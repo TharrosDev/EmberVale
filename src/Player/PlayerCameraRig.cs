@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using Embervale.Combat;
+using Embervale.Core;
 using Embervale.Core.Events;
+using Embervale.Dialogue;
 using Embervale.Core.Services;
 using Embervale.Entities;
 using Embervale.Settings;
@@ -177,6 +179,12 @@ public partial class PlayerCameraRig : EntityComponent
             : null;
 
         EventBus.Instance?.Subscribe<SettingsAppliedEvent>(OnSettingsApplied);
+        EventBus.Instance?.Subscribe<DialogueStartedEvent>(OnDialogueStarted);
+        EventBus.Instance?.Subscribe<DialogueEndedEvent>(OnDialogueEnded);
+
+        // A dialogue pauses the tree, and a paused node does not process. Always keeps _Process alive
+        // for the one case in the gate below; while the tree runs it does nothing.
+        ProcessMode = ProcessModeEnum.Always;
         ApplyFieldOfView(_settings?.Current);
         SetFirstPerson(!(_settings?.Current.ThirdPersonCamera ?? false), immediate: true);
     }
@@ -184,6 +192,51 @@ public partial class PlayerCameraRig : EntityComponent
     protected override void OnTeardown()
     {
         EventBus.Instance?.Unsubscribe<SettingsAppliedEvent>(OnSettingsApplied);
+        EventBus.Instance?.Unsubscribe<DialogueStartedEvent>(OnDialogueStarted);
+        EventBus.Instance?.Unsubscribe<DialogueEndedEvent>(OnDialogueEnded);
+    }
+
+    /// <summary>True from a conversation opening to it closing. Set by the dialogue events rather
+    /// than read off the panel, so the rig does not know the UI exists. Public so the camera probe
+    /// can stand in for the events, which a script cannot publish.</summary>
+    public bool DialogueOpen { get; set; }
+
+    private void OnDialogueStarted(DialogueStartedEvent e)
+    {
+        if (ReferenceEquals(e.Player, Entity))
+        {
+            DialogueOpen = true;
+        }
+    }
+
+    private void OnDialogueEnded(DialogueEndedEvent e)
+    {
+        if (ReferenceEquals(e.Player, Entity))
+        {
+            DialogueOpen = false;
+        }
+    }
+
+    /// <summary>
+    /// Keeps the camera alive during a dialogue. The router, the rig's usual caller, does not run
+    /// while the dialogue pauses the tree, so the special-view layer's push-in would never step.
+    /// Fed <see cref="CameraInputs.Idle"/> because the router is not reading the player: the last
+    /// frame's sprint or fight would otherwise keep framing and bobbing the camera through a
+    /// conversation, and the profile eases back to exploration instead.
+    /// </summary>
+    public override void _Process(double delta)
+    {
+        if (!CameraRigMath.TicksWhilePaused(
+                DialogueOpen,
+                GetTree().Paused,
+                GameManager.Instance is { IsPlaying: true }) ||
+            !GodotObject.IsInstanceValid(Camera) || !GodotObject.IsInstanceValid(CameraPivot))
+        {
+            return;
+        }
+
+        Feed(CameraInputs.Idle);
+        Tick(delta);
     }
 
     /// <summary>What the input router read off the player this frame. Stored, not acted on: the rig

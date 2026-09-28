@@ -171,7 +171,7 @@ Six components, added last and in order by `PlayerFactory`:
   finds them by walking the body's children (`IEntity.GetComponents` is constrained to
   `EntityComponent`, so an interface cannot go through it) and sums them in `CombineLayers`. A layer
   that writes `Camera.Position` or `Rotation` itself puts two writers on one transform. Feel layers
-  scale by `CameraComfort`. The rig ticks from the router, so it does not run while the tree is paused.
+  scale by `CameraComfort`. The rig ticks from the router, which does not run while the tree is paused; a dialogue pauses it, so the rig also ticks itself in `_Process` (always-processing) for the length of a dialogue only.
 - Aim comes from the camera; interact reach is measured from the character. Lock-on facing is
   `LockOnComponent.FaceTarget()`.
 

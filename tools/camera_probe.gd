@@ -28,10 +28,11 @@ func _initialize() -> void:
 	root.add_child(load("res://src/Bootstrap/ContentDatabaseLoader.cs").new())
 	await process_frame
 	await _check_obstruction()
+	await _check_dialogue_ticks()
 	_check_cells_mark_their_geometry()
 	print("---")
 	if _failures.is_empty():
-		print("PASS: walls retract the camera, people do not, and it restores")
+		print("PASS: walls retract the camera, people do not, it restores, and it ticks through a dialogue")
 		quit(0)
 	else:
 		for f in _failures:
@@ -134,6 +135,47 @@ func _check_obstruction() -> void:
 			% [with_ally, free_distance])
 
 	ally.queue_free()
+	body.queue_free()
+	await process_frame
+
+
+# A dialogue pauses the world, which stops the input router, which is the rig's only caller. Without
+# the rig ticking itself, the special-view layer's dialogue push-in never steps. The tree is paused by
+# hand (UiState is static C#, unreachable from here), which is the same flag the dialogue sets.
+#
+# The observable is the third-person swap: asked for while paused, the camera can only leave the eye
+# if the rig ticked. It must stay put when no dialogue is open, so the paused tick is not a general
+# "the camera runs while paused".
+func _check_dialogue_ticks() -> void:
+	var manager := root.get_node_or_null("GameManager")
+	if manager == null:
+		_failures.append("no GameManager autoload; cannot probe the paused-dialogue tick")
+		return
+	manager.ChangeState(3)  # GameState.Playing
+
+	var parts := _rig()
+	var body: CharacterBody3D = parts[0]
+	var camera: Camera3D = parts[1]
+	var rig = parts[2]
+	await process_frame
+
+	paused = true
+	rig.SetFirstPerson(false, false)
+	await create_timer(1.5, true, false, true).timeout
+	var idle: float = camera.position.length()
+	print("paused, no dialogue: camera sits %.2f m out" % idle)
+	if idle > 0.05:
+		_failures.append("the rig ticked while the world was paused with no dialogue open (%.2f m)" % idle)
+
+	rig.DialogueOpen = true
+	await create_timer(1.5, true, false, true).timeout
+	var talking: float = camera.position.length()
+	print("paused, dialogue:    camera sits %.2f m out" % talking)
+	if talking < 1.0:
+		_failures.append("the rig did not tick during a dialogue (%.2f m); the push-in would never play" % talking)
+
+	paused = false
+	manager.ChangeState(0)  # GameState.Boot, as found
 	body.queue_free()
 	await process_frame
 

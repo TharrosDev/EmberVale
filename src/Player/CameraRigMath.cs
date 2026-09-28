@@ -329,6 +329,16 @@ public static class CameraRigMath
     }
 
     /// <summary>
+    /// Whether the rig has to tick itself this frame. A dialogue pauses the world, which stops the
+    /// input router and with it the only caller of <c>Tick</c>, so the push-in toward the speaker
+    /// would never run. This is true only for that case: an open dialogue, in a tree the dialogue
+    /// paused, in a game that is still playing (a pause menu, a load or a game over holds the camera
+    /// still, and a running tree is already ticked by the router).
+    /// </summary>
+    public static bool TicksWhilePaused(bool dialogueOpen, bool treePaused, bool playing) =>
+        dialogueOpen && treePaused && playing;
+
+    /// <summary>
     /// Direction from an aim origin to the point the crosshair converges on. In first person the
     /// camera sits on the pivot, so this returns the pivot's own forward and every aim path
     /// (interact, spells) behaves exactly as it did before the rig existed — the invariant that

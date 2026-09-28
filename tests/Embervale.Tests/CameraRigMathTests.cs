@@ -532,4 +532,17 @@ public class CameraRigMathTests
 
         Assert.True(up > down * 2f, $"rose {up}, fell {down}");
     }
+
+    [Fact]
+    public void TicksWhilePaused_OnlyForAnOpenDialogueInAPausedTreeThatIsStillPlaying()
+    {
+        Assert.True(CameraRigMath.TicksWhilePaused(dialogueOpen: true, treePaused: true, playing: true));
+
+        // Not in a dialogue: the router ticks the rig itself, so this must not double it.
+        Assert.False(CameraRigMath.TicksWhilePaused(dialogueOpen: false, treePaused: true, playing: true));
+        // Tree running: same, the router owns the tick.
+        Assert.False(CameraRigMath.TicksWhilePaused(dialogueOpen: true, treePaused: false, playing: true));
+        // Pause menu, loading or game over during a dialogue: the camera holds still.
+        Assert.False(CameraRigMath.TicksWhilePaused(dialogueOpen: true, treePaused: true, playing: false));
+    }
 }

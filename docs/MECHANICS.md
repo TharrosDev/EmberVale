@@ -83,8 +83,8 @@ rig sums and clamps them (`CameraLayer.cs`, `CameraRigMath.CombineLayers`). Moti
 - **Special views** — dialogue push-in toward the speaker, a boss-entrance lean for the intro lock, a
   slow pull-back after the player dies, a faint lean toward a focused interactable, a wider seat when
   mounted. Restrained ceilings (a few degrees), and the player's own look input always wins.
-  `CameraDirectorLayer`, `SpecialViewMath`. *Partial:* a dialogue pauses the world, which stops the
-  rig ticking, so the dialogue push-in does not currently play; the others do.
+  `CameraDirectorLayer`, `SpecialViewMath`. A dialogue pauses the world, so the rig ticks itself for
+  its duration (`CameraRigMath.TicksWhilePaused`), with the player's inputs held at rest.
 - **Obstruction fade** — props and actors between the camera and the player thin out (up to 80%
   transparency) in third person or when pulled back; walls and terrain stay solid, and every mesh is
   restored exactly. Baked architecture and scatter are merged meshes, so they are not faded.
