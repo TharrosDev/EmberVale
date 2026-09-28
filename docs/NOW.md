@@ -40,6 +40,18 @@ The game is complete from New Game to credits. The finish run's contract and id 
   scar_count`/`three_dragons`, Veiled Archive `greater_house`/`breach_record`, Iron Syndicate
   `quest.iron.caravan_road`/`last_contract`, Emberbound `second_fire`/`reckoning`. Realm NPCs react
   to rank three. Guild content is never read by `quest.main.*`.
+- **Rival duels (47.5) and the world after the ending (44.5).** A black-iron brazier in the
+  Stormcrown arena (after the Storm Tyrant) and one in the Crimson Mission (after the Prophet) summon
+  the Ashen Knight under `BossSummonComponent.FightId` = `boss.ashen_knight_duel1`/`2`: he yields at
+  `BossResource.WithdrawHealthFraction` (65% / 45%), the fight ends on `BossWithdrewEvent` (no kill,
+  loot or bestiary credit), `flag.rival.duel1_won`/`duel2_won` is set and his parting words play.
+  Both are optional, close for good on `flag.ashen_knight_defeated` (`ClosedFlagId`), and his Act IV
+  last words gain a line for each duel won. After an ending the weather pool is filtered by story
+  flags (`WeatherResource.RequiredFlagId`/`ExcludedByFlagIds`, derived and never saved): Dawnfire
+  brings `weather.dawnfire` and strikes rain, storm and fog; the Lord of Embers leaves only the red
+  `weather.embers` (`SkyTint`). The Elder, Last Hearth's headwoman and the Saffra Wells wellkeeper
+  have after-lines per ending. Needs a bake (the two arena scenes and `src/World` changed) and an
+  eye-level look at both skies and both braziers; duel balance is untuned.
 - **Struck, and staying struck:** Phase 40 (survival/needs) and 40.5 (puzzles/traps). **Out of scope**
   (personal build, never published): storefront, platform compliance, launch, live ops, extra locales.
 

@@ -59,6 +59,9 @@ public static class EnvironmentValidation
             Range(issues, $"{weather.Id} wind", weather.WindStrength, 0, 8);
             Range(issues, $"{weather.Id} precipitation", weather.Precipitation, 0, 1);
             Range(issues, $"{weather.Id} fog", weather.FogDensity, 0, .15f);
+            Range(issues, $"{weather.Id} sky tint r", weather.SkyTint.R, 0, 1);
+            Range(issues, $"{weather.Id} sky tint g", weather.SkyTint.G, 0, 1);
+            Range(issues, $"{weather.Id} sky tint b", weather.SkyTint.B, 0, 1);
         }
     }
 

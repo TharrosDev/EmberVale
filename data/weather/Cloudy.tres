@@ -16,3 +16,4 @@ FogDensity = 0.0
 FogColor = Color(0.66, 0.62, 0.57, 1)
 Precipitation = 0.0
 WindStrength = 1.7
+ExcludedByFlagIds = Array[String](["flag.ending_embers"])

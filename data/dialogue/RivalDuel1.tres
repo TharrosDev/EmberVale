@@ -1,0 +1,49 @@
+[gd_resource type="Resource" script_class="DialogueResource" format=3]
+
+[ext_resource type="Script" path="res://src/Dialogue/DialogueResource.cs" id="1_dlg"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueNode.cs" id="2_node"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueChoice.cs" id="3_choice"]
+
+; The Ashen Knight yields after the first duel (Phase 47.5), opened by BossEncounterDirector as
+; boss.ashen_knight_duel1's DefeatDialogueId once flag.rival.duel1_won is set. No effects: the flag is
+; the record, and nothing here is a choice with consequences.
+
+[sub_resource type="Resource" id="ch_who"]
+script = ExtResource("3_choice")
+Text = "dlg.rival.duel1.c_who"
+Goto = "who"
+
+[sub_resource type="Resource" id="ch_why"]
+script = ExtResource("3_choice")
+Text = "dlg.rival.duel1.c_why"
+Goto = "why"
+
+[sub_resource type="Resource" id="ch_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.rival.duel1.c_bye"
+Goto = ""
+
+[sub_resource type="Resource" id="node_yield"]
+script = ExtResource("2_node")
+Id = "yield"
+Text = "dlg.rival.duel1.yield"
+Choices = Array[Resource]([SubResource("ch_who")])
+
+[sub_resource type="Resource" id="node_who"]
+script = ExtResource("2_node")
+Id = "who"
+Text = "dlg.rival.duel1.who"
+Choices = Array[Resource]([SubResource("ch_why")])
+
+[sub_resource type="Resource" id="node_why"]
+script = ExtResource("2_node")
+Id = "why"
+Text = "dlg.rival.duel1.why"
+Choices = Array[Resource]([SubResource("ch_bye")])
+
+[resource]
+script = ExtResource("1_dlg")
+Id = "dialogue.rival_duel1"
+SpeakerName = "dlg.rival.duel1.speaker"
+StartNodeId = "yield"
+Nodes = Array[Resource]([SubResource("node_yield"), SubResource("node_who"), SubResource("node_why")])

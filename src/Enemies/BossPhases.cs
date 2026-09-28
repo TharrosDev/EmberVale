@@ -45,4 +45,17 @@ public static class BossPhases
     /// </summary>
     public static bool ShouldEnrage(double elapsed, float enrageSeconds, bool alreadyEnraged) =>
         !alreadyEnraged && enrageSeconds > 0f && elapsed >= enrageSeconds;
+
+    /// <summary>
+    /// Whether a boss that yields at <paramref name="withdrawFraction"/> should leave now, at
+    /// <paramref name="healthFraction"/> of its health (Phase 47.5). A non-positive fraction is a fight
+    /// to the death; a boss already at zero died instead, and the death path owns it.
+    /// </summary>
+    public static bool ShouldWithdraw(float healthFraction, float withdrawFraction, bool alreadyWithdrawn) =>
+        !alreadyWithdrawn && withdrawFraction > 0f && healthFraction > 0f && healthFraction <= withdrawFraction;
+
+    /// <summary>The authored range of <c>BossResource.WithdrawHealthFraction</c>: <c>[0, 1)</c>. At 1 or
+    /// above the boss would leave on the first scratch; below 0 is a typo, not a design.</summary>
+    public static bool WithdrawFractionValid(float withdrawFraction) =>
+        float.IsFinite(withdrawFraction) && withdrawFraction >= 0f && withdrawFraction < 1f;
 }

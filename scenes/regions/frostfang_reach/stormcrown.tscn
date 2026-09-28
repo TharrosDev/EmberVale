@@ -146,6 +146,40 @@ LockedPromptKey = "boss.storm_tyrant.locked"
 
 [node name="Model" parent="Brazier" instance=ExtResource("st_brazier")]
 
+; Phase 47.5: the Ashen Knight's rival duel 1. An optional second challenge in this arena, cold until
+; flag.storm_tyrant_defeated and closed for good once the Knight falls in Act IV. FightId runs boss.ashen_knight_duel1
+; over enemy.ashen_knight: he yields at a health threshold instead of dying.
+[node name="RivalBrazier" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, 40)
+script = ExtResource("st_entity")
+DisplayName = "Black-Iron Brazier"
+
+[node name="Model" parent="RivalBrazier" instance=ExtResource("st_brazier")]
+
+[node name="Collider" type="StaticBody3D" parent="RivalBrazier"]
+
+[node name="Shape" type="CollisionShape3D" parent="RivalBrazier/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
+shape = SubResource("Shape_st_brazier")
+
+[node name="FireLight" type="OmniLight3D" parent="RivalBrazier"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
+light_color = Color(0.95, 0.45, 0.3, 1)
+light_energy = 1.6
+omni_range = 6.0
+
+[node name="Summon" type="Node" parent="RivalBrazier"]
+script = ExtResource("st_summon")
+SpawnOffset = Vector3(11, 0, 5)
+RequiredQuestId = ""
+RequiredFlagId = "flag.storm_tyrant_defeated"
+BossTemplateId = "enemy.ashen_knight"
+FightId = "boss.ashen_knight_duel1"
+DefeatedFlagId = "flag.rival.duel1_won"
+ClosedFlagId = "flag.ashen_knight_defeated"
+PromptKey = "boss.rival.duel1.prompt"
+LockedPromptKey = "boss.rival.duel1.locked"
+
 [node name="AddSpawns" type="Node3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 21, 0, 45)
 

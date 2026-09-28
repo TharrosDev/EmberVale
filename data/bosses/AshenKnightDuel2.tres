@@ -1,0 +1,50 @@
+[gd_resource type="Resource" script_class="BossResource" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/Enemies/BossResource.cs" id="1_boss"]
+[ext_resource type="Script" path="res://src/Enemies/BossPhaseResource.cs" id="2_phase"]
+
+; The Ashen Knight's second duel (Phase 47.5), in the Crimson Mission after the Prophet falls.
+; Harder than the first: less slowed (-15%), a second stance at 75% that quickens him, and he yields
+; later, at 45% health. flag.rival.duel2_won, then dialogue.rival_duel2. Optional, like the first.
+[sub_resource type="Resource" id="Phase_1"]
+script = ExtResource("2_phase")
+HealthFraction = 1.0
+AttackSpeedBonus = -0.15
+MoveSpeedBonus = 0.0
+GrantSpellIds = Array[String]([])
+AiProfileId = ""
+TelegraphColor = Color(0.95, 0.55, 0.3, 1)
+TelegraphEnergy = 2.5
+WindupPoiseMultiplier = 1.0
+AddWaves = Array[Resource]([])
+
+[sub_resource type="Resource" id="Phase_2"]
+script = ExtResource("2_phase")
+HealthFraction = 0.75
+AttackSpeedBonus = 0.0
+MoveSpeedBonus = 0.1
+GrantSpellIds = Array[String]([])
+AiProfileId = ""
+TelegraphColor = Color(1, 0.45, 0.2, 1)
+TelegraphEnergy = 3.8
+WindupPoiseMultiplier = 0.85
+AddWaves = Array[Resource]([])
+
+[resource]
+script = ExtResource("1_boss")
+Id = "boss.ashen_knight_duel2"
+Phases = Array[Resource]([SubResource("Phase_1"), SubResource("Phase_2")])
+EnrageSeconds = 0.0
+EnrageAttackSpeedBonus = 0.0
+EnrageMoveSpeedBonus = 0.0
+EnrageSpellIds = Array[String]([])
+EnrageForcesFinalPhase = false
+WithdrawHealthFraction = 0.45
+IntroLockSeconds = 2.5
+DefeatSlowSeconds = 1.0
+DefeatTimeScale = 0.4
+DefeatMusicCue = "music.boss_defeat"
+RewardItemId = ""
+RewardQuantity = 1
+DefeatFlagId = "flag.rival.duel2_won"
+DefeatDialogueId = "dialogue.rival_duel2"

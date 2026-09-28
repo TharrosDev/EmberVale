@@ -296,6 +296,40 @@ DefeatedFlagId = "flag.crimson_prophet_defeated"
 PromptKey = "boss.crimson_prophet.challenge_prompt"
 LockedPromptKey = "boss.crimson_prophet.challenge_locked"
 
+; Phase 47.5: the Ashen Knight's rival duel 2. An optional second challenge in this arena, cold until
+; flag.crimson_prophet_defeated and closed for good once the Knight falls in Act IV. FightId runs boss.ashen_knight_duel2
+; over enemy.ashen_knight: he yields at a health threshold instead of dying.
+[node name="RivalBrazier" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 39, 0, -28)
+script = ExtResource("e6")
+DisplayName = "Black-Iron Brazier"
+
+[node name="Model" parent="RivalBrazier" instance=ExtResource("e4")]
+
+[node name="Collider" type="StaticBody3D" parent="RivalBrazier"]
+
+[node name="Shape" type="CollisionShape3D" parent="RivalBrazier/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
+shape = SubResource("Shape_brazier_box")
+
+[node name="FireLight" type="OmniLight3D" parent="RivalBrazier"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
+light_color = Color(0.95, 0.45, 0.3, 1)
+light_energy = 1.6
+omni_range = 6.0
+
+[node name="Summon" type="Node" parent="RivalBrazier"]
+script = ExtResource("e7")
+SpawnOffset = Vector3(6, 0, 8)
+RequiredQuestId = ""
+RequiredFlagId = "flag.crimson_prophet_defeated"
+BossTemplateId = "enemy.ashen_knight"
+FightId = "boss.ashen_knight_duel2"
+DefeatedFlagId = "flag.rival.duel2_won"
+ClosedFlagId = "flag.ashen_knight_defeated"
+PromptKey = "boss.rival.duel2.prompt"
+LockedPromptKey = "boss.rival.duel2.locked"
+
 [node name="AddSpawns" type="Node3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 45, 0, -20)
 

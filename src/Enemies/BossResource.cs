@@ -45,6 +45,15 @@ public partial class BossResource : Resource
     /// that has run long finishes at full intensity rather than in its opening stance.</summary>
     [Export] public bool EnrageForcesFinalPhase { get; set; } = true;
 
+    [ExportGroup("Withdraw")]
+
+    /// <summary>Health fraction at or below which the boss yields and leaves instead of fighting to the
+    /// death (Phase 47.5, the Ashen Knight's rival duels). <c>0</c>, the default, is a fight to the
+    /// death. A withdrawal ends the fight the way a defeat does (<c>BossWithdrewEvent</c>: defeat flag,
+    /// reward, conversation) but nothing dies, so no kill, loot or bestiary credit is given.
+    /// Valid range is <c>[0, 1)</c>; see <c>BossPhases.WithdrawFractionValid</c>.</summary>
+    [Export(PropertyHint.Range, "0,0.95,0.01")] public float WithdrawHealthFraction { get; set; }
+
     [ExportGroup("Encounter")]
 
     /// <summary>Seconds the player is held to watch the boss arrive. The lock leaves the world

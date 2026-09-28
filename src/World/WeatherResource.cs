@@ -45,6 +45,21 @@ public partial class WeatherResource : Resource
 
     [Export(PropertyHint.Range, "0,8,0.1")] public float WindStrength { get; set; } = 1f;
 
+    /// <summary>Multiplies the sky, horizon and fog colour (Phase 44.5). White, the default, leaves the
+    /// day cycle's colours untouched; the ending skies warm or redden the whole world through it.</summary>
+    [Export] public Color SkyTint { get; set; } = Colors.White;
+
+    [ExportGroup("Story gate (Phase 44.5)")]
+    /// <summary>This state can only be rolled while this story flag is set. Empty = always.</summary>
+    [Export] public string RequiredFlagId { get; set; } = string.Empty;
+
+    /// <summary>This state can no longer be rolled once any of these story flags is set.</summary>
+    [Export] public Godot.Collections.Array<string> ExcludedByFlagIds { get; set; } = new();
+
+    /// <summary>Whether the story allows this state now. See <see cref="WeatherEligibility"/>.</summary>
+    public bool IsEligible(System.Func<string, bool> has) =>
+        WeatherEligibility.IsEligible(RequiredFlagId, ExcludedByFlagIds, has);
+
     /// <summary>A randomised duration in in-game hours for one spell of this weather.</summary>
     public float RollDuration()
     {

@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="DialogueResource" load_steps=40 format=3 uid="uid://cmbrvldlgeldr"]
+[gd_resource type="Resource" script_class="DialogueResource" load_steps=46 format=3 uid="uid://cmbrvldlgeldr"]
 
 [ext_resource type="Script" path="res://src/Dialogue/DialogueResource.cs" id="1_dlg"]
 [ext_resource type="Script" path="res://src/Dialogue/DialogueNode.cs" id="2_node"]
@@ -173,11 +173,36 @@ script = ExtResource("3_choice")
 Text = "dlg.elder.dread.c_bye"
 Goto = "root"
 
+; Phase 44.5: after-lines once the game is won, one per ending (Condition 5 = HasFlag).
+[sub_resource type="Resource" id="ch_ending_dawnfire"]
+script = ExtResource("3_choice")
+Text = "dlg.elder.c_ending"
+Goto = "ending_dawnfire"
+Condition = 5
+ConditionArg = "flag.ending_dawnfire"
+
+[sub_resource type="Resource" id="ch_ending_dawnfire_back"]
+script = ExtResource("3_choice")
+Text = "dlg.elder.c_ending_back"
+Goto = "root"
+
+[sub_resource type="Resource" id="ch_ending_embers"]
+script = ExtResource("3_choice")
+Text = "dlg.elder.c_ending"
+Goto = "ending_embers"
+Condition = 5
+ConditionArg = "flag.ending_embers"
+
+[sub_resource type="Resource" id="ch_ending_embers_back"]
+script = ExtResource("3_choice")
+Text = "dlg.elder.c_ending_back"
+Goto = "root"
+
 [sub_resource type="Resource" id="node_root"]
 script = ExtResource("2_node")
 Id = "root"
 Text = "dlg.elder.root"
-Choices = Array[Resource]([SubResource("ch_root_friend"), SubResource("ch_root_pure"), SubResource("ch_root_marked"), SubResource("ch_heart_thanks"), SubResource("ch_heart_offer"), SubResource("ch_heart_active"), SubResource("ch_root_thanks"), SubResource("ch_root_offer"), SubResource("ch_root_active"), SubResource("ch_root_kael"), SubResource("ch_root_dread"), SubResource("ch_root_bye")])
+Choices = Array[Resource]([SubResource("ch_ending_dawnfire"), SubResource("ch_ending_embers"), SubResource("ch_root_friend"), SubResource("ch_root_pure"), SubResource("ch_root_marked"), SubResource("ch_heart_thanks"), SubResource("ch_heart_offer"), SubResource("ch_heart_active"), SubResource("ch_root_thanks"), SubResource("ch_root_offer"), SubResource("ch_root_active"), SubResource("ch_root_kael"), SubResource("ch_root_dread"), SubResource("ch_root_bye")])
 
 [sub_resource type="Resource" id="node_offer"]
 script = ExtResource("2_node")
@@ -269,9 +294,21 @@ Id = "dread"
 Text = "dlg.elder.dread.line"
 Choices = Array[Resource]([SubResource("ch_dread_bye")])
 
+[sub_resource type="Resource" id="node_ending_dawnfire"]
+script = ExtResource("2_node")
+Id = "ending_dawnfire"
+Text = "dlg.elder.ending_dawnfire"
+Choices = Array[Resource]([SubResource("ch_ending_dawnfire_back")])
+
+[sub_resource type="Resource" id="node_ending_embers"]
+script = ExtResource("2_node")
+Id = "ending_embers"
+Text = "dlg.elder.ending_embers"
+Choices = Array[Resource]([SubResource("ch_ending_embers_back")])
+
 [resource]
 script = ExtResource("1_dlg")
 Id = "dialogue.elder"
 SpeakerName = "dlg.elder.speaker"
 StartNodeId = "root"
-Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_offer"), SubResource("node_accepted"), SubResource("node_inprogress"), SubResource("node_thanks"), SubResource("node_friend"), SubResource("node_pure"), SubResource("node_marked"), SubResource("node_heart_offer"), SubResource("node_heart_accepted"), SubResource("node_heart_inprogress"), SubResource("node_heart_thanks"), SubResource("node_kael_ask"), SubResource("node_kael_where"), SubResource("node_kael_already"), SubResource("node_dread")])
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_offer"), SubResource("node_accepted"), SubResource("node_inprogress"), SubResource("node_thanks"), SubResource("node_friend"), SubResource("node_pure"), SubResource("node_marked"), SubResource("node_heart_offer"), SubResource("node_heart_accepted"), SubResource("node_heart_inprogress"), SubResource("node_heart_thanks"), SubResource("node_kael_ask"), SubResource("node_kael_where"), SubResource("node_kael_already"), SubResource("node_dread"), SubResource("node_ending_dawnfire"), SubResource("node_ending_embers")])

@@ -73,6 +73,7 @@ public partial class MusicDirector : Node
 
         EventBus.Instance?.Subscribe<EnemyStateChangedEvent>(OnEnemyState);
         EventBus.Instance?.Subscribe<EntityDiedEvent>(OnDied);
+        EventBus.Instance?.Subscribe<BossWithdrewEvent>(OnBossWithdrew);
         EventBus.Instance?.Subscribe<BossEncounterStartedEvent>(OnBossStarted);
 
         Apply(_machine.Resolve(), instant: true);
@@ -83,6 +84,7 @@ public partial class MusicDirector : Node
     {
         EventBus.Instance?.Unsubscribe<EnemyStateChangedEvent>(OnEnemyState);
         EventBus.Instance?.Unsubscribe<EntityDiedEvent>(OnDied);
+        EventBus.Instance?.Unsubscribe<BossWithdrewEvent>(OnBossWithdrew);
         EventBus.Instance?.Unsubscribe<BossEncounterStartedEvent>(OnBossStarted);
     }
 
@@ -118,6 +120,18 @@ public partial class MusicDirector : Node
     {
         _engaged.Remove(e.Entity.RuntimeId);
         if (_boss != null && ReferenceEquals(e.Entity, _boss))
+        {
+            ClearBoss();
+        }
+
+        Reevaluate();
+    }
+
+    /// <summary>A boss that yields (Phase 47.5) leaves the fight alive; the boss music ends with it.</summary>
+    private void OnBossWithdrew(BossWithdrewEvent e)
+    {
+        _engaged.Remove(e.Boss.RuntimeId);
+        if (_boss != null && ReferenceEquals(e.Boss, _boss))
         {
             ClearBoss();
         }

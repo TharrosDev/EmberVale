@@ -40,11 +40,36 @@ script = ExtResource("3_choice")
 Text = "dlg.ashen_headwoman.c_back"
 Goto = "root"
 
+; Phase 44.5: after-lines once the game is won, one per ending (Condition 5 = HasFlag).
+[sub_resource type="Resource" id="ch_ending_dawnfire"]
+script = ExtResource("3_choice")
+Text = "dlg.ashen_headwoman.c_ending"
+Goto = "ending_dawnfire"
+Condition = 5
+ConditionArg = "flag.ending_dawnfire"
+
+[sub_resource type="Resource" id="ch_ending_dawnfire_back"]
+script = ExtResource("3_choice")
+Text = "dlg.ashen_headwoman.c_back"
+Goto = "root"
+
+[sub_resource type="Resource" id="ch_ending_embers"]
+script = ExtResource("3_choice")
+Text = "dlg.ashen_headwoman.c_ending"
+Goto = "ending_embers"
+Condition = 5
+ConditionArg = "flag.ending_embers"
+
+[sub_resource type="Resource" id="ch_ending_embers_back"]
+script = ExtResource("3_choice")
+Text = "dlg.ashen_headwoman.c_back"
+Goto = "root"
+
 [sub_resource type="Resource" id="node_root"]
 script = ExtResource("2_node")
 Id = "root"
 Text = "dlg.ashen_headwoman.root"
-Choices = Array[Resource]([SubResource("ch_place"), SubResource("ch_east"), SubResource("ch_after"), SubResource("ch_bye")])
+Choices = Array[Resource]([SubResource("ch_ending_dawnfire"), SubResource("ch_ending_embers"), SubResource("ch_place"), SubResource("ch_east"), SubResource("ch_after"), SubResource("ch_bye")])
 
 [sub_resource type="Resource" id="node_place"]
 script = ExtResource("2_node")
@@ -64,9 +89,21 @@ Id = "after"
 Text = "dlg.ashen_headwoman.after"
 Choices = Array[Resource]([SubResource("ch_after_back")])
 
+[sub_resource type="Resource" id="node_ending_dawnfire"]
+script = ExtResource("2_node")
+Id = "ending_dawnfire"
+Text = "dlg.ashen_headwoman.ending_dawnfire"
+Choices = Array[Resource]([SubResource("ch_ending_dawnfire_back")])
+
+[sub_resource type="Resource" id="node_ending_embers"]
+script = ExtResource("2_node")
+Id = "ending_embers"
+Text = "dlg.ashen_headwoman.ending_embers"
+Choices = Array[Resource]([SubResource("ch_ending_embers_back")])
+
 [resource]
 script = ExtResource("1_dlg")
 Id = "dialogue.ashen_headwoman"
 SpeakerName = "dlg.ashen_headwoman.speaker"
 StartNodeId = "root"
-Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_place"), SubResource("node_east"), SubResource("node_after")])
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_place"), SubResource("node_east"), SubResource("node_after"), SubResource("node_ending_dawnfire"), SubResource("node_ending_embers")])

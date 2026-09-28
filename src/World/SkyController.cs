@@ -41,7 +41,7 @@ public partial class SkyController : Node3D
     private RenderQualityResource? _quality;
     private float _light = 1f, _sky = 1f, _fog, _precipitation, _cold;
     private float _regionEnergy = 1f, _regionHaze = 1f, _humidity, _shelterTarget;
-    private Color _regionTint = Colors.White, _haze = new(0.70f, 0.66f, 0.60f), _weatherFog = Colors.White;
+    private Color _regionTint = Colors.White, _haze = new(0.70f, 0.66f, 0.60f), _weatherFog = Colors.White, _weatherTint = Colors.White;
     private double _sampleClock;
     private Vector3 _windTarget = new(1.5f, 0f, 0.5f);
     private bool _initialized;
@@ -136,6 +136,7 @@ public partial class SkyController : Node3D
         _fog = Mathf.Lerp(_fog, weather?.FogDensity ?? 0f, blend);
         _precipitation = Mathf.Lerp(_precipitation, weather?.Precipitation ?? 0f, blend);
         _weatherFog = _weatherFog.Lerp(weather?.FogColor ?? Colors.White, blend);
+        _weatherTint = _weatherTint.Lerp(weather?.SkyTint ?? Colors.White, blend);
         _regionEnergy = Mathf.Lerp(_regionEnergy, RegionAtmosphere?.SunEnergyScale ?? 1f, blend);
         _regionHaze = Mathf.Lerp(_regionHaze, RegionAtmosphere?.HazeScale ?? 1f, blend);
         _regionTint = _regionTint.Lerp(RegionAtmosphere?.SunTint ?? Colors.White, blend);
@@ -177,12 +178,12 @@ public partial class SkyController : Node3D
         _moon.Visible = _moon.LightEnergy > .001f;
         Environment.BackgroundEnergyMultiplier = L(a.SkyEnergy, b.SkyEnergy) * _sky;
         Environment.AmbientLightSource = Godot.Environment.AmbientSource.Color;
-        Environment.AmbientLightColor = a.HorizonColor.Lerp(b.HorizonColor, t);
+        Environment.AmbientLightColor = a.HorizonColor.Lerp(b.HorizonColor, t) * _weatherTint;
         Environment.AmbientLightEnergy = L(a.AmbientEnergy, b.AmbientEnergy) * Mathf.Lerp(.72f, 1f, _sky) * _ambientScale;
         Environment.AmbientLightSkyContribution = .65f;
         Environment.FogEnabled = true;
         Environment.FogDensity = (Cycle.ClearFogDensity + _fog * .65f) * _regionHaze * (1f + _humidity * .25f) * outside;
-        Environment.FogLightColor = a.HorizonColor.Lerp(b.HorizonColor, t).Lerp(_haze, .18f).Lerp(_weatherFog, _precipitation * .2f) * _spaceFog;
+        Environment.FogLightColor = a.HorizonColor.Lerp(b.HorizonColor, t).Lerp(_haze, .18f).Lerp(_weatherFog, _precipitation * .2f) * _spaceFog * _weatherTint;
         Environment.FogLightEnergy = L(a.FogEnergy, b.FogEnergy);
         Environment.FogSkyAffect = .22f;
         Environment.VolumetricFogDensity = _quality?.VolumetricFog == true ? Mathf.Min(.008f, _fog * .18f) * outside : 0f;
@@ -196,8 +197,8 @@ public partial class SkyController : Node3D
         Environment.GlowHdrThreshold = 1.2f;
         if (Environment.Sky?.SkyMaterial is ProceduralSkyMaterial sky)
         {
-            sky.SkyTopColor = a.SkyColor.Lerp(b.SkyColor, t).Lerp(_weatherFog, _precipitation * .35f);
-            sky.SkyHorizonColor = a.HorizonColor.Lerp(b.HorizonColor, t);
+            sky.SkyTopColor = a.SkyColor.Lerp(b.SkyColor, t).Lerp(_weatherFog, _precipitation * .35f) * _weatherTint;
+            sky.SkyHorizonColor = a.HorizonColor.Lerp(b.HorizonColor, t) * _weatherTint;
             sky.GroundHorizonColor = sky.SkyHorizonColor * .55f;
             sky.GroundBottomColor = sky.SkyTopColor * .30f;
             sky.SkyEnergyMultiplier = 1f;
