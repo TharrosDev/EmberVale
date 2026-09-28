@@ -44,6 +44,21 @@ Goto = "root"
 script = ExtResource("3_choice")
 Text = "dlg.archive_steward.c_end"
 
+; -- Phase 42H/42M: the steward reacts to the Keeper of the Veil rank. --
+
+[sub_resource type="Resource" id="ch_h42_react"]
+script = ExtResource("3_choice")
+Text = "dlg.archive_steward.c_h42_react"
+Condition = 14
+ConditionArg = "faction.veiled_archive:3"
+Goto = "h42_react"
+
+[sub_resource type="Resource" id="node_h42_react"]
+script = ExtResource("2_node")
+Id = "h42_react"
+Text = "dlg.archive_steward.h42_react"
+Choices = Array[Resource]([SubResource("ch_back"), SubResource("ch_end")])
+
 [sub_resource type="Resource" id="node_root"]
 script = ExtResource("2_node")
 Id = "root"
@@ -54,7 +69,7 @@ Choices = Array[Resource]([SubResource("ch_member"), SubResource("ch_stranger"),
 script = ExtResource("2_node")
 Id = "member"
 Text = "dlg.archive_steward.member"
-Choices = Array[Resource]([SubResource("ch_back"), SubResource("ch_end")])
+Choices = Array[Resource]([SubResource("ch_h42_react"), SubResource("ch_back"), SubResource("ch_end")])
 
 [sub_resource type="Resource" id="node_stranger"]
 script = ExtResource("2_node")
@@ -67,4 +82,4 @@ script = ExtResource("1_dlg")
 Id = "dialogue.archive_steward"
 SpeakerName = "dlg.archive_steward.speaker"
 StartNodeId = "root"
-Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_member"), SubResource("node_stranger")])
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_member"), SubResource("node_stranger"), SubResource("node_h42_react")])

@@ -1,0 +1,47 @@
+[gd_resource type="Resource" script_class="QuestResource" format=3]
+
+[ext_resource type="Script" path="res://src/Quests/QuestResource.cs" id="1_quest"]
+[ext_resource type="Script" path="res://src/Quests/ObjectiveResource.cs" id="2_obj"]
+[ext_resource type="Script" path="res://src/Quests/QuestItemReward.cs" id="3_reward"]
+
+; Phase 42J - loyalty for sale. The employer (the factor), the target (Vane) and the relationship
+; (Rook, the rank peer 42B reserved) are resolved at Vance's hand-in as
+; flag.iron_syndicate.finale_<fidelity|offer|rook>. Idrys Vane's own dialogue reacts to Ironhand
+; rank; nothing here touches a main-story flag.
+
+[sub_resource type="Resource" id="Obj_ledger"]
+script = ExtResource("2_obj")
+Type = 2
+TargetId = "location.sunspire.caravanserai"
+RequiredCount = 1
+Description = "quest.iron.last_contract.obj_ledger"
+
+[sub_resource type="Resource" id="Obj_rook"]
+script = ExtResource("2_obj")
+Type = 3
+TargetId = "dialogue.syndicate_peer"
+RequiredCount = 1
+Description = "quest.iron.last_contract.obj_rook"
+LocationId = "location.hollowreach.ledger"
+
+[sub_resource type="Resource" id="Reward_item"]
+script = ExtResource("3_reward")
+ItemId = "item.ring.brokers_signet"
+Quantity = 1
+
+[resource]
+script = ExtResource("1_quest")
+Id = "quest.iron.last_contract"
+Title = "quest.iron.last_contract.title"
+Summary = "quest.iron.last_contract.summary"
+Objectives = Array[Resource]([SubResource("Obj_ledger"), SubResource("Obj_rook")])
+XpReward = 260
+GoldReward = 200
+GoldItemId = "item.currency.gold"
+RewardItems = Array[Resource]([SubResource("Reward_item")])
+FactionRewardId = "faction.iron_syndicate"
+FactionRewardAmount = 12
+TimeLimitSeconds = 0.0
+SequentialObjectives = false
+PrerequisiteQuestId = "quest.iron.caravan_road"
+IsMainQuest = false

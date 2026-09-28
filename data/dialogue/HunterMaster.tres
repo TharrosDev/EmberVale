@@ -44,6 +44,253 @@ Goto = "root"
 script = ExtResource("3_choice")
 Text = "dlg.hunter_master.c_end"
 
+; -- Phase 42 finale arc (faction.ash_hunters) --
+; quest.ash_hunters.scar_count (rank two) then quest.ash_hunters.three_dragons (rank three + finale). The accept choice gates on
+; GuildRankAtLeast :1, so rank two (SetFlag, additive - never GuildRank :2, which CLEARS rank
+; three on a revisit) cannot land on a gap. The verdict is given at the hand-in, after the quest,
+; because no objective depends on it; flag.ash_hunters.verdict_given shuts the verdict door once given.
+; DialoguePanel has CloseOnCancel = false, so the single-choice chain verdict -> seal ->
+; GuildRank :3 -> SetFlag guild.ash_hunters.finale cannot be abandoned half way.
+
+[sub_resource type="Resource" id="ch_f42_a_offer"]
+script = ExtResource("3_choice")
+Text = "dlg.hunter_master.f42_c_a_offer"
+Condition = 4
+ConditionArg = "quest.ash_hunters.scar_count"
+Goto = "f42_a_offer"
+
+[sub_resource type="Resource" id="ch_f42_a_active"]
+script = ExtResource("3_choice")
+Text = "dlg.hunter_master.f42_c_a_active"
+Condition = 2
+ConditionArg = "quest.ash_hunters.scar_count"
+Goto = "f42_a_active"
+
+[sub_resource type="Resource" id="ch_f42_a_done"]
+script = ExtResource("3_choice")
+Text = "dlg.hunter_master.f42_c_a_done"
+Condition = 3
+ConditionArg = "quest.ash_hunters.scar_count"
+Goto = "f42_hub"
+Effect = 2
+EffectArg = "guild.ash_hunters.rank2"
+
+[sub_resource type="Resource" id="ch_f42_a_accept"]
+script = ExtResource("3_choice")
+Text = "dlg.hunter_master.f42_c_a_accept"
+Condition = 14
+ConditionArg = "faction.ash_hunters:1"
+Goto = "f42_a_accepted"
+Effect = 1
+EffectArg = "quest.ash_hunters.scar_count"
+
+[sub_resource type="Resource" id="ch_f42_later"]
+script = ExtResource("3_choice")
+Text = "dlg.hunter_master.f42_c_later"
+
+[sub_resource type="Resource" id="ch_f42_ok"]
+script = ExtResource("3_choice")
+Text = "dlg.hunter_master.f42_c_ok"
+
+[sub_resource type="Resource" id="ch_f42_b_offer"]
+script = ExtResource("3_choice")
+Text = "dlg.hunter_master.f42_c_b_offer"
+Condition = 1
+ConditionArg = "quest.ash_hunters.three_dragons"
+Goto = "f42_b_offer"
+
+[sub_resource type="Resource" id="ch_f42_b_active"]
+script = ExtResource("3_choice")
+Text = "dlg.hunter_master.f42_c_b_active"
+Condition = 2
+ConditionArg = "quest.ash_hunters.three_dragons"
+Goto = "f42_b_active"
+
+[sub_resource type="Resource" id="ch_f42_b_report"]
+script = ExtResource("3_choice")
+Text = "dlg.hunter_master.f42_c_b_report"
+Condition = 3
+ConditionArg = "quest.ash_hunters.three_dragons"
+Goto = "f42_b_report"
+
+[sub_resource type="Resource" id="ch_f42_b_accept"]
+script = ExtResource("3_choice")
+Text = "dlg.hunter_master.f42_c_b_accept"
+Goto = "f42_b_accepted"
+Effect = 1
+EffectArg = "quest.ash_hunters.three_dragons"
+
+[sub_resource type="Resource" id="ch_f42_verdict"]
+script = ExtResource("3_choice")
+Text = "dlg.hunter_master.f42_c_verdict"
+Condition = 6
+ConditionArg = "flag.ash_hunters.verdict_given"
+Goto = "f42_verdict"
+
+[sub_resource type="Resource" id="ch_f42_after_verdict_slay"]
+script = ExtResource("3_choice")
+Text = "dlg.hunter_master.f42_c_after"
+Condition = 5
+ConditionArg = "flag.ash_hunters.verdict_slay"
+Goto = "f42_after_verdict_slay"
+
+[sub_resource type="Resource" id="ch_f42_v_verdict_slay"]
+script = ExtResource("3_choice")
+Text = "dlg.hunter_master.f42_c_v_verdict_slay"
+Goto = "f42_v_verdict_slay"
+Effect = 2
+EffectArg = "flag.ash_hunters.verdict_slay"
+
+[sub_resource type="Resource" id="ch_f42_after_verdict_judge"]
+script = ExtResource("3_choice")
+Text = "dlg.hunter_master.f42_c_after"
+Condition = 5
+ConditionArg = "flag.ash_hunters.verdict_judge"
+Goto = "f42_after_verdict_judge"
+
+[sub_resource type="Resource" id="ch_f42_v_verdict_judge"]
+script = ExtResource("3_choice")
+Text = "dlg.hunter_master.f42_c_v_verdict_judge"
+Goto = "f42_v_verdict_judge"
+Effect = 2
+EffectArg = "flag.ash_hunters.verdict_judge"
+
+[sub_resource type="Resource" id="ch_f42_after_verdict_withdraw"]
+script = ExtResource("3_choice")
+Text = "dlg.hunter_master.f42_c_after"
+Condition = 5
+ConditionArg = "flag.ash_hunters.verdict_withdraw"
+Goto = "f42_after_verdict_withdraw"
+
+[sub_resource type="Resource" id="ch_f42_v_verdict_withdraw"]
+script = ExtResource("3_choice")
+Text = "dlg.hunter_master.f42_c_v_verdict_withdraw"
+Goto = "f42_v_verdict_withdraw"
+Effect = 2
+EffectArg = "flag.ash_hunters.verdict_withdraw"
+
+[sub_resource type="Resource" id="ch_f42_seal"]
+script = ExtResource("3_choice")
+Text = "dlg.hunter_master.f42_c_seal"
+Goto = "f42_sealed"
+Effect = 2
+EffectArg = "flag.ash_hunters.verdict_given"
+
+[sub_resource type="Resource" id="ch_f42_rank3"]
+script = ExtResource("3_choice")
+Text = "dlg.hunter_master.f42_c_rank3"
+Goto = "f42_ranked"
+Effect = 12
+EffectArg = "faction.ash_hunters:3"
+
+[sub_resource type="Resource" id="ch_f42_finale"]
+script = ExtResource("3_choice")
+Text = "dlg.hunter_master.f42_c_finale"
+Effect = 2
+EffectArg = "guild.ash_hunters.finale"
+
+[sub_resource type="Resource" id="node_f42_a_offer"]
+script = ExtResource("2_node")
+Id = "f42_a_offer"
+Text = "dlg.hunter_master.f42_a_offer"
+Choices = Array[Resource]([SubResource("ch_f42_a_accept"), SubResource("ch_f42_later")])
+
+[sub_resource type="Resource" id="node_f42_a_accepted"]
+script = ExtResource("2_node")
+Id = "f42_a_accepted"
+Text = "dlg.hunter_master.f42_a_accepted"
+Choices = Array[Resource]([SubResource("ch_f42_ok")])
+
+[sub_resource type="Resource" id="node_f42_a_active"]
+script = ExtResource("2_node")
+Id = "f42_a_active"
+Text = "dlg.hunter_master.f42_a_active"
+Choices = Array[Resource]([SubResource("ch_f42_ok")])
+
+[sub_resource type="Resource" id="node_f42_hub"]
+script = ExtResource("2_node")
+Id = "f42_hub"
+Text = "dlg.hunter_master.f42_hub"
+Choices = Array[Resource]([SubResource("ch_f42_b_offer"), SubResource("ch_f42_b_active"), SubResource("ch_f42_b_report"), SubResource("ch_back"), SubResource("ch_end")])
+
+[sub_resource type="Resource" id="node_f42_b_offer"]
+script = ExtResource("2_node")
+Id = "f42_b_offer"
+Text = "dlg.hunter_master.f42_b_offer"
+Choices = Array[Resource]([SubResource("ch_f42_b_accept"), SubResource("ch_f42_later")])
+
+[sub_resource type="Resource" id="node_f42_b_accepted"]
+script = ExtResource("2_node")
+Id = "f42_b_accepted"
+Text = "dlg.hunter_master.f42_b_accepted"
+Choices = Array[Resource]([SubResource("ch_f42_ok")])
+
+[sub_resource type="Resource" id="node_f42_b_active"]
+script = ExtResource("2_node")
+Id = "f42_b_active"
+Text = "dlg.hunter_master.f42_b_active"
+Choices = Array[Resource]([SubResource("ch_f42_ok")])
+
+[sub_resource type="Resource" id="node_f42_b_report"]
+script = ExtResource("2_node")
+Id = "f42_b_report"
+Text = "dlg.hunter_master.f42_b_report"
+Choices = Array[Resource]([SubResource("ch_f42_verdict"), SubResource("ch_f42_after_verdict_slay"), SubResource("ch_f42_after_verdict_judge"), SubResource("ch_f42_after_verdict_withdraw"), SubResource("ch_back")])
+
+[sub_resource type="Resource" id="node_f42_verdict"]
+script = ExtResource("2_node")
+Id = "f42_verdict"
+Text = "dlg.hunter_master.f42_verdict"
+Choices = Array[Resource]([SubResource("ch_f42_v_verdict_slay"), SubResource("ch_f42_v_verdict_judge"), SubResource("ch_f42_v_verdict_withdraw")])
+
+[sub_resource type="Resource" id="node_f42_v_verdict_slay"]
+script = ExtResource("2_node")
+Id = "f42_v_verdict_slay"
+Text = "dlg.hunter_master.f42_v_verdict_slay"
+Choices = Array[Resource]([SubResource("ch_f42_seal")])
+
+[sub_resource type="Resource" id="node_f42_after_verdict_slay"]
+script = ExtResource("2_node")
+Id = "f42_after_verdict_slay"
+Text = "dlg.hunter_master.f42_after_verdict_slay"
+Choices = Array[Resource]([SubResource("ch_back"), SubResource("ch_end")])
+
+[sub_resource type="Resource" id="node_f42_v_verdict_judge"]
+script = ExtResource("2_node")
+Id = "f42_v_verdict_judge"
+Text = "dlg.hunter_master.f42_v_verdict_judge"
+Choices = Array[Resource]([SubResource("ch_f42_seal")])
+
+[sub_resource type="Resource" id="node_f42_after_verdict_judge"]
+script = ExtResource("2_node")
+Id = "f42_after_verdict_judge"
+Text = "dlg.hunter_master.f42_after_verdict_judge"
+Choices = Array[Resource]([SubResource("ch_back"), SubResource("ch_end")])
+
+[sub_resource type="Resource" id="node_f42_v_verdict_withdraw"]
+script = ExtResource("2_node")
+Id = "f42_v_verdict_withdraw"
+Text = "dlg.hunter_master.f42_v_verdict_withdraw"
+Choices = Array[Resource]([SubResource("ch_f42_seal")])
+
+[sub_resource type="Resource" id="node_f42_after_verdict_withdraw"]
+script = ExtResource("2_node")
+Id = "f42_after_verdict_withdraw"
+Text = "dlg.hunter_master.f42_after_verdict_withdraw"
+Choices = Array[Resource]([SubResource("ch_back"), SubResource("ch_end")])
+
+[sub_resource type="Resource" id="node_f42_sealed"]
+script = ExtResource("2_node")
+Id = "f42_sealed"
+Text = "dlg.hunter_master.f42_sealed"
+Choices = Array[Resource]([SubResource("ch_f42_rank3")])
+
+[sub_resource type="Resource" id="node_f42_ranked"]
+script = ExtResource("2_node")
+Id = "f42_ranked"
+Text = "dlg.hunter_master.f42_ranked"
+Choices = Array[Resource]([SubResource("ch_f42_finale")])
+
 [sub_resource type="Resource" id="node_root"]
 script = ExtResource("2_node")
 Id = "root"
@@ -54,7 +301,7 @@ Choices = Array[Resource]([SubResource("ch_member"), SubResource("ch_stranger"),
 script = ExtResource("2_node")
 Id = "member"
 Text = "dlg.hunter_master.member"
-Choices = Array[Resource]([SubResource("ch_back"), SubResource("ch_end")])
+Choices = Array[Resource]([SubResource("ch_f42_a_offer"), SubResource("ch_f42_a_active"), SubResource("ch_f42_a_done"), SubResource("ch_back"), SubResource("ch_end")])
 
 [sub_resource type="Resource" id="node_stranger"]
 script = ExtResource("2_node")
@@ -67,4 +314,4 @@ script = ExtResource("1_dlg")
 Id = "dialogue.hunter_master"
 SpeakerName = "dlg.hunter_master.speaker"
 StartNodeId = "root"
-Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_member"), SubResource("node_stranger")])
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_member"), SubResource("node_stranger"), SubResource("node_f42_a_offer"), SubResource("node_f42_a_accepted"), SubResource("node_f42_a_active"), SubResource("node_f42_hub"), SubResource("node_f42_b_offer"), SubResource("node_f42_b_accepted"), SubResource("node_f42_b_active"), SubResource("node_f42_b_report"), SubResource("node_f42_verdict"), SubResource("node_f42_v_verdict_slay"), SubResource("node_f42_after_verdict_slay"), SubResource("node_f42_v_verdict_judge"), SubResource("node_f42_after_verdict_judge"), SubResource("node_f42_v_verdict_withdraw"), SubResource("node_f42_after_verdict_withdraw"), SubResource("node_f42_sealed"), SubResource("node_f42_ranked")])

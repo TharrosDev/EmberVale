@@ -1,0 +1,40 @@
+[gd_resource type="Resource" script_class="QuestResource" format=3]
+
+[ext_resource type="Script" path="res://src/Quests/QuestResource.cs" id="1_quest"]
+[ext_resource type="Script" path="res://src/Quests/ObjectiveResource.cs" id="2_obj"]
+
+; Phase 42L - rank two of the Emberbound: the cross-realm/relic investigation. Reaching Stormcrown
+; does not require (or light) the Storm Tyrant's brazier; the main story's defeat flags are never
+; read or written here. Cass Vollen finally gets a voice (42K's carry-forward).
+
+[sub_resource type="Resource" id="Obj_stormcrown"]
+script = ExtResource("2_obj")
+Type = 2
+TargetId = "location.frostfang.stormcrown"
+RequiredCount = 1
+Description = "quest.emberbound.second_fire.obj_stormcrown"
+
+[sub_resource type="Resource" id="Obj_cass"]
+script = ExtResource("2_obj")
+Type = 3
+TargetId = "dialogue.emberbound_warder"
+RequiredCount = 1
+Description = "quest.emberbound.second_fire.obj_cass"
+LocationId = "location.emberdeep.undercroft"
+
+[resource]
+script = ExtResource("1_quest")
+Id = "quest.emberbound.second_fire"
+Title = "quest.emberbound.second_fire.title"
+Summary = "quest.emberbound.second_fire.summary"
+Objectives = Array[Resource]([SubResource("Obj_stormcrown"), SubResource("Obj_cass")])
+XpReward = 180
+GoldReward = 40
+GoldItemId = "item.currency.gold"
+RewardItems = []
+FactionRewardId = "faction.emberbound"
+FactionRewardAmount = 8
+TimeLimitSeconds = 0.0
+SequentialObjectives = false
+PrerequisiteQuestId = "quest.emberbound.summons"
+IsMainQuest = false

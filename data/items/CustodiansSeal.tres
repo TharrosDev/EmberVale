@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="EquippableItemResource" format=3]
+
+[ext_resource type="Script" path="res://src/Items/EquippableItemResource.cs" id="1_eq"]
+
+; Phase 42H - the Veiled Archive's finale reward off quest.veiled_archive.breach_record, the same for
+; every custody verdict. A mastery ring, not a spell: 42H must not grant Act III's highest spells.
+[resource]
+script = ExtResource("1_eq")
+Id = "item.ring.custodians_seal"
+DisplayName = "Custodian's Seal"
+Description = "A plain seal ring cut with the Archive's veil. It opens every case in the Annexe and the great library alike."
+Type = 0
+Rarity = 3
+MaxStack = 1
+Weight = 0.2
+Value = 360
+Slot = 8
+BonusSpellPower = 5.0
+BonusMaxStamina = 10.0
+TradeTags = Array[String](["jewelry"])

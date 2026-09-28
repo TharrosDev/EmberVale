@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="EquippableItemResource" format=3]
+
+[ext_resource type="Script" path="res://src/Items/EquippableItemResource.cs" id="1_eq"]
+
+; Phase 42F - the Ash Hunters' finale reward off quest.ash_hunters.three_dragons, paid the same
+; whatever the verdict (42C's rule: what differs is what Yrsa says, not what she hands over). Frost
+; resistance because the dragon country is the Reach. Empty WorldModelPath: the rarity-tinted primitive.
+[resource]
+script = ExtResource("1_eq")
+Id = "item.amulet.huntmasters_tally"
+DisplayName = "Huntmaster's Tally"
+Description = "A cord of knotted sinew, one knot for every dragon the Ash Hunters ever judged. The newest knot is yours."
+Type = 0
+Rarity = 3
+MaxStack = 1
+Weight = 0.2
+Value = 360
+Slot = 9
+BonusCritChance = 0.04
+BonusFrostResist = 12.0
+TradeTags = Array[String](["jewelry"])

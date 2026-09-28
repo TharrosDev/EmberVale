@@ -1,0 +1,45 @@
+[gd_resource type="Resource" script_class="QuestResource" format=3]
+
+[ext_resource type="Script" path="res://src/Quests/QuestResource.cs" id="1_quest"]
+[ext_resource type="Script" path="res://src/Quests/ObjectiveResource.cs" id="2_obj"]
+
+; Phase 42J - rank two of the Iron Syndicate: the trade-route operation. Two mapped road places and
+; encounter.crimson_procession's cultists (respawning). Paid work, so the gold is the point.
+
+[sub_resource type="Resource" id="Obj_gap"]
+script = ExtResource("2_obj")
+Type = 2
+TargetId = "location.sunspire.caravan_gap"
+RequiredCount = 1
+Description = "quest.iron.caravan_road.obj_gap"
+
+[sub_resource type="Resource" id="Obj_wells"]
+script = ExtResource("2_obj")
+Type = 2
+TargetId = "location.sunspire.wells"
+RequiredCount = 1
+Description = "quest.iron.caravan_road.obj_wells"
+
+[sub_resource type="Resource" id="Obj_cultists"]
+script = ExtResource("2_obj")
+Type = 0
+TargetId = "enemy.cultist"
+RequiredCount = 3
+Description = "quest.iron.caravan_road.obj_cultists"
+
+[resource]
+script = ExtResource("1_quest")
+Id = "quest.iron.caravan_road"
+Title = "quest.iron.caravan_road.title"
+Summary = "quest.iron.caravan_road.summary"
+Objectives = Array[Resource]([SubResource("Obj_gap"), SubResource("Obj_wells"), SubResource("Obj_cultists")])
+XpReward = 170
+GoldReward = 120
+GoldItemId = "item.currency.gold"
+RewardItems = []
+FactionRewardId = "faction.iron_syndicate"
+FactionRewardAmount = 8
+TimeLimitSeconds = 0.0
+SequentialObjectives = false
+PrerequisiteQuestId = "quest.iron.judgment"
+IsMainQuest = false

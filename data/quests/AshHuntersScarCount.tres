@@ -1,0 +1,49 @@
+[gd_resource type="Resource" script_class="QuestResource" format=3]
+
+[ext_resource type="Script" path="res://src/Quests/QuestResource.cs" id="1_quest"]
+[ext_resource type="Script" path="res://src/Quests/ObjectiveResource.cs" id="2_obj"]
+
+; Phase 42F - rank two of the Ash Hunters. Started by dialogue.hunter_master (accept gated on
+; GuildRankAtLeast faction.ash_hunters:1); rank two is SetFlag on the hand-in. The station is the
+; atlas's reserved Ash Hunters hook (location.ashen.station); the maws are encounter.wilds_maw_pack,
+; which respawns, so the Kill objective can always complete. The Talk objective completes on any end
+; of Hask's conversation - he gained a QuestActive line for it, but any report counts.
+
+[sub_resource type="Resource" id="Obj_station"]
+script = ExtResource("2_obj")
+Type = 2
+TargetId = "location.ashen.station"
+RequiredCount = 1
+Description = "quest.ash_hunters.scar_count.obj_station"
+
+[sub_resource type="Resource" id="Obj_hask"]
+script = ExtResource("2_obj")
+Type = 3
+TargetId = "dialogue.ash_hunter_warden"
+RequiredCount = 1
+Description = "quest.ash_hunters.scar_count.obj_hask"
+LocationId = "location.ashen.station"
+
+[sub_resource type="Resource" id="Obj_maws"]
+script = ExtResource("2_obj")
+Type = 0
+TargetId = "enemy.ash_maw"
+RequiredCount = 3
+Description = "quest.ash_hunters.scar_count.obj_maws"
+
+[resource]
+script = ExtResource("1_quest")
+Id = "quest.ash_hunters.scar_count"
+Title = "quest.ash_hunters.scar_count.title"
+Summary = "quest.ash_hunters.scar_count.summary"
+Objectives = Array[Resource]([SubResource("Obj_station"), SubResource("Obj_hask"), SubResource("Obj_maws")])
+XpReward = 170
+GoldReward = 60
+GoldItemId = "item.currency.gold"
+RewardItems = []
+FactionRewardId = "faction.ash_hunters"
+FactionRewardAmount = 8
+TimeLimitSeconds = 0.0
+SequentialObjectives = false
+PrerequisiteQuestId = "quest.ash_hunters.grimtusk"
+IsMainQuest = false

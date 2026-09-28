@@ -1,0 +1,46 @@
+[gd_resource type="Resource" script_class="QuestResource" format=3]
+
+[ext_resource type="Script" path="res://src/Quests/QuestResource.cs" id="1_quest"]
+[ext_resource type="Script" path="res://src/Quests/ObjectiveResource.cs" id="2_obj"]
+[ext_resource type="Script" path="res://src/Quests/QuestItemReward.cs" id="3_reward"]
+
+; Phase 42L - the reckoning. The schism is resolved at the Hierarch's hand-in: her stance node reads
+; flag.emberbound.relic_kept / relic_surrendered (42K's answer is the starting position, never
+; re-asked), then safeguard / destroy / wield sets flag.emberbound.doctrine_<x>; wield also costs
+; +10 corruption. Doctrine (flag), order state (guild.emberbound.finale) and rank are separate facts.
+
+[sub_resource type="Resource" id="Obj_roost"]
+script = ExtResource("2_obj")
+Type = 2
+TargetId = "location.frostfang.ash_roost"
+RequiredCount = 1
+Description = "quest.emberbound.reckoning.obj_roost"
+
+[sub_resource type="Resource" id="Obj_doctrine"]
+script = ExtResource("2_obj")
+Type = 2
+TargetId = "location.sunspire.library"
+RequiredCount = 1
+Description = "quest.emberbound.reckoning.obj_doctrine"
+
+[sub_resource type="Resource" id="Reward_item"]
+script = ExtResource("3_reward")
+ItemId = "item.amulet.warders_ashglass"
+Quantity = 1
+
+[resource]
+script = ExtResource("1_quest")
+Id = "quest.emberbound.reckoning"
+Title = "quest.emberbound.reckoning.title"
+Summary = "quest.emberbound.reckoning.summary"
+Objectives = Array[Resource]([SubResource("Obj_roost"), SubResource("Obj_doctrine")])
+XpReward = 260
+GoldReward = 60
+GoldItemId = "item.currency.gold"
+RewardItems = Array[Resource]([SubResource("Reward_item")])
+FactionRewardId = "faction.emberbound"
+FactionRewardAmount = 12
+TimeLimitSeconds = 0.0
+SequentialObjectives = false
+PrerequisiteQuestId = "quest.emberbound.second_fire"
+IsMainQuest = false
