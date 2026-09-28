@@ -170,8 +170,6 @@ public static class NpcVisualKit
         ["npc.ash_hunter_warden"] = P("ash_hunter_warden", Build.Broad,
             Chest("GuildTabardAsh"), Chest("Quiver"), Hips("Knife")),
         // The Sunspire Dominion: Saffra Wells and the great library.
-        ["npc.sunspire_archivist"] = P("sunspire_archivist", Build.Slim,
-            Chest("ShoulderCape"), Hips("ScrollCase"), Hips("Ledger")),
         ["npc.sunspire_caravan_master"] = P("sunspire_caravan_master", Build.Broad,
             Chest("MerchantMantle"), Chest("Satchel"), Hips("CoinPouch")),
         ["npc.sunspire_wellkeeper"] = P("sunspire_wellkeeper", Build.Standard,

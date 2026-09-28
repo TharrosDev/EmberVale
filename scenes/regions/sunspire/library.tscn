@@ -15,7 +15,7 @@
 [ext_resource type="Script" path="res://src/Animation/EquipmentPresentationComponent.cs" id="e13"]
 [ext_resource type="Script" path="res://src/Factions/FactionComponent.cs" id="e14"]
 [ext_resource type="Script" path="res://src/Dialogue/DialogueComponent.cs" id="e15"]
-[ext_resource type="PackedScene" path="res://assets/models/characters/npc_hooded.glb" id="e16"]
+[ext_resource type="PackedScene" path="res://assets/models/characters/npc_archivist.glb" id="e16"]
 [ext_resource type="Script" path="res://src/World/CellNavBaker.cs" id="e17"]
 [ext_resource type="Script" path="res://src/World/MapLocationComponent.cs" id="maploc_39_5a"]
 
