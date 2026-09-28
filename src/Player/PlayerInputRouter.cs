@@ -111,10 +111,12 @@ public partial class PlayerInputRouter : EntityComponent
 
         bool jump = Godot.Input.IsActionJustPressed(GameInput.Jump);
 
-        // Held sprint is a request. On foot it is granted outright; mounted, the horse's own pool
-        // answers — Tick returns the input unchanged when not mounted, so there is no branch here.
-        bool sprint = _mount?.Tick(delta, Godot.Input.IsActionPressed(GameInput.Sprint))
-            ?? Godot.Input.IsActionPressed(GameInput.Sprint);
+        // Held sprint is a request. On foot it is granted outright; mounted, the horse answers —
+        // it turns the raw wish (not the swing-scaled one: a mounted blow must not rein the horse
+        // in) into its own heading, gait and speed, and gates the jump. Ride hands everything back
+        // unchanged when not mounted, so there is no branch here.
+        bool sprintHeld = Godot.Input.IsActionPressed(GameInput.Sprint);
+        bool sprint = _mount?.Ride(delta, wishDir, sprintHeld, ref actionMove, ref jump) ?? sprintHeld;
         _locomotion?.Move(delta, actionMove, sprint, jump);
 
         // Dodge can't interrupt a committed swing (the attack commit window); it cancels
@@ -151,7 +153,8 @@ public partial class PlayerInputRouter : EntityComponent
                         _weapon is { Weapon.IsRanged: true, IsCommitted: true },
                 lockedOn: _lockOn?.Target != null,
                 inCombat: _combat is { IsBlocking: true } || _weapon is { IsCommitted: true },
-                sprinting: sprint && _locomotion is { } loco && loco.IsGrounded);
+                sprinting: (sprint || _mount is { IsGalloping: true }) &&
+                           _locomotion is { } loco && loco.IsGrounded);
         }
 
         // A warping action closes on whatever the player has locked. With no lock there is no

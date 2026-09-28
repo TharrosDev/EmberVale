@@ -114,6 +114,33 @@ public class MountRulesTests
         Assert.Equal(MountRules.StaminaMax, state.Stamina);
     }
 
+    /// <summary>The gait upgrade's regen scale: a standing horse gets its wind back faster, and a
+    /// bad scale is the flat rate rather than a poisoned pool.</summary>
+    [Fact]
+    public void RegenScalesWithTheGaitAndABadScaleIsFlat()
+    {
+        var spent = new MountRules.GallopState(50f, false, false);
+
+        float flat = MountRules.Step(spent, false, 1f).Stamina;
+        float resting = MountRules.Step(spent, false, 1f, regenScale: 1.5f).Stamina;
+        float cantering = MountRules.Step(spent, false, 1f, regenScale: 0.5f).Stamina;
+
+        Assert.Equal(50f + MountRules.RegenPerSecond, flat, 3);
+        Assert.True(resting > flat && flat > cantering && cantering > 50f);
+        Assert.Equal(flat, MountRules.Step(spent, false, 1f, regenScale: float.NaN).Stamina, 3);
+        Assert.Equal(flat, MountRules.Step(spent, false, 1f, regenScale: -2f).Stamina, 3);
+    }
+
+    /// <summary>The regen scale is a refill rule only: a gallop drains at the one rate.</summary>
+    [Fact]
+    public void RegenScaleNeverTouchesTheDrain()
+    {
+        MountRules.GallopState a = MountRules.Step(MountRules.Fresh, true, 1f);
+        MountRules.GallopState b = MountRules.Step(MountRules.Fresh, true, 1f, regenScale: 3f);
+
+        Assert.Equal(a.Stamina, b.Stamina);
+    }
+
     [Fact]
     public void ANonFinitePoolIsTreatedAsRested()
     {
