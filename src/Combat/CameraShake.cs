@@ -1,64 +1,84 @@
+using System;
+using Embervale.Combat.Actions;
 using Embervale.Core.Events;
+using Embervale.Core.Services;
+using Embervale.Entities;
+using Embervale.Player;
+using Embervale.Settings;
+using Embervale.Stats;
 using Godot;
 
 namespace Embervale.Combat;
 
 /// <summary>
-/// Camera shake (Phase 29B): a trauma-driven kick on the punchy combat states — crit, block, stagger.
-/// A child of the player's <see cref="Camera3D"/>; it offsets the camera around its rest pose each frame
-/// by <see cref="ShakeMath.Amplitude"/> × noise and bleeds the trauma off, snapping back to rest at zero.
-/// The camera's own local transform is otherwise untouched (mouse-look writes the body yaw and the pivot
-/// pitch), so the shake doesn't fight the controls. Single-player: every live hit is the player's, so it
-/// reacts to all of them without a per-entity filter.
+/// Camera shake: per-source trauma turned into a smooth shudder plus a directional kick, as a camera
+/// <b>layer</b>. It never touches the camera transform; <see cref="Sample"/> returns a
+/// <see cref="CameraNudge"/> and <c>PlayerCameraRig</c> sums it with every other layer and writes the
+/// camera once. Single-player: only hits the player deals or takes, the player's staggers and the
+/// player's own actions register, so a fight between two NPCs never shakes the view.
+///
+/// <para>Everything scales by <see cref="CameraComfort.Shake"/> (the settings slider, capped when
+/// Reduced Motion is on). The maths lives in <see cref="ShakeMath"/>.</para>
 /// </summary>
-public partial class CameraShake : Node
+public partial class CameraShake : EntityComponent, ICameraLayer
 {
-    /// <summary>Live source of the camera's rest position (the mode-aware pose owned by
-    /// <c>PlayerCameraRig.CameraRestPosition</c>). Without it the shake snaps back to a rest
-    /// captured at ready time — wrong the moment the player toggles third person.</summary>
-    public System.Func<Vector3>? RestPosition { get; set; }
+    /// <summary>The largest frame the layer integrates, so a hitch cannot fling the kick springs.</summary>
+    private const float MaxDt = 0.1f;
 
-    private Camera3D _camera = null!;
-    private Vector3 _fallbackRestPosition;
-    private Vector3 _restRotation;
-    private float _trauma;
-    private bool _shaking;
-    private readonly RandomNumberGenerator _rng = new();
+    private readonly TraumaPool _pool = new();
+    private CriticalSpring _kickX;
+    private CriticalSpring _kickZ;
+    private CriticalSpring _kickRoll;
+    private float _time;
+    private SettingsService? _settings;
+    private StatsComponent? _stats;
 
-    private Vector3 Rest => RestPosition?.Invoke() ?? _fallbackRestPosition;
-
-    public override void _Ready()
+    protected override void OnInitialize()
     {
-        _camera = GetParent<Camera3D>();
-        _fallbackRestPosition = _camera.Position;
-        _rng.Randomize();
+        _stats = Entity!.GetComponent<StatsComponent>();
+        _settings = ServiceLocator.Instance is { } locator && locator.TryGet(out SettingsService settings)
+            ? settings
+            : null;
 
         EventBus.Instance?.Subscribe<DamageDealtEvent>(OnDamage);
         EventBus.Instance?.Subscribe<EntityStaggeredEvent>(OnStaggered);
         EventBus.Instance?.Subscribe<ActionReleasedEvent>(OnActionReleased);
     }
 
-    public override void _ExitTree()
+    protected override void OnTeardown()
     {
         EventBus.Instance?.Unsubscribe<DamageDealtEvent>(OnDamage);
         EventBus.Instance?.Unsubscribe<EntityStaggeredEvent>(OnStaggered);
         EventBus.Instance?.Unsubscribe<ActionReleasedEvent>(OnActionReleased);
     }
 
+    private bool IsPlayer(IEntity? other) =>
+        other != null && Entity != null && ReferenceEquals(other.Body, Entity.Body);
+
     private void OnDamage(DamageDealtEvent e)
     {
-        if (e.IsCrit)
+        if (IsPlayer(e.Target))
         {
-            _trauma = ShakeMath.Add(_trauma, ShakeMath.CritTrauma);
+            float maxHealth = _stats?.GetMax(StatType.Health) ?? 0f;
+            Submit(ShakeMath.HitTaken(e.Amount, maxHealth, e.IsBlocked, e.IsCrit), FromSource(e.Source));
         }
-        else if (e.IsBlocked)
+        else if (IsPlayer(e.Source))
         {
-            _trauma = ShakeMath.Add(_trauma, ShakeMath.BlockTrauma);
+            Submit(ShakeMath.HitDealt(e.IsCrit, e.IsBlocked));
         }
     }
 
-    private void OnStaggered(EntityStaggeredEvent e) =>
-        _trauma = ShakeMath.Add(_trauma, ShakeMath.StaggerTrauma);
+    private void OnStaggered(EntityStaggeredEvent e)
+    {
+        if (Entity == null)
+        {
+            return;
+        }
+
+        bool player = IsPlayer(e.Entity);
+        float distance = player ? 0f : e.Entity.Body.GlobalPosition.DistanceTo(Entity.Body.GlobalPosition);
+        Submit(ShakeMath.Stagger(player, distance), player ? null : FromSource(e.Entity));
+    }
 
     /// <summary>
     /// An action's own authored kick, on the frame it lands.
@@ -70,19 +90,15 @@ public partial class CameraShake : Node
     /// </summary>
     private void OnActionReleased(ActionReleasedEvent e)
     {
-        if (_playerBody != null && ReferenceEquals(e.Actor.Body, _playerBody) &&
-            e.Actor is Entities.IEntity actor &&
-            actor.GetComponent<Actions.CharacterActionComponent>()?.Current is { } action)
+        if (IsPlayer(e.Actor) &&
+            e.Actor is IEntity actor &&
+            actor.GetComponent<CharacterActionComponent>()?.Current is { } action)
         {
-            Impulse(action.CameraImpulse);
+            Submit(new ShakeHit(
+                e.Kind == ActionKind.Cast ? ShakeSource.Spell : ShakeSource.Action,
+                action.CameraImpulse));
         }
     }
-
-    /// <summary>The body whose actions may shake this camera — the player's, injected by the
-    /// factory. Null means no action ever kicks it.</summary>
-    public Node? PlayerBody { get => _playerBody; set => _playerBody = value; }
-
-    private Node? _playerBody;
 
     /// <summary>
     /// The one way anything else moves the camera: submit an impulse, in the same 0..1 trauma the
@@ -94,45 +110,68 @@ public partial class CameraShake : Node
     /// camera ends up fighting itself. <c>ActionDefinitionResource.CameraImpulse</c> is authored per
     /// action and arrives here.
     /// </summary>
-    public void Impulse(float trauma)
-    {
-        if (trauma > 0f)
-        {
-            _trauma = ShakeMath.Add(_trauma, trauma);
-        }
-    }
+    public void Impulse(float trauma) => Submit(new ShakeHit(ShakeSource.Action, trauma));
 
-    public override void _Process(double delta)
+    /// <summary>
+    /// A directional impulse: the same trauma, plus a kick that pushes the camera away from
+    /// <paramref name="worldFrom"/>, the world-space position the blow came from. The roll leans
+    /// toward the side it hit, so the player reads which way to turn.
+    /// </summary>
+    public void Impulse(float trauma, Vector3 worldFrom) =>
+        Submit(new ShakeHit(ShakeSource.Action, trauma), worldFrom);
+
+    /// <summary>Adds a resolved hit to the pool and, when it carries a source position, the kick.</summary>
+    public void Submit(ShakeHit hit, Vector3? worldFrom = null)
     {
-        if (_trauma <= 0f)
+        if (hit.Trauma <= 0f)
         {
             return;
         }
 
-        // ⚠️ RE-READ EVERY SHAKE, NOT CAPTURED IN _Ready. The rest rotation used to be sampled once
-        // at build time, so a shake wrote `capturedRest + roll` — and anything that had legitimately
-        // changed the camera's rotation since (a view swap, a cutscene) was silently undone the next
-        // time the player took a crit. The position half already re-read its rest through a
-        // delegate; this is the rotation half catching up.
-        if (!_shaking)
+        _pool.Add(hit.Source, hit.Trauma);
+        if (worldFrom is not { } from || Entity == null)
         {
-            _restRotation = _camera.Rotation;
-            _shaking = true;
+            return;
         }
 
-        float amplitude = ShakeMath.Amplitude(_trauma);
-        _camera.Position = Rest + new Vector3(
-            _rng.RandfRange(-1f, 1f) * amplitude * ShakeMath.MaxOffset,
-            _rng.RandfRange(-1f, 1f) * amplitude * ShakeMath.MaxOffset,
-            0f);
-        _camera.Rotation = _restRotation + new Vector3(0f, 0f, _rng.RandfRange(-1f, 1f) * amplitude * ShakeMath.MaxRoll);
+        Vector3 flat = from - Entity.Body.GlobalPosition;
+        (float side, float forward) = ShakeMath.ToLocal(flat.X, flat.Z, Entity.Body.GlobalRotation.Y);
+        DirectionalKick kick = ShakeMath.KickFor(hit.Trauma, side, forward);
+        float limit = ShakeMath.KickLimit;
+        _kickX.Kick(kick.OffsetX, ShakeMath.KickOmega, ShakeMath.KickOffset * limit);
+        _kickZ.Kick(kick.OffsetZ, ShakeMath.KickOmega, ShakeMath.KickBack * limit);
+        _kickRoll.Kick(kick.Roll, ShakeMath.KickOmega, ShakeMath.KickRoll * limit);
+    }
 
-        _trauma = ShakeMath.Decay(_trauma, (float)delta);
-        if (_trauma <= 0f)
+    /// <summary>The blow's position, or null when the source is gone or is the player.</summary>
+    private Vector3? FromSource(IEntity? source) =>
+        source == null || IsPlayer(source) || !GodotObject.IsInstanceValid(source.Body)
+            ? null
+            : source.Body.GlobalPosition;
+
+    public CameraNudge Sample(float dt, in CameraSnapshot snapshot)
+    {
+        dt = Math.Clamp(dt, 0f, MaxDt);
+        _pool.Step(dt);
+        _kickX.Step(dt, ShakeMath.KickOmega);
+        _kickZ.Step(dt, ShakeMath.KickOmega);
+        _kickRoll.Step(dt, ShakeMath.KickOmega);
+        _time += dt;
+
+        float scale = CameraComfort.From(_settings?.Current).Shake;
+        if (scale <= 0f)
         {
-            _camera.Position = Rest;
-            _camera.Rotation = _restRotation;
-            _shaking = false;
+            return CameraNudge.Identity;
         }
+
+        Shudder shudder = ShakeMath.Shake(_pool.Total, _time);
+        return new CameraNudge(
+            new Vector3(
+                (shudder.OffsetX + _kickX.X) * scale,
+                shudder.OffsetY * scale,
+                _kickZ.X * scale),
+            new Vector3(0f, 0f, (shudder.Roll + _kickRoll.X) * scale),
+            0f,
+            1f);
     }
 }
