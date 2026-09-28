@@ -47,8 +47,21 @@ public partial class BossSummonComponent : InteractableComponent
     /// <summary>The boss archetype this brazier summons. Must build a <see cref="BossEntity"/>.</summary>
     [Export] public string BossTemplateId { get; set; } = GameIds.Enemies.IronKing;
 
+    /// <summary>
+    /// A <c>boss.*</c> fight to run instead of the archetype's own <c>BossId</c>, or empty for the
+    /// archetype's. Phase 47.5: the Ashen Knight's rival duels summon the same knight (same body,
+    /// name and bestiary entry, never killed) under a shorter fight that withdraws at a health
+    /// threshold, so the duels need no second enemy template.
+    /// </summary>
+    [Export] public string FightId { get; set; } = string.Empty;
+
     /// <summary>Story flag that marks this boss defeated — its <c>BossResource.DefeatFlagId</c>.</summary>
     [Export] public string DefeatedFlagId { get; set; } = BossEncounterDirector.DefeatedFlag;
+
+    /// <summary>Story flag that closes this challenge for good once set, or empty. Phase 47.5: a rival
+    /// duel brazier closes on <c>flag.ashen_knight_defeated</c>, because a duel skipped in Act II
+    /// cannot be fought against a knight who has since fallen.</summary>
+    [Export] public string ClosedFlagId { get; set; } = string.Empty;
 
     /// <summary>Locale keys for the ready and gated prompts.</summary>
     [Export] public string PromptKey { get; set; } = "boss.challenge_prompt";
@@ -95,6 +108,12 @@ public partial class BossSummonComponent : InteractableComponent
             return false;
         }
 
+        // Before AddChild: the controller resolves its fight in OnInitialize.
+        if (FightId.Length > 0 && boss.GetNodeOrNull<BossController>("BossController") is { } controller)
+        {
+            controller.BossId = FightId;
+        }
+
         arena.AddChild(boss);
         boss.GlobalPosition = brazier.GlobalPosition + SpawnOffset;
 
@@ -137,5 +156,5 @@ public partial class BossSummonComponent : InteractableComponent
         ServiceLocator.Instance is { } sl
         && sl.TryGet(out PlayerCharacter player)
         && player.GetComponent<StoryFlagsComponent>() is { } flags
-        && flags.Has(DefeatedFlagId);
+        && (flags.Has(DefeatedFlagId) || flags.Has(ClosedFlagId));
 }

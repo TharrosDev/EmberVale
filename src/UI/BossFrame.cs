@@ -108,6 +108,7 @@ public partial class BossFrame : PanelContainer
         EventBus.Instance?.Subscribe<BossEncounterStartedEvent>(OnStarted);
         EventBus.Instance?.Subscribe<BossPhaseChangedEvent>(OnPhase);
         EventBus.Instance?.Subscribe<EntityDiedEvent>(OnDied);
+        EventBus.Instance?.Subscribe<BossWithdrewEvent>(OnWithdrew);
     }
 
     public override void _ExitTree()
@@ -115,6 +116,7 @@ public partial class BossFrame : PanelContainer
         EventBus.Instance?.Unsubscribe<BossEncounterStartedEvent>(OnStarted);
         EventBus.Instance?.Unsubscribe<BossPhaseChangedEvent>(OnPhase);
         EventBus.Instance?.Unsubscribe<EntityDiedEvent>(OnDied);
+        EventBus.Instance?.Unsubscribe<BossWithdrewEvent>(OnWithdrew);
     }
 
     private void OnStarted(BossEncounterStartedEvent e)
@@ -138,13 +140,25 @@ public partial class BossFrame : PanelContainer
 
     private void OnDied(EntityDiedEvent e)
     {
-        if (!ReferenceEquals(e.Entity, _boss))
+        if (ReferenceEquals(e.Entity, _boss))
         {
-            return;
+            EndFight("boss.defeat");
         }
+    }
 
+    /// <summary>A boss that yields (Phase 47.5) ends the fight with its own line, not "defeated".</summary>
+    private void OnWithdrew(BossWithdrewEvent e)
+    {
+        if (ReferenceEquals(e.Boss, _boss))
+        {
+            EndFight("boss.withdraw");
+        }
+    }
+
+    private void EndFight(string messageKey)
+    {
         StandDown();
-        ShowMessage(Loc.TF("boss.defeat", _name.Text), 3000);
+        ShowMessage(Loc.TF(messageKey, _name.Text), 3000);
 
         if (_fade is not null)
         {

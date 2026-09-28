@@ -50,12 +50,14 @@ public partial class BossEncounterDirector : Node
         ProcessMode = ProcessModeEnum.Always;
         EventBus.Instance?.Subscribe<BossEncounterStartedEvent>(OnStarted);
         EventBus.Instance?.Subscribe<EntityDiedEvent>(OnDied);
+        EventBus.Instance?.Subscribe<BossWithdrewEvent>(OnWithdrew);
     }
 
     public override void _ExitTree()
     {
         EventBus.Instance?.Unsubscribe<BossEncounterStartedEvent>(OnStarted);
         EventBus.Instance?.Unsubscribe<EntityDiedEvent>(OnDied);
+        EventBus.Instance?.Unsubscribe<BossWithdrewEvent>(OnWithdrew);
         RestoreTime();
         ReleaseLock();
     }
@@ -71,11 +73,18 @@ public partial class BossEncounterDirector : Node
 
     private void OnDied(EntityDiedEvent e)
     {
-        if (e.Entity is not BossEntity boss)
+        if (e.Entity is BossEntity boss)
         {
-            return;
+            EndFight(boss);
         }
+    }
 
+    /// <summary>A boss that yields (Phase 47.5, the rival duels) ends its fight exactly as a death
+    /// does: the same beat, the same first-time-only payout and conversation.</summary>
+    private void OnWithdrew(BossWithdrewEvent e) => EndFight(e.Boss);
+
+    private void EndFight(IEntity boss)
+    {
         BossResource? fight = Fight(boss);
         Engine.TimeScale = fight?.DefeatTimeScale ?? 0.35f;
         _slowed = true;

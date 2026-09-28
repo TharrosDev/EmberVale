@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="WeatherResource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/World/WeatherResource.cs" id="1_weather"]
+
+; Phase 44.5: the Lord of Embers sky, for good. After that ending it is the only state the pool allows
+; (the other five exclude flag.ending_embers), so every realm lives under a dim, red, smoke-hazed sky.
+[resource]
+script = ExtResource("1_weather")
+Id = "weather.embers"
+DisplayName = "Ember Sky"
+Type = 4
+SelectionWeight = 1.0
+MinHours = 8.0
+MaxHours = 12.0
+LightEnergyScale = 0.7
+SkyEnergyScale = 0.75
+FogDensity = 0.012
+FogColor = Color(0.6, 0.28, 0.16, 1)
+Precipitation = 0.0
+WindStrength = 1.2
+SkyTint = Color(1, 0.62, 0.45, 1)
+RequiredFlagId = "flag.ending_embers"

@@ -7,8 +7,34 @@
 ; The Ashen Knight's defeat (the finish run, Act IV). Modelled on dialogue.iron_king_absorb, with one
 ; node in front of the offer: the rival's last words. He is the only Flamebearer who speaks after he
 ; falls, because he is the only one who ever thought of the player as an equal.
+; Phase 47.5: two optional choices on his last words remember the Act II duels (Condition 5 =
+; HasFlag flag.rival.duel1_won / duel2_won); a player who skipped them never sees either.
 ; Condition 6 = MissingFlag (the offer cannot be taken twice); Effect 4 = AddCorruption; Effect 2 = SetFlag.
 [sub_resource type="Resource" id="ch_listen"]
+script = ExtResource("3_choice")
+Text = "dlg.ashenknight.absorb.c_listen"
+Goto = "last_words_2"
+
+[sub_resource type="Resource" id="ch_duel_storm"]
+script = ExtResource("3_choice")
+Text = "dlg.ashenknight.absorb.c_duel_storm"
+Goto = "duel_storm"
+Condition = 5
+ConditionArg = "flag.rival.duel1_won"
+
+[sub_resource type="Resource" id="ch_duel_mission"]
+script = ExtResource("3_choice")
+Text = "dlg.ashenknight.absorb.c_duel_mission"
+Goto = "duel_mission"
+Condition = 5
+ConditionArg = "flag.rival.duel2_won"
+
+[sub_resource type="Resource" id="ch_duel_storm_back"]
+script = ExtResource("3_choice")
+Text = "dlg.ashenknight.absorb.c_listen"
+Goto = "last_words_2"
+
+[sub_resource type="Resource" id="ch_duel_mission_back"]
 script = ExtResource("3_choice")
 Text = "dlg.ashenknight.absorb.c_listen"
 Goto = "last_words_2"
@@ -46,13 +72,25 @@ Text = "dlg.ashenknight.absorb.c_declined_bye"
 script = ExtResource("2_node")
 Id = "last_words"
 Text = "dlg.ashenknight.absorb.last_words"
-Choices = Array[Resource]([SubResource("ch_listen")])
+Choices = Array[Resource]([SubResource("ch_duel_storm"), SubResource("ch_duel_mission"), SubResource("ch_listen")])
 
 [sub_resource type="Resource" id="node_last_words_2"]
 script = ExtResource("2_node")
 Id = "last_words_2"
 Text = "dlg.ashenknight.absorb.last_words_2"
 Choices = Array[Resource]([SubResource("ch_go_on")])
+
+[sub_resource type="Resource" id="node_duel_storm"]
+script = ExtResource("2_node")
+Id = "duel_storm"
+Text = "dlg.ashenknight.absorb.duel_storm"
+Choices = Array[Resource]([SubResource("ch_duel_storm_back")])
+
+[sub_resource type="Resource" id="node_duel_mission"]
+script = ExtResource("2_node")
+Id = "duel_mission"
+Text = "dlg.ashenknight.absorb.duel_mission"
+Choices = Array[Resource]([SubResource("ch_duel_mission_back")])
 
 [sub_resource type="Resource" id="node_offer"]
 script = ExtResource("2_node")
@@ -77,4 +115,4 @@ script = ExtResource("1_dlg")
 Id = "dialogue.ashen_knight_absorb"
 SpeakerName = "dlg.ashenknight.absorb.speaker"
 StartNodeId = "last_words"
-Nodes = Array[Resource]([SubResource("node_last_words"), SubResource("node_last_words_2"), SubResource("node_offer"), SubResource("node_absorbed"), SubResource("node_declined")])
+Nodes = Array[Resource]([SubResource("node_last_words"), SubResource("node_last_words_2"), SubResource("node_duel_storm"), SubResource("node_duel_mission"), SubResource("node_offer"), SubResource("node_absorbed"), SubResource("node_declined")])

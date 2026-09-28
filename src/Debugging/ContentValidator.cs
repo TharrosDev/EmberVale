@@ -722,6 +722,20 @@ public static class ContentValidator
             {
                 issues.Add($"boss '{boss.Id}' has a negative enrage time ({boss.EnrageSeconds})");
             }
+
+            // Phase 47.5: both ends fail silently in play — at 1 or above the boss leaves on the
+            // first scratch, below 0 it is a typo that reads as "fights to the death".
+            if (!BossPhases.WithdrawFractionValid(boss.WithdrawHealthFraction))
+            {
+                issues.Add(
+                    $"boss '{boss.Id}' withdraws at {boss.WithdrawHealthFraction} health — must be within [0, 1)");
+            }
+            else if (boss.WithdrawHealthFraction > 0f && boss.DefeatFlagId.Length == 0)
+            {
+                issues.Add(
+                    $"boss '{boss.Id}' withdraws but sets no DefeatFlagId — nothing would record the duel, " +
+                    "so its brazier could never go cold");
+            }
         }
 
         // The other direction: an archetype must name a boss that exists, and only a boss archetype

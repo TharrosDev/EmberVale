@@ -102,6 +102,14 @@ public partial class BossController : EntityComponent
         }
 
         _encounterBegun = true;
+
+        // Phase one is never entered (AdvanceTo only steps up), so its speed bonuses land here, once
+        // every sibling is ready. Phase 47.5's duel fights open slowed through this.
+        if (_boss is { Phases.Count: > 0 } && _boss.Phases[0] is { } opening)
+        {
+            ApplyBonuses("boss.phase1", opening.AttackSpeedBonus, opening.MoveSpeedBonus);
+        }
+
         EventBus.Instance?.Publish(
             new BossEncounterStartedEvent(Entity, Entity.DisplayName, TotalPhases));
     }
@@ -256,7 +264,11 @@ public partial class BossController : EntityComponent
     /// <see cref="Combat.CombatComponent"/> guards the same hazard the same way one file over ("a
     /// kill blow doesn't also stagger the corpse"), so this is that idiom rather than a new one.
     /// </summary>
-    private bool Defeated => _stats is { IsAlive: false };
+    private bool Defeated => _withdrawn || _stats is { IsAlive: false };
+
+    /// <summary>Set once the boss has yielded at its <see cref="BossResource.WithdrawHealthFraction"/>
+    /// (Phase 47.5). A withdrawn boss is as finished as a dead one: nothing escalates or re-fires.</summary>
+    private bool _withdrawn;
 
     private void OnDamage(DamageDealtEvent e)
     {
@@ -284,7 +296,29 @@ public partial class BossController : EntityComponent
             return;
         }
 
-        AdvanceTo(BossPhases.SelectPhase(_stats.GetCurrent(StatType.Health) / max, Thresholds()));
+        float fraction = _stats.GetCurrent(StatType.Health) / max;
+        if (BossPhases.ShouldWithdraw(fraction, _boss.WithdrawHealthFraction, _withdrawn))
+        {
+            Withdraw();
+            return;
+        }
+
+        AdvanceTo(BossPhases.SelectPhase(fraction, Thresholds()));
+    }
+
+    /// <summary>
+    /// The boss yields and leaves alive (Phase 47.5): its adds fall as they would on a death, the
+    /// fight ends on <see cref="BossWithdrewEvent"/> (the director pays out the defeat flag and opens
+    /// the parting conversation), and the body is removed. Withdrawing is checked before escalation so
+    /// a yielding blow never also summons the next phase.
+    /// </summary>
+    private void Withdraw()
+    {
+        _withdrawn = true;
+        ClearAdds();
+        EventBus.Instance?.Publish(new BossWithdrewEvent(Entity!));
+        Log.Info($"{Entity!.DisplayName} lowers the blade and withdraws.");
+        Entity.Body.QueueFree();
     }
 
     /// <summary>Authored thresholds, high to low. Materialized per call rather than cached because a

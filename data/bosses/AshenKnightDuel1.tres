@@ -1,0 +1,41 @@
+[gd_resource type="Resource" script_class="BossResource" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/Enemies/BossResource.cs" id="1_boss"]
+[ext_resource type="Script" path="res://src/Enemies/BossPhaseResource.cs" id="2_phase"]
+
+; The Ashen Knight's first duel (Phase 47.5), at the Stormcrown after the Storm Tyrant falls.
+; Summoned by the rival brazier there through BossSummonComponent.FightId over enemy.ashen_knight:
+; the same knight, testing the player rather than trying to kill them. Slower than his Act IV self
+; (attack speed -30%), one stance, and he YIELDS at 65% health (WithdrawHealthFraction): the fight
+; ends on BossWithdrewEvent, flag.rival.duel1_won is set and dialogue.rival_duel1 plays. Optional:
+; nothing in the main story reads the flag except his Act IV last words.
+[sub_resource type="Resource" id="Phase_1"]
+script = ExtResource("2_phase")
+HealthFraction = 1.0
+AttackSpeedBonus = -0.3
+MoveSpeedBonus = -0.1
+GrantSpellIds = Array[String]([])
+AiProfileId = ""
+TelegraphColor = Color(0.95, 0.55, 0.3, 1)
+TelegraphEnergy = 2.5
+WindupPoiseMultiplier = 1.0
+AddWaves = Array[Resource]([])
+
+[resource]
+script = ExtResource("1_boss")
+Id = "boss.ashen_knight_duel1"
+Phases = Array[Resource]([SubResource("Phase_1")])
+EnrageSeconds = 0.0
+EnrageAttackSpeedBonus = 0.0
+EnrageMoveSpeedBonus = 0.0
+EnrageSpellIds = Array[String]([])
+EnrageForcesFinalPhase = false
+WithdrawHealthFraction = 0.65
+IntroLockSeconds = 2.5
+DefeatSlowSeconds = 1.0
+DefeatTimeScale = 0.4
+DefeatMusicCue = "music.boss_defeat"
+RewardItemId = ""
+RewardQuantity = 1
+DefeatFlagId = "flag.rival.duel1_won"
+DefeatDialogueId = "dialogue.rival_duel1"

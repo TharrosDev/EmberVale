@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="WeatherResource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/World/WeatherResource.cs" id="1_weather"]
+
+; Phase 44.5: the Dawnfire sky. Exists only after the Dawnfire ending (RequiredFlagId); it arrives with
+; the ending and then alternates with plain Clear, because the endings also strike rain, storm and fog
+; from the pool (their ExcludedByFlagIds). Clear, bright and a touch warm: the fire given back to the world.
+[resource]
+script = ExtResource("1_weather")
+Id = "weather.dawnfire"
+DisplayName = "Dawnfire"
+Type = 0
+SelectionWeight = 2.0
+MinHours = 6.0
+MaxHours = 12.0
+LightEnergyScale = 1.12
+SkyEnergyScale = 1.08
+FogDensity = 0.0
+FogColor = Color(0.95, 0.82, 0.62, 1)
+Precipitation = 0.0
+WindStrength = 0.8
+SkyTint = Color(1, 0.95, 0.86, 1)
+RequiredFlagId = "flag.ending_dawnfire"

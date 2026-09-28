@@ -40,3 +40,12 @@ public readonly record struct BossPhaseChangedEvent(IEntity Boss, int Phase, int
 /// </summary>
 public readonly record struct BossEncounterStartedEvent(
     IEntity Boss, string DisplayName, int TotalPhases) : IGameEvent;
+
+/// <summary>
+/// Raised once when a boss yields at its <c>BossResource.WithdrawHealthFraction</c> and leaves the
+/// fight alive (Phase 47.5, the Ashen Knight's rival duels). Everything that ends a fight on
+/// <c>EntityDiedEvent</c> — the encounter director's defeat beat and reward, the healthbar, the
+/// music, the arena hooks — ends it on this too. It is a separate event on purpose: nothing died, so
+/// kill credit, loot and the bestiary must not see it.
+/// </summary>
+public readonly record struct BossWithdrewEvent(IEntity Boss) : IGameEvent;

@@ -45,11 +45,11 @@ personal and never published.
 | 23 | Corruption | ✅ | 43 | Cinematics | ⬜ (narration cards) |
 | 24 | Meta-shell + localization | ✅ | 43.5 | Flamebearer visions | ⬜ |
 | 25 | Streaming + map | ✅ | 44 | All realms built | ✅ |
-| 25.5 | Stage A hardening | ✅ | 44.5 | Realm decay | ⬜ |
+| 25.5 | Stage A hardening | ✅ | 44.5 | Realm decay | ✅ scoped: ending skies + NPC after-lines |
 | 26 | Races | ✅ | 45 | Feature-complete audit | ⬜ |
 | 27 | Ember Crown | ✅ | 46 | Act I | ✅ |
 | 28 | Iron King | ✅ | 47 | Act II | ✅ |
-| 29 | Combat feel | ✅ | 47.5 | Rival duels | ⬜ |
+| 29 | Combat feel | ✅ | 47.5 | Rival duels | ✅ two optional Act II duels |
 | 29.5 | Spellcraft | ✅ | 48 | Act III | ✅ |
 | 30 | Visual identity | ✅ | 49 | Act IV + endings | ✅ |
 | 30.5 | UI/HUD overhaul | ✅ | 50 | Side content pass | ◐ |
@@ -88,7 +88,7 @@ After it:
 - Optional side content: guild arcs 42F (Ash Hunters finale), 42H (Veiled Archive finale), 42J (Iron
   Syndicate finale), 42L (Emberbound doctrine), 42M (five-guild integration).
 
-Not planned unless the maintainer asks: 42.5, 43, 43.5, 44.5, 47.5, 50.5, 51.5, 52, 53.5, 57, 59.
+Not planned unless the maintainer asks: 42.5, 43, 43.5, 50.5, 51.5, 52, 53.5, 57, 59.
 Never: 40, 40.5, 60–66.
 
 ## 5. Standing rules for any further work

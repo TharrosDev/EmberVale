@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Embervale.Core.Diagnostics;
+using Embervale.Core.Services;
 using Embervale.Dialogue;
 using Embervale.Enemies;
 using Embervale.Localization;
@@ -8,6 +9,7 @@ using Embervale.Quests;
 using Embervale.Races;
 using Embervale.Save;
 using Embervale.UI;
+using Embervale.World;
 using Godot;
 
 namespace Embervale.Bootstrap;
@@ -17,6 +19,9 @@ namespace Embervale.Bootstrap;
 /// raises each act's trigger flag the way its boss or conversation would, and asserts the next act's
 /// quest started by itself, the hidden realm revealed, the chain survives a save/load, every
 /// Flamebearer template builds a boss, and an ending flag plays the ending. Exit 0 PASS / 1 FAIL.
+/// Phase 47.5: the rival duels are wired (yielding fights, their flags and conversations) and the
+/// chain runs without them. Phase 44.5: each ending brings its sky, and the Lord of Embers sky is
+/// re-derived from the flags on load even from a save holding weather the story forbids.
 /// It proves the wiring between acts — not that a fight can be won, which needs a player.
 /// </summary>
 public static class HeadlessStory
@@ -64,6 +69,8 @@ public static class HeadlessStory
             }
         }
 
+        CheckRivalDuels();
+
         foreach (bool dawnfire in new[] { true, false })
         {
             foreach (int absorbed in new[] { 0, 3, 6 })
@@ -103,12 +110,67 @@ public static class HeadlessStory
         log = loaded.GetComponent<QuestLogComponent>()!;
         Check(log.IsActive("quest.main.celestial") && flags.Has("flag.pale_concord_revealed"),
             "the story state did not survive save/load");
+        Check(!flags.Has("flag.rival.duel1_won") && !flags.Has("flag.rival.duel2_won"),
+            "a rival duel flag was set without a duel; the duels must stay optional");
 
         await Raise(root, flags, EndingSequence.DawnfireFlag);
         EndingSequence? ending = lifecycle.Session!.GetNodeOrNull<EndingSequence>("Ending");
         Check(ending?.IsPlaying == true, "setting the Dawnfire flag did not play the ending");
+        Check(Weather()?.Current?.Id == "weather.dawnfire", "the Dawnfire ending did not bring the Dawnfire sky");
+
+        // The other ending, and its sky derived from flags on load. game_complete first so the
+        // ending sequence ignores the second ending flag.
+        flags.Set(EndingSequence.CompleteFlag);
+        flags.Clear(EndingSequence.DawnfireFlag);
+        await Raise(root, flags, EndingSequence.EmbersFlag);
+        Check(Weather()?.Current?.Id == "weather.embers", "the Lord of Embers ending did not bring the ember sky");
+
+        Weather()?.Force("weather.rain"); // a save holding weather the story no longer allows
+        Check(SaveManager.Instance?.SaveGame(Slot) == true, "the post-ending session failed to save");
+        lifecycle.DestroySession();
+        await HeadlessLifecycle.Frames(root, 8);
+        lifecycle.StartLoadedGame(Slot);
+        if (!await HeadlessLifecycle.WaitForPlaying(root))
+        {
+            Finish(root, "the post-ending session never reloaded");
+            return;
+        }
+
+        for (int i = 0; i < 60 && Weather()?.Current?.Id != "weather.embers"; i++)
+        {
+            await HeadlessLifecycle.Frames(root, 10);
+        }
+
+        Check(Weather()?.Current?.Id == "weather.embers",
+            $"after load the ember sky was not re-derived from the ending flag (weather '{Weather()?.Current?.Id}')");
 
         Finish(root, null);
+    }
+
+    private static WeatherDirector? Weather() =>
+        ServiceLocator.Instance is { } sl && sl.TryGet(out WeatherDirector weather) ? weather : null;
+
+    /// <summary>Phase 47.5: both duel fights yield and record their own flag and conversation; the
+    /// Act IV fight is still to the death on the registry's flag.</summary>
+    private static void CheckRivalDuels()
+    {
+        for (int n = 1; n <= 2; n++)
+        {
+            BossResource? duel = BossDatabase.Get($"boss.ashen_knight_duel{n}");
+            Check(duel != null, $"boss.ashen_knight_duel{n} is missing");
+            if (duel == null)
+            {
+                continue;
+            }
+
+            Check(duel.WithdrawHealthFraction > 0f, $"duel {n} does not withdraw; the rival would die in Act II");
+            Check(duel.DefeatFlagId == $"flag.rival.duel{n}_won", $"duel {n} records '{duel.DefeatFlagId}'");
+            Check(DialogueDatabase.Get(duel.DefeatDialogueId) != null, $"duel {n} has no parting conversation");
+        }
+
+        BossResource? final = BossDatabase.Get("boss.ashen_knight");
+        Check(final is { WithdrawHealthFraction: 0f, DefeatFlagId: "flag.ashen_knight_defeated" },
+            "the Act IV Ashen Knight must fight to the death and set flag.ashen_knight_defeated");
     }
 
     private static async Task Raise(ApplicationRoot root, StoryFlagsComponent flags, params string[] ids)

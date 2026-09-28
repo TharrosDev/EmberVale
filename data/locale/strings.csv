@@ -2391,3 +2391,38 @@ vision.hollow_queen.3,"The price was her own soul, and she paid it without looki
 vision.ashen_knight.1,"A VISION. The Sixth Flamebearer climbs the Celestial stair with five companions. He is the only one who reaches the top."
 vision.ashen_knight.2,"He stands before the Ash Throne with Morthul broken at his feet, and hears what the throne asks of whoever wins."
 vision.ashen_knight.3,"He could not sit, and he could not leave it empty. So he knelt, and has guarded the one who would, ever since. He was waiting for you."
+# Phase 44.5 + 47.5 (finishing features): the Ashen Knight's rival duels and the world after the ending
+boss.withdraw,{0} yields.
+boss.rival.duel1.prompt,Answer the Ashen Knight's challenge
+boss.rival.duel1.locked,"A brazier of black iron, cold, ringed with a knight's sigil drawn in ash. Someone is waiting for the storm to break."
+boss.rival.duel2.prompt,Answer the Ashen Knight's challenge
+boss.rival.duel2.locked,"A brazier of black iron, cold, ringed with a knight's sigil drawn in ash. Someone is waiting for the Prophet to fall."
+dlg.rival.duel1.speaker,The Ashen Knight
+dlg.rival.duel1.yield,"He steps back and lowers the greatsword, breathing hard behind a visor black with old fire. ""Enough. The Tyrant fell to you, so I came to see what kind of thing could fell him."""
+dlg.rival.duel1.c_who,Who are you?
+dlg.rival.duel1.who,"""I was the Sixth to carry the flame, and the nearest any of us came to the end of it. Now I keep a stair you have not climbed yet."""
+dlg.rival.duel1.c_why,Why not finish it?
+dlg.rival.duel1.why,"""Because you are not ready, and I would rather meet you when you are. Gather your embers, Seventh. We will cross blades again."" He turns into the storm and is gone."
+dlg.rival.duel1.c_bye,Let him go.
+dlg.rival.duel2.speaker,The Ashen Knight
+dlg.rival.duel2.yield,"This time he yields a step at a time, and he is smiling behind the visor; you can hear it. ""Better. Much better. The Prophet burned for his certainty, and you did not flinch from the fire."""
+dlg.rival.duel2.c_follow,You keep following me.
+dlg.rival.duel2.follow,"""I keep measuring you. Every ember you take brings you a little closer to where I stand."""
+dlg.rival.duel2.c_stair,And where is that?
+dlg.rival.duel2.stair,"""At the top of a stair, before a throne, with a choice I could not make. Come when you are ready. I will not yield a third time."""
+dlg.rival.duel2.c_bye,Let him go.
+dlg.ashenknight.absorb.c_duel_storm,"At the Stormcrown, you let me live."
+dlg.ashenknight.absorb.duel_storm,"""I did. I needed to know whether you would keep climbing. You did."""
+dlg.ashenknight.absorb.c_duel_mission,"In the Mission, you yielded a second time."
+dlg.ashenknight.absorb.duel_mission,"""And I told you I would not yield a third. I kept my word. So did you."""
+dlg.elder.c_ending,"How is the village, now it is over?"
+dlg.elder.ending_dawnfire,"""The forge has not gone cold since. The children count the clear mornings out loud, as if they might run out. I stopped looking north. There is nothing there to dread any more."""
+dlg.elder.ending_embers,"He will not meet your eyes. ""The village keeps your fires burning, as you commanded. We have learned the new prayers. Please, the sky has been red for so long. Is there anything more you require of us?"""
+dlg.elder.c_ending_back,Something else.
+dlg.ashen_headwoman.c_ending,How does Last Hearth fare?
+dlg.ashen_headwoman.ending_dawnfire,"""We stopped rationing the firewood. First winter in living memory. Someone planted beans by the fence, and the wolves only come to look at them."""
+dlg.ashen_headwoman.ending_embers,"""We do as we are told, and the ash falls, and we sweep it. The hearth burns for you now. Everyone knows whose fire it is."" She says it very carefully."
+dlg.sunspire_wellkeeper.c_ending,How are the wells?
+dlg.sunspire_wellkeeper.ending_dawnfire,"""Deeper and sweeter every season. The caravans sing coming in, now. Water is still free. Some laws are worth keeping."""
+dlg.sunspire_wellkeeper.ending_embers,"""The water runs warm and tastes of smoke. Your priests come to bless it every dusk, and nobody drinks until they have gone."" She lowers her voice. ""It is still free. Please do not change that."""
+dlg.sunspire_wellkeeper.c_ending_back,Something else.

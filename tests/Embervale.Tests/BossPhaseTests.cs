@@ -107,4 +107,41 @@ public class BossPhaseTests
         // The Iron King's setting: a boss that can be fought at the player's own pace.
         Assert.False(BossPhases.ShouldEnrage(100000d, seconds, alreadyEnraged: false));
     }
+
+    // --- Withdraw (Phase 47.5) ----------------------------------------------
+
+    [Theory]
+    [InlineData(0.61f, false)]
+    [InlineData(0.6f, true)]    // yields AT the threshold, like a phase
+    [InlineData(0.2f, true)]
+    [InlineData(0f, false)]     // a blow that kills outright is a death, not a withdrawal
+    public void ADuellistYieldsAtOrBelowItsThreshold(float fraction, bool expected)
+    {
+        Assert.Equal(expected, BossPhases.ShouldWithdraw(fraction, 0.6f, alreadyWithdrawn: false));
+    }
+
+    [Fact]
+    public void ABossWithNoThresholdFightsToTheDeath()
+    {
+        Assert.False(BossPhases.ShouldWithdraw(0.01f, 0f, alreadyWithdrawn: false));
+    }
+
+    [Fact]
+    public void ABossWithdrawsOnlyOnce()
+    {
+        Assert.False(BossPhases.ShouldWithdraw(0.3f, 0.6f, alreadyWithdrawn: true));
+    }
+
+    [Theory]
+    [InlineData(0f, true)]
+    [InlineData(0.5f, true)]
+    [InlineData(0.99f, true)]
+    [InlineData(-0.1f, false)]  // below the range: a typo
+    [InlineData(1f, false)]     // at the top: leaves on the first scratch
+    [InlineData(1.5f, false)]
+    [InlineData(float.NaN, false)]
+    public void TheWithdrawRangeFailsAtBothEnds(float fraction, bool valid)
+    {
+        Assert.Equal(valid, BossPhases.WithdrawFractionValid(fraction));
+    }
 }

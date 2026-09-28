@@ -33,12 +33,14 @@ public partial class ArenaHookComponent : Node
         SetRevealed(false);
         EventBus.Instance?.Subscribe<BossPhaseChangedEvent>(OnPhaseChanged);
         EventBus.Instance?.Subscribe<EntityDiedEvent>(OnDied);
+        EventBus.Instance?.Subscribe<BossWithdrewEvent>(OnWithdrew);
     }
 
     public override void _ExitTree()
     {
         EventBus.Instance?.Unsubscribe<BossPhaseChangedEvent>(OnPhaseChanged);
         EventBus.Instance?.Unsubscribe<EntityDiedEvent>(OnDied);
+        EventBus.Instance?.Unsubscribe<BossWithdrewEvent>(OnWithdrew);
     }
 
     // Both handlers react only to a boss standing under this hook's own parent (the arena's cell
@@ -56,6 +58,15 @@ public partial class ArenaHookComponent : Node
     private void OnDied(EntityDiedEvent e)
     {
         if (e.Entity is BossEntity && InThisArena(e.Entity))
+        {
+            SetRevealed(false);
+        }
+    }
+
+    /// <summary>A boss that yields (Phase 47.5) ends the fight too; the arena goes dark again.</summary>
+    private void OnWithdrew(BossWithdrewEvent e)
+    {
+        if (InThisArena(e.Boss))
         {
             SetRevealed(false);
         }
