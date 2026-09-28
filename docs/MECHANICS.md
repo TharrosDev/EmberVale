@@ -45,13 +45,53 @@ live census). *Partial* marks something that exists but is incomplete.
 
 ## Camera
 
+The rig (`PlayerCameraRig`) is the only writer of the camera transform. Everything else is an
+`ICameraLayer` on the player that returns a small nudge (offset, angle, FOV, distance) each frame; the
+rig sums and clamps them (`CameraLayer.cs`, `CameraRigMath.CombineLayers`). Motion layers scale by
+`CameraComfort`: the settings sliders and Reduced Motion reach all of them.
+
 - **First/third person swap** (`V` or the setting, at any time) — true first person rides the head
   bone with the body visible; third person is over the shoulder (side, distance 2–6 m and FOV are live
-  settings). `PlayerCameraRig`, `CameraRigMath` (`src/Player`).
-- **Camera profiles** — exploration, sprint, combat, target-lock and aim multiply the player's
-  settings. `CameraProfile`.
-- **Wall spring** — sweeps only world geometry and camera blockers, so actors never yank it.
-- **Camera shake** — on heavy hits. `CameraShake`, `ShakeMath` (`src/Combat`).
+  settings). The swap is a critically damped spring, so a second press mid-swap turns it round instead
+  of snapping; look direction is kept, the eye seat crossfades, and a swap to third person waits in
+  first person until the seat has 1 m of room. `PlayerCameraRig`, `CameraRigMath` (`src/Player`).
+- **Camera profiles** — exploration, sprint, combat, target-lock, aim and mounted multiply the
+  player's settings, never replace them. Sprint and gallop lean with speed; a context blends in and
+  releases at different rates (combat framing is sticky, aim snaps in and lets go slowly); each has
+  its own pitch limit; look input slows when the view narrows. Only widening FOV is scaled by FOV Kick.
+  `CameraProfile`, `CameraContext`.
+- **Wall spring** — sweeps only world geometry and camera blockers, so actors never yank it. Five
+  probes catch corners, a low ceiling lowers the camera, a wall beside the head narrows the shoulder,
+  and with Auto Shoulder Swap it swings to the free shoulder before pulling in (hysteresis and a
+  0.8 s hold, so it never flickers). Pull-in is instant; push-out waits 0.25 s then eases. First person
+  has a near-plane guard. `CameraRigMath.ProbeMotion`, `SpringStep`, `ShoulderSwapped`.
+- **Lock-on and aim framing** — a close locked target is framed past the shoulder (lateral slide,
+  rise, slight pull-back, yaw cancelling the slide so the target stays on the crosshair), easing in
+  over 0.5 s and out over 0.9 s so a broken lock fades. Aiming tightens FOV slightly and leads toward
+  the shoulder side. Cycling goes left to right on screen, a lost target keeps the lock for 0.8 s, and
+  a new lock swings the body round over 0.3 s. The aim ray starts at the pivot's depth, so a prop
+  between camera and player is never the aim point. `CameraFramingLayer`, `FramingMath`, `LockOn`,
+  `LockOnComponent`, `AimController`.
+- **Camera shake** — trauma per source (hit, heavy, block, crit, stagger, spell, action, landing),
+  each capped, the total held to 0.8. Smooth noise rather than jitter, and hits kick from the side
+  the blow came from (slide and roll, never pitch or yaw, so the crosshair stays put). Scaled by the
+  Camera Shake setting. `CameraShake`, `ShakeMath` (`src/Combat`).
+- **Movement feel** — landing dip scaled by drop height, first-person head bob and sway by gait
+  (stronger sprinting; off airborne, mounted or rolling), a settle when a sprint ends, dodge lean into
+  the roll and pull-back on a backstep, per-gait mounted sway. Half strength in third person, bob off
+  there. `CameraMotionLayer`, `CameraMotionMath`.
+- **Special views** — dialogue push-in toward the speaker, a boss-entrance lean for the intro lock, a
+  slow pull-back after the player dies, a faint lean toward a focused interactable, a wider seat when
+  mounted. Restrained ceilings (a few degrees), and the player's own look input always wins.
+  `CameraDirectorLayer`, `SpecialViewMath`. *Partial:* a dialogue pauses the world, which stops the
+  rig ticking, so the dialogue push-in does not currently play; the others do.
+- **Obstruction fade** — props and actors between the camera and the player thin out (up to 80%
+  transparency) in third person or when pulled back; walls and terrain stay solid, and every mesh is
+  restored exactly. Baked architecture and scatter are merged meshes, so they are not faded.
+  `CameraOcclusion`, `CameraOcclusionMath`.
+- **Camera comfort** (Gameplay and Accessibility settings) — Camera Shake, Head Bob and FOV Kick
+  sliders, Auto Shoulder Swap, Lock-On Framing and Fade Obstructions toggles. Reduced Motion zeroes
+  bob and FOV kick and holds shake to 25%. `CameraComfort`, `Settings`.
 
 ## Combat
 
