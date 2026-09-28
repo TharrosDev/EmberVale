@@ -43,7 +43,7 @@ public static class DevCommands
         console.Register(new ConsoleCommand("give", "give <itemId> [qty]", "Give the player an item.", Give));
         console.Register(new ConsoleCommand("xp", "xp <n>", "Grant the player XP.", Xp));
         console.Register(new ConsoleCommand("heal", "heal", "Refill the player's resources.", Heal));
-        console.Register(new ConsoleCommand("mount", "mount [own]", "Toggle the mount; 'own' grants the stable flag first (Phase 39A).", Mount));
+        console.Register(new ConsoleCommand("mount", "mount [own] [now]", "Whistle or dismount; 'own' grants the stable flag first, 'now' skips the run-in (Phase 39A).", Mount));
         console.Register(new ConsoleCommand("rep", "rep <factionId> <delta>", "Shift faction standing.", Rep));
         console.Register(new ConsoleCommand("guild", "guild <list|<guildId> <offer|join|rank N|leave|refuse|finale|clear>>", "Inspect or drive guild membership through the real story-flag path (Phase 42A).", Guild));
         console.Register(new ConsoleCommand("corruption", "corruption <get|set N|add N|tier>", "Inspect or drive the player's corruption.", Corruption));
@@ -437,10 +437,10 @@ public static class DevCommands
             player.GetComponent<Dialogue.StoryFlagsComponent>()?.Set(MountComponent.OwnedFlagId);
         }
 
-        mount.Toggle();
+        mount.Toggle(instant: System.Array.Exists(args, a => a.Equals("now", System.StringComparison.OrdinalIgnoreCase)));
         return mount.IsMounted
             ? $"mounted (gallop pool {mount.Stamina:0})"
-            : "on foot";
+            : mount.IsSummoning ? "whistled — the horse is running in" : "on foot";
     }
 
     private static string Rep(DevConsole console, string[] args)

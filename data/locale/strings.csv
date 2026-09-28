@@ -1417,11 +1417,14 @@ notify.wager_lost,"{0} takes your {1} gold."
 # which one happened. "Not owned" names the stablemaster rather than the flag: a refusal that does not
 # say where to fix it reads as a broken key.
 mount.summoned,"You whistle, and the horse comes."
-mount.dismissed,You swing down and let the horse wander off.
+mount.remounted,You swing up into the saddle.
+mount.dismissed,"You swing down. The horse waits where you left it."
 mount.not_owned,You have no mount. The Ember Crown Stables sell one.
 mount.exhausted,"The horse is blown — it drops to a walk, whatever you ask of it."
 water.too_deep,"The water deepens past your waist. Any further and it will take your feet."
 world.recovered,You struggle back to safer ground.
+mount.refuses_water,The horse balks at the deep water.
+mount.refuses_drop,The horse shies from the drop.
 # World map (Phase 39.5A) — screen furniture
 map.search_placeholder,Search people, trades, places
 map.search_none,Nothing discovered matches that.

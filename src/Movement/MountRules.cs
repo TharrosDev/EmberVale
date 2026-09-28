@@ -31,11 +31,9 @@ public static class MountRules
     /// long enough for the refusal to read as "the horse is blown" rather than as an input drop.</summary>
     public const float RecoverAt = 25f;
 
-    /// <summary>Multiplier on the rider's <c>StatType.MoveSpeed</c> while mounted. The sprint
-    /// multiplier in <see cref="LocomotionComponent"/> then stacks on top for the gallop, so the
-    /// two gaits are 1.7x and (1.7 x 1.6) 2.7x a walking player.
-    /// ⚠️ Phase 56 owns the number; this is the first authored value for it.</summary>
-    public const float SpeedMultiplier = 1.7f;
+    // The mount's speed multiplier that lived here moved to GaitTuning with the gaits. It was a
+    // canter and a gallop pretending to be one number, and it was not the number it said it was —
+    // GaitTuning.Default has the arithmetic.
 
     /// <summary>The mount's gallop state for one frame.</summary>
     /// <param name="Stamina">Remaining gallop pool, 0..<see cref="StaminaMax"/>.</param>
@@ -50,8 +48,10 @@ public static class MountRules
     /// <summary>
     /// Advances the pool one frame. <paramref name="wantGallop"/> is the player's held sprint; the
     /// returned <see cref="GallopState.Galloping"/> is whether the horse granted it.
+    /// <paramref name="regenScale"/> multiplies the refill — <see cref="MountGaits.RegenScale"/>, so
+    /// a standing horse gets its wind back faster than a cantering one; 1 is 39A's flat rate.
     /// </summary>
-    public static GallopState Step(GallopState state, bool wantGallop, float delta)
+    public static GallopState Step(GallopState state, bool wantGallop, float delta, float regenScale = 1f)
     {
         // A non-finite delta or pool would poison the speed modifier, and that modifier feeds
         // MoveSpeed, which is the exact route 37F's NaN took into a CharacterBody3D's velocity.
@@ -59,6 +59,11 @@ public static class MountRules
         if (float.IsNaN(delta) || float.IsInfinity(delta) || delta < 0f)
         {
             delta = 0f;
+        }
+
+        if (!float.IsFinite(regenScale) || regenScale < 0f)
+        {
+            regenScale = 1f;
         }
 
         float stamina = float.IsNaN(state.Stamina) || float.IsInfinity(state.Stamina)
@@ -69,7 +74,7 @@ public static class MountRules
         bool allowed = wantGallop && !exhausted && stamina > 0f;
         stamina = allowed
             ? stamina - (GallopDrainPerSecond * delta)
-            : stamina + (RegenPerSecond * delta);
+            : stamina + (RegenPerSecond * regenScale * delta);
 
         if (stamina <= 0f)
         {
