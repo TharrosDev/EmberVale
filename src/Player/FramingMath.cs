@@ -147,7 +147,20 @@ public static class FramingMath
     /// Linear, so it reaches exactly 0 and 1; the layer smooths it with <see cref="CameraRigMath.Ease"/>.
     /// </summary>
     public static float StepWeight(float weight, bool active, float dt, float inSeconds, float outSeconds) =>
-        dt <= 0f ? weight : CameraRigMath.StepBlend(weight, active ? 1f : 0f, dt, active ? inSeconds : outSeconds);
+        dt <= 0f ? weight : StepToward(weight, active ? 1f : 0f, dt, active ? inSeconds : outSeconds);
+
+    /// <summary>Moves <paramref name="t"/> toward <paramref name="target"/> at a rate that crosses the
+    /// whole 0..1 range in <paramref name="seconds"/>; a non-positive duration snaps.</summary>
+    private static float StepToward(float t, float target, float dt, float seconds)
+    {
+        if (seconds <= 0f)
+        {
+            return Math.Clamp(target, 0f, 1f);
+        }
+
+        float step = dt / seconds;
+        return target > t ? Math.Min(target, t + step) : Math.Max(target, t - step);
+    }
 
     /// <summary>Signed angle in radians from <paramref name="forward"/> to <paramref name="to"/>
     /// about the up axis, both flattened. Positive means the target is to the right. 0 when either
