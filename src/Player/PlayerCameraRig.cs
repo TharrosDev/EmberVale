@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using Embervale.Combat;
 using Embervale.Core.Events;
 using Embervale.Core.Services;
@@ -12,46 +14,56 @@ namespace Embervale.Player;
 ///
 /// <para>The game is <b>hybrid</b>: the same controls drive first person and an over-the-shoulder
 /// third person, swapped at any time from the settings panel or the toggle-camera key. Body yaw
-/// always equals camera yaw in both modes, so combat, lock-on, dodge and melee reach are
-/// mode-agnostic — the only things that differ are where the camera sits (blended, and sprung off
-/// world geometry) and that third person aims from the camera rather than the head so the crosshair
-/// still means something.</para>
+/// always equals camera yaw in both modes, and pitch lives on the pivot in both, so a swap keeps the
+/// look direction by construction and combat, lock-on, dodge and melee reach are mode-agnostic — the
+/// only things that differ are where the camera sits and that third person aims from the camera
+/// rather than the head so the crosshair still means something.</para>
 ///
 /// <para><b>First person is TRUE first person.</b> The camera rides the body's own head bone and the
-/// body stays visible; you see its arms, its weapon and its equipment because they are the same
-/// arms, weapon and equipment the world sees. What this replaced was a rigless viewmodel with its
-/// own procedural swing — a second skeleton, a second action state and a second weapon that had to
-/// be kept in step with the first, which is the duplication the overhaul's §18 is about.</para>
+/// body stays visible; you see its arms, its weapon and its equipment because they are the same arms,
+/// weapon and equipment the world sees.</para>
 ///
-/// <para>This component owns the camera and nothing else does. The pure geometry it needs is in
+/// <para><b>This component is the only writer of the camera's position, rotation and field of view.</b>
+/// Each frame it composes: the mode blend (a spring, so a toggle pressed mid-swap turns around
+/// smoothly), the context profile (eased asymmetrically, leaning by speed), the player's own
+/// settings, the wall spring, and the summed nudge of every <see cref="ICameraLayer"/> on the entity.
+/// Layers ask for framing; they never touch the transform. The pure arithmetic is in
 /// <see cref="CameraRigMath"/>, which is engine-free and unit-tested; what is left here is the node
-/// writes and the one physics sweep.</para>
+/// writes and the physics sweeps.</para>
 /// </summary>
 [GlobalClass]
 public partial class PlayerCameraRig : EntityComponent
 {
-    /// <summary>Seconds the camera takes to travel between the two modes.</summary>
-    private const float ModeBlendSeconds = 0.18f;
+    /// <summary>Seconds the mode blend takes to settle (about 95% of the way) between the two views.</summary>
+    private const float ModeSettleSeconds = 0.4f;
 
     /// <summary>Radius of the sphere swept from the pivot to the camera. Bigger than the camera's
     /// near plane so a corner can never poke inside it.</summary>
     private const float CameraProbeRadius = 0.22f;
 
-    /// <summary>How fast the camera eases back out after geometry stops crowding it (m/s). Pulling
-    /// in is instant; see <see cref="CameraRigMath.SpringDistance"/>.</summary>
-    private const float CameraPushOutSpeed = 6f;
+    /// <summary>Radius of the sphere swept from the pivot to the eye in first person. Smaller: it only
+    /// has to keep the near plane out of a wall when the head leans into one.</summary>
+    private const float EyeProbeRadius = 0.08f;
 
-    /// <summary>Pitch clamp (radians) so the camera can't flip over the top/bottom.</summary>
-    private const float PitchLimit = 1.45f;
+    /// <summary>Seconds of clear space before the wall spring lets the camera start easing back out
+    /// after geometry stops crowding it. Pulling in is instant; see
+    /// <see cref="CameraRigMath.SpringStep"/>.</summary>
+    private const float PushHoldSeconds = 0.25f;
 
-    /// <summary>0 = first person, 1 = third person. Eased into the camera's rest pose each frame.</summary>
-    private float _modeBlend;
+    /// <summary>Push-out rates, in fractions of full extension per second: the seat as a whole, the
+    /// shoulder and rise squeezes, and the first-person eye.</summary>
+    private const float SeatPushOutPerSecond = 1.6f;
+    private const float SqueezePushOutPerSecond = 2.5f;
+    private const float EyePushOutPerSecond = 4f;
 
-    /// <summary>The blend target (0/1) the mode toggle sets.</summary>
-    private float _modeTarget;
+    /// <summary>Seconds the camera takes to cross to the other shoulder.</summary>
+    private const float ShoulderSwapSeconds = 0.15f;
 
-    /// <summary>Camera distance from the pivot after the collision spring, in metres.</summary>
-    private float _springDistance;
+    /// <summary>The degrees a dodge adds to the field of view at full FOV Kick, and how fast the punch
+    /// lands and bleeds off (seconds).</summary>
+    private const float DodgeFovPunch = 5f;
+    private const float PunchRiseSeconds = 0.05f;
+    private const float PunchFallSeconds = 0.3f;
 
     /// <summary>Seconds of smoothing on the eye anchor. The head bone is animated, so following it
     /// raw hands the player every footfall and every swing as camera shake.</summary>
@@ -69,12 +81,55 @@ public partial class PlayerCameraRig : EntityComponent
     /// head — a knockdown, a death — must not throw the camera with it.</summary>
     private const float MaxEyeOffset = 0.45f;
 
-    /// <summary>The camera's current shape, eased toward whatever the context asks for.</summary>
-    private CameraProfile _profile = CameraProfile.Neutral;
+    /// <summary>0 = first person, 1 = third person, sprung toward <see cref="_modeTarget"/>.</summary>
+    private float _modeBlend;
 
-    /// <summary>Set each frame by the input router from live gameplay state. Held here rather than
-    /// queried so the rig does not have to know about lock-on, aiming or combat components.</summary>
-    public CameraContext Context { get; set; } = CameraContext.Exploration;
+    private float _modeVelocity;
+
+    /// <summary>The blend target (0/1). Third person is only targeted once the seat has room.</summary>
+    private float _modeTarget;
+
+    /// <summary>Whether the player has asked for third person. It can be true while the camera is
+    /// still in first person, waiting for a seat with room in it.</summary>
+    private bool _wantThird;
+
+    /// <summary>The wall spring: the fraction of the seat, of the shoulder offset and of the rise the
+    /// sweeps currently allow, each with the timer its delayed push-out runs on.</summary>
+    private float _seatFraction = 1f;
+    private float _lateralFraction = 1f;
+    private float _riseFraction = 1f;
+    private float _seatClear;
+    private float _lateralClear;
+    private float _riseClear;
+
+    /// <summary>The first-person eye's own guard against the head leaning into a wall.</summary>
+    private float _eyeGuard = 1f;
+    private float _eyeClear;
+
+    /// <summary>Whether the camera is over the shoulder the player did NOT choose, because that one is
+    /// against a wall; how far across it currently is (0..1); and seconds since it last swapped.</summary>
+    private bool _shoulderSwapped;
+    private float _swapBlend;
+    private float _sinceSwap = CameraRigMath.SwapHoldSeconds;
+
+    /// <summary>The camera's current shape, eased toward whatever the context and speed ask for, and
+    /// the time constant (seconds) it is easing with — chosen when the context changes, since going
+    /// into a context and coming out of one deliberately take different times.</summary>
+    private CameraProfile _profile = CameraProfile.Neutral;
+    private float _profileSeconds = CameraProfile.Neutral.BlendSeconds;
+
+    private CameraInputs _inputs = CameraInputs.Idle;
+    private float _dodgePunch;
+
+    /// <summary>Degrees added to the player's FOV setting this frame (profile, dodge punch, layers).</summary>
+    private float _fovOffset;
+
+    private float _pitchLimit = CameraProfile.Neutral.PitchLimit;
+    private float _lookScale = 1f;
+
+    private readonly List<ICameraLayer> _layers = new();
+    private CameraNudge[] _samples = Array.Empty<CameraNudge>();
+    private int _hostChildCount = -1;
 
     private Skeleton3D? _skeleton;
     private int _headBone = -1;
@@ -93,15 +148,26 @@ public partial class PlayerCameraRig : EntityComponent
     /// between the eye and the over-the-shoulder orbit.</summary>
     public Camera3D? Camera { get; set; }
 
-    /// <summary>Whether gameplay is currently first-person (the shipping default).</summary>
+    /// <summary>What the camera is currently for, resolved each frame from what the router fed the
+    /// rig. Read-only: nothing sets a context, so two systems cannot disagree about it.</summary>
+    public CameraContext Context { get; private set; } = CameraContext.Exploration;
+
+    /// <summary>Whether gameplay is currently first-person (the shipping default). True while a swap
+    /// to third person is being held for room: this is where the camera is going, not where the
+    /// player asked for.</summary>
     public bool IsFirstPerson { get; private set; } = true;
 
     /// <summary>The camera's live rest position — the single source of truth shared with
     /// <see cref="CameraShake"/>, which offsets around it per frame. It follows the mode blend and
-    /// the wall spring, so a crit mid-swap or against a wall shakes around where the camera actually
-    /// is, not where the mode says it should be (the "camera glitches into the head on a crit while
-    /// third-person" bug).</summary>
+    /// the wall spring but not the layers, so whatever is shaking the camera shakes around where the
+    /// camera actually is, not where the mode says it should be (the "camera glitches into the head
+    /// on a crit while third-person" bug).</summary>
     public Vector3 CameraRestPosition => _cameraRest;
+
+    /// <summary>How much of its normal rate the look should turn at, so a narrowed view (aiming) turns
+    /// through the same part of the screen per movement rather than the same angle. Cached each
+    /// frame, so reading it never touches the camera node.</summary>
+    public float LookScale => _lookScale;
 
     protected override void OnInitialize()
     {
@@ -120,38 +186,47 @@ public partial class PlayerCameraRig : EntityComponent
         EventBus.Instance?.Unsubscribe<SettingsAppliedEvent>(OnSettingsApplied);
     }
 
+    /// <summary>What the input router read off the player this frame. Stored, not acted on: the rig
+    /// resolves it inside <see cref="Tick"/>, which runs inside the router's not-playing guard.</summary>
+    public void Feed(in CameraInputs inputs) => _inputs = inputs;
+
     /// <summary>
-    /// Switches between first person (camera at the eye, own body casting shadows only — the
-    /// viewmodel arms carry the visible weapon) and over-the-shoulder third person (camera orbits
-    /// behind and to the right, full body shown).
+    /// Asks for first person or over-the-shoulder third person. The swap is a spring, so it can be
+    /// reversed at any moment and turns around smoothly; the look direction is untouched because yaw
+    /// is the body's and pitch is the pivot's in both views.
     ///
-    /// <paramref name="immediate"/> snaps rather than blends — used on initialize so a save resumed
-    /// in third person opens there instead of swooping out on the first frame.
+    /// <para>First person is granted at once. Third person is granted by <see cref="Tick"/> once the
+    /// seat has room (<see cref="CameraRigMath.SeatUsable"/>), so a swap requested in a closet is held
+    /// in first person and completes the moment the player steps out, rather than putting the camera
+    /// against the back of the head.</para>
+    ///
+    /// <paramref name="immediate"/> snaps rather than blends and skips the room check — used on
+    /// initialize so a save resumed in third person opens there instead of swooping out on the first
+    /// frame; the wall spring pulls in on that frame if it has to.
     /// </summary>
     public void SetFirstPerson(bool firstPerson, bool immediate = false)
     {
-        if (IsFirstPerson == firstPerson && !immediate && _modeTarget == (firstPerson ? 0f : 1f))
+        _wantThird = !firstPerson;
+        if (firstPerson)
         {
-            // Nothing changed. Worth checking: the settings panel re-applies live on every slider
-            // drag frame, and the body-mesh shadow walk below is not free.
+            IsFirstPerson = true;
+            _modeTarget = 0f;
+        }
+
+        if (!immediate)
+        {
             return;
         }
 
-        // The flag flips at the *start* of the blend so the viewmodel arms hide on the way out
-        // rather than fading past the camera.
         IsFirstPerson = firstPerson;
         _modeTarget = firstPerson ? 0f : 1f;
-        if (immediate)
-        {
-            _modeBlend = _modeTarget;
-            _springDistance = firstPerson ? 0f : ThirdPersonRest.Length();
-            ApplyCameraRest(ResolveRestOffset());
-        }
-
-        // ⚠️ THE BODY IS VISIBLE IN BOTH VIEWS NOW, and that is the whole of "true first person".
-        // It used to be shadows-only in first person while a separate rigless viewmodel drew a pair
-        // of arms with its own procedural swing — two skeletons, two action states and two weapons
-        // to keep in step. There is one body; you look out of its head and see its own arms.
+        _modeBlend = _modeTarget;
+        _modeVelocity = 0f;
+        _shoulderSwapped = false;
+        _swapBlend = 0f;
+        _seatFraction = _lateralFraction = _riseFraction = 1f;
+        _seatClear = _lateralClear = _riseClear = 0f;
+        ApplyCameraRest(firstPerson ? Vector3.Zero : FullSeat(1f, 1f), CameraNudge.Identity);
     }
 
     /// <summary>Flips the camera mode through the <em>setting</em>, so the toggle key and the
@@ -163,7 +238,7 @@ public partial class PlayerCameraRig : EntityComponent
         if (_settings == null)
         {
             // No settings service (a bare test harness): flip locally so the key still works.
-            SetFirstPerson(!IsFirstPerson);
+            SetFirstPerson(_wantThird);
             return;
         }
 
@@ -172,31 +247,232 @@ public partial class PlayerCameraRig : EntityComponent
         _settings.Save();
     }
 
-    /// <summary>Advances the mode blend and the wall spring, then writes the camera's rest pose. The
-    /// spring sweeps a small sphere from the pivot out to the camera's desired seat and clamps the
-    /// distance to the first thing it touches, so the camera never ends up inside geometry.</summary>
+    /// <summary>
+    /// One frame of the camera: resolve the context and ease the profile, sample the layers, run the
+    /// wall spring, spring the mode blend, and write the camera. Everything here dereferences the
+    /// injected nodes, so it runs only from inside the input router's not-playing guard.
+    /// </summary>
     public void Tick(double delta)
     {
         float dt = (float)delta;
         ResolveHead();
-        _modeBlend = CameraRigMath.StepBlend(_modeBlend, _modeTarget, dt, ModeBlendSeconds);
+        ResolveLayers();
 
         // The profile leans the camera toward what the player is doing. Eased, because a context
-        // change that cut between framings would be worse than having no profiles at all.
-        CameraProfile wanted = CameraProfile.For(Context);
-        _profile = CameraProfile.Blend(_profile, wanted, CameraRigMath.Damp(dt, wanted.BlendSeconds));
-        ApplyFieldOfView(_settings?.Current);
+        // change that cut between framings would be worse than having no profiles at all — and
+        // eased at a rate chosen per transition, because going into a context and coming out of it
+        // should not take the same time.
+        CameraContext wanted = _inputs.Context;
+        if (wanted != Context)
+        {
+            _profileSeconds = CameraProfile.TransitionSeconds(Context, wanted);
+            Context = wanted;
+        }
 
-        float desired = ThirdPersonRest.Length();
-        _springDistance = CameraRigMath.SpringDistance(
-            _springDistance, desired, AllowedCameraDistance(desired), dt, CameraPushOutSpeed);
+        CameraProfile target = CameraProfile.ForSpeed(Context, _inputs.Speed01);
+        _profile = CameraProfile.Blend(_profile, target, CameraRigMath.Damp(dt, _profileSeconds));
 
-        ApplyCameraRest(ResolveRestOffset() + EyeOffset(dt));
+        CameraNudge nudge = SampleLayers(dt);
+
+        Vector3 third = UpdateSeat(dt, nudge.DistanceScale);
+
+        // Third person is granted once the seat has room, and never withdrawn by this check: once the
+        // swap has begun the wall spring owns the camera, and re-testing every frame would flip a
+        // borderline seat in and out of the swap.
+        if (_wantThird && _modeTarget < 1f && CameraRigMath.SeatUsable(third.Length()))
+        {
+            _modeTarget = 1f;
+            IsFirstPerson = false;
+        }
+
+        CameraRigMath.SpringBlend(ref _modeBlend, ref _modeVelocity, _modeTarget, dt, ModeSettleSeconds);
+
+        UpdatePitch(dt);
+        UpdateFieldOfView(dt, nudge.FovOffset);
+
+        // The eye anchor crossfade: the head-bone seat at blend 0, the fixed-pivot seat at 1. Both ends
+        // are continuous in the blend, so a swap in either direction, or reversed halfway, has
+        // nothing to pop.
+        ApplyCameraRest(CameraRigMath.Blend(EyeOffset(dt), third, _modeBlend), nudge);
+    }
+
+    /// <summary>Finds the entity's camera layers, re-finding them when the component set changes.
+    /// Components are children of the body, so a changed child count is the cheap signal. The
+    /// entity's <c>GetComponents</c> is constrained to <see cref="EntityComponent"/>, which an
+    /// interface is not, so this walks the same children.</summary>
+    private void ResolveLayers()
+    {
+        Node host = Entity!.Body;
+        int count = host.GetChildCount();
+        if (count == _hostChildCount)
+        {
+            return;
+        }
+
+        _hostChildCount = count;
+        _layers.Clear();
+        foreach (Node child in host.GetChildren())
+        {
+            if (child is ICameraLayer layer)
+            {
+                _layers.Add(layer);
+            }
+        }
+
+        if (_samples.Length < _layers.Count)
+        {
+            _samples = new CameraNudge[_layers.Count];
+        }
+    }
+
+    /// <summary>Asks every layer what it wants this frame and sums the answers, clamped.</summary>
+    private CameraNudge SampleLayers(float dt)
+    {
+        var snapshot = new CameraSnapshot(
+            Context, IsFirstPerson, _modeBlend, _inputs.Speed01, _inputs.Grounded, _inputs.Sprinting, _inputs.Mounted);
+        for (int i = 0; i < _layers.Count; i++)
+        {
+            _samples[i] = _layers[i].Sample(dt, snapshot);
+        }
+
+        return CameraRigMath.CombineLayers(_samples.AsSpan(0, _layers.Count));
+    }
+
+    /// <summary>
+    /// Where the third-person camera sits relative to the pivot this frame: the seat at full
+    /// extension, then squeezed by the wall spring.
+    ///
+    /// <para>The seat is probed in stages so a wall is answered with the smallest change that fits:
+    /// the shoulder offset and the rise are each swept from the pivot and squeezed on their own (a
+    /// low ceiling lowers the camera; a wall beside the head narrows the shoulder), with the other
+    /// shoulder swept as well so that, when <c>AutoShoulderSwap</c> is on, the camera swings across
+    /// rather than pulling in. Then a fan of sweeps (<see cref="CameraRigMath.ProbeMotion"/>) to the
+    /// squeezed seat shortens the distance, so a corner the centre line slips past is still
+    /// caught.</para>
+    /// </summary>
+    private Vector3 UpdateSeat(float dt, float layerDistanceScale)
+    {
+        Vector3 home = FullSeat(layerDistanceScale, 1f);
+        if (CameraPivot == null || _queries == null || (!_wantThird && _modeBlend <= 0f))
+        {
+            // Not looking through the orbit, so nothing is being crowded. Hold every spring at clear;
+            // a swap out starts from full extension and the first sweep decides how much is real.
+            _seatFraction = _lateralFraction = _riseFraction = 1f;
+            _seatClear = _lateralClear = _riseClear = 0f;
+            return home;
+        }
+
+        Basis basis = CameraPivot.GlobalBasis;
+        Vector3 origin = CameraPivot.GlobalPosition;
+
+        bool auto = (_settings?.Current.AutoShoulderSwap ?? false) && Mathf.Abs(home.X) > 0.05f;
+        float homeClear = Sweep(origin, basis, new Vector3(home.X, 0f, 0f));
+        float awayClear = auto ? Sweep(origin, basis, new Vector3(-home.X, 0f, 0f)) : 1f;
+        float upClear = Sweep(origin, basis, new Vector3(0f, home.Y, 0f));
+
+        _sinceSwap += dt;
+        bool swapped = auto && CameraRigMath.ShoulderSwapped(_shoulderSwapped, homeClear, awayClear, _sinceSwap);
+        if (swapped != _shoulderSwapped)
+        {
+            _shoulderSwapped = swapped;
+            _sinceSwap = 0f;
+        }
+
+        _swapBlend = Mathf.Lerp(_swapBlend, swapped ? 1f : 0f, CameraRigMath.Damp(dt, ShoulderSwapSeconds));
+        _lateralFraction = CameraRigMath.SpringStep(
+            _lateralFraction, 1f, swapped ? awayClear : homeClear, dt, SqueezePushOutPerSecond,
+            ref _lateralClear, PushHoldSeconds);
+        _riseFraction = CameraRigMath.SpringStep(
+            _riseFraction, 1f, upClear, dt, SqueezePushOutPerSecond, ref _riseClear, PushHoldSeconds);
+
+        var squeezed = new Vector3(
+            home.X * Mathf.Lerp(1f, -1f, _swapBlend) * _lateralFraction,
+            home.Y * _riseFraction,
+            home.Z);
+
+        float safe = 1f;
+        for (int i = 0; i < CameraRigMath.ProbeCount; i++)
+        {
+            safe = Mathf.Min(safe, Sweep(origin, basis, CameraRigMath.ProbeMotion(squeezed, i)));
+        }
+
+        _seatFraction = CameraRigMath.SpringStep(
+            _seatFraction, 1f, safe, dt, SeatPushOutPerSecond, ref _seatClear, PushHoldSeconds);
+        return squeezed * _seatFraction;
+    }
+
+    /// <summary>The seat at full extension, before any wall: the player's own distance and shoulder
+    /// settings, scaled by the profile and the layers, on the shoulder <paramref name="side"/> (1 = the
+    /// chosen one, -1 = the other). ⚠️ The profile SCALES the player's settings rather than replacing
+    /// them: the sliders are accessibility choices, and a profile that overrode them would quietly
+    /// undo one every time the player drew a bow.</summary>
+    private Vector3 FullSeat(float layerDistanceScale, float side)
+    {
+        Settings.Settings? s = _settings?.Current;
+        Vector3 seat = CameraRigMath.ComposeSeat(
+            s?.ThirdPersonDistance ?? PlayerFactory.ThirdPersonBackDistance,
+            _profile.DistanceScale,
+            layerDistanceScale,
+            PlayerFactory.ThirdPersonRise + _profile.RiseOffset,
+            (s?.ShoulderOffset() ?? PlayerFactory.ThirdPersonShoulder) * _profile.ShoulderScale);
+        return new Vector3(seat.X * side, seat.Y, seat.Z);
+    }
+
+    /// <summary>One sphere sweep from <paramref name="origin"/> along a pivot-space motion; the
+    /// fraction of it that is clear.
+    ///
+    /// ⚠️ <b>CameraBlocker, not World.</b> Actor bodies share the World layer, so sweeping it pulled the
+    /// camera in whenever a companion stepped between the player and it — twitchy, and the previous
+    /// note here admitted it and left it. Static world geometry declares itself a blocker
+    /// (RegionStreamer.MarkCameraBlockers, WorldCellPresentation's terrain collider); people simply
+    /// are not on the layer, so the camera passes through them and the obstruction fade handles the
+    /// rest.
+    ///
+    /// ⚠️ NOT CombatLayers.CameraObstruction, which is CameraBlocker PLUS WorldStatic — and
+    /// CharacterEntity still defaults to WorldStatic, so that mask puts actors back in the sweep and
+    /// the companion problem returns exactly as it was. Measured: camera_probe.gd reports 0.60 m with
+    /// a companion behind the player on that mask, 3.87 m on this one.</summary>
+    private float Sweep(Vector3 origin, Basis basis, Vector3 localMotion)
+    {
+        Vector3 motion = basis * localMotion;
+        return motion.LengthSquared() < 0.0001f
+            ? 1f
+            : _queries!.SafeSweepFraction(origin, motion, CameraProbeRadius, CombatLayers.CameraBlocker);
+    }
+
+    /// <summary>Applies the context's pitch limit, easing a pitch a tightening limit has left out of
+    /// range back inside it.</summary>
+    private void UpdatePitch(float dt)
+    {
+        _pitchLimit = CameraRigMath.PitchLimit(_profile.PitchLimit, _modeBlend);
+        float eased = CameraRigMath.EasePitchInto(_pitch, _pitchLimit, dt);
+        if (eased != _pitch)
+        {
+            _pitch = eased;
+            if (CameraPivot != null)
+            {
+                CameraPivot.Rotation = new Vector3(_pitch, 0f, 0f);
+            }
+        }
+    }
+
+    /// <summary>The FOV offset for the frame. The widening a sprint or a roll adds is a kick, so the
+    /// player's FOV Kick comfort scale (which Reduced Motion zeroes) applies to it; the narrowing of an
+    /// aim or a lock is framing and does not.</summary>
+    private void UpdateFieldOfView(float dt, float layerFovOffset)
+    {
+        Settings.Settings? current = _settings?.Current;
+        float kick = CameraComfort.From(current).FovKick;
+        _dodgePunch = CameraRigMath.AsymmetricDamp(
+            _dodgePunch, _inputs.Dodging ? DodgeFovPunch : 0f, dt, PunchRiseSeconds, PunchFallSeconds);
+
+        _fovOffset = CameraRigMath.ScaleFovKick(_profile.FovOffset, kick) + (_dodgePunch * kick) + layerFovOffset;
+        ApplyFieldOfView(current);
     }
 
     /// <summary>
     /// Where the eye sits relative to the pivot, in pivot space — the head bone, smoothed, clamped,
-    /// and faded out as the camera leaves first person.
+    /// and kept out of walls.
     ///
     /// ⚠️ <b>Position only. The head's ROTATION is deliberately ignored.</b> Taking it would hand
     /// the player every head turn in every clip as an involuntary camera movement, which is the
@@ -212,7 +488,7 @@ public partial class PlayerCameraRig : EntityComponent
         }
 
         Transform3D head = _skeleton.GlobalTransform * _skeleton.GetBoneGlobalPose(_headBone);
-        Vector3 forward = -CameraPivot.GlobalTransform.Basis.Z;
+        Vector3 forward = -CameraPivot.GlobalBasis.Z;
         Vector3 world = head.Origin + (forward * EyeForward) + (Vector3.Up * EyeRise);
         Vector3 target = CameraPivot.ToLocal(world);
 
@@ -223,14 +499,40 @@ public partial class PlayerCameraRig : EntityComponent
 
         // Seeded rather than lerped from zero, so entering first person does not swoop from the
         // pivot up to the head over the first few frames.
-        _eyeLocal = _eyeSeeded
-            ? _eyeLocal.Lerp(target, CameraRigMath.Damp(dt, EyeSmoothSeconds))
-            : target;
-        _eyeSeeded = true;
+        if (!_eyeSeeded)
+        {
+            _eyeLocal = target;
+            _eyeGuard = 1f;
+            _eyeClear = 0f;
+            _eyeSeeded = true;
+        }
+        else
+        {
+            _eyeLocal = _eyeLocal.Lerp(target, CameraRigMath.Damp(dt, EyeSmoothSeconds));
+        }
 
-        // Faded out by the mode blend so the third-person orbit is measured from the fixed pivot and
-        // does not inherit a bobbing origin.
-        return _eyeLocal * (1f - CameraRigMath.Ease(_modeBlend));
+        return _eyeLocal * GuardEye(dt);
+    }
+
+    /// <summary>
+    /// The first-person near-plane guard: how much of the eye's offset from the pivot the way to it
+    /// leaves clear. A head that leans into a wall (a lunge, a stagger against a corner) would put the
+    /// near plane through it, so the eye is held back — pulled in at once, eased out again — exactly
+    /// as the third-person seat is.
+    /// </summary>
+    private float GuardEye(float dt)
+    {
+        if (_queries == null || CameraPivot == null || _eyeLocal.LengthSquared() < 0.0004f)
+        {
+            _eyeGuard = 1f;
+            return 1f;
+        }
+
+        float clear = _queries.SafeSweepFraction(
+            CameraPivot.GlobalPosition, CameraPivot.GlobalBasis * _eyeLocal, EyeProbeRadius, CombatLayers.CameraBlocker);
+        _eyeGuard = CameraRigMath.SpringStep(
+            _eyeGuard, 1f, clear, dt, EyePushOutPerSecond, ref _eyeClear, PushHoldSeconds * 0.4f);
+        return _eyeGuard;
     }
 
     /// <summary>Finds the head bone once the body exists. Deferred rather than done in
@@ -268,10 +570,11 @@ public partial class PlayerCameraRig : EntityComponent
     }
 
     /// <summary>Applies one look step to the pitch and writes it to the pivot. The look components
-    /// decide how much; the rig owns what it means, because the pivot is the camera's.</summary>
+    /// decide how much; the rig owns what it means, because the pivot is the camera's — including how
+    /// far the current context lets the player look up and down.</summary>
     public void ApplyPitchStep(float step, bool invertY)
     {
-        _pitch = SettingsMath.ApplyPitch(_pitch, step, invertY, PitchLimit);
+        _pitch = SettingsMath.ApplyPitch(_pitch, step, invertY, _pitchLimit);
         if (CameraPivot != null)
         {
             CameraPivot.Rotation = new Vector3(_pitch, 0f, 0f);
@@ -283,17 +586,22 @@ public partial class PlayerCameraRig : EntityComponent
     public float Pullback =>
         Camera != null && CameraPivot != null ? Camera.GlobalPosition.DistanceTo(CameraPivot.GlobalPosition) : 0f;
 
-    /// <summary>Pushes the FOV setting onto the player camera. It lives here rather than in
-    /// <see cref="SettingsService"/> because it is a property of <em>this</em> camera, not of the
-    /// engine, and the service has no handle on the player.</summary>
+    /// <summary>Pushes the FOV setting, plus this frame's offset, onto the player camera. It lives here
+    /// rather than in <see cref="SettingsService"/> because it is a property of <em>this</em> camera,
+    /// not of the engine, and the service has no handle on the player. Also called when settings
+    /// change, so the slider previews live even while the game is paused behind the panel.</summary>
     private void ApplyFieldOfView(Settings.Settings? current)
     {
-        if (Camera != null && current != null)
+        if (current == null)
         {
-            // Same rule as the distance: the player's FOV is the baseline and the profile leans off
-            // it, clamped to the range the settings panel itself allows so no context can push the
-            // camera somewhere the player could not have chosen.
-            Camera.Fov = Mathf.Clamp(current.FieldOfView + _profile.FovOffset, 55f, 115f);
+            return;
+        }
+
+        float fov = CameraRigMath.ComposeFov(current.FieldOfView, _fovOffset);
+        _lookScale = CameraRigMath.LookScale(fov, current.FieldOfView);
+        if (Camera != null)
+        {
+            Camera.Fov = fov;
         }
     }
 
@@ -305,73 +613,15 @@ public partial class PlayerCameraRig : EntityComponent
         SetFirstPerson(!e.Current.ThirdPersonCamera);
     }
 
-    /// <summary>The third-person rest offset at full extension, before the wall spring. Read from
-    /// the live settings each frame so the distance/shoulder sliders move the camera while the
-    /// player drags them, rather than on the next mode swap.</summary>
-    private Vector3 ThirdPersonRest
-    {
-        get
-        {
-            Settings.Settings? s = _settings?.Current;
-            // ⚠️ The profile SCALES the player's own settings rather than replacing them. The
-            // distance and shoulder sliders are accessibility choices; a profile that overrode them
-            // would quietly undo one every time the player drew a bow.
-            return CameraRigMath.RestOffset(
-                firstPerson: false,
-                (s?.ThirdPersonDistance ?? PlayerFactory.ThirdPersonBackDistance) * _profile.DistanceScale,
-                PlayerFactory.ThirdPersonRise + _profile.RiseOffset,
-                (s?.ShoulderOffset() ?? PlayerFactory.ThirdPersonShoulder) * _profile.ShoulderScale);
-        }
-    }
-
-    /// <summary>The camera's rest offset this frame: the eased blend between the two modes, with the
-    /// third-person leg shortened to whatever the wall spring currently allows.</summary>
-    private Vector3 ResolveRestOffset()
-    {
-        Vector3 full = ThirdPersonRest;
-        float extent = full.Length();
-        Vector3 third = extent > 0.0001f ? full * (_springDistance / extent) : Vector3.Zero;
-        return CameraRigMath.Blend(Vector3.Zero, third, CameraRigMath.Ease(_modeBlend));
-    }
-
-    private void ApplyCameraRest(Vector3 rest)
+    /// <summary>Writes the camera: the rest pose, then whatever the layers asked for on top. The rest
+    /// pose alone is what <see cref="CameraRestPosition"/> hands to anything that offsets around it.</summary>
+    private void ApplyCameraRest(Vector3 rest, in CameraNudge nudge)
     {
         _cameraRest = rest;
         if (Camera != null)
         {
-            Camera.Position = rest;
+            Camera.Position = rest + nudge.Offset;
+            Camera.Rotation = nudge.Euler;
         }
     }
-
-    /// <summary>How far the camera can sit from the pivot before it would clip world geometry.
-    /// Returns <paramref name="desired"/> when nothing is in the way (including in first person,
-    /// where the blend collapses the offset to zero anyway and the cast would be wasted work).</summary>
-    private float AllowedCameraDistance(float desired)
-    {
-        if (_modeBlend <= 0f || CameraPivot == null || _queries == null || desired <= 0.0001f)
-        {
-            return desired;
-        }
-
-        // ⚠️ CameraBlocker, not World. Actor bodies share the World layer, so sweeping it pulled the
-        // camera in whenever a companion stepped between the player and it — twitchy, and the
-        // previous note here admitted it and left it. Static world geometry declares itself a
-        // blocker (RegionStreamer.MarkCameraBlockers, WorldCellPresentation's terrain collider);
-        //
-        // ⚠️ NOT CombatLayers.CameraObstruction, which is CameraBlocker PLUS WorldStatic — and
-        // CharacterEntity still defaults to WorldStatic, so that mask puts actors back in the
-        // sweep and the companion problem returns exactly as it was. Measured:
-        // camera_probe.gd reports 0.60 m with a companion behind the player on that mask, 3.87 m
-        // on this one.
-        // people simply are not on the layer, so the camera passes through them and the obstruction
-        // fade handles the rest.
-        float safe = _queries.SafeSweepFraction(
-            CameraPivot.GlobalPosition,
-            CameraPivot.GlobalTransform.Basis * ThirdPersonRest,
-            CameraProbeRadius,
-            CombatLayers.CameraBlocker);
-
-        return desired * safe;
-    }
-
 }

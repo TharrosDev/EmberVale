@@ -49,6 +49,12 @@ settings.tp_shoulder,Camera Shoulder
 settings.tp_shoulder.right,Right
 settings.tp_shoulder.left,Left
 settings.tp_shoulder.centre,Centred
+settings.cam_auto_shoulder,Auto Shoulder Swap
+settings.cam_lock_framing,Lock-On Framing
+settings.cam_obstruction_fade,Fade Obstructions
+settings.cam_shake,Camera Shake
+settings.cam_bob,Head Bob
+settings.cam_fov_kick,FOV Kick
 settings.reduced_motion,Reduced Motion
 settings.subtitles,Subtitles
 settings.ui_scale,UI Scale
@@ -59,7 +65,7 @@ settings.color_vision.none,Off
 settings.color_vision.deuteranopia,Deuteranopia
 settings.color_vision.protanopia,Protanopia
 settings.color_vision.tritanopia,Tritanopia
-settings.reduced_motion.note,Stops panels sliding and magical motifs turning. Nothing is hidden — only held still.
+settings.reduced_motion.note,Stops panels sliding and magical motifs turning, and calms the camera: no head bob or FOV kick and only a light shake. Nothing is hidden — only held still.
 settings.text_scale.note,Sizes text on its own. Unlike UI Scale this leaves panels and spacing where they are.
 settings.high_contrast.note,Solid panel backgrounds, no parchment grain, heavier frames.
 settings.color_vision.note,"Deuteranopia is green-weak, protanopia red-weak, tritanopia blue-yellow. Re-tints interface colours so shades that would blur together stay apart. Rarity also uses brightness and frame width, so it reads with colour off entirely."

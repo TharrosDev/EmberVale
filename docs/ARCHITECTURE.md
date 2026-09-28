@@ -150,7 +150,7 @@ Six components, added last and in order by `PlayerFactory`:
 | Component | Owns |
 | --- | --- |
 | `PlayerPhysicsQueries` | the pooled ray/sweep/overlap queries and the exclusion list (shared by three readers) |
-| `PlayerCameraRig` | camera, view modes, blend, wall spring, FOV |
+| `PlayerCameraRig` | camera, view modes, blend, wall spring, FOV, layer summing |
 | `PlayerLookInput` | mouse/stick turning, mouse capture |
 | `InteractionSensor` | what `E` acts on, the HUD prompt, the hold-`E` pickup sweep |
 | `AimController` | the `AimPoint` |
@@ -163,9 +163,15 @@ Six components, added last and in order by `PlayerFactory`:
   Third person is over-the-shoulder; body yaw equals camera yaw in both. The mode is
   `Settings.ThirdPersonCamera` (settings toggle and `V` flip the same value). Distance (2–6 m),
   shoulder and FOV are live settings applied by the rig.
-- `CameraProfile` (exploration, sprint, combat, target-lock, aim) multiplies the player's settings,
-  never replaces them. The spring sweeps `WorldStatic | CameraBlocker` only, so actors never yank the
-  camera. `CameraRigMath` is pure; `CameraRestPosition` is what `CameraShake` offsets.
+- `CameraProfile` (exploration, sprint, combat, target-lock, aim, mounted) multiplies the player's
+  settings, never replaces them. The spring sweeps `CameraBlocker` only, so actors never yank the
+  camera. `CameraRigMath` is pure.
+- ⚠️ **The rig is the only writer of the camera transform.** Shake, motion, lock-on/aim framing and the
+  special views are `ICameraLayer` components on the player body that return a `CameraNudge`; the rig
+  finds them by walking the body's children (`IEntity.GetComponents` is constrained to
+  `EntityComponent`, so an interface cannot go through it) and sums them in `CombineLayers`. A layer
+  that writes `Camera.Position` or `Rotation` itself puts two writers on one transform. Feel layers
+  scale by `CameraComfort`. The rig ticks from the router, so it does not run while the tree is paused.
 - Aim comes from the camera; interact reach is measured from the character. Lock-on facing is
   `LockOnComponent.FaceTarget()`.
 

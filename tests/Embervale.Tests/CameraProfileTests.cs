@@ -64,8 +64,130 @@ public class CameraProfileTests
             Assert.InRange(p.DistanceScale, 0.5f, 1.5f);
             Assert.InRange(p.FovOffset, -20f, 20f);
             Assert.InRange(p.ShoulderScale, 0.5f, 2f);
-            Assert.True(p.BlendSeconds > 0f, $"{context} must ease rather than cut");
+            Assert.InRange(p.RiseOffset, 0f, 0.6f);
+            Assert.InRange(p.PitchLimit, 0.9f, 1.45f);
+            Assert.True(p.BlendSeconds > 0f, $"{context} must ease in rather than cut");
+            Assert.True(p.ReleaseSeconds > 0f, $"{context} must ease out rather than cut");
         }
+    }
+
+    [Fact]
+    public void MountedOutranksCombatButNotALockOrAnAim()
+    {
+        Assert.Equal(CameraContext.Mounted,
+            CameraProfile.Resolve(aiming: false, lockedOn: false, inCombat: true, sprinting: true, mounted: true));
+        Assert.Equal(CameraContext.TargetLock,
+            CameraProfile.Resolve(aiming: false, lockedOn: true, inCombat: true, sprinting: true, mounted: true));
+        Assert.Equal(CameraContext.Aim,
+            CameraProfile.Resolve(aiming: true, lockedOn: true, inCombat: true, sprinting: true, mounted: true));
+        Assert.Equal(CameraContext.Mounted,
+            CameraProfile.Resolve(aiming: false, lockedOn: false, inCombat: false, sprinting: false, mounted: true));
+    }
+
+    [Fact]
+    public void MountedSitsHigherAndFurtherBackThanOnFoot()
+    {
+        CameraProfile mounted = CameraProfile.For(CameraContext.Mounted);
+        Assert.True(mounted.DistanceScale > 1f);
+        Assert.True(mounted.RiseOffset > CameraProfile.For(CameraContext.Exploration).RiseOffset);
+    }
+
+    [Fact]
+    public void ASprintLeansByHowFastTheBodyIsActuallyMoving()
+    {
+        // Stopped against a wall, or only at walking pace, a "sprint" must not be framed as a chase.
+        CameraProfile still = CameraProfile.ForSpeed(CameraContext.Sprint, 0f);
+        CameraProfile walking = CameraProfile.ForSpeed(CameraContext.Sprint, CameraProfile.SprintLeanFloor);
+        CameraProfile half = CameraProfile.ForSpeed(CameraContext.Sprint, 0.8f);
+        CameraProfile full = CameraProfile.ForSpeed(CameraContext.Sprint, 1f);
+
+        Assert.Equal(0f, still.FovOffset, 4);
+        Assert.Equal(0f, walking.FovOffset, 4);
+        Assert.InRange(half.FovOffset, 0.1f, full.FovOffset - 0.1f);
+        Assert.Equal(CameraProfile.For(CameraContext.Sprint).FovOffset, full.FovOffset, 4);
+        Assert.Equal(CameraProfile.For(CameraContext.Sprint).DistanceScale, full.DistanceScale, 4);
+        Assert.InRange(CameraProfile.ForSpeed(CameraContext.Sprint, 7f).FovOffset, 0f, full.FovOffset + 0.001f);
+    }
+
+    [Fact]
+    public void AMountLeansFromItsRestingSeatTowardAGallop()
+    {
+        CameraProfile rest = CameraProfile.ForSpeed(CameraContext.Mounted, 0f);
+        CameraProfile gallop = CameraProfile.ForSpeed(CameraContext.Mounted, 1f);
+
+        Assert.Equal(CameraProfile.For(CameraContext.Mounted), rest);
+        Assert.True(gallop.FovOffset > rest.FovOffset);
+        Assert.True(gallop.DistanceScale > rest.DistanceScale);
+    }
+
+    [Fact]
+    public void OtherContextsIgnoreSpeed()
+    {
+        foreach (CameraContext context in new[]
+                 { CameraContext.Exploration, CameraContext.Combat, CameraContext.TargetLock, CameraContext.Aim })
+        {
+            Assert.Equal(CameraProfile.For(context), CameraProfile.ForSpeed(context, 0f));
+            Assert.Equal(CameraProfile.For(context), CameraProfile.ForSpeed(context, 1f));
+        }
+    }
+
+    [Fact]
+    public void LeaningIntoAContextAndSettlingOutOfItTakeDifferentTimes()
+    {
+        // ⚠️ The asymmetry is the feel: an aim snaps in and lets go slowly, and a fight's framing
+        // holds so it does not pump in and out between swings.
+        Assert.Equal(CameraProfile.For(CameraContext.Aim).BlendSeconds,
+            CameraProfile.TransitionSeconds(CameraContext.Exploration, CameraContext.Aim));
+        Assert.Equal(CameraProfile.For(CameraContext.Aim).ReleaseSeconds,
+            CameraProfile.TransitionSeconds(CameraContext.Aim, CameraContext.Exploration));
+        Assert.True(
+            CameraProfile.TransitionSeconds(CameraContext.Aim, CameraContext.Exploration) >
+            CameraProfile.TransitionSeconds(CameraContext.Exploration, CameraContext.Aim),
+            "an aim lets go more slowly than it snaps in");
+        Assert.True(
+            CameraProfile.TransitionSeconds(CameraContext.Combat, CameraContext.Exploration) >
+            CameraProfile.TransitionSeconds(CameraContext.Exploration, CameraContext.Combat),
+            "combat framing is sticky");
+    }
+
+    [Fact]
+    public void SettlingToAnyLessSpecificContextUsesTheReleaseTime()
+    {
+        Assert.Equal(CameraProfile.For(CameraContext.Combat).ReleaseSeconds,
+            CameraProfile.TransitionSeconds(CameraContext.Combat, CameraContext.Sprint));
+        Assert.Equal(CameraProfile.For(CameraContext.TargetLock).BlendSeconds,
+            CameraProfile.TransitionSeconds(CameraContext.Combat, CameraContext.TargetLock));
+        Assert.Equal(CameraProfile.For(CameraContext.Sprint).BlendSeconds,
+            CameraProfile.TransitionSeconds(CameraContext.Sprint, CameraContext.Sprint));
+    }
+
+    [Fact]
+    public void AimAndLockLookLessFarUpAndDownThanExploration()
+    {
+        float exploring = CameraProfile.For(CameraContext.Exploration).PitchLimit;
+        Assert.True(CameraProfile.For(CameraContext.TargetLock).PitchLimit < exploring);
+        Assert.True(CameraProfile.For(CameraContext.Mounted).PitchLimit < exploring);
+        Assert.True(CameraProfile.For(CameraContext.Aim).PitchLimit < exploring);
+    }
+
+    [Fact]
+    public void ASprintOnlyFramesAsOneOnTheGround()
+    {
+        var running = new CameraInputs(false, false, false, false, Sprinting: true, Grounded: true, false, 1f);
+        var jumping = running with { Grounded = false };
+
+        Assert.Equal(CameraContext.Sprint, running.Context);
+        Assert.Equal(CameraContext.Exploration, jumping.Context);
+        Assert.Equal(CameraContext.Exploration, CameraInputs.Idle.Context);
+    }
+
+    [Fact]
+    public void TheInputsResolveEveryContext()
+    {
+        Assert.Equal(CameraContext.Aim, (CameraInputs.Idle with { Aiming = true }).Context);
+        Assert.Equal(CameraContext.TargetLock, (CameraInputs.Idle with { LockedOn = true }).Context);
+        Assert.Equal(CameraContext.Combat, (CameraInputs.Idle with { InCombat = true }).Context);
+        Assert.Equal(CameraContext.Mounted, (CameraInputs.Idle with { Mounted = true }).Context);
     }
 
     [Fact]

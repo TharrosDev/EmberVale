@@ -71,6 +71,29 @@ public partial class Settings : Resource
     public float ShoulderOffset() =>
         Player.CameraRigMath.ShoulderOffset(ThirdPersonShoulderSide, Player.PlayerFactory.ThirdPersonShoulder);
 
+    // --- Camera comfort ---------------------------------------------------
+    // Read through Player.CameraComfort so Reduced Motion (below) scales all of them at once.
+
+    /// <summary>How hard hits, landings and blasts shake the camera. 0 = none, 1 = full.</summary>
+    [Export(PropertyHint.Range, "0,1")] public float CameraShakeIntensity { get; set; } = 1f;
+
+    /// <summary>First-person head bob and sway while moving. 0 = a rock-steady eye.</summary>
+    [Export(PropertyHint.Range, "0,1")] public float HeadBob { get; set; } = 0.6f;
+
+    /// <summary>How far sprinting, dodging and landing punch the field of view. 0 = never.</summary>
+    [Export(PropertyHint.Range, "0,1")] public float FovKick { get; set; } = 0.6f;
+
+    /// <summary>Third person only: swing to the other shoulder instead of pulling in when the
+    /// chosen one is against a wall.</summary>
+    [Export] public bool AutoShoulderSwap { get; set; } = true;
+
+    /// <summary>Lock-on and aim frame the camera toward the target instead of leaving it fixed
+    /// behind the player.</summary>
+    [Export] public bool LockOnFraming { get; set; } = true;
+
+    /// <summary>Props between the camera and the player thin out rather than blocking the view.</summary>
+    [Export] public bool ObstructionFade { get; set; } = true;
+
     /// <summary>Whether the onboarding hints appear (Phase 33B). Off means a returning player is
     /// never taught a verb they already know.</summary>
     [Export] public bool ShowTutorials { get; set; } = true;
