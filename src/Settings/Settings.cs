@@ -94,6 +94,24 @@ public partial class Settings : Resource
     /// <summary>Props between the camera and the player thin out rather than blocking the view.</summary>
     [Export] public bool ObstructionFade { get; set; } = true;
 
+    // --- Combat comfort ---------------------------------------------------
+    // Read through Combat.CombatComfort so Reduced Motion (below) scales them at once.
+
+    /// <summary>How long a landed blow freezes the frame. 0 = never, 1 = full.</summary>
+    [Export(PropertyHint.Range, "0,1")] public float HitStopIntensity { get; set; } = 1f;
+
+    /// <summary>Strength of the full-screen flash on crits, blocks, staggers and parries.</summary>
+    [Export(PropertyHint.Range, "0,1")] public float CombatFlashIntensity { get; set; } = 1f;
+
+    /// <summary>Floating damage numbers over what you hit.</summary>
+    [Export] public bool DamageNumbers { get; set; } = true;
+
+    /// <summary>Lock-on picks and cycles targets for you, and holds through brief occlusion.</summary>
+    [Export] public bool LockOnAssist { get; set; } = true;
+
+    /// <summary>How far a bow's aim is pulled toward a target near the crosshair. 0 = none.</summary>
+    [Export(PropertyHint.Range, "0,1")] public float AimAssistStrength { get; set; } = 0.5f;
+
     /// <summary>Whether the onboarding hints appear (Phase 33B). Off means a returning player is
     /// never taught a verb they already know.</summary>
     [Export] public bool ShowTutorials { get; set; } = true;

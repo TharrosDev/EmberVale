@@ -435,70 +435,17 @@ public partial class CharacterActionComponent : EntityComponent
     /// That happened; this exists so it cannot happen again.</summary>
     public void AimAt(Vector3 point) => AimPoint = point;
 
-    /// <summary>Pooled arrows, built on first use so a melee actor never pays for one.</summary>
-    private Core.Pooling.NodePool<Arrow>? _arrows;
+    /// <summary>Owns the pooled arrows and the bow's release rules (see <see cref="RangedAttack"/>).</summary>
+    private readonly RangedAttack _ranged = new();
 
-    protected override void OnTeardown()
-    {
-        // Parked arrows are detached nodes and are not freed with their owner's scene.
-        // Release their render/physics resources when a streamed actor leaves the world.
-        _arrows?.Clear();
-        _arrows = null;
-    }
+    protected override void OnTeardown() => _ranged.Clear();
 
-    private void ReleaseArrow(Arrow arrow)
-    {
-        if (_arrows != null)
-            _arrows.Return(arrow);
-        else
-            arrow.QueueFree(); // A shot may finish after its owner has left the scene.
-    }
-
-    /// <summary>
-    /// Sends an arrow instead of opening a volume.
-    ///
-    /// ⚠️ It spawns on the action's release frame like everything else — the string is drawn, and the
-    /// arrow leaves when the animation shows it leaving. A bow that fired on key-down would put the
-    /// arrow across the room before the draw finished, which is the melee desync all over again in a
-    /// system that never had it.
-    /// </summary>
     private void Shoot(ActionDefinitionResource definition)
     {
-        if (Weapon is not { IsRanged: true } bow || Entity?.Body is not Node3D body)
+        if (Weapon is { IsRanged: true } bow && Entity?.Body is Node3D body)
         {
-            return;
+            _ranged.Fire(bow, definition, Entity, body, _stats, _combat, _mount, AimPoint);
         }
-
-        _arrows ??= new Core.Pooling.NodePool<Arrow>(() => new Arrow { Released = ReleaseArrow }, prewarm: 2);
-
-        float mounted = MountedCombat.DamageScale(
-            _mount is { IsMounted: true }, _mount is { IsGalloping: true });
-        (float amount, bool isCrit) = CombatMath.RollAttack(
-            bow.BaseDamage * definition.DamageScale * mounted, _stats);
-
-        Vector3 from = body.GlobalPosition + (Vector3.Up * 1.4f);
-        Vector3 direction = AimPoint is { } aim && aim.DistanceSquaredTo(from) > 0.04f
-            ? (aim - from).Normalized()
-            : -body.GlobalBasis.Z;
-
-        Arrow arrow = _arrows.Get();
-        if (arrow.GetParent() == null)
-        {
-            // ⚠️ CurrentScene is null outside a normal game boot — every `--script` harness runs with
-            // no current scene — and `CurrentScene?.AddChild` then silently does nothing. The arrow
-            // is a live object that is not in the tree: no physics, no overlaps, no hit, no error.
-            // Falling back to the tree root keeps it in the WORLD (never parented to the shooter,
-            // which would carry it along) and keeps the probes honest.
-            SceneTree tree = body.GetTree();
-            (tree.CurrentScene ?? tree.Root).AddChild(arrow);
-        }
-
-        arrow.GlobalPosition = from;
-        arrow.Launch(
-            new DamagePacket(amount, bow.DamageType, Entity, isCrit,
-                bow.PoiseDamage * definition.PoiseScale),
-            Entity, _combat?.Team ?? 0, direction,
-            bow.ProjectileSpeed, bow.ProjectileRange, bow.ProjectileModelPath);
     }
 
     private void OpenHitbox(ActionDefinitionResource definition)

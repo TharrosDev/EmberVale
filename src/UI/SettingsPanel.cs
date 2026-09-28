@@ -172,6 +172,16 @@ public partial class SettingsPanel : CanvasLayer
             v => s.HeadBob = (float)v));
         body.AddChild(SliderRow(Loc.T("settings.cam_fov_kick"), 0.0, 1.0, 0.05, s.FovKick,
             v => s.FovKick = (float)v));
+        body.AddChild(SliderRow(Loc.T("settings.combat_hit_stop"), 0.0, 1.0, 0.05, s.HitStopIntensity,
+            v => s.HitStopIntensity = (float)v));
+        body.AddChild(SliderRow(Loc.T("settings.combat_flash"), 0.0, 1.0, 0.05, s.CombatFlashIntensity,
+            v => s.CombatFlashIntensity = (float)v));
+        body.AddChild(ToggleRow(Loc.T("settings.combat_numbers"), s.DamageNumbers,
+            v => { s.DamageNumbers = v; Persist(); }));
+        body.AddChild(ToggleRow(Loc.T("settings.combat_lock_assist"), s.LockOnAssist,
+            v => { s.LockOnAssist = v; Persist(); }));
+        body.AddChild(SliderRow(Loc.T("settings.combat_aim_assist"), 0.0, 1.0, 0.05, s.AimAssistStrength,
+            v => s.AimAssistStrength = (float)v));
         body.AddChild(ToggleRow(Loc.T("settings.show_tutorials"), s.ShowTutorials, v =>
         {
             s.ShowTutorials = v;

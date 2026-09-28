@@ -176,6 +176,14 @@ public static class PlayerFactory
         player.AddChild(new WeaponTrailComponent { Name = "WeaponTrail" });
         player.AddChild(new DodgeComponent { Name = "Dodge" });
         player.AddChild(new LockOnComponent { Name = "LockOn", Camera = camera });
+        // --- combat-offence: this group's player components go between the markers (one owner per block) ---
+        // --- end combat-offence ---
+        // --- combat-defence: this group's player components go between the markers (one owner per block) ---
+        // --- end combat-defence ---
+        // --- combat-feedback: this group's player components go between the markers (one owner per block) ---
+        // --- end combat-feedback ---
+        // --- combat-ranged: this group's player components go between the markers (one owner per block) ---
+        // --- end combat-ranged ---
         // 39A: the mount rides ON this body rather than beside it, so it is a component of the
         // player and not an entity of its own. It reads the animation component and the camera
         // pivot, both of which exist by the time any OnInitialize runs.
