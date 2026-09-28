@@ -84,6 +84,7 @@ public class EnumStabilityTests
         Assert.Equal(2, (int)CameraContext.Combat);
         Assert.Equal(3, (int)CameraContext.TargetLock);
         Assert.Equal(4, (int)CameraContext.Aim);
+        Assert.Equal(5, (int)CameraContext.Mounted);
     }
 
     [Fact]

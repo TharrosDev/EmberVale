@@ -67,7 +67,7 @@ public partial class PlayerLookInput : EntityComponent
             return;
         }
 
-        float multiplier = _settings?.Current.MouseSensitivity ?? 1f;
+        float multiplier = LookMultiplier();
         bool invertY = _settings?.Current.InvertY ?? false;
         float dt = (float)delta;
 
@@ -103,7 +103,7 @@ public partial class PlayerLookInput : EntityComponent
             return;
         }
 
-        float multiplier = _settings?.Current.MouseSensitivity ?? 1f;
+        float multiplier = LookMultiplier();
         bool invertY = _settings?.Current.InvertY ?? false;
 
         // While locked on, the body auto-faces the target — mouse only pitches.
@@ -115,6 +115,12 @@ public partial class PlayerLookInput : EntityComponent
         _rig?.ApplyPitchStep(
             SettingsMath.LookStep(motion.Relative.Y, MouseSensitivity, multiplier), invertY);
     }
+
+    /// <summary>The player's sensitivity setting, slowed while the view is narrowed. An aim that
+    /// narrows the field of view but turns at the full angular rate is twitchy exactly when precision
+    /// matters; scaling by the rig's <see cref="PlayerCameraRig.LookScale"/> keeps the turn a constant
+    /// part of the screen instead.</summary>
+    private float LookMultiplier() => (_settings?.Current.MouseSensitivity ?? 1f) * (_rig?.LookScale ?? 1f);
 
     private void OnGameStateChanged(GameStateChangedEvent e) => CaptureMouse(e.Current == GameState.Playing);
 
