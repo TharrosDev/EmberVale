@@ -267,6 +267,10 @@ public static class PlayerFactory
         player.AddChild(new AimController { Name = "Aim", AimNode = aimNode });
         player.AddChild(new PlayerInputRouter { Name = "InputRouter" });
 
+        // --- camera framing layer (B) ---
+        player.AddChild(new CameraFramingLayer { Name = "CameraFraming" });
+        // --- end ---
+
         // The shake offsets around the rig's mode-aware rest pose — a fixed rest would snap the
         // camera back into the head after a crit while playing third-person. Looked up through the
         // player rather than captured, so the delegate cannot outlive the component it reads.

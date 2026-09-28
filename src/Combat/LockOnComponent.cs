@@ -1,5 +1,8 @@
 using System.Collections.Generic;
+using Embervale.Core.Services;
 using Embervale.Entities;
+using Embervale.Player;
+using Embervale.Settings;
 using Embervale.Stats;
 using Godot;
 
@@ -11,6 +14,11 @@ namespace Embervale.Combat;
 /// cycles between nearby hostiles, and drops a target that dies or leaves range. The owning controller
 /// faces the body at the target; the HUD reticles it. Target queries are a physics sphere sweep, run only
 /// on input (toggle/cycle), never per frame.
+///
+/// <para>The camera-facing rules (Settings.LockOnFraming) are: cycling walks the candidates left to
+/// right on screen, a target lost to range or cover gets a short grace before the lock breaks, and the
+/// body swings round to a newly locked target over a beat instead of cutting. With the setting off all
+/// three fall back to the original behaviour.</para>
 /// </summary>
 [GlobalClass]
 public partial class LockOnComponent : EntityComponent
@@ -20,10 +28,50 @@ public partial class LockOnComponent : EntityComponent
     /// <summary>A locked target is kept until it leaves this (larger) range.</summary>
     [Export] public float DropRange { get; set; } = 24f;
 
+    /// <summary>Seconds the body takes to swing round to a newly locked target, after which it faces
+    /// exactly (no lag on a moving foe).</summary>
+    private const float SettleSeconds = 0.3f;
+
+    /// <summary>Ease time of that swing.</summary>
+    private const float SettleEaseSeconds = 0.07f;
+
+    /// <summary>Top speed of that swing, radians a second (about 515 degrees).</summary>
+    private const float SettleMaxRate = 9f;
+
+    /// <summary>A target is dropped outright, grace or not, past this multiple of the drop range.</summary>
+    private const float HardDropFactor = 1.25f;
+
+    /// <summary>Seconds between line-of-sight checks on the held target.</summary>
+    private const float SightInterval = 0.1f;
+
     private CharacterBody3D? _body;
     private int _team;
+    private SettingsService? _settings;
+    private IEntity? _target;
+    private float _lostSeconds;
+    private float _settleLeft;
+    private float _sightTimer;
+    private bool _inSight = true;
+    private ulong _tickStamp;
+    private ulong _faceStamp;
 
-    public IEntity? Target { get; private set; }
+    public IEntity? Target
+    {
+        get => _target;
+        private set
+        {
+            if (!ReferenceEquals(_target, value))
+            {
+                _target = value;
+                _lostSeconds = 0f;
+                _sightTimer = 0f;
+                _inSight = true;
+                _tickStamp = 0;
+                _faceStamp = 0;
+                _settleLeft = value != null ? SettleSeconds : 0f;
+            }
+        }
+    }
 
     public bool IsLocked => Target != null;
 
@@ -31,7 +79,13 @@ public partial class LockOnComponent : EntityComponent
     {
         _body = Entity!.Body as CharacterBody3D;
         _team = Entity!.GetComponent<CombatComponent>()?.Team ?? 0;
+        _settings = ServiceLocator.Instance is { } locator && locator.TryGet(out SettingsService settings)
+            ? settings
+            : null;
     }
+
+    /// <summary>Whether the eased lock behaviour is on; true with no settings service.</summary>
+    private bool Framing => _settings?.Current.LockOnFraming ?? true;
 
     /// <summary>Toggles lock: releases if already locked, otherwise locks the <paramref name="preferred"/>
     /// entity (the aimed-at focus) if it's a valid hostile, else the nearest hostile.</summary>
@@ -46,24 +100,81 @@ public partial class LockOnComponent : EntityComponent
         Target = IsValid(preferred) ? preferred : Nearest();
     }
 
-    /// <summary>Switches to the next/previous nearby hostile.</summary>
+    /// <summary>Switches to the next/previous nearby hostile. With the framing setting on this is
+    /// left to right across the screen; nothing to switch to leaves a good lock alone.</summary>
     public void Cycle(int dir)
     {
         List<IEntity> targets = Acquire();
         if (targets.Count == 0)
         {
-            Target = null;
+            // Nothing to cycle to must not break a lock that is still good.
+            if (Target == null || !Framing)
+            {
+                Target = null;
+            }
+
             return;
         }
 
         int current = Target != null ? targets.IndexOf(Target) : -1;
-        Target = targets[LockOn.CycleIndex(current, targets.Count, dir)];
+        if (!Framing)
+        {
+            Target = targets[LockOn.CycleIndex(current, targets.Count, dir)];
+            return;
+        }
+
+        // Left to right on screen rather than down a score list that reshuffles as things move.
+        var bearings = new List<float>(targets.Count);
+        foreach (IEntity candidate in targets)
+        {
+            bearings.Add(BearingOf(candidate));
+        }
+
+        Target = targets[LockOn.CycleByBearing(bearings, current, dir)];
     }
 
-    /// <summary>Drops the target if it has died or left range. Cheap — call each frame.</summary>
+    /// <summary>
+    /// Drops the target if it has died or is gone for good. Cheap — call each frame. A target that
+    /// has only stepped out of range or behind cover keeps the lock for
+    /// <see cref="LockOn.LossGraceSeconds"/> so a dodge round a pillar does not throw away the lock
+    /// (and the camera framing with it); death and a far overshoot drop it at once.
+    /// </summary>
     public void Tick()
     {
-        if (Target != null && !IsValid(Target))
+        if (Target is not { } target)
+        {
+            return;
+        }
+
+        if (!Framing)
+        {
+            if (!IsValid(target))
+            {
+                Target = null;
+            }
+
+            return;
+        }
+
+        float dt = Elapsed(ref _tickStamp);
+        float distanceSq = DistanceSq(target);
+        float hard = DropRange * HardDropFactor;
+        if (!IsAliveHostile(target) || distanceSq > hard * hard)
+        {
+            Target = null;
+            return;
+        }
+
+        _sightTimer -= dt;
+        if (_sightTimer <= 0f)
+        {
+            _sightTimer = SightInterval;
+            _inSight = HasLineOfSight(target);
+        }
+
+        bool inView = _inSight && LockOn.InRange(distanceSq, DropRange * DropRange);
+        _lostSeconds = LockOn.StepLoss(_lostSeconds, inView, dt);
+        if (LockOn.ShouldDrop(_lostSeconds, LockOn.LossGraceSeconds))
         {
             Target = null;
         }
@@ -92,9 +203,33 @@ public partial class LockOnComponent : EntityComponent
             return;
         }
 
+        // A fresh lock or a cycle swings round over a beat, so the camera (which rides the body's
+        // yaw) settles onto the target instead of cutting to it. Afterwards it faces exactly.
+        float dt = Elapsed(ref _faceStamp);
+        if (Framing && _settleLeft > 0f)
+        {
+            _settleLeft -= dt;
+            Vector3 rotation = body.GlobalRotation;
+            rotation.Y = FramingMath.SlewYaw(
+                rotation.Y, FramingMath.YawTo(to), dt, SettleEaseSeconds, SettleMaxRate);
+            body.GlobalRotation = rotation;
+            return;
+        }
+
         body.LookAt(
             new Vector3(targetBody.GlobalPosition.X, body.GlobalPosition.Y, targetBody.GlobalPosition.Z),
             Vector3.Up);
+    }
+
+    /// <summary>Seconds since the stamp was last taken, clamped so a hitch or a first call is not a
+    /// jump; stamps <paramref name="stamp"/> for next time. Read from the clock because the router
+    /// calls these from its own tick and hands neither a delta.</summary>
+    private static float Elapsed(ref ulong stamp)
+    {
+        ulong now = Time.GetTicksUsec();
+        float dt = stamp == 0 ? 1f / 60f : Mathf.Clamp((now - stamp) / 1_000_000f, 0f, 0.1f);
+        stamp = now;
+        return dt;
     }
 
     private IEntity? Nearest()
@@ -137,8 +272,27 @@ public partial class LockOnComponent : EntityComponent
         // standing between two of them locked whichever was a hand's width closer and something
         // behind the player beat something they were looking straight at. LockOn.Score weights the
         // angle from where the player is actually looking three times as heavily as the distance.
-        result.Sort((a, b) => ScoreOf(a).CompareTo(ScoreOf(b)));
-        result.RemoveAll(e => ScoreOf(e) < 0f);
+        //
+        // Scored ONCE per candidate, then sorted on the cached number: the old comparator re-ran the
+        // scorer (and its line-of-sight ray) on every comparison, so the ranking could disagree with
+        // itself mid-sort. Ties fall to the runtime id so equal scores never trade places.
+        var scored = new List<(float Score, ulong Id, IEntity Entity)>(result.Count);
+        foreach (IEntity candidate in result)
+        {
+            float score = ScoreOf(candidate);
+            if (score >= 0f)
+            {
+                scored.Add((score, candidate.RuntimeId, candidate));
+            }
+        }
+
+        scored.Sort((a, b) => a.Score != b.Score ? a.Score.CompareTo(b.Score) : a.Id.CompareTo(b.Id));
+        result.Clear();
+        foreach (var item in scored)
+        {
+            result.Add(item.Entity);
+        }
+
         return result;
     }
 
@@ -160,6 +314,20 @@ public partial class LockOnComponent : EntityComponent
 
         float angle = distance <= 0.001f ? 0f : forward.AngleTo(to / distance);
         return LockOn.Score(distance, angle, AcquireRange, MaxAcquireAngle, HasLineOfSight(entity));
+    }
+
+    /// <summary>Which way a candidate lies across the screen, radians, positive right of the view.</summary>
+    private float BearingOf(IEntity entity)
+    {
+        if (_body == null)
+        {
+            return 0f;
+        }
+
+        Vector3 forward = Camera != null
+            ? -Camera.GlobalTransform.Basis.Z
+            : -_body.GlobalTransform.Basis.Z;
+        return FramingMath.SignedBearing(forward, entity.Body.GlobalPosition - _body.GlobalPosition);
     }
 
     /// <summary>A candidate behind world geometry is not lockable. One ray, only for candidates that
@@ -190,13 +358,16 @@ public partial class LockOnComponent : EntityComponent
     private float DistanceSq(IEntity entity) =>
         _body == null ? float.MaxValue : (entity.Body.GlobalPosition - _body.GlobalPosition).LengthSquared();
 
-    private bool IsValid(IEntity? entity)
+    private bool IsValid(IEntity? entity) =>
+        IsAliveHostile(entity) && LockOn.InRange(DistanceSq(entity!), DropRange * DropRange);
+
+    /// <summary>Exists, is not us, is on another team and is alive — everything but range.</summary>
+    private bool IsAliveHostile(IEntity? entity)
     {
         return entity is Node node
             && GodotObject.IsInstanceValid(node)
             && !ReferenceEquals(entity, Entity)
             && entity.GetComponent<CombatComponent>() is { } combat && combat.Team != _team
-            && entity.GetComponent<StatsComponent>() is { IsAlive: true }
-            && LockOn.InRange(DistanceSq(entity), DropRange * DropRange);
+            && entity.GetComponent<StatsComponent>() is { IsAlive: true };
     }
 }

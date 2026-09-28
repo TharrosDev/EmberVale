@@ -17,6 +17,10 @@ public partial class AimController : EntityComponent
     /// <summary>How far the crosshair convergence ray reaches before falling back to a far point.</summary>
     private const float AimTraceDistance = 200f;
 
+    /// <summary>A hit nearer than this to the trace start is treated as no hit: a wall at the
+    /// player's nose would otherwise spin the aim sharply toward its own surface.</summary>
+    private const float MinConvergence = 1.5f;
+
     private PlayerCameraRig? _rig;
     private PlayerPhysicsQueries? _queries;
 
@@ -37,11 +41,14 @@ public partial class AimController : EntityComponent
             return;
         }
 
-        Vector3 from = camera.GlobalPosition;
+        // Cast from the pivot's depth, not the camera's: in third person the camera sits behind the
+        // player, and a prop in that gap must not become the point the shot converges on. In first
+        // person the pullback is zero, so this is the camera and nothing changes.
         Vector3 forward = -camera.GlobalTransform.Basis.Z;
-        Vector3 focus = _queries.Raycast(from, forward, AimTraceDistance) is { } hit
-            ? hit.Point
-            : from + (forward * AimTraceDistance);
+        float pullback = _rig.Pullback;
+        Vector3 from = FramingMath.AimTraceStart(camera.GlobalPosition, forward, pullback);
+        Vector3? hit = _queries.Raycast(from, forward, AimTraceDistance) is { } found ? found.Point : null;
+        Vector3 focus = FramingMath.AimConvergence(from, forward, hit, MinConvergence, AimTraceDistance);
 
         Vector3 direction = CameraRigMath.AimDirection(AimNode.GlobalPosition, focus);
         if (Mathf.Abs(direction.Dot(Vector3.Up)) > 0.999f)
