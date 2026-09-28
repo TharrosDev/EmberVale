@@ -12,6 +12,11 @@
 ; 0.86 s of draw out of a 1.35 s shot is deliberate — long enough to be committed to, short enough
 ; that a second shot is a real option when something is running at you.
 ;
+; DRAW (2026-09): the 0.86 s startup IS the draw. The arrow still leaves on the release frame, but
+; how strong it is depends on how long attack stayed held (RangedMath.DrawSeconds, 0.72 s for a full
+; draw). A tapped or buffered press is a weak, slow, loose snap shot. The 9 stamina the bow always cost
+; is split: 4 to nock, then ~7 a second while the string is drawn (RangedMath.DrawStaminaPerSecond).
+;
 ; ⚠️ NO WARP. A ranged action must never close distance on its target; that is the whole difference
 ; between a bow and a charge, and RootMotion stays None for every ranged definition.
 
@@ -31,7 +36,7 @@ NextActionId = ""
 Interruptible = true
 MoveScale = 0.45
 TurnDegreesPerSecond = -1.0
-StaminaCost = 9.0
+StaminaCost = 4.0
 DamageScale = 1.0
 PoiseScale = 1.0
 RootMotion = 0
@@ -49,7 +54,7 @@ DisplayName = "Hunting Bow"
 DamageType = 0
 BaseDamage = 17.0
 PoiseDamage = 12.0
-StaminaCost = 9.0
+StaminaCost = 4.0
 Attacks = Array[ExtResource("2_action")]([SubResource("Loose")])
 WindupTime = 0.86
 ActiveTime = 0.08
