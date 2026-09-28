@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Embervale.Combat;
 using Embervale.Core.Events;
 using Embervale.Entities;
 using Embervale.Save;
@@ -42,17 +43,55 @@ public partial class StatsComponent : EntityComponent, ISaveable
     /// combat).</summary>
     [Export] public float HealthRegenDelay { get; set; } = 3f;
 
+    /// <summary>Seconds over which stamina regen ramps from <see cref="StaminaRampStart"/> to full rate once
+    /// the <see cref="StaminaRegenDelay"/> pause lifts (<see cref="StaminaPacing.RampFactor"/>).</summary>
+    [ExportGroup("Stamina Pacing")]
+    [Export] public float StaminaRampSeconds { get; set; } = 0.6f;
+
+    /// <summary>Fraction of full regen rate the ramp starts at.</summary>
+    [Export(PropertyHint.Range, "0,1,0.05")] public float StaminaRampStart { get; set; } = 0.3f;
+
+    /// <summary>Below this fraction of max, regen slows (<see cref="StaminaPacing.LowStaminaFactor"/>)…</summary>
+    [Export(PropertyHint.Range, "0,1,0.05")] public float LowStaminaKnee { get; set; } = 0.25f;
+
+    /// <summary>…down to this multiplier at empty.</summary>
+    [Export(PropertyHint.Range, "0,1,0.05")] public float LowStaminaRegenFloor { get; set; } = 0.6f;
+
+    /// <summary>Regen multiplier while the owner's guard is up (<see cref="CombatComponent.IsBlocking"/>):
+    /// turtling behind a shield is not also a free recovery.</summary>
+    [Export(PropertyHint.Range, "0,1,0.05")] public float BlockingRegenMultiplier { get; set; } = 0.5f;
+
+    /// <summary>Fraction of max stamina a winded owner must refill to before sprint and dodge return.</summary>
+    [Export(PropertyHint.Range, "0,1,0.05")] public float WindedRecoverFraction { get; set; } = 0.35f;
+
+    /// <summary>Endurance at which stamina regen is exactly <see cref="StaminaRegen"/>; the
+    /// <see cref="AttributeSet"/> default, so unmodified actors are unchanged.</summary>
+    [Export] public float EnduranceRegenBaseline { get; set; } = 10f;
+
+    /// <summary>Regen gained (or lost) per point of Endurance off the baseline, as a fraction of the rate.</summary>
+    [Export] public float EnduranceRegenPerPoint { get; set; } = 0.03f;
+
     private double _staminaIdle;
+    private CombatComponent? _combat;
     private double _healthIdle = double.MaxValue; // start un-paused (full delay already elapsed)
 
     public string SaveId => SaveKey("stats");
 
     public bool IsAlive => GetCurrent(StatType.Health) > 0f;
 
+    /// <summary>
+    /// True from the moment stamina hits zero until it refills to <see cref="WindedRecoverFraction"/>
+    /// (<see cref="StaminaPacing.UpdateWinded"/>). While winded the owner cannot dodge or sprint, and the HUD
+    /// greys the stamina bar. Transient and deliberately not saved: it is a few seconds of combat state, and
+    /// <see cref="Load"/> clears it so a quickload never inherits it from the timeline being abandoned.
+    /// </summary>
+    public bool IsWinded { get; private set; }
+
     protected override void OnInitialize()
     {
         BuildStats(Attributes ?? AttributeSet.CreateDefault());
         RefillResources();
+        _combat = Entity!.GetComponent<CombatComponent>();
         RegisterSaveable();
     }
 
@@ -71,12 +110,21 @@ public partial class StatsComponent : EntityComponent, ISaveable
             Regenerate(StatType.Health, HealthRegen, delta);
         }
 
-        // Stamina regen is paused for StaminaRegenDelay after each spend (Phase 29I anti-mash).
+        // Stamina regen is paused for StaminaRegenDelay after each spend (Phase 29I anti-mash), then ramps
+        // in, runs slower near empty and behind a raised guard, and scales with Endurance.
         _staminaIdle += delta;
-        if (StaminaPacing.CanRegen(_staminaIdle, StaminaRegenDelay))
+        float ramp = StaminaPacing.RampFactor(_staminaIdle, StaminaRegenDelay, StaminaRampSeconds, StaminaRampStart);
+        if (ramp > 0f)
         {
-            Regenerate(StatType.Stamina, StaminaRegen, delta);
+            float rate = StaminaRegen * ramp
+                * StaminaPacing.LowStaminaFactor(GetNormalized(StatType.Stamina), LowStaminaKnee, LowStaminaRegenFloor)
+                * StaminaPacing.AttributeFactor(
+                    GetValue(StatType.Endurance), EnduranceRegenBaseline, EnduranceRegenPerPoint, 0.25f)
+                * (_combat is { IsBlocking: true } ? BlockingRegenMultiplier : 1f);
+            Regenerate(StatType.Stamina, rate, delta);
         }
+
+        IsWinded = StaminaPacing.UpdateWinded(IsWinded, GetNormalized(StatType.Stamina), WindedRecoverFraction);
 
         Regenerate(StatType.Mana, ManaRegen, delta);
     }
@@ -276,6 +324,11 @@ public partial class StatsComponent : EntityComponent, ISaveable
 
     public void Load(Godot.Collections.Dictionary data)
     {
+        // Transient pacing state belongs to the timeline being abandoned; it re-derives from the restored
+        // stamina on the next tick.
+        IsWinded = false;
+        _staminaIdle = 0d;
+
         if (!data.TryGetValue("resources", out Variant resourcesVariant))
         {
             return;

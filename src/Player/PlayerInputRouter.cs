@@ -4,6 +4,7 @@ using Embervale.Core;
 using Embervale.Entities;
 using Embervale.Magic;
 using Embervale.Movement;
+using Embervale.Stats;
 using Godot;
 
 namespace Embervale.Player;
@@ -16,7 +17,7 @@ namespace Embervale.Player;
 /// load-bearing and was documented as such long before this split: the camera rig runs inside the
 /// not-playing guard because it dereferences nodes that a world teardown is freeing; focus is
 /// resolved before lock-on can be toggled onto it; the mount answers the sprint request before
-/// locomotion consumes it; dodge is refused during a committed swing. Godot orders sibling
+/// locomotion consumes it; dodge is held back (buffered) during a committed swing. Godot orders sibling
 /// <c>_PhysicsProcess</c> calls by child order, which would make all of that an invisible
 /// consequence of the order <see cref="PlayerFactory"/> happens to add nodes in. It is written down
 /// here instead.</para>
@@ -36,6 +37,7 @@ public partial class PlayerInputRouter : EntityComponent
     private LockOnComponent? _lockOn;
     private MountComponent? _mount;
     private SpellcastingComponent? _spellcasting;
+    private StatsComponent? _stats;
 
     protected override void OnInitialize()
     {
@@ -52,6 +54,7 @@ public partial class PlayerInputRouter : EntityComponent
         _lockOn = owner.GetComponent<LockOnComponent>();
         _mount = owner.GetComponent<MountComponent>();
         _spellcasting = owner.GetComponent<SpellcastingComponent>();
+        _stats = owner.GetComponent<StatsComponent>();
     }
 
     public override void _PhysicsProcess(double delta)
@@ -113,13 +116,16 @@ public partial class PlayerInputRouter : EntityComponent
 
         // Held sprint is a request. On foot it is granted outright; mounted, the horse's own pool
         // answers — Tick returns the input unchanged when not mounted, so there is no branch here.
-        bool sprint = _mount?.Tick(delta, Godot.Input.IsActionPressed(GameInput.Sprint))
-            ?? Godot.Input.IsActionPressed(GameInput.Sprint);
+        // A winded runner (stamina drained to zero, StatsComponent.IsWinded) cannot sprint until it
+        // refills; mounted, the horse's own pool still answers.
+        bool footWinded = _stats is { IsWinded: true } && _mount is not { IsMounted: true };
+        bool sprintHeld = Godot.Input.IsActionPressed(GameInput.Sprint) && !footWinded;
+        bool sprint = _mount?.Tick(delta, sprintHeld) ?? sprintHeld;
         _locomotion?.Move(delta, actionMove, sprint, jump);
 
-        // Dodge can't interrupt a committed swing (the attack commit window); it cancels
-        // recovery/idle.
-        if (Godot.Input.IsActionJustPressed(GameInput.Dodge) && !(_weapon?.IsCommitted ?? false))
+        // Dodge can't interrupt a committed swing (the attack commit window); DodgeComponent buffers a
+        // press made inside it and fires it the instant the swing becomes cancellable.
+        if (Godot.Input.IsActionJustPressed(GameInput.Dodge))
         {
             _dodge?.TryDodge(wishDir);
         }
@@ -172,7 +178,9 @@ public partial class PlayerInputRouter : EntityComponent
             _combat.IsBlocking = Godot.Input.IsActionPressed(GameInput.Block);
         }
 
-        if (Godot.Input.IsActionJustPressed(GameInput.Attack))
+        // A running dodge sees the press first: it buffers it until the roll's attack-cancel window,
+        // or ends the roll and lets this swing be the roll-attack.
+        if (Godot.Input.IsActionJustPressed(GameInput.Attack) && !(_dodge?.InterceptAttack() ?? false))
         {
             _weapon?.TryAttack();
         }
