@@ -36,6 +36,7 @@ public partial class PlayerInputRouter : EntityComponent
     private LockOnComponent? _lockOn;
     private MountComponent? _mount;
     private SpellcastingComponent? _spellcasting;
+    private BowDrawComponent? _bowDraw;
 
     protected override void OnInitialize()
     {
@@ -52,6 +53,7 @@ public partial class PlayerInputRouter : EntityComponent
         _lockOn = owner.GetComponent<LockOnComponent>();
         _mount = owner.GetComponent<MountComponent>();
         _spellcasting = owner.GetComponent<SpellcastingComponent>();
+        _bowDraw = owner.GetComponent<BowDrawComponent>();
     }
 
     public override void _PhysicsProcess(double delta)
@@ -197,6 +199,12 @@ public partial class PlayerInputRouter : EntityComponent
         {
             _weapon?.TryAttack();
         }
+
+        // region combat-ranged
+        // The bow's draw is how long attack stays held through the shot's startup; the arrow still
+        // leaves on the action's release frame, this only sets how strong it is.
+        _bowDraw?.Tick(delta, Godot.Input.IsActionPressed(GameInput.Attack));
+        // endregion
 
         // Cast: press begins (instant fires now; charged/channeled hold), release ends.
         if (Godot.Input.IsActionJustPressed(GameInput.Cast))

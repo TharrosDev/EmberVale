@@ -173,6 +173,9 @@ def gates(engine: str | None) -> list[Gate]:
         # --- combat-feedback: this group's probe Gate goes between the markers (one owner per block) ---
         # --- end combat-feedback ---
         # --- combat-ranged: this group's probe Gate goes between the markers (one owner per block) ---
+        Gate("combat-ranged", "drawn beats snap, heads beat chests, drop is solved, walls stop arrows, aim assist is honest",
+             [engine, "--headless", "--path", ".", "--script",
+              "res://tools/combat_ranged_probe.gd"], slow=True),
         # --- end combat-ranged ---
         Gate("traversal", "a real capsule walks every authored route in the real collision world",
              [engine, "--headless", "--path", ".", "--script",

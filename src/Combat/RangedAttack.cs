@@ -1,6 +1,8 @@
 using Embervale.Combat.Actions;
+using Embervale.Core.Events;
 using Embervale.Entities;
 using Embervale.Movement;
+using Embervale.Player;
 using Embervale.Stats;
 using Godot;
 
@@ -51,15 +53,41 @@ public sealed class RangedAttack
     {
         _arrows ??= new Core.Pooling.NodePool<Arrow>(() => new Arrow { Released = ReleaseArrow }, prewarm: 2);
 
+        // The draw. A shooter with a BowDrawComponent (the player) is as strong as the string was held
+        // back; anyone else (an AI archer) looses a full draw, exactly as every bow did before draw
+        // existed. Packet.Charge stays 0 for the latter so nothing downstream mistakes it for a drawn shot.
+        BowDrawComponent? draw = shooter?.GetComponent<BowDrawComponent>();
+        float charge = draw?.Take() ?? 1f;
+
         float mounted = MountedCombat.DamageScale(
             mount is { IsMounted: true }, mount is { IsGalloping: true });
         (float amount, bool isCrit) = CombatMath.RollAttack(
             bow.BaseDamage * definition.DamageScale * mounted, stats);
 
+        // ⚠️ THE DRAW SCALES THE ROLLED DAMAGE, NOT THE WEAPON'S BASE. RollAttack adds the archer's power
+        // stat to the base, and on a levelled character that stat is most of the number: scaling only
+        // the base made a snap shot hit for 92% of a full draw.
+        amount *= RangedMath.DamageScale(charge);
+
         Vector3 from = body.GlobalPosition + (Vector3.Up * 1.4f);
-        Vector3 direction = aimPoint is { } aim && aim.DistanceSquaredTo(from) > 0.04f
-            ? (aim - from).Normalized()
+        float speed = bow.ProjectileSpeed * RangedMath.SpeedScale(charge);
+
+        // ⚠️ THE PLAYER'S `AimPoint` IS THE EYE, NOT A POINT OUT ALONG THE AIM. The input router copies
+        // the aim NODE's position into it, which sits at the eye (1.62 m) — 0.22 m above this arrow's
+        // origin — so trusting it sent every player arrow straight up. The aim controller's own
+        // convergence point is the real answer; AimPoint remains the AI's and the harnesses' route.
+        AimController? aimer = shooter?.GetComponent<AimController>();
+        Vector3? focus = aimer is { HasFocus: true } ? aimer.Focus : aimPoint;
+        if (focus is { } aimed && aimer != null)
+        {
+            focus = aimer.AssistedFocus(from, aimed, charge);
+        }
+
+        Vector3 direction = focus is { } target && target.DistanceSquaredTo(from) > 0.04f
+            ? RangedMath.LaunchDirection(
+                from, target, speed, RangedMath.ArrowGravity, bow.ProjectileRange * RangedMath.ReachFraction)
             : -body.GlobalBasis.Z;
+        direction = RangedMath.Scatter(direction, charge, GD.Randf(), GD.Randf());
 
         Arrow arrow = _arrows.Get();
         if (arrow.GetParent() == null)
@@ -76,8 +104,14 @@ public sealed class RangedAttack
         arrow.GlobalPosition = from;
         arrow.Launch(
             new DamagePacket(amount, bow.DamageType, shooter, isCrit,
-                bow.PoiseDamage * definition.PoiseScale, HitKind.Ranged),
+                bow.PoiseDamage * definition.PoiseScale * RangedMath.PoiseScale(charge), HitKind.Ranged,
+                draw != null ? charge : 0f),
             shooter, combat?.Team ?? 0, direction,
-            bow.ProjectileSpeed, bow.ProjectileRange, bow.ProjectileModelPath);
+            speed, bow.ProjectileRange, bow.ProjectileModelPath, RangedMath.ArrowGravity);
+
+        if (draw != null && shooter != null)
+        {
+            EventBus.Instance?.Publish(new ChargeReleasedEvent(shooter, charge));
+        }
     }
 }
