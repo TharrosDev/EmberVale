@@ -119,8 +119,9 @@ public static class PlayerFactory
             Near = 0.08f, // tight near plane so world geometry hugs the eye without clipping weirdness
         };
         cameraPivot.AddChild(camera);
-        var shake = new Embervale.Combat.CameraShake { Name = "Shake", PlayerBody = player };
-        camera.AddChild(shake);
+        // Shake is a camera layer on the player, not a child of the camera: it returns a nudge and the
+        // rig is the only writer of the camera transform.
+        player.AddChild(new Embervale.Combat.CameraShake { Name = "Shake" });
 
         // Spells aim along this node rather than the pivot. It sits at the eye but AimController
         // re-aims it each frame at whatever the crosshair converges on, so a bolt goes where the
@@ -271,10 +272,10 @@ public static class PlayerFactory
         player.AddChild(new CameraFramingLayer { Name = "CameraFraming" });
         // --- end ---
 
-        // The shake offsets around the rig's mode-aware rest pose — a fixed rest would snap the
-        // camera back into the head after a crit while playing third-person. Looked up through the
-        // player rather than captured, so the delegate cannot outlive the component it reads.
-        shake.RestPosition = () => player.GetComponent<PlayerCameraRig>()?.CameraRestPosition ?? Vector3.Zero;
+        // --- camera motion layer (C) ---
+        // Landing dip, head bob, dodge lean and mounted sway: a nudge for the rig to sum, no transform writes.
+        player.AddChild(new CameraMotionLayer { Name = "CameraMotion" });
+        // --- end ---
 
         // First-person viewmodel arms (30L): ride the camera, swing with attacks, guard on block.
 
