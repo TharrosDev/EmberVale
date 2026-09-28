@@ -267,6 +267,14 @@ public static class PlayerFactory
         player.AddChild(new AimController { Name = "Aim", AimNode = aimNode });
         player.AddChild(new PlayerInputRouter { Name = "InputRouter" });
 
+        // --- camera director + occlusion (D) ---
+        // The event-driven special views (dialogue, boss entrance, death, focus, mounted) as a camera
+        // layer, and the obstruction fade. Both resolve the rig and sensor in OnInitialize, so they go
+        // after them; neither touches the camera transform.
+        player.AddChild(new CameraDirectorLayer { Name = "CameraDirector" });
+        player.AddChild(new CameraOcclusion { Name = "CameraOcclusion" });
+        // --- end ---
+
         // The shake offsets around the rig's mode-aware rest pose — a fixed rest would snap the
         // camera back into the head after a crit while playing third-person. Looked up through the
         // player rather than captured, so the delegate cannot outlive the component it reads.
