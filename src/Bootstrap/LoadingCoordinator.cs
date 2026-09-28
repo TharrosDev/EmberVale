@@ -18,17 +18,39 @@ namespace Embervale.Bootstrap;
 /// entered <c>Playing</c> the instant the world was assembled, which is before the streamer has
 /// instanced a single cell. The player was handed control standing over a hole.</para>
 ///
-/// <para>It holds <c>Loading</c> until the streamer reports the region settled <em>and</em> the
-/// physics server reports collision under the player, then re-seats everything on the ground and
-/// runs the caller's completion action once.</para>
+/// <para>It holds <c>Loading</c> through three stages (<see cref="LoadingWait"/>): the streamer
+/// reports the landing settled, the physics server reports collision under the player, and
+/// <see cref="SafePlacementService"/> finds a capsule-clear spot at or near the landing. Then it
+/// re-seats the party and runs the caller's completion action once.</para>
+///
+/// <para><b>Timing guarantees.</b> Every stage is bounded by <see cref="MaxSeconds"/>, after which
+/// the gate aborts to the title rather than resuming into an incomplete world. The placement stage
+/// is additionally bounded by <see cref="PlacementRetryFrames"/>: collision can be resident while
+/// a building's collider is still a frame behind the terrain's, so a refused placement is retried
+/// once per physics frame before falling back to the heightfield. A stuck stage is named in the log
+/// every <see cref="ProgressReportSeconds"/>, and the settle line records when each stage cleared.
+/// A second <see cref="Begin"/> while the gate is open never drops the first caller's action — both
+/// run, once, on the frame play resumes.</para>
 /// </summary>
 public sealed partial class LoadingCoordinator : Node
 {
-    private const double MaxSeconds = 30.0d;
+    /// <summary>Hard cap on the whole gate, seconds.</summary>
+    [Export(PropertyHint.Range, "5,120,1")] public double MaxSeconds { get; set; } = 30.0d;
+
+    /// <summary>Seconds between "still waiting on …" lines while a stage holds.</summary>
+    [Export(PropertyHint.Range, "0,30,0.5")] public double ProgressReportSeconds { get; set; } = 5.0d;
+
+    /// <summary>Physics frames the placement stage retries before it settles for the heightfield.</summary>
+    [Export(PropertyHint.Range, "1,240,1")] public int PlacementRetryFrames { get; set; } = 20;
+
     private const float GroundProbeUp = 1.0f;
     private const float GroundProbeDown = 3.0f;
 
     private double _elapsed = -1d;
+    private double _lastReport;
+    private double _streamerReadyAt = -1d;
+    private double _groundReadyAt = -1d;
+    private int _placementAttempts;
     private Action? _onSettled;
 
     public GameSession Session { get; init; } = null!;
@@ -47,8 +69,22 @@ public sealed partial class LoadingCoordinator : Node
     public void Begin(string message, Action? onSettled)
     {
         GameManager.Instance?.ChangeState(GameState.Loading);
+        if (_elapsed >= 0d && _onSettled != null)
+        {
+            // Re-opened before the last load settled (a portal requested from a load's completion,
+            // a restore on top of a travel). The first caller was promised its action; keep it.
+            Log.Info("LoadingCoordinator: gate re-opened while pending; both completion actions will run.");
+            _onSettled += onSettled;
+        }
+        else
+        {
+            _onSettled = onSettled;
+        }
         _elapsed = 0d;
-        _onSettled = onSettled;
+        _lastReport = 0d;
+        _streamerReadyAt = -1d;
+        _groundReadyAt = -1d;
+        _placementAttempts = 0;
         if (Session.Players.Player is { } player)
         {
             Session.WorldDirector.Streamer?.RequirePosition(player.GlobalPosition);
@@ -86,7 +122,8 @@ public sealed partial class LoadingCoordinator : Node
         {
             Abort(
                 $"The world did not finish loading within {MaxSeconds:0} s " +
-                $"(streamer settled: {streamer?.IsSettled()}, ground under the player: {HasGroundUnderPlayer()}, " +
+                $"(stuck on: {CurrentWait()}, streamer settled: {streamer?.IsSettled()}, " +
+                $"ground under the player: {HasGroundUnderPlayer()}, " +
                 $"player at {Session.Players.Player?.GlobalPosition}, ground height there " +
                 $"{(Session.Players.Player is { } p ? WorldGround.HeightAt(p.GlobalPosition.X, p.GlobalPosition.Z) : 0f):F2}). " +
                 "Returning to the title screen rather than resuming into an incomplete world.");
@@ -97,18 +134,28 @@ public sealed partial class LoadingCoordinator : Node
         if (streamer != null && landingPlayer != null &&
             !streamer.IsPositionReady(landingPlayer.GlobalPosition, requireNavigation: false))
         {
+            ReportProgress(LoadingWait.Streamer);
             return;
         }
+        MarkCleared(ref _streamerReadyAt);
+
         if (!HasGroundUnderPlayer())
         {
+            ReportProgress(LoadingWait.Collision);
+            return;
+        }
+        MarkCleared(ref _groundReadyAt);
+
+        // Everything the world put down is on the ground now, so anything the load moved can be
+        // re-seated against real collision rather than the heightfield alone.
+        if (!SettlePlayer())
+        {
+            ReportProgress(LoadingWait.Placement);
             return;
         }
 
         _elapsed = -1d;
-
-        // Everything the world put down is on the ground now, so anything the load moved can be
-        // re-seated against real collision rather than the heightfield alone.
-        SettleActorsOnGround();
+        RegroupParty();
         streamer?.ReleaseRequiredPosition();
 
         GameManager.Instance?.ChangeState(GameState.Playing);
@@ -122,6 +169,37 @@ public sealed partial class LoadingCoordinator : Node
         _elapsed = -1d;
         _onSettled = null;
         Session.Lifecycle.AbortToTitle(reason);
+    }
+
+    private void MarkCleared(ref double stageClearedAt)
+    {
+        if (stageClearedAt < 0d)
+        {
+            stageClearedAt = _elapsed;
+        }
+    }
+
+    /// <summary>The stage the gate is holding on, from what it has recorded so far.</summary>
+    private LoadingWait CurrentWait() =>
+        LoadingGateRules.Pending(_streamerReadyAt >= 0d, _groundReadyAt >= 0d, placed: false);
+
+    private void ReportProgress(LoadingWait waiting)
+    {
+        if (!LoadingGateRules.ReportDue(_elapsed, _lastReport, ProgressReportSeconds))
+        {
+            return;
+        }
+        _lastReport = _elapsed;
+        string detail = waiting switch
+        {
+            LoadingWait.Streamer => "the streamer to make the landing cell active",
+            LoadingWait.Collision => "collision under the player",
+            LoadingWait.Placement =>
+                $"a capsule-clear landing ({_placementAttempts}/{PlacementRetryFrames} placement attempts)",
+            _ => "nothing",
+        };
+        Log.Info($"LoadingCoordinator: still waiting on {detail} after {_elapsed:0.0} s " +
+                 $"(player at {Session.Players.Player?.GlobalPosition}).");
     }
 
     /// <summary>
@@ -154,26 +232,50 @@ public sealed partial class LoadingCoordinator : Node
     }
 
     /// <summary>
-    /// Puts the player and the party back on the ground once the region is resident. The teleport
-    /// that started the load clamped against <see cref="WorldGround"/> — the analytic field, the
-    /// only thing available before the cells exist; a metre of disagreement between that field and
-    /// the collision mesh it generates leaves the player embedded or hovering.
+    /// Puts the player on the ground once the region is resident. The teleport that started the load
+    /// clamped against <see cref="WorldGround"/> — the analytic field, the only thing available
+    /// before the cells exist; a metre of disagreement between that field and the collision mesh it
+    /// generates leaves the player embedded or hovering.
+    ///
+    /// Returns false while placement should be retried next frame; true once the player is placed —
+    /// on a validated spot, or on the heightfield after <see cref="PlacementRetryFrames"/> refusals,
+    /// which is logged with the search's diagnosis so a landing inside a building is findable.
     /// </summary>
-    private void SettleActorsOnGround()
+    private bool SettlePlayer()
     {
-        if (Session.Players.Player is { } player && IsInstanceValid(player))
+        string placement;
+        if (Session.Players.Player is not { } player || !IsInstanceValid(player))
         {
-            player.Velocity = Vector3.Zero;
-            if (SafePlacementService.TryResolve(player, player.GlobalPosition, out Vector3 resolved))
-            {
-                player.GlobalPosition = resolved;
-            }
-            else
-            {
-                player.GlobalPosition = WorldSessionDirector.SafeLanding(player.GlobalPosition);
-            }
+            return true;
         }
 
+        player.Velocity = Vector3.Zero;
+        var report = new SafePlacementReport();
+        if (SafePlacementService.TryResolve(player, player.GlobalPosition, out Vector3 resolved, report: report))
+        {
+            player.GlobalPosition = resolved;
+            placement = report.Summary();
+            Log.Info($"LoadingCoordinator: world settled in {_elapsed:0.00} s (streamer {_streamerReadyAt:0.00} s, " +
+                     $"collision {_groundReadyAt:0.00} s, retries {_placementAttempts}; {placement}).");
+            return true;
+        }
+
+        _placementAttempts++;
+        if (!LoadingGateRules.PlacementExhausted(_placementAttempts, PlacementRetryFrames))
+        {
+            return false;
+        }
+
+        placement = report.Summary();
+        Log.Warn($"LoadingCoordinator: no capsule-clear landing near {player.GlobalPosition} after " +
+                 $"{_placementAttempts} frame(s) — {placement} (mostly {report.Dominant}). " +
+                 "Falling back to the heightfield.");
+        player.GlobalPosition = WorldSessionDirector.SafeLanding(player.GlobalPosition);
+        return true;
+    }
+
+    private static void RegroupParty()
+    {
         if (ServiceLocator.Instance is { } locator && locator.TryGet(out CompanionRoster party))
         {
             party.RegroupNow();

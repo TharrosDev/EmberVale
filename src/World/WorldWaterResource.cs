@@ -14,11 +14,14 @@ namespace Embervale.World;
 /// "is the player in water", a player who walked off Hollowreach's 53-degree drop-off landed in a
 /// 4.5 m basin <b>in a game with no swimming</b> and had no way out. Declaring the body here fixes
 /// both: <see cref="WorldCellWater"/> draws it with a real shoreline taken from the terrain, and
-/// <see cref="WorldWater"/> lets <see cref="WorldWaterSafety"/> honour the recovery contract.
+/// <see cref="WorldWater"/> lets <see cref="WorldWading"/> slow and warn the bodies in it and
+/// <see cref="WorldRecovery"/> honour the recovery contract.
 ///
-/// ⚠️ <b><see cref="SurfaceY"/> IS ABSOLUTE, LIKE <see cref="WorldGroundAreaResource.Elevation"/>.</b>
-/// A waterline is a place in the world that banks, jetties and boats are built against; a value
-/// that moved when its cell moved would be the 37C placement bug in yet another hat.
+/// ⚠️ <b><see cref="SurfaceY"/> IS READ THROUGH <see cref="ElevationMode"/>.</b> Absolute is a world
+/// Y; RelativeToBase (live invariant 23) is metres above the generated ground under the body's centre
+/// and is what every region spec authors now. Either way the waterline is a place in the world that
+/// banks, jetties and boats are built against, resolved once per region load by
+/// <see cref="ResolveSurface"/>.
 /// </summary>
 [GlobalClass]
 public partial class WorldWaterResource : Resource

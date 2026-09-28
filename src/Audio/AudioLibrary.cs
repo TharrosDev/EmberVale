@@ -103,6 +103,12 @@ public sealed class AudioLibrary
                 ProceduralAudio.NoiseBurst(0.30f, lowpass: 0.12f, gain: 0.26f, seed: 13, attackSeconds: 0.02f,
                     releaseSeconds: 0.22f)), shipped: false),
 
+            // Wading in past the knee (positional). Published by WorldWading. Procedural wash until a
+            // CC0 recording lands, so shipped: false.
+            ["sfx.water.wade"] = Load("res://assets/audio/sfx/water/wade.ogg", () => ProceduralAudio.Mix(
+                ProceduralAudio.NoiseBurst(0.32f, lowpass: 0.22f, gain: 0.26f, seed: 91, releaseSeconds: 0.22f),
+                ProceduralAudio.NoiseBurst(0.12f, lowpass: 0.6f, gain: 0.10f, seed: 92)), shipped: false),
+
             // UI (2D). Used by the Phase 31C UI hooks.
             ["ui.click"] = Load("res://assets/audio/ui/click.wav",
                 () => ProceduralAudio.Sine(1000f, 0.04f, gain: 0.3f, releaseSeconds: 0.03f)),
