@@ -173,7 +173,12 @@ public partial class ApplicationRoot : Node3D, IServiceScopeHost
         settings.LoadAndApply();
         Scope.Register(settings);
 
-        // Broken authored references surface here at boot rather than mid-playthrough.
-        Log.Info(ContentValidator.Run());
+        // Broken authored references surface here at boot rather than mid-playthrough. A release
+        // export skips it: several arms read .tscn source text, which an export ships as binary, so
+        // they would report every scene-authored reference as missing. --validate is the real gate.
+        if (OS.IsDebugBuild())
+        {
+            Log.Info(ContentValidator.Run());
+        }
     }
 }

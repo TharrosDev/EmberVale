@@ -182,6 +182,11 @@ Finish run, 2026-09-28, on `main` after all six realms, the Meshy cast and the d
 | `godot --headless -- --story` | PASS — act chain, hidden-realm reveal, save/load, all seven boss templates, every vision and ending card, the ending plays |
 | `assets.py validate` | PASS (7 new Meshy characters, all HUMANOID, rig probe PASS) |
 | `dotnet build -c ExportRelease` + `check_shipping_assembly.py` | PASS, 0 warnings, no dev tooling |
+| Windows export (`godot --export-release "Windows Desktop"`) | PASS — `build/windows/Embervale.exe` + `.pck` (542 MB, gitignored); boots headless with zero errors, and `Embervale.exe --headless -- --story` PASS inside the export |
+
+Export notes: `export_presets.cfg` is committed; the locale CSV is imported with `importer="keep"` so
+the raw catalogue ships (it was silently dropped, which would have shown raw keys); the boot-time
+content validator runs only in debug builds.
 
 Not yet verified: a human play-through of either ending, eye-level renders of the new realms and
 bosses, and boss balance at real player levels.
