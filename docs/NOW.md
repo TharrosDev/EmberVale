@@ -193,7 +193,7 @@ Finish run, 2026-09-28, on `main` after all six realms, the Meshy cast and the d
 | Gate | Result |
 | --- | --- |
 | `tools/gen_regions.py --check` / `world_atlas.py --check` | PASS / PASS |
-| `world_bake.py --check` | PASS — 151 artifacts, source `21168a7a5c4b` |
+| `world_bake.py --check` | PASS — 151 artifacts, source `36c8391eea66` (after guild arcs, rival duels, ending skies) |
 | `embervale.py build` / `test` | PASS / PASS (2,151 xUnit) |
 | `embervale.py validate` | PASS, zero content issues |
 | `embervale.py report lifecycle` | PASS |
