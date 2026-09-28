@@ -780,7 +780,7 @@ covers them; do not force a bad match to raise the sourced-asset count.
 ## In-house assets
 
 Authored from scratch via the Blender MCP; listed for provenance completeness, not because a
-licence requires it. See `docs/playbook/` Phase 30 for the authoring notes.
+licence requires it. Phase 30 authoring notes are in the old playbook (see `docs/HISTORY.md`).
 
 **This is the post-migration list — four models.** (An earlier revision of this table still listed
 the whole Phase 30 output, including everything the migration had already replaced and the deleted

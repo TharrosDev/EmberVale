@@ -6,7 +6,7 @@
 > format, the `SaveId` contract, the migration policy and — most importantly — **what is deliberately
 > not saved** existed only as comments spread across `SaveManager.cs` and its callers.
 >
-> `ARCHITECTURE.md` §1 is how the machinery works. This is what the bytes mean and which rules you
+> `ARCHITECTURE.md` §2.22 is how the machinery works. This is what the bytes mean and which rules you
 > cannot break without costing someone their progress.
 
 ---

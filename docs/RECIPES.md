@@ -1,1399 +1,698 @@
 # Embervale — Content Recipes
 
-> **What this is.** Step-by-step recipes for adding content without breaking anything: the
-> fields to author, the order to do them in, and the trap each one has already sprung on
-> somebody. Lifted out of `CLAUDE.md` §8 verbatim, because it was **66% of a file that loads
-> into every session** and no session needs more than one of these.
->
-> **How to use it.** Find your recipe in the index, read that one, ignore the rest. The
-> ⚠️ markers are not decoration — every one of them is a defect that shipped before it was
-> written down here.
->
-> **Companions.** `CLAUDE.md` §7 has the repo-wide gotchas (read those every time);
-> [`ARCHITECTURE.md`](ARCHITECTURE.md) has the systems reference; [`IDS.md`](IDS.md) has the
-> id scheme every recipe here authors against.
+Step-by-step recipes for adding content: what to author, in what order, and the trap each step has
+already sprung. **Find your recipe in the index and read only that one.** Every ⚠️ is a defect that
+shipped before it was written down. Repo-wide gotchas are `CLAUDE.md` §7; the systems reference is
+[`ARCHITECTURE.md`](ARCHITECTURE.md); ids follow [`IDS.md`](IDS.md).
 
----
+**Rules that apply to every recipe.** `data/<folder>/` is auto-indexed by its database — adding a
+`.tres` registers it. Enums export as ints and are append-only. `.tres` files take no comments (a
+`;` line fails the parser). Every player-facing string is a `strings.csv` key. `ContentValidator`
+does **not** scan `.tscn`, so an id typed into a scene (a `ShopId`, `ServiceId`, `PropertyId`,
+`ScheduleId`) is unvalidated and fails as *no prompt at all*. `EntityNode.GetComponent<T>` returns
+the **first** child match, so **an entity gets one interactable**: two interactable components on
+one body leave the second silent.
 
 ## Index
 
-- [A new component](#a-new-component)
-- [A new actor / enemy type](#a-new-actor--enemy-type)
-- [A new boss fight (Phases 36A–36D)](#a-new-boss-fight-phases-36a36d)
-- [A new claimable property (Phase 37A)](#a-new-claimable-property-phase-37a)
-- [Giving a property a stash (Phase 37B)](#giving-a-property-a-stash-phase-37b)
-- [A new placeable prop or a buildable yard (Phase 37C)](#a-new-placeable-prop-or-a-buildable-yard-phase-37c)
-- [Giving a property a trophy stand (Phase 37D)](#giving-a-property-a-trophy-stand-phase-37d)
-- [A new shop / merchant (Phase 38A–38J)](#a-new-shop--merchant-phase-38a38j)
-- [A new service — trainer / bank / inn / stable (Phase 38D)](#a-new-service--trainer--bank--inn--stable-phase-38d)
-- [Generators — do not hand-write boilerplate](#generators--do-not-hand-write-boilerplate-agent-ergonomics-pass)
-- [A new region cell (Phases 25, 38K/N1/N2/O, 37E)](#a-new-region-cell-phases-25-38kn1n2o-37e)
-- [A new map location (Phase 39.5A)](#a-new-map-location-phase-395a)
-- [A guild hub and its officers (Phase 42B)](#a-guild-hub-and-its-officers-phase-42b)
-- [A production settlement (Phase 38N1)](#a-production-settlement-phase-38n1)
-- [A tolled crossing — toll, permit, bribe (Phase 38M)](#a-tolled-crossing--toll-permit-bribe-phase-38m)
-- [A fence and contraband (Phase 38O)](#a-fence-and-contraband-phase-38o)
-- [A new gold sink (Phase 38C)](#a-new-gold-sink-phase-38c)
-- [A big/boss creature with body zones (Phase 35A)](#a-bigboss-creature-with-body-zones-phase-35a)
-- [Making a creature fly (Phase 35B)](#making-a-creature-fly-phase-35b)
-- [A breath weapon (Phase 35C)](#a-breath-weapon-phase-35c)
-- [Placing a world boss in a lair (Phase 35D)](#placing-a-world-boss-in-a-lair-phase-35d)
-- [A creature that talks (Phase 35F)](#a-creature-that-talks-phase-35f)
-- [A new weapon](#a-new-weapon)
-- [A new item](#a-new-item)
-- [A new piece of equipment](#a-new-piece-of-equipment)
-- [A new loot affix](#a-new-loot-affix)
-- [A new loot table / dropper](#a-new-loot-table--dropper)
-- [A new perk](#a-new-perk)
-- [A new XP-bearing enemy (or tuning the curve)](#a-new-xp-bearing-enemy-or-tuning-the-curve)
-- [A new quest](#a-new-quest)
-- [A new conversation](#a-new-conversation)
-- [A new NPC routine](#a-new-npc-routine)
-- [A new weather state](#a-new-weather-state)
-- [A new encounter](#a-new-encounter)
-- [A new world event](#a-new-world-event)
-- [A new crafting recipe](#a-new-crafting-recipe)
-- [A new spell](#a-new-spell)
-- [A new status effect](#a-new-status-effect)
-- [A new faction](#a-new-faction)
-- [A new stat](#a-new-stat)
-- [A new event](#a-new-event)
-- [A new persistent system](#a-new-persistent-system)
-- [A new input action](#a-new-input-action)
-- [A new dev-console command](#a-new-dev-console-command)
-- [A new UI panel / HUD widget](#a-new-ui-panel--hud-widget)
+- Actors: [component](#a-new-component) · [enemy archetype](#a-new-enemy-archetype) ·
+  [AI profile](#a-new-enemy-ai-profile) · [bestiary entry](#a-new-bestiary-entry) ·
+  [Ashen variant](#an-ashen-corrupted-variant) · [body zones](#a-bigboss-creature-with-body-zones) ·
+  [flight](#making-a-creature-fly) · [breath](#a-breath-weapon) · [lair boss](#placing-a-world-boss-in-a-lair) ·
+  [talking creature](#a-creature-that-talks) · [boss fight](#a-new-boss-fight) ·
+  [**Flamebearer boss, end to end**](#a-new-flamebearer-boss-end-to-end) · [weapon](#a-new-weapon) ·
+  [companion](#a-new-companion)
+- Items: [item](#a-new-item) · [equipment](#a-new-piece-of-equipment) · [affix](#a-new-loot-affix) ·
+  [loot table](#a-new-loot-table--dropper) · [perk](#a-new-perk) · [XP / curve](#a-new-xp-bearing-enemy-or-tuning-the-curve) ·
+  [crafting recipe](#a-new-crafting-recipe) · [spell](#a-new-spell) · [status effect](#a-new-status-effect)
+- Story: [quest](#a-new-quest) · [chained story quest](#a-chained-story-quest-autostartflagid) ·
+  [conversation](#a-new-conversation) · [faction](#a-new-faction) · [NPC routine](#a-new-npc-routine)
+- World: [region](#a-new-region) · [region cell](#a-new-region-cell) · [sealed or hidden realm](#a-sealed-or-hidden-realm) ·
+  [map location](#a-new-map-location) · [guild hub](#a-guild-hub-and-its-officers) ·
+  [production settlement](#a-production-settlement) · [encounter](#a-new-encounter) ·
+  [world event](#a-new-world-event) · [weather](#a-new-weather-state)
+- Economy: [shop](#a-new-shop--merchant) · [service](#a-new-service--trainer--bank--inn--stable) ·
+  [contract board](#a-supply-contract--a-contract-board) · [toll](#a-tolled-crossing--toll-permit-bribe) ·
+  [fence](#a-fence-and-contraband) · [gold sink](#a-new-gold-sink)
+- Housing: [property](#a-new-claimable-property) · [stash](#giving-a-property-a-stash) ·
+  [placeable / yard](#a-new-placeable-prop-or-a-buildable-yard) · [trophy stand](#giving-a-property-a-trophy-stand)
+- Code: [stat](#a-new-stat) · [event](#a-new-event) · [persistent system](#a-new-persistent-system) ·
+  [input action](#a-new-input-action) · [sound cue](#a-new-sound-cue) · [dev command](#a-new-dev-console-command) ·
+  [pooling](#pooling-a-high-churn-node) · [UI panel](#a-new-ui-panel--hud-widget) · [generators](#generators)
 
 ---
 
+## Actors
 
-## A new component
+### A new component
 
-1. Create `src/<Area>/XxxComponent.cs` extending `EntityComponent`
-   (`[GlobalClass]` if editor-creatable).
-2. Resolve siblings/stats in `OnInitialize` via `Entity!.GetComponent<T>()`.
-   Subscribe to events here; unsubscribe in `OnTeardown`.
-3. Add it as a child of the actor in the relevant factory (or scene).
+1. `src/<Area>/XxxComponent.cs` extending `EntityComponent` (`[GlobalClass]` if editor-creatable).
+2. Resolve siblings in `OnInitialize` via `Entity!.GetComponent<T>()`; subscribe there, unsubscribe
+   in `OnTeardown`. Never override `_Ready`.
+3. Add it as a child of the actor in its factory or scene.
 
-## A new actor / enemy type
+### A new enemy archetype
 
-1. (Optional) marker subclass of `CharacterEntity` for type-level identity.
-2. Add an `AttributeSet` `.tres` for its stats and (if it fights) a
-   `WeaponResource` `.tres`.
-3. Write a factory (mirror `EnemyFactory`) wiring: collision, mesh, `StatsComponent`,
-   `CombatComponent` (set `Team`), `LocomotionComponent`, `Hurtbox`,
-   `Hitbox` + `MeleeWeaponComponent`, and a behaviour component.
+1. Author `data/enemies/Xxx.tres` (`EnemyArchetypeResource`): `Id` (`enemy.*`), `NameKey`, build
+   paths (`AttributesPath`, `WeaponPath`, `LootTablePath`, optional `ModelPath` — empty is a capsule
+   in `PlaceholderTint`), `ModelScale` (default 1), `AiProfileId`, `FactionId`, `XpValue`.
+   `CapsuleRadius`/`CapsuleHeight` size the body **and** the melee reach (scaled against a 1.8 m
+   humanoid). `EnemyArchetypeFactory` builds it and `spawn <id>` works with no code.
+2. **Do not write a factory** unless the actor is *structurally* different (the goblin's
+   `EnemyFactory`, the Ashen Acolyte). A bespoke factory is a worse copy of the shared one — the Iron
+   King's silently skipped the hit reaction, weapon trail and quest enemy group until it was deleted.
+3. **A caster needs three things or it silently stands still:** non-empty `KnownSpellIds`, a standoff
+   profile (e.g. `ai.caster`), and a real `Mana` pool in its `AttributeSet`. Tune `ManaRegen`. Mark
+   enemy-only spells `PlayerLearnable = false`. Authored `KnownSpellIds` bypass `Learn`'s corruption gate.
+4. Add a bestiary entry (validator requires it) and an encounter to make it appear in the wilds.
 
-   **Usually you should not write a factory at all** — author a
-   `data/enemies/Xxx.tres` (`script_class="EnemyArchetypeResource"`) instead and
-   `EnemyArchetypeFactory` builds it, `EnemyArchetypeDatabase` registers it, and
-   `spawn <id>` works with no code. A bespoke factory earns its place only by doing
-   something structurally different (goblin, Ashen Acolyte). The Iron King had one until Phase
-   36B and lost it: once his phases moved into `data/bosses/`, his factory was a worse copy of the
-   shared one — it silently skipped the hit reaction, the weapon trail and the quest enemy group.
+### A new enemy AI profile
 
-## A new boss fight (Phases 36A–36D)
+Author `data/ai_profiles/Xxx.tres` (`AIProfileResource`, `ai.*`) with the knobs you need: perception
+(`VisionRange`, `FovDegrees`, `AlertRadius`), melee (`AttackRange`, `FlankSpreadDegrees`), standoff
+(`StandoffRange`, `KiteDistance`), guard (`BlockDuration`/`BlockRecovery`), nerve
+(`RetreatHealthFraction`, `FleeOnSight`), `AmbushRange`, `TurnSpeedDegrees`, `TerritoryRadius`,
+flight fields. Behaviours are branches in one brain gated on these numbers, so they combine; a zero
+turns a behaviour off; an unknown id falls back to `ai.brute`. ⚠️ `EnemyAlertedEvent` is published
+only when `AlertRadius > 0`.
 
-1. Author `data/bosses/Xxx.tres` (`script_class="BossResource"`): unique `Id` (`boss.*`) and
-   `Phases` — an array of `BossPhaseResource` sub-resources, **ordered high health to low**, the
-   first at `HealthFraction = 1.0`. Each phase carries its `AttackSpeedBonus`/`MoveSpeedBonus`
-   (fractions, applied as `PercentMult` under a `boss.phase{n}` source), optional `GrantSpellIds`,
-   an optional `AiProfileId` swap, and its `TelegraphColor`/`TelegraphEnergy` wind-up flare.
-   Optionally add the enrage fuse: `EnrageSeconds` (`0` = none), `EnrageSpellIds`, the two enrage
-   bonuses, and `EnrageForcesFinalPhase`. `WindupPoiseMultiplier` (36C) decides how punishable the
-   phase's wind-ups are — above `1` makes the telegraph a window worth attacking into, below `1`
-   hardens it. It must stay positive; `0` is a phase that can never be interrupted, which in play
-   looks exactly like the interrupt being broken, so `--validate` rejects it.
-   `AddWaves` (36D) is an array of `BossAddWaveResource` sub-resources — `TemplateId` (any registered
-   enemy), `Count`, `RepeatSeconds` (`0` = once on entering the phase), `MaxAlive` (`0` = uncapped)
-   and `HealthMultiplier`. ⚠️ **A repeating wave must set `MaxAlive`**; the validator rejects one
-   without it, because an uncapped repeat ends the fight by burying the player rather than beating
-   them. Adds die with the boss through the ordinary damage path, so their loot and XP still land.
-   The `Encounter`/`Reward` groups (36E) carry the intro lock, the defeat slow-mo, the guaranteed
-   `RewardItemId`, the `DefeatFlagId` and the `DefeatDialogueId` that offers the corruption choice.
-   ⚠️ **A reward or a defeat conversation requires a `DefeatFlagId`** — without one nothing records
-   that it already happened, so it pays out on every death. That is not hypothetical: it is the
-   shape of the bug 36E fixed, and `--validate` now rejects it. Leave `DefeatFlagId` empty on a lair
-   boss; `LairSpawnComponent` already records those, and a second writer of the same fact drifts.
-2. Point an archetype at it: set `IsBoss = true` **and** `BossId = "boss.xxx"` on
-   `data/enemies/Xxx.tres`. `EnemyArchetypeFactory` attaches the `BossController`; there is no code
-   to write. An `IsBoss` archetype with no `BossId` still gets a controller and falls back to the
-   default three-stage escalation, so a boss is never left with no structure at all.
-3. **An arena binds itself to the fight in its own `.tscn`, not in code** (36D). Tag `Marker3D`s
-   `groups=["boss_add_spawn"]` and waves arrive there — found by group, so renaming or re-parenting a
-   marker cannot silently unbind it, and scoped to markers under the boss's own parent, so two loaded
-   arenas cannot lend each other spawns. With no markers the adds fall back to a ring around the
-   boss, which is what a lair gets. Add an `ArenaHookComponent` (`ActivateAtPhase` + `Reveals`
-   node paths) to have the arena itself reveal things as the fight escalates; it resets on the boss's
-   death, because `BossSummonComponent` deliberately re-arms until the defeat is persisted.
-   See `scenes/regions/ember_crown/arena.tscn` for both.
-4. ⚠️ **The enrage clock starts on the first damage traded with the boss**, not on
-   `BossEncounterStartedEvent` — only `BossSummonComponent` publishes that (the Iron King's path),
-   so keying off it would leave every lair boss with a fuse that never lit.
-5. ⚠️ **Mark any spell a phase grants `PlayerLearnable = false`.** The grant goes through the same
-   path a dialogue reward uses, which ignores that flag — but the player's spellbook lists every
-   spell in the database, so a monster ability would otherwise show up as purchasable.
-6. `--validate` checks the domain **in both directions**: phases must descend from `1.0`, granted
-   spells and profile ids must resolve, an archetype's `BossId` must exist, and a `BossId` may only
-   sit on an `IsBoss` archetype (otherwise it is a silent no-op).
+### A new bestiary entry
 
-## A new claimable property (Phase 37A)
+`data/bestiary/Xxx.tres` (`BestiaryEntryResource`): `Id` = the **enemy template id**, `LoreKey`
+(`enemy.<name>.lore`), `Category` (0 Humanoid · 1 Beast · 2 Undead · 3 Construct · 4 Elemental ·
+5 Ashen · 6 Boss), `KillsToKnow` (`1` for a boss). Leave `NameKey` empty unless there is no archetype.
+⚠️ `--validate` checks both directions: every entry names a template **and** every template has an entry.
 
-1. Author `data/properties/Xxx.tres` (`script_class="PropertyResource"`): unique `Id`
-   (`property.*`), a `NameKey` in `strings.csv`, its `RegionId`, and a `TravelNodeId` — claiming
-   registers the holding as a fast-travel destination, which is what makes owning it worth anything.
-2. Give it a way to be had: a `PriceGold`, a `RequiredQuestId`, or both. ⚠️ **Neither is rejected by
-   `--validate`** — a property that is neither sold nor earned is claimed by the first player who
-   walks into its post. A missing `TravelNodeId` is rejected too: gold spent on somewhere you cannot
-   return to.
-3. Place the deed: an `Entity` in a region cell with a collider (the interact raycast needs one) and
-   a `PropertyDeedComponent { PropertyId = "property.xxx" }`. See `CottageDeed` in
-   `scenes/regions/ember_crown/town_hub.tscn`.
-4. ⚠️ **Every refusal must say which refusal it is.** The prompt reports owned / quest-locked /
-   too-expensive separately, in that order — the quest gate before the price, so a player is never
-   sent to earn gold for something a quest is holding shut. `PropertyClaim.Resolve` owns that order
-   and both the prompt and the interaction read it, so they cannot drift apart.
+### An Ashen (corrupted) variant
 
-## Giving a property a stash (Phase 37B)
+Do not author a new archetype. Set `CorruptionChance` on the encounter; `AshenAffliction.Afflict`
+adds `"ashen"` modifiers, scales XP, prefixes the name and chars the body. Corruption belongs to the
+**place**. Reach for a real archetype only for a different profile, loadout or faction. If you extend
+the affliction: never change `TemplateId` (kill objectives match it), and always `Duplicate()` a
+material before tinting or the tint writes through to every instance.
 
-1. Add an `Entity` to the region cell with a collider, an `InventoryComponent`, and a
-   `PropertyStorageComponent { PropertyId = "property.xxx" }`. See `CottageChest` in
-   `scenes/regions/ember_crown/town_hub.tscn`. **That inventory *is* the storage** — there is no
-   storage service and no new save code, because an entity with a stable `PersistentId` already
-   round-trips its inventory through `SaveManager` (`inventory:<PersistentId>`) and survives cell
-   churn through `CellPersistenceDirector`.
-2. ⚠️ **Give it a `PersistentId`, and never change it.** It is the save key. Without one the
-   inventory does not register as a saveable at all (`SaveKeyPolicy.ShouldPersist`) and the stash
-   silently empties on every reload — the failure looks like an item-loss bug, not a missing field.
-   Two chests sharing an id is worse: they overwrite each other, last write wins.
-3. ⚠️ **Author `Capacity` on the `InventoryComponent` node, not on the `PropertyResource`.**
-   `InventoryComponent.Load` restores through `AddInstance`, which clamps to `Capacity`, so a
-   capacity applied by another component *after* the save manager's mid-load restore drops the
-   overflow without a word. Each property has its own chest, so the node value is already
-   per-property.
-4. Interacting publishes a `StorageOpenedEvent` carrying the container's inventory; the single
-   `StoragePanel` (built in `GameBootstrap` beside the `CraftingPanel`) shows both sides. No panel
-   wiring per container.
-5. ⚠️ **Moving a stack removes by reference for rolled items, by template id only for stackables.**
-   `RemoveItem(id, qty)` matches across *every* stack of that template, so two distinct affixed
-   instances of one template would see the first removal satisfy both and one would evaporate — that
-   bug is live in `ContainerLootComponent.Interact` today. `StoragePanel.Transfer` branches on
-   `ItemInstance.IsStackable` and uses `RemoveOneInstance` otherwise. It also only removes what
-   `AddInstance` reported as *landed*, so a full destination cannot eat the remainder.
-6. There is no `--validate` rule here: capacity and the `PropertyId` both live in a `.tscn`, which
-   `ContentValidator` does not scan. A mis-typed `PropertyId` resolves to nothing and the chest
-   shows **no prompt at all** — if a chest is silently unusable in game, check that field first.
+### A big/boss creature with body zones
 
-## A new placeable prop or a buildable yard (Phase 37C)
+1. `HitZones` on the archetype: `HitZoneResource`s (`Id`, `DamageMultiplier`, `Offset`, `Radius`,
+   `Height`; height ≤ 2×radius is a sphere). Non-empty **replaces** the capsule hurtbox and is the
+   greybox silhouette; the multiplier scales poise damage too.
+2. `IsBoss = true` makes a `BossEntity` (healthbar, corruption-on-kill). `DirectionalMelee = true`
+   swaps the hitbox between jaws/wing/tail by the target's bearing.
+3. ⚠️ **Give its AI profile a `TurnSpeedDegrees`.** The default 0 snaps, so flank and rear attacks
+   are dead code.
 
-1. **A yard:** set `PlacementCenter` and `PlacementRadius` on the `PropertyResource`. ⚠️ The centre is
-   **world** space. A cell scene is authored at its own origin and moved to the cell's `Center` by
-   the streamer, so a point read straight out of a `.tscn` lands a cell's width from the house — add
-   the cell's `Center` first. `--validate` catches the gross version by testing the centre against
-   the region's `Bounds`. `PlacementRadius = 0` is a holding that may not be built in, and it refuses
-   everywhere rather than succeeding everywhere.
-2. **A prop:** add an id + a `Build` case to `src/Housing/PlaceableTemplates.cs`. That one file is
-   both the id set the validator reads and the builders `PersistentActorRegistry` gets, so the two
-   cannot disagree. Stations go through `CraftingStationFactory.Create` (pass a `modelPath`);
-   decorations are an `Entity` + model + collider and deliberately have **no** interaction, because
-   the only verb a decoration has is Remove and placement mode owns that.
-3. **A kit:** author `data/items/Xxx.tres` (`script_class="PlaceableItemResource"`) with `TemplateId`
-   pointing at that id, plus a recipe — and ⚠️ seed the recipe in `GameIds.Recipes.Starting` or
-   `--validate` fails the build (see the crafting recipe entry above).
-4. ⚠️ **Never hand out placement ids from a counter.** `PersistentSpawnDirector._autoId` is not
-   persisted, so a counter reissues `#1` after a load and `Spawn` answers a known id by returning the
-   *existing* actor — the new prop silently never appears, and only in a session that loaded a save.
-   `PlacementIds.Next` scans the live ids instead. The id also encodes the property
-   (`place.<propertyId>#<n>`), which is how a holding's contents are found with no second save record.
-5. `--validate` **builds every template** and requires an `IEntity` with a collider. "Registered" and
-   "works" are different claims, and `PersistentSpawnDirector` discards a bad host with only a log
-   line — the player would just lose the kit.
-6. A prop is removed in placement mode, not by interacting with it: a station's own `Interact`
-   already opens its crafting window. Removal refuses on a full pack rather than destroying the prop.
+### Making a creature fly
 
-## Giving a property a trophy stand (Phase 37D)
+Set `TakeoffRange > 0` on its **AI profile**, plus `HoverAltitude`, `ClimbSpeed`, `AirborneDuration`,
+`GroundedDuration` (all 0 = no flight). The factory adds `FlightComponent`. **Keep the airborne window
+short** — the cycle is Grounded → TakingOff → Airborne → Landing, never open-ended. The validator
+rejects half-authored flight either way round.
 
-1. **Authored:** add an `Entity` to the cell with a collider, an `InventoryComponent` of
-   **`Capacity = 1`**, and a `TrophyStandComponent { PropertyId = "property.xxx" }`. See
-   `CottageStandW`/`CottageStandE` in `town_hub.tscn`. **Placeable:** nothing to do — the
-   `prop.display.stand` template and its Display Stand kit already exist.
-2. ⚠️ **Give it a `PersistentId` and never change it**, exactly as for 37B's chest. That one-slot
-   inventory *is* the display, and it persists as `inventory:<PersistentId>`; without an id it does
-   not register as a saveable at all and the trophy vanishes on reload.
-3. ⚠️ **Capacity must be 1.** `InventoryComponent.Load` clamps to `Capacity`, and a stand acting as
-   a chest is not a trophy case. `--validate` enforces the 1 on the placeable template.
-4. **Leave `PropertyId` empty on anything placed** — a placed stand reads its holding out of its own
-   `place.<propertyId>#<n>` id (`PlacementIds.PropertyOf`), which is why one template serves every
-   property.
-5. **What it accepts is `TrophyDisplay.MinimumRarity` (Epic).** Change it there, not at a call site:
-   the stand and `StoragePanel`'s Store button both read it, so they cannot disagree. Take is
-   deliberately never gated — a stand that could trap an item is worse than one holding junk.
-6. The window is the existing `StoragePanel`; a stand publishes the same `StorageOpenedEvent` with a
-   `MinRarity`. There is no trophy UI to wire.
+### A breath weapon
 
-## A new shop / merchant (Phase 38A–38J)
+1. A spell with `Delivery = 3` (Cone), `CastMode = 2` (Channeled); `ConeAngleDegrees` is the **full**
+   angle, `ImpactRadius` the length; `PlayerLearnable = false`.
+2. On the archetype set `BreathSpellId` **and** the same id in `KnownSpellIds` (validator enforces);
+   `BreathDuration` is the hold.
+3. A caster is a *profile* that stands off (`StandoffRange > AttackRange`), not an actor with spells.
 
-> ⚠️ **MANDATORY LAST STEP: put it on the map.** A shop with no `MapLocationResource` **fails
-> `--validate`** (`ValidateEverythingIsOnTheMap`). Add a row to `tools/gen_map_locations.py` and run
-> it — see [a new map location](#a-new-map-location-phase-395a). Do it in this sub-phase, not the
-> next one.
+### Placing a world boss in a lair
 
-1. Author `data/shops/Xxx.tres` (`script_class="ShopResource"`): unique `Id` (`shop.*`), a `NameKey`
-   in `strings.csv`, a `Stock` array of `ShopStockEntry` sub-resources (`ItemId` + `Quantity`, the same
-   `.tres` sub-resource pattern `LootEntry` uses), `RestockDays`, an optional `LeveledTable`, an
-   optional `FactionId` and `PurseGold`, and the spread — `BuyMarkup` (>= 1) and `SellFraction`.
-   Auto-indexed by `ShopDatabase`.
-   ⚠️ **`SellFraction` must stay below `BuyMarkup`.** Equal or inverted is an infinite gold loop: buy a
-   stack, sell it straight back, repeat. `--validate` rejects it and `ShopPricing` clamps so a
-   hand-edited `.tres` cannot do it either. Gold and `ItemType.Quest` items are rejected from stock — a
-   quest object bought off a shelf, or coins bought with coins.
-2. **Give the merchant a trade (38F).** `AcceptedTags` is what she will buy at all; `Specialties` is what
-   she is expert in — she pays `ShopPricing.SpecialtySellBonus` over the odds for it and asks
-   `SpecialtyBuyDiscount` less. Both are words from `src/Economy/TradeTags.cs`, matched against
-   `ItemResource.TradeTags`. **Tags are not ids** — bare lowercase words, no domain prefix, no `IDS.md`
-   row; the closed vocabulary in that file is the validator's whole authority, and adding one is a line
-   there plus a `trade.tag.<tag>` locale key.
-   ⚠️ **Both empties mean yes.** An empty `AcceptedTags` is a general store, and an untagged item is
-   accepted everywhere — the same inverted fail-safe a missing `ReputationComponent` gets, so a
-   half-authored world trades normally instead of refusing everything.
-   ⚠️ **A settlement needs one merchant with an empty `AcceptedTags`**, or loot becomes unsellable by
-   authoring accident. In the Ember Crown that is Aldreth.
-   ⚠️ **`Specialties` must be a subset of a non-empty `AcceptedTags`** — a specialist who refuses her own
-   trade is well-formed data that reads in game as the premium being broken. `--validate` rejects it, and
-   also rejects a spread too thin to survive the premium (sell ≈ buy is frictionless churn).
-   **Do not add an `ItemType` member for this.** Its ordinals are persisted in every save, and an item
-   wears several tags anyway (a leather cap is `armor` *and* `leather`).
-3. **Stock comes in three kinds and the numbers say which** (38B), with no mode enum:
-   `Quantity = 0` is an unlimited row (a materials stall that never runs out); `Quantity > 0` is finite
-   and refills on the shop's clock; a `LeveledTable` is a `LootTable` rolled at each restock, at a
-   quality scaled by the player's level through `ShopStock.QualityForLevel`. That is the game's **first
-   player-level-driven scaling** — it moves rarity and affixes, never *which* items a merchant deals in.
-   ⚠️ **A finite row needs `RestockDays > 0`**, and so does a `LeveledTable`; `--validate` rejects
-   either without one, because a shop with finite stock and no clock is emptied by the first player
-   through the door and a pool rolled once is frozen for the run.
-4. **Restock is evaluated when a shop is opened, not on a tick.** No `_Process`, no event
-   subscription, no `DayChangedEvent` — a shop restocks because enough days had passed by the time the
-   player walked up, and nothing can observe the difference. `WorldEventDirector` is the counter-example:
-   it ticks real-seconds cooldowns every frame and is not `ISaveable`, so they vanish on reload.
-   `WorldClock.Day` is the date; `time 26` rolls it forward one day (an in-game day is
-   `DayLengthSeconds` — 180 s — of real waiting), and `shop restock <id>` skips the wait entirely.
-5. ⚠️ **Runtime stock lives in `ShopStockService`, never on the resource.** A `ShopResource` is shared
-   by every vendor naming it and is not `ISaveable`, so a remaining count written into it would leak
-   between merchants *and* vanish on reload. **The rolled leveled wares persist too** — that is the
-   whole reason they are in the save: if a reload rerolled the pool, the player would reload until a
-   Legendary appeared.
-6. **Standing moves prices (38C).** Author `FactionId` on the shop and
-   `ShopPricing.PriceMultiplierFor` does the rest: a 15%–35% surcharge across the hostile half of the
-   ramp down to 15% off at Allied, applied through `ShopPricing.MarkupFor` so the multiplication has one
-   home. A faction the player is **hostile** to will not trade at all — that gate reuses
-   `ReputationComponent.IsHostile`, so each faction's authored `HostileThreshold` decides it, and the
-   prompt names the refusal. This is the first thing in the game to read a reputation *tier* and change
-   a number; before it, standing was written, displayed, and consulted only as a boolean.
-   ⚠️ **Author the faction on the `ShopResource`, not the vendor entity**, even though every town NPC
-   already has a `FactionComponent`: `ShopOpenedEvent` carries no vendor, the `shop` dev command has no
-   vendor at all, and the validator cannot scan a `.tscn`.
-   ⚠️ **A shop must invert the AI's fail-safe.** `EnemyAIComponent` treats a missing
-   `ReputationComponent` as *hostile*, which is right for a creature deciding whether to swing; for a
-   merchant it would make every shop in a half-built world refuse. An unresolvable standing trades
-   normally at the authored price.
-   ⚠️ **`BuyMarkup` needs headroom.** `BuyPrice` clamps its markup to `>= 1`, which is what makes a
-   discount incapable of inverting the spread — and also what silently swallows a markup too thin to
-   discount, so a shop near `1.0` charges its best two tiers the same. `--validate` reports that,
-   because the arithmetic cannot.
-   **Only the buy side moves.** A merchant who likes you paying *more* for your loot is symmetric and
-   tempting, but with both clamps in play a generous sell fraction converges on `sell == buy` —
-   frictionless churn — and standing already modifies prices without it.
-7. **A merchant fills up (38H).** `ShopStockService` counts units absorbed per template since the shop's
-   last restock, and `ShopStock.SaturatedPayout` prices a stack **unit by unit** as that count climbs —
-   never one price times a quantity, or dumping the whole stack at once becomes strictly optimal and the
-   mechanic punishes only the tidy seller. There is nothing to author: it rides `RestockDays`, which now
-   carries the shelves, the purse and the appetite.
-   ⚠️ **A shop with `RestockDays = 0` does not saturate at all** — nothing would clear it, so the decay
-   would be permanent. That is answered inside `SaturationMultiplier`, which is why there is no validator
-   rule for it.
-   ⚠️ **Each unit floors at 1 gold.** A one-coin item against any multiplier below 1 rounds to nothing,
-   and a zero payout is refused as worthless — saturation would become a silent *refusal* for exactly the
-   cheap high-volume goods it exists for.
-8. **A merchant's purse is a sink from the other end (38C).** `PurseGold` (`0` = unlimited) is spent
-   buying from the player and refills at restock, so a field of corpses cannot be fenced in one visit.
-   ⚠️ **A positive purse needs `RestockDays > 0`** — same rule and same reason as a finite stock row.
-   A payout the merchant cannot cover refuses the whole sale; paying part of it is item loss with a
-   receipt. The purse arithmetic lives in `ShopStock` (`CanCover`/`AfterSpend`/`AfterRefund`) rather
-   than in the service, because the service is a Godot `Node` the test project cannot construct.
-9. Place it. **Two routes, and 38E decided which is which:**
-   - **A merchant who talks** — author a `DialogueChoice` with `Effect = OpenShop` (9) and
-     `EffectArg = "shop.xxx"` on the conversation she already has. This is the default. It exists because
-     ⚠️ **an entity gets one interactable** — `EntityNode.GetComponent<T>` returns the *first* child match,
-     so a `VendorComponent` behind a `DialogueComponent` never fires — and because two of the three town
-     merchants carry live quest content that a menu must not displace. It also puts the shop id somewhere
-     `ContentValidator` **can read**, which a `.tscn` export never was.
-     ⚠️ **Leave `Goto` empty on that choice.** A conversation left open behind the vendor window returns
-     when the shop closes; `--validate` rejects an `OpenShop` choice that points anywhere.
-     The handover is safe in that order: `DialogueSession.Choose` applies the effect *before* it resolves
-     `Goto`, so `VendorPanel` registers with `UiState` before `DialoguePanel` deregisters, and the owner
-     count never hits zero — no pause flicker, no mouse-mode flicker.
-   - **An unattended counter or stall** — an `Entity` with a collider and a
-     `VendorComponent { ShopId = "shop.xxx" }`. Still the right answer where there is nobody to talk to;
-     its first world placement is the market district. ⚠️ Its `ShopId` lives in a `.tscn` and is therefore
-     **unvalidated** — a typo gives no prompt at all rather than an error (see 8 below).
+1. Set `TerritoryRadius` on its profile, or it chases forever (a flier follows you across realms).
+2. A marker `Entity` in the cell with a **stable, unique `PersistentId`** and a `LairSpawnComponent`
+   (`TemplateId`, `SpawnOffset`). **Persist the spawner, never the boss** — a boss spawned on cell load
+   races `CellPersistenceDirector` and resurrects. Two lairs sharing an id both die at once.
+3. Shape the fight space with a `WorldLandformResource` in the region spec, not a floor.
+4. Inherit `scenes/regions/roost.tscn` (owns `Nav`, baker, `Nest`/`Lair` markers); props go under `Nav`.
+5. Set `DefeatFlagId` if anything must know the boss is dead.
 
-   ⚠️ **A TRAVELLING MERCHANT MAY NOT USE THE DIALOGUE ROUTE (38L).** This is not a preference; the
-   dialogue path has no notion of presence. `DialogueSession` evaluates `ShopOpen`/`ShopClosed` through
-   `ShopHours.IsOpenAt` alone — *hours*, never `IsInTown` — and the only thing that hides an away
-   merchant and zeroes their collider is `VendorComponent.ApplyPresence`. Wire a traveller through a
-   conversation and they stand at their cart every day of the cycle with a working trade line, which is
-   38J's whole mechanic inverted. **Anyone with a `VisitEveryDays > 0` gets a `VendorComponent`**, and
-   pays the unvalidated-`ShopId` price for it — Hesk and the Embermarket's two caravanners all do.
-   Making a traveller talk would mean teaching the two conditions about presence *and* adding a
-   hiding component for dialogue merchants; nobody has needed it enough yet.
+⚠️ **Spawning into a cell: create at zero, add, *then* set `GlobalPosition`.** Factories take a
+**local** position and the cell root is already moved to its centre, so a world position applies the
+offset twice.
 
-   Reach any shop without walking to it via `shop <id>` in the F1 console; drive the discount with
-   `rep <factionId> <delta>`.
-10. ⚠️ **`ContentValidator` does not scan `.tscn`**, so a mistyped `ShopId` gives **no prompt at all**
-   rather than an error — the same trap `PropertyStorageComponent.PropertyId` carries. A merchant
-   silently unusable in game: check that field first.
-11. **Prices have one authority: `ItemInstance.Value`**, which already folds in rarity and affix
-   count, so the spread applies to rolled loot for free. Put any new pricing maths in
-   `src/Economy/ShopPricing.cs` and any restock/level/purse maths in `src/Economy/ShopStock.cs` (both
-   Godot-free, so the test project can pin them) — never at a call site, and never a second price table.
-   ⚠️ Day arithmetic there widens to `long`: a never-stocked shop is stamped `int.MinValue`, and
-   `0 - int.MinValue` overflows back to a negative, which answered "not due" for the one case that
-   most obviously is. The test caught it on the first run.
-12. **Buying charges before it delivers, and refunds if delivery fails.** The other order cannot work:
-    `InventoryComponent.AddInstance` merges a stackable into an existing stack, so the instance handed
-    in is often never stored and `RemoveOneInstance` would find nothing to roll back. Refunding gold
-    always works — spending it either freed a slot or left a stack with room.
-13. **Selling removes by reference for rolled items, by template id only for stackables** — the same
-    split `StoragePanel.Transfer` makes, for the same reason. A zero payout is refused rather than
-    accepted: handing an item over for nothing is item loss wearing a transaction's clothes. The shelf
-    decrement (`ShopStockService.TakeOne`) is deliberately the **last** step of a purchase: nothing may
-    consume stock on a path that ends without the player holding the goods.
-14. **Gate a shelf, and sell a stake in the merchant (38I).** A `ShopStockEntry` carries three optional
-    gates, all of whose defaults mean *ungated*: `RequiredTier` (`ReputationTier.Hated` is the bottom of
-    the ramp, so it needs no sentinel), `RequiredFlagId`, and `RequiredInvestment`. `ShopResource`
-    carries `InvestmentTiers` — an array of `ShopInvestmentTier` (`Cost` + `PurseBonus`), cheapest
-    first — and buying a rung is permanent, raises the merchant's purse at **every future restock**, and
-    unlocks the rows gated behind it. `ShopStock.LockOf` is the one gate authority (pure, swept by
-    tests); the panel evaluates it because the gate needs the player and `ShopStockService` is
-    deliberately player-agnostic.
-    ⚠️ **A stake moves no price, on purpose.** Standing owns the price ramp (38C) and 38F's sweep
-    contract says every new multiplier joins `NoCombinationOfMultipliersLetsSellingBeatBuying` — 38I
-    honours it by adding none. If a later sub-phase wants an investor discount, it joins that test.
-    ⚠️ **A locked row is shown, greyed, with its gate named** — the sold-out rule, for a stronger
-    reason: a hidden row teaches nothing, and a locked one is how the player learns a stake buys
-    something. The refusal order is **flag → standing → gold**, `PropertyClaim.Resolve`'s rule, so
-    nobody is sent to earn coin for something a story beat is holding shut.
-    ⚠️ **An unlimited purse (`PurseGold = 0`) stays unlimited** no matter the stake — adding to it would
-    make a bottomless merchant *finite*, a downgrade the player paid for. Settled in
-    `ShopStock.PurseAfterInvestment` so no caller can forget it, **and** rejected by `--validate`,
-    because safe arithmetic does not make the data meaningful.
-    ⚠️ **`RefundPurse` clamps to the invested ceiling, not the authored one**, or a sale that debited and
-    failed would quietly erase what the stake bought.
-    `--validate` rejects nine shapes, every one of them well-formed data that buys nothing: a free rung,
-    a ladder that stops climbing, a purse bonus on an unlimited purse or on a shop with no restock clock,
-    a stake granting no purse and unlocking no row, a row needing more rungs than exist, a shop that
-    gates *every* row (its window opens empty for a new player), a `RequiredFlagId` nothing writes
-    (folded into `ValidateStoryFlags`' reader pass), and a standing gate above Neutral on a shop with no
-    `FactionId` — the window falls back to Neutral there, so that shelf never opens.
-    Reach it without the grind: `shop invest <id>` in the F1 console buys a rung for free, and the
-    `shop` listing prints `stake held/total`.
+### A creature that talks
 
-15. **Give a shop a clock, and a merchant a road (38J).** `ShopResource` carries `OpenHour`/`CloseHour`
-    (**equal means always open** — the `0`/`0` default, so the fields arrive inert) and
-    `VisitEveryDays`/`VisitDayOffset` (`0` = resident). All the arithmetic lives in the new Godot-free
-    `src/Economy/ShopHours.cs` — `IsOpenAt` (half-open window, wraps past midnight), `OpenSpanHours`,
-    `NextOpenHour`, `IsInTown`, `NextVisitDay`.
-    **Presence needs no save state at all.** It is a pure function of `WorldClock.Day`, so unlike every
-    other piece of shop state in this arc there is nothing to persist and nothing to drift out of step
-    with a reloaded clock. Do the same for anything else derivable from the clock.
-    - **A merchant who talks** gates her trade choice on `DialogueCondition.ShopOpen` (12) with
-      `ConditionArg` = her shop id, and authors a second choice on `ShopClosed` (13) pointing at a
-      closed-hours node. ⚠️ **`--validate` requires that pairing** on any shop with hours: without it the
-      player picks "let's trade" at midnight and *nothing happens*, which is a dead choice rather than a
-      refusal. `ApplyEffect` refuses too, as a backstop — but the backstop is silent by design, so the
-      condition is what actually speaks. ⚠️ **Gate every trade choice**, not just the first: Aldreth
-      offers trade on two nodes, and a gate on one of two doors is not a gate.
-    - **An unattended stall or a traveller** uses `VendorComponent`, which now hides its own entity on
-      the days the merchant is away. ⚠️ **Hiding a `Node3D` does not disable its collision** — the
-      hidden trader would still stop the interact ray and the player's body, an invisible wall that
-      reads as a physics bug. `ApplyPresence` zeroes and restores the collider's `CollisionLayer`
-      alongside `Visible`, and both live in one function so neither can happen without the other.
-    - It rides `TimeOfDayChangedEvent`, the hourly tick `ScheduleComponent` already uses — no
-      `_Process`, no new event, and the day rolls over inside it.
-    ⚠️ **Hours must be authored to match the merchant's `ScheduleComponent` routine, by hand.** A
-    `ScheduleId` lives in a `.tscn`, which `ContentValidator` does not scan, so nothing can check that
-    the shop shuts around the hour she walks away from her stall.
-    ⚠️ **A consumable may never be sold only by travelling shops**, and `--validate` enforces it. Hours
-    are a *wait* — the inn advances the clock — but a merchant who may not be in town is a coin flip
-    against the calendar, and a player out of potions cannot sleep their way to one. **Services keep no
-    hours at all**: an inn that closed at night would be the only way to pass the night, closed at
-    night.
-    Eight validator rules in all: an hour outside `0..23`, a day shorter than
-    `ShopHours.MinimumOpenSpan`, a negative visit cycle, a cycle of `1` (that is a resident), a cycle
-    above `ShopHours.MaxVisitGap`, an offset outside `0..n-1` (a merchant who never appears), a
-    shop-hours condition naming an unknown shop, and the ungated `OpenShop` choice above.
-    `shop <id>` in the console **deliberately overrides both** and says so in its output.
+Set `DialogueId` on the archetype (the factory attaches a `DialogueComponent`; the interact ray hits
+its body). **Put it in a faction the player is not hostile to** (`faction.dragons` pattern), or it
+attacks first; the first hit provokes it regardless. To teach a spell use `LearnSpell` (8) — it
+ignores `PlayerLearnable`, so mark such spells `false`.
 
-## A new service — trainer / bank / inn / stable (Phase 38D)
+### A new boss fight
 
-> ⚠️ **MANDATORY LAST STEP: put it on the map.** A service with no `MapLocationResource` **fails
-> `--validate`** (`ValidateEverythingIsOnTheMap`). Add a row to `tools/gen_map_locations.py` and run
-> it — see [a new map location](#a-new-map-location-phase-395a).
+1. `data/bosses/Xxx.tres` (`BossResource`, `boss.*`): `Phases` — `BossPhaseResource`s **ordered high
+   health to low**, the first at `HealthFraction = 1.0`, each with `AttackSpeedBonus`/`MoveSpeedBonus`
+   (fractions under a `boss.phase{n}` source), optional `GrantSpellIds`, `AiProfileId` swap,
+   `TelegraphColor`/`TelegraphEnergy`, `WindupPoiseMultiplier` (>1 makes a wind-up worth hitting; must
+   stay positive — 0 looks like a broken interrupt and is rejected), `Attacks`, and `AddWaves`
+   (`BossAddWaveResource`: `TemplateId`, `Count`, `RepeatSeconds` 0 = once, `MaxAlive`,
+   `HealthMultiplier`). ⚠️ **A repeating wave must set `MaxAlive`.** Optional enrage: `EnrageSeconds`
+   (0 = none), `EnrageSpellIds`, bonuses, `EnrageForcesFinalPhase`. Encounter/Reward: intro lock,
+   defeat slow-mo, `RewardItemId`, `DefeatFlagId`, `DefeatDialogueId`.
+   ⚠️ **A reward or defeat dialogue requires a `DefeatFlagId`**, or it pays out on every death. Leave
+   it empty on a lair boss (`LairSpawnComponent` owns that fact).
+2. On the archetype: `IsBoss = true` **and** `BossId`. An `IsBoss` with no `BossId` gets the default
+   three-stage table; a `BossId` on a non-boss is rejected.
+3. **The arena binds itself in its `.tscn`:** `Marker3D`s in group `boss_add_spawn` under the boss's
+   parent (no markers = a ring around the boss); `ArenaHookComponent` (`ActivateAtPhase`, `Reveals`)
+   reveals nodes by phase, scoped to bosses under its own arena, and resets on death. See
+   `scenes/regions/ember_crown/arena.tscn`.
+4. ⚠️ The enrage clock starts on the first damage traded, not on `BossEncounterStartedEvent`.
+5. ⚠️ Mark every phase-granted spell `PlayerLearnable = false`.
 
-1. Author `data/services/Xxx.tres` (`script_class="ServiceResource"`): unique `Id` (`service.*`), a
-   `NameKey` in `strings.csv`, a `Kind`, a `PriceGold`, an optional `FactionId`, and the fields that
-   `Kind` reads. Auto-indexed by `ServiceDatabase`. Place it as an `Entity` with a collider and a
-   `ServiceComponent { ServiceId = "service.xxx" }`.
-2. **`UnlockFlagId` is the pay-once contract, and which services need it is a validator rule.**
-   Empty = charged every use (an inn bed, a lesson whose recipes are their own receipt). Set = charged
-   once, and the story flag *is* the record.
-   ⚠️ **A Bank or Stable without one charges its fee on every single interaction** — the exact shape of
-   the bug 36E fixed for boss rewards.
-   ⚠️ **A Trainer granting `XpReward` without one is an infinite gold-to-levels pump.** `DESIGN.md` §6
-   forbids buying the defining power, so an XP lesson must be bounded by a flag. A trainer that only
-   teaches recipes needs no flag: not knowing the recipe *is* the check.
-   ⚠️ **An Inn with one** would make the first night the only one that ever charged.
-3. ⚠️ **An inn must rest through `ServiceRules.RestTarget`, never with its authored `RestHour`.**
-   `WorldClock.SetTimeOfDay` advances `Day` only for an hour of 24 or more and otherwise just rewinds
-   the hour — so resting from 20:00 to 08:00 has to be asked for as `32`. Passing `8` looks like it
-   works and silently freezes 38B's shop restock clock and every future daily service, with nothing in
-   the failure pointing at the inn. Resting *at* the target hour buys a whole day, because an inn is
-   never a no-op.
-4. **A trainer sells access, never a rank.** Recipes through `CraftingComponent.Learn` and XP through
-   `ProgressionComponent.AddXp` — so skill points arrive by *levelling*. Nothing in the game grants a
-   point directly and 38D deliberately did not add a way; see the recipe-reachability rule above for
-   the `Starting` ∪ trainers union.
-5. **A bank is 37B's storage with the property gate removed.** Put an `InventoryComponent` on the
-   service's own entity and it *is* the vault — `StoragePanel` already answers `StorageOpenedEvent`, so
-   there is no UI and no save code to write.
-   ⚠️ **Give that entity a `PersistentId` and never change it** (`inventory:<PersistentId>` is the save
-   key). Without one the inventory does not register as a saveable at all and the vault empties on every
-   reload, which reads as item loss rather than a missing field. Author `Capacity` on the node, not the
-   resource: `InventoryComponent.Load` clamps to it.
-6. **Standing prices a service and can refuse it**, through the same `ShopPricing.PriceMultiplierFor`
-   ramp a shop uses — `ServicePrice` is the flat-price entry point, rounding up and flooring at 1 so a
-   discount cannot make a priced service free. ⚠️ Copy the **inverted** hostility default: an
-   unresolvable `ReputationComponent` serves normally, the opposite of `EnemyAIComponent`'s fail-safe.
-7. ⚠️ **An entity gets one interactable**, so a `ServiceComponent` behind a `DialogueComponent` never
-   fires. The innkeeper's placeholder conversation was replaced outright; the trainer and stablemaster
-   are their own NPCs; the vault is a prop, because the thing that must persist is an inventory and no
-   town NPC carries a `PersistentId`. And ⚠️ **`ContentValidator` cannot scan `.tscn`**, so a mistyped
-   `ServiceId` gives no prompt at all rather than an error.
-8. **There is no `ServiceKind.Repair`, and that is now settled rather than pending.** No durability or
-   condition concept exists anywhere in the game, and ⚠️ **Phase 40 struck survival needs outright**
-   (maintainer direction, 2026-08-12) — durability, hunger and temperature are all CUT. 40B's rule is
-   that cut systems leave no stub, so a kind resolving to nothing would be worse than its absence.
-   **Do not author a repair service**; recorded in `docs/DESIGN.md` §6 and `docs/playbook/phase-40.md`.
+### A new Flamebearer boss, end to end
 
-9. **A commission counter (38Q) is this recipe plus two fields, and it breaks two of the habits above.**
-   `Kind = Commission`, `CommissionStation` (never `Hand`), `MaterialsShopId` pointing at the master's
-   own shop, and `PriceGold` as the labour. He opens the ordinary `CraftingPanel` filtered to that
-   station and supplies whatever the pack is short of, at that shop's prices and the player's standing.
-   ⚠️ **It must be PRICED, and `--validate` enforces that** — the opposite of the free-service rule
-   that fired for 38O's search, 38P's collect counter and 38P2's appraiser. Those are free because an
-   unaffordable service fails closed on the player who needs it; a commission *hands over goods*, so a
-   free one is the materials shop with the spread deleted.
-   ⚠️ **It is charged AFTER its verb**, the only kind that is (`CraftingComponent.Commission`). A full
-   pack refuses the piece and rolls the whole craft back, so charging first would be the one way in the
-   battery to lose the money for nothing.
-   ⚠️ **A commission is the first price the `ShopPricing` clamps do not protect.** It spans two
-   different items — ingredients in, output out — and crafting is meant to add value, so buy-make-sell
-   is an unbounded loop that only the labour fee closes. `--validate` runs
-   `CommissionRules.Exploitable` over every recipe at the station, at Allied standing, and names the fee
-   you need. **Do not author the fee on the floor it prints** — a later recipe or a keener buyer eats
-   the margin.
-   ⚠️ **Sanity-check what the counter is worth next to a free station** before authoring one at all.
-   `town_hub` has three public stations; a master charging for labour alone would be strictly worse
-   than walking twenty metres, which is the "correct and imperceptible" failure that got 38G parked.
+The seven Flamebearers follow one shape; `enemy.storm_tyrant` / `boss.storm_tyrant` is the model.
+Ids follow `docs/playbook/finish.md`'s registry.
 
-## A supply contract / a contract board (Phase 38Q2)
+1. **Body.** `data/attributes/XxxAttributes.tres`, a weapon `.tres`, and `data/enemies/Xxx.tres` with
+   `IsBoss = true`, `BossId`, `AiProfileId = "ai.boss"` (or its own), `FactionId`, `XpValue`,
+   `MaxPoise`, `Reaction`. Model: a generated Meshy body adopted with `python tools/assets.py adopt`
+   (`docs/3D_ASSETS.md`), or, until one exists, an existing body with `ModelScale` — and set
+   `CapsuleHeight` to match the scaled model.
+2. **Fight.** `data/bosses/Xxx.tres` per the recipe above: three or more phases, add waves naming
+   registered enemies, `RewardItemId = "item.relic.<x>_heart"`, `DefeatFlagId = "flag.<x>_defeated"`,
+   `DefeatDialogueId = "dialogue.<x>_absorb"`.
+3. **Relic.** `data/items/` entry for the relic.
+4. **Ember offer.** `data/dialogue/XxxAbsorb.tres` — copy `StormTyrantAbsorb.tres`: the absorb choice
+   carries `AddCorruption` (4) `"25"` and leads to a node whose farewell sets `flag.<x>_absorbed`
+   (one effect per choice); a decline branch; the offer gated on `MissingFlag` of the absorb flag.
+5. **Bestiary** (`Category = 6`, `KillsToKnow = 1`) and every locale key (name, lore, prompts, lines).
+6. **Arena.** In the cell scene, a brazier `Entity` with a collider and `BossSummonComponent`:
+   `BossTemplateId`, `DefeatedFlagId`, `RequiredQuestId` and/or `RequiredFlagId` (empty = ungated;
+   both checked), `PromptKey` / `LockedPromptKey` (locale keys — the locked prompt must say *why*),
+   `SpawnOffset`. Add `boss_add_spawn` markers and, if wanted, an `ArenaHookComponent`. Put the arena
+   on the map (`gen_map_locations.py`) in the same change; if it needs a new cell, see the cell recipe.
+7. **Story wiring (code lists).** Main-story objectives live in `tools/gen_main_story.py` (re-run it).
+   If the boss joins the hidden-realm reveal, add its defeat flag to `HiddenRealmReveal.RequiredFlags`;
+   if its ember counts for the epilogue, add its absorb flag to `EndingSequence.AbsorbFlags`; add its
+   template to `HeadlessStory`'s Flamebearer list.
+8. **Verify:** `--validate`, `--story`, then summon it in a real run and render the arena at eye level.
 
-1. Author `data/contracts/Xxx.tres` (`script_class="ContractResource"`): `Id` (`contract.*`), a
-   `NameKey` in `strings.csv`, `ItemId`, `Quantity`, `RewardGold`, and optionally `FactionId` +
-   `ReputationDelta`. Auto-indexed by `ContractDatabase`. **No code, and no quest.**
-2. ⚠️ **A contract is not a quest and must never become one.** `QuestLogPanel` deliberately carries no
-   Contracts heading — "the journal shows the states the data actually has" — so there is no
-   `QuestResource`, no objective and no `DialogueEffect.StartQuest` anywhere in the feature. The
-   board's own window is the whole UI.
-3. ⚠️ **The reward must BEAT the best buyer, and `--validate` enforces the floor it prints.** A
-   posting paying less than a merchant already pays is a longer walk for less money — 38G's
-   imperceptibility failure. There is deliberately **no ceiling**: buying goods cheap and delivering
-   them dear is a real trade, and what bounds it is that a posting can be filled **once per rotation**
-   (`ContractLedger`). ⚠️ This is the exact mirror of the commission rule above — that one is refused
-   for being too *cheap* because it can be looped; this one for being too *poor* because it cannot.
-4. ⚠️ **Never name an `ItemType.Quest` item.** Handing one over would strand a Collect objective with
-   no way to recover it — `ShopPricing.Sellable`'s own reasoning, and a rule because of it.
-5. **The board itself is a `ServiceKind.Contracts` service** (`BoardSlots`, `RotationDays`), free and
-   flagless, on a prop entity with a collider and one component — an entity gets one interactable.
-   ⚠️ `--validate` insists the authored pool holds **more** contracts than the board has slots, or a
-   rotation would show one posting twice.
-6. ⚠️ **The rotation is derived from the day and never stored** (`ContractRules.Cycle`), so the same
-   day always shows the same board and a quickload cannot reroll it. Only what has been *filled* is
-   saved. If a later board ever needs a rolled rotation, that rotation has to become saved state and
-   this property is gone — do not reach for an RNG without meaning it.
-7. **Adding or removing a contract reshuffles which posting sits on which slot** for every cycle past
-   and future, because the pool is indexed by position. Harmless — nothing saved refers to it — but
-   worth knowing before blaming the rotation for looking wrong after an edit.
+### A new weapon
 
-## Generators — do not hand-write boilerplate (agent-ergonomics pass)
+`data/weapons/Xxx.tres` (`WeaponResource`): damage type, base/poise damage, stamina cost, and an
+authored `Attacks` chain of `ActionDefinitionResource`s (windows as **fractions** of the action's
+duration; `Duration = 0` lets the clip decide) — or the legacy wind-up/active/recovery floats, which
+are synthesised into a chain. `IsRanged` plus the projectile fields make a bow. The actor's
+`CharacterActionComponent.Weapon` or an `EquippableItemResource.Weapon` points at it.
 
-Two committed scripts cover the repo's highest-volume authoring. Both **print to stdout** so the
-output is read before it lands: the `.tscn`/`.tres` stays the authored artefact.
+### A new companion
 
-- **`python tools/gen_cell_props.py props.txt`** — a table of
-  `name  ext_id  x  z  shape_id  y_centre  [yaw]  [y_offset]` becomes the four-node prop stanzas.
-  Verified byte-identical against `emberdeep_mine.tscn`. `--no-collider` for scenery that must not
-  carve the navmesh. It encodes the conventions that were being retyped per prop: static props
-  parent to `Nav`, the collider is a child `StaticBody3D`, and its size comes from the model's
-  **measured** bounding box.
-- **`python tools/gen_merchant_dialogue.py <key> <dialogue.id> <shop.id> "<Speaker>"`** — the
-  resident-merchant graph, verified identical against `data/dialogue/Wenna.tres`. ⚠️ It emits the
-  **scaffold only**; the locale rows stay hand-written, and it lists which ones you owe on stderr.
+`data/companions/Xxx.tres` (`CompanionResource`, `companion.*`): `NameKey`/`TitleKey` (validator
+fails without them), build paths, `FactionId`, optional `KnownSpellIds` (caster), follower envelope
+(`FollowDistance`/`EngageRadius`/`AttackRange`/`LeashRadius`), `StartingLoyalty`,
+`LoyaltyQuestReward`, `LoyaltyQuestId`, `DialogueId`. Auto-registered; recruit by id (dialogue effect
+5, `CompanionRoster.Recruit`, `companion recruit <id>`).
 
-A dressed cell was ~8k output tokens of near-identical stanzas and a merchant conversation ~1.3k.
-Both scripts were written ad hoc and thrown away twice before being committed.
+---
 
-## A new map location (Phase 39.5A)
+## Items and progression
 
-**Do not hand-author these.** The `.tres`, the locale keys and the scene marker must agree, and
-`tools/gen_map_locations.py` generates all three from one table so they cannot drift.
+### A new item
 
-1. **Add a row to the table in `tools/gen_map_locations.py`** with the `add(...)` helper:
-   the cell file, the id tail, the category, **the anchor node path in the cell scene**, the display
-   name, and whichever of `shop=` / `service=` / `dialogue=` / `travel=` apply.
-2. **Pick the anchor carefully — it is the whole feature.** ⚠️ **Parent the marker to the stall,
-   counter or keeper the location IS, never to the cell root with an offset.** The marker's transform
-   is the location's only position, so a marker parented to the thing moves with it and a marker
-   parented to the cell root is a second copy of a coordinate that will rot (invariant 22).
-   `.` means the cell root and is correct **only** for the settlement itself.
-3. **Do not author a coordinate anywhere.** There is no field for one.
-4. **Link, do not restate.** The map asks `ShopDatabase` what a place sells, `ServiceDatabase` what
-   it charges and `DialogueDatabase` who keeps it. Never copy a name or a price into the location.
-5. **Reuse an existing name key where the place already has one.** The five settlements with
-   waystones use their `travel.*.name` key, so renaming the waystone renames the pin.
-6. `RevealWithCell = true` only for a homeland capital or a place the realm's roads announce — it
-   means "known on entering the region". Everything else is discovered by `MapDiscoveryRules`: walking
-   within 20 m, or, for a Primary/Secondary tier, sighting its silhouette within 190/80 m with a clear
-   line over the ground. `RevealFlagId` reveals it from a story flag; `RequiredFlagId` still conceals it
-   (the Undercroft). A quest objective naming it reveals it when the quest starts.
-7. **Run it:** `python tools/gen_map_locations.py`, then `--check` to confirm it is idempotent.
-8. **Gate it:** `godot --headless --path . -- --validate` (both directions of the scene seam) and
-   `godot --headless --path . --script res://tools/map_probe.gd` (a distinct, in-cell world position).
-9. **Wire navigation by id, not coordinate.** Reach/Defend objectives put the `location.*` id in
-   `TargetId`; live-target objectives use `LocationId` only as their unloaded geographic fallback.
-   A travel-capable place links the `TravelNodeComponent`'s `travel.*` id. Discovery reveals the
-   place; interacting with the node separately attunes it. Verify unknown/discovered, tracked,
-   unavailable/available travel, and cross-region save/load states.
+`data/items/Xxx.tres` (`ItemResource`, unique `Id`); reference it anywhere by id. `WorldModelPath`
+lives on the base `ItemResource` (hand, ground and plinth all read it; empty = tinted primitive).
+New interactable kinds subclass `InteractableComponent` (`Prompt`, `Interact`) and need a collider.
 
-⚠️ **A new `MapCategory` is a change to `src/World/MapCategory.cs` AND to the `CATEGORY` list in the
-generator**, which stores the enum's *index*. They are a contract; reordering one without the other
-silently recategorises every location, and only `--validate` catches it.
+### A new piece of equipment
 
-⚠️ **Add a category only when content exists for it.** The filter panel and legend already hide
-groups with no pins, so an empty category is invisible rather than harmless — it is a promise the
-world does not keep, which is the empty-heading problem 37.5E refused for the journal.
+`EquippableItemResource`, `MaxStack = 1`: `Slot`, `Bonus*` fields, optional `Weapon`. Of the six
+school resistances only `BonusFrostResist` exists on gear; each other one is one `[Export]` plus one
+line in `StatBonuses()`. Bonuses apply through `EquipmentComponent`.
 
-## A new region cell (Phases 25, 38K/N1/N2/O, 37E)
+### A new loot affix
 
-> ⚠️ **A new cell needs at least a settlement/landmark map location**, or it is a place the player can
-> stand in that the map cannot name. See [a new map location](#a-new-map-location-phase-395a).
+`data/affixes/Xxx.tres` (`AffixDefinition`): `Id`, `Label`, `Kind` (0 Prefix / 1 Suffix), `Stat`,
+`MinValue`/`MaxValue`, `MinRarity`, `Weight`, `For{Weapons,Armor,Accessories}`.
 
-⚠️ **This recipe did not exist until 37E**, and the settlement recipe below pointed at it ("the cell
-recipe above"). Everything here had been rediscovered four times from other cells' comments.
+### A new loot table / dropper
 
-1. ⚠️ **DO NOT AUTHOR A CELL BY HAND ANY MORE — EDIT `tools/region_spec_<region>.py` AND RUN
-   `python tools/gen_regions.py`** (the 2026-08-29 geography overhaul). The lattice is declared as row
-   bands split into columns and the generator *checks it tiles exactly* before it writes a byte: a gap
-   is a hole the player falls through, an overlap is two coplanar surfaces fighting along a seam, and
-   neither was ever visible from the `.tres`. Every seam route is likewise authored ONCE, as a world
-   point both cells derive their local endpoint from, so half a seam cannot be authored. `--check`
-   fails if the committed `.tres` is out of date.
-2. **Author the cell** in `data/regions/<Region>.tres`: a `sub_resource` with `Id`, `ScenePath`,
-   `Center`, a `WorldCellPresentationResource`, and optional `WorldBiomeScatterResource`, then add
-   it to the region's `Cells` array. Scatter is cosmetic only: layer scenes become MultiMeshes and
-   exclusion circles keep roads, landmarks, encounter centres, and interaction fronts clear.
-   Each layer may declare a reduced cone/box HLOD tier; overlap its begin range with the detailed
-   end range and give both a fade margin. The cell presentation's `TopologyResolution` contributes
-   directly to the region terrain-vertex budget.
-   ⚠️ **Forgetting the array is silent** — the
-   resource exists, `--state` does not count it, and nothing loads.
-3. **`SafeRadius`** is the no-spawn bubble. Set it to cover anywhere the player is meant to be able to
-   stand still. The region's own `SafeZoneRadius` cannot reach a cell a street away.
-4. ⚠️ **`Surplus` / `Demand` / `ShockTags` only if a shop stands in the cell.** `ValidateCellTrade`
-   refuses trade tags with no counter to read them — a half-authored settlement is invisible (38G),
-   and a cell that sells nothing (a homestead, a wilds, an arena) authors none.
-   ⚠️ A shockable cell also needs a `cell.<id>` locale row, or the caravan board posts the raw key.
-5. **The scene** (`scenes/regions/<region>/<cell>.tscn`): a `NavigationRegion3D` named `Nav` with a
-   `CellNavBaker`, then the content. ⚠️ **THERE IS NO FLOOR IN A CELL SCENE ANY MORE.** The ground is
-   the region heightfield: `WorldCellPresentation` builds the terrain mesh AND its collider and
-   parents the collider into `Nav`, so the navmesh bakes off real elevation. A transitional cell is
-   a `Nav`, a baker and nothing else — see `scenes/regions/ember_crown/west_downs.tscn`.
-   ⚠️ **Everything with a collider parents under `Nav`** — geometry outside it is not carved into the
-   bake (27A) and the failure is invisible until you watch an NPC walk through a wall. Interactable
-   `Entity`s parent to the cell root.
-   ⚠️ **An authored node's Y is now its clearance ABOVE the ground, not a world height.**
-   `WorldTerrainConform` adds the terrain height under each direct child of the cell root and of
-   `Nav` at load. Anything whose Y is a real world height — a water surface — joins the
-   `terrain_absolute` group to opt out. A building wants a `WorldGroundAreaResource` pad under it;
-   only the node's own origin is sampled, so a twelve-metre wall on a hillside sinks one corner.
-6. **A schedule in the cell carries a COPY of the cell's `Center` as `Origin`** so destinations stay
-   cell-local. Moving a cell is never a one-line edit.
-7. **Props: measure, never guess.** `python tools/gen_cell_props.py` expands a table into stanzas;
-   collider sizes come from the model's measured bounding box (`docs/3D_ASSETS.md` → Adopting —
-   accessor bounds ignore node scale and will lie to you).
-8. ⚠️ **RENDER IT — the approach, not just the objects.** Copy `tools/market_shots.gd`, point it at
-   the cell, and shoot at **eye level** from where the player actually arrives. Every 37E defect was a
-   correctly-authored model in a position that ruined the shot: a 3 m waystone that reads fine on a
-   road stood as a monolith blocking a front door at 4 m. **A `.tscn` reads fine while looking wrong.**
+`data/loot/Xxx.tres` (`LootTable`) with `LootEntry`s (item, `DropChance`, `Min/MaxQuantity`,
+`RollAffixes`), optional gold and `QualityBonus`. An archetype names it in `LootTablePath`.
 
-## A guild hub and its officers (Phase 42B)
+### A new perk
 
-A guild's home and the people who speak for it. **No new resource kind is involved**: a hub IS a
-`MapLocationResource` and an officer IS an authored `Entity` in a cell scene, so all this recipe
-adds is five id fields on the guild's `FactionResource` and the things those ids point at.
+`data/perks/Xxx.tres` (`PerkResource`): `Id`, name, description, `MaxRank`, `Cost`, `Stat`,
+`ModifierType`, `ValuePerRank`.
 
-1. **Pick the cell, then pick the ground — in that order, and do not put the building on a pad.**
-   ⚠️ **A levelled `GroundArea` is usually a road.** Settlement pads exist because the settlement's
-   road needed flat ground, so the pad and the road corridor are frequently the same rectangle:
-   `Area_crossway_compound` is 12 m deep and 7 m of that is `Path_crossway_compound` plus shoulder.
-   Read the cell's paths out of `data/regions/<Region>.tres` (`Start`, `End`, `Width`, `Shoulder`),
-   and site the building so its footprint clears `Width/2 + Shoulder` from every centreline.
-   ⚠️ Never site it in one of the deliberately empty cells (NOW.md invariant 14).
-2. **Author its pad in the region spec, not in the cell.** Add a `Yard(at=..., ext=..., feather=,
-   blend=, elevation=)` to that cell in `tools/region_spec_<region>.py` and run
-   `python tools/gen_regions.py`. `Elevation` is an **absolute world Y**, so take it from the
-   adjacent pad the new one abuts — that is the only value you can be sure of without measuring.
-3. **Compose the building** with `python tools/compose_building.py <name> <wide> <deep> <storeys>`
-   (`--hollow` for one the player enters, `--open` for a hall with no front wall). ⚠️ **Give each
-   guild a different shell**: same footprint plus same storeys is the "one hall cloned five times"
-   the phase brief forbids, and it is visible from thirty metres.
-   ⚠️ **Do not adopt a raw `assets/library/` model as a file copy.** The `medieval_village` glTFs
-   carry their scale on a parent node and import at ~1/200 (`assets/CREDITS.md`); rescaling one is a
-   Blender step, which is asset-ladder step 4 and a conversation with the maintainer.
-4. **Instance it under `Nav`** in the cell scene (static geometry has to carve the navmesh) and
-   **rotate the door to face the approach.** ⚠️ A wall module's outer face is its local `-Z` and the
-   composed door is on the shell's `+Z` run, so the yaw that points it at the road is not obvious
-   from the file — the only way to know is to render it.
-5. **Author the officers as top-level entities** (`parent="."`, never under `Nav` — an actor must not
-   carve navigation). Copy an existing stanza:
-   `Entity` script + `DisplayName` + `TemplateId` (`npc.*`, and this id is the roster key) + an
-   `Animation` node with `BodyMeshPath = "Model"` + a `Collider`/`Shape` on the cell's `Shape_npc` +
-   a `Faction` node on the guild + a `Dialogue` node + the `Model` instance last.
-   ⚠️ Keep every officer clear of the route corridors too: a capsule that snags on an NPC's collider
-   fails `world_traversal_probe.gd` exactly as a wall does.
-6. **Generate each conversation** with
-   `python tools/gen_guild_dialogue.py <key> <dialogue.id> <faction.id> "<Speaker>"`, then hand-write
-   the nine `dlg.<key>.*` rows in `data/locale/strings.csv`. The scaffold's membership branches use
-   `GuildRankAtLeast` / `GuildNotMember`; ⚠️ **never `HasFlag` with a `guild.*` argument** — those
-   flags are derived by `GuildRules` and hand-writing one is NOW.md invariant 18.
-7. **Give the leader a routine** in `data/schedules/`: set `Origin` to the cell's centre and author
-   every `Destination` cell-local. ⚠️ No destination inside the hub building — a solid shell is one
-   box collider, so its footprint is a hole in the navmesh.
-8. **Map it in this sub-phase.** Add one `add(...)` row to `tools/gen_map_locations.py` anchored to
-   the building node, and run the generator and `--check`. Pick the nearest EXISTING `MapCategory`;
-   a new member for "guild" would say less than `Outpost`, `Contracts`, `Camp`, `Scriptorium` and
-   `Landmark` already do. Pass `reveal=False` for a hub the player is meant to find.
-9. **Declare it on the guild**: `HubLocationId`, `LeaderNpcId`, `QuartermasterNpcId`, `ContactNpcId`
-   on its `data/factions/*.tres`. Leave `RankPeerNpcId` empty until an arc grants a rank to be a peer
-   of — `ValidateGuildHubs` accepts an empty peer and refuses a declared one nobody placed.
-10. **Verify in this order, because the cheap gates do not see placement.**
-    `godot --headless --path . -- --validate` (ids, both sides of the roster);
-    `python tools/check_cell_layout.py data/regions/<Region>.tres` (overlaps);
-    `godot --headless --path . --script res://tools/world_traversal_probe.gd` (**the one that finds a
-    building on a road**); then `godot --path . -- --guild-shots` and *look at the frames* — front,
-    back, at eye level, with the officers in them. ⚠️ Every placement defect 42B shipped and fixed was
-    invisible to the first two and obvious in the fourth.
+### A new XP-bearing enemy (or tuning the curve)
 
-## A production settlement (Phase 38N1)
+`XpValue` on the archetype. Tune levelling in `data/progression/PlayerProgression.tres`.
 
-1. **Author what it refuses before what it sells.** A settlement is a different *place* only if its
-   merchants are a **source** and a **sink** rather than two more stalls: one who sells the local
-   product at the realm's lowest `BuyMarkup` and barely buys, and one who pays the realm's best
-   `SellFraction` for what the place cannot make. `AcceptedTags` is the design; `Stock` is decoration
-   on top of it.
-   ⚠️ **The temptation is to let the sink buy everything so the walk is never wasted, and that is
-   exactly what flattens two settlements back into one.** The Emberdeep quartermaster deliberately
-   does not accept `ore`.
-2. **Check the tag has members first.** `TradeTags`' own rule is that a tag with nothing wearing it is
-   "a promise rather than a feature" — the mine needed a second and third `ore` item before an ore
-   settlement meant anything, exactly as 38L needed a catalogue before twelve specialists did.
-3. **Everything else is the existing recipes**: the cell recipe above, "a new shop / merchant" for the
-   two shops and their conversations, and a `ScheduleResource` with `Origin` set to the cell's
-   `Center` so destinations stay cell-local.
-4. ⚠️ **Carrying goods between two settlements cannot turn a profit yet, and no amount of authoring
-   changes it.** `ShopPricing` clamps every markup to `>= 1` and every sell fraction to `<= 1`, so
-   `sell <= value <= buy` holds at each shop and a two-shop carry is always a loss. Run
-   `godot --headless --path . -- --economy` to see it. Regional demand (38G) moves an item's *value*
-   per settlement and is the only thing that turns those margins positive — do not try to author
-   around it with a generous spread, which just narrows the loss.
+### A new crafting recipe
 
-## A tolled crossing — toll, permit, bribe (Phase 38M)
+1. `data/recipes/Xxx.tres` (`CraftingRecipeResource`): `Station` (0 Hand · 1 Forge · 2 Workbench ·
+   3 Alchemy · 4 Cooking), `Ingredients` (`RecipeIngredient`s), output id/quantity, `OutputRarity`.
+2. ⚠️ **Reachable by exactly one path**, validator-checked as a union: seeded in
+   `GameIds.Recipes.Starting`, **or** taught by a `ServiceKind.Trainer` (`TaughtRecipeIds`). Never
+   both — a trainer charging for what the player walked in with is rejected.
 
-1. **Author the toll on the destination region**, not on the link: `TollGold`, `TollPermitFlagId` and
-   `TollPassFlagId` on `data/regions/Xxx.tres`. `TollGold = 0` (the default) is an untolled road, so
-   every existing region is unaffected. A gate on a two-way road is **two identical blocks, one per
-   region** — the same "declare it on the destination" shape `UnlockFlagId` has, so the bootstrap
-   needs no per-link table.
-2. **Sell the papers as `ServiceKind.Passage` services.** A permit authors `UnlockFlagId` and nothing
-   else — the receipt *is* the exemption, so there is no second record to drift. A bribe authors
+### A new spell
+
+`data/spells/Xxx.tres` (`SpellResource`): `School` (a `DamageType`), `Delivery` (0 Projectile · 1 Area ·
+2 Self · 3 Cone), `CastMode`, `ManaCost`, `Cooldown`, `BaseDamage`, `Healing`, optional
+`StatusEffectId`, delivery knobs (a Projectile with `ImpactRadius > 0` detonates). ⚠️ **The spellbook
+lists every spell**, so set `PlayerLearnable = false` on anything authored for a monster.
+
+### A new status effect
+
+`data/status_effects/Xxx.tres`: `School`, `Duration`, optional DoT, one stat modifier
+(`ModStat`/`ModType`/`ModValue`), `IsBeneficial`, `MaxStacks`. Reference it from a spell.
+
+---
+
+## Story
+
+### A new quest
+
+1. `data/quests/Xxx.tres` (`QuestResource`): `Id`, `Title`/`Summary`, `Objectives`
+   (`ObjectiveResource`: `Type`, `TargetId`, `RequiredCount`), rewards (`XpReward`, `GoldReward`,
+   `RewardItems`, `FactionRewardId`/`FactionRewardAmount` — may be negative), optional
+   `PrerequisiteQuestId`, `CompletionFlagId`, `TimeLimitSeconds`, `IsMainQuest`.
+   **Objective types** (append-only): 0 Kill · 1 Collect · 2 Reach (`location.*`) · 3 Talk
+   (`dialogue.*`) · 4 Escort (`companion.*`; **requires** `LocationId`) · 5 Defend (`location.*`,
+   `RequiredCount` in seconds) · 6 Interact (an `InteractId` on a scene node) · 7 Stealth (no
+   `TargetId`; seeded met, lost when any enemy enters Combat).
+   ⚠️ **A deadline is not an objective type** — it is `TimeLimitSeconds` on the quest.
+   ⚠️ **A Kill objective must name something that respawns** (an encounter or world event can spawn
+   it), or a quest taken after the kill never completes. A one-shot boss needs
+   `AllowsOneShotTarget = true` **and** an offering dialogue gated on the target being alive
+   (`quest.ancient.kin` + `dialogue.ancient_dragon`). A companion's killing blow credits the player.
+2. **`LocationId` only if the target actually lives somewhere.** Encounters spawn around the player and
+   materials drop from loot tables, so most objectives have no destination; inventing one misleads.
+   ⚠️ `--validate` fails a `LocationId` no `MapLocationResource` declares.
+3. **Branching and ordering:** `ObjectiveResource.RequiredFlagId` / `ForbiddenFlagId` make an
+   objective **inert** (cannot advance, does not block, not drawn); `SequentialObjectives` completes in
+   order and steps over shut gates. ⚠️ **Choose the branch before the quest starts** — a choice has one
+   effect, so the fork sets the flag and the next node's choice starts the quest (`Sedge.tres`).
+   `QuestProgress` refuses to complete on zero live objectives. ⚠️ **Gate the fork choices on each
+   other** (`MissingFlag`) or a player can hold both flags. ⚠️ **The ending is the flag, and it needs a
+   consumer** (a dialogue condition, `ShopStockEntry.RequiredFlagId`, `RegionResource.UnlockFlagId`);
+   there is deliberately no per-outcome reward table (invariant 2). Worked example:
+   `quest.hollowreach.barrels` + `shop.hollowreach.hull`. The validator refuses a gate flag nothing
+   writes, a gate that requires and forbids one flag, a gated Stealth objective, sequential with fewer
+   than two objectives, and every objective sharing one `RequiredFlagId`.
+4. **Story flags** have no database: `--validate` catches a flag nothing sets, not a `SetFlag` typo.
+5. Start it with `DialogueEffect.StartQuest`, `QuestLogComponent.StartQuest`, or `AutoStartFlagId`.
+   `QuestGiverComponent` no longer exists. Drive it with `quest start/advance/complete/reset`.
+
+### A chained story quest (`AutoStartFlagId`)
+
+A quest with `AutoStartFlagId` starts itself (and is tracked) the moment that flag is set, and on load
+for a save that already holds it — no quest giver. The previous act's `CompletionFlagId` or a boss's
+`DefeatFlagId` is the trigger. ⚠️ `--validate` fails an auto-start flag nothing ever sets. The main
+story is generated: edit the tables in `tools/gen_main_story.py` (acts, objectives, the Archivist's
+Act III reading, the throne choice) and run it; locale text stays in `strings.csv`.
+
+### A new conversation
+
+1. `data/dialogue/Xxx.tres` (`DialogueResource`): `Id`, `SpeakerName`, `StartNodeId`, `Nodes`
+   (`DialogueNode`: `Id`, `Speaker`, `Text`, `Choices`). A `DialogueChoice` has `Text`, `Goto` (empty =
+   end), **one** `Condition`+`ConditionArg` and **one** `Effect`+`EffectArg`.
+   Conditions: 0 Always · 1 QuestAvailable · 2 QuestActive · 3 QuestCompleted · 4 QuestNotStarted ·
+   5 HasFlag · 6 MissingFlag · 7 CorruptionAtLeast · 8 CorruptionBelow · 9 CompanionRecruited ·
+   10 CompanionNotRecruited · 11 CompanionLoyaltyAtLeast (`<id>:<value>`) · 12 ShopOpen · 13 ShopClosed ·
+   14 GuildRankAtLeast · 15 GuildNotMember · 16 GuildCanJoin.
+   Effects: 1 StartQuest · 2 SetFlag · 3 ClearFlag · 4 AddCorruption · 5 RecruitCompanion ·
+   6 DismissCompanion · 7 AddCompanionLoyalty (`<id>:<delta>`) · 8 LearnSpell · 9 OpenShop ·
+   10 OpenService · 11 JoinGuild · 12 GuildRank (`DialogueEnums.cs` is the authority).
+2. ⚠️ **One condition and one effect per choice**: an "A and B" gate chains through an intermediate
+   node (`Kael.tres`); a choice that starts a quest cannot also set a flag. When nesting, put the
+   condition the node text presupposes outermost.
+3. ⚠️ `OpenShop`/`OpenService` must leave `Goto` empty, or the conversation reopens behind the window.
+4. Attach a `DialogueComponent { DialogueId }` to an `Entity` with a collider.
+
+### A new faction
+
+`data/factions/Xxx.tres`: `Id`, `DefaultReputation`, `HostileThreshold` (a `ReputationTier` int),
+`KillReputationPenalty`, `Enemies`/`Allies`. Tag actors with `FactionComponent`. A guild is a faction
+with ranks (`GuildRules`; NOW invariant 18).
+
+### A new NPC routine
+
+`data/schedules/Xxx.tres`: `Id` and `Entries` (`StartHour`, `Activity`, `Destination`). Destinations
+are **cell-local** — `ScheduleComponent` adds the world position of the cell its NPC stands in
+(`ScheduleResource.DestinationOf`), so moving a cell moves the routine. Hours before the first block wrap to the last. Add a
+`ScheduleComponent { ScheduleId }` to a static NPC. `--validate` fails a destination outside the cell.
+
+---
+
+## World
+
+Read [`WORLD_AUTHORING.md`](WORLD_AUTHORING.md) before touching a region. `data/regions/*.tres` is
+**generated**: edit `tools/region_spec_<region>.py`, run `python tools/gen_regions.py`, then
+`python tools/world_bake.py --bake`.
+
+### A new region
+
+1. Start from `tools/region_spec_template.py`, **never a copy of the Ember Crown's spec** (it drags
+   one realm's cell sizes, seed and road widths along as though they were physics). Claim an atlas band
+   in `tools/world_atlas.py` and add its crossings; `world_atlas.py --check` gates both.
+2. The spec declares `Id`, display name, `Realm`, `SpawnPoint` (Y is clearance), bounds, weather bias,
+   `Neighbours`, a `WorldEnvironmentProfileResource`, a `WorldPerformanceBudgetResource`, a
+   `WorldGenerationProfileResource` (required), biome and the cell lattice. Run `tools/new_cell_scenes.py`
+   for scenes, then `gen_regions.py`, `gen_map_locations.py`, `world_bake.py --bake`.
+3. **Portals come from `Neighbours`**, spawned by `RegionSetup` — no per-scene authoring. Each neighbour
+   may have its own door and landing: `NeighbourPortalPoints[i]` / `NeighbourArrivalPoints[i]` are
+   parallel to `Neighbours` (zero falls back to `PortalPoint` / `SpawnPoint`), so walking back through a
+   crossing lands at that crossing. `UnlockFlagId` on the **destination** hides its door until set.
+   Stepping through (or `region goto <id>`) re-targets the streamer, pays any toll, lands via safe
+   placement and autosaves.
+4. Add the region to the per-region GDScript probes (traversal, census, scene audit, shots).
+
+### A new region cell
+
+> ⚠️ A new cell needs at least a settlement/landmark map location.
+
+1. **Declare it in the spec's row bands**; the generator refuses a lattice that does not tile, and
+   every seam route is one world point. `--check` fails a stale `.tres`.
+2. The cell carries `Id` (`<region>.<cell>`), `ScenePath`, `Center`, a `WorldCellPresentationResource`
+   (`TopologyResolution` counts against the terrain-vertex budget), optional scatter (layers with
+   exclusion circles and an HLOD tier whose begin range overlaps the detailed end, with fade margins).
+   ⚠️ A cell missing from the region's `Cells` array is silent.
+3. `SafeRadius` makes a no-spawn bubble; overlap bubbles so no road strip is unprotected.
+   `SafeZones.Set` replaces and runs before the per-cell adds.
+4. ⚠️ `Surplus` / `Demand` / `ShockTags` only if a shop stands in the cell (plus a `cell.<id>` locale row
+   if shockable).
+5. **Scene:** a `NavigationRegion3D` named `Nav` with a `CellNavBaker`, then content. **No floor** — the
+   terrain collider is parented into `Nav` by `WorldCellPresentation`. ⚠️ **Everything with a collider
+   goes under `Nav`** or it does not carve the bake; interactable entities and actors go on the cell
+   root. ⚠️ **A node's Y is clearance above the ground**; true world heights join `terrain_absolute`. A
+   building wants a level pad (invariant 25).
+6. Navmesh `agent_*` dims derive from the voxel grid (invariant 20): pick `cell_size`/`cell_height`
+   (0.3 in settlements, 0.5/0.4 in large wilds), then `agent_height = ceil(1.75/ch)*ch`,
+   `agent_radius = ceil(0.5/cs)*cs`, `agent_max_climb = floor(0.5/ch)*ch`; slope 40–42. Today: 0.3/0.3 →
+   1.8/0.6/0.3, 0.4/0.3 → 1.8/0.8/0.3, 0.5/0.4 → 2.0/0.5/0.4. Parse **static colliders** only.
+7. Props: `tools/gen_cell_props.py`, collider sizes from the model's **measured** bounds.
+8. `--validate` rejects a scene that exists but does not parse, a negative `SafeRadius`, duplicate cell
+   ids, and any route over a 0.80 grade. There is deliberately no "every cell has a `Nav`" rule (text
+   scans cannot see scene inheritance).
+9. ⚠️ **Render it from where the player arrives, at eye level.** A `.tscn` reads fine while looking wrong.
+
+### A sealed or hidden realm
+
+- `ScopedContentOnly = true` on the region keeps realm-agnostic encounters and world events out; only
+  those naming it in `RegionIds` roll there.
+- `WorldEnvironmentProfileResource.FixedSkyHour` (≥ 0) pins the sky and sun at that hour; the clock,
+  schedules and weather keep running (the Pale Concord's dusk).
+- Entry only by story: a portal from another region gated on this region's `UnlockFlagId`, set by code
+  or content (`HiddenRealmReveal` sets `flag.pale_concord_revealed` from three defeat flags, on every
+  flag change, load and region change).
+- ⚠️ Keep the realm's name out of player-visible text until the reveal: locale values only under
+  `pale.*` / `location.pale.*`, and every map location in its cells gated on the reveal flag.
+  `world_atlas.py --check` enforces it.
+
+### A new map location
+
+**Do not hand-author these.** Add an `add(...)` row to `tools/gen_map_locations.py` (cell file, id
+tail, category, **anchor node path**, name, and `shop=`/`service=`/`dialogue=`/`travel=`).
+
+1. ⚠️ **Parent the marker to the stall, counter or keeper the location IS**, never to the cell root
+   with an offset (invariant 12). `.` is correct only for the settlement itself. No coordinate anywhere.
+2. Link, do not restate — the map asks the shop/service/dialogue databases. Reuse existing name keys.
+3. `RevealWithCell = true` only for a capital or a place the roads announce. Otherwise discovery is by
+   `MapDiscoveryRules` (20 m walk-up; Primary/Secondary sighted within 190/80 m with line of sight);
+   `RevealFlagId` reveals by flag; `RequiredFlagId` conceals; a quest objective reveals on start.
+4. Run the generator and `--check`; then `--validate` and `tools/map_probe.gd`.
+5. Reach/Defend put the `location.*` id in `TargetId`; live targets use `LocationId` as the unloaded
+   fallback; travel places link the `travel.*` id.
+6. ⚠️ A new `MapCategory` changes `src/World/MapCategory.cs` **and** the generator's `CATEGORY` list
+   (it stores the index). Add a category only when content exists for it.
+
+### A guild hub and its officers
+
+A hub is a `MapLocationResource`, an officer a placed `Entity`; the guild's `FactionResource` gains ids.
+
+1. ⚠️ **Do not put the building on a pad — a levelled `GroundArea` is usually a road.** Read the cell's
+   paths and clear `Width/2 + Shoulder` from every centreline. Never use a deliberately empty cell.
+2. Author a new `Yard` in the region spec; `Elevation` is absolute world Y, so copy the adjacent pad's.
+3. `python tools/compose_building.py` (`--hollow`, `--open`); ⚠️ a different shell per guild. ⚠️ Do not
+   file-copy a raw `medieval_village` glTF (it imports at ~1/200).
+4. Instance under `Nav`; the door faces the approach (a wall module's outer face is local `-Z`) —
+   render to know.
+5. Officers are top-level entities (never under `Nav`): `Entity` + `DisplayName` + `TemplateId` (`npc.*`,
+   the roster key) + `Animation` + collider on `Shape_npc` + `Faction` + `Dialogue` + `Model` last.
+   Keep them off route corridors.
+6. `python tools/gen_guild_dialogue.py <key> <dialogue.id> <faction.id> "<Speaker>"`, then the nine
+   `dlg.<key>.*` rows. ⚠️ Never `HasFlag` with a `guild.*` argument.
+7. The leader's routine is cell-local, with no destination inside the (solid) building.
+8. Map it now (nearest existing category; `reveal=False` for a hub to be found).
+9. Declare `HubLocationId`, `LeaderNpcId`, `QuartermasterNpcId`, `ContactNpcId` on the faction; leave
+   `RankPeerNpcId` empty until an arc needs it.
+10. Verify in order: `--validate`, `check_cell_layout.py`, **`world_traversal_probe.gd`** (finds a
+    building on a road), then `--guild-shots` and look at the frames.
+
+### A production settlement
+
+1. **Author what its merchants refuse before what they sell**: a source (local product at the realm's
+   lowest `BuyMarkup`, barely buys) and a sink (best `SellFraction` for what the place cannot make). ⚠️
+   A sink that buys everything flattens two settlements into one.
+2. Check the trade tag has members first.
+3. Everything else is the cell, shop and routine recipes.
+4. ⚠️ Carrying goods cannot profit through spreads alone (`sell <= value <= buy` at every shop); only
+   regional demand (`RegionDemand`) makes a carry pay. `--economy` shows it.
+
+### A new encounter
+
+`data/encounters/Xxx.tres`: `EnemyTemplateId`, `MinCount`/`MaxCount`, `SelectionWeight`,
+`At{Dawn,Day,Dusk,Night}`, `CorruptionChance`, `RegionIds`. ⚠️ **Empty `RegionIds` means anywhere** —
+author it whenever the creature belongs to one realm (frost stalkers once prowled the Ember Crown). A
+misspelt id narrows it to nowhere; only `--validate` catches it.
+
+### A new world event
+
+`data/world_events/Xxx.tres`: `NameKey`, `Kind` (0 Raid · 1 Cache · 2 Hunt), weight, cooldown, time
+limit, `RegionIds` (**empty = anywhere**), day-phase flags, spawn knobs (a Hunt champion is count 1 plus
+`HealthMultiplier`) or `CacheItemId`/`CacheQuantity`, rewards. A new behaviour is a new
+`WorldEventKind` plus a branch in the director.
+
+### A new weather state
+
+`data/weather/Xxx.tres`: `Type`, `SelectionWeight`, `MinHours`/`MaxHours`, `LightEnergyScale`,
+`SkyEnergyScale`, `FogDensity`/`FogColor`, `Precipitation`.
+
+---
+
+## Economy
+
+Mechanism: `ARCHITECTURE.md` §2.21; intent and the sink table: `DESIGN.md` §6. Every price is maths in
+Godot-free `src/Economy/ShopPricing.cs` / `ShopStock.cs` / `ShopHours.cs`, never at a call site and never
+a second price table; any new multiplier joins `NoCombinationOfMultipliersLetsSellingBeatBuying`. Run
+`python tools/negative_tests.py` after touching an economy rule or authored price.
+
+### A new shop / merchant
+
+> ⚠️ **Last step: put it on the map** — a shop with no map location fails `--validate`.
+
+1. `data/shops/Xxx.tres` (`ShopResource`, `shop.*`): `NameKey`, `Stock` (`ShopStockEntry`: `ItemId`,
+   `Quantity`), `RestockDays`, optional `LeveledTable`, `FactionId`, `PurseGold`, `CellId`, and the
+   spread `BuyMarkup` (≥ 1) / `SellFraction`. ⚠️ **`SellFraction` must stay below `BuyMarkup`** (equal
+   or inverted is an infinite loop; rejected and clamped). Gold and quest items are rejected from stock.
+   ⚠️ `CellId` empty means par pricing.
+2. **Trade tags** (`src/Economy/TradeTags.cs`, bare lowercase words): `AcceptedTags` (what she buys),
+   `Specialties` (premium and discount). ⚠️ Both empties mean yes. ⚠️ **Every settlement needs one
+   merchant with empty `AcceptedTags`.** ⚠️ `Specialties` ⊆ a non-empty `AcceptedTags`; a spread too thin
+   for the premium is rejected. Do not add an `ItemType` for trade.
+3. **Stock kinds by number:** `Quantity = 0` unlimited; `> 0` finite, refills on the clock; a
+   `LeveledTable` rolls at restock by player level. ⚠️ Finite rows and leveled tables need
+   `RestockDays > 0`.
+4. **Restock is evaluated when opened**, not ticked. Runtime stock, purses, absorption and rolled wares
+   live in `ShopStockService` (saved), **never on the resource**. `time 26` rolls a day; `shop restock <id>`.
+5. **Standing prices the buy side only** (15%–35% surcharge when disliked, 15% off at Allied); hostile
+   refuses. ⚠️ Author `FactionId` on the shop, not the vendor. ⚠️ An unresolvable standing trades
+   normally (the inverse of the AI's fail-safe). ⚠️ `BuyMarkup` needs headroom or the best tiers price
+   alike (reported).
+6. **Saturation** prices unit by unit as a template is absorbed since restock; none when
+   `RestockDays = 0`; each unit floors at 1 gold.
+7. **Purse** (`PurseGold`, 0 = unlimited) refills at restock; ⚠️ needs `RestockDays > 0`; an uncovered
+   payout refuses the whole sale.
+8. **Placing her.** A merchant who talks: a choice with `OpenShop` (9), `EffectArg = "shop.xxx"`, `Goto`
+   empty. An unattended stall: an `Entity` with a collider and `VendorComponent { ShopId }`
+   (unvalidated). ⚠️ **A travelling merchant (`VisitEveryDays > 0`) must use `VendorComponent`** — the
+   dialogue route has no notion of presence.
+9. **Buy charges before delivering and refunds on failure; sell removes by reference for rolled items,
+   by template for stackables; a zero payout is refused; the shelf decrement is the last step.**
+10. **Gated shelves and stakes:** `ShopStockEntry.RequiredTier` / `RequiredFlagId` / `RequiredInvestment`;
+    `InvestmentTiers` (`Cost`, `PurseBonus`, cheapest first) raise the purse permanently and unlock rows.
+    ⚠️ A stake moves no price. ⚠️ Locked rows show greyed with the gate named; order flag → standing →
+    gold. ⚠️ An unlimited purse stays unlimited; `RefundPurse` clamps to the invested ceiling. Nine
+    validator refusals cover rungs that buy nothing. `shop invest <id>` for testing.
+11. **Hours and travel:** `OpenHour`/`CloseHour` (equal = always open), `VisitEveryDays`/`VisitDayOffset`.
+    Presence is a pure function of the day — nothing saved. A talking merchant gates **every** trade
+    choice on `ShopOpen` (12) and pairs a `ShopClosed` (13) choice (validator requires). A stall hides
+    itself and ⚠️ zeroes its collider with its visibility. ⚠️ Match hours to the NPC's schedule by hand.
+    ⚠️ **No consumable may be sold only by travellers.** Services keep no hours. `shop <id>` overrides both.
+
+### A new service — trainer / bank / inn / stable
+
+> ⚠️ **Last step: put it on the map.**
+
+1. `data/services/Xxx.tres` (`ServiceResource`, `service.*`): `NameKey`, `Kind`, `PriceGold`, optional
+   `FactionId`, kind fields; place an `Entity` with a collider and `ServiceComponent { ServiceId }`.
+2. **`UnlockFlagId` is pay-once.** ⚠️ A Bank or Stable without one charges every use. ⚠️ An XP Trainer
+   without one is a gold-to-levels pump. ⚠️ An Inn with one charges once ever.
+3. ⚠️ **An inn rests through `ServiceRules.RestTarget`** — `SetTimeOfDay(8)` from 20:00 rewinds without
+   advancing the day and freezes every daily clock; ask for 32.
+4. A trainer sells access (recipes via `Learn`, XP via `AddXp`), never skill points.
+5. A bank is an `InventoryComponent` on the service entity. ⚠️ Give it a permanent `PersistentId`; author
+   `Capacity` on the node.
+6. Standing prices services via `ShopPricing.ServicePrice` (rounds up, floors at 1); copy the inverted
+   hostility default.
+7. **There is no Repair kind and never will be** (Phase 40 struck).
+8. **Commission counter:** `Kind = Commission`, `CommissionStation` (never Hand), `MaterialsShopId`,
+   `PriceGold` as labour. ⚠️ Must be priced; ⚠️ charged **after** the craft (rolls back on a full pack);
+   ⚠️ `--validate` runs `CommissionRules.Exploitable` and prints the floor fee — author above it. Check
+   it is worth more than a free station.
+9. A service can be opened from dialogue (`OpenService`, 10), except a Bank.
+
+### A supply contract / a contract board
+
+1. `data/contracts/Xxx.tres` (`ContractResource`): `NameKey`, `ItemId`, `Quantity`, `RewardGold`,
+   optional `FactionId` + `ReputationDelta`. ⚠️ **Never a quest.**
+2. ⚠️ The reward must beat the best buyer (validator prints the floor); no ceiling — once per rotation.
+3. ⚠️ Never an `ItemType.Quest` item.
+4. The board is a free, flagless `ServiceKind.Contracts` service (`BoardSlots`, `RotationDays`) on its
+   own entity. ⚠️ The pool must exceed the slots.
+5. ⚠️ The rotation is derived from the day and never stored; only fills are saved. Adding a contract
+   reshuffles slots for every cycle (harmless).
+
+### A tolled crossing — toll, permit, bribe
+
+1. **Declare the toll on the destination region:** `TollGold` (0 = free), `TollPermitFlagId`,
+   `TollPassFlagId`, and `TollFromRegionIds` (empty = charge arrivals from every neighbour; the Crossway
+   charges only arrivals from Frostfang, since its wardens do not stand at the Ashen Breach or the
+   Southmarch Gate). A two-way gate is two blocks, one per region.
+2. **Papers are `ServiceKind.Passage` services.** A permit sets `UnlockFlagId` only. A bribe sets
    `GrantedFlagId` (consumed at the gate) and a negative `ReputationDelta`, and leaves `UnlockFlagId`
-   **empty**.
-   ⚠️ **Recording a bribe in `UnlockFlagId` makes it a permit**: that field doubles as
-   `ServiceComponent`'s already-bought check, so the gate-hand would refuse to sell a second one.
-   ⚠️ **A permanent pass sold cheaper than the permit deletes the sink** — one bribe and the road is
-   free forever. The pass is consumed by `GameBootstrap.PayToll` for exactly that reason.
-3. **The standing cost is the second half of the price and needs no new currency.** 38C prices every
-   merchant off the same faction standing, so a bribe is charged once at the gate and again at every
-   counter in town, forever. Author `FactionId` or the cost lands nowhere — a validator rule.
-4. ⚠️ **A permit and a bribe are two entities.** `GetComponent<T>` returns the first child match, so
-   two `ServiceComponent`s on one body leave the second unreachable and silent (the 38E finding).
-5. **Charge at the crossing, never at the interactable.** `GameBootstrap.PayToll` sits in
-   `OnRegionTransitionRequested`, which the portal *and* the `region` dev command both arrive at —
-   gating only the component leaves the console a free ride, which is 38C's travel-fee lesson.
-   Fast travel is deliberately **not** tolled: it already pays `TravelFee`, and one journey does not
-   pay two charges.
-6. **Quote the price from the function that charges it.** `RegionTransitionComponent.Prompt` and
-   `PayToll` both call `TollFee.Resolve`, so the number at the gate is the number taken. The prompt is
-   also the refusal channel — `Notifications` has no generic message event, and a refusal that says
-   itself where the player is already looking needs none.
-7. **Two flags, no database — so `--validate` is the only thing standing between a typo and an
-   uncrossable road.** The rule checks that each flag a tolled region names is granted by some
-   authored `Passage` service, as a union. Placing the warden proves nothing: `.tscn` is not scanned.
-
-## A fence and contraband (Phase 38O)
-
-**Read this before authoring anything that no honest merchant should touch.** Contraband is not a
-trade tag like the other twenty-two — it is the only one that fails **closed**, and every step below
-exists because the ordinary tag rules are wrong for a prohibition.
-
-1. **Tag the goods, and tag them with something else too.** `TradeTags.Contraband` on the item, plus
-   whatever it actually is (`gem`, `pelt`, `arcane`…). The second tag is not decoration: it is what
-   makes the refusal legible, because the jeweller who deals in gemstones turns down a stolen signet
-   in front of the player.
-   ⚠️ **Contraband dominates.** `TradeTags.Accepts` answers it first and ignores everything else, so
-   a contraband item is refused by every shop that does not name `contraband` in its own accepted
-   list — including a general store with an **empty** list, which under 38F's "both empties mean yes"
-   would otherwise fence smuggled goods across the most respectable counter in town.
-2. **Give it a source.** Contraband nothing drops and nobody stocks is five files that exist and
-   cannot be reached. Loot rows on the factions who would carry it (`BanditLoot`, `SyndicateLoot`) are
-   the cheap answer; a fence's own shelf is the other, and an item on neither is the
-   `CraftingComponent.Learn` shape CLAUDE.md §1 forbids.
-3. **Author the fence's refusals first**, exactly as a production settlement does (38N1). A fence who
-   takes everything is a general store with a reputation cost bolted on, and the walk to her buys the
-   player nothing.
-4. ⚠️ **Leave the fence's `FactionId` EMPTY.** The natural owner is `faction.outlaws`, which starts at
-   `-30` — tier `Hostile`, at or below its own `HostileThreshold` — so an outlaw-factioned vendor is
-   hidden by `VendorComponent.ApplyPresence` and refuses to trade from the first minute of a new game.
-   The standing a fence *moves* and the standing she *prices by* are two different questions.
-5. **Author both sides of the cost.** `ContrabandFactionId`/`ContrabandDelta` for the faction the sale
-   pleases, `ContrabandPenaltyFactionId`/`ContrabandPenaltyDelta` for the one it offends. Positive and
-   negative respectively — `--validate` rejects a backwards sign, a missing faction, a zero delta
-   beside a named faction, a one-sided fence, and a cost on a shop that will not take the goods.
-   ⚠️ **Per sale, not per unit.** This is deliberately the opposite of 38H's per-unit payout decay:
-   charged per unit, one click on a stack of twenty moves the player three reputation tiers.
-6. **Two fences, not one.** One fence is a door; two are a choice, and they differ in the three
-   numbers that matter — what they accept, what they pay, and what the sale costs in standing. Give at
-   least one of them `OpenHour == CloseHour` (always open), or contraband becomes unsellable for part
-   of every day and the player reads a shop's opening times as the mechanic being broken.
-7. **Confiscation is a `ServiceKind.Search`; recovery is a `ServiceKind.Redeem`.** Both are ordinary
-   38D services and inherit the price, the standing discount, the hostile refusal and the whole prompt
-   battery. The search is priced `0` — a search the player can be too poor to undergo waves the
-   contraband through — and the redemption's `PriceGold` is the **per-unit fine**, not the bill;
-   `ContrabandLaw.Fine` multiplies it by what is held.
-   ⚠️ **Two bodies, not one with two services** — `GetComponent<T>` returns the first child match
-   (38E), the same rule the permit and the bribe already follow.
-   ⚠️ **A realm that can seize must be able to give back.** `--validate` fails a `Search` with no
-   `Redeem` anywhere: a permanent seizure is theft rather than a fine, and it is the only thing that
-   would make carrying contraband a risk the player cannot price.
-8. **Nothing new joins the sweep test, and say so where you would have added it.** Contraband adds a
-   *refusal*, not a price multiplier, so `NoCombinationOfMultipliersLetsSellingBeatBuying` is honoured
-   by there being nothing to add — 38F's contract still binds the next author who does add one.
-
-## A new gold sink (Phase 38C)
-
-1. `docs/DESIGN.md` §6 holds the authoritative sink table — add the row there, or the sink exists in
-   code and nowhere a designer looks.
-2. Put the price in a Godot-free class under `src/Economy/` (`TravelFee` is the model) and charge it at
-   the **single point every path converges on**. The travel fee is charged in
-   `GameBootstrap.OnFastTravelRequested`, not at the map screen, because the `travel goto` dev command
-   publishes the same event — gating the UI alone leaves the console a free ride.
-3. The UI shows the price and greys the control with a reason, reading the **same function** the charge
-   uses (`TravelCosts.FeeFor` for both). A price shown that differs from the price taken is the bug this
-   split exists to prevent, and it is easy to reintroduce by resolving a dependency two different ways
-   — the first draft of 38C did exactly that, reading the active region from a service the map could see
-   and the bootstrap could not.
-4. **Give the sink an exemption the player can earn.** Travel to a holding you own is free, matched
-   through `PropertyResource.TravelNodeId`. Without something like that a sink reads as a toll booth
-   rather than as a choice.
-
-## A big/boss creature with body zones (Phase 35A)
-
-1. Author the archetype `.tres` as above, plus:
-   - `HitZones` — an array of `HitZoneResource` sub-resources (`Id`,
-     `DamageMultiplier`, `Offset`, `Radius`, `Height`; height ≤ 2×radius makes it a
-     sphere). Non-empty **replaces** the whole-body capsule hurtbox, and doubles as
-     the greybox silhouette, so the visual can never drift from what is damageable.
-     The multiplier scales poise damage too — a headshot staggers harder.
-   - `IsBoss = true` → the actor is a `BossEntity`, which is what the Phase 28C
-     healthbar and the 28D corruption-on-kill loop resolve by type.
-   - `DirectionalMelee = true` → a `DragonMeleeComponent` swaps the one
-     `MeleeWeaponComponent`'s hitbox between jaws/wing/tail by the target's bearing.
-2. **Give its AI profile a `TurnSpeedDegrees`.** The AI faces its target before every
-   swing, and the default (`0`) snaps instantly — a body that always looks at you can
-   only ever use its frontal attack, so the flank and rear arcs are dead code without
-   a turn rate. It is also the knob that makes a heavy creature *feel* heavy.
-3. `ContentValidator` checks the zones (ids unique and non-empty, radius and
-   multiplier positive, directional melee backed by zones).
-
-## Making a creature fly (Phase 35B)
-
-1. Set `TakeoffRange > 0` on its **AI profile** (`data/ai_profiles/Xxx.tres`) plus
-   `HoverAltitude`, `ClimbSpeed`, `AirborneDuration` and `GroundedDuration`. Flight
-   is a property of the profile, not the archetype — `EnemyArchetypeFactory` attaches
-   a `FlightComponent` when the profile can fly, and `0` (the default on all four)
-   means no flight and no cost.
-2. **Keep the airborne window short.** A flier with no ranged attack that hovers
-   indefinitely is a fight where neither side can act. The cycle is deliberately
-   `Grounded → TakingOff → Airborne → Landing → Grounded`, never open-ended.
-3. Nothing else needs changing: the AI steers a flier horizontally exactly as it
-   steers a walker, and `LocomotionComponent.Flying` owns the vertical axis alone.
-   `ContentValidator` rejects half-authored flight tuning either way round.
-
-## A breath weapon (Phase 35C)
-
-1. Author `data/spells/Xxx.tres` with `Delivery = 3` (Cone) and `CastMode = 2`
-   (Channeled): `ConeAngleDegrees` is the **full** opening angle, `ImpactRadius` is
-   the cone's *length*, and `PlayerLearnable = false` for a monster's breath. It is
-   an ordinary spell — school resistances, `SchoolIdentity`, status effects and
-   `SpellResolver` all apply with no special-casing.
-2. On the archetype set `BreathSpellId` **and** add the same id to `KnownSpellIds`
-   (the breath is cast through the normal spellcasting path, not around it — the
-   validator rejects one without the other). `BreathDuration` is how long the
-   channel is held.
-3. **A caster is a profile that stands off, not an actor that holds spells.** Giving
-   a melee creature spells does not turn it into a kiter — `EnemyAIComponent` branches
-   on `AIProfileResource.IsStandoff` (`StandoffRange > AttackRange`) alone. Set a
-   standoff range only if you actually want it to back away.
-
-## Placing a world boss in a lair (Phase 35D)
-
-1. Set `TerritoryRadius` on its AI profile. Without it the AI **chases forever** —
-   `_home` is otherwise read only by patrol and retreat — and a flying boss will
-   follow the player into the next realm. `0` is no leash, which is every other
-   profile.
-2. Add a marker `Entity` to the region cell's `.tscn` with a **stable
-   `PersistentId`** and a `LairSpawnComponent` (`TemplateId`, `SpawnOffset`). It
-   builds the creature through `EnemyTemplateRegistry` — no new factory.
-3. **Persist the spawner, never the boss.** `CellPersistenceDirector` reconciles on
-   `RegionCellLoadedEvent`, published *after* the streamer adds the cell root, so a
-   boss spawned in that frame races the walk and a deferred one misses it entirely —
-   either way the boss resurrects every time the cell reloads. The authored spawner is
-   always found, so it holds the "defeated" bit instead.
-4. **The cell's fight space is a landform, not a floor** (the 2026-08-29 overhaul deleted
-   `RoostCell` and every box floor with it). Size the *cell* for the territory in
-   `tools/region_spec_<region>.py` and shape the lair with `WorldLandformResource`: the
-   Wild roost is a 10 m flat-topped shelf with 50-degree sides, the Ash roost a 3.5 m
-   crater floor inside an 8 m rim. Ground colour is the region profile plus the cell's
-   `Tint`, which the shader fades out at the cell edge so it is not a rectangle.
-5. **Give each lair its own `PersistentId`.** `LairSpawnComponent.SaveId` derives from
-   it, so two lairs sharing one means killing either marks both defeated.
-6. **Inherit `scenes/regions/roost.tscn`** (Phase 35F paid the debt the two hand-authored
-   roosts flagged). The base owns the nav region + baker and the `Nest`/`Lair` markers; a
-   roost overrides the `Nest`'s `PersistentId` and the `Lair`'s `TemplateId` and adds its
-   props **as children of `Nav`** (geometry outside the navigation region is not carved
-   into the bake). ⚠️ The base scene no longer owns a floor or a `RoostCell` script — both
-   went with the flat slabs, and the shared-sub-resource `Duplicate()` trap they carried
-   went with them.
-7. **Set `DefeatFlagId` if anything needs to know the boss is dead** (35F). It is the only
-   thing in the game that turns a kill into a story flag, so it is what a dialogue
-   condition or a gated interactable (e.g. `SpellTomeComponent.RequiredFlagId`) can ask.
-
-## A creature that talks (Phase 35F)
-
-1. Set `DialogueId` on the archetype. `EnemyArchetypeFactory` attaches a
-   `DialogueComponent`, and the player's interact raycast is unmasked — it resolves the
-   owner from whatever collider it hits, so the body the creature already has is the
-   target. No extra collision, no bespoke factory.
-2. **Put it in a faction the player is not hostile to**, or it attacks before the prompt is
-   ever readable. `faction.dragons` is the pattern: `DefaultReputation` in the Neutral band,
-   `HostileThreshold` at Unfriendly. `EnemyAIComponent.PlayerIsTarget` does the rest, and
-   the first player hit sets `_provoked` regardless — neutral-until-provoked is pure data.
-3. To have it **teach a recovered spell**, use the `LearnSpell` dialogue effect (`8`) with a
-   `spell.*` id. It goes through the same corruption-gated `SpellcastingComponent.Learn` a
-   tome does and **ignores `PlayerLearnable`**, which is how a spell that can never be
-   bought can still be given. Mark such a spell `PlayerLearnable = false`; the character
-   screen lists it anyway once it is known.
-
-⚠️ **Spawning an actor into a region cell: create at zero, add, *then* set
-`GlobalPosition`.** The factories and `EnemyTemplateRegistry.Create` take a **local**
-position, and a cell's root has already been moved to the cell's centre by the
-streamer — so handing `Create` a world position applies the cell offset twice.
-`BossSummonComponent` has always done it in the right order; the 35D lair spawner did
-not, and its dragon landed on the wrong part of the map (visibly in the void once a
-cell sat far from the origin). `EnemySpawnDirector` had the same latent bug.
-
-## A new weapon
-
-1. Author `data/weapons/Xxx.tres` (`script_class="WeaponResource"`).
-2. Point a `MeleeWeaponComponent.Weapon` at it (factory or future equipment).
-
-## A new item
-
-1. Author `data/items/Xxx.tres` (`script_class="ItemResource"`) with a unique
-   `Id` (e.g. `item.material.silver`).
-2. It is auto-indexed by `ItemDatabase` on startup. Reference it anywhere via
-   `ItemDatabase.Get("item....")` — pickups (`ItemPickupFactory.Create`), loot
-   drops, shops, recipes.
-3. New interactable kinds: subclass `InteractableComponent` (override `Prompt`
-   and `Interact`) and add a collider so the player's raycast can hit it.
-
-## A new piece of equipment
-
-1. Author `data/items/Xxx.tres` (`script_class="EquippableItemResource"`,
-   `MaxStack = 1`): set `Slot`, the `Bonus*` fields, and (for weapons) a `Weapon`
-   `ext_resource` pointing at a `WeaponResource`. `BonusFrostResist` (Phase 35G) is the
-   only one of the 34E resistances gear can carry so far — the other five are one
-   `[Export]` and one line in `StatBonuses()` each, added when an item wants them.
-2. It's indexed by `ItemDatabase` like any item; equip it via the character screen.
-   Bonuses apply automatically through `EquipmentComponent` → `StatsComponent`.
-
-## A new loot affix
-
-1. Author `data/affixes/Xxx.tres` (`script_class="AffixDefinition"`): unique `Id`,
-   a `Label` fragment, `Kind` (0 Prefix / 1 Suffix), target `Stat`, `MinValue`/
-   `MaxValue`, `MinRarity`, `Weight`, and the `For{Weapons,Armor,Accessories}` flags.
-2. Auto-indexed by `AffixDatabase`; it enters the eligible pool for any equippable
-   whose gear family + rolled rarity match. No code change.
-
-## A new loot table / dropper
-
-1. Author `data/loot/Xxx.tres` (`script_class="LootTable"`) with `LootEntry`
-   sub-resources (item id, `DropChance`, `Min/MaxQuantity`, `RollAffixes`), plus
-   optional gold (`GoldChance`/`GoldMin`/`GoldMax`) and `QualityBonus`.
-2. Add a `LootComponent` to the actor (set `Table` or `TablePath`); it rolls and
-   spawns pickups on death. See `EnemyFactory` for the wiring.
-
-## A new perk
-
-1. Author `data/perks/Xxx.tres` (`script_class="PerkResource"`): unique `Id`,
-   `DisplayName`, `Description`, `MaxRank`, `Cost`, target `Stat`, `ModifierType`
-   and `ValuePerRank`.
-2. Auto-indexed by `PerkDatabase`; it appears in the character screen's PERKS list
-   and is learnable once the player has skill points. No code change.
-
-## A new XP-bearing enemy (or tuning the curve)
-
-1. Add an `ExperienceComponent { XpValue = N }` to the actor's factory (see
-   `EnemyFactory`) to grant XP on death.
-2. Tune levelling by editing `data/progression/PlayerProgression.tres` (or author a
-   new `ProgressionResource` and point a `ProgressionComponent.CurvePath`/`Curve` at
-   it).
-
-## A new quest
-
-1. Author `data/quests/Xxx.tres` (`script_class="QuestResource"`) with a unique `Id`,
-   `Title`/`Summary`, `Objectives` (an array of `ObjectiveResource` sub-resources:
-   `Type` 0=Kill / 1=Collect, `TargetId` = entity `TemplateId` or item id,
-   `RequiredCount`), and rewards (`XpReward`, `GoldReward`, `RewardItems` of
-   `QuestItemReward`, and `FactionRewardId`/`FactionRewardAmount` — Phase 34.5C, the same
-   pair `WorldEventResource` has; the amount may be negative). Optional
-   `PrerequisiteQuestId` chains it after another.
-   **There are eight objective types now** (`ObjectiveType`, append-only): 0=Kill, 1=Collect,
-   2=Reach (a `location.*` id), 3=Talk (a `dialogue.*` id), 4=Escort (a `companion.*` id — the one
-   type that **requires** `LocationId`), 5=Defend (a `location.*` id, `RequiredCount` in **seconds**),
-   6=Interact (an `InteractId` authored on a node in a cell scene), 7=Stealth (**no** `TargetId` —
-   a condition on the errand, seeded already met, lost when any enemy enters `Combat`).
-   ⚠️ **A deadline is NOT an objective type** — it is `QuestResource.TimeLimitSeconds` on the quest
-   (41C). `QuestProgress` stores one `int` per objective and two ways to express a deadline is
-   invariant 5 waiting to happen.
-   ⚠️ **A Kill objective must name something that respawns.** `--validate` requires the target to be
-   spawnable by an encounter or world event, because a lair boss is killed once and stays dead — a
-   quest taken afterwards can never complete and never leaves the journal (Phase 35F shipped exactly
-   that). Targeting a one-shot boss needs `AllowsOneShotTarget = true` **and** an offering dialogue
-   that gates on the target still being alive; see `quest.ancient.kin` + `dialogue.ancient_dragon`,
-   which pair it with `LairSpawnComponent.DefeatFlagId`.
-   **Story flags** (`Effect` SetFlag / `Condition` HasFlag) are the only way to mark
-   *state* a quest can't: membership, a rank, a favour owed. They have no database, so
-   `--validate` can only catch a flag that **nothing ever sets** — a `SetFlag` typo still
-   fails silently. A choice carries **one** `Effect`, so a choice that starts a quest cannot
-   also set a flag: hang the flag on the next node's farewell choice (see `Elder.tres`).
-2. **Set `LocationId` on an objective only if the thing it names actually lives somewhere**
-   (39.5C). It takes a `location.*` id and is what puts the objective on the compass, prints a
-   destination under the HUD tracker, and rings the pin on the map — see
-   [a new map location](#a-new-map-location-phase-395a) for authoring the place itself.
-   ⚠️ **Almost nothing in Embervale qualifies, and leaving it empty is the normal answer.** Every
-   hostile is a **region-scoped** `EncounterResource` spawned around the player by the
-   `EncounterDirector`, and every quest material comes off a **loot table**, not a placed node — so
-   "kill six goblins" and "gather iron ore" have no destination, and inventing one sends the player
-   somewhere no better than anywhere else. The one authored example is `quest.ancient.kin`, whose
-   target is a **placed lair** (`ash_roost.tscn`, which carries the matching `MapPin`).
-   ⚠️ `--validate` fails on a `LocationId` no `MapLocationResource` declares — this is the quest arm
-   of *"if the player can go there, it goes on the map"* (CLAUDE.md §1).
-3. **Branching and ordering are two authored fields and no new machinery** (41D).
-   `ObjectiveResource.RequiredFlagId` / `ForbiddenFlagId` make an objective **inert** — it cannot
-   advance, it does not block completion, and no player-facing surface draws it. Two objectives behind
-   one flag and two behind another is a two-path quest. `QuestResource.SequentialObjectives` (a bool,
-   default false) makes objectives complete in authored order; the sequential scan **steps over**
-   objectives whose gate is shut, which is what lets one quest be both ordered and branched.
-   ⚠️ **Choose the branch BEFORE the quest starts.** A `DialogueChoice` carries one `Effect`, so the
-   fork sets the flag and the choice on the next node starts the quest — the two-choices-deep shape
-   `Sedge.tres` uses twice. A quest whose objectives are all gated has *nothing live* until a flag
-   lands, and `QuestProgress` refuses to complete on zero live objectives precisely because that state
-   would otherwise be vacuously finished, with rewards, on the frame it was accepted.
-   ⚠️ **Gate the two fork choices on each other** (`MissingFlag`), or a player who picks a fork and
-   walks off without accepting comes back to both forks and ends up with **both** flags set.
-   ⚠️ **The ending is the flag, and it needs a consumer or it is not an ending.** `DialogueCondition.HasFlag`,
-   `ShopStockEntry.RequiredFlagId` and `RegionResource.UnlockFlagId` all already read flags — there is
-   deliberately **no** per-outcome reward table (a second place rewards live is invariant 5 again).
-   `quest.hollowreach.barrels` + `shop.hollowreach.hull` is the worked example.
-   ⚠️ `--validate` refuses: a gate flag nothing writes, a gate that both requires and forbids one flag,
-   a gated `Stealth` objective, `SequentialObjectives` with fewer than two objectives, and every
-   objective sharing one `RequiredFlagId` (that is availability, not a branch).
-4. Auto-indexed by `QuestDatabase`. Start it from a `DialogueChoice` (`Effect` StartQuest) or
-   directly with `player.GetComponent<QuestLogComponent>().StartQuest(...)`. Objectives advance and
-   rewards apply automatically. No code change for a new quest of any existing type.
-   ⚠️ **`QuestGiverComponent` no longer exists** (deleted 41A: zero references, superseded by
-   `DialogueEffect.StartQuest`, and it carried hard-coded player-facing strings).
-
-## A new conversation
-
-1. Author `data/dialogue/Xxx.tres` (`script_class="DialogueResource"`): unique `Id`,
-   `SpeakerName`, `StartNodeId`, and `Nodes` — an array of `DialogueNode` sub-resources
-   (`Id`, optional `Speaker`, `Text`, `Choices`). Each `DialogueChoice` sub-resource has
-   `Text`, a `Goto` node id (empty = end), an optional `Condition`+`ConditionArg` (gates
-   visibility — incl. `QuestAvailable`, `HasFlag`, and `CorruptionAtLeast`/`CorruptionBelow`)
-   and an optional `Effect`+`EffectArg` (`1`=StartQuest, `2`=SetFlag, `3`=ClearFlag,
-   `4`=AddCorruption, `5`=RecruitCompanion, `6`=DismissCompanion, `7`=AddCompanionLoyalty
-   (`<companionId>:<delta>`), `8`=LearnSpell, `9`=OpenShop, `10`=OpenService — the last two must
-   leave `Goto` empty, or the conversation reopens behind the window they opened). Companion gates come as conditions too (`CompanionRecruited`,
-   `CompanionNotRecruited`, `CompanionLoyaltyAtLeast` = `<companionId>:<value>`).
-   Enums export as ints (see `DialogueEnums.cs`).
-2. Auto-indexed by `DialogueDatabase`. Attach a `DialogueComponent` (set its
-   `DialogueId`) to a world `Entity` with a collider; the player's `E` interact opens it
-   in `DialoguePanel`. No code change for new conversations.
-
-## A new NPC routine
-
-1. Author `data/schedules/Xxx.tres` (`script_class="ScheduleResource"`): unique `Id` and
-   `Entries` — an array of `ScheduleEntry` sub-resources (`StartHour` 0–23, `Activity`
-   label, `Destination` world `Vector3`). Hours before the first block wrap to the last.
-2. Auto-indexed by `ScheduleDatabase`. Add a `ScheduleComponent` (set its `ScheduleId`) to
-   a static NPC `Entity`; it walks the routine off the `WorldClock` and reacts to alerts /
-   dialogue. No code change for new routines.
-
-## A new weather state
-
-1. Author `data/weather/Xxx.tres` (`script_class="WeatherResource"`): unique `Id`, `Type`,
-   `SelectionWeight`, `MinHours`/`MaxHours`, and the atmosphere fields (`LightEnergyScale`,
-   `SkyEnergyScale`, `FogDensity`/`FogColor`, `Precipitation`).
-2. Auto-indexed by `WeatherDatabase`; the `WeatherDirector` can roll it and the
-   `SkyController` renders it (light/fog/rain). No code change.
-
-**A new region** (Phase 25)
-1. Author `data/regions/Xxx.tres` (`script_class="RegionResource"`): unique `Id` (`region.*`),
-   `DisplayName`, `Realm` (the `Realm` enum int), `SpawnPoint` (`Vector3` — where the player
-   appears on entry, Phase 25C), `Bounds` (`AABB`), `DefaultWeatherId` + `DayPhaseBias`,
-   `Neighbours` (`Array[String]` of region ids), one `WorldEnvironmentProfileResource`, one
-   `WorldPerformanceBudgetResource`, and `Cells`
-   — an array of `RegionCellResource` sub-resources (each: `Id` `<region>.<cell>`, `ScenePath`,
-   `Center` `Vector3`, and a `WorldCellPresentationResource`; there is no `LoadRadius`).
-   Place each cell scene at `scenes/regions/<region>/<cell>.tscn`, built at local origin (the
-   streamer positions the instance at `Center`); see `docs/ARCHITECTURE.md` §2.6h-2.
-   **Navmesh (Phase 27A):** wrap the cell's walkable geometry in a `NavigationRegion3D` "Nav" with a
-   `NavigationMesh` whose `geometry_parsed_geometry_type = 1` (**static colliders** — never visual
-   meshes; runtime mesh parsing forces a GPU→CPU readback hitch), and add a `CellNavBaker`
-   (`src/World/CellNavBaker.cs`) as its child so the navmesh **bakes at stream-in**. ⚠️ **The walkable surface is the terrain collider `WorldCellPresentation` parents into `Nav`,
-   not an authored floor** — put a collider on every obstacle (they carve the mesh) and nothing under
-   the cell. ⚠️ **Put the `agent_*` dims on the voxel grid by deriving them from it, and never by
-   copying another cell's numbers** — the bake quantises them silently and warns once per load
-   (`Property agent_height is ceiled to cell_height voxel units and loses precision`). `cell_size` /
-   `cell_height` are 0.3 in settlements and 0.5 / 0.4 in the large wilderness cells, because a 0.25 m
-   voxel over a 200 m cell is twenty-five times the columns to rasterise and the bake times out — so
-   pick those two first, then compute, **rounding the way the baker does**:
-   `agent_height` = `ceil(1.75 / cell_height) * cell_height`, `agent_radius` =
-   `ceil(0.5 / cell_size) * cell_size`, `agent_max_climb` = `floor(0.5 / cell_height) * cell_height`
-   (⚠️ **climb FLOORS while the other two CEIL** — so climb is the one that comes out *stricter*
-   than the 0.5 m intent, 0.3 m on a 0.3 grid, and `ContentValidator.ValidateStepUp` only guards the
-   other direction). `agent_max_slope = 40..42` is not quantised.
-   The values that fall out today: **0.3/0.3 cells** 1.8 / 0.6 / 0.3, **0.4/0.3 cells** 1.8 / 0.8 /
-   0.3, **0.5/0.4 cells** 2.0 / 0.5 / 0.4. Enemy `NavigationAgent3D`s path on it
-   automatically; with no Nav region they fall back to straight-line steering, so a navmesh is
-   optional per cell but expected for any space enemies fight in.
-2. Auto-indexed by `RegionDatabase`; the save header resolves the active region's name, and the
-   `RegionStreamer` instances **every** one of the `Cells` on entering the region and keeps them all
-   resident (a per-frame budget, no distance test — 38M2 deleted the `LoadRadius` rule, the
-   hysteresis and the field, so a cell is authored with a `Center` and nothing else). The
-   `ContentValidator` checks neighbours, default weather, performance/loading limits, authored node
-   and terrain-vertex counts, detailed+HLOD scatter source/count limits, and that each cell
-   `ScenePath` resolves.
-   No code change for a new region.
-   **Adding a cell to an existing region (Phase 38K)** is the same `.tres` sub-resource plus a
-   `.tscn`, and four things are worth doing deliberately:
-   - ⚠️ **The lattice is checked by `tools/gen_regions.py`, not worked out on paper.** Declare the
-     cell in `tools/region_spec_<region>.py`'s row bands; the generator refuses to write a `.tres`
-     whose bands do not tile the region's extent exactly. This replaced four rounds of hand
-     arithmetic and the three seam defects they shipped.
-   - **`SafeRadius` (38K) makes a cell its own no-spawn area.** `0` — the default — means it is not
-     one. A settlement can be more than one cell, and stretching the region's single
-     `SafeZoneRadius` to reach a district a street away also smothers the encounters around the
-     wilds. Author overlapping bubbles so there is no unprotected strip of road between them.
-     `SafeZones` holds a list now; `GameBootstrap.ApplySafeZones` rebuilds it, and ⚠️ `SafeZones.Set`
-     **replaces** and must be called before the per-cell `Add`s, or a region transition leaves the
-     previous realm's districts protecting empty ground here.
-   - **A travel node's `TravelName` is a locale key now.** `TravelNodeComponent` resolves it through
-     `Loc.T`, and because `Loc.T` returns a plain string unchanged, the Phase 25 waystone's authored
-     English still renders and needed no migration.
-   - `--validate` rejects a cell whose scene **exists but does not parse** (a hand-authored `.tscn`
-     with a syntax error — note it does *not* catch a missing `ext_resource`, which Godot tolerates
-     and loads anyway), a negative `SafeRadius`, and two cells sharing an `Id` (the streamer keys its
-     loaded set by id, so one can never be instanced).
-   - ⚠️ There is deliberately **no** "every cell declares a `NavigationRegion3D`" rule. 38K wrote one
-     and deleted it the same hour: a text scan cannot see through scene inheritance, so the three
-     Frostfang roosts — which inherit their `Nav` from the base roost scene — all reported as
-     unnavigable. A check that is wrong three times out of four teaches authors to ignore the
-     validator. What `--validate` *does* own geometrically is `ValidateRouteGrades`: every authored
-     route is walked against the region heightfield and refused over a 0.80 grade, because a road
-     nobody can climb is emergent between two files and invisible in both.
-3. **Hard transitions (Phase 25C):** declaring a region in another's `Neighbours` makes the
-   bootstrap spawn a travel portal between them automatically (a `RegionTransitionComponent` a few
-   metres in front of the region's `SpawnPoint`, or at **`RegionResource.PortalPoint`** when the
-   region authors one — 38M2, so a region with a gate can put its door at the gate).
-   ⚠️ One `PortalPoint` per region, so a region with two neighbours would stack both portals on it.
-   Fine for two regions; a third makes this per-neighbour. Stepping through (or `region goto <id>` in F1) publishes a
-   `RegionTransitionRequestedEvent`; the bootstrap shows the `LoadingScreen`, re-targets the
-   streamer (`UnloadAll` + `Configure`), teleports the player to the destination's `SpawnPoint`, and
-   autosaves the boundary. Reciprocal links give a two-way door. No code change for a new transition.
-
-## A new encounter
-
-1. Author `data/encounters/Xxx.tres` (`script_class="EncounterResource"`): unique `Id`,
-   `EnemyTemplateId`, `MinCount`/`MaxCount`, `SelectionWeight`, the `At{Dawn,Day,Dusk,
-   Night}` allow flags, `CorruptionChance` (0..1, Phase 34F — see below), and `RegionIds`
-   (Phase 34.5B — `Array[String]` of `region.*` ids; **empty means anywhere**). Author
-   `RegionIds` whenever the creature belongs to one realm, or it rolls in every region: that
-   is how frost stalkers ended up prowling the Ember Crown for two phases. A misspelled id
-   narrows the encounter to *nowhere* and `--validate` is the only thing that catches it.
-2. Auto-indexed by `EncounterDatabase`; the `EncounterDirector` spawns it around the player
-   when its day phase is active, resolving `EnemyTemplateId` through `EnemyTemplateRegistry`
-   — so any registered archetype works, not just the goblin (Phase 34B). No code change.
-
-**A corrupted (Ashen) variant of an existing creature** (Phase 34F)
-1. **Don't author a new archetype for it.** Set `CorruptionChance` on an encounter and each enemy
-   it spawns rolls to rise Ashen: `AshenAffliction.Afflict` adds named `"ashen"` stat modifiers,
-   scales XP, prefixes the nameplate via `enemy.ashen_prefix`, and chars the body with the same
-   ash/ember colours `CorruptionAppearanceController` uses on the player. An "Ashen Wolf" authored
-   as its own `.tres` is a copy of `Wolf.tres` that drifts the moment either is tuned.
-2. Corruption is a property of the **place**, not the player — LORE attributes it to Morthul and
-   the realm. Author the chance per encounter; Phase 44.5's realm decay tier can drive it later.
-3. Reach for a real archetype only when the creature is more than a tinted, tougher base — a
-   different AI profile, spell loadout or faction (see `enemy.ash_maw`, `enemy.cinder_thrall`).
-4. If you extend the affliction: never change `TemplateId` (quest kill objectives match on it), and
-   always `Duplicate()` a material before tinting it or the change writes through to every other
-   instance sharing that imported resource.
-
-## A new world event
-
-1. Author `data/world_events/Xxx.tres` (`script_class="WorldEventResource"`): unique `Id` and
-   `NameKey` (a row in `data/locale/strings.csv`), `Kind` (`0`=Raid / `1`=Cache / `2`=Hunt),
-   `SelectionWeight`, `CooldownSeconds`,
-   `TimeLimitSeconds`, `RegionIds` (Phase 35G — `Array[String]` of `region.*` ids;
-   **empty means anywhere**, exactly as for encounters, so author it whenever the event
-   belongs to one realm or it rolls in every region — that is how goblin raids reached
-   Frostfang Reach), the `At{Dawn,Day,Dusk,Night}` flags, spawn knobs (enemy `MinCount`/
-   `MaxCount` + `HealthMultiplier` — a Hunt champion is just a count of 1 and a multiplier,
-   not a second archetype, or `CacheItemId`/`CacheQuantity`), and rewards
-   (`XpReward`, `GoldReward`, `RewardItemId`/`RewardItemQuantity`, `FactionRewardId`/
-   `FactionRewardAmount`).
-2. Auto-indexed by `WorldEventDatabase`; the `WorldEventDirector` rolls and runs it (announce →
-   track → reward). New Raid/Cache/Hunt events need no code; a genuinely new behaviour is a new
-   `WorldEventKind` + a branch in the director's start/track switch.
-
-## A new crafting recipe
-
-1. Author `data/recipes/Xxx.tres` (`script_class="CraftingRecipeResource"`): unique `Id`,
-   `Station` (`0`=Hand / `1`=Forge / `2`=Workbench / `3`=Alchemy / `4`=Cooking), an
-   `Ingredients` array of `RecipeIngredient` sub-resources (`ItemId` + `Quantity`, same
-   sub-resource `.tres` pattern as `LootEntry`), `OutputItemId`/`OutputQuantity`, and
-   `OutputRarity` (`0`=Common plain; higher rolls affixes for an equippable output).
-2. Auto-indexed by `RecipeDatabase`. The player learns it by id (seed via
-   `CraftingComponent.StartingRecipeIds` in `PlayerFactory`, or call `Learn`); it then appears
-   at a matching `CraftingStationComponent`. New stations: `CraftingStationFactory.Create(...)`
-   in the bootstrap. No code change for new recipes.
-3. ⚠️ **A recipe must be reachable by one of exactly two paths, and `--validate` checks the union.**
-   Either seed it in `GameIds.Recipes.Starting` (what `PlayerFactory` grants every new character), or
-   have a `ServiceKind.Trainer` teach it via `ServiceResource.TaughtRecipeIds` (Phase 38D, the first
-   caller `CraftingComponent.Learn` ever had — before that the array was the whole of reachability and
-   `recipe.leather_vest` rotted unreachable from Phase 15 to Phase 35).
-   ⚠️ **Never both.** `PlayerFactory` seeds `Starting` unconditionally, so a recipe in both lists is a
-   trainer charging for knowledge the player walked in with; the validator rejects that too.
-   A late-game recipe now has a real choice of gate: **taught** (`recipe.drakescale_mail` is bought
-   from the Ember Crown smithing lesson) or a **scarce ingredient** (the same mail still needs eight
-   dragon scales that only Frostfang's dragonkin drop). Before 38D only the second existed, which is
-   *why* it was gated that way.
-
-## A new spell
-
-1. Author `data/spells/Xxx.tres` (`script_class="SpellResource"`): unique `Id`, `School`
-   (a `DamageType`), `Delivery` (`0`=Projectile / `1`=Area / `2`=Self), `ManaCost`,
-   `Cooldown`, `BaseDamage`, `Healing` (Self), an optional `StatusEffectId`, and the
-   delivery knobs (`Range`/`ProjectileSpeed` for projectiles, `ImpactRadius` for an AoE
-   burst — a Projectile with `ImpactRadius > 0` detonates as an area on impact).
-2. Auto-indexed by `SpellDatabase`. Add the id to a `SpellcastingComponent.KnownSpellIds`
-   (the player's is set in `PlayerFactory`); cast with `Q`, cycle with `F`. No code change.
-3. ⚠️ **The spellbook lists every spell in the database**, so an enemy's spell appears in the
-   player's character screen as purchasable unless you set `PlayerLearnable = false`
-   (Phase 34D). Set it on any spell authored for a monster loadout.
-
-## A new status effect
-
-1. Author `data/status_effects/Xxx.tres` (`script_class="StatusEffectResource"`): unique
-   `Id`, `School`, `Duration`, optional DoT (`DamagePerTick`/`TickInterval`) and one stat
-   modifier (`ModStat`/`ModType`/`ModValue`, e.g. `MoveSpeed` PercentMult `-0.5` = a slow),
-   and `IsBeneficial` for buffs.
-2. Auto-indexed by `StatusEffectDatabase`. Reference it from a spell's `StatusEffectId`; it
-   applies to whoever the spell hits (or the caster, for a Self cast) via the target's
-   `StatusEffectsComponent`. No code change.
-
-## A new faction
-
-1. Author `data/factions/Xxx.tres` (`script_class="FactionResource"`): unique `Id`,
-   `DefaultReputation`, `HostileThreshold` (a `ReputationTier` int, `2`=Unfriendly),
-   `KillReputationPenalty`, and `Enemies`/`Allies` (`Array[String]([...])` of faction ids).
-2. Auto-indexed by `FactionDatabase`; the player's `ReputationComponent` seeds a standing for
-   it automatically. Tag actors with a `FactionComponent { FactionId = "..." }` (see
-   `EnemyFactory` / the elder in the bootstrap) — enemy AI then keys aggression off the
-   player's standing with that faction. No code change.
-
-## A new stat
-
-1. Add to the `StatType` enum (**append only** — ordinals persist in `.tres`/saves); if it's a
-   depleting resource, update `StatTypes.IsResource`.
-2. Add an exported field + mapping in `AttributeSet` (`ToBaseValues`).
-3. Add a `Loc` key in `StatNames.Key` + `strings.csv`. **Not optional** —
-   `StatNamesTests.EveryStatType_MapsToADistinctNonFallbackKey` fails on any stat without one.
-4. Extend `EnumStabilityTests.StatType_Ordinals` to pin the new ordinal.
-5. Use via `StatsComponent.GetValue(StatType.Xxx)`. A stat missing from an `AttributeSet` reads
-   `0`, so a new stat is inert for existing content until something authors it.
-
-> Worked example — the Phase 34E resistance family (`FireResist` … `NecroticResist`).
-> `CombatMath.Mitigate` routes each `DamageType` through `CombatMath.ResistanceStat` and reuses
-> `ArmorMultiplier`, so there is **one** defence curve, and resistance never becomes immunity
-> (DESIGN's "no school a trap" rule). Authoring an enemy that shrugs off a school is now pure
-> data: set the matching `*Resist` on its `AttributeSet`.
-
-## A new event
-
-1. Add a `readonly record struct XxxEvent(...) : IGameEvent` in the relevant
-   `*Events.cs`.
-2. `Publish` it where it happens; `Subscribe`/`Unsubscribe` where reacted to.
-
-## A new persistent system
-
-1. Implement `ISaveable` (stable `SaveId`, `Save`/`Load` with a Godot
-   `Dictionary`).
-2. `SaveManager.Instance.Register(this)` in `OnInitialize`, `Unregister` in
-   `OnTeardown`.
-
-## A new input action
-
-1. Add a constant + `Bind(...)` in `GameInput`.
-2. Read it via `Godot.Input.IsActionPressed/JustPressed/GetVector`.
-
-**A new sound cue / audio asset** (Phase 31)
-1. Pick a cue id by convention: `sfx.*` / `step.*` (positional, SFX bus), `music.*`,
-   `amb.*`, `ui.*`, `voice.*` (2D). The prefix alone determines the bus + positional flag via
-   the pure `AudioCueRouting` — no per-cue wiring.
-2. Register its sound in `AudioLibrary.Build()`: a real asset (`GD.Load<AudioStream>(...)` of a
-   CC0/open `.ogg`/`.wav` under `assets/audio/`) if one exists, else a `ProceduralAudio`
-   placeholder. An unregistered id plays silence and warns once — never throws.
-3. Request it: publish `SoundCueRequestedEvent(id, pos)` / `MusicCueRequestedEvent(id)`, or call
-   `ServiceLocator.Get<AudioDirector>().PlayCue(id[, pos])`. No code change to add a cue whose
-   prefix already routes.
-
-**A new companion** (Phase 32)
-1. Author `data/companions/Xxx.tres` (`script_class="CompanionResource"`): unique `Id`
-   (`companion.*`), `NameKey`/`TitleKey` (`Loc` keys — add them to `data/locale/strings.csv`, the
-   validator fails without them), the build paths (`AttributesPath`/`WeaponPath`/`ModelPath`),
-   `FactionId`, optional `KnownSpellIds` (non-empty ⇒ it gets a `SpellcastingComponent`, i.e. a
-   caster companion), the follower envelope (`FollowDistance`/`EngageRadius`/`AttackRange`/
-   `LeashRadius`), and the loyalty/content knobs (`StartingLoyalty`, `LoyaltyQuestReward`,
-   `LoyaltyQuestId`/`DialogueId`).
-2. It is auto-indexed by `CompanionDatabase` and auto-registered in `CompanionRegistry` — **no code
-   change**. Recruit it *by id*: a `DialogueChoice` (`Effect` `5`=RecruitCompanion), a quest hook,
-   `ServiceLocator.Get<CompanionRoster>().Recruit("companion.x")`, or `companion recruit <id>` in the
-   F1 console. The roster spawns the actor into a formation slot, tracks loyalty, persists the party,
-   and reconciles it back on load.
-
-**A new enemy archetype — humanoid, beast or undead** (Phase 34B/34C/34D)
-1. Author `data/enemies/Xxx.tres` (`script_class="EnemyArchetypeResource"`): unique `Id`
-   (`enemy.*`), a `NameKey` authored in `strings.csv`, the build paths (`AttributesPath`,
-   `WeaponPath`, `LootTablePath`, optional `ModelPath` — empty falls back to a capsule in
-   `PlaceholderTint`), an `AiProfileId` (see above), `FactionId`, and `XpValue`.
-   `CapsuleRadius`/`CapsuleHeight` size the body *and* the melee reach — the hitbox scales off
-   height against a 1.8 m humanoid reference, so a short quadruped bites at its own scale
-   (Phase 34C) with no extra knob to set.
-   **To make it a caster** (Phase 34D) three things must line up, and the failure is silent:
-   a non-empty `KnownSpellIds` (adds the `SpellcastingComponent`), a standoff `AiProfileId`
-   like `ai.caster` (so it kites instead of closing), **and a real `Mana` pool in its
-   `AttributeSet`** — spells with no mana means it just stands there, with no warning. Tune
-   `ManaRegen` on the archetype for cast pacing. Mark enemy-only spells
-   `PlayerLearnable = false` or they show up in the player's spellbook.
-2. Auto-indexed by `EnemyArchetypeDatabase`, which registers a builder with
-   `EnemyTemplateRegistry`, so `EnemyArchetypeFactory` builds it and encounters/world events/quest
-   kill-targets can reference the id immediately. Add a `data/encounters/*.tres` pointing at it to
-   make it actually appear in the wilds. No code change — reach for a bespoke factory only when the
-   actor is *structurally* different (the boss's phase controller, the acolyte's cast origin), not
-   when it just has different numbers.
-
-**A new bestiary entry** (Phase 34G)
-1. Author `data/bestiary/Xxx.tres` (`script_class="BestiaryEntryResource"`): `Id` = the **enemy
-   template id** it documents, `LoreKey` (authored in `strings.csv` as `enemy.<name>.lore`),
-   `Category` (`0` Humanoid / `1` Beast / `2` Undead / `3` Construct / `4` Elemental / `5` Ashen /
-   `6` Boss), and `KillsToKnow` — kills before the full page opens (`1` for a boss you fight once,
-   so it skips the Sighted stage). Leave `NameKey` empty unless the creature has no
-   `EnemyArchetypeResource` to take one from.
-2. Auto-indexed by `BestiaryDatabase`; the `B` screen picks it up with no code change.
-3. ⚠️ **`--validate` checks this domain in both directions.** An entry must name a registered
-   template, *and* every registered template must have an entry — so adding an enemy without a
-   bestiary page fails the build. That is intentional: it is the guard against content that exists
-   but nothing can reach.
-
-**A new enemy AI personality** (Phase 34A)
-1. Author `data/ai_profiles/Xxx.tres` (`script_class="AIProfileResource"`): unique `Id`
-   (`ai.*`) plus the knobs you want off the defaults — perception (`VisionRange`,
-   `FovDegrees`, `AlertRadius`), melee (`AttackRange`, `FlankSpreadDegrees`), standoff
-   (`StandoffRange`, `KiteDistance`), guard (`BlockDuration`, `BlockRecovery`), nerve
-   (`RetreatHealthFraction`, `FleeOnSight`), and `AmbushRange`.
-2. Auto-indexed by `AIProfileDatabase`. Point a factory's
-   `EnemyAIComponent { ProfileId = "ai.xxx" }` at it. No code change — the behaviours are
-   branches in the one brain, gated on these numbers, so they combine freely (a shielded
-   flanking ambusher is just three knobs). A zeroed knob turns its behaviour off; an
-   unknown id warns and falls back to `ai.brute`.
-
-## A new dev-console command
-
-1. In `DevCommands.RegisterAll`, `console.Register(new ConsoleCommand(name, usage, summary,
-   (console, args) => ...))`. Resolve the player / a world director via the `ServiceLocator`
-   (register the director there if it isn't yet), parse `args`, and return a result line.
-2. It appears in `help` automatically; reach it in-game with `F1`. For determinism, add a
-   scenario to `ReproHarness` (seed + the command sequence) and run it with `repro <name>`.
-
-**Pooling a high-churn node** (perf)
-1. Hold a `NodePool<T>` (`src/Core/Pooling`) on the owner; build it in `OnInitialize`
-   (`new NodePool<T>(factory, prewarm)`) and `Clear()` it in `OnTeardown`.
-2. Make the node reusable: build its children once in `_Ready`, expose a `Launch/Configure`
-   to re-arm per use, and on "death" invoke a release callback (the pool's `Return`) instead
-   of `QueueFree`. To spawn: `pool.Get()` → `AddChild` → position → `Launch(...)`. See
-   `SpellProjectile` + `SpellcastingComponent`. (Throttle/sleep expensive per-frame work by
-   distance to the player the way `EnemyAIComponent` does — perception cache + far-sleep.)
-
-## A new UI panel / HUD widget
-
-1. Build it through `UiTheme` (`src/UI/UiTheme.cs`): `UiTheme.Panel()` for the frame,
-   `UiTheme.Padding()` inside it, then `UiTheme.Header`/`Body`/`Action`/`Bar` for content —
-   don't hand-roll styleboxes/fonts. A modal panel sets `UiState.MenuOpen` + frees the mouse;
-   a non-modal overlay (like the journal) does not.
-2. Rebuild from a dirty flag in `_Process` (never during a button signal). Add new palette
-   colours/builders to `UiTheme` rather than per-panel so the look stays consistent (and the
-   Phase 18 overhaul stays a one-file change).
+   empty. ⚠️ A bribe in `UnlockFlagId` becomes a permit; ⚠️ a permanent pass cheaper than the permit
+   deletes the sink.
+3. Author `FactionId` so the bribe's standing cost lands (validator rule). ⚠️ Permit and bribe are two
+   entities.
+4. **Charge at the crossing:** `RegionSetup.PayToll` in the transition handler, where the portal and
+   `region goto` converge; never on fast travel. The prompt quotes `TollFee.Resolve`, the same function.
+5. `--validate` checks each flag is granted by some `Passage` service.
+
+### A fence and contraband
+
+1. Tag goods `contraband` **plus** what they are. ⚠️ Contraband dominates: every shop that does not list
+   `contraband` refuses it, even an empty-list general store.
+2. Give it a source (loot rows on the factions who would carry it, or a fence's shelf).
+3. Author the fence's refusals first.
+4. ⚠️ **Leave the fence's `FactionId` empty** — `faction.outlaws` starts hostile and would hide her.
+5. Both sides of the cost: `ContrabandFactionId`/`ContrabandDelta` (+) and
+   `ContrabandPenaltyFactionId`/`ContrabandPenaltyDelta` (−); validator checks signs and pairing.
+   ⚠️ Per sale, not per unit.
+6. Two fences, at least one always open.
+7. Confiscation is `ServiceKind.Search` (price 0); recovery is `ServiceKind.Redeem` (`PriceGold` is the
+   per-unit fine). Two bodies. ⚠️ A realm that can seize must be able to give back (validator).
+
+### A new gold sink
+
+1. Add the row to `DESIGN.md` §6.
+2. Price it in a Godot-free `src/Economy/` class and charge at the **single convergence point** (the
+   travel fee in `WorldSessionDirector.OnFastTravelRequested`, where the map button and `travel goto`
+   meet).
+3. The UI shows the price from the **same function** the charge uses (`TravelCosts.FeeFor`).
+4. Give it an earnable exemption (travel to a holding you own is free).
 
 ---
+
+## Housing
+
+### A new claimable property
+
+1. `data/properties/Xxx.tres` (`PropertyResource`, `property.*`): `NameKey`, `RegionId`, `TravelNodeId`
+   (required), and `PriceGold` and/or `RequiredQuestId` (one is required or it is free-on-touch).
+2. Place the deed: an `Entity` with a collider and `PropertyDeedComponent { PropertyId }`
+   (`CottageDeed` in `scenes/regions/ember_crown/ashfall_homestead.tscn`).
+3. ⚠️ Refusals name themselves in order owned → quest-locked → too expensive (`PropertyClaim.Resolve`,
+   read by prompt and interaction).
+
+### Giving a property a stash
+
+1. An `Entity` with a collider, an `InventoryComponent` and `PropertyStorageComponent { PropertyId }`;
+   the inventory *is* the storage (`inventory:<PersistentId>`).
+2. ⚠️ **A permanent, unique `PersistentId`**, or it empties on reload (or two chests overwrite).
+3. ⚠️ `Capacity` on the node (load clamps to it).
+4. `StorageOpenedEvent` opens the one `StoragePanel`.
+5. ⚠️ Transfers remove by reference for rolled items, by template for stackables, and only what landed.
+6. No validator rule (all in `.tscn`); a mistyped `PropertyId` shows no prompt.
+
+### A new placeable prop or a buildable yard
+
+1. **Yard:** `PlacementCenter` (⚠️ **world** space — add the cell's `Center`) and `PlacementRadius`
+   (0 = no building) on the property.
+2. **Prop:** an id plus a `Build` case in `src/Housing/PlaceableTemplates.cs` (the one id set and builder).
+3. **Kit:** a `PlaceableItemResource` with `TemplateId`, plus a recipe — ⚠️ seeded in
+   `GameIds.Recipes.Starting` or trainer-taught.
+4. ⚠️ Never issue placement ids from a counter; `PlacementIds.Next` scans live ids
+   (`place.<propertyId>#<n>`).
+5. `--validate` builds every template and requires an `IEntity` with a collider.
+6. Props are removed in placement mode; removal refuses on a full pack.
+
+### Giving a property a trophy stand
+
+An `Entity` with a collider, an `InventoryComponent` of **`Capacity = 1`**, and
+`TrophyStandComponent { PropertyId }` (leave `PropertyId` empty on placed stands). ⚠️ Permanent
+`PersistentId`. Accepts `TrophyDisplay.MinimumRarity` (Epic); taking is never gated.
+
+---
+
+## Code
+
+### A new stat
+
+1. Append to `StatType` (never reorder); update `StatTypes.IsResource` for depleting ones.
+2. Field + mapping in `AttributeSet.ToBaseValues`.
+3. `Loc` key in `StatNames.Key` + `strings.csv` (a test fails without it).
+4. Pin the ordinal in `EnumStabilityTests.StatType_Ordinals`.
+5. A stat missing from an `AttributeSet` reads 0. Resistances route through one curve
+   (`CombatMath.ResistanceStat` + `ArmorMultiplier`) — never immunity.
+
+### A new event
+
+A `readonly record struct XxxEvent(...) : IGameEvent` in the relevant `*Events.cs`; `Publish` where it
+happens, pair `Subscribe`/`Unsubscribe`.
+
+### A new persistent system
+
+Implement `ISaveable` (stable `SaveId`, `Save`/`Load` with a Godot `Dictionary`); components call
+`RegisterSaveable()` in `OnInitialize` (registers only with a stable `PersistentId`), world services
+register in `_EnterTree`. Load **replaces** (CLAUDE.md §7). Read `SAVE_FORMAT.md` first.
+
+### A new input action
+
+A constant + `Bind(...)` in `GameInput`; read via `Input.IsActionPressed/JustPressed/GetVector`.
+
+### A new sound cue
+
+Pick an id by prefix (`sfx.*`/`step.*` positional SFX; `music.*`, `amb.*`, `ui.*`, `voice.*` 2D —
+`AudioCueRouting`), register it in `AudioLibrary.Build()` (a CC0 asset under `assets/audio/` or a
+`ProceduralAudio` placeholder), and request it with `SoundCueRequestedEvent` / `MusicCueRequestedEvent`
+or `AudioDirector.PlayCue`. An unregistered id plays silence and warns once.
+
+### A new dev-console command
+
+`console.Register(new ConsoleCommand(name, usage, summary, (console, args) => ...))` in
+`DevCommands.RegisterAll`. ⚠️ It must go through the real choke point, not edit state directly. Add a
+`ReproHarness` scenario for determinism.
+
+### Pooling a high-churn node
+
+A `NodePool<T>` built in `OnInitialize`, cleared in `OnTeardown`; the node builds its children once,
+re-arms via `Launch/Configure`, and returns itself instead of `QueueFree` (`SpellProjectile`).
+
+### A new UI panel / HUD widget
+
+Build through `UiTheme` (`Panel`, `Padding`, `Header`/`Body`/`Action`/`Bar`) and the `UiPanel`
+framework; a modal panel pauses the world by default (`UiState.Open(owner, pausesWorld:)`). Rebuild from
+a dirty flag in `_Process`, never inside a button signal. New palette entries go in `UiTheme`. Render it
+with `--panelshots` / `--hudshots`.
+
+### Generators
+
+Committed scripts that print or write authored artefacts — do not hand-write their output:
+`tools/gen_regions.py` (regions), `tools/gen_map_locations.py` (map locations), `tools/gen_main_story.py`
+(main quests and story dialogue), `tools/gen_guild_dialogue.py`, `tools/gen_merchant_dialogue.py` (scaffold
+only; locale rows are hand-written), `tools/gen_cell_props.py` (prop stanzas from a table; `--no-collider`
+for scenery), `tools/compose_building.py`, `tools/compose_district.py`, `tools/new_cell_scenes.py`.

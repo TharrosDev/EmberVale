@@ -401,9 +401,9 @@ digits.
   instantiate when a screen is *opened*, so a broken one appeared in no boot log, no `--play`
   run and no test — only in play, as "nothing is there".
 - **37.5E** ✅ rebuilt map, quest log, dialogue and bestiary.
-  ⚠️ **The journal has no Failed section and never will until the state exists.** `QuestStatus`
-  has exactly two members, Active and Completed — nothing in the game can fail a quest, so the
-  heading would be a permanently empty promise. Same call as the omitted Contracts and
+  ⚠️ **A journal section arrives with its state, never before it.** The Failed section was left out
+  until `QuestStatus.Failed` existed (41B added both), because an empty heading is a permanent
+  promise. Same call as the omitted Contracts and
   Exploration headings. Main/Side is real now: `QuestResource.IsMainQuest`, the field 37.5B
   refused to fake with a backwards "has a prerequisite" heuristic.
   ⚠️ **Quest markers are not on the map**, because quests carry no world position — Kill and

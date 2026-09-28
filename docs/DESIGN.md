@@ -195,7 +195,7 @@ are now live, and the right-hand column names the file that answers each intent.
 | Screen feedback | `DamageDealtEvent` (data) | `CombatFeedbackOverlay` / `CombatFeedbackFx` (29D) |
 
 > **Reading this table:** it is a *map of what exists*, not a to-do list. Phase 29's
-> "Done when" bars (`docs/playbook/` 29A–29I) record how each intent was met. What
+> "Done when" bars (29A–29I, in the old playbook — see `docs/HISTORY.md`) record how each intent was met. What
 > remains open is **tuning**, which is Phase 56's — the shapes are set. See §2.4.
 
 ---
@@ -314,7 +314,7 @@ in code, and the design holds it there:
   corruption is always a *temptation* (§5), never a *requirement*.
 
 > Concrete curve/skill-point/cap values are a Phase 56 balance call; this section fixes the
-> *shape*, not the digits. Cross-links: `ARCHITECTURE.md` §2.6c; `src/Progression/*`;
+> *shape*, not the digits. Cross-links: `ARCHITECTURE.md` §2.8; `src/Progression/*`;
 > docs/RECIPES.md "a new perk".
 
 ---
@@ -510,7 +510,7 @@ beside it would survive a dismissal and retire her permanently, which is why `--
 **The appraiser is free, and that is a decision too** (38P2). A valuation is an obvious per-use sink and it was deliberately not taken: `ServiceRules` refuses any service the player cannot afford *before* the verb runs, so a fee fails closed on the player with an empty purse and a full pack — exactly the person who walked over to ask what is worth carrying. An appraisal only the rich can buy is not a sink, it is a lock on the one screen that explains the economy. Same reasoning as 38O's free warden search and 38P's free consignment counter; `--validate` enforces all three.
 
 ⚠️ **REPAIR IS CUT, AND SO IS EVERY OTHER SURVIVAL NEED** (maintainer direction, 2026-08-12 —
-`docs/playbook/phase-40.md`). This was 38D's one open question and it stayed open for two phases; it
+`docs/HISTORY.md`). This was 38D's one open question and it stayed open for two phases; it
 is now closed in the direction of *no*. **The game has no survival needs**: no durability, no hunger,
 no thirst, no temperature. There is no repairsmith, no `ServiceKind.Repair`, and there will not be one.
 
@@ -683,7 +683,7 @@ balanced and all of them are meant to move.** A balancer needs four things and n
   enough above 1 that the standing ramp does not bottom out at Honored.
 
 > Cross-links: `src/Items/*`, `src/Loot/*` (gold as item today); Phase 37 (housing sink),
-> Phase 38 (vendors/services/sinks — mechanism in `ARCHITECTURE.md` §2.6m), Phase 56 (the numbers).
+> Phase 38 (vendors/services/sinks — mechanism in `ARCHITECTURE.md` §2.21), Phase 56 (the numbers).
 
 ---
 

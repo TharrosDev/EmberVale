@@ -83,8 +83,8 @@ line up with its lattice. The whole workflow is `docs/WORLD_ATLAS.md` §6.
 
 ### Empty space, and why it is the hardest thing to keep
 
-Six of the Ember Crown's sixteen cells and five of Frostfang's ten carry a road, weather, vegetation
-and landform and **no gameplay beat at all**. That is the feature. A realm where every thirty metres
+Most cells of every realm (36 of the Ember Crown's 52, 27 of Frostfang's 36, 14 of Sunspire's 20)
+carry a road, weather, vegetation and landform and **no gameplay beat at all**. That is the feature. A realm where every thirty metres
 has a purpose advertises on every step that it was designed, and the locations that do matter stop
 reading as locations. ⚠️ **Do not fill them in.** If a beat wants to happen in a transitional cell,
 the honest question is whether the realm needs another beat.
@@ -599,6 +599,18 @@ enforced by the gate named or is a review rule.
   cells across 960 × 1020 m in its atlas band north of the Ember Crown** (2026-09 world rebuild): the
   Stormbound Vale, one hold, three dragon territories in their own valleys, the glacier road to the
   aerie, clan traces between them, and twenty-seven cells of empty high country.
+- **The Ashen Wilds** — the Cataclysm scar east of the Ashen Breach: burnt plateaus, ravines and
+  corrupted forest in sixteen cells; Last Hearth, the Ash Hunters' station, the Beast Lord's plateau.
+- **The Sunspire Dominion** — desert basins below the northern escarpment (`Desert` biome, `Sand`
+  layer) in twenty cells; Saffra Wells, the great library, the Crimson Mission.
+- **The Pale Concord** — hidden (`ScopedContentOnly`, `UnlockFlagId`): still fields, canals and
+  Vesperhold under a held dusk (`FixedSkyHour`) in twelve cells; the Hollow Court.
+- **The Celestial Realm** — nine cells of shattered terraces over a void rift (`CelestialRuin` biome,
+  ember-violet light): the landing, the Knight's bridge and Gate, the Ash Throne. Reached only by the
+  Sunspire library's story door.
+
+The four finish-run realms are deliberately compact (roughly 12-24 cells): enough country to travel
+and a clear route to the boss.
 
 ---
 

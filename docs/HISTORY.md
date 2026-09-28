@@ -1,0 +1,181 @@
+# Embervale — project history
+
+A compact record of what every phase produced, plus the lessons still worth knowing. The per-phase
+playbook (`docs/playbook/phase-*.md`, ~8k lines of plans and retrospectives), `SESSION_PLAYBOOK.md`,
+`STAGE_A_STATUS.md` and `VERTICAL_SLICE_PLAN.md` were collapsed into this page on 2026-09-27.
+**Git history keeps every one of them verbatim**: `git log --all -- docs/playbook/` finds the last
+commit that had them, and `git show <commit>:docs/playbook/phase-38.md` reads one.
+
+Current state is [`NOW.md`](NOW.md); what is left is [`PRODUCTION_ROADMAP.md`](PRODUCTION_ROADMAP.md).
+
+## Phases
+
+Status: **done**, **partial**, **not built** (never started; not needed for the finish plan),
+**cut** (maintainer struck it), **out of scope** (personal build, never published).
+
+### Systems (1–21)
+
+| # | Phase | Outcome |
+| --- | --- | --- |
+| 1 | Core architecture | done: EventBus, ServiceLocator, GameManager, SaveManager, entity/component model |
+| 2 | Player controller | done: hybrid first/third-person controller (later split into six components) |
+| 3 | Combat framework | done: damage pipeline, hit/hurtboxes, poise, blocking |
+| 4 | Enemy AI | done: perception-driven FSM (later profile-driven, one shared brain) |
+| 5 | Inventory | done: slot inventory, pickups |
+| 6 | Equipment | done: slots and stat bonuses |
+| 7 | Loot generation | done: item instances, affixes, loot tables |
+| 8 | Progression | done: XP curve, levels, perks |
+| 9 | Quest framework | done: Kill/Collect quests and the quest log |
+| 10 | Dialogue | done: node graphs, conditions, effects, story flags |
+| 11 | NPC schedules | done: world clock and routines |
+| 12 | Magic | done: spells and status effects |
+| 13 | World systems | done: day/night, weather, encounters |
+| 14 | HUD polish | done: `UiTheme`, vitals, crosshair |
+| 15 | Crafting | done: recipes, stations, salvage |
+| 16 | Factions | done: reputation and hostility |
+| 17 | Procedural events | done: raids, caches, hunts |
+| 18 | Game UI overhaul | done: `GameHud`, pause menu, toasts, tooltips |
+| 19 | Optimization | done: pooling, AI LOD |
+| 20 | Deep debugging | done: dev console, invariants, content validator, profiler, repro harness |
+| 21 | Content expansion | superseded by the production phases |
+
+### Stage A — First Playable (G0 reached)
+
+| # | Phase | Outcome |
+| --- | --- | --- |
+| 22 | Production bible and pipeline | done: `IDS.md`, `DESIGN.md`, templates, `GameIds`, validator growth |
+| 23 | Corruption | done: meter, tiers, appearance, dialogue and spell gates |
+| 24 | Meta-shell and localization | done: title, settings, save slots, `Loc.T` + `strings.csv` |
+| 25 | Region streaming and map | done: streamer, portals, cell persistence, map, compass, fast travel |
+| 25.5 | Stage A hardening | done (A–P): `SaveKeyPolicy`, anti-hitch, geometry and locale gates |
+| 26 | Races and character creation | done: six races as data, a creator |
+| 27 | Ember Crown | done: first region, navmesh baked at stream-in, dying-world palette |
+| 28 | Iron King | done: brazier-summoned boss, healthbar, absorb/decline corruption beat |
+
+### Stage B — Vertical Slice (G1 not signed off)
+
+| # | Phase | Outcome |
+| --- | --- | --- |
+| 29 | Combat feel | done: hit-stop, parry/riposte, dodge i-frames, lock-on |
+| 29.5 | Spellcraft and the fading Weave | done: cast modes, school identities, mastery, combos, Weave, enemy casters |
+| 30 | Models and visual identity | done: `ART_STYLE.md`; the cast later moved to Meshy, the world to Quaternius |
+| 30.5 | UI/HUD overhaul | done: `UiPanel` framework and tokens |
+| 31 | Audio foundations | done: buses, music and ambience directors, footsteps |
+| 32 | Companions | done: roster, orders, loyalty; Kael authored in full |
+| 33 | Slice assembly and onboarding | done: prologue, tutorial, the 8-beat slice to the Iron King. The maintainer played the slice arc on 2026-07-30 with no blockers; the G1 gate itself (a play-through of the current build plus an export) was never signed off |
+
+### Stage C — Feature Complete
+
+| # | Phase | Outcome |
+| --- | --- | --- |
+| 34 | Enemy roster | done: AI profiles, creatures as data, resistances, Ashen variants, bestiary |
+| 34.5 | Frostfang clans | done: clan faction, the Clan Hold, a rank chain with a betrayal branch |
+| 35 | Dragons | done: hit zones, flight, breath, lairs, a dragon that talks |
+| 36 | Boss framework | done: `BossResource` phases, telegraphs, add waves, arena hooks, defeat data |
+| 37 | Housing | done: claim, stash, yard placement, trophy stands; the enterable Ashfall Cottage |
+| 37.5 | UI overhaul | done (A–G): one fantasy interface language across every screen |
+| 38 | Economy, vendors, services | done (A–V): shops, services, standing prices, tolls, fences, contracts, haggling, supply shocks, 42 negative tests |
+| 39 | Mounts and traversal | done |
+| 39.5 | Map and location intelligence | done (A–C): `MapLocationResource`, sight discovery, minimap, `--hudshots` / `--panelshots` |
+| 40 | Survival and needs | **cut** 2026-08-12: no durability, hunger, thirst, temperature, encumbrance, repair |
+| 40.5 | Dungeon and puzzle framework | **cut** 2026-08-12: no puzzle, trap or vault tooling |
+| 41 | Quest authoring at scale | done (A–F): eight objective types, deadlines, branches, completion flags, quest dev commands |
+| 41.5 | Divine shrines | done (A–C): seven gods' blessings, corruption-gated refusal |
+| 42 | Guild questlines | partial: 42A–E, G, I, K done (guild model, five hubs, rank-one arcs, Dawnwardens command arc, Veiled Archive admission, Emberbound initiation); 42F, H, J, L, M open |
+| 42.5 | The Crimson Cult | not built as a faction system; the Crimson Mission and the Crimson Prophet (finish run) carry the story role |
+| 43 | Cinematics | not built; `NarrationSequence` cards (opening, closing, ending) serve instead |
+| 43.5 | Flamebearer visions | not built |
+| 44 | All five realms blocked out | done: the 2026-09 world rebuild (Ember Crown, Frostfang) and the finish run (Ashen Wilds, Sunspire, Pale Concord, Celestial) |
+| 44.5 | Realm decay and restoration | not built |
+| 45 | Feature-complete audit | not run as a phase |
+
+### Stage D — Content Complete
+
+| # | Phase | Outcome |
+| --- | --- | --- |
+| 46 | Act I | done: the vertical slice is Act I |
+| 47 | Act II | done (finish run): `quest.main.gathering`, the hidden-realm reveal, `quest.main.hidden` |
+| 47.5 | Ashen Knight rival duels | not built; the Knight is one Act IV fight |
+| 48 | Act III | done (finish run): `quest.main.truth`, the Archivist's reading |
+| 49 | Act IV and endings | done (finish run): Ashen Knight, Morthul, the throne choice, both endings, credits |
+| 50 | Side content and pacing | partial: guild arcs and realm settlements; no dedicated pass |
+| 50.5 | Lore codex | not built |
+| 51 | Itemization pass | partial: one relic per Flamebearer; no catalogue pass |
+| 51.5 | Enchanting and sockets | not built |
+| 52 | Audio production | not built |
+| 53 | Art complete | partial: Meshy boss models being adopted; no final pass |
+| 53.5 | Photo mode | not built |
+| 54 | Accessibility and input | partial: remapping, subtitles, difficulty exist; no audit |
+| 55 | G3 acceptance campaign | replaced by the headless `--story` gate plus the pending maintainer play-through |
+
+### Stages E–G — Release, Launch, Live
+
+| # | Phase | Outcome |
+| --- | --- | --- |
+| 56 | Balance and difficulty | open: the new bosses need tuning |
+| 57 | Performance cert | not run; the 16.67 ms budget stays a soft target |
+| 58 | Save hardening | partial: v2 to v3 migration shipped with the world rebuild; no dedicated pass |
+| 59 | QA and soak | not run |
+| 60 | Localization completion | out of scope (English only) |
+| 61 | Platform compliance and storefront | out of scope |
+| 62 | Release candidate | out of scope (a Windows `ExportRelease` build closes the finish run instead) |
+| 63 | Launch | out of scope |
+| 64 | Launch response | out of scope |
+| 65 | Post-launch content | out of scope |
+| 66 | Expansion/DLC framework | out of scope |
+
+### Out-of-band passes (maintainer-directed, 2026-08-29 to 2026-09-25)
+
+World geography (one heightfield per region), world quality (terrain materials, water safety,
+region template), runtime loading gate, architecture kit, environment/props, 3D pipeline
+consolidation (`assets.py`), world-generation replacement (staged generator + drainage), the
+infrastructure overhaul (`GameBootstrap` dismantled, scoped services, `--lifecycle`), the
+combat/animation/camera overhaul (one action timeline, true first person, ranged combat), the
+world-production overhaul (offline bake, residency tiers, safe placement), the 3D asset gap pass,
+the 2026-09 world rebuild (52- and 36-cell realms in atlas bands, save v3), and the lifecycle
+finalizer fix (`ResidentResources`).
+
+## Lessons still worth knowing
+
+Each of these shipped a defect or a false pass. Rules already written in `CLAUDE.md`,
+`RECIPES.md`, `NOW.md` or `WORLD_AUTHORING.md` are not repeated here.
+
+- **A probe that cannot fail is not a gate.** Four probes once printed PASS while testing nothing:
+  a `Vector3?` that does not marshal aborted a script mid-function, an arrow parented to a null
+  `CurrentScene` was never in the tree, un-parented bodies posed no bones, and a wall test passed
+  because the warp it measured never fired. Add a control case, or negative-test the gate, first.
+- **A crashed test run can look green.** Constructing a Godot `Resource` in the pure suite takes the
+  whole run down and reports the few tests that ran as passing. Compare the test count, not the colour.
+- **Read the gate that is already failing.** `debug_pass_regressions.gd` failed on `main` for days
+  because New Game could not reach Playing (a spawn 3.01 m above the ground, 1 cm outside the loading
+  probe), and no headless route took the New Game path. The `--lifecycle` and `--story` gates exist
+  because of it.
+- **Headless bakes can write zeroed GPU-derived data.** Baked vegetation and the backdrop once had
+  zeroed MultiMesh transforms from the headless dummy renderer. Render the bake before trusting it.
+- **Ask what a tool can actually see.** The Godot MCP drives the editor, where the runtime HUD does not
+  exist; UI defects shipped through a green battery until `--hudshots` / `--panelshots` rendered the
+  real screens. Build the capture harness before the UI work, not after.
+- **A harness shot is evidence only if it drives the thing you changed.**
+- **The gate that finds a placement defect is rarely the one that names the thing.** `--validate` and
+  the layout check passed buildings standing on roads; the traversal probe and a render found them.
+- **When a new state is defined by a negation, grep for the negation.** Quest branches (41D) broke six
+  old `!IsObjectiveComplete`-style tests that had been correct for thirty phases.
+- **A world change derives from one persisted fact**, and hiding a body also means its collider and its
+  prompt, refreshed after a wholesale load (loads do not replay individual flag events).
+- **A debug command must go through the real choke point**, or it proves nothing about events,
+  rewards or world changes. Resetting a view (a quest log entry) is not resetting its world fact.
+- **A choice a completed quest leaves open must only add**, never clear: fire `SetFlag` on the exact
+  derived string rather than an effect that can demote when revisited.
+- **When nesting dialogue conditions, the condition the node text presupposes goes outermost.**
+- **Verify content against states on purpose.** A companion's killing blow never credited a Kill
+  objective from Phase 32C to 42E because no quest had been tested that way.
+- **Grep existing flavour text before inventing a place or item** for an arc; earlier writers often
+  named the seam already (`strings.csv`).
+- **Striking a phase is work outside the phase**: grep for its name and follow every pointer into the
+  phases written against it, and record which partial keeps were offered and declined.
+- **A deferred condition is a hypothesis.** Measure it, then look at the area anyway: clustering
+  measured false while the defect sat a few metres away.
+- **When a new surface answers an old surface's question, take the question away from the old one.**
+  The compass kept discovered places after the minimap took that job, and both got worse.
+- **"Arms crossed" was an import setting, not an animation bug**: A-pose bodies on T-pose clips with
+  `fix_silhouette` off. A rigged body shipping zero animations gets no `AnimationPlayer` at all.

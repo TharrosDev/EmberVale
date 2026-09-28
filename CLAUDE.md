@@ -30,8 +30,7 @@ You are the lead engineer building this game incrementally. The non-negotiables:
   complete and *exercisable*: authored data, `--validate` coverage, tests for any pure logic,
   and at least one way to drive it (an interactable, a dialogue effect, a dev-console command).
   **A sub-phase may land the mechanism and leave its world placement to the sub-phase that
-  owns it** — `docs/playbook/` is the authority on that split, and honouring it is
-  not scaffolding. What is forbidden is a system with **no caller at all when its phase
+  owns it**, and honouring that split is not scaffolding. What is forbidden is a system with **no caller at all when its phase
   closes**: `CraftingComponent.Learn` sat with zero callers from Phase 15 to Phase 35, and
   `recipe.leather_vest` rotted behind it the whole time.
 - **Persistence is not optional.** Any system that holds gameplay state must be
@@ -47,8 +46,8 @@ You are the lead engineer building this game incrementally. The non-negotiables:
   while it is complete — the first merchant with no pin is the one that teaches the player the map
   cannot be trusted, and after that they stop looking at it. ⚠️ **Quest destinations are not yet
   coverable and that is tracked, not forgotten:** a quest names a template id rather than a place
-  (39.5B), so when quest-to-location linking lands, this rule extends to quests and gets its own
-  validator arm.
+  , so when quest-to-location linking lands, this rule extends to quests and gets its own
+  validator arm. (An objective's optional `LocationId` is already validated against the map.)
 - **Prefer composition and data.** New actors = new components + new `.tres`
   resources, not new inheritance chains or hard-coded values.
 - **Respect existing architecture.** Inspect before adding; don't duplicate
@@ -100,7 +99,8 @@ You are the lead engineer building this game incrementally. The non-negotiables:
   build is **private/personal — never sold or published —** so prefer MIT/CC0/open;
   avoid paid or closed). For *code*, a near-miss you have to fight is still worse
   than building clean. Note what you pulled and its licence where it lands.
-- **Work in phases** (see §9). Determine the next highest-priority task and do it.
+- **Work in small, complete steps** (see §9). Determine the next highest-priority task — `docs/NOW.md`
+  and `docs/PRODUCTION_ROADMAP.md` §4 say what is open — and do it.
 
 ---
 
@@ -134,8 +134,8 @@ is not reachable for anything a scene attaches a script to.
 they cannot launch a headless run. So the verification spine of this repo is unchanged and is still
 the shell: `dotnet build`, `dotnet test`, and `--validate` / `--economy` / `--state` / `--play`
 through the console exe below. What the MCP adds that the shell cannot is **viewport, camera and
-isolated-node screenshots** — which is aimed squarely at §7's most expensive recurring defect, the
-"RENDER IT" trap that has fired seven times and currently needs a hand-copied `tools/market_shots.gd`.
+isolated-node screenshots** — aimed at the most expensive recurring defect here, the "RENDER IT"
+trap (placement that reads fine in a `.tscn` and looks wrong on screen).
 
 ⚠️ **It is in Custom (local) mode on purpose.** The server is the `gamedev-mcp-server` binary running
 on **this machine** at `localhost:23630`. The current installation is under
@@ -208,21 +208,19 @@ process start**, so an editor already running in the wrong mode must be closed a
 
 ⚠️ **`.mcp.json` is read when Claude Code starts**, and **the server has to be reachable at that
 moment** — otherwise no `mcp__ai-game-developer__*` tools exist for the whole session no matter what
-you fix afterwards (39.5A ran its entire session this way). Restarting is the only cure; until then
+you fix afterwards. Restarting is the only cure; until then
 the same tools are reachable over HTTP: `godot-cli run-tool <name> . --url http://localhost:23630
 --input '{...}'`, and `godot-cli status .` says whether the editor and server are both up. Tool names
 are the folder names under `.claude/skills/`; each `SKILL.md` carries the argument schema (⚠️ they
 are the *tool's* names, e.g. `scene-open` takes `resourcePath`, not `path`).
 
-⚠️ **THERE ARE TWO TOOL ENDPOINTS AND `run-tool` ONLY REACHES ONE** (39.5A). `ping` lives at
+⚠️ **THERE ARE TWO TOOL ENDPOINTS AND `run-tool` ONLY REACHES ONE.** `ping` lives at
 `/api/system-tools/` and **404s** through `run-tool` with `Tool with Name 'ping' not found` — which
 reads exactly like a broken connection on a connection that is working perfectly. Use
 `godot-cli run-system-tool ping . --url ...` for those, and probe with a real editor tool such as
-`scene-list-opened` instead. Both were captured working this way; `screenshot-viewport` returns a
-genuine PNG once the editor is attached.
+`scene-list-opened` instead; `screenshot-viewport` returns a genuine PNG once the editor is attached.
 
-⚠️ **OPENING GODOT FROM THE PROJECT MANAGER PUTS IT IN CLOUD MODE, SILENTLY** (39.5A, and it is the
-cause of the `SKILL.md` drift 39A reported). `GODOT_MCP_HOST` / `GODOT_MCP_CONNECTION_MODE` are read
+⚠️ **OPENING GODOT FROM THE PROJECT MANAGER PUTS IT IN CLOUD MODE, SILENTLY.** `GODOT_MCP_HOST` / `GODOT_MCP_CONNECTION_MODE` are read
 at process start and are only set when the editor is launched **through `godot-cli open`**. Launch it
 any other way and the running editor talks to `ai-game.dev` while the local server sits listening with
 nothing behind it — which is precisely the "listening port, 503 anyway" state above, and it also
@@ -263,8 +261,7 @@ and Blender is closed, so ask the maintainer to connect the add-on.
 changing proportions, simplifying meshes, combining assets, repairing geometry, improving UVs,
 adjusting materials, building LODs and optimizing for gameplay. Reach for it to *modify* what a
 web search found; authoring an original model is the exception the §1 rule gates
-([`docs/ASSET_POLICY.md`](docs/ASSET_POLICY.md)). Through Phase 30 every model here was built
-from scratch — that is history, not the current default.
+([`docs/ASSET_POLICY.md`](docs/ASSET_POLICY.md)).
 
 **Blender MCP scene hygiene (maintainer rule, 2026-07-02):** when authoring models via the
 Blender MCP, **never leave multiple models stacked at the world origin** (each "centered
@@ -280,7 +277,7 @@ first or you are exercising a **stale binary** (a silent trap: a behaviour-prese
 `dotnet build Embervale.sln` (output goes to `.godot/mono/temp/bin/Debug/Embervale.dll`, where the
 game loads it), *then* run. Pure-logic unit suite: `dotnet test tests/Embervale.Tests`.
 
-A plain launch lands on the **main menu**, not in the world (Phase 24's meta-shell), and the menu's
+A plain launch lands on the **main menu**, not in the world, and the menu's
 buttons need input no tool here can inject — so it verifies boot and database loading, nothing
 in-world. Use `--play` (§3) when you need an actual session. The `WorldIntegrityChecker` (5s) stays
 silent unless an invariant breaks, so give a run several seconds before trusting a clean log. When
@@ -296,10 +293,7 @@ C:\Users\magnu\Downloads\Godot_v4.7.1-stable_mono_win64\Godot_v4.7.1-stable_mono
 Use the `_console.exe` variant from a shell — the plain `.exe` detaches and prints nothing to
 stdout, so you lose the log you ran it for.
 
-**CI runs in GitHub Actions** (`.github/workflows/ci.yml`, added by the 2026-08-15 audit —
-CI had been declined earlier, and the maintainer reversed that once the audit showed 1426
-tests and the whole `ContentValidator` battery depended on someone remembering two commands).
-Two jobs on every push/PR, plus a weekly/manual full battery:
+**CI runs in GitHub Actions** (`.github/workflows/ci.yml`). Two jobs on every push/PR, plus a weekly/manual full battery:
 
 - **Fast deterministic (`Build & test`) — REQUIRED.** Generation, warning-free build, xUnit,
   template, seams and layout. About a minute. This is the one that earns its keep: it proves the
@@ -312,14 +306,11 @@ Two jobs on every push/PR, plus a weekly/manual full battery:
   ⚠️ **Why:** it renders the game on a GPU-less runner under xvfb, which is not the renderer its
   baselines were captured on. It failed thirteen Frostfang frames on ground shading alone, and the
   step-up probe aborted with SIGABRT *after* printing PASS — neither about the repository. **Run
-  `python tools/world_quality_check.py` locally instead**, where a frame can be looked at, which is
-  where every real defect in 42B was actually found.
+  `python tools/world_quality_check.py` locally instead**, where a frame can be looked at.
 - **Weekly/manual full** — exact negative mutations and structured performance history.
 
-**`.github/workflows/` edits push normally** (verified 2026-08-31, making `ci.yml`'s
-`validate-content` job advisory). The session token carries `workflow` scope. ⚠️ It did NOT when the
-file was first added, and that edit went through the GitHub API instead — so if a workflow push is
-ever rejected, the scope is the reason and it is not a repo permission problem.
+**`.github/workflows/` edits push normally**; the session token carries `workflow` scope. ⚠️ If a
+workflow push is ever rejected, a missing `workflow` scope is the reason, not a repo permission.
 
 ⚠️ The green **Vercel** check that also appears on every PR is still a meaningless no-op —
 Vercel is trying to deploy a Godot game as a web app. Ignore that one; the Codex quality jobs above
@@ -333,8 +324,7 @@ are the build signal.
 1. Install Godot 4.7+ **.NET build** and the .NET 8 SDK.
 2. Open `project.godot` in the editor (it builds C# automatically), or
    `dotnet build Embervale.sln`.
-3. Press Play. `scenes/Main.tscn` boots to the main menu; *New Game* / *Continue* enters the
-   sandbox world.
+3. Press Play. `scenes/Main.tscn` boots to the main menu; *New Game* / *Continue* enters the world.
 
 **For you (Claude), via the Godot MCP** (see §2): after any `.cs` change, first
 `dotnet build Embervale.sln` (the shell has dotnet 8.0) — `run_project` does **not**
@@ -350,12 +340,19 @@ from a shell. Verify pure logic with `dotnet test tests/Embervale.Tests`. Close 
 godot --headless --path . -- --validate
 ```
 
-The `--` forwards `--validate` as a user argument; `GameBootstrap` detects it
+The `--` forwards `--validate` as a user argument; `ApplicationRoot` detects it
 (`HeadlessValidation`), loads every database, runs `ContentValidator.RunAll()` (cross-
 references + well-formedness + graph reachability), prints the report, and exits **0** on
-pass / **1** on any issue. ⚠️ **It also now walks the whole region lattice for off-route
-terrain traps** (the 2026-08-30 quality pass) - ground the player can walk into and cannot climb out
-of - so this arm is slower than it used to be and catches a class of defect no file could show.
+pass / **1** on any issue. ⚠️ **It also walks every region lattice for off-route terrain traps** —
+ground the player can walk into and cannot climb out of — so it is slow, and catches a class of defect
+no file could show.
+
+**Headless gates that run a real session:** `--lifecycle` (three New Game → save → destroy → Load
+round trips, failing on any leaked session, service, subscription, saveable or node) and `--story`
+(`HeadlessStory`: raises each act's trigger flag the way its boss or conversation would and asserts
+the next act started, the hidden realm revealed, the chain survived save/load, every Flamebearer
+builds a boss, and an ending flag plays the ending). Both exit 0/1. `--story` proves wiring, not that
+a fight can be won.
 
 **The canonical quality runner:** `python tools/world_quality_check.py --mode full` orchestrates the
 specialist gates in dependency order. `fast` is engine/rendering-free; `engine` adds `--validate`
@@ -396,7 +393,6 @@ spawn or fight. Say which of the two you got; don't let one stand in for the oth
 Hotbar is `1`–`5`. Gamepad plays the whole game (sticks move/look, RT/LT attack/guard, A/B jump/dodge).
 **Any blocking menu pauses the scene tree**; a cinematic lock (boss intro, prologue) does not —
 see `UiState.Open(owner, pausesWorld:)`.
-Goblins roam to the north (−Z) and drop loot.
 
 ---
 
@@ -406,22 +402,22 @@ Goblins roam to the north (−Z) and drop loot.
 project.godot     Engine config + autoload registration (order matters — see §7)
 Embervale.sln     C# solution (net8.0, Godot.NET.Sdk 4.7.0)
 CLAUDE.md         You are here
-README.md         Public overview + the player-facing phase table
-docs/             ARCHITECTURE · RECIPES · IDS · DESIGN · LORE · ART_STYLE · UI_STYLE
-                  ASSET_POLICY · PRODUCTION_ROADMAP · NOW.md · playbook/  (§5 says which to read when)
-scenes/           Main.tscn (entry, GameBootstrap) + regions/<region>/<cell>.tscn
+README.md         Public overview of the game
+docs/             NOW · PRODUCTION_ROADMAP · HISTORY · ARCHITECTURE · RECIPES · IDS · SAVE_FORMAT
+                  DESIGN · LORE · ART_STYLE · UI_STYLE · RENDERING · ASSET_POLICY · 3D_ASSETS
+                  WORLD_AUTHORING · WORLD_ATLAS · TOOLING · playbook/finish.md  (§5 says which when)
+scenes/           Main.tscn (entry, ApplicationRoot) + regions/<region>/<cell>.tscn
 assets/
   library/        Vendored Quaternius CC0 SOURCE art, .gdignore'd — Godot never imports or
                   exports it. A model enters the game only by being adapted into models/
   models/         The models the game actually loads
-  CREDITS.md      Provenance + licence for every asset. Mandatory before commit
+  CREDITS.md      Frozen history — do not add entries (§1)
 data/             Authored content, one folder per resource type
 src/              One folder per system — §5 maps folder → system
 tests/            Embervale.Tests (xUnit, pure logic only; a Godot Resource cannot be constructed)
-tools/            Dev harnesses, not shipped content:
-                    market_shots.gd          instantiates a cell and renders it (copy per use)
-                    gen_cell_props.py        prop table -> .tscn node stanzas
-                    gen_merchant_dialogue.py the resident-merchant graph scaffold
+tools/            Generators, gates and harnesses (not shipped): region_spec_*.py + gen_regions.py,
+                  world_bake.py, world_atlas.py, gen_map_locations.py, gen_main_story.py,
+                  assets.py, embervale.py (the SDK), *_shots.gd render harnesses
 ```
 
 **`data/` is uniform, so it does not need listing:** the folder name *is* the resource type
@@ -452,12 +448,14 @@ file) is free.
 
 | You are about to… | Read | Size |
 | --- | --- | --- |
-| Author content of any kind | [`RECIPES.md`](docs/RECIPES.md) — **the one recipe only** | ~17k tok total |
-| Change how a system works | [`ARCHITECTURE.md`](docs/ARCHITECTURE.md) — the relevant § only | ~23k |
+| Author content of any kind | [`RECIPES.md`](docs/RECIPES.md) — **the one recipe only** | ~10k tok total |
+| Change how a system works | [`ARCHITECTURE.md`](docs/ARCHITECTURE.md) — the relevant § only | ~13k |
 | Pick an id for anything new | [`IDS.md`](docs/IDS.md) | ~3k |
 | **Touch anything that saves or loads** | **[`SAVE_FORMAT.md`](docs/SAVE_FORMAT.md)** — the `SaveId` contract, what is deliberately *not* saved, and the failure policy | ~3k |
-| Continue the roadmap | **[`docs/NOW.md`](docs/NOW.md) first**, then your phase's file in [`docs/playbook/`](docs/playbook/README.md) | ~1k + ~8k |
-| Check a phase's scope or gate | [`PRODUCTION_ROADMAP.md`](docs/PRODUCTION_ROADMAP.md) | ~22k |
+| Pick up work | **[`docs/NOW.md`](docs/NOW.md) first**, then [`playbook/finish.md`](docs/playbook/finish.md) for the finish run's ids | ~4k + ~2k |
+| Check a phase's status or what is left | [`PRODUCTION_ROADMAP.md`](docs/PRODUCTION_ROADMAP.md) | ~2k |
+| Learn what a past phase did, or its traps | [`HISTORY.md`](docs/HISTORY.md), then the repository log for the old playbook | ~4k |
+| Build or change a region | [`WORLD_AUTHORING.md`](docs/WORLD_AUTHORING.md) and [`WORLD_ATLAS.md`](docs/WORLD_ATLAS.md) | ~8k |
 | Make a design call (economy, difficulty, systems cut) | [`DESIGN.md`](docs/DESIGN.md) | ~9k |
 | Write or place anything the player reads | [`LORE.md`](docs/LORE.md) | ~3k |
 | **Add, replace or adapt a model** | **[`3D_ASSETS.md`](docs/3D_ASSETS.md)** — the whole contract, then `python tools/assets.py status` | ~6k |
@@ -465,12 +463,7 @@ file) is free.
 | Restyle a model / a screen | [`ART_STYLE.md`](docs/ART_STYLE.md) / [`UI_STYLE.md`](docs/UI_STYLE.md) | ~4k / ~7k |
 
 **Start every session at [`docs/NOW.md`](docs/NOW.md)** — where the project is, the live invariants,
-and the commands, in about a screen. It is the only place project state is maintained; everything
-else links to it.
-
-The playbook is **one file per phase** in [`docs/playbook/`](docs/playbook/README.md) — open only
-yours, and read the two entries above it. Its most useful content is almost always the "two things
-worth carrying into the next sub-phase" line on the entries just before yours.
+and the commands. It is the only place project state is maintained; everything else links to it.
 
 Quick map (folder → what lives there; see `docs/ARCHITECTURE.md` for detail):
 
@@ -502,7 +495,7 @@ Quick map (folder → what lives there; see `docs/ARCHITECTURE.md` for detail):
 - **Components** end in `Component`; **events** are past-tense and end in `Event`;
   **resources** end in `Resource`/`Set`.
 - **Use `Log`** (not `GD.Print`) for diagnostics.
-- **No hard-coded player-facing strings** (Phase 24G). Every UI/dialogue string the
+- **No hard-coded player-facing strings.** Every UI/dialogue string the
   player can read goes through `Loc.T("key")` (`src/Localization/Loc.cs`) with a key
   authored in `data/locale/strings.csv` — never a string literal in a `Label`/`Button`/
   toast. Diagnostics via `Log` and dev-console/debug text are exempt.
@@ -537,9 +530,8 @@ Quick map (folder → what lives there; see `docs/ARCHITECTURE.md` for detail):
   its `_Ready` never runs (so fields assigned there stay null and every later call throws an NRE
   through a `?.` that passes), it renders nothing, and it leaks as an orphan node for the run — which
   is what the `WorldIntegrityChecker` orphan invariant is actually catching when it fires.
-  `TelegraphComponent` shipped in 36C without the defer and produced 58 NREs and ~50 orphan leaks in
-  one playthrough; `WeaponTrailComponent`, `LairSpawnComponent` and `TrophyStandComponent` all defer
-  and always did. **A node built for the tree should also build its own resources in its constructor,
+  `TelegraphComponent` once shipped without the defer: 58 NREs and ~50 orphan leaks in one
+  playthrough. **A node built for the tree should also build its own resources in its constructor,
   not in `_Ready`** — the deferred add leaves a one-frame window where it is alive but not ready, and
   a caller landing in that window should draw nothing rather than crash.
 - **Autoload order** is fixed in `project.godot`; `EventBus`/`ServiceLocator`
@@ -561,8 +553,8 @@ Quick map (folder → what lives there; see `docs/ARCHITECTURE.md` for detail):
   load of that path is a `gchandle.is_released()` FATAL on the finalizer thread (the `--lifecycle`
   intermittent, closed 2026-09-25). `ResidentResourceTests` enforces it; engine types (scenes,
   textures, meshes) are exempt.
-- **A stagger cancels a wind-up, not a live blow (36C).** `MeleeWeaponComponent` drops the swing
-  only while `Phase.Windup`; once the hitbox opens the attack is committed. `SpellcastingComponent`
+- **A stagger cancels a wind-up, not a live blow.** `CharacterActionComponent` drops an action (unless it is `Interruptible = false`) only
+  during its wind-up; once the hit window opens the attack is committed. `SpellcastingComponent`
   drops an active charge/channel the same way (which is also how a breath ends, since
   `BreathComponent` stops when `IsChanneling` goes false). This applies to **every actor including
   the player** — poise is symmetric.
@@ -580,7 +572,7 @@ Quick map (folder → what lives there; see `docs/ARCHITECTURE.md` for detail):
   explicitly overwrite survives from the timeline being abandoned. The rule: for every fact you
   restore, ask what happens when the saved value is **absent, `false`, or `0`** while the live value
   is not. `Clear()` the collection before repopulating; write the `else` branch for the boolean.
-  A repo-wide audit (2026-08-05) found this in 6 of 27 implementations, and the symptoms were never
+  An audit once found this in 6 of 27 implementations, and the symptoms were never
   obviously save-related — a downed companion re-wounded on load, spells still on cooldown from a
   future that never happened, a chest that looked plundered but was full, a faction hostile in a
   save that predates it. `EquipmentComponent.Load` and `PerksComponent.Load` are the models to copy:
@@ -589,10 +581,11 @@ Quick map (folder → what lives there; see `docs/ARCHITECTURE.md` for detail):
   path — a reconcile that re-publishes them toasts "Kael joins you" on every reload. UI that must
   survive a load should re-derive from `GameLoadedEvent` instead, which is what `PartyWidget` and
   `CompanionRecruiterComponent` already do.
-- **`ServiceLocator` drops a freed registrant on read** rather than handing it out. Several services
-  register without ever unregistering; a dereferenced freed node is a hard `gchandle.is_released`
-  crash, not a null check away.
-- **Don't dereference injected nodes outside `PlayerController`'s not-playing guard.** The
+- **A service's lifetime is where it is parented.** Register with
+  `ServiceScope.RegisterOwned(this, this)`; the node's own `TreeExiting` unregisters it. A freed
+  registrant found in a live scope is an `Invariant` violation — a dereferenced freed node is a hard
+  `gchandle.is_released` crash, not a null check away.
+- **Don't dereference injected nodes outside `PlayerInputRouter`'s not-playing guard.** The
   camera/pivot/aim nodes are being freed during a world teardown or a save/load rebuild, so
   per-frame work that touches them (the camera rig) must stay *inside* the `IsPlaying` early-out.
   Hoisting it above the guard produced an intermittent `gchandle.is_released` fatal on exit —
@@ -615,7 +608,7 @@ It is a separate file for one measured reason: it was **66% of this one**, and t
 every session while no session needs more than one recipe. Splitting it cut the standing cost of
 opening this repo by roughly two thirds and lost nothing — the recipes are one `Read` away.
 
-Its table of contents lists all 40 by name — one `Read` of the ToC is cheaper than carrying the
+Its table of contents lists every recipe by name — one `Read` of the ToC is cheaper than carrying the
 list here, where it loaded every session whether or not any content was being authored.
 
 ⚠️ **If you are about to author content and cannot find a recipe for it, that is a finding.** Write
@@ -625,8 +618,8 @@ one when you are done, in the same shape: what to author, in what order, and wha
 
 - **Branch:** develop on a per-phase branch (e.g. `claude/phase-23d-…`) off `main`.
   **`main` is the trunk.** Never push directly to `main`; always go through a PR.
-- **Per phase:** implement → keep buildable/playable → update `README.md` +
-  `docs/PRODUCTION_ROADMAP.md` (mark phase done, queue next) → commit → push →
+- **Per change:** implement → keep buildable/playable → rewrite `docs/NOW.md` (and
+  `docs/PRODUCTION_ROADMAP.md` if a phase's status changed) → commit → push →
   open a PR into `main` and **merge it immediately** (`gh pr merge --merge --admin`).
   The maintainer wants each push landed on `main`, **not** parked in a draft PR for
   review — do not leave PRs open as drafts. (The PR still exists for history; it's
@@ -640,25 +633,14 @@ one when you are done, in the same shape: what to author, in what order, and wha
 
 ---
 
-## 10. Roadmap status
+## 10. Project status
 
-**Where the project is lives in [`docs/NOW.md`](docs/NOW.md) and nowhere else.** It carries the
-current sub-phase, the next one, the last verification numbers, and the live invariants — about a
-screen. It used to be duplicated here, in `README.md`, in the roadmap and in the playbook, and all
-four were rewritten every sub-phase.
-
-- **Phases 1–21 built the systems**, not the game — a data-driven sandbox that *can* express
-  Embervale. **Phases 22+ are the production roadmap** that carries it to launch.
-- **Stage A ✅** (22–28 + 25.5, gate G0 reached). **Stage B ⏳** — 29–33 are built, and
-  **gate G1 needs a maintainer play-through and one export**. That is the only thing between here
-  and G1, and no amount of further building moves it.
-- **Stage C ⏳ in progress**, and it is the arc you are almost certainly working in.
-
-**Two docs carry the detail and this one deliberately does not:**
-[`docs/PRODUCTION_ROADMAP.md`](docs/PRODUCTION_ROADMAP.md) §11 mirrors phase-level status;
-[`docs/playbook/`](docs/playbook/README.md) is the per-sub-phase tracker and holds every
-retrospective and trap. **Read the playbook entry for the sub-phase you are about to do** — the ones
-immediately before it usually name the thing that will bite you.
+**Where the project is lives in [`docs/NOW.md`](docs/NOW.md) and nowhere else** — current state,
+open work, the last verification numbers and the live invariants. The game is complete from New Game
+to credits; [`docs/PRODUCTION_ROADMAP.md`](docs/PRODUCTION_ROADMAP.md) has phase status and what is
+left, [`docs/HISTORY.md`](docs/HISTORY.md) what each phase produced and the traps worth knowing, and
+[`docs/playbook/finish.md`](docs/playbook/finish.md) the finish run's id registry. Do not duplicate
+status here or in `README.md`.
 
 ### Standing constraints (these are rules, not history)
 
@@ -675,20 +657,19 @@ immediately before it usually name the thing that will bite you.
   scale comes out 1 m too tall; **verify a written asset by parsing the file**, not the Blender
   viewport; and **do not round-trip a rigged model** — it destroys bone-parented children, so when
   a rig already fits, the correct adaptation is a **file copy**.
-- ⚠️ **Check what is already vendored before pulling anything** (38N2). The library was declared
-  "out of medieval bodies" in 38L; the open-web pull that followed returned a file **byte-identical**
-  to `assets/library/women/adventurer.glb`, which had been sitting unadapted since the migration —
-  38L's claim that the unused women were all CC-BY 3.0 was wrong about that one. `ls` the library and
-  read `manifest.json`'s licence field first.
+- ⚠️ **Check what is already vendored before pulling anything.** An open-web pull once returned a
+  file **byte-identical** to `assets/library/women/adventurer.glb`, unadapted since the migration.
+  `ls` the library and read `manifest.json`'s licence field first.
 - ⚠️ **Render every candidate body at eye level, front and back, before adopting it.** Four of six
-  candidates in 38N2 were unusable (modern dress, a punk with a chainsaw, an ornament that is not a
-  person, a four-bone rig), and none of it was visible from a filename. This trap has now fired three
-  times: `npc_townsman` (hi-vis, 38K→38L), `npc_merchant_f` (t-shirt and trainers, 38L→38N1).
+  candidates in one batch were unusable (modern dress, a punk with a chainsaw, an ornament that is
+  not a person, a four-bone rig), and none of it was visible from a filename.
 - **A region streams prepared cells by distance** (Near/Mid/Far/Backdrop radii in the spec's
   `BUDGET`); collision exists only at Near and Mid, so a probe must focus the streamer on a point
-  before asking about the ground there. ⚠️ **The realms sit in disjoint atlas bands**
+  before asking about the ground there. ⚠️ **The six realms sit in disjoint atlas bands**
   (`docs/WORLD_ATLAS.md`, checked by `tools/world_atlas.py --check`): the Ember Crown about
-  x −520..520, z −720..440, and Frostfang Reach north of it. ⚠️ **Places live in world space,
+  x −520..520, z −720..440, Frostfang Reach north of it, the Ashen Wilds east, the Sunspire Dominion
+  south, the Pale Concord far west and the Celestial Realm far north-east. ⚠️ **The Pale Concord's
+  name must not appear in player-visible text before its reveal** (`docs/NOW.md` invariant 34). ⚠️ **Places live in world space,
   cells are partitions** (the 2026-09 world rebuild): author geography and roads in the spec's world
   coordinates and settlements at a content origin; `tools/check_world_composition.py` fails a region
   whose places line up with its lattice. Schedules are cell-local; a property names its cell.
@@ -720,7 +701,7 @@ immediately before it usually name the thing that will bite you.
   `WorldWater`'s non-swimming recovery contract and lets `WorldCellWater` take its shoreline from the
   terrain. A translucent plane authored in a `.tscn` is invisible to the system whose whole job is
   keeping the player out of it — six of them shipped that way, over basins 4.5 m deep.
-- ⚠️ **The `rts` library pack is roughly 1/6 scale** and nothing in the files says so (38M2). Measure
+- ⚠️ **The `rts` library pack is roughly 1/6 scale** and nothing in the files says so. Measure
   any candidate against a 1.8 m reference before authoring around it, and adapt through
   `nodes/root_scale` in the `.import` rather than a Blender round-trip.
 - ⚠️ **THERE ARE NO SURVIVAL NEEDS IN THIS GAME, AND PHASE 40 IS STRUCK** (maintainer direction,
@@ -728,21 +709,10 @@ immediately before it usually name the thing that will bite you.
   not deferred and not condition-gated, so **do not propose any of them as a fix for anything.** Food
   items stay what they are: instant-heal consumables with a `food` trade tag. 40B's rule that a cut
   system leaves no stub is what the cut was executed under, and it survives the phase being struck —
-  `docs/NOW.md` invariant 28 is its home. `docs/DESIGN.md` §6 carries the gold-sink table.
+  `docs/NOW.md` invariant 35 is its home. `docs/DESIGN.md` §6 carries the gold-sink table.
 - ⚠️ **PHASE 40.5 IS STRUCK TOO** — no puzzle, trap or dungeon-framework tooling (same direction).
-  Phase 50 authors dungeons as rooms with encounters and loot; Phase 51E's relic trials will need
-  their own answer when they land. `docs/playbook/phase-40_5.md` records the consequence.
-
-> **Two UI phases, both done:** Phase 14 *polished the debug-grade overlay* (shared
-> `UiTheme`, vitals bars, crosshair, framed panels). Phase 18 built the *real game UI*
-> on top of it — `GameHud` (anchored widgets, nameplate, interaction prompt), a
-> `PauseMenu`, a `Notifications`/`Toast` feed, item tooltips — and demoted the old
-> `DebugHud` to an F3 developer overlay. The *meta/shell* (title screen, settings,
-> save-slot flow) remains the separate content/production roadmap.
-
-See `docs/PRODUCTION_ROADMAP.md` for the production plan (Phases 22+) that takes
-the finished systems sandbox to launch, gated First Playable → Vertical Slice →
-Alpha → Beta → Release Candidate → Launch.
+  Dungeons are rooms with encounters and loot on existing tooling; any future relic trial needs its
+  own answer that is not a puzzle system.
 
 ---
 
