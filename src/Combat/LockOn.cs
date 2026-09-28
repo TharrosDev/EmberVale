@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+
 namespace Embervale.Combat;
 
 /// <summary>
@@ -76,5 +79,52 @@ public static class LockOn
         }
 
         return currentScore < 0f || challengerScore < currentScore - margin;
+    }
+
+    /// <summary>Seconds a held target may stay out of view or past the drop range before the lock is
+    /// let go. A dodge behind a pillar or a step over the range edge should not throw the lock — and
+    /// with it the whole camera framing — away.</summary>
+    public const float LossGraceSeconds = 0.8f;
+
+    /// <summary>How long a target has been continuously lost: 0 while it is in view and in range, else
+    /// the running total.</summary>
+    public static float StepLoss(float lostSeconds, bool inView, float dt) =>
+        inView ? 0f : lostSeconds + Math.Max(dt, 0f);
+
+    /// <summary>Whether a target lost for <paramref name="lostSeconds"/> is gone for good. A
+    /// non-positive grace drops the instant it is lost, which is the pre-grace behaviour.</summary>
+    public static bool ShouldDrop(float lostSeconds, float graceSeconds) =>
+        lostSeconds > 0f && lostSeconds >= graceSeconds;
+
+    /// <summary>
+    /// The candidate to cycle to, chosen by where they stand on screen rather than by their rank in a
+    /// score list.
+    ///
+    /// <para>⚠️ <b>Cycling used to walk the score-sorted list</b>, and scores shift as the player and
+    /// the enemies move, so "next" jumped to an unpredictable foe and could bounce between two. Left to
+    /// right by <paramref name="bearings"/> (radians, positive right) is stable and matches the
+    /// direction the stick or wheel was pushed. Returns an index into <paramref name="bearings"/>, or
+    /// -1 when it is empty; a <paramref name="current"/> of -1 starts at the far end for
+    /// <paramref name="dir"/>.</para>
+    /// </summary>
+    public static int CycleByBearing(IReadOnlyList<float> bearings, int current, int dir)
+    {
+        int count = bearings.Count;
+        if (count == 0)
+        {
+            return -1;
+        }
+
+        var order = new int[count];
+        var keys = new float[count];
+        for (int i = 0; i < count; i++)
+        {
+            order[i] = i;
+            keys[i] = bearings[i];
+        }
+
+        Array.Sort(keys, order);
+        int slot = current < 0 ? -1 : Array.IndexOf(order, current);
+        return order[CycleIndex(slot, count, dir)];
     }
 }
