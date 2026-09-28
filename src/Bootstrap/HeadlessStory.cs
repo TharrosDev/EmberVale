@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Embervale.Core.Diagnostics;
 using Embervale.Dialogue;
 using Embervale.Enemies;
+using Embervale.Localization;
 using Embervale.Quests;
 using Embervale.Races;
 using Embervale.Save;
@@ -53,6 +54,25 @@ public static class HeadlessStory
             EnemyEntity enemy = EnemyTemplateRegistry.Create(id, Vector3.Zero);
             Check(enemy is BossEntity, $"'{id}' does not build a BossEntity");
             enemy.Free();
+        }
+
+        foreach (string name in VisionSequence.Visions.Values)
+        {
+            for (int i = 1; i <= 3; i++)
+            {
+                Check(Loc.Has($"vision.{name}.{i}"), $"vision card 'vision.{name}.{i}' has no text");
+            }
+        }
+
+        foreach (bool dawnfire in new[] { true, false })
+        {
+            foreach (int absorbed in new[] { 0, 3, 6 })
+            {
+                foreach (string card in EndingSequence.Script(dawnfire, absorbed))
+                {
+                    Check(Loc.Has(card), $"ending card '{card}' has no text");
+                }
+            }
         }
 
         await Raise(root, flags, "flag.iron_king_defeated");

@@ -170,7 +170,18 @@ Python is Codex's bundled interpreter
 
 ## Verification
 
-<!-- The integrator fills this at the end of the finish run with the final gate results. -->
+Finish run, 2026-09-28, on `main` after all six realms, the Meshy cast and the docs rewrite merged:
 
-_Pending: final gate results for the finish run (build, test, validate, lifecycle, story,
-world_bake --check, world_atlas --check, assets validate, the ExportRelease build)._
+| Gate | Result |
+| --- | --- |
+| `tools/gen_regions.py --check` / `world_atlas.py --check` | PASS / PASS |
+| `world_bake.py --check` | PASS — 151 artifacts, source `21168a7a5c4b` |
+| `embervale.py build` / `test` | PASS / PASS (2,151 xUnit) |
+| `embervale.py validate` | PASS, zero content issues |
+| `embervale.py report lifecycle` | PASS |
+| `godot --headless -- --story` | PASS — act chain, hidden-realm reveal, save/load, all seven boss templates, every vision and ending card, the ending plays |
+| `assets.py validate` | PASS (7 new Meshy characters, all HUMANOID, rig probe PASS) |
+| `dotnet build -c ExportRelease` + `check_shipping_assembly.py` | PASS, 0 warnings, no dev tooling |
+
+Not yet verified: a human play-through of either ending, eye-level renders of the new realms and
+bosses, and boss balance at real player levels.

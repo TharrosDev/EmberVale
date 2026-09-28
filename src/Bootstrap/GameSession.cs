@@ -127,6 +127,7 @@ public sealed partial class GameSession : Node3D, IServiceScopeHost
         AddChild(new HiddenRealmReveal { Name = "HiddenRealmReveal" });
         AddChild(new ClosingSequence());
         AddChild(new EndingSequence { Name = "Ending" });
+        AddChild(new VisionSequence { Name = "Visions" });
 
         // 4. Developer surfaces. A capture or exported build makes none of them.
         if (BuildProfile.ShowDeveloperTools)
