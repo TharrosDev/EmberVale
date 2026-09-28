@@ -1,0 +1,54 @@
+[gd_resource type="Resource" script_class="QuestResource" format=3]
+
+[ext_resource type="Script" path="res://src/Quests/QuestResource.cs" id="1_quest"]
+[ext_resource type="Script" path="res://src/Quests/ObjectiveResource.cs" id="2_obj"]
+[ext_resource type="Script" path="res://src/Quests/QuestItemReward.cs" id="3_reward"]
+
+; Phase 42H - the truth-custody finale. Cross-realm recovery on three mapped places (Ember Crown,
+; Ashen Wilds, Sunspire), then preserve / share / seal at Ysolde's hand-in, recorded as
+; flag.veiled_archive.custody_<verdict>. Act III handoff: the main story reads none of these flags
+; and none of this text anticipates the Archivist's reading, so every outcome leaves quest.main.truth
+; exactly as it was.
+
+[sub_resource type="Resource" id="Obj_stones"]
+script = ExtResource("2_obj")
+Type = 2
+TargetId = "location.ember_crown.ashen_breach"
+RequiredCount = 1
+Description = "quest.veiled_archive.breach_record.obj_stones"
+
+[sub_resource type="Resource" id="Obj_hearth"]
+script = ExtResource("2_obj")
+Type = 2
+TargetId = "location.ashen.last_hearth"
+RequiredCount = 1
+Description = "quest.veiled_archive.breach_record.obj_hearth"
+
+[sub_resource type="Resource" id="Obj_library"]
+script = ExtResource("2_obj")
+Type = 2
+TargetId = "location.sunspire.library"
+RequiredCount = 1
+Description = "quest.veiled_archive.breach_record.obj_library"
+
+[sub_resource type="Resource" id="Reward_item"]
+script = ExtResource("3_reward")
+ItemId = "item.ring.custodians_seal"
+Quantity = 1
+
+[resource]
+script = ExtResource("1_quest")
+Id = "quest.veiled_archive.breach_record"
+Title = "quest.veiled_archive.breach_record.title"
+Summary = "quest.veiled_archive.breach_record.summary"
+Objectives = Array[Resource]([SubResource("Obj_stones"), SubResource("Obj_hearth"), SubResource("Obj_library")])
+XpReward = 260
+GoldReward = 80
+GoldItemId = "item.currency.gold"
+RewardItems = Array[Resource]([SubResource("Reward_item")])
+FactionRewardId = "faction.veiled_archive"
+FactionRewardAmount = 12
+TimeLimitSeconds = 0.0
+SequentialObjectives = false
+PrerequisiteQuestId = "quest.veiled_archive.greater_house"
+IsMainQuest = false

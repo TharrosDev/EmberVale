@@ -88,11 +88,260 @@ Condition = 3
 ConditionArg = "quest.iron.judgment"
 Goto = "advance"
 
+; Phase 42M: rank one is SetFlag (additive), not GuildRank :1 - this node is re-reachable, and GuildRank
+; CLEARS every rank above the one it names, so a revisit after rank two or three would have demoted.
 [sub_resource type="Resource" id="ch_advance_confirm"]
 script = ExtResource("3_choice")
 Text = "dlg.syndicate_broker.c_advance_confirm"
+Effect = 2
+EffectArg = "guild.iron_syndicate.rank1"
+
+; -- Phase 42 finale arc (faction.iron_syndicate) --
+; quest.iron.caravan_road (rank two) then quest.iron.last_contract (rank three + finale). The accept choice gates on
+; GuildRankAtLeast :1, so rank two (SetFlag, additive - never GuildRank :2, which CLEARS rank
+; three on a revisit) cannot land on a gap. The verdict is given at the hand-in, after the quest,
+; because no objective depends on it; flag.iron_syndicate.verdict_given shuts the verdict door once given.
+; DialoguePanel has CloseOnCancel = false, so the single-choice chain verdict -> seal ->
+; GuildRank :3 -> SetFlag guild.iron_syndicate.finale cannot be abandoned half way.
+
+[sub_resource type="Resource" id="ch_j42_a_offer"]
+script = ExtResource("3_choice")
+Text = "dlg.syndicate_broker.j42_c_a_offer"
+Condition = 4
+ConditionArg = "quest.iron.caravan_road"
+Goto = "j42_a_offer"
+
+[sub_resource type="Resource" id="ch_j42_a_active"]
+script = ExtResource("3_choice")
+Text = "dlg.syndicate_broker.j42_c_a_active"
+Condition = 2
+ConditionArg = "quest.iron.caravan_road"
+Goto = "j42_a_active"
+
+[sub_resource type="Resource" id="ch_j42_a_done"]
+script = ExtResource("3_choice")
+Text = "dlg.syndicate_broker.j42_c_a_done"
+Condition = 3
+ConditionArg = "quest.iron.caravan_road"
+Goto = "j42_hub"
+Effect = 2
+EffectArg = "guild.iron_syndicate.rank2"
+
+[sub_resource type="Resource" id="ch_j42_a_accept"]
+script = ExtResource("3_choice")
+Text = "dlg.syndicate_broker.j42_c_a_accept"
+Condition = 14
+ConditionArg = "faction.iron_syndicate:1"
+Goto = "j42_a_accepted"
+Effect = 1
+EffectArg = "quest.iron.caravan_road"
+
+[sub_resource type="Resource" id="ch_j42_later"]
+script = ExtResource("3_choice")
+Text = "dlg.syndicate_broker.j42_c_later"
+
+[sub_resource type="Resource" id="ch_j42_ok"]
+script = ExtResource("3_choice")
+Text = "dlg.syndicate_broker.j42_c_ok"
+
+[sub_resource type="Resource" id="ch_j42_b_offer"]
+script = ExtResource("3_choice")
+Text = "dlg.syndicate_broker.j42_c_b_offer"
+Condition = 1
+ConditionArg = "quest.iron.last_contract"
+Goto = "j42_b_offer"
+
+[sub_resource type="Resource" id="ch_j42_b_active"]
+script = ExtResource("3_choice")
+Text = "dlg.syndicate_broker.j42_c_b_active"
+Condition = 2
+ConditionArg = "quest.iron.last_contract"
+Goto = "j42_b_active"
+
+[sub_resource type="Resource" id="ch_j42_b_report"]
+script = ExtResource("3_choice")
+Text = "dlg.syndicate_broker.j42_c_b_report"
+Condition = 3
+ConditionArg = "quest.iron.last_contract"
+Goto = "j42_b_report"
+
+[sub_resource type="Resource" id="ch_j42_b_accept"]
+script = ExtResource("3_choice")
+Text = "dlg.syndicate_broker.j42_c_b_accept"
+Goto = "j42_b_accepted"
+Effect = 1
+EffectArg = "quest.iron.last_contract"
+
+[sub_resource type="Resource" id="ch_j42_verdict"]
+script = ExtResource("3_choice")
+Text = "dlg.syndicate_broker.j42_c_verdict"
+Condition = 6
+ConditionArg = "flag.iron_syndicate.verdict_given"
+Goto = "j42_verdict"
+
+[sub_resource type="Resource" id="ch_j42_after_finale_fidelity"]
+script = ExtResource("3_choice")
+Text = "dlg.syndicate_broker.j42_c_after"
+Condition = 5
+ConditionArg = "flag.iron_syndicate.finale_fidelity"
+Goto = "j42_after_finale_fidelity"
+
+[sub_resource type="Resource" id="ch_j42_v_finale_fidelity"]
+script = ExtResource("3_choice")
+Text = "dlg.syndicate_broker.j42_c_v_finale_fidelity"
+Goto = "j42_v_finale_fidelity"
+Effect = 2
+EffectArg = "flag.iron_syndicate.finale_fidelity"
+
+[sub_resource type="Resource" id="ch_j42_after_finale_offer"]
+script = ExtResource("3_choice")
+Text = "dlg.syndicate_broker.j42_c_after"
+Condition = 5
+ConditionArg = "flag.iron_syndicate.finale_offer"
+Goto = "j42_after_finale_offer"
+
+[sub_resource type="Resource" id="ch_j42_v_finale_offer"]
+script = ExtResource("3_choice")
+Text = "dlg.syndicate_broker.j42_c_v_finale_offer"
+Goto = "j42_v_finale_offer"
+Effect = 2
+EffectArg = "flag.iron_syndicate.finale_offer"
+
+[sub_resource type="Resource" id="ch_j42_after_finale_rook"]
+script = ExtResource("3_choice")
+Text = "dlg.syndicate_broker.j42_c_after"
+Condition = 5
+ConditionArg = "flag.iron_syndicate.finale_rook"
+Goto = "j42_after_finale_rook"
+
+[sub_resource type="Resource" id="ch_j42_v_finale_rook"]
+script = ExtResource("3_choice")
+Text = "dlg.syndicate_broker.j42_c_v_finale_rook"
+Goto = "j42_v_finale_rook"
+Effect = 2
+EffectArg = "flag.iron_syndicate.finale_rook"
+
+[sub_resource type="Resource" id="ch_j42_seal"]
+script = ExtResource("3_choice")
+Text = "dlg.syndicate_broker.j42_c_seal"
+Goto = "j42_sealed"
+Effect = 2
+EffectArg = "flag.iron_syndicate.verdict_given"
+
+[sub_resource type="Resource" id="ch_j42_rank3"]
+script = ExtResource("3_choice")
+Text = "dlg.syndicate_broker.j42_c_rank3"
+Goto = "j42_ranked"
 Effect = 12
-EffectArg = "faction.iron_syndicate:1"
+EffectArg = "faction.iron_syndicate:3"
+
+[sub_resource type="Resource" id="ch_j42_finale"]
+script = ExtResource("3_choice")
+Text = "dlg.syndicate_broker.j42_c_finale"
+Effect = 2
+EffectArg = "guild.iron_syndicate.finale"
+
+[sub_resource type="Resource" id="node_j42_a_offer"]
+script = ExtResource("2_node")
+Id = "j42_a_offer"
+Text = "dlg.syndicate_broker.j42_a_offer"
+Choices = Array[Resource]([SubResource("ch_j42_a_accept"), SubResource("ch_j42_later")])
+
+[sub_resource type="Resource" id="node_j42_a_accepted"]
+script = ExtResource("2_node")
+Id = "j42_a_accepted"
+Text = "dlg.syndicate_broker.j42_a_accepted"
+Choices = Array[Resource]([SubResource("ch_j42_ok")])
+
+[sub_resource type="Resource" id="node_j42_a_active"]
+script = ExtResource("2_node")
+Id = "j42_a_active"
+Text = "dlg.syndicate_broker.j42_a_active"
+Choices = Array[Resource]([SubResource("ch_j42_ok")])
+
+[sub_resource type="Resource" id="node_j42_hub"]
+script = ExtResource("2_node")
+Id = "j42_hub"
+Text = "dlg.syndicate_broker.j42_hub"
+Choices = Array[Resource]([SubResource("ch_j42_b_offer"), SubResource("ch_j42_b_active"), SubResource("ch_j42_b_report"), SubResource("ch_back"), SubResource("ch_end")])
+
+[sub_resource type="Resource" id="node_j42_b_offer"]
+script = ExtResource("2_node")
+Id = "j42_b_offer"
+Text = "dlg.syndicate_broker.j42_b_offer"
+Choices = Array[Resource]([SubResource("ch_j42_b_accept"), SubResource("ch_j42_later")])
+
+[sub_resource type="Resource" id="node_j42_b_accepted"]
+script = ExtResource("2_node")
+Id = "j42_b_accepted"
+Text = "dlg.syndicate_broker.j42_b_accepted"
+Choices = Array[Resource]([SubResource("ch_j42_ok")])
+
+[sub_resource type="Resource" id="node_j42_b_active"]
+script = ExtResource("2_node")
+Id = "j42_b_active"
+Text = "dlg.syndicate_broker.j42_b_active"
+Choices = Array[Resource]([SubResource("ch_j42_ok")])
+
+[sub_resource type="Resource" id="node_j42_b_report"]
+script = ExtResource("2_node")
+Id = "j42_b_report"
+Text = "dlg.syndicate_broker.j42_b_report"
+Choices = Array[Resource]([SubResource("ch_j42_verdict"), SubResource("ch_j42_after_finale_fidelity"), SubResource("ch_j42_after_finale_offer"), SubResource("ch_j42_after_finale_rook"), SubResource("ch_back")])
+
+[sub_resource type="Resource" id="node_j42_verdict"]
+script = ExtResource("2_node")
+Id = "j42_verdict"
+Text = "dlg.syndicate_broker.j42_verdict"
+Choices = Array[Resource]([SubResource("ch_j42_v_finale_fidelity"), SubResource("ch_j42_v_finale_offer"), SubResource("ch_j42_v_finale_rook")])
+
+[sub_resource type="Resource" id="node_j42_v_finale_fidelity"]
+script = ExtResource("2_node")
+Id = "j42_v_finale_fidelity"
+Text = "dlg.syndicate_broker.j42_v_finale_fidelity"
+Choices = Array[Resource]([SubResource("ch_j42_seal")])
+
+[sub_resource type="Resource" id="node_j42_after_finale_fidelity"]
+script = ExtResource("2_node")
+Id = "j42_after_finale_fidelity"
+Text = "dlg.syndicate_broker.j42_after_finale_fidelity"
+Choices = Array[Resource]([SubResource("ch_back"), SubResource("ch_end")])
+
+[sub_resource type="Resource" id="node_j42_v_finale_offer"]
+script = ExtResource("2_node")
+Id = "j42_v_finale_offer"
+Text = "dlg.syndicate_broker.j42_v_finale_offer"
+Choices = Array[Resource]([SubResource("ch_j42_seal")])
+
+[sub_resource type="Resource" id="node_j42_after_finale_offer"]
+script = ExtResource("2_node")
+Id = "j42_after_finale_offer"
+Text = "dlg.syndicate_broker.j42_after_finale_offer"
+Choices = Array[Resource]([SubResource("ch_back"), SubResource("ch_end")])
+
+[sub_resource type="Resource" id="node_j42_v_finale_rook"]
+script = ExtResource("2_node")
+Id = "j42_v_finale_rook"
+Text = "dlg.syndicate_broker.j42_v_finale_rook"
+Choices = Array[Resource]([SubResource("ch_j42_seal")])
+
+[sub_resource type="Resource" id="node_j42_after_finale_rook"]
+script = ExtResource("2_node")
+Id = "j42_after_finale_rook"
+Text = "dlg.syndicate_broker.j42_after_finale_rook"
+Choices = Array[Resource]([SubResource("ch_back"), SubResource("ch_end")])
+
+[sub_resource type="Resource" id="node_j42_sealed"]
+script = ExtResource("2_node")
+Id = "j42_sealed"
+Text = "dlg.syndicate_broker.j42_sealed"
+Choices = Array[Resource]([SubResource("ch_j42_rank3")])
+
+[sub_resource type="Resource" id="node_j42_ranked"]
+script = ExtResource("2_node")
+Id = "j42_ranked"
+Text = "dlg.syndicate_broker.j42_ranked"
+Choices = Array[Resource]([SubResource("ch_j42_finale")])
 
 [sub_resource type="Resource" id="node_root"]
 script = ExtResource("2_node")
@@ -104,7 +353,7 @@ Choices = Array[Resource]([SubResource("ch_member"), SubResource("ch_stranger"),
 script = ExtResource("2_node")
 Id = "member"
 Text = "dlg.syndicate_broker.member"
-Choices = Array[Resource]([SubResource("ch_advance"), SubResource("ch_back"), SubResource("ch_end")])
+Choices = Array[Resource]([SubResource("ch_advance"), SubResource("ch_j42_a_offer"), SubResource("ch_j42_a_active"), SubResource("ch_j42_a_done"), SubResource("ch_back"), SubResource("ch_end")])
 
 [sub_resource type="Resource" id="node_stranger"]
 script = ExtResource("2_node")
@@ -135,4 +384,4 @@ script = ExtResource("1_dlg")
 Id = "dialogue.syndicate_broker"
 SpeakerName = "dlg.syndicate_broker.speaker"
 StartNodeId = "root"
-Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_member"), SubResource("node_stranger"), SubResource("node_joined_now"), SubResource("node_declined"), SubResource("node_advance")])
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_member"), SubResource("node_stranger"), SubResource("node_joined_now"), SubResource("node_declined"), SubResource("node_advance"), SubResource("node_j42_a_offer"), SubResource("node_j42_a_accepted"), SubResource("node_j42_a_active"), SubResource("node_j42_hub"), SubResource("node_j42_b_offer"), SubResource("node_j42_b_accepted"), SubResource("node_j42_b_active"), SubResource("node_j42_b_report"), SubResource("node_j42_verdict"), SubResource("node_j42_v_finale_fidelity"), SubResource("node_j42_after_finale_fidelity"), SubResource("node_j42_v_finale_offer"), SubResource("node_j42_after_finale_offer"), SubResource("node_j42_v_finale_rook"), SubResource("node_j42_after_finale_rook"), SubResource("node_j42_sealed"), SubResource("node_j42_ranked")])

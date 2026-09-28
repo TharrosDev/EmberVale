@@ -147,11 +147,260 @@ Goto = "advance_ranked"
 Effect = 8
 EffectArg = "spell.elder_word"
 
+; Phase 42M: rank one is SetFlag (additive), not GuildRank :1 - this node is re-reachable, and GuildRank
+; CLEARS every rank above the one it names, so a revisit after rank two or three would have demoted.
 [sub_resource type="Resource" id="ch_advance_confirm"]
 script = ExtResource("3_choice")
 Text = "dlg.archive_keeper.c_advance_confirm"
+Effect = 2
+EffectArg = "guild.veiled_archive.rank1"
+
+; -- Phase 42 finale arc (faction.veiled_archive) --
+; quest.veiled_archive.greater_house (rank two) then quest.veiled_archive.breach_record (rank three + finale). The accept choice gates on
+; GuildRankAtLeast :1, so rank two (SetFlag, additive - never GuildRank :2, which CLEARS rank
+; three on a revisit) cannot land on a gap. The verdict is given at the hand-in, after the quest,
+; because no objective depends on it; flag.veiled_archive.verdict_given shuts the verdict door once given.
+; DialoguePanel has CloseOnCancel = false, so the single-choice chain verdict -> seal ->
+; GuildRank :3 -> SetFlag guild.veiled_archive.finale cannot be abandoned half way.
+
+[sub_resource type="Resource" id="ch_h42_a_offer"]
+script = ExtResource("3_choice")
+Text = "dlg.archive_keeper.h42_c_a_offer"
+Condition = 4
+ConditionArg = "quest.veiled_archive.greater_house"
+Goto = "h42_a_offer"
+
+[sub_resource type="Resource" id="ch_h42_a_active"]
+script = ExtResource("3_choice")
+Text = "dlg.archive_keeper.h42_c_a_active"
+Condition = 2
+ConditionArg = "quest.veiled_archive.greater_house"
+Goto = "h42_a_active"
+
+[sub_resource type="Resource" id="ch_h42_a_done"]
+script = ExtResource("3_choice")
+Text = "dlg.archive_keeper.h42_c_a_done"
+Condition = 3
+ConditionArg = "quest.veiled_archive.greater_house"
+Goto = "h42_hub"
+Effect = 2
+EffectArg = "guild.veiled_archive.rank2"
+
+[sub_resource type="Resource" id="ch_h42_a_accept"]
+script = ExtResource("3_choice")
+Text = "dlg.archive_keeper.h42_c_a_accept"
+Condition = 14
+ConditionArg = "faction.veiled_archive:1"
+Goto = "h42_a_accepted"
+Effect = 1
+EffectArg = "quest.veiled_archive.greater_house"
+
+[sub_resource type="Resource" id="ch_h42_later"]
+script = ExtResource("3_choice")
+Text = "dlg.archive_keeper.h42_c_later"
+
+[sub_resource type="Resource" id="ch_h42_ok"]
+script = ExtResource("3_choice")
+Text = "dlg.archive_keeper.h42_c_ok"
+
+[sub_resource type="Resource" id="ch_h42_b_offer"]
+script = ExtResource("3_choice")
+Text = "dlg.archive_keeper.h42_c_b_offer"
+Condition = 1
+ConditionArg = "quest.veiled_archive.breach_record"
+Goto = "h42_b_offer"
+
+[sub_resource type="Resource" id="ch_h42_b_active"]
+script = ExtResource("3_choice")
+Text = "dlg.archive_keeper.h42_c_b_active"
+Condition = 2
+ConditionArg = "quest.veiled_archive.breach_record"
+Goto = "h42_b_active"
+
+[sub_resource type="Resource" id="ch_h42_b_report"]
+script = ExtResource("3_choice")
+Text = "dlg.archive_keeper.h42_c_b_report"
+Condition = 3
+ConditionArg = "quest.veiled_archive.breach_record"
+Goto = "h42_b_report"
+
+[sub_resource type="Resource" id="ch_h42_b_accept"]
+script = ExtResource("3_choice")
+Text = "dlg.archive_keeper.h42_c_b_accept"
+Goto = "h42_b_accepted"
+Effect = 1
+EffectArg = "quest.veiled_archive.breach_record"
+
+[sub_resource type="Resource" id="ch_h42_verdict"]
+script = ExtResource("3_choice")
+Text = "dlg.archive_keeper.h42_c_verdict"
+Condition = 6
+ConditionArg = "flag.veiled_archive.verdict_given"
+Goto = "h42_verdict"
+
+[sub_resource type="Resource" id="ch_h42_after_custody_preserve"]
+script = ExtResource("3_choice")
+Text = "dlg.archive_keeper.h42_c_after"
+Condition = 5
+ConditionArg = "flag.veiled_archive.custody_preserve"
+Goto = "h42_after_custody_preserve"
+
+[sub_resource type="Resource" id="ch_h42_v_custody_preserve"]
+script = ExtResource("3_choice")
+Text = "dlg.archive_keeper.h42_c_v_custody_preserve"
+Goto = "h42_v_custody_preserve"
+Effect = 2
+EffectArg = "flag.veiled_archive.custody_preserve"
+
+[sub_resource type="Resource" id="ch_h42_after_custody_share"]
+script = ExtResource("3_choice")
+Text = "dlg.archive_keeper.h42_c_after"
+Condition = 5
+ConditionArg = "flag.veiled_archive.custody_share"
+Goto = "h42_after_custody_share"
+
+[sub_resource type="Resource" id="ch_h42_v_custody_share"]
+script = ExtResource("3_choice")
+Text = "dlg.archive_keeper.h42_c_v_custody_share"
+Goto = "h42_v_custody_share"
+Effect = 2
+EffectArg = "flag.veiled_archive.custody_share"
+
+[sub_resource type="Resource" id="ch_h42_after_custody_seal"]
+script = ExtResource("3_choice")
+Text = "dlg.archive_keeper.h42_c_after"
+Condition = 5
+ConditionArg = "flag.veiled_archive.custody_seal"
+Goto = "h42_after_custody_seal"
+
+[sub_resource type="Resource" id="ch_h42_v_custody_seal"]
+script = ExtResource("3_choice")
+Text = "dlg.archive_keeper.h42_c_v_custody_seal"
+Goto = "h42_v_custody_seal"
+Effect = 2
+EffectArg = "flag.veiled_archive.custody_seal"
+
+[sub_resource type="Resource" id="ch_h42_seal"]
+script = ExtResource("3_choice")
+Text = "dlg.archive_keeper.h42_c_seal"
+Goto = "h42_sealed"
+Effect = 2
+EffectArg = "flag.veiled_archive.verdict_given"
+
+[sub_resource type="Resource" id="ch_h42_rank3"]
+script = ExtResource("3_choice")
+Text = "dlg.archive_keeper.h42_c_rank3"
+Goto = "h42_ranked"
 Effect = 12
-EffectArg = "faction.veiled_archive:1"
+EffectArg = "faction.veiled_archive:3"
+
+[sub_resource type="Resource" id="ch_h42_finale"]
+script = ExtResource("3_choice")
+Text = "dlg.archive_keeper.h42_c_finale"
+Effect = 2
+EffectArg = "guild.veiled_archive.finale"
+
+[sub_resource type="Resource" id="node_h42_a_offer"]
+script = ExtResource("2_node")
+Id = "h42_a_offer"
+Text = "dlg.archive_keeper.h42_a_offer"
+Choices = Array[Resource]([SubResource("ch_h42_a_accept"), SubResource("ch_h42_later")])
+
+[sub_resource type="Resource" id="node_h42_a_accepted"]
+script = ExtResource("2_node")
+Id = "h42_a_accepted"
+Text = "dlg.archive_keeper.h42_a_accepted"
+Choices = Array[Resource]([SubResource("ch_h42_ok")])
+
+[sub_resource type="Resource" id="node_h42_a_active"]
+script = ExtResource("2_node")
+Id = "h42_a_active"
+Text = "dlg.archive_keeper.h42_a_active"
+Choices = Array[Resource]([SubResource("ch_h42_ok")])
+
+[sub_resource type="Resource" id="node_h42_hub"]
+script = ExtResource("2_node")
+Id = "h42_hub"
+Text = "dlg.archive_keeper.h42_hub"
+Choices = Array[Resource]([SubResource("ch_h42_b_offer"), SubResource("ch_h42_b_active"), SubResource("ch_h42_b_report"), SubResource("ch_back"), SubResource("ch_end")])
+
+[sub_resource type="Resource" id="node_h42_b_offer"]
+script = ExtResource("2_node")
+Id = "h42_b_offer"
+Text = "dlg.archive_keeper.h42_b_offer"
+Choices = Array[Resource]([SubResource("ch_h42_b_accept"), SubResource("ch_h42_later")])
+
+[sub_resource type="Resource" id="node_h42_b_accepted"]
+script = ExtResource("2_node")
+Id = "h42_b_accepted"
+Text = "dlg.archive_keeper.h42_b_accepted"
+Choices = Array[Resource]([SubResource("ch_h42_ok")])
+
+[sub_resource type="Resource" id="node_h42_b_active"]
+script = ExtResource("2_node")
+Id = "h42_b_active"
+Text = "dlg.archive_keeper.h42_b_active"
+Choices = Array[Resource]([SubResource("ch_h42_ok")])
+
+[sub_resource type="Resource" id="node_h42_b_report"]
+script = ExtResource("2_node")
+Id = "h42_b_report"
+Text = "dlg.archive_keeper.h42_b_report"
+Choices = Array[Resource]([SubResource("ch_h42_verdict"), SubResource("ch_h42_after_custody_preserve"), SubResource("ch_h42_after_custody_share"), SubResource("ch_h42_after_custody_seal"), SubResource("ch_back")])
+
+[sub_resource type="Resource" id="node_h42_verdict"]
+script = ExtResource("2_node")
+Id = "h42_verdict"
+Text = "dlg.archive_keeper.h42_verdict"
+Choices = Array[Resource]([SubResource("ch_h42_v_custody_preserve"), SubResource("ch_h42_v_custody_share"), SubResource("ch_h42_v_custody_seal")])
+
+[sub_resource type="Resource" id="node_h42_v_custody_preserve"]
+script = ExtResource("2_node")
+Id = "h42_v_custody_preserve"
+Text = "dlg.archive_keeper.h42_v_custody_preserve"
+Choices = Array[Resource]([SubResource("ch_h42_seal")])
+
+[sub_resource type="Resource" id="node_h42_after_custody_preserve"]
+script = ExtResource("2_node")
+Id = "h42_after_custody_preserve"
+Text = "dlg.archive_keeper.h42_after_custody_preserve"
+Choices = Array[Resource]([SubResource("ch_back"), SubResource("ch_end")])
+
+[sub_resource type="Resource" id="node_h42_v_custody_share"]
+script = ExtResource("2_node")
+Id = "h42_v_custody_share"
+Text = "dlg.archive_keeper.h42_v_custody_share"
+Choices = Array[Resource]([SubResource("ch_h42_seal")])
+
+[sub_resource type="Resource" id="node_h42_after_custody_share"]
+script = ExtResource("2_node")
+Id = "h42_after_custody_share"
+Text = "dlg.archive_keeper.h42_after_custody_share"
+Choices = Array[Resource]([SubResource("ch_back"), SubResource("ch_end")])
+
+[sub_resource type="Resource" id="node_h42_v_custody_seal"]
+script = ExtResource("2_node")
+Id = "h42_v_custody_seal"
+Text = "dlg.archive_keeper.h42_v_custody_seal"
+Choices = Array[Resource]([SubResource("ch_h42_seal")])
+
+[sub_resource type="Resource" id="node_h42_after_custody_seal"]
+script = ExtResource("2_node")
+Id = "h42_after_custody_seal"
+Text = "dlg.archive_keeper.h42_after_custody_seal"
+Choices = Array[Resource]([SubResource("ch_back"), SubResource("ch_end")])
+
+[sub_resource type="Resource" id="node_h42_sealed"]
+script = ExtResource("2_node")
+Id = "h42_sealed"
+Text = "dlg.archive_keeper.h42_sealed"
+Choices = Array[Resource]([SubResource("ch_h42_rank3")])
+
+[sub_resource type="Resource" id="node_h42_ranked"]
+script = ExtResource("2_node")
+Id = "h42_ranked"
+Text = "dlg.archive_keeper.h42_ranked"
+Choices = Array[Resource]([SubResource("ch_h42_finale")])
 
 [sub_resource type="Resource" id="node_root"]
 script = ExtResource("2_node")
@@ -163,7 +412,7 @@ Choices = Array[Resource]([SubResource("ch_member"), SubResource("ch_stranger"),
 script = ExtResource("2_node")
 Id = "member"
 Text = "dlg.archive_keeper.member"
-Choices = Array[Resource]([SubResource("ch_advance"), SubResource("ch_back"), SubResource("ch_end")])
+Choices = Array[Resource]([SubResource("ch_advance"), SubResource("ch_h42_a_offer"), SubResource("ch_h42_a_active"), SubResource("ch_h42_a_done"), SubResource("ch_back"), SubResource("ch_end")])
 
 [sub_resource type="Resource" id="node_stranger"]
 script = ExtResource("2_node")
@@ -224,4 +473,4 @@ script = ExtResource("1_dlg")
 Id = "dialogue.archive_keeper"
 SpeakerName = "dlg.archive_keeper.speaker"
 StartNodeId = "root"
-Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_member"), SubResource("node_stranger"), SubResource("node_trial_offer"), SubResource("node_trial_accepted"), SubResource("node_trial_declined"), SubResource("node_trial_active"), SubResource("node_trial_ready"), SubResource("node_admitted"), SubResource("node_advance"), SubResource("node_advance_ranked")])
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_member"), SubResource("node_stranger"), SubResource("node_trial_offer"), SubResource("node_trial_accepted"), SubResource("node_trial_declined"), SubResource("node_trial_active"), SubResource("node_trial_ready"), SubResource("node_admitted"), SubResource("node_advance"), SubResource("node_advance_ranked"), SubResource("node_h42_a_offer"), SubResource("node_h42_a_accepted"), SubResource("node_h42_a_active"), SubResource("node_h42_hub"), SubResource("node_h42_b_offer"), SubResource("node_h42_b_accepted"), SubResource("node_h42_b_active"), SubResource("node_h42_b_report"), SubResource("node_h42_verdict"), SubResource("node_h42_v_custody_preserve"), SubResource("node_h42_after_custody_preserve"), SubResource("node_h42_v_custody_share"), SubResource("node_h42_after_custody_share"), SubResource("node_h42_v_custody_seal"), SubResource("node_h42_after_custody_seal"), SubResource("node_h42_sealed"), SubResource("node_h42_ranked")])

@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="EquippableItemResource" format=3]
+
+[ext_resource type="Script" path="res://src/Items/EquippableItemResource.cs" id="1_eq"]
+
+; Phase 42J - the Iron Syndicate's finale reward off quest.iron.last_contract, the same for every
+; ending (fidelity / better offer / protect Rook). ItemGrant's full-pack handling covers overflow.
+[resource]
+script = ExtResource("1_eq")
+Id = "item.ring.brokers_signet"
+DisplayName = "Broker's Signet"
+Description = "A heavy iron signet stamped with the Ledger House's mark. Fences and factors from Hollowreach to the Wells know it on sight."
+Type = 0
+Rarity = 3
+MaxStack = 1
+Weight = 0.2
+Value = 360
+Slot = 8
+BonusPhysicalPower = 4.0
+BonusCritChance = 0.03
+TradeTags = Array[String](["jewelry"])

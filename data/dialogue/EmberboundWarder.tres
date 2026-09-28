@@ -44,6 +44,34 @@ Goto = "root"
 script = ExtResource("3_choice")
 Text = "dlg.emberbound_warder.c_end"
 
+; -- Phase 42L/42M: Cass Vollen on custody (quest.emberbound.second_fire's Talk) and on the Flamekeeper. --
+
+[sub_resource type="Resource" id="ch_l42_account"]
+script = ExtResource("3_choice")
+Text = "dlg.emberbound_warder.c_l42_account"
+Condition = 2
+ConditionArg = "quest.emberbound.second_fire"
+Goto = "l42_account"
+
+[sub_resource type="Resource" id="ch_l42_react"]
+script = ExtResource("3_choice")
+Text = "dlg.emberbound_warder.c_l42_react"
+Condition = 14
+ConditionArg = "faction.emberbound:3"
+Goto = "l42_react"
+
+[sub_resource type="Resource" id="node_l42_account"]
+script = ExtResource("2_node")
+Id = "l42_account"
+Text = "dlg.emberbound_warder.l42_account"
+Choices = Array[Resource]([SubResource("ch_back"), SubResource("ch_end")])
+
+[sub_resource type="Resource" id="node_l42_react"]
+script = ExtResource("2_node")
+Id = "l42_react"
+Text = "dlg.emberbound_warder.l42_react"
+Choices = Array[Resource]([SubResource("ch_back"), SubResource("ch_end")])
+
 [sub_resource type="Resource" id="node_root"]
 script = ExtResource("2_node")
 Id = "root"
@@ -54,7 +82,7 @@ Choices = Array[Resource]([SubResource("ch_member"), SubResource("ch_stranger"),
 script = ExtResource("2_node")
 Id = "member"
 Text = "dlg.emberbound_warder.member"
-Choices = Array[Resource]([SubResource("ch_back"), SubResource("ch_end")])
+Choices = Array[Resource]([SubResource("ch_l42_account"), SubResource("ch_l42_react"), SubResource("ch_back"), SubResource("ch_end")])
 
 [sub_resource type="Resource" id="node_stranger"]
 script = ExtResource("2_node")
@@ -67,4 +95,4 @@ script = ExtResource("1_dlg")
 Id = "dialogue.emberbound_warder"
 SpeakerName = "dlg.emberbound_warder.speaker"
 StartNodeId = "root"
-Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_member"), SubResource("node_stranger")])
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_member"), SubResource("node_stranger"), SubResource("node_l42_account"), SubResource("node_l42_react")])

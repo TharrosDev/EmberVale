@@ -2391,3 +2391,203 @@ vision.hollow_queen.3,"The price was her own soul, and she paid it without looki
 vision.ashen_knight.1,"A VISION. The Sixth Flamebearer climbs the Celestial stair with five companions. He is the only one who reaches the top."
 vision.ashen_knight.2,"He stands before the Ash Throne with Morthul broken at his feet, and hears what the throne asks of whoever wins."
 vision.ashen_knight.3,"He could not sit, and he could not leave it empty. So he knelt, and has guarded the one who would, ever since. He was waiting for you."
+# Phase 42F/H/J/L/M - guild finales (Ash Hunters, Veiled Archive, Iron Syndicate, Emberbound) and reactions
+quest.ash_hunters.scar_count.title,Counting the Scar
+quest.ash_hunters.scar_count.summary,"Huntmaster Yrsa Kesk's counts from the Ashen Wilds no longer add up. Stand on Hask Morrow's rise above the scar road, hear his count, and see the ash-maws for yourself."
+quest.ash_hunters.scar_count.obj_station,Reach the Ash Hunters' station in the Ashen Wilds
+quest.ash_hunters.scar_count.obj_hask,Hear Hask Morrow's pack count
+quest.ash_hunters.scar_count.obj_maws,Kill ash-maws (3)
+quest.ash_hunters.three_dragons.title,Three Kinds of Fire
+quest.ash_hunters.three_dragons.summary,"The Hunters' ledger calls every dragon the same thing. Look at the wild drakes, the ash-drakes and the Ancient in Frostfang Reach, from as close as you dare, then tell Yrsa Kesk what the ledger should say about each."
+quest.ash_hunters.three_dragons.obj_wild,Observe the wild drakes at the Dragon Roost
+quest.ash_hunters.three_dragons.obj_ash,Observe the ash-drakes at the Ash Roost
+quest.ash_hunters.three_dragons.obj_ancient,Observe the Ancient at its Aerie
+dlg.hunter_master.f42_c_a_offer,Is there work for a marked hunter?
+dlg.hunter_master.f42_c_a_active,The Ashen count is still open.
+dlg.hunter_master.f42_c_a_done,I've been to the scar. Hask's count is right.
+dlg.hunter_master.f42_c_a_accept,I carry the mark. I'll go.
+dlg.hunter_master.f42_c_later,Not yet.
+dlg.hunter_master.f42_c_ok,Understood.
+dlg.hunter_master.f42_c_b_offer,What can't you answer yet?
+dlg.hunter_master.f42_c_b_active,I haven't seen all three yet.
+dlg.hunter_master.f42_c_b_report,I've seen all three kinds.
+dlg.hunter_master.f42_c_b_accept,I'll look at all three.
+dlg.hunter_master.f42_c_verdict,Here's what the ledger should say.
+dlg.hunter_master.f42_c_after,How is the ledger holding?
+dlg.hunter_master.f42_c_v_verdict_slay,"Mark them all. Fire is fire, and all of it burns."
+dlg.hunter_master.f42_c_v_verdict_judge,Hunt the ash-drakes. Leave the wild ones. Protect the one that speaks.
+dlg.hunter_master.f42_c_v_verdict_withdraw,Pull the Hunters out of dragon country. We don't know enough.
+dlg.hunter_master.f42_c_seal,That's my word.
+dlg.hunter_master.f42_c_rank3,I'll carry it.
+dlg.hunter_master.f42_c_finale,"Good hunting, Huntmaster."
+dlg.hunter_master.f42_a_offer,"She finds a page near the back of the field book. ""Hask Morrow keeps our station in the Ashen Wilds, on the rise above the scar road. He sends me pack counts, and lately they don't add up. Once you carry the Tracker's mark, go and stand on his rise, hear his count, and put down three ash-maws yourself. Then tell me what you saw, not what you killed."""
+dlg.hunter_master.f42_a_accepted,"""Last Hearth is the only fire on that road. The station is on the rise above it. Write things down."""
+dlg.hunter_master.f42_a_active,"""Then it's still open. Hask won't have gone anywhere. Neither have the maws."""
+dlg.hunter_master.f42_hub,"She turns the book so you can see your name in it, twice now. ""Right, and worse than he said. You carry the Hunter's mark. Hunters who carry it get the questions the rest of us can't answer yet."""
+dlg.hunter_master.f42_b_offer,"""Dragons."" She says it flatly. ""The ledger calls them all one thing and they are not. There are wild drakes at the Dragon Roost in the Reach, ash-drakes the ember got into at the Ash Roost, and the old one at the Aerie that talks. Go and look at all three, from as close as you dare and no closer. Then tell me what the Hunters should do about each. Whatever you say goes in the ledger, and the ledger outlives both of us."""
+dlg.hunter_master.f42_b_accepted,"""From cover, if you can. A dragon you watched is worth ten you fought."""
+dlg.hunter_master.f42_b_active,"""Then you haven't seen dragons yet. Only a dragon."""
+dlg.hunter_master.f42_b_report,"She opens the book at a clean page and holds the pen over it. ""Go on."""
+dlg.hunter_master.f42_verdict,"""One line for each of them, or one line for all of them. Your choice, and it stands."""
+dlg.hunter_master.f42_v_verdict_slay,"The pen moves. ""Every dragon a mark. It's simple, and simple travels well. It will cost us hunters. It always does."""
+dlg.hunter_master.f42_after_verdict_slay,"""Every dragon a mark, and the marks are coming in. So are the names of the hunters who didn't come back. I read both lists."""
+dlg.hunter_master.f42_v_verdict_judge,"The pen moves slowly, three lines instead of one. ""The ember is in the ash-drakes and not in the others. And a creature that can tell you why it's angry isn't game."" She blots the page. ""That's a harder ledger to keep. It's the right one."""
+dlg.hunter_master.f42_after_verdict_judge,"""Two ash-drakes marked since you left, and the wild roost untouched. The old one at the Aerie watched our hunters pass and let them. I think it knows what we decided."""
+dlg.hunter_master.f42_v_verdict_withdraw,"The pen hesitates, then moves. ""Knowing when we don't know. Most orders never learn it."" She draws a line across the Reach on her map. ""The station at the scar stays. The roosts are closed to us until someone knows more than you do."""
+dlg.hunter_master.f42_after_verdict_withdraw,"""The roosts are quiet, or we don't know otherwise, which is what we chose. Hask still counts the scar. That was always the job."""
+dlg.hunter_master.f42_sealed,"She closes the book on the page and keeps her hand on it. ""Then hear mine. You hunted with your eyes before your bow, all the way to the dragons. That is the Ashbane's mark, and it is the last one we give."""
+dlg.hunter_master.f42_ranked,"""The Tally in your pack has a knot for every dragon this lodge ever judged. Yours is the newest. Wear it where people can see it."""
+dlg.ash_hunter_warden.c_f42_count,The Huntmaster wants your count.
+dlg.ash_hunter_warden.c_f42_react,The Huntmaster sends her regards.
+dlg.ash_hunter_warden.f42_count,"He doesn't take his eyes off the road. ""Forty-one maws past the rise since the thaw, and nine of them wrong in the way the ember makes them wrong. Last year it was twelve and two. Tell her the numbers. Tell her I'm not guessing."""
+dlg.ash_hunter_warden.f42_react,"""Ashbane, is it? Word travels up this road slower than ash, but it travels."" He almost smiles. ""The station's yours whenever you want a roof. Same rule as everyone: write it down."""
+quest.veiled_archive.greater_house.title,The Greater House
+quest.veiled_archive.greater_house.summary,Something is eating the bindings in the great library's lower stacks. Walk the library in the Sunspire Dominion and clear the ruin crawlers out of the sand around it.
+quest.veiled_archive.greater_house.obj_library,Reach the great library in the Sunspire Dominion
+quest.veiled_archive.greater_house.obj_crawlers,Kill ruin crawlers (4)
+quest.veiled_archive.breach_record.title,The Breach Record
+quest.veiled_archive.breach_record.summary,"What the Breach did to the people near it survives in three places: the Breach stones, the survivors at Last Hearth, and a poor copy in the great library. Gather all three for Keeper Ysolde Marr, then decide what the Archive does with them."
+quest.veiled_archive.breach_record.obj_stones,Take rubbings of the stones at the Ashen Breach
+quest.veiled_archive.breach_record.obj_hearth,Hear the survivors' account at Last Hearth
+quest.veiled_archive.breach_record.obj_library,Set the record beside the great library's copy
+dlg.archive_keeper.h42_c_a_offer,Is there more work for a member?
+dlg.archive_keeper.h42_c_a_active,The crawlers are still at the stacks.
+dlg.archive_keeper.h42_c_a_done,The lower stacks are safe.
+dlg.archive_keeper.h42_c_a_accept,I'm a Reader. I'll go.
+dlg.archive_keeper.h42_c_later,Not today.
+dlg.archive_keeper.h42_c_ok,"Thank you, Keeper."
+dlg.archive_keeper.h42_c_b_offer,What aren't you sure you should keep?
+dlg.archive_keeper.h42_c_b_active,The record is still incomplete.
+dlg.archive_keeper.h42_c_b_report,I have the whole Breach record.
+dlg.archive_keeper.h42_c_b_accept,I'll gather the record.
+dlg.archive_keeper.h42_c_verdict,Here is what the Archive should do.
+dlg.archive_keeper.h42_c_after,How does the Breach record fare?
+dlg.archive_keeper.h42_c_v_custody_preserve,"Keep it here, veiled, for the few who need it."
+dlg.archive_keeper.h42_c_v_custody_share,Copy it out. The people at the Hearth and the Wells deserve to know.
+dlg.archive_keeper.h42_c_v_custody_seal,Seal it. Some knowledge only teaches people how to repeat it.
+dlg.archive_keeper.h42_c_seal,That is my decision.
+dlg.archive_keeper.h42_c_rank3,I will hold it quietly.
+dlg.archive_keeper.h42_c_finale,"Thank you, Keeper."
+dlg.archive_keeper.h42_a_offer,"""There is a greater house than this Annexe: the great library in the Sunspire Dominion, half under the sand. Something has got into its lower stacks and is eating the bindings."" Her hands stay behind her back. ""Readers may go and deal with it. Walk the library, put down the crawlers in the sand around it, and come back. The work is dull. Most of our work is."""
+dlg.archive_keeper.h42_a_accepted,"""Take the caravan road south through the Southmarch Gate. The library is beyond Saffra Wells. Mind the sand."""
+dlg.archive_keeper.h42_a_active,"""Then so is the damage. Go on."""
+dlg.archive_keeper.h42_hub,"""The greater house is grateful in the way houses are: silently, and for a very long time."" Her hands come apart. ""You are an Archivist of this house. What comes to an Archivist is what we are not sure we should keep."""
+dlg.archive_keeper.h42_b_offer,"""The Breach record. What the Breach did to the people standing near it. It is cut into the stones at the Breach itself, remembered by the survivors at Last Hearth, and copied once, badly, into a book in the great library. Gather all three. Then decide what the Archive does with it. I will not decide for you. That is what the rank is for."""
+dlg.archive_keeper.h42_b_accepted,"""The stones first, while they still read. Then the Hearth. Then the library, to set it beside the copy."""
+dlg.archive_keeper.h42_b_active,"""Incomplete is the natural state of a record. Finish it anyway."""
+dlg.archive_keeper.h42_b_report,"She takes the rubbings and your notes and lays them side by side on the sill without reading them. ""Before I read a word: what happens to it?"""
+dlg.archive_keeper.h42_verdict,"""Keep it veiled, give it away, or put it where no one reads it again. Those are the only three things an archive can do with anything."""
+dlg.archive_keeper.h42_v_custody_preserve,"""The oldest answer, and the one we are named for."" She slides the record into a case and turns the key. ""It will be here, for whoever needs it and can say why."""
+dlg.archive_keeper.h42_after_custody_preserve,"""Veiled, and read twice this season, both times by members who could say why. That is the system working."""
+dlg.archive_keeper.h42_v_custody_share,"For a moment she looks as though she will argue. ""Copied out, it stops being ours. It stops being anyone's."" She reaches for fresh paper anyway. ""Coran will make the copies and the caravans will carry them. The Archive will learn what it is to be read."""
+dlg.archive_keeper.h42_after_custody_share,"""Coran's copies reached the Wells and the Hearth. A caravan master wrote to ask what else we have. I did not know what to say to that. I am learning."""
+dlg.archive_keeper.h42_v_custody_seal,"""Sealed."" She says it without relief. ""Not burned. We do not burn. But it goes into the vault under the Annexe, and the vault does not open for anyone who asks politely."" She wraps the rubbings in waxed cloth."
+dlg.archive_keeper.h42_after_custody_seal,"""Sealed, and no one has asked for it. Which means either we were right, or no one knows it is gone. I think about the second more than I would like."""
+dlg.archive_keeper.h42_sealed,"""Then it is the Archive's decision, and you made it. Very few members are ever asked. Fewer answer."" Her hands go behind her back again. ""You are Keeper of the Veil, the last rank we have."""
+dlg.archive_keeper.h42_ranked,"""The seal ring in your pack is the custodian's. It opens every case in this room and in the great library too. Try not to need it."""
+dlg.archive_steward.c_h42_react,The Keeper says I hold the Veil now.
+dlg.archive_steward.h42_react,"""Then you may sign for anything in this room."" He slides the ledger across, pen and all. ""Nobody ever does. It is a comfort to know someone could."""
+quest.iron.caravan_road.title,The Southmarch Road
+quest.iron.caravan_road.summary,Idrys Vane's caravans are losing guards to red-robed raiders between the Caravan Gap and Saffra Wells. Walk the road for the Ledger House and make it stop.
+quest.iron.caravan_road.obj_gap,Reach the Caravan Gap
+quest.iron.caravan_road.obj_wells,Reach Saffra Wells
+quest.iron.caravan_road.obj_cultists,Kill cultists (3)
+quest.iron.last_contract.title,Loyalty for Sale
+quest.iron.last_contract.summary,"A Citadel factor is paying the Ledger House to lift Idrys Vane's route ledger from the Caravanserai. Rook Sallow is already on the job. Get the ledger, speak with Rook, and bring Broker Ilder Vance an ending."
+quest.iron.last_contract.obj_ledger,Take Vane's route ledger at the Caravanserai
+quest.iron.last_contract.obj_rook,Speak with Rook Sallow at the Ledger House
+dlg.syndicate_broker.j42_c_a_offer,Any contracts for someone with a rank?
+dlg.syndicate_broker.j42_c_a_active,The road contract is still open.
+dlg.syndicate_broker.j42_c_a_done,The Southmarch road is clear.
+dlg.syndicate_broker.j42_c_a_accept,I'm a Runner. I'll take it.
+dlg.syndicate_broker.j42_c_later,Not now.
+dlg.syndicate_broker.j42_c_ok,Understood.
+dlg.syndicate_broker.j42_c_b_offer,Whose interest?
+dlg.syndicate_broker.j42_c_b_active,The Citadel contract isn't finished.
+dlg.syndicate_broker.j42_c_b_report,"I have Vane's ledger, and I've spoken to Rook."
+dlg.syndicate_broker.j42_c_b_accept,I'll bring you an ending.
+dlg.syndicate_broker.j42_c_verdict,Here's how it ends.
+dlg.syndicate_broker.j42_c_after,How did the Southmarch business settle?
+dlg.syndicate_broker.j42_c_v_finale_fidelity,The contract as written. The factor gets the ledger.
+dlg.syndicate_broker.j42_c_v_finale_offer,"Vane paid better. The ledger goes back to him, and the House takes its cut."
+dlg.syndicate_broker.j42_c_v_finale_rook,"Whatever happens to the ledger, Rook walks free of it."
+dlg.syndicate_broker.j42_c_seal,That's the ending.
+dlg.syndicate_broker.j42_c_rank3,Understood.
+dlg.syndicate_broker.j42_c_finale,"Good day, broker."
+dlg.syndicate_broker.j42_a_offer,"""The Southmarch road is open again, and Idrys Vane's caravans are the first on it. Men in red robes have been lifting his guards between the Caravan Gap and Saffra Wells. Vane pays the Ledger House to make that stop."" He taps the contract. ""Ranked hands only. Runners and up. Walk the road from the Gap to the Wells and put three of the robes in the sand."""
+dlg.syndicate_broker.j42_a_accepted,"""Vane is at the wells. He pays on delivery and not a coin before."""
+dlg.syndicate_broker.j42_a_active,"""Open contracts are unpaid contracts. Close it."""
+dlg.syndicate_broker.j42_hub,"""Vane paid in full and asked for you by name, which is the most expensive thing a client can do."" He folds a contract and keeps it. ""You're a Contractor of this House. Contractors get the work that comes with somebody else's interest attached."""
+dlg.syndicate_broker.j42_b_offer,"""A factor out of the Citadel wants Vane's caravans broken, now that he has proved they run. He is paying us to take Vane's route ledger out of the Caravanserai, quietly. Rook Sallow is already on it. Get the ledger, see Rook, and bring me an ending. What kind of ending is yours to choose. I only need it clean."""
+dlg.syndicate_broker.j42_b_accepted,"""The Caravanserai at the wells. Rook knows the rest. Rook always knows the rest."""
+dlg.syndicate_broker.j42_b_active,"""Then it's the only thing in this district that isn't. Finish it."""
+dlg.syndicate_broker.j42_b_report,"He doesn't reach for the ledger. ""Vane offered you more to lose it. The factor offered me more to get it. And Rook has been on the factor's payroll longer than he's been on mine."" He almost smiles. ""So. What did we sell?"""
+dlg.syndicate_broker.j42_verdict,"""Say it plainly. The Ledger House writes it down the way you say it."""
+dlg.syndicate_broker.j42_v_finale_fidelity,"""Terms, payment, and the ending everyone agreed to."" He takes the ledger at last. ""Vane will hate us. The Citadel will hire us again. That is what fidelity costs and what it buys."""
+dlg.syndicate_broker.j42_after_finale_fidelity,"""The factor's caravans run the road now and Vane runs what's left. Nobody in Saffra Wells will pour you a drink. Everybody in the Citadel will."""
+dlg.syndicate_broker.j42_v_finale_offer,"""A better offer, taken openly, with the House's share on the table."" He weighs the ledger and hands it back. ""The creed is terms and payment. Nobody ever said whose. Vane will remember it. So will the factor."""
+dlg.syndicate_broker.j42_after_finale_offer,"""Vane's caravans still run, and every season he sends a crate of dates with a note that says 'for the cut'. The factor has hired elsewhere. Elsewhere is cheaper and worse."""
+dlg.syndicate_broker.j42_v_finale_rook,"He looks at you for a long moment. ""You sold the contract to keep a man who was selling us."" A pause. ""The Syndicate is loyal to the contract, never the cause. You found a third thing to be loyal to. I'll allow it once."""
+dlg.syndicate_broker.j42_after_finale_rook,"""Rook works the wall outside, and he works it for us now. He owes you, he knows it, and he hates knowing it. That makes him the most reliable man I have."""
+dlg.syndicate_broker.j42_sealed,"""Written."" And he does, for once, in a small book from his coat. ""Three rungs, and you've stood on every one. You're Ironhand. There is no rung above it, only the Broker's chair, and I'm sitting in it."""
+dlg.syndicate_broker.j42_ranked,"""The signet in your pack opens doors from Hollowreach to the Wells. Every fence and factor on the road knows it. Use it like a contract: carefully, and in writing."""
+dlg.syndicate_peer.c_j42_rook,The Broker says you're on the Citadel job.
+dlg.syndicate_peer.c_m42_warden,You know I wear a Dawnwarden's rank too.
+dlg.syndicate_peer.j42_rook,"He doesn't move off the wall. ""I'm on the Citadel's payroll, if that's what he's too polite to say. Two winters now. The factor pays me to know what the House does before it does it."" He finally looks at you. ""Tell Vance or don't. I'll know which by morning."""
+dlg.syndicate_peer.m42_warden,"""A Dawnblade and a Syndicate contract in the same coat."" He snorts. ""The Watch would call that a conflict. The House calls it a wider client list. Keep the two ledgers apart and nobody here will care."""
+dlg.sunspire_caravan_master.c_j42_vane,The Ledger House sends its regards.
+dlg.sunspire_caravan_master.c_j42_vane_bye,"Safe roads, Vane."
+dlg.sunspire_caravan_master.j42_vane,"""The Ledger House, is it."" He looks at the signet before he looks at you. ""Whatever the Syndicate decided about my road, it decided it with your hands. I'll remember the hands."""
+quest.emberbound.second_fire.title,What the Fire Leaves
+quest.emberbound.second_fire.summary,"Hierarch Selane Ott sends the Kindled to see what a Flamebearer leaves behind. Visit Stormcrown in the high passes of Frostfang Reach, then hear Warder Cass Vollen on custody."
+quest.emberbound.second_fire.obj_stormcrown,Visit Stormcrown in the high passes of Frostfang Reach
+quest.emberbound.second_fire.obj_cass,Hear Warder Cass Vollen on custody
+quest.emberbound.reckoning.title,The Reckoning
+quest.emberbound.reckoning.summary,"The Emberbound have never agreed on what they are for. See a beast the ember remade at the Ash Roost, read the order's founding doctrine in the great library, then give the Hierarch your answer."
+quest.emberbound.reckoning.obj_roost,See the ash-drakes at the Ash Roost
+quest.emberbound.reckoning.obj_doctrine,Read the founding doctrine in the great library
+dlg.emberbound_hierarch.l42_c_a_offer,Is there more to learn down here?
+dlg.emberbound_hierarch.l42_c_a_active,I haven't finished at Stormcrown.
+dlg.emberbound_hierarch.l42_c_a_done,"I've seen Stormcrown, and heard Cass on custody."
+dlg.emberbound_hierarch.l42_c_a_accept,I'm Kindled. I'll go.
+dlg.emberbound_hierarch.l42_c_later,Not yet.
+dlg.emberbound_hierarch.l42_c_ok,Understood.
+dlg.emberbound_hierarch.l42_c_b_offer,What has the order argued about?
+dlg.emberbound_hierarch.l42_c_b_active,I'm still reading.
+dlg.emberbound_hierarch.l42_c_b_report,I've seen the roost and read the doctrine.
+dlg.emberbound_hierarch.l42_c_b_accept,"I'll go and see, and read."
+dlg.emberbound_hierarch.l42_c_verdict,I have an answer.
+dlg.emberbound_hierarch.l42_c_after,How does the order hold to the doctrine?
+dlg.emberbound_hierarch.l42_c_v_doctrine_safeguard,Safeguard them. Keep every relic warded until no one needs it.
+dlg.emberbound_hierarch.l42_c_v_doctrine_destroy,Destroy them. Whatever can be broken should be.
+dlg.emberbound_hierarch.l42_c_v_doctrine_wield,Use them. We understand the fire better than anyone. Carry it.
+dlg.emberbound_hierarch.l42_c_seal,That is the doctrine.
+dlg.emberbound_hierarch.l42_c_rank3,I'll keep it.
+dlg.emberbound_hierarch.l42_c_finale,"Until the next time, Hierarch."
+dlg.emberbound_hierarch.l42_a_offer,"""There is more to learn everywhere the fire has been. Stormcrown, in the high passes of the Reach: the Tyrant stood there long enough to change the stone."" The lamp comes up a little. ""The Kindled may go and see what a Flamebearer leaves behind. Then ask Cass what we do with what's left. He'll tell you. He tells everyone."""
+dlg.emberbound_hierarch.l42_a_accepted,"""Go armed. The stone remembers more than the storm does."""
+dlg.emberbound_hierarch.l42_a_active,"""Stormcrown will wait. It's had practice."""
+dlg.emberbound_hierarch.l42_hub,"""Then you've seen what the fire leaves and heard what we do with it."" The lamp comes up. ""You're Ember-Sworn now. The Ember-Sworn are told the thing this order has argued about since before it had a name."""
+dlg.emberbound_hierarch.l42_b_offer,"""What we are for. Some of us say we keep the relics safe until no one needs them. Some say we should break them, if they can be broken. Some say they're tools and we're cowards not to use them."" She sets the lamp down. ""Go and see an ash-drake at its roost, a living thing the ember remade. Then read our founding doctrine. It's shelved in the great library in the Sunspire, under a title nobody would take down. Then come back and tell me which of us is right."""
+dlg.emberbound_hierarch.l42_b_accepted,"""The Ash Roost in the Reach first. The library after. Read it slowly."""
+dlg.emberbound_hierarch.l42_b_active,"""Good. Most people stop too soon."""
+dlg.emberbound_hierarch.l42_b_report,"""Then you know as much as I did when I had to choose."" She doesn't sit. ""The order will follow whatever its chosen voice says. Tonight, that's you."""
+dlg.emberbound_hierarch.l42_c_stance_kept,I kept what I carried.
+dlg.emberbound_hierarch.l42_verdict_kept,"""You kept it, and you're still yourself. That counts as evidence. For which side, I don't know yet. Say it."""
+dlg.emberbound_hierarch.l42_c_stance_surrendered,I gave up what I carried.
+dlg.emberbound_hierarch.l42_verdict_surrendered,"""You gave it up before anyone asked twice. That counts as evidence. For which side, I don't know yet. Say it."""
+dlg.emberbound_hierarch.l42_stance,"""Before you give it: I remember what you told me at the foot of the stair."""
+dlg.emberbound_hierarch.l42_v_doctrine_safeguard,"""Custody."" She nods slowly. ""Cass will be pleased and won't show it. The order stays what it has been: a list, a ward, and a long wait."""
+dlg.emberbound_hierarch.l42_after_doctrine_safeguard,"""Cass has three new names on his list and nothing has left the pedestal. It is a slow kind of winning. It is still winning."""
+dlg.emberbound_hierarch.l42_v_doctrine_destroy,"""Then we become the people who break what we don't understand."" She says it without scorn. ""It might be the only honest answer. Bren will start asking what breaks an ember. I hope he finds out slowly."""
+dlg.emberbound_hierarch.l42_after_doctrine_destroy,"""Bren broke a lesser relic at the bottom of the cut. It took a day and cost him his eyebrows, and the ember went out. So we can. We are less sure we should have learned that."""
+dlg.emberbound_hierarch.l42_c_cost,Do it.
+dlg.emberbound_hierarch.l42_v_doctrine_wield,"The lamp flares, briefly, as though something heard. ""Then we stop studying the fire and start carrying it."" For a moment her look is almost afraid. ""It begins with whoever said it. Hold still."""
+dlg.emberbound_hierarch.l42_v_doctrine_wield_cost,"Heat runs up your arm and settles behind your eyes, and does not leave. ""There,"" she says quietly. ""Now you know what we're asking of everyone else."""
+dlg.emberbound_hierarch.l42_after_doctrine_wield,"""Two of ours carry the fire now, the way you do. They are stronger and they are quieter, and I watch both of them. Someone should be watching you too. It may as well be me."""
+dlg.emberbound_hierarch.l42_sealed,"""Then it's the order's doctrine, and it was your voice that said it."" She takes the lamp up. ""Kindled, Ember-Sworn, and now Flamekeeper. It's the last thing we call anyone."""
+dlg.emberbound_hierarch.l42_ranked,"""Cass warded the ashglass in your pack himself. It won't stop the fire. It will tell you when the fire is close."""
+dlg.emberbound_warder.c_l42_account,The Hierarch sent me to hear about custody.
+dlg.emberbound_warder.c_l42_react,The Hierarch named me Flamekeeper.
+dlg.emberbound_warder.l42_account,"""Custody."" He says it like a prayer he has stopped believing and kept saying. ""Every relic gets a line: where it came from, who carried it, what it did to them. The line is the ward. A relic nobody has written down is a relic somebody is using."" He taps the pedestal. ""That's all custody is. It's enough."""
+dlg.emberbound_warder.l42_react,"""So I heard."" He does not step aside, but for the first time he turns his back on you to face the pedestal. ""Then you're on the list now too. Everyone who decides what we're for ends up on it."""

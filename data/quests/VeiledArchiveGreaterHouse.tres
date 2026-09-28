@@ -1,0 +1,39 @@
+[gd_resource type="Resource" script_class="QuestResource" format=3]
+
+[ext_resource type="Script" path="res://src/Quests/QuestResource.cs" id="1_quest"]
+[ext_resource type="Script" path="res://src/Quests/ObjectiveResource.cs" id="2_obj"]
+
+; Phase 42H - rank two of the Veiled Archive: the Sunspire library handoff 42G named. Reach the
+; library (location.sunspire.library; its map pin links the story Archivist's dialogue, which this
+; arc never touches) and kill crawlers from encounter.buried_crawlers, which respawns.
+
+[sub_resource type="Resource" id="Obj_library"]
+script = ExtResource("2_obj")
+Type = 2
+TargetId = "location.sunspire.library"
+RequiredCount = 1
+Description = "quest.veiled_archive.greater_house.obj_library"
+
+[sub_resource type="Resource" id="Obj_crawlers"]
+script = ExtResource("2_obj")
+Type = 0
+TargetId = "enemy.ruin_crawler"
+RequiredCount = 4
+Description = "quest.veiled_archive.greater_house.obj_crawlers"
+
+[resource]
+script = ExtResource("1_quest")
+Id = "quest.veiled_archive.greater_house"
+Title = "quest.veiled_archive.greater_house.title"
+Summary = "quest.veiled_archive.greater_house.summary"
+Objectives = Array[Resource]([SubResource("Obj_library"), SubResource("Obj_crawlers")])
+XpReward = 180
+GoldReward = 50
+GoldItemId = "item.currency.gold"
+RewardItems = []
+FactionRewardId = "faction.veiled_archive"
+FactionRewardAmount = 8
+TimeLimitSeconds = 0.0
+SequentialObjectives = false
+PrerequisiteQuestId = "quest.veiled_archive.ancient_lead"
+IsMainQuest = false

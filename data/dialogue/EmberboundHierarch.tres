@@ -125,6 +125,292 @@ EffectArg = "faction.emberbound:1"
 script = ExtResource("3_choice")
 Text = "dlg.emberbound_hierarch.c_declined_bye"
 
+; -- Phase 42 finale arc (faction.emberbound) --
+; quest.emberbound.second_fire (rank two) then quest.emberbound.reckoning (rank three + finale). The accept choice gates on
+; GuildRankAtLeast :1, so rank two (SetFlag, additive - never GuildRank :2, which CLEARS rank
+; three on a revisit) cannot land on a gap. The verdict is given at the hand-in, after the quest,
+; because no objective depends on it; flag.emberbound.verdict_given shuts the verdict door once given.
+; DialoguePanel has CloseOnCancel = false, so the single-choice chain verdict -> seal ->
+; GuildRank :3 -> SetFlag guild.emberbound.finale cannot be abandoned half way.
+
+[sub_resource type="Resource" id="ch_l42_a_offer"]
+script = ExtResource("3_choice")
+Text = "dlg.emberbound_hierarch.l42_c_a_offer"
+Condition = 4
+ConditionArg = "quest.emberbound.second_fire"
+Goto = "l42_a_offer"
+
+[sub_resource type="Resource" id="ch_l42_a_active"]
+script = ExtResource("3_choice")
+Text = "dlg.emberbound_hierarch.l42_c_a_active"
+Condition = 2
+ConditionArg = "quest.emberbound.second_fire"
+Goto = "l42_a_active"
+
+[sub_resource type="Resource" id="ch_l42_a_done"]
+script = ExtResource("3_choice")
+Text = "dlg.emberbound_hierarch.l42_c_a_done"
+Condition = 3
+ConditionArg = "quest.emberbound.second_fire"
+Goto = "l42_hub"
+Effect = 2
+EffectArg = "guild.emberbound.rank2"
+
+[sub_resource type="Resource" id="ch_l42_a_accept"]
+script = ExtResource("3_choice")
+Text = "dlg.emberbound_hierarch.l42_c_a_accept"
+Condition = 14
+ConditionArg = "faction.emberbound:1"
+Goto = "l42_a_accepted"
+Effect = 1
+EffectArg = "quest.emberbound.second_fire"
+
+[sub_resource type="Resource" id="ch_l42_later"]
+script = ExtResource("3_choice")
+Text = "dlg.emberbound_hierarch.l42_c_later"
+
+[sub_resource type="Resource" id="ch_l42_ok"]
+script = ExtResource("3_choice")
+Text = "dlg.emberbound_hierarch.l42_c_ok"
+
+[sub_resource type="Resource" id="ch_l42_b_offer"]
+script = ExtResource("3_choice")
+Text = "dlg.emberbound_hierarch.l42_c_b_offer"
+Condition = 1
+ConditionArg = "quest.emberbound.reckoning"
+Goto = "l42_b_offer"
+
+[sub_resource type="Resource" id="ch_l42_b_active"]
+script = ExtResource("3_choice")
+Text = "dlg.emberbound_hierarch.l42_c_b_active"
+Condition = 2
+ConditionArg = "quest.emberbound.reckoning"
+Goto = "l42_b_active"
+
+[sub_resource type="Resource" id="ch_l42_b_report"]
+script = ExtResource("3_choice")
+Text = "dlg.emberbound_hierarch.l42_c_b_report"
+Condition = 3
+ConditionArg = "quest.emberbound.reckoning"
+Goto = "l42_b_report"
+
+[sub_resource type="Resource" id="ch_l42_b_accept"]
+script = ExtResource("3_choice")
+Text = "dlg.emberbound_hierarch.l42_c_b_accept"
+Goto = "l42_b_accepted"
+Effect = 1
+EffectArg = "quest.emberbound.reckoning"
+
+[sub_resource type="Resource" id="ch_l42_verdict"]
+script = ExtResource("3_choice")
+Text = "dlg.emberbound_hierarch.l42_c_verdict"
+Condition = 6
+ConditionArg = "flag.emberbound.verdict_given"
+Goto = "l42_stance"
+
+[sub_resource type="Resource" id="ch_l42_after_doctrine_safeguard"]
+script = ExtResource("3_choice")
+Text = "dlg.emberbound_hierarch.l42_c_after"
+Condition = 5
+ConditionArg = "flag.emberbound.doctrine_safeguard"
+Goto = "l42_after_doctrine_safeguard"
+
+[sub_resource type="Resource" id="ch_l42_v_doctrine_safeguard"]
+script = ExtResource("3_choice")
+Text = "dlg.emberbound_hierarch.l42_c_v_doctrine_safeguard"
+Goto = "l42_v_doctrine_safeguard"
+Effect = 2
+EffectArg = "flag.emberbound.doctrine_safeguard"
+
+[sub_resource type="Resource" id="ch_l42_after_doctrine_destroy"]
+script = ExtResource("3_choice")
+Text = "dlg.emberbound_hierarch.l42_c_after"
+Condition = 5
+ConditionArg = "flag.emberbound.doctrine_destroy"
+Goto = "l42_after_doctrine_destroy"
+
+[sub_resource type="Resource" id="ch_l42_v_doctrine_destroy"]
+script = ExtResource("3_choice")
+Text = "dlg.emberbound_hierarch.l42_c_v_doctrine_destroy"
+Goto = "l42_v_doctrine_destroy"
+Effect = 2
+EffectArg = "flag.emberbound.doctrine_destroy"
+
+[sub_resource type="Resource" id="ch_l42_after_doctrine_wield"]
+script = ExtResource("3_choice")
+Text = "dlg.emberbound_hierarch.l42_c_after"
+Condition = 5
+ConditionArg = "flag.emberbound.doctrine_wield"
+Goto = "l42_after_doctrine_wield"
+
+[sub_resource type="Resource" id="ch_l42_v_doctrine_wield"]
+script = ExtResource("3_choice")
+Text = "dlg.emberbound_hierarch.l42_c_v_doctrine_wield"
+Goto = "l42_v_doctrine_wield"
+Effect = 2
+EffectArg = "flag.emberbound.doctrine_wield"
+
+[sub_resource type="Resource" id="ch_l42_seal"]
+script = ExtResource("3_choice")
+Text = "dlg.emberbound_hierarch.l42_c_seal"
+Goto = "l42_sealed"
+Effect = 2
+EffectArg = "flag.emberbound.verdict_given"
+
+[sub_resource type="Resource" id="ch_l42_rank3"]
+script = ExtResource("3_choice")
+Text = "dlg.emberbound_hierarch.l42_c_rank3"
+Goto = "l42_ranked"
+Effect = 12
+EffectArg = "faction.emberbound:3"
+
+[sub_resource type="Resource" id="ch_l42_finale"]
+script = ExtResource("3_choice")
+Text = "dlg.emberbound_hierarch.l42_c_finale"
+Effect = 2
+EffectArg = "guild.emberbound.finale"
+
+[sub_resource type="Resource" id="ch_l42_stance_kept"]
+script = ExtResource("3_choice")
+Text = "dlg.emberbound_hierarch.l42_c_stance_kept"
+Condition = 5
+ConditionArg = "flag.emberbound.relic_kept"
+Goto = "l42_verdict_kept"
+
+[sub_resource type="Resource" id="ch_l42_stance_surrendered"]
+script = ExtResource("3_choice")
+Text = "dlg.emberbound_hierarch.l42_c_stance_surrendered"
+Condition = 5
+ConditionArg = "flag.emberbound.relic_surrendered"
+Goto = "l42_verdict_surrendered"
+
+[sub_resource type="Resource" id="ch_l42_cost"]
+script = ExtResource("3_choice")
+Text = "dlg.emberbound_hierarch.l42_c_cost"
+Goto = "l42_v_doctrine_wield_cost"
+Effect = 4
+EffectArg = "10"
+
+[sub_resource type="Resource" id="node_l42_a_offer"]
+script = ExtResource("2_node")
+Id = "l42_a_offer"
+Text = "dlg.emberbound_hierarch.l42_a_offer"
+Choices = Array[Resource]([SubResource("ch_l42_a_accept"), SubResource("ch_l42_later")])
+
+[sub_resource type="Resource" id="node_l42_a_accepted"]
+script = ExtResource("2_node")
+Id = "l42_a_accepted"
+Text = "dlg.emberbound_hierarch.l42_a_accepted"
+Choices = Array[Resource]([SubResource("ch_l42_ok")])
+
+[sub_resource type="Resource" id="node_l42_a_active"]
+script = ExtResource("2_node")
+Id = "l42_a_active"
+Text = "dlg.emberbound_hierarch.l42_a_active"
+Choices = Array[Resource]([SubResource("ch_l42_ok")])
+
+[sub_resource type="Resource" id="node_l42_hub"]
+script = ExtResource("2_node")
+Id = "l42_hub"
+Text = "dlg.emberbound_hierarch.l42_hub"
+Choices = Array[Resource]([SubResource("ch_l42_b_offer"), SubResource("ch_l42_b_active"), SubResource("ch_l42_b_report"), SubResource("ch_back"), SubResource("ch_end")])
+
+[sub_resource type="Resource" id="node_l42_b_offer"]
+script = ExtResource("2_node")
+Id = "l42_b_offer"
+Text = "dlg.emberbound_hierarch.l42_b_offer"
+Choices = Array[Resource]([SubResource("ch_l42_b_accept"), SubResource("ch_l42_later")])
+
+[sub_resource type="Resource" id="node_l42_b_accepted"]
+script = ExtResource("2_node")
+Id = "l42_b_accepted"
+Text = "dlg.emberbound_hierarch.l42_b_accepted"
+Choices = Array[Resource]([SubResource("ch_l42_ok")])
+
+[sub_resource type="Resource" id="node_l42_b_active"]
+script = ExtResource("2_node")
+Id = "l42_b_active"
+Text = "dlg.emberbound_hierarch.l42_b_active"
+Choices = Array[Resource]([SubResource("ch_l42_ok")])
+
+[sub_resource type="Resource" id="node_l42_b_report"]
+script = ExtResource("2_node")
+Id = "l42_b_report"
+Text = "dlg.emberbound_hierarch.l42_b_report"
+Choices = Array[Resource]([SubResource("ch_l42_verdict"), SubResource("ch_l42_after_doctrine_safeguard"), SubResource("ch_l42_after_doctrine_destroy"), SubResource("ch_l42_after_doctrine_wield"), SubResource("ch_back")])
+
+[sub_resource type="Resource" id="node_l42_verdict_kept"]
+script = ExtResource("2_node")
+Id = "l42_verdict_kept"
+Text = "dlg.emberbound_hierarch.l42_verdict_kept"
+Choices = Array[Resource]([SubResource("ch_l42_v_doctrine_safeguard"), SubResource("ch_l42_v_doctrine_destroy"), SubResource("ch_l42_v_doctrine_wield")])
+
+[sub_resource type="Resource" id="node_l42_verdict_surrendered"]
+script = ExtResource("2_node")
+Id = "l42_verdict_surrendered"
+Text = "dlg.emberbound_hierarch.l42_verdict_surrendered"
+Choices = Array[Resource]([SubResource("ch_l42_v_doctrine_safeguard"), SubResource("ch_l42_v_doctrine_destroy"), SubResource("ch_l42_v_doctrine_wield")])
+
+[sub_resource type="Resource" id="node_l42_stance"]
+script = ExtResource("2_node")
+Id = "l42_stance"
+Text = "dlg.emberbound_hierarch.l42_stance"
+Choices = Array[Resource]([SubResource("ch_l42_stance_kept"), SubResource("ch_l42_stance_surrendered"), SubResource("ch_back")])
+
+[sub_resource type="Resource" id="node_l42_v_doctrine_safeguard"]
+script = ExtResource("2_node")
+Id = "l42_v_doctrine_safeguard"
+Text = "dlg.emberbound_hierarch.l42_v_doctrine_safeguard"
+Choices = Array[Resource]([SubResource("ch_l42_seal")])
+
+[sub_resource type="Resource" id="node_l42_after_doctrine_safeguard"]
+script = ExtResource("2_node")
+Id = "l42_after_doctrine_safeguard"
+Text = "dlg.emberbound_hierarch.l42_after_doctrine_safeguard"
+Choices = Array[Resource]([SubResource("ch_back"), SubResource("ch_end")])
+
+[sub_resource type="Resource" id="node_l42_v_doctrine_destroy"]
+script = ExtResource("2_node")
+Id = "l42_v_doctrine_destroy"
+Text = "dlg.emberbound_hierarch.l42_v_doctrine_destroy"
+Choices = Array[Resource]([SubResource("ch_l42_seal")])
+
+[sub_resource type="Resource" id="node_l42_after_doctrine_destroy"]
+script = ExtResource("2_node")
+Id = "l42_after_doctrine_destroy"
+Text = "dlg.emberbound_hierarch.l42_after_doctrine_destroy"
+Choices = Array[Resource]([SubResource("ch_back"), SubResource("ch_end")])
+
+[sub_resource type="Resource" id="node_l42_v_doctrine_wield"]
+script = ExtResource("2_node")
+Id = "l42_v_doctrine_wield"
+Text = "dlg.emberbound_hierarch.l42_v_doctrine_wield"
+Choices = Array[Resource]([SubResource("ch_l42_cost")])
+
+[sub_resource type="Resource" id="node_l42_v_doctrine_wield_cost"]
+script = ExtResource("2_node")
+Id = "l42_v_doctrine_wield_cost"
+Text = "dlg.emberbound_hierarch.l42_v_doctrine_wield_cost"
+Choices = Array[Resource]([SubResource("ch_l42_seal")])
+
+[sub_resource type="Resource" id="node_l42_after_doctrine_wield"]
+script = ExtResource("2_node")
+Id = "l42_after_doctrine_wield"
+Text = "dlg.emberbound_hierarch.l42_after_doctrine_wield"
+Choices = Array[Resource]([SubResource("ch_back"), SubResource("ch_end")])
+
+[sub_resource type="Resource" id="node_l42_sealed"]
+script = ExtResource("2_node")
+Id = "l42_sealed"
+Text = "dlg.emberbound_hierarch.l42_sealed"
+Choices = Array[Resource]([SubResource("ch_l42_rank3")])
+
+[sub_resource type="Resource" id="node_l42_ranked"]
+script = ExtResource("2_node")
+Id = "l42_ranked"
+Text = "dlg.emberbound_hierarch.l42_ranked"
+Choices = Array[Resource]([SubResource("ch_l42_finale")])
+
 [sub_resource type="Resource" id="node_root"]
 script = ExtResource("2_node")
 Id = "root"
@@ -135,7 +421,7 @@ Choices = Array[Resource]([SubResource("ch_member"), SubResource("ch_stranger"),
 script = ExtResource("2_node")
 Id = "member"
 Text = "dlg.emberbound_hierarch.member"
-Choices = Array[Resource]([SubResource("ch_back"), SubResource("ch_end")])
+Choices = Array[Resource]([SubResource("ch_l42_a_offer"), SubResource("ch_l42_a_active"), SubResource("ch_l42_a_done"), SubResource("ch_back"), SubResource("ch_end")])
 
 [sub_resource type="Resource" id="node_stranger"]
 script = ExtResource("2_node")
@@ -178,4 +464,4 @@ script = ExtResource("1_dlg")
 Id = "dialogue.emberbound_hierarch"
 SpeakerName = "dlg.emberbound_hierarch.speaker"
 StartNodeId = "root"
-Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_member"), SubResource("node_stranger"), SubResource("node_initiate"), SubResource("node_surrendered"), SubResource("node_kept"), SubResource("node_joined"), SubResource("node_declined")])
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_member"), SubResource("node_stranger"), SubResource("node_initiate"), SubResource("node_surrendered"), SubResource("node_kept"), SubResource("node_joined"), SubResource("node_declined"), SubResource("node_l42_a_offer"), SubResource("node_l42_a_accepted"), SubResource("node_l42_a_active"), SubResource("node_l42_hub"), SubResource("node_l42_b_offer"), SubResource("node_l42_b_accepted"), SubResource("node_l42_b_active"), SubResource("node_l42_b_report"), SubResource("node_l42_verdict_kept"), SubResource("node_l42_verdict_surrendered"), SubResource("node_l42_stance"), SubResource("node_l42_v_doctrine_safeguard"), SubResource("node_l42_after_doctrine_safeguard"), SubResource("node_l42_v_doctrine_destroy"), SubResource("node_l42_after_doctrine_destroy"), SubResource("node_l42_v_doctrine_wield"), SubResource("node_l42_v_doctrine_wield_cost"), SubResource("node_l42_after_doctrine_wield"), SubResource("node_l42_sealed"), SubResource("node_l42_ranked")])

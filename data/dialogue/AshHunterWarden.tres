@@ -40,11 +40,39 @@ script = ExtResource("3_choice")
 Text = "dlg.ash_hunter_warden.c_back"
 Goto = "root"
 
+; -- Phase 42F/42M: the station's warden hears the Huntmaster's count and reacts to the Ashbane rank. --
+
+[sub_resource type="Resource" id="ch_f42_count"]
+script = ExtResource("3_choice")
+Text = "dlg.ash_hunter_warden.c_f42_count"
+Condition = 2
+ConditionArg = "quest.ash_hunters.scar_count"
+Goto = "f42_count"
+
+[sub_resource type="Resource" id="ch_f42_react"]
+script = ExtResource("3_choice")
+Text = "dlg.ash_hunter_warden.c_f42_react"
+Condition = 14
+ConditionArg = "faction.ash_hunters:3"
+Goto = "f42_react"
+
+[sub_resource type="Resource" id="node_f42_count"]
+script = ExtResource("2_node")
+Id = "f42_count"
+Text = "dlg.ash_hunter_warden.f42_count"
+Choices = Array[Resource]([SubResource("ch_lord_back")])
+
+[sub_resource type="Resource" id="node_f42_react"]
+script = ExtResource("2_node")
+Id = "f42_react"
+Text = "dlg.ash_hunter_warden.f42_react"
+Choices = Array[Resource]([SubResource("ch_lord_back")])
+
 [sub_resource type="Resource" id="node_root"]
 script = ExtResource("2_node")
 Id = "root"
 Text = "dlg.ash_hunter_warden.root"
-Choices = Array[Resource]([SubResource("ch_lord"), SubResource("ch_station"), SubResource("ch_done"), SubResource("ch_bye")])
+Choices = Array[Resource]([SubResource("ch_lord"), SubResource("ch_station"), SubResource("ch_done"), SubResource("ch_f42_count"), SubResource("ch_f42_react"), SubResource("ch_bye")])
 
 [sub_resource type="Resource" id="node_lord"]
 script = ExtResource("2_node")
@@ -69,4 +97,4 @@ script = ExtResource("1_dlg")
 Id = "dialogue.ash_hunter_warden"
 SpeakerName = "dlg.ash_hunter_warden.speaker"
 StartNodeId = "root"
-Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_lord"), SubResource("node_station"), SubResource("node_done")])
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_lord"), SubResource("node_station"), SubResource("node_done"), SubResource("node_f42_count"), SubResource("node_f42_react")])

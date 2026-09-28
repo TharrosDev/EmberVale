@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="EquippableItemResource" format=3]
+
+[ext_resource type="Script" path="res://src/Items/EquippableItemResource.cs" id="1_eq"]
+
+; Phase 42L - the Emberbound's finale reward off quest.emberbound.reckoning, the same for every
+; doctrine. The doctrine's own consequence is the flag (and +10 corruption for 'wield').
+[resource]
+script = ExtResource("1_eq")
+Id = "item.amulet.warders_ashglass"
+DisplayName = "Warder's Ashglass"
+Description = "A bead of fused ash on a chain, warded by Cass Vollen's own hand. It grows warm when the fire is near."
+Type = 0
+Rarity = 3
+MaxStack = 1
+Weight = 0.2
+Value = 360
+Slot = 9
+BonusMaxHealth = 25.0
+BonusSpellPower = 3.0
+TradeTags = Array[String](["jewelry"])

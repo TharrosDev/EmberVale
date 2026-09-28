@@ -40,7 +40,7 @@ personal and never published.
 
 | # | Phase | | # | Phase | |
 | --- | --- | --- | --- | --- | --- |
-| 1–21 | Systems foundation | ✅ | 42 | Guild questlines | ◐ F/H/J/L/M open |
+| 1–21 | Systems foundation | ✅ | 42 | Guild questlines | ✅ |
 | 22 | Production bible | ✅ | 42.5 | Crimson Cult | ⬜ (story role via the Prophet) |
 | 23 | Corruption | ✅ | 43 | Cinematics | ⬜ (narration cards) |
 | 24 | Meta-shell + localization | ✅ | 43.5 | Flamebearer visions | ⬜ |
@@ -85,8 +85,6 @@ Finish run (in progress):
 After it:
 
 - **The maintainer play-through** (G1/G3): New Game to credits, both endings, from legitimate play.
-- Optional side content: guild arcs 42F (Ash Hunters finale), 42H (Veiled Archive finale), 42J (Iron
-  Syndicate finale), 42L (Emberbound doctrine), 42M (five-guild integration).
 
 Not planned unless the maintainer asks: 42.5, 43, 43.5, 44.5, 47.5, 50.5, 51.5, 52, 53.5, 57, 59.
 Never: 40, 40.5, 60–66.

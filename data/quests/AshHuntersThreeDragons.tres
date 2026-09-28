@@ -1,0 +1,53 @@
+[gd_resource type="Resource" script_class="QuestResource" format=3]
+
+[ext_resource type="Script" path="res://src/Quests/QuestResource.cs" id="1_quest"]
+[ext_resource type="Script" path="res://src/Quests/ObjectiveResource.cs" id="2_obj"]
+[ext_resource type="Script" path="res://src/Quests/QuestItemReward.cs" id="3_reward"]
+
+; Phase 42F - the Ash Hunters' finale. Knowledge, not a kill count: three Reach objectives on the
+; three already-mapped roosts (Wild, Ash, Ancient). Whether any dragon is alive or dead does not
+; matter - the verdict (slay / judge / withdraw) is given at Yrsa's hand-in and recorded as
+; flag.ash_hunters.<verdict>; rank three and guild.ash_hunters.finale follow in the same chain.
+
+[sub_resource type="Resource" id="Obj_wild"]
+script = ExtResource("2_obj")
+Type = 2
+TargetId = "location.frostfang.dragon_roost"
+RequiredCount = 1
+Description = "quest.ash_hunters.three_dragons.obj_wild"
+
+[sub_resource type="Resource" id="Obj_ash"]
+script = ExtResource("2_obj")
+Type = 2
+TargetId = "location.frostfang.ash_roost"
+RequiredCount = 1
+Description = "quest.ash_hunters.three_dragons.obj_ash"
+
+[sub_resource type="Resource" id="Obj_ancient"]
+script = ExtResource("2_obj")
+Type = 2
+TargetId = "location.frostfang.ancient_aerie"
+RequiredCount = 1
+Description = "quest.ash_hunters.three_dragons.obj_ancient"
+
+[sub_resource type="Resource" id="Reward_item"]
+script = ExtResource("3_reward")
+ItemId = "item.amulet.huntmasters_tally"
+Quantity = 1
+
+[resource]
+script = ExtResource("1_quest")
+Id = "quest.ash_hunters.three_dragons"
+Title = "quest.ash_hunters.three_dragons.title"
+Summary = "quest.ash_hunters.three_dragons.summary"
+Objectives = Array[Resource]([SubResource("Obj_wild"), SubResource("Obj_ash"), SubResource("Obj_ancient")])
+XpReward = 260
+GoldReward = 100
+GoldItemId = "item.currency.gold"
+RewardItems = Array[Resource]([SubResource("Reward_item")])
+FactionRewardId = "faction.ash_hunters"
+FactionRewardAmount = 12
+TimeLimitSeconds = 0.0
+SequentialObjectives = false
+PrerequisiteQuestId = "quest.ash_hunters.scar_count"
+IsMainQuest = false
