@@ -160,6 +160,18 @@ public partial class SettingsPanel : CanvasLayer
                 Loc.T("settings.tp_shoulder.centre"),
             },
             s.ThirdPersonShoulderSide, i => { s.ThirdPersonShoulderSide = i; Persist(); }));
+        body.AddChild(ToggleRow(Loc.T("settings.cam_auto_shoulder"), s.AutoShoulderSwap,
+            v => { s.AutoShoulderSwap = v; Persist(); }));
+        body.AddChild(ToggleRow(Loc.T("settings.cam_lock_framing"), s.LockOnFraming,
+            v => { s.LockOnFraming = v; Persist(); }));
+        body.AddChild(ToggleRow(Loc.T("settings.cam_obstruction_fade"), s.ObstructionFade,
+            v => { s.ObstructionFade = v; Persist(); }));
+        body.AddChild(SliderRow(Loc.T("settings.cam_shake"), 0.0, 1.0, 0.05, s.CameraShakeIntensity,
+            v => s.CameraShakeIntensity = (float)v));
+        body.AddChild(SliderRow(Loc.T("settings.cam_bob"), 0.0, 1.0, 0.05, s.HeadBob,
+            v => s.HeadBob = (float)v));
+        body.AddChild(SliderRow(Loc.T("settings.cam_fov_kick"), 0.0, 1.0, 0.05, s.FovKick,
+            v => s.FovKick = (float)v));
         body.AddChild(ToggleRow(Loc.T("settings.show_tutorials"), s.ShowTutorials, v =>
         {
             s.ShowTutorials = v;
