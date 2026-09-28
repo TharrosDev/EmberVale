@@ -56,7 +56,10 @@ public partial class AudioDirector : Node
     }
 
     /// <summary>Plays a cue positionally in 3D (falls back to a flat play for a non-positional cue id).</summary>
-    public void PlayCue(string cueId, Vector3 position)
+    public void PlayCue(string cueId, Vector3 position) => PlayCue(cueId, position, 0f, 1f);
+
+    /// <summary>Plays a cue positionally with a per-play volume offset and pitch (footstep variation).</summary>
+    public void PlayCue(string cueId, Vector3 position, float volumeDb, float pitchScale)
     {
         if (!_library.TryGet(cueId, out AudioStream stream))
         {
@@ -71,7 +74,7 @@ public partial class AudioDirector : Node
 
         PositionalSfxPlayer player = _sfxPool.Get();
         AddChild(player);
-        player.PlayCue(stream, AudioCueRouting.BusFor(cueId), position);
+        player.PlayCue(stream, AudioCueRouting.BusFor(cueId), position, volumeDb, pitchScale);
     }
 
     /// <summary>Plays a cue non-positionally (2D) — music, UI, ambience one-shots.</summary>
@@ -90,7 +93,7 @@ public partial class AudioDirector : Node
         player.PlayCue(stream, bus);
     }
 
-    private void OnSoundCue(SoundCueRequestedEvent e) => PlayCue(e.CueId, e.Position);
+    private void OnSoundCue(SoundCueRequestedEvent e) => PlayCue(e.CueId, e.Position, e.VolumeDb, e.PitchScale);
 
     private void OnMusicCue(MusicCueRequestedEvent e) => PlayCue(e.CueId);
 

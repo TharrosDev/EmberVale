@@ -702,6 +702,12 @@ public partial class GameHud : CanvasLayer
 
         SetVital(_hpBar, _hpText, stats, StatType.Health);
         SetVital(_staBar, _staText, stats, StatType.Stamina);
+
+        // Winded (stamina hit zero; dodge and sprint locked until it refills — StatsComponent.IsWinded): the
+        // bar dims and the reading turns Bad, two channels as with low health, no motion needed.
+        _staBar.SelfModulate = stats.IsWinded ? new Color(1f, 1f, 1f, 0.45f) : Colors.White;
+        _staText.AddThemeColorOverride("font_color", stats.IsWinded ? UiTheme.Bad : UiTheme.Text);
+
         SetVital(_mpBar, _mpText, stats, StatType.Mana);
         UpdateCriticalHealth(stats, delta);
 

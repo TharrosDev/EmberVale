@@ -7,23 +7,41 @@ live census). *Partial* marks something that exists but is incomplete.
 
 ## Movement and traversal
 
-- **Walk, sprint, jump** — input-agnostic kinematic motor; speed from the `MoveSpeed` stat.
-  `LocomotionComponent` (`src/Movement`).
-- **Step-up** — climbs kerbs and steps Godot's `CharacterBody3D` cannot; accept/revert rule.
-  `StepUp`. There is no climbing or ledge grab beyond this.
-- **Dodge roll** — i-frame window, refused mid-swing, stamina-gated. `DodgeComponent`, `Dodge`.
-- **Stamina pacing** — regen pauses while you keep spending, so mashing drains to empty.
-  `StaminaPacing` (`src/Stats`).
-- **Mounts** — whistle (`Y`) a horse once the stablemaster is paid; gallop is a sustain pool with its
-  own pacing; mounted blows scale with gait, not with merely sitting on a horse. `MountComponent`,
+- **Walk, sprint, jump** — input-agnostic kinematic motor; speed from the `MoveSpeed` stat. Walk toggle
+  (`Caps Lock`) or a half-pushed stick; the player's sprint drains stamina and is refused while winded;
+  coyote time and a jump buffer; slower uphill, snaps down steps; long drops stumble, and past 7 m cost
+  the player health (deep water cushions). `LocomotionComponent`, `LocomotionRules`, `SprintStamina`,
+  `JumpAssist`, `FallRules` (`src/Movement`).
+- **Step-up** — climbs kerbs and steps up to 0.5 m that Godot's `CharacterBody3D` cannot, rolls
+  included; kept only if the body rose, advanced and landed on walkable floor, so it never climbs
+  cliffs. `StepUp`. There is no climbing or ledge grab beyond this.
+- **Dodge roll** — held input rolls on an ease-out burst; neutral input backsteps (cheaper, shorter
+  i-frames). Presses mid-swing or mid-roll are buffered, an attack cancels the roll once i-frames
+  close, back-to-back dodges cost more, refused while winded or mounted. `DodgeComponent`, `Dodge`.
+- **Stamina pacing** — regen pauses while you keep spending, then ramps in, runs slower near empty and
+  behind a raised guard, and scales with Endurance. Hitting zero leaves you winded (no dodge or sprint,
+  the stamina bar dims) until 35% refills. `StaminaPacing`, `StatsComponent` (`src/Stats`).
+- **Mounts** — whistle (`Y`) once the stablemaster is paid and the horse gallops in from out of sight,
+  then waits where you dismount; walk/trot/canter/gallop with a speed ramp and a heading that turns
+  slower the faster it goes; it balks at deep water and steep drops, jumps from a trot, and only a
+  gallop at real pace hits harder. `MountComponent`, `MountGaits`, `MountTerrain`, `MountWhistle`,
   `MountRules`, `MountedCombat`.
-- **Wading, not swimming** — declared water is wadeable under 1.1 m and refused deeper; deep water or
-  an exitless pit returns you to safe ground. `WorldWater`, `WorldRecovery`, `WorldWaterResource`.
-- **Safe placement** — every spawn, landing and respawn waits for real collision and a clear capsule.
-  `SafePlacementService`, `LoadingCoordinator`.
-- **Foot IK and footsteps** — feet planted on terrain; footstep sound by floor surface and gait.
-  `FootIkComponent`, `FootstepComponent`.
-- **NaN guard** — a motion vector is checked before it reaches physics. `MotionSafety`.
+- **Wading, not swimming** — water slows you through ankle, knee and waist bands; at 0.9 m a warning
+  fires and past the 1.1 m limit the water pushes you back to the shallows. Deep water, an exitless
+  pit or a fall out of the world fades you back to recent safe ground, facing away. `WorldWater`,
+  `WadingRules`, `WorldWading`, `WorldRecovery`, `SafeGroundTrail`, `WorldWaterResource`.
+- **Safe placement** — every spawn, landing and respawn waits for real collision and a clear capsule,
+  ring-searching up to 3 m around a refused point and reporting why it gave up; the loading gate
+  retries placement and names the stage it is stuck on. `SafePlacementService`, `PlacementSearch`,
+  `LoadingCoordinator`, `LoadingGateRules`.
+- **Foot IK and footsteps** — two-bone leg IK plants each foot on slopes and stairs, drops the pelvis
+  to the lower foot and rolls planted feet to the ground; off mid-air, mounted or rolling. Footsteps
+  land on the animation's foot contact, sound by water, tag, terrain biome or collider, and scale with
+  gait; jumps and landings too, NPCs within 20 m. `FootIkComponent`, `FootPlacement`,
+  `FootstepComponent`, `FootstepGait`, `FootstepAudio`, `Surfaces`.
+- **NaN guard** — a motion vector is checked before it reaches physics, and a body found at a
+  non-finite position or below the world is returned to its last floor; each is logged once per body.
+  `MotionSafety`.
 
 ## Camera
 

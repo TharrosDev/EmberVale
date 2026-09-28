@@ -50,9 +50,12 @@ public readonly record struct GameLoadedEvent(string Slot) : IGameEvent;
 /// Published at narrative beats (e.g. a boss defeat); no consumer exists yet.</summary>
 public readonly record struct MusicCueRequestedEvent(string CueId) : IGameEvent;
 
-/// <summary>Requests a positional sound cue by id — the placeholder hook the Phase 31 audio system will
-/// consume. Published on combat swings/impacts; no consumer exists yet.</summary>
-public readonly record struct SoundCueRequestedEvent(string CueId, Vector3 Position) : IGameEvent;
+/// <summary>Requests a positional sound cue by id, consumed by the <c>AudioDirector</c>. Published on
+/// combat swings/impacts, ambient emitters and footsteps. <c>VolumeDb</c> and <c>PitchScale</c> are
+/// per-play variation (footsteps scale both by gait, landings by how hard they hit); the defaults
+/// play the cue exactly as recorded.</summary>
+public readonly record struct SoundCueRequestedEvent(
+    string CueId, Vector3 Position, float VolumeDb = 0f, float PitchScale = 1f) : IGameEvent;
 
 /// <summary>Raised when the player's active input device flips between keyboard/mouse and
 /// gamepad (30.5J, via <see cref="InputDevice"/>) — prompt glyphs refresh on it.</summary>

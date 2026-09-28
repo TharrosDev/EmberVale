@@ -87,6 +87,28 @@ public class StepUpTests
     }
 
     /// <summary>
+    /// ⚠️ Without this, a slope steeper than floor_max_angle is a wall to MoveAndSlide, IsOnWall fires
+    /// against it exactly as against a kerb, and the step walks the body up a cliff the terrain was
+    /// authored to refuse — rise and advance both pass. A kerb's top is flat; a cliff's is more cliff.
+    /// </summary>
+    [Fact]
+    public void ALandingOnGroundTooSteepToStandOnIsNotAStep()
+    {
+        float cos45 = 0.7071f;
+        Assert.True(StepUp.Accept(0.3f, 0.5f, StepUp.MaxHeight, landingNormalY: 1f, minFloorNormalY: cos45));
+        Assert.True(StepUp.Accept(0.3f, 0.5f, StepUp.MaxHeight, landingNormalY: 0.8f, minFloorNormalY: cos45));
+        Assert.False(StepUp.Accept(0.3f, 0.5f, StepUp.MaxHeight, landingNormalY: 0.5f, minFloorNormalY: cos45));
+    }
+
+    [Fact]
+    public void ALandingOnNothingIsNotAStep()
+    {
+        Assert.False(StepUp.Accept(0.3f, 0.5f, StepUp.MaxHeight, landingNormalY: 0f, minFloorNormalY: 0.7071f));
+        Assert.False(StepUp.Accept(0.3f, 0.5f, StepUp.MaxHeight, landingNormalY: 0f));
+        Assert.False(StepUp.Accept(0.3f, 0.5f, StepUp.MaxHeight, landingNormalY: float.NaN));
+    }
+
+    /// <summary>
     /// The number that closes the live mismatch: no cell may ask for an <c>agent_max_climb</c> above
     /// this, or NPCs are pathed onto ground the player cannot follow them onto. (The bake then FLOORS
     /// each cell's climb to a <c>cell_height</c> voxel, so what is baked sits at or below it — 0.3 on a

@@ -16,12 +16,17 @@ public partial class PositionalSfxPlayer : AudioStreamPlayer3D
 
     public override void _Ready() => Finished += OnFinished;
 
-    /// <summary>(Re)arms and plays the cue at a world position on the given bus. Add to the tree first.</summary>
-    public void PlayCue(AudioStream stream, StringName bus, Vector3 position)
+    /// <summary>(Re)arms and plays the cue at a world position on the given bus. Add to the tree first.
+    /// Volume and pitch are set on EVERY play, defaults included, because the player is pooled: a
+    /// footstep's detune must not leak into the next sword swing that reuses this node.</summary>
+    public void PlayCue(AudioStream stream, StringName bus, Vector3 position, float volumeDb = 0f,
+        float pitchScale = 1f)
     {
         Bus = bus;
         Stream = stream;
         GlobalPosition = position;
+        VolumeDb = volumeDb;
+        PitchScale = pitchScale > 0.01f ? pitchScale : 1f;
         Play();
     }
 

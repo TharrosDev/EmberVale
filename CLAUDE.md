@@ -388,7 +388,7 @@ the save left off, which for the Ember Crown is usually the town hub *inside* th
 `--play` run therefore proves boot, database loading and save restore — **not** that new enemies
 spawn or fight. Say which of the two you got; don't let one stand in for the other.
 
-**Sandbox controls:** `WASD` move · mouse look · `Shift` sprint · `Space` jump ·
+**Sandbox controls:** `WASD` move · mouse look · `Shift` sprint · `Caps Lock` walk · `Space` jump ·
 `LMB` attack · `RMB` block · `E` interact · `V` swap first/third person ·
 `I` inventory · `T` spellbook · `B` bestiary · `C` party order ·
 `H` heal dummy · `R` respawn dummy · `F5`/`F9` quick save/load · `Esc` pause (frees the cursor).

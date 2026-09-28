@@ -17,6 +17,10 @@ public static class GameInput
     public const string MoveRight = "move_right";
     public const string Jump = "jump";
     public const string Sprint = "sprint";
+
+    /// <summary>Toggles walk (Skyrim's Caps Lock). Keyboard only: a stick already walks by being
+    /// pushed part-way, since the move actions keep their analog magnitude.</summary>
+    public const string WalkToggle = "walk_toggle";
     public const string Dodge = "dodge";
     public const string Interact = "interact";
     public const string Attack = "attack";
@@ -66,6 +70,12 @@ public static class GameInput
     /// <summary>Deadzone for the look axes. Godot defaults an action to 0.5, which on a look stick
     /// reads as a dead controller until it is half-deflected.</summary>
     private const float LookDeadzone = 0.15f;
+
+    /// <summary>Deadzone for the move axes, pinned here rather than inherited. ⚠️ <c>Input.GetVector</c>
+    /// rescales the stick from the deadzone to 1 and the motor keeps that magnitude, so this number is
+    /// also where a pad's walking pace begins — a deadzone raised in an editor-authored action map
+    /// would silently swallow the walk.</summary>
+    private const float MoveDeadzone = 0.2f;
 
     /// <summary>Hotbar slots 1-5 (number-row keys) — quick-use/equip an assigned item.</summary>
     public static readonly string[] Hotbar = { "hotbar_1", "hotbar_2", "hotbar_3", "hotbar_4", "hotbar_5" };
@@ -136,6 +146,7 @@ public static class GameInput
         Bind(MoveRight, new InputEventKey { PhysicalKeycode = Key.D });
         Bind(Jump, new InputEventKey { PhysicalKeycode = Key.Space });
         Bind(Sprint, new InputEventKey { PhysicalKeycode = Key.Shift });
+        Bind(WalkToggle, new InputEventKey { PhysicalKeycode = Key.Capslock });
         Bind(Dodge, new InputEventKey { PhysicalKeycode = Key.Ctrl });
         Bind(Interact, new InputEventKey { PhysicalKeycode = Key.E });
         Bind(Inventory, new InputEventKey { PhysicalKeycode = Key.I });
@@ -188,6 +199,10 @@ public static class GameInput
         Bind(MoveBack, new InputEventJoypadMotion { Axis = JoyAxis.LeftY, AxisValue = 1f });
         Bind(MoveLeft, new InputEventJoypadMotion { Axis = JoyAxis.LeftX, AxisValue = -1f });
         Bind(MoveRight, new InputEventJoypadMotion { Axis = JoyAxis.LeftX, AxisValue = 1f });
+        foreach (string move in new[] { MoveForward, MoveBack, MoveLeft, MoveRight })
+        {
+            InputMap.ActionSetDeadzone(move, MoveDeadzone);
+        }
 
         // Look: right stick, polled per frame by the controller.
         Bind(LookLeft, new InputEventJoypadMotion { Axis = JoyAxis.RightX, AxisValue = -1f });

@@ -80,6 +80,7 @@ public partial class Notifications : CanvasLayer
         bus?.Subscribe<BlessingClaimedEvent>(OnBlessingClaimed);
         bus?.Subscribe<ShrineAlreadyVisitedEvent>(OnShrineAlreadyVisited);
         bus?.Subscribe<ShrineRefusedEvent>(OnShrineRefused);
+        bus?.Subscribe<WorldHazardNoticeEvent>(OnWorldHazard);
     }
 
     public override void _Process(double delta)
@@ -121,6 +122,7 @@ public partial class Notifications : CanvasLayer
         bus.Unsubscribe<BlessingClaimedEvent>(OnBlessingClaimed);
         bus.Unsubscribe<ShrineAlreadyVisitedEvent>(OnShrineAlreadyVisited);
         bus.Unsubscribe<ShrineRefusedEvent>(OnShrineRefused);
+        bus.Unsubscribe<WorldHazardNoticeEvent>(OnWorldHazard);
     }
 
     private void OnLeveledUp(LeveledUpEvent e) =>
@@ -249,6 +251,9 @@ public partial class Notifications : CanvasLayer
     }
 
     private void OnMountRefused(MountRefusedEvent e) => Push(Loc.T(e.ReasonKey), UiTheme.Bad);
+
+    private void OnWorldHazard(WorldHazardNoticeEvent e) =>
+        Push(Loc.T(e.ReasonKey), UiTheme.Bad, NoticeCategory.Warning);
 
     private void OnBlessingClaimed(BlessingClaimedEvent e) =>
         Push(Loc.TF("notify.blessing_received", Loc.T(e.Shrine.BlessingNameKey)), UiTheme.Good, NoticeCategory.Reward);

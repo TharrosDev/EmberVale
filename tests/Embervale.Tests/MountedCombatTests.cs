@@ -44,6 +44,30 @@ public class MountedCombatTests
     /// swing for exactly what they would on foot — otherwise 39A's exhaustion latch would quietly
     /// become a combat debuff, which is not what it was written to be.
     /// </summary>
+    /// <summary>
+    /// The tightening: a granted gallop is only a charge at gallop pace. Pinned on a wall with
+    /// sprint held, or on the first frame of the gallop, the horse is not carrying any weight.
+    /// </summary>
+    [Fact]
+    public void AGallopWithNoPaceIsNotACharge()
+    {
+        const float gallop = 2.72f;
+
+        Assert.False(MountedCombat.IsCharging(true, 0f, gallop));
+        Assert.False(MountedCombat.IsCharging(true, gallop * 0.5f, gallop));
+        Assert.True(MountedCombat.IsCharging(true, gallop * MountedCombat.ChargeSpeedFraction, gallop));
+        Assert.True(MountedCombat.IsCharging(true, gallop, gallop));
+    }
+
+    [Fact]
+    public void PaceWithoutTheGallopIsNotACharge()
+    {
+        // A downhill canter can touch gallop pace; the charge is still the gallop's, not the slope's.
+        Assert.False(MountedCombat.IsCharging(false, 3f, 2.72f));
+        Assert.False(MountedCombat.IsCharging(true, float.NaN, 2.72f));
+        Assert.False(MountedCombat.IsCharging(true, 3f, 0f));
+    }
+
     [Fact]
     public void RidingNeverMakesABlowWeakerThanOnFoot()
     {

@@ -95,6 +95,19 @@ public sealed class AudioLibrary
             ["step.wood"] = Load("res://assets/audio/sfx/steps/wood.ogg", () => Footstep(0.55f, 8)),
             ["step.stone"] = Load("res://assets/audio/sfx/steps/stone.ogg", () => Footstep(0.7f, 9)),
             ["step.snow"] = Load("res://assets/audio/sfx/steps/snow.ogg", () => Footstep(0.25f, 10)),
+            // Wading (2026-09 footstep upgrade). No CC0 recording is vendored, so it is procedural
+            // until one is: a bright slosh over a low push of water. shipped: false keeps its
+            // absence at info, like the other procedural-until-sourced cues.
+            ["step.water"] = Load("res://assets/audio/sfx/steps/water.ogg", () => ProceduralAudio.Mix(
+                ProceduralAudio.NoiseBurst(0.22f, lowpass: 0.65f, gain: 0.22f, seed: 12, releaseSeconds: 0.16f),
+                ProceduralAudio.NoiseBurst(0.30f, lowpass: 0.12f, gain: 0.26f, seed: 13, attackSeconds: 0.02f,
+                    releaseSeconds: 0.22f)), shipped: false),
+
+            // Wading in past the knee (positional). Published by WorldWading. Procedural wash until a
+            // CC0 recording lands, so shipped: false.
+            ["sfx.water.wade"] = Load("res://assets/audio/sfx/water/wade.ogg", () => ProceduralAudio.Mix(
+                ProceduralAudio.NoiseBurst(0.32f, lowpass: 0.22f, gain: 0.26f, seed: 91, releaseSeconds: 0.22f),
+                ProceduralAudio.NoiseBurst(0.12f, lowpass: 0.6f, gain: 0.10f, seed: 92)), shipped: false),
 
             // UI (2D). Used by the Phase 31C UI hooks.
             ["ui.click"] = Load("res://assets/audio/ui/click.wav",

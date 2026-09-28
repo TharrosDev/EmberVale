@@ -16,7 +16,7 @@ namespace Embervale.Player;
 /// load-bearing and was documented as such long before this split: the camera rig runs inside the
 /// not-playing guard because it dereferences nodes that a world teardown is freeing; focus is
 /// resolved before lock-on can be toggled onto it; the mount answers the sprint request before
-/// locomotion consumes it; dodge is refused during a committed swing. Godot orders sibling
+/// locomotion consumes it; dodge is held back (buffered) during a committed swing. Godot orders sibling
 /// <c>_PhysicsProcess</c> calls by child order, which would make all of that an invisible
 /// consequence of the order <see cref="PlayerFactory"/> happens to add nodes in. It is written down
 /// here instead.</para>
@@ -109,17 +109,28 @@ public partial class PlayerInputRouter : EntityComponent
             _mount?.Toggle();
         }
 
+        // Walk is a gait on the motor, not a scale on the wish, so sprint can still override it and
+        // the stick's own magnitude still counts underneath it.
+        if (Godot.Input.IsActionJustPressed(GameInput.WalkToggle) && _locomotion != null)
+        {
+            _locomotion.Walking = !_locomotion.Walking;
+        }
+
+        // A press, not a hold: the motor buffers it (JumpAssist), so one pressed a moment before
+        // landing or during a roll still fires.
         bool jump = Godot.Input.IsActionJustPressed(GameInput.Jump);
 
-        // Held sprint is a request. On foot it is granted outright; mounted, the horse's own pool
-        // answers — Tick returns the input unchanged when not mounted, so there is no branch here.
-        bool sprint = _mount?.Tick(delta, Godot.Input.IsActionPressed(GameInput.Sprint))
-            ?? Godot.Input.IsActionPressed(GameInput.Sprint);
+        // Held sprint is a request. On foot the motor answers it from the player's stamina (refused
+        // while winded); mounted, the horse answers — it turns the raw wish (not the swing-scaled one: a mounted blow must not rein the horse
+        // in) into its own heading, gait and speed, and gates the jump. Ride hands everything back
+        // unchanged when not mounted, so there is no branch here.
+        bool sprintHeld = Godot.Input.IsActionPressed(GameInput.Sprint);
+        bool sprint = _mount?.Ride(delta, wishDir, sprintHeld, ref actionMove, ref jump) ?? sprintHeld;
         _locomotion?.Move(delta, actionMove, sprint, jump);
 
-        // Dodge can't interrupt a committed swing (the attack commit window); it cancels
-        // recovery/idle.
-        if (Godot.Input.IsActionJustPressed(GameInput.Dodge) && !(_weapon?.IsCommitted ?? false))
+        // Dodge can't interrupt a committed swing (the attack commit window); DodgeComponent buffers a
+        // press made inside it and fires it the instant the swing becomes cancellable.
+        if (Godot.Input.IsActionJustPressed(GameInput.Dodge))
         {
             _dodge?.TryDodge(wishDir);
         }
@@ -151,7 +162,8 @@ public partial class PlayerInputRouter : EntityComponent
                         _weapon is { Weapon.IsRanged: true, IsCommitted: true },
                 lockedOn: _lockOn?.Target != null,
                 inCombat: _combat is { IsBlocking: true } || _weapon is { IsCommitted: true },
-                sprinting: sprint && _locomotion is { } loco && loco.IsGrounded);
+                sprinting: _locomotion is { IsGrounded: true } loco &&
+                           (loco.IsSprinting || _mount is { IsGalloping: true }));
         }
 
         // A warping action closes on whatever the player has locked. With no lock there is no
@@ -172,7 +184,9 @@ public partial class PlayerInputRouter : EntityComponent
             _combat.IsBlocking = Godot.Input.IsActionPressed(GameInput.Block);
         }
 
-        if (Godot.Input.IsActionJustPressed(GameInput.Attack))
+        // A running dodge sees the press first: it buffers it until the roll's attack-cancel window,
+        // or ends the roll and lets this swing be the roll-attack.
+        if (Godot.Input.IsActionJustPressed(GameInput.Attack) && !(_dodge?.InterceptAttack() ?? false))
         {
             _weapon?.TryAttack();
         }
