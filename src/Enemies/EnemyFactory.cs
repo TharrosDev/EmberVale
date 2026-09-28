@@ -96,6 +96,12 @@ public static class EnemyFactory
         enemy.AddChild(new Embervale.Animation.CharacterAnimationComponent { Name = "Animation", BodyMeshPath = "Mesh" });
         enemy.AddChild(new Embervale.Animation.EquipmentPresentationComponent { Name = "EquipmentVisuals", BodyMeshPath = "Mesh" });
         enemy.AddChild(new Embervale.Animation.FootIkComponent { Name = "FootIk" });
+        // Footsteps at distance: quieter than the player's own and silent past 20 m, where the
+        // component skips its bone reads and raycasts entirely.
+        enemy.AddChild(new Embervale.Player.FootstepComponent
+        {
+            Name = "Footsteps", MaxAudibleDistance = 20f, VolumeOffsetDb = -5f,
+        });
         enemy.AddChild(new WeaponTrailComponent { Name = "WeaponTrail" });
         enemy.AddChild(BuildHurtbox());
 

@@ -87,6 +87,12 @@ public static class CompanionFactory
         companion.AddChild(new Embervale.Animation.CharacterAnimationComponent { Name = "Animation", BodyMeshPath = "Mesh" });
         companion.AddChild(new Embervale.Animation.EquipmentPresentationComponent { Name = "EquipmentVisuals", BodyMeshPath = "Mesh" });
         companion.AddChild(new Embervale.Animation.FootIkComponent { Name = "FootIk" });
+        // Footsteps at distance: quieter than the player's own and silent past 20 m, where the
+        // component skips its bone reads and raycasts entirely.
+        companion.AddChild(new Embervale.Player.FootstepComponent
+        {
+            Name = "Footsteps", MaxAudibleDistance = 20f, VolumeOffsetDb = -5f,
+        });
         companion.AddChild(new WeaponTrailComponent { Name = "WeaponTrail" });
         companion.AddChild(BuildHurtbox());
 
