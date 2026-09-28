@@ -277,7 +277,13 @@ public static class PlayerFactory
         player.AddChild(new CameraMotionLayer { Name = "CameraMotion" });
         // --- end ---
 
-        // First-person viewmodel arms (30L): ride the camera, swing with attacks, guard on block.
+        // --- camera director + occlusion (D) ---
+        // The event-driven special views (dialogue, boss entrance, death, focus, mounted) as a camera
+        // layer, and the obstruction fade. Both resolve the rig and sensor in OnInitialize, so they go
+        // after them; neither touches the camera transform.
+        player.AddChild(new CameraDirectorLayer { Name = "CameraDirector" });
+        player.AddChild(new CameraOcclusion { Name = "CameraOcclusion" });
+        // --- end ---
 
         // Race applies LAST so Stats/Perks/Spellcasting/Reputation have initialized when its
         // OnInitialize runs: the chosen race's stat deltas become modifiers and (on New Game) its
