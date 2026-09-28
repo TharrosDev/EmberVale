@@ -64,3 +64,17 @@ public readonly record struct ChargeReleasedEvent(IEntity Attacker, float Charge
 /// <summary>Raised when the player's lock-on target changes; <paramref name="Target"/> is null when the
 /// lock is dropped.</summary>
 public readonly record struct LockChangedEvent(IEntity Player, IEntity? Target) : IGameEvent;
+
+// --- combat-defence events (append-only block, owned by the damage pipeline) ---
+
+/// <summary>Raised beside <see cref="EntityParriedEvent"/> with how well the parry was timed, so
+/// presentation can play a perfect parry bigger than a late deflect.</summary>
+public readonly record struct ParryGradedEvent(IEntity Defender, IEntity? Attacker, ParryGrade Grade) : IGameEvent;
+
+/// <summary>Raised when a body becomes a critical opening: its poise broke into an interrupting
+/// stagger, it was parried, or its guard broke. <paramref name="Seconds"/> is how long a riposte
+/// still counts, and <paramref name="Cause"/> says why. AI can react to it; a blow inside the window
+/// raises <see cref="CriticalHitEvent"/> and closes it.</summary>
+public readonly record struct PunishWindowOpenedEvent(IEntity Target, OpenCause Cause, float Seconds) : IGameEvent;
+
+// --- end combat-defence events ---

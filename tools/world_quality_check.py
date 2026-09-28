@@ -166,6 +166,9 @@ def gates(engine: str | None) -> list[Gate]:
         # --- combat-offence: this group's probe Gate goes between the markers (one owner per block) ---
         # --- end combat-offence ---
         # --- combat-defence: this group's probe Gate goes between the markers (one owner per block) ---
+        Gate("combat-defence", "graded parry, guard break, riposte, poise and hit zones through real hurtboxes",
+             [engine, "--headless", "--path", ".", "--script",
+              "res://tools/combat_defence_probe.gd"], slow=True),
         # --- end combat-defence ---
         # --- combat-feedback: this group's probe Gate goes between the markers (one owner per block) ---
         # --- end combat-feedback ---

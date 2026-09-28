@@ -22,6 +22,16 @@ public partial class Hurtbox : Area3D
     [Export]
     public float DamageMultiplier { get; set; } = 1f;
 
+    /// <summary>Scales poise damage on top of <see cref="DamageMultiplier"/> (which poise already
+    /// follows), so a zone can be tender to stagger without being tender to steel: a wing that is
+    /// hard to hurt but easy to unbalance. Default <c>1</c>.</summary>
+    [Export]
+    public float PoiseMultiplier { get; set; } = 1f;
+
+    /// <summary>A zone that takes at least half again the damage is a weak point: a head, a
+    /// throat, a cracked plate. Ranged attackers and presentation read this rather than a zone name.</summary>
+    public bool IsWeakPoint => DamageMultiplier >= 1.5f;
+
     public IEntity? OwnerEntity { get; private set; }
 
     public CombatComponent? Combat { get; private set; }
@@ -46,12 +56,13 @@ public partial class Hurtbox : Area3D
             return default;
         }
 
-        if (DamageMultiplier != 1f)
+        if (DamageMultiplier != 1f || PoiseMultiplier != 1f)
         {
+            float damage = Mathf.Max(0f, DamageMultiplier);
             packet = packet with
             {
-                Amount = packet.Amount * DamageMultiplier,
-                PoiseDamage = packet.PoiseDamage * DamageMultiplier,
+                Amount = packet.Amount * damage,
+                PoiseDamage = packet.PoiseDamage * damage * Mathf.Max(0f, PoiseMultiplier),
             };
         }
 

@@ -53,16 +53,28 @@ public static class CombatMath
     private static (float Amount, bool IsCrit) RollCrit(float amount, StatsComponent? source)
     {
         bool isCrit = false;
-        float critChance = source?.GetValue(StatType.CritChance) ?? 0f;
+        float critChance = ClampCritChance(source?.GetValue(StatType.CritChance) ?? 0f);
         if (GD.Randf() < critChance)
         {
             isCrit = true;
-            float critDamage = source?.GetValue(StatType.CritDamage) ?? 1.5f;
-            amount *= critDamage;
+            amount *= ClampCritMultiplier(source?.GetValue(StatType.CritDamage) ?? 1.5f);
         }
 
         return (amount, isCrit);
     }
+
+    /// <summary>Highest crit chance any build reaches. A crit that is nearly guaranteed is not a crit,
+    /// it is a second damage stat that hides its own tuning.</summary>
+    public const float MaxCritChance = 0.75f;
+
+    /// <summary>Crit chance clamped to 0..<see cref="MaxCritChance"/>.</summary>
+    public static float ClampCritChance(float chance) =>
+        chance < 0f ? 0f : chance > MaxCritChance ? MaxCritChance : chance;
+
+    /// <summary>Crit damage multiplier clamped to 1.25..4: a crit always reads as one, and never
+    /// one-shots by stat stacking alone.</summary>
+    public static float ClampCritMultiplier(float multiplier) =>
+        multiplier < 1.25f ? 1.25f : multiplier > 4f ? 4f : multiplier;
 
     /// <summary>
     /// Reduces incoming damage by the defender's mitigation. Physical damage uses the classic armor
@@ -79,13 +91,41 @@ public static class CombatMath
         }
 
         // One curve for both, so there is only ever one defence formula to balance. Resistance
-        // only, never immunity: ArmorMultiplier stays in (0, 1], which keeps every magic school a
-        // viable spine to build around (DESIGN §"none a trap").
-        // ponytail: no vulnerability side — ArmorMultiplier clamps a negative resist to ×1 rather
-        // than amplifying. Add a signed curve if an encounter ever needs a real weakness.
+        // only, never immunity: a positive value stays in (0, 1], which keeps every magic school a
+        // viable spine to build around (DESIGN §"none a trap"). A negative value is a vulnerability
+        // and amplifies, bounded below double (MitigationMultiplier).
         StatType mitigator = ResistanceStat(type);
-        return amount * ArmorMultiplier(defender.GetValue(mitigator));
+        return amount * MitigationMultiplier(defender.GetValue(mitigator));
     }
+
+    /// <summary>The smallest a landed, unblocked hit can be after mitigation. Resistance is never
+    /// immunity, and a hit that rounds to nothing tells the player nothing.</summary>
+    public const float MinimumHit = 1f;
+
+    /// <summary>
+    /// The chip floor: a hit that would have done damage before mitigation does at least
+    /// <see cref="MinimumHit"/> (or all of it, if it was smaller) unless a guard took it. True damage
+    /// is already unmitigated, so the floor never touches it.
+    /// </summary>
+    public static float FloorHit(float mitigated, float raw, bool blocked)
+    {
+        if (blocked || raw <= 0f)
+        {
+            return mitigated;
+        }
+
+        float floor = raw < MinimumHit ? raw : MinimumHit;
+        return mitigated < floor ? floor : mitigated;
+    }
+
+    /// <summary>
+    /// The signed mitigation curve. At or above zero it is <see cref="ArmorMultiplier"/>. Below zero
+    /// (a vulnerability: a curse, a sundered armour, a frost creature's fire resistance) it mirrors the
+    /// curve upward, <c>2 - 100 / (100 - x)</c>, so weakness amplifies damage toward but never past
+    /// double, with the same diminishing shape as resistance.
+    /// </summary>
+    public static float MitigationMultiplier(float value) =>
+        value >= 0f ? ArmorMultiplier(value) : 2f - (100f / (100f - value));
 
     /// <summary>The stat that mitigates a damage school. Physical answers to <c>Armor</c>; the magic
     /// schools each answer to their own resistance (Phase 34E). <see cref="DamageType.True"/> never

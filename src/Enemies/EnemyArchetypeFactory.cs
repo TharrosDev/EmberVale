@@ -283,7 +283,8 @@ public static class EnemyArchetypeFactory
             }
 
             enemy.AddChild(BuildHurtbox(
-                $"Hurtbox_{zone.Id}", zone.Id, zone.DamageMultiplier, zone.Offset, zone.Radius, zone.Height));
+                $"Hurtbox_{zone.Id}", zone.Id, zone.DamageMultiplier, zone.Offset, zone.Radius, zone.Height,
+                zone.PoiseMultiplier));
         }
     }
 
@@ -291,9 +292,13 @@ public static class EnemyArchetypeFactory
     /// knuckle) — Godot's CapsuleShape3D silently clamps a height below 2r, which would quietly
     /// inflate a small zone's volume.</summary>
     private static Hurtbox BuildHurtbox(
-        string name, string zoneId, float multiplier, Vector3 offset, float radius, float height)
+        string name, string zoneId, float multiplier, Vector3 offset, float radius, float height,
+        float poiseMultiplier = 1f)
     {
-        var hurtbox = new Hurtbox { Name = name, ZoneId = zoneId, DamageMultiplier = multiplier };
+        var hurtbox = new Hurtbox
+        {
+            Name = name, ZoneId = zoneId, DamageMultiplier = multiplier, PoiseMultiplier = poiseMultiplier,
+        };
         Shape3D shape = height > radius * 2f
             ? new CapsuleShape3D { Radius = radius, Height = height }
             : new SphereShape3D { Radius = radius };

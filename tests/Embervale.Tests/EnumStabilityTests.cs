@@ -421,4 +421,28 @@ public class EnumStabilityTests
         Assert.Equal(9, (int)TutorialStep.Journal);
         Assert.Equal(10, (int)TutorialStep.Cast);
     }
+
+    [Fact]
+    public void DefenceEnums_Ordinals()
+    {
+        // The damage pipeline's vocabulary (combat upgrade). HitKind is stamped by attackers on every
+        // DamagePacket, and ParryGrade/OpenCause ride events; a re-map silently changes what a blow does.
+        Assert.Equal(0, (int)HitKind.Normal);
+        Assert.Equal(1, (int)HitKind.Heavy);
+        Assert.Equal(2, (int)HitKind.Charged);
+        Assert.Equal(3, (int)HitKind.Riposte);
+        Assert.Equal(4, (int)HitKind.Backstab);
+        Assert.Equal(5, (int)HitKind.Plunge);
+        Assert.Equal(6, (int)HitKind.Ranged);
+        Assert.Equal(7, (int)HitKind.Spell);
+        Assert.Equal(0, (int)ParryGrade.None);
+        Assert.Equal(1, (int)ParryGrade.Late);
+        Assert.Equal(2, (int)ParryGrade.Good);
+        Assert.Equal(3, (int)ParryGrade.Perfect);
+        Assert.Equal(0, (int)OpenCause.None);
+        Assert.Equal(1, (int)OpenCause.PoiseBreak);
+        Assert.Equal(2, (int)OpenCause.Parry);
+        Assert.Equal(3, (int)OpenCause.GuardBreak);
+        Assert.Equal(4, (int)OpenCause.PerfectParry);
+    }
 }

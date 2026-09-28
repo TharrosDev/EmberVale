@@ -676,6 +676,13 @@ public static class ContentValidator
                     $"enemy archetype '{archetype.Id}' hit zone '{zone.Id}' has multiplier " +
                     $"{zone.DamageMultiplier} — it would absorb hits for free");
             }
+
+            if (zone.PoiseMultiplier < 0f)
+            {
+                issues.Add(
+                    $"enemy archetype '{archetype.Id}' hit zone '{zone.Id}' has poise multiplier " +
+                    $"{zone.PoiseMultiplier} — a negative one would restore poise on a hit");
+            }
         }
 
         if (archetype.DirectionalMelee && archetype.HitZones.Count == 0)
