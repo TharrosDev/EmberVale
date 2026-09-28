@@ -130,4 +130,133 @@ public class FootPlacementTests
         Assert.Equal(flat, FootPlacement.AlignToSlope(flat, Vector3.Up, 35f, weight: 1f));
         Assert.Equal(flat, FootPlacement.AlignToSlope(flat, Vector3.Zero, 35f, weight: 1f));
     }
+
+    // --- The 2026-09 upgrade: easing, planted weight, the two-bone solve and the new disables. ---
+
+    [Fact]
+    public void PlacementIsOffWhenMountedOrRolling()
+    {
+        // A rider's legs belong to the saddle; a roll tumbles the body through the ground plane.
+        Assert.False(FootPlacement.ShouldPlace(true, false, true, 1f, 25f, mounted: true));
+        Assert.False(FootPlacement.ShouldPlace(true, false, true, 1f, 25f, dashing: true));
+        Assert.True(FootPlacement.ShouldPlace(true, false, true, 1f, 25f, mounted: false, dashing: false));
+    }
+
+    [Fact]
+    public void SmoothingIsFrameRateIndependent()
+    {
+        // Two 60 fps frames and one 30 fps frame cover the same time and must land in the same
+        // place. The old per-frame Lerp settled twice as fast at 120 fps as at 60.
+        float twoSmall = FootPlacement.Smooth(FootPlacement.Smooth(0f, 1f, 12f, 1f / 60f), 1f, 12f, 1f / 60f);
+        float oneLarge = FootPlacement.Smooth(0f, 1f, 12f, 1f / 30f);
+        Assert.Equal(oneLarge, twoSmall, 4);
+        Assert.InRange(oneLarge, 0.01f, 0.99f);
+    }
+
+    [Fact]
+    public void SmoothingNeverOvershootsAndZeroSharpnessSnaps()
+    {
+        Assert.InRange(FootPlacement.Smooth(0f, 1f, 12f, 10f), 0.99f, 1f);
+        Assert.Equal(1f, FootPlacement.Smooth(0f, 1f, 0f, 0.016f), 5);
+        Assert.Equal(0.3f, FootPlacement.Smooth(0.3f, 1f, 12f, 0f), 5);
+    }
+
+    [Fact]
+    public void OnlyAPlantedFootIsLaidFlat()
+    {
+        // A foot mid-swing tilted to the ground under it digs its toe in on every uphill stride.
+        Assert.Equal(1f, FootPlacement.Planted(0f, 0.03f, 0.15f), 4);
+        Assert.Equal(0f, FootPlacement.Planted(0.2f, 0.03f, 0.15f), 4);
+        Assert.InRange(FootPlacement.Planted(0.09f, 0.03f, 0.15f), 0.01f, 0.99f);
+    }
+
+    [Fact]
+    public void SlopeRotationTipsUpTowardTheNormalWithinTheLimit()
+    {
+        Vector3 normal = new Vector3(0f, 1f, 1f).Normalized(); // a 45 degree slope
+        Quaternion full = FootPlacement.SlopeRotation(Vector3.Up, normal, 90f, 1f);
+        Assert.True((full * Vector3.Up).IsEqualApprox(normal));
+
+        Quaternion limited = FootPlacement.SlopeRotation(Vector3.Up, normal, 20f, 1f);
+        Assert.Equal(20f, Mathf.RadToDeg(Vector3.Up.AngleTo(limited * Vector3.Up)), 2);
+
+        Assert.Equal(Quaternion.Identity, FootPlacement.SlopeRotation(Vector3.Up, normal, 35f, 0f));
+    }
+
+    private static readonly Vector3 Hip = new(0f, 1f, 0f);
+    private static readonly Vector3 Knee = new(0f, 0.55f, 0.06f);
+    private static readonly Vector3 Ankle = new(0f, 0.1f, 0f);
+
+    private static (Vector3 Knee, Vector3 Foot) Apply(Vector3 hip, Vector3 knee, Vector3 foot,
+        Quaternion upper, Quaternion lower)
+    {
+        Vector3 newKnee = hip + (upper * (knee - hip));
+        Vector3 newFoot = newKnee + ((upper * lower) * (foot - knee));
+        return (newKnee, newFoot);
+    }
+
+    [Theory]
+    [InlineData(0f, 0.3f, 0f)]    // lifted onto a stair
+    [InlineData(0f, 0.12f, 0.08f)] // forward, near full reach
+    [InlineData(0.08f, 0.2f, -0.1f)]
+    public void TheTwoBoneSolvePutsTheAnkleOnTheTarget(float x, float y, float z)
+    {
+        var target = new Vector3(x, y, z);
+        Assert.True(FootPlacement.SolveTwoBone(Hip, Knee, Ankle, target, Vector3.Forward,
+            out Quaternion upper, out Quaternion lower));
+
+        (Vector3 knee, Vector3 foot) = Apply(Hip, Knee, Ankle, upper, lower);
+        Assert.True(foot.DistanceTo(target) < 0.002f, $"foot {foot} missed {target}");
+
+        // Bones keep their length: the leg is rotated, never stretched.
+        Assert.Equal((Knee - Hip).Length(), (knee - Hip).Length(), 4);
+        Assert.Equal((Ankle - Knee).Length(), (foot - knee).Length(), 4);
+    }
+
+    [Fact]
+    public void TheKneeKeepsBendingTheWayItWasAnimated()
+    {
+        // Lifting the foot bends the knee further, and forward (+Z here) — never backwards.
+        FootPlacement.SolveTwoBone(Hip, Knee, Ankle, new Vector3(0f, 0.35f, 0f), Vector3.Back,
+            out Quaternion upper, out Quaternion lower);
+        (Vector3 knee, _) = Apply(Hip, Knee, Ankle, upper, lower);
+        Assert.True(knee.Z > Knee.Z, $"knee {knee} should bend further forward");
+    }
+
+    [Fact]
+    public void AnUnreachableTargetStraightensTheLegTowardItRatherThanTearingIt()
+    {
+        var target = new Vector3(0f, -2f, 0f);
+        FootPlacement.SolveTwoBone(Hip, Knee, Ankle, target, Vector3.Forward,
+            out Quaternion upper, out Quaternion lower);
+        (Vector3 knee, Vector3 foot) = Apply(Hip, Knee, Ankle, upper, lower);
+
+        float reach = (Knee - Hip).Length() + (Ankle - Knee).Length();
+        Assert.InRange((foot - Hip).Length(), reach * 0.99f, reach + 0.0001f);
+        Assert.True((foot - Hip).Normalized().Dot(Vector3.Down) > 0.999f);
+        Assert.Equal((Knee - Hip).Length(), (knee - Hip).Length(), 4);
+    }
+
+    [Fact]
+    public void AStraightLegBendsTowardThePole()
+    {
+        // Dead straight, the bend plane is undefined; the pole says which way the knee goes.
+        var hip = new Vector3(0f, 1f, 0f);
+        var knee = new Vector3(0f, 0.55f, 0f);
+        var foot = new Vector3(0f, 0.1f, 0f);
+        var pole = new Vector3(0f, 0f, 1f);
+        Assert.True(FootPlacement.SolveTwoBone(hip, knee, foot, new Vector3(0f, 0.3f, 0f), pole,
+            out Quaternion upper, out Quaternion lower));
+        (Vector3 newKnee, Vector3 newFoot) = Apply(hip, knee, foot, upper, lower);
+        Assert.True(newKnee.Z > 0.05f, $"knee {newKnee} should bend toward the pole");
+        Assert.True(newFoot.DistanceTo(new Vector3(0f, 0.3f, 0f)) < 0.002f);
+    }
+
+    [Fact]
+    public void ADegenerateChainIsRefused()
+    {
+        Assert.False(FootPlacement.SolveTwoBone(Hip, Hip, Ankle, Vector3.Zero, Vector3.Forward,
+            out Quaternion upper, out _));
+        Assert.Equal(Quaternion.Identity, upper);
+    }
 }

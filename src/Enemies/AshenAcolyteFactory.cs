@@ -93,6 +93,12 @@ public static class AshenAcolyteFactory
         enemy.AddChild(new Embervale.Animation.CharacterAnimationComponent { Name = "Animation", BodyMeshPath = "Mesh" });
         enemy.AddChild(new Embervale.Animation.EquipmentPresentationComponent { Name = "EquipmentVisuals", BodyMeshPath = "Mesh" });
         enemy.AddChild(new Embervale.Animation.FootIkComponent { Name = "FootIk" });
+        // Footsteps at distance: quieter than the player's own and silent past 20 m, where the
+        // component skips its bone reads and raycasts entirely.
+        enemy.AddChild(new Embervale.Player.FootstepComponent
+        {
+            Name = "Footsteps", MaxAudibleDistance = 20f, VolumeOffsetDb = -5f,
+        });
         enemy.AddChild(BuildHurtbox());
 
         // The player's spells can burn/chill/freeze it; its own casts also push statuses onto it.
