@@ -94,7 +94,7 @@ Embervale is *beautiful but dying* (LORE). Every scene carries three layers:
 Saturation discipline: environment albedo stays under ~40% saturation; only
 emissives (embers, spell VFX, corruption glow) may exceed it.
 
-### 2.1 Per-realm grading (same language, four dialects)
+### 2.1 Per-realm grading (same language, six dialects)
 
 | Realm | Base key | Light | Signature |
 | ----- | -------- | ----- | --------- |
@@ -102,6 +102,8 @@ emissives (embers, spell VFX, corruption glow) may exceed it.
 | **Frostfang Reach** | cold steel + bone pale | hard white-blue, long shadows | wind-scoured ice facets, dark pine silhouettes |
 | **Ashen Wilds** | ash grey + corruption violet | sickly diffuse, low contrast | drifting ash motes, ember fissures in char |
 | **Sunspire Dominion** | bone pale + ember gold | high bleached sun, deep cool shade | sandstone monoliths, turquoise oasis accents |
+| **Pale Concord** | drained colour + preserved stone | a held dusk (`FixedSkyHour` 17.4), low warm sun, pale violet haze | canals, a preserved city, grass that never ripens |
+| **Celestial Realm** | ash + ember violet | a low red ember key light, weak sun, thick violet-ash haze | shattered terraces silhouetted over a void rift, the Ash Throne |
 
 ### 2.2 Corruption's visual arc (the 23F/30I hook)
 

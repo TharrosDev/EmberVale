@@ -47,7 +47,7 @@ Regex the validator can enforce: `^[a-z]+(\.[a-z0-9_]+)+$`.
 
 ## 2. Domain registry
 
-Every domain in use today (✅) plus the reserved domains future phases will add (⏳).
+Every domain in use today (✅).
 Pattern column shows the canonical shape; examples are real ids from `data/**`.
 
 | Domain | Pattern | Example | Source / notes |
@@ -80,7 +80,7 @@ Pattern column shows the canonical shape; examples are real ids from `data/**`.
 | `shop.*` | `shop.<region>.<trade>` | `shop.ember_crown.goods` | ✅ `ShopDatabase` — Phase 38A. Region-scoped like `property.*`, because a merchant stands somewhere. Referenced two ways since 38E: a `DialogueEffect.OpenShop` arg in a `.tres`, which **is** validated, and a `VendorComponent.ShopId` in a `.tscn`, which is not — `ContentValidator` does not scan scenes, so a typo there gives no prompt at all rather than an error. Prefer the effect for anyone the player can talk to. ⚠️ **38L scopes by *settlement district*, not by region id**: the Embermarket's twelve are `shop.embermarket.*`, not `shop.ember_crown.*`, because sixteen shops in one region all reading `ember_crown` tells a reader nothing about where the merchant is. A district is the useful unit once a region has more than one |
 | `service.*` | `service.<region>.<kind>` | `service.ember_crown.inn` | ✅ `ServiceDatabase` — Phase 38D (trainer/bank/inn/stable). Region-scoped like `shop.*`. Same `.tscn` blind spot: the `ServiceId` on a `ServiceComponent` is unvalidated, so a typo gives no prompt rather than an error |
 | `location.*` | `location.<district>.<name>` | `location.embermarket.ironmonger` | ✅ `MapLocationDatabase` — Phase 39.5A. District-scoped like `shop.*`, for the same reason. ⚠️ **It carries no coordinates**: a location's position is the transform of the `MapLocationComponent` parented to the thing it names in the cell scene, so the id is referenced from a `.tscn` as well as a `.tres`. **Unlike `shop.*` and `service.*`, that scene reference IS validated** — `ValidateMapMarkersArePlaced` scans cell scenes in both directions, so a typo fails the gate instead of silently producing a marker that never appears. Author with `tools/gen_map_locations.py` rather than by hand |
-| `relic.*` | `relic.<name>` | — | ⏳ Phase 51 (divine relics; likely an `item.*` subcat too — decide there) |
+| `relic.*` | — | — | not a domain: relics are the `item.relic.*` subcategory (one `item.relic.<x>_heart` per Flamebearer, `docs/playbook/finish.md`) |
 
 > **No `bestiary.*` family.** Bestiary entries (Phase 34G) are keyed by the `enemy.*` id they
 > document, so a creature has exactly one id across the registry, its encounters, quest kill
