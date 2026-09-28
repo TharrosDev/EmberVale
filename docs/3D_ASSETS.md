@@ -124,7 +124,9 @@ character.**
 
 ### ⚠️ INVENTORY BEFORE YOU GENERATE, AND THE INVENTORY IS THIS REPOSITORY
 
-**32 characters and creatures are already generated, adopted and in the game.** Before spending a
+**The cast is already generated, adopted and in the game**: 32 characters and creatures by
+2026-09-06, then the finish run's seven (the Storm Tyrant, Beast Lord, Crimson Prophet, Hollow
+Queen, Ashen Knight, Morthul and the Archivist); `assets.py status` has the live count. Before spending a
 credit on a living actor, read `reports/3d/archive/meshy-migration/manifest.csv` — 56 rows, each
 carrying the `meshy_task_id` and `rig_task_id` it came from — and `python tools/assets.py status`.
 The player, Kael, the goblin and the Iron King are `chr_player_base`, `npc_kael`, `enm_goblin` and
@@ -144,6 +146,11 @@ worth knowing because the `meshy` MCP server does not always connect:
 ```bash
 curl -s -H "Authorization: Bearer $MESHY_API_KEY" https://api.meshy.ai/openapi/v1/balance
 ```
+
+⚠️ **Finish-run lessons (2026-09-27).** The `meshy` MCP's `meshy_image_to_3d` fails for
+`smart-topology`; call the REST endpoint (`POST /openapi/v1/image-to-3d`) with `$MESHY_API_KEY`
+instead. A subagent asked to run Meshy may be denied the tools by permissions, so run generation from
+the main session or check the subagent's permissions first.
 
 **Props, architecture and nature — the four packs first.** `assets/library/` holds 1,136 vendored
 CC0 models behind a `.gdignore`; the medieval megakit, interiors, nature megakit and the animation
@@ -197,6 +204,10 @@ hitboxes are related but separate contracts.
 `.import` after its first 3D use, flipping `compress/mode` 0 → 2. Commit before importing and you
 commit a file the engine is about to change. The shipped convention is `compress/mode=2` with
 `detect_3d/compress_to=0`.
+
+⚠️ **`adopt` can classify a fresh Meshy rig as QUADRUPED on its first run.** Re-run `adopt` for that
+one file alone; it classifies as HUMANOID the second time. Check the family in `manifest.json` (and
+`assets.py validate`) before committing.
 
 ⚠️ **Measure in the engine, not by parsing glTF accessors.** Instantiate the imported `PackedScene`.
 A skinned mesh's raw AABB is bind-space and can be hundreds of metres.

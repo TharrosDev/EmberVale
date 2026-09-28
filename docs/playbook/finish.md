@@ -1,4 +1,4 @@
-# Finish plan (2026-09-27)
+# Finish plan (2026-09-27) — done 2026-09-28
 
 Maintainer direction: **finish the game.** This page is the contract for the finishing run and the
 registry of its ids. The build is personal and never published, so storefront/platform/live phases
@@ -7,10 +7,12 @@ per-phase playbook this page once sat beside is summarised in [`../HISTORY.md`](
 
 ## Status
 
-Built and merged: all four new realms, all seven Flamebearers, the story spine (Acts I-IV, both
-endings, credits, free roam), per-neighbour doors, and the headless `--story` gate. Remaining:
-Meshy models for the placeholder bosses, eye-level review of the new realms and arenas, boss balance,
-the world visual re-baseline, and the Windows `ExportRelease` build (definition of done 5).
+**Done.** Built and merged: all four new realms, all seven Flamebearers with their own Meshy bodies,
+the story spine (Acts I-IV, both endings, credits, free roam), per-neighbour doors, Flamebearer
+visions, the guild finales, the Ashen Knight's rival duels, the post-ending skies, the headless
+`--story` gate, and a Windows export that passes `--story` inside itself (definition of done 5).
+Definition of done 1 is built but has not been proved by a human play-through. Left over, tracked in
+[`../NOW.md`](../NOW.md): eye-level review, boss and duel balance, the world visual re-baseline.
 
 ## Definition of done
 
@@ -48,8 +50,10 @@ players may choose either. After credits the save continues in free roam.
 | Hollow Queen | `enemy.hollow_queen` | `boss.hollow_queen` | `flag.hollow_queen_defeated` | `item.relic.hollow_heart` | `dialogue.hollow_queen_absorb` | Pale Concord |
 | Ashen Knight | `enemy.ashen_knight` | `boss.ashen_knight` | `flag.ashen_knight_defeated` | `item.relic.ashen_heart` | `dialogue.ashen_knight_absorb` | Celestial |
 | Morthul | `enemy.morthul` | `boss.morthul` | `flag.morthul_defeated` | — | `dialogue.ash_throne` (the ending choice) | Celestial |
+| Ashen Knight duels (optional) | `enemy.ashen_knight` | `boss.ashen_knight_duel1` / `_duel2` | `flag.rival.duel1_won` / `duel2_won` | — | `dialogue.rival_duel1` / `_duel2` | Stormcrown / Crimson Mission |
 
-Absorb flags follow `flag.<name>_absorbed` (`flag.iron_king_absorbed` exists).
+Absorb flags follow `flag.<name>_absorbed` (`flag.iron_king_absorbed` exists). Visions set
+`flag.vision.<name>`; endings set `flag.ending_dawnfire` / `flag.ending_embers`, then `flag.game_complete`.
 
 | Realm | region id | atlas band (x; z) | entry | portal gate flag |
 | --- | --- | --- | --- | --- |
@@ -61,7 +65,8 @@ Absorb flags follow `flag.<name>_absorbed` (`flag.iron_king_absorbed` exists).
 ## Boss placement
 
 Every arena uses `BossSummonComponent` (a brazier): set `BossTemplateId`, `DefeatedFlagId`,
-`RequiredQuestId` and `RequiredFlagId` (empty = ungated), `PromptKey` and `LockedPromptKey`. A boss
+`RequiredQuestId` and `RequiredFlagId` (empty = ungated), `PromptKey` and `LockedPromptKey`; a duel
+brazier also sets `FightId` (a yielding `boss.*` fight) and `ClosedFlagId`. A boss
 reusing another body sets `EnemyArchetypeResource.ModelScale`. The full recipe is
 `docs/RECIPES.md` → *A new Flamebearer boss*. The Iron King's
 `scenes/regions/ember_crown/arena.tscn` plus `ArenaHookComponent` is the reference arena.
@@ -69,8 +74,9 @@ reusing another body sets `EnemyArchetypeResource.ModelScale`. The full recipe i
 
 ## Integration rules for parallel realm work (still apply to any further branch)
 
-- Each realm is built on its own branch in its own worktree. Main merges them one at a time and
-  **re-bakes after each merge** (`world_bake.py --bake`), so bake binaries never need hand merging.
+- Each realm is built on its own branch in its own worktree. Main merges them one at a time, then
+  runs **one master bake** (`world_bake.py --bake`) after the merges, so bake binaries never need hand
+  merging. ⚠️ Never run two bakes at once, and run heavy gates one at a time (14 GB machine).
 - `data/locale/strings.csv`: append your keys in one block under a `# <realm>` comment line if the
   file allows comments, otherwise at the end. Never reorder existing rows.
 - The Pale Concord's name must stay out of every surface the atlas gate scans until its reveal.

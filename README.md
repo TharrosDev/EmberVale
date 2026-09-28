@@ -12,7 +12,8 @@ to one of two endings.
 The gods are dead and the **Weave** that carries magic is fading. Seven **Flamebearers** once held
 the gods' fire; all seven have fallen, and their embers are what is left of divine power. The player
 walks out of Ashfall into the Ember Crown and, realm by realm, puts the fallen to rest — each time
-choosing whether to take the ember (power, and corruption) or refuse it.
+choosing whether to take the ember (power, and corruption) or refuse it, and then seeing how that
+champion fell.
 
 ### Realms
 
@@ -29,11 +30,13 @@ choosing whether to take the ember (power, and corruption) or refuse it.
 
 - **Act I — Awakening.** Ashfall, Kael, the goblin warband, the Iron King.
 - **Act II — Gathering the Flame.** The Storm Tyrant, the Beast Lord and the Crimson Prophet, in any
-  order; their fall reveals the hidden realm and its Hollow Queen.
+  order; their fall reveals the hidden realm and its Hollow Queen. The Ashen Knight waits at two of
+  those battlefields to test you, and yields before he dies.
 - **Act III — Truth of the Gods.** The Archivist's reading at the Sunspire library opens the gate.
 - **Act IV — The Celestial War.** The Ashen Knight, Morthul, and the Ash Throne: low corruption
   offers only **Dawnfire**, high corruption only **Lord of Embers**, and in between the choice is
-  yours. An epilogue reflects how many embers you took; after the credits the world stays open.
+  yours. An epilogue reflects how many embers you took; after the credits the world stays open, under
+  warm clear skies or a red ember sky depending on the ending, and people remember what you chose.
 
 ### Systems
 
@@ -41,8 +44,9 @@ Weighty melee with poise, parries, dodges and lock-on; bows; a deep magic system
 channelled casts, school identities, mastery, combos, the fading Weave); corruption tiers that change
 your body, your dialogue and the spells you can claim; companions with orders and loyalty; six
 playable races; housing; a full economy (shops, services, tolls, fences, contracts); mounts; a map
-that discovers places by sight; branching quests; divine shrines; five joinable guilds; dragons;
-day/night, weather and NPC routines; save/load everywhere.
+that discovers places by sight; branching quests; divine shrines; five joinable guilds, each with a
+rank-three finale; dragons; yielding rival duels; day/night, weather and NPC routines; save/load
+everywhere. The full list is [`docs/MECHANICS.md`](docs/MECHANICS.md).
 
 ## Build and run
 
@@ -55,7 +59,11 @@ godot --path . -- --play                       # continue the newest save straig
 godot --headless --path . -- --validate        # content gate, exit 0/1
 godot --headless --path . -- --story           # the main story wired end to end, exit 0/1
 dotnet test tests/Embervale.Tests              # pure-logic unit tests
+godot --headless --path . --export-release "Windows Desktop" build/windows/Embervale.exe
 ```
+
+The export needs Godot's 4.7.1 .NET export templates installed; `Embervale.exe --headless -- --story`
+smoke-tests the result.
 
 Controls: `WASD` move · mouse look · `Shift` sprint · `Space` jump · `Ctrl` dodge · `LMB` attack ·
 `RMB` block · `Q` cast · `F` cycle spell · middle mouse lock-on · `E` interact · `V` swap view ·
@@ -69,6 +77,7 @@ Controls: `WASD` move · mouse look · `Shift` sprint · `Space` jump · `Ctrl` 
 | --- | --- |
 | [`CLAUDE.md`](CLAUDE.md) | how to work in this repo: rules, environment, gotchas |
 | [`docs/NOW.md`](docs/NOW.md) | where the project is, live invariants, commands |
+| [`docs/MECHANICS.md`](docs/MECHANICS.md) | every mechanic and system in the game, one line each |
 | [`docs/PRODUCTION_ROADMAP.md`](docs/PRODUCTION_ROADMAP.md) | stages, phase status, what is left |
 | [`docs/HISTORY.md`](docs/HISTORY.md) | what every phase produced, and the lessons |
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) / [`docs/RECIPES.md`](docs/RECIPES.md) | how the systems work / how to add content |

@@ -351,8 +351,10 @@ no file could show.
 round trips, failing on any leaked session, service, subscription, saveable or node) and `--story`
 (`HeadlessStory`: raises each act's trigger flag the way its boss or conversation would and asserts
 the next act started, the hidden realm revealed, the chain survived save/load, every Flamebearer
-builds a boss, and an ending flag plays the ending). Both exit 0/1. `--story` proves wiring, not that
-a fight can be won.
+builds a boss, the rival duels are wired, every vision and ending card has text, each ending brings
+its sky, and an ending flag plays the ending). Both exit 0/1. `--story` proves wiring, not that a
+fight can be won. It also runs inside the Windows export as its smoke test (`docs/NOW.md` has the
+export command).
 
 **The canonical quality runner:** `python tools/world_quality_check.py --mode full` orchestrates the
 specialist gates in dependency order. `fast` is engine/rendering-free; `engine` adds `--validate`
@@ -403,7 +405,7 @@ project.godot     Engine config + autoload registration (order matters — see �
 Embervale.sln     C# solution (net8.0, Godot.NET.Sdk 4.7.0)
 CLAUDE.md         You are here
 README.md         Public overview of the game
-docs/             NOW · PRODUCTION_ROADMAP · HISTORY · ARCHITECTURE · RECIPES · IDS · SAVE_FORMAT
+docs/             NOW · MECHANICS · PRODUCTION_ROADMAP · HISTORY · ARCHITECTURE · RECIPES · IDS · SAVE_FORMAT
                   DESIGN · LORE · ART_STYLE · UI_STYLE · RENDERING · ASSET_POLICY · 3D_ASSETS
                   WORLD_AUTHORING · WORLD_ATLAS · TOOLING · playbook/finish.md  (§5 says which when)
 scenes/           Main.tscn (entry, ApplicationRoot) + regions/<region>/<cell>.tscn
@@ -448,6 +450,7 @@ file) is free.
 
 | You are about to… | Read | Size |
 | --- | --- | --- |
+| Find out whether a mechanic exists, and where | [`MECHANICS.md`](docs/MECHANICS.md) — one line per mechanic | ~6k |
 | Author content of any kind | [`RECIPES.md`](docs/RECIPES.md) — **the one recipe only** | ~10k tok total |
 | Change how a system works | [`ARCHITECTURE.md`](docs/ARCHITECTURE.md) — the relevant § only | ~13k |
 | Pick an id for anything new | [`IDS.md`](docs/IDS.md) | ~3k |

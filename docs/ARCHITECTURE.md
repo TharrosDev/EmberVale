@@ -241,14 +241,24 @@ names one via `BossId`; `EnemyArchetypeFactory` attaches `BossController` to any
 - **`BossSummonComponent`** (the brazier, an interactable) summons once and re-arms until the defeat
   flag is set. Exports: `BossTemplateId` (must build a `BossEntity`), `DefeatedFlagId`,
   `RequiredQuestId` and `RequiredFlagId` (both checked; empty = ungated; a missing quest log fails
-  closed), `PromptKey` / `LockedPromptKey` (the locked prompt says why), `SpawnOffset`. The boss HUD
-  banner names the boss actually summoned.
+  closed), `PromptKey` / `LockedPromptKey` (the locked prompt says why), `SpawnOffset`, **`FightId`**
+  (a `boss.*` fight to run instead of the archetype's own `BossId`, set on the controller before
+  `AddChild`) and **`ClosedFlagId`** (closes the challenge for good once set). The boss HUD banner
+  names the boss actually summoned.
+- **Yielding fights (Phase 47.5).** `BossResource.WithdrawHealthFraction` (valid `[0, 1)`, 0 = to the
+  death; `BossPhases.ShouldWithdraw`/`WithdrawFractionValid`): at or below it the controller clears
+  the adds, publishes **`BossWithdrewEvent`** and frees the body. The encounter director, boss frame,
+  music and arena hooks end the fight on it exactly as on a death (defeat flag, reward, conversation),
+  while kill credit, loot and the bestiary never see it. `--validate` fails a withdrawing boss with no
+  `DefeatFlagId`. Phase one's speed bonuses apply at `BeginEncounter` (a duel opens slowed). The
+  Ashen Knight's duels are `boss.ashen_knight_duel1`/`2` on his own archetype via `FightId`.
 - **The seven Flamebearers** (`enemy.*`/`boss.*` ids in `playbook/finish.md`): the Iron King (Ember
   Crown arena), Storm Tyrant (Frostfang, Stormcrown), Beast Lord (Ashen Wilds plateau), Crimson Prophet
   (Sunspire, Crimson Mission), Hollow Queen (Pale Concord, Hollow Court), Ashen Knight (Celestial,
   Knight's Gate) and Morthul (Ash Throne, brazier gated on `flag.ashen_knight_defeated` via
   `RequiredFlagId`). Each defeat but Morthul's runs a `dialogue.<boss>_absorb` offer (absorb:
-  `AddCorruption 25` + `flag.<boss>_absorbed`) and drops `item.relic.<x>_heart`.
+  `AddCorruption 25` + `flag.<boss>_absorbed`) and drops `item.relic.<x>_heart`. Closing that
+  conversation plays the boss's vision (§2.11).
 
 ### 2.8 Items, loot and progression (`src/Items`, `src/Loot`, `src/Progression`)
 
@@ -314,9 +324,17 @@ names one via `BossId`; `EnemyArchetypeFactory` attaches `BossController` to any
   cards, an epilogue card keyed to how many of `AbsorbFlags` are held, then credits; sets
   `flag.game_complete` (which also stops a reload replaying it). The player is then standing in the
   world; free roam continues. `OpeningSequence` and `ClosingSequence` are the other narration cards.
+- **`VisionSequence`** (a `NarrationSequence`, session node): on `DialogueEndedEvent` for one of six
+  absorb dialogues (`VisionSequence.Visions`) it sets `flag.vision.<name>` and plays
+  `vision.<name>.1..3` once per save. Keyed on the conversation ending, never on the kill.
+- **After the ending** the world answers through data: story-gated weather (§2.14) and NPC dialogue
+  branches on `HasFlag flag.ending_*` (the Elder, Last Hearth's headwoman, the Saffra Wells wellkeeper).
 - **`--story`** (`HeadlessStory`) raises each act's trigger flag in a real session and asserts the
   next quest started, the reveal happened only after Act II, the chain survives save/load, every
-  Flamebearer template builds a boss, and an ending flag plays the ending.
+  Flamebearer template builds a boss, both duels withdraw and record their flag and conversation (and
+  stay unset without a duel), every vision and ending card has locale text, each ending brings its sky
+  (re-derived on load even from a save holding forbidden weather), and an ending flag plays the
+  ending. It passes inside the exported build too.
 
 ### 2.12 World clock and schedules (`src/World`, `src/Npc`)
 
@@ -359,7 +377,12 @@ names one via `BossId`; `EnemyArchetypeFactory` attaches `BossController` to any
   `RENDERING.md` covers quality tiers and effects. ⚠️ Palette alone cannot make a region a different
   place.
 - `WeatherDirector` (`ISaveable` `weather`): weighted rolls, never the same twice, persisted id and
-  remaining time.
+  remaining time. **Story-gated pool (Phase 44.5):** `WeatherResource.RequiredFlagId` (rollable only
+  while set) and `ExcludedByFlagIds` (gone once any is set), pure rule `WeatherEligibility`. Derived,
+  never saved: a newly set required flag forces its state at once; an ineligible current state is
+  rolled away on a flag change, after a load and on a 2 s poll. `WeatherResource.SkyTint` multiplies
+  sky, horizon, ambient and fog colour in `SkyController`. Dawnfire adds `weather.dawnfire` and
+  excludes rain/storm/fog; Lord of Embers leaves only `weather.embers`.
 - `EncounterDirector`: spawns groups around the player filtered by day phase, weather cadence, the
   active region and `RegionIds` (empty = anywhere), capped, cell-owned, not persisted, never inside a
   safe zone. **`RegionResource.ScopedContentOnly`** admits only encounters (and world events) naming
@@ -612,8 +635,13 @@ never reaches into the registry for gameplay. `UI_STYLE.md` is the visual langua
   packages, `src/Debugging/*Shots.cs`, `ShotHarness`, `ReproHarness`, and the `CS0618` suppression.
   `TreatWarningsAsErrors` is always on. `ContentValidator`, `Invariant`, the console and overlays stay
   (runtime-gated). `tools/check_shipping_assembly.py` scans the `ExportRelease` assembly.
-- ⚠️ **There is no `export_presets.cfg` yet and the project has never been exported**; the shipping
-  build is proved only by the `ExportRelease` compile plus that scan until the finish run's export.
+- **Windows export** (2026-09-28): `export_presets.cfg` ("Windows Desktop", tracked, no credentials)
+  excludes `tools/`, `tests/`, `docs/`, `reports/`, `artifacts/` and `include_filter`s
+  `assets/models/manifest.json` and `data/world_bake/manifest.json` (non-resource files the game
+  reads). `data/locale/strings.csv.import` uses `importer="keep"` so the raw CSV ships and `Loc` reads
+  it directly (a translation import silently dropped it: raw keys on screen). `ApplicationRoot` runs
+  the boot-time `ContentValidator` only when `OS.IsDebugBuild()` — several arms read `.tscn` text,
+  which an export ships binary. `--story` runs inside the export as its smoke test.
 
 **Layer rules** (dependencies point down, never in a cycle): Application (no session/world/player
 knowledge) → Session (never outlives quit-to-title) → World (never outlives its session) →
@@ -656,7 +684,7 @@ Health = 100.0
 
 ### 4.1 Cross-reference validation
 
-`ContentValidator` resolves every cross-reference at boot, via `validate`, and headless with
+`ContentValidator` resolves every cross-reference at boot (debug builds only), via `validate`, and headless with
 `--validate` (exit 0/1), feeding the `Invariant` counter. It covers item, quest, enemy template,
 faction, region, status-effect, shop, service, recipe, property, dialogue-node and locale references
 across loot tables, recipes, quests, dialogue, spells, factions, encounters, world events, shops,

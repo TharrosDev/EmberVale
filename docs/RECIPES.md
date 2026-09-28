@@ -20,7 +20,8 @@ one body leave the second silent.
   [Ashen variant](#an-ashen-corrupted-variant) · [body zones](#a-bigboss-creature-with-body-zones) ·
   [flight](#making-a-creature-fly) · [breath](#a-breath-weapon) · [lair boss](#placing-a-world-boss-in-a-lair) ·
   [talking creature](#a-creature-that-talks) · [boss fight](#a-new-boss-fight) ·
-  [**Flamebearer boss, end to end**](#a-new-flamebearer-boss-end-to-end) · [weapon](#a-new-weapon) ·
+  [**Flamebearer boss, end to end**](#a-new-flamebearer-boss-end-to-end) ·
+  [yielding duel fight](#a-yielding-duel-fight) · [weapon](#a-new-weapon) ·
   [companion](#a-new-companion)
 - Items: [item](#a-new-item) · [equipment](#a-new-piece-of-equipment) · [affix](#a-new-loot-affix) ·
   [loot table](#a-new-loot-table--dropper) · [perk](#a-new-perk) · [XP / curve](#a-new-xp-bearing-enemy-or-tuning-the-curve) ·
@@ -30,7 +31,8 @@ one body leave the second silent.
 - World: [region](#a-new-region) · [region cell](#a-new-region-cell) · [sealed or hidden realm](#a-sealed-or-hidden-realm) ·
   [map location](#a-new-map-location) · [guild hub](#a-guild-hub-and-its-officers) ·
   [production settlement](#a-production-settlement) · [encounter](#a-new-encounter) ·
-  [world event](#a-new-world-event) · [weather](#a-new-weather-state)
+  [world event](#a-new-world-event) · [weather](#a-new-weather-state) ·
+  [weather gated on a story flag](#weather-gated-on-a-story-flag)
 - Economy: [shop](#a-new-shop--merchant) · [service](#a-new-service--trainer--bank--inn--stable) ·
   [contract board](#a-supply-contract--a-contract-board) · [toll](#a-tolled-crossing--toll-permit-bribe) ·
   [fence](#a-fence-and-contraband) · [gold sink](#a-new-gold-sink)
@@ -185,8 +187,32 @@ Ids follow `docs/playbook/finish.md`'s registry.
 7. **Story wiring (code lists).** Main-story objectives live in `tools/gen_main_story.py` (re-run it).
    If the boss joins the hidden-realm reveal, add its defeat flag to `HiddenRealmReveal.RequiredFlags`;
    if its ember counts for the epilogue, add its absorb flag to `EndingSequence.AbsorbFlags`; add its
-   template to `HeadlessStory`'s Flamebearer list.
+   template to `HeadlessStory`'s Flamebearer list. For a vision, add its absorb dialogue id to
+   `VisionSequence.Visions` and author `vision.<name>.1`..`3` in `strings.csv` (`--story` fails a
+   missing card).
 8. **Verify:** `--validate`, `--story`, then summon it in a real run and render the arena at eye level.
+
+### A yielding duel fight
+
+A boss who yields instead of dying (the Ashen Knight's rival duels; `boss.ashen_knight_duel1` is the
+model). No new enemy template: the duel reuses the boss's archetype.
+
+1. `data/bosses/XxxDuel.tres`: a normal `BossResource` (shorter phase list is fine) with
+   `WithdrawHealthFraction` in `(0, 1)` (0.65 = leaves at 65% health), its own `DefeatFlagId`
+   (e.g. `flag.rival.duelN_won`) and `DefeatDialogueId` for the parting words. ⚠️ **A withdrawing
+   fight must set `DefeatFlagId`** (`--validate` fails it; nothing else would ever cool the brazier).
+   Phase one's `AttackSpeedBonus`/`MoveSpeedBonus` apply from the start, so negative values open it
+   slowed. Leave `RewardItemId` empty unless the duel pays.
+2. The parting conversation in `data/dialogue/` plus its locale keys.
+3. In the arena cell scene, a brazier `BossSummonComponent`: `BossTemplateId` = the boss's own
+   archetype, **`FightId`** = the duel's `boss.*` id, `DefeatedFlagId` = the duel's flag,
+   `RequiredFlagId` for when it opens, and **`ClosedFlagId`** for when it can never be fought again
+   (the duels close on `flag.ashen_knight_defeated`). Map it in the same change.
+4. ⚠️ A withdrawal publishes `BossWithdrewEvent`, not `EntityDiedEvent`: no kill credit, loot, XP or
+   bestiary. Anything new that ends a fight on death must also listen for it.
+5. To make a later scene remember it, read the duel flag with `HasFlag` (the Knight's last words do).
+   Add the duel to `HeadlessStory.CheckRivalDuels` if it is story-relevant, then re-bake (the cell
+   scene changed) and `--story`.
 
 ### A new weapon
 
@@ -469,7 +495,22 @@ limit, `RegionIds` (**empty = anywhere**), day-phase flags, spawn knobs (a Hunt 
 ### A new weather state
 
 `data/weather/Xxx.tres`: `Type`, `SelectionWeight`, `MinHours`/`MaxHours`, `LightEnergyScale`,
-`SkyEnergyScale`, `FogDensity`/`FogColor`, `Precipitation`.
+`SkyEnergyScale`, `FogDensity`/`FogColor`, `Precipitation`, `WindStrength`, `SkyTint` (white = no
+change; multiplies sky, horizon, ambient and fog colour).
+
+### Weather gated on a story flag
+
+`Dawnfire.tres` / `Embers.tres` are the models.
+
+1. On the new state set `RequiredFlagId` (it can be rolled only while that flag is held). The moment
+   the flag is set, `WeatherDirector` forces the first state requiring it, so the sky arrives with the
+   story beat.
+2. On every state the beat should end, add the flag to `ExcludedByFlagIds`. ⚠️ If the flag excludes
+   every other state, the one left is permanent — that is how the Lord of Embers sky works; do it on
+   purpose.
+3. Nothing is saved: eligibility is re-derived from story flags on flag changes, after a load and on
+   a 2 s poll. The flag needs a writer (`--validate` fails a read nothing sets).
+4. Verify with `--story` if the flag is an ending, otherwise force the flag in a run and look at it.
 
 ---
 

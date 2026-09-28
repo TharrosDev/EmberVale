@@ -81,12 +81,12 @@ Status: **done**, **partial**, **not built** (never started; not needed for the 
 | 40.5 | Dungeon and puzzle framework | **cut** 2026-08-12: no puzzle, trap or vault tooling |
 | 41 | Quest authoring at scale | done (A–F): eight objective types, deadlines, branches, completion flags, quest dev commands |
 | 41.5 | Divine shrines | done (A–C): seven gods' blessings, corruption-gated refusal |
-| 42 | Guild questlines | partial: 42A–E, G, I, K done (guild model, five hubs, rank-one arcs, Dawnwardens command arc, Veiled Archive admission, Emberbound initiation); 42F, H, J, L, M open |
+| 42 | Guild questlines | done: 42A–E, G, I, K (guild model, five hubs, rank-one arcs, Dawnwardens command arc, Veiled Archive admission, Emberbound initiation), then 42F/H/J/L finales for the Ash Hunters, Veiled Archive, Iron Syndicate and Emberbound (rank three, three-way verdict) and 42M integration (realm NPCs react to rank three) |
 | 42.5 | The Crimson Cult | not built as a faction system; the Crimson Mission and the Crimson Prophet (finish run) carry the story role |
 | 43 | Cinematics | not built; `NarrationSequence` cards (opening, closing, ending) serve instead |
-| 43.5 | Flamebearer visions | not built |
+| 43.5 | Flamebearer visions | done (finish run): `VisionSequence`, three cards after each absorb conversation |
 | 44 | All five realms blocked out | done: the 2026-09 world rebuild (Ember Crown, Frostfang) and the finish run (Ashen Wilds, Sunspire, Pale Concord, Celestial) |
-| 44.5 | Realm decay and restoration | not built |
+| 44.5 | Realm decay and restoration | done, scoped: story-gated ending skies (`WeatherResource.RequiredFlagId`/`ExcludedByFlagIds`, `SkyTint`) and NPC after-lines |
 | 45 | Feature-complete audit | not run as a phase |
 
 ### Stage D — Content Complete
@@ -95,7 +95,7 @@ Status: **done**, **partial**, **not built** (never started; not needed for the 
 | --- | --- | --- |
 | 46 | Act I | done: the vertical slice is Act I |
 | 47 | Act II | done (finish run): `quest.main.gathering`, the hidden-realm reveal, `quest.main.hidden` |
-| 47.5 | Ashen Knight rival duels | not built; the Knight is one Act IV fight |
+| 47.5 | Ashen Knight rival duels | done (finish run): two optional yielding duels (`WithdrawHealthFraction`, `BossWithdrewEvent`, `FightId`); his last words remember them |
 | 48 | Act III | done (finish run): `quest.main.truth`, the Archivist's reading |
 | 49 | Act IV and endings | done (finish run): Ashen Knight, Morthul, the throne choice, both endings, credits |
 | 50 | Side content and pacing | partial: guild arcs and realm settlements; no dedicated pass |
@@ -103,9 +103,9 @@ Status: **done**, **partial**, **not built** (never started; not needed for the 
 | 51 | Itemization pass | partial: one relic per Flamebearer; no catalogue pass |
 | 51.5 | Enchanting and sockets | not built |
 | 52 | Audio production | not built |
-| 53 | Art complete | partial: Meshy boss models being adopted; no final pass |
+| 53 | Art complete | partial: all seven Meshy bosses adopted; no final pass |
 | 53.5 | Photo mode | not built |
-| 54 | Accessibility and input | partial: remapping, subtitles, difficulty exist; no audit |
+| 54 | Accessibility and input | partial: full gamepad play, subtitles, colour-vision modes, high contrast, reduced motion; no key remapping; the difficulty setting is stored but no gameplay system reads it; no audit |
 | 55 | G3 acceptance campaign | replaced by the headless `--story` gate plus the pending maintainer play-through |
 
 ### Stages E–G — Release, Launch, Live
@@ -118,7 +118,7 @@ Status: **done**, **partial**, **not built** (never started; not needed for the 
 | 59 | QA and soak | not run |
 | 60 | Localization completion | out of scope (English only) |
 | 61 | Platform compliance and storefront | out of scope |
-| 62 | Release candidate | out of scope (a Windows `ExportRelease` build closes the finish run instead) |
+| 62 | Release candidate | out of scope; a Windows export (2026-09-28) closed the finish run instead |
 | 63 | Launch | out of scope |
 | 64 | Launch response | out of scope |
 | 65 | Post-launch content | out of scope |
@@ -179,3 +179,8 @@ Each of these shipped a defect or a false pass. Rules already written in `CLAUDE
   The compass kept discovered places after the minimap took that job, and both got worse.
 - **"Arms crossed" was an import setting, not an animation bug**: A-pose bodies on T-pose clips with
   `fix_silhouette` off. A rigged body shipping zero animations gets no `AnimationPlayer` at all.
+- **Finish run (2026-09-27/28).** Never run world bakes in parallel: merge the branches, then one
+  master bake. Run heavy gates one at a time on a 14 GB machine. An export silently drops files it
+  does not recognise as resources — the locale CSV (fixed with `importer="keep"`) and the two
+  `manifest.json` files (`include_filter`) — so smoke-test the export itself (`--story` inside it).
+  A validator arm that reads `.tscn` text reports false errors in an export, where scenes are binary.

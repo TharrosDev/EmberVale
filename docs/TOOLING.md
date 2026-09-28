@@ -231,7 +231,9 @@ remains available through `world --mode performance`.
   SDK headless imports skip booting its relay and avoid regenerating editor skills.
 * CI calls these same commands and uploads `artifacts/`. The existing advisory policy for
   renderer-dependent validation is preserved. Shipping exclusion is still verified by the
-  existing `check_shipping_assembly` gate; there are no configured export presets.
+  existing `check_shipping_assembly` gate; the export itself is outside the SDK (below).
+* `embervale_sdk/contract.py` filters `[McpPlugin]` lines (the Godot-MCP addon logging its relay as
+  down on every editor launch) out of error diagnostics; they are tooling state, not project errors.
 
 Run `python tools/embervale.py test` after changes to process/protocol code. The engine battery
 and representative scenarios exercise the native half. Unit tests cover process cleanup, timeout
@@ -246,6 +248,25 @@ missing scenes, assertion exit codes, screenshot baseline/diff and automatic fai
 /root/...` focuses a live tree dump. `--max-warnings N` fails on excessive warning occurrences.
 Repeated diagnostics retain a `count` instead of duplicating hundreds of identical rows.
 `report state|economy|worldgen|lifecycle` exposes the existing C# report/probe entry points.
+
+## Story gate and Windows export
+
+Neither is an SDK command; run them through the console Godot directly, one at a time.
+
+```text
+godot --headless --path . -- --story      # exit 0/1; HeadlessStory
+dotnet build Embervale.csproj -c ExportRelease && python tools/check_shipping_assembly.py
+godot --headless --path . --export-release "Windows Desktop" build/windows/Embervale.exe
+build/windows/Embervale.exe --headless -- --story
+```
+
+`--story` raises each act's trigger flag in a real session and checks the act chain, the hidden-realm
+reveal, save/load, every Flamebearer template, both rival duels, every vision and ending card's locale
+text, both ending skies (also after a reload) and the ending sequence. It proves wiring, not that a
+fight can be won. The export uses the tracked `export_presets.cfg` preset "Windows Desktop" and the
+4.7.1 .NET templates in `%APPDATA%\Godot\export_templates\4.7.1.stable.mono`; output under `build/` is
+gitignored. Running `--story` inside the export is the smoke test: it fails on missing locale text,
+missing manifests or anything else the export dropped.
 
 ## Create, customize and build
 
