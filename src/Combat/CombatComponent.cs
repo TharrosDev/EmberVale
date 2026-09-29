@@ -368,7 +368,7 @@ public partial class CombatComponent : EntityComponent
 
         // A guard covers a front arc, and is knocked down with the body holding it. See
         // GuardArcDegrees and GuardUp.
-        GuardZone zone = GuardUp
+        GuardZone zone = GuardUp && !packet.Unblockable
             ? DefenceRules.ZoneOf(bearing ?? 0f, GuardArcDegrees)
             : GuardZone.Outside;
         if (zone != GuardZone.Outside)

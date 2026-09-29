@@ -1,3 +1,4 @@
+using Embervale.Combat;
 using Embervale.Combat.Actions;
 using Godot;
 
@@ -21,8 +22,11 @@ public static class SpellActions
     private static readonly System.Collections.Generic.Dictionary<string, ActionDefinitionResource>
         Cache = new();
 
-    /// <summary>The cast action for a spell — authored if it has one, otherwise derived once.</summary>
-    public static ActionDefinitionResource? For(SpellResource? spell)
+    /// <summary>The cast action for a spell — authored if it has one, otherwise derived once from the
+    /// spell's own <see cref="SpellResource.WindupSeconds"/> and <see cref="SpellResource.RecoverySeconds"/>
+    /// (<see cref="SpellRules.Shape"/>). <paramref name="hyperarmoured"/> is the variant that a stagger
+    /// cannot cancel (an uninterruptible spell, or a caster under Barkskin).</summary>
+    public static ActionDefinitionResource? For(SpellResource? spell, bool hyperarmoured = false)
     {
         if (spell == null)
         {
@@ -34,35 +38,39 @@ public static class SpellActions
             return authored;
         }
 
-        if (Cache.TryGetValue(spell.Id, out ActionDefinitionResource? cached))
+        bool uninterruptible = hyperarmoured || !spell.Interruptible;
+        string key = uninterruptible ? spell.Id + "#armoured" : spell.Id;
+        if (Cache.TryGetValue(key, out ActionDefinitionResource? cached))
         {
             return cached;
         }
 
         // A channelled spell's "cast" is the moment it starts sustaining, so it releases early and
         // recovers fast; an instant one has a readable throw. Neither roots the caster completely —
-        // a mage pinned in place by every bolt is a mage who cannot kite.
+        // a mage pinned in place by every bolt is a mage who cannot kite (MoveScale 0.5).
         bool sustained = spell.CastMode == CastMode.Channeled;
+        CastShape shape = SpellRules.Shape(spell.WindupSeconds, spell.RecoverySeconds, sustained);
         var definition = new ActionDefinitionResource
         {
             Id = $"spell.{spell.Id}",
             Kind = ActionKind.Cast,
             AnimationSlot = sustained ? "channel" : "cast",
-            Duration = 0f,                       // the clip decides; a cast has no gameplay deadline
-            FallbackDuration = sustained ? 0.45f : 0.7f,
-            ActiveFrom = sustained ? 0.2f : 0.45f,
-            ActiveTo = sustained ? 0.3f : 0.55f,
-            CancelFrom = sustained ? 0.35f : 0.7f,
+            Duration = shape.Duration,           // 0 = the clip decides; a derived shape warps the clip to fit
+            FallbackDuration = shape.FallbackDuration,
+            ActiveFrom = shape.ActiveFrom,
+            ActiveTo = shape.ActiveTo,
+            CancelFrom = shape.CancelFrom,
             ComboFrom = 1f,
             ComboTo = 1f,
             StaminaCost = 0f,                    // spells cost mana, and it is already spent
             MoveScale = 0.5f,
             TurnDegreesPerSecond = -1f,
-            Interruptible = true,
+            Interruptible = !uninterruptible,
+            Telegraph = spell.Blockable ? TelegraphClass.Auto : TelegraphClass.Unblockable,
             SwingCueId = "sfx.combat.swing",
         };
 
-        Cache[spell.Id] = definition;
+        Cache[key] = definition;
         return definition;
     }
 

@@ -202,6 +202,27 @@ public partial class SpellResource : Resource
     /// <summary>Extra damage fraction per stack of <see cref="ConsumesStatusId"/> consumed (0 = none).</summary>
     [Export] public float BonusPerConsumedStack { get; set; } = 0f;
 
+    [ExportGroup("Casting core additions (magic upgrade)")]
+    /// <summary>Foes a projectile passes through before it stops (Flame Lance). 0 = it stops on the first.</summary>
+    [Export] public int PierceCount { get; set; } = 0;
+
+    /// <summary>Extra foes pierced at full charge (scaled by how full the charge was, rounded). Charged casts only.</summary>
+    [Export] public int PierceChargeBonus { get; set; } = 0;
+
+    /// <summary>Hit points of a summoned totem (Lifebloom Totem). 0 uses the default; a totem can always be destroyed.</summary>
+    [Export] public float SummonHealth { get; set; } = 0f;
+
+    /// <summary>Fraction of normal movement kept while this spell is channelled. 1 opts out of the slow.</summary>
+    [Export] public float ChannelMoveScale { get; set; } = 0.6f;
+
+    /// <summary>A lingering zone or area also afflicts the caster standing in it with the spell's status
+    /// (Blizzard: you can be caught in your own). Status only, never damage.</summary>
+    [Export] public bool AffectsCaster { get; set; } = false;
+
+    /// <summary>Seconds a Ground spell with <see cref="PullStrength"/> but no zone keeps drawing foes in
+    /// after it lands. 0 uses 0.6.</summary>
+    [Export] public float PullSeconds { get; set; } = 0f;
+
     public bool HasStatusEffect => !string.IsNullOrEmpty(StatusEffectId);
 
     public bool HasSelfStatus => !string.IsNullOrEmpty(SelfStatusEffectId);
