@@ -86,6 +86,35 @@ public partial class StatusEffectResource : Resource
     /// absorbs (a ward). 0 = none.</summary>
     [Export] public float DamageTakenModifier { get; set; } = 0f;
 
+    [ExportGroup("Rules (magic upgrade, status group)")]
+    /// <summary>Fixed damage a ward absorbs before it breaks (Arcane Ward). Pairs with a negative
+    /// <see cref="DamageTakenModifier"/>, which is the fraction of each hit the ward takes. 0 = no pool.</summary>
+    [Export] public float AbsorbAmount { get; set; } = 0f;
+
+    /// <summary>Extra ward capacity per point of the caster's SpellPower.</summary>
+    [Export] public float AbsorbPerSpellPower { get; set; } = 0f;
+
+    /// <summary>Mana an entirely unspent ward returns to its caster when it expires (scaled by the
+    /// unspent share). Broken or dispelled wards return nothing.</summary>
+    [Export] public float ExpiryManaReturn { get; set; } = 0f;
+
+    /// <summary>Mana the bearer regains for each kill it makes while this is active (Soul Echo).</summary>
+    [Export] public float ManaOnKill { get; set; } = 0f;
+
+    /// <summary>Status applied to everything a detonation hits, the bearer included (Kindle ignites).</summary>
+    [Export] public string DetonateAppliesStatusId { get; set; } = string.Empty;
+
+    /// <summary>Locale key stem: <c>magic.status.kindled</c> for <c>status.kindled</c>.</summary>
+    public string LocKey => "magic.status." + (Id.StartsWith("status.", System.StringComparison.Ordinal) ? Id[7..] : Id);
+
+    /// <summary>Player-visible name through <c>Loc</c>, falling back to <see cref="DisplayName"/>.</summary>
+    public string LocalName => Embervale.Localization.Loc.Has(LocKey + ".name")
+        ? Embervale.Localization.Loc.T(LocKey + ".name") : DisplayName;
+
+    /// <summary>Player-visible one-line description through <c>Loc</c>, empty when none is authored.</summary>
+    public string LocalDescription => Embervale.Localization.Loc.Has(LocKey + ".desc")
+        ? Embervale.Localization.Loc.T(LocKey + ".desc") : string.Empty;
+
     public bool HasDamageOverTime => DamagePerTick > 0f && TickInterval > 0f;
 
     public bool HasHealOverTime => HealPerTick > 0f && TickInterval > 0f;

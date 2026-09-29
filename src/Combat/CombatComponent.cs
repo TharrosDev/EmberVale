@@ -444,6 +444,9 @@ public partial class CombatComponent : EntityComponent
         // nothing either: resistance is not immunity, so an unblocked hit does at least a point.
         float final = Mathf.Max(0f, CombatMath.FloorHit(
             CombatMath.Mitigate(amount, packet.Type, _stats), amount, blocked));
+
+        // Statuses have the last word on what reaches health: a mark amplifies, a ward absorbs.
+        final = Entity.GetComponent<Embervale.Magic.StatusEffectsComponent>()?.ModifyIncoming(final, packet.Source) ?? final;
         _stats.ApplyDamage(final, packet.Source);
 
         if (openingLanded && packet.Source != null)

@@ -61,6 +61,10 @@ public readonly record struct SchoolRankedUpEvent(IEntity Caster, Embervale.Comb
 // --- magic-core events: append inside this block only ---
 // --- end magic-core events ---
 // --- magic-status events: append inside this block only ---
+
+/// <summary>A ward absorbed its last point and broke with a flash. An expiring ward raises only
+/// <see cref="StatusEffectRemovedEvent"/>.</summary>
+public readonly record struct WardBrokenEvent(IEntity Target, string EffectId) : IGameEvent;
 // --- end magic-status events ---
 // --- magic-learning events: append inside this block only ---
 // --- end magic-learning events ---
