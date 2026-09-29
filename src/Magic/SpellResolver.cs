@@ -1,6 +1,8 @@
 using Embervale.Combat;
 using Embervale.Core.Diagnostics;
+using Embervale.Core.Events;
 using Embervale.Entities;
+using Embervale.Stats;
 using Godot;
 
 namespace Embervale.Magic;
@@ -12,6 +14,19 @@ namespace Embervale.Magic;
 /// eligible target(s), honouring the same friendly-fire rules a <see cref="Hitbox"/>
 /// uses (never the caster, never an ally on the caster's team).
 /// </summary>
+/// <summary>What became of a spell aimed at one hurtbox.</summary>
+public enum SpellHitResult
+{
+    /// <summary>Whiffed: a dodge's i-frames, or a target already dead.</summary>
+    Missed,
+
+    /// <summary>A guard stopped it (chip damage only, no rider effects).</summary>
+    Blocked,
+
+    /// <summary>It landed.</summary>
+    Landed,
+}
+
 public static class SpellResolver
 {
     /// <summary>
@@ -25,14 +40,60 @@ public static class SpellResolver
     /// </summary>
     private const int MaxHurtboxesPerBurst = 64;
 
-    /// <summary>Delivers a single-target hit (damage + school identity + status) to one hurtbox.</summary>
-    public static void HitOne(
-        Node3D context, Hurtbox hurtbox, DamagePacket packet, SpellResource spell, IEntity? caster, int casterTeam)
+    /// <summary>Delivers a single-target hit (damage + school identity + status) to one hurtbox.
+    /// <paramref name="dealDamage"/> false is a status-only touch (a barrier of a spell with no damage).
+    /// </summary>
+    public static SpellHitResult HitOne(
+        Node3D context, Hurtbox hurtbox, DamagePacket packet, SpellResource spell, IEntity? caster, int casterTeam,
+        bool dealDamage = true)
     {
-        hurtbox.Receive(packet);
+        IEntity? target = hurtbox.OwnerEntity;
+        CombatComponent? combat = hurtbox.Combat;
+
+        // A dodge's i-frames whiff the whole spell, status included, and a corpse takes nothing.
+        if (combat is { IsInvulnerable: true } ||
+            target?.GetComponent<StatsComponent>() is { IsAlive: false })
+        {
+            return SpellHitResult.Missed;
+        }
+
+        // A spell that eats a status (a consume-and-bonus spell) strips the stacks as it lands and is
+        // stronger for each one.
+        if (spell.ConsumesStatusId.Length > 0 &&
+            target?.GetComponent<StatusEffectsComponent>() is { } statuses)
+        {
+            int stacks = statuses.StacksOf(spell.ConsumesStatusId);
+            if (stacks > 0)
+            {
+                packet = packet with
+                {
+                    Amount = packet.Amount * SpellRules.ConsumeMultiplier(stacks, spell.BonusPerConsumedStack),
+                };
+                statuses.Consume(spell.ConsumesStatusId);
+            }
+        }
+
+        DamageResult result = dealDamage ? hurtbox.Receive(packet) : default;
+
+        // A guard stopped it: chip damage only, and none of the rider effects. Never parried (a spell is
+        // not parryable), so a blocked result is the whole story.
+        if (result.IsBlocked && caster != null && target != null)
+        {
+            EventBus.Instance?.Publish(new SpellBlockedEvent(caster, spell.Id, target));
+            return SpellHitResult.Blocked;
+        }
+
         SchoolIdentity.OnSpellHit(context, spell, packet, caster, casterTeam, hurtbox);
         SpellCombo.OnHit(spell, caster, hurtbox);
-        ApplyStatus(hurtbox.OwnerEntity, spell, caster);
+        ApplyStatus(target, spell, caster);
+
+        if (caster != null && target != null)
+        {
+            EventBus.Instance?.Publish(
+                new SpellHitEvent(caster, target, spell.Id, result.FinalAmount, result.IsCrit || packet.IsCrit));
+        }
+
+        return SpellHitResult.Landed;
     }
 
     /// <summary>
@@ -51,6 +112,20 @@ public static class SpellResolver
     {
         SpawnFlash(context, center, radius, SpellSchools.Color(spell.School));
         Resolve(context, spell, packet, caster, casterTeam, center, radius, coneDirection: null);
+        CatchCaster(spell, caster, center, radius);
+    }
+
+    /// <summary>A zone or burst that <see cref="SpellResource.AffectsCaster"/> afflicts a caster standing
+    /// in it with the spell's status (Blizzard: you can be caught in your own). Status only, never damage.</summary>
+    private static void CatchCaster(SpellResource spell, IEntity? caster, Vector3 center, float radius)
+    {
+        if (!spell.AffectsCaster || caster?.Body is not Node3D body ||
+            body.GlobalPosition.DistanceTo(center) > radius + 0.9f)
+        {
+            return;
+        }
+
+        ApplyStatus(caster, spell, caster);
     }
 
     /// <summary>
@@ -143,10 +218,7 @@ public static class SpellResolver
                 continue;
             }
 
-            hurtbox.Receive(packet);
-            SchoolIdentity.OnSpellHit(context, spell, packet, caster, casterTeam, hurtbox);
-            SpellCombo.OnHit(spell, caster, hurtbox);
-            ApplyStatus(hurtbox.OwnerEntity, spell, caster);
+            HitOne(context, hurtbox, packet, spell, caster, casterTeam);
         }
     }
 
@@ -213,7 +285,11 @@ public static class SpellResolver
         target.GetComponent<StatusEffectsComponent>()?.Apply(definition, caster);
     }
 
-    private static void SpawnFlash(Node3D context, Vector3 center, float radius, Color color)
+    private static void SpawnFlash(Node3D context, Vector3 center, float radius, Color color) =>
+        SpawnFlashAt(context, center, radius, color);
+
+    /// <summary>A cast or impact flare at a point, from the spell's school. Presentation only.</summary>
+    public static void SpawnFlashAt(Node3D context, Vector3 center, float radius, Color color)
     {
         SceneTree? tree = context.GetTree();
         Node? parent = tree?.CurrentScene;
@@ -250,6 +326,56 @@ public static class SpellResolver
             float travelled = length * i / Puffs;
             // The cone's radius at this distance — so the flashes trace the actual damaged volume.
             SpawnFlash(context, origin + (axis * travelled), travelled * Mathf.Tan(halfAngle), color);
+        }
+    }
+
+    /// <summary>
+    /// Draws every hostile body within <paramref name="radius"/> of <paramref name="center"/> toward it
+    /// by <paramref name="strength"/> metres a second for this <paramref name="dt"/> (Gravity Well).
+    /// Swept with <c>MoveAndCollide</c>, so nobody is pulled through a wall, and never past the centre.
+    /// </summary>
+    public static void Pull(
+        Node3D context, Vector3 center, float radius, float strength, double dt, IEntity? caster, int casterTeam)
+    {
+        if (strength <= 0f)
+        {
+            return;
+        }
+
+        PhysicsDirectSpaceState3D space = context.GetWorld3D().DirectSpaceState;
+        var query = new PhysicsShapeQueryParameters3D
+        {
+            Shape = new SphereShape3D { Radius = radius },
+            Transform = new Transform3D(Basis.Identity, center),
+            CollideWithAreas = true,
+            CollideWithBodies = false,
+            CollisionMask = CombatLayers.Hurtbox,
+        };
+
+        var pulled = new HitDedupe();
+        foreach (Godot.Collections.Dictionary hit in space.IntersectShape(query, MaxHurtboxesPerBurst))
+        {
+            if (!hit.TryGetValue("collider", out Variant v) || v.AsGodotObject() is not Hurtbox hurtbox ||
+                !IsHostileTarget(hurtbox, caster, casterTeam) ||
+                hurtbox.OwnerEntity?.Body is not CharacterBody3D body ||
+                !pulled.TryHit(hurtbox.OwnerEntity, hurtbox))
+            {
+                continue;
+            }
+
+            Vector3 toCentre = center - body.GlobalPosition;
+            toCentre.Y = 0f;
+            float distance = toCentre.Length();
+            if (distance < 0.4f)
+            {
+                continue;
+            }
+
+            float step = Mathf.Min(strength * (float)dt, distance - 0.3f);
+            if (step > 0f)
+            {
+                body.MoveAndCollide(toCentre / distance * step);
+            }
         }
     }
 }

@@ -28,6 +28,9 @@ public sealed class HitDedupe
         return _struck.Add(owner ?? hurtbox);
     }
 
+    /// <summary>Whether this owner has already been struck in this window (a piercing bolt asks).</summary>
+    public bool Has(object owner) => _struck.Contains(owner);
+
     /// <summary>Reopens the window — every actor becomes hittable again.</summary>
     public void Clear()
     {

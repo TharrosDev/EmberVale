@@ -40,6 +40,13 @@ public partial class SpellProjectile : Area3D
     private double _life;
     private bool _resolved = true; // inert until Launch arms it
 
+    /// <summary>Foes this bolt may still pass through (a piercing spell), and the ones it has already
+    /// struck, so a lance that overlaps a target for several steps hits it once.</summary>
+    private int _pierceLeft;
+    private readonly HitDedupe _struck = new();
+
+    private const string StormbrandId = "status.stormbrand";
+
     /// <summary>The reused sweep query. See <see cref="SweepHit"/>.</summary>
     private PhysicsShapeQueryParameters3D? _sweepQuery;
 
@@ -84,6 +91,8 @@ public partial class SpellProjectile : Area3D
         _casterBody = caster?.Body;
         _direction = direction.Normalized();
         _life = spell.ProjectileSpeed > 0f ? spell.Range / spell.ProjectileSpeed : 2d;
+        _pierceLeft = spell.ImpactRadius > 0f ? 0 : SpellRules.PierceCount(spell.PierceCount, spell.PierceChargeBonus, packet.Charge);
+        _struck.Clear();
 
         Color color = SpellSchools.Color(spell.School);
         _material.AlbedoColor = color;
@@ -123,12 +132,37 @@ public partial class SpellProjectile : Area3D
 
         for (int i = 0; i < steps; i++)
         {
+            Vector3 before = GlobalPosition;
             GlobalPosition += step;
-            if (SweepHit(out Hurtbox? struck))
+
+            // A barrier stands between two steps: the bolt is spent against it, and bursts there.
+            if (SpellBarrier.TryIntercept(
+                    before, GlobalPosition, _casterTeam, _packet.Amount, _caster, _spell.Id, out Vector3 stoppedAt))
             {
-                Resolve(struck);
+                GlobalPosition = stoppedAt;
+                Resolve(null);
                 return;
             }
+
+            if (!SweepHit(out Hurtbox? struck))
+            {
+                continue;
+            }
+
+            // A piercing bolt strikes and flies on, once per foe, until it has pierced its fill.
+            if (struck != null && _pierceLeft > 0 && _spell.ImpactRadius <= 0f)
+            {
+                if (_struck.TryHit(struck.OwnerEntity, struck))
+                {
+                    SpellResolver.HitOne(this, struck, _packet, _spell, _caster, _casterTeam);
+                    _pierceLeft--;
+                }
+
+                continue;
+            }
+
+            Resolve(struck);
+            return;
         }
 
         if (_life <= 0d)
@@ -174,6 +208,12 @@ public partial class SpellProjectile : Area3D
             {
                 if (SpellResolver.IsHostileTarget(hurtbox, _caster, _casterTeam))
                 {
+                    // A foe this bolt already pierced is behind it now: it neither stops nor hits it again.
+                    if (hurtbox.OwnerEntity is { } owner && _struck.Has(owner))
+                    {
+                        continue;
+                    }
+
                     target = hurtbox;
                     return true;
                 }
@@ -192,8 +232,9 @@ public partial class SpellProjectile : Area3D
         return blocked;
     }
 
-    /// <summary>The nearest valid hostile hurtbox within <paramref name="radius"/> of the bolt (Phase
-    /// 29.5G homing), or null. A sphere query on the Hurtbox layer, mirroring <see cref="SpellResolver.Detonate"/>.</summary>
+    /// <summary>The valid hostile hurtbox a homing bolt hunts within <paramref name="radius"/> of it
+    /// (Phase 29.5G): a foe carrying <c>status.stormbrand</c> first, else the nearest. A sphere query on the
+    /// Hurtbox layer, mirroring <see cref="SpellResolver.Detonate"/>.</summary>
     private Hurtbox? NearestHostile(float radius)
     {
         PhysicsDirectSpaceState3D space = GetWorld3D().DirectSpaceState;
@@ -206,24 +247,23 @@ public partial class SpellProjectile : Area3D
             CollisionMask = CombatLayers.Hurtbox,
         };
 
-        Hurtbox? best = null;
-        float bestDist = float.MaxValue;
+        var boxes = new System.Collections.Generic.List<Hurtbox>();
+        var candidates = new System.Collections.Generic.List<(float DistanceSquared, bool Branded)>();
         foreach (Godot.Collections.Dictionary hit in space.IntersectShape(query, 16))
         {
             if (hit.TryGetValue("collider", out Variant colliderVar) &&
                 colliderVar.AsGodotObject() is Hurtbox hurtbox &&
-                SpellResolver.IsHostileTarget(hurtbox, _caster, _casterTeam))
+                SpellResolver.IsHostileTarget(hurtbox, _caster, _casterTeam) &&
+                !(hurtbox.OwnerEntity is { } owner && _struck.Has(owner)))
             {
-                float dist = hurtbox.GlobalPosition.DistanceSquaredTo(GlobalPosition);
-                if (dist < bestDist)
-                {
-                    bestDist = dist;
-                    best = hurtbox;
-                }
+                boxes.Add(hurtbox);
+                bool branded = hurtbox.OwnerEntity?.GetComponent<StatusEffectsComponent>()?.Has(StormbrandId) == true;
+                candidates.Add((hurtbox.GlobalPosition.DistanceSquaredTo(GlobalPosition), branded));
             }
         }
 
-        return best;
+        int pick = SpellHoming.Pick(candidates);
+        return pick < 0 ? null : boxes[pick];
     }
 
     private void Resolve(Hurtbox? primary)

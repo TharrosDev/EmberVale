@@ -1,6 +1,7 @@
 using System;
 using Embervale.Core.Events;
 using Embervale.Entities;
+using Embervale.Magic;
 using Godot;
 
 namespace Embervale.Combat;
@@ -204,6 +205,15 @@ public partial class Arrow : Area3D
             // A wall ends the step where it stands; nothing behind it can be reached this step.
             (Vector3 Point, Vector3 Normal)? wall = _world.FirstSolid(space, from, to);
             Vector3 reach = wall?.Point ?? to;
+
+            // A spell barrier eats the shaft (Pyre Wall burns arrows, a Bulwark stops them) and takes
+            // its damage off the wall's health. Spell-only rule, owned by SpellBarrier.
+            if (SpellBarrier.TryIntercept(from, reach, _shooterTeam, _packet.Amount, _shooter, null, out Vector3 blockedAt))
+            {
+                GlobalPosition = blockedAt;
+                Resolve();
+                return;
+            }
 
             if (TryStrike(space, reach))
             {

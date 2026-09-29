@@ -55,4 +55,18 @@ public class SpellHomingTests
 
         Assert.Equal(Vector3.Forward, steered);
     }
+
+    [Fact]
+    public void Pick_PrefersABrandedFoeOverANearerUnbrandedOne()
+    {
+        var candidates = new (float, bool)[] { (4f, false), (30f, true), (9f, true), (1f, false) };
+        Assert.Equal(2, SpellHoming.Pick(candidates));
+    }
+
+    [Fact]
+    public void Pick_FallsBackToTheNearestAndHandlesNone()
+    {
+        Assert.Equal(1, SpellHoming.Pick(new (float, bool)[] { (9f, false), (2f, false) }));
+        Assert.Equal(-1, SpellHoming.Pick(System.Array.Empty<(float, bool)>()));
+    }
 }

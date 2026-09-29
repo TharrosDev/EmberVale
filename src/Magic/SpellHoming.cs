@@ -25,4 +25,25 @@ public static class SpellHoming
         Vector3 steered = dir.Lerp(desired, t);
         return steered.LengthSquared() < 1e-6f ? desired : steered.Normalized();
     }
+
+    /// <summary>
+    /// Which candidate a homing bolt hunts: the nearest one carrying the brand (Ball Lightning prefers a
+    /// Stormbranded foe), otherwise the nearest of all. Returns its index, or -1 for none.
+    /// </summary>
+    public static int Pick(System.Collections.Generic.IReadOnlyList<(float DistanceSquared, bool Branded)> candidates)
+    {
+        int best = -1;
+        for (int i = 0; i < candidates.Count; i++)
+        {
+            if (best < 0 ||
+                (candidates[i].Branded && !candidates[best].Branded) ||
+                (candidates[i].Branded == candidates[best].Branded &&
+                 candidates[i].DistanceSquared < candidates[best].DistanceSquared))
+            {
+                best = i;
+            }
+        }
+
+        return best;
+    }
 }
