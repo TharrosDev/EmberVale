@@ -340,7 +340,7 @@ public partial class DebugHud : CanvasLayer
         string state = cooldown > 0f
             ? $"CD {cooldown:0.0}s"
             : stats.GetCurrent(StatType.Mana) >= spell.ManaCost ? "READY" : "no mana";
-        sb.Append($"Spell: {spell.DisplayName} ({spell.ManaCost:0} MP) — {state}\n");
+        sb.Append($"Spell: {SpellText.Name(spell)} ({spell.ManaCost:0} MP) — {state}\n");
     }
 
     private static void AppendEffects(StringBuilder sb, StatusEffectsComponent effects)
@@ -353,7 +353,7 @@ public partial class DebugHud : CanvasLayer
         sb.Append("\nEffects:");
         foreach (StatusEffect effect in effects.ActiveEffects)
         {
-            sb.Append($" {effect.Definition.DisplayName} ({effect.Remaining:0.0}s)");
+            sb.Append($" {SpellText.Name(effect.Definition)} ({effect.Remaining:0.0}s)");
         }
 
         sb.Append('\n');

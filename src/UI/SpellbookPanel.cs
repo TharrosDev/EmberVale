@@ -790,6 +790,10 @@ public partial class SpellbookPanel : UiPanel
                 status.IsBeneficial ? UiTheme.Good : SpellSchools.Color(status.School)));
             col.AddChild(UiTheme.Caption(Loc.TF(
                 "magic.book.status_line", status.Duration.ToString("0.#"), Mathf.Max(1, status.MaxStacks))));
+            if (SpellText.Description(status) is { Length: > 0 } statusText)
+            {
+                col.AddChild(UiTheme.Prose(statusText));
+            }
         }
 
         List<string> rules = new(SpellBookRules.RuleText(spell));

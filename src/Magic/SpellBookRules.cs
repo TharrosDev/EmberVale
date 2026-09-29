@@ -175,7 +175,15 @@ public static class SpellText
 
     public static string Description(SpellResource spell) => Pick(spell.Id + ".desc", spell.Description);
 
-    public static string Name(StatusEffectResource status) => Pick(status.Id + ".name", status.DisplayName);
+    /// <summary>A status's player name: <c>magic.status.&lt;id without "status."&gt;.name</c> first, the
+    /// resource's <c>DisplayName</c> after. Same key stem as the status agent's <c>LocalName</c>.</summary>
+    public static string Name(StatusEffectResource status) => Pick(StatusKey(status) + ".name", status.DisplayName);
+
+    /// <summary>A status's one-line description, empty when none is authored.</summary>
+    public static string Description(StatusEffectResource status) => Pick(StatusKey(status) + ".desc", string.Empty);
+
+    private static string StatusKey(StatusEffectResource status) =>
+        "magic.status." + (status.Id.StartsWith("status.", System.StringComparison.Ordinal) ? status.Id[7..] : status.Id);
 
     private static string Pick(string key, string fallback) => Loc.Has(key) ? Loc.T(key) : fallback;
 }

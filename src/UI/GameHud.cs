@@ -913,6 +913,8 @@ public partial class GameHud : CanvasLayer
             // every status effect a 2 px brass rule and its own grain ShaderMaterial — a five-chip
             // row was five framed screens' worth of chrome for five words of text.
             PanelContainer chip = UiTheme.Chip(SpellText.Name(effect.Definition), tint, out Label time);
+            chip.TooltipText = SpellText.Description(effect.Definition);
+            chip.MouseFilter = Control.MouseFilterEnum.Pass;
             _statusChips.Add((effect, time));
             _statusRow.AddChild(chip);
         }
