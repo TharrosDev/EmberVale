@@ -138,6 +138,16 @@ public partial class SpellbookPanel : UiPanel
         MarkDirty();
     }
 
+    /// <summary>Opens the book on a school (a <see cref="DamageType"/> ordinal); the probe and the
+    /// screenshot harnesses use it to reach a page without pressing buttons.</summary>
+    public void ShowSchool(int school)
+    {
+        _school = (DamageType)school;
+        _selected = null;
+        _armed = null;
+        MarkDirty();
+    }
+
     public void SetProgression(ProgressionComponent? progression)
     {
         _progression = progression;
