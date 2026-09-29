@@ -36,6 +36,8 @@ public partial class PlayerInputRouter : EntityComponent
     private LockOnComponent? _lockOn;
     private MountComponent? _mount;
     private SpellcastingComponent? _spellcasting;
+    private BowDrawComponent? _bowDraw;
+    private AttackInputState _attackInput;
 
     protected override void OnInitialize()
     {
@@ -52,6 +54,7 @@ public partial class PlayerInputRouter : EntityComponent
         _lockOn = owner.GetComponent<LockOnComponent>();
         _mount = owner.GetComponent<MountComponent>();
         _spellcasting = owner.GetComponent<SpellcastingComponent>();
+        _bowDraw = owner.GetComponent<BowDrawComponent>();
     }
 
     public override void _PhysicsProcess(double delta)
@@ -151,6 +154,15 @@ public partial class PlayerInputRouter : EntityComponent
             _lockOn?.Cycle(-1);
         }
 
+        // A committed swing may only be steered so far (ActionDefinitionResource.TurnDegreesPerSecond).
+        // The lock's auto-facing is what turns the body toward a circling target, so it is what is
+        // limited: the executor caps whatever rotated the body since its last tick. Free-look is
+        // exempt because the body yaw IS the camera there and capping it would cap looking around.
+        if (_weapon != null)
+        {
+            _weapon.EnforceTurnLimit = _lockOn?.Target != null;
+        }
+
         _lockOn?.FaceTarget();
 
         // What the camera is FOR, read off gameplay rather than set by it — the rig resolves the
@@ -191,12 +203,13 @@ public partial class PlayerInputRouter : EntityComponent
             _combat.IsBlocking = Godot.Input.IsActionPressed(GameInput.Block);
         }
 
-        // A running dodge sees the press first: it buffers it until the roll's attack-cancel window,
-        // or ends the roll and lets this swing be the roll-attack.
-        if (Godot.Input.IsActionJustPressed(GameInput.Attack) && !(_dodge?.InterceptAttack() ?? false))
-        {
-            _weapon?.TryAttack();
-        }
+        TickAttack(delta, input);
+
+        // region combat-ranged
+        // The bow's draw is how long attack stays held through the shot's startup; the arrow still
+        // leaves on the action's release frame, this only sets how strong it is.
+        _bowDraw?.Tick(delta, Godot.Input.IsActionPressed(GameInput.Attack));
+        // endregion
 
         // Cast: press begins (instant fires now; charged/channeled hold), release ends.
         if (Godot.Input.IsActionJustPressed(GameInput.Cast))
@@ -228,6 +241,72 @@ public partial class PlayerInputRouter : EntityComponent
         }
     }
 
+    /// <summary>
+    /// The attack button. A running dodge sees the press first (it buffers it until the roll's
+    /// attack-cancel window, or turns it into the roll-cut). In the air a press is a plunge. On the
+    /// ground a tap swings a light attack in the direction being pushed, and a hold winds a heavy that
+    /// is released with the button (<see cref="AttackInputState"/>). A bow keeps the plain press.
+    /// </summary>
+    private void TickAttack(double delta, Vector2 input)
+    {
+        if (_weapon == null)
+        {
+            return;
+        }
+
+        bool pressed = Godot.Input.IsActionJustPressed(GameInput.Attack);
+        bool held = Godot.Input.IsActionPressed(GameInput.Attack);
+        bool released = Godot.Input.IsActionJustReleased(GameInput.Attack);
+
+        if (_weapon.Weapon is { IsRanged: true })
+        {
+            _attackInput.Reset();
+            if (pressed && !(_dodge?.InterceptAttack() ?? false))
+            {
+                _weapon.TryAttack();
+            }
+
+            return;
+        }
+
+        if (pressed)
+        {
+            if (_dodge?.InterceptAttack() ?? false)
+            {
+                _attackInput.Reset();
+                return;
+            }
+
+            // A jump-attack dives; if it cannot (too low, no stamina) it is the ordinary swing.
+            if (_locomotion is { IsGrounded: false } && _weapon.TryPlunge())
+            {
+                _attackInput.Reset();
+                return;
+            }
+        }
+
+        bool busy = _weapon.Current != null || _weapon.IsCharging;
+        AttackIntent intent = _attackInput.Step(
+            pressed, held, released, busy, (float)delta, ChargeRules.HoldThreshold);
+
+        switch (intent)
+        {
+            case AttackIntent.Light:
+                _weapon.TryAttackDirected(AttackDirections.Resolve(input));
+                break;
+            case AttackIntent.BeginCharge:
+                if (!_weapon.BeginCharge())
+                {
+                    _attackInput.Abort();
+                }
+
+                break;
+            case AttackIntent.Release:
+                _weapon.ReleaseCharge();
+                break;
+        }
+    }
+
     /// <summary>Releases continuous input state when control is suspended (menu open / not playing),
     /// so a guard held when the menu opened can't strand as "blocking" — the live input is re-read on
     /// the first frame back in control.</summary>
@@ -238,6 +317,8 @@ public partial class PlayerInputRouter : EntityComponent
             _combat.IsBlocking = false;
         }
 
+        _weapon?.CancelCharge();
+        _attackInput.Reset();
         _spellcasting?.CancelCast(); // drop any charge/channel so it doesn't fire after a menu/pause
     }
 }

@@ -90,7 +90,7 @@ public partial class DragonMeleeComponent : EntityComponent
             return;
         }
 
-        Armed = DragonMelee.Choose(_ai.BearingTo(player.GlobalPosition));
+        Armed = DragonMelee.Choose(_ai.BearingTo(player.GlobalPosition), Armed);
     }
 
     /// <summary>The action id for the blow currently armed by bearing. The AI asks for this rather

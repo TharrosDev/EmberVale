@@ -86,9 +86,13 @@ public class MotionWarpTests
     [Fact]
     public void TheYawTurnsTowardTheTarget()
     {
-        // Godot faces -Z, so a target at +X is a +90 degree yaw.
+        // Godot faces -Z and yaw +90 turns -Z toward -X, so a target at +X is a -90 degree yaw.
         float yaw = MotionWarp.YawStep(0f, Vector3.Zero, new Vector3(5f, 0f, 0f), 180f, 1f);
-        Assert.Equal(Mathf.Pi / 2f, yaw, 3);
+        Assert.Equal(-Mathf.Pi / 2f, yaw, 3);
+
+        // A target dead ahead (-Z) needs no turn at all: the old atan2(x, z) turned the actor round
+        // to face away from it.
+        Assert.Equal(0f, MotionWarp.YawStep(0f, Vector3.Zero, new Vector3(0f, 0f, -5f), 180f, 1f), 3);
     }
 
     [Fact]
@@ -97,7 +101,7 @@ public class MotionWarpTests
         // ⚠️ The cap is per ACTION, not per frame. That is the difference between correcting onto a
         // target that stepped aside and tracking a circling one through the whole animation.
         float yaw = MotionWarp.YawStep(0f, Vector3.Zero, new Vector3(5f, 0f, 0f), 10f, 1f);
-        Assert.Equal(Mathf.DegToRad(10f), yaw, 4);
+        Assert.Equal(-Mathf.DegToRad(10f), yaw, 4);
 
         Assert.Equal(0f, MotionWarp.YawStep(0f, Vector3.Zero, new Vector3(5f, 0f, 0f), 0f, 1f));
     }
@@ -107,7 +111,7 @@ public class MotionWarpTests
     {
         // Without wrapping, a target just behind the actor turns it the long way round — a full
         // spin in place, which reads as the character panicking.
-        float yaw = MotionWarp.YawStep(Mathf.Pi - 0.1f, Vector3.Zero, new Vector3(0f, 0f, -5f), 180f, 1f);
+        float yaw = MotionWarp.YawStep(Mathf.Pi - 0.1f, Vector3.Zero, new Vector3(0f, 0f, 5f), 180f, 1f);
         Assert.True(Mathf.Abs(yaw) < Mathf.Pi / 2f, $"expected a short turn, got {yaw} rad");
     }
 

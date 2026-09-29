@@ -36,8 +36,49 @@ public partial class CharacterActionComponent : EntityComponent
     /// action shape. Swapped live by <c>EquipmentComponent</c>.</summary>
     [Export] public WeaponResource? Weapon { get; set; }
 
-    /// <summary>How long a press stays buffered while the actor is committed, in seconds.</summary>
+    /// <summary>How long a press stays buffered while the actor is committed, in seconds. The buffer
+    /// stretches to reach the cancel point when that is a little further off (<see cref="BufferLead"/>).</summary>
     [Export] public float BufferWindow { get; set; } = 0.18f;
+
+    /// <summary>A press made more than this many seconds before the action can cancel is dropped
+    /// rather than buffered (<see cref="AttackBuffer.Accepts"/>): mashing through a long wind-up does
+    /// not queue a phantom swing.</summary>
+    [Export] public float BufferLead { get; set; } = AttackBuffer.DefaultLead;
+
+    /// <summary>How much of normal movement the actor keeps while holding a charge.</summary>
+    [Export(PropertyHint.Range, "0,1,0.05")] public float ChargeMoveScale { get; set; } = 0.4f;
+
+    /// <summary>Whether <see cref="ActionDefinitionResource.TurnDegreesPerSecond"/> is enforced on this
+    /// actor's facing. On for every AI actor. The player's router switches it off while free-looking
+    /// (body yaw is the camera there) and on while locked on, so a committed swing cannot be steered
+    /// round a circling target.</summary>
+    public bool EnforceTurnLimit { get; set; } = true;
+
+    /// <summary>True while a hold-to-charge heavy is being wound up.</summary>
+    public bool IsCharging { get; private set; }
+
+    /// <summary>The current charge, 0..1 (0 when not charging).</summary>
+    public float Charge => IsCharging
+        ? ChargeRules.Fraction(_chargeSeconds, Weapon?.MaxChargeSeconds ?? 1f)
+        : 0f;
+
+    /// <summary>What the last melee swing's packet was stamped as. Read by probes and presenters.</summary>
+    public HitKind LastSwingKind { get; private set; }
+
+    /// <summary>The charge (0..1) the last swing carried.</summary>
+    public float LastSwingCharge { get; private set; }
+
+    /// <summary>The damage multiplier the last swing was released with (charge, direction, plunge
+    /// height), before the weapon's own scale.</summary>
+    public float LastSwingDamageMultiplier { get; private set; } = 1f;
+
+    /// <summary>True while a plunge is diving: airborne with the blow waiting for the ground.</summary>
+    public bool IsDiving => _diving;
+
+    /// <summary>True in the committed tail of the running action (after its blow, before it can
+    /// cancel): the window a heavy swing can be punished in. B's poise pipeline may read this.</summary>
+    public bool InCommittedRecovery =>
+        Current != null && ActionTimeline.InCommittedRecovery(_progress, Current.Windows);
 
     /// <summary>The default swing volume, injected by the actor's factory.</summary>
     public Hitbox? Hitbox { get; set; }
@@ -61,7 +102,7 @@ public partial class CharacterActionComponent : EntityComponent
 
     /// <summary>How much of normal movement the actor keeps this frame — 1 at rest. Read by the
     /// player's input router and by AI locomotion, so a committed swing stops being a float.</summary>
-    public float MoveScale => Current?.MoveScale ?? 1f;
+    public float MoveScale => IsCharging ? ChargeMoveScale : Current?.MoveScale ?? 1f;
 
     /// <summary>Degrees per second the actor may still turn while acting, or a negative number for
     /// "unrestricted". 0 locks facing at the commit, which is what stops a swing tracking a
@@ -93,7 +134,53 @@ public partial class CharacterActionComponent : EntityComponent
     private double _elapsed;
     private double _duration;
     private double _buffer;
+    private AttackDirection _bufferDirection;
     private bool _clipDriven;
+
+    private float _chargeSeconds;
+    private WeaponResource? _chargeWeapon;
+    private SwingContext _swing = SwingContext.Neutral;
+    private Vector3 _advanceLeft;
+    private float _lastYaw;
+    private bool _yawTracked;
+    private int _lastAiPick = -1;
+
+    private bool _diving;
+    private float _diveSeconds;
+    private float _plungeHeight;
+
+    /// <summary>Longest a dive may wait for ground before giving up (a flier, a bottomless drop).</summary>
+    private const float MaxDiveSeconds = 4f;
+
+    /// <summary>The per-swing modifiers a directional press, a charge release or a plunge stamp on top
+    /// of the definition. Never persisted, never authored: it exists for one swing.</summary>
+    private readonly record struct SwingContext(
+        HitKind? Kind,
+        float Charge,
+        float DamageMul,
+        float PoiseMul,
+        bool Hyperarmor,
+        Vector3 Advance,
+        float DurationScale,
+        float SpeedScale,
+        float Cost,
+        bool ForceCost)
+    {
+        public static readonly SwingContext Neutral =
+            new(null, 0f, 1f, 1f, false, Vector3.Zero, 1f, 1f, -1f, false);
+
+        public static SwingContext Directed(AttackDirection direction)
+        {
+            DirectionModifier m = AttackDirections.Modifier(direction);
+            return Neutral with
+            {
+                DamageMul = m.DamageScale,
+                PoiseMul = m.PoiseScale,
+                DurationScale = m.DurationScale,
+                Advance = m.Advance,
+            };
+        }
+    }
 
     protected override void OnInitialize()
     {
@@ -117,26 +204,213 @@ public partial class CharacterActionComponent : EntityComponent
                       "damage. Assign the actor's Hitbox node to this component.");
         }
 
+        // The player's ground-pound volume, when its factory built one. Registered by name like the
+        // dragon's arcs, so the plunge definition selects it and any other actor simply lacks it.
+        if (Entity.Body.GetNodeOrNull<Hitbox>(PlungeHitboxNode) is { } plunge)
+        {
+            NamedHitboxes["PlungeArc"] = plunge;
+        }
+
         // Idle is where every actor spends nearly all of its life and there is nothing to advance
         // there. A request re-arms the callback; _PhysicsProcess parks it again once the action and
         // its buffer are done.
         SetPhysicsProcess(false);
     }
 
+    /// <summary>The node name a factory gives the player's plunge volume.</summary>
+    public const string PlungeHitboxNode = "PlungeHitbox";
+
     /// <summary>Requests the actor's next attack — a fresh swing, or the next link if pressed inside
-    /// the combo window. A press during commitment is buffered and auto-released the instant the
-    /// action becomes cancellable. Returns true if something started now.</summary>
-    public bool TryAttack()
+    /// the combo window. A press during commitment is buffered (if it is close enough to the cancel
+    /// point to be worth keeping) and auto-released the instant the action becomes cancellable.
+    /// Returns true if something started now.</summary>
+    public bool TryAttack() => TryAttackDirected(AttackDirection.Neutral);
+
+    /// <summary>As <see cref="TryAttack"/>, with the direction the attacker was moving in (chosen once
+    /// at the commit; see <see cref="AttackDirections"/>). The direction of a buffered press is kept
+    /// with it.</summary>
+    public bool TryAttackDirected(AttackDirection direction)
     {
         SetPhysicsProcess(true);
 
-        if (IsCommitted)
+        // A charge is its own commitment: a second press does not stack a swing on top of it.
+        if (IsCharging || _diving)
         {
-            _buffer = BufferWindow;
             return false;
         }
 
-        return StartNext();
+        if (IsCommitted)
+        {
+            BufferPress(direction);
+            return false;
+        }
+
+        return StartNext(SwingContext.Directed(direction));
+    }
+
+    private void BufferPress(AttackDirection direction)
+    {
+        if (Current == null)
+        {
+            return;
+        }
+
+        float until = ActionTimeline.SecondsUntilCancel(_progress, Current.Windows, _duration);
+        if (!AttackBuffer.Accepts(until, BufferLead))
+        {
+            return;
+        }
+
+        _buffer = AttackBuffer.Lifetime(BufferWindow, until);
+        _bufferDirection = direction;
+    }
+
+    /// <summary>
+    /// Starts winding up a heavy attack (the attack button held past the tap threshold). Returns false
+    /// when the weapon has no melee heavy, the actor is acting or staggered, or cannot afford the
+    /// swing. While charging the actor moves at <see cref="ChargeMoveScale"/>, drains stamina, and
+    /// drops the charge (free, but the stamina is gone) on a stagger, a block, a dodge or a weapon swap.
+    /// </summary>
+    public bool BeginCharge()
+    {
+        if (IsCharging)
+        {
+            return true;
+        }
+
+        if (Weapon?.HeavyAttack() is not { } heavy || Current != null || _diving ||
+            _combat is { IsStaggered: true } || _stats is { IsAlive: false })
+        {
+            return false;
+        }
+
+        if (_stats != null && _stats.GetCurrent(StatType.Stamina) < heavy.StaminaCost)
+        {
+            return false;
+        }
+
+        IsCharging = true;
+        _chargeSeconds = 0f;
+        _chargeWeapon = Weapon;
+        SetPhysicsProcess(true);
+        return true;
+    }
+
+    /// <summary>Swings the charged heavy. What it is depends on how long it was held: a plain
+    /// <see cref="HitKind.Heavy"/> early, a <see cref="HitKind.Charged"/> blow from
+    /// <see cref="ChargeRules.ChargedFrom"/>, hyperarmoured near full. Publishes
+    /// <see cref="ChargeReleasedEvent"/>. Returns true if the swing started.</summary>
+    public bool ReleaseCharge()
+    {
+        if (!IsCharging)
+        {
+            return false;
+        }
+
+        float charge = Charge;
+        IsCharging = false;
+        _chargeSeconds = 0f;
+
+        if (Weapon?.HeavyAttack() is not { } heavy)
+        {
+            return false;
+        }
+
+        EventBus.Instance?.Publish(new ChargeReleasedEvent(Entity!, charge));
+
+        float bonus = Weapon.ChargeDamageBonus;
+        var swing = SwingContext.Neutral with
+        {
+            Kind = ChargeRules.KindOf(charge),
+            Charge = charge,
+            DamageMul = ChargeRules.DamageMultiplier(charge, bonus),
+            PoiseMul = ChargeRules.PoiseMultiplier(charge, bonus),
+            Hyperarmor = ChargeRules.GrantsHyperarmor(charge),
+            SpeedScale = ChargeRules.ReleaseSpeed(charge),
+            Cost = ChargeRules.ReleaseCost(heavy.StaminaCost, charge),
+
+            // The stamina drained while holding was the price of the wind-up: a charge that ran the
+            // bar down still swings, for whatever is left.
+            ForceCost = true,
+        };
+
+        return Begin(heavy, 0, swing);
+    }
+
+    /// <summary>Drops a charge in progress without swinging.</summary>
+    public void CancelCharge()
+    {
+        IsCharging = false;
+        _chargeSeconds = 0f;
+    }
+
+    /// <summary>
+    /// Strikes downward out of a jump or fall. The actor dives at <see cref="PlungeRules.DiveSpeed"/>,
+    /// committed and unsteerable, and the blow lands when it reaches the ground, carrying the drop
+    /// (<see cref="PlungeRules.HeightScale"/>). Refused on the ground, when mounted, from a drop under
+    /// <see cref="PlungeRules.MinHeight"/>, or without the stamina. Returns true if the dive began.
+    /// </summary>
+    public bool TryPlunge()
+    {
+        if (Weapon?.PlungeAttack() is not { } plunge || Entity?.Body is not CharacterBody3D body ||
+            IsCharging || _diving || IsCommitted || _combat is { IsStaggered: true })
+        {
+            return false;
+        }
+
+        bool grounded = body.IsOnFloor();
+        float height = grounded ? 0f : HeightAboveGround(body);
+        if (!PlungeRules.CanStart(height, grounded, _mount is { IsMounted: true }) ||
+            (_stats != null && _stats.GetCurrent(StatType.Stamina) < plunge.StaminaCost))
+        {
+            return false;
+        }
+
+        CloseHitbox();
+        _stats?.ModifyCurrent(StatType.Stamina, -plunge.StaminaCost);
+
+        SetPhysicsProcess(true);
+        Current = plunge;
+        ComboIndex = 0;
+        _progress = 0f;
+        _elapsed = 0d;
+        _released = false;
+        _clipDriven = false;
+        _duration = plunge.FallbackDuration;
+        _buffer = 0d;
+        _diving = true;
+        _diveSeconds = 0f;
+        _plungeHeight = height;
+        _advanceLeft = Vector3.Zero;
+        _swing = SwingContext.Neutral with
+        {
+            Kind = HitKind.Plunge,
+            DamageMul = PlungeRules.HeightScale(height),
+        };
+        Phase = ActionPhase.Startup;
+        SetWindup(true);
+        EventBus.Instance?.Publish(
+            new AttackPerformedEvent(Entity, 0, height / PlungeRules.DiveSpeed));
+        return true;
+    }
+
+    /// <summary>The attack an attack press made straight out of a dodge becomes: a quick lunging cut
+    /// (<see cref="WeaponResource.RollAttack"/>). Falls back to an ordinary swing for a weapon without
+    /// one.</summary>
+    public bool TryRollAttack()
+    {
+        if (Weapon?.RollAttack() is not { } cut)
+        {
+            return TryAttack();
+        }
+
+        SetPhysicsProcess(true);
+        if (IsCharging || _diving || IsCommitted)
+        {
+            return false;
+        }
+
+        return Begin(cut, 0, SwingContext.Neutral);
     }
 
     /// <summary>
@@ -162,14 +436,22 @@ public partial class CharacterActionComponent : EntityComponent
             candidates[i] = ActionSelection.Candidate.Of(chain[i]);
         }
 
-        int pick = ActionSelection.Choose(candidates, distance, GD.Randf());
+        // The last pick carries less weight, so an enemy varies its blows instead of repeating the
+        // one the player has just learned to answer.
+        int pick = ActionSelection.Choose(candidates, distance, GD.Randf(), _lastAiPick, 0.45f);
         if (pick < 0)
         {
             return false;
         }
 
         SetPhysicsProcess(true);
-        return Begin(chain[pick], pick);
+        bool started = Begin(chain[pick], pick, SwingContext.Neutral);
+        if (started)
+        {
+            _lastAiPick = pick;
+        }
+
+        return started;
     }
 
     /// <summary>Starts the named action from this weapon's chain, if it has one. How a directional
@@ -197,7 +479,7 @@ public partial class CharacterActionComponent : EntityComponent
         }
 
         SetPhysicsProcess(true);
-        return Begin(definition, comboIndex: 0);
+        return Begin(definition, 0, SwingContext.Neutral);
     }
 
     /// <summary>Drops the running action and tells anything presenting it to stop.</summary>
@@ -214,12 +496,16 @@ public partial class CharacterActionComponent : EntityComponent
         ComboIndex = 0;
         _progress = 0f;
         _buffer = 0d;   // a queued press must not fire the instant a stagger lifts
+        _diving = false;
+        _advanceLeft = Vector3.Zero;
+        _yawTracked = false;
+        _swing = SwingContext.Neutral;
         SetWindup(false);
         _animation?.StopAction();
         EventBus.Instance?.Publish(new AttackInterruptedEvent(Entity!));
     }
 
-    private bool StartNext()
+    private bool StartNext(SwingContext swing)
     {
         ActionDefinitionResource[] chain = Chain();
         if (chain.Length == 0)
@@ -232,44 +518,56 @@ public partial class CharacterActionComponent : EntityComponent
             ? (ComboIndex + 1) % chain.Length
             : 0;
 
-        return Begin(chain[next], next);
+        return Begin(chain[next], next, swing);
     }
 
-    private bool Begin(ActionDefinitionResource definition, int comboIndex)
+    private bool Begin(ActionDefinitionResource definition, int comboIndex, SwingContext swing)
     {
         if (_combat is { IsStaggered: true })
         {
             return false;
         }
 
-        if (_stats != null && _stats.GetCurrent(StatType.Stamina) < definition.StaminaCost)
+        float cost = swing.Cost >= 0f ? swing.Cost : definition.StaminaCost;
+        if (_stats != null && !swing.ForceCost && _stats.GetCurrent(StatType.Stamina) < cost)
         {
             return false;
         }
 
         CloseHitbox();
-        _stats?.ModifyCurrent(StatType.Stamina, -definition.StaminaCost);
+        _stats?.ModifyCurrent(StatType.Stamina, -cost);
 
         Current = definition;
         ComboIndex = comboIndex;
         _progress = 0f;
         _elapsed = 0d;
+        _swing = swing;
+        _diving = false;
 
         // Ask the animation for the clock. A positive authored Duration warps the clip to fit it; 0
         // lets the clip's own length decide; -1 back means this body has no clip for the slot and
-        // the fallback timer runs the identical fractions.
-        float speed = ActionSpeed();
-        float desired = definition.Duration > 0f ? definition.Duration / speed : 0f;
-        float actual = _animation?.StartAction(definition.AnimationSlot, desired) ?? -1f;
+        // the fallback timer runs the identical fractions. A direction slows or quickens the whole
+        // swing, a charge release quickens it: both scale the clock, so the windows stay honest.
+        float speed = ActionSpeed() * swing.SpeedScale;
+        float desired = definition.Duration > 0f
+            ? definition.Duration / speed * swing.DurationScale
+            : 0f;
+        float actual = _animation?.StartAction(SlotFor(definition, swing), desired) ?? -1f;
 
         _clipDriven = actual > 0f;
-        _duration = _clipDriven ? actual : definition.FallbackDuration / speed;
+        _duration = _clipDriven ? actual : definition.FallbackDuration / speed * swing.DurationScale;
 
         Phase = ActionPhase.Startup;
         SetWindup(true);
         _warpDegreesLeft = definition.MaxWarpDegrees;
         _released = false;
         _warpDistanceLeft = definition.MaxWarpDistance;
+        BeginAdvance(definition, swing);
+        if (Entity?.Body is Node3D body)
+        {
+            _lastYaw = body.Rotation.Y;
+            _yawTracked = true;
+        }
 
         // The telegraph is told the *effective* startup, not an authored constant: a phase buff or a
         // slow debuff moves the danger window, and a cue that ignores that is worse than none.
@@ -284,7 +582,7 @@ public partial class CharacterActionComponent : EntityComponent
 
         // Back to rest: nothing to advance until the next request. Decided in one place rather than
         // at each of Tick's exits.
-        if (Current == null && _buffer <= 0d && AiRecoveryRemaining <= 0f)
+        if (Current == null && _buffer <= 0d && AiRecoveryRemaining <= 0f && !IsCharging)
         {
             SetPhysicsProcess(false);
         }
@@ -297,12 +595,25 @@ public partial class CharacterActionComponent : EntityComponent
             AiRecoveryRemaining -= (float)delta;
         }
 
+        if (IsCharging)
+        {
+            TickCharge(delta);
+        }
+
         if (_buffer > 0d)
         {
             _buffer -= delta;
+
+            // Intent does not survive a stagger: a press queued before the hit must not fire the
+            // moment the stagger lifts, long after the player stopped meaning it.
+            if (_combat is { IsStaggered: true })
+            {
+                _buffer = 0d;
+            }
         }
 
-        if (AttackBuffer.ShouldRelease(_buffer, IsCommitted) && StartNext())
+        if (AttackBuffer.ShouldRelease(_buffer, IsCommitted) &&
+            StartNext(SwingContext.Directed(_bufferDirection)))
         {
             _buffer = 0d;
             return;
@@ -315,15 +626,27 @@ public partial class CharacterActionComponent : EntityComponent
 
         ActionWindows windows = Current.Windows;
 
+        if (_diving)
+        {
+            TickDive(delta);
+            if (_diving)
+            {
+                return;
+            }
+        }
+
         // Only the startup is interruptible, and only for an action that says so. Once the blow is
         // live it is committed — which is what keeps the punish window something to aim for rather
-        // than a race. Hyperarmor is simply Interruptible = false.
+        // than a race. Hyperarmor is simply Interruptible = false; a fully charged swing earns it.
         if (_combat is { IsStaggered: true } &&
-            ActionTimeline.StaggerCancels(_progress, windows, Current.Interruptible))
+            ActionTimeline.StaggerCancels(
+                _progress, windows, Current.Interruptible && !_swing.Hyperarmor))
         {
             Cancel();
             return;
         }
+
+        LimitTurn(Current, delta);
 
         _elapsed += delta;
 
@@ -334,9 +657,17 @@ public partial class CharacterActionComponent : EntityComponent
         _progress = animated >= 0f ? animated : ActionTimeline.ProgressOf(_elapsed, _duration);
 
         Phase = ActionTimeline.PhaseAt(_progress, windows);
-        SetWindup(Phase == ActionPhase.Startup);
 
-        ApplyWarp(Current, delta);
+        // Startup is a punish window for poise, and so is the committed tail of an action that says
+        // so (a heavy's recovery): the big swing is paid for after it lands.
+        SetWindup(Phase == ActionPhase.Startup ||
+                  (Current.RecoveryVulnerable && ActionTimeline.InCommittedRecovery(_progress, windows)));
+
+        ApplyMotion(Current, delta);
+        if (Entity?.Body is Node3D moved)
+        {
+            _lastYaw = moved.Rotation.Y;
+        }
 
         bool shouldBeOpen = ActionTimeline.IsActive(_progress, windows);
         if (shouldBeOpen && !_released)
@@ -365,8 +696,125 @@ public partial class CharacterActionComponent : EntityComponent
         Phase = ActionPhase.Idle;
         ComboIndex = 0;
         _progress = 0f;
+        _yawTracked = false;
+        _advanceLeft = Vector3.Zero;
+        _swing = SwingContext.Neutral;
         SetWindup(false);
         _animation?.StopAction();
+    }
+
+    /// <summary>Winds a charge: drains stamina, and drops it on anything that breaks a brace.</summary>
+    private void TickCharge(double delta)
+    {
+        if (Weapon != _chargeWeapon || _combat is { IsStaggered: true, } || _stats is { IsAlive: false } ||
+            _combat is { IsBlocking: true } || Current != null)
+        {
+            CancelCharge();
+            return;
+        }
+
+        _chargeSeconds += (float)delta;
+        if (_stats != null && Weapon != null)
+        {
+            _stats.ModifyCurrent(StatType.Stamina, -Weapon.ChargeStaminaPerSecond * (float)delta);
+
+            // Wound to the last drop: it swings now, at the charge it reached, rather than the
+            // player holding a bar that cannot pay for anything.
+            if (_stats.GetCurrent(StatType.Stamina) <= 0f)
+            {
+                ReleaseCharge();
+            }
+        }
+    }
+
+    /// <summary>The dive of a plunge: falling fast and unsteered until the ground, then the blow's
+    /// own clock starts. Cancelled by a stagger, or if the ground never comes.</summary>
+    private void TickDive(double delta)
+    {
+        if (Current == null || Entity?.Body is not CharacterBody3D body ||
+            _combat is { IsStaggered: true } || _diveSeconds > MaxDiveSeconds)
+        {
+            Cancel();
+            return;
+        }
+
+        _diveSeconds += (float)delta;
+        if (!body.IsOnFloor())
+        {
+            Vector3 v = body.Velocity;
+            body.Velocity = new Vector3(v.X * 0.5f, Mathf.Min(v.Y, -PlungeRules.DiveSpeed), v.Z * 0.5f);
+            return;
+        }
+
+        // Landed: the blow's clock starts here, so the shockwave is timed off the impact.
+        ActionDefinitionResource plunge = Current;
+        _diving = false;
+        float speed = ActionSpeed();
+        float actual = _animation?.StartAction(plunge.AnimationSlot, plunge.Duration / speed) ?? -1f;
+        _clipDriven = actual > 0f;
+        _duration = _clipDriven ? actual : plunge.FallbackDuration / speed;
+        _elapsed = 0d;
+        _progress = 0f;
+        _yawTracked = true;
+        _lastYaw = body.Rotation.Y;
+    }
+
+    /// <summary>The plunge's drop, and the slot a swing plays: a charged heavy uses the overhead clip.</summary>
+    private static string SlotFor(ActionDefinitionResource definition, SwingContext swing) =>
+        swing.Charge >= ChargeRules.OverheadFrom && definition.AnimationSlot == "heavy"
+            ? "heavy_overhead"
+            : definition.AnimationSlot;
+
+    private float HeightAboveGround(CharacterBody3D body)
+    {
+        const float probe = 30f;
+        Vector3 from = body.GlobalPosition + (Vector3.Up * 0.1f);
+        var query = PhysicsRayQueryParameters3D.Create(
+            from, from + (Vector3.Down * probe), CombatLayers.WorldStatic);
+        query.Exclude = new Godot.Collections.Array<Rid> { body.GetRid() };
+
+        Godot.Collections.Dictionary hit = body.GetWorld3D().DirectSpaceState.IntersectRay(query);
+        return hit.Count == 0 ? probe : from.Y - hit["position"].AsVector3().Y;
+    }
+
+    /// <summary>Spends the swing's untargeted step (a directional lunge or back-cut, a roll cut's
+    /// push) across the startup. With a warp target the forward part is dropped: the warp already
+    /// closes that gap and both would overshoot.</summary>
+    private void BeginAdvance(ActionDefinitionResource definition, SwingContext swing)
+    {
+        _advanceLeft = Vector3.Zero;
+        if (Entity?.Body is not Node3D body)
+        {
+            return;
+        }
+
+        Vector3 local = swing.Advance + (Vector3.Forward * definition.AdvanceMetres);
+        bool warping = definition.RootMotion == RootMotionMode.WarpToTarget &&
+                       WarpTarget is { } t && GodotObject.IsInstanceValid(t);
+        if (warping && local.Z < 0f)
+        {
+            local.Z = 0f;
+        }
+
+        _advanceLeft = body.GlobalBasis * local;
+    }
+
+    /// <summary>A committed swing may only be steered as far as its action allows (see
+    /// <see cref="EnforceTurnLimit"/>): whatever turned the body since the last tick is capped.</summary>
+    private void LimitTurn(ActionDefinitionResource definition, double delta)
+    {
+        if (!EnforceTurnLimit || !_yawTracked || definition.TurnDegreesPerSecond < 0f ||
+            Entity?.Body is not Node3D body)
+        {
+            return;
+        }
+
+        float yaw = body.Rotation.Y;
+        float allowed = MotionWarp.LimitedYaw(_lastYaw, yaw, definition.TurnDegreesPerSecond, delta);
+        if (!Mathf.IsEqualApprox(allowed, yaw))
+        {
+            body.Rotation = new Vector3(body.Rotation.X, allowed, body.Rotation.Z);
+        }
     }
 
     /// <summary>
@@ -377,11 +825,9 @@ public partial class CharacterActionComponent : EntityComponent
     /// construction rather than by a check somebody has to remember. Assigning the position directly
     /// would put a lunging enemy inside the geometry the player was hiding behind.
     /// </summary>
-    private void ApplyWarp(ActionDefinitionResource definition, double delta)
+    private void ApplyMotion(ActionDefinitionResource definition, double delta)
     {
-        if (definition.RootMotion != RootMotionMode.WarpToTarget ||
-            WarpTarget is not { } target || !GodotObject.IsInstanceValid(target) ||
-            Entity?.Body is not CharacterBody3D body)
+        if (Entity?.Body is not CharacterBody3D body)
         {
             return;
         }
@@ -392,8 +838,30 @@ public partial class CharacterActionComponent : EntityComponent
             return;
         }
 
+        // The untargeted step (direction, roll cut) is swept the same way as the warp.
+        Vector3 advance = MotionWarp.AdvanceStep(_advanceLeft, fraction);
+        if (advance.LengthSquared() > 0f)
+        {
+            _advanceLeft -= advance;
+            body.MoveAndCollide(advance);
+        }
+
+        if (definition.RootMotion != RootMotionMode.WarpToTarget ||
+            WarpTarget is not { } target || !GodotObject.IsInstanceValid(target))
+        {
+            return;
+        }
+
         Vector3 here = body.GlobalPosition;
         Vector3 there = target.GlobalPosition;
+
+        // ⚠️ A SWING DOES NOT CHASE SOMEONE BEHIND IT. The warp may turn the actor only so far
+        // (MaxWarpDegrees), so a target outside twice that is not one it can be aimed at; lunging
+        // anyway would read as homing. It simply swings where it is facing.
+        if (!MotionWarp.Reachable(body.Rotation.Y, here, there, definition.MaxWarpDegrees))
+        {
+            return;
+        }
 
         // ⚠️ THE BUDGET IS PER ACTION, NOT PER FRAME, and it is spent as it is used. Passing the
         // authored maximum every frame caps each STEP rather than the journey: a long wind-up then
@@ -435,70 +903,17 @@ public partial class CharacterActionComponent : EntityComponent
     /// That happened; this exists so it cannot happen again.</summary>
     public void AimAt(Vector3 point) => AimPoint = point;
 
-    /// <summary>Pooled arrows, built on first use so a melee actor never pays for one.</summary>
-    private Core.Pooling.NodePool<Arrow>? _arrows;
+    /// <summary>Owns the pooled arrows and the bow's release rules (see <see cref="RangedAttack"/>).</summary>
+    private readonly RangedAttack _ranged = new();
 
-    protected override void OnTeardown()
-    {
-        // Parked arrows are detached nodes and are not freed with their owner's scene.
-        // Release their render/physics resources when a streamed actor leaves the world.
-        _arrows?.Clear();
-        _arrows = null;
-    }
+    protected override void OnTeardown() => _ranged.Clear();
 
-    private void ReleaseArrow(Arrow arrow)
-    {
-        if (_arrows != null)
-            _arrows.Return(arrow);
-        else
-            arrow.QueueFree(); // A shot may finish after its owner has left the scene.
-    }
-
-    /// <summary>
-    /// Sends an arrow instead of opening a volume.
-    ///
-    /// ⚠️ It spawns on the action's release frame like everything else — the string is drawn, and the
-    /// arrow leaves when the animation shows it leaving. A bow that fired on key-down would put the
-    /// arrow across the room before the draw finished, which is the melee desync all over again in a
-    /// system that never had it.
-    /// </summary>
     private void Shoot(ActionDefinitionResource definition)
     {
-        if (Weapon is not { IsRanged: true } bow || Entity?.Body is not Node3D body)
+        if (Weapon is { IsRanged: true } bow && Entity?.Body is Node3D body)
         {
-            return;
+            _ranged.Fire(bow, definition, Entity, body, _stats, _combat, _mount, AimPoint);
         }
-
-        _arrows ??= new Core.Pooling.NodePool<Arrow>(() => new Arrow { Released = ReleaseArrow }, prewarm: 2);
-
-        float mounted = MountedCombat.DamageScale(
-            _mount is { IsMounted: true }, _mount is { IsGalloping: true });
-        (float amount, bool isCrit) = CombatMath.RollAttack(
-            bow.BaseDamage * definition.DamageScale * mounted, _stats);
-
-        Vector3 from = body.GlobalPosition + (Vector3.Up * 1.4f);
-        Vector3 direction = AimPoint is { } aim && aim.DistanceSquaredTo(from) > 0.04f
-            ? (aim - from).Normalized()
-            : -body.GlobalBasis.Z;
-
-        Arrow arrow = _arrows.Get();
-        if (arrow.GetParent() == null)
-        {
-            // ⚠️ CurrentScene is null outside a normal game boot — every `--script` harness runs with
-            // no current scene — and `CurrentScene?.AddChild` then silently does nothing. The arrow
-            // is a live object that is not in the tree: no physics, no overlaps, no hit, no error.
-            // Falling back to the tree root keeps it in the WORLD (never parented to the shooter,
-            // which would carry it along) and keeps the probes honest.
-            SceneTree tree = body.GetTree();
-            (tree.CurrentScene ?? tree.Root).AddChild(arrow);
-        }
-
-        arrow.GlobalPosition = from;
-        arrow.Launch(
-            new DamagePacket(amount, bow.DamageType, Entity, isCrit,
-                bow.PoiseDamage * definition.PoiseScale),
-            Entity, _combat?.Team ?? 0, direction,
-            bow.ProjectileSpeed, bow.ProjectileRange, bow.ProjectileModelPath);
     }
 
     private void OpenHitbox(ActionDefinitionResource definition)
@@ -525,11 +940,20 @@ public partial class CharacterActionComponent : EntityComponent
         // other weapon factor does rather than becoming a fourth thing stacked on the outcome.
         float mounted = MountedCombat.DamageScale(
             _mount is { IsMounted: true }, _mount is { IsGalloping: true });
-        float baseDamage = Weapon.BaseDamage * definition.DamageScale * mounted;
+        float baseDamage = Weapon.BaseDamage * definition.DamageScale * _swing.DamageMul * mounted;
+
+        // The attacker stamps what kind of blow this is; the defender side and presentation read it.
+        // An authored heavy (a boss's slam) is a Heavy hit without anyone opting in.
+        HitKind kind = _swing.Kind ??
+                       (definition.Kind == ActionKind.HeavyAttack ? HitKind.Heavy : HitKind.Normal);
+        LastSwingKind = kind;
+        LastSwingCharge = _swing.Charge;
+        LastSwingDamageMultiplier = _swing.DamageMul;
 
         (float amount, bool isCrit) = CombatMath.RollAttack(baseDamage, _stats);
         box.Activate(new DamagePacket(
-            amount, Weapon.DamageType, Entity, isCrit, Weapon.PoiseDamage * definition.PoiseScale));
+            amount, Weapon.DamageType, Entity, isCrit,
+            Weapon.PoiseDamage * definition.PoiseScale * _swing.PoiseMul, kind, _swing.Charge));
         _openHitbox = box;
     }
 

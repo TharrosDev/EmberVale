@@ -49,3 +49,32 @@ public readonly record struct ActionReleasedEvent(
 /// makes the interrupt legible as a win rather than as the attack simply not happening.
 /// </summary>
 public readonly record struct AttackInterruptedEvent(IEntity Attacker) : IGameEvent;
+
+/// <summary>Raised when a guard gives out: the defender ran out of stamina holding it, or a blow was
+/// heavy enough to break it. Published by the defence side; presentation and AI listen.</summary>
+public readonly record struct GuardBrokenEvent(IEntity Defender, IEntity? Attacker) : IGameEvent;
+
+/// <summary>Raised when a blow lands as a critical opening — a riposte on a parried or staggered target,
+/// or a backstab. <paramref name="Kind"/> says which.</summary>
+public readonly record struct CriticalHitEvent(IEntity Attacker, IEntity Target, HitKind Kind) : IGameEvent;
+
+/// <summary>Raised when a charged or held attack is released. <paramref name="Charge"/> is 0..1.</summary>
+public readonly record struct ChargeReleasedEvent(IEntity Attacker, float Charge) : IGameEvent;
+
+/// <summary>Raised when the player's lock-on target changes; <paramref name="Target"/> is null when the
+/// lock is dropped.</summary>
+public readonly record struct LockChangedEvent(IEntity Player, IEntity? Target) : IGameEvent;
+
+// --- combat-defence events (append-only block, owned by the damage pipeline) ---
+
+/// <summary>Raised beside <see cref="EntityParriedEvent"/> with how well the parry was timed, so
+/// presentation can play a perfect parry bigger than a late deflect.</summary>
+public readonly record struct ParryGradedEvent(IEntity Defender, IEntity? Attacker, ParryGrade Grade) : IGameEvent;
+
+/// <summary>Raised when a body becomes a critical opening: its poise broke into an interrupting
+/// stagger, it was parried, or its guard broke. <paramref name="Seconds"/> is how long a riposte
+/// still counts, and <paramref name="Cause"/> says why. AI can react to it; a blow inside the window
+/// raises <see cref="CriticalHitEvent"/> and closes it.</summary>
+public readonly record struct PunishWindowOpenedEvent(IEntity Target, OpenCause Cause, float Seconds) : IGameEvent;
+
+// --- end combat-defence events ---

@@ -95,24 +95,46 @@ from `_Ready` (bottom-up), so the host exists but a sibling may not have initial
 ### 2.2 Combat (`src/Combat`)
 
 - `DamageType`: `Physical` (Armor), `Fire/Frost/Lightning/Arcane/Nature/Necrotic` (own resistance),
-  `True` (unmitigated). `DamagePacket` (attacker-built, carries `Source`) and `DamageResult`.
-- `CombatMath`: `RollAttack` (adds `PhysicalPower × 0.5`, crit), `RollSpell` (SpellPower +
-  Intelligence), `Mitigate` → **one curve for every school**, `100/(100+x)` via `ResistanceStat` +
-  `ArmorMultiplier`. **Resistance, never immunity**: the multiplier stays in `(0, 1]`; negative resist
-  clamps to ×1 (no vulnerability). `PoiseDamage` applies the wind-up multiplier.
+  `True` (unmitigated). `DamagePacket` (attacker-built, carries `Source`, and a `HitKind` + `Charge`
+  the attacker stamps) and `DamageResult` (also `Parry`, `GuardBroken`, `Opening`).
+- `CombatMath`: `RollAttack` (adds `PhysicalPower × 0.5`, crit chance capped 0.75, multiplier
+  clamped 1.25–4), `RollSpell` (SpellPower + Intelligence), `Mitigate` → **one curve for every
+  school**, `100/(100+x)` via `ResistanceStat` + `ArmorMultiplier`. **Resistance, never immunity**:
+  the multiplier stays in `(0, 1]` for resistance; a negative value is a vulnerability that amplifies,
+  bounded below ×2. An unblocked hit does at least 1 damage. `PoiseDamage` applies the wind-up
+  multiplier.
 - `Hurtbox` (layer Hurtbox, mask 0; needs a shape). An actor may carry several **hit zones**, each
-  with a `ZoneId` and `DamageMultiplier` (damage and poise). `HitDedupe` makes hits once per
-  **owning entity** per swing or blast (shared by `Hitbox` and `SpellResolver`).
+  with a `ZoneId`, a `DamageMultiplier` and a `PoiseMultiplier` (`HitZoneResource`); `IsWeakPoint` is
+  a damage multiplier of 1.5+. `HitDedupe` makes hits once per **owning entity** per swing or blast
+  (shared by `Hitbox` and `SpellResolver`). When a swing overlaps several zones of one body, `Hitbox`
+  delivers to the highest-multiplier zone, not whichever physics returned first.
 - `Hitbox` (layer Hitbox, mask Hurtbox): `Activate(packet)` opens the window, `_PhysicsProcess`
   **polls overlaps** (never trust `area_entered` timing), skips its owner and same-`Team` hurtboxes.
-- `CombatComponent`: `Team` (0 player, 1 hostile, 2 neutral), poise/stagger, `IsBlocking`,
-  `InWindup` + `WindupPoiseMultiplier`, `ReceiveDamage` (block → mitigation → `ApplyDamage`, poise,
-  `EntityStaggeredEvent`, `DamageDealtEvent`).
+- `CombatComponent`: `Team` (0 player, 1 hostile, 2 neutral), poise/stagger, `IsBlocking` (raise) and
+  `GuardUp` (raised **and** not staggered — presentation reads this), `InWindup` +
+  `WindupPoiseMultiplier`, `ReceiveDamage` (see the pipeline below). A flinch has its own timer
+  (`IsFlinching`); `IsStaggered` means an interrupting reaction only.
 - `PoiseReaction` resolves flinch/stagger/heavy/knockdown by `ReactionClass`; a flinch does not
   interrupt; a boss is never knocked down or pushed.
 - `WeaponResource`: damage type, base/poise damage, stamina cost, an `Attacks` chain, or legacy
-  wind-up/active/recovery floats synthesised into a chain. `IsRanged` + projectile fields make a bow;
-  `Arrow` sub-steps its flight (at 42 m/s a single step passes through a 0.12 m body).
+  wind-up/active/recovery floats synthesised into a chain (light links, a heavy, a roll-cut).
+  `RecoveryCommit`/`FinisherRecoveryCommit` keep the start of a swing's recovery committed.
+  `IsRanged` + projectile fields make a bow (see *Ranged* below).
+
+**The defence pipeline (`ReceiveDamage`, rules in `DefenceRules` and `CombatMath`).**
+Invulnerable (dodge i-frames) → whiff. Otherwise: is the attacker in the guard arc (front zone within
+70% of `GuardArcDegrees`, flank the rest; the rear is uncovered)? A front guard may **parry** on
+timing (`ParryGrade`: Perfect is free and staggers longest, Good, Late is a 90% deflect with no
+riposte); arrows and spells can be blocked but never parried. A block costs stamina scaled by the
+blow's guard pressure and weight; a guard that cannot pay, or that a `Charged` (≥0.9) or `Plunge`
+blow crushes, **breaks** (full hit, long class-scaled stagger, `GuardBrokenEvent`). Then mitigation,
+then poise (no poise chip while already staggered, so a stagger cannot be chain-locked). A body
+becomes **open** (`OpenCause`: PoiseBreak, Parry, PerfectParry, GuardBreak; the stagger plus 0.25 s)
+and the next melee blow on it is a `Riposte` critical (bonus by cause, once); a blow from ≥120° round
+the back is a `Backstab`. Both publish `CriticalHitEvent`; bosses take 60% of the bonus; the player's
+side (team 0) is never opened, so poise stays symmetric without a hidden multiplier on the player.
+How each `HitKind` scales damage/poise/guard pressure is one table in `DefenceRules`; attackers stamp
+`Kind`/`Charge` and never pre-scale by them.
 
 **The action timeline — one clock.** `ActionDefinitionResource` authors an animation slot, a
 duration, gameplay windows **as fractions of that duration**, commitment, cost, damage/poise scale,
@@ -127,6 +149,36 @@ every actor, the player included. `ActionSelection` is what AI may know ("hit wh
 `MotionWarp` closes the last of a committed attack's gap, bounded and **swept** so it never passes a
 wall; it is not root motion (the Meshy clips carry none). Telegraphs run off
 `AttackPerformedEvent.WindupSeconds` (the *effective* wind-up), never a constant.
+
+**Offence on the executor.** Every swing carries a per-swing context (kind, charge, damage/poise
+multipliers, hyperarmor, step, speed). Holding attack ≥ 0.22 s (`ChargeRules`) charges a heavy or
+charged blow (`HitKind.Heavy` below charge 0.3, `Charged` from it, hyperarmour from 0.8); an attack
+pressed in the air dives and lands as `Plunge` (`PlungeRules`, sphere `PlungeHitbox`); an attack out of
+a roll is the weapon's roll-cut. `AttackInput` turns raw presses into intents, `AttackBuffer` only
+accepts a press within 0.28 s of the cancel point, and `AttackDirections` picks a humanoid's
+forward/back/side step once at the commit. A committed action's facing turns no faster than its
+`TurnDegreesPerSecond` (always for AI; for the player only while locked on). `RecoveryVulnerable`
+actions mark their committed tail through `CombatComponent.InWindup`, and
+`CharacterActionComponent.InCommittedRecovery` is public.
+
+**Ranged (`RangedAttack`, `BowDrawComponent`, `Arrow`).** `Shoot` delegates to `RangedAttack.Fire`.
+The player's draw is how long attack stayed held through the bow's startup (`RangedMath`); it scales the
+*rolled* damage, speed and poise, and stamps `Charge`. Anyone without a `BowDrawComponent` looses a full
+draw with `Charge = 0`. The launch direction is solved under gravity through
+`AimController.Focus` (the crosshair convergence, **not** `AimPoint`, which the router sets to the
+eye), bent by `AimAssistMath` (scaled by `CombatComfort.AimAssist`). `Arrow` queries the physics space
+directly each sub-step (`HitZoneRouting`: nearest body, highest-multiplier zone; `WorldRay` for solid
+world geometry, ignoring actor bodies that share layer 1).
+
+**Presentation is one-way (`CombatFeedbackDirector`).** The director gathers `DamageDealtEvent`,
+`EntityParriedEvent`, `GuardBrokenEvent`, `CriticalHitEvent` and `EntityStaggeredEvent` per target and
+publishes one `HitConfirmedEvent` (a `HitOutcome`) at the end of the frame. Hit-stop, the mesh lurch,
+`CombatFeedbackOverlay`, `DamageNumberLayer` and `DamageDirectionOverlay` consume it, so all need the
+director in the session. Everything that punctuates a blow for feel reads `CombatComfort` (Hit Stop,
+Screen Flash, Damage Numbers, Lock-On Assist, Aim Assist; Reduced Motion caps the first two at 25%).
+`TelegraphComponent` classes (`TelegraphClass`: standard, parryable, unblockable, sweep) are inferred
+from action ids and hitboxes until an authored flag exists on `ActionDefinitionResource`.
+`LockOnComponent` publishes `LockChangedEvent` and `LockBrokenEvent`.
 
 ### 2.3 Movement and animation (`src/Movement`, `src/Animation`)
 

@@ -1,5 +1,8 @@
+using Embervale.Combat.Actions;
 using Embervale.Core.Events;
+using Embervale.Core.Services;
 using Embervale.Entities;
+using Embervale.Player;
 using Godot;
 
 namespace Embervale.Combat;
@@ -55,10 +58,28 @@ public partial class TelegraphComponent : EntityComponent
 
     private void OnAttack(AttackPerformedEvent e)
     {
-        if (ReferenceEquals(e.Attacker, Entity))
+        if (!ReferenceEquals(e.Attacker, Entity))
         {
-            _ring?.Arm(e.WindupSeconds, RingRadius, RingColor);
+            return;
         }
+
+        // The class comes from the action that just began (Current is set before this event is
+        // published); with no action to read it is an ordinary ring. The duration is still the real
+        // wind-up, and the parry cue lights off the player's own parry window.
+        TelegraphClass cls = TelegraphClass.Standard;
+        float sweep = TelegraphClasses.DefaultSweepDegrees;
+        if (Entity!.GetComponent<CharacterActionComponent>()?.Current is { } action)
+        {
+            TelegraphSource source = TelegraphClasses.FromAction(action);
+            cls = TelegraphClasses.Classify(source);
+            sweep = TelegraphClasses.SweepDegrees(source);
+        }
+
+        float parryWindow = ServiceLocator.Instance is { } locator && locator.TryGet(out PlayerCharacter player) &&
+                            player.GetComponent<CombatComponent>() is { } combat
+            ? combat.ParryWindow
+            : 0.2f;
+        _ring?.Arm(e.WindupSeconds, RingRadius, RingColor, cls, parryWindow, sweep);
     }
 
     private void OnInterrupted(AttackInterruptedEvent e)

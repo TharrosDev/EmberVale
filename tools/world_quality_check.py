@@ -163,6 +163,26 @@ def gates(engine: str | None) -> list[Gate]:
         Gate("camera", "walls retract the camera, people do not, and it restores",
              [engine, "--headless", "--path", ".", "--script",
               "res://tools/camera_probe.gd"], slow=True),
+        # --- combat-offence: this group's probe Gate goes between the markers (one owner per block) ---
+        Gate("combat-offence", "charge, buffer, direction, warp, turn-lock, plunge and roll-cut hold under real frames",
+             [engine, "--headless", "--path", ".", "--script",
+              "res://tools/combat_offence_probe.gd"], slow=True),
+        # --- end combat-offence ---
+        # --- combat-defence: this group's probe Gate goes between the markers (one owner per block) ---
+        Gate("combat-defence", "graded parry, guard break, riposte, poise and hit zones through real hurtboxes",
+             [engine, "--headless", "--path", ".", "--script",
+              "res://tools/combat_defence_probe.gd"], slow=True),
+        # --- end combat-defence ---
+        # --- combat-feedback: this group's probe Gate goes between the markers (one owner per block) ---
+        Gate("combat-feedback", "hit-stop restores the clock (mid-pause too), a swing and a parry reach the feedback, lock-on works paused, telegraphs run off the real wind-up",
+             [engine, "--headless", "--path", ".", "--script",
+              "res://tools/combat_feedback_probe.gd"], slow=True),
+        # --- end combat-feedback ---
+        # --- combat-ranged: this group's probe Gate goes between the markers (one owner per block) ---
+        Gate("combat-ranged", "drawn beats snap, heads beat chests, drop is solved, walls stop arrows, aim assist is honest",
+             [engine, "--headless", "--path", ".", "--script",
+              "res://tools/combat_ranged_probe.gd"], slow=True),
+        # --- end combat-ranged ---
         Gate("traversal", "a real capsule walks every authored route in the real collision world",
              [engine, "--headless", "--path", ".", "--script",
               "res://tools/world_traversal_probe.gd"], slow=True, timeout=1800),
