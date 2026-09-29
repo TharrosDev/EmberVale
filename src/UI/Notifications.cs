@@ -81,6 +81,7 @@ public partial class Notifications : CanvasLayer
         bus?.Subscribe<ShrineAlreadyVisitedEvent>(OnShrineAlreadyVisited);
         bus?.Subscribe<ShrineRefusedEvent>(OnShrineRefused);
         bus?.Subscribe<WorldHazardNoticeEvent>(OnWorldHazard);
+        SubscribeMagic(bus);
     }
 
     public override void _Process(double delta)
@@ -123,6 +124,7 @@ public partial class Notifications : CanvasLayer
         bus.Unsubscribe<ShrineAlreadyVisitedEvent>(OnShrineAlreadyVisited);
         bus.Unsubscribe<ShrineRefusedEvent>(OnShrineRefused);
         bus.Unsubscribe<WorldHazardNoticeEvent>(OnWorldHazard);
+        UnsubscribeMagic(bus);
     }
 
     private void OnLeveledUp(LeveledUpEvent e) =>
