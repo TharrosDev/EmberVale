@@ -28,31 +28,35 @@ today and is deepened, `replaces` = the old id resolves to it through `SpellAlia
 | 3 | `spell.pyre_wall` | Pyre Wall | Fire | Barrier | Line of fire: burns what crosses it, eats arrows, does not stop bodies |
 | 4 | `spell.sunfall` | Sunfall | Fire | Ground, charged, replaces `spell.fireball` | Meteor at the aim point after a telegraph; crushes guards on a direct hit |
 | 5 | `spell.rime_shard` | Rime Shard | Frost | Projectile, instant | Chills; a shard into a chilled foe freezes it (Frost identity) |
-| 6 | `spell.frost_nova` | Frost Nova | Frost | Area, kept | Ring around you: chills everything and knocks back the ones already frozen |
+| 6 | `spell.frost_nova` | Frost Nova | Frost | Area, kept | Ring around you: chills everything; anything already chilled freezes |
 | 7 | `spell.blizzard` | Blizzard | Frost | Area with zone, kept | Lingering storm that slows and stacks chill; you can be caught in your own |
 | 8 | `spell.glacial_bulwark` | Glacial Bulwark | Frost | Barrier | Solid ice wall that stops bodies and projectiles, breakable, Shatter-able |
-| 9 | `spell.ball_lightning` | Ball Lightning | Lightning | Projectile, homing, kept | Slow homing orb that chains when it lands; Stormbrand pulls it |
-| 10 | `spell.storm_conduit` | Storm Conduit | Lightning | Projectile, channelled, kept | Held beam; rooted-ish (0.5 move scale) and interruptible, chains to marked foes |
-| 11 | `spell.thunder_step` | Thunder Step | Lightning | Dash | Dash along the aim striking what you pass; ends in a short stun on the last foe |
+| 9 | `spell.ball_lightning` | Ball Lightning | Lightning | Projectile, homing, kept | Slow homing orb that chains when it lands; it prefers a Stormbranded foe |
+| 10 | `spell.storm_conduit` | Storm Conduit | Lightning | Projectile, channelled, kept | Held beam; slowed and interruptible while it runs, and it chains to a Stormbranded foe |
+| 11 | `spell.thunder_step` | Thunder Step | Lightning | Dash | Dash along the aim striking what you pass; the last foe struck is stunned (`status.stunned`) |
 | 12 | `spell.stormbrand` | Stormbrand | Lightning | Projectile, instant | Brands a foe; every lightning hit within range arcs to the brand |
 | 13 | `spell.null_lance` | Null Lance | Arcane | Projectile, instant, replaces `spell.arcane_lance` | Dispels a benefit and silences: it interrupts a caster mid wind-up |
-| 14 | `spell.arcane_shield` | Arcane Shield | Arcane | Self, kept | Ward that absorbs a fixed amount; a perfect block into it refunds mana |
-| 15 | `spell.blink` | Blink | Arcane | Self, kept | Teleport along the aim; a short window of reduced damage on arrival |
+| 14 | `spell.arcane_shield` | Arcane Shield | Arcane | Self, kept | Ward that absorbs a fixed amount and breaks with a flash; an unspent ward returns a share of its mana |
+| 15 | `spell.blink` | Blink | Arcane | Self, kept | Teleport along the aim, stopped short by a wall; a shorter jump costs less mana |
 | 16 | `spell.gravity_well` | Gravity Well | Arcane | Ground | Pulls foes to the centre after a telegraph; stacks with Blizzard and Pyre Wall |
-| 17 | `spell.mending_bloom` | Mending Bloom | Nature | Self, instant, replaces `spell.lesser_heal` | Heal now plus a Regrowth tail; interrupted casts refund half the mana |
+| 17 | `spell.mending_bloom` | Mending Bloom | Nature | Self, instant, replaces `spell.lesser_heal` | Heal now plus a Regrowth tail |
 | 18 | `spell.lifebloom_totem` | Lifebloom Totem | Nature | Self with totem, kept | Totem heals over time and can be destroyed |
 | 19 | `spell.thornsnare` | Thornsnare | Nature | Ground | Roots foes in the area (Root), with control immunity afterwards |
 | 20 | `spell.stinging_swarm` | Stinging Swarm | Nature | Projectile, instant | Swarmed DoT that jumps to a nearby foe when its bearer dies |
-| 21 | `spell.barkskin` | Barkskin | Nature | Self | Armour and hyperarmoured casting for a few seconds; slows you |
+| 21 | `spell.barkskin` | Barkskin | Nature | Self | Armour up for a few seconds, and casting is hyperarmoured while it lasts (a stagger cannot cancel a cast) |
 | 22 | `spell.ember_siphon` | Ember Siphon | Necrotic | Projectile, kept (corruption tier 2) | Lifesteal bolt; heals more the lower the target's health |
 | 23 | `spell.soul_tithe` | Soul Tithe | Necrotic | Projectile, `HealthCost` | Pay health for a big hit; refunds mana on a kill (Soul Echo) |
-| 24 | `spell.knit_bone` | Knit Bone | Necrotic | Self, kept, now `PlayerLearnable` | Heals by spending a fraction of a Decay stack you carry |
-| 25 | `spell.grave_mark` | Grave Mark | Necrotic | Projectile, instant | Marks a foe: damage taken rises, and the Weave's decay hits it harder |
+| 24 | `spell.knit_bone` | Knit Bone | Necrotic | Self, kept, now `PlayerLearnable` | Cleanses a Decay affliction on you and heals more for each stack it removed |
+| 25 | `spell.grave_mark` | Grave Mark | Necrotic | Projectile, instant | Marks a foe: damage taken rises, and Necrotic lifesteal off a marked foe doubles |
 
 Retired ids (their `.tres` are deleted, `SpellAliases` resolves them): `spell.firebolt`, `spell.fireball`,
 `spell.arcane_lance`, `spell.lesser_heal`. Enemy-only spells stay as they are and stay
 `PlayerLearnable = false`: `spell.ash_breath`, `spell.dragon_breath`, `spell.drake_breath`,
 `spell.elder_word`, `spell.wither`.
+
+The "one thing it does" column is the intent. Where a mechanism turns out awkward, keep the identity and
+change the mechanism, then say so in your final report so the content descriptions match what shipped.
+General rules the core agent owns: a cast interrupted in its wind-up refunds half its mana.
 
 Numbers are yours to tune inside these bands: mana 8 to 34, cooldown 0.6 to 16 s, `WindupSeconds` 0.15 to
 0.9 (more wind-up for more payoff), `MaxRank` 3. Cheap spells must not out-scale expensive ones.
@@ -60,9 +64,9 @@ Numbers are yours to tune inside these bands: mana 8 to 34, cooldown 0.6 to 16 s
 ## Reserved status ids (placeholders are committed; the status agent owns their content)
 
 `status.kindled`, `status.rooted`, `status.silenced`, `status.stormbrand`, `status.barkskin`,
-`status.grave_mark`, `status.swarmed`, `status.soul_echo`, plus the existing `status.burning`,
+`status.grave_mark`, `status.swarmed`, `status.soul_echo`, `status.stunned`, plus the existing `status.burning`,
 `status.chill`, `status.frozen`, `status.decay`, `status.regrowth`, `status.arcane_ward`. The content
-agent may reference any of them. The status agent may add more, but tells the content agent by id in its
+agent references only these ids. The status agent may add more for its own use, but tells the content agent by id in its
 final report and never renames these.
 
 ## Shared contract (already committed)
