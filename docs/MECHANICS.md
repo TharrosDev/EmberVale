@@ -95,32 +95,90 @@ rig sums and clamps them (`CameraLayer.cs`, `CameraRigMath.CombineLayers`). Moti
 
 ## Combat
 
+Weighty and readable: a swing commits, its tell is legible, and parry, guard and poise decide fights.
+Attackers stamp a `HitKind` (and a `Charge`) on the `DamagePacket`; the defence pipeline turns that into
+damage, poise and guard pressure in one place (`DefenceRules`, `CombatMath`). Presentation never
+changes a rule: it reads events, and everything that punctuates a blow for feel scales by
+`CombatComfort` (Hit Stop, Screen Flash, Damage Numbers, Lock-On Assist, Aim Assist; Reduced Motion
+caps the first two at 25%).
+
 - **One action timeline** — every actor's attacks, casts and shots are `ActionDefinitionResource`s
-  with windows as fractions of the clip; one executor. `CharacterActionComponent`, `ActionTimeline`.
-- **Melee combos and input buffer** — weapon attack chains; an early press is buffered until the swing
-  can cancel; combo links alternate swing direction and the finisher hits harder. `AttackBuffer`.
-- **Directional melee (big bodies)** — dragons pick bite, wing or tail by where you stand.
-  `DragonMeleeComponent`, `DragonMelee`. Humanoid melee has no player-chosen direction.
-- **Motion warp** — closes the last of a committed attack's gap, swept so it never passes a wall.
+  with windows as fractions of the clip; one executor with a per-swing context (kind, charge, damage
+  and poise scale, hyperarmour, step). Light chains keep the start of their recovery committed
+  (`RecoveryCommit`), heavy and plunge tails are punishable, and a committed action's facing turns no
+  faster than its `TurnDegreesPerSecond` (always for enemies; for the player only while locked on).
+  `CharacterActionComponent`, `ActionTimeline`, `ChargeRules`, `PlungeRules`.
+- **Melee combos and input buffer** — weapon attack chains alternate swing direction and the finisher
+  hits harder. A press is buffered only within 0.28 s of the cancel point, so mashing through a long
+  wind-up queues nothing; a stagger clears it; a buffered press keeps its direction. Enemies weight
+  against repeating their last blow. `AttackBuffer`, `AttackInput`, `ActionSelection`.
+- **Heavy and charged attacks** — hold attack 0.22 s or more to charge, release to swing. A short
+  hold is a heavy; from 0.3 it is charged (damage and poise grow with the hold, released faster the
+  longer it was held), and from 0.8 it is hyperarmoured. Charging slows movement to 40%, drains
+  stamina and is dropped by a stagger, a raised guard, a dodge or a weapon swap. A tap swings a light.
+  `HitKind.Heavy`, `HitKind.Charged`, `ChargeReleasedEvent`.
+- **Plunge attack** — attack in the air dives at 18 m/s and lands as a sphere blow scaling from x1 to
+  x2 with the drop (0.7–8 m); it always crushes a guard. Refused on the ground, mounted or without
+  stamina. `PlungeRules`, `HitKind.Plunge`.
+- **Directional melee** — dragons pick bite, wing or tail by where you stand, with 12 degrees of
+  hysteresis so the arc never flickers. Humanoids take a direction from movement input at the commit:
+  forward lunges 0.9 m for more damage, back steps away for less, sideways steps for more poise damage.
+  An attack out of a roll is the weapon's roll-cut. `DragonMeleeComponent`, `DragonMelee`,
+  `AttackDirections`.
+- **Motion warp** — closes the last of a committed attack's gap, swept so it never passes a wall, and
+  ignores a target outside twice its turn limit. It now faces the target (the old yaw faced away).
   `MotionWarp`.
-- **Blocking, parry, riposte** — `RMB` blocks with chip damage; a block raised inside the parry
-  window negates the hit and staggers the attacker (the riposte opening). `CombatComponent`, `Parry`.
+- **Blocking, parry, riposte** — `RMB` blocks. The guard covers a front zone at full strength and a
+  flank zone at 60% with no parry; the rear is open. A block costs stamina scaled by the blow's weight
+  and guard pressure, and a tired guard takes more poise damage. A block raised inside the window
+  parries, graded: Perfect (first half of the window) is free, negates the blow and staggers the
+  attacker longest; Good costs stamina; Late is a hard deflect with no riposte. Arrows and spells can
+  be blocked, never parried. One parry per guard raise. `CombatComponent`, `Parry`, `DefenceRules`.
+- **Guard break** — a guard that cannot pay its stamina, or that a fully charged or plunging blow
+  crushes, breaks: the full hit lands and the body takes a long stagger scaled by class. A body with no
+  stamina pool cannot be stamina-broken. `GuardBrokenEvent`.
+- **Punish window and criticals** — a body is open after a poise break, a parry or a guard break, for
+  the stagger plus 0.25 s. The first melee blow on an open body is a riposte critical (x1.35 poise
+  break, x1.75 guard break, x2 parry, x2.5 perfect parry); a blow from behind is a backstab (x1.5).
+  Bosses take 60% of the bonus and the player's side is never opened, so poise stays symmetric.
+  `OpenCause`, `HitKind.Riposte`, `HitKind.Backstab`, `CriticalHitEvent`, `PunishWindowOpenedEvent`.
 - **Poise and stagger** — symmetric for every actor: flinch, stagger, heavy, knockdown by reaction
   class; a stagger cancels a wind-up, never a live blow; wind-ups can take extra poise damage; bosses
-  are never knocked down. `PoiseReaction`, `CombatComponent`.
-- **Hit-stop and hit feedback** — weight-scaled freeze frame, mesh lurch toward the blow, weapon
-  trails, screen flash per state (crit, block, stagger, parry), damage-direction indicator.
-  `HitStopDirector`, `HitReactionComponent`, `WeaponTrailComponent`, `CombatFeedbackOverlay`,
-  `DamageDirectionOverlay`.
-- **Lock-on** — middle mouse; cycles targets in range; faces the target. `LockOnComponent`, `LockOn`.
-- **Ranged** — bows fire sub-stepped arrows along the camera's aim point. `WeaponResource.IsRanged`,
-  `Arrow`, `AimController`. 19 weapons (`data/weapons`).
+  are never knocked down. A flinch has its own timer and no longer cancels an action, and poise is not
+  chipped while staggered, so a stagger cannot be chain-locked. `PoiseReaction`, `CombatComponent`.
+- **Hit-stop and hit feedback** — every blow is named once (`HitOutcome`: hit, blocked, parried, guard
+  broken, critical, poise broken, resisted) and hit-stop, mesh lurch, sparks, sound, screen flash and
+  floating numbers all follow that name. Hit-stop weighs outcome, damage and kind, is rate-limited and
+  restores the clock on pause; the trail streaks through the swing from the release frame. The
+  damage-direction indicator is coloured by outcome and warns of a hostile wind-up behind or beside
+  you; nameplates show a poise bar and a state tag. `CombatFeedbackDirector`, `HitStopDirector`,
+  `HitReactionComponent`, `WeaponTrailComponent`, `CombatFeedbackOverlay`, `DamageDirectionOverlay`.
+- **Floating damage numbers** — crits large and gold, blocks small in parentheses, resisted dim with
+  a word, parry a word with no number; rapid hits on one target merge. Off with the Damage Numbers
+  setting; held still under Reduced Motion. `DamageNumberLayer`, `DamageNumberMath`.
+- **Lock-on** — middle mouse; cycles targets in range, faces the target, and says when it breaks
+  (target died, too far, lost sight). With Lock-On Assist it prefers a target mid-swing or nearly dead,
+  passes the lock to the next enemy within 10 m on a kill, and steps on a mouse flick or a full stick
+  push. `LockOnComponent`, `LockOn`, `LockOnCueLayer`, `LockChangedEvent`, `LockBrokenEvent`.
+- **Ranged** — the bow's startup is the draw: hold to draw (7 stamina a second), release on the action's
+  release frame. A tapped or buffered press is a weak snap shot (x0.45 damage, scatter); a full draw hits
+  hardest and flies fastest. Arrows are solved under gravity through the crosshair, stop and stick in
+  world geometry, and query the physics space each sub-step so a thin body is never tunnelled. An
+  aim assist bends the arrow (never the camera), preferring the lock-on target and never through cover.
+  Archers with no draw loose a full draw as before. `RangedAttack`, `BowDrawComponent`, `Arrow`,
+  `AimController`, `RangedMath`, `AimAssistMath`. 19 weapons (`data/weapons`).
 - **Hit zones** — an actor can carry several hurtboxes with their own damage and poise multipliers
-  (dragon heads, boss bodies). `Hurtbox`, `HitZoneResource`.
+  (dragon heads, boss bodies); a zone of x1.5 or more is a weak point, an arrow lands on the
+  highest-multiplier zone it reaches, and a tall single-zone body takes a headshot on its top 18%
+  (x1.5). `Hurtbox`, `HitZoneResource`, `HitZoneRouting`.
 - **Damage and resistances** — Physical (armour), Fire, Frost, Lightning, Arcane, Nature, Necrotic
-  (own resistances), True; one mitigation curve, resistance never immunity; crits. `CombatMath`,
-  `DamageType`.
-- **Telegraphs** — ground rings sized to the real wind-up, tinted by boss phase. `TelegraphComponent`.
+  (own resistances), True; one mitigation curve; resistance never immunity, and a negative resistance
+  is a vulnerability (bounded below x2). An unblocked hit does at least 1 damage; crit chance is capped
+  at 75% and the multiplier at x4. `CombatMath`, `DamageType`, `HitKind`.
+- **Telegraphs** — ground rings sized to the real wind-up, tinted by boss phase, in four classes read
+  by shape as well as colour: standard, parryable (a gold ring closes on the parry moment), unblockable
+  (thick pulsing red) and sweep (a fan by the arc). Class is inferred from the action until it is
+  authored. `TelegraphComponent`, `TelegraphClass`.
 
 ## Magic
 
