@@ -15,3 +15,6 @@ RecoveryTime = 0.30
 AttackSpeed = 0.95
 ComboLength = 3
 FinisherMultiplier = 1.7
+HeavyDamageScale = 2.1
+MaxChargeSeconds = 1.0
+PlungeDamageScale = 1.6

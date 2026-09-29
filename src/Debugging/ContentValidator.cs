@@ -229,6 +229,7 @@ public static class ContentValidator
             }
 
             CheckActions(weapon.Attacks, $"weapon '{file}'", issues);
+            CheckOffence(weapon, $"weapon '{file}'", issues);
         }
 
         // ⚠️ BOSS PHASES AUTHOR ACTIONS TOO, and they were invisible to this until a phase set was
@@ -324,6 +325,68 @@ public static class ContentValidator
             }
         }
     }
+
+    // --- combat-offence: heavy / plunge / roll-cut rules (one owner per block) ---
+
+    /// <summary>
+    /// The offence pass's rules for a weapon: the hold-to-charge numbers must be usable, the recovery
+    /// commitment must be a fraction, and the heavy, plunge and roll-cut actions a weapon runs (authored
+    /// or synthesised) must pass the same per-action rules as its light chain.
+    ///
+    /// ⚠️ A zero <c>MaxChargeSeconds</c> is a divide-by-nothing that reads as a permanently full
+    /// charge, and a negative stamina drain would refill the bar while holding; neither throws.
+    /// </summary>
+    private static void CheckOffence(WeaponResource weapon, string source, List<string> issues)
+    {
+        if (weapon.RecoveryCommit is < 0f or > 1f || weapon.FinisherRecoveryCommit is < 0f or > 1f)
+        {
+            issues.Add($"{source} has a recovery commitment outside 0..1 " +
+                       $"({weapon.RecoveryCommit}, {weapon.FinisherRecoveryCommit}).");
+        }
+
+        if (weapon.IsRanged)
+        {
+            return;
+        }
+
+        if (weapon.MaxChargeSeconds <= 0f)
+        {
+            issues.Add($"{source} has MaxChargeSeconds {weapon.MaxChargeSeconds}; a charge needs a positive length.");
+        }
+
+        if (weapon.ChargeStaminaPerSecond < 0f || weapon.ChargeDamageBonus < 0f)
+        {
+            issues.Add($"{source} has a negative charge drain or bonus; holding must not refill stamina or weaken the blow.");
+        }
+
+        if (weapon.HeavyDamageScale <= 0f || weapon.HeavyPoiseScale <= 0f ||
+            weapon.HeavyStaminaMultiplier <= 0f || weapon.PlungeDamageScale <= 0f)
+        {
+            issues.Add($"{source} has a non-positive heavy or plunge scale; that attack would deal nothing.");
+        }
+
+        var offence = new Godot.Collections.Array<ActionDefinitionResource>();
+        foreach (ActionDefinitionResource? action in new[]
+                 { weapon.HeavyAttack(), weapon.PlungeAttack(), weapon.RollAttack() })
+        {
+            if (action != null)
+            {
+                offence.Add(action);
+            }
+        }
+
+        CheckActions(offence, $"{source} (heavy/plunge/roll)", issues);
+
+        foreach (ActionDefinitionResource? action in weapon.Attacks)
+        {
+            if (action is { AdvanceMetres: < 0f or > 4f })
+            {
+                issues.Add($"{source} attack '{action.Id}' advances {action.AdvanceMetres} m; a lunge is 0..4 m.");
+            }
+        }
+    }
+
+    // --- end combat-offence ---
 
     private static void CheckFraction(string where, string field, float value, List<string> issues)
     {

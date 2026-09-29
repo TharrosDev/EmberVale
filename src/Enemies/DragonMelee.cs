@@ -44,4 +44,30 @@ public static class DragonMelee
 
         return bearing <= WingHalfAngle ? DragonAttack.Wing : DragonAttack.Tail;
     }
+
+    /// <summary>Degrees a target must cross <em>past</em> an arc's edge before the dragon abandons
+    /// the arc it already has armed.</summary>
+    public const float Hysteresis = 12f;
+
+    /// <summary>
+    /// As <see cref="Choose(float)"/>, but sticky: a target hovering on an arc boundary does not make
+    /// the armed arc (and so the wind-up the player is reading) flicker between two blows. The
+    /// dragon keeps <paramref name="armed"/> until the bearing leaves its arc by
+    /// <see cref="Hysteresis"/>. Combined with the commit (an arc never changes mid-swing), a player
+    /// reads which limb is coming and can trust it.
+    /// </summary>
+    public static DragonAttack Choose(float bearingDegrees, DragonAttack armed)
+    {
+        float bearing = bearingDegrees < 0f ? -bearingDegrees : bearingDegrees;
+        (float low, float high) = armed switch
+        {
+            DragonAttack.Bite => (0f, BiteHalfAngle),
+            DragonAttack.Wing => (BiteHalfAngle, WingHalfAngle),
+            _ => (WingHalfAngle, 180f),
+        };
+
+        return bearing >= low - Hysteresis && bearing <= high + Hysteresis
+            ? armed
+            : Choose(bearingDegrees);
+    }
 }

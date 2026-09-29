@@ -87,6 +87,11 @@ public partial class ActionDefinitionResource : Resource
     /// what a boss's committed slam wants.</summary>
     [Export] public bool Interruptible { get; set; } = true;
 
+    /// <summary>Whether the committed tail of this action (after the blow, before it can cancel) is a
+    /// punish window: the actor counts as caught mid-action for poise (<c>CombatComponent.InWindup</c>),
+    /// exactly as it is during startup. On for heavies, where the big swing is paid for in recovery.</summary>
+    [Export] public bool RecoveryVulnerable { get; set; }
+
     /// <summary>How much of normal movement the actor keeps while this runs. 0 roots them.</summary>
     [Export(PropertyHint.Range, "0,1,0.05")] public float MoveScale { get; set; }
 
@@ -112,6 +117,10 @@ public partial class ActionDefinitionResource : Resource
     [Export] public RootMotionMode RootMotion { get; set; } = RootMotionMode.None;
     [Export] public float MaxWarpDistance { get; set; } = 1.5f;
     [Export] public float MaxWarpDegrees { get; set; } = 35f;
+
+    /// <summary>Metres the actor steps forward during startup with or without a target (swept, spent
+    /// across the wind-up like a warp). 0 for none. A lunge is authored here, not root motion.</summary>
+    [Export] public float AdvanceMetres { get; set; }
 
     [ExportGroup("Presentation")]
     [Export] public float HitStopScale { get; set; } = 1f;

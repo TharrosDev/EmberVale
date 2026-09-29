@@ -57,6 +57,9 @@ public class EnumStabilityTests
     }
 
     [Fact]
+    public void AttackDirection_Ordinals() => Assert.Equal(new[] { 0, 1, 2, 3, 4 }, new[] { (int)AttackDirection.Neutral, (int)AttackDirection.Forward, (int)AttackDirection.Back, (int)AttackDirection.Left, (int)AttackDirection.Right });
+
+    [Fact]
     public void ReactionClass_Ordinals()
     {
         Assert.Equal(0, (int)ReactionClass.Small);

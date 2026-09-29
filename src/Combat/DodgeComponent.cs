@@ -155,7 +155,8 @@ public partial class DodgeComponent : EntityComponent
     /// The router's attack press, offered here first. Returns true when the dodge consumed it — held in a
     /// buffer until <see cref="Dodge.CanCancelIntoAttack"/> opens — and false when there is no dodge to
     /// respect (the caller attacks normally). A press that arrives inside the cancel window ends the dodge
-    /// here and returns false, so the caller's own attack is the roll-attack.
+    /// and starts the weapon's roll-attack (a quick lunging cut, <see cref="CharacterActionComponent.TryRollAttack"/>)
+    /// right here, and returns true so the caller does not swing a second time.
     /// </summary>
     public bool InterceptAttack()
     {
@@ -167,7 +168,8 @@ public partial class DodgeComponent : EntityComponent
         if (Dodge.CanCancelIntoAttack(_elapsed, Duration(), AttackCancelFraction))
         {
             End(cancelDash: true);
-            return false;
+            _weapon?.TryRollAttack();
+            return true;
         }
 
         _attackBuffer = BufferWindow;
@@ -199,6 +201,9 @@ public partial class DodgeComponent : EntityComponent
         _active = true;
         _dodgeBuffer = 0d;
         _attackBuffer = 0d;
+
+        // A roll is an escape from anything wound up: a held charge is dropped, not swung.
+        _weapon?.CancelCharge();
 
         _stats?.ModifyCurrent(StatType.Stamina, -cost);
         _locomotion?.StartDash(_dir, SpeedAt(0f), Duration());
@@ -236,7 +241,7 @@ public partial class DodgeComponent : EntityComponent
         {
             _attackBuffer = 0d;
             End(cancelDash: true);
-            _weapon?.TryAttack();
+            _weapon?.TryRollAttack();
             return;
         }
 

@@ -81,6 +81,19 @@ public static class ActionTimeline
     /// </summary>
     public static bool CanCancel(float progress, ActionWindows w) => progress >= w.CancelFrom;
 
+    /// <summary>Seconds until the action becomes cancellable, 0 once it is. What the input buffer
+    /// measures a press against.</summary>
+    public static float SecondsUntilCancel(float progress, ActionWindows w, double duration)
+    {
+        float left = w.CancelFrom - progress;
+        return left <= 0f || duration <= 0d ? 0f : (float)(left * duration);
+    }
+
+    /// <summary>True in the committed tail after the blow is spent and before the actor may act
+    /// again: the window a heavy swing can be punished in.</summary>
+    public static bool InCommittedRecovery(float progress, ActionWindows w) =>
+        progress >= w.ActiveTo && progress < w.CancelFrom && progress < 1f;
+
     /// <summary>True while a press would chain into the next link of a combo rather than restart it.</summary>
     public static bool InComboWindow(float progress, ActionWindows w) =>
         progress >= w.ComboFrom && progress <= w.ComboTo;
