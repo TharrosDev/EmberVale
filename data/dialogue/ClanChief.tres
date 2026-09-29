@@ -148,7 +148,7 @@ EffectArg = "flag.clan.hearth_kin"
 script = ExtResource("2_node")
 Id = "root"
 Text = "dlg.clan_chief.root"
-Choices = Array[Resource]([SubResource("ch_kin"), SubResource("ch_work"), SubResource("ch_who"), SubResource("ch_tyrant"), SubResource("ch_bye")])
+Choices = Array[Resource]([SubResource("ch_kin"), SubResource("ch_work"), SubResource("ch_who"), SubResource("ch_tyrant"), SubResource("ch_mg_menu"), SubResource("ch_bye")])
 
 [sub_resource type="Resource" id="node_who"]
 script = ExtResource("2_node")
@@ -222,9 +222,44 @@ Id = "hol_thanks"
 Text = "dlg.clan_chief.hollow.thanks"
 Choices = Array[Resource]([SubResource("ch_hol_thanks_bye")])
 
+; Magic upgrade: this NPC teaches spellcraft (spell.teach.* strings, LearnSpell effect).
+[sub_resource type="Resource" id="ch_mg_menu"]
+script = ExtResource("3_choice")
+Text = "spell.teach.ask_menu"
+Goto = "mg_teach"
+
+[sub_resource type="Resource" id="ch_mg_glacial_bulwark"]
+script = ExtResource("3_choice")
+Text = "spell.glacial_bulwark.ask"
+Goto = "mg_taught"
+Effect = 8
+EffectArg = "spell.glacial_bulwark"
+
+[sub_resource type="Resource" id="ch_mg_back"]
+script = ExtResource("3_choice")
+Text = "spell.teach.back"
+Goto = "root"
+
+[sub_resource type="Resource" id="ch_mg_thanks"]
+script = ExtResource("3_choice")
+Text = "spell.teach.thanks"
+Goto = "root"
+
+[sub_resource type="Resource" id="node_mg_teach"]
+script = ExtResource("2_node")
+Id = "mg_teach"
+Text = "spell.teach.clan_chief"
+Choices = Array[Resource]([SubResource("ch_mg_glacial_bulwark"), SubResource("ch_mg_back")])
+
+[sub_resource type="Resource" id="node_mg_taught"]
+script = ExtResource("2_node")
+Id = "mg_taught"
+Text = "spell.teach.clan_chief.taught"
+Choices = Array[Resource]([SubResource("ch_mg_thanks")])
+
 [resource]
 script = ExtResource("1_dlg")
 Id = "dialogue.clan_chief"
 SpeakerName = "dlg.clan_chief.speaker"
 StartNodeId = "root"
-Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_who"), SubResource("node_tyrant"), SubResource("node_kin"), SubResource("node_work"), SubResource("node_prov_offer"), SubResource("node_prov_accepted"), SubResource("node_prov_inprogress"), SubResource("node_prov_thanks"), SubResource("node_hol_offer"), SubResource("node_hol_accepted"), SubResource("node_hol_inprogress"), SubResource("node_hol_thanks")])
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_who"), SubResource("node_tyrant"), SubResource("node_kin"), SubResource("node_work"), SubResource("node_prov_offer"), SubResource("node_prov_accepted"), SubResource("node_prov_inprogress"), SubResource("node_prov_thanks"), SubResource("node_hol_offer"), SubResource("node_hol_accepted"), SubResource("node_hol_inprogress"), SubResource("node_hol_thanks"), SubResource("node_mg_teach"), SubResource("node_mg_taught")])

@@ -2723,4 +2723,63 @@ spell.knit_bone.name,Knit Bone
 spell.knit_bone.desc,"Cleanse a Decay affliction from yourself and heal more for each stack it removed."
 spell.grave_mark.name,Grave Mark
 spell.grave_mark.desc,"Mark a foe so it takes more damage; necrotic lifesteal drawn from a marked foe doubles."
+spell.teach.ask_menu,Ask whether they teach any spellcraft.
+spell.teach.back,Never mind.
+spell.teach.thanks,Thank them.
+spell.mending_bloom.ask,Ask to be taught Mending Bloom.
+spell.teach.apothecary,"Mirela wipes her hands on her apron. 'I cannot spare a tonic, but I can spare a word. Mending Bloom is a herb-wife's charm, and I will show it to anyone who means to use it kindly.'"
+spell.teach.apothecary.taught,"She guides your hands through the shape twice, then makes you do it alone. It holds on the third try."
+spell.stinging_swarm.ask,Ask to be taught Stinging Swarm.
+spell.teach.hunter_tracker,"Halda glances up from the cast. 'Wasp-wives taught me one trick for things too big to fight. I can teach you the rest of it.'"
+spell.teach.hunter_tracker.taught,"She sets a paper nest between you and a post and shows you how to shake it loose without being stung. By dusk it answers your hand."
+spell.barkskin.ask,Ask to be taught Barkskin.
+spell.teach.hunter_master,"The Huntmaster shuts her field book. 'A hunter who cannot take a hit is a hunter for a season. There is a way of holding the body the way a tree holds itself.'"
+spell.teach.hunter_master.taught,"She has you stand under the lodge roof's edge in the rain until you stop feeling it. Then she shows you what you were doing."
+spell.rime_shard.ask,Ask to be taught Rime Shard.
+spell.frost_nova.ask,Ask to be taught Frost Nova.
+spell.teach.clan_hearthkeeper,"Vetle nods at the fire. 'The cold is a tool once you stop arguing with it. I know two ways of handing it to another. Pick one.'"
+spell.teach.clan_hearthkeeper.taught,"He takes your hands and holds them out to the fire, then turns them over. 'Now the other way. That is all of it.'"
+spell.glacial_bulwark.ask,Ask to be taught Glacial Bulwark.
+spell.teach.clan_chief,"Hjalvar looks you over. 'The hold has stood because a wall of ice stands when a wall of men does not. I will teach you the wall.'"
+spell.teach.clan_chief.taught,"He walks you out into the snow and shows you where the ice wants to rise. It rises for you on the second try."
+spell.thunder_step.ask,Ask to be taught Thunder Step.
+spell.teach.clan_exile,"Halvar turns his stump to the fire. 'I lost this hand keeping up with the storm. I did not lose how I did it. Ask, and I will show you.'"
+spell.teach.clan_exile.taught,"He has you run at the dark until the air cracks under your feet. On the third run it answers."
+spell.thornsnare.ask,Ask to be taught Thornsnare.
+spell.teach.clan_beast_tamer,"Yrsa scratches something unseen behind the ear. 'Things that will not stay put need a lesson in staying put. There is a bramble-word for it.'"
+spell.teach.clan_beast_tamer.taught,"She murmurs it once, then makes you say it to a patch of frozen bracken. It grows up around your boot, and she laughs."
+spell.flame_lance.ask,Ask to be taught Flame Lance.
+spell.teach.dawnwarden_serjeant,"Rook shifts the duty board under his arm. 'Wardens carry a lance of fire for what the sword will not reach. I can show you the draw, if you can keep quiet while I do.'"
+spell.teach.dawnwarden_serjeant.taught,"He walks you through the draw slowly, hold and loose, and corrects your grip on the air twice. 'Good enough for a Warden.'"
+spell.sunfall.ask,Ask to be taught Sunfall.
+spell.teach.dawnwarden_captain,"The Captain closes the ledger. 'The dawn falls where we say it falls. I do not teach it to just anyone, but you have not yet given me a reason to refuse.'"
+spell.teach.dawnwarden_captain.taught,"He marks a point on the courtyard with his boot and tells you to call the sun onto it. The flagstone is scorched by evening."
+spell.pyre_wall.ask,Ask to be taught Pyre Wall.
+spell.teach.emberbound_warder,"Cass does not move. 'The pedestal is not for you. The fire that guards it is a separate matter, and that I can teach.'"
+spell.teach.emberbound_warder.taught,"He draws a line in the dust and tells you to make it burn. It takes a while, and he watches every attempt."
+spell.ember_siphon.ask,Ask to be taught Ember Siphon.
+spell.teach.emberbound_hierarch,"The Hierarch lowers her lamp. 'There is a rite for those who have carried embers a while. It would slide off anyone who has not. You have, I think.'"
+spell.teach.emberbound_hierarch.taught,"The words take hold of you where the ash already has. The lamp gutters, and Selane smiles without warmth."
+spell.null_lance.ask,Ask to be taught Null Lance.
+spell.teach.archive_reader,"Ferris looks up, annoyed to be caught. 'The Archive has a lance in the margin of a book on unmaking. I have copied it out. You may as well have it.'"
+spell.teach.archive_reader.taught,"He turns the copied page toward you and reads it aloud in a flat voice. The words settle in your head like a coin in a purse."
+spell.arcane_shield.ask,Ask to be taught Arcane Shield.
+spell.gravity_well.ask,Ask to be taught Gravity Well.
+spell.teach.archive_steward,"Coran blots a sheet. 'Two workings are kept in the annexe ledgers that were never meant for the shelves: a ward and a well. Which shall I copy for you?'"
+spell.teach.archive_steward.taught,"He copies the working onto a clean sheet, has you read it back, then burns the sheet. 'The Archive does not keep spare copies.'"
+spell.blink.ask,Ask to be taught Blink.
+spell.teach.sunspire_archivist,"Seren finally lifts her eyes. 'The old scholars had a step for crossing the sand between the shelves. Would you like it?'"
+spell.teach.sunspire_archivist.taught,"She turns a page you were not supposed to be able to see. When you look up, you are on the far side of the reading desk."
+spell.lifebloom_totem.ask,Ask to be taught Lifebloom Totem.
+spell.teach.sunspire_wellkeeper,"Oda leans on the well-rope. 'A green thing planted at a well lives on other people's kindness. I know how to plant one that gives back.'"
+spell.teach.sunspire_wellkeeper.taught,"She has you press a seed into the sand and hum. It grows knee-high before she has finished scolding your tune."
+spell.knit_bone.ask,Ask to be taught Knit Bone.
+spell.teach.ashen_mender,"Ada tears a strip of linen without looking. 'Wounds and rot both. There is a way to knit a body and draw the rot out first. It is not pretty.'"
+spell.teach.ashen_mender.taught,"She holds your wrist and shows you where to push. 'Rot first, then bone. Never the other way round.'"
+spell.soul_tithe.ask,Ask to be taught Soul Tithe.
+spell.teach.undying_steward,"Ismene folds the proclamation. 'The Concord pays its debts in the coin it has most of. I can teach you the paying.'"
+spell.teach.undying_steward.taught,"It costs you something small and warm, and the working takes it. 'That is the tithe. Spend it well.'"
+spell.grave_mark.ask,Ask to be taught Grave Mark.
+spell.teach.undying_clockkeeper,"Corwen taps the dial. 'Everything here is marked with the hour it will stop. I can teach you to mark things that have not stopped yet.'"
+spell.teach.undying_clockkeeper.taught,"He shows you how to hold the mark in your mind like a number on a dial. Then he sets the clock a minute back for luck."
 # --- end magic-content ---

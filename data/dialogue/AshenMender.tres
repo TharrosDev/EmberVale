@@ -22,7 +22,7 @@ Goto = "root"
 script = ExtResource("2_node")
 Id = "root"
 Text = "dlg.ashen_mender.root"
-Choices = Array[Resource]([SubResource("ch_ash"), SubResource("ch_bye")])
+Choices = Array[Resource]([SubResource("ch_ash"), SubResource("ch_mg_menu"), SubResource("ch_bye")])
 
 [sub_resource type="Resource" id="node_ash"]
 script = ExtResource("2_node")
@@ -30,9 +30,44 @@ Id = "ash"
 Text = "dlg.ashen_mender.ash"
 Choices = Array[Resource]([SubResource("ch_ash_back")])
 
+; Magic upgrade: this NPC teaches spellcraft (spell.teach.* strings, LearnSpell effect).
+[sub_resource type="Resource" id="ch_mg_menu"]
+script = ExtResource("3_choice")
+Text = "spell.teach.ask_menu"
+Goto = "mg_teach"
+
+[sub_resource type="Resource" id="ch_mg_knit_bone"]
+script = ExtResource("3_choice")
+Text = "spell.knit_bone.ask"
+Goto = "mg_taught"
+Effect = 8
+EffectArg = "spell.knit_bone"
+
+[sub_resource type="Resource" id="ch_mg_back"]
+script = ExtResource("3_choice")
+Text = "spell.teach.back"
+Goto = "root"
+
+[sub_resource type="Resource" id="ch_mg_thanks"]
+script = ExtResource("3_choice")
+Text = "spell.teach.thanks"
+Goto = "root"
+
+[sub_resource type="Resource" id="node_mg_teach"]
+script = ExtResource("2_node")
+Id = "mg_teach"
+Text = "spell.teach.ashen_mender"
+Choices = Array[Resource]([SubResource("ch_mg_knit_bone"), SubResource("ch_mg_back")])
+
+[sub_resource type="Resource" id="node_mg_taught"]
+script = ExtResource("2_node")
+Id = "mg_taught"
+Text = "spell.teach.ashen_mender.taught"
+Choices = Array[Resource]([SubResource("ch_mg_thanks")])
+
 [resource]
 script = ExtResource("1_dlg")
 Id = "dialogue.ashen_mender"
 SpeakerName = "dlg.ashen_mender.speaker"
 StartNodeId = "root"
-Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_ash")])
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_ash"), SubResource("node_mg_teach"), SubResource("node_mg_taught")])

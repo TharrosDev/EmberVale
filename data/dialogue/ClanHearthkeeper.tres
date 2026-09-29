@@ -32,7 +32,7 @@ Text = "dlg.clan_hearthkeeper.c_hold_bye"
 script = ExtResource("2_node")
 Id = "root"
 Text = "dlg.clan_hearthkeeper.root"
-Choices = Array[Resource]([SubResource("ch_sworn"), SubResource("ch_hold"), SubResource("ch_bye")])
+Choices = Array[Resource]([SubResource("ch_sworn"), SubResource("ch_hold"), SubResource("ch_mg_menu"), SubResource("ch_bye")])
 
 [sub_resource type="Resource" id="node_sworn"]
 script = ExtResource("2_node")
@@ -46,9 +46,51 @@ Id = "hold"
 Text = "dlg.clan_hearthkeeper.hold"
 Choices = Array[Resource]([SubResource("ch_hold_bye")])
 
+; Magic upgrade: this NPC teaches spellcraft (spell.teach.* strings, LearnSpell effect).
+[sub_resource type="Resource" id="ch_mg_menu"]
+script = ExtResource("3_choice")
+Text = "spell.teach.ask_menu"
+Goto = "mg_teach"
+
+[sub_resource type="Resource" id="ch_mg_rime_shard"]
+script = ExtResource("3_choice")
+Text = "spell.rime_shard.ask"
+Goto = "mg_taught"
+Effect = 8
+EffectArg = "spell.rime_shard"
+
+[sub_resource type="Resource" id="ch_mg_frost_nova"]
+script = ExtResource("3_choice")
+Text = "spell.frost_nova.ask"
+Goto = "mg_taught"
+Effect = 8
+EffectArg = "spell.frost_nova"
+
+[sub_resource type="Resource" id="ch_mg_back"]
+script = ExtResource("3_choice")
+Text = "spell.teach.back"
+Goto = "root"
+
+[sub_resource type="Resource" id="ch_mg_thanks"]
+script = ExtResource("3_choice")
+Text = "spell.teach.thanks"
+Goto = "root"
+
+[sub_resource type="Resource" id="node_mg_teach"]
+script = ExtResource("2_node")
+Id = "mg_teach"
+Text = "spell.teach.clan_hearthkeeper"
+Choices = Array[Resource]([SubResource("ch_mg_rime_shard"), SubResource("ch_mg_frost_nova"), SubResource("ch_mg_back")])
+
+[sub_resource type="Resource" id="node_mg_taught"]
+script = ExtResource("2_node")
+Id = "mg_taught"
+Text = "spell.teach.clan_hearthkeeper.taught"
+Choices = Array[Resource]([SubResource("ch_mg_thanks")])
+
 [resource]
 script = ExtResource("1_dlg")
 Id = "dialogue.clan_hearthkeeper"
 SpeakerName = "dlg.clan_hearthkeeper.speaker"
 StartNodeId = "root"
-Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_hold"), SubResource("node_sworn")])
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_hold"), SubResource("node_sworn"), SubResource("node_mg_teach"), SubResource("node_mg_taught")])

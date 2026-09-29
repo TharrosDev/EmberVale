@@ -138,7 +138,7 @@ EffectArg = "flag.clan.bloodfeud"
 script = ExtResource("2_node")
 Id = "root"
 Text = "dlg.clan_exile.root"
-Choices = Array[Resource]([SubResource("ch_feud"), SubResource("ch_work"), SubResource("ch_who"), SubResource("ch_bye")])
+Choices = Array[Resource]([SubResource("ch_feud"), SubResource("ch_work"), SubResource("ch_who"), SubResource("ch_mg_menu"), SubResource("ch_bye")])
 
 [sub_resource type="Resource" id="node_who"]
 script = ExtResource("2_node")
@@ -206,9 +206,44 @@ Id = "rit_thanks"
 Text = "dlg.clan_exile.rite.thanks"
 Choices = Array[Resource]([SubResource("ch_rit_thanks_bye")])
 
+; Magic upgrade: this NPC teaches spellcraft (spell.teach.* strings, LearnSpell effect).
+[sub_resource type="Resource" id="ch_mg_menu"]
+script = ExtResource("3_choice")
+Text = "spell.teach.ask_menu"
+Goto = "mg_teach"
+
+[sub_resource type="Resource" id="ch_mg_thunder_step"]
+script = ExtResource("3_choice")
+Text = "spell.thunder_step.ask"
+Goto = "mg_taught"
+Effect = 8
+EffectArg = "spell.thunder_step"
+
+[sub_resource type="Resource" id="ch_mg_back"]
+script = ExtResource("3_choice")
+Text = "spell.teach.back"
+Goto = "root"
+
+[sub_resource type="Resource" id="ch_mg_thanks"]
+script = ExtResource("3_choice")
+Text = "spell.teach.thanks"
+Goto = "root"
+
+[sub_resource type="Resource" id="node_mg_teach"]
+script = ExtResource("2_node")
+Id = "mg_teach"
+Text = "spell.teach.clan_exile"
+Choices = Array[Resource]([SubResource("ch_mg_thunder_step"), SubResource("ch_mg_back")])
+
+[sub_resource type="Resource" id="node_mg_taught"]
+script = ExtResource("2_node")
+Id = "mg_taught"
+Text = "spell.teach.clan_exile.taught"
+Choices = Array[Resource]([SubResource("ch_mg_thanks")])
+
 [resource]
 script = ExtResource("1_dlg")
 Id = "dialogue.clan_exile"
 SpeakerName = "dlg.clan_exile.speaker"
 StartNodeId = "root"
-Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_who"), SubResource("node_feud"), SubResource("node_work"), SubResource("node_prf_offer"), SubResource("node_prf_accepted"), SubResource("node_prf_inprogress"), SubResource("node_prf_thanks"), SubResource("node_rit_offer"), SubResource("node_rit_accepted"), SubResource("node_rit_inprogress"), SubResource("node_rit_thanks")])
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_who"), SubResource("node_feud"), SubResource("node_work"), SubResource("node_prf_offer"), SubResource("node_prf_accepted"), SubResource("node_prf_inprogress"), SubResource("node_prf_thanks"), SubResource("node_rit_offer"), SubResource("node_rit_accepted"), SubResource("node_rit_inprogress"), SubResource("node_rit_thanks"), SubResource("node_mg_teach"), SubResource("node_mg_taught")])

@@ -46,7 +46,7 @@ Goto = "root"
 script = ExtResource("2_node")
 Id = "root"
 Text = "dlg.sunspire_wellkeeper.root"
-Choices = Array[Resource]([SubResource("ch_ending_dawnfire"), SubResource("ch_ending_embers"), SubResource("ch_wells"), SubResource("ch_bye")])
+Choices = Array[Resource]([SubResource("ch_ending_dawnfire"), SubResource("ch_ending_embers"), SubResource("ch_wells"), SubResource("ch_mg_menu"), SubResource("ch_bye")])
 
 [sub_resource type="Resource" id="node_wells"]
 script = ExtResource("2_node")
@@ -66,9 +66,44 @@ Id = "ending_embers"
 Text = "dlg.sunspire_wellkeeper.ending_embers"
 Choices = Array[Resource]([SubResource("ch_ending_embers_back")])
 
+; Magic upgrade: this NPC teaches spellcraft (spell.teach.* strings, LearnSpell effect).
+[sub_resource type="Resource" id="ch_mg_menu"]
+script = ExtResource("3_choice")
+Text = "spell.teach.ask_menu"
+Goto = "mg_teach"
+
+[sub_resource type="Resource" id="ch_mg_lifebloom_totem"]
+script = ExtResource("3_choice")
+Text = "spell.lifebloom_totem.ask"
+Goto = "mg_taught"
+Effect = 8
+EffectArg = "spell.lifebloom_totem"
+
+[sub_resource type="Resource" id="ch_mg_back"]
+script = ExtResource("3_choice")
+Text = "spell.teach.back"
+Goto = "root"
+
+[sub_resource type="Resource" id="ch_mg_thanks"]
+script = ExtResource("3_choice")
+Text = "spell.teach.thanks"
+Goto = "root"
+
+[sub_resource type="Resource" id="node_mg_teach"]
+script = ExtResource("2_node")
+Id = "mg_teach"
+Text = "spell.teach.sunspire_wellkeeper"
+Choices = Array[Resource]([SubResource("ch_mg_lifebloom_totem"), SubResource("ch_mg_back")])
+
+[sub_resource type="Resource" id="node_mg_taught"]
+script = ExtResource("2_node")
+Id = "mg_taught"
+Text = "spell.teach.sunspire_wellkeeper.taught"
+Choices = Array[Resource]([SubResource("ch_mg_thanks")])
+
 [resource]
 script = ExtResource("1_dlg")
 Id = "dialogue.sunspire_wellkeeper"
 SpeakerName = "dlg.sunspire_wellkeeper.speaker"
 StartNodeId = "root"
-Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_wells"), SubResource("node_ending_dawnfire"), SubResource("node_ending_embers")])
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_wells"), SubResource("node_ending_dawnfire"), SubResource("node_ending_embers"), SubResource("node_mg_teach"), SubResource("node_mg_taught")])

@@ -106,19 +106,44 @@ public sealed class EnemyCasterTactics
             return;
         }
 
-        // 2. Offensive: the hardest-hitting ready damage spell, aimed down the body's facing.
+        // 2. Control: a root, silence, stun or mark goes out whenever it is ready. Its own cooldown paces
+        //    it, so a shaman roots you, then fills the gap with damage, and the fight has a rhythm
+        //    instead of one spell on repeat.
+        SpellResource? opener = ReadyControl(casting);
+        if (opener != null && casting.TryCastById(opener.Id))
+        {
+            return;
+        }
+
+        // 3. Offensive: the hardest-hitting ready damage spell, aimed down the body's facing.
         SpellResource? attack = ReadyOffensive(casting);
         if (attack != null && casting.TryCastById(attack.Id))
         {
             return;
         }
 
-        // 3. Ward itself when there is nothing better to do and the buff is not already up.
+        // 4. Ward itself when there is nothing better to do and the buff is not already up.
         SpellResource? ward = ReadySupport(casting, healing: false);
         if (ward != null && !HasStatus(_owner, ward.StatusEffectId))
         {
             casting.TryCastSupportOn(_owner, ward);
         }
+    }
+
+    /// <summary>A ready non-Self spell whose status controls its target (root, silence, stun, mark), or null.
+    /// Control is read from the status resource, so a spell earns this by its data and no id is named.</summary>
+    private static SpellResource? ReadyControl(SpellcastingComponent casting)
+    {
+        foreach (SpellResource spell in casting.Spells)
+        {
+            if (spell.Delivery != SpellDelivery.Self && spell.HasStatusEffect && casting.CanCast(spell) &&
+                StatusEffectDatabase.Get(spell.StatusEffectId) is { Controls: not StatusControl.None })
+            {
+                return spell;
+            }
+        }
+
+        return null;
     }
 
     /// <summary>The strongest ready offensive (non-Self, damaging) spell the caster knows, or null.</summary>

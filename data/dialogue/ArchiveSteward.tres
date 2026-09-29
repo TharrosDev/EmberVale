@@ -63,7 +63,7 @@ Choices = Array[Resource]([SubResource("ch_back"), SubResource("ch_end")])
 script = ExtResource("2_node")
 Id = "root"
 Text = "dlg.archive_steward.root"
-Choices = Array[Resource]([SubResource("ch_member"), SubResource("ch_stranger"), SubResource("ch_bye")])
+Choices = Array[Resource]([SubResource("ch_member"), SubResource("ch_stranger"), SubResource("ch_mg_menu"), SubResource("ch_bye")])
 
 [sub_resource type="Resource" id="node_member"]
 script = ExtResource("2_node")
@@ -77,9 +77,51 @@ Id = "stranger"
 Text = "dlg.archive_steward.stranger"
 Choices = Array[Resource]([SubResource("ch_back"), SubResource("ch_end")])
 
+; Magic upgrade: this NPC teaches spellcraft (spell.teach.* strings, LearnSpell effect).
+[sub_resource type="Resource" id="ch_mg_menu"]
+script = ExtResource("3_choice")
+Text = "spell.teach.ask_menu"
+Goto = "mg_teach"
+
+[sub_resource type="Resource" id="ch_mg_arcane_shield"]
+script = ExtResource("3_choice")
+Text = "spell.arcane_shield.ask"
+Goto = "mg_taught"
+Effect = 8
+EffectArg = "spell.arcane_shield"
+
+[sub_resource type="Resource" id="ch_mg_gravity_well"]
+script = ExtResource("3_choice")
+Text = "spell.gravity_well.ask"
+Goto = "mg_taught"
+Effect = 8
+EffectArg = "spell.gravity_well"
+
+[sub_resource type="Resource" id="ch_mg_back"]
+script = ExtResource("3_choice")
+Text = "spell.teach.back"
+Goto = "root"
+
+[sub_resource type="Resource" id="ch_mg_thanks"]
+script = ExtResource("3_choice")
+Text = "spell.teach.thanks"
+Goto = "root"
+
+[sub_resource type="Resource" id="node_mg_teach"]
+script = ExtResource("2_node")
+Id = "mg_teach"
+Text = "spell.teach.archive_steward"
+Choices = Array[Resource]([SubResource("ch_mg_arcane_shield"), SubResource("ch_mg_gravity_well"), SubResource("ch_mg_back")])
+
+[sub_resource type="Resource" id="node_mg_taught"]
+script = ExtResource("2_node")
+Id = "mg_taught"
+Text = "spell.teach.archive_steward.taught"
+Choices = Array[Resource]([SubResource("ch_mg_thanks")])
+
 [resource]
 script = ExtResource("1_dlg")
 Id = "dialogue.archive_steward"
 SpeakerName = "dlg.archive_steward.speaker"
 StartNodeId = "root"
-Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_member"), SubResource("node_stranger"), SubResource("node_h42_react")])
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_member"), SubResource("node_stranger"), SubResource("node_h42_react"), SubResource("node_mg_teach"), SubResource("node_mg_taught")])
