@@ -26,6 +26,8 @@ namespace Embervale.Combat;
 /// between attacker and defender for a parry.</param>
 /// <param name="ByPlayer">The player (or, with no player in play, the player's side) dealt it.</param>
 /// <param name="OnPlayer">The player took it.</param>
+/// <param name="Weight">A spell's authored <c>ImpactWeight</c> (0..1) when the blow was a spell that
+/// carries one, otherwise 0 (unset). Presentation only: hit-stop and shake scale by it.</param>
 public readonly record struct HitConfirmedEvent(
     IEntity? Source,
     IEntity Target,
@@ -36,4 +38,5 @@ public readonly record struct HitConfirmedEvent(
     bool Staggered,
     Vector3 Point,
     bool ByPlayer,
-    bool OnPlayer) : IGameEvent;
+    bool OnPlayer,
+    float Weight = 0f) : IGameEvent;
