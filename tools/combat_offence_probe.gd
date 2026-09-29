@@ -244,7 +244,7 @@ func _check_charge() -> void:
 	if not action.BeginCharge():
 		_fail("charge: could not begin a second charge")
 	else:
-		combat.Stagger(0.2)
+		combat.Stagger(0.2, 0, 2)
 		await _frames(2)
 		if action.IsCharging:
 			_fail("charge: a stagger did not break the charge")
@@ -278,7 +278,7 @@ func _check_hyperarmor() -> void:
 		await _frames(70 if full else 15)
 		action.ReleaseCharge()
 		await _frames(3)
-		combat.Stagger(0.4)
+		combat.Stagger(0.4, 0, 2)
 		await _frames(3)
 		var still_swinging: bool = action.Current != null
 		print("hyperarmor: %s charge, staggered in the wind-up -> %s"
@@ -326,7 +326,7 @@ func _check_buffer() -> void:
 	action.TryAttack()
 	await _frames(15)
 	action.TryAttack()
-	combat.Stagger(0.25)
+	combat.Stagger(0.25, 0, 2)
 	await _frames(90)
 	var after_stagger: bool = action.Current != null
 	print("buffer: press queued then staggered -> %s" % ("swung anyway" if after_stagger else "cleared"))
