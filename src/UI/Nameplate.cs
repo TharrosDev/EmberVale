@@ -1,5 +1,7 @@
 using Embervale.Combat;
+using Embervale.Combat.Actions;
 using Embervale.Entities;
+using Embervale.Localization;
 using Embervale.Stats;
 using Godot;
 
@@ -24,6 +26,9 @@ public partial class Nameplate : PanelContainer
     /// <summary>The last subject shown, so the health bar can snap rather than animate when the
     /// player's aim crosses from one target to another.</summary>
     private IEntity? _last;
+    private IEntity? _lastCombat;
+    private JuicedBar _poise = null!;
+    private Label _tag = null!;
 
     public Nameplate()
     {
@@ -46,6 +51,18 @@ public partial class Nameplate : PanelContainer
         _bar = JuicedBar.Create(UiTheme.Health, 180f);
         col.AddChild(_bar);
 
+        // Combat additions: a thin poise bar under the health bar (how close the target is to
+        // breaking) and a state tag (staggered, guarding, or what its wind-up asks of you).
+        _poise = JuicedBar.Create(new Color(0.62f, 0.66f, 0.72f), 180f);
+        _poise.CustomMinimumSize = new Vector2(180f, 5f);
+        _poise.Visible = false;
+        col.AddChild(_poise);
+
+        _tag = UiTheme.Caption("");
+        _tag.HorizontalAlignment = HorizontalAlignment.Center;
+        _tag.Visible = false;
+        col.AddChild(_tag);
+
         pad.AddChild(col);
         AddChild(pad);
     }
@@ -64,6 +81,7 @@ public partial class Nameplate : PanelContainer
             focus.GetComponent<StatsComponent>() is not { } stats)
         {
             _last = null;
+            _lastCombat = null;
             Visible = false;
             return;
         }
@@ -87,7 +105,63 @@ public partial class Nameplate : PanelContainer
             _bar.SetTarget(health);
         }
 
+        ShowCombat(focus, changed: !ReferenceEquals(focus, _lastCombat));
+        _lastCombat = focus;
         Visible = true;
+    }
+
+    /// <summary>The poise bar and the state tag. Poise drains as the target is worn down and refills
+    /// on a break; the tag names the moment worth acting on — staggered (press the attack), winding up
+    /// (and whether to parry, dodge or step out of a sweep), guarding.</summary>
+    private void ShowCombat(IEntity focus, bool changed)
+    {
+        if (focus.GetComponent<CombatComponent>() is not { } combat)
+        {
+            _poise.Visible = false;
+            _tag.Visible = false;
+            return;
+        }
+
+        _poise.Visible = true;
+        if (changed)
+        {
+            _poise.Snap(combat.PoiseNormalized);
+        }
+        else
+        {
+            _poise.SetTarget(combat.PoiseNormalized);
+        }
+
+        string? key = null;
+        Color tint = UiTheme.Dim;
+        if (combat.IsStaggered)
+        {
+            key = "combat.feedback.tag_staggered";
+            tint = UiTheme.Accent;
+        }
+        else if (focus.GetComponent<CharacterActionComponent>() is { Phase: ActionPhase.Startup } &&
+                 TelegraphClasses.Of(focus) is { } cls)
+        {
+            key = TelegraphClasses.LabelKey(cls);
+            tint = cls switch
+            {
+                TelegraphClass.Parryable => UiTheme.Accent,
+                TelegraphClass.Unblockable => UiTheme.Bad,
+                TelegraphClass.Sweep => UiTheme.AccentHot,
+                _ => UiTheme.Text,
+            };
+        }
+        else if (combat.IsBlocking)
+        {
+            key = "combat.feedback.tag_guarding";
+        }
+
+        _tag.Visible = key != null;
+        if (key != null)
+        {
+            _tag.Text = Loc.T(key);
+            _tag.AddThemeColorOverride("font_color", tint);
+        }
     }
 
     /// <summary>

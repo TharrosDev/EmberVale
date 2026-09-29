@@ -1,15 +1,31 @@
+using System;
+
 namespace Embervale.Combat;
 
+/// <summary>The sound for a blow: which shipped cue, how loud, and at what pitch.</summary>
+public readonly record struct CuePlan(string CueId, float PitchScale, float VolumeDb);
+
+/// <summary>How a blow's impact spark looks: its tint, how big it swells, and whether it throws a
+/// shock ring as well (the marks of a parry, a guard break and a poise break).</summary>
+public readonly record struct SparkPlan(float R, float G, float B, float Scale, bool Ring);
+
 /// <summary>
-/// Pure mapping from a hit's flavour to its placeholder feedback (Phase 29C): the sound-cue id and the
-/// impact-spark tint for a crit / blocked / plain hit. Godot-free so it's unit-testable; the
+/// Pure mapping from a hit's flavour to its feedback (Phase 29C, deepened): the sound cue and the
+/// impact-spark look for every <see cref="HitOutcome"/>. Godot-free so it's unit-testable; the
 /// <see cref="CombatFeedbackDirector"/> consumes it.
+///
+/// <para>⚠️ <b>No new audio assets.</b> The library ships four combat cues (swing, hit, crit, block),
+/// and the audio library is not this system's to grow, so the outcomes are told apart by <em>which</em>
+/// cue, at what pitch and loudness: a parry is the block cue rung high and loud, a guard break is the
+/// hit cue dropped an octave and driven, a poise break is the crit cue low, a resisted blow is a dull
+/// thud. When real cues land they slot into <see cref="Plan"/> without touching a caller.</para>
 /// </summary>
 public static class CombatFx
 {
     public const string CritCue = "sfx.combat.crit";
     public const string BlockCue = "sfx.combat.block";
     public const string HitCue = "sfx.combat.hit";
+    public const string SwingCue = "sfx.combat.swing";
 
     /// <summary>The sound-cue id for a resolved hit (crit takes precedence over block over a plain hit).</summary>
     public static string CueId(bool isCrit, bool isBlocked) =>
@@ -29,5 +45,42 @@ public static class CombatFx
         }
 
         return (1.0f, 0.95f, 0.85f); // warm white
+    }
+
+    /// <summary>The sound for an outcome. Heavy kinds sit lower and louder, light ones higher and softer.</summary>
+    public static CuePlan Plan(HitOutcome outcome, HitKind kind)
+    {
+        (string cue, float pitch, float volume) = outcome switch
+        {
+            HitOutcome.Blocked => (BlockCue, 0.95f, -2f),
+            HitOutcome.Parried => (BlockCue, 1.45f, 4f),
+            HitOutcome.GuardBroken => (HitCue, 0.6f, 5f),
+            HitOutcome.Critical => (CritCue, kind == HitKind.Riposte ? 0.85f : 1f, 2f),
+            HitOutcome.PoiseBroken => (CritCue, 0.7f, 0f),
+            HitOutcome.Resisted => (BlockCue, 0.75f, -5f),
+            _ => (HitCue, 1f, 0f),
+        };
+
+        float weight = HitOutcomes.KindWeight(kind);
+        pitch *= weight > 1f ? 0.9f : weight < 1f ? 1.12f : 1f;
+        volume += weight > 1f ? 2f : weight < 1f ? -3f : 0f;
+        return new CuePlan(cue, pitch, volume);
+    }
+
+    /// <summary>The spark for an outcome: tinted and sized so the eight things that can happen to a
+    /// blow do not all look like a white puff. Damage scales an ordinary hit's swell a little.</summary>
+    public static SparkPlan Spark(HitOutcome outcome, float amount)
+    {
+        float swell = 0.85f + (0.5f * Math.Clamp(amount / HitStop.HeavyDamageRef, 0f, 1f));
+        return outcome switch
+        {
+            HitOutcome.Blocked => new SparkPlan(0.65f, 0.68f, 0.74f, 0.8f, false),
+            HitOutcome.Parried => new SparkPlan(1.0f, 0.90f, 0.55f, 1.6f, true),
+            HitOutcome.GuardBroken => new SparkPlan(0.82f, 0.35f, 0.30f, 1.8f, true),
+            HitOutcome.Critical => new SparkPlan(1.0f, 0.82f, 0.35f, 1.4f * swell, false),
+            HitOutcome.PoiseBroken => new SparkPlan(0.95f, 0.62f, 0.30f, 1.5f, true),
+            HitOutcome.Resisted => new SparkPlan(0.50f, 0.52f, 0.62f, 0.7f, false),
+            _ => new SparkPlan(1.0f, 0.95f, 0.85f, swell, false),
+        };
     }
 }

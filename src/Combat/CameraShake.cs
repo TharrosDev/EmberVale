@@ -43,10 +43,34 @@ public partial class CameraShake : EntityComponent, ICameraLayer
         EventBus.Instance?.Subscribe<DamageDealtEvent>(OnDamage);
         EventBus.Instance?.Subscribe<EntityStaggeredEvent>(OnStaggered);
         EventBus.Instance?.Subscribe<ActionReleasedEvent>(OnActionReleased);
+        EventBus.Instance?.Subscribe<EntityParriedEvent>(OnParried);
+        EventBus.Instance?.Subscribe<GuardBrokenEvent>(OnGuardBroken);
+    }
+
+    /// <summary>A parry the player made or suffered: a sharp jolt, felt as the clash of the two
+    /// blades. Hooks only; the trauma tiers are <see cref="ShakeMath"/>'s.</summary>
+    private void OnParried(EntityParriedEvent e)
+    {
+        if (IsPlayer(e.Defender) || IsPlayer(e.Attacker))
+        {
+            Submit(ShakeMath.Parried(), FromSource(IsPlayer(e.Defender) ? e.Attacker : e.Defender));
+        }
+    }
+
+    /// <summary>The player's guard giving out is the heaviest thing that can happen to the camera
+    /// short of a crit.</summary>
+    private void OnGuardBroken(GuardBrokenEvent e)
+    {
+        if (IsPlayer(e.Defender))
+        {
+            Submit(ShakeMath.GuardBroken(), FromSource(e.Attacker));
+        }
     }
 
     protected override void OnTeardown()
     {
+        EventBus.Instance?.Unsubscribe<EntityParriedEvent>(OnParried);
+        EventBus.Instance?.Unsubscribe<GuardBrokenEvent>(OnGuardBroken);
         EventBus.Instance?.Unsubscribe<DamageDealtEvent>(OnDamage);
         EventBus.Instance?.Unsubscribe<EntityStaggeredEvent>(OnStaggered);
         EventBus.Instance?.Unsubscribe<ActionReleasedEvent>(OnActionReleased);

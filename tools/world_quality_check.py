@@ -168,6 +168,9 @@ def gates(engine: str | None) -> list[Gate]:
         # --- combat-defence: this group's probe Gate goes between the markers (one owner per block) ---
         # --- end combat-defence ---
         # --- combat-feedback: this group's probe Gate goes between the markers (one owner per block) ---
+        Gate("combat-feedback", "hit-stop restores the clock (mid-pause too), a swing and a parry reach the feedback, lock-on works paused, telegraphs run off the real wind-up",
+             [engine, "--headless", "--path", ".", "--script",
+              "res://tools/combat_feedback_probe.gd"], slow=True),
         # --- end combat-feedback ---
         # --- combat-ranged: this group's probe Gate goes between the markers (one owner per block) ---
         # --- end combat-ranged ---

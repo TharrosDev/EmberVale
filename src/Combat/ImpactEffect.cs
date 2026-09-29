@@ -18,7 +18,11 @@ public partial class ImpactEffect : Node3D
 
     private MeshInstance3D _mesh = null!;
     private StandardMaterial3D _material = null!;
+    private MeshInstance3D _ring = null!;
+    private StandardMaterial3D _ringMaterial = null!;
     private Color _color = Colors.White;
+    private float _scale = 1f;
+    private bool _showRing;
     private double _age;
     private bool _active; // inert until Launch arms it
 
@@ -40,18 +44,43 @@ public partial class ImpactEffect : Node3D
             Visible = false,
         };
         AddChild(_mesh);
+
+        // The shock ring of a parry, a guard break or a poise break: a flat torus that races outward
+        // faster than the spark swells, so these three read as events rather than as a bigger puff.
+        _ringMaterial = new StandardMaterial3D
+        {
+            Transparency = BaseMaterial3D.TransparencyEnum.Alpha,
+            ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
+            EmissionEnabled = true,
+            CullMode = BaseMaterial3D.CullModeEnum.Disabled,
+        };
+        _ring = new MeshInstance3D
+        {
+            Mesh = new TorusMesh { InnerRadius = 0.8f, OuterRadius = 1f, RingSegments = 24 },
+            MaterialOverride = _ringMaterial,
+            Visible = false,
+            CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
+        };
+        AddChild(_ring);
     }
 
-    /// <summary>(Re)arms the spark with a tint. Add it to the tree and set GlobalPosition first.</summary>
-    public void Launch(Color color)
+    /// <summary>(Re)arms the spark with a tint, a size multiplier and, optionally, a shock ring. Add it
+    /// to the tree and set GlobalPosition first.</summary>
+    public void Launch(Color color, float scale = 1f, bool ring = false)
     {
         _color = color;
+        _scale = Mathf.Clamp(scale, 0.3f, 3f);
+        _showRing = ring;
         _age = 0d;
         _active = true;
         _mesh.Visible = true;
         _mesh.Scale = Vector3.One;
         _material.Emission = color;
         _material.AlbedoColor = new Color(color.R, color.G, color.B, 0.7f);
+        _ring.Visible = ring;
+        _ring.Scale = Vector3.One * 0.1f;
+        _ringMaterial.Emission = color;
+        _ringMaterial.AlbedoColor = new Color(color.R, color.G, color.B, 0.9f);
     }
 
     public override void _Process(double delta)
@@ -67,6 +96,7 @@ public partial class ImpactEffect : Node3D
         {
             _active = false;
             _mesh.Visible = false;
+            _ring.Visible = false;
             if (Released != null)
             {
                 Released(this);
@@ -79,7 +109,15 @@ public partial class ImpactEffect : Node3D
             return;
         }
 
-        _mesh.Scale = Vector3.One * Mathf.Lerp(1f, GrowRadius / SeedRadius, t);
+        _mesh.Scale = Vector3.One * Mathf.Lerp(1f, GrowRadius * _scale / SeedRadius, t);
         _material.AlbedoColor = new Color(_color.R, _color.G, _color.B, 0.7f * (1f - t));
+
+        if (_showRing)
+        {
+            // Eased out, so it snaps open on the frame of the blow and lingers thin at the edge.
+            float open = 1f - ((1f - t) * (1f - t));
+            _ring.Scale = Vector3.One * Mathf.Lerp(0.1f, 1.5f * _scale, open);
+            _ringMaterial.AlbedoColor = new Color(_color.R, _color.G, _color.B, 0.9f * (1f - t));
+        }
     }
 }

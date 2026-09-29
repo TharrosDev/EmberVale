@@ -1,4 +1,7 @@
 using System.Collections.Generic;
+using Embervale.Combat.Actions;
+using Embervale.Core;
+using Embervale.Core.Events;
 using Embervale.Core.Services;
 using Embervale.Entities;
 using Embervale.Player;
@@ -54,26 +57,87 @@ public partial class LockOnComponent : EntityComponent
     private bool _inSight = true;
     private ulong _tickStamp;
     private ulong _faceStamp;
+    private readonly FlickGate _flick = new();
+    private Vector3 _lastPoint;
+    private LockBreakReason _lostBy = LockBreakReason.LostSight;
 
     public IEntity? Target
     {
         get => _target;
-        private set
+        private set => SetTarget(value, LockBreakReason.Invalid);
+    }
+
+    /// <summary>Whether Lock-On Assist is on (the live comfort setting): a wider cone, threats first,
+    /// the lock passing on to the next enemy on a kill, and flick switching.</summary>
+    private static bool Assist => LiveComfort.Get().LockOnAssist;
+
+    /// <summary>
+    /// Changes the lock and says so: <see cref="LockChangedEvent"/> for any change, plus
+    /// <see cref="LockBrokenEvent"/> (with <paramref name="reason"/>) when a held lock ends. A cycle
+    /// from one target to another is a change, not a break.
+    /// </summary>
+    private void SetTarget(IEntity? value, LockBreakReason reason)
+    {
+        if (ReferenceEquals(_target, value))
         {
-            if (!ReferenceEquals(_target, value))
+            return;
+        }
+
+        IEntity? previous = _target;
+        Vector3 lastPoint = previous is { Body: { } body } && GodotObject.IsInstanceValid(body)
+            ? body.GlobalPosition + (Vector3.Up * 1.0f)
+            : _lastPoint;
+
+        _target = value;
+        _lostSeconds = 0f;
+        _sightTimer = 0f;
+        _inSight = true;
+        _tickStamp = 0;
+        _faceStamp = 0;
+        _settleLeft = value != null ? SettleSeconds : 0f;
+        _flick.Reset();
+        if (value is { Body: { } newBody } && GodotObject.IsInstanceValid(newBody))
+        {
+            _lastPoint = newBody.GlobalPosition + (Vector3.Up * 1.0f);
+        }
+
+        if (Entity == null)
+        {
+            return;
+        }
+
+        EventBus.Instance?.Publish(new LockChangedEvent(Entity, value));
+        if (value == null && previous != null)
+        {
+            EventBus.Instance?.Publish(new LockBrokenEvent(Entity, previous, reason, lastPoint));
+        }
+    }
+
+    /// <summary>Ends the lock for <paramref name="reason"/>; with the assist on a kill passes it to the
+    /// next enemy close by instead of dropping.</summary>
+    private void Drop(LockBreakReason reason)
+    {
+        SetTarget(null, reason);
+        if (!LockOn.ShouldAutoAdvance(Assist, reason))
+        {
+            return;
+        }
+
+        foreach (IEntity candidate in Acquire())
+        {
+            if (DistanceSq(candidate) <= LockOn.AutoAdvanceRange * LockOn.AutoAdvanceRange)
             {
-                _target = value;
-                _lostSeconds = 0f;
-                _sightTimer = 0f;
-                _inSight = true;
-                _tickStamp = 0;
-                _faceStamp = 0;
-                _settleLeft = value != null ? SettleSeconds : 0f;
+                SetTarget(candidate, LockBreakReason.Invalid);
+                return;
             }
         }
     }
 
     public bool IsLocked => Target != null;
+
+    /// <summary>The locked target as a plain node — for callers that cannot see <see cref="IEntity"/>
+    /// (GDScript, the headless probe).</summary>
+    public Node? TargetNode => _target as Node;
 
     protected override void OnInitialize()
     {
@@ -93,12 +157,17 @@ public partial class LockOnComponent : EntityComponent
     {
         if (Target != null)
         {
-            Target = null;
+            SetTarget(null, LockBreakReason.Toggled);
             return;
         }
 
         Target = IsValid(preferred) ? preferred : Nearest();
     }
+
+    /// <summary>Toggles the lock with no aimed-at preference. A plain-argument door for callers that
+    /// cannot pass an <see cref="IEntity"/> — the headless probe is one (GDScript cannot reach a method
+    /// taking an interface).</summary>
+    public void ToggleNearest() => Toggle(null);
 
     /// <summary>Switches to the next/previous nearby hostile. With the framing setting on this is
     /// left to right across the screen; nothing to switch to leaves a good lock alone.</summary>
@@ -110,7 +179,7 @@ public partial class LockOnComponent : EntityComponent
             // Nothing to cycle to must not break a lock that is still good.
             if (Target == null || !Framing)
             {
-                Target = null;
+                SetTarget(null, LockBreakReason.Invalid);
             }
 
             return;
@@ -150,7 +219,7 @@ public partial class LockOnComponent : EntityComponent
         {
             if (!IsValid(target))
             {
-                Target = null;
+                Drop(DropReason(target));
             }
 
             return;
@@ -161,8 +230,25 @@ public partial class LockOnComponent : EntityComponent
         float hard = DropRange * HardDropFactor;
         if (!IsAliveHostile(target) || distanceSq > hard * hard)
         {
-            Target = null;
+            Drop(DropReason(target));
             return;
+        }
+
+        if (target.Body is { } held && GodotObject.IsInstanceValid(held))
+        {
+            _lastPoint = held.GlobalPosition + (Vector3.Up * 1.0f);
+        }
+
+        // Flick the right stick to step to the next target in that direction (the mouse does the
+        // same from _Input). Only with the assist on; the cycle keys always work.
+        if (Assist && InputMap.HasAction(GameInput.LookLeft) && InputMap.HasAction(GameInput.LookRight))
+        {
+            int flick = _flick.FeedStick(Input.GetAxis(GameInput.LookLeft, GameInput.LookRight), dt);
+            if (flick != 0)
+            {
+                Cycle(flick);
+                return;
+            }
         }
 
         _sightTimer -= dt;
@@ -172,11 +258,48 @@ public partial class LockOnComponent : EntityComponent
             _inSight = HasLineOfSight(target);
         }
 
-        bool inView = _inSight && LockOn.InRange(distanceSq, DropRange * DropRange);
+        bool inRange = LockOn.InRange(distanceSq, DropRange * DropRange);
+        bool inView = _inSight && inRange;
+        if (!inView)
+        {
+            _lostBy = inRange ? LockBreakReason.LostSight : LockBreakReason.OutOfRange;
+        }
+
         _lostSeconds = LockOn.StepLoss(_lostSeconds, inView, dt);
         if (LockOn.ShouldDrop(_lostSeconds, LockOn.LossGraceSeconds))
         {
-            Target = null;
+            Drop(_lostBy);
+        }
+    }
+
+    /// <summary>Why a target that fails the validity test is gone: dead (or freed), out past the drop
+    /// range, or simply no longer a hostile.</summary>
+    private LockBreakReason DropReason(IEntity target)
+    {
+        if (target is not Node node || !GodotObject.IsInstanceValid(node) ||
+            target.GetComponent<StatsComponent>() is not { IsAlive: true })
+        {
+            return LockBreakReason.TargetDied;
+        }
+
+        return DistanceSq(target) > DropRange * DropRange ? LockBreakReason.OutOfRange : LockBreakReason.Invalid;
+    }
+
+    /// <summary>Flicking the mouse while locked on steps to the next target that way (with the assist
+    /// on). The body faces the target on its own while locked, so the mouse's yaw is free for this.</summary>
+    public override void _Input(InputEvent @event)
+    {
+        if (@event is not InputEventMouseMotion motion || Target == null || !Framing || !Assist ||
+            Input.MouseMode != Input.MouseModeEnum.Captured ||
+            GameManager.Instance is { IsPlaying: false } || UiState.MenuOpen)
+        {
+            return;
+        }
+
+        int dir = _flick.FeedMouse(motion.Relative.X, (float)GetProcessDeltaTime());
+        if (dir != 0)
+        {
+            Cycle(dir);
         }
     }
 
@@ -313,7 +436,16 @@ public partial class LockOnComponent : EntityComponent
             : -_body.GlobalTransform.Basis.Z;
 
         float angle = distance <= 0.001f ? 0f : forward.AngleTo(to / distance);
-        return LockOn.Score(distance, angle, AcquireRange, MaxAcquireAngle, HasLineOfSight(entity));
+        bool assist = Assist;
+        float score = LockOn.Score(
+            distance, angle, AcquireRange, LockOn.AcquireAngle(MaxAcquireAngle, assist), HasLineOfSight(entity));
+
+        // With the assist on, what is swinging at the player and what is nearly dead rank ahead of
+        // what is merely nearest.
+        bool threat = entity.GetComponent<CharacterActionComponent>() is
+            { Phase: ActionPhase.Startup or ActionPhase.Active };
+        float health = entity.GetComponent<StatsComponent>()?.GetNormalized(StatType.Health) ?? 1f;
+        return LockOn.Prioritised(score, assist, threat, health);
     }
 
     /// <summary>Which way a candidate lies across the screen, radians, positive right of the view.</summary>

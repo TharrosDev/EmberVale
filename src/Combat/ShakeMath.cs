@@ -183,6 +183,18 @@ public static class ShakeMath
     public static ShakeHit HitDealt(bool crit, bool blocked) =>
         crit && !blocked ? new ShakeHit(ShakeSource.Crit, CritTrauma) : ShakeHit.None;
 
+    /// <summary>Trauma of a parry: a hard, short jolt on the stagger source (the clash).</summary>
+    public const float ParryTrauma = 0.35f;
+
+    /// <summary>Trauma of the player's guard breaking.</summary>
+    public const float GuardBreakTrauma = 0.5f;
+
+    /// <summary>A parry the player made or suffered.</summary>
+    public static ShakeHit Parried() => new(ShakeSource.Stagger, ParryTrauma);
+
+    /// <summary>The player's guard giving out.</summary>
+    public static ShakeHit GuardBroken() => new(ShakeSource.Stagger, GuardBreakTrauma);
+
     /// <summary>What a stagger adds: the player's own is the full tier; another actor's only registers
     /// when it is within <see cref="NearStaggerMetres"/>, and softly.</summary>
     public static ShakeHit Stagger(bool isPlayer, float distanceMetres)

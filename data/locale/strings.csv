@@ -2642,3 +2642,19 @@ dlg.sunspire_wellkeeper.c_ending,How are the wells?
 dlg.sunspire_wellkeeper.ending_dawnfire,"""Deeper and sweeter every season. The caravans sing coming in, now. Water is still free. Some laws are worth keeping."""
 dlg.sunspire_wellkeeper.ending_embers,"""The water runs warm and tastes of smoke. Your priests come to bless it every dusk, and nobody drinks until they have gone."" She lowers her voice. ""It is still free. Please do not change that."""
 dlg.sunspire_wellkeeper.c_ending_back,Something else.
+combat.feedback.guard_broken,GUARD BROKEN
+combat.feedback.broken,POISE BROKEN
+combat.feedback.riposte,RIPOSTE!
+combat.feedback.backstab,BACKSTAB!
+combat.feedback.tell_attack,ATTACK
+combat.feedback.tell_parry,PARRY
+combat.feedback.tell_dodge,DODGE
+combat.feedback.tell_sweep,SWEEP
+combat.feedback.num_parried,PARRIED
+combat.feedback.num_guard_broken,GUARD BREAK
+combat.feedback.num_broken,BREAK
+combat.feedback.num_resisted,resisted
+combat.feedback.lock_far,Too far
+combat.feedback.lock_sight,Lost sight
+combat.feedback.tag_staggered,STAGGERED
+combat.feedback.tag_guarding,GUARDING
