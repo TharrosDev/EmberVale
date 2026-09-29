@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="SpellResource" format=3 uid="uid://bjukba1xknlsp"]
+
+[ext_resource type="Script" path="res://src/Magic/SpellResource.cs" id="1_spell"]
+
+[resource]
+script = ExtResource("1_spell")
+Id = "spell.thornsnare"
+DisplayName = "Thornsnare"
+Description = "Thorns erupt over an area and root every foe in it; they shrug off further control for a while."
+School = 5
+Delivery = 4
+LearnCost = 1
+UpgradeCost = 1
+MaxRank = 3
+ManaCost = 16.0
+Cooldown = 9.0
+BaseDamage = 4.0
+StatusEffectId = "status.rooted"
+ImpactRadius = 3.5
+WindupSeconds = 0.3
+RecoverySeconds = 0.3
+ImpactWeight = 0.3
+PlaceRange = 16.0
+GroundDelay = 0.5

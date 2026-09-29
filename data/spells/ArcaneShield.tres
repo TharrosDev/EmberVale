@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="SpellResource" load_steps=2 format=3 uid="uid://cmbrvlsparcaneshield"]
+[gd_resource type="Resource" script_class="SpellResource" format=3 uid="uid://cmbrvlsparcaneshield"]
 
 [ext_resource type="Script" path="res://src/Magic/SpellResource.cs" id="1_spell"]
 
@@ -6,14 +6,15 @@
 script = ExtResource("1_spell")
 Id = "spell.arcane_shield"
 DisplayName = "Arcane Shield"
-Description = "Wraps the caster in a ward of arcane force, hardening them against harm."
+Description = "A ward that absorbs a fixed amount of damage and breaks with a flash; an unspent ward returns a share of its mana."
 School = 4
 Delivery = 2
-ManaCost = 16.0
-Cooldown = 12.0
-BaseDamage = 0.0
-Healing = 0.0
+LearnCost = 1
+UpgradeCost = 1
+MaxRank = 3
+ManaCost = 18.0
+Cooldown = 14.0
 StatusEffectId = "status.arcane_ward"
-Range = 0.0
-ProjectileSpeed = 0.0
-ImpactRadius = 0.0
+WindupSeconds = 0.3
+RecoverySeconds = 0.2
+ImpactWeight = 0.2

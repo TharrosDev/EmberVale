@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="SpellResource" format=3 uid="uid://bui6e1ffdbpue"]
+
+[ext_resource type="Script" path="res://src/Magic/SpellResource.cs" id="1_spell"]
+
+[resource]
+script = ExtResource("1_spell")
+Id = "spell.gravity_well"
+DisplayName = "Gravity Well"
+Description = "Mark the ground and, after a warning, pull every foe in the area toward its centre."
+School = 4
+Delivery = 4
+LearnCost = 1
+UpgradeCost = 1
+MaxRank = 3
+ManaCost = 26.0
+Cooldown = 11.0
+BaseDamage = 10.0
+ImpactRadius = 4.5
+WindupSeconds = 0.6
+RecoverySeconds = 0.4
+PoiseDamage = 8.0
+ImpactWeight = 0.5
+PlaceRange = 20.0
+GroundDelay = 0.9
+PullStrength = 6.0

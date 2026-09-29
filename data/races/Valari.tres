@@ -25,6 +25,6 @@ DisplayName = "Valari"
 Description = "Descendants of celestial servants, gifted with keen intellect and a natural affinity for magic. The Valari are born to the arcane — their minds are sharp and their spells potent."
 StatDeltas = Array[Resource]([SubResource("Delta_int"), SubResource("Delta_sp"), SubResource("Delta_mana")])
 InnatePerkIds = Array[String]([])
-InnateSpellIds = Array[String](["spell.firebolt"])
+InnateSpellIds = Array[String](["spell.null_lance"])
 ReputationTweaks = Array[Resource]([])
 AppearanceOptionIds = Array[String]([])

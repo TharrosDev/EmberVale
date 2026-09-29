@@ -2673,4 +2673,54 @@ combat.feedback.tag_guarding,GUARDING
 # --- magic-learning: prefix magic.learn.* and magic.book.* ---
 # --- end magic-learning ---
 # --- magic-content: prefix spell.<id>.name / spell.<id>.desc ---
+spell.emberlash.name,Emberlash
+spell.emberlash.desc,"A fast, cheap bolt of flame that leaves a Kindled stack on its target; the third stack detonates."
+spell.flame_lance.name,Flame Lance
+spell.flame_lance.desc,"Hold to draw a lance of fire and loose it; a fuller draw hits harder and burns longer."
+spell.pyre_wall.name,Pyre Wall
+spell.pyre_wall.desc,"Raise a line of fire that burns whatever crosses it and eats arrows, but does not stop bodies."
+spell.sunfall.name,Sunfall
+spell.sunfall.desc,"Call a meteor down on the aim point after a short warning; a direct hit crushes a raised guard."
+spell.rime_shard.name,Rime Shard
+spell.rime_shard.desc,"A quick shard of ice that chills its target; a shard into a chilled foe freezes it."
+spell.frost_nova.name,Frost Nova
+spell.frost_nova.desc,"A ring of cold around you that chills everything close; anything already chilled freezes."
+spell.blizzard.name,Blizzard
+spell.blizzard.desc,"A lingering storm around you that slows foes and stacks chill on every pulse; you can be caught in your own."
+spell.glacial_bulwark.name,Glacial Bulwark
+spell.glacial_bulwark.desc,"Raise a wall of solid ice that stops bodies and projectiles until it is broken or fades."
+spell.ball_lightning.name,Ball Lightning
+spell.ball_lightning.desc,"A slow homing orb that chains to a nearby foe where it lands and prefers a Stormbranded target."
+spell.storm_conduit.name,Storm Conduit
+spell.storm_conduit.desc,"Hold to channel a beam of lightning; you are slowed and can be interrupted while it runs, and it chains to a Stormbranded foe."
+spell.thunder_step.name,Thunder Step
+spell.thunder_step.desc,"Dash along your aim, striking everything you pass and stunning the last foe struck."
+spell.stormbrand.name,Stormbrand
+spell.stormbrand.desc,"Brand a foe so that every lightning hit within range arcs to the brand."
+spell.null_lance.name,Null Lance
+spell.null_lance.desc,"A lance of unmaking that strips a benefit from its target and silences it, interrupting a caster mid wind-up."
+spell.arcane_shield.name,Arcane Shield
+spell.arcane_shield.desc,"A ward that absorbs a fixed amount of damage and breaks with a flash; an unspent ward returns a share of its mana."
+spell.blink.name,Blink
+spell.blink.desc,"Step along your aim and reappear, stopped short by a wall; a shorter jump costs less mana."
+spell.gravity_well.name,Gravity Well
+spell.gravity_well.desc,"Mark the ground and, after a warning, pull every foe in the area toward its centre."
+spell.mending_bloom.name,Mending Bloom
+spell.mending_bloom.desc,"Mend your wounds at once and leave a Regrowth that keeps healing for a time."
+spell.lifebloom_totem.name,Lifebloom Totem
+spell.lifebloom_totem.desc,"Plant a totem that heals you over time; foes can destroy it."
+spell.thornsnare.name,Thornsnare
+spell.thornsnare.desc,"Thorns erupt over an area and root every foe in it; they shrug off further control for a while."
+spell.stinging_swarm.name,Stinging Swarm
+spell.stinging_swarm.desc,"Loose a swarm that stings its target over time and jumps to a nearby foe if the bearer dies."
+spell.barkskin.name,Barkskin
+spell.barkskin.desc,"Harden your skin for a few seconds, raising armour and making your casting impossible to stagger."
+spell.ember_siphon.name,Ember Siphon
+spell.ember_siphon.desc,"A corrupted lance of ash-fire that drains a foe and heals you more the lower its health; only the Marked can wield it."
+spell.soul_tithe.name,Soul Tithe
+spell.soul_tithe.desc,"Pay health for a heavy blow; if it kills, the spell returns mana."
+spell.knit_bone.name,Knit Bone
+spell.knit_bone.desc,"Cleanse a Decay affliction from yourself and heal more for each stack it removed."
+spell.grave_mark.name,Grave Mark
+spell.grave_mark.desc,"Mark a foe so it takes more damage; necrotic lifesteal drawn from a marked foe doubles."
 # --- end magic-content ---
