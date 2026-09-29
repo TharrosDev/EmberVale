@@ -283,16 +283,15 @@ public partial class LocomotionComponent : EntityComponent
         // and it is what Stand already passes deliberately.
         wishDir = MotionSafety.Sanitize(wishDir);
 
-        // A rooted or stunned body cannot move on foot: no steering, no jump, and a stun ends a roll.
+        // A rooted or stunned body cannot move on foot: no steering, no jump, no roll, and it stops dead.
         StatusEffectsComponent? status = _status ??= Entity?.GetComponent<StatusEffectsComponent>();
         if (status != null && (status.IsRooted || status.IsStunned))
         {
             wishDir = Vector3.Zero;
             jump = false;
-            if (status.IsStunned)
-            {
-                _dashing = false;
-            }
+            _dashing = false;
+            velocity.X = 0f;
+            velocity.Z = 0f;
         }
 
         bool grounded = _body.IsOnFloor();

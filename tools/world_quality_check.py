@@ -186,6 +186,9 @@ def gates(engine: str | None) -> list[Gate]:
         # --- magic-core: this group's probe Gate goes between the markers (one owner per block) ---
         # --- end magic-core ---
         # --- magic-status: this group's probe Gate goes between the markers (one owner per block) ---
+        Gate("magic-status", "status rules through real components: kindle detonation, swarm spread, mark, ward, dispel, control immunity, rooted movement, brand arcs, lifesteal, combos, shaped vfx",
+             [engine, "--headless", "--path", ".", "--script",
+              "res://tools/magic_status_probe.gd"], slow=True),
         # --- end magic-status ---
         # --- magic-learning: this group's probe Gate goes between the markers (one owner per block) ---
         # --- end magic-learning ---
