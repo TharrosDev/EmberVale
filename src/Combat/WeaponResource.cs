@@ -63,7 +63,58 @@ public partial class WeaponResource : Resource
     /// <summary>Extra damage multiplier applied at the final combo hit (the finisher).</summary>
     [Export] public float FinisherMultiplier { get; set; } = 1.5f;
 
+    [ExportGroup("Commitment")]
+    /// <summary>How much of a synthesised light swing's recovery is committed (0 = cancellable at once,
+    /// 1 = the whole tail). The committed tail is the window a swing can be punished in, and it is what
+    /// stops a chain being an unbroken stream.</summary>
+    [Export(PropertyHint.Range, "0,1,0.05")] public float RecoveryCommit { get; set; } = 0.3f;
+
+    /// <summary>As <see cref="RecoveryCommit"/> for the last link, which hits hardest and pays most.</summary>
+    [Export(PropertyHint.Range, "0,1,0.05")] public float FinisherRecoveryCommit { get; set; } = 0.65f;
+
+    [ExportGroup("Heavy and charged")]
+    /// <summary>An authored heavy attack. Empty synthesises one from the legacy timings, slower and
+    /// harder-hitting than the light chain, so every melee weapon has a heavy without authoring one.</summary>
+    [Export] public ActionDefinitionResource? Heavy { get; set; }
+
+    [Export] public float HeavyDamageScale { get; set; } = 2f;
+    [Export] public float HeavyPoiseScale { get; set; } = 2.4f;
+
+    /// <summary>Multiplies the light stamina cost for the synthesised heavy.</summary>
+    [Export] public float HeavyStaminaMultiplier { get; set; } = 2.2f;
+
+    /// <summary>Seconds of holding (past the tap threshold) to reach a full charge.</summary>
+    [Export] public float MaxChargeSeconds { get; set; } = 1f;
+
+    /// <summary>Extra damage multiplier at a full charge, on top of the heavy's own scale.</summary>
+    [Export] public float ChargeDamageBonus { get; set; } = 0.75f;
+
+    /// <summary>Stamina drained per second while a charge is held.</summary>
+    [Export] public float ChargeStaminaPerSecond { get; set; } = 8f;
+
+    [ExportGroup("Plunge")]
+    /// <summary>An authored plunge attack. Empty synthesises one.</summary>
+    [Export] public ActionDefinitionResource? Plunge { get; set; }
+
+    [Export] public float PlungeDamageScale { get; set; } = 1.5f;
+
     private ActionDefinitionResource[]? _synthesised;
+    private ActionDefinitionResource? _synthHeavy;
+    private ActionDefinitionResource? _synthPlunge;
+    private ActionDefinitionResource? _synthRoll;
+
+    /// <summary>The heavy attack a hold-and-release swings: authored, or synthesised once. Null for a
+    /// ranged weapon, which has no melee heavy.</summary>
+    public ActionDefinitionResource? HeavyAttack() =>
+        IsRanged ? null : Heavy ?? (_synthHeavy ??= SynthesiseHeavy());
+
+    /// <summary>The downward strike a jump-attack becomes. Null for a ranged weapon.</summary>
+    public ActionDefinitionResource? PlungeAttack() =>
+        IsRanged ? null : Plunge ?? (_synthPlunge ??= SynthesisePlunge());
+
+    /// <summary>The quick lunging cut an attack pressed out of a roll becomes. Null for a ranged weapon.</summary>
+    public ActionDefinitionResource? RollAttack() =>
+        IsRanged ? null : _synthRoll ??= SynthesiseRoll();
 
     /// <summary>
     /// The chain a swing runs through — authored if there is one, otherwise synthesised once from
@@ -124,9 +175,11 @@ public partial class WeaponResource : Resource
                 ActiveFrom = activeFrom,
                 ActiveTo = activeTo,
 
-                // Recovery is entirely cancellable and is entirely the combo window — the legacy
-                // rule, where chaining "during Recovery" advanced the combo.
-                CancelFrom = activeTo,
+                // The start of the tail is committed (RecoveryCommit; longer for the finisher) so a
+                // swing can be punished, and the rest is the combo window: chaining "during
+                // Recovery" advances the combo, and a press before it opens is buffered.
+                CancelFrom = activeTo + ((1f - activeTo) *
+                    Mathf.Clamp(i == links - 1 ? FinisherRecoveryCommit : RecoveryCommit, 0f, 1f)),
                 ComboFrom = activeTo,
                 ComboTo = 1f,
 
@@ -147,14 +200,124 @@ public partial class WeaponResource : Resource
                 AiMinRange = 0f,
                 AiMaxRange = 999f,
 
-                // ⚠️ NOT restricted, and the camera is why. This game's body yaw *is* its camera
-                // yaw in both view modes (PlayerCameraRig), so capping the turn rate during an
-                // attack would cap the player's ability to look around. Per-actor rotation limits
-                // belong on authored enemy actions, where facing and view are separate things.
-                TurnDegreesPerSecond = -1f,
+                // A committed swing cannot be steered round a circling target. ⚠️ This game's body
+                // yaw *is* the player's camera yaw in both view modes (PlayerCameraRig), so capping
+                // the turn would cap looking around: CharacterActionComponent.EnforceTurnLimit is
+                // therefore switched off for the player while free-looking and on while locked on,
+                // where it is the lock's auto-facing that is being limited. Every AI actor is always
+                // limited.
+                TurnDegreesPerSecond = 140f,
             };
         }
 
         return chain;
+    }
+
+    private ActionDefinitionResource SynthesiseHeavy()
+    {
+        // Every phase is longer than the light swing's, the wind-up most of all: a heavy is a tell you
+        // can read and a recovery you can punish. The floors keep a dagger's heavy from being a flick.
+        float wind = Mathf.Max(0.32f, WindupTime * 2.2f);
+        float active = Mathf.Max(0.12f, ActiveTime * 1.5f);
+        float recovery = Mathf.Max(0.5f, RecoveryTime * 1.8f);
+        float total = wind + active + recovery;
+        float activeTo = (wind + active) / total;
+
+        return new ActionDefinitionResource
+        {
+            Id = $"{DisplayName}.heavy",
+            Kind = ActionKind.HeavyAttack,
+            AnimationSlot = "heavy",
+            Duration = total,
+            FallbackDuration = total,
+            ActiveFrom = wind / total,
+            ActiveTo = activeTo,
+            CancelFrom = activeTo + ((1f - activeTo) * 0.85f),
+            ComboFrom = 1f,
+            ComboTo = 1f,
+            Interruptible = true,
+            RecoveryVulnerable = true,
+            MoveScale = 0.1f,
+            TurnDegreesPerSecond = 60f,
+            StaminaCost = StaminaCost * HeavyStaminaMultiplier,
+            DamageScale = HeavyDamageScale,
+            PoiseScale = HeavyPoiseScale,
+            Knockback = 4f,
+            RootMotion = RootMotionMode.WarpToTarget,
+            MaxWarpDistance = 1.6f,
+            MaxWarpDegrees = 25f,
+            HitStopScale = 1.7f,
+            CameraImpulse = 0.7f,
+            TrailFrom = 0.4f,
+            TrailTo = 0.75f,
+            AiWeight = 0f,
+            AiMinRange = 0f,
+            AiMaxRange = 999f,
+            AiRecoverySeconds = 0.9f,
+        };
+    }
+
+    private ActionDefinitionResource SynthesisePlunge()
+    {
+        // The dive itself is not on this clock (it waits for the ground); this is the landing blow.
+        const float total = 0.75f;
+        return new ActionDefinitionResource
+        {
+            Id = $"{DisplayName}.plunge",
+            Kind = ActionKind.Attack,
+            AnimationSlot = "heavy_overhead",
+            Duration = total,
+            FallbackDuration = total,
+            ActiveFrom = 0.12f,
+            ActiveTo = 0.3f,
+            CancelFrom = 0.78f,
+            ComboFrom = 1f,
+            ComboTo = 1f,
+            RecoveryVulnerable = true,
+            MoveScale = 0f,
+            TurnDegreesPerSecond = 0f,
+            StaminaCost = StaminaCost * 1.6f,
+            DamageScale = PlungeDamageScale,
+            PoiseScale = 2f,
+            Knockback = 5f,
+            HitboxName = "PlungeArc",
+            HitStopScale = 1.8f,
+            CameraImpulse = 0.9f,
+            AiWeight = 0f,
+        };
+    }
+
+    private ActionDefinitionResource SynthesiseRoll()
+    {
+        // Quicker in startup than the light swing (the roll already did the wind-up's work) but with a
+        // real recovery, so a roll-attack is an opening rather than a free hit.
+        float wind = Mathf.Max(0.06f, WindupTime * 0.55f);
+        float active = Mathf.Max(0.08f, ActiveTime * 1.2f);
+        float recovery = Mathf.Max(0.2f, RecoveryTime * 0.9f);
+        float total = wind + active + recovery;
+        float activeTo = (wind + active) / total;
+
+        return new ActionDefinitionResource
+        {
+            Id = $"{DisplayName}.rollcut",
+            Kind = ActionKind.Attack,
+            AnimationSlot = "attack",
+            Duration = total,
+            FallbackDuration = total,
+            ActiveFrom = wind / total,
+            ActiveTo = activeTo,
+            CancelFrom = activeTo + ((1f - activeTo) * 0.5f),
+            ComboFrom = activeTo,
+            ComboTo = 1f,
+            MoveScale = 0.35f,
+            TurnDegreesPerSecond = -1f,
+            StaminaCost = StaminaCost,
+            DamageScale = 1.15f,
+            RootMotion = RootMotionMode.WarpToTarget,
+            MaxWarpDistance = 1.4f,
+            MaxWarpDegrees = 30f,
+            AdvanceMetres = 0.8f,
+            AiWeight = 0f,
+        };
     }
 }

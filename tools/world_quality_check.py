@@ -164,6 +164,9 @@ def gates(engine: str | None) -> list[Gate]:
              [engine, "--headless", "--path", ".", "--script",
               "res://tools/camera_probe.gd"], slow=True),
         # --- combat-offence: this group's probe Gate goes between the markers (one owner per block) ---
+        Gate("combat-offence", "charge, buffer, direction, warp, turn-lock, plunge and roll-cut hold under real frames",
+             [engine, "--headless", "--path", ".", "--script",
+              "res://tools/combat_offence_probe.gd"], slow=True),
         # --- end combat-offence ---
         # --- combat-defence: this group's probe Gate goes between the markers (one owner per block) ---
         # --- end combat-defence ---

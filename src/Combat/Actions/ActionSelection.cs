@@ -91,6 +91,31 @@ public static class ActionSelection
         return -1;
     }
 
+    /// <summary>
+    /// As <see cref="Choose(Candidate[], float, float)"/>, but the action picked last time carries only
+    /// <paramref name="repeatWeight"/> of its weight, so an enemy varies its attacks instead of
+    /// repeating the one the player has just learned to answer. The penalty never removes the only
+    /// option: with nothing else in range the repeat is still chosen.
+    /// </summary>
+    public static int Choose(Candidate[] chain, float distance, float roll, int lastPick, float repeatWeight)
+    {
+        if (lastPick < 0 || lastPick >= chain.Length || repeatWeight >= 1f)
+        {
+            return Choose(chain, distance, roll);
+        }
+
+        var adjusted = new Candidate[chain.Length];
+        for (int i = 0; i < chain.Length; i++)
+        {
+            adjusted[i] = i == lastPick
+                ? chain[i] with { Weight = chain[i].Weight * (repeatWeight < 0f ? 0f : repeatWeight) }
+                : chain[i];
+        }
+
+        int pick = Choose(adjusted, distance, roll);
+        return pick >= 0 ? pick : Choose(chain, distance, roll);
+    }
+
     /// <summary>Whether this action reaches a target at <paramref name="distance"/>.</summary>
     public static bool InRange(Candidate action, float distance) =>
         action.Weight > 0f && distance >= action.MinRange && distance <= action.MaxRange;

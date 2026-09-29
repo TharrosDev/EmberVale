@@ -177,6 +177,15 @@ public static class PlayerFactory
         player.AddChild(new DodgeComponent { Name = "Dodge" });
         player.AddChild(new LockOnComponent { Name = "LockOn", Camera = camera });
         // --- combat-offence: this group's player components go between the markers (one owner per block) ---
+        // The plunge attack's ground-pound volume: a sphere around the landing point rather than the
+        // forward box the swings use. CharacterActionComponent finds it by name in OnInitialize.
+        var plungeHitbox = new Hitbox
+        {
+            Name = CharacterActionComponent.PlungeHitboxNode,
+            Position = new Vector3(0f, 0.6f, 0f),
+        };
+        plungeHitbox.AddChild(new CollisionShape3D { Shape = new SphereShape3D { Radius = 2.2f } });
+        player.AddChild(plungeHitbox);
         // --- end combat-offence ---
         // --- combat-defence: this group's player components go between the markers (one owner per block) ---
         // --- end combat-defence ---
