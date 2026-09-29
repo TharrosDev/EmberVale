@@ -17,6 +17,43 @@
 ;     the faction id, and hand-writing one into a .tres is NOW.md invariant 18's whole subject.
 ;   - the two are exhaustive and disjoint, so root is never a dead end.
 
+; Magic upgrade: this NPC teaches spellcraft (spell.teach.* strings, LearnSpell effect).
+[sub_resource type="Resource" id="ch_mg_menu"]
+script = ExtResource("3_choice")
+Text = "spell.teach.ask_menu"
+Goto = "mg_teach"
+
+[sub_resource type="Resource" id="ch_mg_ember_siphon"]
+script = ExtResource("3_choice")
+Text = "spell.ember_siphon.ask"
+Goto = "mg_taught"
+Condition = 7
+ConditionArg = "40"
+Effect = 8
+EffectArg = "spell.ember_siphon"
+
+[sub_resource type="Resource" id="ch_mg_back"]
+script = ExtResource("3_choice")
+Text = "spell.teach.back"
+Goto = "root"
+
+[sub_resource type="Resource" id="ch_mg_thanks"]
+script = ExtResource("3_choice")
+Text = "spell.teach.thanks"
+Goto = "root"
+
+[sub_resource type="Resource" id="node_mg_teach"]
+script = ExtResource("2_node")
+Id = "mg_teach"
+Text = "spell.teach.emberbound_hierarch"
+Choices = Array[Resource]([SubResource("ch_mg_ember_siphon"), SubResource("ch_mg_back")])
+
+[sub_resource type="Resource" id="node_mg_taught"]
+script = ExtResource("2_node")
+Id = "mg_taught"
+Text = "spell.teach.emberbound_hierarch.taught"
+Choices = Array[Resource]([SubResource("ch_mg_thanks")])
+
 [sub_resource type="Resource" id="ch_member"]
 script = ExtResource("3_choice")
 Text = "dlg.emberbound_hierarch.c_member"
@@ -458,43 +495,6 @@ script = ExtResource("2_node")
 Id = "declined"
 Text = "dlg.emberbound_hierarch.declined"
 Choices = Array[Resource]([SubResource("ch_declined_bye")])
-
-; Magic upgrade: this NPC teaches spellcraft (spell.teach.* strings, LearnSpell effect).
-[sub_resource type="Resource" id="ch_mg_menu"]
-script = ExtResource("3_choice")
-Text = "spell.teach.ask_menu"
-Goto = "mg_teach"
-
-[sub_resource type="Resource" id="ch_mg_ember_siphon"]
-script = ExtResource("3_choice")
-Text = "spell.ember_siphon.ask"
-Goto = "mg_taught"
-Condition = 7
-ConditionArg = "40"
-Effect = 8
-EffectArg = "spell.ember_siphon"
-
-[sub_resource type="Resource" id="ch_mg_back"]
-script = ExtResource("3_choice")
-Text = "spell.teach.back"
-Goto = "root"
-
-[sub_resource type="Resource" id="ch_mg_thanks"]
-script = ExtResource("3_choice")
-Text = "spell.teach.thanks"
-Goto = "root"
-
-[sub_resource type="Resource" id="node_mg_teach"]
-script = ExtResource("2_node")
-Id = "mg_teach"
-Text = "spell.teach.emberbound_hierarch"
-Choices = Array[Resource]([SubResource("ch_mg_ember_siphon"), SubResource("ch_mg_back")])
-
-[sub_resource type="Resource" id="node_mg_taught"]
-script = ExtResource("2_node")
-Id = "mg_taught"
-Text = "spell.teach.emberbound_hierarch.taught"
-Choices = Array[Resource]([SubResource("ch_mg_thanks")])
 
 [resource]
 script = ExtResource("1_dlg")

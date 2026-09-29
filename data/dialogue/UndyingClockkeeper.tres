@@ -8,6 +8,41 @@
 ; Queen's defeat: before it they speak of the bargain and the Court; after it, of release.
 ; Every key is under pale. (post-reveal text; see tools/world_atlas.py).
 
+; Magic upgrade: this NPC teaches spellcraft (spell.teach.* strings, LearnSpell effect).
+[sub_resource type="Resource" id="ch_mg_menu"]
+script = ExtResource("3_choice")
+Text = "spell.teach.ask_menu"
+Goto = "mg_teach"
+
+[sub_resource type="Resource" id="ch_mg_grave_mark"]
+script = ExtResource("3_choice")
+Text = "spell.grave_mark.ask"
+Goto = "mg_taught"
+Effect = 8
+EffectArg = "spell.grave_mark"
+
+[sub_resource type="Resource" id="ch_mg_back"]
+script = ExtResource("3_choice")
+Text = "spell.teach.back"
+Goto = "root"
+
+[sub_resource type="Resource" id="ch_mg_thanks"]
+script = ExtResource("3_choice")
+Text = "spell.teach.thanks"
+Goto = "root"
+
+[sub_resource type="Resource" id="node_mg_teach"]
+script = ExtResource("2_node")
+Id = "mg_teach"
+Text = "spell.teach.undying_clockkeeper"
+Choices = Array[Resource]([SubResource("ch_mg_grave_mark"), SubResource("ch_mg_back")])
+
+[sub_resource type="Resource" id="node_mg_taught"]
+script = ExtResource("2_node")
+Id = "mg_taught"
+Text = "spell.teach.undying_clockkeeper.taught"
+Choices = Array[Resource]([SubResource("ch_mg_thanks")])
+
 [sub_resource type="Resource" id="ch_bargain"]
 script = ExtResource("3_choice")
 Text = "pale.dlg.clockkeeper.c_bargain"
@@ -59,41 +94,6 @@ script = ExtResource("2_node")
 Id = "freed"
 Text = "pale.dlg.clockkeeper.freed"
 Choices = Array[Resource]([SubResource("ch_bye")])
-
-; Magic upgrade: this NPC teaches spellcraft (spell.teach.* strings, LearnSpell effect).
-[sub_resource type="Resource" id="ch_mg_menu"]
-script = ExtResource("3_choice")
-Text = "spell.teach.ask_menu"
-Goto = "mg_teach"
-
-[sub_resource type="Resource" id="ch_mg_grave_mark"]
-script = ExtResource("3_choice")
-Text = "spell.grave_mark.ask"
-Goto = "mg_taught"
-Effect = 8
-EffectArg = "spell.grave_mark"
-
-[sub_resource type="Resource" id="ch_mg_back"]
-script = ExtResource("3_choice")
-Text = "spell.teach.back"
-Goto = "root"
-
-[sub_resource type="Resource" id="ch_mg_thanks"]
-script = ExtResource("3_choice")
-Text = "spell.teach.thanks"
-Goto = "root"
-
-[sub_resource type="Resource" id="node_mg_teach"]
-script = ExtResource("2_node")
-Id = "mg_teach"
-Text = "spell.teach.undying_clockkeeper"
-Choices = Array[Resource]([SubResource("ch_mg_grave_mark"), SubResource("ch_mg_back")])
-
-[sub_resource type="Resource" id="node_mg_taught"]
-script = ExtResource("2_node")
-Id = "mg_taught"
-Text = "spell.teach.undying_clockkeeper.taught"
-Choices = Array[Resource]([SubResource("ch_mg_thanks")])
 
 [resource]
 script = ExtResource("1_dlg")
