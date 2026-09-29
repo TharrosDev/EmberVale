@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Embervale.Core.Events;
 using Embervale.Entities;
 using Embervale.Player;
+using Embervale.UI;
 using Godot;
 
 namespace Embervale.Magic;
@@ -19,7 +20,10 @@ public partial class StatusEffectVfxComponent : EntityComponent
     /// <summary>Height above the entity origin the swirl centres on.</summary>
     [Export] public float SwirlHeight { get; set; } = 1.1f;
 
-    private readonly Dictionary<string, GpuParticles3D> _active = new();
+    private readonly Dictionary<string, Node3D> _active = new();
+
+    /// <summary>Height above the entity origin a mark or glyph floats at.</summary>
+    [Export] public float HeadHeight { get; set; } = 2.25f;
 
     protected override void OnInitialize()
     {
@@ -50,15 +54,17 @@ public partial class StatusEffectVfxComponent : EntityComponent
             return;
         }
 
-        GpuParticles3D swirl = BuildSwirl(SpellSchools.Color(effect.School));
-        Entity!.Body.AddChild(swirl);
-        swirl.Position = new Vector3(0f, SwirlHeight, 0f);
-        _active[e.EffectId] = swirl;
+        Color tint = SpellSchools.Color(effect.School);
+        StatusVfxShape shape = StatusVfxShapes.Pick(effect.Controls, effect.AbsorbAmount > 0f);
+        Node3D visual = shape == StatusVfxShape.Swirl ? BuildSwirl(tint) : BuildShape(shape, tint);
+        Entity!.Body.AddChild(visual);
+        visual.Position = shape == StatusVfxShape.Swirl ? new Vector3(0f, SwirlHeight, 0f) : Vector3.Zero;
+        _active[e.EffectId] = visual;
     }
 
     private void OnRemoved(StatusEffectRemovedEvent e)
     {
-        if (!ReferenceEquals(e.Target, Entity) || !_active.Remove(e.EffectId, out GpuParticles3D? swirl) ||
+        if (!ReferenceEquals(e.Target, Entity) || !_active.Remove(e.EffectId, out Node3D? swirl) ||
             !IsInstanceValid(swirl))
         {
             return;
@@ -75,8 +81,15 @@ public partial class StatusEffectVfxComponent : EntityComponent
             return;
         }
 
+        // A shaped mark has nothing to fade: it simply ends with the status.
+        if (swirl is not GpuParticles3D particles)
+        {
+            swirl.QueueFree();
+            return;
+        }
+
         // Stop emitting and let the last particles fade before freeing.
-        swirl.Emitting = false;
+        particles.Emitting = false;
         swirl.GetTree().CreateTimer(1.2).Timeout += () =>
         {
             if (IsInstanceValid(swirl))
@@ -128,4 +141,103 @@ public partial class StatusEffectVfxComponent : EntityComponent
             Emitting = true,
         };
     }
+
+    // --- shaped marks (magic upgrade): primitives only, tinted by the school colour ---
+
+    private Node3D BuildShape(StatusVfxShape shape, Color tint)
+    {
+        // Reduced Motion: the marks that orbit hold still instead.
+        float spin = UiTheme.MotionEnabled ? 70f : 0f;
+        var root = new StatusVfxSpin { Name = "StatusVfx" + shape };
+        switch (shape)
+        {
+            case StatusVfxShape.MarkRing:
+                root.DegreesPerSecond = spin;
+                root.AddChild(Mesh(
+                    new TorusMesh { InnerRadius = 0.26f, OuterRadius = 0.32f, Rings = 24, RingSegments = 8 },
+                    Glow(tint, 0.9f),
+                    new Vector3(0f, HeadHeight, 0f)));
+                break;
+            case StatusVfxShape.Thorns:
+                const int Thorns = 7;
+                for (int i = 0; i < Thorns; i++)
+                {
+                    float angle = Mathf.Tau * i / Thorns;
+                    MeshInstance3D thorn = Mesh(
+                        new CylinderMesh { TopRadius = 0f, BottomRadius = 0.06f, Height = 0.55f, RadialSegments = 6 },
+                        Glow(tint.Darkened(0.2f), 1f),
+                        new Vector3(Mathf.Cos(angle) * 0.45f, 0.26f, Mathf.Sin(angle) * 0.45f));
+                    thorn.Rotation = new Vector3(Mathf.Sin(angle) * 0.35f, 0f, -Mathf.Cos(angle) * 0.35f);
+                    root.AddChild(thorn);
+                }
+
+                break;
+            case StatusVfxShape.BrokenGlyph:
+                const int Fragments = 5;
+                for (int i = 0; i < Fragments; i++)
+                {
+                    // Five of six arc slots: the missing one is the break.
+                    float angle = Mathf.Tau * i / (Fragments + 1);
+                    MeshInstance3D bar = Mesh(
+                        new BoxMesh { Size = new Vector3(0.22f, 0.025f, 0.05f) },
+                        Glow(tint, 0.95f),
+                        new Vector3(Mathf.Cos(angle) * 0.3f, HeadHeight, Mathf.Sin(angle) * 0.3f));
+                    bar.Rotation = new Vector3(0f, -angle - (Mathf.Pi / 2f), 0f);
+                    root.AddChild(bar);
+                }
+
+                MeshInstance3D slash = Mesh(
+                    new BoxMesh { Size = new Vector3(0.7f, 0.025f, 0.05f) },
+                    Glow(tint, 0.95f),
+                    new Vector3(0f, HeadHeight, 0f));
+                slash.Rotation = new Vector3(0f, Mathf.Pi / 4f, 0f);
+                root.AddChild(slash);
+                break;
+            case StatusVfxShape.Stars:
+                root.DegreesPerSecond = spin * 2f;
+                for (int i = 0; i < 3; i++)
+                {
+                    float angle = Mathf.Tau * i / 3f;
+                    root.AddChild(Mesh(
+                        new SphereMesh { Radius = 0.06f, Height = 0.12f, RadialSegments = 8, Rings = 4 },
+                        Glow(tint, 1f),
+                        new Vector3(Mathf.Cos(angle) * 0.32f, HeadHeight, Mathf.Sin(angle) * 0.32f)));
+                }
+
+                break;
+            case StatusVfxShape.IceShell:
+                root.AddChild(Mesh(
+                    new CapsuleMesh { Radius = 0.6f, Height = 1.95f, RadialSegments = 12, Rings = 4 },
+                    Glow(tint, 0.4f),
+                    new Vector3(0f, 0.98f, 0f)));
+                break;
+            case StatusVfxShape.WardShell:
+                root.AddChild(Mesh(
+                    new SphereMesh { Radius = 0.95f, Height = 1.9f, RadialSegments = 16, Rings = 8 },
+                    Glow(tint, 0.22f),
+                    new Vector3(0f, 1f, 0f)));
+                break;
+        }
+
+        return root;
+    }
+
+    private static MeshInstance3D Mesh(Mesh mesh, Material material, Vector3 position) => new()
+    {
+        Mesh = mesh,
+        MaterialOverride = material,
+        Position = position,
+        CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
+    };
+
+    private static StandardMaterial3D Glow(Color tint, float alpha) => new()
+    {
+        AlbedoColor = new Color(tint.R, tint.G, tint.B, alpha),
+        Transparency = BaseMaterial3D.TransparencyEnum.Alpha,
+        ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
+        EmissionEnabled = true,
+        Emission = tint,
+        EmissionEnergyMultiplier = 1.4f,
+        CullMode = BaseMaterial3D.CullModeEnum.Disabled,
+    };
 }

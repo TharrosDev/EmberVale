@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Embervale.Combat;
 using Embervale.Core.Diagnostics;
+using Embervale.Core.Events;
 using Embervale.Entities;
 using Godot;
 
@@ -18,7 +19,13 @@ public readonly record struct ComboRule(
     DamageType TriggerSchool,
     string RequiredStatusId,
     float BonusDamage,
-    bool ConsumeStatus);
+    bool ConsumeStatus,
+    string Id = "")
+{
+    /// <summary>Player-visible name through <c>Loc</c>, falling back to <see cref="Name"/>.</summary>
+    public string LocalName => Embervale.Localization.Loc.Has("magic.status." + Id + ".name")
+        ? Embervale.Localization.Loc.T("magic.status." + Id + ".name") : Name;
+}
 
 /// <summary>
 /// The magic analogue of the combat read (Phase 29.5D): cross-school interactions. When a spell hits, it
@@ -33,6 +40,11 @@ public readonly record struct ComboRule(
 /// Shipped combos:
 ///   * <b>Shatter</b> — Lightning into a Chilled foe: the brittle ice cracks for a burst (consumes chill).
 ///   * <b>Thermal Shock</b> — Fire into a Chilled foe: the temperature swing wracks it (consumes chill).
+///   * <b>Steam Burst</b> — Frost into a Kindled foe: the cold snuffs the Kindle in a scalding burst.
+///   * <b>Meltdown</b> — Fire into a Frozen foe: the ice gives way at once, ending the freeze.
+///   * <b>Superconduct</b> — Frost into a Stormbranded foe: the brand discharges through the cold.
+///   * <b>Smoke Out</b> — Fire into a Swarmed foe: the swarm is burned off and scatters.
+/// Each carries a stable id (<c>combo.*</c>) that <see cref="SpellComboEvent"/> raises.
 /// </summary>
 public static class SpellCombo
 {
@@ -40,8 +52,12 @@ public static class SpellCombo
 
     private static readonly ComboRule[] Rules =
     {
-        new("Shatter", DamageType.Lightning, "status.chill", 18f, true),
-        new("Thermal Shock", DamageType.Fire, "status.chill", 14f, true),
+        new("Shatter", DamageType.Lightning, StatusIds.Chill, 18f, true, "combo.shatter"),
+        new("Meltdown", DamageType.Fire, StatusIds.Frozen, 24f, true, "combo.meltdown"),
+        new("Thermal Shock", DamageType.Fire, StatusIds.Chill, 14f, true, "combo.thermal_shock"),
+        new("Steam Burst", DamageType.Frost, StatusIds.Kindled, 16f, true, "combo.steam_burst"),
+        new("Superconduct", DamageType.Frost, StatusIds.Stormbrand, 20f, true, "combo.superconduct"),
+        new("Smoke Out", DamageType.Fire, StatusIds.Swarmed, 16f, true, "combo.smoke_out"),
     };
 
     /// <summary>
@@ -92,6 +108,11 @@ public static class SpellCombo
         if (rule.ConsumeStatus)
         {
             status.Consume(rule.RequiredStatusId);
+        }
+
+        if (primary.OwnerEntity is { } target)
+        {
+            EventBus.Instance?.Publish(new SpellComboEvent(caster ?? target, target, rule.Id));
         }
 
         Log.Info($"Spell combo triggered: {rule.Name}");

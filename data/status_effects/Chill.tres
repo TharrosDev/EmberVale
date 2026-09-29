@@ -13,4 +13,4 @@ DamagePerTick = 0.0
 TickInterval = 1.0
 ModStat = 11
 ModType = 2
-ModValue = -0.5
+ModValue = -0.4

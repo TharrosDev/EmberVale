@@ -17,8 +17,12 @@ namespace Embervale.Magic;
 ///     is still the school's self-side identity; this is its offensive half, unblocked once 34E
 ///     authored <c>spell.arcane_lance</c> (Arcane had only Self casts before, so there was no hit
 ///     to hang it on).
-///   * <b>Fire</b> — handled in <see cref="StatusEffectsComponent"/> (stacking ignite), so it needs
-///     no hook here. <b>Nature</b> — heal-over-time, authored as data (a HoT status).
+///   * <b>Fire</b> — stacking ignite (<see cref="StatusEffectsComponent"/>), and a Fire hit on a
+///     Kindled foe feeds it a Burning stack; the Kindle itself detonates at three stacks.
+///   * <b>Lightning</b> also answers a Stormbrand: every lightning hit within
+///     <see cref="BrandRange"/> arcs to the branded foe first.
+///   * <b>Necrotic</b> lifesteal heals more the lower the target's health, doubled off a Grave Mark.
+///   * <b>Nature</b> — regrowth and roots, authored as data (a HoT status, a Root control).
 ///
 /// Invoked by <see cref="SpellResolver"/> once per struck target, <em>after</em> damage lands but
 /// <em>before</em> the spell's own status is applied (so Frost can read the pre-hit chill).
@@ -29,14 +33,48 @@ public static class SchoolIdentity
     private const float ChainDamageFraction = 0.5f;
     private const float NecroticLifestealFraction = 0.35f;
 
-    private const string ChillId = "status.chill";
-    private const string FrozenId = "status.frozen";
+    /// <summary>How far from the struck foe a Stormbrand still pulls a lightning arc.</summary>
+    public const float BrandRange = 12f;
 
-    /// <summary>Health the caster recovers from a Necrotic hit dealing <paramref name="damage"/>.</summary>
-    public static float LifestealAmount(float damage) => Mathf.Max(0f, damage) * NecroticLifestealFraction;
+    private const float BrandArcFraction = 0.75f;
 
-    /// <summary>Damage a chained Lightning arc deals, as a fraction of the primary hit.</summary>
-    public static float ChainDamage(float damage) => Mathf.Max(0f, damage) * ChainDamageFraction;
+    /// <summary>Health the caster recovers from a Necrotic hit dealing <paramref name="damage"/>. It grows
+    /// as the target's health (<paramref name="targetHealthFraction"/>, after the hit) falls, up to double
+    /// at the last sliver, and doubles again off a Grave Marked foe.</summary>
+    public static float LifestealAmount(float damage, float targetHealthFraction = 1f, bool targetMarked = false)
+    {
+        float lowHealth = 1f + (1f - Mathf.Clamp(targetHealthFraction, 0f, 1f));
+        return Mathf.Max(0f, damage) * NecroticLifestealFraction * lowHealth * (targetMarked ? 2f : 1f);
+    }
+
+    /// <summary>Damage a chained Lightning arc deals, as a fraction of the primary hit; an arc drawn to a
+    /// Stormbrand carries more.</summary>
+    public static float ChainDamage(float damage, bool toBrand = false) =>
+        Mathf.Max(0f, damage) * (toBrand ? BrandArcFraction : ChainDamageFraction);
+
+    /// <summary>Which candidate a lightning arc jumps to: the nearest Stormbranded foe within
+    /// <see cref="BrandRange"/>, else the nearest foe within the plain chain radius. -1 for none.</summary>
+    public static int PickChainTarget(IReadOnlyList<(float Distance, bool Branded)> candidates)
+    {
+        int best = -1;
+        for (int i = 0; i < candidates.Count; i++)
+        {
+            (float distance, bool branded) = candidates[i];
+            if (branded ? distance > BrandRange : distance > ChainRadius)
+            {
+                continue;
+            }
+
+            if (best < 0 || Prefer(candidates[i], candidates[best]))
+            {
+                best = i;
+            }
+        }
+
+        return best;
+
+        static bool Prefer((float D, bool B) a, (float D, bool B) b) => a.B != b.B ? a.B : a.D < b.D;
+    }
 
     public static void OnSpellHit(
         Node3D context,
@@ -48,39 +86,66 @@ public static class SchoolIdentity
     {
         switch (spell.School)
         {
+            case DamageType.Fire:
+                FeedKindle(primary, caster);
+                break;
             case DamageType.Frost:
                 EscalateFreeze(primary, caster);
                 break;
             case DamageType.Lightning:
-                ChainToNearby(context, spell, packet, caster, casterTeam, primary);
+                // A brand is a mark, not a bolt: it must not arc to (and re-brand) another foe.
+                if (spell.StatusEffectId != StatusIds.Stormbrand)
+                {
+                    ChainToNearby(context, spell, packet, caster, casterTeam, primary);
+                }
+
                 break;
             case DamageType.Necrotic:
-                Lifesteal(caster, packet.Amount);
+                Lifesteal(caster, packet.Amount, primary);
                 break;
             case DamageType.Arcane:
-                Dispel(primary);
+                // A bolt tears a buff off; a ground or barrier pulse does not.
+                if (spell.Delivery == SpellDelivery.Projectile)
+                {
+                    Dispel(primary, caster);
+                }
+
                 break;
         }
     }
 
-    /// <summary>A Frost hit on an already-chilled target freezes it solid (a hard root).</summary>
+    /// <summary>A Fire hit on a Kindled foe feeds the fire: one more Burning stack.</summary>
+    private static void FeedKindle(Hurtbox primary, IEntity? caster)
+    {
+        StatusEffectsComponent? status = primary.OwnerEntity?.GetComponent<StatusEffectsComponent>();
+        if (status != null && status.Has(StatusIds.Kindled))
+        {
+            status.Apply(StatusEffectDatabase.Get(StatusIds.Burning), caster);
+        }
+    }
+
+    /// <summary>A Frost hit on an already-chilled target freezes it: a short Stun and Root, then it is
+    /// immune to being frozen again (the status's <c>ControlImmunitySeconds</c>). The chill is spent.</summary>
     private static void EscalateFreeze(Hurtbox primary, IEntity? caster)
     {
         StatusEffectsComponent? status = primary.OwnerEntity?.GetComponent<StatusEffectsComponent>();
-        if (status != null && status.Has(ChillId))
+        if (status != null && status.Has(StatusIds.Chill))
         {
-            status.Apply(StatusEffectDatabase.Get(FrozenId), caster);
+            status.Consume(StatusIds.Chill);
+            status.Apply(StatusEffectDatabase.Get(StatusIds.Frozen), caster);
         }
     }
 
     /// <summary>The caster heals for a share of the Necrotic damage it just dealt.</summary>
-    private static void Lifesteal(IEntity? caster, float damage)
+    private static void Lifesteal(IEntity? caster, float damage, Hurtbox primary)
     {
-        caster?.GetComponent<StatsComponent>()?.Heal(LifestealAmount(damage));
+        float fraction = primary.OwnerEntity?.GetComponent<StatsComponent>()?.GetNormalized(StatType.Health) ?? 1f;
+        bool marked = primary.OwnerEntity?.GetComponent<StatusEffectsComponent>()?.Has(StatusIds.GraveMark) == true;
+        caster?.GetComponent<StatsComponent>()?.Heal(LifestealAmount(damage, fraction, marked));
     }
 
-    /// <summary>An Arcane hit tears one buff off the target — the longest-lasting one
-    /// (<see cref="StatusMath.PickDispel"/>), never a harmful effect.
+    /// <summary>An Arcane bolt tears one buff off the target — the longest-lasting dispellable one
+    /// (<see cref="StatusEffectsComponent.Dispel"/>), never a harmful effect.
     ///
     /// This cannot fire on a self-ward: <c>OnSpellHit</c> is only reached from
     /// <see cref="SpellResolver"/>'s <c>HitOne</c>/<c>Detonate</c> — the Projectile and Area paths —
@@ -88,29 +153,13 @@ public static class SchoolIdentity
     /// casting <c>spell.arcane_shield</c> never dispels the ward it just applied.
     // ponytail: one buff per hit, like Lightning's single jump — a full cleanse would make Arcane a
     // hard counter to every buff at once rather than a trade. Widen only if it plays weak.</summary>
-    private static void Dispel(Hurtbox primary)
+    private static void Dispel(Hurtbox primary, IEntity? caster)
     {
-        StatusEffectsComponent? status = primary.OwnerEntity?.GetComponent<StatusEffectsComponent>();
-        if (status == null)
-        {
-            return;
-        }
-
-        // Materialize before consuming: Consume mutates the dictionary ActiveEffects views.
-        var candidates = new List<(string Id, bool IsBeneficial, double Remaining)>();
-        foreach (StatusEffect effect in status.ActiveEffects)
-        {
-            candidates.Add((effect.Definition.Id, effect.Definition.IsBeneficial, effect.Remaining));
-        }
-
-        if (StatusMath.PickDispel(candidates) is { } stripped)
-        {
-            status.Consume(stripped);
-        }
+        primary.OwnerEntity?.GetComponent<StatusEffectsComponent>()?.Dispel(caster);
     }
 
-    /// <summary>Arcs the bolt to the nearest other hostile within <see cref="ChainRadius"/> for a
-    /// reduced hit. One jump only — chained arcs don't re-trigger the school hook.
+    /// <summary>Arcs the bolt to a Stormbranded foe within <see cref="BrandRange"/> if there is one,
+    /// else to the nearest other hostile within <see cref="ChainRadius"/>, for a reduced hit. One jump only — chained arcs don't re-trigger the school hook.
     ///
     /// <b>"Other" is per actor, not per hurtbox.</b> This path predates 35A, when every actor had
     /// exactly one <see cref="Hurtbox"/> and excluding the primary volume was the same as excluding
@@ -132,16 +181,16 @@ public static class SchoolIdentity
         PhysicsDirectSpaceState3D space = context.GetWorld3D().DirectSpaceState;
         var query = new PhysicsShapeQueryParameters3D
         {
-            Shape = new SphereShape3D { Radius = ChainRadius },
+            Shape = new SphereShape3D { Radius = BrandRange },
             Transform = new Transform3D(Basis.Identity, center),
             CollideWithAreas = true,
             CollideWithBodies = false,
             CollisionMask = CombatLayers.Hurtbox,
         };
 
-        Godot.Collections.Array<Godot.Collections.Dictionary> hits = space.IntersectShape(query, 16);
-        Hurtbox? best = null;
-        float bestDist = float.MaxValue;
+        Godot.Collections.Array<Godot.Collections.Dictionary> hits = space.IntersectShape(query, 32);
+        var hurtboxes = new List<Hurtbox>();
+        var candidates = new List<(float Distance, bool Branded)>();
 
         // Spend the primary's actor up front, so every zone of the creature just hit is already
         // taken. This also subsumes the duplicate-hurtbox guard the query needed: two rows for one
@@ -159,25 +208,27 @@ public static class SchoolIdentity
             if (!hit.TryGetValue("collider", out Variant colliderVar) ||
                 colliderVar.AsGodotObject() is not Hurtbox hurtbox ||
                 !SpellResolver.IsHostileTarget(hurtbox, caster, casterTeam) ||
+                hurtbox.OwnerEntity?.GetComponent<StatsComponent>() is { IsAlive: false } ||
                 !struck.TryHit(hurtbox.OwnerEntity, hurtbox))
             {
                 continue;
             }
 
-            float dist = hurtbox.GlobalPosition.DistanceSquaredTo(center);
-            if (dist < bestDist)
-            {
-                bestDist = dist;
-                best = hurtbox;
-            }
+            hurtboxes.Add(hurtbox);
+            candidates.Add((
+                hurtbox.GlobalPosition.DistanceTo(center),
+                hurtbox.OwnerEntity?.GetComponent<StatusEffectsComponent>()?.Has(StatusIds.Stormbrand) == true));
         }
 
-        if (best == null)
+        int pick = PickChainTarget(candidates);
+        if (pick < 0)
         {
             return;
         }
 
-        var arc = packet with { Amount = ChainDamage(packet.Amount) };
+        Hurtbox best = hurtboxes[pick];
+        bool toBrand = candidates[pick].Branded;
+        var arc = packet with { Amount = ChainDamage(packet.Amount, toBrand) };
         best.Receive(arc);
         SpellResolver.ApplyStatus(best.OwnerEntity, spell, caster);
     }
