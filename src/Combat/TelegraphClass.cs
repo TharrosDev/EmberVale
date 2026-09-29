@@ -20,23 +20,28 @@ public enum TelegraphClass
     /// <summary>A wide arc (wing, tail, cleave, breath): a fan instead of a ring, so the player reads
     /// where the danger is and where it is not.</summary>
     Sweep = 3,
+
+    /// <summary>Not authored: read the class off the action's id, hitbox and commitment. The default
+    /// on <c>ActionDefinitionResource.Telegraph</c>, so existing data keeps its inferred class.</summary>
+    Auto = 4,
 }
 
-/// <summary>What is readable about an action today that says what kind of blow it is.</summary>
+/// <summary>What is readable about an action that says what kind of blow it is. An authored
+/// <paramref name="Authored"/> class (and <paramref name="AuthoredSweep"/> fan angle, 0 = infer) wins.</summary>
 public readonly record struct TelegraphSource(
-    ActionKind Kind, string ActionId, string HitboxName, bool Interruptible);
+    ActionKind Kind, string ActionId, string HitboxName, bool Interruptible,
+    TelegraphClass Authored = TelegraphClass.Auto, float AuthoredSweep = 0f);
 
 /// <summary>
 /// Pure mapping from an action to its <see cref="TelegraphClass"/>, keyed only on what
 /// <see cref="ActionDefinitionResource"/> exposes today.
 ///
-/// <para>⚠️ <b>This is a stand-in for an authored flag.</b> Nothing on the definition says "this cannot
-/// be guarded" or "this is a wide arc", so the class is read off the id and the hitbox name (the
-/// dragon's <c>wing</c> and <c>tail</c> volumes, an id that says <c>sweep</c>, <c>cleave</c> or
-/// <c>breath</c>) and off commitment (a heavy blow that hyperarmor makes uninterruptible reads as
-/// "do not stand in it"). The flag wanted is an authored <c>TelegraphClass</c> (or separate
-/// <c>Unblockable</c> and <c>SweepDegrees</c>) on <c>ActionDefinitionResource</c>; when it exists it
-/// replaces the token match here and nothing that consumes the class changes.</para>
+/// <para>An action may author its class (<c>ActionDefinitionResource.Telegraph</c>, and
+/// <c>SweepDegrees</c> for a fan) and that wins. ⚠️ Left at <see cref="TelegraphClass.Auto"/> — every
+/// existing action — the class is still read off the id and the hitbox name (the dragon's <c>wing</c>
+/// and <c>tail</c> volumes, an id that says <c>sweep</c>, <c>cleave</c> or <c>breath</c>) and off
+/// commitment (a heavy blow that hyperarmor makes uninterruptible reads as "do not stand in it").
+/// Author the flag when a name would lie.</para>
 /// </summary>
 public static class TelegraphClasses
 {
@@ -46,6 +51,11 @@ public static class TelegraphClasses
     /// <summary>The class of an action.</summary>
     public static TelegraphClass Classify(in TelegraphSource source)
     {
+        if (source.Authored != TelegraphClass.Auto)
+        {
+            return source.Authored;
+        }
+
         string tokens = ((source.ActionId ?? "") + " " + (source.HitboxName ?? "")).ToLowerInvariant();
 
         // Declared in the id: an author who wrote it in the name has said it.
@@ -72,6 +82,11 @@ public static class TelegraphClasses
     /// <summary>The fan angle of a sweep, degrees: a tail comes round behind, a spin is a full circle.</summary>
     public static float SweepDegrees(in TelegraphSource source)
     {
+        if (source.AuthoredSweep > 0f)
+        {
+            return Math.Clamp(source.AuthoredSweep, 30f, 360f);
+        }
+
         string tokens = ((source.ActionId ?? "") + " " + (source.HitboxName ?? "")).ToLowerInvariant();
         if (Has(tokens, "spin") || Has(tokens, "whirl"))
         {
@@ -108,7 +123,8 @@ public static class TelegraphClasses
 
     /// <summary>The readable facts of an action definition.</summary>
     public static TelegraphSource FromAction(ActionDefinitionResource action) =>
-        new(action.Kind, action.Id, action.HitboxName, action.Interruptible);
+        new(action.Kind, action.Id, action.HitboxName, action.Interruptible,
+            action.Telegraph, action.SweepDegrees);
 
     private static bool Has(string tokens, string token) => tokens.Contains(token, StringComparison.Ordinal);
 }

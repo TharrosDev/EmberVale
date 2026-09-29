@@ -138,8 +138,9 @@ caps the first two at 25%).
   crushes, breaks: the full hit lands and the body takes a long stagger scaled by class. A body with no
   stamina pool cannot be stamina-broken. `GuardBrokenEvent`.
 - **Punish window and criticals** — a body is open after a poise break, a parry or a guard break, for
-  the stagger plus 0.25 s. The first melee blow on an open body is a riposte critical (x1.35 poise
-  break, x1.75 guard break, x2 parry, x2.5 perfect parry); a blow from behind is a backstab (x1.5).
+  the stagger plus 0.25 s, and for the committed tail of its own heavy or plunge swing. The first melee
+  blow on an open body is a riposte critical (x1.25 swing recovery, x1.35 poise break, x1.75 guard
+  break, x2 parry, x2.5 perfect parry); a blow from behind is a backstab (x1.5).
   Bosses take 60% of the bonus and the player's side is never opened, so poise stays symmetric.
   `OpenCause`, `HitKind.Riposte`, `HitKind.Backstab`, `CriticalHitEvent`, `PunishWindowOpenedEvent`.
 - **Poise and stagger** — symmetric for every actor: flinch, stagger, heavy, knockdown by reaction
@@ -159,7 +160,7 @@ caps the first two at 25%).
 - **Lock-on** — middle mouse; cycles targets in range, faces the target, and says when it breaks
   (target died, too far, lost sight). With Lock-On Assist it prefers a target mid-swing or nearly dead,
   passes the lock to the next enemy within 10 m on a kill, and steps on a mouse flick or a full stick
-  push. `LockOnComponent`, `LockOn`, `LockOnCueLayer`, `LockChangedEvent`, `LockBrokenEvent`.
+  push. Cover is judged against static geometry and terrain only, so a person never blocks a lock. `LockOnComponent`, `LockOn`, `LockOnCueLayer`, `LockChangedEvent`, `LockBrokenEvent`.
 - **Ranged** — the bow's startup is the draw: hold to draw (7 stamina a second), release on the action's
   release frame. A tapped or buffered press is a weak snap shot (x0.45 damage, scatter); a full draw hits
   hardest and flies fastest. Arrows are solved under gravity through the crosshair, stop and stick in
@@ -177,8 +178,9 @@ caps the first two at 25%).
   at 75% and the multiplier at x4. `CombatMath`, `DamageType`, `HitKind`.
 - **Telegraphs** — ground rings sized to the real wind-up, tinted by boss phase, in four classes read
   by shape as well as colour: standard, parryable (a gold ring closes on the parry moment), unblockable
-  (thick pulsing red) and sweep (a fan by the arc). Class is inferred from the action until it is
-  authored. `TelegraphComponent`, `TelegraphClass`.
+  (thick pulsing red) and sweep (a fan by the arc). An action can author its class and fan angle
+  (`ActionDefinitionResource.Telegraph`, `SweepDegrees`); left on Auto it is inferred from the action's
+  id, hitbox and commitment. `TelegraphComponent`, `TelegraphClass`.
 
 ## Magic
 

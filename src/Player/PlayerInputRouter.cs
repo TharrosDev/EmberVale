@@ -192,10 +192,11 @@ public partial class PlayerInputRouter : EntityComponent
         {
             _weapon.WarpTarget = _lockOn?.Target?.Body;
 
-            // Where a bow shoots. The aim node is already the converged crosshair point that the
-            // interaction ray and spell targeting use, so a ranged shot goes exactly where the
-            // player is looking rather than where the body happens to face.
-            _weapon.AimPoint = _aim?.AimNode?.GlobalPosition;
+            // Where a bow shoots: the aim controller's converged crosshair point. ⚠️ Not AimNode's
+            // position — that node sits at the eye, so trusting it sent every arrow straight up.
+            // RangedAttack prefers the controller's focus itself; this keeps AimPoint honest for
+            // anything else that reads it.
+            _weapon.AimPoint = _aim is { HasFocus: true } ? _aim.Focus : _aim?.AimNode?.GlobalPosition;
         }
 
         if (_combat != null)

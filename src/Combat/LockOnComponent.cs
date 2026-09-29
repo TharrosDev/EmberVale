@@ -463,7 +463,13 @@ public partial class LockOnComponent : EntityComponent
     }
 
     /// <summary>A candidate behind world geometry is not lockable. One ray, only for candidates that
-    /// already passed the cheaper angle and range tests.</summary>
+    /// already passed the cheaper angle and range tests.
+    ///
+    /// ⚠️ <b>CameraBlocker, not World.</b> Actor bodies share the World layer, and this ray ends inside
+    /// the candidate's own capsule, so a World mask always hit the target's own body first and the
+    /// "blocked" verdict made every actor unlockable in a real session (found by rendering it). Static
+    /// geometry and terrain carry CameraBlocker and people do not — the same split the camera spring
+    /// uses (<see cref="CombatLayers.CameraBlocker"/>).</summary>
     private bool HasLineOfSight(IEntity entity)
     {
         if (_body == null)
@@ -473,7 +479,7 @@ public partial class LockOnComponent : EntityComponent
 
         Vector3 from = _body.GlobalPosition + (Vector3.Up * 1.4f);
         Vector3 to = entity.Body.GlobalPosition + (Vector3.Up * 1.0f);
-        var query = PhysicsRayQueryParameters3D.Create(from, to, CombatLayers.World);
+        var query = PhysicsRayQueryParameters3D.Create(from, to, CombatLayers.CameraBlocker);
         query.Exclude = new Godot.Collections.Array<Rid> { _body.GetRid() };
         return _body.GetWorld3D().DirectSpaceState.IntersectRay(query).Count == 0;
     }

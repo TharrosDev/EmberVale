@@ -18,7 +18,7 @@ DLL = pathlib.Path(".godot/mono/temp/bin/ExportRelease/Embervale.dll")
 # Type names that must not exist in a shipping build.
 FORBIDDEN = [
     "ShellShots", "HudShots", "PanelShots", "ShrineShots", "GuildShots",
-    "EnemyShots", "ShotHarness", "ReproHarness",
+    "EnemyShots", "CombatShots", "ShotHarness", "ReproHarness",
 ]
 # Namespaces from the vendored Godot-MCP addon and its NuGet dependencies.
 FORBIDDEN_PREFIXES = ["IvanMurzak", "GodotMCP", "com.IvanMurzak"]

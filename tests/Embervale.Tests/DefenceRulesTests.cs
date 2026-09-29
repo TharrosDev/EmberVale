@@ -320,6 +320,14 @@ public class DefenceRulesTests
     }
 
     [Fact]
+    public void RiposteBonus_ARecoveryTailIsTheSmallestReward()
+    {
+        // Punishing a heavy swing's tail is real but never beats breaking a body's poise or guard.
+        Assert.True(DefenceRules.RiposteBonus(OpenCause.Recovery) > 1f);
+        Assert.True(DefenceRules.RiposteBonus(OpenCause.Recovery) < DefenceRules.RiposteBonus(OpenCause.PoiseBreak));
+    }
+
+    [Fact]
     public void OpeningMultiplier_PinsTheNumbers()
     {
         Assert.Equal(2f, DefenceRules.OpeningMultiplier(HitKind.Riposte, OpenCause.Parry, false, ReactionClass.Humanoid), Tolerance);

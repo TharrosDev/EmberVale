@@ -209,12 +209,16 @@ func _check_charge() -> void:
 			% (action.Current.Id if action.Current != null else "nothing"))
 
 	var vulnerable_in_tail := false
+	var open_in_tail := false
 	var hits := 0
 	var last: float = health_before
 	for f in 100:
 		await physics_frame
 		if action.InCommittedRecovery and combat.InWindup:
 			vulnerable_in_tail = true
+			# The defence side reads the same tail as a riposte opening (OpenCause.Recovery = 5).
+			if combat.RecoveryOpen and combat.IsOpen and combat.CurrentOpenCause == 5:
+				open_in_tail = true
 		var now: float = target_stats.GetCurrent(HEALTH)
 		if now < last:
 			hits += 1
@@ -236,6 +240,10 @@ func _check_charge() -> void:
 			% action.LastSwingDamageMultiplier)
 	if not vulnerable_in_tail:
 		_fail("charge: the heavy's committed recovery never registered as a punish window")
+	if not open_in_tail:
+		_fail("charge: the heavy's committed recovery never opened the body to a riposte")
+	if combat.RecoveryOpen or combat.IsOpen:
+		_fail("charge: the opening outlived the heavy's recovery")
 	if action.Current != null:
 		_fail("charge: the heavy had not finished 100 frames after release")
 

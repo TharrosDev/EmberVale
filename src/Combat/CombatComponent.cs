@@ -115,10 +115,32 @@ public partial class CombatComponent : EntityComponent
     /// <summary>True while this body is a critical opening: parried, guard-broken or poise-broken, and
     /// for a short grace after (<see cref="DefenceRules.OpeningGraceSeconds"/>). The first riposte
     /// inside the window closes it.</summary>
-    public bool IsOpen => _openTimer > 0d;
+    public bool IsOpen => _openTimer > 0d || RecoveryLive;
 
-    /// <summary>Why this body is open, <see cref="OpenCause.None"/> when it is not.</summary>
-    public OpenCause CurrentOpenCause => IsOpen ? _openCause : OpenCause.None;
+    /// <summary>Set by <c>CharacterActionComponent</c> for the committed tail of a
+    /// <c>RecoveryVulnerable</c> action (a heavy's or plunge's recovery): the swing is paid for after it
+    /// lands. The first riposte inside the tail closes it; it re-arms with the next such tail.</summary>
+    public bool RecoveryOpen
+    {
+        get => _recoveryOpen;
+        set
+        {
+            _recoveryOpen = value;
+            if (!value)
+            {
+                _recoveryConsumed = false;
+            }
+        }
+    }
+
+    private bool _recoveryOpen;
+    private bool _recoveryConsumed;
+    private bool RecoveryLive => _recoveryOpen && !_recoveryConsumed;
+
+    /// <summary>Why this body is open, <see cref="OpenCause.None"/> when it is not. A timed opening
+    /// (stagger, parry, guard break) outranks the recovery tail when both hold.</summary>
+    public OpenCause CurrentOpenCause =>
+        _openTimer > 0d ? _openCause : (RecoveryLive ? OpenCause.Recovery : OpenCause.None);
 
     /// <summary>Seconds left in the punish window, 0 when closed.</summary>
     public float OpenRemaining => _openTimer > 0d ? (float)_openTimer : 0f;
@@ -312,6 +334,7 @@ public partial class CombatComponent : EntityComponent
     {
         _openTimer = 0d;
         _openCause = OpenCause.None;
+        _recoveryConsumed = _recoveryOpen;
     }
 
     /// <summary>Resolves an incoming hit and applies it. Returns the resolved result.</summary>

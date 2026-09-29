@@ -96,7 +96,8 @@ public sealed partial class GameShellController : Node
         bool shrineShots = HasFlag("--shrine-shots");
         bool guildShots = HasFlag("--guild-shots");
         bool enemyShots = HasFlag("--enemy-shots");
-        bool capture = hudShots || panelShots || shrineShots || guildShots || enemyShots;
+        bool combatShots = HasFlag("--combat-shots");
+        bool capture = hudShots || panelShots || shrineShots || guildShots || enemyShots || combatShots;
 
         if ((!capture && !HasFlag("--play")) || MostRecentSlot() is not { } slot)
         {
@@ -108,6 +109,7 @@ public sealed partial class GameShellController : Node
             : shrineShots ? "--shrine-shots"
             : guildShots ? "--guild-shots"
             : enemyShots ? "--enemy-shots"
+            : combatShots ? "--combat-shots"
             : "--play";
         Log.Info($"{mode}: continuing most recent save '{slot}'.");
         StartLoadedGame(slot);
@@ -157,6 +159,11 @@ public sealed partial class GameShellController : Node
         if (enemyShots)
         {
             AddChild(new Debugging.EnemyShots { Name = "EnemyShots" });
+        }
+
+        if (combatShots)
+        {
+            AddChild(new Debugging.CombatShots { Name = "CombatShots" });
         }
 #endif
     }

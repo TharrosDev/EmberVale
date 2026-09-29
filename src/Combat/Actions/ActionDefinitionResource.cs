@@ -92,6 +92,14 @@ public partial class ActionDefinitionResource : Resource
     /// exactly as it is during startup. On for heavies, where the big swing is paid for in recovery.</summary>
     [Export] public bool RecoveryVulnerable { get; set; }
 
+    /// <summary>What kind of blow this reads as on the telegraph, the warning arc and the nameplate
+    /// (parryable, unblockable, sweep). <c>Auto</c> infers it from the id, hitbox and commitment.</summary>
+    [Export] public TelegraphClass Telegraph { get; set; } = TelegraphClass.Auto;
+
+    /// <summary>Fan angle in degrees for a <c>Sweep</c> telegraph. 0 infers it (a tail is wider, a
+    /// spin is a full circle).</summary>
+    [Export(PropertyHint.Range, "0,360,5")] public float SweepDegrees { get; set; }
+
     /// <summary>How much of normal movement the actor keeps while this runs. 0 roots them.</summary>
     [Export(PropertyHint.Range, "0,1,0.05")] public float MoveScale { get; set; }
 

@@ -16,6 +16,9 @@ public enum OpenCause
 
     /// <summary>It was parried on the very first frames of the guard. The biggest riposte.</summary>
     PerfectParry = 4,
+
+    /// <summary>It is in the committed tail of its own heavy or plunge swing: the big blow is paid for.</summary>
+    Recovery = 5,
 }
 
 /// <summary>Where an attacker sits relative to a raised guard.</summary>
@@ -230,6 +233,7 @@ public static class DefenceRules
         OpenCause.GuardBreak => 1.75f,
         OpenCause.Parry => 2f,
         OpenCause.PerfectParry => 2.5f,
+        OpenCause.Recovery => 1.25f,
         _ => 1f,
     };
 

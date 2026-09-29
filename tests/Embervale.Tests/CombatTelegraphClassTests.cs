@@ -12,6 +12,32 @@ public class CombatTelegraphClassTests
         TelegraphClasses.Classify(new TelegraphSource(kind, id, hitbox, interruptible));
 
     [Fact]
+    public void AnAuthoredClass_BeatsTheNameAndCommitment()
+    {
+        // An id that says "sweep" and a hyperarmoured heavy would both infer something else.
+        var source = new TelegraphSource(ActionKind.HeavyAttack, "boss.sweep", "", false,
+            TelegraphClass.Parryable, 0f);
+        Assert.Equal(TelegraphClass.Parryable, TelegraphClasses.Classify(source));
+    }
+
+    [Fact]
+    public void AnAuthoredSweepAngle_WinsAndIsClamped()
+    {
+        var wide = new TelegraphSource(ActionKind.Attack, "x", "", true, TelegraphClass.Sweep, 500f);
+        var narrow = new TelegraphSource(ActionKind.Attack, "tail", "", true, TelegraphClass.Sweep, 10f);
+        Assert.Equal(360f, TelegraphClasses.SweepDegrees(wide));
+        Assert.Equal(30f, TelegraphClasses.SweepDegrees(narrow));
+    }
+
+    [Fact]
+    public void Auto_FallsBackToInference()
+    {
+        var source = new TelegraphSource(ActionKind.Attack, "dragon.tail", "TailArc", true);
+        Assert.Equal(TelegraphClass.Sweep, TelegraphClasses.Classify(source));
+        Assert.Equal(220f, TelegraphClasses.SweepDegrees(source));
+    }
+
+    [Fact]
     public void ALightSwing_IsParryable() => Assert.Equal(TelegraphClass.Parryable, Class(ActionKind.Attack, "sword.slash"));
 
     [Fact]
@@ -64,6 +90,12 @@ public class CombatTelegraphClassTests
         var keys = new System.Collections.Generic.HashSet<string>();
         foreach (TelegraphClass cls in System.Enum.GetValues<TelegraphClass>())
         {
+            // Auto is an authoring value: Classify never returns it, so it is never drawn or labelled.
+            if (cls == TelegraphClass.Auto)
+            {
+                continue;
+            }
+
             Assert.True(keys.Add(TelegraphClasses.LabelKey(cls)));
             Assert.StartsWith("combat.feedback.", TelegraphClasses.LabelKey(cls));
         }

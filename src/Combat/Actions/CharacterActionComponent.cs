@@ -660,8 +660,9 @@ public partial class CharacterActionComponent : EntityComponent
 
         // Startup is a punish window for poise, and so is the committed tail of an action that says
         // so (a heavy's recovery): the big swing is paid for after it lands.
-        SetWindup(Phase == ActionPhase.Startup ||
-                  (Current.RecoveryVulnerable && ActionTimeline.InCommittedRecovery(_progress, windows)));
+        bool vulnerableTail = Current.RecoveryVulnerable &&
+                              ActionTimeline.InCommittedRecovery(_progress, windows);
+        SetWindup(Phase == ActionPhase.Startup || vulnerableTail, vulnerableTail);
 
         ApplyMotion(Current, delta);
         if (Entity?.Body is Node3D moved)
@@ -885,11 +886,14 @@ public partial class CharacterActionComponent : EntityComponent
 
     /// <summary>Mirrors the startup window onto the combat component, which is where incoming poise
     /// damage is resolved and therefore where a phase's wind-up vulnerability has to be applied.</summary>
-    private void SetWindup(bool inWindup)
+    /// <summary><paramref name="recoveryOpen"/> is the committed tail of a <c>RecoveryVulnerable</c>
+    /// action: the defence side treats the body as a riposte opening for exactly that long.</summary>
+    private void SetWindup(bool inWindup, bool recoveryOpen = false)
     {
         if (_combat != null)
         {
             _combat.InWindup = inWindup;
+            _combat.RecoveryOpen = recoveryOpen;
         }
     }
 

@@ -158,7 +158,8 @@ a roll is the weapon's roll-cut. `AttackInput` turns raw presses into intents, `
 accepts a press within 0.28 s of the cancel point, and `AttackDirections` picks a humanoid's
 forward/back/side step once at the commit. A committed action's facing turns no faster than its
 `TurnDegreesPerSecond` (always for AI; for the player only while locked on). `RecoveryVulnerable`
-actions mark their committed tail through `CombatComponent.InWindup`, and
+actions mark their committed tail through `CombatComponent.InWindup` (extra poise damage) and
+`CombatComponent.RecoveryOpen` (a riposte opening, `OpenCause.Recovery`, closed by the first riposte);
 `CharacterActionComponent.InCommittedRecovery` is public.
 
 **Ranged (`RangedAttack`, `BowDrawComponent`, `Arrow`).** `Shoot` delegates to `RangedAttack.Fire`.
@@ -176,9 +177,14 @@ publishes one `HitConfirmedEvent` (a `HitOutcome`) at the end of the frame. Hit-
 `CombatFeedbackOverlay`, `DamageNumberLayer` and `DamageDirectionOverlay` consume it, so all need the
 director in the session. Everything that punctuates a blow for feel reads `CombatComfort` (Hit Stop,
 Screen Flash, Damage Numbers, Lock-On Assist, Aim Assist; Reduced Motion caps the first two at 25%).
-`TelegraphComponent` classes (`TelegraphClass`: standard, parryable, unblockable, sweep) are inferred
-from action ids and hitboxes until an authored flag exists on `ActionDefinitionResource`.
-`LockOnComponent` publishes `LockChangedEvent` and `LockBrokenEvent`.
+`TelegraphComponent` classes (`TelegraphClass`: standard, parryable, unblockable, sweep) come from
+`ActionDefinitionResource.Telegraph` / `SweepDegrees`; left on `Auto` they are inferred from the action
+id, hitbox and commitment. `LockOnComponent` publishes `LockChangedEvent` and `LockBrokenEvent`. ⚠️ Its
+line-of-sight ray masks `CameraBlocker`, not `World`: actors share the World layer and the ray ends
+inside the target's own capsule, so a World mask made every actor unlockable. Look at combat with
+`godot --path . --fixed-fps 60 -- --combat-shots` (`CombatShots`, PNGs under the user data
+`combat_shots/`); it needs a real window and a save, and a live event banner or boss bar hides the
+nameplate by design.
 
 ### 2.3 Movement and animation (`src/Movement`, `src/Animation`)
 

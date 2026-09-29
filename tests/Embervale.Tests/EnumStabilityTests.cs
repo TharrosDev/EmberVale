@@ -447,5 +447,17 @@ public class EnumStabilityTests
         Assert.Equal(2, (int)OpenCause.Parry);
         Assert.Equal(3, (int)OpenCause.GuardBreak);
         Assert.Equal(4, (int)OpenCause.PerfectParry);
+        Assert.Equal(5, (int)OpenCause.Recovery);
+    }
+
+    [Fact]
+    public void TelegraphClass_Ordinals()
+    {
+        // Authored into ActionDefinitionResource.Telegraph, so the integers are content.
+        Assert.Equal(0, (int)TelegraphClass.Standard);
+        Assert.Equal(1, (int)TelegraphClass.Parryable);
+        Assert.Equal(2, (int)TelegraphClass.Unblockable);
+        Assert.Equal(3, (int)TelegraphClass.Sweep);
+        Assert.Equal(4, (int)TelegraphClass.Auto);
     }
 }
