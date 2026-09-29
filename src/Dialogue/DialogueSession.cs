@@ -250,17 +250,15 @@ public sealed class DialogueSession
 
                 break;
             case DialogueEffect.LearnSpell:
-                if (SpellDatabase.Get(arg) is not { } taught)
+                if (SpellDatabase.Get(arg) is null)
                 {
                     Log.Warn($"Dialogue effect LearnSpell: unknown spell '{arg}'.");
                 }
-                else if (_spellcasting != null && !_spellcasting.IsKnown(taught))
+                else
                 {
-                    // Learn re-checks the 23H corruption gate itself and no-ops when it fails, so a
-                    // teacher offering a corrupted spell to the untainted is refused here as it is at
-                    // a tome — silently, which is what "the words writhe out of reach" looks like.
-                    _spellcasting.Learn(arg);
-                    EventBus.Instance?.Publish(new SpellsChangedEvent(_player));
+                    // The one learning route: it resolves a retired id, applies the 23H corruption gate
+                    // (a refusal now toasts why), and raises SpellLearnedEvent once.
+                    SpellLearning.TryLearn(_player, arg, LearnRoutes.Dialogue);
                 }
 
                 break;
