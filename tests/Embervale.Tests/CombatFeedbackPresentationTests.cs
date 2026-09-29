@@ -177,6 +177,11 @@ public class CombatFeedbackPresentationTests
     public void Number_CritIsBiggerAndBangedBlockIsSmallAndParenthesised()
     {
         Assert.True(DamageNumberMath.Style(HitOutcome.Critical, false).Scale > DamageNumberMath.Style(HitOutcome.Hit, false).Scale);
+        // A second number on the same target starts above the first, and a flurry stops climbing.
+        Assert.Equal(0f, DamageNumberMath.LiftAbove(-1f));
+        Assert.True(DamageNumberMath.LiftAbove(0f) > 0f);
+        Assert.True(DamageNumberMath.LiftAbove(60f) > 60f);
+        Assert.Equal(DamageNumberMath.LiftAbove(240f), DamageNumberMath.LiftAbove(900f));
         Assert.True(DamageNumberMath.Style(HitOutcome.Blocked, false).Scale < DamageNumberMath.Style(HitOutcome.Hit, false).Scale);
         Assert.Equal("25!", DamageNumberMath.Compose(HitOutcome.Critical, 25f, null));
         Assert.Equal("(6)", DamageNumberMath.Compose(HitOutcome.Blocked, 6f, null));

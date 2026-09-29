@@ -189,9 +189,17 @@ public sealed partial class GameShellController : Node
             return null;
         }
 
+        // EMBERVALE_SLOT picks a slot by name, for a capture that needs a particular world state (no
+        // live event banner, say). Unknown names fall through to the newest save.
+        string wanted = OS.GetEnvironment("EMBERVALE_SLOT");
         SaveSlotInfo? latest = null;
         foreach (SaveSlotInfo info in manager.ListSlots())
         {
+            if (wanted.Length > 0 && info.Slot == wanted)
+            {
+                return info.Slot;
+            }
+
             if (latest == null || info.TimestampUnix > latest.TimestampUnix)
             {
                 latest = info;

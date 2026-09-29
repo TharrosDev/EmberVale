@@ -118,6 +118,17 @@ public static class DamageNumberMath
         return ((h % 2001UL) / 1000f) - 1f;
     }
 
+    /// <summary>A number younger than this still occupies its spot, so a new one on the same target
+    /// starts above it rather than on top of it.</summary>
+    public const float LaneWindow = 0.6f;
+
+    /// <summary>Pixels a new number starts above the spot. <paramref name="highestRecentTop"/> is how high
+    /// the topmost recent number on the same target is right now (lift plus how far it has risen), or a
+    /// negative value when there is none. The new number starts one line above that, so the older ones
+    /// (which keep rising) are never overprinted. Capped, so a flurry cannot climb off the screen.</summary>
+    public static float LiftAbove(float highestRecentTop) =>
+        highestRecentTop < 0f ? 0f : Math.Min(highestRecentTop, 240f) + 34f;
+
     /// <summary>Whether a new number should fold into the one already on screen for the same
     /// target.</summary>
     public static bool ShouldMerge(float existingAgeSeconds, bool sameTarget, HitOutcome existing, HitOutcome incoming) =>

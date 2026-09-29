@@ -184,7 +184,8 @@ line-of-sight ray masks `CameraBlocker`, not `World`: actors share the World lay
 inside the target's own capsule, so a World mask made every actor unlockable. Look at combat with
 `godot --path . --fixed-fps 60 -- --combat-shots` (`CombatShots`, PNGs under the user data
 `combat_shots/`); it needs a real window and a save, and a live event banner or boss bar hides the
-nameplate by design.
+nameplate by design (`EMBERVALE_SLOT=<slot>` picks a save without one). A new number on a target starts
+above the older ones' current height (`DamageNumberMath.LiftAbove`).
 
 ### 2.3 Movement and animation (`src/Movement`, `src/Animation`)
 

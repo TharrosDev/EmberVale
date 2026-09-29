@@ -33,6 +33,7 @@ public sealed partial class DamageNumberLayer : Control
         public float Age;
         public float Life;
         public float Drift;
+        public float Lift;
         public float Amount;
         public float SizeScale;
         public ulong TargetId;
@@ -89,9 +90,23 @@ public sealed partial class DamageNumberLayer : Control
             _live.RemoveAt(0);
         }
 
+        // Recent numbers on this target hold their spot, so this one starts above them instead of
+        // on top (a poise break and the riposte that follows it used to print over each other).
+        float highest = -1f;
+        foreach (Entry existing in _live)
+        {
+            if (existing.TargetId == targetId && existing.Age < DamageNumberMath.LaneWindow)
+            {
+                float top = existing.Lift +
+                            (DamageNumberMath.Rise(existing.Age / existing.Life) * DamageNumberMath.RisePixels);
+                highest = Mathf.Max(highest, top);
+            }
+        }
+
         var entry = new Entry
         {
             Label = _free.Count > 0 ? _free.Pop() : MakeLabel(),
+            Lift = DamageNumberMath.LiftAbove(highest),
             World = e.Point,
             ScreenSpace = taken,
             Age = 0f,
@@ -185,7 +200,7 @@ public sealed partial class DamageNumberLayer : Control
             Label label = entry.Label;
             label.Visible = true;
             Vector2 size = label.GetCombinedMinimumSize();
-            label.Position = new Vector2(at.X - (size.X * 0.5f) + sway, at.Y - rise - (size.Y * 0.5f));
+            label.Position = new Vector2(at.X - (size.X * 0.5f) + sway, at.Y - rise - entry.Lift - (size.Y * 0.5f));
             label.PivotOffset = size * 0.5f;
             label.Scale = Vector2.One * (motion ? DamageNumberMath.Pop(t) : 1f);
             float alpha = DamageNumberMath.Alpha(t) * (entry.Style.Italic ? 0.75f : 1f);
