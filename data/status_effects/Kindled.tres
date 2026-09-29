@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="StatusEffectResource" load_steps=2 format=3 uid="uid://cmbrvlstkindled"]
+
+[ext_resource type="Script" path="res://src/Magic/StatusEffectResource.cs" id="1_status"]
+
+[resource]
+script = ExtResource("1_status")
+Id = "status.kindled"
+DisplayName = "Kindled"
+School = 1
+IsBeneficial = false
+Duration = 6.0
+DamagePerTick = 0.0
+TickInterval = 1.0
+ModStat = 11
+ModType = 2
+ModValue = 0.0
+Controls = 8

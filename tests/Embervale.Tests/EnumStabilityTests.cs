@@ -460,4 +460,26 @@ public class EnumStabilityTests
         Assert.Equal(3, (int)TelegraphClass.Sweep);
         Assert.Equal(4, (int)TelegraphClass.Auto);
     }
+
+    [Fact]
+    public void MagicUpgradeEnums_Ordinals()
+    {
+        Assert.Equal(4, (int)SpellDelivery.Ground);
+        Assert.Equal(5, (int)SpellDelivery.Barrier);
+        Assert.Equal(6, (int)SpellDelivery.Dash);
+        Assert.Equal(0, (int)StatusControl.None);
+        Assert.Equal(1, (int)StatusControl.Root);
+        Assert.Equal(2, (int)StatusControl.Silence);
+        Assert.Equal(4, (int)StatusControl.Stun);
+        Assert.Equal(8, (int)StatusControl.Mark);
+    }
+
+    // --- magic-core: enum tests for this group go between the markers (one owner per block) ---
+    // --- end magic-core ---
+    // --- magic-status: enum tests for this group go between the markers (one owner per block) ---
+    // --- end magic-status ---
+    // --- magic-learning: enum tests for this group go between the markers (one owner per block) ---
+    // --- end magic-learning ---
+    // --- magic-content: enum tests for this group go between the markers (one owner per block) ---
+    // --- end magic-content ---
 }

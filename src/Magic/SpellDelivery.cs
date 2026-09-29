@@ -24,4 +24,19 @@ public enum SpellDelivery
     /// <see cref="SpellResource.ImpactRadius"/> of the origin. An Area burst you have to be in
     /// front of.</summary>
     Cone,
+
+    // --- magic upgrade 2026-09 (append-only) ---
+
+    /// <summary>Lands where the caster aims, after <see cref="SpellResource.GroundDelay"/> seconds of
+    /// telegraph on the ground (Sunfall, Gravity Well, Thornsnare). The delay is the warning: it is
+    /// the same ring an enemy's wind-up draws, so a ground spell can be read and dodged.</summary>
+    Ground,
+
+    /// <summary>A standing wall across the aim point that lasts <see cref="SpellResource.BarrierDuration"/>
+    /// (Pyre Wall, Glacial Bulwark). It can stop projectiles and bodies and can be broken.</summary>
+    Barrier,
+
+    /// <summary>The caster travels <see cref="SpellResource.DashDistance"/> along the aim and strikes
+    /// what it passes through (Thunder Step). A Self cast that moves; Blink stays a teleport.</summary>
+    Dash,
 }

@@ -183,6 +183,14 @@ def gates(engine: str | None) -> list[Gate]:
              [engine, "--headless", "--path", ".", "--script",
               "res://tools/combat_ranged_probe.gd"], slow=True),
         # --- end combat-ranged ---
+        # --- magic-core: this group's probe Gate goes between the markers (one owner per block) ---
+        # --- end magic-core ---
+        # --- magic-status: this group's probe Gate goes between the markers (one owner per block) ---
+        # --- end magic-status ---
+        # --- magic-learning: this group's probe Gate goes between the markers (one owner per block) ---
+        # --- end magic-learning ---
+        # --- magic-content: this group's probe Gate goes between the markers (one owner per block) ---
+        # --- end magic-content ---
         Gate("traversal", "a real capsule walks every authored route in the real collision world",
              [engine, "--headless", "--path", ".", "--script",
               "res://tools/world_traversal_probe.gd"], slow=True, timeout=1800),

@@ -2666,3 +2666,11 @@ combat.feedback.lock_far,Too far
 combat.feedback.lock_sight,Lost sight
 combat.feedback.tag_staggered,STAGGERED
 combat.feedback.tag_guarding,GUARDING
+# --- magic-core: this group's keys go between the markers (one owner per block); prefix magic.cast.* ---
+# --- end magic-core ---
+# --- magic-status: prefix magic.status.* ---
+# --- end magic-status ---
+# --- magic-learning: prefix magic.learn.* and magic.book.* ---
+# --- end magic-learning ---
+# --- magic-content: prefix spell.<id>.name / spell.<id>.desc ---
+# --- end magic-content ---

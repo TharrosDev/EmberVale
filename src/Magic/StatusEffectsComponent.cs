@@ -60,6 +60,34 @@ public partial class StatusEffectsComponent : EntityComponent
 
     public bool Has(string effectId) => _active.ContainsKey(effectId);
 
+    // --- magic upgrade 2026-09: the read API other systems use; the rules behind it belong to the
+    // status agent. Everything that asks "can this actor cast / move" asks here. ---
+
+    /// <summary>Every control the active statuses put on this entity, OR-ed together.</summary>
+    public StatusControl Controls
+    {
+        get
+        {
+            StatusControl all = StatusControl.None;
+            foreach (StatusEffect effect in _active.Values)
+            {
+                all |= effect.Definition.Controls;
+            }
+
+            return all;
+        }
+    }
+
+    public bool IsSilenced => (Controls & StatusControl.Silence) != 0;
+
+    public bool IsRooted => (Controls & StatusControl.Root) != 0;
+
+    public bool IsStunned => (Controls & StatusControl.Stun) != 0;
+
+    /// <summary>Current stack count of an effect, 0 when absent.</summary>
+    public int StacksOf(string effectId) =>
+        _active.TryGetValue(effectId, out StatusEffect? effect) ? effect.Stacks : 0;
+
     /// <summary>Strips an effect outright (Phase 29.5D combos "consume" the status they trigger off, e.g.
     /// a shatter eating the chill). A no-op if the effect isn't present.</summary>
     public void Consume(string effectId) => Remove(effectId);

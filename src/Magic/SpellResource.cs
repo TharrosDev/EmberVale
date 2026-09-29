@@ -134,5 +134,75 @@ public partial class SpellResource : Resource
     /// <summary>Seconds between a summoned totem's pulses (defaults to 1 when unset).</summary>
     [Export] public float SummonTickInterval { get; set; } = 1f;
 
+    // --- magic upgrade 2026-09: every field below defaults to "off", so a spell authored before it is unchanged ---
+
+    [ExportGroup("Committed cast (magic upgrade)")]
+    /// <summary>Seconds of visible wind-up before the spell leaves the hand. 0 derives it from the cast
+    /// action (<c>SpellActions.For</c>). A stagger during the wind-up cancels the cast (poise is
+    /// symmetric), so this is also how long a caster is open to being interrupted.</summary>
+    [Export] public float WindupSeconds { get; set; } = 0f;
+
+    /// <summary>Seconds after release before the caster can act again. 0 derives it.</summary>
+    [Export] public float RecoverySeconds { get; set; } = 0f;
+
+    /// <summary>Poise damage a hit deals. 0 keeps the current default.</summary>
+    [Export] public float PoiseDamage { get; set; } = 0f;
+
+    /// <summary>False makes the spell unblockable: a guard does not stop it (still never parryable).</summary>
+    [Export] public bool Blockable { get; set; } = true;
+
+    /// <summary>False lets the cast finish through a stagger (hyperarmoured casting, bosses, Barkskin).</summary>
+    [Export] public bool Interruptible { get; set; } = true;
+
+    /// <summary>Hit-stop and shake weight of the blow, 0..1. Presentation only, scaled by <c>CombatComfort</c>.</summary>
+    [Export] public float ImpactWeight { get; set; } = 0.5f;
+
+    [ExportGroup("Ground, barrier, dash (magic upgrade)")]
+    /// <summary>Furthest point a <see cref="SpellDelivery.Ground"/> or <see cref="SpellDelivery.Barrier"/>
+    /// cast can be placed from the caster, metres. The aim point is clamped to it.</summary>
+    [Export] public float PlaceRange { get; set; } = 18f;
+
+    /// <summary>Seconds a Ground cast telegraphs before it lands. The ground ring shows exactly this.</summary>
+    [Export] public float GroundDelay { get; set; } = 0f;
+
+    /// <summary>Pull toward the centre for a Ground spell that draws foes in (Gravity Well), m/s. 0 = none.</summary>
+    [Export] public float PullStrength { get; set; } = 0f;
+
+    /// <summary>Seconds a <see cref="SpellDelivery.Barrier"/> stands.</summary>
+    [Export] public float BarrierDuration { get; set; } = 0f;
+
+    /// <summary>Width of a barrier across the aim, metres.</summary>
+    [Export] public float BarrierWidth { get; set; } = 4f;
+
+    /// <summary>Damage a barrier absorbs before it breaks. 0 = it cannot be broken, only expire.</summary>
+    [Export] public float BarrierHealth { get; set; } = 0f;
+
+    /// <summary>A barrier eats projectiles and spells (Pyre Wall burns arrows, Bulwark stops all).</summary>
+    [Export] public bool BarrierBlocksProjectiles { get; set; } = true;
+
+    /// <summary>A barrier is solid to bodies (Glacial Bulwark). False = a hazard you can walk into.</summary>
+    [Export] public bool BarrierBlocksBodies { get; set; } = false;
+
+    /// <summary>Metres a <see cref="SpellDelivery.Dash"/> travels along the aim.</summary>
+    [Export] public float DashDistance { get; set; } = 0f;
+
+    /// <summary>Radius around the dash line that a dash strikes.</summary>
+    [Export] public float DashHitRadius { get; set; } = 1.4f;
+
+    [ExportGroup("Costs and identity (magic upgrade)")]
+    /// <summary>Health the caster pays (Soul Tithe). Refused rather than killing the caster.</summary>
+    [Export] public float HealthCost { get; set; } = 0f;
+
+    /// <summary>Status the caster gains on release (Soul Tithe's echo, a buff on a hit spell). Empty = none.</summary>
+    [Export] public string SelfStatusEffectId { get; set; } = string.Empty;
+
+    /// <summary>Status the spell strips from its target as it lands, adding damage per stack. Empty = none.</summary>
+    [Export] public string ConsumesStatusId { get; set; } = string.Empty;
+
+    /// <summary>Extra damage fraction per stack of <see cref="ConsumesStatusId"/> consumed (0 = none).</summary>
+    [Export] public float BonusPerConsumedStack { get; set; } = 0f;
+
     public bool HasStatusEffect => !string.IsNullOrEmpty(StatusEffectId);
+
+    public bool HasSelfStatus => !string.IsNullOrEmpty(SelfStatusEffectId);
 }
