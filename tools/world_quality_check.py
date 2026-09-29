@@ -190,6 +190,9 @@ def gates(engine: str | None) -> list[Gate]:
         # --- magic-learning: this group's probe Gate goes between the markers (one owner per block) ---
         # --- end magic-learning ---
         # --- magic-content: this group's probe Gate goes between the markers (one owner per block) ---
+        Gate("magic-content", "25 player spells, statuses, aliases, enemy loadouts and a learn route for each, against the real databases",
+             [engine, "--headless", "--path", ".", "--script",
+              "res://tools/magic_content_probe.gd"], slow=True),
         # --- end magic-content ---
         Gate("traversal", "a real capsule walks every authored route in the real collision world",
              [engine, "--headless", "--path", ".", "--script",

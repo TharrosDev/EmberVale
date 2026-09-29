@@ -137,7 +137,7 @@ public sealed class EnemyCasterTactics
         foreach (SpellResource spell in casting.Spells)
         {
             if (spell.Delivery != SpellDelivery.Self && spell.HasStatusEffect && casting.CanCast(spell) &&
-                StatusEffectDatabase.Get(spell.StatusEffectId) is { Controls: not StatusControl.None })
+                StatusEffectDatabase.Get(spell.StatusEffectId) is { } status && IsControlStatus(status))
             {
                 return spell;
             }
@@ -145,6 +145,13 @@ public sealed class EnemyCasterTactics
 
         return null;
     }
+
+    /// <summary>Root, silence and stun take the target out of the fight; a status that raises the damage it
+    /// takes (Grave Mark) sets it up. A bare Mark flag is not enough: Kindled and Stormbrand carry one and
+    /// are damage riders, which the damage pick below already handles.</summary>
+    private static bool IsControlStatus(StatusEffectResource status) =>
+        (status.Controls & (StatusControl.Root | StatusControl.Silence | StatusControl.Stun)) != StatusControl.None ||
+        status.DamageTakenModifier > 0f;
 
     /// <summary>The strongest ready offensive (non-Self, damaging) spell the caster knows, or null.</summary>
     private static SpellResource? ReadyOffensive(SpellcastingComponent casting)
