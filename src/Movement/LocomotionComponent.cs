@@ -1,5 +1,6 @@
 using Embervale.Core.Diagnostics;
 using Embervale.Entities;
+using Embervale.Magic;
 using Embervale.Stats;
 using Embervale.World;
 using Godot;
@@ -153,6 +154,7 @@ public partial class LocomotionComponent : EntityComponent
 
     private CharacterBody3D _body = null!;
     private StatsComponent? _stats;
+    private StatusEffectsComponent? _status;
     private MountComponent? _mount;
     private float _gravity = 9.8f;
 
@@ -280,6 +282,17 @@ public partial class LocomotionComponent : EntityComponent
         // The other door into the same failure. Zero is the honest reading of "no usable direction",
         // and it is what Stand already passes deliberately.
         wishDir = MotionSafety.Sanitize(wishDir);
+
+        // A rooted or stunned body cannot move on foot: no steering, no jump, no roll, and it stops dead.
+        StatusEffectsComponent? status = _status ??= Entity?.GetComponent<StatusEffectsComponent>();
+        if (status != null && (status.IsRooted || status.IsStunned))
+        {
+            wishDir = Vector3.Zero;
+            jump = false;
+            _dashing = false;
+            velocity.X = 0f;
+            velocity.Z = 0f;
+        }
 
         bool grounded = _body.IsOnFloor();
         (_jump, bool jumpNow) = JumpAssist.Step(

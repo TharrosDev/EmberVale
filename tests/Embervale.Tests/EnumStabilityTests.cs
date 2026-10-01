@@ -477,6 +477,17 @@ public class EnumStabilityTests
     // --- magic-core: enum tests for this group go between the markers (one owner per block) ---
     // --- end magic-core ---
     // --- magic-status: enum tests for this group go between the markers (one owner per block) ---
+    [Fact]
+    public void StatusVfxShape_Ordinals_ArePinned()
+    {
+        Assert.Equal(0, (int)Embervale.Magic.StatusVfxShape.Swirl);
+        Assert.Equal(1, (int)Embervale.Magic.StatusVfxShape.MarkRing);
+        Assert.Equal(2, (int)Embervale.Magic.StatusVfxShape.Thorns);
+        Assert.Equal(3, (int)Embervale.Magic.StatusVfxShape.BrokenGlyph);
+        Assert.Equal(4, (int)Embervale.Magic.StatusVfxShape.Stars);
+        Assert.Equal(5, (int)Embervale.Magic.StatusVfxShape.IceShell);
+        Assert.Equal(6, (int)Embervale.Magic.StatusVfxShape.WardShell);
+    }
     // --- end magic-status ---
     // --- magic-learning: enum tests for this group go between the markers (one owner per block) ---
     // --- end magic-learning ---

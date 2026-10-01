@@ -2669,6 +2669,42 @@ combat.feedback.tag_guarding,GUARDING
 # --- magic-core: this group's keys go between the markers (one owner per block); prefix magic.cast.* ---
 # --- end magic-core ---
 # --- magic-status: prefix magic.status.* ---
+magic.status.kindled.name,Kindled
+magic.status.kindled.desc,Marked by fire. The third Kindle in a row detonates in a burst that ignites everything it touches.
+magic.status.burning.name,Burning
+magic.status.burning.desc,Burns for a few seconds. Stacks make it hurt more.
+magic.status.chill.name,Chilled
+magic.status.chill.desc,Slowed by the cold. A frost hit on a chilled foe freezes it.
+magic.status.frozen.name,Frozen
+magic.status.frozen.desc,"Frozen solid: cannot move or act for a moment, and brittle. Then immune to freezing for a while."
+magic.status.rooted.name,Rooted
+magic.status.rooted.desc,Held fast by thorns. Cannot move on foot but can still act.
+magic.status.silenced.name,Silenced
+magic.status.silenced.desc,Cannot cast. A cast in its wind-up is broken.
+magic.status.stormbrand.name,Stormbranded
+magic.status.stormbrand.desc,Every lightning hit nearby arcs to this mark.
+magic.status.barkskin.name,Barkskin
+magic.status.barkskin.desc,"Armour up, and casting cannot be interrupted by a stagger."
+magic.status.grave_mark.name,Grave Mark
+magic.status.grave_mark.desc,"Takes more damage, and Necrotic lifesteal off it is doubled."
+magic.status.swarmed.name,Swarmed
+magic.status.swarmed.desc,Stung over time. The swarm jumps to a nearby foe when its bearer dies.
+magic.status.soul_echo.name,Soul Echo
+magic.status.soul_echo.desc,Each kill returns mana while the echo lasts.
+magic.status.stunned.name,Stunned
+magic.status.stunned.desc,Cannot act or move for a moment. Immune to stuns afterwards.
+magic.status.decay.name,Decaying
+magic.status.decay.desc,"Rotting flesh. Hurts over time, stacks, and Knit Bone mends more for each stack."
+magic.status.regrowth.name,Regrowth
+magic.status.regrowth.desc,Heals a little each second.
+magic.status.arcane_ward.name,Arcane Ward
+magic.status.arcane_ward.desc,"Absorbs a fixed amount of damage, then breaks. Unspent, it returns some mana."
+magic.status.combo.shatter.name,Shatter
+magic.status.combo.thermal_shock.name,Thermal Shock
+magic.status.combo.meltdown.name,Meltdown
+magic.status.combo.steam_burst.name,Steam Burst
+magic.status.combo.superconduct.name,Superconduct
+magic.status.combo.smoke_out.name,Smoke Out
 # --- end magic-status ---
 # --- magic-learning: prefix magic.learn.* and magic.book.* ---
 # --- end magic-learning ---

@@ -31,6 +31,15 @@ public sealed class StatusEffect
     /// DoT is multiplied by this.</summary>
     public int Stacks { get; private set; } = 1;
 
+    /// <summary>Damage a ward can still absorb; 0 for a status that is not a ward.</summary>
+    public float AbsorbRemaining { get; set; }
+
+    /// <summary>What <see cref="AbsorbRemaining"/> started at (the share left decides the mana returned).</summary>
+    public float AbsorbCapacity { get; set; }
+
+    /// <summary>How many times this status has already jumped on a bearer's death (Stinging Swarm).</summary>
+    public int SpreadGeneration { get; set; }
+
     /// <summary>Resets the lifetime (and tick) when the same effect is re-applied.</summary>
     public void Refresh()
     {

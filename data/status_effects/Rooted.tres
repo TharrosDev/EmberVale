@@ -15,3 +15,4 @@ ModStat = 11
 ModType = 2
 ModValue = 0.0
 Controls = 1
+ControlImmunitySeconds = 4.0
