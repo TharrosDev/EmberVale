@@ -191,6 +191,9 @@ def gates(engine: str | None) -> list[Gate]:
               "res://tools/magic_status_probe.gd"], slow=True),
         # --- end magic-status ---
         # --- magic-learning: this group's probe Gate goes between the markers (one owner per block) ---
+        Gate("magic-learning", "mastery ranks and attunes, the Weave bends both paths inside its clamp, one learning route, corrupted tomes need two presses, the spellbook and HUD chips build",
+             [engine, "--headless", "--path", ".", "--script",
+              "res://tools/magic_learning_probe.gd"], slow=True),
         # --- end magic-learning ---
         # --- magic-content: this group's probe Gate goes between the markers (one owner per block) ---
         # --- end magic-content ---

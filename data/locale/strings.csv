@@ -2707,6 +2707,70 @@ magic.status.combo.superconduct.name,Superconduct
 magic.status.combo.smoke_out.name,Smoke Out
 # --- end magic-status ---
 # --- magic-learning: prefix magic.learn.* and magic.book.* ---
+magic.learn.learned,Spell learned: {0}
+magic.learn.learned_corrupt,"Spell learned: {0}. A corrupted craft, taken knowingly."
+magic.learn.refused_tier,"{0} is out of reach: it needs {1}, and you are {2}."
+magic.learn.refused_known,You already know {0}.
+magic.learn.refused_sealed,The tome is sealed. Whatever guards it is still guarding it.
+magic.learn.confirm_corrupt,{0} feeds on the dying Weave. Interact again to take it.
+magic.learn.rank_up,{0} mastery reaches rank {1}
+magic.learn.tome_prompt,Recover {0}
+magic.learn.tome_prompt_corrupt,Take the corrupted words: {0}
+magic.learn.tome_prompt_known,{0} (already known)
+magic.learn.tome_prompt_locked,{0} (out of reach)
+magic.learn.tome_prompt_blank,Study the tome
+magic.book.weave_strong,strong
+magic.book.weave_thinning,thinning
+magic.book.weave_frayed,frayed
+magic.book.weave_failing,failing
+magic.book.weave_chip,Weave {0} ({1}%)
+magic.book.weave_line,"The Weave here is fading. Ordinary spells: {0}% power, {1}% mana. Corrupted spells: {2}% power, {3}% mana."
+magic.book.weave_spell,"Here: {0}% power, {1}% mana"
+magic.book.rank_short,Rank {0}/{1}
+magic.book.rank_progress,Rank {0}/{1}: {2} of {3} casts to the next rank
+magic.book.rank_maxed,Rank {0}/{1}: mastered
+magic.book.perk_power,Every rank: +{0}% damage and healing
+magic.book.perk_cooldown,Rank {0}: cooldowns {1}% shorter. Rank {2}: {1}% shorter again
+magic.book.perk_attune,"Rank {0}: attunement, +{1} resistance to {2} damage"
+magic.book.windup_chip,wind-up {0}s
+magic.book.windup_label,Wind-up
+magic.book.seconds,{0}s
+magic.book.health_cost_label,Health cost
+magic.book.here_value,{0} (now {1})
+magic.book.applies_chip,applies {0}
+magic.book.status_line,"Lasts {0}s, up to {1} stacks"
+magic.book.locked,Locked: needs {0}. You are {1}.
+magic.book.embrace,Embrace ({0})
+magic.book.embrace_confirm,Confirm ({0})
+magic.book.embrace_warning,This craft feeds on the dying Weave. Press again to take it.
+magic.book.delivery_ground,Ground
+magic.book.delivery_barrier,Barrier
+magic.book.delivery_dash,Dash
+magic.book.rule.ground,Lands where you aim after {0}s. A ring on the ground shows where and when.
+magic.book.rule.pull,Pulls foes toward its centre.
+magic.book.rule.barrier,A wall across your aim for {0}s.
+magic.book.rule.barrier_solid,Solid: it stops bodies.
+magic.book.rule.barrier_hazard,A hazard: bodies can walk into it.
+magic.book.rule.barrier_shots,It stops projectiles.
+magic.book.rule.barrier_breakable,It breaks after {0} damage.
+magic.book.rule.dash,"Dashes {0} m along your aim, striking what you pass."
+magic.book.rule.blink,Teleports up to {0} m along your aim; a wall stops you short.
+magic.book.rule.homing,Homes on foes within {0} m.
+magic.book.rule.zone,Leaves a lingering zone for {0}s.
+magic.book.rule.totem,Leaves a totem for {0}s.
+magic.book.rule.mark,Marks the target; other spells read the mark.
+magic.book.rule.silence,Silences the target and interrupts a cast in its wind-up.
+magic.book.rule.root,Roots the target in place.
+magic.book.rule.stun,Stuns the target.
+magic.book.rule.consumes,Consumes a status on the target for extra damage.
+magic.book.rule.health_cost,Costs {0} health.
+magic.book.rule.unblockable,A guard does not stop it.
+magic.book.rule.hyperarmour,A stagger cannot cancel the cast.
+magic.book.hud_silenced,Silenced
+magic.book.hud_rooted,Rooted
+magic.book.hud_stunned,Stunned
+magic.book.hud_health_cost,{0} hp
+magic.book.hud_mana_short,need {0} more
 # --- end magic-learning ---
 # --- magic-content: prefix spell.<id>.name / spell.<id>.desc ---
 # --- end magic-content ---

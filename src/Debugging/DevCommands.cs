@@ -50,7 +50,12 @@ public static class DevCommands
         console.Register(new ConsoleCommand("learn", "learn <spellId|perkId>", "Learn a spell or perk (respects corruption gating).", Learn));
         console.Register(new ConsoleCommand("race", "race [id]", "Show races, or live-apply one to the player (Phase 26C).", RaceCmd));
         console.Register(new ConsoleCommand("mastery", "mastery", "Show the player's per-school spell mastery (Phase 29.5C).", Mastery));
-        console.Register(new ConsoleCommand("weave", "weave [set <0..1>|restore]", "Inspect or tune the region's magic potency — the fading Weave (Phase 29.5E).", WeaveCmd));
+        console.Register(new ConsoleCommand("weave", "weave [<0..1>|set <0..1>|restore]", "Inspect or tune the region's magic potency — the fading Weave (Phase 29.5E).", WeaveCmd));
+        console.Register(new ConsoleCommand("spells", "spells [all]", "List the spells the player knows (or every player spell with ids and lock state).", Spells));
+        console.Register(new ConsoleCommand("unlearn", "unlearn <spellId>", "Forget a known spell (dev only).", Unlearn));
+        console.Register(new ConsoleCommand("mana", "mana [n]", "Refill the player's mana, or set it to n.", ManaCmd));
+        console.Register(new ConsoleCommand("school", "school <fire|frost|lightning|arcane|nature|necrotic> <points>", "Set a school's banked mastery points (raises the rank event when it climbs).", School));
+        console.Register(new ConsoleCommand("status", "status <statusId> [seconds]", "Apply a status effect to the player, optionally for n seconds.", StatusCmd));
 
         console.Register(new ConsoleCommand("time", "time <hour>", "Set the time of day (0–24).", Time));
         console.Register(new ConsoleCommand("weather", "weather <id>", "Force a weather state.", Weather));
@@ -725,13 +730,17 @@ public static class DevCommands
             {
                 Weave.Set(p);
             }
+            else if (float.TryParse(args[0], NumberStyles.Float, CultureInfo.InvariantCulture, out float bare))
+            {
+                Weave.Set(bare);
+            }
             else
             {
-                return "usage: weave [set <0..1>|restore]";
+                return "usage: weave [<0..1>|set <0..1>|restore]";
             }
         }
 
-        return $"Weave potency {Weave.Potency:0.00} | ordinary cast ×{Weave.PowerMultiplier(false):0.00} pow, " +
+        return $"Weave potency {Weave.Potency:0.00} ({Weave.Band}) | ordinary cast ×{Weave.PowerMultiplier(false):0.00} pow, " +
             $"×{Weave.CostMultiplier(false):0.00} cost | corrupted ×{Weave.PowerMultiplier(true):0.00} pow, " +
             $"×{Weave.CostMultiplier(true):0.00} cost";
     }
@@ -764,6 +773,135 @@ public static class DevCommands
         return string.Join("\n", lines);
     }
 
+    private static string Spells(DevConsole console, string[] args)
+    {
+        if (!TryPlayer(out PlayerCharacter player) || player.GetComponent<SpellcastingComponent>() is not { } casting)
+        {
+            return "no spellcasting component";
+        }
+
+        bool all = args.Length > 0 && args[0].Equals("all", System.StringComparison.OrdinalIgnoreCase);
+        var lines = new List<string>();
+        foreach (SpellResource spell in all ? SpellDatabase.All : casting.Spells)
+        {
+            if (all && !spell.PlayerLearnable && !casting.IsKnown(spell))
+            {
+                continue;
+            }
+
+            string state = casting.IsKnown(spell)
+                ? $"known r{casting.RankOf(spell)}"
+                : casting.MeetsCorruption(spell) ? "unknown" : $"locked ({spell.MinCorruptionTier})";
+            lines.Add($"{spell.Id}  {spell.School}  {state}");
+        }
+
+        return lines.Count == 0 ? "no spells" : string.Join("\n", lines);
+    }
+
+    private static string Unlearn(DevConsole console, string[] args)
+    {
+        if (args.Length < 1)
+        {
+            return "usage: unlearn <spellId>";
+        }
+
+        if (!TryPlayer(out PlayerCharacter player) || player.GetComponent<SpellcastingComponent>() is not { } casting)
+        {
+            return "no spellcasting component";
+        }
+
+        string id = SpellDatabase.Get(args[0])?.Id ?? args[0];
+        if (SpellDatabase.Get(id) is not { } spell || !casting.IsKnown(spell))
+        {
+            return $"{id} is not known";
+        }
+
+        // No public Forget on the caster, so round-trip its own save: drop the id and Load it back. Load
+        // replaces the list and clears cooldowns, which is exactly right for a dev command.
+        Godot.Collections.Dictionary data = casting.Save();
+        var kept = new Godot.Collections.Array();
+        foreach (Variant entry in data["spells"].AsGodotArray())
+        {
+            if (entry.AsString() != id)
+            {
+                kept.Add(entry);
+            }
+        }
+
+        data["spells"] = kept;
+        casting.Load(data);
+        EventBus.Instance?.Publish(new SpellsChangedEvent(player));
+        return $"forgot {spell.DisplayName}";
+    }
+
+    private static string ManaCmd(DevConsole console, string[] args)
+    {
+        if (!TryPlayer(out PlayerCharacter player) || player.GetComponent<StatsComponent>() is not { } stats)
+        {
+            return "no stats component";
+        }
+
+        if (args.Length >= 1 && float.TryParse(args[0], NumberStyles.Float, CultureInfo.InvariantCulture, out float value))
+        {
+            stats.SetCurrent(StatType.Mana, value);
+        }
+        else
+        {
+            stats.SetCurrent(StatType.Mana, stats.GetMax(StatType.Mana));
+        }
+
+        return $"mana {stats.GetCurrent(StatType.Mana):0}/{stats.GetMax(StatType.Mana):0}";
+    }
+
+    private static string School(DevConsole console, string[] args)
+    {
+        if (args.Length < 2 || !System.Enum.TryParse(args[0], true, out DamageType school)
+            || !int.TryParse(args[1], out int points))
+        {
+            return "usage: school <fire|frost|lightning|arcane|nature|necrotic> <points>";
+        }
+
+        if (!TryPlayer(out PlayerCharacter player) || player.GetComponent<SchoolMasteryComponent>() is not { } mastery)
+        {
+            return "no school-mastery component";
+        }
+
+        mastery.SetPoints(school, points);
+        return $"{school}: {mastery.PointsIn(school)} points, rank {mastery.RankOf(school)}/{SchoolMasteryMath.MaxRank}";
+    }
+
+    private static string StatusCmd(DevConsole console, string[] args)
+    {
+        if (args.Length < 1)
+        {
+            return "usage: status <statusId> [seconds]";
+        }
+
+        if (!TryPlayer(out PlayerCharacter player) || player.GetComponent<StatusEffectsComponent>() is not { } effects)
+        {
+            return "no status component";
+        }
+
+        if (StatusEffectDatabase.Get(args[0]) is not { } definition)
+        {
+            return $"unknown status: {args[0]}";
+        }
+
+        effects.Apply(definition, player);
+        if (args.Length >= 2 && double.TryParse(args[1], NumberStyles.Float, CultureInfo.InvariantCulture, out double seconds))
+        {
+            foreach (StatusEffect effect in effects.ActiveEffects)
+            {
+                if (effect.Definition.Id == definition.Id)
+                {
+                    effect.Remaining = seconds;
+                }
+            }
+        }
+
+        return effects.Has(definition.Id) ? $"applied {definition.Id}" : $"{definition.Id} did not take (resisted?)";
+    }
+
     private static string Learn(DevConsole console, string[] args)
     {
         if (args.Length < 1)
@@ -791,8 +929,10 @@ public static class DevCommands
                 return $"cannot learn {id}: corruption below {CorruptionTiers.Label(spell.MinCorruptionTier)}";
             }
 
-            casting.Learn(id);
-            return $"learned spell {spell.DisplayName}";
+            LearnOutcome outcome = SpellLearning.TryLearn(player, id, LearnRoutes.Trainer);
+            return outcome == LearnOutcome.Learned
+                ? $"learned spell {spell.DisplayName} ({spell.Id})"
+                : $"did not learn {spell.Id}: {outcome}";
         }
 
         // A perk: gated by corruption tier and skill points.

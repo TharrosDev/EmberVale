@@ -72,6 +72,14 @@ public partial class GameHud : CanvasLayer
     // Status-effect chips (30.5C): one tinted chip per active effect. The row is rebuilt only
     // when the effect set changes (signature compare); timers update in place per frame.
     private HBoxContainer _statusRow = null!;
+
+    // Control and Weave chips (magic upgrade): silenced / rooted / stunned state and the region's fading
+    // Weave, in a wrapping row above the status chips. Rebuilt only when the signature changes.
+    private HFlowContainer _controlRow = null!;
+    private string _controlSignature = string.Empty;
+
+    /// <summary>Statuses shown in the strip before the rest fold into a "+N" chip.</summary>
+    private const int MaxStatusChips = 6;
     private readonly System.Collections.Generic.List<(StatusEffect Effect, Label Time)> _statusChips = new();
     private string _statusSignature = string.Empty;
 
@@ -274,6 +282,11 @@ public partial class GameHud : CanvasLayer
         _castBar = UiTheme.Bar(UiTheme.ArcaneSilver);
         _castBar.Visible = false;
         col.AddChild(_castBar);
+
+        _controlRow = new HFlowContainer { CustomMinimumSize = new Vector2(168f, 0f) };
+        _controlRow.AddThemeConstantOverride("h_separation", UiTheme.SpaceXs);
+        _controlRow.AddThemeConstantOverride("v_separation", UiTheme.SpaceXs);
+        col.AddChild(_controlRow);
 
         _statusRow = new HBoxContainer();
         _statusRow.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
@@ -717,6 +730,7 @@ public partial class GameHud : CanvasLayer
 
         UpdateSpellWidget();
         UpdateStatusChips();
+        UpdateControlChips();
     }
 
     /// <summary>Health fraction at or below which the bar starts asking for attention.</summary>
@@ -779,32 +793,46 @@ public partial class GameHud : CanvasLayer
 
             float cd = spells.CooldownOf(spell);
 
+            // The cost the cast will actually charge: the region's Weave bends it (corrupted spells get
+            // cheaper as the Weave fades, ordinary ones dearer), so showing the sheet cost would lie.
+            float cost = spell.ManaCost
+                * Weave.CostMultiplier(spell.MinCorruptionTier > CorruptionTier.Untainted);
+
             // ⚠️ Affordability is ASKED, not decided (§48). The HUD compares against the live mana
             // reading purely to colour the number; whether the cast is allowed remains
             // SpellcastingComponent's call, and this never gates anything.
-            bool affordable = _player.GetComponent<StatsComponent>() is not { } casterStats ||
-                              casterStats.GetCurrent(StatType.Mana) >= spell.ManaCost;
-            _spellCost.Visible = spell.ManaCost > 0f;
-            _spellCost.Text = $"{spell.ManaCost:0}";
+            float mana = _player.GetComponent<StatsComponent>() is { } casterStats
+                ? casterStats.GetCurrent(StatType.Mana)
+                : float.MaxValue;
+            bool affordable = mana >= cost;
+            bool silenced = _player.GetComponent<StatusEffectsComponent>() is { IsSilenced: true };
+            _spellCost.Visible = cost > 0f || spell.HealthCost > 0f;
+            _spellCost.Text = spell.HealthCost > 0f
+                ? $"{cost:0} + {Loc.TF("magic.book.hud_health_cost", spell.HealthCost.ToString("0"))}"
+                : $"{cost:0}";
             _spellCost.AddThemeColorOverride(
                 "font_color", affordable ? UiTheme.Mana : UiTheme.Bad);
 
-            _spellState.Text = spells.IsCharging ? Loc.T("hud.charging")
+            _spellState.Text = silenced ? Loc.T("magic.book.hud_silenced")
+                : spells.IsCharging ? Loc.T("hud.charging")
                 : spells.IsChanneling ? Loc.T("hud.channeling")
                 : cd > 0f ? $"{cd:0.0}s"
-                : !affordable ? Loc.T("hud.no_mana")
+                : !affordable ? Loc.TF("magic.book.hud_mana_short", Mathf.Ceil(cost - mana).ToString("0"))
                 : Loc.T("hud.ready");
             // Font colour, not Modulate — modulating multiplies the caption's own Dim down
             // below readable contrast (30.5K audit).
             _spellState.AddThemeColorOverride(
-                "font_color", cd > 0f ? UiTheme.Dim : !affordable ? UiTheme.Bad : UiTheme.Accent);
+                "font_color", silenced || !affordable ? UiTheme.Bad : cd > 0f ? UiTheme.Dim : UiTheme.Accent);
             _spellRow.Visible = true;
 
-            bool coolingDown = cd > 0f && spell.Cooldown > 0f;
+            // The recovery bar runs off the cooldown the cast actually set, which mastery shortens.
+            float total = spell.Cooldown
+                * (_player.GetComponent<SchoolMasteryComponent>()?.CooldownMultiplier(spell.School) ?? 1f);
+            bool coolingDown = cd > 0f && total > 0f;
             _cooldownBar.Visible = coolingDown;
             if (coolingDown)
             {
-                _cooldownBar.Value = 1d - (cd / spell.Cooldown);
+                _cooldownBar.Value = Mathf.Clamp(1d - (cd / total), 0d, 1d);
                 _cooldownBar.Modulate = tint;
             }
 
@@ -848,7 +876,9 @@ public partial class GameHud : CanvasLayer
 
         foreach ((StatusEffect effect, Label time) in _statusChips)
         {
-            time.Text = $"{effect.Remaining:0.0}s";
+            time.Text = effect.Stacks > 1
+                ? $"x{effect.Stacks} {effect.Remaining:0.0}s"
+                : $"{effect.Remaining:0.0}s";
         }
     }
 
@@ -866,17 +896,67 @@ public partial class GameHud : CanvasLayer
             return;
         }
 
+        int shown = 0;
         foreach (StatusEffect effect in effects.ActiveEffects)
         {
+            if (shown++ >= MaxStatusChips)
+            {
+                _statusRow.AddChild(UiTheme.Chip(
+                    $"+{effects.ActiveEffects.Count - MaxStatusChips}", UiTheme.Dim));
+                break;
+            }
+
             // Buffs read as dead-green, afflictions in their school's colour.
             Color tint = effect.Definition.IsBeneficial ? UiTheme.Good : SpellSchools.Color(effect.Definition.School);
 
             // A Chip, not a Panel (37.5B). These were full framed panels, which after 37.5A gave
             // every status effect a 2 px brass rule and its own grain ShaderMaterial — a five-chip
             // row was five framed screens' worth of chrome for five words of text.
-            PanelContainer chip = UiTheme.Chip(effect.Definition.DisplayName, tint, out Label time);
+            PanelContainer chip = UiTheme.Chip(SpellText.Name(effect.Definition), tint, out Label time);
+            chip.TooltipText = SpellText.Description(effect.Definition);
+            chip.MouseFilter = Control.MouseFilterEnum.Pass;
             _statusChips.Add((effect, time));
             _statusRow.AddChild(chip);
+        }
+    }
+
+    /// <summary>The state chips: what the player cannot currently do (silenced, rooted, stunned) and the
+    /// region's Weave while it is not strong. Rebuilt only when what they say changes.</summary>
+    private void UpdateControlChips()
+    {
+        StatusEffectsComponent? effects = _player!.GetComponent<StatusEffectsComponent>();
+        bool silenced = effects is { IsSilenced: true };
+        bool rooted = effects is { IsRooted: true };
+        bool stunned = effects is { IsStunned: true };
+        bool weave = WeaveMath.ShowsIndicator(Weave.Potency);
+
+        string signature = $"{silenced}|{rooted}|{stunned}|{(weave ? (int)Mathf.Round(Weave.Potency * 100f) : -1)}";
+        if (signature == _controlSignature)
+        {
+            return;
+        }
+
+        _controlSignature = signature;
+        UiTheme.ClearChildren(_controlRow);
+
+        if (weave)
+        {
+            _controlRow.AddChild(UiTheme.Chip(SpellbookPanel.WeaveChipText(), SpellbookPanel.WeaveTint(Weave.Band)));
+        }
+
+        if (silenced)
+        {
+            _controlRow.AddChild(UiTheme.Chip(Loc.T("magic.book.hud_silenced"), UiTheme.Bad));
+        }
+
+        if (rooted)
+        {
+            _controlRow.AddChild(UiTheme.Chip(Loc.T("magic.book.hud_rooted"), UiTheme.Bad));
+        }
+
+        if (stunned)
+        {
+            _controlRow.AddChild(UiTheme.Chip(Loc.T("magic.book.hud_stunned"), UiTheme.Bad));
         }
     }
 

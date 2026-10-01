@@ -67,6 +67,29 @@ public readonly record struct SchoolRankedUpEvent(IEntity Caster, Embervale.Comb
 public readonly record struct WardBrokenEvent(IEntity Target, string EffectId) : IGameEvent;
 // --- end magic-status events ---
 // --- magic-learning events: append inside this block only ---
+
+/// <summary>Why a learn attempt was refused, so the player is told rather than left guessing.</summary>
+public enum SpellLearnRefusal
+{
+    /// <summary>The learner already has the spell.</summary>
+    AlreadyKnown,
+
+    /// <summary>The spell is corrupted and the learner's tier is below its <c>MinCorruptionTier</c>.</summary>
+    CorruptionTooLow,
+
+    /// <summary>A tome is sealed behind a story flag.</summary>
+    Sealed,
+
+    /// <summary>A corrupted spell is within reach: the learner must confirm the choice (interact again).</summary>
+    ConfirmCorrupted,
+}
+
+/// <summary>A learn attempt did not teach anything. <paramref name="TierNow"/> and
+/// <paramref name="TierRequired"/> are <c>CorruptionTier</c> ordinals (0 when not relevant). Presentation
+/// only: the toast feed turns it into a legible line.</summary>
+public readonly record struct SpellLearnRefusedEvent(
+    IEntity Learner, string SpellId, SpellLearnRefusal Reason, int TierNow, int TierRequired) : IGameEvent;
+
 // --- end magic-learning events ---
 // --- magic-content events: append inside this block only ---
 // --- end magic-content events ---
