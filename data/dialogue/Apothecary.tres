@@ -4,6 +4,41 @@
 [ext_resource type="Script" path="res://src/Dialogue/DialogueNode.cs" id="2_node"]
 [ext_resource type="Script" path="res://src/Dialogue/DialogueChoice.cs" id="3_choice"]
 
+; Magic upgrade: this NPC teaches spellcraft (spell.teach.* strings, LearnSpell effect).
+[sub_resource type="Resource" id="ch_mg_menu"]
+script = ExtResource("3_choice")
+Text = "spell.teach.ask_menu"
+Goto = "mg_teach"
+
+[sub_resource type="Resource" id="ch_mg_mending_bloom"]
+script = ExtResource("3_choice")
+Text = "spell.mending_bloom.ask"
+Goto = "mg_taught"
+Effect = 8
+EffectArg = "spell.mending_bloom"
+
+[sub_resource type="Resource" id="ch_mg_back"]
+script = ExtResource("3_choice")
+Text = "spell.teach.back"
+Goto = "root"
+
+[sub_resource type="Resource" id="ch_mg_thanks"]
+script = ExtResource("3_choice")
+Text = "spell.teach.thanks"
+Goto = "root"
+
+[sub_resource type="Resource" id="node_mg_teach"]
+script = ExtResource("2_node")
+Id = "mg_teach"
+Text = "spell.teach.apothecary"
+Choices = Array[Resource]([SubResource("ch_mg_mending_bloom"), SubResource("ch_mg_back")])
+
+[sub_resource type="Resource" id="node_mg_taught"]
+script = ExtResource("2_node")
+Id = "mg_taught"
+Text = "spell.teach.apothecary.taught"
+Choices = Array[Resource]([SubResource("ch_mg_thanks")])
+
 [sub_resource type="Resource" id="ch_offer"]
 script = ExtResource("3_choice")
 Text = "dlg.apothecary.c_offer"
@@ -76,7 +111,7 @@ Text = "dlg.apothecary.c_thanks_bye"
 script = ExtResource("2_node")
 Id = "root"
 Text = "dlg.apothecary.root"
-Choices = Array[Resource]([SubResource("ch_offer"), SubResource("ch_active"), SubResource("ch_thanks"), SubResource("ch_trade"), SubResource("ch_closed"), SubResource("ch_bye")])
+Choices = Array[Resource]([SubResource("ch_offer"), SubResource("ch_active"), SubResource("ch_thanks"), SubResource("ch_trade"), SubResource("ch_closed"), SubResource("ch_mg_menu"), SubResource("ch_bye")])
 
 [sub_resource type="Resource" id="node_offer"]
 script = ExtResource("2_node")
@@ -113,4 +148,4 @@ script = ExtResource("1_dlg")
 Id = "dialogue.apothecary"
 SpeakerName = "dlg.apothecary.speaker"
 StartNodeId = "root"
-Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_offer"), SubResource("node_accepted"), SubResource("node_inprogress"), SubResource("node_thanks"), SubResource("node_closed")])
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_offer"), SubResource("node_accepted"), SubResource("node_inprogress"), SubResource("node_thanks"), SubResource("node_closed"), SubResource("node_mg_teach"), SubResource("node_mg_taught")])

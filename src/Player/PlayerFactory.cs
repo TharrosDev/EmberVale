@@ -264,16 +264,8 @@ public static class PlayerFactory
         {
             Name = "Spellcasting",
             AimNode = aimNode,
-            KnownSpellIds = new Godot.Collections.Array<string>
-            {
-                GameIds.Spells.Firebolt,
-                GameIds.Spells.Fireball,
-                GameIds.Spells.FrostNova,
-                GameIds.Spells.LesserHeal,
-                GameIds.Spells.ArcaneShield,
-                GameIds.Spells.FlameLance,
-                GameIds.Spells.StormConduit,
-            },
+            // Magic upgrade: a new character knows one spell; the rest are found (tomes, teachers, race).
+            KnownSpellIds = new Godot.Collections.Array<string>(GameIds.Spells.Starting),
         });
 
         // ⚠️ THE SIX COMPONENTS BELOW ARE ONE SYSTEM AND THEIR ORDER MATTERS. The shared physics

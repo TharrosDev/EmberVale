@@ -8,6 +8,41 @@
 ; Queen's defeat: before it they speak of the bargain and the Court; after it, of release.
 ; Every key is under pale. (post-reveal text; see tools/world_atlas.py).
 
+; Magic upgrade: this NPC teaches spellcraft (spell.teach.* strings, LearnSpell effect).
+[sub_resource type="Resource" id="ch_mg_menu"]
+script = ExtResource("3_choice")
+Text = "spell.teach.ask_menu"
+Goto = "mg_teach"
+
+[sub_resource type="Resource" id="ch_mg_soul_tithe"]
+script = ExtResource("3_choice")
+Text = "spell.soul_tithe.ask"
+Goto = "mg_taught"
+Effect = 8
+EffectArg = "spell.soul_tithe"
+
+[sub_resource type="Resource" id="ch_mg_back"]
+script = ExtResource("3_choice")
+Text = "spell.teach.back"
+Goto = "root"
+
+[sub_resource type="Resource" id="ch_mg_thanks"]
+script = ExtResource("3_choice")
+Text = "spell.teach.thanks"
+Goto = "root"
+
+[sub_resource type="Resource" id="node_mg_teach"]
+script = ExtResource("2_node")
+Id = "mg_teach"
+Text = "spell.teach.undying_steward"
+Choices = Array[Resource]([SubResource("ch_mg_soul_tithe"), SubResource("ch_mg_back")])
+
+[sub_resource type="Resource" id="node_mg_taught"]
+script = ExtResource("2_node")
+Id = "mg_taught"
+Text = "spell.teach.undying_steward.taught"
+Choices = Array[Resource]([SubResource("ch_mg_thanks")])
+
 [sub_resource type="Resource" id="ch_bargain"]
 script = ExtResource("3_choice")
 Text = "pale.dlg.steward.c_bargain"
@@ -40,7 +75,7 @@ Goto = "root"
 script = ExtResource("2_node")
 Id = "root"
 Text = "pale.dlg.steward.root"
-Choices = Array[Resource]([SubResource("ch_bargain"), SubResource("ch_queen"), SubResource("ch_freed"), SubResource("ch_bye")])
+Choices = Array[Resource]([SubResource("ch_bargain"), SubResource("ch_queen"), SubResource("ch_freed"), SubResource("ch_mg_menu"), SubResource("ch_bye")])
 
 [sub_resource type="Resource" id="node_bargain"]
 script = ExtResource("2_node")
@@ -65,4 +100,4 @@ script = ExtResource("1_dlg")
 Id = "dialogue.undying_steward"
 SpeakerName = "pale.dlg.steward.speaker"
 StartNodeId = "root"
-Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_bargain"), SubResource("node_queen"), SubResource("node_freed")])
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_bargain"), SubResource("node_queen"), SubResource("node_freed"), SubResource("node_mg_teach"), SubResource("node_mg_taught")])

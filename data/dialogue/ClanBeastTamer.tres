@@ -4,6 +4,41 @@
 [ext_resource type="Script" path="res://src/Dialogue/DialogueNode.cs" id="2_node"]
 [ext_resource type="Script" path="res://src/Dialogue/DialogueChoice.cs" id="3_choice"]
 
+; Magic upgrade: this NPC teaches spellcraft (spell.teach.* strings, LearnSpell effect).
+[sub_resource type="Resource" id="ch_mg_menu"]
+script = ExtResource("3_choice")
+Text = "spell.teach.ask_menu"
+Goto = "mg_teach"
+
+[sub_resource type="Resource" id="ch_mg_thornsnare"]
+script = ExtResource("3_choice")
+Text = "spell.thornsnare.ask"
+Goto = "mg_taught"
+Effect = 8
+EffectArg = "spell.thornsnare"
+
+[sub_resource type="Resource" id="ch_mg_back"]
+script = ExtResource("3_choice")
+Text = "spell.teach.back"
+Goto = "root"
+
+[sub_resource type="Resource" id="ch_mg_thanks"]
+script = ExtResource("3_choice")
+Text = "spell.teach.thanks"
+Goto = "root"
+
+[sub_resource type="Resource" id="node_mg_teach"]
+script = ExtResource("2_node")
+Id = "mg_teach"
+Text = "spell.teach.clan_beast_tamer"
+Choices = Array[Resource]([SubResource("ch_mg_thornsnare"), SubResource("ch_mg_back")])
+
+[sub_resource type="Resource" id="node_mg_taught"]
+script = ExtResource("2_node")
+Id = "mg_taught"
+Text = "spell.teach.clan_beast_tamer.taught"
+Choices = Array[Resource]([SubResource("ch_mg_thanks")])
+
 [sub_resource type="Resource" id="ch_kin"]
 script = ExtResource("3_choice")
 Text = "dlg.clan_beast_tamer.c_kin"
@@ -44,7 +79,7 @@ Goto = "root"
 script = ExtResource("2_node")
 Id = "root"
 Text = "dlg.clan_beast_tamer.root"
-Choices = Array[Resource]([SubResource("ch_kin"), SubResource("ch_hounds"), SubResource("ch_beasts"), SubResource("ch_bye")])
+Choices = Array[Resource]([SubResource("ch_kin"), SubResource("ch_hounds"), SubResource("ch_beasts"), SubResource("ch_mg_menu"), SubResource("ch_bye")])
 
 [sub_resource type="Resource" id="node_kin"]
 script = ExtResource("2_node")
@@ -69,4 +104,4 @@ script = ExtResource("1_dlg")
 Id = "dialogue.clan_beast_tamer"
 SpeakerName = "dlg.clan_beast_tamer.speaker"
 StartNodeId = "root"
-Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_hounds"), SubResource("node_beasts"), SubResource("node_kin")])
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_hounds"), SubResource("node_beasts"), SubResource("node_kin"), SubResource("node_mg_teach"), SubResource("node_mg_taught")])

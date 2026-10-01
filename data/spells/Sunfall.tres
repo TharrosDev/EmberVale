@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="SpellResource" format=3 uid="uid://bilqu6jai734x"]
+
+[ext_resource type="Script" path="res://src/Magic/SpellResource.cs" id="1_spell"]
+
+[resource]
+script = ExtResource("1_spell")
+Id = "spell.sunfall"
+DisplayName = "Sunfall"
+Description = "Call a meteor down on the aim point after a short warning; a direct hit crushes a raised guard."
+School = 1
+Delivery = 4
+LearnCost = 1
+UpgradeCost = 1
+MaxRank = 3
+CastMode = 1
+ManaCost = 30.0
+Cooldown = 12.0
+BaseDamage = 36.0
+StatusEffectId = "status.burning"
+ImpactRadius = 4.0
+ChargeTime = 0.9
+MaxChargeMultiplier = 1.8
+WindupSeconds = 0.9
+RecoverySeconds = 0.5
+PoiseDamage = 60.0
+Blockable = false
+ImpactWeight = 0.9
+PlaceRange = 22.0
+GroundDelay = 1.1

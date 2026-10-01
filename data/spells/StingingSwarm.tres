@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="SpellResource" format=3 uid="uid://blxukejprmceo"]
+
+[ext_resource type="Script" path="res://src/Magic/SpellResource.cs" id="1_spell"]
+
+[resource]
+script = ExtResource("1_spell")
+Id = "spell.stinging_swarm"
+DisplayName = "Stinging Swarm"
+Description = "Loose a swarm that stings its target over time and jumps to a nearby foe if the bearer dies."
+School = 5
+Delivery = 0
+LearnCost = 1
+UpgradeCost = 1
+MaxRank = 3
+ManaCost = 12.0
+Cooldown = 2.0
+BaseDamage = 5.0
+StatusEffectId = "status.swarmed"
+Range = 26.0
+ProjectileSpeed = 20.0
+WindupSeconds = 0.2
+RecoverySeconds = 0.15
+PoiseDamage = 3.0
+ImpactWeight = 0.15

@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="SpellResource" format=3 uid="uid://bsm23mcxb1q8p"]
+
+[ext_resource type="Script" path="res://src/Magic/SpellResource.cs" id="1_spell"]
+
+[resource]
+script = ExtResource("1_spell")
+Id = "spell.rime_shard"
+DisplayName = "Rime Shard"
+Description = "A quick shard of ice that chills its target; a shard into a chilled foe freezes it."
+School = 2
+Delivery = 0
+LearnCost = 1
+UpgradeCost = 1
+MaxRank = 3
+ManaCost = 9.0
+Cooldown = 0.8
+BaseDamage = 9.0
+StatusEffectId = "status.chill"
+Range = 32.0
+ProjectileSpeed = 32.0
+WindupSeconds = 0.2
+RecoverySeconds = 0.1
+PoiseDamage = 6.0
+ImpactWeight = 0.2

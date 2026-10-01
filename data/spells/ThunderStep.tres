@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="SpellResource" format=3 uid="uid://b3edkqvomkit1"]
+
+[ext_resource type="Script" path="res://src/Magic/SpellResource.cs" id="1_spell"]
+
+[resource]
+script = ExtResource("1_spell")
+Id = "spell.thunder_step"
+DisplayName = "Thunder Step"
+Description = "Dash along your aim, striking everything you pass and stunning the last foe struck."
+School = 3
+Delivery = 6
+LearnCost = 1
+UpgradeCost = 1
+MaxRank = 3
+ManaCost = 18.0
+Cooldown = 7.0
+BaseDamage = 16.0
+StatusEffectId = "status.stunned"
+WindupSeconds = 0.15
+RecoverySeconds = 0.25
+PoiseDamage = 24.0
+ImpactWeight = 0.6
+DashDistance = 9.0
+DashHitRadius = 1.6

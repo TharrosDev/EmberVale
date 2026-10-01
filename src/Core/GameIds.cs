@@ -211,31 +211,58 @@ public static class GameIds
 
     public static class Spells
     {
-        public const string Firebolt = "spell.firebolt";
-        public const string Fireball = "spell.fireball";
-        public const string FrostNova = "spell.frost_nova";
-        public const string LesserHeal = "spell.lesser_heal";
-        public const string ArcaneShield = "spell.arcane_shield";
+        // The 25 player spells of the 2026-09 magic upgrade, grouped by school. The four ids the upgrade
+        // retired (firebolt, fireball, arcane_lance, lesser_heal) resolve through SpellAliases.
+        public const string Emberlash = "spell.emberlash";
         public const string FlameLance = "spell.flame_lance";
-        public const string StormConduit = "spell.storm_conduit";
-        public const string EmberSiphon = "spell.ember_siphon";
-        public const string BallLightning = "spell.ball_lightning";
+        public const string PyreWall = "spell.pyre_wall";
+        public const string Sunfall = "spell.sunfall";
+
+        public const string RimeShard = "spell.rime_shard";
+        public const string FrostNova = "spell.frost_nova";
         public const string Blizzard = "spell.blizzard";
+        public const string GlacialBulwark = "spell.glacial_bulwark";
+
+        public const string BallLightning = "spell.ball_lightning";
+        public const string StormConduit = "spell.storm_conduit";
+        public const string ThunderStep = "spell.thunder_step";
+        public const string Stormbrand = "spell.stormbrand";
+
+        public const string NullLance = "spell.null_lance";
+        public const string ArcaneShield = "spell.arcane_shield";
         public const string Blink = "spell.blink";
+        public const string GravityWell = "spell.gravity_well";
+
+        public const string MendingBloom = "spell.mending_bloom";
         public const string LifebloomTotem = "spell.lifebloom_totem";
+        public const string Thornsnare = "spell.thornsnare";
+        public const string StingingSwarm = "spell.stinging_swarm";
+        public const string Barkskin = "spell.barkskin";
 
-        // Phase 34D — the Necrotic school's first enemy-facing spells.
-        public const string Wither = "spell.wither";
+        public const string EmberSiphon = "spell.ember_siphon";
+        public const string SoulTithe = "spell.soul_tithe";
         public const string KnitBone = "spell.knit_bone";
+        public const string GraveMark = "spell.grave_mark";
 
-        // Phase 34E — Arcane's first offensive spell; the school had only Self casts before.
-        public const string ArcaneLance = "spell.arcane_lance";
-
-        // Phase 35C — the first Cone delivery. Dragon breath is a channeled spell, not a bespoke attack.
+        // Enemy-only spells (PlayerLearnable = false).
+        public const string Wither = "spell.wither";
         public const string DragonBreath = "spell.dragon_breath";
-
-        // Phase 35E — Necrotic rather than Fire, so fire resistance buys the player nothing here.
         public const string AshBreath = "spell.ash_breath";
+
+        /// <summary>What a new character knows before anything is learned. Everything else is found: a tome, a
+        /// teacher's dialogue, or a race's innate spell.</summary>
+        public static readonly string[] Starting = { Emberlash };
+
+        /// <summary>The 25 player-learnable spells, in school order. A table test pins this against the data.</summary>
+        public static readonly string[] Roster =
+        {
+            Emberlash, FlameLance, PyreWall, Sunfall,
+            RimeShard, FrostNova, Blizzard, GlacialBulwark,
+            BallLightning, StormConduit, ThunderStep, Stormbrand,
+            NullLance, ArcaneShield, Blink, GravityWell,
+            MendingBloom, LifebloomTotem, Thornsnare, StingingSwarm, Barkskin,
+            EmberSiphon, SoulTithe, KnitBone, GraveMark,
+        };
     }
 
     public static class Recipes

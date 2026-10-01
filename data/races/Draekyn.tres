@@ -31,6 +31,6 @@ DisplayName = "Draekyn"
 Description = "Dragon-blooded descendants, rare and feared. The Draekyn carry the breath of dragons in their veins — a power that draws wary eyes wherever they walk."
 StatDeltas = Array[Resource]([SubResource("Delta_str"), SubResource("Delta_sp"), SubResource("Delta_critdmg")])
 InnatePerkIds = Array[String]([])
-InnateSpellIds = Array[String](["spell.fireball"])
+InnateSpellIds = Array[String](["spell.flame_lance"])
 ReputationTweaks = Array[Resource]([SubResource("Rep_villagers")])
 AppearanceOptionIds = Array[String]([])

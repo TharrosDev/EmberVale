@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="SpellResource" format=3 uid="uid://bd4ej5igh5njg"]
+
+[ext_resource type="Script" path="res://src/Magic/SpellResource.cs" id="1_spell"]
+
+[resource]
+script = ExtResource("1_spell")
+Id = "spell.barkskin"
+DisplayName = "Barkskin"
+Description = "Harden your skin for a few seconds, raising armour and making your casting impossible to stagger."
+School = 5
+Delivery = 2
+LearnCost = 1
+UpgradeCost = 1
+MaxRank = 3
+ManaCost = 14.0
+Cooldown = 16.0
+StatusEffectId = "status.barkskin"
+WindupSeconds = 0.3
+RecoverySeconds = 0.2
+ImpactWeight = 0.2
