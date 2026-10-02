@@ -10,11 +10,12 @@ namespace Embervale.Magic;
 /// </summary>
 public sealed class StatusEffect
 {
-    public StatusEffect(StatusEffectResource definition, IEntity? source)
+    public StatusEffect(StatusEffectResource definition, IEntity? source, float durationMultiplier = 1f)
     {
         Definition = definition;
         Source = source;
-        Remaining = definition.Duration;
+        DurationMultiplier = StatusMath.DurationMultiplier(durationMultiplier);
+        Remaining = definition.Duration * DurationMultiplier;
         TickTimer = definition.TickInterval;
     }
 
@@ -26,6 +27,9 @@ public sealed class StatusEffect
     public double Remaining { get; set; }
 
     public double TickTimer { get; set; }
+
+    /// <summary>Lifetime scale authored by the applying spell's charge, never written to its resource.</summary>
+    public float DurationMultiplier { get; private set; }
 
     /// <summary>Current stack count (Fire ignite, Phase 29.5B). 1 for non-stacking effects; the per-tick
     /// DoT is multiplied by this.</summary>
@@ -40,17 +44,18 @@ public sealed class StatusEffect
     /// <summary>How many times this status has already jumped on a bearer's death (Stinging Swarm).</summary>
     public int SpreadGeneration { get; set; }
 
-    /// <summary>Resets the lifetime (and tick) when the same effect is re-applied.</summary>
-    public void Refresh()
+    /// <summary>Refreshes lifetime without shortening a stronger live application or postponing the
+    /// next tick. Rapid stacking must not make an active damage-over-time effect stop dealing damage.</summary>
+    public void Refresh(float durationMultiplier = 1f)
     {
-        Remaining = Definition.Duration;
-        TickTimer = Definition.TickInterval;
+        DurationMultiplier = StatusMath.DurationMultiplier(durationMultiplier);
+        Remaining = System.Math.Max(Remaining, Definition.Duration * DurationMultiplier);
     }
 
     /// <summary>Re-application: refreshes the duration and adds one stack up to the definition's cap.</summary>
-    public void AddStack()
+    public void AddStack(float durationMultiplier = 1f)
     {
-        Refresh();
+        Refresh(durationMultiplier);
         Stacks = StatusMath.NextStack(Stacks, Definition.MaxStacks);
     }
 }

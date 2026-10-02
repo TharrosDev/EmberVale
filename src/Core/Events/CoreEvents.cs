@@ -43,6 +43,10 @@ public readonly record struct ResourceChangedEvent(IEntity Entity, StatType Stat
 /// toast) without firing on every manual quicksave.</summary>
 public readonly record struct GameSavedEvent(string Slot, bool IsAutosave = false) : IGameEvent;
 
+/// <summary>Raised after a save has been validated, before live saveables restore. Transient session
+/// effects clear here so their modifiers cannot leak into the restored timeline.</summary>
+public readonly record struct GameLoadingEvent(string Slot) : IGameEvent;
+
 /// <summary>Raised after a save slot is successfully loaded.</summary>
 public readonly record struct GameLoadedEvent(string Slot) : IGameEvent;
 

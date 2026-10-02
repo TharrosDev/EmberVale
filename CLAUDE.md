@@ -480,6 +480,11 @@ Quick map (folder → what lives there; see `docs/ARCHITECTURE.md` for detail):
 | `src/Items` `src/Loot` | Inventory, equipment, item instances, affixes, loot tables |
 | `src/Progression` `src/Quests` `src/Dialogue` | XP/perks, quests, conversation graphs + story flags |
 | `src/Magic` `src/World` `src/Npc` | Spells/status effects; clock/weather/encounters/events; schedules |
+
+Magic regression gates: `python tools/embervale.py tool magic_core_probe`, `magic_status_probe`,
+`magic_learning_probe`, and `magic_content_probe` (the latter checks prepared world tome interactions).
+Build and import first; all four also belong to the engine/full world suite. Delivery, status and
+learning ownership is documented in [`ARCHITECTURE.md`](docs/ARCHITECTURE.md#213-magic-srcmagic).
 | `src/Crafting` `src/Factions` | Recipes/stations; reputation/faction tags |
 | `src/Housing` `src/Economy` | Claimable holdings + placement; shops, vendors and the buy/sell spread |
 | `src/Companions` | `CompanionRoster` (party, loyalty + persistence), `CompanionAIComponent`, `CompanionResource`, formation/leash/order cores |

@@ -63,7 +63,7 @@ public static class SpellActions
             ComboFrom = 1f,
             ComboTo = 1f,
             StaminaCost = 0f,                    // spells cost mana, and it is already spent
-            MoveScale = 0.5f,
+            MoveScale = sustained ? 1f : 0.5f,
             TurnDegreesPerSecond = -1f,
             Interruptible = !uninterruptible,
             Telegraph = spell.Blockable ? TelegraphClass.Auto : TelegraphClass.Unblockable,

@@ -814,6 +814,7 @@ public partial class GameHud : CanvasLayer
                 "font_color", affordable ? UiTheme.Mana : UiTheme.Bad);
 
             _spellState.Text = silenced ? Loc.T("magic.book.hud_silenced")
+                : spells.PendingSpell != null ? Loc.T("hud.casting")
                 : spells.IsCharging ? Loc.T("hud.charging")
                 : spells.IsChanneling ? Loc.T("hud.channeling")
                 : cd > 0f ? $"{cd:0.0}s"
@@ -836,10 +837,11 @@ public partial class GameHud : CanvasLayer
                 _cooldownBar.Modulate = tint;
             }
 
-            casting = spells.IsCharging || spells.IsChanneling;
+            casting = spells.PendingSpell != null || spells.IsCharging || spells.IsChanneling;
             if (casting)
             {
-                _castBar.Value = spells.IsCharging ? spells.ChargeProgress : 1d;
+                _castBar.Value = spells.PendingSpell != null ? spells.WindupProgress
+                    : spells.IsCharging ? spells.ChargeProgress : 1d;
                 _castBar.Modulate = tint;
             }
         }

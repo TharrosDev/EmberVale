@@ -34,10 +34,18 @@ public partial class SpellGround : Node3D
 
     private double _age;
     private double _pullLeft;
+    private SpellLifetime? _lifetime;
+    private bool _cancelled;
 
     public override void _Ready()
     {
         AddChild(Ring);
+        _lifetime = new SpellLifetime(this, Caster, Cancel);
+        if (!_lifetime.Check())
+        {
+            return;
+        }
+
         Ring.Position = new Vector3(0f, 0.06f, 0f);
         TelegraphClass cls = Spell.Blockable ? TelegraphClass.Standard : TelegraphClass.Unblockable;
         Ring.Arm(Delay, Radius, SpellSchools.Color(Spell.School), cls);
@@ -45,7 +53,7 @@ public partial class SpellGround : Node3D
 
     public override void _Process(double delta)
     {
-        if (Landed)
+        if (_cancelled || _lifetime?.Check() != true || Landed)
         {
             return;
         }
@@ -59,7 +67,7 @@ public partial class SpellGround : Node3D
 
     public override void _PhysicsProcess(double delta)
     {
-        if (!Landed || _pullLeft <= 0d)
+        if (_cancelled || _lifetime?.Check() != true || !Landed || _pullLeft <= 0d)
         {
             return;
         }
@@ -82,6 +90,7 @@ public partial class SpellGround : Node3D
         {
             var zone = new SpellZone
             {
+                Name = "SpellZone",
                 Spell = Spell,
                 Packet = Packet,
                 Caster = Caster,
@@ -91,19 +100,45 @@ public partial class SpellGround : Node3D
                 TickInterval = Spell.ZoneTickInterval,
                 PullStrength = Spell.PullStrength,
             };
-            GetTree().CurrentScene.AddChild(zone);
+            SpellLifetime.HostFor(Caster, this).AddChild(zone);
             zone.GlobalPosition = GlobalPosition + (Vector3.Up * 0.1f);
             QueueFree();
             return;
         }
 
         SpellResolver.Detonate(this, Spell, Packet, Caster, CasterTeam, centre, Radius);
+        if (_cancelled || _lifetime?.Check() != true)
+        {
+            return;
+        }
+
         if (Spell.PullStrength > 0f)
         {
             _pullLeft = Spell.PullSeconds > 0f ? Spell.PullSeconds : DefaultPullSeconds;
             return;
         }
 
+        QueueFree();
+    }
+
+    public override void _ExitTree()
+    {
+        _lifetime?.Dispose();
+        _cancelled = true;
+        Caster = null;
+        Packet = default;
+    }
+
+    private void Cancel()
+    {
+        _cancelled = true;
+        _pullLeft = 0d;
+        Caster = null;
+        Packet = default;
+        SetProcess(false);
+        SetPhysicsProcess(false);
+        Ring.Clear();
+        Hide();
         QueueFree();
     }
 }

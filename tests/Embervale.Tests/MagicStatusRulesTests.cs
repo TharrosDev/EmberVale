@@ -13,6 +13,21 @@ namespace Embervale.Tests;
 /// </summary>
 public class MagicStatusRulesTests
 {
+    [Theory]
+    [InlineData(0f, 1f)]
+    [InlineData(-2f, 1f)]
+    [InlineData(1f, 1f)]
+    [InlineData(2f, 2f)]
+    public void ChargeLifetime_NeverShortensAuthoredDuration(float multiplier, float expected) =>
+        Assert.Equal(expected, StatusMath.DurationMultiplier(multiplier));
+
+    [Fact]
+    public void ChargeLifetime_RejectsNonFiniteInput()
+    {
+        Assert.Equal(1f, StatusMath.DurationMultiplier(float.NaN));
+        Assert.Equal(1f, StatusMath.DurationMultiplier(float.PositiveInfinity));
+    }
+
     // --- detonation ---
 
     [Theory]
@@ -165,6 +180,14 @@ public class MagicStatusRulesTests
         Assert.Equal(
             2f * SchoolIdentity.LifestealAmount(80f, 0.6f, false),
             SchoolIdentity.LifestealAmount(80f, 0.6f, true), 3);
+    }
+
+    [Fact]
+    public void Lifesteal_IsLimitedToHealthActuallyRemoved()
+    {
+        Assert.Equal(0f, SchoolIdentity.LifestealAmount(0f, 0f, true));
+        Assert.Equal(3.5f, SchoolIdentity.LifestealAmount(5f, 0f), 3);
+        Assert.Equal(0f, SchoolIdentity.LifestealAmount(-5f, 0f));
     }
 
     [Fact]

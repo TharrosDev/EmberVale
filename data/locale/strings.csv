@@ -535,6 +535,7 @@ hud.level,Lv {0}
 hud.no_mana,not enough mana
 hud.ready,ready
 hud.charging,charging…
+hud.casting,casting…
 hud.channeling,channeling
 hud.xp_gain,+{0} XP
 hud.levelup,Level {0}
@@ -2776,7 +2777,7 @@ magic.book.hud_mana_short,need {0} more
 spell.emberlash.name,Emberlash
 spell.emberlash.desc,"A fast, cheap bolt of flame that leaves a Kindled stack on its target; the third stack detonates."
 spell.flame_lance.name,Flame Lance
-spell.flame_lance.desc,"Hold to draw a lance of fire and loose it; a fuller draw hits harder and burns longer."
+spell.flame_lance.desc,"Hold to draw a piercing lance of fire; a fuller draw pierces more foes, hits harder and burns longer."
 spell.pyre_wall.name,Pyre Wall
 spell.pyre_wall.desc,"Raise a line of fire that burns whatever crosses it and eats arrows, but does not stop bodies."
 spell.sunfall.name,Sunfall

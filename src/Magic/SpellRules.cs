@@ -76,6 +76,44 @@ public static class SpellRules
         return Math.Max(0, baseCount) + (int)MathF.Round(Math.Max(0, chargeBonus) * c);
     }
 
+    /// <summary>A full charge extends a status by its authored bonus, clamped at both charge endpoints.</summary>
+    public static float StatusDurationMultiplier(float charge, float bonus) =>
+        1f + (Math.Clamp(charge, 0f, 1f) * Math.Max(0f, bonus));
+
+    /// <summary>A ground impact directly strikes the actor when its horizontal footprint contains the centre.</summary>
+    public static bool IsDirectImpact(float horizontalDistance, float directRadius) =>
+        horizontalDistance <= Math.Max(0f, directRadius);
+
+    /// <summary>Earliest parameter where a segment enters a rectangular barrier, including its thickness
+    /// and the projectile radius. The volume matches the physical wall, so a near-face collision is a hit.</summary>
+    public static float BarrierEntry(
+        float x0, float y0, float z0, float x1, float y1, float z1,
+        float width, float height, float thickness, float radius)
+    {
+        float r = Math.Max(0f, radius);
+        float enter = 0f;
+        float exit = 1f;
+        return Slab(x0, x1, -width * 0.5f - r, width * 0.5f + r, ref enter, ref exit) &&
+               Slab(y0, y1, -r, height + r, ref enter, ref exit) &&
+               Slab(z0, z1, -thickness * 0.5f - r, thickness * 0.5f + r, ref enter, ref exit)
+            ? enter : -1f;
+
+        static bool Slab(float from, float to, float min, float max, ref float near, ref float far)
+        {
+            float delta = to - from;
+            if (Math.Abs(delta) < 1e-7f)
+            {
+                return from >= min && from <= max;
+            }
+
+            float a = (min - from) / delta;
+            float b = (max - from) / delta;
+            near = Math.Max(near, Math.Min(a, b));
+            far = Math.Min(far, Math.Max(a, b));
+            return near <= far;
+        }
+    }
+
     /// <summary>A ground or barrier aim point's horizontal distance from the caster once clamped to the place range.</summary>
     public static float ClampPlaceDistance(float distance, float placeRange) =>
         Math.Clamp(distance, 0f, Math.Max(0f, placeRange));

@@ -96,15 +96,16 @@ public static class SpellCombo
     }
 
     /// <summary>Resolves any combo for a spell hitting <paramref name="primary"/>: bonus damage + consume.</summary>
-    public static void OnHit(SpellResource spell, IEntity? caster, Hurtbox primary)
+    public static bool OnHit(SpellResource spell, IEntity? caster, Hurtbox primary)
     {
         StatusEffectsComponent? status = primary.OwnerEntity?.GetComponent<StatusEffectsComponent>();
         if (status == null || Match(spell.School, status.Has) is not { } rule)
         {
-            return;
+            return false;
         }
 
-        primary.Receive(new DamagePacket(rule.BonusDamage, spell.School, caster, false, ComboPoise));
+        DamageResult result = primary.Receive(new DamagePacket(rule.BonusDamage, spell.School, caster, false, ComboPoise,
+            HitKind.Spell, 0f, !spell.Blockable));
         if (rule.ConsumeStatus)
         {
             status.Consume(rule.RequiredStatusId);
@@ -116,5 +117,6 @@ public static class SpellCombo
         }
 
         Log.Info($"Spell combo triggered: {rule.Name}");
+        return result.Killed;
     }
 }

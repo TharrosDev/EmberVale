@@ -1,0 +1,27 @@
+{
+  "scene": "res://scenes/Main.tscn",
+  "steps": [
+    { "op": "new_game" },
+    {
+      "op": "wait_until",
+      "name": "Magic upgrade starts a real playable session",
+      "node": "/root/Main",
+      "property": "AutomationPlaying",
+      "comparison": "eq",
+      "value": true,
+      "frames": 1800
+    },
+    { "op": "send_action", "action": "interact", "frames": 2 },
+    { "op": "wait_frames", "frames": 40 },
+    { "op": "send_action", "action": "cast", "frames": 1 },
+    { "op": "wait_frames", "frames": 5 },
+    { "op": "capture_screenshot", "name": "magic-windup" },
+    { "op": "wait_frames", "frames": 60 },
+    { "op": "send_action", "action": "spellbook", "frames": 1 },
+    { "op": "wait_frames", "frames": 30 },
+    { "op": "capture_screenshot", "name": "magic-spellbook" },
+    { "op": "collect_logs" },
+    { "op": "collect_metrics" },
+    { "op": "scene_tree" }
+  ]
+}

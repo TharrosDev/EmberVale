@@ -647,13 +647,10 @@ public partial class SpellbookPanel : UiPanel
         return UiTheme.Chip(Loc.TF("char.spell_cost", spell.LearnCost), UiTheme.Disabled);
     }
 
-    /// <summary>Buys a spell with spell points and, if it worked, announces the learning once.</summary>
+    /// <summary>Buys a spell with spell points; the casting component announces the successful purchase.</summary>
     private void LearnFromBook(SpellResource spell)
     {
-        if (_spellcasting!.Buy(spell) && _spellcasting.Entity is { } caster)
-        {
-            EventBus.Instance?.Publish(new SpellLearnedEvent(caster, spell.Id, LearnRoutes.Spellbook));
-        }
+        _spellcasting!.Buy(spell);
     }
 
     /// <summary>

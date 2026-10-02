@@ -42,6 +42,7 @@ public partial class MagicStatusProbeSeam : Node
         bus?.Subscribe<WardBrokenEvent>(e => Bump("wardbroken:" + e.EffectId));
         bus?.Subscribe<StatusEffectAppliedEvent>(e => Bump("applied:" + e.EffectId));
         bus?.Subscribe<StatusEffectRemovedEvent>(e => Bump("removed:" + e.EffectId));
+        bus?.Subscribe<EntityStaggeredEvent>(_ => Bump("staggered"));
     }
 
     private void Bump(string key) => _counts[key] = Count(key) + 1;
@@ -67,6 +68,37 @@ public partial class MagicStatusProbeSeam : Node
     public bool Apply(Node3D target, string statusId, Node3D? source) =>
         Status(target)?.Apply(StatusEffectDatabase.Get(statusId), source as IEntity) ?? false;
 
+    public bool ApplyDefinition(Node3D target, StatusEffectResource definition, Node3D? source, float durationMultiplier) =>
+        Status(target)?.Apply(definition, source as IEntity, durationMultiplier) ?? false;
+
+    public double Remaining(Node3D target, string statusId)
+    {
+        if (Status(target) is not { } status)
+        {
+            return 0d;
+        }
+
+        foreach (StatusEffect effect in status.ActiveEffects)
+        {
+            if (effect.Definition.Id == statusId)
+            {
+                return effect.Remaining;
+            }
+        }
+
+        return 0d;
+    }
+
+    /// <summary>Raises the real pre-restore event so the probe can inspect status modifier cleanup
+    /// before Stats.Load replaces the saved timeline.</summary>
+    public void BeginLiveLoad() => EventBus.Instance?.Publish(new GameLoadingEvent("magic-status-probe"));
+
+    public void ForceStagger(Node3D body, float seconds) =>
+        (body as IEntity)?.GetComponent<CombatComponent>()?.Stagger(seconds, OpenCause.PoiseBreak, StaggerResponse.Stagger);
+
+    public void StepDodge(Node3D body, float seconds) =>
+        (body as IEntity)?.GetComponent<DodgeComponent>()?._PhysicsProcess(seconds);
+
     /// <summary>The id stripped, or empty when there was nothing to take.</summary>
     public string Dispel(Node3D target, Node3D? source) =>
         Status(target)?.Dispel(source as IEntity) ?? string.Empty;
@@ -89,7 +121,7 @@ public partial class MagicStatusProbeSeam : Node
     {
         var entity = caster as IEntity;
         int team = entity?.GetComponent<CombatComponent>()?.Team ?? 0;
-        var packet = new DamagePacket(damage, spell.School, entity, false, 0f, HitKind.Spell);
+        var packet = new DamagePacket(damage, spell.School, entity, false, 0f, HitKind.Spell, 0f, !spell.Blockable);
         SpellResolver.HitOne(caster, hurtbox, packet, spell, entity, team);
     }
 

@@ -1,5 +1,6 @@
 using Embervale.Combat.Actions;
 using Embervale.Entities;
+using Embervale.Magic;
 using Embervale.Movement;
 using Embervale.Stats;
 using Godot;
@@ -81,6 +82,7 @@ public partial class DodgeComponent : EntityComponent
     private LocomotionComponent? _locomotion;
     private StatsComponent? _stats;
     private CombatComponent? _combat;
+    private StatusEffectsComponent? _status;
     private MountComponent? _mount;
     private CharacterActionComponent? _weapon;
 
@@ -106,6 +108,7 @@ public partial class DodgeComponent : EntityComponent
         _locomotion = Entity!.GetComponent<LocomotionComponent>();
         _stats = Entity!.GetComponent<StatsComponent>();
         _combat = Entity!.GetComponent<CombatComponent>();
+        _status = Entity.GetComponent<StatusEffectsComponent>();
         _mount = Entity!.GetComponent<MountComponent>();
         _weapon = Entity!.GetComponent<CharacterActionComponent>();
     }
@@ -129,6 +132,12 @@ public partial class DodgeComponent : EntityComponent
     /// </summary>
     public bool TryDodge(Vector3 direction)
     {
+        if (MovementControlled)
+        {
+            CancelForControl();
+            return false;
+        }
+
         // 39B: a mounted rider does not shoulder-roll. It is the one combat verb riding takes away —
         // melee, block and casting all work from the saddle — because a roll from up there has no
         // reading at all, and 39A's gallop is already the mounted evade. Refused before the stamina
@@ -160,6 +169,12 @@ public partial class DodgeComponent : EntityComponent
     /// </summary>
     public bool InterceptAttack()
     {
+        if (MovementControlled)
+        {
+            CancelForControl();
+            return false;
+        }
+
         if (!_active)
         {
             return false;
@@ -178,6 +193,11 @@ public partial class DodgeComponent : EntityComponent
 
     private bool Begin(Vector3 direction)
     {
+        if (MovementControlled)
+        {
+            return false;
+        }
+
         Vector3 flat = new(direction.X, 0f, direction.Z);
         DodgeKind kind = Dodge.Resolve(flat.LengthSquared(), DirectionDeadzone);
         int chain = Dodge.NextChain(_chain, _sinceLastEnd, ChainWindow);
@@ -212,6 +232,12 @@ public partial class DodgeComponent : EntityComponent
 
     public override void _PhysicsProcess(double delta)
     {
+        if (MovementControlled)
+        {
+            CancelForControl();
+            return;
+        }
+
         _sinceLastEnd += delta;
         _dodgeBuffer -= delta;
         _attackBuffer -= delta;
@@ -295,6 +321,18 @@ public partial class DodgeComponent : EntityComponent
         {
             _locomotion?.CancelDash();
         }
+    }
+
+    private bool MovementControlled =>
+        _status is { IsRooted: true } or { IsStunned: true };
+
+    /// <summary>A newly applied root or stun ends dodge movement, i-frames and buffered cancel attacks
+    /// immediately. Control removal never resurrects a press from the old roll.</summary>
+    public void CancelForControl()
+    {
+        End(cancelDash: true);
+        _dodgeBuffer = 0d;
+        _attackBuffer = 0d;
     }
 
     private float Duration() => _kind == DodgeKind.Roll ? RollDuration : BackstepDuration;

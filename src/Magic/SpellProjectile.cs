@@ -39,6 +39,10 @@ public partial class SpellProjectile : Area3D
     private Vector3 _direction;
     private double _life;
     private bool _resolved = true; // inert until Launch arms it
+    private SpellLifetime? _lifetime;
+    private bool _cancelled;
+    private bool _releaseQueued;
+    private bool _returning;
 
     /// <summary>Foes this bolt may still pass through (a piercing spell), and the ones it has already
     /// struck, so a lance that overlaps a target for several steps hits it once.</summary>
@@ -84,6 +88,9 @@ public partial class SpellProjectile : Area3D
     /// tree and positioned (the visual children must already exist from <see cref="_Ready"/>).</summary>
     public void Launch(SpellResource spell, DamagePacket packet, IEntity? caster, int casterTeam, Vector3 direction)
     {
+        _lifetime?.Dispose();
+        _cancelled = false;
+        _releaseQueued = false;
         _spell = spell;
         _packet = packet;
         _caster = caster;
@@ -100,12 +107,17 @@ public partial class SpellProjectile : Area3D
         _light.LightColor = color;
 
         _resolved = false;
+        CollisionLayer = CombatLayers.Hitbox;
+        CollisionMask = CombatLayers.Hurtbox | CombatLayers.World;
+        SetPhysicsProcess(true);
         Monitoring = true;
+        _lifetime = new SpellLifetime(this, caster, Cancel);
+        _lifetime.Check();
     }
 
     public override void _PhysicsProcess(double delta)
     {
-        if (_resolved)
+        if (_resolved || _cancelled || _lifetime?.Check() != true)
         {
             return;
         }
@@ -113,7 +125,10 @@ public partial class SpellProjectile : Area3D
         // Homing (Phase 29.5G — Ball Lightning): bend toward the nearest hostile each frame.
         if (_spell.HomingRange > 0f && NearestHostile(_spell.HomingRange) is { } target)
         {
-            _direction = SpellHoming.Steer(_direction, target.GlobalPosition - GlobalPosition, HomingTurnRate, (float)delta);
+            // At the foe's body, not its origin: a hurtbox sits at the feet, and a bolt steered there
+            // dives into the floor.
+            _direction = SpellHoming.Steer(
+                _direction, SpellResolver.VolumeCentre(target) - GlobalPosition, HomingTurnRate, (float)delta);
         }
 
         // ⚠️ THE FLIGHT IS SWEPT, NOT TELEPORTED. It used to be one `GlobalPosition += v * delta`
@@ -137,7 +152,7 @@ public partial class SpellProjectile : Area3D
 
             // A barrier stands between two steps: the bolt is spent against it, and bursts there.
             if (SpellBarrier.TryIntercept(
-                    before, GlobalPosition, _casterTeam, _packet.Amount, _caster, _spell.Id, out Vector3 stoppedAt))
+                    before, GlobalPosition, _casterTeam, _packet.Amount, _caster, _spell.Id, out Vector3 stoppedAt, Radius))
             {
                 GlobalPosition = stoppedAt;
                 Resolve(null);
@@ -155,6 +170,11 @@ public partial class SpellProjectile : Area3D
                 if (_struck.TryHit(struck.OwnerEntity, struck))
                 {
                     SpellResolver.HitOne(this, struck, _packet, _spell, _caster, _casterTeam);
+                    if (_resolved || _lifetime?.Check() != true)
+                    {
+                        return;
+                    }
+
                     _pierceLeft--;
                 }
 
@@ -223,7 +243,9 @@ public partial class SpellProjectile : Area3D
 
             // World geometry. Never the caster's own body — a bolt launched from inside the
             // caster's capsule would burst on the frame it was fired.
-            if (collider is Node3D body && (_casterBody == null || !ReferenceEquals(body, _casterBody)))
+            // Nor the body of a foe it has already pierced: it is still inside that capsule.
+            if (collider is Node3D body && (_casterBody == null || !ReferenceEquals(body, _casterBody)) &&
+                !(EntityNode.FindOwner(body) is { } bodyOwner && _struck.Has(bodyOwner)))
             {
                 blocked = true;
             }
@@ -258,7 +280,7 @@ public partial class SpellProjectile : Area3D
             {
                 boxes.Add(hurtbox);
                 bool branded = hurtbox.OwnerEntity?.GetComponent<StatusEffectsComponent>()?.Has(StormbrandId) == true;
-                candidates.Add((hurtbox.GlobalPosition.DistanceSquaredTo(GlobalPosition), branded));
+                candidates.Add((SpellResolver.VolumeCentre(hurtbox).DistanceSquaredTo(GlobalPosition), branded));
             }
         }
 
@@ -268,6 +290,11 @@ public partial class SpellProjectile : Area3D
 
     private void Resolve(Hurtbox? primary)
     {
+        if (_resolved || _cancelled || _lifetime?.Check() != true)
+        {
+            return;
+        }
+
         _resolved = true;
         Monitoring = false;
 
@@ -283,18 +310,73 @@ public partial class SpellProjectile : Area3D
 
         // Defer the detach/free: we're inside this node's own physics step, and _resolved keeps
         // it inert until then. (The pool reclaims it; without a pool it frees itself.)
+        if (_cancelled || _lifetime?.Check() != true)
+        {
+            return;
+        }
+
+        _releaseQueued = true;
         Callable.From(Release).CallDeferred();
     }
 
     private void Release()
     {
+        if (!IsInstanceValid(this) || !_releaseQueued || _cancelled || _lifetime?.Check() != true)
+        {
+            return;
+        }
+
+        _releaseQueued = false;
         if (Released != null)
         {
-            Released(this);
+            _returning = true;
+            try
+            {
+                Released(this);
+            }
+            finally
+            {
+                _returning = false;
+            }
         }
         else
         {
             QueueFree();
         }
+    }
+
+    public override void _ExitTree()
+    {
+        _lifetime?.Dispose();
+        _resolved = true;
+        _cancelled = true;
+        _releaseQueued = false;
+        _caster = null;
+        _casterBody = null;
+        _packet = default;
+        _struck.Clear();
+        if (!_returning)
+        {
+            Released = null;
+        }
+    }
+
+    private void Cancel()
+    {
+        _resolved = true;
+        _cancelled = true;
+        _releaseQueued = false;
+        _caster = null;
+        _casterBody = null;
+        _packet = default;
+        _struck.Clear();
+        Released = null; // a cancelled shot is freed, never returned to a possibly torn-down pool
+        CollisionLayer = 0u;
+        CollisionMask = 0u;
+        Monitoring = false;
+        SetProcess(false);
+        SetPhysicsProcess(false);
+        Hide();
+        QueueFree();
     }
 }

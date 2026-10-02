@@ -60,7 +60,7 @@ public partial class CombatFeedbackDirector : Node
         bus?.Subscribe<CriticalHitEvent>(OnCritical);
         bus?.Subscribe<ActionReleasedEvent>(OnReleased);
         bus?.Subscribe<ChargeReleasedEvent>(OnCharge);
-        bus?.Subscribe<Magic.SpellHitEvent>(OnSpellHit);
+        bus?.Subscribe<Magic.SpellImpactEvent>(OnSpellHit);
     }
 
     public override void _ExitTree()
@@ -73,7 +73,7 @@ public partial class CombatFeedbackDirector : Node
         bus?.Unsubscribe<CriticalHitEvent>(OnCritical);
         bus?.Unsubscribe<ActionReleasedEvent>(OnReleased);
         bus?.Unsubscribe<ChargeReleasedEvent>(OnCharge);
-        bus?.Unsubscribe<Magic.SpellHitEvent>(OnSpellHit);
+        bus?.Unsubscribe<Magic.SpellImpactEvent>(OnSpellHit);
         _pending.Clear();
         _pool?.Clear();
     }
@@ -139,11 +139,11 @@ public partial class CombatFeedbackDirector : Node
 
     /// <summary>A spell landed: the blow is a spell whatever the caster's last action was (a ground spell
     /// lands long after its cast), and it carries the spell's own <c>ImpactWeight</c> for hit-stop and shake.</summary>
-    private void OnSpellHit(Magic.SpellHitEvent e)
+    private void OnSpellHit(Magic.SpellImpactEvent e)
     {
         Pending p = Get(e.Target);
         p.Declared = p.Declared == HitKind.Normal ? HitKind.Spell : p.Declared;
-        p.SpellWeight = Magic.SpellDatabase.Get(e.SpellId)?.ImpactWeight ?? -1f;
+        p.SpellWeight = e.Weight;
         p.Source ??= e.Caster;
     }
 

@@ -59,6 +59,14 @@ public readonly record struct SpellLearnedEvent(IEntity Caster, string SpellId, 
 public readonly record struct SchoolRankedUpEvent(IEntity Caster, Embervale.Combat.DamageType School, int Rank) : IGameEvent;
 
 // --- magic-core events: append inside this block only ---
+
+/// <summary>A spell landed, with what presentation weighs it by: the spell's authored
+/// <c>ImpactWeight</c> (0..1) and the charge (0..1) a held cast reached. Raised beside
+/// <see cref="SpellHitEvent"/> by the casting core; hit-stop and shake read it through the combat
+/// feedback director and never feed back into a rule.</summary>
+public readonly record struct SpellImpactEvent(
+    IEntity Caster, IEntity Target, string SpellId, float Weight, float Charge) : IGameEvent;
+
 // --- end magic-core events ---
 // --- magic-status events: append inside this block only ---
 

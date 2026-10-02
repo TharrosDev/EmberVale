@@ -98,7 +98,8 @@ public partial class StatusEffectResource : Resource
     /// unspent share). Broken or dispelled wards return nothing.</summary>
     [Export] public float ExpiryManaReturn { get; set; } = 0f;
 
-    /// <summary>Mana the bearer regains for each kill it makes while this is active (Soul Echo).</summary>
+    /// <summary>Mana refunded when the applying Soul Tithe spell directly kills its target. The
+    /// resolver owns attribution; carrying Soul Echo does not refund unrelated kills.</summary>
     [Export] public float ManaOnKill { get; set; } = 0f;
 
     /// <summary>Status applied to everything a detonation hits, the bearer included (Kindle ignites).</summary>

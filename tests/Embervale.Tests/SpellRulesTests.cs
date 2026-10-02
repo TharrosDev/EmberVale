@@ -95,6 +95,55 @@ public class SpellRulesTests
     }
 
     [Fact]
+    public void AFullerChargeBurnsLongerWithinTheAuthoredRange()
+    {
+        Assert.Equal(1f, SpellRules.StatusDurationMultiplier(0f, 1f));
+        Assert.Equal(1.5f, SpellRules.StatusDurationMultiplier(0.5f, 1f));
+        Assert.Equal(2f, SpellRules.StatusDurationMultiplier(1f, 1f));
+        Assert.Equal(2f, SpellRules.StatusDurationMultiplier(3f, 1f));
+        Assert.Equal(1f, SpellRules.StatusDurationMultiplier(-3f, 1f));
+        Assert.Equal(1f, SpellRules.StatusDurationMultiplier(1f, -1f));
+    }
+
+    [Fact]
+    public void AMeteorCentreCrushesButTheEdgeOfAFullChargeCanBeBlocked()
+    {
+        Assert.True(SpellRules.IsDirectImpact(0.8f, 0.8f));
+        Assert.False(SpellRules.IsDirectImpact(1.2f, 0.8f));
+        var edge = new DamagePacket(10f, DamageType.Fire, null, false, 5f, HitKind.Spell, 1f)
+        {
+            GuardCrushOverride = SpellRules.IsDirectImpact(1.2f, 0.8f),
+        };
+        Assert.Equal(1f, edge.Charge);
+        Assert.False(edge.GuardCrushOverride);
+        Assert.Null(new DamagePacket(10f, DamageType.Fire, null, false, 5f).GuardCrushOverride);
+    }
+
+    [Fact]
+    public void ChannelTimingContainsAuthoredWindupAndRecovery()
+    {
+        CastShape shape = SpellRules.Shape(0.25f, 0.2f, sustained: true);
+        Assert.Equal(0.25f, SpellRules.WindupOf(shape), 4);
+        Assert.Equal(0.2f, shape.Duration * (1f - shape.ActiveTo), 4);
+        Assert.Equal(1f, shape.CancelFrom);
+    }
+
+    [Fact]
+    public void ABarrierInterceptsAtItsNearFaceRatherThanItsCentrePlane()
+    {
+        // An arrow's world ray ends at z=0.25, the near face of a 0.5 m wall.
+        Assert.Equal(1f, SpellRules.BarrierEntry(0f, 1f, 1f, 0f, 1f, 0.25f, 4f, 2.6f, 0.5f, 0f), 4);
+        // A radius .25 bolt overlaps the wall at z=.5 before its centre reaches the face.
+        Assert.Equal(1f, SpellRules.BarrierEntry(0f, 1f, 1f, 0f, 1f, 0.5f, 4f, 2.6f, 0.5f, 0.25f), 4);
+        Assert.Equal(-1f, SpellRules.BarrierEntry(3f, 1f, 1f, 3f, 1f, -1f, 4f, 2.6f, 0.5f, 0f));
+        Assert.Equal(-1f, SpellRules.BarrierEntry(0f, 3f, 1f, 0f, 3f, -1f, 4f, 2.6f, 0.5f, 0f));
+        // Hits from behind, parallel steps, and starts inside the volume use the same geometry.
+        Assert.Equal(0.375f, SpellRules.BarrierEntry(0f, 1f, -1f, 0f, 1f, 1f, 4f, 2.6f, 0.5f, 0f), 4);
+        Assert.Equal(0f, SpellRules.BarrierEntry(0f, 1f, 0f, 1f, 1f, 0f, 4f, 2.6f, 0.5f, 0f));
+        Assert.Equal(-1f, SpellRules.BarrierEntry(0f, 1f, 1f, 1f, 1f, 1f, 4f, 2.6f, 0.5f, 0f));
+    }
+
+    [Fact]
     public void BlinkStopsShortOfAWallAndCostsLessForAShorterJump()
     {
         float travelled = SpellRules.TravelDistance(8f, 3f, 0.5f);

@@ -38,6 +38,16 @@ public partial class SpellBarrier : Node3D
     public float Width { get; set; } = 4f;
     public float Duration { get; set; } = 6f;
 
+    /// <summary>Seconds the wall telegraphs before it stands (the spell's <c>GroundDelay</c>): the ring on
+    /// the ground is the warning, and until it closes the wall stops nothing and burns nothing.</summary>
+    public float Delay { get; set; }
+
+    /// <summary>True once the wall stands (after its telegraph).</summary>
+    public bool Active { get; private set; }
+
+    /// <summary>The telegraph ring, so a probe can read that it is armed for the delay.</summary>
+    public TelegraphRing Ring { get; } = new() { Name = "BarrierRing" };
+
     /// <summary>Damage left before the wall breaks; a wall authored with no health cannot break.</summary>
     public float Health { get; private set; }
 
@@ -49,18 +59,50 @@ public partial class SpellBarrier : Node3D
     private bool Solid => Spell.BarrierBlocksBodies;
 
     private StandardMaterial3D? _material;
+    private StaticBody3D? _solidBody;
+    private SpellLifetime? _lifetime;
     private double _age;
     private double _poll;
     private readonly Dictionary<ulong, double> _nextHit = new();
     private readonly HashSet<ulong> _seen = new();
 
-    public override void _EnterTree() => ActiveBarriers.Add(this);
-
-    public override void _ExitTree() => ActiveBarriers.Remove(this);
+    public override void _ExitTree()
+    {
+        _lifetime?.Dispose();
+        ActiveBarriers.Remove(this);
+        Ended = true;
+        Active = false;
+        Caster = null;
+        Packet = default;
+    }
 
     public override void _Ready()
     {
+        AddChild(Ring);
+        _lifetime = new SpellLifetime(this, Caster, Cancel);
+        if (!_lifetime.Check())
+        {
+            return;
+        }
+
         Health = Spell.BarrierHealth;
+        if (Delay <= 0f)
+        {
+            Activate();
+            return;
+        }
+
+        Ring.Position = new Vector3(0f, 0.06f, 0f);
+        Ring.Arm(Delay, Width * 0.5f, SpellSchools.Color(Spell.School));
+    }
+
+    /// <summary>The telegraph is over: the wall stands, solid where its spell says so.</summary>
+    private void Activate()
+    {
+        Active = true;
+        _age = 0d;
+        Ring.Clear();
+        ActiveBarriers.Add(this);
         Color tint = SpellSchools.Color(Spell.School);
         _material = new StandardMaterial3D
         {
@@ -103,6 +145,7 @@ public partial class SpellBarrier : Node3D
                 Position = new Vector3(0f, WallHeight * 0.5f, 0f),
             });
             AddChild(body);
+            _solidBody = body;
         }
     }
 
@@ -118,12 +161,22 @@ public partial class SpellBarrier : Node3D
 
     public override void _Process(double delta)
     {
-        if (Ended)
+        if (Ended || _lifetime?.Check() != true)
         {
             return;
         }
 
         _age += delta;
+        if (!Active)
+        {
+            if (_age >= Delay)
+            {
+                Activate();
+            }
+
+            return;
+        }
+
         if (_material != null)
         {
             // Fades as it runs out, so how long is left can be read off the wall.
@@ -151,7 +204,7 @@ public partial class SpellBarrier : Node3D
     /// <summary>Takes damage off the wall. Breaks it when the health is spent.</summary>
     public void Absorb(float amount)
     {
-        if (Ended || Spell.BarrierHealth <= 0f)
+        if (Ended || _lifetime?.Check() != true || !Active || Spell.BarrierHealth <= 0f)
         {
             return;
         }
@@ -171,6 +224,9 @@ public partial class SpellBarrier : Node3D
         }
 
         Ended = true;
+        Active = false;
+        StopCollision();
+        _lifetime?.Dispose();
         EventBus.Instance?.Publish(new BarrierEndedEvent(Caster, Spell.Id, broken));
         if (broken)
         {
@@ -178,30 +234,32 @@ public partial class SpellBarrier : Node3D
         }
 
         ActiveBarriers.Remove(this);
+        Caster = null;
+        Packet = default;
         QueueFree();
     }
 
     /// <summary>Whether a segment from <paramref name="from"/> to <paramref name="to"/> crosses this wall's face,
     /// and where.</summary>
-    public bool Crosses(Vector3 from, Vector3 to, out Vector3 at)
+    public bool Crosses(Vector3 from, Vector3 to, out Vector3 at, float projectileRadius = 0f)
     {
         at = to;
-        Vector3 normal = GlobalTransform.Basis.Z;
-        Vector3 right = GlobalTransform.Basis.X;
-        Vector3 centre = GlobalPosition;
-        float t = SpellRules.PlaneCrossing((from - centre).Dot(normal), (to - centre).Dot(normal));
+        if (Ended || !Active || _lifetime?.Check() != true)
+        {
+            return false;
+        }
+
+        Transform3D inverse = GlobalTransform.AffineInverse();
+        Vector3 a = inverse * from;
+        Vector3 b = inverse * to;
+        float t = SpellRules.BarrierEntry(a.X, a.Y, a.Z, b.X, b.Y, b.Z,
+            Width, WallHeight, Thickness, projectileRadius);
         if (t < 0f)
         {
             return false;
         }
 
-        Vector3 p = from.Lerp(to, t);
-        if (!SpellRules.OnBarrierFace((p - centre).Dot(right), p.Y - centre.Y, Width, WallHeight))
-        {
-            return false;
-        }
-
-        at = p;
+        at = from.Lerp(to, t);
         return true;
     }
 
@@ -212,7 +270,8 @@ public partial class SpellBarrier : Node3D
     /// is given (an arrow passes null). Returns true with the point it was stopped at.
     /// </summary>
     public static bool TryIntercept(
-        Vector3 from, Vector3 to, int shooterTeam, float damage, IEntity? shooter, string? spellId, out Vector3 at)
+        Vector3 from, Vector3 to, int shooterTeam, float damage, IEntity? shooter, string? spellId, out Vector3 at,
+        float projectileRadius = 0f)
     {
         at = to;
         if (ActiveBarriers.Count == 0)
@@ -222,11 +281,14 @@ public partial class SpellBarrier : Node3D
 
         SpellBarrier? nearest = null;
         float best = float.MaxValue;
-        foreach (SpellBarrier barrier in ActiveBarriers)
+        // A lifetime check can remove a caster's queued-for-deletion wall immediately. Walking
+        // backwards keeps that removal safe without allocating a registry snapshot for each bolt.
+        for (int i = ActiveBarriers.Count - 1; i >= 0; i--)
         {
-            if (barrier.Ended || !barrier.Spell.BarrierBlocksProjectiles ||
+            SpellBarrier barrier = ActiveBarriers[i];
+            if (barrier.Ended || !barrier.Active || !barrier.Spell.BarrierBlocksProjectiles ||
                 (barrier.CasterTeam == shooterTeam && !barrier.Solid) ||
-                !barrier.Crosses(from, to, out Vector3 hit))
+                !barrier.Crosses(from, to, out Vector3 hit, projectileRadius))
             {
                 continue;
             }
@@ -290,6 +352,10 @@ public partial class SpellBarrier : Node3D
 
             _nextHit[owner.RuntimeId] = now + tick;
             SpellResolver.HitOne(this, hurtbox, Packet, Spell, Caster, CasterTeam, dealDamage: Spell.BaseDamage > 0f);
+            if (Ended || _lifetime?.Check() != true)
+            {
+                return;
+            }
         }
 
         // Anyone who stepped out is forgotten, so walking back in burns at once.
@@ -308,6 +374,32 @@ public partial class SpellBarrier : Node3D
             {
                 _nextHit.Remove(id);
             }
+        }
+    }
+
+    private void Cancel()
+    {
+        Ended = true;
+        Active = false;
+        ActiveBarriers.Remove(this);
+        Caster = null;
+        Packet = default;
+        _nextHit.Clear();
+        _seen.Clear();
+        StopCollision();
+        SetProcess(false);
+        SetPhysicsProcess(false);
+        Ring.Clear();
+        Hide();
+        QueueFree();
+    }
+
+    private void StopCollision()
+    {
+        if (_solidBody != null && IsInstanceValid(_solidBody))
+        {
+            _solidBody.CollisionLayer = 0u;
+            _solidBody.CollisionMask = 0u;
         }
     }
 }

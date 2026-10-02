@@ -203,11 +203,19 @@ public partial class SpellResource : Resource
     [Export] public float BonusPerConsumedStack { get; set; } = 0f;
 
     [ExportGroup("Casting core additions (magic upgrade)")]
-    /// <summary>Foes a projectile passes through before it stops (Flame Lance). 0 = it stops on the first.</summary>
+    /// <summary>Extra foes a projectile strikes beyond the first, flying on through each (Flame Lance).
+    /// 0 = it stops on the first foe it hits.</summary>
     [Export] public int PierceCount { get; set; } = 0;
 
-    /// <summary>Extra foes pierced at full charge (scaled by how full the charge was, rounded). Charged casts only.</summary>
+    /// <summary>Extra foes struck at full charge on top of <see cref="PierceCount"/>, scaled by how full the
+    /// charge was (rounded). Charged casts only.</summary>
     [Export] public int PierceChargeBonus { get; set; } = 0;
+
+    /// <summary>Extra status duration at full charge. 1 doubles the normal duration; 0 keeps it unchanged.</summary>
+    [Export] public float StatusDurationChargeBonus { get; set; } = 0f;
+
+    /// <summary>A ground spell crushes a guard only when its impact centre directly strikes the actor.</summary>
+    [Export] public bool DirectHitGuardBreak { get; set; } = false;
 
     /// <summary>Hit points of a summoned totem (Lifebloom Totem). 0 uses the default; a totem can always be destroyed.</summary>
     [Export] public float SummonHealth { get; set; } = 0f;

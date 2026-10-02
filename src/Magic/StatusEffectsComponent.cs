@@ -41,8 +41,6 @@ public partial class StatusEffectsComponent : EntityComponent
     }
 
     private readonly Dictionary<string, StatusEffect> _active = new();
-    private readonly List<StatusEffect> _scratch = new();
-    private readonly List<string> _expired = new();
     private readonly List<(StatusControl Mask, double Remaining)> _immunities = new();
 
     private StatsComponent? _stats;
@@ -56,20 +54,27 @@ public partial class StatusEffectsComponent : EntityComponent
         _stats = Entity!.GetComponent<StatsComponent>();
         _combat = Entity.GetComponent<CombatComponent>();
         EventBus.Instance?.Subscribe<EntityDiedEvent>(OnEntityDied);
+        EventBus.Instance?.Subscribe<GameLoadingEvent>(OnGameLoading);
     }
 
     protected override void OnTeardown()
     {
         EventBus.Instance?.Unsubscribe<EntityDiedEvent>(OnEntityDied);
+        EventBus.Instance?.Unsubscribe<GameLoadingEvent>(OnGameLoading);
         ClearAll();
     }
 
     /// <summary>Applies (or refreshes / stacks) a status effect from its definition. Returns false when
     /// it was refused: the bearer is dead, or is still immune to the control it carries (a
     /// <see cref="StatusResistedEvent"/> is raised for the latter).</summary>
-    public bool Apply(StatusEffectResource? definition, IEntity? source) => Apply(definition, source, 0);
+    public bool Apply(StatusEffectResource? definition, IEntity? source) => Apply(definition, source, 1f);
 
-    private bool Apply(StatusEffectResource? definition, IEntity? source, int spreadGeneration)
+    /// <summary>Applies a charge-scaled lifetime without modifying the shared resource.</summary>
+    public bool Apply(StatusEffectResource? definition, IEntity? source, float durationMultiplier) =>
+        ApplyWithSpread(definition, source, 0, durationMultiplier);
+
+    private bool ApplyWithSpread(StatusEffectResource? definition, IEntity? source, int spreadGeneration,
+        float durationMultiplier)
     {
         if (definition == null || Entity == null || _stats is { IsAlive: false })
         {
@@ -85,7 +90,7 @@ public partial class StatusEffectsComponent : EntityComponent
                 return true;
             }
 
-            existing.AddStack();
+            existing.AddStack(durationMultiplier);
             if (definition.AbsorbAmount > 0f)
             {
                 existing.AbsorbCapacity = WardCapacity(definition, source);
@@ -106,7 +111,7 @@ public partial class StatusEffectsComponent : EntityComponent
             return false;
         }
 
-        var effect = new StatusEffect(definition, source) { SpreadGeneration = spreadGeneration };
+        var effect = new StatusEffect(definition, source, durationMultiplier) { SpreadGeneration = spreadGeneration };
         if (definition.AbsorbAmount > 0f)
         {
             effect.AbsorbCapacity = WardCapacity(definition, source);
@@ -117,11 +122,16 @@ public partial class StatusEffectsComponent : EntityComponent
         ApplyModifier(effect);
         EventBus.Instance?.Publish(new StatusEffectAppliedEvent(Entity, definition.Id, source));
 
+        if ((hard & (StatusControl.Root | StatusControl.Stun)) != 0)
+        {
+            Entity.GetComponent<DodgeComponent>()?.CancelForControl();
+        }
+
         // A stun holds the body the way a stagger does, so actions and casts are refused by the code
         // that already respects a stagger. No punish window: a freeze is not a poise break.
         if ((hard & StatusControl.Stun) != 0)
         {
-            _combat?.Stagger(definition.Duration, OpenCause.None);
+            _combat?.NotifyStatusStun();
         }
 
         if (StatusMath.ShouldDetonate(effect.Stacks, definition.DetonateAtStacks))
@@ -156,6 +166,25 @@ public partial class StatusEffectsComponent : EntityComponent
     public bool IsRooted => (Controls & StatusControl.Root) != 0;
 
     public bool IsStunned => (Controls & StatusControl.Stun) != 0;
+
+    /// <summary>The longest remaining stun owned by an active status. Removing it releases only this
+    /// contribution; ordinary combat stagger keeps its own timer.</summary>
+    public float StunRemaining
+    {
+        get
+        {
+            double remaining = 0d;
+            foreach (StatusEffect effect in _active.Values)
+            {
+                if ((effect.Definition.Controls & StatusControl.Stun) != 0)
+                {
+                    remaining = System.Math.Max(remaining, effect.Remaining);
+                }
+            }
+
+            return (float)remaining;
+        }
+    }
 
     /// <summary>Current stack count of an effect, 0 when absent.</summary>
     public int StacksOf(string effectId) =>
@@ -273,10 +302,14 @@ public partial class StatusEffectsComponent : EntityComponent
 
         float result = StatusMath.Reduce(StatusMath.Amplify(amount, amplify), reduce);
 
-        _scratch.Clear();
-        _scratch.AddRange(_active.Values);
-        foreach (StatusEffect ward in _scratch)
+        // Each invocation owns its snapshot: ward-break events and DoT death can re-enter status code.
+        foreach (StatusEffect ward in new List<StatusEffect>(_active.Values))
         {
+            if (!_active.TryGetValue(ward.Definition.Id, out StatusEffect? live) || !ReferenceEquals(live, ward))
+            {
+                continue;
+            }
+
             StatusEffectResource def = ward.Definition;
             if (def.AbsorbAmount <= 0f || def.DamageTakenModifier >= 0f || ward.AbsorbRemaining <= 0f)
             {
@@ -310,9 +343,7 @@ public partial class StatusEffectsComponent : EntityComponent
         }
 
         // Snapshot: a tick can break a ward, detonate or spread, all of which edit the live set.
-        _scratch.Clear();
-        _scratch.AddRange(_active.Values);
-        foreach (StatusEffect effect in _scratch)
+        foreach (StatusEffect effect in new List<StatusEffect>(_active.Values))
         {
             if (!_active.TryGetValue(effect.Definition.Id, out StatusEffect? live) || !ReferenceEquals(live, effect))
             {
@@ -320,26 +351,17 @@ public partial class StatusEffectsComponent : EntityComponent
             }
 
             Tick(effect, delta);
-            if (effect.Remaining <= 0d)
+            if (effect.Remaining <= 0d && _active.TryGetValue(effect.Definition.Id, out live) && ReferenceEquals(live, effect))
             {
-                _expired.Add(effect.Definition.Id);
+                Remove(effect.Definition.Id, Ending.Expired, null);
             }
-        }
-
-        if (_expired.Count > 0)
-        {
-            foreach (string id in _expired)
-            {
-                Remove(id, Ending.Expired, null);
-            }
-
-            _expired.Clear();
         }
     }
 
     private void Tick(StatusEffect effect, double delta)
     {
-        effect.Remaining -= delta;
+        double elapsed = System.Math.Min(System.Math.Max(0d, delta), System.Math.Max(0d, effect.Remaining));
+        effect.Remaining -= System.Math.Max(0d, delta);
 
         StatusEffectResource def = effect.Definition;
         if (!def.HasTickEffect)
@@ -347,7 +369,7 @@ public partial class StatusEffectsComponent : EntityComponent
             return;
         }
 
-        (int ticks, double newTimer) = StatusMath.AdvanceDot(effect.TickTimer, delta, def.TickInterval);
+        (int ticks, double newTimer) = StatusMath.AdvanceDot(effect.TickTimer, elapsed, def.TickInterval);
         effect.TickTimer = newTimer;
         for (int i = 0; i < ticks; i++)
         {
@@ -491,19 +513,7 @@ public partial class StatusEffectsComponent : EntityComponent
         if (ReferenceEquals(e.Entity, Entity))
         {
             SpreadOnDeath(e.Killer);
-            return;
-        }
-
-        // Soul Echo: a kill by this bearer refunds mana while the echo lasts.
-        if (ReferenceEquals(e.Killer, Entity) && _stats is { IsAlive: true })
-        {
-            foreach (StatusEffect effect in _active.Values)
-            {
-                if (effect.Definition.ManaOnKill > 0f)
-                {
-                    _stats.ModifyCurrent(StatType.Mana, effect.Definition.ManaOnKill);
-                }
-            }
+            ClearAll();
         }
     }
 
@@ -511,9 +521,7 @@ public partial class StatusEffectsComponent : EntityComponent
     /// hostile of its caster within its radius, preferring one it is not already on.</summary>
     private void SpreadOnDeath(IEntity? killer)
     {
-        _scratch.Clear();
-        _scratch.AddRange(_active.Values);
-        foreach (StatusEffect effect in _scratch)
+        foreach (StatusEffect effect in new List<StatusEffect>(_active.Values))
         {
             StatusEffectResource def = effect.Definition;
             IEntity? source = effect.Source;
@@ -542,7 +550,7 @@ public partial class StatusEffectsComponent : EntityComponent
             int pick = StatusMath.PickSpreadTarget(candidates);
             if (pick >= 0)
             {
-                owners[pick].Apply(def, source, effect.SpreadGeneration + 1);
+                owners[pick].ApplyWithSpread(def, source, effect.SpreadGeneration + 1, effect.DurationMultiplier);
             }
         }
     }
@@ -630,12 +638,10 @@ public partial class StatusEffectsComponent : EntityComponent
 
     private void ClearAll()
     {
-        if (_active.Count == 0)
-        {
-            return;
-        }
-
-        foreach (StatusEffect effect in _active.Values)
+        var removed = new List<StatusEffect>(_active.Values);
+        _active.Clear();
+        _immunities.Clear();
+        foreach (StatusEffect effect in removed)
         {
             RemoveModifier(effect);
             if (Entity != null)
@@ -643,9 +649,11 @@ public partial class StatusEffectsComponent : EntityComponent
                 EventBus.Instance?.Publish(new StatusEffectRemovedEvent(Entity, effect.Definition.Id));
             }
         }
-
-        _active.Clear();
     }
+
+    // Before saveables restore: strip effect-owned modifiers against the old stats, including on a
+    // load that later fails. A quickload must not carry any state from the abandoned combat timeline.
+    private void OnGameLoading(GameLoadingEvent e) => ClearAll();
 
     private void ApplyModifier(StatusEffect effect)
     {

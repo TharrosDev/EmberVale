@@ -10,6 +10,10 @@ namespace Embervale.Magic;
 /// </summary>
 public static class StatusMath
 {
+    /// <summary>A spell may extend a status lifetime; invalid charge input never shortens or poisons it.</summary>
+    public static float DurationMultiplier(float multiplier) =>
+        float.IsFinite(multiplier) ? Math.Max(1f, multiplier) : 1f;
+
     /// <summary>
     /// Advances a DoT's tick timer by <paramref name="delta"/> and reports how many ticks fire. A tick
     /// is due each time the timer reaches <c>&lt;= 0</c>, after which <paramref name="interval"/> is

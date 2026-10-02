@@ -184,7 +184,13 @@ def gates(engine: str | None) -> list[Gate]:
               "res://tools/combat_ranged_probe.gd"], slow=True),
         # --- end combat-ranged ---
         # --- magic-core: this group's probe Gate goes between the markers (one owner per block) ---
+        Gate("magic-core", "committed casts, interruption, channels, placement, breakable barriers, cleanse, costs and real roster charge behavior",
+             [engine, "--headless", "--path", ".", "--script", "res://tools/magic_core_probe.gd"],
+             modes=("engine", "full")),
         # --- end magic-core ---
+        Gate("magic-lifetime", "spell deliveries cancel before live load and stay inside session ownership",
+             [engine, "--headless", "--path", ".", "--script", "res://tools/magic_lifetime_probe.gd"],
+             modes=("engine", "full")),
         # --- magic-status: this group's probe Gate goes between the markers (one owner per block) ---
         Gate("magic-status", "status rules through real components: kindle detonation, swarm spread, mark, ward, dispel, control immunity, rooted movement, brand arcs, lifesteal, combos, shaped vfx",
              [engine, "--headless", "--path", ".", "--script",

@@ -16,8 +16,11 @@
 #              refused inside the immunity window
 #   locomotion a rooted body does not move on foot and an unrooted one does
 #   lightning  an arc prefers a Stormbrand over a nearer foe and carries more; a brand spell does not arc
-#   necrotic   lifesteal heals more off a nearly dead target and doubles off a Grave Mark; Soul Echo refunds
-#              mana on a kill
+#   ticks      simultaneous DoTs advance through a broken ward; a DoT death spreads Swarm and clears state
+#   live load  pre-restore event clears status modifiers, wards, controls and immunity without expiry refunds
+#   dodge      Root refuses admission, cancels a live roll and clears its i-frames and buffered attacks
+#   necrotic   lifesteal uses resolved health damage, scales with low health and Grave Mark; unrelated kills
+#              under Soul Echo never refund mana (Soul Tithe attribution is in the core probe)
 #   combos     every combo fires with its stable id and spends its status
 #   vfx        each shaped status builds its mark and removes it with the status
 #
@@ -31,6 +34,8 @@ extends SceneTree
 
 const HEALTH := 0     # StatType.Health
 const MANA := 2       # StatType.Mana
+const STAMINA := 1
+const ARMOR := 8
 
 const FIRE := 1
 const FROST := 2
@@ -60,7 +65,10 @@ func _initialize() -> void:
 	await _check_mark_and_ward()
 	await _check_dispel_and_cleanse()
 	await _check_controls()
+	await _check_tick_reentrancy()
+	await _check_live_load()
 	await _check_locomotion()
+	await _check_dodge()
 	await _check_lightning()
 	await _check_necrotic()
 	await _check_combos()
@@ -68,7 +76,7 @@ func _initialize() -> void:
 
 	print("---")
 	if _failures.is_empty():
-		print("PASS: content, kindle, swarm, mark, ward, dispel, controls, locomotion, lightning, necrotic, combos and vfx all hold")
+		print("PASS: content, kindle, swarm, mark, ward, dispel, controls, DoT ticks, live load, locomotion, dodge, lightning, necrotic, combos and vfx all hold")
 		quit(0)
 	else:
 		for f in _failures:
@@ -104,7 +112,7 @@ func _floor() -> void:
 
 
 # A hand-built actor: {body, stats, combat, status, hurt}. `hp` is its health pool.
-func _actor(name_: String, team: int, at: Vector3, hp := 5000.0, with_vfx := false, with_loco := false) -> Dictionary:
+func _actor(name_: String, team: int, at: Vector3, hp := 5000.0, with_vfx := false, with_loco := false, with_dodge := false) -> Dictionary:
 	var body := CharacterBody3D.new()
 	body.set_script(load("res://src/Entities/CharacterEntity.cs"))
 	body.name = name_
@@ -138,6 +146,11 @@ func _actor(name_: String, team: int, at: Vector3, hp := 5000.0, with_vfx := fal
 		var loco = load("res://src/Movement/LocomotionComponent.cs").new()
 		loco.name = "Locomotion"
 		body.add_child(loco)
+	var dodge = null
+	if with_dodge:
+		dodge = load("res://src/Combat/DodgeComponent.cs").new()
+		dodge.name = "Dodge"
+		body.add_child(dodge)
 
 	var hurt := Area3D.new()
 	hurt.set_script(load("res://src/Combat/Hurtbox.cs"))
@@ -152,7 +165,7 @@ func _actor(name_: String, team: int, at: Vector3, hp := 5000.0, with_vfx := fal
 	body.add_child(hurt)
 
 	root.add_child(body)
-	return {"body": body, "stats": stats, "combat": combat, "status": status, "hurt": hurt}
+	return {"body": body, "stats": stats, "combat": combat, "status": status, "hurt": hurt, "dodge": dodge}
 
 
 func _spell(school: int, status_id := "") -> Resource:
@@ -461,12 +474,28 @@ func _check_controls() -> void:
 	# Stun holds the body like a stagger, with no punish window.
 	var s := _actor("CtlStun", 2, Vector3(1320, 0, -6))
 	await _frames(2)
+	var stagger_events_before: int = _seam.Count("staggered")
 	_seam.Apply(s["body"], "status.stunned", c["body"])
 	if not s["status"].IsStunned or not s["combat"].IsStaggered:
 		_fail("control: a stun did not hold the body (stunned=%s staggered=%s)"
 			% [s["status"].IsStunned, s["combat"].IsStaggered])
 	if s["combat"].IsOpen:
 		_fail("control: a stun opened a riposte window")
+	if _seam.Count("staggered") != stagger_events_before + 1:
+		_fail("control: applying a stun did not publish exactly one interruption event")
+	_seam.Consume(s["body"], "status.stunned")
+	if s["combat"].IsStaggered:
+		_fail("control: consuming a stun left a combat stagger behind")
+	if _seam.Count("staggered") != stagger_events_before + 1:
+		_fail("control: consuming a stun published another interruption event")
+	# A separately owned poise stagger must survive removal of a status-owned freeze.
+	_seam.Step(s["body"], 5.0)
+	if not _seam.Apply(s["body"], "status.frozen", c["body"]):
+		_fail("control: independent stagger test could not apply Frozen")
+	_seam.ForceStagger(s["body"], 3.0)
+	_seam.Consume(s["body"], "status.frozen")
+	if not s["combat"].IsStaggered or s["combat"].StaggerRemaining < 2.9 or not s["combat"].IsOpen:
+		_fail("control: consuming Frozen erased the independent poise stagger or punish window")
 
 	# Frost identity: chill, then a frost hit freezes; then the freeze is refused inside its immunity.
 	var f := _actor("CtlFrost", 2, Vector3(1340, 0, -6))
@@ -500,6 +529,101 @@ func _check_controls() -> void:
 	if not f["status"].Has("status.frozen"):
 		_fail("frost: the freeze never came back after the immunity ended")
 	_free([c, t, s, f])
+
+
+func _check_tick_reentrancy() -> void:
+	var c := _actor("TickCaster", 1, Vector3(3200, 0, 0))
+	var t := _actor("TickBearer", 2, Vector3(3200, 0, -6))
+	var dead := _actor("TickDying", 2, Vector3(3400, 0, 0), 2.0)
+	var next := _actor("TickSpread", 2, Vector3(3403, 0, 0))
+	await _frames(3)
+	for a in [t, dead, next]:
+		a["status"].process_mode = Node.PROCESS_MODE_DISABLED
+		a["stats"].process_mode = Node.PROCESS_MODE_DISABLED
+	_seam.ResetCounts()
+	var ward = load("res://src/Magic/StatusEffectResource.cs").new()
+	ward.Id = "status.probe_ward"
+	ward.Duration = 3.0
+	ward.AbsorbAmount = 3.0
+	ward.DamageTakenModifier = -1.0
+	ward.IsBeneficial = true
+	_seam.ApplyDefinition(t["body"], ward, c["body"], 1.0)
+	for id in ["status.burning", "status.decay", "status.swarmed"]:
+		_seam.Apply(t["body"], id, c["body"])
+	var before := _hp(t)
+	_seam.Step(t["body"], 1.1)
+	if not _near(before - _hp(t), 7.0, 0.01):
+		_fail("ticks: simultaneous Burning/Decay/Swarm through 3 ward should lose 7 health, lost %.2f" % (before - _hp(t)))
+	if _seam.Count("wardbroken:status.probe_ward") != 1 or _seam.Count("removed:status.probe_ward") != 1:
+		_fail("ticks: a DoT-broken ward did not end and signal exactly once")
+	_seam.Step(t["body"], 7.0)
+	for id in ["status.burning", "status.decay", "status.swarmed"]:
+		if t["status"].Has(id) or _seam.Count("removed:" + id) != 1:
+			_fail("ticks: %s did not continue to expiry exactly once" % id)
+	# Killing inside the tick loop re-enters death/spread and clears the same bearer's effects.
+	_seam.Apply(dead["body"], "status.swarmed", c["body"])
+	_seam.Apply(dead["body"], "status.burning", c["body"])
+	_seam.Step(dead["body"], 1.1)
+	if dead["stats"].IsAlive or dead["status"].Has("status.swarmed") or dead["status"].Has("status.burning"):
+		_fail("ticks: a DoT death retained effects or failed to kill")
+	if not next["status"].Has("status.swarmed"):
+		_fail("ticks: a death inside DoT processing did not spread Swarm")
+	# A charged application's lifetime is on the instance, including refreshed stacks.
+	var burning = load("res://data/status_effects/Burning.tres")
+	_seam.ApplyDefinition(t["body"], burning, c["body"], 2.0)
+	_seam.Step(t["body"], 4.1)
+	if not t["status"].Has("status.burning"):
+		_fail("ticks: charge-scaled Burning ended at the base lifetime")
+	_seam.ApplyDefinition(t["body"], burning, c["body"], 2.0)
+	if _seam.Remaining(t["body"], "status.burning") < 7.9 or burning.Duration != 4.0:
+		_fail("ticks: refreshing charged Burning lost its scale or mutated the shared definition")
+	_seam.Step(t["body"], 0.1)
+	_seam.ApplyDefinition(t["body"], burning, c["body"], 1.0)
+	if _seam.Remaining(t["body"], "status.burning") < 7.8:
+		_fail("ticks: a shorter burn refresh shortened the live charged burn")
+	_seam.Step(t["body"], 8.1)
+	if t["status"].Has("status.burning"):
+		_fail("ticks: charge-scaled Burning never expired")
+	_seam.Apply(t["body"], "status.burning", c["body"])
+	before = _hp(t)
+	_seam.Step(t["body"], 0.6)
+	_seam.Apply(t["body"], "status.burning", c["body"])
+	_seam.Step(t["body"], 0.5)
+	if not _near(before - _hp(t), 8.0, 0.01):
+		_fail("ticks: a rapid second Burning stack postponed its due tick (lost %.2f, expected 8)" % (before - _hp(t)))
+	print("ticks: simultaneous DoTs, ward-break callbacks, death spread, expiry and charged lifetime checked")
+	_free([c, t, dead, next])
+
+
+func _check_live_load() -> void:
+	var a := _actor("LiveLoad", 2, Vector3(3600, 0, 0))
+	await _frames(2)
+	var armor_before: float = a["stats"].GetValue(ARMOR)
+	_seam.Apply(a["body"], "status.decay", null)
+	if a["stats"].GetValue(ARMOR) >= armor_before:
+		_fail("live load: Decay did not install its armor modifier")
+	_seam.Apply(a["body"], "status.rooted", null)
+	_seam.Consume(a["body"], "status.rooted")
+	_seam.Apply(a["body"], "status.stunned", null)
+	_seam.Apply(a["body"], "status.arcane_ward", a["body"])
+	a["stats"].SetCurrent(MANA, 0.0)
+	_seam.ResetCounts()
+	_seam.BeginLiveLoad()
+	if a["status"].IsStunned or a["combat"].IsStaggered or _seam.WardRemaining(a["body"]) != 0.0:
+		_fail("live load: transient controls, stagger or ward survived pre-restore event")
+	if _seam.ImmunityRemaining(a["body"], CTRL_ROOT) != 0.0 or _seam.ImmunityRemaining(a["body"], CTRL_STUN) != 0.0:
+		_fail("live load: control immunity survived reset")
+	if a["status"].Has("status.decay") or a["stats"].GetValue(ARMOR) != armor_before:
+		_fail("live load: Decay or its stat modifier survived reset")
+	if a["stats"].GetCurrent(MANA) != 0.0 or _seam.Count("wardbroken:status.arcane_ward") != 0:
+		_fail("live load: reset incorrectly refunded mana or broke the discarded ward")
+	for id in ["status.decay", "status.stunned", "status.arcane_ward"]:
+		if _seam.Count("removed:" + id) != 1:
+			_fail("live load: %s removal was not published exactly once" % id)
+	if not _seam.Apply(a["body"], "status.rooted", null):
+		_fail("live load: stale immunity refused a control in the restored timeline")
+	print("live load: effect state, modifiers, immunity and events cleared before stats restore")
+	_free([a])
 
 
 # ---- locomotion ----------------------------------------------------------------------------------
@@ -539,6 +663,45 @@ func _check_locomotion() -> void:
 		_fail("locomotion: a stunned body still moved %.2f m" % stunned_moved)
 	if again < 1.0:
 		_fail("locomotion: the body did not move again once the control ended")
+	_free([a])
+
+
+func _check_dodge() -> void:
+	var a := _actor("RootedDodger", 2, Vector3(20, 0.05, 300), 100.0, false, true, true)
+	var loco = a["body"].get_node("Locomotion")
+	var dodge = a["dodge"]
+	await _frames(3)
+	for i in 15:
+		loco.Move(1.0 / 60.0, Vector3.ZERO, false, false)
+		await physics_frame
+	var stamina_before: float = a["stats"].GetCurrent(STAMINA)
+	_seam.Apply(a["body"], "status.rooted", null)
+	if dodge.TryDodge(Vector3(0, 0, -1)) or dodge.IsDodging or a["combat"].IsInvulnerable:
+		_fail("dodge: Root permitted a dodge or stationary i-frames")
+	if a["stats"].GetCurrent(STAMINA) != stamina_before:
+		_fail("dodge: a refused rooted dodge spent stamina")
+	_seam.Consume(a["body"], "status.rooted")
+	if not dodge.TryDodge(Vector3(0, 0, -1)):
+		_fail("dodge: unrooted grounded actor could not begin a roll")
+	else:
+		# Step the real dodge into i-frames, then queue a later roll and attack cancellation.
+		_seam.StepDodge(a["body"], 0.08)
+		if not a["combat"].IsInvulnerable:
+			_fail("dodge: fixture did not reach live roll i-frames")
+		dodge.TryDodge(Vector3(0, 0, -1))
+		dodge.InterceptAttack()
+		# Consuming Root granted immunity; the pre-load event starts a fresh combat timeline.
+		_seam.BeginLiveLoad()
+		_seam.Apply(a["body"], "status.rooted", null)
+		if dodge.IsDodging or a["combat"].IsInvulnerable or loco.IsDashing:
+			_fail("dodge: Root did not immediately cancel the live roll, dash and i-frames")
+		if dodge.InterceptAttack():
+			_fail("dodge: a rooted actor retained the roll-attack cancel route")
+		_seam.Consume(a["body"], "status.rooted")
+		_seam.StepDodge(a["body"], 0.02)
+		if dodge.IsDodging or a["combat"].IsInvulnerable:
+			_fail("dodge: removing Root resurrected a buffered roll")
+	print("dodge: admission, stamina, live i-frame cancellation and buffered cancel state checked")
 	_free([a])
 
 
@@ -599,6 +762,8 @@ func _check_necrotic() -> void:
 	var full := _actor("NecFull", 2, Vector3(1900, 0, -6))
 	var marked := _actor("NecMarked", 2, Vector3(1920, 0, -6))
 	var low := _actor("NecLow", 2, Vector3(1940, 0, -6))
+	var warded := _actor("NecWard", 2, Vector3(1900, 0, -30))
+	var overkill := _actor("NecOverkill", 2, Vector3(1920, 0, -30), 2.0)
 	await _frames(3)
 	var drain = _spell(NECROTIC)
 	_seam.Apply(marked["body"], "status.grave_mark", c["body"])
@@ -616,12 +781,25 @@ func _check_necrotic() -> void:
 	print("necrotic: lifesteal full %.2f, marked %.2f, near dead %.2f" % [heal_full, heal_marked, heal_low])
 	if not _near(heal_full, 14.1, 0.5):
 		_fail("necrotic: a hit on a healthy foe healed %.2f, expected about 14" % heal_full)
-	if not _near(heal_marked / heal_full, 2.0, 0.05):
-		_fail("necrotic: off a Grave Mark the heal was x%.2f, expected doubled" % (heal_marked / heal_full))
+	# Grave Mark amplifies damage by 25%, then doubles lifesteal off the actual health removed.
+	if not _near(heal_marked / heal_full, 2.5, 0.05):
+		_fail("necrotic: off a Grave Mark the heal was x%.2f, expected amplified damage and doubled drain" % (heal_marked / heal_full))
 	if heal_low < heal_full * 1.5:
 		_fail("necrotic: a nearly dead target healed %.2f, expected clearly more than %.2f" % [heal_low, heal_full])
+	_seam.Apply(warded["body"], "status.arcane_ward", c["body"])
+	c["stats"].SetCurrent(HEALTH, 1.0)
+	var ward_hp := _hp(warded)
+	_seam.Hit(warded["hurt"], drain, c["body"], 40.0)
+	if _hp(warded) != ward_hp or c["stats"].GetCurrent(HEALTH) != 1.0:
+		_fail("necrotic: fully absorbed damage healed the caster or leaked health")
+	_seam.Apply(overkill["body"], "status.grave_mark", c["body"])
+	c["stats"].SetCurrent(HEALTH, 1.0)
+	_seam.Hit(overkill["hurt"], drain, c["body"], 100.0)
+	var overkill_heal: float = c["stats"].GetCurrent(HEALTH) - 1.0
+	if not _near(overkill_heal, 2.8, 0.01):
+		_fail("necrotic: marked overkill should drain only 2 actual health (heal 2.8), healed %.2f" % overkill_heal)
 
-	# Soul Echo refunds mana on a kill, and only while it is on.
+	# Soul Echo represents Soul Tithe's direct kill refund; merely carrying it cannot refund other kills.
 	var prey := _actor("NecPrey", 2, Vector3(1960, 0, -6))
 	var prey2 := _actor("NecPrey2", 2, Vector3(1980, 0, -6))
 	await _frames(2)
@@ -634,9 +812,9 @@ func _check_necrotic() -> void:
 	print("necrotic: mana after a kill without echo %.2f, with echo %.2f" % [without, with_echo])
 	if without > 1.0:
 		_fail("necrotic: a kill refunded %.2f mana with no Soul Echo" % without)
-	if with_echo < 11.0:
-		_fail("necrotic: a kill under Soul Echo refunded only %.2f mana" % with_echo)
-	_free([c, full, marked, low, prey, prey2])
+	if with_echo > 1.0:
+		_fail("necrotic: an unrelated kill under Soul Echo refunded %.2f mana" % with_echo)
+	_free([c, full, marked, low, warded, overkill, prey, prey2])
 
 
 # ---- combos --------------------------------------------------------------------------------------
@@ -667,6 +845,8 @@ func _check_combos() -> void:
 			_fail("combo: %s did not fire exactly once (fired %d, last '%s')" % [k[2], fired, _seam.LastComboId])
 		if t["status"].Has(k[1]):
 			_fail("combo: %s did not spend %s" % [k[2], k[1]])
+		if k[1] == "status.frozen" and t["combat"].IsStaggered:
+			_fail("combo: Meltdown spent Frozen but left its status-owned stagger")
 		if before - _hp(t) < 20.0:
 			_fail("combo: %s dealt no burst (%.1f)" % [k[2], before - _hp(t)])
 		t["body"].queue_free()

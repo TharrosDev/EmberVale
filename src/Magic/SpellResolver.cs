@@ -41,11 +41,13 @@ public static class SpellResolver
     private const int MaxHurtboxesPerBurst = 64;
 
     /// <summary>Delivers a single-target hit (damage + school identity + status) to one hurtbox.
-    /// <paramref name="dealDamage"/> false is a status-only touch (a barrier of a spell with no damage).
+    /// <paramref name="dealDamage"/> false is a status-only touch (a barrier of a spell with no damage);
+    /// <paramref name="applyStatus"/> false withholds the spell's own status (a dash that stuns only the last foe).
     /// </summary>
     public static SpellHitResult HitOne(
         Node3D context, Hurtbox hurtbox, DamagePacket packet, SpellResource spell, IEntity? caster, int casterTeam,
-        bool dealDamage = true)
+        bool dealDamage = true,
+        bool applyStatus = true)
     {
         IEntity? target = hurtbox.OwnerEntity;
         CombatComponent? combat = hurtbox.Combat;
@@ -59,38 +61,63 @@ public static class SpellResolver
 
         // A spell that eats a status (a consume-and-bonus spell) strips the stacks as it lands and is
         // stronger for each one.
-        if (spell.ConsumesStatusId.Length > 0 &&
-            target?.GetComponent<StatusEffectsComponent>() is { } statuses)
+        StatusEffectsComponent? statuses = target?.GetComponent<StatusEffectsComponent>();
+        int consumed = spell.ConsumesStatusId.Length > 0 ? statuses?.StacksOf(spell.ConsumesStatusId) ?? 0 : 0;
+        if (consumed > 0)
         {
-            int stacks = statuses.StacksOf(spell.ConsumesStatusId);
-            if (stacks > 0)
+            packet = packet with
             {
-                packet = packet with
-                {
-                    Amount = packet.Amount * SpellRules.ConsumeMultiplier(stacks, spell.BonusPerConsumedStack),
-                };
-                statuses.Consume(spell.ConsumesStatusId);
-            }
+                Amount = packet.Amount * SpellRules.ConsumeMultiplier(consumed, spell.BonusPerConsumedStack),
+            };
         }
 
+        bool targetWasMarked = statuses?.Has(StatusIds.GraveMark) == true;
+        Vector3 hitPosition = hurtbox.GlobalPosition;
         DamageResult result = dealDamage ? hurtbox.Receive(packet) : default;
 
         // A guard stopped it: chip damage only, and none of the rider effects. Never parried (a spell is
         // not parryable), so a blocked result is the whole story.
-        if (result.IsBlocked && caster != null && target != null)
+        if (result.IsBlocked)
         {
-            EventBus.Instance?.Publish(new SpellBlockedEvent(caster, spell.Id, target));
+            if (caster != null && target != null)
+            {
+                EventBus.Instance?.Publish(new SpellBlockedEvent(caster, spell.Id, target));
+            }
             return SpellHitResult.Blocked;
         }
 
-        SchoolIdentity.OnSpellHit(context, spell, packet, caster, casterTeam, hurtbox);
-        SpellCombo.OnHit(spell, caster, hurtbox);
-        ApplyStatus(target, spell, caster);
+        if (consumed > 0)
+        {
+            statuses?.Consume(spell.ConsumesStatusId);
+        }
+
+        float resolvedDamage = result.HealthDamage;
+        SchoolIdentity.OnSpellHit(context, spell, packet, caster, casterTeam, hurtbox, resolvedDamage,
+            targetWasMarked, result.Killed, dealDamage ? result.HealthFraction : -1f, hitPosition);
+        bool killed = result.Killed;
+        if (!killed)
+        {
+            killed = SpellCombo.OnHit(spell, caster, hurtbox);
+        }
+        if (applyStatus && !killed)
+        {
+            ApplyStatus(target, spell, caster, packet.Charge);
+        }
+
+        // Soul Tithe refunds only its own killing blow. Reading the transition here also handles an
+        // immediate projectile hit before the self-side echo event arrives, without a blanket kill buff.
+        if (spell.Id == "spell.soul_tithe" && result.Killed &&
+            caster?.GetComponent<StatsComponent>() is { IsAlive: true } casterStats)
+        {
+            float refund = StatusEffectDatabase.Get(spell.SelfStatusEffectId)?.ManaOnKill ?? 0f;
+            casterStats.ModifyCurrent(StatType.Mana, refund);
+        }
 
         if (caster != null && target != null)
         {
             EventBus.Instance?.Publish(
                 new SpellHitEvent(caster, target, spell.Id, result.FinalAmount, result.IsCrit || packet.IsCrit));
+            EventBus.Instance?.Publish(new SpellImpactEvent(caster, target, spell.Id, spell.ImpactWeight, packet.Charge));
         }
 
         return SpellHitResult.Landed;
@@ -218,7 +245,16 @@ public static class SpellResolver
                 continue;
             }
 
-            HitOne(context, hurtbox, packet, spell, caster, casterTeam);
+            DamagePacket blow = packet;
+            if (spell.DirectHitGuardBreak)
+            {
+                Vector3 offset = VolumeCentre(hurtbox) - center;
+                offset.Y = 0f;
+                // Preserve the actual charge for damage, statuses and presentation. A meteor's guard
+                // rule comes from its footprint: its centre crushes; a full-charge edge can be blocked.
+                blow = blow with { GuardCrushOverride = SpellRules.IsDirectImpact(offset.Length(), 0.8f) };
+            }
+            HitOne(context, hurtbox, blow, spell, caster, casterTeam);
         }
     }
 
@@ -249,7 +285,7 @@ public static class SpellResolver
     /// cone take all of them or none. Falls back to the Area for the ordinary one-shape hurtbox,
     /// where the two are the same anyway.
     /// </summary>
-    private static Vector3 VolumeCentre(Hurtbox hurtbox)
+    public static Vector3 VolumeCentre(Hurtbox hurtbox)
     {
         foreach (Node child in hurtbox.GetChildren())
         {
@@ -274,7 +310,7 @@ public static class SpellResolver
     }
 
     /// <summary>Applies a spell's status effect (if any) to a target entity.</summary>
-    public static void ApplyStatus(IEntity? target, SpellResource spell, IEntity? caster)
+    public static void ApplyStatus(IEntity? target, SpellResource spell, IEntity? caster, float charge = 0f)
     {
         if (target == null || !spell.HasStatusEffect)
         {
@@ -282,7 +318,8 @@ public static class SpellResolver
         }
 
         StatusEffectResource? definition = StatusEffectDatabase.Get(spell.StatusEffectId);
-        target.GetComponent<StatusEffectsComponent>()?.Apply(definition, caster);
+        target.GetComponent<StatusEffectsComponent>()?.Apply(definition, caster,
+            SpellRules.StatusDurationMultiplier(charge, spell.StatusDurationChargeBonus));
     }
 
     private static void SpawnFlash(Node3D context, Vector3 center, float radius, Color color) =>
@@ -292,7 +329,7 @@ public static class SpellResolver
     public static void SpawnFlashAt(Node3D context, Vector3 center, float radius, Color color)
     {
         SceneTree? tree = context.GetTree();
-        Node? parent = tree?.CurrentScene;
+        Node? parent = tree == null ? null : SpellLifetime.HostFor(null, context);
         if (parent == null)
         {
             return;

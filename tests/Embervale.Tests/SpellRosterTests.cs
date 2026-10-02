@@ -89,6 +89,27 @@ public class SpellRosterTests
     }
 
     [Fact]
+    public void FlameLance_AuthorsPierceGrowthAndLongerBurnAtFullCharge()
+    {
+        Spell spell = Roster()["spell.flame_lance"];
+        Assert.Equal((int)CastMode.Charged, spell.I("CastMode"));
+        Assert.True(spell.I("PierceCount") > 0);
+        Assert.True(spell.I("PierceChargeBonus") > 0);
+        Assert.True(spell.F("StatusDurationChargeBonus") > 0f);
+    }
+
+    [Fact]
+    public void Sunfall_BreaksOnlyDirectGuardsAndKnitBoneConsumesDecay()
+    {
+        Dictionary<string, Spell> roster = Roster();
+        Assert.Equal("true", roster["spell.sunfall"].S("Blockable"));
+        Assert.Equal("true", roster["spell.sunfall"].S("DirectHitGuardBreak"));
+        Assert.Equal((int)SpellDelivery.Self, roster["spell.knit_bone"].I("Delivery"));
+        Assert.Equal("status.decay", roster["spell.knit_bone"].S("ConsumesStatusId"));
+        Assert.True(roster["spell.knit_bone"].F("BonusPerConsumedStack") > 0f);
+    }
+
+    [Fact]
     public void Roster_HasTwentyFiveUniqueSpellsAndEachHasAFile()
     {
         Assert.Equal(25, GameIds.Spells.Roster.Length);

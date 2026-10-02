@@ -40,6 +40,9 @@ func _initialize() -> void:
 	_check_aliases()
 	_check_loadouts()
 	_check_routes()
+	for issue in _d.NumericGuardIssues():
+		_fail(issue)
+	await _check_prepared_tomes()
 
 	print("---")
 	if _failures.is_empty():
@@ -53,6 +56,22 @@ func _initialize() -> void:
 
 func _fail(msg: String) -> void:
 	_failures.append(msg)
+
+
+func _check_prepared_tomes() -> void:
+	var learner := CharacterBody3D.new()
+	learner.set_script(load("res://src/Entities/CharacterEntity.cs"))
+	learner.name = "PreparedTomeLearner"
+	root.add_child(learner)
+	for script_name in ["Stats/StatsComponent", "Dialogue/StoryFlagsComponent", "Magic/SpellcastingComponent"]:
+		var component = load("res://src/%s.cs" % script_name).new()
+		component.name = script_name.get_file()
+		learner.add_child(component)
+	await process_frame
+	for issue in _d.PreparedTomeIssues(learner):
+		_fail(issue)
+	learner.queue_free()
+	await process_frame
 
 
 func _check_roster() -> void:

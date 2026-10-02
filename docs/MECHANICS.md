@@ -184,23 +184,30 @@ caps the first two at 25%).
 
 ## Magic
 
-- **Spells as data** — 19 spells (`data/spells`): school, delivery (projectile, area, self, cone), cast
+- **Spells as data** — 25 player spells and five enemy spells (`data/spells`): school, delivery, cast
   mode (instant, charged by hold, channelled), mana, cooldown, status. `SpellResource`,
   `SpellcastingComponent`. `Q` casts, `F` cycles, `T` spellbook.
-- **Special deliveries** — homing (Ball Lightning), lingering zones (Blizzard), a healing totem
-  (Lifebloom), a gaze-directed teleport (Blink). `SpellHoming`, `SpellZone`, `SpellTotem`.
+- **Committed casts** — visible wind-up, release and recovery; stagger interrupts for a half-mana
+  refund. Held channels retain commitment and slow movement; charge scales damage, piercing and burn
+  duration. `SpellActions`, `SpellcastingComponent`, `CharacterActionComponent`.
+- **Special deliveries** — delayed ground telegraphs, destructible barriers, enemy-hitting dashes,
+  piercing and homing bolts, lingering zones, a healing totem and a committed-direction Blink.
+  `SpellGround`, `SpellBarrier`, `SpellProjectile`, `SpellZone`, `SpellTotem`.
 - **School identities** — Fire stacking ignite, Frost chill to freeze, Lightning chain, Necrotic
   lifesteal, Nature regrowth, Arcane ward and dispel. `SchoolIdentity`.
-- **Combos** — Shatter and Thermal Shock read afflictions already on the target. `SpellCombo`.
+- **Combos** — Shatter, Thermal Shock, Steam Burst, Meltdown, Superconduct and Smoke Out read pre-hit afflictions.
+  `SpellCombo`.
 - **Mastery** — schools rank up with use; spells gain rank damage. `SchoolMasteryComponent`,
   `SpellMastery`.
-- **Status effects** — Burning, Chill, Frozen, Decay, Regrowth, Arcane Ward (`data/status_effects`),
-  with VFX; transient. `StatusEffectsComponent`.
+- **Status effects** — stacking burns and decay, frost control with immunity, roots, silence,
+  marks, swarms, regeneration and wards (`data/status_effects`), with VFX. Root/Stun cancels dodge
+  i-frames; effects, modifiers and immunity clear on death and before load. `StatusEffectsComponent`.
 - **The fading Weave** — each region's `WeavePotency` weakens ordinary magic and strengthens corrupted
   magic as it falls. `Weave`, `WeaveMath`.
 - **Corrupted casts** — spells with `MinCorruptionTier` can only be learned at that tier or above.
-- **Learning** — recovered from tomes, dialogue (`LearnSpell`) and trainers, never bought off a shelf.
-  `SpellTomeComponent`.
+- **Learning** — tomes, dialogue (`LearnSpell`) and trainers share one learning route; spellbook
+  purchase/upgrade spends spell points. Corrupt tomes require an explicit embrace. Retired spell ids
+  migrate on load. `SpellLearning`, `SpellTomeComponent`, `SpellAliases`, `SpellbookPanel`.
 
 ## Corruption and the ember choice
 

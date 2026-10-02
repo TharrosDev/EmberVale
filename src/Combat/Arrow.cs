@@ -208,7 +208,7 @@ public partial class Arrow : Area3D
 
             // A spell barrier eats the shaft (Pyre Wall burns arrows, a Bulwark stops them) and takes
             // its damage off the wall's health. Spell-only rule, owned by SpellBarrier.
-            if (SpellBarrier.TryIntercept(from, reach, _shooterTeam, _packet.Amount, _shooter, null, out Vector3 blockedAt))
+            if (SpellBarrier.TryIntercept(from, reach, _shooterTeam, _packet.Amount, _shooter, null, out Vector3 blockedAt, Radius))
             {
                 GlobalPosition = blockedAt;
                 Resolve();

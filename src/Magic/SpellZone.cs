@@ -29,14 +29,35 @@ public partial class SpellZone : Node3D
 
     private double _life;
     private double _tickTimer; // 0 → first pulse fires immediately
+    private SpellLifetime? _lifetime;
+    private bool _cancelled;
 
-    public override void _Ready() => SetPhysicsProcess(PullStrength > 0f);
+    public override void _Ready()
+    {
+        _lifetime = new SpellLifetime(this, Caster, Cancel);
+        if (_lifetime.Check())
+        {
+            SetPhysicsProcess(PullStrength > 0f);
+        }
+    }
 
-    public override void _PhysicsProcess(double delta) =>
+    public override void _PhysicsProcess(double delta)
+    {
+        if (_cancelled || _lifetime?.Check() != true)
+        {
+            return;
+        }
+
         SpellResolver.Pull(this, GlobalPosition, Radius, PullStrength, delta, Caster, CasterTeam);
+    }
 
     public override void _Process(double delta)
     {
+        if (_cancelled || _lifetime?.Check() != true)
+        {
+            return;
+        }
+
         _life += delta;
         _tickTimer -= delta;
         if (_tickTimer <= 0d)
@@ -49,5 +70,24 @@ public partial class SpellZone : Node3D
         {
             QueueFree();
         }
+    }
+
+    public override void _ExitTree()
+    {
+        _lifetime?.Dispose();
+        _cancelled = true;
+        Caster = null;
+        Packet = default;
+    }
+
+    private void Cancel()
+    {
+        _cancelled = true;
+        Caster = null;
+        Packet = default;
+        SetProcess(false);
+        SetPhysicsProcess(false);
+        Hide();
+        QueueFree();
     }
 }

@@ -36,12 +36,20 @@ public partial class SpellTotem : Entity
     public bool Ended { get; private set; }
 
     private StatsComponent? _stats;
+    private Hurtbox? _hurtbox;
+    private SpellLifetime? _lifetime;
     private double _life;
     private double _tickTimer = 1f; // wait one interval before the first heal
 
     public override void _Ready()
     {
+        _lifetime = new SpellLifetime(this, Caster, Cancel);
         base._Ready();
+        if (!_lifetime.Check())
+        {
+            return;
+        }
+
         DisplayName = Spell?.DisplayName ?? "Totem";
         TemplateId = "spell.totem";
 
@@ -60,6 +68,7 @@ public partial class SpellTotem : Entity
             Position = new Vector3(0f, 0.5f, 0f),
         });
         AddChild(hurtbox);
+        _hurtbox = hurtbox;
 
         AddChild(new MeshInstance3D
         {
@@ -77,7 +86,7 @@ public partial class SpellTotem : Entity
 
     public override void _Process(double delta)
     {
-        if (Ended)
+        if (Ended || _lifetime?.Check() != true)
         {
             return;
         }
@@ -93,7 +102,7 @@ public partial class SpellTotem : Entity
         if (_tickTimer <= 0d)
         {
             _tickTimer += TickInterval;
-            if (Target is { IsAlive: true } stats && IsInstanceValid(stats))
+            if (Target is { } stats && IsInstanceValid(stats) && stats.IsAlive)
             {
                 stats.Heal(HealPerTick);
             }
@@ -110,12 +119,52 @@ public partial class SpellTotem : Entity
 
     private void End(bool broken)
     {
+        if (Ended)
+        {
+            return;
+        }
+
         Ended = true;
+        StopCollision();
+        _lifetime?.Dispose();
         if (Spell != null)
         {
             EventBus.Instance?.Publish(new BarrierEndedEvent(Caster, Spell.Id, broken));
         }
 
+        Target = null;
+        Caster = null;
         QueueFree();
+    }
+
+    public override void _ExitTree()
+    {
+        _lifetime?.Dispose();
+        Ended = true;
+        Target = null;
+        Caster = null;
+        base._ExitTree();
+    }
+
+    private void Cancel()
+    {
+        Ended = true;
+        Target = null;
+        Caster = null;
+        StopCollision();
+        SetProcess(false);
+        SetPhysicsProcess(false);
+        Hide();
+        QueueFree();
+    }
+
+    private void StopCollision()
+    {
+        if (_hurtbox != null && IsInstanceValid(_hurtbox))
+        {
+            _hurtbox.CollisionLayer = 0u;
+            _hurtbox.CollisionMask = 0u;
+            _hurtbox.Monitorable = false;
+        }
     }
 }

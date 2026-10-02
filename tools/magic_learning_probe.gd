@@ -89,12 +89,15 @@ func _caster(name_: String, known: Array[String]) -> Dictionary:
 	var mastery = load("res://src/Magic/SchoolMasteryComponent.cs").new()
 	mastery.name = "SchoolMastery"
 	body.add_child(mastery)
+	var progression = load("res://src/Progression/ProgressionComponent.cs").new()
+	progression.name = "Progression"
+	body.add_child(progression)
 	var casting = load("res://src/Magic/SpellcastingComponent.cs").new()
 	casting.name = "Spellcasting"
 	casting.KnownSpellIds = known
 	body.add_child(casting)
 	return {"body": body, "stats": stats, "corruption": corruption, "effects": effects,
-		"mastery": mastery, "casting": casting}
+		"mastery": mastery, "casting": casting, "progression": progression}
 
 
 func _all_text(node: Node, out: Array[String]) -> void:
@@ -113,6 +116,16 @@ func _has_text(node: Node, needle: String) -> bool:
 		if needle in t:
 			return true
 	return false
+
+
+func _buy_button(node: Node) -> Button:
+	if node is Button and node.text.begins_with("Buy (") and not node.disabled:
+		return node
+	for child in node.get_children():
+		var found := _buy_button(child)
+		if found != null:
+			return found
+	return null
 
 
 # ---- mastery -------------------------------------------------------------------------------------
@@ -283,6 +296,8 @@ func _check_book() -> void:
 	root.add_child(panel)
 	await process_frame
 	panel.SetSpellcasting(c["casting"])
+	c["progression"].Load({"spell_sp": 10})
+	panel.SetProgression(c["progression"])
 	panel.SetOpen(true)
 	for i in 4:
 		await process_frame
@@ -293,6 +308,14 @@ func _check_book() -> void:
 	_expect(_has_text(panel, "SPELLBOOK") or _has_text(panel, "Spellbook"), "book: the panel builds and shows its title")
 	# The fire school is first; the frost school holds Frost Nova, which the probe caster knows.
 	_expect(_has_text(panel, "Frost"), "book: the school ring lists the schools")
+	var buy := _buy_button(panel)
+	_expect(buy != null, "book: an affordable unknown spell offers a purchase")
+	if buy != null:
+		var before: int = _driver.Learned
+		var points_before: int = c["progression"].SpellPoints
+		buy.emit_signal("pressed")
+		_expect(_driver.Learned == before + 1 and _driver.LastRoute == "spellbook", "book: one purchase emits exactly one learned event")
+		_expect(c["progression"].SpellPoints < points_before, "book: purchase spends spell points")
 
 	# Necrotic holds the corrupted Ember Siphon: an Untainted reader must be told why it is out of reach.
 	panel.ShowSchool(6)

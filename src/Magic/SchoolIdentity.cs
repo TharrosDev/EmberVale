@@ -82,28 +82,33 @@ public static class SchoolIdentity
         DamagePacket packet,
         IEntity? caster,
         int casterTeam,
-        Hurtbox primary)
+        Hurtbox primary,
+        float resolvedDamage = -1f,
+        bool targetWasMarked = false,
+        bool targetKilled = false,
+        float targetHealthFraction = -1f,
+        Vector3? hitPosition = null)
     {
         switch (spell.School)
         {
-            case DamageType.Fire:
+            case DamageType.Fire when !targetKilled:
                 FeedKindle(primary, caster);
                 break;
-            case DamageType.Frost:
+            case DamageType.Frost when !targetKilled:
                 EscalateFreeze(primary, caster);
                 break;
             case DamageType.Lightning:
                 // A brand is a mark, not a bolt: it must not arc to (and re-brand) another foe.
                 if (spell.StatusEffectId != StatusIds.Stormbrand)
                 {
-                    ChainToNearby(context, spell, packet, caster, casterTeam, primary);
+                    ChainToNearby(context, spell, packet, caster, casterTeam, primary, hitPosition);
                 }
 
                 break;
             case DamageType.Necrotic:
-                Lifesteal(caster, packet.Amount, primary);
+                Lifesteal(caster, resolvedDamage >= 0f ? resolvedDamage : packet.Amount, primary, targetWasMarked, targetHealthFraction);
                 break;
-            case DamageType.Arcane:
+            case DamageType.Arcane when !targetKilled:
                 // A bolt tears a buff off; a ground or barrier pulse does not.
                 if (spell.Delivery == SpellDelivery.Projectile)
                 {
@@ -137,10 +142,11 @@ public static class SchoolIdentity
     }
 
     /// <summary>The caster heals for a share of the Necrotic damage it just dealt.</summary>
-    private static void Lifesteal(IEntity? caster, float damage, Hurtbox primary)
+    private static void Lifesteal(IEntity? caster, float damage, Hurtbox primary, bool targetWasMarked, float targetHealthFraction)
     {
-        float fraction = primary.OwnerEntity?.GetComponent<StatsComponent>()?.GetNormalized(StatType.Health) ?? 1f;
-        bool marked = primary.OwnerEntity?.GetComponent<StatusEffectsComponent>()?.Has(StatusIds.GraveMark) == true;
+        float fraction = targetHealthFraction >= 0f ? targetHealthFraction
+            : primary.OwnerEntity?.GetComponent<StatsComponent>()?.GetNormalized(StatType.Health) ?? 1f;
+        bool marked = targetWasMarked || primary.OwnerEntity?.GetComponent<StatusEffectsComponent>()?.Has(StatusIds.GraveMark) == true;
         caster?.GetComponent<StatsComponent>()?.Heal(LifestealAmount(damage, fraction, marked));
     }
 
@@ -175,9 +181,10 @@ public static class SchoolIdentity
         DamagePacket packet,
         IEntity? caster,
         int casterTeam,
-        Hurtbox primary)
+        Hurtbox primary,
+        Vector3? hitPosition = null)
     {
-        Vector3 center = primary.GlobalPosition;
+        Vector3 center = hitPosition ?? primary.GlobalPosition;
         PhysicsDirectSpaceState3D space = context.GetWorld3D().DirectSpaceState;
         var query = new PhysicsShapeQueryParameters3D
         {

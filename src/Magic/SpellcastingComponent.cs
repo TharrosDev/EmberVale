@@ -78,6 +78,14 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
     private float _pendingPower = 1f;
     private CharacterActionComponent? _actions;
     private double _channelTickTimer;
+    private bool _channelReleased;
+
+    // Blink commits its direction and maximum travel with the price. A later obstruction may shorten
+    // that same jump (and refund the difference); changing aim cannot turn a cheap jump into a long one.
+    private Vector3 _blinkDirection;
+    private float _blinkTravel;
+    private float _blinkPaid;
+    private float _blinkFullCost;
 
     // --- committed cast (magic upgrade): what the pending cast paid and how strong it is ---
     private float _pendingCharge;
@@ -92,6 +100,10 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
 
     /// <summary>The spell whose wind-up is running (mana spent, waiting for its release frame), or null.</summary>
     public SpellResource? PendingSpell => _pending;
+
+    /// <summary>Fraction of the pending wind-up completed on the action's own clock.</summary>
+    public float WindupProgress => _pending != null && _actions?.Current is { ActiveFrom: > 0f } action
+        ? Mathf.Clamp((_actions?.Progress ?? 0f) / action.ActiveFrom, 0f, 1f) : 0f;
 
     /// <summary>The wind-up the last committed cast reported, in seconds (what the telegraph showed).</summary>
     public float LastWindupSeconds { get; private set; }
@@ -115,6 +127,11 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
 
     public IReadOnlyList<SpellResource> Spells => _spells;
 
+    /// <summary>How many spells are known, and the one at an index (for callers that cannot take a list).</summary>
+    public int SpellCount => _spells.Count;
+
+    public SpellResource? SpellAt(int index) => index >= 0 && index < _spells.Count ? _spells[index] : null;
+
     public int SelectedIndex => _selected;
 
     public SpellResource? Selected =>
@@ -135,6 +152,8 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
         EventBus.Instance?.Subscribe<ActionReleasedEvent>(OnActionReleased);
         EventBus.Instance?.Subscribe<AttackPerformedEvent>(OnAttackPerformed);
         EventBus.Instance?.Subscribe<DamageDealtEvent>(OnDamageDealt);
+        EventBus.Instance?.Subscribe<EntityDiedEvent>(OnEntityDied);
+        EventBus.Instance?.Subscribe<GameLoadingEvent>(OnGameLoading);
         _worldRay = new WorldRay();
         if (Entity.Body is CollisionObject3D collider)
         {
@@ -152,6 +171,8 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
         EventBus.Instance?.Unsubscribe<ActionReleasedEvent>(OnActionReleased);
         EventBus.Instance?.Unsubscribe<AttackPerformedEvent>(OnAttackPerformed);
         EventBus.Instance?.Unsubscribe<DamageDealtEvent>(OnDamageDealt);
+        EventBus.Instance?.Unsubscribe<EntityDiedEvent>(OnEntityDied);
+        EventBus.Instance?.Unsubscribe<GameLoadingEvent>(OnGameLoading);
         DropChannelSlow();
         _worldRay?.Dispose();
         _worldRay = null;
@@ -160,6 +181,22 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
     }
 
     private void ReturnProjectile(SpellProjectile projectile) => _projectilePool?.Return(projectile);
+
+    private void OnEntityDied(EntityDiedEvent e)
+    {
+        if (ReferenceEquals(e.Entity, Entity))
+        {
+            CancelCast();
+        }
+    }
+
+    private void OnGameLoading(GameLoadingEvent _)
+    {
+        CancelCast();
+        _cooldowns.Clear();
+        _lastAttacker = null;
+        _lastAttackerAt = 0;
+    }
 
     public override void _Process(double delta)
     {
@@ -216,22 +253,24 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
 
     private void TickInterrupts()
     {
-        if (_activeCast is { } held && InterruptsNow(held))
-        {
-            CancelCast();
-            if (Entity != null)
-            {
-                EventBus.Instance?.Publish(new AttackInterruptedEvent(Entity));
-                EventBus.Instance?.Publish(new SpellInterruptedEvent(Entity, held.Id, RecentAttacker()));
-            }
-        }
-
-        // A committed cast in its wind-up: the mana is spent, the release frame has not come. An action
-        // that ended without releasing (something cancelled it) is the same thing.
         if (_pending is { } pending && (InterruptsNow(pending) || _actions is { Current: null }))
         {
             InterruptPending();
         }
+        else if (_activeCast is { } held && (InterruptsNow(held) ||
+                 (_channelReleased && _actions is { Current: null })))
+        {
+            CancelCast();
+            if (Entity != null)
+            {
+                if (_actions == null)
+                {
+                    EventBus.Instance?.Publish(new AttackInterruptedEvent(Entity));
+                }
+                EventBus.Instance?.Publish(new SpellInterruptedEvent(Entity, held.Id, RecentAttacker()));
+            }
+        }
+
     }
 
     /// <summary>Drops the wind-up in flight: half the mana comes back, the action is cancelled, and
@@ -247,6 +286,9 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
         float spent = _pendingMana;
         _pending = null;
         _pendingMana = 0f;
+        _activeCast = null;
+        _channelReleased = false;
+        DropChannelSlow();
         _actions?.Cancel();
         if (spent > 0f && _stats is { IsAlive: true })
         {
@@ -357,6 +399,23 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
         }
     }
 
+    /// <summary>Adds a spell resource to the spellbook directly, without the database lookup. For a
+    /// caster built by hand (the headless probe builds its spells in code); the ordinary routes are
+    /// <see cref="Learn"/> and <see cref="Buy"/>.</summary>
+    public void Teach(SpellResource spell)
+    {
+        if (_spells.Exists(s => s.Id == spell.Id))
+        {
+            return;
+        }
+
+        _spells.Add(spell);
+        if (!KnownSpellIds.Contains(spell.Id))
+        {
+            KnownSpellIds.Add(spell.Id);
+        }
+    }
+
     /// <summary>Whether the spell is already in this caster's spellbook.</summary>
     public bool IsKnown(SpellResource spell) => _spells.Exists(s => s.Id == spell.Id);
 
@@ -383,6 +442,37 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
         }
 
         _ranks[spell.Id] = 1;
+        if (Entity != null)
+        {
+            EventBus.Instance?.Publish(new SpellsChangedEvent(Entity));
+            EventBus.Instance?.Publish(new SpellLearnedEvent(Entity, spell.Id, "spellbook"));
+        }
+
+        return true;
+    }
+
+    /// <summary>Removes a spell from the spellbook (the dev <c>unlearn</c> command): its rank and cooldown
+    /// go with it, and a cast in progress of it is dropped. A retired id resolves to its replacement.
+    /// Returns false when the spell is not known.</summary>
+    public bool Forget(string spellId)
+    {
+        string id = ResolveId(spellId);
+        int idx = _spells.FindIndex(s => s.Id == id);
+        if (idx < 0)
+        {
+            return false;
+        }
+
+        if (_activeCast?.Id == id || _pending?.Id == id)
+        {
+            CancelCast();
+        }
+
+        _spells.RemoveAt(idx);
+        KnownSpellIds.Remove(id);
+        _ranks.Remove(id);
+        _cooldowns.Remove(id);
+        _selected = Mathf.Clamp(_selected, 0, Mathf.Max(0, _spells.Count - 1));
         if (Entity != null)
         {
             EventBus.Instance?.Publish(new SpellsChangedEvent(Entity));
@@ -420,7 +510,7 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
     /// that verdict out to callers, so a guarded cast path needs no <c>!</c>.</summary>
     public bool CanCast([NotNullWhen(true)] SpellResource? spell)
     {
-        if (spell == null || _stats == null || !_stats.IsAlive)
+        if (spell == null || _stats == null || !_stats.IsAlive || _pending != null || _activeCast != null)
         {
             return false;
         }
@@ -452,7 +542,8 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
     ///
     /// <para>An actor with no action component (a turret, a bare test harness) delivers immediately.</para>
     /// </summary>
-    public bool TryCast() => StartCast(Selected, 1f, 0f);
+    public bool TryCast() => Selected is { CastMode: CastMode.Channeled }
+        ? BeginSelectedCast() : StartCast(Selected, 1f, 0f);
 
     /// <summary>
     /// Begins a committed cast: the action starts (a wind-up the caster is open to being interrupted in),
@@ -467,7 +558,15 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
             return false;
         }
 
-        float mana = ManaToSpend(spell);
+        if (spell.BlinkDistance > 0f)
+        {
+            _blinkDirection = HorizontalAim();
+            _blinkTravel = TravelInDirection(spell.BlinkDistance, WallMargin, _blinkDirection);
+            _blinkFullCost = EffectiveManaCost(spell);
+            _blinkPaid = SpellRules.BlinkCost(_blinkFullCost, _blinkTravel, spell.BlinkDistance);
+        }
+
+        float mana = spell.BlinkDistance > 0f ? _blinkPaid : EffectiveManaCost(spell);
         if (_stats!.GetCurrent(StatType.Mana) < mana)
         {
             return false;
@@ -489,6 +588,7 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
         Pay(spell, mana);
         if (started)
         {
+            _actions!.HoldAtRelease = spell.CastMode == CastMode.Channeled;
             _pending = spell;
             _pendingPower = power;
             _pendingCharge = charge;
@@ -504,7 +604,14 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
         }
         else
         {
-            Deliver(spell, power, charge);
+            if (spell.CastMode == CastMode.Channeled)
+            {
+                _channelReleased = true;
+            }
+            else
+            {
+                Deliver(spell, power, charge);
+            }
         }
 
         if (Entity != null)
@@ -524,17 +631,19 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
             _stats.ModifyCurrent(StatType.Health, -spell.HealthCost);
         }
 
-        _cooldowns[spell.Id] = spell.Cooldown;
+        _cooldowns[spell.Id] = CooldownFor(spell);
     }
 
-    /// <summary>What a cast costs in mana now: the spell's cost, or for a blink the price of the jump
-    /// the wall will actually allow.</summary>
-    private float ManaToSpend(SpellResource spell)
+    /// <summary>The cooldown a cast starts, after the caster's school mastery trims it.</summary>
+    private float CooldownFor(SpellResource spell)
     {
-        float cost = EffectiveManaCost(spell);
-        return spell.BlinkDistance > 0f
-            ? SpellRules.BlinkCost(cost, TravelAlongAim(spell.BlinkDistance, WallMargin), spell.BlinkDistance)
-            : cost;
+        float multiplier = 1f;
+        if (_mastery != null && IsInstanceValid(_mastery))
+        {
+            multiplier = _mastery.CooldownMultiplier(spell.School);
+        }
+
+        return spell.Cooldown * Mathf.Clamp(multiplier, 0.1f, 1f);
     }
 
     /// <summary>Delivers a spell whose cast action has reached its release. The action timeline
@@ -546,18 +655,38 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
             return;
         }
 
+        if (InterruptsNow(spell))
+        {
+            InterruptPending();
+            return;
+        }
+
         _pending = null;
         _pendingMana = 0f;
-        Deliver(spell, _pendingPower, _pendingCharge);
+        if (spell.CastMode == CastMode.Channeled)
+        {
+            _channelReleased = true;
+            ApplyChannelSlow(spell);
+            TickChannel(0d);
+        }
+        else
+        {
+            Deliver(spell, _pendingPower, _pendingCharge);
+        }
     }
 
     /// <summary>Begins a cast on key-down (Phase 29.5A): Instant fires now; Charged starts charging;
     /// Channeled starts sustaining. No-op if a cast is already active or the spell isn't ready.</summary>
     public void BeginCast()
     {
-        if (_activeCast != null)
+        BeginSelectedCast();
+    }
+
+    private bool BeginSelectedCast()
+    {
+        if (_activeCast != null || _pending != null || _actions is { IsCommitted: true })
         {
-            return;
+            return false;
         }
 
         SpellResource? spell = Selected;
@@ -566,27 +695,36 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
             case CastMode.Charged when CanCast(spell):
                 _activeCast = spell;
                 _chargeElapsed = 0f;
-                break;
+                return true;
             case CastMode.Channeled when CanCast(spell):
+                _channelReleased = false;
+                if (!StartCast(spell, 1f, 0f))
+                {
+                    return false;
+                }
                 _activeCast = spell;
                 _channelTickTimer = 0d; // fire the first tick immediately
-                ApplyChannelSlow(spell);
-                break;
+                if (_channelReleased)
+                {
+                    ApplyChannelSlow(spell);
+                    TickChannel(0d);
+                }
+                return true;
             default:
-                TryCast();
-                break;
+                return TryCast();
         }
     }
 
     /// <summary>Advances an active charged/channeled cast each frame while the key is held.</summary>
     public void UpdateCast(double delta)
     {
+        TickInterrupts();
         switch (_activeCast?.CastMode)
         {
             case CastMode.Charged:
                 _chargeElapsed += (float)delta;
                 break;
-            case CastMode.Channeled:
+            case CastMode.Channeled when _channelReleased:
                 TickChannel(delta);
                 break;
         }
@@ -596,6 +734,7 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
     /// a channeled cast simply stops (and goes on cooldown). No-op for instant casts.</summary>
     public void EndCast()
     {
+        TickInterrupts();
         SpellResource? spell = _activeCast;
         if (spell == null)
         {
@@ -616,15 +755,29 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
         }
         else if (spell.CastMode == CastMode.Channeled)
         {
-            _cooldowns[spell.Id] = spell.Cooldown;
+            if (_pending != null)
+            {
+                CancelCast(); // key-up during wind-up does not release a beam tick
+            }
+            else
+            {
+                _actions?.ReleaseHold();
+            }
+            _channelReleased = false;
+            _cooldowns[spell.Id] = CooldownFor(spell);
         }
     }
 
-    /// <summary>Abandons an in-progress charged/channeled cast without firing (e.g. a menu opens or the
-    /// game pauses) — no damage, no mana spent on release, no cooldown.</summary>
+    /// <summary>Abandons an in-progress cast without a release (e.g. a menu opens). A channel starts its
+    /// cooldown, and a committed cast retains the cost and cooldown it already paid.</summary>
     public void CancelCast()
     {
+        if (_activeCast is { CastMode: CastMode.Channeled } channel)
+        {
+            _cooldowns[channel.Id] = CooldownFor(channel);
+        }
         _activeCast = null;
+        _channelReleased = false;
         DropChannelSlow();
 
         // ⚠️ A cast interrupted between its start and its release must not still go off. The cooldown is
@@ -661,6 +814,11 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
     private void TickChannel(double delta)
     {
         SpellResource spell = _activeCast!;
+        if (InterruptsNow(spell))
+        {
+            TickInterrupts();
+            return;
+        }
         _channelTickTimer -= delta;
         if (_channelTickTimer > 0d)
         {
@@ -755,6 +913,7 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
 
         var zone = new SpellZone
         {
+            Name = "SpellZone",
             Spell = spell,
             Packet = BuildPacket(spell, power, charge),
             Caster = Entity,
@@ -764,7 +923,7 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
             TickInterval = spell.ZoneTickInterval,
             PullStrength = spell.PullStrength,
         };
-        GetTree().CurrentScene.AddChild(zone);
+        SpellLifetime.HostFor(Entity, this).AddChild(zone);
         zone.GlobalPosition = body.GlobalPosition + (Vector3.Up * 0.1f);
     }
 
@@ -777,6 +936,7 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
 
         var totem = new SpellTotem
         {
+            Name = "SpellTotem",
             Target = _stats,
             HealPerTick = spell.Healing * Empower(spell, power),
             Duration = spell.SummonDuration,
@@ -787,7 +947,7 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
             CasterTeam = team,
             Health = spell.SummonHealth > 0f ? spell.SummonHealth : SpellTotem.DefaultHealth,
         };
-        GetTree().CurrentScene.AddChild(totem);
+        SpellLifetime.HostFor(Entity, this).AddChild(totem);
         totem.GlobalPosition = body.GlobalPosition;
     }
 
@@ -828,7 +988,7 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
         SpellProjectile projectile = _projectilePool?.Get() ?? new SpellProjectile { Released = ReturnProjectile };
 
         // Add to the tree (so its visual children build on first use) then position + arm it.
-        GetTree().CurrentScene.AddChild(projectile);
+        SpellLifetime.HostFor(Entity, this).AddChild(projectile);
         projectile.GlobalPosition = origin;
         projectile.Launch(spell, BuildPacket(spell, power, charge), Entity, team, direction);
     }
@@ -866,7 +1026,7 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
     {
         if (spell.BlinkDistance > 0f)
         {
-            Blink(spell.BlinkDistance);
+            Blink(spell);
         }
 
         ApplySupport(Entity, spell, power);
@@ -884,6 +1044,7 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
 
         var ground = new SpellGround
         {
+            Name = "SpellGround",
             Spell = spell,
             Packet = BuildPacket(spell, power, charge),
             Caster = Entity,
@@ -891,7 +1052,7 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
             Delay = spell.GroundDelay,
             Radius = spell.ImpactRadius > 0f ? spell.ImpactRadius : DefaultNovaRadius,
         };
-        GetTree().CurrentScene.AddChild(ground);
+        SpellLifetime.HostFor(Entity, this).AddChild(ground);
         ground.GlobalPosition = PlacePoint(spell);
     }
 
@@ -913,14 +1074,16 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
 
         var barrier = new SpellBarrier
         {
+            Name = "SpellBarrier",
             Spell = spell,
             Packet = BuildPacket(spell, power, charge),
             Caster = Entity,
             CasterTeam = team,
             Width = spell.BarrierWidth,
             Duration = spell.BarrierDuration,
+            Delay = spell.GroundDelay,
         };
-        GetTree().CurrentScene.AddChild(barrier);
+        SpellLifetime.HostFor(Entity, this).AddChild(barrier);
         barrier.GlobalPosition = point;
         barrier.Face(across);
     }
@@ -979,13 +1142,18 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
         body.GlobalPosition = end;
         body.Velocity = Vector3.Zero;
 
+        // The last foe struck is stunned. A spell authored with the stun as its own status
+        // (Thunder Step) lands it on that foe only; any other status lands on everyone struck.
         Hurtbox? last = null;
+        bool statusIsStun = spell.StatusEffectId == StunnedId;
         struck.Sort((a, b) => a.Along.CompareTo(b.Along));
-        foreach ((Hurtbox box, float _) in struck)
+        for (int i = 0; i < struck.Count; i++)
         {
-            if (SpellResolver.HitOne(body, box, packet, spell, Entity, team) == SpellHitResult.Landed)
+            SpellHitResult result = SpellResolver.HitOne(
+                body, struck[i].Box, packet, spell, Entity, team, applyStatus: !statusIsStun);
+            if (result == SpellHitResult.Landed)
             {
-                last = box;
+                last = struck[i].Box;
             }
         }
 
@@ -1053,6 +1221,9 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
     /// <summary>Metres the caster can travel along its horizontal aim before a wall, up to
     /// <paramref name="wanted"/>, stopping <paramref name="margin"/> short of the wall.</summary>
     private float TravelAlongAim(float wanted, float margin)
+        => TravelInDirection(wanted, margin, HorizontalAim());
+
+    private float TravelInDirection(float wanted, float margin, Vector3 direction)
     {
         if (Entity?.Body is not Node3D body || _worldRay == null)
         {
@@ -1060,28 +1231,29 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
         }
 
         Vector3 from = body.GlobalPosition + (Vector3.Up * 1f);
-        Vector3 to = from + (HorizontalAim() * wanted);
+        Vector3 to = from + (direction * wanted);
         float hit = _worldRay.FirstSolid(body.GetWorld3D().DirectSpaceState, from, to) is { } solid
             ? from.DistanceTo(solid.Point)
             : -1f;
         return SpellRules.TravelDistance(wanted, hit, margin);
     }
 
-    /// <summary>Teleports the caster up to <paramref name="distance"/> metres along their aim (Phase 29.5G —
+    /// <summary>Teleports the caster up to <see cref="SpellResource.BlinkDistance"/> metres along their aim (Phase 29.5G —
     /// Blink), stopping short of world geometry (people are not walls). ponytail: straight horizontal
     /// hop (keeps feet height); no ledge/step handling — fine for a flat-ish dodge.</summary>
-    private void Blink(float distance)
+    private void Blink(SpellResource spell)
     {
         if (Entity?.Body is not CharacterBody3D body)
         {
             return;
         }
 
-        Vector3 direction = HorizontalAim();
-        float travel = TravelAlongAim(distance, WallMargin);
-        Color colour = SpellSchools.Color(Selected?.School ?? DamageType.Arcane);
+        float travel = TravelInDirection(_blinkTravel, WallMargin, _blinkDirection);
+        float actualCost = SpellRules.BlinkCost(_blinkFullCost, travel, spell.BlinkDistance);
+        _stats?.ModifyCurrent(StatType.Mana, Mathf.Max(0f, _blinkPaid - actualCost));
+        Color colour = SpellSchools.Color(spell.School);
         SpellResolver.SpawnFlashAt(body, body.GlobalPosition + (Vector3.Up * 1f), 0.9f, colour);
-        body.GlobalPosition += direction * travel;
+        body.GlobalPosition += _blinkDirection * travel;
         body.Velocity = Vector3.Zero;
         SpellResolver.SpawnFlashAt(body, body.GlobalPosition + (Vector3.Up * 1f), 0.9f, colour);
     }
@@ -1095,9 +1267,17 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
             return;
         }
 
+        StatusEffectsComponent? statuses = target.GetComponent<StatusEffectsComponent>();
+        int consumed = spell.ConsumesStatusId.Length > 0 ? statuses?.StacksOf(spell.ConsumesStatusId) ?? 0 : 0;
+        if (consumed > 0)
+        {
+            statuses?.Consume(spell.ConsumesStatusId);
+        }
+
         if (spell.Healing > 0f)
         {
-            target.GetComponent<StatsComponent>()?.Heal(spell.Healing * Empower(spell, power));
+            target.GetComponent<StatsComponent>()?.Heal(spell.Healing * Empower(spell, power)
+                * SpellRules.ConsumeMultiplier(consumed, spell.BonusPerConsumedStack));
         }
 
         if (spell.HasStatusEffect)
@@ -1112,7 +1292,7 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
     /// its replacement. Reuses the full <see cref="TryCast"/> path — no parallel casting logic (29.5F).</summary>
     public bool TryCastById(string spellId)
     {
-        string id = SpellAliases.Resolve(spellId);
+        string id = ResolveId(spellId);
         int idx = _spells.FindIndex(s => s.Id == id);
         if (idx < 0)
         {
@@ -1135,7 +1315,7 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
             return false;
         }
 
-        string id = SpellAliases.Resolve(spellId);
+        string id = ResolveId(spellId);
         int idx = _spells.FindIndex(s => s.Id == id);
         if (idx < 0)
         {
@@ -1143,8 +1323,7 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
         }
 
         _selected = idx;
-        BeginCast();
-        return true;
+        return BeginSelectedCast();
     }
 
     /// <summary>Casts a Self-delivery support spell (heal/ward) onto an <em>ally</em> rather than the
@@ -1158,7 +1337,7 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
         }
 
         _stats!.ModifyCurrent(StatType.Mana, -EffectiveManaCost(spell));
-        _cooldowns[spell.Id] = spell.Cooldown;
+        _cooldowns[spell.Id] = CooldownFor(spell);
         ApplySupport(ally, spell, 1f);
         if (Entity != null)
         {
@@ -1179,6 +1358,10 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
         Vector3 forward = (-node.GlobalTransform.Basis.Z).Normalized();
         return (node.GlobalPosition + (forward * MuzzleOffset), forward);
     }
+
+    /// <summary>The id a spell is known by now: the id itself when the database has it, else what a
+    /// retired id was replaced by, else the id unchanged (a save can name a spell this build lacks).</summary>
+    private static string ResolveId(string id) => SpellDatabase.Get(id)?.Id ?? SpellAliases.Resolve(id);
 
     /// <summary>Rebuilds the spellbook from <see cref="KnownSpellIds"/>. A retired id resolves to its
     /// replacement (<see cref="SpellDatabase.Get"/>) and the list is kept free of duplicates, so an old
@@ -1237,28 +1420,20 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
         // save holds (none, for a save that predates them), and loading while holding a charge, a channel
         // or a wind-up must not leave any of it alive: a stale _activeCast blocks every later BeginCast
         // and keeps IsChanneling true for a cast that no longer exists.
+        CancelCast();
         _cooldowns.Clear();
-        _activeCast = null;
         _chargeElapsed = 0f;
-        _pending = null;
-        _pendingMana = 0f;
-        DropChannelSlow();
-
+        KnownSpellIds = new Godot.Collections.Array<string>();
         if (data.TryGetValue("spells", out Variant spellsVar))
         {
-            KnownSpellIds = new Godot.Collections.Array<string>();
             foreach (Variant entry in spellsVar.AsGodotArray())
             {
-                // A retired id maps to its replacement rather than being dropped.
-                string id = SpellAliases.Resolve(entry.AsString());
-                if (!KnownSpellIds.Contains(id))
-                {
-                    KnownSpellIds.Add(id);
-                }
+                // A retired id is kept as saved; RebuildSpells resolves it to its replacement (and drops a
+                // duplicate) rather than dropping the spell.
+                KnownSpellIds.Add(entry.AsString());
             }
-
-            RebuildSpells();
         }
+        RebuildSpells();
 
         _ranks.Clear();
         if (data.TryGetValue("ranks", out Variant ranksVar))
@@ -1266,7 +1441,7 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
             Godot.Collections.Dictionary ranks = ranksVar.AsGodotDictionary();
             foreach (Variant key in ranks.Keys)
             {
-                string id = SpellAliases.Resolve(key.AsString());
+                string id = ResolveId(key.AsString());
                 int rank = ranks[key].AsInt32();
                 _ranks[id] = _ranks.TryGetValue(id, out int existing) ? Mathf.Max(existing, rank) : rank;
             }
@@ -1277,7 +1452,7 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
             Godot.Collections.Dictionary cooldowns = cooldownsVar.AsGodotDictionary();
             foreach (Variant key in cooldowns.Keys)
             {
-                string id = SpellAliases.Resolve(key.AsString());
+                string id = ResolveId(key.AsString());
                 double remaining = cooldowns[key].AsDouble();
                 if (remaining > 0d)
                 {
