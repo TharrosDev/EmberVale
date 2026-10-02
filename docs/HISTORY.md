@@ -135,11 +135,42 @@ world-production overhaul (offline bake, residency tiers, safe placement), the 3
 the 2026-09 world rebuild (52- and 36-cell realms in atlas bands, save v3), and the lifecycle
 finalizer fix (`ResidentResources`).
 
+### Magic upgrade integration (2026-10-01/02)
+
+The separate core, status, learning and content implementations were integrated into one working
+upgrade: 25 player spells and five enemy spells; committed wind-up/release/recovery; held channels;
+ground telegraphs, breakable barriers and dash; status controls, wards, DoTs and six combos; school
+mastery, the Weave, aliases and shared learning routes. Prepared tome placements are part of the
+master bake. The original assignment brief is now the implementation reference in
+[`playbook/magic.md`](playbook/magic.md).
+
+Integration fixed shared-resource charge mutation, status reentrancy and death/load cleanup, status
+stun ownership, dodge control cancellation, named-stack healing, Blink cost reconciliation and direct
+Sunfall guard breaking. Death and controls cancel at the cast release/tick choke points. Damage
+resolution captures health damage and lethal outcome before a synchronous player respawn can change
+the live stats. `SpellLifetime` places deliveries under their session/world owner and cancels them
+before live load or caster removal.
+
+Confirmed local evidence: all five magic native probes, the deterministic fast world gate and full
+SDK validation passed. The master bake produced 145 cells and six region resources with source
+signature `4151e553f2d5`, with existing navigation-edge warnings. The final unit run passed 2,996 C#
+tests with zero failures/skips and 28 Python SDK tests. Lifecycle passed three New Game/save/destroy/
+Load round-trips with zero orphan/baseline/invariant violations; shared action/melee/defence probes
+and direct story validation also passed. The rendered magic scenario passed, with the wind-up HUD
+and six-school spellbook captures reviewed. A fresh Windows export completed using recovery mode,
+and its packaged `--story` passed in isolation with no gameplay errors. Packaging logged one Godot
+editor/core hot-reload timer diagnostic; the existing navigation-edge and rendered-exit ObjectDB
+warnings remain. Exact run and log references are in [`NOW.md`](NOW.md). The maintainer's full
+play-through, eye-level world/boss review and boss/duel balance work remain open.
+
 ## Lessons still worth knowing
 
 Each of these shipped a defect or a false pass. Rules already written in `CLAUDE.md`,
 `RECIPES.md`, `NOW.md` or `WORLD_AUTHORING.md` are not repeated here.
 
+- **Read a hit's outcome before its events can change the actor.** The player respawns inside the
+  death event; reading health afterward lost lethal-hit lifesteal and reapplied afflictions to the
+  revived player. Capture the damage/lethal result before dispatch and use it through the spell hooks.
 - **A probe that cannot fail is not a gate.** Four probes once printed PASS while testing nothing:
   a `Vector3?` that does not marshal aborted a script mid-function, an arrow parented to a null
   `CurrentScene` was never in the tree, un-parented bodies posed no bones, and a wall test passed
