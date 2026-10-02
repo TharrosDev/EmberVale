@@ -486,6 +486,13 @@ Quick map (folder → what lives there; see `docs/ARCHITECTURE.md` for detail):
 | `src/Save` | `ISaveable`, `SaveManager`, `PersistentId`, `PersistentSpawnDirector` |
 | `src/UI` `src/Debugging` | `GameHud`/panels/`UiTheme`; dev console, profiler, integrity + content validators |
 
+Magic regression gates: `python tools/embervale.py tool magic_core_probe`, `magic_status_probe`,
+`magic_learning_probe`, `magic_content_probe` and `magic_lifetime_probe`. Build and import first;
+all five also belong to the engine/full world suite. The content probe checks prepared world tome
+interactions; the lifetime probe checks cancellation before live load and session/caster ownership.
+The integrated contract and probe coverage are in [`docs/playbook/magic.md`](docs/playbook/magic.md);
+system ownership is in [`ARCHITECTURE.md`](docs/ARCHITECTURE.md#213-magic-srcmagic).
+
 ---
 
 ## 6. Coding conventions

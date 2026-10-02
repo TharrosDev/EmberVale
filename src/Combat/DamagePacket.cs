@@ -33,7 +33,9 @@ public readonly record struct DamagePacket(
     bool IsCrit,
     float PoiseDamage,
     HitKind Kind = HitKind.Normal,
-    float Charge = 0f);
+    float Charge = 0f,
+    bool Unblockable = false,
+    bool? GuardCrushOverride = null);
 
 /// <summary>The outcome of resolving a <see cref="DamagePacket"/> against a defender.
 /// <paramref name="Parry"/> is <see cref="ParryGrade.None"/> unless the blow was parried;
@@ -47,4 +49,7 @@ public readonly record struct DamageResult(
     DamageType Type,
     ParryGrade Parry = ParryGrade.None,
     bool GuardBroken = false,
-    HitKind Opening = HitKind.Normal);
+    HitKind Opening = HitKind.Normal,
+    float HealthDamage = 0f,
+    bool Killed = false,
+    float HealthFraction = 1f);

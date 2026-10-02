@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 namespace Embervale.Magic;
@@ -9,6 +10,10 @@ namespace Embervale.Magic;
 /// </summary>
 public static class StatusMath
 {
+    /// <summary>A spell may extend a status lifetime; invalid charge input never shortens or poisons it.</summary>
+    public static float DurationMultiplier(float multiplier) =>
+        float.IsFinite(multiplier) ? Math.Max(1f, multiplier) : 1f;
+
     /// <summary>
     /// Advances a DoT's tick timer by <paramref name="delta"/> and reports how many ticks fire. A tick
     /// is due each time the timer reaches <c>&lt;= 0</c>, after which <paramref name="interval"/> is
@@ -77,5 +82,83 @@ public static class StatusMath
         }
 
         return best;
+    }
+
+    // --- magic upgrade 2026-09: the rules behind StatusEffectsComponent, kept over primitives ---
+
+    /// <summary>The controls that lock an actor down and so fall under diminishing returns. A mark is
+    /// information, not a lock, and is never immune-able.</summary>
+    public const StatusControl HardControls = StatusControl.Root | StatusControl.Silence | StatusControl.Stun;
+
+    /// <summary>Just the lock-down bits of a control set.</summary>
+    public static StatusControl HardOf(StatusControl controls) => controls & HardControls;
+
+    /// <summary>True when a fresh status carrying <paramref name="incoming"/> controls must be refused
+    /// because the bearer is still immune to at least one of the lock-downs it would add.</summary>
+    public static bool IsControlRefused(StatusControl incoming, StatusControl immune) =>
+        (HardOf(incoming) & immune) != StatusControl.None;
+
+    /// <summary>Stack count at which a detonating status goes off (0 = never detonates).</summary>
+    public static bool ShouldDetonate(int stacks, int detonateAt) => detonateAt > 0 && stacks >= detonateAt;
+
+    /// <summary>Damage of a detonation: per-stack damage times the stacks it consumed.</summary>
+    public static float DetonateDamage(int stacks, float perStack) =>
+        Math.Max(0, stacks) * Math.Max(0f, perStack);
+
+    /// <summary>Incoming damage after a mark: <paramref name="amplify"/> is the summed positive
+    /// <c>DamageTakenModifier</c>, capped at +100% so stacked marks cannot run away.</summary>
+    public static float Amplify(float amount, float amplify) =>
+        Math.Max(0f, amount) * (1f + Math.Clamp(amplify, 0f, 1f));
+
+    /// <summary>Incoming damage after a flat fractional reduction (a negative modifier with no pool),
+    /// capped at 90% so nothing is ever immune.</summary>
+    public static float Reduce(float amount, float reduction) =>
+        Math.Max(0f, amount) * (1f - Math.Clamp(reduction, 0f, 0.9f));
+
+    /// <summary>A ward eating a hit. <paramref name="fraction"/> (0..1) of the hit goes into the pool
+    /// until the pool is spent; the rest passes through. Returns what still lands and the pool left.</summary>
+    public static (float Passed, float PoolLeft) Absorb(float amount, float fraction, float pool)
+    {
+        float hit = Math.Max(0f, amount);
+        float wanted = hit * Math.Clamp(fraction, 0f, 1f);
+        float used = Math.Min(wanted, Math.Max(0f, pool));
+        return (hit - used, Math.Max(0f, pool) - used);
+    }
+
+    /// <summary>Ward capacity: authored base plus a share of the caster's spell power.</summary>
+    public static float WardCapacity(float baseAmount, float spellPower, float perSpellPower) =>
+        Math.Max(0f, baseAmount) + (Math.Max(0f, spellPower) * Math.Max(0f, perSpellPower));
+
+    /// <summary>Mana an expiring ward returns to its caster: the unspent share of its authored maximum.
+    /// A broken or dispelled ward returns nothing (the caller simply does not ask).</summary>
+    public static float WardManaReturn(float maxReturn, float poolLeft, float capacity) =>
+        capacity <= 0f ? 0f : Math.Max(0f, maxReturn) * Math.Clamp(poolLeft / capacity, 0f, 1f);
+
+    /// <summary>Multiplier for effects that scale per stack consumed or cleansed (Knit Bone's heal,
+    /// a spell's <c>BonusPerConsumedStack</c>): 1 + stacks * bonus.</summary>
+    public static float StackBonusMultiplier(int stacks, float bonusPerStack) =>
+        1f + (Math.Max(0, stacks) * Math.Max(0f, bonusPerStack));
+
+    /// <summary>Whether a spread status may jump again: bounded, so a swarm cannot chain across a
+    /// whole cave forever.</summary>
+    public static bool CanSpread(int generation, int maxJumps) => generation < maxJumps;
+
+    /// <summary>The nearest spread target, preferring one that does not already carry the status.
+    /// Returns an index into <paramref name="candidates"/>, or -1 when it is empty.</summary>
+    public static int PickSpreadTarget(IReadOnlyList<(float DistanceSquared, bool AlreadyHas)> candidates)
+    {
+        int best = -1;
+        for (int i = 0; i < candidates.Count; i++)
+        {
+            if (best < 0 || Better(candidates[i], candidates[best]))
+            {
+                best = i;
+            }
+        }
+
+        return best;
+
+        static bool Better((float D, bool Has) a, (float D, bool Has) b) =>
+            a.Has != b.Has ? !a.Has : a.D < b.D;
     }
 }

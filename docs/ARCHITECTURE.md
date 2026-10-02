@@ -412,25 +412,41 @@ names one via `BossId`; `EnemyArchetypeFactory` attaches `BossController` to any
 
 ### 2.13 Magic (`src/Magic`)
 
-- `SpellResource`: `School` (a `DamageType`), `Delivery` (Projectile/Area/Self/Cone), `CastMode`
-  (Instant/Charged/Channeled), mana, cooldown, damage, healing, `StatusEffectId`, range/speed/radius,
-  `ConeAngleDegrees` (full angle; `ImpactRadius` is cone length), `PlayerLearnable`,
-  `MinCorruptionTier`.
-- `SpellcastingComponent` (`ISaveable`; known spells + prepared index, cooldowns transient): cast
-  state machine (`BeginCast`/`UpdateCast`/`EndCast`/`CancelCast`; charge scales by hold via
-  `SpellCharge`; channels tick), `TryCast`, `TryCastById`, `Learn` (corruption-gated). A cast waits for
-  its own animation release.
-- `SpellProjectile` (pooled) and `SpellResolver` (`HitOne`, `Detonate`, `Sweep` sharing one `Resolve`,
-  same friendly-fire and `HitDedupe` rules). `StatusEffectsComponent` ticks effects (DoT attributed to
-  the caster; transient — not saved).
-- **School identities** on one seam, `SchoolIdentity.OnSpellHit` (projectile/area paths only): Fire
-  stacking ignite, Frost chill → freeze, Lightning chain, Necrotic lifesteal, Nature regrowth, Arcane
-  ward plus on-hit dispel of the longest beneficial status. `SpellCombo` (Shatter, Thermal Shock)
-  reads pre-hit afflictions. `SchoolMasteryComponent` (`ISaveable`) ranks schools per cast.
+- `SpellResource`: school, Projectile/Area/Self/Cone/Ground/Barrier/Dash delivery and
+  Instant/Charged/Channeled input mode. Data owns wind-up/recovery, interruption, guard/poise impact,
+  piercing, charge-dependent status duration, placed telegraphs, barriers, health costs and status
+  consumption. `SpellRouteValidator` rejects invalid numbers and unreachable learning declarations.
+- `SpellcastingComponent` (`ISaveable`; known spells, ranks and prepared index): all releases use
+  `CharacterActionComponent`'s clock. Channels hold that action and its animation at release, tick
+  only after wind-up, and resume authored recovery on release. Interrupted wind-ups refund half the
+  mana; silence, stagger and death cancel appropriately. Blink commits direction/distance and refunds
+  a newly obstructed portion. Load replaces the spell list and cancels transient casts/cooldowns.
+- `SpellProjectile` (pooled), `SpellGround`, `SpellBarrier` and `SpellResolver` share targeting,
+  damage outcomes and deduplication. Projectile sweeps intercept a barrier's physical volume before
+  ordinary geometry; its health and school interaction determine whether it ends. Sunfall breaks guard
+  only on the direct central hit. School lifesteal uses actual health damage; Soul Tithe refunds only
+  its own killing hit. Self support consumes named stacks before healing (Knit Bone).
+- `StatusEffectsComponent` owns transient stacks, DoTs, wards, controls and immunity. Nested ticks,
+  ward breaks and death spread each own an iteration snapshot. Refresh preserves tick cadence and
+  stronger remaining duration. Death and `GameLoadingEvent` clear effects before saveables restore;
+  status stun is separate from combat stagger, and Root/Stun cancel dodge movement and invulnerability.
+- Every caster also cancels at death/pre-load events and rechecks controls at release/channel ticks.
+  `DamageResult` captures actual health loss, lethal outcome and post-hit health fraction before
+  synchronous respawn listeners run, so killing hits cannot re-afflict the revived player.
+  `SpellLifetime` parents deliveries to the session/world scope and cancels them on pre-load or
+  caster removal; active and pooled projectiles cannot return through a torn-down caster.
+- `SchoolIdentity` and `SpellCombo` read pre-hit afflictions: ignite/detonation, chill/freeze/immunity,
+  chain, actual-damage lifesteal, regrowth, ward/dispel and six combos. `SchoolMasteryComponent`
+  saves points for six schools: five ranks grant power, cooldown trims at ranks 2/4 and resistance at
+  rank 3; held channels bank at most one point per spell per second.
 - **The fading Weave:** `RegionResource.WeavePotency` feeds the `Weave` static on world build and
   transition; `WeaveMath` weakens ordinary magic and strengthens corrupted magic as potency falls. No
   extra save state.
-- Spells are recovered, not bought: `SpellTomeComponent`, the `LearnSpell` dialogue effect, trainers.
+- `SpellLearning.TryLearn` is the shared tome/dialogue/trainer route (one learned/refused event).
+  Spellbook purchase spends progression points and publishes once from the component; corrupt
+  learning requires its tier and explicit embrace. `SpellAliases` migrates retired ids on restore.
+  The magic probes cover core, status, learning/HUD, delivery lifetime and content, including real prepared tomes;
+  probe drivers are excluded from shipping assemblies.
 
 ### 2.14 World systems: sky, weather, encounters, events (`src/World`)
 

@@ -194,6 +194,14 @@ public static class PlayerFactory
         // --- combat-ranged: this group's player components go between the markers (one owner per block) ---
         player.AddChild(new BowDrawComponent { Name = "BowDraw" });
         // --- end combat-ranged ---
+        // --- magic-core: this group's player components go between the markers (one owner per block) ---
+        // --- end magic-core ---
+        // --- magic-status: this group's player components go between the markers (one owner per block) ---
+        // --- end magic-status ---
+        // --- magic-learning: this group's player components go between the markers (one owner per block) ---
+        // --- end magic-learning ---
+        // --- magic-content: this group's player components go between the markers (one owner per block) ---
+        // --- end magic-content ---
         // 39A: the mount rides ON this body rather than beside it, so it is a component of the
         // player and not an entity of its own. It reads the animation component and the camera
         // pivot, both of which exist by the time any OnInitialize runs.
@@ -256,16 +264,8 @@ public static class PlayerFactory
         {
             Name = "Spellcasting",
             AimNode = aimNode,
-            KnownSpellIds = new Godot.Collections.Array<string>
-            {
-                GameIds.Spells.Firebolt,
-                GameIds.Spells.Fireball,
-                GameIds.Spells.FrostNova,
-                GameIds.Spells.LesserHeal,
-                GameIds.Spells.ArcaneShield,
-                GameIds.Spells.FlameLance,
-                GameIds.Spells.StormConduit,
-            },
+            // Magic upgrade: a new character knows one spell; the rest are found (tomes, teachers, race).
+            KnownSpellIds = new Godot.Collections.Array<string>(GameIds.Spells.Starting),
         });
 
         // ⚠️ THE SIX COMPONENTS BELOW ARE ONE SYSTEM AND THEIR ORDER MATTERS. The shared physics

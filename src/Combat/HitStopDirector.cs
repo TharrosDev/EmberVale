@@ -55,6 +55,13 @@ public partial class HitStopDirector : Node
         }
 
         float actionScale = e.Source?.GetComponent<CharacterActionComponent>()?.Current?.HitStopScale ?? 1f;
+
+        // A spell's own ImpactWeight scales the stop (0.5, the default, is the weight spells had).
+        if (e.Kind == HitKind.Spell && e.Weight > 0f)
+        {
+            actionScale *= Magic.SpellRules.HitStopScale(e.Weight);
+        }
+
         Engage(HitStop.Plan(e.Outcome, e.Kind, e.Amount, e.Staggered, actionScale));
     }
 

@@ -26,6 +26,8 @@ public static class SpellDatabase
 
     public static SpellResource? Get(string id)
     {
-        return ById.TryGetValue(id, out SpellResource? spell) ? spell : null;
+        return ById.TryGetValue(id, out SpellResource? spell)
+            ? spell
+            : ById.GetValueOrDefault(SpellAliases.Resolve(id));
     }
 }

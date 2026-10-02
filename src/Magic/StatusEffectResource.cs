@@ -56,6 +56,66 @@ public partial class StatusEffectResource : Resource
     /// <summary>Modifier value (0 = no stat modifier). e.g. -0.5 PercentMult = a 50% slow.</summary>
     [Export] public float ModValue { get; set; } = 0f;
 
+    // --- magic upgrade 2026-09: defaults are "off", so an existing status is unchanged ---
+
+    [ExportGroup("Control and rules (magic upgrade)")]
+    /// <summary>What this status does to the bearer beyond stats: roots, silences, stuns, marks.</summary>
+    [Export] public StatusControl Controls { get; set; } = StatusControl.None;
+
+    /// <summary>False protects the status from Dispel and Cleanse (deep curses).</summary>
+    [Export] public bool Dispellable { get; set; } = true;
+
+    /// <summary>Seconds after this status ends during which the bearer is immune to a fresh controlling
+    /// status (diminishing returns: a rooted or silenced actor is never chain-locked).</summary>
+    [Export] public float ControlImmunitySeconds { get; set; } = 0f;
+
+    /// <summary>Stack count at which the status detonates and is consumed (Kindle). 0 = never.</summary>
+    [Export] public int DetonateAtStacks { get; set; } = 0;
+
+    /// <summary>Damage of that detonation per stack, in the status's school.</summary>
+    [Export] public float DetonateDamagePerStack { get; set; } = 0f;
+
+    /// <summary>Radius of that detonation; 0 hits only the bearer.</summary>
+    [Export] public float DetonateRadius { get; set; } = 0f;
+
+    /// <summary>On the bearer's death the status jumps to living hostiles within this radius
+    /// (Stinging Swarm). 0 = it dies with the bearer.</summary>
+    [Export] public float SpreadOnDeathRadius { get; set; } = 0f;
+
+    /// <summary>Fraction of incoming damage this status changes: positive amplifies (a mark), negative
+    /// absorbs (a ward). 0 = none.</summary>
+    [Export] public float DamageTakenModifier { get; set; } = 0f;
+
+    [ExportGroup("Rules (magic upgrade, status group)")]
+    /// <summary>Fixed damage a ward absorbs before it breaks (Arcane Ward). Pairs with a negative
+    /// <see cref="DamageTakenModifier"/>, which is the fraction of each hit the ward takes. 0 = no pool.</summary>
+    [Export] public float AbsorbAmount { get; set; } = 0f;
+
+    /// <summary>Extra ward capacity per point of the caster's SpellPower.</summary>
+    [Export] public float AbsorbPerSpellPower { get; set; } = 0f;
+
+    /// <summary>Mana an entirely unspent ward returns to its caster when it expires (scaled by the
+    /// unspent share). Broken or dispelled wards return nothing.</summary>
+    [Export] public float ExpiryManaReturn { get; set; } = 0f;
+
+    /// <summary>Mana refunded when the applying Soul Tithe spell directly kills its target. The
+    /// resolver owns attribution; carrying Soul Echo does not refund unrelated kills.</summary>
+    [Export] public float ManaOnKill { get; set; } = 0f;
+
+    /// <summary>Status applied to everything a detonation hits, the bearer included (Kindle ignites).</summary>
+    [Export] public string DetonateAppliesStatusId { get; set; } = string.Empty;
+
+    /// <summary>Locale key stem: <c>magic.status.kindled</c> for <c>status.kindled</c>.</summary>
+    public string LocKey => "magic.status." + (Id.StartsWith("status.", System.StringComparison.Ordinal) ? Id[7..] : Id);
+
+    /// <summary>Player-visible name through <c>Loc</c>, falling back to <see cref="DisplayName"/>.</summary>
+    public string LocalName => Embervale.Localization.Loc.Has(LocKey + ".name")
+        ? Embervale.Localization.Loc.T(LocKey + ".name") : DisplayName;
+
+    /// <summary>Player-visible one-line description through <c>Loc</c>, empty when none is authored.</summary>
+    public string LocalDescription => Embervale.Localization.Loc.Has(LocKey + ".desc")
+        ? Embervale.Localization.Loc.T(LocKey + ".desc") : string.Empty;
+
     public bool HasDamageOverTime => DamagePerTick > 0f && TickInterval > 0f;
 
     public bool HasHealOverTime => HealPerTick > 0f && TickInterval > 0f;

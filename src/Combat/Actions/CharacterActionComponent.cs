@@ -96,9 +96,32 @@ public partial class CharacterActionComponent : EntityComponent
 
     public ActionPhase Phase { get; private set; } = ActionPhase.Idle;
 
+    /// <summary>Progress of the one authoritative action clock, for presentation.</summary>
+    public float Progress => _progress;
+
+    /// <summary>A sustaining cast holds its release pose and remains committed until its owner releases it.</summary>
+    public bool HoldAtRelease { get; set; }
+
+    /// <summary>Ends a sustained release and runs the existing action's authored recovery.</summary>
+    public void ReleaseHold()
+    {
+        if (!HoldAtRelease || Current == null)
+        {
+            return;
+        }
+
+        HoldAtRelease = false;
+        _animation?.ResumeAction();
+        // The held release has already occupied the active span. Recovery begins at its trailing edge.
+        _progress = Current.ActiveTo;
+        _elapsed = _duration * _progress;
+        _clipDriven = false;
+        Phase = ActionPhase.Recovery;
+    }
+
     /// <summary>True while no new action or dodge may start. A press here is buffered, not dropped.</summary>
     public bool IsCommitted =>
-        Current != null && !ActionTimeline.CanCancel(_progress, Current.Windows);
+        Current != null && (HoldAtRelease || !ActionTimeline.CanCancel(_progress, Current.Windows));
 
     /// <summary>How much of normal movement the actor keeps this frame — 1 at rest. Read by the
     /// player's input router and by AI locomotion, so a committed swing stops being a float.</summary>
@@ -485,6 +508,7 @@ public partial class CharacterActionComponent : EntityComponent
     /// <summary>Drops the running action and tells anything presenting it to stop.</summary>
     public void Cancel()
     {
+        HoldAtRelease = false;
         if (Current == null)
         {
             return;
@@ -538,6 +562,7 @@ public partial class CharacterActionComponent : EntityComponent
         _stats?.ModifyCurrent(StatType.Stamina, -cost);
 
         Current = definition;
+        HoldAtRelease = false;
         ComboIndex = comboIndex;
         _progress = 0f;
         _elapsed = 0d;
@@ -648,6 +673,11 @@ public partial class CharacterActionComponent : EntityComponent
 
         LimitTurn(Current, delta);
 
+        if (HoldAtRelease && _released)
+        {
+            return;
+        }
+
         _elapsed += delta;
 
         // The animation is the clock whenever it is holding one. ActionProgress goes negative the
@@ -681,6 +711,11 @@ public partial class CharacterActionComponent : EntityComponent
             OpenHitbox(Current);
             EventBus.Instance?.Publish(
                 new ActionReleasedEvent(Entity!, Current.Id, Current.Kind));
+            if (HoldAtRelease)
+            {
+                _animation?.HoldAction();
+                return;
+            }
         }
         else if (!shouldBeOpen && _openHitbox != null)
         {

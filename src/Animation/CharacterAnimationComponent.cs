@@ -78,6 +78,9 @@ public partial class CharacterAnimationComponent : EntityComponent
     /// <summary>The clip the running action is being clocked by, or empty when the fallback timer
     /// is doing it instead.</summary>
     private string _actionClip = "";
+    private bool _actionHeld;
+    private float _actionSpeed = 1f;
+    private float _heldPlayerSpeed = 1f;
 
     /// <summary>The tree, when this body could support one. Null means the simple fallback below is
     /// driving instead — see <see cref="LocomotionTree.Build"/> for when that happens.</summary>
@@ -222,12 +225,16 @@ public partial class CharacterAnimationComponent : EntityComponent
     /// channel-loop pose covers those, so per-tick one-shots/flashes are skipped.</summary>
     private void OnSpellCast(SpellCastEvent e)
     {
-        if (!ReferenceEquals(e.Caster, Entity) || _spellcasting is { IsChanneling: true })
+        if (!ReferenceEquals(e.Caster, Entity) || _spellcasting is { IsChanneling: true } ||
+            SpellDatabase.Get(e.SpellId) is { CastMode: CastMode.Channeled })
         {
             return;
         }
 
-        PlayOneShot(_cast);
+        if (_actionClip.Length == 0)
+        {
+            PlayOneShot(_cast);
+        }
 
         if (SpellDatabase.Get(e.SpellId) is { } spell)
         {
@@ -373,6 +380,7 @@ public partial class CharacterAnimationComponent : EntityComponent
     /// </summary>
     public float StartAction(string slot, float desiredSeconds)
     {
+        ResumeAction();
         // A rider gets no full-body one-shot for the reason PlayOneShot documents at length: the
         // standing clip lifts the hips half a metre out of the saddle. ⚠️ This refusal is now
         // FALLBACK-ONLY — a tree-driven body plays the swing on its upper-body layer instead, with
@@ -396,6 +404,7 @@ public partial class CharacterAnimationComponent : EntityComponent
 
         float actual = desiredSeconds > 0f ? desiredSeconds : clipSeconds;
         float speed = ActionTimeline.ClipSpeedFor(clipSeconds, actual);
+        _actionSpeed = speed;
         _actionClip = clip;
 
         if (_tree != null && _playback != null)
@@ -479,10 +488,50 @@ public partial class CharacterAnimationComponent : EntityComponent
     /// <summary>Releases the clip back to locomotion. Called when the action ends or is cancelled.</summary>
     public void StopAction()
     {
+        ResumeAction();
         _actionClip = "";
         if (_tree != null && _playback?.GetCurrentNode() == LocomotionTree.ActionState)
         {
             _playback.Travel(LocomotionTree.LocomotionState);
+        }
+    }
+
+    /// <summary>Holds a channel's visible release pose while its action remains committed.</summary>
+    public void HoldAction()
+    {
+        if (_actionHeld || _actionClip.Length == 0)
+        {
+            return;
+        }
+
+        _actionHeld = true;
+        _heldPlayerSpeed = _player?.SpeedScale ?? 1f;
+        if (_tree != null && _playback?.GetCurrentNode() == LocomotionTree.ActionState)
+        {
+            _tree.Set(LocomotionTree.ActionScaleParam, 0f);
+        }
+        else if (_player != null)
+        {
+            _player.SpeedScale = 0f;
+        }
+    }
+
+    /// <summary>Resumes the held clip for recovery or cancellation, restoring its previous speed.</summary>
+    public void ResumeAction()
+    {
+        if (!_actionHeld)
+        {
+            return;
+        }
+
+        _actionHeld = false;
+        if (_tree != null)
+        {
+            _tree.Set(LocomotionTree.ActionScaleParam, _actionSpeed);
+        }
+        if (_player != null)
+        {
+            _player.SpeedScale = _heldPlayerSpeed;
         }
     }
 

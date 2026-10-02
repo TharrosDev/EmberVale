@@ -1,6 +1,8 @@
 using Embervale.Combat;
 using Embervale.Core.Diagnostics;
+using Embervale.Core.Events;
 using Embervale.Entities;
+using Embervale.Stats;
 using Godot;
 
 namespace Embervale.Magic;
@@ -12,6 +14,19 @@ namespace Embervale.Magic;
 /// eligible target(s), honouring the same friendly-fire rules a <see cref="Hitbox"/>
 /// uses (never the caster, never an ally on the caster's team).
 /// </summary>
+/// <summary>What became of a spell aimed at one hurtbox.</summary>
+public enum SpellHitResult
+{
+    /// <summary>Whiffed: a dodge's i-frames, or a target already dead.</summary>
+    Missed,
+
+    /// <summary>A guard stopped it (chip damage only, no rider effects).</summary>
+    Blocked,
+
+    /// <summary>It landed.</summary>
+    Landed,
+}
+
 public static class SpellResolver
 {
     /// <summary>
@@ -25,14 +40,87 @@ public static class SpellResolver
     /// </summary>
     private const int MaxHurtboxesPerBurst = 64;
 
-    /// <summary>Delivers a single-target hit (damage + school identity + status) to one hurtbox.</summary>
-    public static void HitOne(
-        Node3D context, Hurtbox hurtbox, DamagePacket packet, SpellResource spell, IEntity? caster, int casterTeam)
+    /// <summary>Delivers a single-target hit (damage + school identity + status) to one hurtbox.
+    /// <paramref name="dealDamage"/> false is a status-only touch (a barrier of a spell with no damage);
+    /// <paramref name="applyStatus"/> false withholds the spell's own status (a dash that stuns only the last foe).
+    /// </summary>
+    public static SpellHitResult HitOne(
+        Node3D context, Hurtbox hurtbox, DamagePacket packet, SpellResource spell, IEntity? caster, int casterTeam,
+        bool dealDamage = true,
+        bool applyStatus = true)
     {
-        hurtbox.Receive(packet);
-        SchoolIdentity.OnSpellHit(context, spell, packet, caster, casterTeam, hurtbox);
-        SpellCombo.OnHit(spell, caster, hurtbox);
-        ApplyStatus(hurtbox.OwnerEntity, spell, caster);
+        IEntity? target = hurtbox.OwnerEntity;
+        CombatComponent? combat = hurtbox.Combat;
+
+        // A dodge's i-frames whiff the whole spell, status included, and a corpse takes nothing.
+        if (combat is { IsInvulnerable: true } ||
+            target?.GetComponent<StatsComponent>() is { IsAlive: false })
+        {
+            return SpellHitResult.Missed;
+        }
+
+        // A spell that eats a status (a consume-and-bonus spell) strips the stacks as it lands and is
+        // stronger for each one.
+        StatusEffectsComponent? statuses = target?.GetComponent<StatusEffectsComponent>();
+        int consumed = spell.ConsumesStatusId.Length > 0 ? statuses?.StacksOf(spell.ConsumesStatusId) ?? 0 : 0;
+        if (consumed > 0)
+        {
+            packet = packet with
+            {
+                Amount = packet.Amount * SpellRules.ConsumeMultiplier(consumed, spell.BonusPerConsumedStack),
+            };
+        }
+
+        bool targetWasMarked = statuses?.Has(StatusIds.GraveMark) == true;
+        Vector3 hitPosition = hurtbox.GlobalPosition;
+        DamageResult result = dealDamage ? hurtbox.Receive(packet) : default;
+
+        // A guard stopped it: chip damage only, and none of the rider effects. Never parried (a spell is
+        // not parryable), so a blocked result is the whole story.
+        if (result.IsBlocked)
+        {
+            if (caster != null && target != null)
+            {
+                EventBus.Instance?.Publish(new SpellBlockedEvent(caster, spell.Id, target));
+            }
+            return SpellHitResult.Blocked;
+        }
+
+        if (consumed > 0)
+        {
+            statuses?.Consume(spell.ConsumesStatusId);
+        }
+
+        float resolvedDamage = result.HealthDamage;
+        SchoolIdentity.OnSpellHit(context, spell, packet, caster, casterTeam, hurtbox, resolvedDamage,
+            targetWasMarked, result.Killed, dealDamage ? result.HealthFraction : -1f, hitPosition);
+        bool killed = result.Killed;
+        if (!killed)
+        {
+            killed = SpellCombo.OnHit(spell, caster, hurtbox);
+        }
+        if (applyStatus && !killed)
+        {
+            ApplyStatus(target, spell, caster, packet.Charge);
+        }
+
+        // Soul Tithe refunds only its own killing blow. Reading the transition here also handles an
+        // immediate projectile hit before the self-side echo event arrives, without a blanket kill buff.
+        if (spell.Id == "spell.soul_tithe" && result.Killed &&
+            caster?.GetComponent<StatsComponent>() is { IsAlive: true } casterStats)
+        {
+            float refund = StatusEffectDatabase.Get(spell.SelfStatusEffectId)?.ManaOnKill ?? 0f;
+            casterStats.ModifyCurrent(StatType.Mana, refund);
+        }
+
+        if (caster != null && target != null)
+        {
+            EventBus.Instance?.Publish(
+                new SpellHitEvent(caster, target, spell.Id, result.FinalAmount, result.IsCrit || packet.IsCrit));
+            EventBus.Instance?.Publish(new SpellImpactEvent(caster, target, spell.Id, spell.ImpactWeight, packet.Charge));
+        }
+
+        return SpellHitResult.Landed;
     }
 
     /// <summary>
@@ -51,6 +139,20 @@ public static class SpellResolver
     {
         SpawnFlash(context, center, radius, SpellSchools.Color(spell.School));
         Resolve(context, spell, packet, caster, casterTeam, center, radius, coneDirection: null);
+        CatchCaster(spell, caster, center, radius);
+    }
+
+    /// <summary>A zone or burst that <see cref="SpellResource.AffectsCaster"/> afflicts a caster standing
+    /// in it with the spell's status (Blizzard: you can be caught in your own). Status only, never damage.</summary>
+    private static void CatchCaster(SpellResource spell, IEntity? caster, Vector3 center, float radius)
+    {
+        if (!spell.AffectsCaster || caster?.Body is not Node3D body ||
+            body.GlobalPosition.DistanceTo(center) > radius + 0.9f)
+        {
+            return;
+        }
+
+        ApplyStatus(caster, spell, caster);
     }
 
     /// <summary>
@@ -143,10 +245,16 @@ public static class SpellResolver
                 continue;
             }
 
-            hurtbox.Receive(packet);
-            SchoolIdentity.OnSpellHit(context, spell, packet, caster, casterTeam, hurtbox);
-            SpellCombo.OnHit(spell, caster, hurtbox);
-            ApplyStatus(hurtbox.OwnerEntity, spell, caster);
+            DamagePacket blow = packet;
+            if (spell.DirectHitGuardBreak)
+            {
+                Vector3 offset = VolumeCentre(hurtbox) - center;
+                offset.Y = 0f;
+                // Preserve the actual charge for damage, statuses and presentation. A meteor's guard
+                // rule comes from its footprint: its centre crushes; a full-charge edge can be blocked.
+                blow = blow with { GuardCrushOverride = SpellRules.IsDirectImpact(offset.Length(), 0.8f) };
+            }
+            HitOne(context, hurtbox, blow, spell, caster, casterTeam);
         }
     }
 
@@ -177,7 +285,7 @@ public static class SpellResolver
     /// cone take all of them or none. Falls back to the Area for the ordinary one-shape hurtbox,
     /// where the two are the same anyway.
     /// </summary>
-    private static Vector3 VolumeCentre(Hurtbox hurtbox)
+    public static Vector3 VolumeCentre(Hurtbox hurtbox)
     {
         foreach (Node child in hurtbox.GetChildren())
         {
@@ -202,7 +310,7 @@ public static class SpellResolver
     }
 
     /// <summary>Applies a spell's status effect (if any) to a target entity.</summary>
-    public static void ApplyStatus(IEntity? target, SpellResource spell, IEntity? caster)
+    public static void ApplyStatus(IEntity? target, SpellResource spell, IEntity? caster, float charge = 0f)
     {
         if (target == null || !spell.HasStatusEffect)
         {
@@ -210,13 +318,18 @@ public static class SpellResolver
         }
 
         StatusEffectResource? definition = StatusEffectDatabase.Get(spell.StatusEffectId);
-        target.GetComponent<StatusEffectsComponent>()?.Apply(definition, caster);
+        target.GetComponent<StatusEffectsComponent>()?.Apply(definition, caster,
+            SpellRules.StatusDurationMultiplier(charge, spell.StatusDurationChargeBonus));
     }
 
-    private static void SpawnFlash(Node3D context, Vector3 center, float radius, Color color)
+    private static void SpawnFlash(Node3D context, Vector3 center, float radius, Color color) =>
+        SpawnFlashAt(context, center, radius, color);
+
+    /// <summary>A cast or impact flare at a point, from the spell's school. Presentation only.</summary>
+    public static void SpawnFlashAt(Node3D context, Vector3 center, float radius, Color color)
     {
         SceneTree? tree = context.GetTree();
-        Node? parent = tree?.CurrentScene;
+        Node? parent = tree == null ? null : SpellLifetime.HostFor(null, context);
         if (parent == null)
         {
             return;
@@ -250,6 +363,56 @@ public static class SpellResolver
             float travelled = length * i / Puffs;
             // The cone's radius at this distance — so the flashes trace the actual damaged volume.
             SpawnFlash(context, origin + (axis * travelled), travelled * Mathf.Tan(halfAngle), color);
+        }
+    }
+
+    /// <summary>
+    /// Draws every hostile body within <paramref name="radius"/> of <paramref name="center"/> toward it
+    /// by <paramref name="strength"/> metres a second for this <paramref name="dt"/> (Gravity Well).
+    /// Swept with <c>MoveAndCollide</c>, so nobody is pulled through a wall, and never past the centre.
+    /// </summary>
+    public static void Pull(
+        Node3D context, Vector3 center, float radius, float strength, double dt, IEntity? caster, int casterTeam)
+    {
+        if (strength <= 0f)
+        {
+            return;
+        }
+
+        PhysicsDirectSpaceState3D space = context.GetWorld3D().DirectSpaceState;
+        var query = new PhysicsShapeQueryParameters3D
+        {
+            Shape = new SphereShape3D { Radius = radius },
+            Transform = new Transform3D(Basis.Identity, center),
+            CollideWithAreas = true,
+            CollideWithBodies = false,
+            CollisionMask = CombatLayers.Hurtbox,
+        };
+
+        var pulled = new HitDedupe();
+        foreach (Godot.Collections.Dictionary hit in space.IntersectShape(query, MaxHurtboxesPerBurst))
+        {
+            if (!hit.TryGetValue("collider", out Variant v) || v.AsGodotObject() is not Hurtbox hurtbox ||
+                !IsHostileTarget(hurtbox, caster, casterTeam) ||
+                hurtbox.OwnerEntity?.Body is not CharacterBody3D body ||
+                !pulled.TryHit(hurtbox.OwnerEntity, hurtbox))
+            {
+                continue;
+            }
+
+            Vector3 toCentre = center - body.GlobalPosition;
+            toCentre.Y = 0f;
+            float distance = toCentre.Length();
+            if (distance < 0.4f)
+            {
+                continue;
+            }
+
+            float step = Mathf.Min(strength * (float)dt, distance - 0.3f);
+            if (step > 0f)
+            {
+                body.MoveAndCollide(toCentre / distance * step);
+            }
         }
     }
 }

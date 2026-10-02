@@ -79,7 +79,9 @@ public static class DefenceRules
 
             // A shaft or a bolt is easy to hold a shield against, and there is nobody to riposte.
             HitKind.Ranged => new BlowProfile(1f, 1f, 0.75f, false, false),
-            HitKind.Spell => new BlowProfile(1f, 1f, 1f, false, false),
+            // Never parryable. A fully charged spell (Sunfall, a drawn Flame Lance) is more than a guard
+            // holds: pressure rises with the charge and a full one crushes it, like a charged swing.
+            HitKind.Spell => new BlowProfile(1f, 1f, 1f + c, c >= CrushCharge, false),
 
             _ => new BlowProfile(1f, 1f, 1f, false, true),
         };

@@ -69,7 +69,7 @@ public class CombatTelegraphClassTests
         Assert.Equal(TelegraphClass.Sweep, Class(ActionKind.HeavyAttack, "ironking.sweep", interruptible: false));
 
     [Fact]
-    public void ACast_IsStandard() => Assert.Equal(TelegraphClass.Standard, Class(ActionKind.Cast, "spell.fireball"));
+    public void ACast_IsStandard() => Assert.Equal(TelegraphClass.Standard, Class(ActionKind.Cast, "spell.sunfall"));
 
     [Fact]
     public void SweepDegrees_TailComesRoundAndSpinIsACircle()

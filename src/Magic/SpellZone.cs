@@ -10,8 +10,8 @@ namespace Embervale.Magic;
 /// <see cref="SpellResolver.Detonate"/> (damage + the spell's status + a flash), so a Frost zone chills
 /// everything inside on a cadence. The <see cref="Packet"/> is snapshotted at cast time.
 ///
-/// ponytail: spawns at the caster (a lingering nova) with a fixed radius; aim-placed zones / growth are a
-/// later upgrade. Stops early if its world goes away.
+/// A zone spawns at the caster (a lingering nova) or, for a Ground spell, at its landing point
+/// (<see cref="SpellGround"/>). Stops early if its world goes away.
 /// </summary>
 public partial class SpellZone : Node3D
 {
@@ -23,11 +23,41 @@ public partial class SpellZone : Node3D
     public float Duration { get; set; } = 4f;
     public float TickInterval { get; set; } = 1f;
 
+    /// <summary>Metres a second it draws hostile bodies toward its centre while it lasts (Gravity Well
+    /// under a zone). 0 = none.</summary>
+    public float PullStrength { get; set; }
+
     private double _life;
     private double _tickTimer; // 0 → first pulse fires immediately
+    private SpellLifetime? _lifetime;
+    private bool _cancelled;
+
+    public override void _Ready()
+    {
+        _lifetime = new SpellLifetime(this, Caster, Cancel);
+        if (_lifetime.Check())
+        {
+            SetPhysicsProcess(PullStrength > 0f);
+        }
+    }
+
+    public override void _PhysicsProcess(double delta)
+    {
+        if (_cancelled || _lifetime?.Check() != true)
+        {
+            return;
+        }
+
+        SpellResolver.Pull(this, GlobalPosition, Radius, PullStrength, delta, Caster, CasterTeam);
+    }
 
     public override void _Process(double delta)
     {
+        if (_cancelled || _lifetime?.Check() != true)
+        {
+            return;
+        }
+
         _life += delta;
         _tickTimer -= delta;
         if (_tickTimer <= 0d)
@@ -40,5 +70,24 @@ public partial class SpellZone : Node3D
         {
             QueueFree();
         }
+    }
+
+    public override void _ExitTree()
+    {
+        _lifetime?.Dispose();
+        _cancelled = true;
+        Caster = null;
+        Packet = default;
+    }
+
+    private void Cancel()
+    {
+        _cancelled = true;
+        Caster = null;
+        Packet = default;
+        SetProcess(false);
+        SetPhysicsProcess(false);
+        Hide();
+        QueueFree();
     }
 }

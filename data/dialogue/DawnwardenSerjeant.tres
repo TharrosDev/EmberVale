@@ -37,6 +37,41 @@
 ; is granted only after the fork already picked one. This is the Serjeant's half of 42D's "hub
 ; dialogue variant" (patrols answer to him); Captain Fenn carries the leadership half.
 
+; Magic upgrade: this NPC teaches spellcraft (spell.teach.* strings, LearnSpell effect).
+[sub_resource type="Resource" id="ch_mg_menu"]
+script = ExtResource("3_choice")
+Text = "spell.teach.ask_menu"
+Goto = "mg_teach"
+
+[sub_resource type="Resource" id="ch_mg_flame_lance"]
+script = ExtResource("3_choice")
+Text = "spell.flame_lance.ask"
+Goto = "mg_taught"
+Effect = 8
+EffectArg = "spell.flame_lance"
+
+[sub_resource type="Resource" id="ch_mg_back"]
+script = ExtResource("3_choice")
+Text = "spell.teach.back"
+Goto = "root"
+
+[sub_resource type="Resource" id="ch_mg_thanks"]
+script = ExtResource("3_choice")
+Text = "spell.teach.thanks"
+Goto = "root"
+
+[sub_resource type="Resource" id="node_mg_teach"]
+script = ExtResource("2_node")
+Id = "mg_teach"
+Text = "spell.teach.dawnwarden_serjeant"
+Choices = Array[Resource]([SubResource("ch_mg_flame_lance"), SubResource("ch_mg_back")])
+
+[sub_resource type="Resource" id="node_mg_taught"]
+script = ExtResource("2_node")
+Id = "mg_taught"
+Text = "spell.teach.dawnwarden_serjeant.taught"
+Choices = Array[Resource]([SubResource("ch_mg_thanks")])
+
 [sub_resource type="Resource" id="ch_member"]
 script = ExtResource("3_choice")
 Text = "dlg.dawnwarden_serjeant.c_member"
@@ -118,7 +153,7 @@ Goto = "finale_state_authority"
 script = ExtResource("2_node")
 Id = "root"
 Text = "dlg.dawnwarden_serjeant.root"
-Choices = Array[Resource]([SubResource("ch_member"), SubResource("ch_stranger"), SubResource("ch_bye")])
+Choices = Array[Resource]([SubResource("ch_member"), SubResource("ch_stranger"), SubResource("ch_mg_menu"), SubResource("ch_bye")])
 
 [sub_resource type="Resource" id="node_member"]
 script = ExtResource("2_node")
@@ -173,4 +208,4 @@ script = ExtResource("1_dlg")
 Id = "dialogue.dawnwarden_serjeant"
 SpeakerName = "dlg.dawnwarden_serjeant.speaker"
 StartNodeId = "root"
-Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_member"), SubResource("node_stranger"), SubResource("node_joined"), SubResource("node_refused"), SubResource("node_ranked"), SubResource("node_finale_state"), SubResource("node_finale_state_service"), SubResource("node_finale_state_authority")])
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_member"), SubResource("node_stranger"), SubResource("node_joined"), SubResource("node_refused"), SubResource("node_ranked"), SubResource("node_finale_state"), SubResource("node_finale_state_service"), SubResource("node_finale_state_authority"), SubResource("node_mg_teach"), SubResource("node_mg_taught")])

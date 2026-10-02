@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="SpellResource" format=3 uid="uid://by8s4j2px5e7a"]
+
+[ext_resource type="Script" path="res://src/Magic/SpellResource.cs" id="1_spell"]
+
+[resource]
+script = ExtResource("1_spell")
+Id = "spell.emberlash"
+DisplayName = "Emberlash"
+Description = "A fast, cheap bolt of flame that leaves a Kindled stack on its target; the third stack detonates."
+School = 1
+Delivery = 0
+LearnCost = 1
+UpgradeCost = 1
+MaxRank = 3
+ManaCost = 8.0
+Cooldown = 0.7
+BaseDamage = 9.0
+StatusEffectId = "status.kindled"
+Range = 32.0
+ProjectileSpeed = 30.0
+WindupSeconds = 0.15
+RecoverySeconds = 0.1
+PoiseDamage = 6.0
+ImpactWeight = 0.2

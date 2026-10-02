@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="SpellResource" format=3 uid="uid://bv266malkilfh"]
+
+[ext_resource type="Script" path="res://src/Magic/SpellResource.cs" id="1_spell"]
+
+[resource]
+script = ExtResource("1_spell")
+Id = "spell.glacial_bulwark"
+DisplayName = "Glacial Bulwark"
+Description = "Raise a wall of solid ice that stops bodies and projectiles until it is broken or fades."
+School = 2
+Delivery = 5
+LearnCost = 1
+UpgradeCost = 1
+MaxRank = 3
+ManaCost = 20.0
+Cooldown = 12.0
+WindupSeconds = 0.4
+RecoverySeconds = 0.3
+ImpactWeight = 0.4
+PlaceRange = 8.0
+GroundDelay = 0.35
+BarrierDuration = 9.0
+BarrierWidth = 4.0
+BarrierHealth = 60.0
+BarrierBlocksProjectiles = true
+BarrierBlocksBodies = true

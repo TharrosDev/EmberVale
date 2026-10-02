@@ -39,6 +39,7 @@ public partial class CombatFeedbackDirector : Node
         public bool Staggered;
         public bool Parried;
         public HitKind Declared;
+        public float SpellWeight = -1f;
     }
 
     private readonly Dictionary<ulong, Pending> _pending = new();
@@ -59,6 +60,7 @@ public partial class CombatFeedbackDirector : Node
         bus?.Subscribe<CriticalHitEvent>(OnCritical);
         bus?.Subscribe<ActionReleasedEvent>(OnReleased);
         bus?.Subscribe<ChargeReleasedEvent>(OnCharge);
+        bus?.Subscribe<Magic.SpellImpactEvent>(OnSpellHit);
     }
 
     public override void _ExitTree()
@@ -71,6 +73,7 @@ public partial class CombatFeedbackDirector : Node
         bus?.Unsubscribe<CriticalHitEvent>(OnCritical);
         bus?.Unsubscribe<ActionReleasedEvent>(OnReleased);
         bus?.Unsubscribe<ChargeReleasedEvent>(OnCharge);
+        bus?.Unsubscribe<Magic.SpellImpactEvent>(OnSpellHit);
         _pending.Clear();
         _pool?.Clear();
     }
@@ -132,6 +135,16 @@ public partial class CombatFeedbackDirector : Node
         p.Crit = true;
         p.Declared = e.Kind;
         p.Source ??= e.Attacker;
+    }
+
+    /// <summary>A spell landed: the blow is a spell whatever the caster's last action was (a ground spell
+    /// lands long after its cast), and it carries the spell's own <c>ImpactWeight</c> for hit-stop and shake.</summary>
+    private void OnSpellHit(Magic.SpellImpactEvent e)
+    {
+        Pending p = Get(e.Target);
+        p.Declared = p.Declared == HitKind.Normal ? HitKind.Spell : p.Declared;
+        p.SpellWeight = e.Weight;
+        p.Source ??= e.Caster;
     }
 
     private void OnReleased(ActionReleasedEvent e) =>
@@ -216,7 +229,8 @@ public partial class CombatFeedbackDirector : Node
         bool byPlayer = CombatPerspective.IsPlayer(p.Source);
         bool onPlayer = CombatPerspective.IsPlayer(p.Target);
         var hit = new HitConfirmedEvent(
-            p.Source, p.Target, p.Amount, p.Type, outcome, kind, p.Staggered, point, byPlayer, onPlayer);
+            p.Source, p.Target, p.Amount, p.Type, outcome, kind, p.Staggered, point, byPlayer, onPlayer,
+            p.SpellWeight >= 0f ? p.SpellWeight : 0f);
         EventBus.Instance?.Publish(hit);
 
         // A status tick with no attacker and no weight is not worth a spark or a sound.

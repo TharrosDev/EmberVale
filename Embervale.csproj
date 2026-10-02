@@ -95,5 +95,7 @@
     <Compile Remove="src/Debugging/*Shots.cs" />
     <Compile Remove="src/Debugging/ShotHarness.cs" />
     <Compile Remove="src/Debugging/ReproHarness.cs" />
+    <Compile Remove="src/Debugging/Magic*ProbeDriver.cs" />
+    <Compile Remove="src/Magic/MagicStatusProbeSeam.cs" />
   </ItemGroup>
 </Project>

@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="SpellResource" format=3 uid="uid://bt724373idl62"]
+
+[ext_resource type="Script" path="res://src/Magic/SpellResource.cs" id="1_spell"]
+
+[resource]
+script = ExtResource("1_spell")
+Id = "spell.pyre_wall"
+DisplayName = "Pyre Wall"
+Description = "Raise a line of fire that burns whatever crosses it and eats arrows, but does not stop bodies."
+School = 1
+Delivery = 5
+LearnCost = 1
+UpgradeCost = 1
+MaxRank = 3
+ManaCost = 22.0
+Cooldown = 9.0
+BaseDamage = 7.0
+StatusEffectId = "status.burning"
+WindupSeconds = 0.5
+RecoverySeconds = 0.3
+ImpactWeight = 0.3
+PlaceRange = 12.0
+GroundDelay = 0.5
+BarrierDuration = 8.0
+BarrierWidth = 6.0
+BarrierHealth = 0.0
+BarrierBlocksProjectiles = true
+BarrierBlocksBodies = false

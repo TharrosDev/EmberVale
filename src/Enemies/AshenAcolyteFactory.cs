@@ -115,10 +115,10 @@ public static class AshenAcolyteFactory
             AimNode = castOrigin,
             KnownSpellIds = new Godot.Collections.Array<string>
             {
-                GameIds.Spells.Firebolt,   // offensive (single target)
-                GameIds.Spells.Fireball,   // offensive (heavier, AoE on impact)
+                GameIds.Spells.Emberlash,   // offensive (single target)
+                GameIds.Spells.Sunfall,   // offensive (heavier, AoE on impact)
                 GameIds.Spells.ArcaneShield, // self-ward
-                GameIds.Spells.LesserHeal, // heal a wounded ally (or itself)
+                GameIds.Spells.MendingBloom, // heal a wounded ally (or itself)
             },
         });
 

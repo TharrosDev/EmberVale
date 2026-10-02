@@ -22,7 +22,11 @@ public static class Weave
     /// <summary>The active region's magic potency in [0,1] (1 = the Weave flows full).</summary>
     public static float Potency => _potency;
 
-    public static void Set(float potency) => _potency = Mathf.Clamp(potency, 0f, 1f);
+    public static void Set(float potency) =>
+        _potency = float.IsNaN(potency) ? DefaultPotency : Mathf.Clamp(potency, 0f, 1f);
+
+    /// <summary>How strongly the active region's Weave flows, for the HUD chip and the spellbook line.</summary>
+    public static WeaveBand Band => WeaveMath.BandOf(_potency);
 
     public static void Reset() => _potency = DefaultPotency;
 

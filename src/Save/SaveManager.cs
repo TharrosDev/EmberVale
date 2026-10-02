@@ -529,6 +529,7 @@ public sealed partial class SaveManager : Node
         }
 
         var objects = objectsVariant.AsGodotDictionary();
+        EventBus.Instance?.Publish(new GameLoadingEvent(slot));
         int restored = 0;
         int reset = 0;
         int failures = 0;
@@ -576,6 +577,7 @@ public sealed partial class SaveManager : Node
                     }
                     catch (Exception ex)
                     {
+                        failures++;
                         Log.Error($"Saveable '{id}' has no entry in slot '{slot}' and threw while " +
                                   $"being reset to empty; it may keep state from the abandoned " +
                                   $"timeline. Its Load() must tolerate an empty document: {ex}");

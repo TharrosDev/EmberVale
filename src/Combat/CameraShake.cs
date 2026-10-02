@@ -45,6 +45,18 @@ public partial class CameraShake : EntityComponent, ICameraLayer
         EventBus.Instance?.Subscribe<ActionReleasedEvent>(OnActionReleased);
         EventBus.Instance?.Subscribe<EntityParriedEvent>(OnParried);
         EventBus.Instance?.Subscribe<GuardBrokenEvent>(OnGuardBroken);
+        EventBus.Instance?.Subscribe<HitConfirmedEvent>(OnSpellLanded);
+    }
+
+    /// <summary>A spell the player landed, weighed by the spell's own <c>ImpactWeight</c>. Comfort scales
+    /// it downstream, in <see cref="Sample"/>, like every other impulse.</summary>
+    private void OnSpellLanded(HitConfirmedEvent e)
+    {
+        if (e.Kind == HitKind.Spell && e.Weight > 0f && e.ByPlayer && IsPlayer(e.Source) &&
+            e.Outcome is HitOutcome.Hit or HitOutcome.Critical or HitOutcome.PoiseBroken)
+        {
+            Submit(new ShakeHit(ShakeSource.Spell, Magic.SpellRules.ShakeTrauma(e.Weight)));
+        }
     }
 
     /// <summary>A parry the player made or suffered: a sharp jolt, felt as the clash of the two
@@ -71,6 +83,7 @@ public partial class CameraShake : EntityComponent, ICameraLayer
     {
         EventBus.Instance?.Unsubscribe<EntityParriedEvent>(OnParried);
         EventBus.Instance?.Unsubscribe<GuardBrokenEvent>(OnGuardBroken);
+        EventBus.Instance?.Unsubscribe<HitConfirmedEvent>(OnSpellLanded);
         EventBus.Instance?.Unsubscribe<DamageDealtEvent>(OnDamage);
         EventBus.Instance?.Unsubscribe<EntityStaggeredEvent>(OnStaggered);
         EventBus.Instance?.Unsubscribe<ActionReleasedEvent>(OnActionReleased);

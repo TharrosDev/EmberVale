@@ -1,6 +1,7 @@
 using Embervale.Core.Diagnostics;
 using Embervale.Core.Events;
 using Embervale.Entities;
+using Embervale.Magic;
 using Embervale.Stats;
 using Godot;
 
@@ -86,6 +87,7 @@ public partial class CombatComponent : EntityComponent
     public float GuardArcDegrees { get; set; } = 100f;
 
     private StatsComponent? _stats;
+    private StatusEffectsComponent? _status;
     private float _poise;
     private double _staggerTimer;
     private double _flinchTimer;
@@ -104,13 +106,14 @@ public partial class CombatComponent : EntityComponent
     /// <summary>True while an interrupting reaction (stagger, heavy, knockdown, a parried or guard-broken
     /// body) holds this actor. ⚠️ A flinch is deliberately NOT this: it is presentation only, so everything
     /// that asks "was I interrupted?" (the action timeline, dodge, casting) keeps working through one.</summary>
-    public bool IsStaggered => _staggerTimer > 0d;
+    public bool IsStaggered => _staggerTimer > 0d || _status?.IsStunned == true;
 
     /// <summary>True during a flinch, the short reaction that does not interrupt.</summary>
     public bool IsFlinching => _flinchTimer > 0d;
 
     /// <summary>Seconds left on the current stagger, 0 when not staggered.</summary>
-    public float StaggerRemaining => _staggerTimer > 0d ? (float)_staggerTimer : 0f;
+    public float StaggerRemaining => Mathf.Max((float)_staggerTimer,
+        _status?.StunRemaining ?? 0f);
 
     /// <summary>True while this body is a critical opening: parried, guard-broken or poise-broken, and
     /// for a short grace after (<see cref="DefenceRules.OpeningGraceSeconds"/>). The first riposte
@@ -164,6 +167,7 @@ public partial class CombatComponent : EntityComponent
     protected override void OnInitialize()
     {
         _stats = Entity!.GetComponent<StatsComponent>();
+        _status = Entity.GetComponent<StatusEffectsComponent>();
         ValidateAuthoring();
         _poise = MaxPoise;
     }
@@ -265,7 +269,7 @@ public partial class CombatComponent : EntityComponent
         {
             _staggerTimer -= delta;
         }
-        else if (_poise < MaxPoise)
+        else if (!IsStaggered && _poise < MaxPoise)
         {
             _poise = Mathf.Min(MaxPoise, _poise + (PoiseRegen * (float)delta));
         }
@@ -312,6 +316,18 @@ public partial class CombatComponent : EntityComponent
         }
     }
 
+    /// <summary>Signals a new status-owned stun to action and presentation listeners. Its lifetime
+    /// stays on the status, so consuming Frozen cannot erase or extend an independent poise stagger.</summary>
+    public void NotifyStatusStun()
+    {
+        _flinchTimer = 0d;
+        LastResponse = StaggerResponse.Stagger;
+        if (Entity != null)
+        {
+            EventBus.Instance?.Publish(new EntityStaggeredEvent(Entity));
+        }
+    }
+
     /// <summary>Opens the body to a riposte for the stagger plus a short grace. A stronger cause
     /// replaces a weaker one already open; the window never shrinks.</summary>
     private void OpenUp(OpenCause cause, float staggerSeconds)
@@ -354,6 +370,10 @@ public partial class CombatComponent : EntityComponent
         // What this kind of blow is worth against a defender (DefenceRules.Profile). The attacker
         // stamps Kind and Charge and never pre-scales by them, so nothing here counts twice.
         BlowProfile blow = DefenceRules.Profile(packet.Kind, packet.Charge);
+        if (packet.GuardCrushOverride is { } crush)
+        {
+            blow = blow with { CrushesGuard = crush };
+        }
         float amount = Mathf.Max(0f, packet.Amount) * blow.DamageMultiplier;
         float incomingPoise = Mathf.Max(0f, packet.PoiseDamage) * blow.PoiseMultiplier;
         bool blocked = false;
@@ -368,7 +388,7 @@ public partial class CombatComponent : EntityComponent
 
         // A guard covers a front arc, and is knocked down with the body holding it. See
         // GuardArcDegrees and GuardUp.
-        GuardZone zone = GuardUp
+        GuardZone zone = GuardUp && !packet.Unblockable
             ? DefenceRules.ZoneOf(bearing ?? 0f, GuardArcDegrees)
             : GuardZone.Outside;
         if (zone != GuardZone.Outside)
@@ -444,6 +464,17 @@ public partial class CombatComponent : EntityComponent
         // nothing either: resistance is not immunity, so an unblocked hit does at least a point.
         float final = Mathf.Max(0f, CombatMath.FloorHit(
             CombatMath.Mitigate(amount, packet.Type, _stats), amount, blocked));
+
+        // Statuses have the last word on what reaches health: a mark amplifies, a ward absorbs.
+        final = Entity.GetComponent<Embervale.Magic.StatusEffectsComponent>()?.ModifyIncoming(final, packet.Source) ?? final;
+        // Capture this hit before ApplyDamage publishes death: the player can already be alive at
+        // its respawn point when that synchronous event returns.
+        float healthBefore = _stats.GetCurrent(StatType.Health);
+        float healthDamage = Mathf.Min(Mathf.Max(0f, final), healthBefore);
+        bool killed = healthBefore > 0f && healthDamage >= healthBefore;
+        float remaining = Mathf.Max(0f, healthBefore - healthDamage);
+        float maxHealth = _stats.GetMax(StatType.Health);
+        float healthFraction = maxHealth > 0f ? remaining / maxHealth : 0f;
         _stats.ApplyDamage(final, packet.Source);
 
         if (openingLanded && packet.Source != null)
@@ -458,7 +489,7 @@ public partial class CombatComponent : EntityComponent
 
         // A kill blow doesn't also stagger the corpse — only poise-check a survivor (avoids a
         // Staggered event firing alongside the Died event on the same hit).
-        if (_stats.IsAlive)
+        if (!killed && _stats.IsAlive)
         {
             if (guardBroken)
             {
@@ -479,7 +510,7 @@ public partial class CombatComponent : EntityComponent
 
         return new DamageResult(
             final, isCrit, blocked, packet.Type, parryGrade, guardBroken,
-            openingLanded ? opening : HitKind.Normal);
+            openingLanded ? opening : HitKind.Normal, healthDamage, killed, healthFraction);
     }
 
     /// <summary>The attacker's half of a parry: staggered for the graded duration, scaled for its body,

@@ -256,7 +256,8 @@ Neither is an SDK command; run them through the console Godot directly, one at a
 ```text
 godot --headless --path . -- --story      # exit 0/1; HeadlessStory
 dotnet build Embervale.csproj -c ExportRelease && python tools/check_shipping_assembly.py
-godot --headless --path . --export-release "Windows Desktop" build/windows/Embervale.exe
+python -c "from pathlib import Path; Path('build/windows').mkdir(parents=True, exist_ok=True)"
+godot --headless --recovery-mode --path . --export-release "Windows Desktop" build/windows/Embervale.exe
 build/windows/Embervale.exe --headless -- --story
 ```
 
@@ -265,7 +266,10 @@ reveal, save/load, every Flamebearer template, both rival duels, every vision an
 text, both ending skies (also after a reload) and the ending sequence. It proves wiring, not that a
 fight can be won. The export uses the tracked `export_presets.cfg` preset "Windows Desktop" and the
 4.7.1 .NET templates in `%APPDATA%\Godot\export_templates\4.7.1.stable.mono`; output under `build/` is
-gitignored. Running `--story` inside the export is the smoke test: it fails on missing locale text,
+gitignored. Create the output directory in a fresh checkout before exporting. Editor recovery mode
+keeps development plugins from connecting to a local MCP server during packaging; it does not disable
+gameplay scripts in the exported build. Set `EMBERVALE_USER_DIR` to a disposable directory under
+`artifacts/` for the story probes. Running `--story` inside the export is the smoke test: it fails on missing locale text,
 missing manifests or anything else the export dropped.
 
 ## Create, customize and build

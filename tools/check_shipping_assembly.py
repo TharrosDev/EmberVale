@@ -19,6 +19,9 @@ DLL = pathlib.Path(".godot/mono/temp/bin/ExportRelease/Embervale.dll")
 FORBIDDEN = [
     "ShellShots", "HudShots", "PanelShots", "ShrineShots", "GuildShots",
     "EnemyShots", "CombatShots", "ShotHarness", "ReproHarness",
+    "MagicCoreProbeDriver", "MagicStatusProbeSeam", "MagicLearningProbeDriver",
+    "MagicContentProbeDriver",
+    "MagicLifetimeProbeDriver",
 ]
 # Namespaces from the vendored Godot-MCP addon and its NuGet dependencies.
 FORBIDDEN_PREFIXES = ["IvanMurzak", "GodotMCP", "com.IvanMurzak"]

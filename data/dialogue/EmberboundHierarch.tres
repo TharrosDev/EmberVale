@@ -17,6 +17,43 @@
 ;     the faction id, and hand-writing one into a .tres is NOW.md invariant 18's whole subject.
 ;   - the two are exhaustive and disjoint, so root is never a dead end.
 
+; Magic upgrade: this NPC teaches spellcraft (spell.teach.* strings, LearnSpell effect).
+[sub_resource type="Resource" id="ch_mg_menu"]
+script = ExtResource("3_choice")
+Text = "spell.teach.ask_menu"
+Goto = "mg_teach"
+
+[sub_resource type="Resource" id="ch_mg_ember_siphon"]
+script = ExtResource("3_choice")
+Text = "spell.ember_siphon.ask"
+Goto = "mg_taught"
+Condition = 7
+ConditionArg = "40"
+Effect = 8
+EffectArg = "spell.ember_siphon"
+
+[sub_resource type="Resource" id="ch_mg_back"]
+script = ExtResource("3_choice")
+Text = "spell.teach.back"
+Goto = "root"
+
+[sub_resource type="Resource" id="ch_mg_thanks"]
+script = ExtResource("3_choice")
+Text = "spell.teach.thanks"
+Goto = "root"
+
+[sub_resource type="Resource" id="node_mg_teach"]
+script = ExtResource("2_node")
+Id = "mg_teach"
+Text = "spell.teach.emberbound_hierarch"
+Choices = Array[Resource]([SubResource("ch_mg_ember_siphon"), SubResource("ch_mg_back")])
+
+[sub_resource type="Resource" id="node_mg_taught"]
+script = ExtResource("2_node")
+Id = "mg_taught"
+Text = "spell.teach.emberbound_hierarch.taught"
+Choices = Array[Resource]([SubResource("ch_mg_thanks")])
+
 [sub_resource type="Resource" id="ch_member"]
 script = ExtResource("3_choice")
 Text = "dlg.emberbound_hierarch.c_member"
@@ -415,7 +452,7 @@ Choices = Array[Resource]([SubResource("ch_l42_finale")])
 script = ExtResource("2_node")
 Id = "root"
 Text = "dlg.emberbound_hierarch.root"
-Choices = Array[Resource]([SubResource("ch_member"), SubResource("ch_stranger"), SubResource("ch_bye")])
+Choices = Array[Resource]([SubResource("ch_member"), SubResource("ch_stranger"), SubResource("ch_mg_menu"), SubResource("ch_bye")])
 
 [sub_resource type="Resource" id="node_member"]
 script = ExtResource("2_node")
@@ -464,4 +501,4 @@ script = ExtResource("1_dlg")
 Id = "dialogue.emberbound_hierarch"
 SpeakerName = "dlg.emberbound_hierarch.speaker"
 StartNodeId = "root"
-Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_member"), SubResource("node_stranger"), SubResource("node_initiate"), SubResource("node_surrendered"), SubResource("node_kept"), SubResource("node_joined"), SubResource("node_declined"), SubResource("node_l42_a_offer"), SubResource("node_l42_a_accepted"), SubResource("node_l42_a_active"), SubResource("node_l42_hub"), SubResource("node_l42_b_offer"), SubResource("node_l42_b_accepted"), SubResource("node_l42_b_active"), SubResource("node_l42_b_report"), SubResource("node_l42_verdict_kept"), SubResource("node_l42_verdict_surrendered"), SubResource("node_l42_stance"), SubResource("node_l42_v_doctrine_safeguard"), SubResource("node_l42_after_doctrine_safeguard"), SubResource("node_l42_v_doctrine_destroy"), SubResource("node_l42_after_doctrine_destroy"), SubResource("node_l42_v_doctrine_wield"), SubResource("node_l42_v_doctrine_wield_cost"), SubResource("node_l42_after_doctrine_wield"), SubResource("node_l42_sealed"), SubResource("node_l42_ranked")])
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_member"), SubResource("node_stranger"), SubResource("node_initiate"), SubResource("node_surrendered"), SubResource("node_kept"), SubResource("node_joined"), SubResource("node_declined"), SubResource("node_l42_a_offer"), SubResource("node_l42_a_accepted"), SubResource("node_l42_a_active"), SubResource("node_l42_hub"), SubResource("node_l42_b_offer"), SubResource("node_l42_b_accepted"), SubResource("node_l42_b_active"), SubResource("node_l42_b_report"), SubResource("node_l42_verdict_kept"), SubResource("node_l42_verdict_surrendered"), SubResource("node_l42_stance"), SubResource("node_l42_v_doctrine_safeguard"), SubResource("node_l42_after_doctrine_safeguard"), SubResource("node_l42_v_doctrine_destroy"), SubResource("node_l42_after_doctrine_destroy"), SubResource("node_l42_v_doctrine_wield"), SubResource("node_l42_v_doctrine_wield_cost"), SubResource("node_l42_after_doctrine_wield"), SubResource("node_l42_sealed"), SubResource("node_l42_ranked"), SubResource("node_mg_teach"), SubResource("node_mg_taught")])

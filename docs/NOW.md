@@ -5,11 +5,18 @@
 Developer SDK: [`TOOLING.md`](TOOLING.md) (`python tools/embervale.py`). Every mechanic in the game,
 one line each: [`MECHANICS.md`](MECHANICS.md).
 
-## Where we are (2026-09-28, the finish run done)
+## Where we are (2026-10-02, the magic upgrade integrated)
 
 The game is complete from New Game to credits. The finish run's contract and id registry are
 [`playbook/finish.md`](playbook/finish.md).
 
+- **Magic.** The upgrade is integrated: 25 player spells and five enemy spells, committed cast
+  wind-up/release/recovery, held channels, placed ground spells, breakable barriers, dash, school
+  identities, controls/wards/DoTs, combos, learning and mastery. Death and live load cancel casts and
+  transient deliveries; damage outcomes are captured before death handlers can respawn an actor.
+  Prepared tome placements are included in the master world bake. The implementation and probe
+  responsibilities are in [`playbook/magic.md`](playbook/magic.md); the current verification evidence
+  is below. Human play-through and balance remain open.
 - **Realms.** All five realms plus the Celestial Realm exist as generated regions in disjoint atlas
   bands ([`WORLD_ATLAS.md`](WORLD_ATLAS.md)): the Ember Crown (52 cells) and Frostfang Reach (36), and
   the compact finish-run realms — the **Ashen Wilds** (16: Last Hearth, the Ash Hunters' station, the
@@ -184,7 +191,8 @@ python tools/negative_tests.py             # refuses a dirty data/ or scenes/ �
 godot --headless --path . --script res://tools/debug_pass_regressions.gd
 godot --headless --path . --script res://tools/world_traversal_probe.gd
 dotnet build Embervale.csproj -c ExportRelease && python tools/check_shipping_assembly.py
-godot --headless --path . --export-release "Windows Desktop" build/windows/Embervale.exe
+python -c "from pathlib import Path; Path('build/windows').mkdir(parents=True, exist_ok=True)"
+godot --headless --recovery-mode --path . --export-release "Windows Desktop" build/windows/Embervale.exe
 build/windows/Embervale.exe --headless -- --story   # smoke the export
 godot --path . -- --guild-shots | --panelshots | --hudshots
 godot --path . --script res://tools/world_shots.gd   # add -- --update-world-baseline AFTER inspecting
@@ -195,6 +203,10 @@ python tools/gen_map_locations.py [--check]
 python tools/gen_guild_dialogue.py <key> <dialogue.id> <faction.id> "<Speaker>"
 ```
 
+Create the export directory in a fresh checkout: `build/windows` is ignored and is not cloned.
+`--recovery-mode` disables editor plugins so a headless export does not wait for an unavailable
+local editor MCP endpoint.
+
 `godot` and `python` are not on the shell PATH. Godot is the 4.7.1 console executable at
 `C:\Users\magnu\Downloads\Godot_v4.7.1-stable_mono_win64\Godot_v4.7.1-stable_mono_win64\Godot_v4.7.1-stable_mono_win64_console.exe`;
 Python is Codex's bundled interpreter
@@ -203,19 +215,31 @@ Export templates are in `%APPDATA%\Godot\export_templates\4.7.1.stable.mono`.
 
 ## Verification
 
-Finish run, 2026-09-28, on `main` after all six realms, the Meshy cast and the docs rewrite merged:
+Magic integration, 2026-10-02, verified on `codex/magic-upgrade-finished`. These completed checks
+cover the implementation, authored content and packaged runtime; human play-through and release
+certification remain outside this evidence.
 
 | Gate | Result |
 | --- | --- |
-| `tools/gen_regions.py --check` / `world_atlas.py --check` | PASS / PASS |
-| `world_bake.py --check` | PASS — 151 artifacts, source `36c8391eea66` (after guild arcs, rival duels, ending skies) |
-| `embervale.py build` / `test` | PASS / PASS (2,151 xUnit) |
-| `embervale.py validate` | PASS, zero content issues |
-| `embervale.py report lifecycle` | PASS |
-| `godot --headless -- --story` | PASS — act chain, hidden-realm reveal, save/load, all seven boss templates, every vision and ending card, the ending plays |
-| `assets.py validate` | PASS (7 new Meshy characters, all HUMANOID, rig probe PASS) |
-| `dotnet build -c ExportRelease` + `check_shipping_assembly.py` | PASS, 0 warnings, no dev tooling |
-| Windows export (`godot --export-release "Windows Desktop"`) | PASS — `build/windows/Embervale.exe` + `.pck` (542 MB, gitignored); boots headless with zero errors, and `Embervale.exe --headless -- --story` PASS inside the export |
+| Master `world_bake.py --bake` | PASS — 145 cells and six region resources; source signature `4151e553f2d5ae4a3f2eaaa3bbc51cef0844b37c530e813a3a4bf1511ad83650`; run `20261002T033509-fa708c5ffa` (1,119 s), existing navigation-edge warnings only |
+| `magic_core_probe` | PASS — committed casts, interruption, charge, held channels, delivery, costs and real roster behavior |
+| `magic_status_probe` | PASS — real status components, controls, wards, combos, school interactions and cleanup |
+| `magic_learning_probe` | PASS — learning/mastery/Weave routes and spellbook/HUD construction |
+| `magic_lifetime_probe` | PASS — delivery cancellation before live load and session/caster lifetime ownership |
+| Final SDK test | PASS — 2,996 C# tests, zero failures/skips, and 28 Python SDK tests; run `20261002T035710-a752f33a27` (36.8 s) |
+| Final deterministic fast world suite | PASS — all six realms, bake inputs/output hashes, generation/district/maps/atlas, build/C# tests and shipping assembly exclusions; run `20261002T035604-cf5a6ece44` |
+| Full SDK validate | PASS — recursive resource checks and semantic ContentValidator references, well-formedness and reachability; run `20261002T035747-6af9e8c879` (93.8 s) |
+| Final lifecycle | PASS — three New Game/save/destroy/Load round-trips, zero orphan/baseline/invariant violations; run `20261002T035921-f78a3a8ec1` (52.2 s) |
+| Shared action, melee and defence probes | PASS — action-clip probe at fixed 60 FPS (`artifacts/magic-release/action-clip.log`); melee run `20261002T040106-e44161593f`; defence run `20261002T040117-527881818a` |
+| Direct `--story` gate | PASS — act chaining, save/load, endings and rival-duel wiring (`artifacts/magic-release/story.log`); this checks story behavior/wiring rather than winning those fights |
+| `magic_content_probe` against the completed bake | PASS — run `20261002T035524-85b35bbc6c`; all five magic probes are green |
+| Rendered magic scenario | PASS — run `20261002T040259-460557e273` (55.7 s); two reviewed 1280×720 captures show the Emberlash wind-up/HUD and six-school spellbook, with expected mana, mastery count and cast/delivery/status labels; existing navigation-edge/ObjectDB exit warnings only |
+| Windows ExportRelease and packaged `--story` | PASS — recovery-mode export exit 0 (`artifacts/magic-release/windows-export-retry.log`); fresh `Embervale.exe --headless -- --story` exit 0 in 7.1 s with an isolated user directory and no source-checkout `--path` (`artifacts/magic-release/packaged-story.log`); EXE 109,344,768 bytes, PCK 375,878,228 bytes |
+
+Export packaging completed with one editor diagnostic: `GodotTools.HotReloadAssemblyWatcher` called
+`Timer.Start` after removal from the editor tree. Its backtrace was confined to Godot editor/core;
+the packaged story run completed with no gameplay errors. Existing navigation-edge warnings and
+ObjectDB warnings on rendered exit remain as described above.
 
 Export notes: `export_presets.cfg` is committed; the locale CSV is imported with `importer="keep"` so
 the raw catalogue ships (it was silently dropped, which would have shown raw keys); the boot-time

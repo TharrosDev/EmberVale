@@ -17,6 +17,41 @@
 ;     the faction id, and hand-writing one into a .tres is NOW.md invariant 18's whole subject.
 ;   - the two are exhaustive and disjoint, so root is never a dead end.
 
+; Magic upgrade: this NPC teaches spellcraft (spell.teach.* strings, LearnSpell effect).
+[sub_resource type="Resource" id="ch_mg_menu"]
+script = ExtResource("3_choice")
+Text = "spell.teach.ask_menu"
+Goto = "mg_teach"
+
+[sub_resource type="Resource" id="ch_mg_pyre_wall"]
+script = ExtResource("3_choice")
+Text = "spell.pyre_wall.ask"
+Goto = "mg_taught"
+Effect = 8
+EffectArg = "spell.pyre_wall"
+
+[sub_resource type="Resource" id="ch_mg_back"]
+script = ExtResource("3_choice")
+Text = "spell.teach.back"
+Goto = "root"
+
+[sub_resource type="Resource" id="ch_mg_thanks"]
+script = ExtResource("3_choice")
+Text = "spell.teach.thanks"
+Goto = "root"
+
+[sub_resource type="Resource" id="node_mg_teach"]
+script = ExtResource("2_node")
+Id = "mg_teach"
+Text = "spell.teach.emberbound_warder"
+Choices = Array[Resource]([SubResource("ch_mg_pyre_wall"), SubResource("ch_mg_back")])
+
+[sub_resource type="Resource" id="node_mg_taught"]
+script = ExtResource("2_node")
+Id = "mg_taught"
+Text = "spell.teach.emberbound_warder.taught"
+Choices = Array[Resource]([SubResource("ch_mg_thanks")])
+
 [sub_resource type="Resource" id="ch_member"]
 script = ExtResource("3_choice")
 Text = "dlg.emberbound_warder.c_member"
@@ -76,7 +111,7 @@ Choices = Array[Resource]([SubResource("ch_back"), SubResource("ch_end")])
 script = ExtResource("2_node")
 Id = "root"
 Text = "dlg.emberbound_warder.root"
-Choices = Array[Resource]([SubResource("ch_member"), SubResource("ch_stranger"), SubResource("ch_bye")])
+Choices = Array[Resource]([SubResource("ch_member"), SubResource("ch_stranger"), SubResource("ch_mg_menu"), SubResource("ch_bye")])
 
 [sub_resource type="Resource" id="node_member"]
 script = ExtResource("2_node")
@@ -95,4 +130,4 @@ script = ExtResource("1_dlg")
 Id = "dialogue.emberbound_warder"
 SpeakerName = "dlg.emberbound_warder.speaker"
 StartNodeId = "root"
-Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_member"), SubResource("node_stranger"), SubResource("node_l42_account"), SubResource("node_l42_react")])
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_member"), SubResource("node_stranger"), SubResource("node_l42_account"), SubResource("node_l42_react"), SubResource("node_mg_teach"), SubResource("node_mg_taught")])

@@ -183,6 +183,29 @@ def gates(engine: str | None) -> list[Gate]:
              [engine, "--headless", "--path", ".", "--script",
               "res://tools/combat_ranged_probe.gd"], slow=True),
         # --- end combat-ranged ---
+        # --- magic-core: this group's probe Gate goes between the markers (one owner per block) ---
+        Gate("magic-core", "committed casts, interruption, channels, placement, breakable barriers, cleanse, costs and real roster charge behavior",
+             [engine, "--headless", "--path", ".", "--script", "res://tools/magic_core_probe.gd"],
+             modes=("engine", "full")),
+        # --- end magic-core ---
+        Gate("magic-lifetime", "spell deliveries cancel before live load and stay inside session ownership",
+             [engine, "--headless", "--path", ".", "--script", "res://tools/magic_lifetime_probe.gd"],
+             modes=("engine", "full")),
+        # --- magic-status: this group's probe Gate goes between the markers (one owner per block) ---
+        Gate("magic-status", "status rules through real components: kindle detonation, swarm spread, mark, ward, dispel, control immunity, rooted movement, brand arcs, lifesteal, combos, shaped vfx",
+             [engine, "--headless", "--path", ".", "--script",
+              "res://tools/magic_status_probe.gd"], slow=True),
+        # --- end magic-status ---
+        # --- magic-learning: this group's probe Gate goes between the markers (one owner per block) ---
+        Gate("magic-learning", "mastery ranks and attunes, the Weave bends both paths inside its clamp, one learning route, corrupted tomes need two presses, the spellbook and HUD chips build",
+             [engine, "--headless", "--path", ".", "--script",
+              "res://tools/magic_learning_probe.gd"], slow=True),
+        # --- end magic-learning ---
+        # --- magic-content: this group's probe Gate goes between the markers (one owner per block) ---
+        Gate("magic-content", "25 player spells, statuses, aliases, enemy loadouts and a learn route for each, against the real databases",
+             [engine, "--headless", "--path", ".", "--script",
+              "res://tools/magic_content_probe.gd"], slow=True),
+        # --- end magic-content ---
         Gate("traversal", "a real capsule walks every authored route in the real collision world",
              [engine, "--headless", "--path", ".", "--script",
               "res://tools/world_traversal_probe.gd"], slow=True, timeout=1800),

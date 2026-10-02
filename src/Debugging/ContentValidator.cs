@@ -101,6 +101,7 @@ public static class ContentValidator
         ValidateInteractIdsArePlaced(issues);
         ValidateDialogue(issues);
         ValidateSpells(issues);
+        SpellRouteValidator.Validate(issues);
         ValidateFactions(issues);
         ValidateEncounters(issues);
         ValidateWorldEvents(issues);

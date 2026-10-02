@@ -460,4 +460,54 @@ public class EnumStabilityTests
         Assert.Equal(3, (int)TelegraphClass.Sweep);
         Assert.Equal(4, (int)TelegraphClass.Auto);
     }
+
+    [Fact]
+    public void MagicUpgradeEnums_Ordinals()
+    {
+        Assert.Equal(4, (int)SpellDelivery.Ground);
+        Assert.Equal(5, (int)SpellDelivery.Barrier);
+        Assert.Equal(6, (int)SpellDelivery.Dash);
+        Assert.Equal(0, (int)StatusControl.None);
+        Assert.Equal(1, (int)StatusControl.Root);
+        Assert.Equal(2, (int)StatusControl.Silence);
+        Assert.Equal(4, (int)StatusControl.Stun);
+        Assert.Equal(8, (int)StatusControl.Mark);
+    }
+
+    // --- magic-core: enum tests for this group go between the markers (one owner per block) ---
+    // --- end magic-core ---
+    // --- magic-status: enum tests for this group go between the markers (one owner per block) ---
+    [Fact]
+    public void StatusVfxShape_Ordinals_ArePinned()
+    {
+        Assert.Equal(0, (int)Embervale.Magic.StatusVfxShape.Swirl);
+        Assert.Equal(1, (int)Embervale.Magic.StatusVfxShape.MarkRing);
+        Assert.Equal(2, (int)Embervale.Magic.StatusVfxShape.Thorns);
+        Assert.Equal(3, (int)Embervale.Magic.StatusVfxShape.BrokenGlyph);
+        Assert.Equal(4, (int)Embervale.Magic.StatusVfxShape.Stars);
+        Assert.Equal(5, (int)Embervale.Magic.StatusVfxShape.IceShell);
+        Assert.Equal(6, (int)Embervale.Magic.StatusVfxShape.WardShell);
+    }
+    // --- end magic-status ---
+    // --- magic-learning: enum tests for this group go between the markers (one owner per block) ---
+    // --- end magic-learning ---
+    // --- magic-content: enum tests for this group go between the markers (one owner per block) ---
+    [Fact]
+    public void PlayerSpellRoster_IdsArePinned()
+    {
+        // Spell ids persist in saves and dialogue effects: the roster is a contract, not a list to tidy.
+        Assert.Equal(
+            new[]
+            {
+                "spell.emberlash", "spell.flame_lance", "spell.pyre_wall", "spell.sunfall",
+                "spell.rime_shard", "spell.frost_nova", "spell.blizzard", "spell.glacial_bulwark",
+                "spell.ball_lightning", "spell.storm_conduit", "spell.thunder_step", "spell.stormbrand",
+                "spell.null_lance", "spell.arcane_shield", "spell.blink", "spell.gravity_well",
+                "spell.mending_bloom", "spell.lifebloom_totem", "spell.thornsnare", "spell.stinging_swarm", "spell.barkskin",
+                "spell.ember_siphon", "spell.soul_tithe", "spell.knit_bone", "spell.grave_mark",
+            },
+            Embervale.Core.GameIds.Spells.Roster);
+    }
+
+    // --- end magic-content ---
 }

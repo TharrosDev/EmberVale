@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="SpellResource" load_steps=2 format=3 uid="uid://cmbrvlspfrostnova"]
+[gd_resource type="Resource" script_class="SpellResource" format=3 uid="uid://cmbrvlspfrostnova"]
 
 [ext_resource type="Script" path="res://src/Magic/SpellResource.cs" id="1_spell"]
 
@@ -6,14 +6,18 @@
 script = ExtResource("1_spell")
 Id = "spell.frost_nova"
 DisplayName = "Frost Nova"
-Description = "A burst of cold around the caster, damaging and chilling everything close by."
+Description = "A ring of cold around you that chills everything close; anything already chilled freezes."
 School = 2
 Delivery = 1
-ManaCost = 18.0
-Cooldown = 4.0
-BaseDamage = 16.0
-Healing = 0.0
+LearnCost = 1
+UpgradeCost = 1
+MaxRank = 3
+ManaCost = 20.0
+Cooldown = 8.0
+BaseDamage = 14.0
 StatusEffectId = "status.chill"
-Range = 0.0
-ProjectileSpeed = 0.0
 ImpactRadius = 4.5
+WindupSeconds = 0.35
+RecoverySeconds = 0.3
+PoiseDamage = 20.0
+ImpactWeight = 0.5
