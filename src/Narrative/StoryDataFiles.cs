@@ -45,6 +45,30 @@ public static class StoryDataFiles
         return files;
     }
 
+    /// <summary>Parses every reaction file under <see cref="Companions.CompanionReactionData.Directory"/>; ids
+    /// must be unique across files, problems are appended to <paramref name="errors"/>.</summary>
+    public static List<Companions.CompanionReaction> LoadReactions(List<string> errors)
+    {
+        var reactions = new List<Companions.CompanionReaction>();
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        foreach ((string path, string text) in ReadJson(Companions.CompanionReactionData.Directory))
+        {
+            foreach (Companions.CompanionReaction reaction in Companions.CompanionReactionData.Parse(text, path, errors))
+            {
+                if (seen.Add(reaction.Id))
+                {
+                    reactions.Add(reaction);
+                }
+                else
+                {
+                    errors.Add($"{path} reaction '{reaction.Id}': duplicate id across files");
+                }
+            }
+        }
+
+        return reactions;
+    }
+
     /// <summary>Parses every rule file under <see cref="StoryRuleData.RulesDirectory"/>. Rules keep file
     /// order (files ordinal by name, rules in file order); problems are appended to <paramref name="errors"/>.</summary>
     public static List<StoryRule> LoadRules(List<string> errors)

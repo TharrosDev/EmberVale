@@ -51,6 +51,7 @@ public partial class StoryRuleDirector : Node
 
         EventBus.Instance?.Subscribe<StoryFlagChangedEvent>(OnFlag);
         EventBus.Instance?.Subscribe<RegionChangedEvent>(OnRegion);
+        EventBus.Instance?.Subscribe<GameLoadingEvent>(OnLoading);
         EventBus.Instance?.Subscribe<GameLoadedEvent>(OnLoaded);
         EventBus.Instance?.Subscribe<OpeningFinishedEvent>(OnOpeningFinished);
         EventBus.Instance?.Subscribe<CompanionRecruitedEvent>(OnRecruited);
@@ -61,6 +62,7 @@ public partial class StoryRuleDirector : Node
     {
         EventBus.Instance?.Unsubscribe<StoryFlagChangedEvent>(OnFlag);
         EventBus.Instance?.Unsubscribe<RegionChangedEvent>(OnRegion);
+        EventBus.Instance?.Unsubscribe<GameLoadingEvent>(OnLoading);
         EventBus.Instance?.Unsubscribe<GameLoadedEvent>(OnLoaded);
         EventBus.Instance?.Unsubscribe<OpeningFinishedEvent>(OnOpeningFinished);
         EventBus.Instance?.Unsubscribe<CompanionRecruitedEvent>(OnRecruited);
@@ -74,6 +76,13 @@ public partial class StoryRuleDirector : Node
     private void OnRecruited(CompanionRecruitedEvent e) => Run(_catchUpWindow);
 
     private void OnDismissed(CompanionDismissedEvent e) => Run(_catchUpWindow);
+
+    // Opens at the start of the restore so flags changed while saveables load are silent too.
+    private void OnLoading(GameLoadingEvent e)
+    {
+        _catchUpWindow = true;
+        CallDeferred(nameof(EndCatchUp));
+    }
 
     private void OnLoaded(GameLoadedEvent e)
     {

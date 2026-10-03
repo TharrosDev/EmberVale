@@ -35,6 +35,7 @@ public partial class HiddenRealmReveal : Node
     public override void _Ready()
     {
         EventBus.Instance?.Subscribe<StoryFlagChangedEvent>(OnFlag);
+        EventBus.Instance?.Subscribe<GameLoadingEvent>(OnLoading);
         EventBus.Instance?.Subscribe<GameLoadedEvent>(OnLoaded);
         EventBus.Instance?.Subscribe<RegionChangedEvent>(OnRegion);
     }
@@ -42,6 +43,7 @@ public partial class HiddenRealmReveal : Node
     public override void _ExitTree()
     {
         EventBus.Instance?.Unsubscribe<StoryFlagChangedEvent>(OnFlag);
+        EventBus.Instance?.Unsubscribe<GameLoadingEvent>(OnLoading);
         EventBus.Instance?.Unsubscribe<GameLoadedEvent>(OnLoaded);
         EventBus.Instance?.Unsubscribe<RegionChangedEvent>(OnRegion);
     }
@@ -59,6 +61,12 @@ public partial class HiddenRealmReveal : Node
         {
             Evaluate(_catchUpWindow);
         }
+    }
+
+    private void OnLoading(GameLoadingEvent e)
+    {
+        _catchUpWindow = true;
+        CallDeferred(nameof(EndCatchUp));
     }
 
     private void OnLoaded(GameLoadedEvent e)
