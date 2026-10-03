@@ -47,8 +47,18 @@ public static class SpellResolver
     public static SpellHitResult HitOne(
         Node3D context, Hurtbox hurtbox, DamagePacket packet, SpellResource spell, IEntity? caster, int casterTeam,
         bool dealDamage = true,
-        bool applyStatus = true)
+        bool applyStatus = true,
+        SpellLifetime? lifetime = null)
     {
+        // Persistent deliveries pass their existing authority. A direct hit gets a scoped one,
+        // so a synchronous death or load can cancel its remaining rider effects as well.
+        using SpellLifetime? scoped = lifetime == null ? new SpellLifetime(context, caster, static () => { }) : null;
+        lifetime ??= scoped!;
+        if (!lifetime.Check())
+        {
+            return SpellHitResult.Missed;
+        }
+
         IEntity? target = hurtbox.OwnerEntity;
         CombatComponent? combat = hurtbox.Combat;
 
@@ -86,27 +96,30 @@ public static class SpellResolver
             return SpellHitResult.Blocked;
         }
 
-        if (consumed > 0)
+        if (consumed > 0 && lifetime.Check())
         {
             statuses?.Consume(spell.ConsumesStatusId);
         }
 
         float resolvedDamage = result.HealthDamage;
-        SchoolIdentity.OnSpellHit(context, spell, packet, caster, casterTeam, hurtbox, resolvedDamage,
-            targetWasMarked, result.Killed, dealDamage ? result.HealthFraction : -1f, hitPosition);
-        bool killed = result.Killed;
-        if (!killed)
+        if (lifetime.Check())
         {
-            killed = SpellCombo.OnHit(spell, caster, hurtbox);
+            SchoolIdentity.OnSpellHit(context, spell, packet, caster, casterTeam, hurtbox, resolvedDamage,
+                targetWasMarked, result.Killed, dealDamage ? result.HealthFraction : -1f, hitPosition, lifetime);
         }
-        if (applyStatus && !killed)
+        bool killed = result.Killed;
+        if (!killed && lifetime.Check())
+        {
+            killed = SpellCombo.OnHit(spell, caster, hurtbox, lifetime);
+        }
+        if (applyStatus && !killed && lifetime.Check())
         {
             ApplyStatus(target, spell, caster, packet.Charge);
         }
 
         // Soul Tithe refunds only its own killing blow. Reading the transition here also handles an
         // immediate projectile hit before the self-side echo event arrives, without a blanket kill buff.
-        if (spell.Id == "spell.soul_tithe" && result.Killed &&
+        if (spell.Id == "spell.soul_tithe" && result.Killed && lifetime.Check() &&
             caster?.GetComponent<StatsComponent>() is { IsAlive: true } casterStats)
         {
             float refund = StatusEffectDatabase.Get(spell.SelfStatusEffectId)?.ManaOnKill ?? 0f;
@@ -135,11 +148,22 @@ public static class SpellResolver
         IEntity? caster,
         int casterTeam,
         Vector3 center,
-        float radius)
+        float radius,
+        SpellLifetime? lifetime = null)
     {
+        using SpellLifetime? scoped = lifetime == null ? new SpellLifetime(context, caster, static () => { }) : null;
+        lifetime ??= scoped!;
+        if (!lifetime.Check())
+        {
+            return;
+        }
+
         SpawnFlash(context, center, radius, SpellSchools.Color(spell.School));
-        Resolve(context, spell, packet, caster, casterTeam, center, radius, coneDirection: null);
-        CatchCaster(spell, caster, center, radius);
+        Resolve(context, spell, packet, caster, casterTeam, center, radius, coneDirection: null, lifetime);
+        if (lifetime.Check())
+        {
+            CatchCaster(spell, caster, center, radius);
+        }
     }
 
     /// <summary>A zone or burst that <see cref="SpellResource.AffectsCaster"/> afflicts a caster standing
@@ -171,10 +195,18 @@ public static class SpellResolver
         Vector3 origin,
         Vector3 direction,
         float length,
-        float angleDegrees)
+        float angleDegrees,
+        SpellLifetime? lifetime = null)
     {
+        using SpellLifetime? scoped = lifetime == null ? new SpellLifetime(context, caster, static () => { }) : null;
+        lifetime ??= scoped!;
+        if (!lifetime.Check())
+        {
+            return;
+        }
+
         SpawnConeFlash(context, origin, direction, length, angleDegrees, SpellSchools.Color(spell.School));
-        Resolve(context, spell, packet, caster, casterTeam, origin, length, (direction, angleDegrees));
+        Resolve(context, spell, packet, caster, casterTeam, origin, length, (direction, angleDegrees), lifetime);
     }
 
     /// <summary>The shared body: a hurtbox query at a point, each eligible actor hit once. A
@@ -187,7 +219,8 @@ public static class SpellResolver
         int casterTeam,
         Vector3 center,
         float radius,
-        (Vector3 Direction, float AngleDegrees)? coneDirection)
+        (Vector3 Direction, float AngleDegrees)? coneDirection,
+        SpellLifetime lifetime)
     {
         PhysicsDirectSpaceState3D space = context.GetWorld3D().DirectSpaceState;
         var query = new PhysicsShapeQueryParameters3D
@@ -209,8 +242,14 @@ public static class SpellResolver
 
         // Per-actor, not per-hurtbox: a blast clipping three zones of one dragon is still one hit (35A).
         var struck = new HitDedupe();
+        using var world = new WorldRay();
         foreach (Godot.Collections.Dictionary hit in hits)
         {
+            if (!lifetime.Check())
+            {
+                break;
+            }
+
             if (!hit.TryGetValue("collider", out Variant colliderVar) ||
                 colliderVar.AsGodotObject() is not Hurtbox hurtbox)
             {
@@ -235,7 +274,7 @@ public static class SpellResolver
             // standing on the other side of it — and the cone version reached through the arena wall
             // for its whole length. Tested before the dedupe, so a zone hidden behind cover cannot
             // spend the actor's one hit and shadow a zone that is exposed.
-            if (IsOccluded(space, center, VolumeCentre(hurtbox)))
+            if (IsOccluded(world, space, center, VolumeCentre(hurtbox)))
             {
                 continue;
             }
@@ -254,7 +293,7 @@ public static class SpellResolver
                 // rule comes from its footprint: its centre crushes; a full-charge edge can be blocked.
                 blow = blow with { GuardCrushOverride = SpellRules.IsDirectImpact(offset.Length(), 0.8f) };
             }
-            HitOne(context, hurtbox, blow, spell, caster, casterTeam);
+            HitOne(context, hurtbox, blow, spell, caster, casterTeam, lifetime: lifetime);
         }
     }
 
@@ -265,17 +304,14 @@ public static class SpellResolver
     /// ray does not report a shape it starts inside, so a burst that detonated against a wall is not
     /// blocked by that same wall.
     /// </summary>
-    private static bool IsOccluded(PhysicsDirectSpaceState3D space, Vector3 center, Vector3 target)
+    private static bool IsOccluded(WorldRay world, PhysicsDirectSpaceState3D space, Vector3 center, Vector3 target)
     {
         if (center.DistanceSquaredTo(target) < 0.0001f)
         {
             return false;
         }
 
-        PhysicsRayQueryParameters3D ray =
-            PhysicsRayQueryParameters3D.Create(center, target, CombatLayers.World);
-        ray.CollideWithAreas = false;
-        return space.IntersectRay(ray).Count > 0;
+        return world.FirstSolid(space, center, target) != null;
     }
 
     /// <summary>

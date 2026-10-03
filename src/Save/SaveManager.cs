@@ -76,6 +76,8 @@ public sealed partial class SaveManager : Node
     private Godot.Collections.Dictionary? _activeLoad;
     private HashSet<string>? _activeClaimed;
     private HashSet<string>? _activeDeferred;
+    private int _activeLoadFailures;
+    private bool _operationInProgress;
 
     public override void _EnterTree()
     {
@@ -111,10 +113,11 @@ public sealed partial class SaveManager : Node
 
     public void Register(ISaveable saveable)
     {
-        if (!_saveables.Contains(saveable))
+        if (_saveables.Contains(saveable))
         {
-            _saveables.Add(saveable);
+            return;
         }
+        _saveables.Add(saveable);
 
         // If a load is in flight, an actor that registers now (e.g. one the spawn director just
         // recreated) restores itself from the in-flight snapshot rather than missing this load.
@@ -130,6 +133,7 @@ public sealed partial class SaveManager : Node
                 }
                 catch (Exception ex)
                 {
+                    _activeLoadFailures++;
                     Log.Error($"Saveable '{id}' threw in Load() during spawn restore: {ex}");
                 }
             }
@@ -184,18 +188,50 @@ public sealed partial class SaveManager : Node
     /// lives in <see cref="AutosaveService"/>; this stays the low-level writer. Returns success.</summary>
     public bool SaveGame(string slot, bool isAutosave)
     {
-        DirAccess.MakeDirRecursiveAbsolute(SlotDir(slot));
+        if (_operationInProgress)
+        {
+            Log.Warn($"Cannot save slot '{slot}' while another save/load is in progress.");
+            return false;
+        }
+        _operationInProgress = true;
+        try
+        {
+            return SaveGameCore(slot, isAutosave);
+        }
+        catch (Exception ex)
+        {
+            Log.Error($"Could not save slot '{slot}': {ex}");
+            return false;
+        }
+        finally
+        {
+            _operationInProgress = false;
+        }
+    }
 
-        // Collect state defensively: a single component throwing in Save() must not
-        // abort the whole save or corrupt the file — log it and persist the rest.
+    private bool SaveGameCore(string slot, bool isAutosave)
+    {
+        Error directoryError = DirAccess.MakeDirRecursiveAbsolute(SlotDir(slot));
+        if (directoryError != Error.Ok)
+        {
+            Log.Error($"Could not create save slot '{slot}': {directoryError}");
+            return false;
+        }
+
+        // Collect everything before touching the authoritative file. A partial snapshot destroys
+        // progress just as surely as a truncated write, so any failed or duplicate entry refuses
+        // the commit and preserves the previous save.
         var objects = new Godot.Collections.Dictionary();
         int failures = 0;
-        foreach (ISaveable saveable in _saveables)
+        foreach (ISaveable saveable in _saveables.ToArray())
         {
+            if (saveable is Node node && (!IsInstanceValid(node) || node.IsQueuedForDeletion())) { continue; }
             string id = saveable.SaveId;
-            if (objects.ContainsKey(id))
+            if (string.IsNullOrEmpty(id) || objects.ContainsKey(id))
             {
-                Log.Warn($"Two saveables share SaveId '{id}'; the later one overwrites the earlier. State will be lost.");
+                failures++;
+                Log.Error($"Save slot '{slot}' has an empty or duplicate SaveId '{id}'; refusing to overwrite progress.");
+                continue;
             }
 
             try
@@ -207,6 +243,12 @@ public sealed partial class SaveManager : Node
                 failures++;
                 Log.Error($"Saveable '{id}' threw in Save(); skipping it: {ex}");
             }
+        }
+
+        if (failures > 0)
+        {
+            Log.Error($"Save slot '{slot}' could not capture {failures} object(s); previous save preserved.");
+            return false;
         }
 
         Godot.Collections.Dictionary header = BuildHeader(slot).ToDictionary();
@@ -265,7 +307,7 @@ public sealed partial class SaveManager : Node
             DirAccess.RemoveAbsolute(legacy);
         }
 
-        Log.Info($"Saved {objects.Count} object(s) to slot '{slot}'" + (failures > 0 ? $" ({failures} skipped)." : "."));
+        Log.Info($"Saved {objects.Count} object(s) to slot '{slot}'.");
         EventBus.Instance?.Publish(new GameSavedEvent(slot, isAutosave));
         return true;
     }
@@ -284,6 +326,12 @@ public sealed partial class SaveManager : Node
             }
 
             file.StoreString(contents);
+            file.Flush();
+            if (file.GetError() != Error.Ok)
+            {
+                Log.Error($"Could not write temp file '{temp}': {file.GetError()}; previous file preserved.");
+                return false;
+            }
         }
 
         Error renamed = DirAccess.RenameAbsolute(temp, target);
@@ -346,6 +394,10 @@ public sealed partial class SaveManager : Node
             if (fields.TryGetValue("player_yaw", out Variant yaw)) { info.PlayerYaw = (float)yaw.AsDouble(); }
             if (fields.TryGetValue("level", out Variant level)) { info.Level = level.AsInt32(); }
             if (fields.TryGetValue("corruption_tier", out Variant tier)) { info.CorruptionTier = tier.AsString(); }
+            if (fields.TryGetValue("race_id", out Variant race)) { info.RaceId = race.AsString(); }
+            if (fields.TryGetValue("char_name", out Variant name)) { info.CharacterName = name.AsString(); }
+            if (fields.TryGetValue("appearance", out Variant appearance)) { info.Appearance = appearance.AsString(); }
+            if (fields.TryGetValue("background", out Variant background)) { info.Background = background.AsString(); }
         }
 
         return info;
@@ -395,10 +447,20 @@ public sealed partial class SaveManager : Node
 
         foreach (string name in dir.GetDirectories())
         {
-            if (ReadHeader(name) is { } info)
+            if (SaveExists(name) && ReadHeader(name) is { } info)
             {
                 slots.Add(info);
             }
+        }
+
+        // Flat saves are still supported by LoadGame; they must also be discoverable by Continue
+        // and the slot browser. Prefer the directory layout when both forms exist.
+        foreach (string file in dir.GetFiles())
+        {
+            if (!file.EndsWith(".json", StringComparison.Ordinal)) { continue; }
+            string name = file.Substring(0, file.Length - 5);
+            if (FileAccess.FileExists(SlotSavePath(name))) { continue; }
+            if (ReadHeader(name) is { } info) { slots.Add(info); }
         }
 
         return slots;
@@ -469,6 +531,29 @@ public sealed partial class SaveManager : Node
     /// </summary>
     public bool LoadGame(string slot)
     {
+        if (_operationInProgress)
+        {
+            Log.Warn($"Cannot load slot '{slot}' while another save/load is in progress.");
+            return false;
+        }
+        _operationInProgress = true;
+        try
+        {
+            return LoadGameCore(slot);
+        }
+        catch (Exception ex)
+        {
+            Log.Error($"Could not load slot '{slot}'; refusing a partial restore: {ex}");
+            return false;
+        }
+        finally
+        {
+            _operationInProgress = false;
+        }
+    }
+
+    private bool LoadGameCore(string slot)
+    {
         // Prefer the new directory layout; fall back to a legacy flat file.
         string path = FileAccess.FileExists(SlotSavePath(slot)) ? SlotSavePath(slot) : LegacySlotPath(slot);
         if (!FileAccess.FileExists(path))
@@ -506,7 +591,14 @@ public sealed partial class SaveManager : Node
             return false;
         }
 
-        int version = versionVariant.AsInt32();
+        double rawVersion = versionVariant.AsDouble();
+        if (!double.IsFinite(rawVersion) || rawVersion != Math.Truncate(rawVersion) ||
+            rawVersion < int.MinValue || rawVersion > int.MaxValue)
+        {
+            Log.Error($"Save slot '{slot}' has an invalid version; refusing to load.");
+            return false;
+        }
+        int version = (int)rawVersion;
         if (!TryMigrate(slot, version, ref root))
         {
             return false;
@@ -519,17 +611,25 @@ public sealed partial class SaveManager : Node
             return false;
         }
 
+        var objects = objectsVariant.AsGodotDictionary();
+        foreach (KeyValuePair<Variant, Variant> entry in objects)
+        {
+            if (entry.Value.VariantType != Variant.Type.Dictionary)
+            {
+                Log.Error($"Save slot '{slot}' entry '{entry.Key}' is not an object; refusing to load.");
+                return false;
+            }
+        }
+
         // Continue this save's playtime from where it was last written, and keep the header around:
         // it also carries the region/transform the LocationApplier restores once the overlay lands.
         SaveSlotInfo? savedHeader = null;
         if (root.TryGetValue("header", out Variant headerVariant) && headerVariant.VariantType == Variant.Type.Dictionary)
         {
             savedHeader = SaveSlotInfo.FromDictionary(headerVariant.AsGodotDictionary());
-            _playtimeSeconds = savedHeader.PlaytimeSeconds;
         }
+        _playtimeSeconds = savedHeader?.PlaytimeSeconds ?? 0d;
 
-        var objects = objectsVariant.AsGodotDictionary();
-        EventBus.Instance?.Publish(new GameLoadingEvent(slot));
         int restored = 0;
         int reset = 0;
         int failures = 0;
@@ -541,12 +641,18 @@ public sealed partial class SaveManager : Node
         _activeLoad = objects;
         _activeClaimed = claimed;
         _activeDeferred = deferred;
+        _activeLoadFailures = 0;
         try
         {
+            EventBus.Instance?.Publish(new GameLoadingEvent(slot));
             // Iterate a snapshot: a saveable's Load() may spawn actors that register new saveables,
             // which would otherwise mutate the live list mid-enumeration.
             foreach (ISaveable saveable in _saveables.ToArray())
             {
+                // Earlier restores can despawn/rebuild actors. Their old wrappers may still be in
+                // this snapshot, but no longer belong to the live collection.
+                if (!_saveables.Contains(saveable)) { continue; }
+                if (saveable is Node node && (!IsInstanceValid(node) || node.IsQueuedForDeletion())) { continue; }
                 string id = saveable.SaveId;
                 if (claimed.Contains(id))
                 {
@@ -614,6 +720,8 @@ public sealed partial class SaveManager : Node
         }
         finally
         {
+            failures += _activeLoadFailures;
+            _activeLoadFailures = 0;
             _activeLoad = null;
             _activeClaimed = null;
             _activeDeferred = null;

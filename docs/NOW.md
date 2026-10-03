@@ -5,11 +5,17 @@
 Developer SDK: [`TOOLING.md`](TOOLING.md) (`python tools/embervale.py`). Every mechanic in the game,
 one line each: [`MECHANICS.md`](MECHANICS.md).
 
-## Where we are (2026-10-02, the magic upgrade integrated)
+## Where we are (2026-10-03, runtime debugging and optimization)
 
 The game is complete from New Game to credits. The finish run's contract and id registry are
 [`playbook/finish.md`](playbook/finish.md).
 
+- **Runtime audit.** Save capture now refuses partial snapshots; F9 and pause Load rebuild a fresh
+  session with the saved character identity and region. Streaming follows live focus, owns transient
+  actors and refuses unavailable prepared data or unsafe encounter placement. Magic checks damage
+  callbacks against cast lifetime, including immediate caster respawn, and uses actor-aware cover
+  queries. Shared entity/stat paths remove repeated managed allocation. Findings, measurements,
+  regression coverage and remaining boundaries are in [`RUNTIME_AUDIT.md`](RUNTIME_AUDIT.md).
 - **Magic.** The upgrade is integrated: 25 player spells and five enemy spells, committed cast
   wind-up/release/recovery, held channels, placed ground spells, breakable barriers, dash, school
   identities, controls/wards/DoTs, combos, learning and mastery. Death and live load cancel casts and
@@ -30,7 +36,8 @@ The game is complete from New Game to credits. The finish run's contract and id 
   `BossSummonComponent` braziers. Each defeat offers its ember (absorb = +25 corruption and
   `flag.<boss>_absorbed`) and drops a relic; Morthul's defeat leads to the throne instead. All seven
   have their own adopted Meshy bodies (as does Archivist Seren Adaru); capsules were fitted at
-  adoption but the bodies have not been reviewed at eye level.
+  adoption. Storm Tyrant retargeting is corrected and its geometry was reviewed from six angles; the other
+  new boss bodies still need eye-level review.
 - **Visions.** Closing a Flamebearer's absorb conversation (either choice) plays three narration cards
   of how that champion fell (`VisionSequence`, keys `vision.<name>.1..3`), once per save
   (`flag.vision.<name>`). Morthul has none; the throne choice follows him.
@@ -73,7 +80,8 @@ The game is complete from New Game to credits. The finish run's contract and id 
 **Open:** the maintainer play-through (G1/G3) of the exported build, New Game to credits and both
 endings; eye-level visual review of the new realms, bosses, duel braziers and ending skies; a reviewed
 world visual re-baseline (the baseline predates the 2026-09 rebuild); the new realms are not yet in
-the per-region GDScript probes (traversal, census, scene audit, shots); balance tuning of the new
+the per-region traversal, mesh census and screenshot probes (scene audit now covers all six);
+balance tuning of the new
 bosses and the duels.
 
 **Operating lessons (this 14 GB machine):** never run world bakes in parallel — merge first, then
@@ -215,35 +223,26 @@ Export templates are in `%APPDATA%\Godot\export_templates\4.7.1.stable.mono`.
 
 ## Verification
 
-Magic integration, 2026-10-02, verified on `codex/magic-upgrade-finished`. These completed checks
-cover the implementation, authored content and packaged runtime; human play-through and release
-certification remain outside this evidence.
+Runtime audit, 2026-10-03, on `codex/debug-optimization-audit`. SDK evidence lives in
+`artifacts/headless/<run-id>/summary.json`; those local artifacts include the exact commands,
+per-gate results and diagnostics. [`RUNTIME_AUDIT.md`](RUNTIME_AUDIT.md#validation) records the
+coverage and limits of the completed checks.
 
-| Gate | Result |
+| Check | Completed evidence |
 | --- | --- |
-| Master `world_bake.py --bake` | PASS — 145 cells and six region resources; source signature `4151e553f2d5ae4a3f2eaaa3bbc51cef0844b37c530e813a3a4bf1511ad83650`; run `20261002T033509-fa708c5ffa` (1,119 s), existing navigation-edge warnings only |
-| `magic_core_probe` | PASS — committed casts, interruption, charge, held channels, delivery, costs and real roster behavior |
-| `magic_status_probe` | PASS — real status components, controls, wards, combos, school interactions and cleanup |
-| `magic_learning_probe` | PASS — learning/mastery/Weave routes and spellbook/HUD construction |
-| `magic_lifetime_probe` | PASS — delivery cancellation before live load and session/caster lifetime ownership |
-| Final SDK test | PASS — 2,996 C# tests, zero failures/skips, and 28 Python SDK tests; run `20261002T035710-a752f33a27` (36.8 s) |
-| Final deterministic fast world suite | PASS — all six realms, bake inputs/output hashes, generation/district/maps/atlas, build/C# tests and shipping assembly exclusions; run `20261002T035604-cf5a6ece44` |
-| Full SDK validate | PASS — recursive resource checks and semantic ContentValidator references, well-formedness and reachability; run `20261002T035747-6af9e8c879` (93.8 s) |
-| Final lifecycle | PASS — three New Game/save/destroy/Load round-trips, zero orphan/baseline/invariant violations; run `20261002T035921-f78a3a8ec1` (52.2 s) |
-| Shared action, melee and defence probes | PASS — action-clip probe at fixed 60 FPS (`artifacts/magic-release/action-clip.log`); melee run `20261002T040106-e44161593f`; defence run `20261002T040117-527881818a` |
-| Direct `--story` gate | PASS — act chaining, save/load, endings and rival-duel wiring (`artifacts/magic-release/story.log`); this checks story behavior/wiring rather than winning those fights |
-| `magic_content_probe` against the completed bake | PASS — run `20261002T035524-85b35bbc6c`; all five magic probes are green |
-| Rendered magic scenario | PASS — run `20261002T040259-460557e273` (55.7 s); two reviewed 1280×720 captures show the Emberlash wind-up/HUD and six-school spellbook, with expected mana, mastery count and cast/delivery/status labels; existing navigation-edge/ObjectDB exit warnings only |
-| Windows ExportRelease and packaged `--story` | PASS — recovery-mode export exit 0 (`artifacts/magic-release/windows-export-retry.log`); fresh `Embervale.exe --headless -- --story` exit 0 in 7.1 s with an isolated user directory and no source-checkout `--path` (`artifacts/magic-release/packaged-story.log`); EXE 109,344,768 bytes, PCK 375,878,228 bytes |
+| Build and import | PASS — final build `20261003T161856-126dec4f1f` (20.8 s), zero warnings/errors; import `20261003T153012-937ea63ef4` (27.2 s), no diagnostics |
+| Normal lifecycle and player checkpoint reload | PASS — three normal save/load round-trips and two capture-profile reload round-trips; zero orphan or invariant violations in each gate, `20261003T153108-fea7607efb` |
+| Broad native engine coverage | 23 of 26 gates PASS in `20261003T145053-b2ecf2472d`; map, scenes and animation-library failed in that run and were repaired and rerun below |
+| Map, equipment sockets and animation library | PASS — all three gates in `20261003T152041-bea54f8d3b`, no diagnostics |
+| All-six-realm scene audit and its positive/negative rules | PASS — individual gates in `20261003T150336-922e8e5a37`; that aggregate run still failed its map gate |
+| Asset validation | PASS — `20261003T151851-18dd3e14d2` (39.3 s) |
+| World runtime audit | PASS — 41 checks in final run `20261003T162356-3cb6d72f7f`, including clear/blocked player landings, missing prepared data, streaming and transient ownership; no service-scope invariant errors |
+| Final unit and SDK tests | PASS — 3,025 C# tests, zero failures/skips, and 34 Python tests; `20261003T161917-417422d182` (26.3 s) |
+| Final master bake | PASS — 145 cells and six regions, 151 outputs; source `4e9963094eb6`; `20261003T154601-cd594ae2de` (1,774.5 s), existing navigation warnings only |
+| Recursive resource and semantic content validation | PASS — `20261003T161944-da53ba5f70` (132.2 s), zero diagnostics |
+| Component lookup measurement | PASS — 10,000 calls in `20261003T144851-ae0e3b55e8`: snapshot loop 2,252,864 managed bytes / 74.66 ms; indexed lookup 0 bytes / 3.59 ms. This measures one code path, not whole-game FPS |
+| Final world quality and native audits | PASS — `20261003T162356-3cb6d72f7f` (39.7 s): save/runtime audits, 41 world checks, 24 magic lifetime cases, all-six-realm generation/quality and shipping exclusions |
+| Storm Tyrant rendered captures | PASS — `20261003T162436-327fc3a6c7` (52.6 s), ten images generated; six geometry angles visually reviewed. Animation sample state was verified; those four images were generated but not all visually reviewed. Startup frame-budget warning remains |
 
-Export packaging completed with one editor diagnostic: `GodotTools.HotReloadAssemblyWatcher` called
-`Timer.Start` after removal from the editor tree. Its backtrace was confined to Godot editor/core;
-the packaged story run completed with no gameplay errors. Existing navigation-edge warnings and
-ObjectDB warnings on rendered exit remain as described above.
-
-Export notes: `export_presets.cfg` is committed; the locale CSV is imported with `importer="keep"` so
-the raw catalogue ships (it was silently dropped, which would have shown raw keys); the boot-time
-content validator runs only in debug builds.
-
-Not yet verified: a human play-through of either ending, eye-level renders of the new realms and
-bosses, and boss balance at real player levels.
+Existing navigation-edge warnings remain as described above. Human New Game-to-credits play-through,
+boss balance at real player levels, and eye-level review of the new realms and bosses remain open.

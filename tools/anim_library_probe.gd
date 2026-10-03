@@ -219,7 +219,7 @@ func _hands_stay_on_their_own_side(scene: Node, sk: Skeleton3D, id: String) -> b
 		var right: float = sk.get_bone_global_pose(rh).origin.x
 		if signf(left) != signf(rest_left) or signf(right) != signf(rest_right):
 			_failures.append(
-				"%s: '%s' crosses the arms — left hand rests at x=%+.3f and plays at x=%+.3f. Its rest is not the profile silhouette; enable retarget/rest_fixer/fix_silhouette in its .import."
-				% [id, slot, rest_left, left])
+				"%s: '%s' crosses the arms — left hand rests at x=%+.3f and plays at x=%+.3f; right hand rests at x=%+.3f and plays at x=%+.3f. Its rest is not the profile silhouette; enable retarget/rest_fixer/fix_silhouette in its .import."
+				% [id, slot, rest_left, left, rest_right, right])
 			ok = false
 	return ok

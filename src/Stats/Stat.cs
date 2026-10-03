@@ -115,8 +115,8 @@ public sealed class Stat
         float percentAdd = 0f;
         float value = _baseValue;
 
-        // First pass: gather flat and additive-percent; apply multiplicative inline.
-        var multipliers = new List<float>();
+        // Gather additive terms first. Multipliers must still be applied one by one after
+        // them, in authored order, to preserve the formula and floating-point rounding.
         foreach (StatModifier mod in _modifiers)
         {
             switch (mod.Type)
@@ -127,17 +127,17 @@ public sealed class Stat
                 case ModifierType.PercentAdd:
                     percentAdd += mod.Value;
                     break;
-                case ModifierType.PercentMult:
-                    multipliers.Add(mod.Value);
-                    break;
             }
         }
 
         value += flat;
         value *= 1f + percentAdd;
-        foreach (float m in multipliers)
+        foreach (StatModifier mod in _modifiers)
         {
-            value *= 1f + m;
+            if (mod.Type == ModifierType.PercentMult)
+            {
+                value *= 1f + mod.Value;
+            }
         }
 
         return value;

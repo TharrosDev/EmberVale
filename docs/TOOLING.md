@@ -181,6 +181,7 @@ python tools/embervale.py screenshot --baseline path/to/approved.png --threshold
 python tools/embervale.py perf tools/headless/scenarios/new-game.json --frames 300 --max-frame-ms 25
 python tools/embervale.py perf tools/headless/scenarios/new-game.json --baseline path/to/previous.metrics.json --threshold 0.10
 python tools/embervale.py world --mode visual
+python tools/embervale.py world --mode engine --gate save-audit --gate world-audit --gate runtime-audit
 python tools/embervale.py tool architecture_shots --render
 ```
 

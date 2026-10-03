@@ -30,9 +30,9 @@
     `dotnet build -p:EmbervaleTooling=false` to see what the shipping assembly
     compiles to without exporting.
 
-    NOTE: this project has no export_presets.cfg and has never been exported, so
-    "the shipping build" is currently proved by `dotnet build -c ExportRelease`
-    compiling clean, not by a real export artifact.
+    The tracked Windows Desktop preset produces build/windows/Embervale.exe and
+    its PCK. The ExportRelease assembly check and packaged story smoke verify
+    the shipping build; current evidence is recorded in docs/NOW.md.
   -->
   <PropertyGroup>
     <EmbervaleTooling Condition="'$(EmbervaleTooling)' == '' And '$(Configuration)' == 'ExportRelease'">false</EmbervaleTooling>
@@ -96,6 +96,8 @@
     <Compile Remove="src/Debugging/ShotHarness.cs" />
     <Compile Remove="src/Debugging/ReproHarness.cs" />
     <Compile Remove="src/Debugging/Magic*ProbeDriver.cs" />
+    <Compile Remove="src/Debugging/*AuditProbeDriver.cs" />
+    <Compile Remove="src/Debugging/SaveAuditProbe.cs" />
     <Compile Remove="src/Magic/MagicStatusProbeSeam.cs" />
   </ItemGroup>
 </Project>

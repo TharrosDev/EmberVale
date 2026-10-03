@@ -17,23 +17,19 @@ namespace Embervale.World;
 /// Two corrections, in order, and both are needed. The navmesh answers "is this somewhere an actor
 /// can stand", which is what keeps a member out of a wall — but the mesh is a simplified surface and
 /// its Y drifts from the terrain by a few centimetres, so the ground answers the height afterwards.
-/// With no navigation map (the procedural sandbox, or a cell whose bake has not landed) the ground
-/// alone is still better than the raw point.
+/// With no synchronized navigation map the placement service can still validate real ground and
+/// capsule clearance. A rejected point is never replaced by an unchecked analytic height: callers
+/// skip materializing that actor and keep their live count honest.
 /// </summary>
 public static class SpawnPlacement
 {
     /// <summary>How far a spawn point may be nudged onto the navmesh. Beyond this the nearest
     /// walkable ground is somewhere else entirely and moving the actor there would scatter a band
-    /// across the map; the point is used as-is on the ground and the actor walks out on its own.</summary>
+    /// across the map; a point that fails real ground/clearance checks is refused.</summary>
     private const float MaxSnapDistance = SafePlacementService.DefaultMaxCorrection;
 
-    /// <summary>The nearest point an actor can stand at, given a desired one.</summary>
-    public static Vector3 Resolve(Node3D context, Vector3 desired)
-    {
-        return SafePlacementService.TryResolve(
-            context, desired, out Vector3 resolved, maxCorrection: MaxSnapDistance)
-            ? resolved
-            : WorldGround.OnGround(
-                desired, (SafePlacementService.DefaultHeight * 0.5f) + 0.06f);
-    }
+    /// <summary>Finds a real capsule-clear landing, or refuses materialization.</summary>
+    public static bool TryResolve(Node3D context, Vector3 desired, out Vector3 resolved) =>
+        SafePlacementService.TryResolve(
+            context, desired, out resolved, maxCorrection: MaxSnapDistance);
 }

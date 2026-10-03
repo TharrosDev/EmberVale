@@ -31,6 +31,7 @@ public sealed class SpellLifetime : IDisposable
         _bus = EventBus.Instance;
         _bus?.Subscribe<GameLoadingEvent>(OnGameLoading);
         _bus?.Subscribe<EntityDespawnedEvent>(OnEntityDespawned);
+        _bus?.Subscribe<EntityDiedEvent>(OnEntityDied);
         if (_casterBody != null)
         {
             _casterBody.TreeExiting += OnCasterExiting;
@@ -88,6 +89,7 @@ public sealed class SpellLifetime : IDisposable
         {
             _bus.Unsubscribe<GameLoadingEvent>(OnGameLoading);
             _bus.Unsubscribe<EntityDespawnedEvent>(OnEntityDespawned);
+            _bus.Unsubscribe<EntityDiedEvent>(OnEntityDied);
         }
 
         if (_casterBody != null && GodotObject.IsInstanceValid(_casterBody))
@@ -103,6 +105,14 @@ public sealed class SpellLifetime : IDisposable
     private void OnGameLoading(GameLoadingEvent _) => Cancel();
 
     private void OnEntityDespawned(EntityDespawnedEvent e)
+    {
+        if (ReferenceEquals(e.Entity, _caster))
+        {
+            Cancel();
+        }
+    }
+
+    private void OnEntityDied(EntityDiedEvent e)
     {
         if (ReferenceEquals(e.Entity, _caster))
         {

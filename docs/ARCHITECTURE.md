@@ -487,7 +487,9 @@ projection preloads ahead, hysteresis prevents thrash, activation is staged unde
 with `MaxConcurrentLoadRequests` (drops to one under memory pressure). Only one region is active; a
 realm transition is a session-world boundary. `RequirePosition` pins a landing Near; `IsPositionReady`
 waits for real collision. `LoadingCoordinator` + `SafePlacementService` (ground, slope, capsule
-clearance, optional nav) gate every spawn — never a timer. Cell loaded/unloaded events describe
+clearance, optional nav) gate player loading and actor materialization. Exhausted player placement
+aborts to title. Hazard recovery retains a last-resort analytic landing; its pending-placement
+boundary is recorded in `RUNTIME_AUDIT.md`. Cell loaded/unloaded events describe
 gameplay ownership.
 
 - `RegionResource`: `Id`, `DisplayName`, `Realm`, `SpawnPoint` (Y is clearance), `Cells`, `Bounds`,
@@ -642,13 +644,14 @@ rolls back). Any kind but Bank can be opened from dialogue (`OpenService`). A wo
 failure policy, migrations).
 
 - `ISaveable` (`SaveId`, `Save()` / `Load(dict)` with a Godot `Dictionary`). `SaveManager` writes
-  `user://saves/<slot>.json` in a versioned envelope; writes are atomic (`.tmp` + rename); each
-  component's save/load is isolated; `TryMigrate` upgrades older envelopes and refuses newer; load warns
+  `user://saves/<slot>/save.json` in a versioned envelope (legacy flat files remain readable);
+  writes are staged, flushed and checked before atomic replacement. Failed captures refuse the save,
+  and failed restores refuse the load. `TryMigrate` upgrades older envelopes and refuses newer; load warns
   about orphaned entries and unclaimed saveables.
 - **Identity:** `EntityComponent.SaveKey(prefix)` prefers `PersistentId` (the player is `player`).
   Components call **`RegisterSaveable()`** in `OnInitialize`, which registers only when the owner has a
   stable id (`SaveKeyPolicy`); world services register in `_EnterTree` with fixed keys. `savecheck` (F1)
-  should report 0 volatile ids. Duplicate `SaveId`s warn at write time — chase those.
+  should report 0 volatile ids. Empty or duplicate `SaveId`s refuse the save and preserve progress.
 - Benign warnings: "no usable entry for `<id>`" from a save older than the saveable.
 - `PersistentSpawnDirector` (`spawns`) recreates tracked spawned actors from a manifest via
   `PersistentActorRegistry`; recreated components restore through the in-flight-load hook. Ambient

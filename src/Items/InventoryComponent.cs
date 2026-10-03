@@ -238,13 +238,21 @@ public partial class InventoryComponent : EntityComponent, ISaveable
     /// and removes it from the bag. Returns false if it isn't a held consumable.</summary>
     public bool Consume(ItemInstance? instance)
     {
-        if (instance?.Template is not ConsumableItemResource consumable || CountOf(instance.TemplateId) <= 0)
+        if (instance?.Template is not ConsumableItemResource consumable)
         {
             return false;
         }
 
         StatsComponent? stats = Entity?.GetComponent<StatsComponent>();
-        if (stats == null)
+        if (stats == null || !stats.IsAlive)
+        {
+            return false;
+        }
+
+        // Secure the exact held unit before publishing healing events. An instance from a
+        // previous load (or another bag) must not heal for free just because its template
+        // is still present, and a reentrant heal listener must not consume this unit twice.
+        if (RemoveOneInstance(instance) == null)
         {
             return false;
         }
@@ -254,7 +262,6 @@ public partial class InventoryComponent : EntityComponent, ISaveable
             stats.Heal(consumable.HealAmount);
         }
 
-        RemoveOneInstance(instance);
         Log.Info($"Consumed {consumable.DisplayName}.");
         return true;
     }

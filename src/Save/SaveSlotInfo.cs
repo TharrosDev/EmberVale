@@ -48,22 +48,37 @@ public sealed class SaveSlotInfo
     /// <summary>The character's chosen name (Phase 26C).</summary>
     public string CharacterName { get; set; } = "Wanderer";
 
-    public Godot.Collections.Dictionary ToDictionary() => new()
+    /// <summary>Optional creator identity fields; older saves default to empty.</summary>
+    public string Appearance { get; set; } = string.Empty;
+    public string Background { get; set; } = string.Empty;
+
+    public Godot.Collections.Dictionary ToDictionary()
     {
-        ["slot"] = Slot,
-        ["timestamp"] = TimestampUnix,
-        ["playtime"] = PlaytimeSeconds,
-        ["region"] = Region,
-        ["region_id"] = RegionId,
-        ["player_x"] = PlayerX,
-        ["player_y"] = PlayerY,
-        ["player_z"] = PlayerZ,
-        ["player_yaw"] = PlayerYaw,
-        ["level"] = Level,
-        ["corruption_tier"] = CorruptionTier,
-        ["race_id"] = RaceId,
-        ["char_name"] = CharacterName,
-    };
+        var data = new Godot.Collections.Dictionary
+        {
+            ["slot"] = Slot,
+            ["timestamp"] = TimestampUnix,
+            ["playtime"] = PlaytimeSeconds,
+            ["region"] = Region,
+            ["region_id"] = RegionId,
+            ["level"] = Level,
+            ["corruption_tier"] = CorruptionTier,
+            ["race_id"] = RaceId,
+            ["char_name"] = CharacterName,
+            ["appearance"] = Appearance,
+            ["background"] = Background,
+        };
+        // Absence is meaningful for older saves and for a save with no live player. Emitting
+        // default zero coordinates turns that absence into a teleport to the world origin.
+        if (HasLocation)
+        {
+            data["player_x"] = PlayerX;
+            data["player_y"] = PlayerY;
+            data["player_z"] = PlayerZ;
+            data["player_yaw"] = PlayerYaw;
+        }
+        return data;
+    }
 
     public static SaveSlotInfo FromDictionary(Godot.Collections.Dictionary data)
     {
@@ -81,6 +96,8 @@ public sealed class SaveSlotInfo
         if (data.TryGetValue("corruption_tier", out Variant tier)) { info.CorruptionTier = tier.AsString(); }
         if (data.TryGetValue("race_id", out Variant race)) { info.RaceId = race.AsString(); }
         if (data.TryGetValue("char_name", out Variant name)) { info.CharacterName = name.AsString(); }
+        if (data.TryGetValue("appearance", out Variant appearance)) { info.Appearance = appearance.AsString(); }
+        if (data.TryGetValue("background", out Variant background)) { info.Background = background.AsString(); }
         return info;
     }
 }

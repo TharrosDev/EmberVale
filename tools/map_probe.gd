@@ -24,7 +24,6 @@ extends SceneTree
 
 const LOCATIONS_DIR := "res://data/map_locations"
 const REGIONS_DIR := "res://data/regions"
-const SCENES_DIR := "res://scenes/regions"
 
 var _failures: Array[String] = []
 var _content_loader: Node
@@ -49,13 +48,20 @@ func _run() -> void:
 
 	var centres := _cell_centres()
 	var sizes := _cell_sizes()
+	var scene_ids := _cell_scene_ids()
 	print("map_probe: %d cell centre(s) from %s" % [centres.size(), REGIONS_DIR])
 
 	var placed := {}
 	var total := 0
 
-	for scene_path in _scene_paths(SCENES_DIR):
-		var cell_id: String = _cell_id_for(scene_path, centres)
+	# Audit the authored production catalogue, including exact scene ownership. Old unreferenced
+	# prototype scenes can remain on disk without becoming invented world cells in this probe.
+	var scene_paths: Array = scene_ids.keys()
+	scene_paths.sort()
+	for scene_path in scene_paths:
+		var cell_id: String = _cell_id_for(scene_path, scene_ids)
+		if cell_id.is_empty():
+			continue
 		var centre: Vector3 = centres.get(cell_id, Vector3.ZERO)
 
 		var packed: PackedScene = load(scene_path)
@@ -230,26 +236,37 @@ func _cell_centres() -> Dictionary:
 	return centres
 
 
-func _cell_id_for(scene_path: String, centres: Dictionary) -> String:
-	var stem := scene_path.get_file().trim_suffix(".tscn")
-	for id in centres:
-		if String(id).ends_with("." + stem):
-			return id
-	return stem
-
-
-func _scene_paths(directory: String) -> Array:
-	var out := []
-	var dir := DirAccess.open(directory)
+func _cell_scene_ids() -> Dictionary:
+	var scene_ids := {}
+	var dir := DirAccess.open(REGIONS_DIR)
 	if dir == null:
-		return out
+		_fail("cannot open %s" % REGIONS_DIR)
+		return scene_ids
 	for file in dir.get_files():
-		if file.ends_with(".tscn"):
-			out.append("%s/%s" % [directory, file])
-	for sub in dir.get_directories():
-		out.append_array(_scene_paths("%s/%s" % [directory, sub]))
-	out.sort()
-	return out
+		var name := file.trim_suffix(".remap")
+		if not name.ends_with(".tres"):
+			continue
+		var region: Resource = load("%s/%s" % [REGIONS_DIR, name])
+		if region == null:
+			_fail("region %s did not load" % name)
+			continue
+		for cell in region.Cells:
+			var path: String = cell.ScenePath
+			if scene_ids.has(path):
+				_fail("scene '%s' is assigned to more than one cell" % path)
+				scene_ids[path] = ""
+			else:
+				scene_ids[path] = String(cell.Id)
+	return scene_ids
+
+
+func _cell_id_for(scene_path: String, scene_ids: Dictionary) -> String:
+	# Stems such as landing, south_fields and caravan_road recur in different realms.
+	# The exact authored path owns the cell identity; a basename cannot decide it.
+	var cell_id: String = scene_ids.get(scene_path, "")
+	if cell_id.is_empty():
+		_fail("scene '%s' has no unambiguous authored cell" % scene_path)
+	return cell_id
 
 
 ## Cell id -> Vector2(Width, Depth), from the cell's WorldCellPresentationResource. Loaded rather

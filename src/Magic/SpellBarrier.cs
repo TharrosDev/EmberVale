@@ -351,7 +351,8 @@ public partial class SpellBarrier : Node3D
             }
 
             _nextHit[owner.RuntimeId] = now + tick;
-            SpellResolver.HitOne(this, hurtbox, Packet, Spell, Caster, CasterTeam, dealDamage: Spell.BaseDamage > 0f);
+            SpellResolver.HitOne(this, hurtbox, Packet, Spell, Caster, CasterTeam,
+                dealDamage: Spell.BaseDamage > 0f, lifetime: _lifetime);
             if (Ended || _lifetime?.Check() != true)
             {
                 return;

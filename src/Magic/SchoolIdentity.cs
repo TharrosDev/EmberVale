@@ -87,7 +87,8 @@ public static class SchoolIdentity
         bool targetWasMarked = false,
         bool targetKilled = false,
         float targetHealthFraction = -1f,
-        Vector3? hitPosition = null)
+        Vector3? hitPosition = null,
+        SpellLifetime? lifetime = null)
     {
         switch (spell.School)
         {
@@ -95,13 +96,13 @@ public static class SchoolIdentity
                 FeedKindle(primary, caster);
                 break;
             case DamageType.Frost when !targetKilled:
-                EscalateFreeze(primary, caster);
+                EscalateFreeze(primary, caster, lifetime);
                 break;
             case DamageType.Lightning:
                 // A brand is a mark, not a bolt: it must not arc to (and re-brand) another foe.
                 if (spell.StatusEffectId != StatusIds.Stormbrand)
                 {
-                    ChainToNearby(context, spell, packet, caster, casterTeam, primary, hitPosition);
+                    ChainToNearby(context, spell, packet, caster, casterTeam, primary, hitPosition, lifetime);
                 }
 
                 break;
@@ -131,13 +132,16 @@ public static class SchoolIdentity
 
     /// <summary>A Frost hit on an already-chilled target freezes it: a short Stun and Root, then it is
     /// immune to being frozen again (the status's <c>ControlImmunitySeconds</c>). The chill is spent.</summary>
-    private static void EscalateFreeze(Hurtbox primary, IEntity? caster)
+    private static void EscalateFreeze(Hurtbox primary, IEntity? caster, SpellLifetime? lifetime)
     {
         StatusEffectsComponent? status = primary.OwnerEntity?.GetComponent<StatusEffectsComponent>();
         if (status != null && status.Has(StatusIds.Chill))
         {
             status.Consume(StatusIds.Chill);
-            status.Apply(StatusEffectDatabase.Get(StatusIds.Frozen), caster);
+            if (lifetime?.Check() != false)
+            {
+                status.Apply(StatusEffectDatabase.Get(StatusIds.Frozen), caster);
+            }
         }
     }
 
@@ -182,7 +186,8 @@ public static class SchoolIdentity
         IEntity? caster,
         int casterTeam,
         Hurtbox primary,
-        Vector3? hitPosition = null)
+        Vector3? hitPosition = null,
+        SpellLifetime? lifetime = null)
     {
         Vector3 center = hitPosition ?? primary.GlobalPosition;
         PhysicsDirectSpaceState3D space = context.GetWorld3D().DirectSpaceState;
@@ -228,7 +233,7 @@ public static class SchoolIdentity
         }
 
         int pick = PickChainTarget(candidates);
-        if (pick < 0)
+        if (pick < 0 || lifetime?.Check() == false)
         {
             return;
         }
@@ -236,7 +241,9 @@ public static class SchoolIdentity
         Hurtbox best = hurtboxes[pick];
         bool toBrand = candidates[pick].Branded;
         var arc = packet with { Amount = ChainDamage(packet.Amount, toBrand) };
-        best.Receive(arc);
-        SpellResolver.ApplyStatus(best.OwnerEntity, spell, caster);
+        if (!best.Receive(arc).Killed && lifetime?.Check() != false)
+        {
+            SpellResolver.ApplyStatus(best.OwnerEntity, spell, caster);
+        }
     }
 }

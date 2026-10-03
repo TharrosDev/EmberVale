@@ -27,7 +27,7 @@ namespace Embervale.Bootstrap;
 /// the gate aborts to the title rather than resuming into an incomplete world. The placement stage
 /// is additionally bounded by <see cref="PlacementRetryFrames"/>: collision can be resident while
 /// a building's collider is still a frame behind the terrain's, so a refused placement is retried
-/// once per physics frame before falling back to the heightfield. A stuck stage is named in the log
+/// once per physics frame before aborting to the title. A stuck stage is named in the log
 /// every <see cref="ProgressReportSeconds"/>, and the settle line records when each stage cleared.
 /// A second <see cref="Begin"/> while the gate is open never drops the first caller's action — both
 /// run, once, on the frame play resumes.</para>
@@ -40,7 +40,7 @@ public sealed partial class LoadingCoordinator : Node
     /// <summary>Seconds between "still waiting on …" lines while a stage holds.</summary>
     [Export(PropertyHint.Range, "0,30,0.5")] public double ProgressReportSeconds { get; set; } = 5.0d;
 
-    /// <summary>Physics frames the placement stage retries before it settles for the heightfield.</summary>
+    /// <summary>Physics frames the placement stage retries before aborting an unsafe landing.</summary>
     [Export(PropertyHint.Range, "1,240,1")] public int PlacementRetryFrames { get; set; } = 20;
 
     private const float GroundProbeUp = 1.0f;
@@ -237,9 +237,9 @@ public sealed partial class LoadingCoordinator : Node
     /// before the cells exist; a metre of disagreement between that field and the collision mesh it
     /// generates leaves the player embedded or hovering.
     ///
-    /// Returns false while placement should be retried next frame; true once the player is placed —
-    /// on a validated spot, or on the heightfield after <see cref="PlacementRetryFrames"/> refusals,
-    /// which is logged with the search's diagnosis so a landing inside a building is findable.
+    /// Returns true only once the player is placed on a validated spot. A refusal returns false
+    /// while the next frame can retry; exhausting <see cref="PlacementRetryFrames"/> aborts the
+    /// session with the search's diagnosis and never releases play or its completion action.
     /// </summary>
     private bool SettlePlayer()
     {
@@ -267,11 +267,10 @@ public sealed partial class LoadingCoordinator : Node
         }
 
         placement = report.Summary();
-        Log.Warn($"LoadingCoordinator: no capsule-clear landing near {player.GlobalPosition} after " +
-                 $"{_placementAttempts} frame(s) — {placement} (mostly {report.Dominant}). " +
-                 "Falling back to the heightfield.");
-        player.GlobalPosition = WorldSessionDirector.SafeLanding(player.GlobalPosition);
-        return true;
+        Abort($"LoadingCoordinator: no capsule-clear landing near {player.GlobalPosition} after " +
+              $"{_placementAttempts} frame(s) — {placement} (mostly {report.Dominant}). " +
+              "Returning to the title screen instead of resuming into blocked geometry.");
+        return false;
     }
 
     private static void RegroupParty()

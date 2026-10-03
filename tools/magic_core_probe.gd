@@ -89,6 +89,9 @@ func _initialize() -> void:
 	await _check_costs()
 	await _check_roster_identities()
 	await _check_pierce_and_homing()
+	await _check_actor_geometry()
+	await _check_worldray_crowd()
+	await _check_status_respawn()
 	await _check_totem()
 	await _check_save()
 	await _check_lifecycle_interrupts()
@@ -1191,6 +1194,152 @@ func _check_pierce_and_homing() -> void:
 	if not brand_hit or plain_hit:
 		_fail("homing: the orb did not prefer the Stormbranded foe (plain %s, branded %s)" % [plain_hit, brand_hit])
 	await _free([caster, plain_foe, branded])
+
+
+# ---- totem ---------------------------------------------------------------------------------------
+
+func _check_actor_geometry() -> void:
+	var bolt := _spell("spell.probe_actor_collision", {"WindupSeconds": 0.05, "RecoverySeconds": 0.1,
+		"ManaCost": 0.0, "ImpactRadius": 0.0})
+	var caster := _actor("GeometryCaster", 1, Vector3.ZERO, [bolt])
+	var ally := _actor("GeometryAlly", 1, Vector3(0, 0, -3))
+	var target := _actor("GeometryTarget", 2, Vector3(0, 0, -6))
+	# Production CharacterEntity bodies occupy the legacy world layer. Earlier magic probes
+	# used layer 2 exclusively, hiding actor capsules mistaken for spell-blocking walls.
+	for actor in [caster, ally, target]:
+		actor["body"].collision_layer = 1
+	await _frames(3)
+	var target_hp: float = _health(target)
+	var ally_hp: float = _health(ally)
+	if not caster["casting"].TryCastById(bolt.Id):
+		_fail("geometry: control projectile was refused")
+	await _frames(70)
+	if _health(target) >= target_hp or _health(ally) != ally_hp:
+		_fail("geometry: a projectile must pass an allied legacy-world capsule and hit the hostile hurtbox")
+	target_hp = _health(target)
+	bolt.ImpactRadius = 10.0
+	_driver.GroundImpact(_world, bolt, caster["body"], Vector3(0, 1, -1), 10.0, 0.0, 1)
+	if _health(target) >= target_hp or _health(ally) != ally_hp:
+		_fail("geometry: actor capsules must not occlude a burst against a hostile target")
+	# A physical world body on layer 2 is cover, even though actors on that layer are skipped.
+	var wall := StaticBody3D.new()
+	wall.collision_layer = 2
+	var holder := CollisionShape3D.new()
+	var box := BoxShape3D.new()
+	box.size = Vector3(4, 3, 0.2)
+	holder.shape = box
+	wall.add_child(holder)
+	wall.position = Vector3(0, 1.5, -4.5)
+	_world.add_child(wall)
+	await _frames(3)
+	target_hp = _health(target)
+	_driver.GroundImpact(_world, bolt, caster["body"], Vector3(0, 1, -1), 10.0, 0.0, 1)
+	if _health(target) != target_hp:
+		_fail("geometry: a burst passed through physical world geometry on layer 2")
+	bolt.ImpactRadius = 0.0
+	if not caster["casting"].TryCastById(bolt.Id):
+		_fail("geometry: covered projectile was refused")
+	await _frames(70)
+	if _health(target) != target_hp:
+		_fail("geometry: a projectile passed through physical world geometry on layer 2")
+	print("geometry: spells pass actor capsules and respect physical world cover")
+	await _free([caster, ally, target, wall])
+	await _clear_transients()
+
+
+func _check_worldray_crowd() -> void:
+	var crowd := []
+	for i in 6:
+		var actor := _actor("Crowd%d" % i, 1, Vector3(20, 0, -2 - i))
+		actor["body"].collision_layer = 1
+		crowd.append(actor)
+	await _frames(3)
+	var ray_from := Vector3(20, 1, 0)
+	var ray_to := Vector3(20, 1, -10)
+	if not _driver.WorldSegmentClear(_world, ray_from, ray_to):
+		_fail("crowd: a clear ray through six actor capsules reported world cover")
+	var wall := StaticBody3D.new()
+	wall.collision_layer = 1
+	var holder := CollisionShape3D.new()
+	var box := BoxShape3D.new()
+	box.size = Vector3(4, 3, 0.2)
+	holder.shape = box
+	wall.add_child(holder)
+	wall.position = Vector3(20, 1.5, -8.5)
+	_world.add_child(wall)
+	await _frames(3)
+	if _driver.WorldSegmentClear(_world, ray_from, ray_to):
+		_fail("crowd: a wall behind six actor capsules disappeared when WorldRay exhausted its old four-actor skip budget")
+	print("crowd: clear actor crowds pass rays; walls behind them remain cover")
+	crowd.append(wall)
+	await _free(crowd)
+	# More than the bounded query budget is an unproven segment, so fail closed. These
+	# fixtures need only an entity capsule, keeping the exhaustion case inexpensive.
+	crowd.clear()
+	for i in 65:
+		var actor := CharacterBody3D.new()
+		actor.set_script(load("res://src/Entities/CharacterEntity.cs"))
+		actor.collision_layer = 1
+		actor.position = Vector3(20, 0, -2 - i)
+		var capsule_holder := CollisionShape3D.new()
+		var capsule := CapsuleShape3D.new()
+		capsule.radius = 0.2
+		capsule.height = 1.8
+		capsule_holder.shape = capsule
+		capsule_holder.position.y = 0.9
+		actor.add_child(capsule_holder)
+		_world.add_child(actor)
+		crowd.append(actor)
+	await _frames(3)
+	if _driver.WorldSegmentClear(_world, ray_from, Vector3(20, 1, -70)):
+		_fail("crowd: exhausting the bounded actor query budget fabricated a clear segment")
+	await _free(crowd)
+
+
+func _check_status_respawn() -> void:
+	_driver.BeginImmediateRespawn("RespawningDot")
+	var bearer := _actor("RespawningDot", 2, Vector3.ZERO)
+	await _frames(3)
+	bearer["status"].process_mode = Node.PROCESS_MODE_DISABLED
+	bearer["stats"].process_mode = Node.PROCESS_MODE_DISABLED
+	bearer["stats"].SetCurrent(HEALTH, 1.0)
+	_apply(bearer, "res://data/status_effects/Burning.tres")
+	_driver.StepStatuses(bearer["status"], 3.1)
+	if _health(bearer) != bearer["stats"].GetMax(HEALTH) or _has_status(bearer, "status.burning"):
+		_fail("respawn: removed pre-death Burning continued its catch-up ticks on the revived actor")
+	_driver.EndImmediateRespawn()
+	await _free([bearer])
+
+	_driver.BeginImmediateRespawn("RespawningKindle")
+	bearer = _actor("RespawningKindle", 2, Vector3.ZERO)
+	var caster := _actor("KindleCaster", 1, Vector3(0, 0, 8))
+	await _frames(3)
+	bearer["status"].process_mode = Node.PROCESS_MODE_DISABLED
+	bearer["stats"].SetCurrent(HEALTH, 1.0)
+	var kindled := _res("res://data/status_effects/Kindled.tres")
+	for i in 3:
+		_driver.ApplyStatusFrom(bearer["status"], kindled, caster["body"])
+	if _health(bearer) != bearer["stats"].GetMax(HEALTH) or _has_status(bearer, "status.burning"):
+		_fail("respawn: lethal Kindle detonation applied Burning to the revived actor")
+	_driver.EndImmediateRespawn()
+	await _free([bearer, caster])
+
+	# The same lethal-outcome rule must protect a neighbour killed by the detonation splash.
+	_driver.BeginImmediateRespawn("RespawningKindleNeighbour")
+	var neighbour := _actor("RespawningKindleNeighbour", 2, Vector3(2, 0, 0))
+	bearer = _actor("KindleBearer", 2, Vector3.ZERO)
+	caster = _actor("KindleCaster", 1, Vector3(0, 0, 8))
+	await _frames(3)
+	for actor in [bearer, neighbour]:
+		actor["status"].process_mode = Node.PROCESS_MODE_DISABLED
+	neighbour["stats"].SetCurrent(HEALTH, 1.0)
+	for i in 3:
+		_driver.ApplyStatusFrom(bearer["status"], kindled, caster["body"])
+	if not _has_status(bearer, "status.burning") or _has_status(neighbour, "status.burning"):
+		_fail("respawn: Kindle splash must ignite a surviving bearer and withhold Burning from its revived neighbour")
+	_driver.EndImmediateRespawn()
+	print("respawn: removed DoTs and lethal Kindle hits cannot afflict the revived actor")
+	await _free([bearer, caster, neighbour])
 
 
 # ---- totem ---------------------------------------------------------------------------------------

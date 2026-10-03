@@ -89,7 +89,8 @@ public partial class StatsComponent : EntityComponent, ISaveable
 
     protected override void OnInitialize()
     {
-        BuildStats(Attributes ?? AttributeSet.CreateDefault());
+        Attributes ??= AttributeSet.CreateDefault();
+        BuildStats(Attributes);
         RefillResources();
         _combat = Entity!.GetComponent<CombatComponent>();
         RegisterSaveable();

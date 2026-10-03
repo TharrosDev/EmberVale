@@ -163,6 +163,17 @@ public partial class MagicCoreProbeDriver : RefCounted
     public void ApplyStatus(StatusEffectsComponent status, StatusEffectResource definition) =>
         status.Apply(definition, null);
 
+    public void ApplyStatusFrom(StatusEffectsComponent status, StatusEffectResource definition, Node3D source) =>
+        status.Apply(definition, source as Entities.IEntity);
+
+    public void StepStatuses(StatusEffectsComponent status, double seconds) => status._Process(seconds);
+
+    public bool WorldSegmentClear(Node3D context, Vector3 from, Vector3 to)
+    {
+        using var ray = new WorldRay();
+        return ray.FirstSolid(context.GetWorld3D().DirectSpaceState, from, to) == null;
+    }
+
     public double StatusRemaining(StatusEffectsComponent statuses, string id)
     {
         foreach (StatusEffect effect in statuses.ActiveEffects)

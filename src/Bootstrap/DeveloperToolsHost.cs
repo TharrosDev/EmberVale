@@ -23,10 +23,9 @@ namespace Embervale.Bootstrap;
 ///
 /// <para>The console (F1), the debug HUD (F3), the profiler (F4), the standing integrity checker,
 /// the training dummy and the single-key cheats used to be threaded through the bootstrap beside
-/// the game's own systems, each with its own <c>BuildProfile</c> check. They are all here now and
-/// the gate is one <c>if</c> in <see cref="GameSession.Build"/>: <b>a capture or exported build
-/// never constructs this node at all</b>, so there is nothing to accidentally respond to a stray
-/// keypress.</para>
+/// the game's own systems, each with its own <c>BuildProfile</c> check. They are all here now;
+/// <see cref="GameSession.Build"/> gates their overlays and this host filters their keys in a
+/// capture or exported build.</para>
 ///
 /// <para>Quick save and quick load are the exception and stay unconditional — they are player
 /// conveniences, not developer affordances — so this node processes keys in every build and filters
@@ -49,8 +48,11 @@ public sealed partial class DeveloperToolsHost : Node
     public override void _EnterTree()
     {
         ProcessMode = ProcessModeEnum.Always;
-        EventBus.Instance?.Subscribe<EntityDamagedEvent>(OnEntityDamaged);
-        EventBus.Instance?.Subscribe<EntityDiedEvent>(OnEntityDied);
+        if (BuildProfile.ShowDeveloperTools)
+        {
+            EventBus.Instance?.Subscribe<EntityDamagedEvent>(OnEntityDamaged);
+            EventBus.Instance?.Subscribe<EntityDiedEvent>(OnEntityDied);
+        }
         EventBus.Instance?.Subscribe<GameSavedEvent>(OnGameSaved);
     }
 
@@ -111,6 +113,11 @@ public sealed partial class DeveloperToolsHost : Node
         {
             return;
         }
+        if ((key.Keycode is Key.F5 or Key.F9) &&
+            GameManager.Instance?.State is not (GameState.Playing or GameState.Paused))
+        {
+            return;
+        }
 
         // Quick save/load stay in every build — they are player conveniences. The cheats below them
         // are developer affordances and a capture build must not respond to a stray H or X.
@@ -148,10 +155,9 @@ public sealed partial class DeveloperToolsHost : Node
 
                 break;
             case Key.F9:
-                if (SaveManager.Instance is { } loader && !loader.LoadGame(loader.ActiveSlot))
+                if (SaveManager.Instance is { } loader)
                 {
-                    Session.Lifecycle.AbortToTitle(
-                        $"Quickload of slot '{loader.ActiveSlot}' failed; returning to the title screen.");
+                    Session.Lifecycle.RequestReload(Session, loader.ActiveSlot);
                 }
 
                 break;

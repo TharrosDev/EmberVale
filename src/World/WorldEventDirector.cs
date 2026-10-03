@@ -41,6 +41,7 @@ public partial class WorldEventDirector : Node3D, ISaveable
     private readonly List<string> _expiring = new();
 
     private double _timer;
+    private double _materializationRetryTimer;
     private WorldEvent? _active;
 
     public string SaveId => "world_events";
@@ -95,7 +96,7 @@ public partial class WorldEventDirector : Node3D, ISaveable
         }
 
         Begin(resource, player);
-        return true;
+        return _active != null;
     }
 
     public override void _Process(double delta)
@@ -125,11 +126,15 @@ public partial class WorldEventDirector : Node3D, ISaveable
     {
         WorldEvent active = _active!;
         RemoveInvalidActors(active);
-        if (active.Actors.Count == 0 && !active.IsComplete && OriginIsNear(active.Origin))
+        _materializationRetryTimer -= delta;
+        if (active.Actors.Count == 0 && !active.IsComplete && _materializationRetryTimer <= 0d &&
+            OriginIsNear(active.Origin))
         {
             active.Enemies.Clear();
             active.EnemyIds.Clear();
-            Materialize(active);
+            // A restored event can be temporarily blocked by collision or another actor. Retry
+            // without doing a complete ring/capsule search every render frame while it remains so.
+            _materializationRetryTimer = Materialize(active) ? 0d : 1d;
         }
         if (active.IsTimed)
         {
@@ -193,6 +198,7 @@ public partial class WorldEventDirector : Node3D, ISaveable
         }
 
         _active = worldEvent;
+        _materializationRetryTimer = 0d;
         EventBus.Instance?.Publish(new WorldEventStartedEvent(resource.Id, resource.NameKey, origin));
         Log.Info($"World event: {worldEvent.Name} — {worldEvent.ObjectiveLabel()}.");
     }
@@ -219,9 +225,13 @@ public partial class WorldEventDirector : Node3D, ISaveable
             // origin's. The jitter is up to a metre in each direction and the origin was validated
             // once for the whole band, so on any slope some of them spawned inside it.
             Vector3 jitter = new(GD.Randf() * 2f - 1f, 0f, GD.Randf() * 2f - 1f);
+            if (!SpawnPlacement.TryResolve(this, worldEvent.Origin + jitter, out Vector3 position))
+            {
+                continue;
+            }
             EnemyEntity enemy = EnemyTemplateRegistry.Create(
                 worldEvent.Resource.EnemyTemplateId,
-                SpawnPlacement.Resolve(this, worldEvent.Origin + jitter));
+                position);
             if (!TryOwnActor(enemy, enemy.Position))
             {
                 enemy.Free();
@@ -245,11 +255,12 @@ public partial class WorldEventDirector : Node3D, ISaveable
             // On the ground, not at the event's authored Y: an event origin is a planar point and
             // WorldEvents places it from a safe-zone ring at a fixed height (see SafeZones), which on
             // real terrain is inside a hillside as often as above it.
-            Vector3 pickupPosition = SafePlacementService.TryResolve(
-                this, worldEvent.Origin, out Vector3 resolved,
-                capsuleRadius: 0.25f, capsuleHeight: 0.5f)
-                ? resolved
-                : WorldGround.OnGround(worldEvent.Origin, 0.31f);
+            if (!SafePlacementService.TryResolve(
+                this, worldEvent.Origin, out Vector3 pickupPosition,
+                capsuleRadius: 0.25f, capsuleHeight: 0.5f))
+            {
+                return false;
+            }
             var pickup = ItemPickupFactory.Create(item, count, pickupPosition);
             if (TryOwnActor(pickup, pickup.Position))
             {
@@ -537,6 +548,7 @@ public partial class WorldEventDirector : Node3D, ISaveable
 
     public void Load(Godot.Collections.Dictionary data)
     {
+        _materializationRetryTimer = 0d;
         if (_active != null)
         {
             foreach (Node3D actor in _active.Actors)

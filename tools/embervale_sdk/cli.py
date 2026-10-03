@@ -39,6 +39,7 @@ def parser():
     p.add_argument("--base", help="include changes since this merge base as well as staged/unstaged/untracked")
     p.add_argument("--godot", type=Path)
     p.add_argument("--mode", choices=("fast", "engine", "visual", "performance", "full"), default="engine")
+    p.add_argument("--gate", action="append", help="world: run only this named gate; repeat for a focused regression set")
     p.add_argument("--region", choices=("ember_crown", "frostfang_reach", "ashen_wilds", "sunspire", "pale_concord", "celestial"))
     p.add_argument("--engine-tests", action="store_true", help="include native protocol integration tests")
     p.add_argument("--render", action="store_true", help="use a rendering display (required for screenshot evidence)")
@@ -327,7 +328,18 @@ class Run:
     def world(self, mode=None, skip=()):
         from world_quality_check import gates, REGIONS
         mode = mode or self.args.mode
-        for gate in gates(str(self.engine) if self.engine else None):
+        registry = gates(str(self.engine) if self.engine else None)
+        selected = set(self.args.gate or ())
+        if selected:
+            if self.args.command != "world":
+                raise ValueError("--gate applies only to the world command")
+            available = {gate.name for gate in registry if mode in gate.modes and not (mode == "fast" and gate.slow)}
+            unavailable = selected - available
+            if unavailable:
+                raise ValueError(f"Unavailable gates for {mode}: {', '.join(sorted(unavailable))}")
+        for gate in registry:
+            if selected and gate.name not in selected:
+                continue
             if gate.name in skip or mode not in gate.modes or (mode == "fast" and gate.slow):
                 continue
             if not self.engine and any("godot" in p.lower() for p in gate.command[:1]):
@@ -391,6 +403,8 @@ def main(argv=None):
             raise ValueError("--write/--overwrite apply only to author")
         if args.changed_only and cmd not in {"validate", "audit", "all"}:
             raise ValueError("--changed-only is supported by validate/audit/all")
+        if args.gate and cmd != "world":
+            raise ValueError("--gate applies only to the world command")
         if passthrough and cmd not in {"assets", "tool"}:
             raise ValueError("Arguments after -- are supported only by assets/tool")
         if cmd == "doctor": run.doctor()
