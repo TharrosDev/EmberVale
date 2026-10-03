@@ -49,6 +49,8 @@ public sealed partial class MinimapHud : PanelContainer
 
     private readonly List<MapPin> _all = new();
     private readonly List<MapPin> _near = new();
+    private List<QuestPin> _questPins = new();
+    private readonly HashSet<string> _questIds = new();
     private List<MapLandTile> _land = new();
 
     // ⚠️ Cached against MapService.Revision, not re-enumerated per frame — the same rule
@@ -118,6 +120,7 @@ public sealed partial class MinimapHud : PanelContainer
         {
             _rebuildTimer = RebuildInterval;
             RefreshDiscovered();
+            RefreshQuestPins();
             RefreshNear(centre);
         }
 
@@ -175,8 +178,24 @@ public sealed partial class MinimapHud : PanelContainer
     /// <see cref="MinimapFilter"/>.</summary>
     private void RefreshNear(Vector2 centre)
     {
-        MinimapFilter.Select(_all, centre, RadiusMetres, MaxPins, _near, TrackedLocationId());
+        MinimapFilter.Select(_all, centre, RadiusMetres, MaxPins, _near, TrackedLocationId(), _questIds);
         _view.Pins = _near;
+    }
+
+    /// <summary>Re-derives the quest pins on the rebuild cadence: the log changes without the map's revision
+    /// moving, and the pins are the current objective of every live quest.</summary>
+    private void RefreshQuestPins()
+    {
+        _questPins = QuestProgressViews.Pins(
+            ServiceLocator.Instance is { } locator && locator.TryGet(out PlayerCharacter player)
+                ? player.GetComponent<QuestLogComponent>()
+                : null);
+        _view.QuestPins = _questPins;
+        _questIds.Clear();
+        foreach (QuestPin pin in _questPins)
+        {
+            _questIds.Add(pin.LocationId);
+        }
     }
 
     private static string? TrackedLocationId() =>

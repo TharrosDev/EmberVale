@@ -87,3 +87,43 @@ public sealed class BannerQueue
     /// <summary>Marks a key finished, so it may be queued again (a no-op while the flag guards repeats).</summary>
     public void Done(string key) => _known.Remove(key);
 }
+
+/// <summary>One sampled moment of the banner's life.</summary>
+public readonly record struct BannerFrame(float Alpha, float Rise, bool Finished);
+
+/// <summary>
+/// The banner's timeline: fade in, hold, fade out. Reduced motion removes the rise (movement) and keeps the
+/// fade (it is how the banner appears and leaves at all), so the fade durations are deliberately NOT routed
+/// through <c>UiTheme.Duration</c>, which collapses to zero under that setting.
+/// </summary>
+public static class BannerTimeline
+{
+    public const float FadeIn = 0.7f;
+    public const float Hold = 3.4f;
+    public const float FadeOut = 0.9f;
+    public const float Total = FadeIn + Hold + FadeOut;
+
+    /// <summary>Pixels the text rises while fading in, when motion is enabled.</summary>
+    public const float RisePixels = 14f;
+
+    public static BannerFrame At(float elapsed, bool motion)
+    {
+        if (elapsed >= Total)
+        {
+            return new BannerFrame(0f, 0f, true);
+        }
+
+        float rise = motion ? RisePixels * (1f - UiMotion.EaseOut(UiMotion.Progress(elapsed, FadeIn))) : 0f;
+        if (elapsed < FadeIn)
+        {
+            return new BannerFrame(UiMotion.EaseOut(UiMotion.Progress(elapsed, FadeIn)), rise, false);
+        }
+
+        if (elapsed < FadeIn + Hold)
+        {
+            return new BannerFrame(1f, 0f, false);
+        }
+
+        return new BannerFrame(1f - UiMotion.EaseIn(UiMotion.Progress(elapsed - FadeIn - Hold, FadeOut)), 0f, false);
+    }
+}

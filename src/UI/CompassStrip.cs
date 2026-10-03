@@ -77,6 +77,12 @@ public sealed partial class CompassStrip : Control
     private Vector3? _objectiveTarget;
     private float _resolveTimer;
 
+    // How the objective chevron is drawn (campaign UI): the tracked quest's kind picks its colour, an
+    // optional objective is hollow, and a cross-realm objective points at a door and names the realm.
+    private CompassMarkKind _markKind = CompassMarkKind.Main;
+    private CompassMarkState _markState = CompassMarkState.Active;
+    private string? _portalRegionName;
+
     public void SetPlayer(IEntity? player) => _player = player;
 
     /// <summary>The tracked objective's world position, or null when there is nothing to walk toward.
@@ -86,6 +92,10 @@ public sealed partial class CompassStrip : Control
     /// per interval and — worse — two answers, which is how a tracker saying "320 m NW" ends up
     /// beside a compass marker pointing east.</summary>
     public Vector3? ObjectiveTarget => _objectiveTarget;
+
+    /// <summary>The realm the chevron is pointing toward through a door, or null when it points at the
+    /// objective itself. The quest tracker reads it so its readout names the same realm.</summary>
+    public string? PortalRegionName => _portalRegionName;
 
     public override void _Ready()
     {
@@ -133,8 +143,12 @@ public sealed partial class CompassStrip : Control
 
         if (_objectiveTarget is { } target)
         {
-            DrawDestination(font, target, origin, heading, halfWidth, centreX, UiTheme.Good,
-                playerWaypoint: false, showDistance: waypoint == null);
+            // Main-thread objectives wear the ember of the journal's main spine and errands its quieter
+            // tone; both agree with the tracker band beside them. An optional objective is hollow.
+            Color objectiveTint = _markKind == CompassMarkKind.Main ? UiTheme.QuestMain : UiTheme.QuestSide;
+            DrawDestination(font, target, origin, heading, halfWidth, centreX, objectiveTint,
+                playerWaypoint: false, showDistance: waypoint == null,
+                hollow: _markState == CompassMarkState.Optional, label: _portalRegionName);
         }
 
         if (waypoint is { } playerMark)
@@ -207,7 +221,7 @@ public sealed partial class CompassStrip : Control
     /// </summary>
     private void DrawDestination(
         Font font, Vector3 target, Vector3 origin, float heading, float halfWidth, float centreX,
-        Color tint, bool playerWaypoint, bool showDistance)
+        Color tint, bool playerWaypoint, bool showDistance, bool hollow = false, string? label = null)
     {
         float dx = target.X - origin.X;
         float dz = target.Z - origin.Z;
@@ -224,9 +238,9 @@ public sealed partial class CompassStrip : Control
                 new(edgeX - (direction * 4f), MarkTop),
                 new(edgeX - (direction * 4f), MarkTop + 10f),
             };
-            if (playerWaypoint)
+            if (playerWaypoint || hollow)
             {
-                DrawPolyline(new[] { arrow[1], arrow[0], arrow[2] }, new Color(mark, 0.9f), 2f);
+                DrawPolyline(new[] { arrow[1], arrow[0], arrow[2] }, new Color(mark, hollow ? 0.6f : 0.9f), 2f);
             }
             else
             {
@@ -250,6 +264,20 @@ public sealed partial class CompassStrip : Control
             };
             DrawPolyline(diamond, new Color(mark, fade), 2f);
         }
+        else if (hollow)
+        {
+            // An optional objective: the chevron's outline only, and dimmer, so it reads as "also".
+            DrawPolyline(
+                new[]
+                {
+                    new Vector2(x - 6f, MarkTop),
+                    new Vector2(x + 6f, MarkTop),
+                    new Vector2(x, MarkTop + 9f),
+                    new Vector2(x - 6f, MarkTop),
+                },
+                new Color(mark, fade * 0.7f),
+                2f);
+        }
         else
         {
             DrawColoredPolygon(
@@ -267,7 +295,8 @@ public sealed partial class CompassStrip : Control
         if (showDistance)
         {
             (string value, string unitKey) = CompassMath.Distance(Mathf.Sqrt((dx * dx) + (dz * dz)));
-            DrawLabel(font, $"{value}{Loc.T(unitKey)}", x, new Color(mark, fade),
+            string readout = $"{value}{Loc.T(unitKey)}";
+            DrawLabel(font, label != null ? $"{label} {readout}" : readout, x, new Color(mark, fade),
                 UiTheme.CaptionFontSize, DistanceBaseline);
         }
     }
@@ -303,29 +332,56 @@ public sealed partial class CompassStrip : Control
         return CompassMath.HeadingFromForward(forward.X, forward.Z);
     }
 
-    /// <summary>Tracked quest → its first incomplete objective → its nearest live world target, or
-    /// the authored destination when nothing matching is loaded (39.5C).</summary>
+    /// <summary>
+    /// Tracked quest, its current objective (required before optional), then where to point.
+    ///
+    /// A live world target or the authored place wins when the objective is in THIS region. When the
+    /// objective's place is in another realm the strip points at this realm's door toward it (and names the
+    /// realm), because the other realm's atlas position is a direction on a map the player cannot walk.
+    /// If no door can be resolved it falls back to the old behaviour.
+    /// </summary>
     private Vector3? ResolveObjectiveTarget()
     {
+        _portalRegionName = null;
         if (_player is not { } player || player.Body is not { } body || !IsInstanceValid(body) ||
             player.GetComponent<QuestLogComponent>()?.Tracked is not { } progress)
         {
             return null;
         }
 
-        var objectives = progress.Quest.ObjectiveList();
-        for (int i = 0; i < objectives.Count; i++)
+        // ⚠️ CURRENT, not merely incomplete or active (41D). A branch objective the player is not on is
+        // inert - neither done nor pending - and the needle would happily point at it, sending the
+        // player down the path they declined. The shared rule also puts a required objective ahead of an
+        // optional one, so a side step can never pull the needle off the thing that finishes the quest.
+        ObjectiveResource? objective = QuestProgressViews.CurrentObjective(progress, out _);
+        if (objective == null)
         {
-            // ⚠️ ACTIVE, not merely incomplete (41D). A branch objective the player is not on is
-            // inert — neither done nor pending — and the needle would happily point at it, sending
-            // the player down the path they declined. Same line, same reason, in MapScreen and
-            // GameHud: three surfaces, one fact (invariant 5).
-            if (!progress.IsObjectiveComplete(i) && progress.IsObjectiveActive(i))
+            return null; // active quest with all objectives met (awaiting turn-in)
+        }
+
+        _markKind = CompassRoutingRules.KindOf(progress.Quest.IsMainQuest);
+        _markState = CompassRoutingRules.StateOf(objective.IsOptional);
+
+        Vector3? direct = ObjectiveLocator.Locate(objective, GetTree(), body.GlobalPosition);
+
+        string currentRegion = QuestPlaces.ActiveRegionId();
+        string objectiveRegion = QuestPlaces.RegionIdOfLocation(QuestPlaces.PlaceId(objective));
+        CompassMode mode = CompassRoutingRules.ModeFor(
+            objectiveRegion, progress.Quest.RegionId, currentRegion, direct != null);
+
+        if (mode == CompassMode.Portal)
+        {
+            string destination = CompassRoutingRules.DestinationRegion(objectiveRegion, progress.Quest.RegionId);
+            string? hop = CompassRoutingRules.NextHop(
+                currentRegion, destination, QuestPlaces.RegionGraph(), id => QuestPlaces.IsRegionOpen(id, player));
+            if (hop != null && QuestPlaces.PortalPosition(currentRegion, hop) is { } door)
             {
-                return ObjectiveLocator.Locate(objectives[i], GetTree(), body.GlobalPosition);
+                string realm = QuestPlaces.RegionName(destination);
+                _portalRegionName = realm.Length > 0 ? realm : null;
+                return door;
             }
         }
 
-        return null; // active quest with all objectives met (awaiting turn-in)
+        return direct;
     }
 }

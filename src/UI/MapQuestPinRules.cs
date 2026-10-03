@@ -1,11 +1,9 @@
 using System.Collections.Generic;
+using Embervale.World;
 
 namespace Embervale.UI;
 
-/// <summary>One objective's map facts: where it points and whether it is live.</summary>
-public readonly record struct QuestObjectiveSite(string LocationId, bool Optional, bool Live);
-
-/// <summary>A quest pin: the location, the quest it belongs to (main or side), and whether it is the tracked one.</summary>
+/// <summary>A quest pin: the location, whether its quest is the main thread, and whether it is the tracked one.</summary>
 public readonly record struct QuestPin(string LocationId, bool IsMain, bool Tracked);
 
 /// <summary>One quest as the pin builder sees it.</summary>
@@ -13,32 +11,11 @@ public sealed record QuestPinSource(
     string QuestId, bool IsMain, bool IsLedger, bool Active, bool Tracked, IReadOnlyList<QuestObjectiveSite> Sites);
 
 /// <summary>
-/// The map's quest rules. Reveal is spoiler-safe: a quest reveals only the places its currently live
-/// objectives name, and each later place the moment its objective opens, so the map never discloses the
-/// end of a quest at its start and never both branches of a fork. Pins show the current objective of every
-/// live non-ledger quest, with the ring reserved for the tracked one.
+/// The map's quest pins: the current objective's place for every live non-ledger quest, with the ring
+/// reserved for the tracked one. What a quest may reveal, and when, is <see cref="MapQuestReveal"/>.
 /// </summary>
 public static class MapQuestPinRules
 {
-    /// <summary>The location ids to reveal now: the place of every live objective that has one.</summary>
-    public static List<string> RevealNow(IReadOnlyList<QuestObjectiveSite> sites)
-    {
-        var ids = new List<string>();
-        foreach (QuestObjectiveSite site in sites)
-        {
-            if (site.Live && site.LocationId.Length > 0 && !ids.Contains(site.LocationId))
-            {
-                ids.Add(site.LocationId);
-            }
-        }
-
-        return ids;
-    }
-
-    /// <summary>The location a single objective reveals when it activates, or null (not live, or no place).</summary>
-    public static string? RevealOnActivation(QuestObjectiveSite site) =>
-        site.Live && site.LocationId.Length > 0 ? site.LocationId : null;
-
     /// <summary>
     /// Pins for the live, non-ledger quests: each quest's current objective's place (required first, then
     /// optional). A location shared by two quests is one pin, kept as the tracked/main one so the strongest

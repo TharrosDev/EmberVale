@@ -89,6 +89,29 @@ public partial class MapView : Control
     /// because Embervale's hostiles are region-scoped encounters rather than placed actors.</summary>
     public string? ObjectiveId { get; set; }
 
+    private readonly Dictionary<string, QuestPin> _questById = new();
+    private IReadOnlyList<QuestPin> _questPins = Array.Empty<QuestPin>();
+
+    /// <summary>
+    /// The current objective's place for every live non-ledger quest (<see cref="MapQuestPinRules.Pins"/>).
+    /// Each is drawn at full strength with a small badge - a filled ember diamond for the main thread, an
+    /// outlined one for an errand - and only the tracked quest's pin also gets the ring. Shape and fill carry
+    /// main versus side first and colour second, so the pair survives every colour-vision setting.
+    /// </summary>
+    public IReadOnlyList<QuestPin> QuestPins
+    {
+        get => _questPins;
+        set
+        {
+            _questPins = value;
+            _questById.Clear();
+            foreach (QuestPin pin in value)
+            {
+                _questById[pin.LocationId] = pin;
+            }
+        }
+    }
+
     public Vector3? Waypoint { get; set; }
 
     /// <summary>
@@ -148,7 +171,8 @@ public partial class MapView : Control
         Projection.Viewport.IsEqualApprox(Size) ? Projection : Projection.Resized(Size);
 
     /// <summary>True when a category passes the filter and its tier is visible at this zoom.</summary>
-    private bool Emphasized(MapPin pin) => pin.Id == SelectedId || pin.Id == ObjectiveId;
+    private bool Emphasized(MapPin pin) =>
+        pin.Id == SelectedId || pin.Id == ObjectiveId || _questById.ContainsKey(pin.Id);
 
     private bool Shows(MapPin pin) =>
         Emphasized(pin) ||
@@ -499,6 +523,24 @@ public partial class MapView : Control
         return new Rect2(a, b - a).Abs();
     }
 
+    /// <summary>The quest badge beside a pin: a filled diamond for the main thread, an outlined one for an errand.</summary>
+    private void DrawQuestBadge(Vector2 at, Color colour, bool main)
+    {
+        const float r = 5f;
+        Vector2[] diamond =
+        {
+            at + new Vector2(0f, -r), at + new Vector2(r, 0f), at + new Vector2(0f, r), at + new Vector2(-r, 0f),
+        };
+
+        if (main)
+        {
+            DrawColoredPolygon(diamond, colour);
+            return;
+        }
+
+        DrawPolyline(new[] { diamond[0], diamond[1], diamond[2], diamond[3], diamond[0] }, colour, 2f);
+    }
+
     private void DrawPins(MapTier tier)
     {
         foreach (MapPin pin in Pins)
@@ -526,7 +568,20 @@ public partial class MapView : Control
             // The tracked objective is ringed under everything else, so a selection or hover still
             // reads on top of it — the quest marker says "this is where you are going", and the
             // selection ring says "this is what you just clicked". Both can be true of one pin.
-            if (pin.Id == ObjectiveId)
+            if (_questById.TryGetValue(pin.Id, out QuestPin questPin))
+            {
+                Color quest = UiTheme.Adapt(questPin.IsMain ? UiTheme.QuestMain : UiTheme.QuestSide);
+
+                // The ring is the tracked quest's alone: "this is where you are going".
+                if (questPin.Tracked)
+                {
+                    DrawArc(at, radius + 9f, 0f, Mathf.Tau, 28, new Color(quest, 0.9f), 2f);
+                    DrawArc(at, radius + 12.5f, 0f, Mathf.Tau, 28, new Color(quest, 0.35f), 1f);
+                }
+
+                DrawQuestBadge(at + new Vector2(radius + 5f, -radius - 5f), quest, questPin.IsMain);
+            }
+            else if (pin.Id == ObjectiveId)
             {
                 Color quest = UiTheme.Adapt(UiTheme.QuestMain);
                 DrawArc(at, radius + 9f, 0f, Mathf.Tau, 28, new Color(quest, 0.9f), 2f);

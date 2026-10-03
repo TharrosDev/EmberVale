@@ -92,7 +92,13 @@ public partial class GameHud : CanvasLayer
     private VBoxContainer _questList = null!;
     private Label _questWhere = null!;
     private Label _questClock = null!;
+    private Label _questHeader = null!;
+    private Label? _questHint;
     private string _questSignature = string.Empty;
+    private int _questCurrentObjective = -1;
+    private string _questObjectiveKey = string.Empty;
+    private readonly ObjectiveDwell _questDwell = new();
+    private readonly TrackerTitleFlash _questFlash = new();
 
     private PanelContainer _bannerPanel = null!;
     private Label _bannerText = null!;
@@ -135,6 +141,13 @@ public partial class GameHud : CanvasLayer
         _player = player;
         _compass?.SetPlayer(player);
     }
+
+    /// <summary>Whether the current objective's hint is showing under it. Read by the screenshot harness.</summary>
+    public bool TrackerHintVisible => _questHint is { Visible: true };
+
+    /// <summary>Adds time to the tracker's same-objective clock, so the harness can photograph the hint without
+    /// waiting out <see cref="TrackerRules.HintDelaySeconds"/>. The clock is the real one; this only nudges it.</summary>
+    public void AdvanceTrackerDwell(float seconds) => _questDwell.Tick(_questObjectiveKey, seconds);
 
     public void SetClock(WorldClock? clock) => _clock = clock;
 
@@ -365,7 +378,8 @@ public partial class GameHud : CanvasLayer
 
         var col = new VBoxContainer();
         col.AddThemeConstantOverride("separation", 2);
-        col.AddChild(UiTheme.Header(Loc.T("hud.quest")));
+        _questHeader = UiTheme.Header(Loc.T("hud.quest"));
+        col.AddChild(_questHeader);
         _questList = new VBoxContainer();
         _questList.AddThemeConstantOverride("separation", 2);
         col.AddChild(_questList);
@@ -613,7 +627,7 @@ public partial class GameHud : CanvasLayer
         }
 
         UpdateContext();
-        UpdateQuest();
+        UpdateQuest((float)delta);
         UpdateBanner();
         UpdateFocus();
         ResolveTopCentrePriority();
@@ -991,15 +1005,20 @@ public partial class GameHud : CanvasLayer
         }
     }
 
-    private void UpdateQuest()
+    private void UpdateQuest(float delta)
     {
         // 39.5B: one authority for "which quest am I on" — see QuestLogComponent.Tracked.
         QuestProgress? active = _player?.GetComponent<QuestLogComponent>()?.Tracked;
 
-        if (active == null)
+        // A ledger quest is an umbrella record: it is never tracked by the log's own rules, but a
+        // dialogue's TrackQuest can name one, and the tracker must not become a second place that
+        // decides otherwise.
+        if (active == null || active.Quest.IsLedger)
         {
             _questPanel.Visible = false;
             _questSignature = string.Empty;
+            _questFlash.Observe(null, delta);
+            _questDwell.Tick(null, delta);
             return;
         }
 
@@ -1023,7 +1042,19 @@ public partial class GameHud : CanvasLayer
         if (current != _questSignature)
         {
             _questSignature = current;
+            _questCurrentObjective = ObjectiveFocusRules.Current(QuestProgressViews.States(active));
+            _questObjectiveKey = _questCurrentObjective >= 0 ? $"{active.Quest.Id}:{_questCurrentObjective}" : string.Empty;
             RebuildQuestRows(active);
+        }
+
+        // "Now tracking" holds the header for a few seconds after the tracked quest changes, and the
+        // current objective's hint appears once the player has sat on the same step for a while.
+        _questFlash.Observe(active.Quest.Id, delta);
+        _questHeader.Text = Loc.T(_questFlash.Active ? "questui.now_tracking" : "hud.quest");
+        _questDwell.Tick(_questObjectiveKey, delta);
+        if (_questHint != null)
+        {
+            _questHint.Visible = TrackerRules.ShouldShowHint(true, _questDwell.Seconds);
         }
 
         UpdateQuestDestination();
@@ -1049,7 +1080,10 @@ public partial class GameHud : CanvasLayer
             (string value, string unitKey) = CompassMath.Distance(new Vector2(offset.X, offset.Z).Length());
             string cardinal = Loc.T(CompassMath.CardinalKey(CompassMath.BearingTo(offset.X, offset.Z)));
 
-            _questWhere.Text = Loc.TF("hud.quest.destination", value, Loc.T(unitKey), cardinal);
+            // A destination in another realm points at this realm's door toward it, and says so.
+            _questWhere.Text = _compass.PortalRegionName is { } realm
+                ? Loc.TF("questui.destination_portal", realm, value, Loc.T(unitKey), cardinal)
+                : Loc.TF("hud.quest.destination", value, Loc.T(unitKey), cardinal);
             _questWhere.AddThemeColorOverride("font_color", UiTheme.Accent);
             _questWhere.Visible = true;
             return;
@@ -1097,35 +1131,23 @@ public partial class GameHud : CanvasLayer
         _questClock.Visible = true;
     }
 
-    /// <summary>The tracked objective's authored destination name, or null when it has none.</summary>
+    /// <summary>The tracked quest's current objective's place name, or null when it has none. Goes through
+    /// <see cref="QuestPlaces.PlaceName"/>, so a Reach or Defend objective (whose place is its
+    /// <c>TargetId</c>, not a <c>LocationId</c>) names its destination like every other type.</summary>
     private string? TrackedDestinationName()
     {
-        if (_player?.GetComponent<QuestLogComponent>()?.Tracked is not { } progress)
+        if (_player?.GetComponent<QuestLogComponent>()?.Tracked is not { } progress ||
+            QuestProgressViews.CurrentObjective(progress, out _) is not { } objective)
         {
             return null;
         }
 
-        var objectives = progress.Quest.ObjectiveList();
-        for (int i = 0; i < objectives.Count; i++)
-        {
-            // Active rather than incomplete (41D) — see CompassStrip.ResolveObjectiveTarget. This
-            // is the third of the three surfaces that would otherwise name the dead branch's place.
-            if (progress.IsObjectiveComplete(i) || !progress.IsObjectiveActive(i) ||
-                objectives[i].LocationId.Length == 0)
-            {
-                continue;
-            }
-
-            return MapLocationDatabase.Get(objectives[i].LocationId) is { } location
-                ? Loc.T(location.NameKey)
-                : null;
-        }
-
-        return null;
+        return QuestPlaces.PlaceName(objective);
     }
 
-    /// <summary>Structured tracker rows (30.5D): accent title, then one line per objective —
-    /// complete objectives tick over to dead-green so progress reads at a glance.</summary>
+    /// <summary>Structured tracker rows (30.5D): the chapter, an accent title, then one line per objective —
+    /// complete objectives tick over to dead-green so progress reads at a glance. Optional objectives carry
+    /// an "Optional" tag; the current objective carries its hint, hidden until the player has lingered.</summary>
     private void RebuildQuestRows(QuestProgress progress)
     {
         foreach (Node child in _questList.GetChildren())
@@ -1134,15 +1156,30 @@ public partial class GameHud : CanvasLayer
             child.QueueFree();
         }
 
-        // Priority colour off the real field, added in 37.5E. 37.5B had this pinned to QuestMain
-        // because `QuestResource` had no main/side flag and the available heuristic ("has a
-        // prerequisite") was both invented and backwards — a prerequisite chains a quest, it does
-        // not demote it.
+        _questHint = null;
+
+        // The spine carries the quest's priority, matching the journal: ember for the main thread, the
+        // errand colour for a side quest. The band's stylebox is its own instance, so recolouring it
+        // touches nothing else.
+        Color tint = progress.Quest.IsMainQuest ? UiTheme.QuestMain : UiTheme.QuestSide;
+        if (_questPanel.GetThemeStylebox("panel") is StyleBoxFlat spine)
+        {
+            spine.BorderColor = tint;
+        }
+
+        // Which chapter this is, above the title. Absent text means no label rather than a raw key.
+        if (progress.Quest.ChapterKey.Length > 0 &&
+            JournalIndexRules.FirstResolving(
+                JournalIndexRules.ChapterTitleKeys(progress.Quest.ChapterKey), Loc.Has) is { } chapterKey)
+        {
+            Label chapter = UiTheme.Caption(Loc.T(chapterKey), UiTheme.Dim);
+            chapter.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+            _questList.AddChild(chapter);
+        }
+
         // The title is the thing you glance at, so it is Display-faced and wraps rather than
         // clipping — a truncated quest name is a quest you cannot identify.
-        Label title = UiTheme.Body(
-            Loc.T(progress.Quest.Title),
-            progress.Quest.IsMainQuest ? UiTheme.QuestMain : UiTheme.QuestSide);
+        Label title = UiTheme.Body(Loc.T(progress.Quest.Title), tint);
         UiTheme.ApplyType(title, UiTheme.FontRole.Display, UiTheme.BodyFontSize);
         title.AutowrapMode = TextServer.AutowrapMode.WordSmart;
         _questList.AddChild(title);
@@ -1184,6 +1221,12 @@ public partial class GameHud : CanvasLayer
             text.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
             line.AddChild(text);
 
+            // Optional steps are told apart by a word, not by being dimmer.
+            if (objectives[i].IsOptional)
+            {
+                line.AddChild(UiTheme.Chip(Loc.T("questui.chip.optional_short"), UiTheme.Dim));
+            }
+
             // A 1-of-1 objective's "0/1" is noise — the bullet already says done or not.
             if (objectives[i].RequiredCount > 1)
             {
@@ -1203,6 +1246,18 @@ public partial class GameHud : CanvasLayer
                 track.CustomMinimumSize = new Vector2(186f, 3f);
                 track.Value = Mathf.Clamp(have / (double)required, 0d, 1d);
                 _questList.AddChild(track);
+            }
+
+            // The hint for the CURRENT objective sits under it, hidden until the player has stayed on this
+            // step long enough to look stuck (TrackerRules.HintDelaySeconds). UpdateQuest toggles it.
+            if (i == _questCurrentObjective && objectives[i].HintKey.Length > 0 && Loc.Has(objectives[i].HintKey))
+            {
+                Label hint = UiTheme.Flavour(Loc.T(objectives[i].HintKey), UiTheme.Dim);
+                UiTheme.ApplyType(hint, UiTheme.FontRole.SerifItalic, UiTheme.CaptionFontSize);
+                hint.CustomMinimumSize = new Vector2(186f, 0f);
+                hint.Visible = false;
+                _questList.AddChild(hint);
+                _questHint = hint;
             }
         }
     }

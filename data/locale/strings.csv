@@ -2893,4 +2893,63 @@ spell.teach.undying_clockkeeper.taught,"He shows you how to hold the mark in you
 # --- BEGIN campaign:world ---
 # --- END campaign:world ---
 # --- BEGIN campaign:ui ---
+questui.journal_title,QUEST JOURNAL
+questui.footer,{0}  Switch section     {1}  Close
+questui.tab,{0} ({1})
+questui.section.main,Main Thread
+questui.section.errands,Errands
+questui.section.completed,Completed
+questui.section.failed,Failed
+questui.main_thread,Main Thread
+questui.ledger,Ledger
+questui.chapter_open,- {0} ({1})
+questui.chapter_closed,+ {0} ({1})
+questui.completed_more,Show {0} more
+questui.completed_fewer,Show fewer
+questui.updated_tip,This quest has news since you last read it.
+questui.status.completed,Completed
+questui.status.failed,Failed
+questui.status.tracked,Tracked
+questui.status.updated,New
+questui.chip.main,Main thread
+questui.chip.errand,Errand
+questui.chip.ledger,Ledger
+questui.chip.level,Level {0}
+questui.chip.optional,Optional
+questui.chip.optional_short,Optional
+questui.giver,From {0}
+questui.stage_header,JOURNAL
+questui.tick_line,✓ {0}
+questui.where,Where: {0}
+questui.where_in,"Where: {0}, {1}"
+questui.reward_gold,{0} gold
+questui.reward_faction,{0} standing {1}
+questui.with_prompt,{0}  [{1}]
+questui.now_tracking,NOW TRACKING
+questui.destination_portal,To {0}: {1} {2} · {3}
+questui.new_objective,New objective: {0}
+questui.updated_toast,Quest updated: {0}
+questui.optional_done,Optional objective done: {0}
+questui.bark_by,- {0}
+questui.act_line,ACT {0}
+questui.legend.main,Main objective
+questui.legend.side,Errand objective
+questui.legend.tracked,Tracked (ringed)
+questui.dialogue.choice_number,{0}. {1}
+questui.dialogue.context,Objective: {0}
+questui.dialogue.history,History
+questui.dialogue.history_hide,Hide history
+questui.dialogue.history_title,EARLIER
+questui.dialogue.you,> {0}
+questui.tag.quest,Quest
+questui.tag.quest_named,Quest: {0}
+questui.tag.corruption,Corruption {0}
+questui.tag.reputation,{0} {1}
+questui.tag.loyalty,{0} loyalty {1}
+questui.tag.companion_join,{0} joins you
+questui.tag.companion_leave,{0} leaves
+questui.tag.guild_join,Join {0}
+questui.tag.guild_rank,{0} rank {1}
+questui.tag.item,{0} {1}
+questui.tag.story,Story
 # --- END campaign:ui ---

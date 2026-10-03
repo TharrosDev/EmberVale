@@ -8,7 +8,9 @@ using Embervale.Entities;
 using Embervale.Magic;
 using Embervale.Player;
 using Embervale.Quests;
+using Embervale.Localization;
 using Embervale.Stats;
+using Embervale.UI;
 using Embervale.World;
 using Godot;
 
@@ -58,6 +60,22 @@ public sealed partial class HudShots : ShotHarness
             return "empty-stamina state was not reached";
         if (name == "05b-quest-tracked" && player.GetComponent<QuestLogComponent>()?.Tracked is null)
             return "no active tracked quest";
+        if (name is "05b2-tracker-campaign" or "05b3-tracker-hint")
+        {
+            if (player.GetComponent<QuestLogComponent>()?.Tracked?.Quest.Id != QuestShotFixtures.AshWind)
+                return "the campaign fixture quest is not the tracked quest";
+            if (!Loc.Has("chapter.ch.1.title"))
+                return "chapter title text did not resolve";
+        }
+        if (name == "05b3-tracker-hint" && Hud() is { TrackerHintVisible: false })
+            return "the objective hint did not appear after the dwell";
+        if (name == "07c-boss-epithet" && QuestShotFixtures.FindFirst<BossFrame>(GetTree().Root) is not { Visible: true })
+            return "the boss frame is not showing";
+        if (name == "10-objective-toast" && QuestShotFixtures.FindFirst<Toast>(GetTree().Root) is null)
+            return "no toast is on screen";
+        if (name == "11-chapter-banner" &&
+            QuestShotFixtures.FindFirst<ChapterBanner>(GetTree().Root) is not { Showing: "ch.1" })
+            return "the chapter banner is not showing";
         if (name.StartsWith("05c-") || name.StartsWith("05d-"))
         {
             if (ServiceLocator.Instance is not { } locator || !locator.TryGet(out MapService map) || map.Waypoint is null)
@@ -108,6 +126,21 @@ public sealed partial class HudShots : ShotHarness
         // whole tool exists to prevent.
         Shot("05b-quest-tracked", StartAndTrackAQuest);
 
+        // The campaign tracker: a chapter label above the title, the spine in the main-quest colour, a done
+        // step, the current step and an optional step carrying its "Optional" tag. Built in memory because no
+        // authored quest carries the new fields yet.
+        Shot("05b2-tracker-campaign", () =>
+        {
+            if (QuestShotFixtures.Log() is { } log)
+            {
+                QuestShotFixtures.StartTrackedMainQuest(log);
+            }
+        });
+
+        // The objective hint, which only appears after the player has sat on one step for a while
+        // (TrackerRules.HintDelaySeconds). The harness advances the dwell clock rather than waiting.
+        Shot("05b3-tracker-hint", () => Hud()?.AdvanceTrackerDwell(TrackerRules.HintDelaySeconds + 5f));
+
         // ⚠️ The compass's destination channel — chevron, distance, and the edge arrow for a mark
         // behind you — is invisible in every other shot, because the one authored quest destination
         // is cross-region and resolves to no position. Without these two the 39.5C compass rebuild
@@ -124,10 +157,24 @@ public sealed partial class HudShots : ShotHarness
         // quest notice. This is the frame that proves the top-centre suppression contract under load.
         Shot("07b-boss-hostile", StageBossPressure);
 
+        // A boss with an epithet card and its own intro line, staged through the frame's own entry point.
+        Shot("07c-boss-epithet", StageBossEpithet);
+
         // The visibility rule this sub-phase added — the one shot that proves a HUD is ABSENT.
         Shot("08-menu-open", () => UiState.Open(this));
 
         Shot("09-menu-closed", () => UiState.Close(this));
+
+        // Last, and in this order, because both are transient: a toast lives a few seconds and the banner
+        // holds the lower third for about five, and either would otherwise sit in every later frame.
+        // Finishing the current step opens the next one, which the feed folds into ONE toast.
+        Shot("10-objective-toast", () => QuestShotFixtures.Log()?.DebugAdvance(QuestShotFixtures.AshWind, 1));
+
+        Shot("11-chapter-banner", () =>
+        {
+            QuestShotFixtures.HoldChapterBanners(false);
+            QuestShotFixtures.FindFirst<ChapterBanner>(GetTree().Root)?.Request("ch.1");
+        });
     }
 
     // --- State drivers, all through the owning system ------------------------
@@ -136,6 +183,8 @@ public sealed partial class HudShots : ShotHarness
         ServiceLocator.Instance is { } locator && locator.TryGet(out PlayerCharacter player) ? player : null;
 
     private static StatsComponent? Stats() => Player()?.GetComponent<StatsComponent>();
+
+    private GameHud? Hud() => QuestShotFixtures.FindFirst<GameHud>(GetTree().Root);
 
     private static void SetFraction(StatType type, float fraction)
     {
@@ -212,6 +261,18 @@ public sealed partial class HudShots : ShotHarness
         {
             clock.SetTimeOfDay(hour);
         }
+    }
+
+    private void StageBossEpithet()
+    {
+        if (Player() is not { } player || QuestShotFixtures.FindFirst<BossFrame>(GetTree().Root) is not { } frame)
+        {
+            return;
+        }
+
+        QuestShotFixtures.RegisterText();
+        frame.Present(player, "THE BLACK-IRON KING", 4, QuestShotFixtures.BossEpithetKey, QuestShotFixtures.BossIntroKey);
+        EventBus.Instance?.Publish(new BossPhaseChangedEvent(player, 2, 4));
     }
 
     private static void StageBossPressure()

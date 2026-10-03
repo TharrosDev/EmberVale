@@ -23,6 +23,7 @@ public partial class BossFrame : PanelContainer
     private const ulong FadeMs = 1400;
 
     private Label _name = null!;
+    private Label _epithet = null!;
     private JuicedBar _bar = null!;
     private HBoxContainer _pips = null!;
     private Label _phaseText = null!;
@@ -54,6 +55,14 @@ public partial class BossFrame : PanelContainer
         _name = UiTheme.Display(Loc.T("boss.name"), UiTheme.Text);
         _name.HorizontalAlignment = HorizontalAlignment.Center;
         col.AddChild(_name);
+
+        // The boss's epithet card ("The Black-Iron King"), set in the book italic under the name. Hidden for
+        // a boss that authors none, so the frame is unchanged for them.
+        _epithet = UiTheme.Flavour(string.Empty, UiTheme.Dim);
+        UiTheme.ApplyType(_epithet, UiTheme.FontRole.SerifItalic, UiTheme.BodyFontSize);
+        _epithet.HorizontalAlignment = HorizontalAlignment.Center;
+        _epithet.Visible = false;
+        col.AddChild(_epithet);
 
         _bar = JuicedBar.Create(UiTheme.Health, 520f);
         _bar.CustomMinimumSize = new Vector2(520f, 16f);
@@ -121,19 +130,37 @@ public partial class BossFrame : PanelContainer
 
     private void OnStarted(BossEncounterStartedEvent e)
     {
-        _boss = e.Boss;
-        _totalPhases = Mathf.Max(1, e.TotalPhases);
+        // The boss's own data carries the epithet and intro line. A boss with no controller (or authored
+        // text that does not resolve) falls back to the generic "bars your path" line.
+        BossResource? fight = e.Boss.GetComponent<BossController>()?.Fight;
+        Present(e.Boss, e.DisplayName, e.TotalPhases, fight?.EpithetKey ?? string.Empty, fight?.IntroLineKey ?? string.Empty);
+    }
+
+    /// <summary>Opens the frame for a fight: name, epithet under it, phase pips and the intro line. The event
+    /// handler calls this with the boss's data; it is public so a harness can stage the same frame
+    /// through the same path.</summary>
+    public void Present(IEntity boss, string displayName, int totalPhases, string epithetKey, string introLineKey)
+    {
+        _boss = boss;
+        _totalPhases = Mathf.Max(1, totalPhases);
         _bar.Snap(1d);
-        _name.Text = e.DisplayName;
+        _name.Text = displayName;
         BuildPips();
         SetPhase(1);
+
+        string? epithet = BossIntroText.Epithet(epithetKey, Loc.Has);
+        _epithet.Visible = epithet != null;
+        _epithet.Text = epithet != null ? Loc.T(epithet) : string.Empty;
 
         _name.Visible = true;
         _bar.Visible = true;
         _pips.Visible = true;
         _phaseText.Visible = true;
         Visible = true;
-        ShowMessage(Loc.TF("boss.intro", e.DisplayName), 2500);
+
+        string introKey = BossIntroText.IntroKey(introLineKey, Loc.Has, out bool usesName);
+        bool authored = !usesName;
+        ShowMessage(usesName ? Loc.TF(introKey, displayName) : Loc.T(introKey), authored ? 4500UL : 2500UL);
     }
 
     private void OnPhase(BossPhaseChangedEvent e) => SetPhase(e.Phase);
@@ -174,6 +201,7 @@ public partial class BossFrame : PanelContainer
         _boss = null;
         _bar.Visible = false;
         _name.Visible = false;
+        _epithet.Visible = false;
         _pips.Visible = false;
         _phaseText.Visible = false;
     }

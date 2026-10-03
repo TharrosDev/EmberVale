@@ -4,6 +4,7 @@ using Embervale.Dialogue;
 using Embervale.Factions;
 using Embervale.Quests;
 using Embervale.UI;
+using Embervale.World;
 using Xunit;
 
 namespace Embervale.Tests;
@@ -438,6 +439,31 @@ public class QuestUiRulesTests
         Assert.Equal(2, q.Count);
     }
 
+    [Fact]
+    public void Banner_TimelineFadesInHoldsAndFadesOut()
+    {
+        Assert.Equal(0f, BannerTimeline.At(0f, motion: true).Alpha, 3);
+        Assert.Equal(1f, BannerTimeline.At(BannerTimeline.FadeIn + 0.1f, motion: true).Alpha, 3);
+        Assert.Equal(1f, BannerTimeline.At(BannerTimeline.FadeIn + BannerTimeline.Hold - 0.01f, motion: true).Alpha, 3);
+
+        BannerFrame leaving = BannerTimeline.At(BannerTimeline.Total - 0.1f, motion: true);
+        Assert.InRange(leaving.Alpha, 0.001f, 0.99f);
+        Assert.False(leaving.Finished);
+        Assert.True(BannerTimeline.At(BannerTimeline.Total, motion: true).Finished);
+    }
+
+    [Fact]
+    public void Banner_ReducedMotionKeepsTheFadeButDropsTheRise()
+    {
+        BannerFrame moving = BannerTimeline.At(0.1f, motion: true);
+        BannerFrame still = BannerTimeline.At(0.1f, motion: false);
+
+        Assert.True(moving.Rise > 0f);
+        Assert.Equal(0f, still.Rise);
+        Assert.Equal(moving.Alpha, still.Alpha, 5);
+        Assert.InRange(still.Alpha, 0.01f, 0.99f);
+    }
+
     // --- rewards ---------------------------------------------------------------------------
 
     [Theory]
@@ -653,15 +679,15 @@ public class QuestUiRulesTests
     public void Map_StartRevealsOnlyLiveObjectivePlaces()
     {
         var sites = new[] { Site("loc.a"), Site("loc.b", live: false), Site("loc.a"), Site(string.Empty), Site("loc.c") };
-        Assert.Equal(new[] { "loc.a", "loc.c" }, MapQuestPinRules.RevealNow(sites));
+        Assert.Equal(new[] { "loc.a", "loc.c" }, MapQuestReveal.RevealNow(sites));
     }
 
     [Fact]
     public void Map_ActivationRevealsThatObjectivesPlaceOnly()
     {
-        Assert.Equal("loc.x", MapQuestPinRules.RevealOnActivation(Site("loc.x")));
-        Assert.Null(MapQuestPinRules.RevealOnActivation(Site("loc.x", live: false)));
-        Assert.Null(MapQuestPinRules.RevealOnActivation(Site(string.Empty)));
+        Assert.Equal("loc.x", MapQuestReveal.RevealOnActivation(Site("loc.x")));
+        Assert.Null(MapQuestReveal.RevealOnActivation(Site("loc.x", live: false)));
+        Assert.Null(MapQuestReveal.RevealOnActivation(Site(string.Empty)));
     }
 
     [Fact]

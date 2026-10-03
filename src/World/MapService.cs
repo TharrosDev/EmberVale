@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Embervale.Core.Events;
 using Embervale.Core.Services;
 using Embervale.Dialogue;
+using Embervale.Entities;
 using Embervale.Player;
 using Embervale.Save;
 using Godot;
@@ -79,12 +80,14 @@ public partial class MapService : Node, ISaveable
         SaveManager.Instance?.Register(this);
         EventBus.Instance?.Subscribe<RegionCellLoadedEvent>(OnCellLoaded);
         EventBus.Instance?.Subscribe<Quests.QuestStartedEvent>(OnQuestStarted);
+        EventBus.Instance?.Subscribe<Quests.QuestObjectiveActivatedEvent>(OnObjectiveActivated);
     }
 
     public override void _ExitTree()
     {
         EventBus.Instance?.Unsubscribe<RegionCellLoadedEvent>(OnCellLoaded);
         EventBus.Instance?.Unsubscribe<Quests.QuestStartedEvent>(OnQuestStarted);
+        EventBus.Instance?.Unsubscribe<Quests.QuestObjectiveActivatedEvent>(OnObjectiveActivated);
         SaveManager.Instance?.Unregister(this);
     }
 
@@ -241,23 +244,69 @@ public partial class MapService : Node, ISaveable
     }
 
     /// <summary>
-    /// Being sent somewhere is being told where it is (2026-09 world rebuild): taking a quest reveals
-    /// every place its objectives name. Before this the only ways onto the map were walking up to a
-    /// place or having it arrive with the region, and a realm eight times the size made the second one
-    /// the only practical one.
+    /// Being sent somewhere is being told where it is (2026-09 world rebuild): taking a quest reveals the
+    /// places its objectives name. Before this the only ways onto the map were walking up to a place or
+    /// having it arrive with the region, and a realm eight times the size made the second one the only
+    /// practical one.
+    ///
+    /// ⚠️ <b>Only the objectives that are LIVE.</b> The first version revealed every objective's place at
+    /// quest start, which spoiled a quest's ending on its first day and, for a fork, showed both branches.
+    /// A live objective is in the player's branch, unlocked and unmet (<see cref="MapQuestReveal"/>); each
+    /// later place is revealed the moment its objective opens (<see cref="OnObjectiveActivated"/>).
     /// </summary>
     private void OnQuestStarted(Quests.QuestStartedEvent e)
     {
-        foreach (Quests.ObjectiveResource objective in e.Quest.ObjectiveList())
+        if (ProgressOf(e.Owner, e.Quest.Id) is not { } progress)
         {
-            foreach (string id in new[] { objective.LocationId, objective.TargetId })
+            return;
+        }
+
+        foreach (string id in MapQuestReveal.RevealNow(MapQuestReveal.SitesOf(progress)))
+        {
+            RevealQuestLocation(id);
+        }
+    }
+
+    private void OnObjectiveActivated(Quests.QuestObjectiveActivatedEvent e)
+    {
+        IEntity? player = ServiceLocator.Instance is { } locator && locator.TryGet(out Player.PlayerCharacter p) ? p : null;
+        if (ProgressOf(player, e.QuestId) is not { } progress)
+        {
+            return;
+        }
+
+        List<QuestObjectiveSite> sites = MapQuestReveal.SitesOf(progress);
+        if (e.ObjectiveIndex >= 0 && e.ObjectiveIndex < sites.Count &&
+            MapQuestReveal.RevealOnActivation(sites[e.ObjectiveIndex]) is { } id)
+        {
+            RevealQuestLocation(id);
+        }
+    }
+
+    private static Quests.QuestProgress? ProgressOf(IEntity? owner, string questId)
+    {
+        if (owner?.GetComponent<Quests.QuestLogComponent>() is not { } log)
+        {
+            return null;
+        }
+
+        foreach (Quests.QuestProgress progress in log.Quests)
+        {
+            if (progress.Quest.Id == questId)
             {
-                if (!string.IsNullOrEmpty(id) && MapLocationDatabase.Get(id) is { } location &&
-                    (location.RequiredFlagId.Length == 0 || HasFlag(location.RequiredFlagId)))
-                {
-                    Reveal(location);
-                }
+                return progress;
             }
+        }
+
+        return null;
+    }
+
+    private void RevealQuestLocation(string id)
+    {
+        if (!string.IsNullOrEmpty(id) && MapLocationDatabase.Get(id) is { } location &&
+            (location.RequiredFlagId.Length == 0 || HasFlag(location.RequiredFlagId)))
+        {
+            Reveal(location);
         }
     }
 

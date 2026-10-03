@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Embervale.Quests;
+using Embervale.World;
 
 namespace Embervale.UI;
 
@@ -34,4 +35,27 @@ public static class QuestProgressViews
     /// (<see cref="ObjectiveNavigation.ActiveLocationId"/>: required before optional; Reach and Defend name a
     /// place in TargetId, every other type in LocationId). Null when it has no authored place.</summary>
     public static string? CurrentLocationId(QuestProgress progress) => ObjectiveNavigation.ActiveLocationId(progress);
+
+    /// <summary>The map pins for every live non-ledger quest in the log: the current objective's place, with
+    /// the tracked quest marked (see <see cref="MapQuestPinRules.Pins"/>).</summary>
+    public static List<QuestPin> Pins(QuestLogComponent? log)
+    {
+        var sources = new List<QuestPinSource>();
+        if (log != null)
+        {
+            QuestProgress? tracked = log.Tracked;
+            foreach (QuestProgress progress in log.Quests)
+            {
+                sources.Add(new QuestPinSource(
+                    progress.Quest.Id,
+                    progress.Quest.IsMainQuest,
+                    progress.Quest.IsLedger,
+                    progress.Status == QuestStatus.Active,
+                    ReferenceEquals(tracked, progress),
+                    MapQuestReveal.SitesOf(progress)));
+            }
+        }
+
+        return MapQuestPinRules.Pins(sources);
+    }
 }
