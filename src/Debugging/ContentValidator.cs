@@ -6081,6 +6081,12 @@ public static class ContentValidator
             written.Add(flag);
         }
 
+        // The load catch-up writes mission done flags and the arc-ready flags for legacy saves.
+        foreach (string flag in Narrative.CampaignCatchUp.WrittenFlags())
+        {
+            written.Add(flag);
+        }
+
         foreach (Narrative.StoryRule rule in Narrative.StoryDataFiles.LoadRules(new List<string>()))
         {
             foreach (string flag in rule.Set)
