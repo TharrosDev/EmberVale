@@ -7,7 +7,9 @@ using Embervale.Corruption;
 using Embervale.Economy;
 using Embervale.Entities;
 using Embervale.Factions;
+using Embervale.Items;
 using Embervale.Magic;
+using Embervale.Narrative;
 using Embervale.Quests;
 
 namespace Embervale.Dialogue;
@@ -28,6 +30,8 @@ public sealed class DialogueSession
     private readonly StoryFlagsComponent? _flags;
     private readonly CorruptionComponent? _corruption;
     private readonly SpellcastingComponent? _spellcasting;
+    private readonly ReputationComponent? _reputation;
+    private readonly InventoryComponent? _inventory;
 
     public DialogueResource Dialogue { get; }
 
@@ -43,7 +47,49 @@ public sealed class DialogueSession
         _flags = player.GetComponent<StoryFlagsComponent>();
         _corruption = player.GetComponent<CorruptionComponent>();
         _spellcasting = player.GetComponent<SpellcastingComponent>();
-        CurrentNode = dialogue.StartNode();
+        _reputation = player.GetComponent<ReputationComponent>();
+        _inventory = player.GetComponent<InventoryComponent>();
+
+        // Start variants first (first matching condition wins), else the authored start node. The start
+        // node's OnEnter effect fires here, once, exactly as a node reached by a choice does.
+        CurrentNode = ResolveStart(dialogue);
+        EnterCurrentNode();
+    }
+
+    private DialogueNode? ResolveStart(DialogueResource dialogue)
+    {
+        var variants = new List<(DialogueCondition, string, string)>();
+        foreach (DialogueStartVariant variant in dialogue.StartVariantList())
+        {
+            variants.Add((variant.Condition, variant.ConditionArg, variant.NodeId));
+        }
+
+        if (variants.Count == 0)
+        {
+            return dialogue.StartNode();
+        }
+
+        string id = DialogueRules.SelectStartNode(
+            variants, Evaluate, n => dialogue.FindNode(n) != null, string.Empty);
+        return id.Length > 0 ? dialogue.FindNode(id) : dialogue.StartNode();
+    }
+
+    /// <summary>Applies the node's OnEnter effect (once per entry). A panel-opening effect is refused:
+    /// it would open a shop or service window under a live conversation (the validator rejects it).</summary>
+    private void EnterCurrentNode()
+    {
+        if (CurrentNode is not { } node || node.OnEnterEffect == DialogueEffect.None)
+        {
+            return;
+        }
+
+        if (DialogueRules.OpensPanel(node.OnEnterEffect))
+        {
+            Log.Warn($"Dialogue '{Dialogue.Id}' node '{node.Id}': an OnEnter effect may not open a shop or service.");
+            return;
+        }
+
+        ApplyEffect(node.OnEnterEffect, node.OnEnterEffectArg);
     }
 
     /// <summary>Speaker name for the current node (node override, else the conversation's).</summary>
@@ -68,7 +114,8 @@ public sealed class DialogueSession
 
         foreach (DialogueChoice choice in CurrentNode.ChoiceList())
         {
-            if (Evaluate(choice.Condition, choice.ConditionArg))
+            if (DialogueRules.ChoiceVisible(
+                    choice.Condition, choice.ConditionArg, choice.Condition2, choice.Condition2Arg, Evaluate))
             {
                 visible.Add(choice);
             }
@@ -87,7 +134,9 @@ public sealed class DialogueSession
         }
 
         ApplyEffect(choice.Effect, choice.EffectArg);
+        ApplyEffect(choice.Effect2, choice.Effect2Arg);
         CurrentNode = Dialogue.FindNode(choice.Goto); // empty/unknown id => null => ended
+        EnterCurrentNode();
         return IsEnded;
     }
 
@@ -138,6 +187,15 @@ public sealed class DialogueSession
             case DialogueCondition.GuildCanJoin:
                 return _flags != null && FactionDatabase.Get(arg) is { IsGuild: true } joinable &&
                     GuildRules.CanJoin(GuildRules.Resolve(_flags.Has, joinable), joinable.RejoinAllowed);
+            case DialogueCondition.ReputationAtLeast:
+                // Earned standing (Get), not Effective: see the enum member's note.
+                return DialogueRules.TryParseIdAmount(arg, 0, out string repFaction, out int repAmount) &&
+                    _reputation != null && _reputation.Get(repFaction) >= repAmount;
+            case DialogueCondition.CompanionInParty:
+                return Roster()?.IsRecruited(arg) ?? false;
+            case DialogueCondition.HasItem:
+                return DialogueRules.TryParseIdAmount(arg, 1, out string heldItem, out int heldCount) &&
+                    _inventory != null && _inventory.Contains(heldItem, heldCount);
             default:
                 return true;
         }
@@ -350,6 +408,65 @@ public sealed class DialogueSession
                 else
                 {
                     Log.Warn($"Dialogue effect GuildRank: malformed argument '{arg}' or rank out of range.");
+                }
+
+                break;
+            case DialogueEffect.AddReputation:
+                if (DialogueRules.TryParseIdAmount(arg, 0, out string repTarget, out int repDelta) &&
+                    FactionDatabase.Get(repTarget) != null)
+                {
+                    _reputation?.Add(repTarget, repDelta);
+                }
+                else
+                {
+                    Log.Warn($"Dialogue effect AddReputation: malformed argument '{arg}' (expected <factionId>:<delta>) or unknown faction.");
+                }
+
+                break;
+            case DialogueEffect.GiveItem:
+                if (DialogueRules.TryParseIdAmount(arg, 1, out string giftId, out int giftCount) &&
+                    ItemDatabase.Get(giftId) is { } gift && giftCount > 0)
+                {
+                    // ItemGrant spills the overflow at the player's feet; a full pack never eats a gift.
+                    ItemGrant.Give(_inventory, gift, giftCount, _player);
+                }
+                else
+                {
+                    Log.Warn($"Dialogue effect GiveItem: malformed argument '{arg}' (expected <itemId>:<count>) or unknown item.");
+                }
+
+                break;
+            case DialogueEffect.TakeItem:
+                if (DialogueRules.TryParseIdAmount(arg, 1, out string takeId, out int takeCount) && takeCount > 0)
+                {
+                    // All or nothing: the choice should be gated on HasItem, but a choice that is not
+                    // must not half-take a stack or push the count negative.
+                    if (_inventory == null || !_inventory.Contains(takeId, takeCount) ||
+                        !_inventory.RemoveItem(takeId, takeCount))
+                    {
+                        Log.Warn($"Dialogue effect TakeItem: the player does not hold {takeCount}x '{takeId}'; nothing taken.");
+                    }
+                }
+                else
+                {
+                    Log.Warn($"Dialogue effect TakeItem: malformed argument '{arg}' (expected <itemId>:<count>).");
+                }
+
+                break;
+            case DialogueEffect.PlayCards:
+                if (!string.IsNullOrEmpty(arg))
+                {
+                    EventBus.Instance?.Publish(new StoryCardsRequestedEvent(arg));
+                }
+
+                break;
+            case DialogueEffect.TrackQuest:
+                _questLog?.Track(arg);
+                break;
+            case DialogueEffect.Banner:
+                if (!string.IsNullOrEmpty(arg))
+                {
+                    EventBus.Instance?.Publish(new StoryBannerRequestedEvent(arg));
                 }
 
                 break;

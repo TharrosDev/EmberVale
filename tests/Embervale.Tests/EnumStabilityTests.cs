@@ -380,6 +380,14 @@ public class EnumStabilityTests
         // the `guild join`/`guild rank` console commands are.
         Assert.Equal(11, (int)DialogueEffect.JoinGuild);
         Assert.Equal(12, (int)DialogueEffect.GuildRank);
+
+        // Campaign overhaul: tools/campaign/model.py (class E) mirrors these ordinals.
+        Assert.Equal(13, (int)DialogueEffect.AddReputation);
+        Assert.Equal(14, (int)DialogueEffect.GiveItem);
+        Assert.Equal(15, (int)DialogueEffect.TakeItem);
+        Assert.Equal(16, (int)DialogueEffect.PlayCards);
+        Assert.Equal(17, (int)DialogueEffect.TrackQuest);
+        Assert.Equal(18, (int)DialogueEffect.Banner);
     }
 
     [Fact]
@@ -399,6 +407,11 @@ public class EnumStabilityTests
         Assert.Equal(14, (int)DialogueCondition.GuildRankAtLeast);
         Assert.Equal(15, (int)DialogueCondition.GuildNotMember);
         Assert.Equal(16, (int)DialogueCondition.GuildCanJoin);
+
+        // Campaign overhaul: tools/campaign/model.py (class C) mirrors these ordinals.
+        Assert.Equal(17, (int)DialogueCondition.ReputationAtLeast);
+        Assert.Equal(18, (int)DialogueCondition.CompanionInParty);
+        Assert.Equal(19, (int)DialogueCondition.HasItem);
     }
 
     [Fact]
