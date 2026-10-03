@@ -764,6 +764,7 @@ public static class ContentValidator
     /// </summary>
     private static void ValidateBosses(List<string> issues)
     {
+        HashSet<string>? bossKeys = LocaleKeys();
         foreach (BossResource boss in BossDatabase.All)
         {
             if (string.IsNullOrEmpty(boss.Id))
@@ -788,6 +789,21 @@ public static class ContentValidator
             }
 
             ValidateEncounter(boss, issues);
+
+            // Campaign presentation keys: empty is fine, a set value must resolve.
+            if (bossKeys != null)
+            {
+                foreach ((string what, string key) in new[]
+                         {
+                             ("EpithetKey", boss.EpithetKey), ("IntroLineKey", boss.IntroLineKey),
+                         })
+                {
+                    if (!string.IsNullOrEmpty(key) && !bossKeys.Contains(key))
+                    {
+                        issues.Add($"boss '{boss.Id}' {what} '{key}' is not a key in data/locale/strings.csv");
+                    }
+                }
+            }
 
             if (boss.EnrageSeconds < 0f)
             {
@@ -3758,6 +3774,21 @@ public static class ContentValidator
                 // to a generic when Description is missing, so an unauthored objective would render as
                 // the word "objective" to the player. Authoring the line is the rule.
                 Require(objectives[i].Description, $"objective {i} description", issues, keys, quest.Id);
+                RequireIfSet(objectives[i].HintKey, $"objective {i} HintKey", issues, keys, quest.Id);
+                RequireIfSet(objectives[i].JournalEntryKey, $"objective {i} JournalEntryKey", issues, keys, quest.Id);
+            }
+
+            // Campaign presentation keys: empty is a real answer (the UI omits the row), a set value
+            // must resolve.
+            RequireIfSet(quest.GiverNameKey, "GiverNameKey", issues, keys, quest.Id);
+            RequireIfSet(quest.DetailKey, "DetailKey", issues, keys, quest.Id);
+        }
+
+        static void RequireIfSet(string value, string what, List<string> issues, HashSet<string> keys, string questId)
+        {
+            if (!string.IsNullOrEmpty(value) && !keys.Contains(value))
+            {
+                issues.Add($"quest '{questId}' {what} '{value}' is not a key in data/locale/strings.csv");
             }
         }
 
@@ -3894,6 +3925,29 @@ public static class ContentValidator
 
                         break;
 
+                    // Campaign overhaul. A milestone's target is a story flag; whether anything WRITES
+                    // that flag is ValidateStoryFlags' question (same machinery as a branch gate).
+                    case ObjectiveType.Milestone:
+                        if (!objective.TargetId.StartsWith("flag.", System.StringComparison.Ordinal))
+                        {
+                            issues.Add($"quest '{quest.Id}' milestone objective target '{objective.TargetId}' " +
+                                       "must be a story flag starting with 'flag.'");
+                        }
+
+                        if (objective.RequiredCount != 1)
+                        {
+                            issues.Add($"quest '{quest.Id}' milestone objective '{objective.TargetId}' has " +
+                                       $"RequiredCount {objective.RequiredCount} - a milestone is met by one flag, so it must be 1");
+                        }
+
+                        if (objective.TargetId.Length > 0 && objective.TargetId == objective.CompletionFlagId)
+                        {
+                            issues.Add($"quest '{quest.Id}' milestone '{objective.TargetId}' sets its own target " +
+                                       "as its CompletionFlagId - it would wait for itself");
+                        }
+
+                        break;
+
                     case ObjectiveType.Defend:
                         RequireMapLocation(objective.TargetId, $"quest '{quest.Id}' defend objective", issues);
 
@@ -3906,6 +3960,19 @@ public static class ContentValidator
                         }
 
                         break;
+                }
+
+                // Campaign flag fields are written through the flag family only.
+                if (!QuestCompletionRules.IsValidFlagId(objective.CompletionFlagId))
+                {
+                    issues.Add($"quest '{quest.Id}' objective CompletionFlagId '{objective.CompletionFlagId}' " +
+                               "must start with 'flag.'");
+                }
+
+                if (!QuestCompletionRules.IsValidFlagId(objective.ActivatedFlagId))
+                {
+                    issues.Add($"quest '{quest.Id}' objective ActivatedFlagId '{objective.ActivatedFlagId}' " +
+                               "must start with 'flag.'");
                 }
 
                 // 41D. A gate that is its own opposite can never be open, so the objective is one
@@ -3969,6 +4036,37 @@ public static class ContentValidator
                 QuestDatabase.Get(quest.PrerequisiteQuestId) == null)
             {
                 issues.Add($"quest '{quest.Id}' requires unknown quest '{quest.PrerequisiteQuestId}'");
+            }
+
+            // Campaign presentation/world fields.
+            if (!QuestCompletionRules.IsValidFlagId(quest.StartFlagId))
+            {
+                issues.Add($"quest '{quest.Id}' StartFlagId '{quest.StartFlagId}' must start with 'flag.'");
+            }
+
+            if (!QuestCompletionRules.IsValidFlagId(quest.FailFlagId))
+            {
+                issues.Add($"quest '{quest.Id}' FailFlagId '{quest.FailFlagId}' must start with 'flag.'");
+            }
+
+            if (!string.IsNullOrEmpty(quest.RegionId) && RegionDatabase.Get(quest.RegionId) == null)
+            {
+                issues.Add($"quest '{quest.Id}' RegionId '{quest.RegionId}' is not a known region");
+            }
+
+            if (quest.RecommendedLevel < 0)
+            {
+                issues.Add($"quest '{quest.Id}' has a negative RecommendedLevel ({quest.RecommendedLevel})");
+            }
+
+            if (quest.OrderInAct < 0)
+            {
+                issues.Add($"quest '{quest.Id}' has a negative OrderInAct ({quest.OrderInAct})");
+            }
+
+            if (quest.ChapterKey.Length > 0 && quest.ChapterKey.Trim() != quest.ChapterKey)
+            {
+                issues.Add($"quest '{quest.Id}' ChapterKey '{quest.ChapterKey}' has surrounding whitespace");
             }
         }
     }
@@ -5063,16 +5161,24 @@ public static class ContentValidator
             // 41C. A Stealth objective is seeded already met, so a quest made only of stealth
             // conditions completes on the frame it starts, silently, with rewards.
             bool anythingToDo = false;
+            bool anyRequired = false;
             foreach (ObjectiveResource objective in objectives)
             {
-                if (objective.Type != ObjectiveType.Stealth)
+                anyRequired |= !objective.IsOptional;
+                if (objective.Type != ObjectiveType.Stealth && !objective.IsOptional)
                 {
                     anythingToDo = true;
-                    break;
                 }
             }
 
-            if (!anythingToDo)
+            // An optional objective never blocks completion, so a quest of nothing else would have
+            // no way to finish (the completion rule needs at least one required live objective).
+            if (!anyRequired)
+            {
+                issues.Add($"quest '{quest.Id}' has only optional objectives - it needs at least one " +
+                           "required objective or it can never complete");
+            }
+            else if (!anythingToDo)
             {
                 issues.Add($"quest '{quest.Id}' has only stealth objectives — a stealth condition " +
                            "starts met, so the quest would complete the instant it is accepted");
@@ -5158,6 +5264,12 @@ public static class ContentValidator
                     issues.Add($"quest '{quest.Id}' objective requires its own completion flag " +
                                $"'{quest.CompletionFlagId}' — the flag is set only after the " +
                                "objective completes, so this branch can never be entered");
+                }
+
+                if (objective.Type == ObjectiveType.Milestone && objective.TargetId == quest.CompletionFlagId)
+                {
+                    issues.Add($"quest '{quest.Id}' milestone waits on its own completion flag " +
+                               $"'{quest.CompletionFlagId}' - it can never be met");
                 }
             }
         }
@@ -5816,6 +5928,26 @@ public static class ContentValidator
             {
                 written.Add(quest.CompletionFlagId);
             }
+
+            // The campaign flag fields are writers too (the quest log sets them idempotently).
+            foreach (string flag in new[] { quest.StartFlagId, quest.FailFlagId })
+            {
+                if (!string.IsNullOrEmpty(flag))
+                {
+                    written.Add(flag);
+                }
+            }
+
+            foreach (ObjectiveResource objective in quest.ObjectiveList())
+            {
+                foreach (string flag in new[] { objective.CompletionFlagId, objective.ActivatedFlagId })
+                {
+                    if (!string.IsNullOrEmpty(flag))
+                    {
+                        written.Add(flag);
+                    }
+                }
+            }
         }
 
         foreach (DialogueResource dialogue in DialogueDatabase.All)
@@ -5857,6 +5989,10 @@ public static class ContentValidator
             {
                 RequireWritten(objective.RequiredFlagId, "requires", quest.Id, written, issues);
                 RequireWritten(objective.ForbiddenFlagId, "is blocked by", quest.Id, written, issues);
+                if (objective.Type == ObjectiveType.Milestone)
+                {
+                    RequireWritten(objective.TargetId, "waits as a milestone on", quest.Id, written, issues);
+                }
             }
         }
 
@@ -5893,10 +6029,18 @@ public static class ContentValidator
                 issues.Add($"world actor hides after flag '{flag}', which nothing ever sets");
             }
         }
+
+        foreach (string flag in CollectSceneVisibilityFlagReaders("VisibleWhenFlagId"))
+        {
+            if (!written.Contains(flag))
+            {
+                issues.Add($"world actor appears on flag '{flag}', which nothing ever sets");
+            }
+        }
     }
 
     /// <summary>Scene-authored readers used by <see cref="World.FlagVisibilityComponent"/>.</summary>
-    private static IEnumerable<string> CollectSceneVisibilityFlagReaders()
+    private static IEnumerable<string> CollectSceneVisibilityFlagReaders(string property = "HiddenWhenFlagId")
     {
         foreach (string path in ScenePaths("res://scenes"))
         {
@@ -5907,7 +6051,7 @@ public static class ContentValidator
             }
 
             foreach (System.Text.RegularExpressions.Match match in
-                     System.Text.RegularExpressions.Regex.Matches(file.GetAsText(), "HiddenWhenFlagId = \"([^\"]+)\""))
+                     System.Text.RegularExpressions.Regex.Matches(file.GetAsText(), property + " = \"([^\"]+)\""))
             {
                 yield return match.Groups[1].Value;
             }

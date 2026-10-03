@@ -119,6 +119,19 @@ public enum ObjectiveType
     /// waiting to happen rather than a challenge.
     /// </summary>
     Stealth,
+
+    /// <summary>
+    /// Completes when the story flag named by <c>TargetId</c> is set (campaign overhaul). It is the
+    /// bridge from "something happened elsewhere" (a boss fell, a fork was chosen, another quest's
+    /// objective completed) into a quest step, with no event of its own to listen to.
+    ///
+    /// ⚠️ <b>Evaluated on <c>StoryFlagChangedEvent</c>, when the objective becomes active, and on
+    /// <c>GameLoadedEvent</c></b> — so a flag the player already holds completes it the moment it
+    /// unlocks, and a chain of milestones on flags set by other objectives resolves in one pass.
+    /// It has no world position: the compass/map use <c>LocationId</c> if authored and otherwise
+    /// draw nothing. <c>RequiredCount</c> must be 1.
+    /// </summary>
+    Milestone,
 }
 
 /// <summary>Lifecycle state of a quest in the player's log.</summary>

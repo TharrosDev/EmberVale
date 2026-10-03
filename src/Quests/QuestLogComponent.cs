@@ -73,6 +73,22 @@ public partial class QuestLogComponent : EntityComponent, ISaveable
 
     private float _sinceReachTick;
 
+    /// <summary>Objectives whose activation has been processed this session (questId, index): the
+    /// edge detector behind <c>ActivatedFlagId</c> and <see cref="QuestObjectiveActivatedEvent"/>.
+    /// Runtime-only; rebuilt silently on load.</summary>
+    private readonly HashSet<(string QuestId, int Index)> _activated = new();
+
+    /// <summary>The stage signature the player last saw, per quest (journal "updated" dot).</summary>
+    private readonly Dictionary<string, int> _seen = new();
+
+    /// <summary>A save with no <c>seen</c> key was loaded: stamp every quest as seen once the flags
+    /// have loaded (gates are flag-derived, so the signature cannot be taken inside <see cref="Load"/>).</summary>
+    private bool _stampSeenOnLoad;
+
+    private bool _reconciling;
+    private bool _reconcileAgain;
+    private int _suspend;
+
     private ProgressionComponent? _progression;
     private InventoryComponent? _inventory;
 
@@ -118,17 +134,35 @@ public partial class QuestLogComponent : EntityComponent, ISaveable
                 return chosen;
             }
 
+            // Fallback: the first active main-thread quest, then any active quest; a ledger quest is
+            // never a candidate. Highest rank wins, the first of equal rank wins.
+            QuestProgress? best = null;
+            int bestRank = -1;
             foreach (QuestProgress progress in _quests.Values)
             {
-                if (progress.Status == QuestStatus.Active)
+                if (progress.Status != QuestStatus.Active)
                 {
-                    return progress;
+                    continue;
+                }
+
+                int rank = QuestTrackingRules.FallbackRank(progress.Quest.IsMainQuest, progress.Quest.IsLedger);
+                if (rank > bestRank)
+                {
+                    best = progress;
+                    bestRank = rank;
                 }
             }
 
-            return null;
+            return best;
         }
     }
+
+    /// <summary>What the HUD follows right now, for the start-tracking decision. A tracked ledger
+    /// quest counts as nothing: it must never block a real quest from being followed.</summary>
+    private TrackedKind CurrentTrackedKind() =>
+        Tracked is { } t && !t.Quest.IsLedger
+            ? (t.Quest.IsMainQuest ? TrackedKind.Main : TrackedKind.Side)
+            : TrackedKind.None;
 
     /// <summary>Follows <paramref name="questId"/> on the HUD, or clears the choice when it is empty
     /// or names a quest that is not active. Idempotent; safe to call with anything.</summary>
@@ -169,29 +203,55 @@ public partial class QuestLogComponent : EntityComponent, ISaveable
 
     private void OnFlagChanged(StoryFlagChangedEvent e)
     {
-        if (e.Value && ReferenceEquals(e.Owner, Entity))
+        if (!ReferenceEquals(e.Owner, Entity))
+        {
+            return;
+        }
+
+        if (e.Value)
         {
             AutoStart(e.Flag);
         }
+
+        // Milestones wait on flags and gates open and close on flags, so any change can unlock a step.
+        Reconcile();
     }
 
     /// <summary>A save written before a chained quest existed, or across the frame its trigger was
-    /// set, still picks it up: every auto-start quest whose flag is held and is not in the log.</summary>
-    private void OnGameLoaded(GameLoadedEvent e) => AutoStart(null);
+    /// set, still picks it up: every auto-start quest whose flag is held and is not in the log.
+    /// Existing quests are re-derived first and silently (a load restores state, it does not narrate
+    /// one); the seen-stamp for a save with no <c>seen</c> key comes before any new quest starts, so
+    /// a quest started by this very load still shows as updated.</summary>
+    private void OnGameLoaded(GameLoadedEvent e)
+    {
+        Reconcile(silent: true);
+        if (_stampSeenOnLoad)
+        {
+            _stampSeenOnLoad = false;
+            foreach (QuestProgress progress in _quests.Values)
+            {
+                _seen[progress.Quest.Id] = progress.StageSignature();
+            }
+        }
+
+        AutoStart(null);
+    }
 
     private void AutoStart(string? flag)
     {
         foreach (QuestResource quest in QuestDatabase.All)
         {
-            if (string.IsNullOrEmpty(quest.AutoStartFlagId) || HasQuest(quest.Id) ||
-                (flag != null ? quest.AutoStartFlagId != flag : _flags?.Has(quest.AutoStartFlagId) != true))
+            if (string.IsNullOrEmpty(quest.AutoStartFlagId))
             {
                 continue;
             }
 
-            if (StartQuest(quest))
+            if (QuestCompletionRules.ShouldAutoStart(
+                    quest.AutoStartFlagId, flag, _flags?.Has(quest.AutoStartFlagId) == true,
+                    quest.CompletionFlagId, _flags?.Has(quest.CompletionFlagId) == true, HasQuest(quest.Id)))
             {
-                Track(quest.Id);
+                // StartQuest decides tracking itself (main-first, never steals a tracked main quest).
+                StartQuest(quest);
             }
         }
     }
@@ -226,7 +286,14 @@ public partial class QuestLogComponent : EntityComponent, ISaveable
         return string.IsNullOrEmpty(quest.PrerequisiteQuestId) || IsCompleted(quest.PrerequisiteQuestId);
     }
 
-    /// <summary>Adds a quest to the log as Active. Returns false if it can't be started.</summary>
+    /// <summary>
+    /// Adds a quest to the log as Active. Returns false if it can't be started.
+    ///
+    /// Tracks the quest only when <see cref="QuestTrackingRules.ShouldTrackOnStart"/> says so (so a
+    /// dialogue-started side quest never steals a tracked main quest), sets its <c>StartFlagId</c>,
+    /// announces <see cref="ChapterStartedEvent"/> for a chaptered quest, then reconciles so its live
+    /// objectives activate (and any already-held milestone flag completes) before this returns.
+    /// </summary>
     public bool StartQuest(QuestResource quest)
     {
         if (!CanStart(quest))
@@ -234,17 +301,35 @@ public partial class QuestLogComponent : EntityComponent, ISaveable
             return false;
         }
 
+        // Decided BEFORE the quest enters the log, or the fallback would answer with the new quest.
+        bool track = QuestTrackingRules.ShouldTrackOnStart(quest.IsMainQuest, quest.IsLedger, CurrentTrackedKind());
+
         var progress = new QuestProgress(quest);
         BindFlags(progress);
         _quests[quest.Id] = progress;
+        ForgetActivations(quest.Id);
+        _seen.Remove(quest.Id); // a new attempt is news, even if its first stage matches a failed one's
+        if (track)
+        {
+            TrackedQuestId = quest.Id;
+        }
+
         Log.Info($"Quest started: {quest.Title}");
         if (Entity != null)
         {
             EventBus.Instance?.Publish(new QuestStartedEvent(Entity, quest));
         }
 
-        // A quest with no objectives (or all already satisfied) completes immediately.
-        TryComplete(progress);
+        if (quest.ChapterKey.Length > 0)
+        {
+            EventBus.Instance?.Publish(new ChapterStartedEvent(quest.ChapterKey, quest.Id));
+        }
+
+        SetFlag(quest.StartFlagId);
+
+        // Activates the first live objective(s), resolves held milestones, and completes a quest
+        // that is already satisfied.
+        Reconcile();
         return true;
     }
 
@@ -270,9 +355,18 @@ public partial class QuestLogComponent : EntityComponent, ISaveable
             return result;
         }
 
-        SetObjectiveCount(progress, objectiveIndex,
-            Mathf.Min(progress.Counts[objectiveIndex] + amount, objectives[objectiveIndex].RequiredCount));
-        TryComplete(progress);
+        _suspend++;
+        try
+        {
+            SetObjectiveCount(progress, objectiveIndex,
+                Mathf.Min(progress.Counts[objectiveIndex] + amount, objectives[objectiveIndex].RequiredCount));
+        }
+        finally
+        {
+            _suspend--;
+        }
+
+        Reconcile();
         return QuestDebugAdvanceResult.Advanced;
     }
 
@@ -342,6 +436,8 @@ public partial class QuestLogComponent : EntityComponent, ISaveable
         }
 
         _defendHeld.Clear();
+        ForgetActivations(questId);
+        _seen.Remove(questId);
         if (Entity != null)
         {
             EventBus.Instance?.Publish(new QuestResetEvent(Entity, progress.Quest));
@@ -740,41 +836,179 @@ public partial class QuestLogComponent : EntityComponent, ISaveable
             }
         }
 
-        foreach (QuestProgress progress in active)
+        // Counts are written with reconciliation suspended, so a flag set by one completion cannot
+        // complete the quest between two objectives that this same event advances together.
+        bool changedAny = false;
+        _suspend++;
+        try
         {
-            List<ObjectiveResource> objectives = progress.Quest.ObjectiveList();
-            bool changed = false;
-
-            for (int i = 0; i < objectives.Count; i++)
+            foreach (QuestProgress progress in active)
             {
-                ObjectiveResource objective = objectives[i];
-                if (objective.Type != type || objective.TargetId != targetId ||
-                    progress.IsObjectiveComplete(i) || !progress.IsObjectiveActive(i))
+                List<ObjectiveResource> objectives = progress.Quest.ObjectiveList();
+                for (int i = 0; i < objectives.Count; i++)
                 {
-                    continue;
+                    ObjectiveResource objective = objectives[i];
+                    if (objective.Type != type || objective.TargetId != targetId ||
+                        progress.IsObjectiveComplete(i) || !progress.IsObjectiveActive(i))
+                    {
+                        continue;
+                    }
+
+                    SetObjectiveCount(progress, i, Mathf.Min(progress.Counts[i] + amount, objective.RequiredCount));
+                    changedAny = true;
                 }
-
-                SetObjectiveCount(progress, i, Mathf.Min(progress.Counts[i] + amount, objective.RequiredCount));
-                changed = true;
             }
+        }
+        finally
+        {
+            _suspend--;
+        }
 
-            if (changed)
-            {
-                TryComplete(progress);
-            }
+        if (changedAny)
+        {
+            Reconcile();
         }
     }
 
-    /// <summary>Writes one objective count and announces the exact normal progress event.</summary>
+    /// <summary>Writes one objective count and announces the exact normal progress event. The single
+    /// choke point for counts, so it is also where an objective's completion is noticed: the
+    /// objective's <c>CompletionFlagId</c> is set (idempotently) and <see cref="QuestStageChangedEvent"/>
+    /// is published, optional objectives included.</summary>
     private void SetObjectiveCount(QuestProgress progress, int index, int count)
     {
         ObjectiveResource objective = progress.Quest.ObjectiveList()[index];
+        bool wasComplete = progress.IsObjectiveComplete(index);
         progress.Counts[index] = count;
         if (Entity != null)
         {
             EventBus.Instance?.Publish(new QuestObjectiveAdvancedEvent(
                 Entity, progress.Quest, index, count, objective.RequiredCount));
         }
+
+        if (!wasComplete && progress.IsObjectiveComplete(index))
+        {
+            SetFlag(objective.CompletionFlagId);
+            EventBus.Instance?.Publish(new QuestStageChangedEvent(progress.Quest.Id, index, true));
+        }
+    }
+
+    /// <summary>Sets a story flag through the idempotent setter (never twice, never when empty).</summary>
+    private void SetFlag(string flagId)
+    {
+        if (_flags != null && QuestCompletionRules.ShouldSetFlag(flagId, _flags.Has(flagId)))
+        {
+            _flags.Set(flagId);
+        }
+    }
+
+    private void ForgetActivations(string questId) => _activated.RemoveWhere(a => a.QuestId == questId);
+
+    /// <summary>
+    /// Brings every active quest in line with the flags: activates newly-live objectives (setting
+    /// their <c>ActivatedFlagId</c>), completes Milestone objectives whose flag is held, and completes
+    /// quests that are now satisfied. Runs to a fixed point, so milestones chained on flags set by
+    /// other objectives resolve in one call.
+    ///
+    /// ⚠️ Re-entrancy: setting a flag publishes a synchronous event that lands back here. A nested call
+    /// only marks the outer loop dirty, so exactly one reconciler runs, every set is idempotent, and
+    /// the pass count is capped as a backstop against an authoring cycle.
+    /// </summary>
+    private void Reconcile(bool silent = false)
+    {
+        if (_reconciling || _suspend > 0)
+        {
+            _reconcileAgain = true;
+            return;
+        }
+
+        _reconciling = true;
+        try
+        {
+            for (int pass = 0; pass < 64; pass++)
+            {
+                _reconcileAgain = false;
+                var active = new List<QuestProgress>();
+                foreach (QuestProgress p in _quests.Values)
+                {
+                    if (p.Status == QuestStatus.Active)
+                    {
+                        active.Add(p);
+                    }
+                }
+
+                foreach (QuestProgress progress in active)
+                {
+                    ReconcileOne(progress, silent);
+                }
+
+                if (!_reconcileAgain)
+                {
+                    break;
+                }
+            }
+        }
+        finally
+        {
+            _reconciling = false;
+            _reconcileAgain = false;
+        }
+    }
+
+    private void ReconcileOne(QuestProgress progress, bool silent)
+    {
+        List<ObjectiveResource> objectives = progress.Quest.ObjectiveList();
+        for (int i = 0; i < objectives.Count && progress.Status == QuestStatus.Active; i++)
+        {
+            if (!progress.IsObjectiveActive(i))
+            {
+                continue;
+            }
+
+            if (_activated.Add((progress.Quest.Id, i)))
+            {
+                SetFlag(objectives[i].ActivatedFlagId);
+                if (!silent)
+                {
+                    EventBus.Instance?.Publish(new QuestObjectiveActivatedEvent(progress.Quest.Id, i));
+                    EventBus.Instance?.Publish(new QuestStageChangedEvent(progress.Quest.Id, i, false));
+                }
+            }
+
+            if (objectives[i].Type == ObjectiveType.Milestone && !progress.IsObjectiveComplete(i) &&
+                ObjectiveProgress.MilestoneMet(objectives[i].TargetId, _flags != null ? _flags.Has : null))
+            {
+                SetObjectiveCount(progress, i, objectives[i].RequiredCount);
+            }
+        }
+
+        TryComplete(progress);
+    }
+
+    // --- "Updated" dot -------------------------------------------------------
+
+    /// <summary>True while an active quest has progressed (or just started) since the player last
+    /// called <see cref="MarkSeen"/> for it. Saves that predate this show no dots.</summary>
+    public bool IsUpdated(string questId) =>
+        _quests.TryGetValue(questId, out QuestProgress? progress) &&
+        QuestUpdateRules.IsUpdated(
+            _seen.TryGetValue(questId, out int seen) ? seen : null, progress.StageSignature(), progress.Status);
+
+    /// <summary>Records the quest's current stage as seen (the journal calls this when it shows the quest).</summary>
+    public void MarkSeen(string questId)
+    {
+        if (!_quests.TryGetValue(questId, out QuestProgress? progress))
+        {
+            return;
+        }
+
+        int signature = progress.StageSignature();
+        if (_seen.TryGetValue(questId, out int seen) && seen == signature)
+        {
+            return;
+        }
+
+        _seen[questId] = signature;
+        EventBus.Instance?.Publish(new QuestSeenChangedEvent(questId));
     }
 
     /// <summary>
@@ -813,7 +1047,10 @@ public partial class QuestLogComponent : EntityComponent, ISaveable
                 // one refuses to fail on an objective that belongs to a branch the player never took
                 // — an escort on the path not chosen has no charge to lose, so nothing about it can
                 // be a failure. A dead branch must not be able to lose the quest.
+                // An OPTIONAL objective can never lose the quest: an optional escort whose charge
+                // falls, or an optional hold the player dies on, is just an objective not earned.
                 if (objective.Type != type ||
+                    objective.IsOptional ||
                     !progress.IsObjectiveActive(i) ||
                     (!alreadyMetStillCounts && progress.IsObjectiveComplete(i)) ||
                     (targetId != null && objective.TargetId != targetId))
@@ -856,6 +1093,7 @@ public partial class QuestLogComponent : EntityComponent, ISaveable
         _defendHeld.Clear();
 
         Log.Info($"Quest failed: {progress.Quest.Title}");
+        SetFlag(progress.Quest.FailFlagId);
         if (Entity != null)
         {
             EventBus.Instance?.Publish(new QuestFailedEvent(Entity, progress.Quest));
@@ -941,12 +1179,31 @@ public partial class QuestLogComponent : EntityComponent, ISaveable
         {
             ["quests"] = quests,
             ["tracked"] = TrackedQuestId,
+            ["seen"] = SaveSeen(),
         };
+    }
+
+    private Godot.Collections.Dictionary SaveSeen()
+    {
+        var seen = new Godot.Collections.Dictionary();
+        foreach ((string questId, int signature) in _seen)
+        {
+            if (_quests.ContainsKey(questId))
+            {
+                seen[questId] = signature;
+            }
+        }
+
+        return seen;
     }
 
     public void Load(Godot.Collections.Dictionary data)
     {
         _quests.Clear();
+        _activated.Clear();
+        _defendHeld.Clear();
+        _seen.Clear();
+        _stampSeenOnLoad = false;
 
         // ⚠️ Cleared unconditionally BEFORE the restore, not merged over (CLAUDE.md §7). A quickload
         // keeps every live component, so without this line a quest tracked in the timeline being
@@ -977,6 +1234,22 @@ public partial class QuestLogComponent : EntityComponent, ISaveable
         if (data.TryGetValue("tracked", out Variant trackedVar))
         {
             Track(trackedVar.AsString());
+        }
+
+        // Optional key (added with the journal's updated dot). ABSENT means an old save: every quest
+        // in it counts as already seen, so a pre-existing save shows no dots. The stamp itself waits
+        // for OnGameLoaded because a stage signature reads flags, which may not have loaded yet.
+        if (data.TryGetValue("seen", out Variant seenVar))
+        {
+            Godot.Collections.Dictionary seen = seenVar.AsGodotDictionary();
+            foreach (Variant key in seen.Keys)
+            {
+                _seen[key.AsString()] = seen[key].AsInt32();
+            }
+        }
+        else
+        {
+            _stampSeenOnLoad = true;
         }
 
         // The quest-log UI rebuilds from this component on GameLoadedEvent.

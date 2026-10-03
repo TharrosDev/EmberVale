@@ -269,6 +269,10 @@ public class EnumStabilityTests
         // swap would silently pre-complete whichever objective took its place.
         Assert.Equal(6, (int)ObjectiveType.Interact);
         Assert.Equal(7, (int)ObjectiveType.Stealth);
+
+        // Campaign overhaul. Milestone is authored in quest .tres files as Type = 8 and means "the
+        // flag named by TargetId is set", so a shifted ordinal would reinterpret flag ids as targets.
+        Assert.Equal(8, (int)ObjectiveType.Milestone);
     }
 
     [Fact]

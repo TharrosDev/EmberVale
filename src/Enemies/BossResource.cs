@@ -89,4 +89,13 @@ public partial class BossResource : Resource
     /// <summary>Conversation opened once the defeat beat ends — the corruption choice, for a boss
     /// that offers one. Part of the reward, and gated with it.</summary>
     [Export] public string DefeatDialogueId { get; set; } = string.Empty;
+
+    [ExportGroup("Presentation")]
+
+    /// <summary>Locale key of the boss's epithet card text (e.g. "The Black-Iron King"); empty = none.
+    /// Read by the UI, which validates nothing here beyond the key existing.</summary>
+    [Export] public string EpithetKey { get; set; } = string.Empty;
+
+    /// <summary>Locale key of the line the boss speaks as the encounter begins; empty = none.</summary>
+    [Export] public string IntroLineKey { get; set; } = string.Empty;
 }

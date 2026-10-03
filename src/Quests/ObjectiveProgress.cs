@@ -52,6 +52,16 @@ public static class ObjectiveProgress
     /// gate and order produce a live objective, and that is arithmetic over three arrays.
     /// </summary>
     public static bool IsActive(int index, bool[] gateOpen, int[] counts, int[] required, bool sequential)
+        => IsActive(index, gateOpen, counts, required, sequential, null);
+
+    /// <summary>
+    /// <see cref="IsActive(int, bool[], int[], int[], bool)"/> with optional objectives (campaign
+    /// overhaul): an <paramref name="optional"/> objective never LOCKS a later one, so a sequential
+    /// quest's required chain is ordered among its required steps only. An optional objective is
+    /// itself still locked behind the earlier required steps, exactly like any other.
+    /// </summary>
+    public static bool IsActive(
+        int index, bool[] gateOpen, int[] counts, int[] required, bool sequential, bool[]? optional)
     {
         if (index < 0 || index >= required.Length || index >= counts.Length || index >= gateOpen.Length)
         {
@@ -70,7 +80,7 @@ public static class ObjectiveProgress
 
         for (int i = 0; i < index; i++)
         {
-            if (gateOpen[i] && !IsComplete(counts[i], required[i]))
+            if (gateOpen[i] && !IsOptionalAt(optional, i) && !IsComplete(counts[i], required[i]))
             {
                 return false;
             }
@@ -78,6 +88,9 @@ public static class ObjectiveProgress
 
         return true;
     }
+
+    private static bool IsOptionalAt(bool[]? optional, int index) =>
+        optional != null && index < optional.Length && optional[index];
 
     /// <summary>
     /// True when every LIVE objective has met its requirement (41D) — the gate-aware counterpart to
@@ -90,11 +103,28 @@ public static class ObjectiveProgress
     /// only-stealth-objectives trap: a set that begins in the finished position because it is empty.
     /// </summary>
     public static bool AllLiveMet(bool[] gateOpen, int[] counts, int[] required, bool sequential)
+        => AllLiveMet(gateOpen, counts, required, sequential, null);
+
+    /// <summary>
+    /// THE QUEST COMPLETION RULE (campaign overhaul). A quest is complete exactly when
+    /// <list type="number">
+    /// <item>at least one <b>required</b> objective is live (not <paramref name="optional"/>, branch
+    /// gate open), AND</item>
+    /// <item>every required live objective has met its count.</item>
+    /// </list>
+    /// Optional objectives never block completion and never satisfy (1): a quest whose required
+    /// objectives are all gated off therefore stays open however many optional ones are done, and a
+    /// gated-off required objective is skipped rather than blocking. A required objective that is
+    /// merely locked behind an earlier sequential step is live (gate open) and unmet, so it blocks.
+    /// Caveat: a Stealth objective is seeded met, so it counts as live-and-met; the validator refuses
+    /// quests whose only required objectives are stealth conditions.
+    /// </summary>
+    public static bool AllLiveMet(bool[] gateOpen, int[] counts, int[] required, bool sequential, bool[]? optional)
     {
         bool anyLive = false;
         for (int i = 0; i < required.Length; i++)
         {
-            if (!gateOpen[i])
+            if (!gateOpen[i] || IsOptionalAt(optional, i))
             {
                 continue;
             }
@@ -112,6 +142,11 @@ public static class ObjectiveProgress
         _ = sequential;
         return anyLive;
     }
+
+    /// <summary>A <see cref="ObjectiveType.Milestone"/> is met once the story flag its target names is
+    /// held. An empty target is never met (the validator refuses one).</summary>
+    public static bool MilestoneMet(string? targetFlagId, System.Func<string, bool>? hasFlag) =>
+        !string.IsNullOrEmpty(targetFlagId) && hasFlag != null && hasFlag(targetFlagId);
 
     /// <summary>
     /// Advances a <see cref="ObjectiveType.Defend"/> hold by one poll tick (41B): adds

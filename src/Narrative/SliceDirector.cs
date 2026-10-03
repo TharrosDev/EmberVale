@@ -40,8 +40,10 @@ public partial class SliceDirector : Node
 
     private void OnRegionTransition(RegionChangedEvent e)
     {
-        if (Flags() is not { } flags || !flags.Has(BossEncounterDirector.DefeatedFlag) ||
-            flags.Has(CompletedFlag))
+        // Only the first time the player walks out of the Ember Crown after the Iron King fell; see
+        // SliceClosingRules for why an arbitrary region change must not play the closing cards.
+        if (Flags() is not { } flags || !SliceClosingRules.ShouldPlay(
+                flags.Has(BossEncounterDirector.DefeatedFlag), flags.Has(CompletedFlag), e.FromRegionId, e.RegionId))
         {
             return;
         }

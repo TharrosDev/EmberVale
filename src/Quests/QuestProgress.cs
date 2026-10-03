@@ -98,7 +98,8 @@ public sealed class QuestProgress
         }
 
         return ObjectiveProgress.IsActive(
-            index, GateStates(objectives), Counts, Required(objectives), Quest.SequentialObjectives);
+            index, GateStates(objectives), Counts, Required(objectives), Quest.SequentialObjectives,
+            Optional(objectives));
     }
 
     /// <summary>
@@ -129,7 +130,24 @@ public sealed class QuestProgress
     {
         List<ObjectiveResource> objectives = Quest.ObjectiveList();
         return ObjectiveProgress.AllLiveMet(
-            GateStates(objectives), Counts, Required(objectives), Quest.SequentialObjectives);
+            GateStates(objectives), Counts, Required(objectives), Quest.SequentialObjectives,
+            Optional(objectives));
+    }
+
+    /// <summary>
+    /// Signature of this quest's visible stage for the journal's updated dot (see
+    /// <see cref="QuestUpdateRules"/>): status plus every objective's inert/active/complete stage.
+    /// </summary>
+    public int StageSignature()
+    {
+        List<ObjectiveResource> objectives = Quest.ObjectiveList();
+        var stages = new int[objectives.Count];
+        for (int i = 0; i < stages.Length; i++)
+        {
+            stages[i] = QuestUpdateRules.Stage(IsObjectiveActive(i), IsObjectiveComplete(i));
+        }
+
+        return QuestUpdateRules.Signature(Status, stages);
     }
 
     /// <summary>Each objective's branch-gate state, resolved through <see cref="HasFlag"/>.</summary>
@@ -142,6 +160,17 @@ public sealed class QuestProgress
         }
 
         return open;
+    }
+
+    private static bool[] Optional(List<ObjectiveResource> objectives)
+    {
+        var optional = new bool[objectives.Count];
+        for (int i = 0; i < objectives.Count; i++)
+        {
+            optional[i] = objectives[i].IsOptional;
+        }
+
+        return optional;
     }
 
     private static int[] Required(List<ObjectiveResource> objectives)
