@@ -6068,6 +6068,27 @@ public static class ContentValidator
 
         CollectSceneAuthoredFlags(written);
 
+        // Flags the code writes by itself: built-in story rules, the party mirror, and every
+        // data-authored story rule's `set` list. (Parse problems are ValidateStoryData's to report.)
+        var companionIds = new List<string>();
+        foreach (CompanionResource companion in CompanionDatabase.All)
+        {
+            companionIds.Add(companion.Id);
+        }
+
+        foreach (string flag in Narrative.StoryRuleData.CodeWrittenFlags(companionIds))
+        {
+            written.Add(flag);
+        }
+
+        foreach (Narrative.StoryRule rule in Narrative.StoryDataFiles.LoadRules(new List<string>()))
+        {
+            foreach (string flag in rule.Set)
+            {
+                written.Add(flag);
+            }
+        }
+
         // Every boss writes its own defeat flag through BossDefeat (36E), not only the Iron King.
         foreach (Enemies.BossResource boss in Enemies.BossDatabase.All)
         {
