@@ -25,12 +25,21 @@ script = ExtResource("3_reward")
 ItemId = "item.weapon.steel_sword"
 Quantity = 1
 
+[sub_resource type="Resource" id="Obj_arena"]
+script = ExtResource("2_obj")
+Type = 2
+TargetId = "location.ember_crown.arena"
+RequiredCount = 1
+Description = "quest.warband.heart.obj_arena"
+HintKey = "quest.warband.heart.hint_arena"
+JournalEntryKey = "quest.warband.heart.log_arena"
+
 [resource]
 script = ExtResource("1_quest")
 Id = "quest.warband.heart"
 Title = "quest.warband.heart.title"
 Summary = "quest.warband.heart.summary"
-Objectives = Array[Resource]([SubResource("Obj_kill")])
+Objectives = Array[Resource]([SubResource("Obj_kill"), SubResource("Obj_arena")])
 XpReward = 150
 GoldReward = 50
 GoldItemId = "item.currency.gold"
@@ -38,3 +47,11 @@ RewardItems = Array[Resource]([SubResource("Reward_sword")])
 CompletionFlagId = "flag.frostfang.passage_open"
 PrerequisiteQuestId = "quest.warband.remedies"
 IsMainQuest = true
+AutoStartFlagId = "flag.main.citadel_approach_done"
+ChapterKey = "ch.1"
+OrderInAct = 8
+RegionId = "region.ember_crown"
+RecommendedLevel = 5
+SequentialObjectives = true
+GiverNameKey = "dlg.elder.speaker"
+DetailKey = "quest.warband.heart.detail"

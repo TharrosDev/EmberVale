@@ -16,15 +16,45 @@ script = ExtResource("3_reward")
 ItemId = "item.potion.health"
 Quantity = 2
 
+[sub_resource type="Resource" id="Obj_scout"]
+script = ExtResource("2_obj")
+Type = 8
+TargetId = "flag.beat.postern_known"
+RequiredCount = 1
+Description = "quest.warband.remedies.obj_scout"
+LocationId = "location.ember_crown.iron_citadel"
+IsOptional = true
+HintKey = "quest.warband.remedies.hint_scout"
+JournalEntryKey = "quest.warband.remedies.log_scout"
+
+[sub_resource type="Resource" id="Obj_handin"]
+script = ExtResource("2_obj")
+Type = 3
+TargetId = "dialogue.apothecary"
+RequiredCount = 1
+Description = "quest.warband.remedies.obj_handin"
+LocationId = "location.ember_crown.apothecary"
+HintKey = "quest.warband.remedies.hint_handin"
+JournalEntryKey = "quest.warband.remedies.log_handin"
+
 [resource]
 script = ExtResource("1_quest")
 Id = "quest.warband.remedies"
 Title = "quest.warband.remedies.title"
 Summary = "quest.warband.remedies.summary"
-Objectives = Array[Resource]([SubResource("Obj_collect")])
+Objectives = Array[Resource]([SubResource("Obj_collect"), SubResource("Obj_scout"), SubResource("Obj_handin")])
 XpReward = 80
 GoldReward = 30
 GoldItemId = "item.currency.gold"
 RewardItems = Array[Resource]([SubResource("Reward_potion")])
 PrerequisiteQuestId = "quest.warband.forge"
 IsMainQuest = true
+AutoStartFlagId = "flag.main.forge_done"
+CompletionFlagId = "flag.main.remedies_done"
+ChapterKey = "ch.1"
+OrderInAct = 6
+RegionId = "region.ember_crown"
+RecommendedLevel = 3
+SequentialObjectives = true
+GiverNameKey = "dlg.apothecary.speaker"
+DetailKey = "quest.warband.remedies.detail"

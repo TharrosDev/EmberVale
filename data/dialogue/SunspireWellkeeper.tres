@@ -3,6 +3,7 @@
 [ext_resource type="Script" path="res://src/Dialogue/DialogueResource.cs" id="1_dlg"]
 [ext_resource type="Script" path="res://src/Dialogue/DialogueNode.cs" id="2_node"]
 [ext_resource type="Script" path="res://src/Dialogue/DialogueChoice.cs" id="3_choice"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueStartVariant.cs" id="9_variant"]
 
 ; Magic upgrade: this NPC teaches spellcraft (spell.teach.* strings, LearnSpell effect).
 [sub_resource type="Resource" id="ch_mg_menu"]
@@ -26,6 +27,114 @@ Goto = "root"
 script = ExtResource("3_choice")
 Text = "spell.teach.thanks"
 Goto = "root"
+
+[sub_resource type="Resource" id="ch_root_cq_gs_exposed"]
+script = ExtResource("3_choice")
+Text = "dlg.sunspire_wellkeeper.root.c_cq_gs_exposed"
+Goto = "cq_gs_exposed"
+Condition = 5
+ConditionArg = "flag.fork.flock_exposed"
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_root_cq_gs_turned"]
+script = ExtResource("3_choice")
+Text = "dlg.sunspire_wellkeeper.root.c_cq_gs_turned"
+Goto = "cq_gs_turned"
+Condition = 5
+ConditionArg = "flag.fork.flock_turned"
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_root_cq_gs_kin"]
+script = ExtResource("3_choice")
+Text = "dlg.sunspire_wellkeeper.root.c_cq_gs_kin"
+Goto = "cq_gs_kin"
+Condition = 5
+ConditionArg = "flag.fork.flock_kin"
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_cq_dw_hook_else"]
+script = ExtResource("3_choice")
+Text = "dlg.sunspire_wellkeeper.cq_dw_hook.c_else"
+Goto = "root"
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_cq_dw_hook_go"]
+script = ExtResource("3_choice")
+Text = "dlg.sunspire_wellkeeper.cq_dw_hook.c_go"
+Goto = ""
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_cq_cp_after_exposed_take"]
+script = ExtResource("3_choice")
+Text = "dlg.sunspire_wellkeeper.cq_cp_after_exposed.c_take"
+Goto = ""
+Condition = 0
+ConditionArg = ""
+Effect = 14
+EffectArg = "item.potion.health:2"
+
+[sub_resource type="Resource" id="ch_cq_cp_after_turned_take"]
+script = ExtResource("3_choice")
+Text = "dlg.sunspire_wellkeeper.cq_cp_after_turned.c_take"
+Goto = ""
+Condition = 0
+ConditionArg = ""
+Effect = 14
+EffectArg = "item.potion.health:2"
+
+[sub_resource type="Resource" id="ch_cq_cp_after_kin_go"]
+script = ExtResource("3_choice")
+Text = "dlg.sunspire_wellkeeper.cq_cp_after_kin.c_go"
+Goto = ""
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_cq_cp_after_neutral_else"]
+script = ExtResource("3_choice")
+Text = "dlg.sunspire_wellkeeper.cq_cp_after_neutral.c_else"
+Goto = "root"
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_cq_gs_exposed_else"]
+script = ExtResource("3_choice")
+Text = "dlg.sunspire_wellkeeper.cq_gs_exposed.c_else"
+Goto = "root"
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_cq_gs_turned_else"]
+script = ExtResource("3_choice")
+Text = "dlg.sunspire_wellkeeper.cq_gs_turned.c_else"
+Goto = "root"
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_cq_gs_kin_else"]
+script = ExtResource("3_choice")
+Text = "dlg.sunspire_wellkeeper.cq_gs_kin.c_else"
+Goto = "root"
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
 
 [sub_resource type="Resource" id="node_mg_teach"]
 script = ExtResource("2_node")
@@ -81,7 +190,7 @@ Goto = "root"
 script = ExtResource("2_node")
 Id = "root"
 Text = "dlg.sunspire_wellkeeper.root"
-Choices = Array[Resource]([SubResource("ch_ending_dawnfire"), SubResource("ch_ending_embers"), SubResource("ch_wells"), SubResource("ch_mg_menu"), SubResource("ch_bye")])
+Choices = Array[Resource]([SubResource("ch_ending_dawnfire"), SubResource("ch_ending_embers"), SubResource("ch_wells"), SubResource("ch_mg_menu"), SubResource("ch_root_cq_gs_exposed"), SubResource("ch_root_cq_gs_turned"), SubResource("ch_root_cq_gs_kin"), SubResource("ch_bye")])
 
 [sub_resource type="Resource" id="node_wells"]
 script = ExtResource("2_node")
@@ -101,9 +210,100 @@ Id = "ending_embers"
 Text = "dlg.sunspire_wellkeeper.ending_embers"
 Choices = Array[Resource]([SubResource("ch_ending_embers_back")])
 
+[sub_resource type="Resource" id="node_cq_dw_hook"]
+script = ExtResource("2_node")
+Id = "cq_dw_hook"
+Text = "dlg.sunspire_wellkeeper.cq_dw_hook"
+Choices = Array[Resource]([SubResource("ch_cq_dw_hook_else"), SubResource("ch_cq_dw_hook_go")])
+
+[sub_resource type="Resource" id="node_cq_cp_after_exposed"]
+script = ExtResource("2_node")
+Id = "cq_cp_after_exposed"
+Text = "dlg.sunspire_wellkeeper.cq_cp_after_exposed"
+Choices = Array[Resource]([SubResource("ch_cq_cp_after_exposed_take")])
+
+[sub_resource type="Resource" id="node_cq_cp_after_turned"]
+script = ExtResource("2_node")
+Id = "cq_cp_after_turned"
+Text = "dlg.sunspire_wellkeeper.cq_cp_after_turned"
+Choices = Array[Resource]([SubResource("ch_cq_cp_after_turned_take")])
+
+[sub_resource type="Resource" id="node_cq_cp_after_kin"]
+script = ExtResource("2_node")
+Id = "cq_cp_after_kin"
+Text = "dlg.sunspire_wellkeeper.cq_cp_after_kin"
+Choices = Array[Resource]([SubResource("ch_cq_cp_after_kin_go")])
+
+[sub_resource type="Resource" id="node_cq_cp_after_neutral"]
+script = ExtResource("2_node")
+Id = "cq_cp_after_neutral"
+Text = "dlg.sunspire_wellkeeper.cq_cp_after_neutral"
+Choices = Array[Resource]([SubResource("ch_cq_cp_after_neutral_else")])
+
+[sub_resource type="Resource" id="node_cq_gs_exposed"]
+script = ExtResource("2_node")
+Id = "cq_gs_exposed"
+Text = "dlg.sunspire_wellkeeper.cq_gs_exposed"
+Choices = Array[Resource]([SubResource("ch_cq_gs_exposed_else")])
+
+[sub_resource type="Resource" id="node_cq_gs_turned"]
+script = ExtResource("2_node")
+Id = "cq_gs_turned"
+Text = "dlg.sunspire_wellkeeper.cq_gs_turned"
+Choices = Array[Resource]([SubResource("ch_cq_gs_turned_else")])
+
+[sub_resource type="Resource" id="node_cq_gs_kin"]
+script = ExtResource("2_node")
+Id = "cq_gs_kin"
+Text = "dlg.sunspire_wellkeeper.cq_gs_kin"
+Choices = Array[Resource]([SubResource("ch_cq_gs_kin_else")])
+
+[sub_resource type="Resource" id="start_root_5_b977"]
+script = ExtResource("9_variant")
+Condition = 5
+ConditionArg = "flag.main.crimson_prophet_done"
+NodeId = "root"
+
+[sub_resource type="Resource" id="start_cq_cp_after_exposed_5_2e6b"]
+script = ExtResource("9_variant")
+Condition = 5
+ConditionArg = "flag.beat.prophetend_exposed"
+NodeId = "cq_cp_after_exposed"
+
+[sub_resource type="Resource" id="start_cq_cp_after_turned_5_e751"]
+script = ExtResource("9_variant")
+Condition = 5
+ConditionArg = "flag.beat.prophetend_turned"
+NodeId = "cq_cp_after_turned"
+
+[sub_resource type="Resource" id="start_cq_cp_after_kin_5_845d"]
+script = ExtResource("9_variant")
+Condition = 5
+ConditionArg = "flag.beat.prophetend_kin"
+NodeId = "cq_cp_after_kin"
+
+[sub_resource type="Resource" id="start_cq_cp_after_neutral_5_648f"]
+script = ExtResource("9_variant")
+Condition = 5
+ConditionArg = "flag.crimson_prophet_defeated"
+NodeId = "cq_cp_after_neutral"
+
+[sub_resource type="Resource" id="start_root_5_88ca"]
+script = ExtResource("9_variant")
+Condition = 5
+ConditionArg = "flag.beat.oda_briefed"
+NodeId = "root"
+
+[sub_resource type="Resource" id="start_cq_dw_hook_2_723f"]
+script = ExtResource("9_variant")
+Condition = 2
+ConditionArg = "quest.main.dry_wells"
+NodeId = "cq_dw_hook"
+
 [resource]
 script = ExtResource("1_dlg")
 Id = "dialogue.sunspire_wellkeeper"
 SpeakerName = "dlg.sunspire_wellkeeper.speaker"
 StartNodeId = "root"
-Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_wells"), SubResource("node_ending_dawnfire"), SubResource("node_ending_embers"), SubResource("node_mg_teach"), SubResource("node_mg_taught")])
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_wells"), SubResource("node_ending_dawnfire"), SubResource("node_ending_embers"), SubResource("node_mg_teach"), SubResource("node_mg_taught"), SubResource("node_cq_dw_hook"), SubResource("node_cq_cp_after_exposed"), SubResource("node_cq_cp_after_turned"), SubResource("node_cq_cp_after_kin"), SubResource("node_cq_cp_after_neutral"), SubResource("node_cq_gs_exposed"), SubResource("node_cq_gs_turned"), SubResource("node_cq_gs_kin")])
+StartVariants = Array[Resource]([SubResource("start_root_5_b977"), SubResource("start_cq_cp_after_exposed_5_2e6b"), SubResource("start_cq_cp_after_turned_5_e751"), SubResource("start_cq_cp_after_kin_5_845d"), SubResource("start_cq_cp_after_neutral_5_648f"), SubResource("start_root_5_88ca"), SubResource("start_cq_dw_hook_2_723f")])

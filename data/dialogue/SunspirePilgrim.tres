@@ -3,6 +3,7 @@
 [ext_resource type="Script" path="res://src/Dialogue/DialogueResource.cs" id="1_dlg"]
 [ext_resource type="Script" path="res://src/Dialogue/DialogueNode.cs" id="2_node"]
 [ext_resource type="Script" path="res://src/Dialogue/DialogueChoice.cs" id="3_choice"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueStartVariant.cs" id="9_variant"]
 
 [sub_resource type="Resource" id="ch_mission"]
 script = ExtResource("3_choice")
@@ -17,6 +18,42 @@ Text = "dlg.sunspire_pilgrim.c_mission_bye"
 script = ExtResource("3_choice")
 Text = "dlg.sunspire_pilgrim.c_bye"
 
+[sub_resource type="Resource" id="ch_cq_dw_tamsin_else"]
+script = ExtResource("3_choice")
+Text = "dlg.sunspire_pilgrim.cq_dw_tamsin.c_else"
+Goto = "root"
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_cq_dw_tamsin_go"]
+script = ExtResource("3_choice")
+Text = "dlg.sunspire_pilgrim.cq_dw_tamsin.c_go"
+Goto = ""
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_cq_pf_turned_else"]
+script = ExtResource("3_choice")
+Text = "dlg.sunspire_pilgrim.cq_pf_turned.c_else"
+Goto = "root"
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_cq_pf_turned_go"]
+script = ExtResource("3_choice")
+Text = "dlg.sunspire_pilgrim.cq_pf_turned.c_go"
+Goto = ""
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
 [sub_resource type="Resource" id="node_root"]
 script = ExtResource("2_node")
 Id = "root"
@@ -29,9 +66,46 @@ Id = "mission"
 Text = "dlg.sunspire_pilgrim.mission"
 Choices = Array[Resource]([SubResource("ch_mission_bye")])
 
+[sub_resource type="Resource" id="node_cq_dw_tamsin"]
+script = ExtResource("2_node")
+Id = "cq_dw_tamsin"
+Text = "dlg.sunspire_pilgrim.cq_dw_tamsin"
+Choices = Array[Resource]([SubResource("ch_cq_dw_tamsin_else"), SubResource("ch_cq_dw_tamsin_go")])
+
+[sub_resource type="Resource" id="node_cq_pf_turned"]
+script = ExtResource("2_node")
+Id = "cq_pf_turned"
+Text = "dlg.sunspire_pilgrim.cq_pf_turned"
+Choices = Array[Resource]([SubResource("ch_cq_pf_turned_else"), SubResource("ch_cq_pf_turned_go")])
+
+[sub_resource type="Resource" id="start_root_5_73ab"]
+script = ExtResource("9_variant")
+Condition = 5
+ConditionArg = "flag.main.prophets_flock_done"
+NodeId = "root"
+
+[sub_resource type="Resource" id="start_cq_pf_turned_5_43dc"]
+script = ExtResource("9_variant")
+Condition = 5
+ConditionArg = "flag.fork.flock_turned"
+NodeId = "cq_pf_turned"
+
+[sub_resource type="Resource" id="start_root_5_3b0a"]
+script = ExtResource("9_variant")
+Condition = 5
+ConditionArg = "flag.main.dry_wells_done"
+NodeId = "root"
+
+[sub_resource type="Resource" id="start_cq_dw_tamsin_5_d07a"]
+script = ExtResource("9_variant")
+Condition = 5
+ConditionArg = "flag.beat.gap_seen"
+NodeId = "cq_dw_tamsin"
+
 [resource]
 script = ExtResource("1_dlg")
 Id = "dialogue.sunspire_pilgrim"
 SpeakerName = "dlg.sunspire_pilgrim.speaker"
 StartNodeId = "root"
-Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_mission")])
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_mission"), SubResource("node_cq_dw_tamsin"), SubResource("node_cq_pf_turned")])
+StartVariants = Array[Resource]([SubResource("start_root_5_73ab"), SubResource("start_cq_pf_turned_5_43dc"), SubResource("start_root_5_3b0a"), SubResource("start_cq_dw_tamsin_5_d07a")])

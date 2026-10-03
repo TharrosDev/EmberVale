@@ -3,6 +3,7 @@
 [ext_resource type="Script" path="res://src/Dialogue/DialogueResource.cs" id="1_dlg"]
 [ext_resource type="Script" path="res://src/Dialogue/DialogueNode.cs" id="2_node"]
 [ext_resource type="Script" path="res://src/Dialogue/DialogueChoice.cs" id="3_choice"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueStartVariant.cs" id="9_variant"]
 
 [sub_resource type="Resource" id="ch_offer"]
 script = ExtResource("3_choice")
@@ -84,6 +85,42 @@ Text = "dlg.smith.c_inprogress_bye"
 script = ExtResource("3_choice")
 Text = "dlg.smith.c_thanks_bye"
 
+[sub_resource type="Resource" id="ch_cq_forge_check_ore"]
+script = ExtResource("3_choice")
+Text = "dlg.smith.cq_forge_check.c_ore"
+Goto = "cq_forge_thanks"
+Condition = 19
+ConditionArg = "item.material.iron_ore:3"
+Effect = 15
+EffectArg = "item.material.iron_ore:3"
+
+[sub_resource type="Resource" id="ch_cq_forge_check_else"]
+script = ExtResource("3_choice")
+Text = "dlg.smith.cq_forge_check.c_else"
+Goto = "root"
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_cq_forge_check_later"]
+script = ExtResource("3_choice")
+Text = "dlg.smith.cq_forge_check.c_later"
+Goto = ""
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_cq_forge_thanks_go"]
+script = ExtResource("3_choice")
+Text = "dlg.smith.cq_forge_thanks.c_go"
+Goto = ""
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
 [sub_resource type="Resource" id="node_root"]
 script = ExtResource("2_node")
 Id = "root"
@@ -126,9 +163,34 @@ Id = "closed"
 Text = "dlg.smith.closed"
 Choices = Array[Resource]([SubResource("ch_bye")])
 
+[sub_resource type="Resource" id="node_cq_forge_check"]
+script = ExtResource("2_node")
+Id = "cq_forge_check"
+Text = "dlg.smith.cq_forge_check"
+Choices = Array[Resource]([SubResource("ch_cq_forge_check_ore"), SubResource("ch_cq_forge_check_else"), SubResource("ch_cq_forge_check_later")])
+
+[sub_resource type="Resource" id="node_cq_forge_thanks"]
+script = ExtResource("2_node")
+Id = "cq_forge_thanks"
+Text = "dlg.smith.cq_forge_thanks"
+Choices = Array[Resource]([SubResource("ch_cq_forge_thanks_go")])
+
+[sub_resource type="Resource" id="start_root_5_117d"]
+script = ExtResource("9_variant")
+Condition = 5
+ConditionArg = "flag.main.forge_done"
+NodeId = "root"
+
+[sub_resource type="Resource" id="start_cq_forge_check_2_cc7b"]
+script = ExtResource("9_variant")
+Condition = 2
+ConditionArg = "quest.warband.forge"
+NodeId = "cq_forge_check"
+
 [resource]
 script = ExtResource("1_dlg")
 Id = "dialogue.smith"
 SpeakerName = "dlg.smith.speaker"
 StartNodeId = "root"
-Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_offer"), SubResource("node_accepted"), SubResource("node_inprogress"), SubResource("node_thanks"), SubResource("node_commission"), SubResource("node_closed")])
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_offer"), SubResource("node_accepted"), SubResource("node_inprogress"), SubResource("node_thanks"), SubResource("node_commission"), SubResource("node_closed"), SubResource("node_cq_forge_check"), SubResource("node_cq_forge_thanks")])
+StartVariants = Array[Resource]([SubResource("start_root_5_117d"), SubResource("start_cq_forge_check_2_cc7b")])

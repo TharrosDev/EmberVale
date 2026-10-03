@@ -3,6 +3,7 @@
 [ext_resource type="Script" path="res://src/Dialogue/DialogueResource.cs" id="1_dlg"]
 [ext_resource type="Script" path="res://src/Dialogue/DialogueNode.cs" id="2_node"]
 [ext_resource type="Script" path="res://src/Dialogue/DialogueChoice.cs" id="3_choice"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueStartVariant.cs" id="9_variant"]
 
 [sub_resource type="Resource" id="ch_road"]
 script = ExtResource("3_choice")
@@ -39,6 +40,24 @@ Goto = "j42_vane"
 script = ExtResource("3_choice")
 Text = "dlg.sunspire_caravan_master.c_j42_vane_bye"
 
+[sub_resource type="Resource" id="ch_cq_dw_vane_else"]
+script = ExtResource("3_choice")
+Text = "dlg.sunspire_caravan_master.cq_dw_vane.c_else"
+Goto = "root"
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_cq_dw_vane_go"]
+script = ExtResource("3_choice")
+Text = "dlg.sunspire_caravan_master.cq_dw_vane.c_go"
+Goto = ""
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
 [sub_resource type="Resource" id="node_j42_vane"]
 script = ExtResource("2_node")
 Id = "j42_vane"
@@ -63,9 +82,28 @@ Id = "gate"
 Text = "dlg.sunspire_caravan_master.gate"
 Choices = Array[Resource]([SubResource("ch_gate_bye")])
 
+[sub_resource type="Resource" id="node_cq_dw_vane"]
+script = ExtResource("2_node")
+Id = "cq_dw_vane"
+Text = "dlg.sunspire_caravan_master.cq_dw_vane"
+Choices = Array[Resource]([SubResource("ch_cq_dw_vane_else"), SubResource("ch_cq_dw_vane_go")])
+
+[sub_resource type="Resource" id="start_root_5_3b0a"]
+script = ExtResource("9_variant")
+Condition = 5
+ConditionArg = "flag.main.dry_wells_done"
+NodeId = "root"
+
+[sub_resource type="Resource" id="start_cq_dw_vane_5_d07a"]
+script = ExtResource("9_variant")
+Condition = 5
+ConditionArg = "flag.beat.gap_seen"
+NodeId = "cq_dw_vane"
+
 [resource]
 script = ExtResource("1_dlg")
 Id = "dialogue.sunspire_caravan_master"
 SpeakerName = "dlg.sunspire_caravan_master.speaker"
 StartNodeId = "root"
-Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_road"), SubResource("node_gate"), SubResource("node_j42_vane")])
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_road"), SubResource("node_gate"), SubResource("node_j42_vane"), SubResource("node_cq_dw_vane")])
+StartVariants = Array[Resource]([SubResource("start_root_5_3b0a"), SubResource("start_cq_dw_vane_5_d07a")])
