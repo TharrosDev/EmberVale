@@ -1,5 +1,6 @@
-using Embervale.Combat;
+using System;
 using System.Collections.Generic;
+using Embervale.Combat;
 using Embervale.Core;
 using Embervale.Core.Diagnostics;
 using Embervale.Core.Events;
@@ -47,6 +48,10 @@ public sealed partial class RegionStreamer : Node3D
     private readonly HashSet<string> _pendingIds = new();
     private readonly Dictionary<string, RegionCellResource> _requests = new();
     private readonly List<ReadyCell> _ready = new();
+    private readonly List<string> _requestPollIds = new();
+    private readonly Comparison<RegionCellResource> _comparePending;
+    private bool _pendingSortDirty;
+    private Vector3 _priorityFocus;
 
     /// <summary>Cells whose scene could not be requested, loaded or found, and that have used up
     /// <see cref="MaxAttempts"/>. ⚠️ WITHOUT THIS THE STREAMER NEVER STOPS RETRYING ONE. A failed
@@ -78,7 +83,7 @@ public sealed partial class RegionStreamer : Node3D
     /// river reads as the same substance as the lake it runs into.</summary>
     private WorldWaterResource? _waterPalette;
     private WorldPerformanceBudgetResource? _streamingBudget;
-    private WorldRegionBackdrop? _backdrop;
+    private Node3D? _backdrop;
     private WorldRecovery? _recovery;
     private WorldPerformanceMonitor? _performance;
     private WorldVisibilityManager? _visibility;
@@ -87,6 +92,11 @@ public sealed partial class RegionStreamer : Node3D
     private string? _requiredCellId;
     private float _decisionTimer;
     private WorldStreamingDebugDraw? _debugDraw;
+
+    public RegionStreamer()
+    {
+        _comparePending = ComparePending;
+    }
 
     /// <summary>The region currently being streamed, or empty before the first <see cref="Configure"/>.
     /// The streamer is re-configured at both places the active region changes (world build and each
@@ -150,27 +160,32 @@ public sealed partial class RegionStreamer : Node3D
             _backdrop.QueueFree();
             _backdrop = null;
         }
-        if (region == null)
+        if (region == null || missingPrepared)
         {
             return;
         }
 
         _fallbackFocus = region.SpawnPoint;
 
-        if (_preparedRegion?.Backdrop?.Instantiate() is WorldRegionBackdrop preparedBackdrop)
+        // A package may carry WorldRegionBackdrop directly or a compatibility Node3D container.
+        // Instantiate once and own the complete root: the container branch otherwise leaked its
+        // first instance and left an empty container after every region transition.
+        Node? preparedBackdrop = _preparedRegion?.Backdrop?.Instantiate();
+        if (preparedBackdrop is Node3D preparedBackdropRoot)
         {
-            _backdrop = preparedBackdrop;
+            _backdrop = preparedBackdropRoot;
             AddChild(_backdrop);
         }
-        else if (_preparedRegion?.Backdrop?.Instantiate() is Node3D preparedBackdropRoot)
+        else
         {
-            _backdrop = preparedBackdropRoot.GetNodeOrNull<WorldRegionBackdrop>("PreparedBackdrop");
-            AddChild(preparedBackdropRoot);
-        }
-        else if (_environmentProfile != null)
-        {
-            _backdrop = WorldRegionBackdrop.Create(_environmentProfile, region, _heightfield!);
-            AddChild(_backdrop);
+            preparedBackdrop?.Free();
+            // Production with missing prepared data remains blocked above. Do not feed a null
+            // field into generation or silently generate a replacement for a missing package.
+            if (authoringGeneration && _environmentProfile != null && _heightfield != null)
+            {
+                _backdrop = WorldRegionBackdrop.Create(_environmentProfile, region, _heightfield);
+                AddChild(_backdrop);
+            }
         }
 
         foreach (RegionCellResource cell in region.Cells)
@@ -212,6 +227,10 @@ public sealed partial class RegionStreamer : Node3D
     /// <summary>True when every currently relevant tier has reached its requested activation state.</summary>
     public bool IsSettled()
     {
+        if (HasFailedCells())
+        {
+            return false;
+        }
         foreach (RegionCellResource cell in _cells)
         {
             WorldStreamingTier target = _desired.GetValueOrDefault(cell.Id);
@@ -294,11 +313,11 @@ public sealed partial class RegionStreamer : Node3D
     {
         RegionCellResource? cell = CellAt(position);
         if (cell == null || !_gameplayActive.Contains(cell.Id) ||
-            !_loaded.TryGetValue(cell.Id, out Node3D? root))
+            !_runtime.TryGetValue(cell.Id, out WorldCellActivation? runtime))
         {
             return false;
         }
-        root.AddChild(actor);
+        runtime.AddTransientActor(actor, position);
         return true;
     }
 
@@ -368,6 +387,7 @@ public sealed partial class RegionStreamer : Node3D
         if (_pendingIds.Add(cell.Id))
         {
             _pending.Add(cell);
+            _pendingSortDirty = true;
         }
     }
 
@@ -419,7 +439,9 @@ public sealed partial class RegionStreamer : Node3D
 
     private void PollThreadedRequests()
     {
-        foreach (string cellId in new List<string>(_requests.Keys))
+        _requestPollIds.Clear();
+        _requestPollIds.AddRange(_requests.Keys);
+        foreach (string cellId in _requestPollIds)
         {
             RegionCellResource cell = _requests[cellId];
             string scenePath = ScenePathFor(cell);
@@ -483,9 +505,11 @@ public sealed partial class RegionStreamer : Node3D
 
     private void Instantiate(RegionCellResource cell, PackedScene scene)
     {
-        if (scene.Instantiate() is not Node3D root)
+        Node instance = scene.Instantiate();
+        if (instance is not Node3D root)
         {
-            Log.Warn($"RegionStreamer: cell '{cell.Id}' scene '{cell.ScenePath}' failed to instance.");
+            instance.Free();
+            Fail(cell.Id, $"scene '{cell.ScenePath}' has no Node3D root");
             return;
         }
         root.Name = cell.Id;
@@ -560,7 +584,9 @@ public sealed partial class RegionStreamer : Node3D
         _pending.Clear();
         _pendingIds.Clear();
         _requests.Clear();
+        _requestPollIds.Clear();
         _ready.Clear();
+        _pendingSortDirty = false;
         _failed.Clear();
         _attempts.Clear();
     }
@@ -603,6 +629,8 @@ public sealed partial class RegionStreamer : Node3D
 
         WorldStreamingLimits limits = _streamingBudget?.StreamingLimits() ?? new WorldStreamingLimits(
             85f, 170f, 300f, 460f, 30f, 2f, 0.65f);
+        _priorityFocus = position;
+        _pendingSortDirty = true;
         foreach (RegionCellResource cell in _cells)
         {
             WorldStreamingTier current = _runtime.TryGetValue(cell.Id, out WorldCellActivation? runtime)
@@ -656,23 +684,32 @@ public sealed partial class RegionStreamer : Node3D
 
     private void SortPendingByPriority()
     {
-        Vector3 focus = _toolFocus ?? _fallbackFocus;
-        _pending.Sort((a, b) =>
+        if (!_pendingSortDirty)
         {
-            if (a.Id == _requiredCellId)
-            {
-                return b.Id == _requiredCellId ? 0 : -1;
-            }
-            if (b.Id == _requiredCellId)
-            {
-                return 1;
-            }
-            int tier = ((int)_desired.GetValueOrDefault(b.Id)).CompareTo(
-                (int)_desired.GetValueOrDefault(a.Id));
-            return tier != 0
-                ? tier
-                : a.Center.DistanceSquaredTo(focus).CompareTo(b.Center.DistanceSquaredTo(focus));
-        });
+            return;
+        }
+        _pendingSortDirty = false;
+        if (_pending.Count > 1)
+        {
+            _pending.Sort(_comparePending);
+        }
+    }
+
+    private int ComparePending(RegionCellResource a, RegionCellResource b)
+    {
+        if (a.Id == _requiredCellId)
+        {
+            return b.Id == _requiredCellId ? 0 : -1;
+        }
+        if (b.Id == _requiredCellId)
+        {
+            return 1;
+        }
+        int tier = ((int)_desired.GetValueOrDefault(b.Id)).CompareTo(
+            (int)_desired.GetValueOrDefault(a.Id));
+        return tier != 0
+            ? tier
+            : a.Center.DistanceSquaredTo(_priorityFocus).CompareTo(b.Center.DistanceSquaredTo(_priorityFocus));
     }
 
     private void ScheduleTier(string cellId, WorldStreamingTier target)
@@ -685,6 +722,7 @@ public sealed partial class RegionStreamer : Node3D
         {
             _gameplayActive.Remove(cellId);
             EventBus.Instance?.Publish(new RegionCellUnloadedEvent(cellId));
+            runtime.RetireTransientActors();
         }
         runtime.TargetTier = target;
         runtime.Stage = 0;

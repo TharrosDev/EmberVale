@@ -10,6 +10,12 @@ namespace Embervale.Magic;
 /// </summary>
 public static class StatusMath
 {
+    /// <summary>Maximum callbacks a single status catch-up can ask its component to execute.
+    /// Authored statuses currently last at most 12 seconds with one-second tick intervals;
+    /// charged Burning lasts eight. This leaves ample headroom while bounding malformed inputs.
+    /// Excess ticks are discarded while the timer retains the elapsed cadence.</summary>
+    public const int MaxCatchUpTicks = 256;
+
     /// <summary>A spell may extend a status lifetime; invalid charge input never shortens or poisons it.</summary>
     public static float DurationMultiplier(float multiplier) =>
         float.IsFinite(multiplier) ? Math.Max(1f, multiplier) : 1f;
@@ -17,26 +23,56 @@ public static class StatusMath
     /// <summary>
     /// Advances a DoT's tick timer by <paramref name="delta"/> and reports how many ticks fire. A tick
     /// is due each time the timer reaches <c>&lt;= 0</c>, after which <paramref name="interval"/> is
-    /// added back — so a large <paramref name="delta"/> that spans several intervals catches up all of
-    /// them. Returns the new timer (the carry-over toward the next tick). A non-positive
-    /// <paramref name="interval"/> is a no-op (0 ticks, timer unchanged) so it can never loop forever.
+    /// added back — so a large <paramref name="delta"/> that spans several intervals catches up
+    /// their count arithmetically, bounded by <see cref="MaxCatchUpTicks"/>. Returns the new timer
+    /// (the carry-over toward the next tick). Invalid intervals/deltas are a no-op; a nonfinite
+    /// timer resets to a valid interval. Every result is finite and the calculation never loops.
     /// </summary>
     public static (int Ticks, double NewTimer) AdvanceDot(double tickTimer, double delta, double interval)
     {
-        if (interval <= 0d)
+        if (!double.IsFinite(interval) || interval <= 0d)
+        {
+            return (0, double.IsFinite(tickTimer) ? tickTimer : 0d);
+        }
+
+        if (!double.IsFinite(tickTimer))
+        {
+            return (0, interval);
+        }
+
+        if (!double.IsFinite(delta) || delta < 0d)
         {
             return (0, tickTimer);
         }
 
         double timer = tickTimer - delta;
-        int ticks = 0;
-        while (timer <= 0d)
+        if (timer > 0d)
         {
-            ticks++;
-            timer += interval;
+            return (0, timer);
         }
 
-        return (ticks, timer);
+        double overdue = -timer;
+        double periods;
+        double remainder;
+        if (double.IsFinite(overdue))
+        {
+            periods = overdue / interval;
+            remainder = overdue % interval;
+        }
+        else
+        {
+            // Two finite operands can overflow their difference. Divide and reduce them
+            // separately so neither the tick count nor its phase depends on that overflow.
+            periods = (delta / interval) + ((-tickTimer) / interval);
+            double elapsedPart = delta % interval;
+            double timerPart = (-tickTimer) % interval;
+            double untilWrap = interval - timerPart;
+            remainder = elapsedPart >= untilWrap ? elapsedPart - untilWrap : elapsedPart + timerPart;
+        }
+
+        double due = Math.Floor(periods) + 1d;
+        int ticks = due >= MaxCatchUpTicks ? MaxCatchUpTicks : (int)due;
+        return (ticks, interval - remainder);
     }
 
     /// <summary>The stack count after one more application: <paramref name="current"/> + 1, capped at

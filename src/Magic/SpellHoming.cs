@@ -36,9 +36,8 @@ public static class SpellHoming
         for (int i = 0; i < candidates.Count; i++)
         {
             if (best < 0 ||
-                (candidates[i].Branded && !candidates[best].Branded) ||
-                (candidates[i].Branded == candidates[best].Branded &&
-                 candidates[i].DistanceSquared < candidates[best].DistanceSquared))
+                IsPreferred(candidates[i].DistanceSquared, candidates[i].Branded,
+                    candidates[best].DistanceSquared, candidates[best].Branded))
             {
                 best = i;
             }
@@ -46,4 +45,9 @@ public static class SpellHoming
 
         return best;
     }
+
+    /// <summary>Whether a candidate replaces the current target. Shared by the streaming physics
+    /// query and the pure list picker, so a homing frame needs no candidate-list allocations.</summary>
+    public static bool IsPreferred(float distanceSquared, bool branded, float currentDistanceSquared, bool currentBranded) =>
+        (branded && !currentBranded) || (branded == currentBranded && distanceSquared < currentDistanceSquared);
 }

@@ -63,7 +63,7 @@ public partial class SpellZone : Node3D
         if (_tickTimer <= 0d)
         {
             _tickTimer += TickInterval;
-            SpellResolver.Detonate(this, Spell, Packet, Caster, CasterTeam, GlobalPosition, Radius);
+            SpellResolver.Detonate(this, Spell, Packet, Caster, CasterTeam, GlobalPosition, Radius, _lifetime);
         }
 
         if (_life >= Duration)

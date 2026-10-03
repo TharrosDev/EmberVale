@@ -6,8 +6,11 @@ using Embervale.Core.Diagnostics;
 using Embervale.Core.Events;
 using Embervale.Core.Pooling;
 using Embervale.Core.Services;
+using Embervale.Entities;
 using Embervale.Races;
 using Embervale.Save;
+using Embervale.UI;
+using Embervale.World;
 using Godot;
 
 namespace Embervale.Bootstrap;
@@ -47,7 +50,16 @@ public static class HeadlessLifecycle
 
     private static readonly List<string> Failures = new();
 
-    public static bool Requested() => HeadlessValidation.HasFlag(FlagArgument);
+    public static bool Requested() => HeadlessValidation.HasFlag(FlagArgument) || ReloadAuditRequested();
+
+    private static bool ReloadAuditRequested()
+    {
+#if EMBERVALE_TOOLING
+        return HeadlessValidation.HasFlag("--save-reload");
+#else
+        return false;
+#endif
+    }
 
     /// <summary>
     /// Fire-and-forget: this drives real frames, and it ends the process itself. It is the entry
@@ -57,6 +69,14 @@ public static class HeadlessLifecycle
     {
         Log.Info("=== lifecycle probe ===");
         Failures.Clear();
+        bool reloadAudit = ReloadAuditRequested();
+        int cycles = reloadAudit ? 2 : Cycles;
+        if (reloadAudit && !System.IO.Path.IsPathFullyQualified(OS.GetEnvironment("EMBERVALE_USER_DIR")))
+        {
+            Log.Error("save-reload requires an absolute isolated EMBERVALE_USER_DIR.");
+            root.GetTree().Quit(1);
+            return;
+        }
 
         await Frames(root, ReclaimFrames);
 
@@ -66,11 +86,19 @@ public static class HeadlessLifecycle
         Log.Info($"lifecycle: baseline — {baselineServices} service(s), {baselineSubscribers} subscription(s), " +
                  $"{baselineOrphans} orphan node(s).");
 
-        for (int cycle = 1; cycle <= Cycles; cycle++)
+        for (int cycle = 1; cycle <= cycles; cycle++)
         {
             string slot = $"lifecycle_probe_{cycle}";
 
             await RunNewGame(root, lifecycle, slot, cycle);
+#if EMBERVALE_TOOLING
+            if (reloadAudit)
+            {
+                await RunReloadAudit(root, lifecycle, slot, cycle);
+                await Teardown(root, lifecycle, $"cycle {cycle} quick reload", baselineSubscribers, baselineServices, baselineOrphans);
+                continue;
+            }
+#endif
             await Teardown(root, lifecycle, $"cycle {cycle} new-game", baselineSubscribers, baselineServices, baselineOrphans);
 
             await RunLoad(root, lifecycle, slot, cycle);
@@ -78,13 +106,17 @@ public static class HeadlessLifecycle
         }
 
         CleanUpProbeSlots();
-        Report(root.GetTree(), baselineOrphans);
+        Report(root.GetTree(), baselineOrphans, cycles, reloadAudit);
     }
 
     private static async Task RunNewGame(
         ApplicationRoot root, SessionLifecycleCoordinator lifecycle, string slot, int cycle)
     {
-        lifecycle.StartNewGame(slot, CharacterProfile.Human);
+        CharacterProfile profile = ReloadAuditRequested()
+            ? new CharacterProfile { RaceId = "race.umbral", CharacterName = "Reload Audit",
+                Background = "A traveller from the Reach", AppearanceOptionIds = ["appearance.audit_one", "appearance.audit_two"] }
+            : CharacterProfile.Human;
+        lifecycle.StartNewGame(slot, profile);
 
         if (lifecycle.Session is not { } session)
         {
@@ -141,6 +173,130 @@ public static class HeadlessLifecycle
               streamer.IsPositionReady(player.GlobalPosition),
             $"{label}: reached Playing without a ready landing cell or with failed cells.");
     }
+
+#if EMBERVALE_TOOLING
+    private static async Task RunReloadAudit(ApplicationRoot root, SessionLifecycleCoordinator lifecycle, string slot, int cycle)
+    {
+        if (lifecycle.Session is not { } original || GameManager.Instance is not { IsPlaying: true })
+        {
+            Failures.Add($"reload cycle {cycle}: no playable session to rewind.");
+            return;
+        }
+        SaveManager saves = SaveManager.Instance;
+        ServiceScope priorScope = original.Scope;
+        Check(original.DevTools != null, $"reload cycle {cycle}: quick-save/load input is absent from this build profile.");
+        if (original.DevTools == null) { return; }
+        if (BuildProfile.IsCapture)
+        {
+            Check(original.DevTools.GetChildCount() == 0,
+                $"reload cycle {cycle}: capture mode constructed developer overlays beside quick-save/load input.");
+        }
+        const string authoredId = "ember_crown.guild_vault";
+        if (cycle == 1)
+        {
+            // This authored cell actor uses the same TreeExiting removal ledger as death and
+            // looted pickups. Removing it after the checkpoint used to survive an F9 overlay.
+            IEntity? actor = null;
+            for (int frame = 0; frame < LoadFrameBudget && actor == null; frame++)
+            {
+                actor = FindActor(original.World, authoredId);
+                if (actor == null) { await Frames(root, 1); }
+            }
+            Check(actor != null, "F9 regression: authored guild vault never streamed in.");
+            if (actor == null) { return; }
+            Check(saves.SaveGame(slot), "F9 regression: checkpoint with authored actor failed to save.");
+            actor.Body.QueueFree();
+            await Frames(root, ReclaimFrames);
+            Check(FindActor(original.World, authoredId) == null, "F9 regression: authored actor did not leave the scene.");
+            Godot.Collections.Array removed = original.GetNode<CellPersistenceDirector>("CellPersistence").Save()["removed"].AsGodotArray();
+            Check(removed.Contains(authoredId), "F9 regression: removal was not recorded by cell persistence.");
+            Check(!lifecycle.RequestReload(original, slot + "_missing") && ReferenceEquals(lifecycle.Session, original),
+                "F9 regression: absent checkpoint tore down the live session.");
+            original.Profile.RaceId = "race.human";
+            original.Profile.CharacterName = "Abandoned Timeline";
+            original.Profile.Background = "Abandoned background";
+            original.Profile.AppearanceOptionIds = ["appearance.abandoned"];
+            using var key = new InputEventKey { Keycode = Key.F9, Pressed = true };
+            original.DevTools!._UnhandledKeyInput(key);
+        }
+        else
+        {
+            RewriteRegionAsV2Fixture(saves, slot, GameIds.Regions.FrostfangReach);
+            GameManager.Instance.ChangeState(GameState.Paused);
+            PauseMenu? menu = null;
+            foreach (Node child in original.Ui.GetChildren()) { if (child is PauseMenu pause) { menu = pause; break; } }
+            Check(menu?.RequestLoad() == true, "pause reload regression: the paused menu refused the checkpoint.");
+        }
+
+        Check(ReferenceEquals(lifecycle.Session, original), $"reload cycle {cycle}: input synchronously destroyed its owning session.");
+        for (int repeat = 0; repeat < 20; repeat++)
+        {
+            Check(!lifecycle.RequestReload(original, slot), $"reload cycle {cycle}: duplicate pending request was accepted.");
+        }
+        await Frames(root, 2);
+        Check(lifecycle.Session != null && !ReferenceEquals(lifecycle.Session, original), $"reload cycle {cycle}: deferred request did not create a fresh session.");
+        if (!await WaitForPlaying(root) || lifecycle.Session is not { } restored)
+        {
+            Failures.Add($"reload cycle {cycle}: restored session never reached Playing.");
+            return;
+        }
+        CheckLandingReady(restored, $"reload cycle {cycle}");
+        Check(priorScope.Count == 0, $"reload cycle {cycle}: abandoned session services survived.");
+        Check(restored.Profile.RaceId == "race.umbral" && restored.Profile.CharacterName == "Reload Audit",
+            $"reload cycle {cycle}: loaded character came from the abandoned session instead of the header.");
+        Check(restored.Profile.Background == "A traveller from the Reach" &&
+              restored.Profile.AppearanceOptionIds is ["appearance.audit_one", "appearance.audit_two"],
+            $"reload cycle {cycle}: background or appearance choices were lost.");
+        Check(!lifecycle.RequestReload(original, slot), $"reload cycle {cycle}: a stale session could reload over its replacement.");
+
+        if (cycle == 1)
+        {
+            IEntity? actor = null;
+            for (int frame = 0; frame < LoadFrameBudget && actor == null; frame++)
+            {
+                actor = FindActor(restored.World, authoredId);
+                if (actor == null) { await Frames(root, 1); }
+            }
+            Check(actor != null, "F9 regression: authored actor removed after the checkpoint was not rebuilt.");
+        }
+        else
+        {
+            Check(restored.CurrentRegionId == GameIds.Regions.FrostfangReach,
+                "pause reload regression: migrated save retained the abandoned region.");
+            Vector3 spawn = RegionDatabase.Get(GameIds.Regions.FrostfangReach)!.SpawnPoint;
+            Vector3 landing = restored.Players.Player!.GlobalPosition;
+            Check(Math.Abs(landing.X - spawn.X) < 1f && Math.Abs(landing.Z - spawn.Z) < 1f,
+                "pause reload regression: migrated header did not land at its saved region's spawn point.");
+            Check(lifecycle.RequestReload(restored, slot), "reload cancellation regression: request was not queued.");
+            lifecycle.DestroySession();
+            await Frames(root, ReclaimFrames);
+            Check(!lifecycle.HasSession, "reload cancellation regression: deferred callback recreated a session after quit.");
+        }
+    }
+
+    private static IEntity? FindActor(Node root, string persistentId)
+    {
+        if (root is IEntity actor && actor.PersistentId == persistentId && !root.IsQueuedForDeletion()) { return actor; }
+        foreach (Node child in root.GetChildren())
+        {
+            if (FindActor(child, persistentId) is { } match) { return match; }
+        }
+        return null;
+    }
+
+    private static void RewriteRegionAsV2Fixture(SaveManager saves, string slot, string regionId)
+    {
+        string path = saves.SlotPath(slot);
+        var envelope = Json.ParseString(FileAccess.GetFileAsString(path)).AsGodotDictionary();
+        var header = envelope["header"].AsGodotDictionary();
+        header["region_id"] = regionId;
+        header["region"] = RegionDatabase.Get(regionId)!.DisplayName;
+        envelope["version"] = 2;
+        using (FileAccess file = FileAccess.Open(path, FileAccess.ModeFlags.Write)) { file.StoreString(Json.Stringify(envelope)); }
+        string mirror = path.Substring(0, path.Length - "save.json".Length) + "header.json";
+        using (FileAccess file = FileAccess.Open(mirror, FileAccess.ModeFlags.Write)) { file.StoreString(Json.Stringify(header)); }
+    }
+#endif
 
     /// <summary>
     /// What must be true after every teardown. Each of these was a real hazard before the overhaul:
@@ -231,14 +387,15 @@ public static class HeadlessLifecycle
         }
     }
 
-    private static void Report(SceneTree tree, int baselineOrphans)
+    private static void Report(SceneTree tree, int baselineOrphans, int cycles, bool reloadAudit)
     {
-        Log.Info($"lifecycle: {Cycles} new-game + load round trip(s); orphan nodes {Orphans()} " +
+        string label = reloadAudit ? "save-reload" : "lifecycle";
+        Log.Info($"{label}: {cycles} new-game + load round trip(s); orphan nodes {Orphans()} " +
                  $"(baseline {baselineOrphans}); invariant violations {Invariant.Violations}.");
 
         if (Failures.Count == 0 && Invariant.Violations == 0)
         {
-            Log.Info("lifecycle: PASS");
+            Log.Info($"{label}: PASS");
             tree.Quit(0);
             return;
         }

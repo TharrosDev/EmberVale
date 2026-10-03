@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Embervale.Core;
 using Godot;
 
 namespace Embervale.Stats;
@@ -78,6 +79,10 @@ public partial class AttributeSet : Resource
     /// <summary>Programmatic default used as a fallback when no resource is assigned.</summary>
     public static AttributeSet CreateDefault()
     {
+        // Keep the C# script alive across GC/session boundaries, while returning a fresh mutable
+        // resource for each caller. A temporary default alone can be finalized before the next
+        // construction, leaving Godot's managed-type script lookup without a live script.
+        _ = ResidentResources.Load<Script>("res://src/Stats/AttributeSet.cs");
         return new AttributeSet();
     }
 }

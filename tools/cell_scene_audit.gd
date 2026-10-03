@@ -26,7 +26,10 @@ extends SceneTree
 const REGIONS := [
 	"res://data/regions/EmberCrown.tres",
 	"res://data/regions/FrostfangReach.tres",
+	"res://data/regions/AshenWilds.tres",
+	"res://data/regions/Sunspire.tres",
 	"res://data/regions/PaleConcord.tres",
+	"res://data/regions/CelestialRealm.tres",
 ]
 
 # A collider at least this big on two horizontal axes is "building-sized": something the player will
@@ -43,6 +46,9 @@ var _findings: Array[String] = []
 
 
 func _initialize() -> void:
+	if OS.get_cmdline_user_args().has("--self-test"):
+		_self_test()
+		return
 	for region_path in REGIONS:
 		var region: Resource = load(region_path)
 		if region == null:
@@ -123,7 +129,10 @@ func _check_children(cell_id: String, parent: Node, root: Node, colliders: Array
 	for child in parent.get_children():
 		if not (child is Node3D):
 			continue
-		_check_walkthrough(cell_id, child, root, colliders)
+		# Nav groups independently authored placements. Its combined bounding box can span
+		# decorative lamps/benches without containing a wall; audit its children individually.
+		if child != root.get_node_or_null("Nav"):
+			_check_walkthrough(cell_id, child, root, colliders)
 		if child.is_in_group(ABSOLUTE_GROUP):
 			continue
 		var y: float = child.position.y
@@ -133,6 +142,44 @@ func _check_children(cell_id: String, parent: Node, root: Node, colliders: Array
 		elif y > MAX_Y:
 			_findings.append("%s: FLOATING %s at authored y=%.2f (join '%s' if that Y is a real world height)"
 				% [cell_id, _path(child, root), y, ABSOLUTE_GROUP])
+
+
+func _self_test() -> void:
+	var root := Node3D.new()
+	var nav := NavigationRegion3D.new()
+	nav.name = "Nav"
+	root.add_child(nav)
+	for x in [-7.0, 7.0]:
+		var lamp := MeshInstance3D.new()
+		var mesh := BoxMesh.new()
+		mesh.size = Vector3(0.4, 3.5, 0.4)
+		lamp.mesh = mesh
+		lamp.position.x = x
+		nav.add_child(lamp)
+	_check_authored_heights("fixture", root, _colliders(root))
+	var passed := _findings.is_empty()
+	_findings.clear()
+	var wall := MeshInstance3D.new()
+	wall.name = "Wall"
+	var wall_mesh := BoxMesh.new()
+	wall_mesh.size = Vector3(6, 3, 1)
+	wall.mesh = wall_mesh
+	nav.add_child(wall)
+	_check_authored_heights("fixture", root, _colliders(root))
+	passed = passed and _findings.size() == 1 and _findings[0].contains("NO_COLLISION at Nav/Wall")
+	_findings.clear()
+	var body := StaticBody3D.new()
+	var shape := CollisionShape3D.new()
+	var box := BoxShape3D.new()
+	box.size = wall_mesh.size
+	shape.shape = box
+	body.add_child(shape)
+	wall.add_child(body)
+	_check_authored_heights("fixture", root, _colliders(root))
+	passed = passed and _findings.is_empty()
+	root.free()
+	print("scene audit rules: %s (decorative container, missing wall collision, solid wall)" % ("PASS" if passed else "FAIL"))
+	quit(0 if passed else 1)
 
 
 # A placement whose visible geometry is building-sized must stop the player.

@@ -67,8 +67,8 @@ public sealed partial class GameSession : Node3D, IServiceScopeHost
 
     public SaveHeaderComposer Header { get; private set; } = null!;
 
-    /// <summary>The developer surfaces (console, debug HUD, profiler, integrity checker, the
-    /// training dummy and the single-key cheats). Null in a capture or exported build.</summary>
+    /// <summary>Quick-save/load input plus optional developer surfaces. Null before Build; capture
+    /// and exported builds construct the input host without overlays, dummy or cheat keys.</summary>
     public DeveloperToolsHost? DevTools { get; private set; }
 
     /// <summary>The new-game prologue. Null once it has played; a load never builds one.</summary>
@@ -129,11 +129,12 @@ public sealed partial class GameSession : Node3D, IServiceScopeHost
         AddChild(new EndingSequence { Name = "Ending" });
         AddChild(new VisionSequence { Name = "Visions" });
 
-        // 4. Developer surfaces. A capture or exported build makes none of them.
+        // 4. Quick save/load keys exist in every build. Only the overlays and cheat controls are
+        // developer affordances; DeveloperToolsHost filters those when capture/shipping is active.
+        DevTools = new DeveloperToolsHost { Name = "DeveloperTools", Session = this };
+        AddChild(DevTools);
         if (BuildProfile.ShowDeveloperTools)
         {
-            DevTools = new DeveloperToolsHost { Name = "DeveloperTools", Session = this };
-            AddChild(DevTools);
             DevTools.BuildOverlays();
         }
 

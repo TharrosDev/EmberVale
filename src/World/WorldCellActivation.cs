@@ -16,6 +16,7 @@ internal sealed class WorldCellActivation
     private readonly List<CollisionState> _collisions = new();
     private readonly List<VisualState> _visuals = new();
     private readonly List<NavigationRegion3D> _navigation = new();
+    private readonly List<Node3D> _transientActors = new();
 
     public WorldCellActivation(Node3D root)
     {
@@ -32,6 +33,29 @@ internal sealed class WorldCellActivation
     public WorldStreamingTier TargetTier { get; set; } = WorldStreamingTier.Unloaded;
     public int Stage { get; set; }
     public bool GameplayActive => Tier == WorldStreamingTier.Near;
+
+    /// <summary>Emergent actors are authored in world space and live only while this cell is Near.</summary>
+    public void AddTransientActor(Node3D actor, Vector3 position)
+    {
+        // Initialization runs during AddChild. Put the detached actor in cell-local space first so
+        // AI home positions and every component's OnInitialize observe the intended world point.
+        actor.Position = Root.ToLocal(position);
+        Root.AddChild(actor);
+        _transientActors.Add(actor);
+        actor.TreeExited += () => _transientActors.Remove(actor);
+    }
+
+    public void RetireTransientActors()
+    {
+        foreach (Node3D actor in _transientActors)
+        {
+            if (GodotObject.IsInstanceValid(actor))
+            {
+                actor.QueueFree();
+            }
+        }
+        _transientActors.Clear();
+    }
 
     /// <summary>Runs one bounded activation unit. Returns true when the requested tier is complete.</summary>
     public bool Advance()
@@ -72,8 +96,14 @@ internal sealed class WorldCellActivation
 
     public bool HasTerrainCollision()
     {
-        foreach (CollisionState state in _collisions)
+        for (int i = _collisions.Count - 1; i >= 0; i--)
         {
+            CollisionState state = _collisions[i];
+            if (!GodotObject.IsInstanceValid(state.Node))
+            {
+                _collisions.RemoveAt(i);
+                continue;
+            }
             if (state.Node.Name == "TerrainCollider" && state.Node.CollisionLayer != 0u)
             {
                 return true;
@@ -84,8 +114,14 @@ internal sealed class WorldCellActivation
 
     public bool HasNavigation()
     {
-        foreach (NavigationRegion3D region in _navigation)
+        for (int i = _navigation.Count - 1; i >= 0; i--)
         {
+            NavigationRegion3D region = _navigation[i];
+            if (!GodotObject.IsInstanceValid(region))
+            {
+                _navigation.RemoveAt(i);
+                continue;
+            }
             if (region.Enabled && region.NavigationMesh?.GetPolygonCount() > 0)
             {
                 return true;
@@ -116,8 +152,17 @@ internal sealed class WorldCellActivation
 
     private void ApplyPresentation(WorldStreamingTier tier)
     {
-        foreach (VisualState state in _visuals)
+        for (int i = _visuals.Count - 1; i >= 0; i--)
         {
+            VisualState state = _visuals[i];
+            // Death and persistence reconciliation can free descendants while the prepared cell
+            // itself stays resident. Captured handles describe its initial contents, not a lifetime
+            // guarantee; prune before any native property or parent traversal touches them.
+            if (!GodotObject.IsInstanceValid(state.Node))
+            {
+                _visuals.RemoveAt(i);
+                continue;
+            }
             bool visible = state.Visible && tier switch
             {
                 WorldStreamingTier.Unloaded => false,
@@ -134,8 +179,14 @@ internal sealed class WorldCellActivation
 
     private void ApplyCollision(WorldStreamingTier tier)
     {
-        foreach (CollisionState state in _collisions)
+        for (int i = _collisions.Count - 1; i >= 0; i--)
         {
+            CollisionState state = _collisions[i];
+            if (!GodotObject.IsInstanceValid(state.Node))
+            {
+                _collisions.RemoveAt(i);
+                continue;
+            }
             bool enabled = tier == WorldStreamingTier.Near ||
                            (tier == WorldStreamingTier.Mid && state.Node.Name == "TerrainCollider");
             state.Node.CollisionLayer = enabled ? state.Layer : 0u;
@@ -145,8 +196,14 @@ internal sealed class WorldCellActivation
 
     private void ApplyNavigation(WorldStreamingTier tier)
     {
-        foreach (NavigationRegion3D navigation in _navigation)
+        for (int i = _navigation.Count - 1; i >= 0; i--)
         {
+            NavigationRegion3D navigation = _navigation[i];
+            if (!GodotObject.IsInstanceValid(navigation))
+            {
+                _navigation.RemoveAt(i);
+                continue;
+            }
             navigation.Enabled = tier == WorldStreamingTier.Near;
         }
     }

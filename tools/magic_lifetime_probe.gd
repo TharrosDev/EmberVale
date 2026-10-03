@@ -15,6 +15,7 @@ func _initialize() -> void:
 	current_scene = _world
 	_driver = load("res://src/Debugging/MagicLifetimeProbeDriver.cs").new()
 	await process_frame
+	_check(_driver.DefaultAttributesAreIndependent(), "default attributes must be distinct, mutation-isolated resources")
 	_driver.Begin(_world)
 	await _frames()
 	_driver.SpawnAll()
@@ -22,7 +23,7 @@ func _initialize() -> void:
 	_check(_driver.ControlEffectsWork(), "control zone/totem must damage and heal before cancellation")
 	_driver.Finish()
 	await _frames()
-	for cancellation in ["load", "detach", "despawn", "queued"]:
+	for cancellation in ["load", "detach", "despawn", "queued", "death"]:
 		_driver.Begin(_world)
 		await _frames()
 		_driver.SpawnAll()
@@ -32,6 +33,7 @@ func _initialize() -> void:
 			"detach": _driver.DetachCaster()
 			"despawn": _driver.DespawnEvent()
 			"queued": _driver.QueueCaster()
+			"death": _driver.DeathAndRespawn()
 		for issue in _driver.InertIssues():
 			_failures.append("%s: %s" % [cancellation, issue])
 		await _frames()
@@ -56,6 +58,19 @@ func _initialize() -> void:
 	_check(_driver.CancelledShotFreed(), "cancelled pending return reached pool or survived cleanup")
 	_driver.Finish()
 	await _frames()
+	for source in ["projectile", "ground", "zone", "direct", "cone", "dash"]:
+		for cancellation in ["normal", "load", "death", "respawn"]:
+			# Exercise the production default path across managed collection and session teardown.
+			# Defaults remain fresh per component while their C# script stays resident.
+			_databases.CollectManagedResources()
+			_driver.Begin(_world)
+			_check(_driver.FixtureDefaultsRetained(), "components must retain independent default attributes")
+			_driver.PrepareBurstCancellation(source, cancellation)
+			await _frames()
+			for issue in _driver.ResolveBurstCancellation():
+				_failures.append("burst %s/%s: %s" % [source, cancellation, issue])
+			_driver.Finish()
+			await _frames()
 	_driver = null
 	_world.queue_free()
 	await _frames()

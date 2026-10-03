@@ -18,8 +18,6 @@ import re
 import struct
 from pathlib import Path
 
-from PIL import Image
-
 JSON_CHUNK = 0x4E4F534A
 BIN_CHUNK = 0x004E4942
 
@@ -58,6 +56,8 @@ def write_glb(path: Path, doc: dict, binary: bytes) -> None:
 
 def shrink_images(doc: dict, binary: bytes, max_size: int) -> dict[int, bytes]:
     """Return {bufferView index: replacement bytes} for every oversized embedded image."""
+    from PIL import Image
+
     replacements: dict[int, bytes] = {}
     for image in doc.get("images", []):
         view_index = image.get("bufferView")
@@ -247,7 +247,7 @@ RETARGET_BLOCK = """_subresources={
 "retarget/remove_tracks/unimportant_positions": true,
 "retarget/remove_tracks/unmapped_bones": false,
 "retarget/rest_fixer/apply_node_transforms": true,
-"retarget/rest_fixer/fix_silhouette/enable": false,
+"retarget/rest_fixer/fix_silhouette/enable": {fix_silhouette},
 "retarget/rest_fixer/fix_silhouette/filter": [],
 "retarget/rest_fixer/fix_silhouette/threshold": 15.0,
 "retarget/rest_fixer/keep_global_rest_on_leftovers": true,
@@ -273,10 +273,19 @@ def patch_import(dest: Path, root_scale: float | None, bonemap: str) -> str:
     if not sidecar.exists():
         return "no .import yet (run a Godot import pass, then re-run with --patch-import)"
     text = sidecar.read_text(encoding="utf-8")
-    block = RETARGET_BLOCK.replace("{bonemap}", bonemap)
     # _subresources is always the last multi-line param before the gltf/ block, and it appears both
     # as "{}" and as a nested dict -- anchoring on what follows it covers each form with one rule.
-    text, count = re.subn(r"_subresources=.*?(?=\ngltf/naming_version)",
+    subresources_pattern = r"_subresources=.*?(?=\ngltf/naming_version)"
+    existing = re.search(subresources_pattern, text, flags=re.S)
+    if existing is None:
+        return f"FAILED to locate _subresources in {sidecar.name}"
+    # A rest-pose correction is reviewed per model. Re-adoption must preserve an explicit choice
+    # in either direction; new or unreviewed models retain the conservative disabled default.
+    silhouette = re.search(r'"retarget/rest_fixer/fix_silhouette/enable"\s*:\s*(true|false)\b',
+                           existing.group(0))
+    fix_silhouette = silhouette.group(1) if silhouette is not None else "false"
+    block = RETARGET_BLOCK.replace("{bonemap}", bonemap).replace("{fix_silhouette}", fix_silhouette)
+    text, count = re.subn(subresources_pattern,
                           block, text, count=1, flags=re.S)
     if count != 1:
         return f"FAILED to locate _subresources in {sidecar.name}"

@@ -22,6 +22,7 @@ FORBIDDEN = [
     "MagicCoreProbeDriver", "MagicStatusProbeSeam", "MagicLearningProbeDriver",
     "MagicContentProbeDriver",
     "MagicLifetimeProbeDriver",
+    "RuntimeAuditProbeDriver", "WorldAuditProbeDriver", "SaveAuditProbe",
 ]
 # Namespaces from the vendored Godot-MCP addon and its NuGet dependencies.
 FORBIDDEN_PREFIXES = ["IvanMurzak", "GodotMCP", "com.IvanMurzak"]

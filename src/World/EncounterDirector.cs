@@ -131,9 +131,13 @@ public partial class EncounterDirector : Node3D
             // Per member, not per band: the jitter moves each one off the validated origin, so each
             // one is placed on walkable ground of its own. See SpawnPlacement.
             Vector3 jitter = new(GD.Randf() * 2f - 1f, 0f, GD.Randf() * 2f - 1f);
+            if (!SpawnPlacement.TryResolve(this, origin + jitter, out Vector3 position))
+            {
+                continue;
+            }
             if (SpawnEnemy(
                 encounter.EnemyTemplateId,
-                SpawnPlacement.Resolve(this, origin + jitter),
+                position,
                 encounter.CorruptionChance))
             {
                 spawned++;

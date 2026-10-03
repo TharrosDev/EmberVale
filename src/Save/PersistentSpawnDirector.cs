@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Embervale.Core.Diagnostics;
 using Embervale.Core.Services;
@@ -53,10 +54,14 @@ public partial class PersistentSpawnDirector : Node, ISaveable
     {
         if (string.IsNullOrEmpty(persistentId))
         {
-            persistentId = $"{templateId}#{++_autoId}";
+            // The session counter restarts after a load; restored ids may already contain #1.
+            // Generate a free id rather than returning an old actor as the requested new spawn.
+            do { persistentId = $"{templateId}#{++_autoId}"; }
+            while (_tracked.ContainsKey(persistentId));
         }
 
-        if (_tracked.TryGetValue(persistentId, out IEntity? existing) && IsInstanceValid((Node)existing.Body))
+        if (_tracked.TryGetValue(persistentId, out IEntity? existing) && IsInstanceValid((Node)existing.Body) &&
+            !existing.Body.IsQueuedForDeletion())
         {
             return existing;
         }
@@ -115,7 +120,7 @@ public partial class PersistentSpawnDirector : Node, ISaveable
         var actors = new Godot.Collections.Array();
         foreach (IEntity entity in _tracked.Values)
         {
-            if (entity.Body is not Node node || !IsInstanceValid(node))
+            if (entity.Body is not Node node || !IsInstanceValid(node) || node.IsQueuedForDeletion())
             {
                 continue;
             }
@@ -137,19 +142,19 @@ public partial class PersistentSpawnDirector : Node, ISaveable
 
     public void Load(Godot.Collections.Dictionary data)
     {
-        if (!data.TryGetValue("actors", out Variant actorsVariant) ||
-            actorsVariant.VariantType != Variant.Type.Array)
+        if (data.TryGetValue("actors", out Variant actorsVariant) && actorsVariant.VariantType != Variant.Type.Array)
         {
-            return;
+            throw new InvalidOperationException("Persistent spawn manifest 'actors' must be an array.");
         }
 
         // Build the desired set from the save.
         var desired = new Dictionary<string, (string Template, Vector3 Pos, float Yaw)>();
-        foreach (Variant element in actorsVariant.AsGodotArray())
+        foreach (Variant element in actorsVariant.VariantType == Variant.Type.Array
+                     ? actorsVariant.AsGodotArray() : new Godot.Collections.Array())
         {
             if (element.VariantType != Variant.Type.Dictionary)
             {
-                continue;
+                throw new InvalidOperationException("Persistent spawn manifest contains a non-object actor.");
             }
 
             var entry = element.AsGodotDictionary();
@@ -157,7 +162,7 @@ public partial class PersistentSpawnDirector : Node, ISaveable
             string tid = entry.TryGetValue("tid", out Variant tidV) ? tidV.AsString() : string.Empty;
             if (string.IsNullOrEmpty(pid) || string.IsNullOrEmpty(tid))
             {
-                continue;
+                throw new InvalidOperationException("Persistent spawn manifest contains an actor with no identity or template.");
             }
 
             var pos = new Vector3(
@@ -165,7 +170,10 @@ public partial class PersistentSpawnDirector : Node, ISaveable
                 entry.TryGetValue("y", out Variant y) ? y.AsSingle() : 0f,
                 entry.TryGetValue("z", out Variant z) ? z.AsSingle() : 0f);
             float yaw = entry.TryGetValue("yaw", out Variant yawV) ? yawV.AsSingle() : 0f;
-            desired[pid] = (tid, pos, yaw);
+            if (!desired.TryAdd(pid, (tid, pos, yaw)))
+            {
+                throw new InvalidOperationException($"Persistent spawn manifest repeats actor '{pid}'.");
+            }
         }
 
         // Despawn tracked actors that the save no longer contains (snapshot the keys first).
@@ -180,7 +188,8 @@ public partial class PersistentSpawnDirector : Node, ISaveable
         // Recreate missing actors / reposition surviving ones.
         foreach (KeyValuePair<string, (string Template, Vector3 Pos, float Yaw)> kv in desired)
         {
-            if (_tracked.TryGetValue(kv.Key, out IEntity? live) && live.Body is Node node && IsInstanceValid(node))
+            if (_tracked.TryGetValue(kv.Key, out IEntity? live) && live.Body is Node node && IsInstanceValid(node) &&
+                !node.IsQueuedForDeletion() && live.TemplateId == kv.Value.Template)
             {
                 // Lifted, never lowered: a saved position that predates a landform edit otherwise
                 // rebuilds the actor inside the hillside (World.WorldGround.Lift).
@@ -189,7 +198,11 @@ public partial class PersistentSpawnDirector : Node, ISaveable
             }
             else
             {
-                Spawn(kv.Value.Template, kv.Key, kv.Value.Pos, kv.Value.Yaw);
+                Despawn(kv.Key);
+                if (Spawn(kv.Value.Template, kv.Key, kv.Value.Pos, kv.Value.Yaw) == null)
+                {
+                    throw new InvalidOperationException($"Could not restore persistent actor '{kv.Key}' of template '{kv.Value.Template}'.");
+                }
             }
         }
     }

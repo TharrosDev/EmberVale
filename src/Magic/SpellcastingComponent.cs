@@ -1097,6 +1097,14 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
             return;
         }
 
+        // One authority covers the whole dash. A synchronous load or caster death during the
+        // first hit must also cancel later hits and the final stun, even if the caster respawns.
+        using var lifetime = new SpellLifetime(this, Entity, static () => { });
+        if (!lifetime.Check())
+        {
+            return;
+        }
+
         Vector3 direction = HorizontalAim();
         float travel = TravelAlongAim(spell.DashDistance, DashWallMargin);
         Vector3 start = body.GlobalPosition;
@@ -1149,15 +1157,25 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
         struck.Sort((a, b) => a.Along.CompareTo(b.Along));
         for (int i = 0; i < struck.Count; i++)
         {
+            if (!lifetime.Check())
+            {
+                return;
+            }
+
             SpellHitResult result = SpellResolver.HitOne(
-                body, struck[i].Box, packet, spell, Entity, team, applyStatus: !statusIsStun);
+                body, struck[i].Box, packet, spell, Entity, team, applyStatus: !statusIsStun, lifetime: lifetime);
+            if (!lifetime.Check())
+            {
+                return;
+            }
+
             if (result == SpellHitResult.Landed)
             {
                 last = struck[i].Box;
             }
         }
 
-        if (last?.OwnerEntity != null)
+        if (lifetime.Check() && last?.OwnerEntity != null)
         {
             last.OwnerEntity.GetComponent<StatusEffectsComponent>()?
                 .Apply(StatusEffectDatabase.Get(StunnedId), Entity);

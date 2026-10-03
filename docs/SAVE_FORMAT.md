@@ -21,7 +21,8 @@ user://saves/<slot>/
 ```
 
 Legacy flat saves (`user://saves/<slot>.json`) are still **readable**, and are deleted the first time
-that slot is written in the directory layout.
+that slot is written in the directory layout. The slot browser and Continue list them alongside
+directory saves, preferring the directory when both layouts exist.
 
 Slots are just directory names. `quick` is the default; `auto1`/`auto2`/`auto3` are the autosave ring
 (`AutosaveService.RingSlots`).
@@ -44,19 +45,26 @@ differently — see §6.
 
 ## 3. The header
 
-Written by `SaveManager.BuildHeader` plus `GameBootstrap.BuildSaveHeader` (the gameplay half, wired
+Written by `SaveManager.BuildHeader` plus `SaveHeaderComposer.Build` (the gameplay half, wired
 through `SaveManager.HeaderProvider` so the manager stays free of gameplay types).
 
 | Field | Used for |
 | --- | --- |
-| `timestamp`, `playtime_seconds` | slot browser ordering and display |
+| `timestamp`, `playtime` | slot browser ordering and display |
 | `region`, `region_id` | display name, **and the region a load restores into** |
 | `player_x/y/z`, `player_yaw` | **the transform a load restores** |
 | `race_id`, `char_name` | the character `StartLoadedGame` spawns |
+| `appearance`, `background` | optional creator choices; appearance ids use `CharacterProfile`'s semicolon encoding |
 | `level`, `corruption_tier` | slot browser |
 
 ⚠️ **The header is not decoration — it is load-bearing.** Since the 2026-08-15 audit it drives where
 and who the player is after a load. Treat a wrong header as a wrong save.
+
+All four character fields are copied from the gameplay provider into both header copies and restored
+before session construction. Older headers default missing appearance/background to empty strings;
+these optional fields do not change version 3. An absent
+player location stays absent when serialized (`HasLocation == false` omits the transform keys);
+writing zero-valued coordinates would turn an old/no-player header into a teleport to the origin.
 
 ⚠️ **`header.json` is a mirror and must never be stale.** It is written after `save.json` commits,
 with no transaction across the two. If that write fails the mirror is **deleted**, because
@@ -103,8 +111,9 @@ Everything here resets on load, deliberately. **Check this list before assuming 
 
 The rules, in the order a load applies them:
 
-1. **No `version` field → refuse.** Every envelope this game has written carries one. Its absence
+1. **No valid integer `version` field → refuse.** Every envelope this game has written carries one. Its absence
    means a truncated write, a hand-edit, or some other JSON document entirely.
+   Fractional and out-of-range numeric versions are also refused instead of being truncated.
 2. **`version` > current → refuse.** A newer save cannot be read by an older build.
 3. **`version` < current WITH a migration step → migrate forward.** ⚠️ There is one now:
    **v1 → v2 (the 2026-08-29 geography overhaul)**. Every world coordinate a v1 document holds was
@@ -134,21 +143,42 @@ The rules, in the order a load applies them:
    branch only ever caught corrupt or foreign files, and waved them through into live components.
    When a v2 arrives, register a step that upgrades `root` in place; **an unmigratable save must fail
    loudly, never load in pieces.**
-4. **No `objects` section → refuse.**
-5. **Any `ISaveable.Load` throws → the whole load fails.** Each exception is caught so one bad entry
+5. **No dictionary `objects` section, or any non-dictionary object state → refuse.** A corrupt entry
+   is detected before any live saveable is changed; it is not mistaken for an absent system.
+6. **Any `ISaveable.Load` throws → the whole load fails.** Each exception is caught so one bad entry
    cannot abort the other thirty-odd, but the result is reported as a failure and
    `GameLoadedEvent` is **not** published. ⚠️ **A partial restore is a failed load**: the caller
    abandons the session to the title, because continuing hands the player a world assembled from half
    the save and half of whatever was already live, and the next autosave writes that over the good
    file.
-6. **An entry with no live claimant** logs an orphan warning (drift, or a renamed `SaveId`). Entries a
+   This also includes components that register while persistent actors are being recreated. An
+   exception from the final location restore returns failure and does not publish `GameLoadedEvent`.
+7. **An entry with no live claimant** logs an orphan warning (drift, or a renamed `SaveId`). Entries a
    streamed-out cell is holding are claimed via `ClaimDeferred` and are *not* reported — warning on
    the healthy path is how a diagnostic teaches you to ignore it.
-7. **A live saveable with no entry** keeps its current state and warns. ⚠️ This is a merge over live
-   state, not a reset — the hazard `CLAUDE.md` §7 describes.
+8. **A live saveable with no entry** receives `Load(empty dictionary)`. The implementation must
+   replace the abandoned timeline with its empty/default state, including clearing spawned actors.
+   A reset exception is a failed load. Registrations removed or queued for deletion by an earlier
+   restore are skipped when the manager reaches their old snapshot entries.
 
 Writes are atomic: staged to `<target>.tmp`, then renamed over the target, so a crash mid-write can
-never truncate a good file.
+never truncate a good file. The staged file is flushed and checked for write errors before commit.
+**A snapshot with any failed capture or empty/duplicate `SaveId` is refused before commit.** The
+previous authoritative file and header remain intact, and `GameSavedEvent` is not published.
+An exception while composing the header or serializing also returns failure.
+
+**Save/load operations cannot nest.** Callbacks run during restoration and can publish gameplay
+events; a save triggered by one must not overwrite the source with an intermediate world. A nested
+save or load returns failure until the outer operation has completed.
+
+**Player loads rebuild the session.** F9 and the pause menu use the same deferred
+`SessionLifecycleCoordinator.RequestReload` route as the slot browser's fresh-session load. This
+recreates authored actors removed after the checkpoint, restores the saved character and region,
+and uses that region's spawn when a migrated/older header carries no transform. An absent checkpoint
+leaves the current session running. Only one request may be pending; ending its session cancels the
+callback. The low-level `SaveManager.LoadGame` remains the overlay used within that rebuilt session
+and by native probes. F5/F9 are available in capture and exported builds; save/reload keys are
+ignored while the world is loading.
 
 ## 7. Rules for changing any of this
 
@@ -170,6 +200,8 @@ never truncate a good file.
 ```bash
 dotnet test tests/Embervale.Tests     # SaveKeyPolicy and the pure helpers only
 godot --path . -- --play              # boots the newest save; reports objects restored, 0 errors
+python tools/embervale.py world --mode engine --gate save-audit # native integrity probe with isolated saves
+python tools/embervale.py world --mode engine --gate save-reload # F9/pause session rebuild and cancellation
 ```
 
 ⚠️ **The headless suite cannot reach most of this.** `SaveManager` is a `Node` and the test project

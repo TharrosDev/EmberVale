@@ -53,6 +53,8 @@ public partial class SpellProjectile : Area3D
 
     /// <summary>The reused sweep query. See <see cref="SweepHit"/>.</summary>
     private PhysicsShapeQueryParameters3D? _sweepQuery;
+    private PhysicsShapeQueryParameters3D? _homingQuery;
+    private SphereShape3D? _homingShape;
 
     private StandardMaterial3D _material = null!;
     private OmniLight3D _light = null!;
@@ -63,7 +65,7 @@ public partial class SpellProjectile : Area3D
     public override void _Ready()
     {
         CollisionLayer = CombatLayers.Hitbox;
-        CollisionMask = CombatLayers.Hurtbox | CombatLayers.World;
+        CollisionMask = CombatLayers.ProjectileMask;
         Monitorable = false;
         Monitoring = false;
 
@@ -82,6 +84,19 @@ public partial class SpellProjectile : Area3D
 
         _light = new OmniLight3D { OmniRange = 4f, LightEnergy = 1.2f };
         AddChild(_light);
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            _lifetime?.Dispose();
+            _sweepQuery?.Dispose();
+            _homingQuery?.Dispose();
+            _homingShape?.Dispose();
+        }
+
+        base.Dispose(disposing);
     }
 
     /// <summary>(Re)configures and arms the projectile for a new shot. Call after it is in the
@@ -108,9 +123,11 @@ public partial class SpellProjectile : Area3D
 
         _resolved = false;
         CollisionLayer = CombatLayers.Hitbox;
-        CollisionMask = CombatLayers.Hurtbox | CombatLayers.World;
+        CollisionMask = CombatLayers.ProjectileMask;
         SetPhysicsProcess(true);
-        Monitoring = true;
+        // Flight uses direct queries; maintaining an unused overlap list adds broadphase work
+        // for every bolt in the air and never supplies a more current collision result.
+        Monitoring = false;
         _lifetime = new SpellLifetime(this, caster, Cancel);
         _lifetime.Check();
     }
@@ -169,7 +186,7 @@ public partial class SpellProjectile : Area3D
             {
                 if (_struck.TryHit(struck.OwnerEntity, struck))
                 {
-                    SpellResolver.HitOne(this, struck, _packet, _spell, _caster, _casterTeam);
+                    SpellResolver.HitOne(this, struck, _packet, _spell, _caster, _casterTeam, lifetime: _lifetime);
                     if (_resolved || _lifetime?.Check() != true)
                     {
                         return;
@@ -209,7 +226,7 @@ public partial class SpellProjectile : Area3D
             Shape = new SphereShape3D { Radius = Radius },
             CollideWithAreas = true,
             CollideWithBodies = true,
-            CollisionMask = CombatLayers.Hurtbox | CombatLayers.World,
+            CollisionMask = CombatLayers.ProjectileMask,
         };
         _sweepQuery.Transform = new Transform3D(Basis.Identity, GlobalPosition);
         PhysicsShapeQueryParameters3D query = _sweepQuery;
@@ -241,11 +258,11 @@ public partial class SpellProjectile : Area3D
                 continue; // the caster's own hurtbox, or an ally's: pass through
             }
 
-            // World geometry. Never the caster's own body — a bolt launched from inside the
-            // caster's capsule would burst on the frame it was fired.
-            // Nor the body of a foe it has already pierced: it is still inside that capsule.
+            // Actor capsules share the World layer with walls. Only their hurtboxes resolve a
+            // spell: an ally's body cannot stop a bolt, and a foe's larger capsule cannot consume
+            // it before it reaches that foe's hurtbox. This matches WorldRay and Arrow.
             if (collider is Node3D body && (_casterBody == null || !ReferenceEquals(body, _casterBody)) &&
-                !(EntityNode.FindOwner(body) is { } bodyOwner && _struck.Has(bodyOwner)))
+                EntityNode.FindOwner(body) == null)
             {
                 blocked = true;
             }
@@ -260,32 +277,39 @@ public partial class SpellProjectile : Area3D
     private Hurtbox? NearestHostile(float radius)
     {
         PhysicsDirectSpaceState3D space = GetWorld3D().DirectSpaceState;
-        var query = new PhysicsShapeQueryParameters3D
+        _homingShape ??= new SphereShape3D();
+        _homingQuery ??= new PhysicsShapeQueryParameters3D
         {
-            Shape = new SphereShape3D { Radius = radius },
-            Transform = new Transform3D(Basis.Identity, GlobalPosition),
+            Shape = _homingShape,
             CollideWithAreas = true,
             CollideWithBodies = false,
             CollisionMask = CombatLayers.Hurtbox,
         };
+        _homingShape.Radius = radius;
+        _homingQuery.Transform = new Transform3D(Basis.Identity, GlobalPosition);
 
-        var boxes = new System.Collections.Generic.List<Hurtbox>();
-        var candidates = new System.Collections.Generic.List<(float DistanceSquared, bool Branded)>();
-        foreach (Godot.Collections.Dictionary hit in space.IntersectShape(query, 16))
+        Hurtbox? best = null;
+        float bestDistance = float.PositiveInfinity;
+        bool bestBranded = false;
+        foreach (Godot.Collections.Dictionary hit in space.IntersectShape(_homingQuery, 16))
         {
             if (hit.TryGetValue("collider", out Variant colliderVar) &&
                 colliderVar.AsGodotObject() is Hurtbox hurtbox &&
                 SpellResolver.IsHostileTarget(hurtbox, _caster, _casterTeam) &&
                 !(hurtbox.OwnerEntity is { } owner && _struck.Has(owner)))
             {
-                boxes.Add(hurtbox);
                 bool branded = hurtbox.OwnerEntity?.GetComponent<StatusEffectsComponent>()?.Has(StormbrandId) == true;
-                candidates.Add((SpellResolver.VolumeCentre(hurtbox).DistanceSquaredTo(GlobalPosition), branded));
+                float distance = SpellResolver.VolumeCentre(hurtbox).DistanceSquaredTo(GlobalPosition);
+                if (best == null || SpellHoming.IsPreferred(distance, branded, bestDistance, bestBranded))
+                {
+                    best = hurtbox;
+                    bestDistance = distance;
+                    bestBranded = branded;
+                }
             }
         }
 
-        int pick = SpellHoming.Pick(candidates);
-        return pick < 0 ? null : boxes[pick];
+        return best;
     }
 
     private void Resolve(Hurtbox? primary)
@@ -301,11 +325,11 @@ public partial class SpellProjectile : Area3D
         // Resolve impact while still in the tree (the detonation queries this node's world).
         if (_spell.ImpactRadius > 0f)
         {
-            SpellResolver.Detonate(this, _spell, _packet, _caster, _casterTeam, GlobalPosition, _spell.ImpactRadius);
+            SpellResolver.Detonate(this, _spell, _packet, _caster, _casterTeam, GlobalPosition, _spell.ImpactRadius, _lifetime);
         }
         else if (primary != null)
         {
-            SpellResolver.HitOne(this, primary, _packet, _spell, _caster, _casterTeam);
+            SpellResolver.HitOne(this, primary, _packet, _spell, _caster, _casterTeam, lifetime: _lifetime);
         }
 
         // Defer the detach/free: we're inside this node's own physics step, and _resolved keeps

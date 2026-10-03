@@ -36,13 +36,23 @@ public sealed partial class EnemyShots : ShotHarness
     private EnemyEntity? _subject;
     private Node3D? _scaleReference;
     private string _slot = "idle";
+    private string _resolvedClip = string.Empty;
 
     protected override string Flag => "--enemy-shots";
     protected override string OutputDir => "user://enemy_shots";
 
     protected override void BuildShotList()
     {
-        foreach (string id in Priority)
+        string requestedId = OS.GetEnvironment("EMBERVALE_ENEMY_SHOT_ID").Trim();
+        if (requestedId.Length > 0 &&
+            (!requestedId.StartsWith("enemy.", StringComparison.Ordinal) ||
+             EnemyArchetypeDatabase.Get(requestedId) == null))
+        {
+            GD.PushError($"--enemy-shots: unknown EMBERVALE_ENEMY_SHOT_ID '{requestedId}'");
+            return;
+        }
+        IEnumerable<string> selected = requestedId.Length == 0 ? Priority : new[] { requestedId };
+        foreach (string id in selected)
         {
             string stem = id["enemy.".Length..].Replace('_', '-');
             foreach ((string suffix, float angle, string slot) in Views)
@@ -57,12 +67,31 @@ public sealed partial class EnemyShots : ShotHarness
 
     private void Frame(string id, float angleDegrees, string slot)
     {
+        _slot = slot;
+        _resolvedClip = string.Empty;
         if (ServiceLocator.Instance is not { } locator ||
             !locator.TryGet(out PlayerCharacter player) ||
-            player.GetComponent<PlayerCameraRig>() is not { Camera: { } camera } ||
+            player.GetComponent<PlayerCameraRig>() is not { } cameraRig ||
+            cameraRig.Camera is not { } camera ||
             EnemyArchetypeDatabase.Get(id) is not { } archetype)
         {
             return;
+        }
+
+        // The real gameplay rig owns the camera every frame. Once the harness selects that camera,
+        // stop the rig from replacing the requested orbit during ShotHarness's capture hold.
+        cameraRig.ProcessMode = ProcessModeEnum.Disabled;
+        if (player.GetComponent<CameraOcclusion>() is { } occlusion)
+        {
+            // The shot camera is examining the subject, not looking back toward the player.
+            // Gameplay obstruction fading would otherwise make rear views of the subject translucent.
+            occlusion.ProcessMode = ProcessModeEnum.Disabled;
+        }
+        if (player.GetNodeOrNull<Node3D>("BodyMesh") is { } playerVisual)
+        {
+            // Keep the real player, camera, collision and session alive, but clear its model from
+            // the orbit views. The separate height reference supplies scale without hiding the subject.
+            playerVisual.Visible = false;
         }
 
         // Freeze the player: the router is the one component that reads input every frame.
@@ -83,6 +112,12 @@ public sealed partial class EnemyShots : ShotHarness
         Vector3 ground = player.GlobalPosition + new Vector3(0f, 0.04f, -4.0f);
         _subject = EnemyArchetypeFactory.Create(archetype, ground);
         GetTree().CurrentScene.AddChild(_subject);
+        // AddChild has run the real component initialization and installed the authored/shared
+        // libraries. Stop only its selector (and inherited AnimationTree) before choosing the pose.
+        if (_subject.GetComponent<CharacterAnimationComponent>() is { } animation)
+        {
+            animation.ProcessMode = ProcessModeEnum.Disabled;
+        }
         if (_subject.GetComponent<EnemyAIComponent>() is { } ai)
         {
             ai.ProcessMode = ProcessModeEnum.Disabled;
@@ -92,7 +127,6 @@ public sealed partial class EnemyShots : ShotHarness
             locomotion.ProcessMode = ProcessModeEnum.Disabled;
         }
 
-        _slot = slot;
         CallDeferred(MethodName.PlayRequestedSlot);
 
         // Imported skinned AABBs include bind-space extremes for several source packs, so gameplay
@@ -102,15 +136,18 @@ public sealed partial class EnemyShots : ShotHarness
         float distance = Mathf.Max(4.8f, Mathf.Max(height * 2.10f, archetype.CapsuleRadius * 5.0f));
         float angle = Mathf.DegToRad(angleDegrees);
         Vector3 target = ground + new Vector3(0f, height * 0.52f, 0f);
-        Vector3 orbit = new(Mathf.Sin(angle) * distance, Mathf.Max(0.25f, height * 0.10f),
-            Mathf.Cos(angle) * distance);
+        // Enemy factories orient the body toward local -Z. A zero angle must therefore face its
+        // front, and the requested left/right views must follow the subject's actual world basis.
+        Vector3 facing = (_subject.GlobalBasis * Vector3.Forward).Normalized();
+        Vector3 orbit = (facing.Rotated(Vector3.Up, -angle) * distance) +
+            (Vector3.Up * Mathf.Max(0.25f, height * 0.10f));
         camera.Fov = 42f;
         camera.GlobalPosition = target + orbit;
         camera.LookAt(target, Vector3.Up);
 
         _scaleReference = PlayerScaleReference();
         GetTree().CurrentScene.AddChild(_scaleReference);
-        _scaleReference.GlobalPosition = ground + new Vector3(-width * 0.72f - 0.45f, 0f, 0f);
+        _scaleReference.GlobalPosition = ground - (camera.GlobalBasis.X * (width * 0.72f + 0.45f));
     }
 
     private static Node3D PlayerScaleReference()
@@ -143,11 +180,12 @@ public sealed partial class EnemyShots : ShotHarness
         {
             return;
         }
-        string clip = AnimationClips.Resolve(player.GetAnimationList(), _slot);
-        if (clip.Length > 0)
+        _resolvedClip = AnimationClips.Resolve(player.GetAnimationList(), _slot);
+        if (_resolvedClip.Length > 0)
         {
-            player.Play(clip);
+            player.Play(_resolvedClip);
             player.Seek(_slot == "death" ? 0.55 : _slot is "attack" or "hit" ? 0.32 : 0.15, update: true);
+            player.Pause();
         }
     }
 
@@ -173,9 +211,17 @@ public sealed partial class EnemyShots : ShotHarness
         {
             return "production AnimationPlayer is missing";
         }
-        if (AnimationClips.Resolve(animation.GetAnimationList(), _slot).Length == 0)
+        if (_resolvedClip.Length == 0)
         {
             return $"no clip resolves for required '{_slot}' state";
+        }
+        if ((string)animation.AssignedAnimation != _resolvedClip)
+        {
+            return $"requested '{_slot}' clip '{_resolvedClip}', but '{animation.AssignedAnimation}' owns the pose";
+        }
+        if (animation.IsPlaying())
+        {
+            return $"requested '{_slot}' pose is advancing instead of paused at the capture sample";
         }
         if (EnemyVisualKit.Resolve(_subject.TemplateId) is { } profile)
         {

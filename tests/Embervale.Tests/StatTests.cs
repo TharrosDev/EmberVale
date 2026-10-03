@@ -1,3 +1,4 @@
+using System;
 using Embervale.Stats;
 using Xunit;
 
@@ -10,6 +11,40 @@ namespace Embervale.Tests;
 public class StatTests
 {
     private const float Tolerance = 0.0001f;
+
+    [Fact]
+    public void Recalculation_PreservesMultiplierOrderWithoutAllocating()
+    {
+        var stat = new Stat(StatType.PhysicalPower, 100f);
+        stat.AddModifier(new StatModifier(0.50f, ModifierType.PercentMult));
+        stat.AddModifier(new StatModifier(50f, ModifierType.Flat));
+        stat.AddModifier(new StatModifier(0.20f, ModifierType.PercentAdd));
+        stat.AddModifier(new StatModifier(-0.25f, ModifierType.PercentMult));
+
+        float expected = (100f + 50f) * (1f + 0.20f);
+        expected *= 1f + 0.50f;
+        expected *= 1f - 0.25f;
+        Assert.Equal(expected, stat.Value);
+
+        // Warm the method before measuring only invalidation/recalculation, not setup or JIT.
+        for (int i = 0; i < 1000; i++)
+        {
+            stat.BaseValue = 100f + (i % 2);
+            _ = stat.Value;
+        }
+
+        long before = GC.GetAllocatedBytesForCurrentThread();
+        float total = 0f;
+        for (int i = 0; i < 10000; i++)
+        {
+            stat.BaseValue = 100f + (i % 2);
+            total += stat.Value;
+        }
+        long allocated = GC.GetAllocatedBytesForCurrentThread() - before;
+
+        Assert.True(total > 0f);
+        Assert.Equal(0L, allocated);
+    }
 
     [Fact]
     public void BaseValue_WithNoModifiers_IsReturnedVerbatim()

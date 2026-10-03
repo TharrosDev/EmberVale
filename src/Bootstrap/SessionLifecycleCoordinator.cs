@@ -30,6 +30,9 @@ public sealed partial class SessionLifecycleCoordinator : Node
     /// <summary>The live session, or null at the title screen.</summary>
     public GameSession? Session { get; private set; }
 
+    private bool _reloadPending;
+    private int _reloadRequestGeneration;
+
     public override void _EnterTree()
     {
         // The pause menu asks for a teardown from a paused tree, so this must keep processing.
@@ -37,6 +40,45 @@ public sealed partial class SessionLifecycleCoordinator : Node
     }
 
     public bool HasSession => Session != null && IsInstanceValid(Session);
+
+    /// <summary>Reloads a checkpoint through a fresh session. Rebuilding restores authored actors
+    /// removed after the checkpoint and uses the saved race/region even when an old header has no
+    /// location. The application-owned coordinator holds the deferred callback, never the menu or
+    /// input node that the reload destroys. At most one request may be pending per session.</summary>
+    public bool RequestReload(GameSession requestingSession, string slot)
+    {
+        if (!HasSession || !ReferenceEquals(Session, requestingSession) || _reloadPending ||
+            GameManager.Instance?.State is not (GameState.Playing or GameState.Paused))
+        {
+            return false;
+        }
+        if (SaveManager.Instance is not { } saves || string.IsNullOrWhiteSpace(slot) || !saves.SaveExists(slot))
+        {
+            Log.Warn($"Cannot reload slot '{slot}': no saved checkpoint exists.");
+            return false;
+        }
+
+        _reloadPending = true;
+        int generation = ++_reloadRequestGeneration;
+        Callable.From(() =>
+        {
+            if (!IsInstanceValid(this) || IsQueuedForDeletion() || !_reloadPending ||
+                generation != _reloadRequestGeneration || !HasSession ||
+                !ReferenceEquals(Session, requestingSession))
+            {
+                return;
+            }
+            _reloadPending = false;
+            StartLoadedGame(slot);
+        }).CallDeferred();
+        return true;
+    }
+
+    public override void _ExitTree()
+    {
+        _reloadPending = false;
+        _reloadRequestGeneration++;
+    }
 
     /// <summary>Raised after a session is torn down, so the shell can show the title again.</summary>
     public event Action? SessionEnded;
@@ -81,6 +123,8 @@ public sealed partial class SessionLifecycleCoordinator : Node
             {
                 ["race_id"] = header.RaceId,
                 ["char_name"] = header.CharacterName,
+                ["appearance"] = header.Appearance,
+                ["background"] = header.Background,
             });
 
             // The saved region has to be current BEFORE the build so the streamer, portals, safe
@@ -123,6 +167,10 @@ public sealed partial class SessionLifecycleCoordinator : Node
     /// </summary>
     public void DestroySession()
     {
+        // A queued request belongs to the session that made it. A quit or a different session
+        // start cancels it before its callback can load over that newer state.
+        _reloadPending = false;
+        _reloadRequestGeneration++;
         if (!HasSession)
         {
             return;

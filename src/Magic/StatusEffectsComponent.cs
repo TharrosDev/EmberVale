@@ -373,24 +373,37 @@ public partial class StatusEffectsComponent : EntityComponent
         effect.TickTimer = newTimer;
         for (int i = 0; i < ticks; i++)
         {
+            if (!IsActive(effect) || _stats is { IsAlive: false })
+            {
+                break;
+            }
+
             if (def.HasDamageOverTime)
             {
                 float hit = ModifyIncoming(def.DamagePerTick * effect.Stacks, effect.Source);
+                if (!IsActive(effect))
+                {
+                    break;
+                }
                 _stats?.ApplyDamage(hit, effect.Source);
+            }
+
+            // Death/load callbacks may remove this effect and immediately revive the bearer.
+            // Its abandoned timeline cannot heal or keep damaging the now-live actor.
+            if (!IsActive(effect) || _stats is { IsAlive: false })
+            {
+                break;
             }
 
             if (def.HasHealOverTime)
             {
                 _stats?.Heal(def.HealPerTick);
             }
-
-            // Stop ticking a victim the DoT just killed.
-            if (_stats is { IsAlive: false })
-            {
-                break;
-            }
         }
     }
+
+    private bool IsActive(StatusEffect effect) =>
+        _active.TryGetValue(effect.Definition.Id, out StatusEffect? live) && ReferenceEquals(live, effect);
 
     // --- controls: diminishing returns ---
 
@@ -471,6 +484,7 @@ public partial class StatusEffectsComponent : EntityComponent
         }
 
         float damage = StatusMath.DetonateDamage(effect.Stacks, def.DetonateDamagePerStack);
+        Vector3 centre = Entity.Body.GlobalPosition;
         IEntity? source = effect.Source;
         StatusEffectResource? ignite = string.IsNullOrEmpty(def.DetonateAppliesStatusId)
             ? null
@@ -480,23 +494,30 @@ public partial class StatusEffectsComponent : EntityComponent
         Remove(def.Id, Ending.Consumed, null);
 
         var packet = new DamagePacket(damage, def.School, source, false, DetonatePoise, HitKind.Spell);
+        bool killed;
         if (_combat != null)
         {
-            _combat.ReceiveDamage(packet);
+            killed = _combat.ReceiveDamage(packet).Killed;
         }
         else
         {
+            killed = _stats is { IsAlive: true } && damage >= _stats.GetCurrent(StatType.Health);
             _stats?.ApplyDamage(damage, source);
         }
 
-        Apply(ignite, source);
+        if (!killed)
+        {
+            Apply(ignite, source);
+        }
 
         if (def.DetonateRadius > 0f && source != null)
         {
-            foreach (Hurtbox hurtbox in HostilesNear(Entity.Body.GlobalPosition, def.DetonateRadius, source, Entity))
+            foreach (Hurtbox hurtbox in HostilesNear(centre, def.DetonateRadius, source, Entity))
             {
-                hurtbox.Receive(packet);
-                hurtbox.OwnerEntity?.GetComponent<StatusEffectsComponent>()?.Apply(ignite, source);
+                if (!hurtbox.Receive(packet).Killed)
+                {
+                    hurtbox.OwnerEntity?.GetComponent<StatusEffectsComponent>()?.Apply(ignite, source);
+                }
             }
         }
 

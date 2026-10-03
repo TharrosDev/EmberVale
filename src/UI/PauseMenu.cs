@@ -85,12 +85,7 @@ public partial class PauseMenu : CanvasLayer
 
 		col.AddChild(MenuButton(Loc.T("pause.resume"), Resume));
 		col.AddChild(MenuButton(Loc.T("pause.save"), () => { if (SaveManager.Instance is { } s) { s.SaveGame(s.ActiveSlot); } }));
-		// A load that only partly restores leaves an untrustworthy world, so it drops to the title
-		// rather than resuming into it (see SaveManager.LoadGame's partial-restore guard).
-		col.AddChild(MenuButton(Loc.T("pause.load"), () =>
-		{
-			if (SaveManager.Instance is { } s && !s.LoadGame(s.ActiveSlot)) { ReturnToMainMenu(); }
-		}));
+		col.AddChild(MenuButton(Loc.T("pause.load"), () => { RequestLoad(); }));
 		col.AddChild(MenuButton(Loc.T("pause.settings"), OpenSettings));
 		col.AddChild(MenuButton(Loc.T("pause.main_menu"), ReturnToMainMenu));
 		col.AddChild(MenuButton(Loc.T("pause.quit"), () => GetTree().Quit()));
@@ -118,12 +113,17 @@ public partial class PauseMenu : CanvasLayer
 	private void ReturnToMainMenu()
 	{
 		SetPanelVisible(false);
+		Bootstrap.SessionLifecycleCoordinator? lifecycle = SessionHost();
+		Bootstrap.GameSession? requestingSession = lifecycle?.Session;
 
 		Callable.From(() =>
 		{
-			if (SessionHost() is { } lifecycle)
+			if (lifecycle != null)
 			{
-				lifecycle.DestroySession();
+				if (IsInstanceValid(lifecycle) && ReferenceEquals(lifecycle.Session, requestingSession))
+				{
+					lifecycle.DestroySession();
+				}
 				return;
 			}
 
@@ -132,6 +132,19 @@ public partial class PauseMenu : CanvasLayer
 			Godot.Input.MouseMode = Godot.Input.MouseModeEnum.Visible;
 			GameManager.Instance?.ChangeState(GameState.MainMenu);
 		}).CallDeferred();
+	}
+
+	/// <summary>Same checkpoint route as F9. The coordinator owns the deferred rebuild, so this
+	/// menu can be destroyed without leaving a callback that walks its old parent chain.</summary>
+	public bool RequestLoad()
+	{
+		if (SaveManager.Instance is not { } saves || SessionHost() is not { Session: { } session } lifecycle)
+		{
+			return false;
+		}
+		if (!lifecycle.RequestReload(session, saves.ActiveSlot)) { return false; }
+		SetPanelVisible(false);
+		return true;
 	}
 
 	/// <summary>The coordinator that owns the session this menu is inside, found by walking up the

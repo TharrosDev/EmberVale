@@ -22,9 +22,12 @@ internal static class EntityNode
     public static T? GetComponent<T>(Node host)
         where T : EntityComponent
     {
-        foreach (Node child in host.GetChildren())
+        // GetChildren materializes a native Array and a managed wrapper on every lookup.
+        // Direct indexing preserves first-match order without allocating that snapshot.
+        int count = host.GetChildCount();
+        for (int i = 0; i < count; i++)
         {
-            if (child is T match)
+            if (host.GetChild(i) is T match)
             {
                 return match;
             }

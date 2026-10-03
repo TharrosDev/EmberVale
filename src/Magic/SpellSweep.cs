@@ -30,19 +30,26 @@ public static class SpellSweep
             return 1;
         }
 
-        if (!(distance > 0f) || !(radius > 0f))
+        if (!(distance > 0f) || !(radius > 0f) || !float.IsFinite(radius))
         {
             // Not moving, or a degenerate radius: one test where it stands is the honest answer.
             return 1;
         }
 
-        int steps = (int)System.Math.Ceiling(distance / radius);
-        if (steps < 1)
+        // Saturate before converting to int. A large finite travel (or +infinity) used to
+        // overflow that conversion and collapse the supposedly capped sweep to one step.
+        double steps = System.Math.Ceiling((double)distance / radius);
+        if (steps >= maxSteps)
+        {
+            return maxSteps;
+        }
+
+        if (steps < 1d)
         {
             return 1;
         }
 
-        return steps > maxSteps ? maxSteps : steps;
+        return (int)steps;
     }
 
     /// <summary>The length of each sub-step for a given frame — <c>distance / SubStepCount</c>.

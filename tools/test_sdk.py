@@ -121,6 +121,37 @@ class ContractTests(unittest.TestCase):
             self.assertFalse(path.with_suffix(".json.tmp").exists())
 
 
+class FocusedGateTests(unittest.TestCase):
+    def run_for(self, arguments):
+        from embervale_sdk.cli import parser, Run
+        from unittest.mock import Mock
+        run = Run.__new__(Run)
+        run.args = parser().parse_args(["world", "--mode", "engine", *arguments])
+        run.engine = Path("godot-test.exe")
+        run.artifacts = Path("test-artifacts")
+        run.process = Mock()
+        return run
+
+    def test_focused_gate_preserves_negative_fixture_error_policy(self):
+        run = self.run_for(["--gate", "save-audit"])
+        run.world()
+        self.assertEqual(1, run.process.call_count)
+        self.assertEqual("save-audit", run.process.call_args.args[0])
+        self.assertTrue(run.process.call_args.kwargs["expected_errors"])
+
+    def test_unknown_gate_fails_before_running_anything(self):
+        run = self.run_for(["--gate", "save-audit", "--gate", "typo"])
+        with self.assertRaises(ValueError):
+            run.world()
+        run.process.assert_not_called()
+
+    def test_gate_outside_selected_mode_is_refused(self):
+        run = self.run_for(["--gate", "visuals"])
+        with self.assertRaises(ValueError):
+            run.world()
+        run.process.assert_not_called()
+
+
 class ScenarioTests(unittest.TestCase):
     def plan(self, step):
         return validate_plan(dict(steps=[step]))

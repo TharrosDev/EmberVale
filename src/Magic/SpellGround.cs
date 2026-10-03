@@ -106,7 +106,7 @@ public partial class SpellGround : Node3D
             return;
         }
 
-        SpellResolver.Detonate(this, Spell, Packet, Caster, CasterTeam, centre, Radius);
+        SpellResolver.Detonate(this, Spell, Packet, Caster, CasterTeam, centre, Radius, _lifetime);
         if (_cancelled || _lifetime?.Check() != true)
         {
             return;
