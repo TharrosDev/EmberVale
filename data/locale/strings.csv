@@ -2884,3 +2884,13 @@ spell.grave_mark.ask,Ask to be taught Grave Mark.
 spell.teach.undying_clockkeeper,"Corwen taps the dial. 'Everything here is marked with the hour it will stop. I can teach you to mark things that have not stopped yet.'"
 spell.teach.undying_clockkeeper.taught,"He shows you how to hold the mark in your mind like a number on a dial. Then he sets the clock a minute back for luck."
 # --- end magic-content ---
+# --- BEGIN campaign:core ---
+# --- END campaign:core ---
+# --- BEGIN campaign:spec1 ---
+# --- END campaign:spec1 ---
+# --- BEGIN campaign:spec2 ---
+# --- END campaign:spec2 ---
+# --- BEGIN campaign:world ---
+# --- END campaign:world ---
+# --- BEGIN campaign:ui ---
+# --- END campaign:ui ---
