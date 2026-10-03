@@ -28,6 +28,10 @@ public readonly record struct CompanionLoyaltyTierChangedEvent(string CompanionI
 /// <summary>Raised when a companion's AI transitions between behaviour states.</summary>
 public readonly record struct CompanionStateChangedEvent(IEntity Companion, CompanionState State) : IGameEvent;
 
+/// <summary>Raised when a party member reacts to a story beat with a line (<c>data/story/reactions</c>).
+/// <paramref name="TextKey"/> is a locale key; the notification feed shows it as that companion speaking.</summary>
+public readonly record struct CompanionBarkEvent(string CompanionId, string TextKey) : IGameEvent;
+
 /// <summary>Raised when a companion runs out of health and goes down, and again when it recovers
 /// (<paramref name="Downed"/> false). Companions are never permanently lost — a downed companion
 /// stands back up after a recovery delay.</summary>

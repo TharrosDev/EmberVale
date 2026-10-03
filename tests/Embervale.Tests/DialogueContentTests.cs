@@ -74,6 +74,9 @@ public class DialogueContentTests
             reachable.Add(start.Groups[1].Value);
         }
 
+        // A conditional start variant is an entry point too.
+        reachable.UnionWith(Captures(source, @"^NodeId = ""([^""]+)"""));
+
         foreach (string node in NodeIds(source))
         {
             Assert.True(reachable.Contains(node), $"{file}: node '{node}' is unreachable");
@@ -105,14 +108,100 @@ public class DialogueContentTests
         int conditions = Enum.GetValues<DialogueCondition>().Length;
         int effects = Enum.GetValues<DialogueEffect>().Length;
 
-        foreach (int value in Ints(source, @"^Condition = (\d+)"))
+        // Condition / Condition2 (choices) and Condition (start variants); Effect / Effect2 / OnEnterEffect.
+        foreach (int value in Ints(source, @"^Condition2? = (\d+)"))
         {
             Assert.True(value < conditions, $"{file}: condition ordinal {value} is out of range");
         }
 
-        foreach (int value in Ints(source, @"^Effect = (\d+)"))
+        foreach (int value in Ints(source, @"^(?:Effect2?|OnEnterEffect) = (\d+)"))
         {
             Assert.True(value < effects, $"{file}: effect ordinal {value} is out of range");
+        }
+    }
+
+    [Theory]
+    [MemberData(nameof(DialogueFiles))]
+    public void StartVariantsNameRealNodes(string file)
+    {
+        string source = Read(file);
+        HashSet<string> nodes = NodeIds(source);
+        foreach (string target in Captures(source, @"^NodeId = ""([^""]*)"""))
+        {
+            Assert.True(nodes.Contains(target), $"{file}: start variant points at unknown node '{target}'");
+        }
+    }
+
+    [Theory]
+    [MemberData(nameof(DialogueFiles))]
+    public void ExtensionArgumentsAreWellFormed(string file)
+    {
+        // Every (effect, arg) and (condition, arg) pair in the file, first and second pairs and OnEnter alike.
+        string source = Read(file);
+        HashSet<string> catalogue = CatalogueKeys();
+
+        foreach ((int effect, string arg) in EffectPairs(source))
+        {
+            switch ((DialogueEffect)effect)
+            {
+                case DialogueEffect.AddReputation:
+                    Assert.True(arg.Contains(':') && DialogueRules.TryParseIdAmount(arg, 0, out string faction, out int delta) &&
+                        faction.StartsWith("faction.", StringComparison.Ordinal) && delta != 0,
+                        $"{file}: AddReputation argument '{arg}' is not '<faction id>:<non-zero delta>'");
+                    break;
+                case DialogueEffect.GiveItem:
+                case DialogueEffect.TakeItem:
+                    Assert.True(DialogueRules.TryParseIdAmount(arg, 1, out string item, out int count) && count >= 1 &&
+                        item.StartsWith("item.", StringComparison.Ordinal),
+                        $"{file}: item effect argument '{arg}' is not '<item id>[:<count >= 1>]'");
+                    break;
+                case DialogueEffect.PlayCards:
+                    Assert.True(catalogue.Contains(arg + ".1"), $"{file}: PlayCards prefix '{arg}' has no '{arg}.1' key");
+                    break;
+                case DialogueEffect.TrackQuest:
+                    Assert.StartsWith("quest.", arg);
+                    break;
+            }
+        }
+
+        foreach ((int condition, string arg) in ConditionPairs(source))
+        {
+            switch ((DialogueCondition)condition)
+            {
+                case DialogueCondition.ReputationAtLeast:
+                    Assert.True(arg.Contains(':') && DialogueRules.TryParseIdAmount(arg, 0, out string faction, out _) &&
+                        faction.StartsWith("faction.", StringComparison.Ordinal),
+                        $"{file}: ReputationAtLeast argument '{arg}' is not '<faction id>:<number>'");
+                    break;
+                case DialogueCondition.HasItem:
+                    Assert.True(DialogueRules.TryParseIdAmount(arg, 1, out string item, out int count) && count >= 1 &&
+                        item.StartsWith("item.", StringComparison.Ordinal),
+                        $"{file}: HasItem argument '{arg}' is not '<item id>[:<count >= 1>]'");
+                    break;
+                case DialogueCondition.CompanionInParty:
+                    Assert.StartsWith("companion.", arg);
+                    break;
+            }
+        }
+    }
+
+    /// <summary>The ordinal and argument of every effect: <c>Effect</c>, <c>Effect2</c>, <c>OnEnterEffect</c>.</summary>
+    private static IEnumerable<(int Ordinal, string Arg)> EffectPairs(string source)
+    {
+        foreach (Match match in Regex.Matches(
+            source, @"^(Effect2?|OnEnterEffect) = (\d+)\r?\n\1Arg = ""([^""]*)""", RegexOptions.Multiline))
+        {
+            yield return (int.Parse(match.Groups[2].Value), match.Groups[3].Value);
+        }
+    }
+
+    /// <summary>The ordinal and argument of every condition: choices' two pairs and start variants.</summary>
+    private static IEnumerable<(int Ordinal, string Arg)> ConditionPairs(string source)
+    {
+        foreach (Match match in Regex.Matches(
+            source, @"^(Condition2?) = (\d+)\r?\n\1Arg = ""([^""]*)""", RegexOptions.Multiline))
+        {
+            yield return (int.Parse(match.Groups[2].Value), match.Groups[3].Value);
         }
     }
 
@@ -138,7 +227,7 @@ public class DialogueContentTests
     [MemberData(nameof(DialogueFiles))]
     public void CompanionArgumentsParse(string file)
     {
-        foreach (string arg in Captures(Read(file), @"^(?:Effect|Condition)Arg = ""(companion\.[^""]+)"""))
+        foreach (string arg in Captures(Read(file), @"^(?:Effect2?|Condition2?|OnEnterEffect)Arg = ""(companion\.[^""]+)"""))
         {
             Assert.True(CompanionArg.TryParse(arg, out string id, out _), $"{file}: unparseable arg '{arg}'");
             Assert.StartsWith("companion.", id);
@@ -152,14 +241,19 @@ public class DialogueContentTests
         // AddCorruption's argument is parsed as an int at runtime and silently becomes 0 if it
         // isn't one — a corruption beat that quietly does nothing.
         string source = Read(file);
-        foreach (Match match in Regex.Matches(
-            source, @"^Effect = (\d+)\r?\nEffectArg = ""([^""]*)""", RegexOptions.Multiline))
+        foreach ((int ordinal, string arg) in EffectPairs(source))
         {
-            if (int.Parse(match.Groups[1].Value) == (int)DialogueEffect.AddCorruption)
+            if (ordinal == (int)DialogueEffect.AddCorruption)
             {
-                Assert.True(
-                    int.TryParse(match.Groups[2].Value, out _),
-                    $"{file}: AddCorruption argument '{match.Groups[2].Value}' is not a number");
+                Assert.True(int.TryParse(arg, out _), $"{file}: AddCorruption argument '{arg}' is not a number");
+            }
+        }
+
+        foreach ((int ordinal, string arg) in ConditionPairs(source))
+        {
+            if (ordinal is (int)DialogueCondition.CorruptionAtLeast or (int)DialogueCondition.CorruptionBelow)
+            {
+                Assert.True(int.TryParse(arg, out _), $"{file}: corruption condition threshold '{arg}' is not a number");
             }
         }
     }

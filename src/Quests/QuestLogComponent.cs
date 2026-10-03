@@ -224,6 +224,7 @@ public partial class QuestLogComponent : EntityComponent, ISaveable
     /// a quest started by this very load still shows as updated.</summary>
     private void OnGameLoaded(GameLoadedEvent e)
     {
+        RunCampaignCatchUp();
         Reconcile(silent: true);
         if (_stampSeenOnLoad)
         {
@@ -235,6 +236,90 @@ public partial class QuestLogComponent : EntityComponent, ISaveable
         }
 
         AutoStart(null);
+    }
+
+    /// <summary>
+    /// Brings a pre-campaign save onto the campaign chain (<see cref="Narrative.CampaignCatchUp"/>, a
+    /// pure idempotent mapping): sets the done flags its legacy progress implies and marks the matching
+    /// quests completed in the journal, silently. Reconciliation is suspended while it runs, so the
+    /// flags it sets cannot narrate a load; the silent reconcile that follows settles the rest.
+    /// </summary>
+    private void RunCampaignCatchUp()
+    {
+        if (_flags == null)
+        {
+            return;
+        }
+
+        Narrative.CampaignCatchUpPlan plan = Narrative.CampaignCatchUp.Plan(
+            _flags.Has, IsCompleted, id => QuestDatabase.Get(id) != null);
+        if (plan.IsEmpty)
+        {
+            return;
+        }
+
+        _suspend++;
+        try
+        {
+            foreach (string questId in plan.CompleteQuests)
+            {
+                MarkCompletedSilently(questId);
+            }
+
+            foreach (string flag in plan.SetFlags)
+            {
+                _flags.Set(flag);
+            }
+        }
+        finally
+        {
+            _suspend--;
+        }
+
+        Log.Info($"Campaign catch-up: {plan.SetFlags.Count} flag(s), {plan.CompleteQuests.Count} quest(s).");
+    }
+
+    /// <summary>
+    /// Marks a quest Completed without granting rewards and without publishing
+    /// <see cref="QuestCompletedEvent"/> (so no toast, no autosave and no analytics): the load catch-up's
+    /// tool for quests the legacy flow never had. Its completion flag is set (idempotently), every
+    /// objective reads as done in the journal, and it is stamped as seen. Returns false when the quest
+    /// does not exist or is already completed.
+    /// </summary>
+    public bool MarkCompletedSilently(string questId)
+    {
+        if (QuestDatabase.Get(questId) is not { } quest)
+        {
+            return false;
+        }
+
+        if (!_quests.TryGetValue(questId, out QuestProgress? progress))
+        {
+            progress = new QuestProgress(quest);
+            BindFlags(progress);
+            _quests[questId] = progress;
+        }
+        else if (progress.Status == QuestStatus.Completed)
+        {
+            return false;
+        }
+
+        List<ObjectiveResource> objectives = quest.ObjectiveList();
+        for (int i = 0; i < objectives.Count; i++)
+        {
+            progress.Counts[i] = Mathf.Max(progress.Counts[i], objectives[i].RequiredCount);
+        }
+
+        progress.Status = QuestStatus.Completed;
+        if (TrackedQuestId == questId)
+        {
+            TrackedQuestId = string.Empty;
+        }
+
+        _seen[questId] = progress.StageSignature();
+        SetFlag(quest.CompletionFlagId);
+        EventBus.Instance?.Publish(new QuestSeenChangedEvent(questId));
+        return true;
     }
 
     private void AutoStart(string? flag)
