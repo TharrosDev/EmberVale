@@ -46,19 +46,33 @@ public partial class HiddenRealmReveal : Node
         EventBus.Instance?.Unsubscribe<RegionChangedEvent>(OnRegion);
     }
 
+    /// <summary>The beat the live reveal announces (never on a load catch-up).</summary>
+    public const string RevealBeat = "pale_reveal";
+
+    // True from a game load until the end of that frame: a save that already holds the three defeats
+    // catches up silently, however many events the load produces.
+    private bool _catchUpWindow;
+
     private void OnFlag(StoryFlagChangedEvent e)
     {
         if (e.Value && e.Flag != RevealedFlag)
         {
-            Evaluate();
+            Evaluate(_catchUpWindow);
         }
     }
 
-    private void OnLoaded(GameLoadedEvent e) => Evaluate();
+    private void OnLoaded(GameLoadedEvent e)
+    {
+        _catchUpWindow = true;
+        Evaluate(silent: true);
+        CallDeferred(nameof(EndCatchUp));
+    }
 
-    private void OnRegion(RegionChangedEvent e) => Evaluate();
+    private void EndCatchUp() => _catchUpWindow = false;
 
-    private static void Evaluate()
+    private void OnRegion(RegionChangedEvent e) => Evaluate(_catchUpWindow);
+
+    private static void Evaluate(bool silent)
     {
         if (ServiceLocator.Instance is not { } sl || !sl.TryGet(out PlayerCharacter player) ||
             player.GetComponent<StoryFlagsComponent>() is not { } flags || !ShouldReveal(flags.Has))
@@ -67,6 +81,13 @@ public partial class HiddenRealmReveal : Node
         }
 
         flags.Set(RevealedFlag);
+        if (silent)
+        {
+            Log.Info("Hidden realm reveal caught up silently from a load.");
+            return;
+        }
+
         Log.Info("Hidden realm revealed: all three Act II Flamebearers have fallen.");
+        EventBus.Instance?.Publish(new StoryBeatEvent(RevealBeat));
     }
 }
