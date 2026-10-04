@@ -20700,7 +20700,9 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "scenes/regions/ember_crown/town_hub.tscn"
+   ]
   },
   "flag.beat.anchor_a": {
    "writers": [
@@ -20887,7 +20889,9 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "scenes/regions/ember_crown/wilds_north.tscn"
+   ]
   },
   "flag.beat.beast_track_a_seen": {
    "writers": [
@@ -20998,7 +21002,8 @@
    ],
    "code": false,
    "externalRefs": [
-    "data/story/reactions/spec1.json"
+    "data/story/reactions/spec1.json",
+    "scenes/regions/ember_crown/ashen_breach.tscn"
    ]
   },
   "flag.beat.cairn_mid_lit": {
@@ -21041,7 +21046,9 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "scenes/regions/frostfang_reach/clan_hold.tscn"
+   ]
   },
   "flag.beat.carter_helped": {
    "writers": [
@@ -21064,7 +21071,9 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "scenes/regions/ember_crown/town_hub.tscn"
+   ]
   },
   "flag.beat.choir_answered": {
    "writers": [
@@ -21856,7 +21865,9 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "scenes/regions/ember_crown/citadel.tscn"
+   ]
   },
   "flag.beat.prophetend_exposed": {
    "writers": [],
@@ -21996,7 +22007,9 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "scenes/regions/frostfang_reach/glacier.tscn"
+   ]
   },
   "flag.beat.scout_cairn_north_seen": {
    "writers": [
@@ -22014,7 +22027,9 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "scenes/regions/frostfang_reach/glacier.tscn"
+   ]
   },
   "flag.beat.scout_cairn_south_seen": {
    "writers": [
@@ -22032,7 +22047,9 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "scenes/regions/frostfang_reach/clan_hold.tscn"
+   ]
   },
   "flag.beat.seals_broken": {
    "writers": [],
@@ -22094,7 +22111,9 @@
    ],
    "readers": [],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "scenes/regions/ember_crown/citadel.tscn"
+   ]
   },
   "flag.beat.square_held": {
    "writers": [
@@ -22265,7 +22284,8 @@
    ],
    "code": true,
    "externalRefs": [
-    "data/story/rules/spec1.json"
+    "data/story/rules/spec1.json",
+    "scenes/regions/frostfang_reach/clan_hold.tscn"
    ]
   },
   "flag.beat.stormend_hjalvar": {
@@ -22313,7 +22333,8 @@
    ],
    "code": true,
    "externalRefs": [
-    "data/story/rules/spec1.json"
+    "data/story/rules/spec1.json",
+    "scenes/regions/frostfang_reach/stormfall.tscn"
    ]
   },
   "flag.beat.throne_decided": {
@@ -22355,7 +22376,9 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "scenes/regions/ember_crown/ashen_breach.tscn"
+   ]
   },
   "flag.beat.track_a_read": {
    "writers": [
@@ -23322,7 +23345,8 @@
    "code": true,
    "externalRefs": [
     "data/story/reactions/spec1.json",
-    "data/story/rules/spec1.json"
+    "data/story/rules/spec1.json",
+    "scenes/regions/ember_crown/citadel.tscn"
    ]
   },
   "flag.fork.flock_exposed": {
@@ -23657,7 +23681,8 @@
    "code": true,
    "externalRefs": [
     "data/story/reactions/spec1.json",
-    "data/story/rules/spec1.json"
+    "data/story/rules/spec1.json",
+    "scenes/regions/frostfang_reach/stormfall.tscn"
    ]
   },
   "flag.fork.succession_hjalvar": {
@@ -23687,7 +23712,8 @@
    ],
    "code": true,
    "externalRefs": [
-    "data/story/rules/spec1.json"
+    "data/story/rules/spec1.json",
+    "scenes/regions/frostfang_reach/stormfall.tscn"
    ]
   },
   "flag.frostfang.passage_open": {
@@ -24007,7 +24033,7 @@
     "data/regions/AshenWilds.tres",
     "data/regions/Sunspire.tres",
     "data/shops/EmberCrownApothecary.tres",
-    "scenes/regions/frostfang_reach/stormcrown.tscn",
+    "scenes/regions/ember_crown/arena.tscn",
     "src/Bootstrap/HeadlessStory.cs",
     "src/Enemies/BossEncounterDirector.cs",
     "src/Narrative/CampaignCatchUp.cs"
@@ -24220,7 +24246,9 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "scenes/regions/ember_crown/kings_approach.tscn"
+   ]
   },
   "flag.main.closed_hold_done": {
    "writers": [
@@ -25139,7 +25167,9 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "scenes/regions/ember_crown/arena.tscn"
+   ]
   },
   "flag.rival.sigil": {
    "writers": [
@@ -25660,7 +25690,8 @@
    ],
    "externalRefs": [
     "data/story/reactions/spec1.json",
-    "data/story/rules/spec1.json"
+    "data/story/rules/spec1.json",
+    "scenes/regions/ember_crown/citadel.tscn"
    ]
   },
   {
@@ -26025,7 +26056,8 @@
    ],
    "externalRefs": [
     "data/story/reactions/spec1.json",
-    "data/story/rules/spec1.json"
+    "data/story/rules/spec1.json",
+    "scenes/regions/frostfang_reach/stormfall.tscn"
    ]
   },
   {
@@ -26060,7 +26092,8 @@
     }
    ],
    "externalRefs": [
-    "data/story/rules/spec1.json"
+    "data/story/rules/spec1.json",
+    "scenes/regions/frostfang_reach/stormfall.tscn"
    ]
   }
  ]
