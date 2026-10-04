@@ -489,6 +489,15 @@ def build_scenes():
             out[path] = text
     return out
 
+# ── Campaign overhaul (2026-10): per-workstream location files ──────────────────────────────────
+# tools/map_locations_campaign_<ws>.py each define register(add); loaded in name order so output is stable.
+import glob as _glob, importlib.util as _ilu
+for _f in sorted(_glob.glob(os.path.join(os.path.dirname(os.path.abspath(__file__)), "map_locations_campaign_*.py"))):
+    _spec = _ilu.spec_from_file_location(os.path.basename(_f)[:-3], _f)
+    _mod = _ilu.module_from_spec(_spec)
+    _spec.loader.exec_module(_mod)
+    _mod.register(add)
+
 
 def main():
     check = "--check" in sys.argv

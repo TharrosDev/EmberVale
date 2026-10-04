@@ -4190,8 +4190,12 @@ boss.ashen_knight.intro,"I have waited four hundred years for someone worth draw
 boss.morthul.epithet,The Ash King
 boss.morthul.intro,"Sit, little ember. Everyone does, in the end."
 # --- END campaign:spec2 ---
-# --- BEGIN campaign:world ---
-# --- END campaign:world ---
+# --- BEGIN campaign:worlda ---
+# --- END campaign:worlda ---
+# --- BEGIN campaign:worldb ---
+# --- END campaign:worldb ---
+# --- BEGIN campaign:worldc ---
+# --- END campaign:worldc ---
 # --- BEGIN campaign:ui ---
 questui.journal_title,QUEST JOURNAL
 questui.footer,{0}  Switch section     {1}  Close
