@@ -24,6 +24,12 @@ public partial class DialogueComponent : InteractableComponent
     /// <summary>Optional prompt-name override; falls back to the conversation's speaker.</summary>
     [Export] public string SpeakerName { get; set; } = string.Empty;
 
+    /// <summary>
+    /// Optional locale key for the whole prompt (a cairn reads "Examine the cairn", not "Talk to Toren's
+    /// cairn"). When set it replaces the "Talk to {speaker}" line; the corpse/mid-swing guard still applies.
+    /// </summary>
+    [Export] public string PromptKey { get; set; } = string.Empty;
+
     private DialogueResource? Dialogue => DialogueDatabase.Get(DialogueId);
 
     /// <summary>
@@ -51,6 +57,11 @@ public partial class DialogueComponent : InteractableComponent
             if (!CanTalk())
             {
                 return string.Empty;
+            }
+
+            if (!string.IsNullOrEmpty(PromptKey))
+            {
+                return Loc.T(PromptKey);
             }
 
             string who = !string.IsNullOrEmpty(SpeakerName)
