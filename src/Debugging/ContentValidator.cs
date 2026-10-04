@@ -6095,6 +6095,18 @@ public static class ContentValidator
             }
         }
 
+        // Scene-authored set pieces write their ClearedFlagId when beaten.
+        foreach (string flag in CollectSceneSetPieceWriters())
+        {
+            written.Add(flag);
+        }
+
+        // Companion reactions record themselves as flag.bark.<slug>.
+        foreach (Companions.CompanionReaction reaction in Narrative.StoryDataFiles.LoadReactions(new List<string>()))
+        {
+            written.Add(reaction.BarkFlag);
+        }
+
         // Every boss writes its own defeat flag through BossDefeat (36E), not only the Iron King.
         foreach (Enemies.BossResource boss in Enemies.BossDatabase.All)
         {
@@ -6233,6 +6245,194 @@ public static class ContentValidator
             {
                 issues.Add($"world actor appears on flag '{flag}', which nothing ever sets");
             }
+        }
+
+        ValidateSceneStoryHooks(written, issues);
+        ValidateStoryData(written, issues);
+    }
+
+    private const string BossSummonScript = "/BossSummonComponent.cs";
+    private const string SetPieceScript = "/SetPieceSpawnComponent.cs";
+
+    /// <summary>Every scene node carrying a given script (matched by the script path's suffix).</summary>
+    private static IEnumerable<(string Path, SceneNodeText Node)> SceneNodesWithScript(string scriptSuffix)
+    {
+        foreach (string path in ScenePaths("res://scenes"))
+        {
+            using FileAccess? file = FileAccess.Open(path, FileAccess.ModeFlags.Read);
+            if (file == null)
+            {
+                continue;
+            }
+
+            string text = file.GetAsText();
+            if (!text.Contains(scriptSuffix, System.StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            foreach (SceneNodeText node in SceneTextParser.Nodes(text))
+            {
+                if (node.ScriptPath.EndsWith(scriptSuffix, System.StringComparison.Ordinal))
+                {
+                    yield return (path, node);
+                }
+            }
+        }
+    }
+
+    private static IEnumerable<string> CollectSceneSetPieceWriters()
+    {
+        foreach ((string _, SceneNodeText node) in SceneNodesWithScript(SetPieceScript))
+        {
+            string cleared = node.Str("ClearedFlagId");
+            if (cleared.Length > 0)
+            {
+                yield return cleared;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Scene-authored story hooks, cross-checked against the flag writers and the quest database (they
+    /// were unvalidated until now: a typo in a scene is a brazier or raid that silently never opens).
+    /// <c>BossSummonComponent</c>: RequiredQuestId must be a quest, RequiredFlagId / ClosedFlagId /
+    /// DefeatedFlagId must be flags something writes, FightId a boss fight. Property defaults apply when
+    /// a scene omits a property, so the default <c>quest.warband.heart</c> is checked too.
+    /// <c>SetPieceSpawnComponent</c>: trigger/required/despawn flags written, a ClearedFlagId authored
+    /// (the durable record), templates registered, numeric ranges in bounds.
+    /// </summary>
+    private static void ValidateSceneStoryHooks(HashSet<string> written, List<string> issues)
+    {
+        foreach ((string path, SceneNodeText node) in SceneNodesWithScript(BossSummonScript))
+        {
+            string where = $"scene '{path}' BossSummonComponent '{node.Name}'";
+            string quest = node.Str("RequiredQuestId", "quest.warband.heart");
+            if (quest.Length > 0 && QuestDatabase.Get(quest) == null)
+            {
+                issues.Add($"{where} RequiredQuestId '{quest}' is not a quest");
+            }
+
+            RequireSceneFlag(node.Str("RequiredFlagId"), "RequiredFlagId", where, written, issues);
+            RequireSceneFlag(node.Str("ClosedFlagId"), "ClosedFlagId", where, written, issues);
+            RequireSceneFlag(
+                node.Str("DefeatedFlagId", Enemies.BossEncounterDirector.DefeatedFlag), "DefeatedFlagId", where,
+                written, issues);
+
+            string template = node.Str("BossTemplateId", GameIds.Enemies.IronKing);
+            RequireEnemy(template, where + " BossTemplateId", issues);
+            string fight = node.Str("FightId");
+            if (fight.Length > 0 && Enemies.BossDatabase.Get(fight) == null)
+            {
+                issues.Add($"{where} FightId '{fight}' is not a boss fight");
+            }
+        }
+
+        foreach ((string path, SceneNodeText node) in SceneNodesWithScript(SetPieceScript))
+        {
+            string where = $"scene '{path}' SetPieceSpawnComponent '{node.Name}'";
+            string trigger = node.Str("TriggerFlagId");
+            RequireSceneFlag(trigger, "TriggerFlagId", where, written, issues);
+            RequireSceneFlag(node.Str("RequiredFlagId"), "RequiredFlagId", where, written, issues);
+            RequireSceneFlag(node.Str("DespawnFlagId"), "DespawnFlagId", where, written, issues);
+
+            string cleared = node.Str("ClearedFlagId");
+            if (cleared.Length == 0)
+            {
+                issues.Add($"{where} has no ClearedFlagId; the story flag is the durable record that it was beaten");
+            }
+            else if (!cleared.StartsWith("flag.", System.StringComparison.Ordinal))
+            {
+                issues.Add($"{where} ClearedFlagId '{cleared}' must start with 'flag.'");
+            }
+
+            IReadOnlyList<string> templates = node.StrList("TemplateIds", System.Array.Empty<string>());
+            foreach (string template in templates)
+            {
+                RequireEnemy(template, where + " TemplateIds", issues);
+            }
+
+            (float sx, float sy, float sz) = node.Vector3("TriggerSize", (24f, 8f, 24f));
+            foreach (string problem in Enemies.SetPieceWaves.ConfigProblems(
+                         node.Int("Waves", 1), node.Int("CountPerWave", 3), node.Float("WaveDelaySeconds", 15f),
+                         trigger.Length > 0, sx, sy, sz, node.Float("SpawnRadius", 8f), templates.Count))
+            {
+                issues.Add($"{where}: {problem}");
+            }
+        }
+    }
+
+    private static void RequireSceneFlag(
+        string flag, string property, string where, HashSet<string> written, List<string> issues)
+    {
+        if (flag.Length == 0)
+        {
+            return;
+        }
+
+        if (!flag.StartsWith("flag.", System.StringComparison.Ordinal))
+        {
+            issues.Add($"{where} {property} '{flag}' must start with 'flag.'");
+        }
+        else if (!written.Contains(flag))
+        {
+            issues.Add($"{where} {property} '{flag}' is a flag nothing ever sets");
+        }
+    }
+
+    /// <summary>
+    /// The story JSON tables: parse problems, rule ids, and that every flag a rule or reaction READS has a
+    /// writer, every reaction names a real companion and an existing locale key. (Rule <c>set</c> flags and
+    /// reaction bark flags are already in the writer set.)
+    /// </summary>
+    private static void ValidateStoryData(HashSet<string> written, List<string> issues)
+    {
+        var ruleErrors = new List<string>();
+        foreach (Narrative.StoryRule rule in Narrative.StoryDataFiles.LoadRules(ruleErrors))
+        {
+            if (rule.Id.StartsWith("rule.builtin.", System.StringComparison.Ordinal))
+            {
+                issues.Add($"story rule '{rule.Id}': the 'rule.builtin.' prefix is reserved for rules written in code");
+            }
+
+            var read = new List<string>(rule.All);
+            read.AddRange(rule.None);
+            foreach (string flag in read)
+            {
+                if (!written.Contains(flag))
+                {
+                    issues.Add($"story rule '{rule.Id}' reads flag '{flag}', which nothing ever sets");
+                }
+            }
+        }
+
+        foreach (string error in ruleErrors)
+        {
+            issues.Add($"story rules: {error}");
+        }
+
+        var reactionErrors = new List<string>();
+        foreach (Companions.CompanionReaction reaction in Narrative.StoryDataFiles.LoadReactions(reactionErrors))
+        {
+            if (CompanionDatabase.Get(reaction.Companion) == null)
+            {
+                issues.Add($"companion reaction '{reaction.Id}' names unknown companion '{reaction.Companion}'");
+            }
+
+            if (!Loc.Has(reaction.TextKey))
+            {
+                issues.Add($"companion reaction '{reaction.Id}' text key '{reaction.TextKey}' is not in the locale catalogue");
+            }
+
+            if (!written.Contains(reaction.Flag))
+            {
+                issues.Add($"companion reaction '{reaction.Id}' waits on flag '{reaction.Flag}', which nothing ever sets");
+            }
+        }
+
+        foreach (string error in reactionErrors)
+        {
+            issues.Add($"companion reactions: {error}");
         }
     }
 

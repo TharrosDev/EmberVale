@@ -50,6 +50,61 @@ public sealed class SetPieceWaves
     public static bool InsideBox(float x, float y, float z, float sizeX, float sizeY, float sizeZ) =>
         Math.Abs(x) <= sizeX * 0.5f && Math.Abs(y) <= sizeY * 0.5f && Math.Abs(z) <= sizeZ * 0.5f;
 
+    /// <summary>Authoring ranges of a set piece. An authored range fails silently at both ends (NOW.md
+    /// invariant 8): zero waves is a piece that never does anything, a hundred is a frame-rate trap.</summary>
+    public const int MaxWaves = 10;
+    public const int MaxCountPerWave = 12;
+    public const int MaxTotalSpawns = 60;
+    public const float MaxWaveDelay = 600f;
+    public const float MaxTriggerExtent = 200f;
+    public const float MaxSpawnRadius = 60f;
+
+    /// <summary>What is wrong with a set piece's numeric settings (empty when nothing is). Used by the
+    /// content validator on scene-authored pieces and unit-tested in both directions.</summary>
+    public static System.Collections.Generic.List<string> ConfigProblems(
+        int waves, int countPerWave, float waveDelaySeconds, bool flagTriggered,
+        float sizeX, float sizeY, float sizeZ, float spawnRadius, int templateCount)
+    {
+        var problems = new System.Collections.Generic.List<string>();
+        if (waves < 1 || waves > MaxWaves)
+        {
+            problems.Add($"Waves {waves} is outside 1..{MaxWaves}");
+        }
+
+        if (countPerWave < 1 || countPerWave > MaxCountPerWave)
+        {
+            problems.Add($"CountPerWave {countPerWave} is outside 1..{MaxCountPerWave}");
+        }
+
+        if (waves >= 1 && countPerWave >= 1 && (long)waves * countPerWave > MaxTotalSpawns)
+        {
+            problems.Add($"{waves} wave(s) of {countPerWave} is more than {MaxTotalSpawns} spawns");
+        }
+
+        if (float.IsNaN(waveDelaySeconds) || waveDelaySeconds < 0f || waveDelaySeconds > MaxWaveDelay)
+        {
+            problems.Add($"WaveDelaySeconds {waveDelaySeconds} is outside 0..{MaxWaveDelay}");
+        }
+
+        if (!flagTriggered && !(sizeX > 0f && sizeY > 0f && sizeZ > 0f &&
+                                sizeX <= MaxTriggerExtent && sizeY <= MaxTriggerExtent && sizeZ <= MaxTriggerExtent))
+        {
+            problems.Add($"TriggerSize ({sizeX}, {sizeY}, {sizeZ}) must be positive and at most {MaxTriggerExtent} on each axis");
+        }
+
+        if (float.IsNaN(spawnRadius) || spawnRadius < 1f || spawnRadius > MaxSpawnRadius)
+        {
+            problems.Add($"SpawnRadius {spawnRadius} is outside 1..{MaxSpawnRadius}");
+        }
+
+        if (templateCount < 1)
+        {
+            problems.Add("TemplateIds is empty");
+        }
+
+        return problems;
+    }
+
     /// <summary>Begins the set piece and releases the first wave. A second call does nothing.</summary>
     public void Start()
     {
