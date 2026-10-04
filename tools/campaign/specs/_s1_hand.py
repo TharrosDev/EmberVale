@@ -45,7 +45,7 @@ ELDER = Extension(
     nodes=[
         Node("cq_sq_hook",
              "The Elder is already looking north when you reach him. A column of smoke stands over the Kingsway, thick and "
-             "straight. 'Goblins raid by night, in threes, and run when they bleed. This is noon, and they are marching in "
+             "straight. 'Goblins raid by night, in threes, and run when they bleed. This is broad day, and they are marching in "
              "step. That is not hunger. That is orders.' His eyes find the ember in yours and do not remark on it. 'Do not "
              "tell me what you are. Ring the bell.' He points at a post beside the Waystone where an old bronze bell hangs. "
              "'The town will bar its doors, and the square becomes the only thing between that smoke and the market. Hold it "

@@ -2971,7 +2971,7 @@ quest.main.citadel_approach.obj_decide,Decide what becomes of the Marshal
 quest.main.citadel_approach.hint_decide,Cut his chains or press him for what he knows. Speak to him again if you walked away.
 quest.main.citadel_approach.log_decide,"You settled it. Whatever it was, you will be asked about it again."
 quest.main.iron_king.title,The Iron King
-quest.main.iron_king.summary,"The warband is broken, and every scrip, ledger and chained marshal points up the long road to the Ember Arena, where the first Flamebearer keeps his court of iron. Light the brazier, end it, and find out who has been watching from the gallery."
+quest.main.iron_king.summary,"The warband is broken, and every scrip, ledger and confession points up the long road to the Ember Arena, where the first Flamebearer keeps his court of iron. Light the brazier, end it, and find out who has been watching from the gallery."
 quest.main.iron_king.detail,"The Iron King was the first of the seven to be given the fire, and he has had a long time to decide what it is for. He holds the arena the way he held the Kingsway: closed to everyone but his own. The brazier at the sand's edge calls him out. Afterwards the Elder will want to hear all of it, including whatever you were not expecting."
 quest.main.iron_king.obj_king,Defeat the Iron King in the Ember Arena
 quest.main.iron_king.hint_king,Light the challenge brazier at the edge of the sand. In the second phase the garrison comes down to him: use the pillars.
@@ -3427,7 +3427,7 @@ chapter.ch.2.frostfang.title,Frostfang Reach
 chapter.ch.2.frostfang.subtitle,The clans of Frostfang Reach have buried their dead twice and will not bury a third.
 boss.storm_tyrant.epithet,The Storm That Remembers
 boss.storm_tyrant.intro,'Four hundred years I have waited for someone who was not afraid of the thunder.'
-dlg.elder.cq_sq_hook,"The Elder is already looking north when you reach him. A column of smoke stands over the Kingsway, thick and straight. 'Goblins raid by night, in threes, and run when they bleed. This is noon, and they are marching in step. That is not hunger. That is orders.' His eyes find the ember in yours and do not remark on it. 'Do not tell me what you are. Ring the bell.' He points at a post beside the Waystone where an old bronze bell hangs. 'The town will bar its doors, and the square becomes the only thing between that smoke and the market. Hold it until they break.'"
+dlg.elder.cq_sq_hook,"The Elder is already looking north when you reach him. A column of smoke stands over the Kingsway, thick and straight. 'Goblins raid by night, in threes, and run when they bleed. This is broad day, and they are marching in step. That is not hunger. That is orders.' His eyes find the ember in yours and do not remark on it. 'Do not tell me what you are. Ring the bell.' He points at a post beside the Waystone where an old bronze bell hangs. 'The town will bar its doors, and the square becomes the only thing between that smoke and the market. Hold it until they break.'"
 dlg.elder.cq_sq_hook.c_who,Who is giving them orders?
 dlg.elder.cq_sq_hook.c_else,Something else.
 dlg.elder.cq_sq_hook.c_go,I will ring it.

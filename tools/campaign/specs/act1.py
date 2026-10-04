@@ -161,7 +161,7 @@ Q07 = Quest(
 Q09 = Quest(
     id="quest.main.iron_king",
     title="The Iron King",
-    summary="The warband is broken, and every scrip, ledger and chained marshal points up the long road to the Ember Arena, "
+    summary="The warband is broken, and every scrip, ledger and confession points up the long road to the Ember Arena, "
             "where the first Flamebearer keeps his court of iron. Light the brazier, end it, and find out who has been "
             "watching from the gallery.",
     detail="The Iron King was the first of the seven to be given the fire, and he has had a long time to decide what "
