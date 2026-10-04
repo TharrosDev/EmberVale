@@ -775,6 +775,7 @@ DialogueId = "dialogue.rival_library"
 [node name="Visibility" type="Node" parent="AshenKnight"]
 script = ExtResource("wb_flagvisibilitycomponent")
 VisibleWhenFlagId = "flag.beat.library_defended"
+HiddenWhenFlagId = "flag.main.deep_stacks_done"
 
 [node name="VaultWards" type="Node3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 45, 0, -74.4)

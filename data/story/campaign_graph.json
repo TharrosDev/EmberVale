@@ -2057,7 +2057,7 @@
      "count": 1,
      "location": "location.ember_crown.iron_citadel",
      "reqFlag": "",
-     "forbidFlag": "",
+     "forbidFlag": "flag.beat.dray_decided",
      "completionFlag": "",
      "activatedFlag": "",
      "optional": false,
@@ -2102,6 +2102,10 @@
     {
      "flag": "flag.beat.postern_known",
      "via": "objective[2].required"
+    },
+    {
+     "flag": "flag.beat.dray_decided",
+     "via": "objective[4].forbidden"
     },
     {
      "flag": "flag.beat.dray_decided",
@@ -21717,6 +21721,11 @@
   "flag.beat.dray_decided": {
    "writers": [],
    "readers": [
+    {
+     "kind": "quest",
+     "id": "quest.main.citadel_approach",
+     "via": "objective[4].forbidden"
+    },
     {
      "kind": "quest",
      "id": "quest.main.citadel_approach",

@@ -2630,7 +2630,7 @@ dlg.rival.duel1.c_why,Why not finish it?
 dlg.rival.duel1.why,"""Because you are not ready, and I would rather meet you when you are. Gather your embers, Seventh. We will cross blades again."" He turns into the storm and is gone."
 dlg.rival.duel1.c_bye,Let him go.
 dlg.rival.duel2.speaker,The Ashen Knight
-dlg.rival.duel2.yield,"This time he yields a step at a time, and he is smiling behind the visor; you can hear it. ""Better. Much better. The Prophet burned for his certainty, and you did not flinch from the fire."""
+dlg.rival.duel2.yield,"He yields a step at a time, and he is smiling behind the visor; you can hear it. ""The Prophet burned for his certainty, and you did not flinch from the fire. Remember that when you are asked to burn."""
 dlg.rival.duel2.c_follow,You keep following me.
 dlg.rival.duel2.follow,"""I keep measuring you. Every ember you take brings you a little closer to where I stand."""
 dlg.rival.duel2.c_stair,And where is that?

@@ -597,7 +597,11 @@ public partial class QuestLogComponent : EntityComponent, ISaveable
         // the subject rather than the killer.
         if (ReferenceEquals(e.Entity, Entity))
         {
-            FailQuestsWith(ObjectiveType.Defend, null);
+            // ⚠️ A DEATH MUST NOT END THE MAIN STORY. Nothing restarts a failed quest (auto-start skips one
+            // already in the log), so failing a main-thread hold would soft-lock the whole chain; dying on a
+            // main Defend only loses the hold, which starts over. Side quests keep the old rule: they fail.
+            FailQuestsWith(ObjectiveType.Defend, null, skipMainQuests: true);
+            ResetMainDefends();
             return;
         }
 
@@ -1161,7 +1165,8 @@ public partial class QuestLogComponent : EntityComponent, ISaveable
     /// condition in the game and the rule would ship as a silent no-op through a green build, green
     /// tests and a green validator.
     /// </summary>
-    private void FailQuestsWith(ObjectiveType type, string? targetId, bool alreadyMetStillCounts = false)
+    private void FailQuestsWith(ObjectiveType type, string? targetId, bool alreadyMetStillCounts = false,
+        bool skipMainQuests = false)
     {
         // Snapshot for Advance's reason: Fail publishes, and a listener may touch the log.
         var active = new List<QuestProgress>();
@@ -1175,6 +1180,11 @@ public partial class QuestLogComponent : EntityComponent, ISaveable
 
         foreach (QuestProgress progress in active)
         {
+            if (skipMainQuests && progress.Quest.IsMainQuest)
+            {
+                continue;
+            }
+
             List<ObjectiveResource> objectives = progress.Quest.ObjectiveList();
             for (int i = 0; i < objectives.Count; i++)
             {
@@ -1198,6 +1208,33 @@ public partial class QuestLogComponent : EntityComponent, ISaveable
 
                 Fail(progress.Quest.Id);
                 break;
+            }
+        }
+    }
+
+    /// <summary>
+    /// The owner died: every live, unfinished Defend objective of an active MAIN quest starts over (the
+    /// partial hold is lost) instead of failing the quest. Counts reset through <see cref="SetObjectiveCount"/>
+    /// so the tracker and journal redraw.
+    /// </summary>
+    private void ResetMainDefends()
+    {
+        _defendHeld.Clear();
+        foreach (QuestProgress progress in _quests.Values)
+        {
+            if (progress.Status != QuestStatus.Active || !progress.Quest.IsMainQuest)
+            {
+                continue;
+            }
+
+            List<ObjectiveResource> objectives = progress.Quest.ObjectiveList();
+            for (int i = 0; i < objectives.Count; i++)
+            {
+                if (objectives[i].Type == ObjectiveType.Defend && progress.Counts[i] > 0 &&
+                    !progress.IsObjectiveComplete(i) && progress.IsObjectiveActive(i))
+                {
+                    SetObjectiveCount(progress, i, 0);
+                }
             }
         }
     }

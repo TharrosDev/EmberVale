@@ -150,6 +150,7 @@ Q07 = Quest(
                  journal="The signal is out. Nothing is coming up the ramp behind you."),
         talk("dialogue.dray", "Find Marshal Orsolo Dray in the garrison hall", tag="dray",
              location="location.ember_crown.iron_citadel",
+             forbid_flag="flag.beat.dray_decided",
              hint="Dray is held in a wooden stockade pen in the Citadel court, east of the court well.",
              journal="Dray is chained in a stockade pen in the court. He signed for the arms until the day he stopped."),
         milestone("flag.beat.dray_decided", "Decide what becomes of the Marshal", tag="decide",

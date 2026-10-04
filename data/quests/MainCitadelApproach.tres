@@ -55,6 +55,7 @@ TargetId = "dialogue.dray"
 RequiredCount = 1
 Description = "quest.main.citadel_approach.obj_dray"
 LocationId = "location.ember_crown.iron_citadel"
+ForbiddenFlagId = "flag.beat.dray_decided"
 HintKey = "quest.main.citadel_approach.hint_dray"
 JournalEntryKey = "quest.main.citadel_approach.log_dray"
 
