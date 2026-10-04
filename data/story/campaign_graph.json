@@ -4,19 +4,39 @@
  "codeFlags": [
   "flag.ashen_knight_defeated",
   "flag.beast_lord_defeated",
+  "flag.beat.anchors_lit",
+  "flag.beat.choir_passed",
+  "flag.beat.seals_broken",
+  "flag.beat.stair_unsealed",
   "flag.crimson_prophet_defeated",
+  "flag.fork.dray_pressed",
+  "flag.fork.dray_spared",
+  "flag.fork.flock_exposed",
+  "flag.fork.flock_kin",
+  "flag.fork.flock_turned",
+  "flag.fork.herd_calmed",
+  "flag.fork.herd_slain",
+  "flag.fork.succession_halvar",
+  "flag.fork.succession_hjalvar",
   "flag.game_complete",
   "flag.hollow_queen_defeated",
   "flag.iron_king_defeated",
   "flag.morthul_defeated",
   "flag.pale_concord_revealed",
+  "flag.party.companion.kael",
   "flag.rival.duel1_won",
   "flag.rival.duel2_won",
-  "flag.storm_tyrant_defeated"
+  "flag.storm_tyrant_defeated",
+  "flag.testimonies_all",
+  "flag.testimony.beast",
+  "flag.testimony.iron",
+  "flag.testimony.prophet",
+  "flag.testimony.storm"
  ],
  "terminalFlags": [
   "flag.frostfang.passage_open",
-  "flag.game_complete"
+  "flag.game_complete",
+  "flag.main.throne_done"
  ],
  "entryQuests": [],
  "quests": [
@@ -1640,20 +1660,20 @@
    "source": "generated",
    "title": "quest.main.celestial.title",
    "summary": "quest.main.celestial.summary",
-   "chapter": "",
-   "order": 0,
-   "region": "",
-   "level": 0,
+   "chapter": "ch.4",
+   "order": 29,
+   "region": "region.celestial",
+   "level": 28,
    "isMain": true,
    "isLedger": false,
    "sequential": true,
-   "autoStart": "flag.celestial_gate_open",
-   "completionFlag": "",
+   "autoStart": "flag.main.sundered_stair_done",
+   "completionFlag": "flag.main.celestial_done",
    "startFlag": "",
    "failFlag": "",
    "prerequisite": "",
-   "detailKey": "",
-   "giverKey": "",
+   "detailKey": "quest.main.celestial.detail",
+   "giverKey": "dlg.rival_gate.speaker",
    "objectives": [
     {
      "type": 0,
@@ -1666,8 +1686,8 @@
      "activatedFlag": "",
      "optional": false,
      "description": "quest.main.celestial.obj_knight",
-     "hintKey": "",
-     "journalKey": ""
+     "hintKey": "quest.main.celestial.hint_knight",
+     "journalKey": "quest.main.celestial.log_knight"
     },
     {
      "type": 0,
@@ -1680,22 +1700,421 @@
      "activatedFlag": "",
      "optional": false,
      "description": "quest.main.celestial.obj_morthul",
-     "hintKey": "",
-     "journalKey": ""
+     "hintKey": "quest.main.celestial.hint_morthul",
+     "journalKey": "quest.main.celestial.log_morthul"
     }
    ],
-   "writes": [],
+   "writes": [
+    {
+     "flag": "flag.main.celestial_done",
+     "via": "completion"
+    }
+   ],
    "reads": [
     {
-     "flag": "flag.celestial_gate_open",
+     "flag": "flag.main.sundered_stair_done",
      "via": "autoStart"
     }
    ],
    "locKeys": [
+    "dlg.rival_gate.speaker",
+    "quest.main.celestial.detail",
+    "quest.main.celestial.hint_knight",
+    "quest.main.celestial.hint_morthul",
+    "quest.main.celestial.log_knight",
+    "quest.main.celestial.log_morthul",
     "quest.main.celestial.obj_knight",
     "quest.main.celestial.obj_morthul",
     "quest.main.celestial.summary",
     "quest.main.celestial.title"
+   ]
+  },
+  {
+   "id": "quest.main.celestial_landing",
+   "file": "data/quests/MainCelestialLanding.tres",
+   "source": "generated",
+   "title": "quest.main.celestial_landing.title",
+   "summary": "quest.main.celestial_landing.summary",
+   "chapter": "ch.4",
+   "order": 26,
+   "region": "region.celestial",
+   "level": 25,
+   "isMain": true,
+   "isLedger": false,
+   "sequential": true,
+   "autoStart": "flag.main.truth_done",
+   "completionFlag": "flag.main.celestial_landing_done",
+   "startFlag": "",
+   "failFlag": "",
+   "prerequisite": "",
+   "detailKey": "quest.main.celestial_landing.detail",
+   "giverKey": "dlg.assembly_marshal.speaker",
+   "objectives": [
+    {
+     "type": 2,
+     "target": "location.celestial.landing",
+     "count": 1,
+     "location": "",
+     "reqFlag": "",
+     "forbidFlag": "",
+     "completionFlag": "",
+     "activatedFlag": "",
+     "optional": false,
+     "description": "quest.main.celestial_landing.obj_gate",
+     "hintKey": "quest.main.celestial_landing.hint_gate",
+     "journalKey": "quest.main.celestial_landing.log_gate"
+    },
+    {
+     "type": 6,
+     "target": "interact.celestial.landing_beacon",
+     "count": 1,
+     "location": "location.celestial.landing",
+     "reqFlag": "",
+     "forbidFlag": "",
+     "completionFlag": "flag.beat.landing_beacon_lit",
+     "activatedFlag": "",
+     "optional": false,
+     "description": "quest.main.celestial_landing.obj_beacon",
+     "hintKey": "quest.main.celestial_landing.hint_beacon",
+     "journalKey": "quest.main.celestial_landing.log_beacon"
+    },
+    {
+     "type": 5,
+     "target": "location.celestial.landing",
+     "count": 45,
+     "location": "",
+     "reqFlag": "",
+     "forbidFlag": "",
+     "completionFlag": "flag.beat.landing_held",
+     "activatedFlag": "",
+     "optional": false,
+     "description": "quest.main.celestial_landing.obj_hold",
+     "hintKey": "quest.main.celestial_landing.hint_hold",
+     "journalKey": "quest.main.celestial_landing.log_hold"
+    },
+    {
+     "type": 3,
+     "target": "dialogue.assembly_marshal",
+     "count": 1,
+     "location": "location.celestial.landing",
+     "reqFlag": "",
+     "forbidFlag": "",
+     "completionFlag": "",
+     "activatedFlag": "",
+     "optional": false,
+     "description": "quest.main.celestial_landing.obj_marshal",
+     "hintKey": "quest.main.celestial_landing.hint_marshal",
+     "journalKey": "quest.main.celestial_landing.log_marshal"
+    },
+    {
+     "type": 6,
+     "target": "interact.celestial.five_graves",
+     "count": 1,
+     "location": "location.celestial.landing",
+     "reqFlag": "",
+     "forbidFlag": "",
+     "completionFlag": "flag.beat.graves_read",
+     "activatedFlag": "",
+     "optional": false,
+     "description": "quest.main.celestial_landing.obj_graves",
+     "hintKey": "quest.main.celestial_landing.hint_graves",
+     "journalKey": "quest.main.celestial_landing.log_graves"
+    }
+   ],
+   "writes": [
+    {
+     "flag": "flag.main.celestial_landing_done",
+     "via": "completion"
+    },
+    {
+     "flag": "flag.beat.landing_beacon_lit",
+     "via": "objective[1].completion"
+    },
+    {
+     "flag": "flag.beat.landing_held",
+     "via": "objective[2].completion"
+    },
+    {
+     "flag": "flag.beat.graves_read",
+     "via": "objective[4].completion"
+    }
+   ],
+   "reads": [
+    {
+     "flag": "flag.main.truth_done",
+     "via": "autoStart"
+    }
+   ],
+   "locKeys": [
+    "dlg.assembly_marshal.speaker",
+    "quest.main.celestial_landing.detail",
+    "quest.main.celestial_landing.hint_beacon",
+    "quest.main.celestial_landing.hint_gate",
+    "quest.main.celestial_landing.hint_graves",
+    "quest.main.celestial_landing.hint_hold",
+    "quest.main.celestial_landing.hint_marshal",
+    "quest.main.celestial_landing.log_beacon",
+    "quest.main.celestial_landing.log_gate",
+    "quest.main.celestial_landing.log_graves",
+    "quest.main.celestial_landing.log_hold",
+    "quest.main.celestial_landing.log_marshal",
+    "quest.main.celestial_landing.obj_beacon",
+    "quest.main.celestial_landing.obj_gate",
+    "quest.main.celestial_landing.obj_graves",
+    "quest.main.celestial_landing.obj_hold",
+    "quest.main.celestial_landing.obj_marshal",
+    "quest.main.celestial_landing.summary",
+    "quest.main.celestial_landing.title"
+   ]
+  },
+  {
+   "id": "quest.main.deep_stacks",
+   "file": "data/quests/MainDeepStacks.tres",
+   "source": "generated",
+   "title": "quest.main.deep_stacks.title",
+   "summary": "quest.main.deep_stacks.summary",
+   "chapter": "ch.3",
+   "order": 24,
+   "region": "region.sunspire",
+   "level": 23,
+   "isMain": true,
+   "isLedger": false,
+   "sequential": false,
+   "autoStart": "flag.main.sundering_pages_done",
+   "completionFlag": "flag.main.deep_stacks_done",
+   "startFlag": "",
+   "failFlag": "",
+   "prerequisite": "",
+   "detailKey": "quest.main.deep_stacks.detail",
+   "giverKey": "dlg.sunspire_archivist.speaker",
+   "objectives": [
+    {
+     "type": 2,
+     "target": "location.sunspire.library",
+     "count": 1,
+     "location": "",
+     "reqFlag": "",
+     "forbidFlag": "",
+     "completionFlag": "",
+     "activatedFlag": "",
+     "optional": false,
+     "description": "quest.main.deep_stacks.obj_library",
+     "hintKey": "quest.main.deep_stacks.hint_library",
+     "journalKey": "quest.main.deep_stacks.log_library"
+    },
+    {
+     "type": 6,
+     "target": "interact.sunspire.stacks_door",
+     "count": 1,
+     "location": "location.sunspire.library",
+     "reqFlag": "",
+     "forbidFlag": "",
+     "completionFlag": "flag.beat.stacks_open",
+     "activatedFlag": "",
+     "optional": false,
+     "description": "quest.main.deep_stacks.obj_door",
+     "hintKey": "quest.main.deep_stacks.hint_door",
+     "journalKey": "quest.main.deep_stacks.log_door"
+    },
+    {
+     "type": 0,
+     "target": "enemy.ward_golem",
+     "count": 3,
+     "location": "location.sunspire.deep_stacks",
+     "reqFlag": "flag.beat.stacks_open",
+     "forbidFlag": "",
+     "completionFlag": "flag.beat.golems_down",
+     "activatedFlag": "",
+     "optional": false,
+     "description": "quest.main.deep_stacks.obj_golems",
+     "hintKey": "quest.main.deep_stacks.hint_golems",
+     "journalKey": "quest.main.deep_stacks.log_golems"
+    },
+    {
+     "type": 6,
+     "target": "interact.sunspire.seal_plinth_a",
+     "count": 1,
+     "location": "location.sunspire.deep_stacks",
+     "reqFlag": "flag.beat.golems_down",
+     "forbidFlag": "",
+     "completionFlag": "flag.beat.plinth_a",
+     "activatedFlag": "",
+     "optional": false,
+     "description": "quest.main.deep_stacks.obj_plinth_a",
+     "hintKey": "quest.main.deep_stacks.hint_plinth_a",
+     "journalKey": "quest.main.deep_stacks.log_plinth_a"
+    },
+    {
+     "type": 6,
+     "target": "interact.sunspire.seal_plinth_b",
+     "count": 1,
+     "location": "location.sunspire.deep_stacks",
+     "reqFlag": "flag.beat.golems_down",
+     "forbidFlag": "",
+     "completionFlag": "flag.beat.plinth_b",
+     "activatedFlag": "",
+     "optional": false,
+     "description": "quest.main.deep_stacks.obj_plinth_b",
+     "hintKey": "quest.main.deep_stacks.hint_plinth_b",
+     "journalKey": "quest.main.deep_stacks.log_plinth_b"
+    },
+    {
+     "type": 6,
+     "target": "interact.sunspire.seal_plinth_c",
+     "count": 1,
+     "location": "location.sunspire.deep_stacks",
+     "reqFlag": "flag.beat.golems_down",
+     "forbidFlag": "",
+     "completionFlag": "flag.beat.plinth_c",
+     "activatedFlag": "",
+     "optional": false,
+     "description": "quest.main.deep_stacks.obj_plinth_c",
+     "hintKey": "quest.main.deep_stacks.hint_plinth_c",
+     "journalKey": "quest.main.deep_stacks.log_plinth_c"
+    },
+    {
+     "type": 5,
+     "target": "location.sunspire.deep_stacks",
+     "count": 60,
+     "location": "",
+     "reqFlag": "flag.beat.seals_broken",
+     "forbidFlag": "",
+     "completionFlag": "flag.beat.library_defended",
+     "activatedFlag": "",
+     "optional": false,
+     "description": "quest.main.deep_stacks.obj_hold",
+     "hintKey": "quest.main.deep_stacks.hint_hold",
+     "journalKey": "quest.main.deep_stacks.log_hold"
+    },
+    {
+     "type": 3,
+     "target": "dialogue.rival_library",
+     "count": 1,
+     "location": "location.sunspire.deep_stacks",
+     "reqFlag": "flag.beat.library_defended",
+     "forbidFlag": "",
+     "completionFlag": "",
+     "activatedFlag": "",
+     "optional": false,
+     "description": "quest.main.deep_stacks.obj_rival",
+     "hintKey": "quest.main.deep_stacks.hint_rival",
+     "journalKey": "quest.main.deep_stacks.log_rival"
+    },
+    {
+     "type": 6,
+     "target": "interact.sunspire.sundering_codex",
+     "count": 1,
+     "location": "location.sunspire.deep_stacks",
+     "reqFlag": "flag.beat.rival_parley_done",
+     "forbidFlag": "",
+     "completionFlag": "flag.beat.codex_read",
+     "activatedFlag": "",
+     "optional": false,
+     "description": "quest.main.deep_stacks.obj_codex",
+     "hintKey": "quest.main.deep_stacks.hint_codex",
+     "journalKey": "quest.main.deep_stacks.log_codex"
+    }
+   ],
+   "writes": [
+    {
+     "flag": "flag.main.deep_stacks_done",
+     "via": "completion"
+    },
+    {
+     "flag": "flag.beat.stacks_open",
+     "via": "objective[1].completion"
+    },
+    {
+     "flag": "flag.beat.golems_down",
+     "via": "objective[2].completion"
+    },
+    {
+     "flag": "flag.beat.plinth_a",
+     "via": "objective[3].completion"
+    },
+    {
+     "flag": "flag.beat.plinth_b",
+     "via": "objective[4].completion"
+    },
+    {
+     "flag": "flag.beat.plinth_c",
+     "via": "objective[5].completion"
+    },
+    {
+     "flag": "flag.beat.library_defended",
+     "via": "objective[6].completion"
+    },
+    {
+     "flag": "flag.beat.codex_read",
+     "via": "objective[8].completion"
+    }
+   ],
+   "reads": [
+    {
+     "flag": "flag.main.sundering_pages_done",
+     "via": "autoStart"
+    },
+    {
+     "flag": "flag.beat.stacks_open",
+     "via": "objective[2].required"
+    },
+    {
+     "flag": "flag.beat.golems_down",
+     "via": "objective[3].required"
+    },
+    {
+     "flag": "flag.beat.golems_down",
+     "via": "objective[4].required"
+    },
+    {
+     "flag": "flag.beat.golems_down",
+     "via": "objective[5].required"
+    },
+    {
+     "flag": "flag.beat.seals_broken",
+     "via": "objective[6].required"
+    },
+    {
+     "flag": "flag.beat.library_defended",
+     "via": "objective[7].required"
+    },
+    {
+     "flag": "flag.beat.rival_parley_done",
+     "via": "objective[8].required"
+    }
+   ],
+   "locKeys": [
+    "dlg.sunspire_archivist.speaker",
+    "quest.main.deep_stacks.detail",
+    "quest.main.deep_stacks.hint_codex",
+    "quest.main.deep_stacks.hint_door",
+    "quest.main.deep_stacks.hint_golems",
+    "quest.main.deep_stacks.hint_hold",
+    "quest.main.deep_stacks.hint_library",
+    "quest.main.deep_stacks.hint_plinth_a",
+    "quest.main.deep_stacks.hint_plinth_b",
+    "quest.main.deep_stacks.hint_plinth_c",
+    "quest.main.deep_stacks.hint_rival",
+    "quest.main.deep_stacks.log_codex",
+    "quest.main.deep_stacks.log_door",
+    "quest.main.deep_stacks.log_golems",
+    "quest.main.deep_stacks.log_hold",
+    "quest.main.deep_stacks.log_library",
+    "quest.main.deep_stacks.log_plinth_a",
+    "quest.main.deep_stacks.log_plinth_b",
+    "quest.main.deep_stacks.log_plinth_c",
+    "quest.main.deep_stacks.log_rival",
+    "quest.main.deep_stacks.obj_codex",
+    "quest.main.deep_stacks.obj_door",
+    "quest.main.deep_stacks.obj_golems",
+    "quest.main.deep_stacks.obj_hold",
+    "quest.main.deep_stacks.obj_library",
+    "quest.main.deep_stacks.obj_plinth_a",
+    "quest.main.deep_stacks.obj_plinth_b",
+    "quest.main.deep_stacks.obj_plinth_c",
+    "quest.main.deep_stacks.obj_rival",
+    "quest.main.deep_stacks.summary",
+    "quest.main.deep_stacks.title"
    ]
   },
   {
@@ -1778,25 +2197,266 @@
    ]
   },
   {
+   "id": "quest.main.godfall_choir",
+   "file": "data/quests/MainGodfallChoir.tres",
+   "source": "generated",
+   "title": "quest.main.godfall_choir.title",
+   "summary": "quest.main.godfall_choir.summary",
+   "chapter": "ch.4",
+   "order": 27,
+   "region": "region.celestial",
+   "level": 26,
+   "isMain": true,
+   "isLedger": false,
+   "sequential": false,
+   "autoStart": "flag.main.celestial_landing_done",
+   "completionFlag": "flag.main.godfall_choir_done",
+   "startFlag": "",
+   "failFlag": "",
+   "prerequisite": "",
+   "detailKey": "quest.main.godfall_choir.detail",
+   "giverKey": "dlg.assembly_marshal.speaker",
+   "objectives": [
+    {
+     "type": 2,
+     "target": "location.celestial.fallen_choir",
+     "count": 1,
+     "location": "",
+     "reqFlag": "",
+     "forbidFlag": "",
+     "completionFlag": "flag.beat.choir_reached",
+     "activatedFlag": "",
+     "optional": false,
+     "description": "quest.main.godfall_choir.obj_choir",
+     "hintKey": "quest.main.godfall_choir.hint_choir",
+     "journalKey": "quest.main.godfall_choir.log_choir"
+    },
+    {
+     "type": 0,
+     "target": "enemy.arcane_echo",
+     "count": 4,
+     "location": "location.celestial.fallen_choir",
+     "reqFlag": "flag.beat.choir_reached",
+     "forbidFlag": "flag.beat.choir_answered",
+     "completionFlag": "flag.beat.choir_silenced",
+     "activatedFlag": "",
+     "optional": false,
+     "description": "quest.main.godfall_choir.obj_echoes",
+     "hintKey": "quest.main.godfall_choir.hint_echoes",
+     "journalKey": "quest.main.godfall_choir.log_echoes"
+    },
+    {
+     "type": 8,
+     "target": "flag.beat.choir_passed",
+     "count": 1,
+     "location": "location.celestial.fallen_choir",
+     "reqFlag": "flag.beat.choir_reached",
+     "forbidFlag": "",
+     "completionFlag": "",
+     "activatedFlag": "",
+     "optional": false,
+     "description": "quest.main.godfall_choir.obj_pass",
+     "hintKey": "quest.main.godfall_choir.hint_pass",
+     "journalKey": "quest.main.godfall_choir.log_pass"
+    },
+    {
+     "type": 2,
+     "target": "location.celestial.godfall",
+     "count": 1,
+     "location": "",
+     "reqFlag": "flag.beat.choir_passed",
+     "forbidFlag": "",
+     "completionFlag": "flag.beat.godfall_reached",
+     "activatedFlag": "",
+     "optional": false,
+     "description": "quest.main.godfall_choir.obj_godfall",
+     "hintKey": "quest.main.godfall_choir.hint_godfall",
+     "journalKey": "quest.main.godfall_choir.log_godfall"
+    },
+    {
+     "type": 6,
+     "target": "interact.celestial.anchor_a",
+     "count": 1,
+     "location": "location.celestial.godfall",
+     "reqFlag": "flag.beat.godfall_reached",
+     "forbidFlag": "",
+     "completionFlag": "flag.beat.anchor_a",
+     "activatedFlag": "",
+     "optional": false,
+     "description": "quest.main.godfall_choir.obj_anchor_a",
+     "hintKey": "quest.main.godfall_choir.hint_anchor_a",
+     "journalKey": "quest.main.godfall_choir.log_anchor_a"
+    },
+    {
+     "type": 6,
+     "target": "interact.celestial.anchor_b",
+     "count": 1,
+     "location": "location.celestial.godfall",
+     "reqFlag": "flag.beat.godfall_reached",
+     "forbidFlag": "",
+     "completionFlag": "flag.beat.anchor_b",
+     "activatedFlag": "",
+     "optional": false,
+     "description": "quest.main.godfall_choir.obj_anchor_b",
+     "hintKey": "quest.main.godfall_choir.hint_anchor_b",
+     "journalKey": "quest.main.godfall_choir.log_anchor_b"
+    },
+    {
+     "type": 6,
+     "target": "interact.celestial.anchor_c",
+     "count": 1,
+     "location": "location.celestial.godfall",
+     "reqFlag": "flag.beat.godfall_reached",
+     "forbidFlag": "",
+     "completionFlag": "flag.beat.anchor_c",
+     "activatedFlag": "",
+     "optional": false,
+     "description": "quest.main.godfall_choir.obj_anchor_c",
+     "hintKey": "quest.main.godfall_choir.hint_anchor_c",
+     "journalKey": "quest.main.godfall_choir.log_anchor_c"
+    },
+    {
+     "type": 5,
+     "target": "location.celestial.godfall",
+     "count": 60,
+     "location": "",
+     "reqFlag": "flag.beat.anchors_lit",
+     "forbidFlag": "",
+     "completionFlag": "flag.beat.godfall_held",
+     "activatedFlag": "",
+     "optional": false,
+     "description": "quest.main.godfall_choir.obj_hold",
+     "hintKey": "quest.main.godfall_choir.hint_hold",
+     "journalKey": "quest.main.godfall_choir.log_hold"
+    }
+   ],
+   "writes": [
+    {
+     "flag": "flag.main.godfall_choir_done",
+     "via": "completion"
+    },
+    {
+     "flag": "flag.beat.choir_reached",
+     "via": "objective[0].completion"
+    },
+    {
+     "flag": "flag.beat.choir_silenced",
+     "via": "objective[1].completion"
+    },
+    {
+     "flag": "flag.beat.godfall_reached",
+     "via": "objective[3].completion"
+    },
+    {
+     "flag": "flag.beat.anchor_a",
+     "via": "objective[4].completion"
+    },
+    {
+     "flag": "flag.beat.anchor_b",
+     "via": "objective[5].completion"
+    },
+    {
+     "flag": "flag.beat.anchor_c",
+     "via": "objective[6].completion"
+    },
+    {
+     "flag": "flag.beat.godfall_held",
+     "via": "objective[7].completion"
+    }
+   ],
+   "reads": [
+    {
+     "flag": "flag.main.celestial_landing_done",
+     "via": "autoStart"
+    },
+    {
+     "flag": "flag.beat.choir_reached",
+     "via": "objective[1].required"
+    },
+    {
+     "flag": "flag.beat.choir_answered",
+     "via": "objective[1].forbidden"
+    },
+    {
+     "flag": "flag.beat.choir_reached",
+     "via": "objective[2].required"
+    },
+    {
+     "flag": "flag.beat.choir_passed",
+     "via": "objective[2].milestone"
+    },
+    {
+     "flag": "flag.beat.choir_passed",
+     "via": "objective[3].required"
+    },
+    {
+     "flag": "flag.beat.godfall_reached",
+     "via": "objective[4].required"
+    },
+    {
+     "flag": "flag.beat.godfall_reached",
+     "via": "objective[5].required"
+    },
+    {
+     "flag": "flag.beat.godfall_reached",
+     "via": "objective[6].required"
+    },
+    {
+     "flag": "flag.beat.anchors_lit",
+     "via": "objective[7].required"
+    }
+   ],
+   "locKeys": [
+    "dlg.assembly_marshal.speaker",
+    "quest.main.godfall_choir.detail",
+    "quest.main.godfall_choir.hint_anchor_a",
+    "quest.main.godfall_choir.hint_anchor_b",
+    "quest.main.godfall_choir.hint_anchor_c",
+    "quest.main.godfall_choir.hint_choir",
+    "quest.main.godfall_choir.hint_echoes",
+    "quest.main.godfall_choir.hint_godfall",
+    "quest.main.godfall_choir.hint_hold",
+    "quest.main.godfall_choir.hint_pass",
+    "quest.main.godfall_choir.log_anchor_a",
+    "quest.main.godfall_choir.log_anchor_b",
+    "quest.main.godfall_choir.log_anchor_c",
+    "quest.main.godfall_choir.log_choir",
+    "quest.main.godfall_choir.log_echoes",
+    "quest.main.godfall_choir.log_godfall",
+    "quest.main.godfall_choir.log_hold",
+    "quest.main.godfall_choir.log_pass",
+    "quest.main.godfall_choir.obj_anchor_a",
+    "quest.main.godfall_choir.obj_anchor_b",
+    "quest.main.godfall_choir.obj_anchor_c",
+    "quest.main.godfall_choir.obj_choir",
+    "quest.main.godfall_choir.obj_echoes",
+    "quest.main.godfall_choir.obj_godfall",
+    "quest.main.godfall_choir.obj_hold",
+    "quest.main.godfall_choir.obj_pass",
+    "quest.main.godfall_choir.summary",
+    "quest.main.godfall_choir.title"
+   ]
+  },
+  {
    "id": "quest.main.hidden",
    "file": "data/quests/MainHidden.tres",
    "source": "generated",
    "title": "quest.main.hidden.title",
-   "summary": "quest.main.hidden.summary",
-   "chapter": "",
-   "order": 0,
-   "region": "",
-   "level": 0,
+   "summary": "pale.quest.hidden.summary",
+   "chapter": "ch.2.pale",
+   "order": 22,
+   "region": "region.pale_concord",
+   "level": 22,
    "isMain": true,
    "isLedger": false,
-   "sequential": false,
-   "autoStart": "flag.pale_concord_revealed",
-   "completionFlag": "",
+   "sequential": true,
+   "autoStart": "flag.pale.court_open",
+   "completionFlag": "flag.main.hidden_done",
    "startFlag": "",
    "failFlag": "",
    "prerequisite": "",
-   "detailKey": "",
-   "giverKey": "",
+   "detailKey": "pale.quest.hidden.detail",
+   "giverKey": "pale.dlg.hollow_queen_parley.speaker",
    "objectives": [
     {
      "type": 0,
@@ -1809,43 +2469,69 @@
      "activatedFlag": "",
      "optional": false,
      "description": "quest.main.hidden.obj",
-     "hintKey": "",
-     "journalKey": ""
+     "hintKey": "pale.quest.hidden.hint_queen",
+     "journalKey": "pale.quest.hidden.log_queen"
+    },
+    {
+     "type": 3,
+     "target": "dialogue.hollow_queen_parley",
+     "count": 1,
+     "location": "location.pale.palace",
+     "reqFlag": "",
+     "forbidFlag": "",
+     "completionFlag": "",
+     "activatedFlag": "",
+     "optional": false,
+     "description": "pale.quest.hidden.obj_aftermath",
+     "hintKey": "pale.quest.hidden.hint_aftermath",
+     "journalKey": "pale.quest.hidden.log_aftermath"
     }
    ],
-   "writes": [],
+   "writes": [
+    {
+     "flag": "flag.main.hidden_done",
+     "via": "completion"
+    }
+   ],
    "reads": [
     {
-     "flag": "flag.pale_concord_revealed",
+     "flag": "flag.pale.court_open",
      "via": "autoStart"
     }
    ],
    "locKeys": [
+    "pale.dlg.hollow_queen_parley.speaker",
+    "pale.quest.hidden.detail",
+    "pale.quest.hidden.hint_aftermath",
+    "pale.quest.hidden.hint_queen",
+    "pale.quest.hidden.log_aftermath",
+    "pale.quest.hidden.log_queen",
+    "pale.quest.hidden.obj_aftermath",
+    "pale.quest.hidden.summary",
     "quest.main.hidden.obj",
-    "quest.main.hidden.summary",
     "quest.main.hidden.title"
    ]
   },
   {
-   "id": "quest.main.truth",
-   "file": "data/quests/MainTruth.tres",
+   "id": "quest.main.pale_door",
+   "file": "data/quests/MainPaleDoor.tres",
    "source": "generated",
-   "title": "quest.main.truth.title",
-   "summary": "quest.main.truth.summary",
-   "chapter": "",
-   "order": 0,
-   "region": "",
-   "level": 0,
+   "title": "pale.quest.pale_door.title",
+   "summary": "pale.quest.pale_door.summary",
+   "chapter": "ch.2.pale",
+   "order": 19,
+   "region": "region.pale_concord",
+   "level": 20,
    "isMain": true,
    "isLedger": false,
-   "sequential": false,
-   "autoStart": "flag.hollow_queen_defeated",
-   "completionFlag": "",
+   "sequential": true,
+   "autoStart": "flag.pale_concord_revealed",
+   "completionFlag": "flag.main.pale_door_done",
    "startFlag": "",
    "failFlag": "",
    "prerequisite": "",
-   "detailKey": "",
-   "giverKey": "",
+   "detailKey": "pale.quest.pale_door.detail",
+   "giverKey": "dlg.sunspire_archivist.speaker",
    "objectives": [
     {
      "type": 3,
@@ -1857,22 +2543,951 @@
      "completionFlag": "",
      "activatedFlag": "",
      "optional": false,
-     "description": "quest.main.truth.obj",
-     "hintKey": "",
-     "journalKey": ""
+     "description": "pale.quest.pale_door.obj_archivist",
+     "hintKey": "pale.quest.pale_door.hint_archivist",
+     "journalKey": "pale.quest.pale_door.log_archivist"
+    },
+    {
+     "type": 2,
+     "target": "location.pale.landing",
+     "count": 1,
+     "location": "",
+     "reqFlag": "",
+     "forbidFlag": "",
+     "completionFlag": "",
+     "activatedFlag": "",
+     "optional": false,
+     "description": "pale.quest.pale_door.obj_quay",
+     "hintKey": "pale.quest.pale_door.hint_quay",
+     "journalKey": "pale.quest.pale_door.log_quay"
+    },
+    {
+     "type": 6,
+     "target": "interact.pale.landing_lamp",
+     "count": 1,
+     "location": "location.pale.landing",
+     "reqFlag": "",
+     "forbidFlag": "",
+     "completionFlag": "flag.beat.pale_landing_lit",
+     "activatedFlag": "",
+     "optional": false,
+     "description": "pale.quest.pale_door.obj_lamp",
+     "hintKey": "pale.quest.pale_door.hint_lamp",
+     "journalKey": "pale.quest.pale_door.log_lamp"
     }
    ],
-   "writes": [],
+   "writes": [
+    {
+     "flag": "flag.main.pale_door_done",
+     "via": "completion"
+    },
+    {
+     "flag": "flag.beat.pale_landing_lit",
+     "via": "objective[2].completion"
+    }
+   ],
    "reads": [
     {
-     "flag": "flag.hollow_queen_defeated",
+     "flag": "flag.pale_concord_revealed",
      "via": "autoStart"
     }
    ],
    "locKeys": [
+    "dlg.sunspire_archivist.speaker",
+    "pale.quest.pale_door.detail",
+    "pale.quest.pale_door.hint_archivist",
+    "pale.quest.pale_door.hint_lamp",
+    "pale.quest.pale_door.hint_quay",
+    "pale.quest.pale_door.log_archivist",
+    "pale.quest.pale_door.log_lamp",
+    "pale.quest.pale_door.log_quay",
+    "pale.quest.pale_door.obj_archivist",
+    "pale.quest.pale_door.obj_lamp",
+    "pale.quest.pale_door.obj_quay",
+    "pale.quest.pale_door.summary",
+    "pale.quest.pale_door.title"
+   ]
+  },
+  {
+   "id": "quest.main.queens_count",
+   "file": "data/quests/MainQueensCount.tres",
+   "source": "generated",
+   "title": "pale.quest.queens_count.title",
+   "summary": "pale.quest.queens_count.summary",
+   "chapter": "ch.2.pale",
+   "order": 21,
+   "region": "region.pale_concord",
+   "level": 21,
+   "isMain": true,
+   "isLedger": false,
+   "sequential": true,
+   "autoStart": "flag.main.vesperhold_done",
+   "completionFlag": "flag.pale.court_open",
+   "startFlag": "",
+   "failFlag": "",
+   "prerequisite": "",
+   "detailKey": "pale.quest.queens_count.detail",
+   "giverKey": "pale.dlg.steward.speaker",
+   "objectives": [
+    {
+     "type": 2,
+     "target": "location.pale.court_approach",
+     "count": 1,
+     "location": "",
+     "reqFlag": "",
+     "forbidFlag": "",
+     "completionFlag": "",
+     "activatedFlag": "",
+     "optional": false,
+     "description": "pale.quest.queens_count.obj_approach",
+     "hintKey": "pale.quest.queens_count.hint_approach",
+     "journalKey": "pale.quest.queens_count.log_approach"
+    },
+    {
+     "type": 0,
+     "target": "enemy.hollow_husk",
+     "count": 5,
+     "location": "location.pale.court_approach",
+     "reqFlag": "",
+     "forbidFlag": "",
+     "completionFlag": "",
+     "activatedFlag": "",
+     "optional": false,
+     "description": "pale.quest.queens_count.obj_husks",
+     "hintKey": "pale.quest.queens_count.hint_husks",
+     "journalKey": "pale.quest.queens_count.log_husks"
+    },
+    {
+     "type": 8,
+     "target": "flag.pale.court_open",
+     "count": 1,
+     "location": "location.pale.court_approach",
+     "reqFlag": "",
+     "forbidFlag": "",
+     "completionFlag": "",
+     "activatedFlag": "",
+     "optional": false,
+     "description": "pale.quest.queens_count.obj_stone",
+     "hintKey": "pale.quest.queens_count.hint_stone",
+     "journalKey": "pale.quest.queens_count.log_stone"
+    }
+   ],
+   "writes": [
+    {
+     "flag": "flag.pale.court_open",
+     "via": "completion"
+    }
+   ],
+   "reads": [
+    {
+     "flag": "flag.main.vesperhold_done",
+     "via": "autoStart"
+    },
+    {
+     "flag": "flag.pale.court_open",
+     "via": "objective[2].milestone"
+    }
+   ],
+   "locKeys": [
+    "pale.dlg.steward.speaker",
+    "pale.quest.queens_count.detail",
+    "pale.quest.queens_count.hint_approach",
+    "pale.quest.queens_count.hint_husks",
+    "pale.quest.queens_count.hint_stone",
+    "pale.quest.queens_count.log_approach",
+    "pale.quest.queens_count.log_husks",
+    "pale.quest.queens_count.log_stone",
+    "pale.quest.queens_count.obj_approach",
+    "pale.quest.queens_count.obj_husks",
+    "pale.quest.queens_count.obj_stone",
+    "pale.quest.queens_count.summary",
+    "pale.quest.queens_count.title"
+   ]
+  },
+  {
+   "id": "quest.main.sundered_stair",
+   "file": "data/quests/MainSunderedStair.tres",
+   "source": "generated",
+   "title": "quest.main.sundered_stair.title",
+   "summary": "quest.main.sundered_stair.summary",
+   "chapter": "ch.4",
+   "order": 28,
+   "region": "region.celestial",
+   "level": 27,
+   "isMain": true,
+   "isLedger": false,
+   "sequential": false,
+   "autoStart": "flag.main.godfall_choir_done",
+   "completionFlag": "flag.main.sundered_stair_done",
+   "startFlag": "",
+   "failFlag": "",
+   "prerequisite": "",
+   "detailKey": "quest.main.sundered_stair.detail",
+   "giverKey": "dlg.assembly_marshal.speaker",
+   "objectives": [
+    {
+     "type": 2,
+     "target": "location.celestial.sundered_stair",
+     "count": 1,
+     "location": "",
+     "reqFlag": "",
+     "forbidFlag": "",
+     "completionFlag": "flag.beat.stair_reached",
+     "activatedFlag": "",
+     "optional": false,
+     "description": "quest.main.sundered_stair.obj_stair",
+     "hintKey": "quest.main.sundered_stair.hint_stair",
+     "journalKey": "quest.main.sundered_stair.log_stair"
+    },
+    {
+     "type": 6,
+     "target": "interact.celestial.winch_a",
+     "count": 1,
+     "location": "location.celestial.sundered_stair",
+     "reqFlag": "flag.beat.stair_reached",
+     "forbidFlag": "",
+     "completionFlag": "flag.beat.winch_a",
+     "activatedFlag": "",
+     "optional": false,
+     "description": "quest.main.sundered_stair.obj_winch_a",
+     "hintKey": "quest.main.sundered_stair.hint_winch_a",
+     "journalKey": "quest.main.sundered_stair.log_winch_a"
+    },
+    {
+     "type": 6,
+     "target": "interact.celestial.winch_b",
+     "count": 1,
+     "location": "location.celestial.sundered_stair",
+     "reqFlag": "flag.beat.stair_reached",
+     "forbidFlag": "",
+     "completionFlag": "flag.beat.winch_b",
+     "activatedFlag": "",
+     "optional": false,
+     "description": "quest.main.sundered_stair.obj_winch_b",
+     "hintKey": "quest.main.sundered_stair.hint_winch_b",
+     "journalKey": "quest.main.sundered_stair.log_winch_b"
+    },
+    {
+     "type": 0,
+     "target": "enemy.stone_sentinel",
+     "count": 3,
+     "location": "location.celestial.sundered_stair",
+     "reqFlag": "flag.beat.stair_unsealed",
+     "forbidFlag": "",
+     "completionFlag": "flag.beat.sentinels_down",
+     "activatedFlag": "",
+     "optional": false,
+     "description": "quest.main.sundered_stair.obj_sentinels",
+     "hintKey": "quest.main.sundered_stair.hint_sentinels",
+     "journalKey": "quest.main.sundered_stair.log_sentinels"
+    },
+    {
+     "type": 5,
+     "target": "location.celestial.sundered_stair",
+     "count": 45,
+     "location": "",
+     "reqFlag": "flag.beat.sentinels_down",
+     "forbidFlag": "",
+     "completionFlag": "flag.beat.stair_held",
+     "activatedFlag": "",
+     "optional": false,
+     "description": "quest.main.sundered_stair.obj_hold",
+     "hintKey": "quest.main.sundered_stair.hint_hold",
+     "journalKey": "quest.main.sundered_stair.log_hold"
+    },
+    {
+     "type": 4,
+     "target": "companion.kael",
+     "count": 1,
+     "location": "location.celestial.sundered_stair",
+     "reqFlag": "flag.party.companion.kael",
+     "forbidFlag": "",
+     "completionFlag": "",
+     "activatedFlag": "",
+     "optional": true,
+     "description": "quest.main.sundered_stair.obj_kael",
+     "hintKey": "quest.main.sundered_stair.hint_kael",
+     "journalKey": "quest.main.sundered_stair.log_kael"
+    },
+    {
+     "type": 3,
+     "target": "dialogue.rival_concourse",
+     "count": 1,
+     "location": "location.celestial.sundered_stair",
+     "reqFlag": "flag.beat.stair_held",
+     "forbidFlag": "",
+     "completionFlag": "flag.beat.stair_echo",
+     "activatedFlag": "",
+     "optional": false,
+     "description": "quest.main.sundered_stair.obj_echo",
+     "hintKey": "quest.main.sundered_stair.hint_echo",
+     "journalKey": "quest.main.sundered_stair.log_echo"
+    },
+    {
+     "type": 2,
+     "target": "location.celestial.knight_gate",
+     "count": 1,
+     "location": "",
+     "reqFlag": "flag.beat.stair_echo",
+     "forbidFlag": "",
+     "completionFlag": "",
+     "activatedFlag": "",
+     "optional": false,
+     "description": "quest.main.sundered_stair.obj_gate",
+     "hintKey": "quest.main.sundered_stair.hint_gate",
+     "journalKey": "quest.main.sundered_stair.log_gate"
+    }
+   ],
+   "writes": [
+    {
+     "flag": "flag.main.sundered_stair_done",
+     "via": "completion"
+    },
+    {
+     "flag": "flag.beat.stair_reached",
+     "via": "objective[0].completion"
+    },
+    {
+     "flag": "flag.beat.winch_a",
+     "via": "objective[1].completion"
+    },
+    {
+     "flag": "flag.beat.winch_b",
+     "via": "objective[2].completion"
+    },
+    {
+     "flag": "flag.beat.sentinels_down",
+     "via": "objective[3].completion"
+    },
+    {
+     "flag": "flag.beat.stair_held",
+     "via": "objective[4].completion"
+    },
+    {
+     "flag": "flag.beat.stair_echo",
+     "via": "objective[6].completion"
+    }
+   ],
+   "reads": [
+    {
+     "flag": "flag.main.godfall_choir_done",
+     "via": "autoStart"
+    },
+    {
+     "flag": "flag.beat.stair_reached",
+     "via": "objective[1].required"
+    },
+    {
+     "flag": "flag.beat.stair_reached",
+     "via": "objective[2].required"
+    },
+    {
+     "flag": "flag.beat.stair_unsealed",
+     "via": "objective[3].required"
+    },
+    {
+     "flag": "flag.beat.sentinels_down",
+     "via": "objective[4].required"
+    },
+    {
+     "flag": "flag.party.companion.kael",
+     "via": "objective[5].required"
+    },
+    {
+     "flag": "flag.beat.stair_held",
+     "via": "objective[6].required"
+    },
+    {
+     "flag": "flag.beat.stair_echo",
+     "via": "objective[7].required"
+    }
+   ],
+   "locKeys": [
+    "dlg.assembly_marshal.speaker",
+    "quest.main.sundered_stair.detail",
+    "quest.main.sundered_stair.hint_echo",
+    "quest.main.sundered_stair.hint_gate",
+    "quest.main.sundered_stair.hint_hold",
+    "quest.main.sundered_stair.hint_kael",
+    "quest.main.sundered_stair.hint_sentinels",
+    "quest.main.sundered_stair.hint_stair",
+    "quest.main.sundered_stair.hint_winch_a",
+    "quest.main.sundered_stair.hint_winch_b",
+    "quest.main.sundered_stair.log_echo",
+    "quest.main.sundered_stair.log_gate",
+    "quest.main.sundered_stair.log_hold",
+    "quest.main.sundered_stair.log_kael",
+    "quest.main.sundered_stair.log_sentinels",
+    "quest.main.sundered_stair.log_stair",
+    "quest.main.sundered_stair.log_winch_a",
+    "quest.main.sundered_stair.log_winch_b",
+    "quest.main.sundered_stair.obj_echo",
+    "quest.main.sundered_stair.obj_gate",
+    "quest.main.sundered_stair.obj_hold",
+    "quest.main.sundered_stair.obj_kael",
+    "quest.main.sundered_stair.obj_sentinels",
+    "quest.main.sundered_stair.obj_stair",
+    "quest.main.sundered_stair.obj_winch_a",
+    "quest.main.sundered_stair.obj_winch_b",
+    "quest.main.sundered_stair.summary",
+    "quest.main.sundered_stair.title"
+   ]
+  },
+  {
+   "id": "quest.main.sundering_pages",
+   "file": "data/quests/MainSunderingPages.tres",
+   "source": "generated",
+   "title": "quest.main.sundering_pages.title",
+   "summary": "quest.main.sundering_pages.summary",
+   "chapter": "ch.3",
+   "order": 23,
+   "region": "region.sunspire",
+   "level": 22,
+   "isMain": true,
+   "isLedger": false,
+   "sequential": true,
+   "autoStart": "flag.main.hidden_done",
+   "completionFlag": "flag.main.sundering_pages_done",
+   "startFlag": "",
+   "failFlag": "",
+   "prerequisite": "",
+   "detailKey": "quest.main.sundering_pages.detail",
+   "giverKey": "dlg.sunspire_archivist.speaker",
+   "objectives": [
+    {
+     "type": 8,
+     "target": "flag.testimonies_all",
+     "count": 1,
+     "location": "",
+     "reqFlag": "",
+     "forbidFlag": "",
+     "completionFlag": "",
+     "activatedFlag": "",
+     "optional": false,
+     "description": "quest.main.sundering_pages.obj_gather",
+     "hintKey": "quest.main.sundering_pages.hint_gather",
+     "journalKey": "quest.main.sundering_pages.log_gather"
+    },
+    {
+     "type": 2,
+     "target": "location.sunspire.library",
+     "count": 1,
+     "location": "",
+     "reqFlag": "",
+     "forbidFlag": "",
+     "completionFlag": "",
+     "activatedFlag": "",
+     "optional": false,
+     "description": "quest.main.sundering_pages.obj_library",
+     "hintKey": "quest.main.sundering_pages.hint_library",
+     "journalKey": "quest.main.sundering_pages.log_library"
+    },
+    {
+     "type": 3,
+     "target": "dialogue.sunspire_archivist",
+     "count": 1,
+     "location": "location.sunspire.library",
+     "reqFlag": "",
+     "forbidFlag": "",
+     "completionFlag": "",
+     "activatedFlag": "",
+     "optional": false,
+     "description": "quest.main.sundering_pages.obj_archivist",
+     "hintKey": "quest.main.sundering_pages.hint_archivist",
+     "journalKey": "quest.main.sundering_pages.log_archivist"
+    },
+    {
+     "type": 6,
+     "target": "interact.sunspire.reading_table",
+     "count": 1,
+     "location": "location.sunspire.library",
+     "reqFlag": "",
+     "forbidFlag": "",
+     "completionFlag": "flag.beat.pages_read",
+     "activatedFlag": "",
+     "optional": false,
+     "description": "quest.main.sundering_pages.obj_table",
+     "hintKey": "quest.main.sundering_pages.hint_table",
+     "journalKey": "quest.main.sundering_pages.log_table"
+    },
+    {
+     "type": 2,
+     "target": "location.embermarket.annexe",
+     "count": 1,
+     "location": "",
+     "reqFlag": "",
+     "forbidFlag": "",
+     "completionFlag": "",
+     "activatedFlag": "",
+     "optional": false,
+     "description": "quest.main.sundering_pages.obj_annexe",
+     "hintKey": "quest.main.sundering_pages.hint_annexe",
+     "journalKey": "quest.main.sundering_pages.log_annexe"
+    },
+    {
+     "type": 3,
+     "target": "dialogue.archive_keeper",
+     "count": 1,
+     "location": "location.embermarket.annexe",
+     "reqFlag": "",
+     "forbidFlag": "",
+     "completionFlag": "",
+     "activatedFlag": "",
+     "optional": false,
+     "description": "quest.main.sundering_pages.obj_keeper",
+     "hintKey": "quest.main.sundering_pages.hint_keeper",
+     "journalKey": "quest.main.sundering_pages.log_keeper"
+    }
+   ],
+   "writes": [
+    {
+     "flag": "flag.main.sundering_pages_done",
+     "via": "completion"
+    },
+    {
+     "flag": "flag.beat.pages_read",
+     "via": "objective[3].completion"
+    }
+   ],
+   "reads": [
+    {
+     "flag": "flag.main.hidden_done",
+     "via": "autoStart"
+    },
+    {
+     "flag": "flag.testimonies_all",
+     "via": "objective[0].milestone"
+    }
+   ],
+   "locKeys": [
+    "dlg.sunspire_archivist.speaker",
+    "quest.main.sundering_pages.detail",
+    "quest.main.sundering_pages.hint_annexe",
+    "quest.main.sundering_pages.hint_archivist",
+    "quest.main.sundering_pages.hint_gather",
+    "quest.main.sundering_pages.hint_keeper",
+    "quest.main.sundering_pages.hint_library",
+    "quest.main.sundering_pages.hint_table",
+    "quest.main.sundering_pages.log_annexe",
+    "quest.main.sundering_pages.log_archivist",
+    "quest.main.sundering_pages.log_gather",
+    "quest.main.sundering_pages.log_keeper",
+    "quest.main.sundering_pages.log_library",
+    "quest.main.sundering_pages.log_table",
+    "quest.main.sundering_pages.obj_annexe",
+    "quest.main.sundering_pages.obj_archivist",
+    "quest.main.sundering_pages.obj_gather",
+    "quest.main.sundering_pages.obj_keeper",
+    "quest.main.sundering_pages.obj_library",
+    "quest.main.sundering_pages.obj_table",
+    "quest.main.sundering_pages.summary",
+    "quest.main.sundering_pages.title"
+   ]
+  },
+  {
+   "id": "quest.main.throne",
+   "file": "data/quests/MainThrone.tres",
+   "source": "generated",
+   "title": "quest.main.throne.title",
+   "summary": "quest.main.throne.summary",
+   "chapter": "ch.4",
+   "order": 30,
+   "region": "region.celestial",
+   "level": 29,
+   "isMain": true,
+   "isLedger": false,
+   "sequential": false,
+   "autoStart": "flag.main.celestial_done",
+   "completionFlag": "flag.main.throne_done",
+   "startFlag": "",
+   "failFlag": "",
+   "prerequisite": "",
+   "detailKey": "quest.main.throne.detail",
+   "giverKey": "dlg.throne.speaker",
+   "objectives": [
+    {
+     "type": 6,
+     "target": "interact.celestial.entropy_stele_a",
+     "count": 1,
+     "location": "location.celestial.ash_throne",
+     "reqFlag": "",
+     "forbidFlag": "",
+     "completionFlag": "",
+     "activatedFlag": "",
+     "optional": true,
+     "description": "quest.main.throne.obj_stele_a",
+     "hintKey": "quest.main.throne.hint_stele_a",
+     "journalKey": "quest.main.throne.log_stele_a"
+    },
+    {
+     "type": 6,
+     "target": "interact.celestial.entropy_stele_b",
+     "count": 1,
+     "location": "location.celestial.ash_throne",
+     "reqFlag": "",
+     "forbidFlag": "",
+     "completionFlag": "",
+     "activatedFlag": "",
+     "optional": true,
+     "description": "quest.main.throne.obj_stele_b",
+     "hintKey": "quest.main.throne.hint_stele_b",
+     "journalKey": "quest.main.throne.log_stele_b"
+    },
+    {
+     "type": 6,
+     "target": "interact.celestial.entropy_stele_c",
+     "count": 1,
+     "location": "location.celestial.ash_throne",
+     "reqFlag": "",
+     "forbidFlag": "",
+     "completionFlag": "",
+     "activatedFlag": "",
+     "optional": true,
+     "description": "quest.main.throne.obj_stele_c",
+     "hintKey": "quest.main.throne.hint_stele_c",
+     "journalKey": "quest.main.throne.log_stele_c"
+    },
+    {
+     "type": 8,
+     "target": "flag.beat.throne_decided",
+     "count": 1,
+     "location": "location.celestial.ash_throne",
+     "reqFlag": "",
+     "forbidFlag": "",
+     "completionFlag": "",
+     "activatedFlag": "",
+     "optional": false,
+     "description": "quest.main.throne.obj_decide",
+     "hintKey": "quest.main.throne.hint_decide",
+     "journalKey": "quest.main.throne.log_decide"
+    }
+   ],
+   "writes": [
+    {
+     "flag": "flag.main.throne_done",
+     "via": "completion"
+    }
+   ],
+   "reads": [
+    {
+     "flag": "flag.main.celestial_done",
+     "via": "autoStart"
+    },
+    {
+     "flag": "flag.beat.throne_decided",
+     "via": "objective[3].milestone"
+    }
+   ],
+   "locKeys": [
+    "dlg.throne.speaker",
+    "quest.main.throne.detail",
+    "quest.main.throne.hint_decide",
+    "quest.main.throne.hint_stele_a",
+    "quest.main.throne.hint_stele_b",
+    "quest.main.throne.hint_stele_c",
+    "quest.main.throne.log_decide",
+    "quest.main.throne.log_stele_a",
+    "quest.main.throne.log_stele_b",
+    "quest.main.throne.log_stele_c",
+    "quest.main.throne.obj_decide",
+    "quest.main.throne.obj_stele_a",
+    "quest.main.throne.obj_stele_b",
+    "quest.main.throne.obj_stele_c",
+    "quest.main.throne.summary",
+    "quest.main.throne.title"
+   ]
+  },
+  {
+   "id": "quest.main.truth",
+   "file": "data/quests/MainTruth.tres",
+   "source": "generated",
+   "title": "quest.main.truth.title",
+   "summary": "quest.main.truth.summary",
+   "chapter": "ch.3",
+   "order": 25,
+   "region": "region.sunspire",
+   "level": 24,
+   "isMain": true,
+   "isLedger": false,
+   "sequential": true,
+   "autoStart": "flag.main.deep_stacks_done",
+   "completionFlag": "flag.main.truth_done",
+   "startFlag": "",
+   "failFlag": "",
+   "prerequisite": "",
+   "detailKey": "quest.main.truth.detail",
+   "giverKey": "dlg.sunspire_archivist.speaker",
+   "objectives": [
+    {
+     "type": 3,
+     "target": "dialogue.sunspire_archivist",
+     "count": 1,
+     "location": "location.sunspire.library",
+     "reqFlag": "flag.beat.codex_read",
+     "forbidFlag": "",
+     "completionFlag": "",
+     "activatedFlag": "",
+     "optional": false,
+     "description": "quest.main.truth.obj",
+     "hintKey": "quest.main.truth.hint_reading",
+     "journalKey": "quest.main.truth.log_reading"
+    },
+    {
+     "type": 8,
+     "target": "flag.celestial_gate_open",
+     "count": 1,
+     "location": "location.sunspire.library",
+     "reqFlag": "",
+     "forbidFlag": "",
+     "completionFlag": "",
+     "activatedFlag": "",
+     "optional": false,
+     "description": "quest.main.truth.obj_open",
+     "hintKey": "quest.main.truth.hint_open",
+     "journalKey": "quest.main.truth.log_open"
+    }
+   ],
+   "writes": [
+    {
+     "flag": "flag.main.truth_done",
+     "via": "completion"
+    }
+   ],
+   "reads": [
+    {
+     "flag": "flag.main.deep_stacks_done",
+     "via": "autoStart"
+    },
+    {
+     "flag": "flag.beat.codex_read",
+     "via": "objective[0].required"
+    },
+    {
+     "flag": "flag.celestial_gate_open",
+     "via": "objective[1].milestone"
+    }
+   ],
+   "locKeys": [
+    "dlg.sunspire_archivist.speaker",
+    "quest.main.truth.detail",
+    "quest.main.truth.hint_open",
+    "quest.main.truth.hint_reading",
+    "quest.main.truth.log_open",
+    "quest.main.truth.log_reading",
     "quest.main.truth.obj",
+    "quest.main.truth.obj_open",
     "quest.main.truth.summary",
     "quest.main.truth.title"
+   ]
+  },
+  {
+   "id": "quest.main.vesperhold",
+   "file": "data/quests/MainVesperhold.tres",
+   "source": "generated",
+   "title": "pale.quest.vesperhold.title",
+   "summary": "pale.quest.vesperhold.summary",
+   "chapter": "ch.2.pale",
+   "order": 20,
+   "region": "region.pale_concord",
+   "level": 20,
+   "isMain": true,
+   "isLedger": false,
+   "sequential": true,
+   "autoStart": "flag.main.pale_door_done",
+   "completionFlag": "flag.main.vesperhold_done",
+   "startFlag": "",
+   "failFlag": "",
+   "prerequisite": "",
+   "detailKey": "pale.quest.vesperhold.detail",
+   "giverKey": "pale.dlg.steward.speaker",
+   "objectives": [
+    {
+     "type": 2,
+     "target": "location.pale.city",
+     "count": 1,
+     "location": "",
+     "reqFlag": "",
+     "forbidFlag": "",
+     "completionFlag": "",
+     "activatedFlag": "",
+     "optional": false,
+     "description": "pale.quest.vesperhold.obj_city",
+     "hintKey": "pale.quest.vesperhold.hint_city",
+     "journalKey": "pale.quest.vesperhold.log_city"
+    },
+    {
+     "type": 3,
+     "target": "dialogue.undying_steward",
+     "count": 1,
+     "location": "location.pale.city",
+     "reqFlag": "",
+     "forbidFlag": "",
+     "completionFlag": "",
+     "activatedFlag": "",
+     "optional": false,
+     "description": "pale.quest.vesperhold.obj_steward",
+     "hintKey": "pale.quest.vesperhold.hint_steward",
+     "journalKey": "pale.quest.vesperhold.log_steward"
+    },
+    {
+     "type": 3,
+     "target": "dialogue.undying_lamplighter",
+     "count": 1,
+     "location": "location.pale.city",
+     "reqFlag": "",
+     "forbidFlag": "",
+     "completionFlag": "",
+     "activatedFlag": "",
+     "optional": false,
+     "description": "pale.quest.vesperhold.obj_lamplighter",
+     "hintKey": "pale.quest.vesperhold.hint_lamplighter",
+     "journalKey": "pale.quest.vesperhold.log_lamplighter"
+    },
+    {
+     "type": 3,
+     "target": "dialogue.undying_baker",
+     "count": 1,
+     "location": "location.pale.city",
+     "reqFlag": "",
+     "forbidFlag": "",
+     "completionFlag": "",
+     "activatedFlag": "",
+     "optional": false,
+     "description": "pale.quest.vesperhold.obj_baker",
+     "hintKey": "pale.quest.vesperhold.hint_baker",
+     "journalKey": "pale.quest.vesperhold.log_baker"
+    },
+    {
+     "type": 3,
+     "target": "dialogue.undying_clockkeeper",
+     "count": 1,
+     "location": "location.pale.city",
+     "reqFlag": "",
+     "forbidFlag": "",
+     "completionFlag": "",
+     "activatedFlag": "",
+     "optional": false,
+     "description": "pale.quest.vesperhold.obj_clockkeeper",
+     "hintKey": "pale.quest.vesperhold.hint_clockkeeper",
+     "journalKey": "pale.quest.vesperhold.log_clockkeeper"
+    },
+    {
+     "type": 6,
+     "target": "interact.pale.dusk_registry",
+     "count": 1,
+     "location": "location.pale.city",
+     "reqFlag": "",
+     "forbidFlag": "",
+     "completionFlag": "flag.beat.registry_read",
+     "activatedFlag": "",
+     "optional": false,
+     "description": "pale.quest.vesperhold.obj_registry",
+     "hintKey": "pale.quest.vesperhold.hint_registry",
+     "journalKey": "pale.quest.vesperhold.log_registry"
+    },
+    {
+     "type": 6,
+     "target": "interact.pale.lamp_signing",
+     "count": 1,
+     "location": "location.pale.city",
+     "reqFlag": "",
+     "forbidFlag": "",
+     "completionFlag": "flag.beat.lamp_signing",
+     "activatedFlag": "",
+     "optional": false,
+     "description": "pale.quest.vesperhold.obj_lamp_signing",
+     "hintKey": "pale.quest.vesperhold.hint_lamp_signing",
+     "journalKey": "pale.quest.vesperhold.log_lamp_signing"
+    },
+    {
+     "type": 6,
+     "target": "interact.pale.lamp_cradle",
+     "count": 1,
+     "location": "location.pale.city",
+     "reqFlag": "",
+     "forbidFlag": "",
+     "completionFlag": "flag.beat.lamp_cradle",
+     "activatedFlag": "",
+     "optional": false,
+     "description": "pale.quest.vesperhold.obj_lamp_cradle",
+     "hintKey": "pale.quest.vesperhold.hint_lamp_cradle",
+     "journalKey": "pale.quest.vesperhold.log_lamp_cradle"
+    },
+    {
+     "type": 6,
+     "target": "interact.pale.lamp_queen",
+     "count": 1,
+     "location": "location.pale.city",
+     "reqFlag": "",
+     "forbidFlag": "",
+     "completionFlag": "flag.beat.lamp_queen",
+     "activatedFlag": "",
+     "optional": false,
+     "description": "pale.quest.vesperhold.obj_lamp_queen",
+     "hintKey": "pale.quest.vesperhold.hint_lamp_queen",
+     "journalKey": "pale.quest.vesperhold.log_lamp_queen"
+    }
+   ],
+   "writes": [
+    {
+     "flag": "flag.main.vesperhold_done",
+     "via": "completion"
+    },
+    {
+     "flag": "flag.beat.registry_read",
+     "via": "objective[5].completion"
+    },
+    {
+     "flag": "flag.beat.lamp_signing",
+     "via": "objective[6].completion"
+    },
+    {
+     "flag": "flag.beat.lamp_cradle",
+     "via": "objective[7].completion"
+    },
+    {
+     "flag": "flag.beat.lamp_queen",
+     "via": "objective[8].completion"
+    }
+   ],
+   "reads": [
+    {
+     "flag": "flag.main.pale_door_done",
+     "via": "autoStart"
+    }
+   ],
+   "locKeys": [
+    "pale.dlg.steward.speaker",
+    "pale.quest.vesperhold.detail",
+    "pale.quest.vesperhold.hint_baker",
+    "pale.quest.vesperhold.hint_city",
+    "pale.quest.vesperhold.hint_clockkeeper",
+    "pale.quest.vesperhold.hint_lamp_cradle",
+    "pale.quest.vesperhold.hint_lamp_queen",
+    "pale.quest.vesperhold.hint_lamp_signing",
+    "pale.quest.vesperhold.hint_lamplighter",
+    "pale.quest.vesperhold.hint_registry",
+    "pale.quest.vesperhold.hint_steward",
+    "pale.quest.vesperhold.log_baker",
+    "pale.quest.vesperhold.log_city",
+    "pale.quest.vesperhold.log_clockkeeper",
+    "pale.quest.vesperhold.log_lamp_cradle",
+    "pale.quest.vesperhold.log_lamp_queen",
+    "pale.quest.vesperhold.log_lamp_signing",
+    "pale.quest.vesperhold.log_lamplighter",
+    "pale.quest.vesperhold.log_registry",
+    "pale.quest.vesperhold.log_steward",
+    "pale.quest.vesperhold.obj_baker",
+    "pale.quest.vesperhold.obj_city",
+    "pale.quest.vesperhold.obj_clockkeeper",
+    "pale.quest.vesperhold.obj_lamp_cradle",
+    "pale.quest.vesperhold.obj_lamp_queen",
+    "pale.quest.vesperhold.obj_lamp_signing",
+    "pale.quest.vesperhold.obj_lamplighter",
+    "pale.quest.vesperhold.obj_registry",
+    "pale.quest.vesperhold.obj_steward",
+    "pale.quest.vesperhold.summary",
+    "pale.quest.vesperhold.title"
    ]
   },
   {
@@ -2452,6 +4067,567 @@
  ],
  "dialogues": [
   {
+   "id": "dialogue.ally_dray_pressed",
+   "file": "data/dialogue/AllyDrayPressed.tres",
+   "source": "generated",
+   "speaker": "dlg.ally_dray_pressed.speaker",
+   "start": "root",
+   "startVariants": [],
+   "nodes": [
+    {
+     "id": "root",
+     "choices": 2,
+     "gotos": [
+      "gift"
+     ]
+    },
+    {
+     "id": "gift",
+     "choices": 1,
+     "gotos": []
+    }
+   ],
+   "flagsSet": [
+    "flag.boon.dray_pressed"
+   ],
+   "flagsCleared": [],
+   "flagsRead": [
+    "flag.boon.dray_pressed"
+   ],
+   "questsStarted": [],
+   "sites": [
+    {
+     "flag": "flag.boon.dray_pressed",
+     "kind": "read",
+     "node": "root",
+     "at": "choice[0]"
+    },
+    {
+     "flag": "flag.boon.dray_pressed",
+     "kind": "set",
+     "node": "root",
+     "at": "choice[0]"
+    }
+   ],
+   "locKeys": [
+    "dlg.ally.c_leave",
+    "dlg.ally.c_take",
+    "dlg.ally.gift",
+    "dlg.ally_dray_pressed.speaker",
+    "landing2.fork.dray_pressed"
+   ]
+  },
+  {
+   "id": "dialogue.ally_dray_spared",
+   "file": "data/dialogue/AllyDraySpared.tres",
+   "source": "generated",
+   "speaker": "dlg.ally_dray_spared.speaker",
+   "start": "root",
+   "startVariants": [],
+   "nodes": [
+    {
+     "id": "root",
+     "choices": 2,
+     "gotos": [
+      "gift"
+     ]
+    },
+    {
+     "id": "gift",
+     "choices": 1,
+     "gotos": []
+    }
+   ],
+   "flagsSet": [
+    "flag.boon.dray_spared"
+   ],
+   "flagsCleared": [],
+   "flagsRead": [
+    "flag.boon.dray_spared"
+   ],
+   "questsStarted": [],
+   "sites": [
+    {
+     "flag": "flag.boon.dray_spared",
+     "kind": "read",
+     "node": "root",
+     "at": "choice[0]"
+    },
+    {
+     "flag": "flag.boon.dray_spared",
+     "kind": "set",
+     "node": "root",
+     "at": "choice[0]"
+    }
+   ],
+   "locKeys": [
+    "dlg.ally.c_leave",
+    "dlg.ally.c_take",
+    "dlg.ally.gift",
+    "dlg.ally_dray_spared.speaker",
+    "landing2.fork.dray_spared"
+   ]
+  },
+  {
+   "id": "dialogue.ally_flock_exposed",
+   "file": "data/dialogue/AllyFlockExposed.tres",
+   "source": "generated",
+   "speaker": "dlg.ally_flock_exposed.speaker",
+   "start": "root",
+   "startVariants": [],
+   "nodes": [
+    {
+     "id": "root",
+     "choices": 2,
+     "gotos": [
+      "gift"
+     ]
+    },
+    {
+     "id": "gift",
+     "choices": 1,
+     "gotos": []
+    }
+   ],
+   "flagsSet": [
+    "flag.boon.flock_exposed"
+   ],
+   "flagsCleared": [],
+   "flagsRead": [
+    "flag.boon.flock_exposed"
+   ],
+   "questsStarted": [],
+   "sites": [
+    {
+     "flag": "flag.boon.flock_exposed",
+     "kind": "read",
+     "node": "root",
+     "at": "choice[0]"
+    },
+    {
+     "flag": "flag.boon.flock_exposed",
+     "kind": "set",
+     "node": "root",
+     "at": "choice[0]"
+    }
+   ],
+   "locKeys": [
+    "dlg.ally.c_leave",
+    "dlg.ally.c_take",
+    "dlg.ally.gift",
+    "dlg.ally_flock_exposed.speaker",
+    "landing2.fork.flock_exposed"
+   ]
+  },
+  {
+   "id": "dialogue.ally_flock_kin",
+   "file": "data/dialogue/AllyFlockKin.tres",
+   "source": "generated",
+   "speaker": "dlg.ally_flock_kin.speaker",
+   "start": "root",
+   "startVariants": [],
+   "nodes": [
+    {
+     "id": "root",
+     "choices": 2,
+     "gotos": [
+      "gift"
+     ]
+    },
+    {
+     "id": "gift",
+     "choices": 1,
+     "gotos": []
+    }
+   ],
+   "flagsSet": [
+    "flag.boon.flock_kin"
+   ],
+   "flagsCleared": [],
+   "flagsRead": [
+    "flag.boon.flock_kin"
+   ],
+   "questsStarted": [],
+   "sites": [
+    {
+     "flag": "flag.boon.flock_kin",
+     "kind": "read",
+     "node": "root",
+     "at": "choice[0]"
+    },
+    {
+     "flag": "flag.boon.flock_kin",
+     "kind": "set",
+     "node": "root",
+     "at": "choice[0]"
+    }
+   ],
+   "locKeys": [
+    "dlg.ally.c_leave",
+    "dlg.ally.c_take",
+    "dlg.ally.gift",
+    "dlg.ally_flock_kin.speaker",
+    "landing2.fork.flock_kin"
+   ]
+  },
+  {
+   "id": "dialogue.ally_flock_turned",
+   "file": "data/dialogue/AllyFlockTurned.tres",
+   "source": "generated",
+   "speaker": "dlg.ally_flock_turned.speaker",
+   "start": "root",
+   "startVariants": [],
+   "nodes": [
+    {
+     "id": "root",
+     "choices": 2,
+     "gotos": [
+      "gift"
+     ]
+    },
+    {
+     "id": "gift",
+     "choices": 1,
+     "gotos": []
+    }
+   ],
+   "flagsSet": [
+    "flag.boon.flock_turned"
+   ],
+   "flagsCleared": [],
+   "flagsRead": [
+    "flag.boon.flock_turned"
+   ],
+   "questsStarted": [],
+   "sites": [
+    {
+     "flag": "flag.boon.flock_turned",
+     "kind": "read",
+     "node": "root",
+     "at": "choice[0]"
+    },
+    {
+     "flag": "flag.boon.flock_turned",
+     "kind": "set",
+     "node": "root",
+     "at": "choice[0]"
+    }
+   ],
+   "locKeys": [
+    "dlg.ally.c_leave",
+    "dlg.ally.c_take",
+    "dlg.ally.gift",
+    "dlg.ally_flock_turned.speaker",
+    "landing2.fork.flock_turned"
+   ]
+  },
+  {
+   "id": "dialogue.ally_halvar",
+   "file": "data/dialogue/AllyHalvar.tres",
+   "source": "generated",
+   "speaker": "dlg.ally_halvar.speaker",
+   "start": "root",
+   "startVariants": [],
+   "nodes": [
+    {
+     "id": "root",
+     "choices": 2,
+     "gotos": [
+      "gift"
+     ]
+    },
+    {
+     "id": "gift",
+     "choices": 1,
+     "gotos": []
+    }
+   ],
+   "flagsSet": [
+    "flag.boon.halvar"
+   ],
+   "flagsCleared": [],
+   "flagsRead": [
+    "flag.boon.halvar"
+   ],
+   "questsStarted": [],
+   "sites": [
+    {
+     "flag": "flag.boon.halvar",
+     "kind": "read",
+     "node": "root",
+     "at": "choice[0]"
+    },
+    {
+     "flag": "flag.boon.halvar",
+     "kind": "set",
+     "node": "root",
+     "at": "choice[0]"
+    }
+   ],
+   "locKeys": [
+    "dlg.ally.c_leave",
+    "dlg.ally.c_take",
+    "dlg.ally.gift",
+    "dlg.ally_halvar.speaker",
+    "landing2.fork.halvar"
+   ]
+  },
+  {
+   "id": "dialogue.ally_herd_calmed",
+   "file": "data/dialogue/AllyHerdCalmed.tres",
+   "source": "generated",
+   "speaker": "dlg.ally_herd_calmed.speaker",
+   "start": "root",
+   "startVariants": [],
+   "nodes": [
+    {
+     "id": "root",
+     "choices": 2,
+     "gotos": [
+      "gift"
+     ]
+    },
+    {
+     "id": "gift",
+     "choices": 1,
+     "gotos": []
+    }
+   ],
+   "flagsSet": [
+    "flag.boon.herd_calmed"
+   ],
+   "flagsCleared": [],
+   "flagsRead": [
+    "flag.boon.herd_calmed"
+   ],
+   "questsStarted": [],
+   "sites": [
+    {
+     "flag": "flag.boon.herd_calmed",
+     "kind": "read",
+     "node": "root",
+     "at": "choice[0]"
+    },
+    {
+     "flag": "flag.boon.herd_calmed",
+     "kind": "set",
+     "node": "root",
+     "at": "choice[0]"
+    }
+   ],
+   "locKeys": [
+    "dlg.ally.c_leave",
+    "dlg.ally.c_take",
+    "dlg.ally.gift",
+    "dlg.ally_herd_calmed.speaker",
+    "landing2.fork.herd_calmed"
+   ]
+  },
+  {
+   "id": "dialogue.ally_herd_slain",
+   "file": "data/dialogue/AllyHerdSlain.tres",
+   "source": "generated",
+   "speaker": "dlg.ally_herd_slain.speaker",
+   "start": "root",
+   "startVariants": [],
+   "nodes": [
+    {
+     "id": "root",
+     "choices": 2,
+     "gotos": [
+      "gift"
+     ]
+    },
+    {
+     "id": "gift",
+     "choices": 1,
+     "gotos": []
+    }
+   ],
+   "flagsSet": [
+    "flag.boon.herd_slain"
+   ],
+   "flagsCleared": [],
+   "flagsRead": [
+    "flag.boon.herd_slain"
+   ],
+   "questsStarted": [],
+   "sites": [
+    {
+     "flag": "flag.boon.herd_slain",
+     "kind": "read",
+     "node": "root",
+     "at": "choice[0]"
+    },
+    {
+     "flag": "flag.boon.herd_slain",
+     "kind": "set",
+     "node": "root",
+     "at": "choice[0]"
+    }
+   ],
+   "locKeys": [
+    "dlg.ally.c_leave",
+    "dlg.ally.c_take",
+    "dlg.ally.gift",
+    "dlg.ally_herd_slain.speaker",
+    "landing2.fork.herd_slain"
+   ]
+  },
+  {
+   "id": "dialogue.ally_hjalvar",
+   "file": "data/dialogue/AllyHjalvar.tres",
+   "source": "generated",
+   "speaker": "dlg.ally_hjalvar.speaker",
+   "start": "root",
+   "startVariants": [],
+   "nodes": [
+    {
+     "id": "root",
+     "choices": 2,
+     "gotos": [
+      "gift"
+     ]
+    },
+    {
+     "id": "gift",
+     "choices": 1,
+     "gotos": []
+    }
+   ],
+   "flagsSet": [
+    "flag.boon.hjalvar"
+   ],
+   "flagsCleared": [],
+   "flagsRead": [
+    "flag.boon.hjalvar"
+   ],
+   "questsStarted": [],
+   "sites": [
+    {
+     "flag": "flag.boon.hjalvar",
+     "kind": "read",
+     "node": "root",
+     "at": "choice[0]"
+    },
+    {
+     "flag": "flag.boon.hjalvar",
+     "kind": "set",
+     "node": "root",
+     "at": "choice[0]"
+    }
+   ],
+   "locKeys": [
+    "dlg.ally.c_leave",
+    "dlg.ally.c_take",
+    "dlg.ally.gift",
+    "dlg.ally_hjalvar.speaker",
+    "landing2.fork.hjalvar"
+   ]
+  },
+  {
+   "id": "dialogue.ally_queen_kept",
+   "file": "data/dialogue/AllyQueenKept.tres",
+   "source": "generated",
+   "speaker": "dlg.ally_queen_kept.speaker",
+   "start": "root",
+   "startVariants": [],
+   "nodes": [
+    {
+     "id": "root",
+     "choices": 2,
+     "gotos": [
+      "gift"
+     ]
+    },
+    {
+     "id": "gift",
+     "choices": 1,
+     "gotos": []
+    }
+   ],
+   "flagsSet": [
+    "flag.boon.queen_kept"
+   ],
+   "flagsCleared": [],
+   "flagsRead": [
+    "flag.boon.queen_kept"
+   ],
+   "questsStarted": [],
+   "sites": [
+    {
+     "flag": "flag.boon.queen_kept",
+     "kind": "read",
+     "node": "root",
+     "at": "choice[0]"
+    },
+    {
+     "flag": "flag.boon.queen_kept",
+     "kind": "set",
+     "node": "root",
+     "at": "choice[0]"
+    }
+   ],
+   "locKeys": [
+    "dlg.ally.c_leave",
+    "dlg.ally.c_take",
+    "dlg.ally.gift",
+    "dlg.ally_queen_kept.speaker",
+    "landing2.fork.queen_kept"
+   ]
+  },
+  {
+   "id": "dialogue.ally_queen_released",
+   "file": "data/dialogue/AllyQueenReleased.tres",
+   "source": "generated",
+   "speaker": "dlg.ally_queen_released.speaker",
+   "start": "root",
+   "startVariants": [],
+   "nodes": [
+    {
+     "id": "root",
+     "choices": 2,
+     "gotos": [
+      "gift"
+     ]
+    },
+    {
+     "id": "gift",
+     "choices": 1,
+     "gotos": []
+    }
+   ],
+   "flagsSet": [
+    "flag.boon.queen_released"
+   ],
+   "flagsCleared": [],
+   "flagsRead": [
+    "flag.boon.queen_released"
+   ],
+   "questsStarted": [],
+   "sites": [
+    {
+     "flag": "flag.boon.queen_released",
+     "kind": "read",
+     "node": "root",
+     "at": "choice[0]"
+    },
+    {
+     "flag": "flag.boon.queen_released",
+     "kind": "set",
+     "node": "root",
+     "at": "choice[0]"
+    }
+   ],
+   "locKeys": [
+    "dlg.ally.c_leave",
+    "dlg.ally.c_take",
+    "dlg.ally.gift",
+    "dlg.ally_queen_released.speaker",
+    "landing2.fork.queen_released"
+   ]
+  },
+  {
    "id": "dialogue.ancient_dragon",
    "file": "data/dialogue/AncientDragon.tres",
    "source": "hand",
@@ -2691,7 +4867,18 @@
    "source": "hand",
    "speaker": "dlg.archive_keeper.speaker",
    "start": "root",
-   "startVariants": [],
+   "startVariants": [
+    {
+     "cond": 5,
+     "arg": "flag.beat.stacks_key_given",
+     "node": "root"
+    },
+    {
+     "cond": 5,
+     "arg": "flag.beat.pages_read",
+     "node": "pages_key"
+    }
+   ],
    "nodes": [
     {
      "id": "root",
@@ -2887,9 +5074,28 @@
      "id": "h42_ranked",
      "choices": 1,
      "gotos": []
+    },
+    {
+     "id": "pages_key",
+     "choices": 3,
+     "gotos": [
+      "pages_key_why",
+      "pages_key_member"
+     ]
+    },
+    {
+     "id": "pages_key_why",
+     "choices": 1,
+     "gotos": []
+    },
+    {
+     "id": "pages_key_member",
+     "choices": 1,
+     "gotos": []
     }
    ],
    "flagsSet": [
+    "flag.beat.stacks_key_given",
     "flag.veiled_archive.custody_preserve",
     "flag.veiled_archive.custody_seal",
     "flag.veiled_archive.custody_share",
@@ -2902,6 +5108,8 @@
    "flagsRead": [
     "flag.ancient.taught",
     "flag.ancient_dragon_defeated",
+    "flag.beat.pages_read",
+    "flag.beat.stacks_key_given",
     "flag.veiled_archive.custody_preserve",
     "flag.veiled_archive.custody_seal",
     "flag.veiled_archive.custody_share",
@@ -3002,6 +5210,24 @@
      "kind": "set",
      "node": "h42_ranked",
      "at": "choice[0]"
+    },
+    {
+     "flag": "flag.beat.stacks_key_given",
+     "kind": "set",
+     "node": "pages_key",
+     "at": "onEnter"
+    },
+    {
+     "flag": "flag.beat.stacks_key_given",
+     "kind": "read",
+     "node": "root",
+     "at": "startVariant"
+    },
+    {
+     "flag": "flag.beat.pages_read",
+     "kind": "read",
+     "node": "pages_key",
+     "at": "startVariant"
     }
    ],
    "locKeys": [
@@ -3016,6 +5242,10 @@
     "dlg.archive_keeper.c_bye",
     "dlg.archive_keeper.c_end",
     "dlg.archive_keeper.c_member",
+    "dlg.archive_keeper.c_pages_keep",
+    "dlg.archive_keeper.c_pages_ring",
+    "dlg.archive_keeper.c_pages_thanks",
+    "dlg.archive_keeper.c_pages_why",
     "dlg.archive_keeper.c_stranger",
     "dlg.archive_keeper.c_trial_accept",
     "dlg.archive_keeper.c_trial_active",
@@ -3059,6 +5289,9 @@
     "dlg.archive_keeper.h42_v_custody_share",
     "dlg.archive_keeper.h42_verdict",
     "dlg.archive_keeper.member",
+    "dlg.archive_keeper.pages_key",
+    "dlg.archive_keeper.pages_key_member",
+    "dlg.archive_keeper.pages_key_why",
     "dlg.archive_keeper.root",
     "dlg.archive_keeper.speaker",
     "dlg.archive_keeper.stranger",
@@ -3432,7 +5665,18 @@
    "source": "generated",
    "speaker": "dlg.throne.speaker",
    "start": "gate",
-   "startVariants": [],
+   "startVariants": [
+    {
+     "cond": 5,
+     "arg": "flag.rival.gate_kneel",
+     "node": "gate_kneel"
+    },
+    {
+     "cond": 5,
+     "arg": "flag.rival.gate_draw",
+     "node": "gate_draw"
+    }
+   ],
    "nodes": [
     {
      "id": "gate",
@@ -3462,9 +5706,24 @@
      "gotos": [
       "throne"
      ]
+    },
+    {
+     "id": "gate_kneel",
+     "choices": 2,
+     "gotos": [
+      "throne"
+     ]
+    },
+    {
+     "id": "gate_draw",
+     "choices": 2,
+     "gotos": [
+      "throne"
+     ]
     }
    ],
    "flagsSet": [
+    "flag.beat.throne_decided",
     "flag.ending_dawnfire",
     "flag.ending_embers"
    ],
@@ -3472,7 +5731,9 @@
    "flagsRead": [
     "flag.ending_dawnfire",
     "flag.ending_embers",
-    "flag.morthul_defeated"
+    "flag.morthul_defeated",
+    "flag.rival.gate_draw",
+    "flag.rival.gate_kneel"
    ],
    "questsStarted": [],
    "sites": [
@@ -3501,6 +5762,12 @@
      "at": "choice[0]"
     },
     {
+     "flag": "flag.beat.throne_decided",
+     "kind": "set",
+     "node": "dawn",
+     "at": "choice[0]"
+    },
+    {
      "flag": "flag.ending_dawnfire",
      "kind": "read",
      "node": "embers",
@@ -3511,6 +5778,48 @@
      "kind": "set",
      "node": "embers",
      "at": "choice[0]"
+    },
+    {
+     "flag": "flag.beat.throne_decided",
+     "kind": "set",
+     "node": "embers",
+     "at": "choice[0]"
+    },
+    {
+     "flag": "flag.morthul_defeated",
+     "kind": "read",
+     "node": "gate_kneel",
+     "at": "choice[0]"
+    },
+    {
+     "flag": "flag.morthul_defeated",
+     "kind": "read",
+     "node": "gate_kneel",
+     "at": "choice[1]"
+    },
+    {
+     "flag": "flag.morthul_defeated",
+     "kind": "read",
+     "node": "gate_draw",
+     "at": "choice[0]"
+    },
+    {
+     "flag": "flag.morthul_defeated",
+     "kind": "read",
+     "node": "gate_draw",
+     "at": "choice[1]"
+    },
+    {
+     "flag": "flag.rival.gate_kneel",
+     "kind": "read",
+     "node": "gate_kneel",
+     "at": "startVariant"
+    },
+    {
+     "flag": "flag.rival.gate_draw",
+     "kind": "read",
+     "node": "gate_draw",
+     "at": "startVariant"
     }
    ],
    "locKeys": [
@@ -3525,6 +5834,8 @@
     "dlg.throne.dawn",
     "dlg.throne.embers",
     "dlg.throne.gate",
+    "dlg.throne.gate_draw",
+    "dlg.throne.gate_kneel",
     "dlg.throne.intro",
     "dlg.throne.speaker"
    ]
@@ -3638,10 +5949,14 @@
    "nodes": [
     {
      "id": "last_words",
-     "choices": 3,
+     "choices": 7,
      "gotos": [
       "duel_storm",
       "duel_mission",
+      "library_trust",
+      "library_defy",
+      "gate_kneel",
+      "gate_draw",
       "last_words_2"
      ]
     },
@@ -3683,6 +5998,34 @@
      "id": "declined",
      "choices": 1,
      "gotos": []
+    },
+    {
+     "id": "library_trust",
+     "choices": 1,
+     "gotos": [
+      "last_words_2"
+     ]
+    },
+    {
+     "id": "library_defy",
+     "choices": 1,
+     "gotos": [
+      "last_words_2"
+     ]
+    },
+    {
+     "id": "gate_kneel",
+     "choices": 1,
+     "gotos": [
+      "last_words_2"
+     ]
+    },
+    {
+     "id": "gate_draw",
+     "choices": 1,
+     "gotos": [
+      "last_words_2"
+     ]
     }
    ],
    "flagsSet": [
@@ -3692,7 +6035,11 @@
    "flagsRead": [
     "flag.ashen_knight_absorbed",
     "flag.rival.duel1_won",
-    "flag.rival.duel2_won"
+    "flag.rival.duel2_won",
+    "flag.rival.gate_draw",
+    "flag.rival.gate_kneel",
+    "flag.rival.library_defy",
+    "flag.rival.library_trust"
    ],
    "questsStarted": [],
    "sites": [
@@ -3707,6 +6054,30 @@
      "kind": "read",
      "node": "last_words",
      "at": "choice[1]"
+    },
+    {
+     "flag": "flag.rival.library_trust",
+     "kind": "read",
+     "node": "last_words",
+     "at": "choice[2]"
+    },
+    {
+     "flag": "flag.rival.library_defy",
+     "kind": "read",
+     "node": "last_words",
+     "at": "choice[3]"
+    },
+    {
+     "flag": "flag.rival.gate_kneel",
+     "kind": "read",
+     "node": "last_words",
+     "at": "choice[4]"
+    },
+    {
+     "flag": "flag.rival.gate_draw",
+     "kind": "read",
+     "node": "last_words",
+     "at": "choice[5]"
     },
     {
      "flag": "flag.ashen_knight_absorbed",
@@ -3729,13 +6100,21 @@
     "dlg.ashenknight.absorb.c_declined_bye",
     "dlg.ashenknight.absorb.c_duel_mission",
     "dlg.ashenknight.absorb.c_duel_storm",
+    "dlg.ashenknight.absorb.c_gate_draw",
+    "dlg.ashenknight.absorb.c_gate_kneel",
     "dlg.ashenknight.absorb.c_go_on",
+    "dlg.ashenknight.absorb.c_library_defy",
+    "dlg.ashenknight.absorb.c_library_trust",
     "dlg.ashenknight.absorb.c_listen",
     "dlg.ashenknight.absorb.declined",
     "dlg.ashenknight.absorb.duel_mission",
     "dlg.ashenknight.absorb.duel_storm",
+    "dlg.ashenknight.absorb.gate_draw",
+    "dlg.ashenknight.absorb.gate_kneel",
     "dlg.ashenknight.absorb.last_words",
     "dlg.ashenknight.absorb.last_words_2",
+    "dlg.ashenknight.absorb.library_defy",
+    "dlg.ashenknight.absorb.library_trust",
     "dlg.ashenknight.absorb.offer",
     "dlg.ashenknight.absorb.speaker"
    ]
@@ -3850,6 +6229,90 @@
    ]
   },
   {
+   "id": "dialogue.assembly_marshal",
+   "file": "data/dialogue/AssemblyMarshal.tres",
+   "source": "generated",
+   "speaker": "dlg.assembly_marshal.speaker",
+   "start": "root",
+   "startVariants": [
+    {
+     "cond": 5,
+     "arg": "flag.main.celestial_landing_done",
+     "node": "later"
+    }
+   ],
+   "nodes": [
+    {
+     "id": "root",
+     "choices": 4,
+     "gotos": [
+      "allies",
+      "place",
+      "plan"
+     ]
+    },
+    {
+     "id": "allies",
+     "choices": 2,
+     "gotos": [
+      "root"
+     ]
+    },
+    {
+     "id": "place",
+     "choices": 2,
+     "gotos": [
+      "root"
+     ]
+    },
+    {
+     "id": "plan",
+     "choices": 2,
+     "gotos": [
+      "root"
+     ]
+    },
+    {
+     "id": "later",
+     "choices": 1,
+     "gotos": []
+    }
+   ],
+   "flagsSet": [],
+   "flagsCleared": [],
+   "flagsRead": [
+    "flag.main.celestial_landing_done"
+   ],
+   "questsStarted": [],
+   "sites": [
+    {
+     "flag": "flag.main.celestial_landing_done",
+     "kind": "read",
+     "node": "later",
+     "at": "startVariant"
+    }
+   ],
+   "locKeys": [
+    "dlg.assembly_marshal.allies",
+    "dlg.assembly_marshal.allies.c_back",
+    "dlg.assembly_marshal.allies.c_hold",
+    "dlg.assembly_marshal.later",
+    "dlg.assembly_marshal.later.c_hold",
+    "dlg.assembly_marshal.place",
+    "dlg.assembly_marshal.place.c_back",
+    "dlg.assembly_marshal.place.c_hold",
+    "dlg.assembly_marshal.plan",
+    "dlg.assembly_marshal.plan.c_back",
+    "dlg.assembly_marshal.plan.c_hold",
+    "dlg.assembly_marshal.root",
+    "dlg.assembly_marshal.root.c_allies",
+    "dlg.assembly_marshal.root.c_hold",
+    "dlg.assembly_marshal.root.c_place",
+    "dlg.assembly_marshal.root.c_plan",
+    "dlg.assembly_marshal.speaker"
+   ]
+  },
+  {
    "id": "dialogue.beast_lord_absorb",
    "file": "data/dialogue/BeastLordAbsorb.tres",
    "source": "hand",
@@ -3957,6 +6420,293 @@
     "dlg.bregan.root",
     "dlg.bregan.speaker",
     "dlg.bregan.talk"
+   ]
+  },
+  {
+   "id": "dialogue.celestial_anchor_a",
+   "file": "data/dialogue/CelestialAnchorA.tres",
+   "source": "generated",
+   "speaker": "dlg.celestial_anchor_a.speaker",
+   "start": "root",
+   "startVariants": [],
+   "nodes": [
+    {
+     "id": "root",
+     "choices": 1,
+     "gotos": []
+    }
+   ],
+   "flagsSet": [],
+   "flagsCleared": [],
+   "flagsRead": [],
+   "questsStarted": [],
+   "sites": [],
+   "locKeys": [
+    "dlg.celestial_anchor_a.root",
+    "dlg.celestial_anchor_a.root.c_close",
+    "dlg.celestial_anchor_a.speaker"
+   ]
+  },
+  {
+   "id": "dialogue.celestial_anchor_b",
+   "file": "data/dialogue/CelestialAnchorB.tres",
+   "source": "generated",
+   "speaker": "dlg.celestial_anchor_b.speaker",
+   "start": "root",
+   "startVariants": [],
+   "nodes": [
+    {
+     "id": "root",
+     "choices": 1,
+     "gotos": []
+    }
+   ],
+   "flagsSet": [],
+   "flagsCleared": [],
+   "flagsRead": [],
+   "questsStarted": [],
+   "sites": [],
+   "locKeys": [
+    "dlg.celestial_anchor_b.root",
+    "dlg.celestial_anchor_b.root.c_close",
+    "dlg.celestial_anchor_b.speaker"
+   ]
+  },
+  {
+   "id": "dialogue.celestial_anchor_c",
+   "file": "data/dialogue/CelestialAnchorC.tres",
+   "source": "generated",
+   "speaker": "dlg.celestial_anchor_c.speaker",
+   "start": "root",
+   "startVariants": [],
+   "nodes": [
+    {
+     "id": "root",
+     "choices": 1,
+     "gotos": []
+    }
+   ],
+   "flagsSet": [],
+   "flagsCleared": [],
+   "flagsRead": [],
+   "questsStarted": [],
+   "sites": [],
+   "locKeys": [
+    "dlg.celestial_anchor_c.root",
+    "dlg.celestial_anchor_c.root.c_close",
+    "dlg.celestial_anchor_c.speaker"
+   ]
+  },
+  {
+   "id": "dialogue.celestial_graves",
+   "file": "data/dialogue/CelestialGraves.tres",
+   "source": "generated",
+   "speaker": "dlg.celestial_graves.speaker",
+   "start": "root",
+   "startVariants": [],
+   "nodes": [
+    {
+     "id": "root",
+     "choices": 3,
+     "gotos": [
+      "names",
+      "sixth"
+     ]
+    },
+    {
+     "id": "names",
+     "choices": 2,
+     "gotos": [
+      "sixth"
+     ]
+    },
+    {
+     "id": "sixth",
+     "choices": 2,
+     "gotos": [
+      "names"
+     ]
+    }
+   ],
+   "flagsSet": [],
+   "flagsCleared": [],
+   "flagsRead": [],
+   "questsStarted": [],
+   "sites": [],
+   "locKeys": [
+    "dlg.celestial_graves.names",
+    "dlg.celestial_graves.names.c_close",
+    "dlg.celestial_graves.names.c_sixth",
+    "dlg.celestial_graves.root",
+    "dlg.celestial_graves.root.c_close",
+    "dlg.celestial_graves.root.c_names",
+    "dlg.celestial_graves.root.c_sixth",
+    "dlg.celestial_graves.sixth",
+    "dlg.celestial_graves.sixth.c_close",
+    "dlg.celestial_graves.sixth.c_names",
+    "dlg.celestial_graves.speaker"
+   ]
+  },
+  {
+   "id": "dialogue.celestial_landing_beacon",
+   "file": "data/dialogue/CelestialLandingBeacon.tres",
+   "source": "generated",
+   "speaker": "dlg.celestial_landing_beacon.speaker",
+   "start": "root",
+   "startVariants": [],
+   "nodes": [
+    {
+     "id": "root",
+     "choices": 2,
+     "gotos": [
+      "more"
+     ]
+    },
+    {
+     "id": "more",
+     "choices": 1,
+     "gotos": []
+    }
+   ],
+   "flagsSet": [],
+   "flagsCleared": [],
+   "flagsRead": [],
+   "questsStarted": [],
+   "sites": [],
+   "locKeys": [
+    "dlg.celestial_landing_beacon.more",
+    "dlg.celestial_landing_beacon.more.c_close",
+    "dlg.celestial_landing_beacon.root",
+    "dlg.celestial_landing_beacon.root.c_close",
+    "dlg.celestial_landing_beacon.root.c_more",
+    "dlg.celestial_landing_beacon.speaker"
+   ]
+  },
+  {
+   "id": "dialogue.celestial_winch_a",
+   "file": "data/dialogue/CelestialWinchA.tres",
+   "source": "generated",
+   "speaker": "dlg.celestial_winch_a.speaker",
+   "start": "root",
+   "startVariants": [],
+   "nodes": [
+    {
+     "id": "root",
+     "choices": 1,
+     "gotos": []
+    }
+   ],
+   "flagsSet": [],
+   "flagsCleared": [],
+   "flagsRead": [],
+   "questsStarted": [],
+   "sites": [],
+   "locKeys": [
+    "dlg.celestial_winch_a.root",
+    "dlg.celestial_winch_a.root.c_close",
+    "dlg.celestial_winch_a.speaker"
+   ]
+  },
+  {
+   "id": "dialogue.celestial_winch_b",
+   "file": "data/dialogue/CelestialWinchB.tres",
+   "source": "generated",
+   "speaker": "dlg.celestial_winch_b.speaker",
+   "start": "root",
+   "startVariants": [],
+   "nodes": [
+    {
+     "id": "root",
+     "choices": 1,
+     "gotos": []
+    }
+   ],
+   "flagsSet": [],
+   "flagsCleared": [],
+   "flagsRead": [],
+   "questsStarted": [],
+   "sites": [],
+   "locKeys": [
+    "dlg.celestial_winch_b.root",
+    "dlg.celestial_winch_b.root.c_close",
+    "dlg.celestial_winch_b.speaker"
+   ]
+  },
+  {
+   "id": "dialogue.choir_echo",
+   "file": "data/dialogue/ChoirEcho.tres",
+   "source": "generated",
+   "speaker": "dlg.choir_echo.speaker",
+   "start": "root",
+   "startVariants": [
+    {
+     "cond": 5,
+     "arg": "flag.beat.choir_answered",
+     "node": "passed"
+    },
+    {
+     "cond": 8,
+     "arg": "40",
+     "node": "unknown"
+    }
+   ],
+   "nodes": [
+    {
+     "id": "root",
+     "choices": 2,
+     "gotos": [
+      "sung"
+     ]
+    },
+    {
+     "id": "sung",
+     "choices": 1,
+     "gotos": []
+    },
+    {
+     "id": "unknown",
+     "choices": 1,
+     "gotos": []
+    },
+    {
+     "id": "passed",
+     "choices": 1,
+     "gotos": []
+    }
+   ],
+   "flagsSet": [
+    "flag.beat.choir_answered"
+   ],
+   "flagsCleared": [],
+   "flagsRead": [
+    "flag.beat.choir_answered"
+   ],
+   "questsStarted": [],
+   "sites": [
+    {
+     "flag": "flag.beat.choir_answered",
+     "kind": "set",
+     "node": "root",
+     "at": "choice[0]"
+    },
+    {
+     "flag": "flag.beat.choir_answered",
+     "kind": "read",
+     "node": "passed",
+     "at": "startVariant"
+    }
+   ],
+   "locKeys": [
+    "dlg.choir_echo.passed",
+    "dlg.choir_echo.passed.c_go",
+    "dlg.choir_echo.root",
+    "dlg.choir_echo.root.c_refuse",
+    "dlg.choir_echo.root.c_sing",
+    "dlg.choir_echo.speaker",
+    "dlg.choir_echo.sung",
+    "dlg.choir_echo.sung.c_go",
+    "dlg.choir_echo.unknown",
+    "dlg.choir_echo.unknown.c_go"
    ]
   },
   {
@@ -6369,6 +9119,81 @@
    ]
   },
   {
+   "id": "dialogue.entropy_stele_a",
+   "file": "data/dialogue/EntropySteleA.tres",
+   "source": "generated",
+   "speaker": "dlg.entropy_stele_a.speaker",
+   "start": "root",
+   "startVariants": [],
+   "nodes": [
+    {
+     "id": "root",
+     "choices": 1,
+     "gotos": []
+    }
+   ],
+   "flagsSet": [],
+   "flagsCleared": [],
+   "flagsRead": [],
+   "questsStarted": [],
+   "sites": [],
+   "locKeys": [
+    "dlg.entropy_stele_a.root",
+    "dlg.entropy_stele_a.root.c_close",
+    "dlg.entropy_stele_a.speaker"
+   ]
+  },
+  {
+   "id": "dialogue.entropy_stele_b",
+   "file": "data/dialogue/EntropySteleB.tres",
+   "source": "generated",
+   "speaker": "dlg.entropy_stele_b.speaker",
+   "start": "root",
+   "startVariants": [],
+   "nodes": [
+    {
+     "id": "root",
+     "choices": 1,
+     "gotos": []
+    }
+   ],
+   "flagsSet": [],
+   "flagsCleared": [],
+   "flagsRead": [],
+   "questsStarted": [],
+   "sites": [],
+   "locKeys": [
+    "dlg.entropy_stele_b.root",
+    "dlg.entropy_stele_b.root.c_close",
+    "dlg.entropy_stele_b.speaker"
+   ]
+  },
+  {
+   "id": "dialogue.entropy_stele_c",
+   "file": "data/dialogue/EntropySteleC.tres",
+   "source": "generated",
+   "speaker": "dlg.entropy_stele_c.speaker",
+   "start": "root",
+   "startVariants": [],
+   "nodes": [
+    {
+     "id": "root",
+     "choices": 1,
+     "gotos": []
+    }
+   ],
+   "flagsSet": [],
+   "flagsCleared": [],
+   "flagsRead": [],
+   "questsStarted": [],
+   "sites": [],
+   "locKeys": [
+    "dlg.entropy_stele_c.root",
+    "dlg.entropy_stele_c.root.c_close",
+    "dlg.entropy_stele_c.speaker"
+   ]
+  },
+  {
    "id": "dialogue.gilda",
    "file": "data/dialogue/Gilda.tres",
    "source": "hand",
@@ -6787,6 +9612,237 @@
     "dlg.hollowqueen.absorb.declined",
     "dlg.hollowqueen.absorb.offer",
     "dlg.hollowqueen.absorb.speaker"
+   ]
+  },
+  {
+   "id": "dialogue.hollow_queen_parley",
+   "file": "data/dialogue/HollowQueenParley.tres",
+   "source": "generated",
+   "speaker": "pale.dlg.hollow_queen_parley.speaker",
+   "start": "root",
+   "startVariants": [
+    {
+     "cond": 5,
+     "arg": "flag.hollow_queen_defeated",
+     "node": "after"
+    },
+    {
+     "cond": 7,
+     "arg": "60",
+     "node": "truce"
+    },
+    {
+     "cond": 5,
+     "arg": "flag.fork.queen_released",
+     "node": "released"
+    },
+    {
+     "cond": 5,
+     "arg": "flag.fork.queen_kept",
+     "node": "kept"
+    }
+   ],
+   "nodes": [
+    {
+     "id": "root",
+     "choices": 2,
+     "gotos": [
+      "counting"
+     ]
+    },
+    {
+     "id": "counting",
+     "choices": 2,
+     "gotos": [
+      "root"
+     ]
+    },
+    {
+     "id": "released",
+     "choices": 2,
+     "gotos": [
+      "released_why"
+     ]
+    },
+    {
+     "id": "released_why",
+     "choices": 1,
+     "gotos": []
+    },
+    {
+     "id": "kept",
+     "choices": 2,
+     "gotos": [
+      "kept_why"
+     ]
+    },
+    {
+     "id": "kept_why",
+     "choices": 1,
+     "gotos": []
+    },
+    {
+     "id": "truce",
+     "choices": 2,
+     "gotos": [
+      "truce_taken",
+      "truce_refused"
+     ]
+    },
+    {
+     "id": "truce_taken",
+     "choices": 1,
+     "gotos": []
+    },
+    {
+     "id": "truce_refused",
+     "choices": 1,
+     "gotos": []
+    },
+    {
+     "id": "after",
+     "choices": 5,
+     "gotos": [
+      "after_throne",
+      "after_released",
+      "after_kept",
+      "after_truce"
+     ]
+    },
+    {
+     "id": "after_throne",
+     "choices": 2,
+     "gotos": [
+      "after"
+     ]
+    },
+    {
+     "id": "after_released",
+     "choices": 2,
+     "gotos": [
+      "after"
+     ]
+    },
+    {
+     "id": "after_kept",
+     "choices": 2,
+     "gotos": [
+      "after"
+     ]
+    },
+    {
+     "id": "after_truce",
+     "choices": 2,
+     "gotos": [
+      "after"
+     ]
+    }
+   ],
+   "flagsSet": [
+    "flag.beat.queen_truce",
+    "flag.testimony.queen"
+   ],
+   "flagsCleared": [],
+   "flagsRead": [
+    "flag.beat.queen_truce",
+    "flag.fork.queen_kept",
+    "flag.fork.queen_released",
+    "flag.hollow_queen_defeated"
+   ],
+   "questsStarted": [],
+   "sites": [
+    {
+     "flag": "flag.beat.queen_truce",
+     "kind": "set",
+     "node": "truce_taken",
+     "at": "onEnter"
+    },
+    {
+     "flag": "flag.testimony.queen",
+     "kind": "set",
+     "node": "after",
+     "at": "onEnter"
+    },
+    {
+     "flag": "flag.fork.queen_released",
+     "kind": "read",
+     "node": "after",
+     "at": "choice[1]"
+    },
+    {
+     "flag": "flag.fork.queen_kept",
+     "kind": "read",
+     "node": "after",
+     "at": "choice[2]"
+    },
+    {
+     "flag": "flag.beat.queen_truce",
+     "kind": "read",
+     "node": "after",
+     "at": "choice[3]"
+    },
+    {
+     "flag": "flag.hollow_queen_defeated",
+     "kind": "read",
+     "node": "after",
+     "at": "startVariant"
+    },
+    {
+     "flag": "flag.fork.queen_released",
+     "kind": "read",
+     "node": "released",
+     "at": "startVariant"
+    },
+    {
+     "flag": "flag.fork.queen_kept",
+     "kind": "read",
+     "node": "kept",
+     "at": "startVariant"
+    }
+   ],
+   "locKeys": [
+    "pale.dlg.hollow_queen_parley.after",
+    "pale.dlg.hollow_queen_parley.after.c_carry",
+    "pale.dlg.hollow_queen_parley.after.c_fate_kept",
+    "pale.dlg.hollow_queen_parley.after.c_fate_released",
+    "pale.dlg.hollow_queen_parley.after.c_throne",
+    "pale.dlg.hollow_queen_parley.after.c_truce",
+    "pale.dlg.hollow_queen_parley.after_kept",
+    "pale.dlg.hollow_queen_parley.after_kept.c_again",
+    "pale.dlg.hollow_queen_parley.after_kept.c_carry",
+    "pale.dlg.hollow_queen_parley.after_released",
+    "pale.dlg.hollow_queen_parley.after_released.c_again",
+    "pale.dlg.hollow_queen_parley.after_released.c_carry",
+    "pale.dlg.hollow_queen_parley.after_throne",
+    "pale.dlg.hollow_queen_parley.after_throne.c_again",
+    "pale.dlg.hollow_queen_parley.after_throne.c_carry",
+    "pale.dlg.hollow_queen_parley.after_truce",
+    "pale.dlg.hollow_queen_parley.after_truce.c_again",
+    "pale.dlg.hollow_queen_parley.after_truce.c_carry",
+    "pale.dlg.hollow_queen_parley.counting",
+    "pale.dlg.hollow_queen_parley.counting.c_back",
+    "pale.dlg.hollow_queen_parley.counting.c_light",
+    "pale.dlg.hollow_queen_parley.kept",
+    "pale.dlg.hollow_queen_parley.kept.c_ring",
+    "pale.dlg.hollow_queen_parley.kept.c_why",
+    "pale.dlg.hollow_queen_parley.kept_why",
+    "pale.dlg.hollow_queen_parley.kept_why.c_light",
+    "pale.dlg.hollow_queen_parley.released",
+    "pale.dlg.hollow_queen_parley.released.c_ring",
+    "pale.dlg.hollow_queen_parley.released.c_why",
+    "pale.dlg.hollow_queen_parley.released_why",
+    "pale.dlg.hollow_queen_parley.released_why.c_light",
+    "pale.dlg.hollow_queen_parley.root",
+    "pale.dlg.hollow_queen_parley.root.c_counting",
+    "pale.dlg.hollow_queen_parley.root.c_light",
+    "pale.dlg.hollow_queen_parley.speaker",
+    "pale.dlg.hollow_queen_parley.truce",
+    "pale.dlg.hollow_queen_parley.truce.c_accept",
+    "pale.dlg.hollow_queen_parley.truce.c_refuse",
+    "pale.dlg.hollow_queen_parley.truce_refused",
+    "pale.dlg.hollow_queen_parley.truce_refused.c_light",
+    "pale.dlg.hollow_queen_parley.truce_taken",
+    "pale.dlg.hollow_queen_parley.truce_taken.c_light"
    ]
   },
   {
@@ -8142,6 +11198,311 @@
    ]
   },
   {
+   "id": "dialogue.pale_count_stone",
+   "file": "data/dialogue/PaleCountStone.tres",
+   "source": "generated",
+   "speaker": "pale.dlg.pale_count_stone.speaker",
+   "start": "root",
+   "startVariants": [
+    {
+     "cond": 5,
+     "arg": "flag.pale.court_open",
+     "node": "settled"
+    }
+   ],
+   "nodes": [
+    {
+     "id": "root",
+     "choices": 5,
+     "gotos": [
+      "ends",
+      "goes_on",
+      "released",
+      "kept"
+     ]
+    },
+    {
+     "id": "ends",
+     "choices": 2,
+     "gotos": [
+      "root"
+     ]
+    },
+    {
+     "id": "goes_on",
+     "choices": 2,
+     "gotos": [
+      "root"
+     ]
+    },
+    {
+     "id": "released",
+     "choices": 1,
+     "gotos": []
+    },
+    {
+     "id": "kept",
+     "choices": 1,
+     "gotos": []
+    },
+    {
+     "id": "settled",
+     "choices": 1,
+     "gotos": []
+    }
+   ],
+   "flagsSet": [
+    "flag.fork.queen_kept",
+    "flag.fork.queen_released",
+    "flag.pale.court_open"
+   ],
+   "flagsCleared": [],
+   "flagsRead": [
+    "flag.pale.court_open"
+   ],
+   "questsStarted": [],
+   "sites": [
+    {
+     "flag": "flag.pale.court_open",
+     "kind": "read",
+     "node": "root",
+     "at": "choice[2]"
+    },
+    {
+     "flag": "flag.fork.queen_released",
+     "kind": "set",
+     "node": "root",
+     "at": "choice[2]"
+    },
+    {
+     "flag": "flag.pale.court_open",
+     "kind": "set",
+     "node": "root",
+     "at": "choice[2]"
+    },
+    {
+     "flag": "flag.pale.court_open",
+     "kind": "read",
+     "node": "root",
+     "at": "choice[3]"
+    },
+    {
+     "flag": "flag.fork.queen_kept",
+     "kind": "set",
+     "node": "root",
+     "at": "choice[3]"
+    },
+    {
+     "flag": "flag.pale.court_open",
+     "kind": "set",
+     "node": "root",
+     "at": "choice[3]"
+    },
+    {
+     "flag": "flag.pale.court_open",
+     "kind": "read",
+     "node": "settled",
+     "at": "startVariant"
+    }
+   ],
+   "locKeys": [
+    "pale.dlg.pale_count_stone.ends",
+    "pale.dlg.pale_count_stone.ends.c_back",
+    "pale.dlg.pale_count_stone.ends.c_bye",
+    "pale.dlg.pale_count_stone.goes_on",
+    "pale.dlg.pale_count_stone.goes_on.c_back",
+    "pale.dlg.pale_count_stone.goes_on.c_bye",
+    "pale.dlg.pale_count_stone.kept",
+    "pale.dlg.pale_count_stone.kept.c_go",
+    "pale.dlg.pale_count_stone.released",
+    "pale.dlg.pale_count_stone.released.c_go",
+    "pale.dlg.pale_count_stone.root",
+    "pale.dlg.pale_count_stone.root.c_ask_end",
+    "pale.dlg.pale_count_stone.root.c_ask_on",
+    "pale.dlg.pale_count_stone.root.c_keep",
+    "pale.dlg.pale_count_stone.root.c_later",
+    "pale.dlg.pale_count_stone.root.c_release",
+    "pale.dlg.pale_count_stone.settled",
+    "pale.dlg.pale_count_stone.settled.c_leave",
+    "pale.dlg.pale_count_stone.speaker"
+   ]
+  },
+  {
+   "id": "dialogue.pale_dusk_registry",
+   "file": "data/dialogue/PaleDuskRegistry.tres",
+   "source": "generated",
+   "speaker": "pale.dlg.pale_dusk_registry.speaker",
+   "start": "root",
+   "startVariants": [],
+   "nodes": [
+    {
+     "id": "root",
+     "choices": 2,
+     "gotos": [
+      "more"
+     ]
+    },
+    {
+     "id": "more",
+     "choices": 1,
+     "gotos": []
+    }
+   ],
+   "flagsSet": [],
+   "flagsCleared": [],
+   "flagsRead": [],
+   "questsStarted": [],
+   "sites": [],
+   "locKeys": [
+    "pale.dlg.pale_dusk_registry.more",
+    "pale.dlg.pale_dusk_registry.more.c_close",
+    "pale.dlg.pale_dusk_registry.root",
+    "pale.dlg.pale_dusk_registry.root.c_close",
+    "pale.dlg.pale_dusk_registry.root.c_more",
+    "pale.dlg.pale_dusk_registry.speaker"
+   ]
+  },
+  {
+   "id": "dialogue.pale_lamp_cradle",
+   "file": "data/dialogue/PaleLampCradle.tres",
+   "source": "generated",
+   "speaker": "pale.dlg.pale_lamp_cradle.speaker",
+   "start": "root",
+   "startVariants": [],
+   "nodes": [
+    {
+     "id": "root",
+     "choices": 2,
+     "gotos": [
+      "more"
+     ]
+    },
+    {
+     "id": "more",
+     "choices": 1,
+     "gotos": []
+    }
+   ],
+   "flagsSet": [],
+   "flagsCleared": [],
+   "flagsRead": [],
+   "questsStarted": [],
+   "sites": [],
+   "locKeys": [
+    "pale.dlg.pale_lamp_cradle.more",
+    "pale.dlg.pale_lamp_cradle.more.c_close",
+    "pale.dlg.pale_lamp_cradle.root",
+    "pale.dlg.pale_lamp_cradle.root.c_close",
+    "pale.dlg.pale_lamp_cradle.root.c_more",
+    "pale.dlg.pale_lamp_cradle.speaker"
+   ]
+  },
+  {
+   "id": "dialogue.pale_lamp_queen",
+   "file": "data/dialogue/PaleLampQueen.tres",
+   "source": "generated",
+   "speaker": "pale.dlg.pale_lamp_queen.speaker",
+   "start": "root",
+   "startVariants": [],
+   "nodes": [
+    {
+     "id": "root",
+     "choices": 2,
+     "gotos": [
+      "more"
+     ]
+    },
+    {
+     "id": "more",
+     "choices": 1,
+     "gotos": []
+    }
+   ],
+   "flagsSet": [],
+   "flagsCleared": [],
+   "flagsRead": [],
+   "questsStarted": [],
+   "sites": [],
+   "locKeys": [
+    "pale.dlg.pale_lamp_queen.more",
+    "pale.dlg.pale_lamp_queen.more.c_close",
+    "pale.dlg.pale_lamp_queen.root",
+    "pale.dlg.pale_lamp_queen.root.c_close",
+    "pale.dlg.pale_lamp_queen.root.c_more",
+    "pale.dlg.pale_lamp_queen.speaker"
+   ]
+  },
+  {
+   "id": "dialogue.pale_lamp_signing",
+   "file": "data/dialogue/PaleLampSigning.tres",
+   "source": "generated",
+   "speaker": "pale.dlg.pale_lamp_signing.speaker",
+   "start": "root",
+   "startVariants": [],
+   "nodes": [
+    {
+     "id": "root",
+     "choices": 2,
+     "gotos": [
+      "more"
+     ]
+    },
+    {
+     "id": "more",
+     "choices": 1,
+     "gotos": []
+    }
+   ],
+   "flagsSet": [],
+   "flagsCleared": [],
+   "flagsRead": [],
+   "questsStarted": [],
+   "sites": [],
+   "locKeys": [
+    "pale.dlg.pale_lamp_signing.more",
+    "pale.dlg.pale_lamp_signing.more.c_close",
+    "pale.dlg.pale_lamp_signing.root",
+    "pale.dlg.pale_lamp_signing.root.c_close",
+    "pale.dlg.pale_lamp_signing.root.c_more",
+    "pale.dlg.pale_lamp_signing.speaker"
+   ]
+  },
+  {
+   "id": "dialogue.pale_landing_lamp",
+   "file": "data/dialogue/PaleLandingLamp.tres",
+   "source": "generated",
+   "speaker": "pale.dlg.pale_landing_lamp.speaker",
+   "start": "root",
+   "startVariants": [],
+   "nodes": [
+    {
+     "id": "root",
+     "choices": 2,
+     "gotos": [
+      "more"
+     ]
+    },
+    {
+     "id": "more",
+     "choices": 1,
+     "gotos": []
+    }
+   ],
+   "flagsSet": [],
+   "flagsCleared": [],
+   "flagsRead": [],
+   "questsStarted": [],
+   "sites": [],
+   "locKeys": [
+    "pale.dlg.pale_landing_lamp.more",
+    "pale.dlg.pale_landing_lamp.more.c_close",
+    "pale.dlg.pale_landing_lamp.root",
+    "pale.dlg.pale_landing_lamp.root.c_close",
+    "pale.dlg.pale_landing_lamp.root.c_more",
+    "pale.dlg.pale_landing_lamp.speaker"
+   ]
+  },
+  {
    "id": "dialogue.perrin",
    "file": "data/dialogue/Perrin.tres",
    "source": "hand",
@@ -8189,6 +11550,68 @@
     "dlg.perrin.root",
     "dlg.perrin.speaker",
     "dlg.perrin.talk"
+   ]
+  },
+  {
+   "id": "dialogue.rival_concourse",
+   "file": "data/dialogue/RivalConcourse.tres",
+   "source": "generated",
+   "speaker": "dlg.rival_concourse.speaker",
+   "start": "root",
+   "startVariants": [],
+   "nodes": [
+    {
+     "id": "root",
+     "choices": 4,
+     "gotos": [
+      "know",
+      "why",
+      "want"
+     ]
+    },
+    {
+     "id": "know",
+     "choices": 2,
+     "gotos": [
+      "root"
+     ]
+    },
+    {
+     "id": "why",
+     "choices": 2,
+     "gotos": [
+      "root"
+     ]
+    },
+    {
+     "id": "want",
+     "choices": 2,
+     "gotos": [
+      "root"
+     ]
+    }
+   ],
+   "flagsSet": [],
+   "flagsCleared": [],
+   "flagsRead": [],
+   "questsStarted": [],
+   "sites": [],
+   "locKeys": [
+    "dlg.rival_concourse.know",
+    "dlg.rival_concourse.know.c_back",
+    "dlg.rival_concourse.know.c_go",
+    "dlg.rival_concourse.root",
+    "dlg.rival_concourse.root.c_go",
+    "dlg.rival_concourse.root.c_know",
+    "dlg.rival_concourse.root.c_want",
+    "dlg.rival_concourse.root.c_why",
+    "dlg.rival_concourse.speaker",
+    "dlg.rival_concourse.want",
+    "dlg.rival_concourse.want.c_back",
+    "dlg.rival_concourse.want.c_go",
+    "dlg.rival_concourse.why",
+    "dlg.rival_concourse.why.c_back",
+    "dlg.rival_concourse.why.c_go"
    ]
   },
   {
@@ -8275,6 +11698,382 @@
     "dlg.rival.duel2.speaker",
     "dlg.rival.duel2.stair",
     "dlg.rival.duel2.yield"
+   ]
+  },
+  {
+   "id": "dialogue.rival_gate",
+   "file": "data/dialogue/RivalGate.tres",
+   "source": "generated",
+   "speaker": "dlg.rival_gate.speaker",
+   "start": "root",
+   "startVariants": [
+    {
+     "cond": 5,
+     "arg": "flag.beat.gate_vigil_done",
+     "node": "after"
+    },
+    {
+     "cond": 5,
+     "arg": "flag.rival.library_defy",
+     "node": "root_defy"
+    },
+    {
+     "cond": 5,
+     "arg": "flag.rival.library_trust",
+     "node": "root_trust"
+    }
+   ],
+   "nodes": [
+    {
+     "id": "root",
+     "choices": 4,
+     "gotos": [
+      "kneel",
+      "draw",
+      "fight"
+     ]
+    },
+    {
+     "id": "root_trust",
+     "choices": 4,
+     "gotos": [
+      "kneel",
+      "draw",
+      "fight"
+     ]
+    },
+    {
+     "id": "root_defy",
+     "choices": 4,
+     "gotos": [
+      "kneel",
+      "draw",
+      "fight"
+     ]
+    },
+    {
+     "id": "kneel",
+     "choices": 1,
+     "gotos": []
+    },
+    {
+     "id": "draw",
+     "choices": 1,
+     "gotos": []
+    },
+    {
+     "id": "fight",
+     "choices": 1,
+     "gotos": []
+    },
+    {
+     "id": "after",
+     "choices": 1,
+     "gotos": []
+    }
+   ],
+   "flagsSet": [
+    "flag.beat.gate_vigil_done",
+    "flag.rival.gate_draw",
+    "flag.rival.gate_kneel"
+   ],
+   "flagsCleared": [],
+   "flagsRead": [
+    "flag.beat.gate_vigil_done",
+    "flag.rival.library_defy",
+    "flag.rival.library_trust"
+   ],
+   "questsStarted": [],
+   "sites": [
+    {
+     "flag": "flag.rival.gate_kneel",
+     "kind": "set",
+     "node": "root",
+     "at": "choice[0]"
+    },
+    {
+     "flag": "flag.beat.gate_vigil_done",
+     "kind": "set",
+     "node": "root",
+     "at": "choice[0]"
+    },
+    {
+     "flag": "flag.rival.gate_draw",
+     "kind": "set",
+     "node": "root",
+     "at": "choice[1]"
+    },
+    {
+     "flag": "flag.beat.gate_vigil_done",
+     "kind": "set",
+     "node": "root",
+     "at": "choice[1]"
+    },
+    {
+     "flag": "flag.beat.gate_vigil_done",
+     "kind": "set",
+     "node": "root",
+     "at": "choice[2]"
+    },
+    {
+     "flag": "flag.rival.gate_kneel",
+     "kind": "set",
+     "node": "root_trust",
+     "at": "choice[0]"
+    },
+    {
+     "flag": "flag.beat.gate_vigil_done",
+     "kind": "set",
+     "node": "root_trust",
+     "at": "choice[0]"
+    },
+    {
+     "flag": "flag.rival.gate_draw",
+     "kind": "set",
+     "node": "root_trust",
+     "at": "choice[1]"
+    },
+    {
+     "flag": "flag.beat.gate_vigil_done",
+     "kind": "set",
+     "node": "root_trust",
+     "at": "choice[1]"
+    },
+    {
+     "flag": "flag.beat.gate_vigil_done",
+     "kind": "set",
+     "node": "root_trust",
+     "at": "choice[2]"
+    },
+    {
+     "flag": "flag.rival.gate_kneel",
+     "kind": "set",
+     "node": "root_defy",
+     "at": "choice[0]"
+    },
+    {
+     "flag": "flag.beat.gate_vigil_done",
+     "kind": "set",
+     "node": "root_defy",
+     "at": "choice[0]"
+    },
+    {
+     "flag": "flag.rival.gate_draw",
+     "kind": "set",
+     "node": "root_defy",
+     "at": "choice[1]"
+    },
+    {
+     "flag": "flag.beat.gate_vigil_done",
+     "kind": "set",
+     "node": "root_defy",
+     "at": "choice[1]"
+    },
+    {
+     "flag": "flag.beat.gate_vigil_done",
+     "kind": "set",
+     "node": "root_defy",
+     "at": "choice[2]"
+    },
+    {
+     "flag": "flag.beat.gate_vigil_done",
+     "kind": "read",
+     "node": "after",
+     "at": "startVariant"
+    },
+    {
+     "flag": "flag.rival.library_defy",
+     "kind": "read",
+     "node": "root_defy",
+     "at": "startVariant"
+    },
+    {
+     "flag": "flag.rival.library_trust",
+     "kind": "read",
+     "node": "root_trust",
+     "at": "startVariant"
+    }
+   ],
+   "locKeys": [
+    "dlg.rival_gate.after",
+    "dlg.rival_gate.after.c_light",
+    "dlg.rival_gate.draw",
+    "dlg.rival_gate.draw.c_light",
+    "dlg.rival_gate.fight",
+    "dlg.rival_gate.fight.c_light",
+    "dlg.rival_gate.kneel",
+    "dlg.rival_gate.kneel.c_rise",
+    "dlg.rival_gate.root",
+    "dlg.rival_gate.root.c_draw",
+    "dlg.rival_gate.root.c_fight",
+    "dlg.rival_gate.root.c_kneel",
+    "dlg.rival_gate.root.c_later",
+    "dlg.rival_gate.root_defy",
+    "dlg.rival_gate.root_defy.c_draw",
+    "dlg.rival_gate.root_defy.c_fight",
+    "dlg.rival_gate.root_defy.c_kneel",
+    "dlg.rival_gate.root_defy.c_later",
+    "dlg.rival_gate.root_trust",
+    "dlg.rival_gate.root_trust.c_draw",
+    "dlg.rival_gate.root_trust.c_fight",
+    "dlg.rival_gate.root_trust.c_kneel",
+    "dlg.rival_gate.root_trust.c_later",
+    "dlg.rival_gate.speaker"
+   ]
+  },
+  {
+   "id": "dialogue.rival_library",
+   "file": "data/dialogue/RivalLibrary.tres",
+   "source": "generated",
+   "speaker": "dlg.rival_library.speaker",
+   "start": "root",
+   "startVariants": [
+    {
+     "cond": 5,
+     "arg": "flag.rival.library_trust",
+     "node": "after_trust"
+    },
+    {
+     "cond": 5,
+     "arg": "flag.rival.library_defy",
+     "node": "after_defy"
+    }
+   ],
+   "nodes": [
+    {
+     "id": "root",
+     "choices": 5,
+     "gotos": [
+      "why",
+      "what",
+      "trust",
+      "defy"
+     ]
+    },
+    {
+     "id": "why",
+     "choices": 2,
+     "gotos": [
+      "root"
+     ]
+    },
+    {
+     "id": "what",
+     "choices": 2,
+     "gotos": [
+      "root"
+     ]
+    },
+    {
+     "id": "trust",
+     "choices": 1,
+     "gotos": []
+    },
+    {
+     "id": "defy",
+     "choices": 1,
+     "gotos": []
+    },
+    {
+     "id": "after_trust",
+     "choices": 1,
+     "gotos": []
+    },
+    {
+     "id": "after_defy",
+     "choices": 1,
+     "gotos": []
+    }
+   ],
+   "flagsSet": [
+    "flag.beat.rival_parley_done",
+    "flag.rival.library_defy",
+    "flag.rival.library_trust"
+   ],
+   "flagsCleared": [],
+   "flagsRead": [
+    "flag.rival.library_defy",
+    "flag.rival.library_trust"
+   ],
+   "questsStarted": [],
+   "sites": [
+    {
+     "flag": "flag.beat.rival_parley_done",
+     "kind": "set",
+     "node": "root",
+     "at": "onEnter"
+    },
+    {
+     "flag": "flag.rival.library_trust",
+     "kind": "read",
+     "node": "root",
+     "at": "choice[2]"
+    },
+    {
+     "flag": "flag.rival.library_defy",
+     "kind": "read",
+     "node": "root",
+     "at": "choice[2]"
+    },
+    {
+     "flag": "flag.rival.library_trust",
+     "kind": "set",
+     "node": "root",
+     "at": "choice[2]"
+    },
+    {
+     "flag": "flag.rival.library_defy",
+     "kind": "read",
+     "node": "root",
+     "at": "choice[3]"
+    },
+    {
+     "flag": "flag.rival.library_trust",
+     "kind": "read",
+     "node": "root",
+     "at": "choice[3]"
+    },
+    {
+     "flag": "flag.rival.library_defy",
+     "kind": "set",
+     "node": "root",
+     "at": "choice[3]"
+    },
+    {
+     "flag": "flag.rival.library_trust",
+     "kind": "read",
+     "node": "after_trust",
+     "at": "startVariant"
+    },
+    {
+     "flag": "flag.rival.library_defy",
+     "kind": "read",
+     "node": "after_defy",
+     "at": "startVariant"
+    }
+   ],
+   "locKeys": [
+    "dlg.rival_library.after_defy",
+    "dlg.rival_library.after_defy.c_go",
+    "dlg.rival_library.after_trust",
+    "dlg.rival_library.after_trust.c_go",
+    "dlg.rival_library.defy",
+    "dlg.rival_library.defy.c_go",
+    "dlg.rival_library.root",
+    "dlg.rival_library.root.c_defy",
+    "dlg.rival_library.root.c_later",
+    "dlg.rival_library.root.c_trust",
+    "dlg.rival_library.root.c_what",
+    "dlg.rival_library.root.c_why",
+    "dlg.rival_library.speaker",
+    "dlg.rival_library.trust",
+    "dlg.rival_library.trust.c_go",
+    "dlg.rival_library.what",
+    "dlg.rival_library.what.c_back",
+    "dlg.rival_library.what.c_later",
+    "dlg.rival_library.why",
+    "dlg.rival_library.why.c_back",
+    "dlg.rival_library.why.c_later"
    ]
   },
   {
@@ -8640,7 +12439,43 @@
    "source": "generated",
    "speaker": "dlg.sunspire_archivist.speaker",
    "start": "root",
-   "startVariants": [],
+   "startVariants": [
+    {
+     "cond": 5,
+     "arg": "flag.celestial_gate_open",
+     "node": "root"
+    },
+    {
+     "cond": 5,
+     "arg": "flag.beat.codex_read",
+     "node": "reading"
+    },
+    {
+     "cond": 5,
+     "arg": "flag.beat.stacks_key_given",
+     "node": "stacks_wait"
+    },
+    {
+     "cond": 5,
+     "arg": "flag.testimonies_all",
+     "node": "pages"
+    },
+    {
+     "cond": 5,
+     "arg": "flag.hollow_queen_defeated",
+     "node": "testimony_missing"
+    },
+    {
+     "cond": 5,
+     "arg": "flag.beat.pale_landing_lit",
+     "node": "lamp_turned"
+    },
+    {
+     "cond": 5,
+     "arg": "flag.pale_concord_revealed",
+     "node": "door"
+    }
+   ],
    "nodes": [
     {
      "id": "root",
@@ -8719,21 +12554,107 @@
      "gotos": [
       "root"
      ]
+    },
+    {
+     "id": "door",
+     "choices": 4,
+     "gotos": [
+      "door_what",
+      "door_why",
+      "root"
+     ]
+    },
+    {
+     "id": "door_what",
+     "choices": 2,
+     "gotos": [
+      "door"
+     ]
+    },
+    {
+     "id": "door_why",
+     "choices": 2,
+     "gotos": [
+      "door"
+     ]
+    },
+    {
+     "id": "lamp_turned",
+     "choices": 2,
+     "gotos": [
+      "root"
+     ]
+    },
+    {
+     "id": "testimony_missing",
+     "choices": 3,
+     "gotos": [
+      "pages",
+      "root"
+     ]
+    },
+    {
+     "id": "pages",
+     "choices": 4,
+     "gotos": [
+      "pages_released",
+      "pages_kept",
+      "root"
+     ]
+    },
+    {
+     "id": "pages_released",
+     "choices": 1,
+     "gotos": [
+      "pages"
+     ]
+    },
+    {
+     "id": "pages_kept",
+     "choices": 1,
+     "gotos": [
+      "pages"
+     ]
+    },
+    {
+     "id": "stacks_wait",
+     "choices": 2,
+     "gotos": [
+      "root"
+     ]
+    },
+    {
+     "id": "reading",
+     "choices": 2,
+     "gotos": [
+      "cataclysm",
+      "root"
+     ]
     }
    ],
    "flagsSet": [
-    "flag.celestial_gate_open"
+    "flag.beat.pages_laid",
+    "flag.celestial_gate_open",
+    "flag.testimonies_all",
+    "flag.truth.reading_done"
    ],
    "flagsCleared": [],
    "flagsRead": [
+    "flag.beat.codex_read",
+    "flag.beat.pale_landing_lit",
+    "flag.beat.stacks_key_given",
     "flag.celestial_gate_open",
     "flag.crimson_prophet_defeated",
-    "flag.hollow_queen_defeated"
+    "flag.fork.queen_kept",
+    "flag.fork.queen_released",
+    "flag.hollow_queen_defeated",
+    "flag.pale_concord_revealed",
+    "flag.testimonies_all"
    ],
    "questsStarted": [],
    "sites": [
     {
-     "flag": "flag.hollow_queen_defeated",
+     "flag": "flag.beat.codex_read",
      "kind": "read",
      "node": "root",
      "at": "choice[0]"
@@ -8767,6 +12688,78 @@
      "kind": "set",
      "node": "throne",
      "at": "choice[0]"
+    },
+    {
+     "flag": "flag.truth.reading_done",
+     "kind": "set",
+     "node": "throne",
+     "at": "choice[0]"
+    },
+    {
+     "flag": "flag.testimonies_all",
+     "kind": "set",
+     "node": "testimony_missing",
+     "at": "choice[0]"
+    },
+    {
+     "flag": "flag.beat.pages_laid",
+     "kind": "set",
+     "node": "pages",
+     "at": "onEnter"
+    },
+    {
+     "flag": "flag.fork.queen_released",
+     "kind": "read",
+     "node": "pages",
+     "at": "choice[0]"
+    },
+    {
+     "flag": "flag.fork.queen_kept",
+     "kind": "read",
+     "node": "pages",
+     "at": "choice[1]"
+    },
+    {
+     "flag": "flag.celestial_gate_open",
+     "kind": "read",
+     "node": "root",
+     "at": "startVariant"
+    },
+    {
+     "flag": "flag.beat.codex_read",
+     "kind": "read",
+     "node": "reading",
+     "at": "startVariant"
+    },
+    {
+     "flag": "flag.beat.stacks_key_given",
+     "kind": "read",
+     "node": "stacks_wait",
+     "at": "startVariant"
+    },
+    {
+     "flag": "flag.testimonies_all",
+     "kind": "read",
+     "node": "pages",
+     "at": "startVariant"
+    },
+    {
+     "flag": "flag.hollow_queen_defeated",
+     "kind": "read",
+     "node": "testimony_missing",
+     "at": "startVariant"
+    },
+    {
+     "flag": "flag.beat.pale_landing_lit",
+     "kind": "read",
+     "node": "lamp_turned",
+     "at": "startVariant"
+    },
+    {
+     "flag": "flag.pale_concord_revealed",
+     "kind": "read",
+     "node": "door",
+     "at": "startVariant"
     }
    ],
    "locKeys": [
@@ -8774,13 +12767,22 @@
     "dlg.archivist.c_gate",
     "dlg.archivist.c_hidden",
     "dlg.archivist.c_more",
+    "dlg.archivist.c_not_yet",
     "dlg.archivist.c_open",
+    "dlg.archivist.c_pages_fate",
+    "dlg.archivist.c_testimony_carry",
     "dlg.archivist.c_truth",
     "dlg.archivist.cataclysm",
     "dlg.archivist.gate",
     "dlg.archivist.hidden",
     "dlg.archivist.morthul",
     "dlg.archivist.opened",
+    "dlg.archivist.pages",
+    "dlg.archivist.pages_kept",
+    "dlg.archivist.pages_released",
+    "dlg.archivist.reading",
+    "dlg.archivist.stacks_wait",
+    "dlg.archivist.testimony_missing",
     "dlg.archivist.throne",
     "dlg.sunspire_archivist.c_bye",
     "dlg.sunspire_archivist.c_library",
@@ -8791,6 +12793,13 @@
     "dlg.sunspire_archivist.prophet",
     "dlg.sunspire_archivist.root",
     "dlg.sunspire_archivist.speaker",
+    "pale.dlg.archivist.c_door_go",
+    "pale.dlg.archivist.c_door_what",
+    "pale.dlg.archivist.c_door_why",
+    "pale.dlg.archivist.door",
+    "pale.dlg.archivist.door_what",
+    "pale.dlg.archivist.door_why",
+    "pale.dlg.archivist.lamp_turned",
     "spell.blink.ask",
     "spell.teach.ask_menu",
     "spell.teach.back",
@@ -8853,6 +12862,69 @@
    ]
   },
   {
+   "id": "dialogue.sunspire_codex",
+   "file": "data/dialogue/SunspireCodex.tres",
+   "source": "generated",
+   "speaker": "dlg.sunspire_codex.speaker",
+   "start": "root",
+   "startVariants": [],
+   "nodes": [
+    {
+     "id": "root",
+     "choices": 3,
+     "gotos": [
+      "read",
+      "read"
+     ]
+    },
+    {
+     "id": "read",
+     "choices": 2,
+     "gotos": [
+      "root"
+     ]
+    }
+   ],
+   "flagsSet": [
+    "flag.beat.codex_cards_seen"
+   ],
+   "flagsCleared": [],
+   "flagsRead": [
+    "flag.beat.codex_cards_seen"
+   ],
+   "questsStarted": [],
+   "sites": [
+    {
+     "flag": "flag.beat.codex_cards_seen",
+     "kind": "read",
+     "node": "root",
+     "at": "choice[0]"
+    },
+    {
+     "flag": "flag.beat.codex_cards_seen",
+     "kind": "set",
+     "node": "root",
+     "at": "choice[0]"
+    },
+    {
+     "flag": "flag.beat.codex_cards_seen",
+     "kind": "read",
+     "node": "root",
+     "at": "choice[1]"
+    }
+   ],
+   "locKeys": [
+    "dlg.sunspire_codex.read",
+    "dlg.sunspire_codex.read.c_again",
+    "dlg.sunspire_codex.read.c_close",
+    "dlg.sunspire_codex.root",
+    "dlg.sunspire_codex.root.c_close",
+    "dlg.sunspire_codex.root.c_turn",
+    "dlg.sunspire_codex.root.c_turn_first",
+    "dlg.sunspire_codex.speaker"
+   ]
+  },
+  {
    "id": "dialogue.sunspire_pilgrim",
    "file": "data/dialogue/SunspirePilgrim.tres",
    "source": "hand",
@@ -8885,6 +12957,151 @@
     "dlg.sunspire_pilgrim.mission",
     "dlg.sunspire_pilgrim.root",
     "dlg.sunspire_pilgrim.speaker"
+   ]
+  },
+  {
+   "id": "dialogue.sunspire_reading_table",
+   "file": "data/dialogue/SunspireReadingTable.tres",
+   "source": "generated",
+   "speaker": "dlg.sunspire_reading_table.speaker",
+   "start": "root",
+   "startVariants": [],
+   "nodes": [
+    {
+     "id": "root",
+     "choices": 2,
+     "gotos": [
+      "more"
+     ]
+    },
+    {
+     "id": "more",
+     "choices": 1,
+     "gotos": []
+    }
+   ],
+   "flagsSet": [],
+   "flagsCleared": [],
+   "flagsRead": [],
+   "questsStarted": [],
+   "sites": [],
+   "locKeys": [
+    "dlg.sunspire_reading_table.more",
+    "dlg.sunspire_reading_table.more.c_close",
+    "dlg.sunspire_reading_table.root",
+    "dlg.sunspire_reading_table.root.c_close",
+    "dlg.sunspire_reading_table.root.c_more",
+    "dlg.sunspire_reading_table.speaker"
+   ]
+  },
+  {
+   "id": "dialogue.sunspire_seal_a",
+   "file": "data/dialogue/SunspireSealA.tres",
+   "source": "generated",
+   "speaker": "dlg.sunspire_seal_a.speaker",
+   "start": "root",
+   "startVariants": [],
+   "nodes": [
+    {
+     "id": "root",
+     "choices": 1,
+     "gotos": []
+    }
+   ],
+   "flagsSet": [],
+   "flagsCleared": [],
+   "flagsRead": [],
+   "questsStarted": [],
+   "sites": [],
+   "locKeys": [
+    "dlg.sunspire_seal_a.root",
+    "dlg.sunspire_seal_a.root.c_close",
+    "dlg.sunspire_seal_a.speaker"
+   ]
+  },
+  {
+   "id": "dialogue.sunspire_seal_b",
+   "file": "data/dialogue/SunspireSealB.tres",
+   "source": "generated",
+   "speaker": "dlg.sunspire_seal_b.speaker",
+   "start": "root",
+   "startVariants": [],
+   "nodes": [
+    {
+     "id": "root",
+     "choices": 1,
+     "gotos": []
+    }
+   ],
+   "flagsSet": [],
+   "flagsCleared": [],
+   "flagsRead": [],
+   "questsStarted": [],
+   "sites": [],
+   "locKeys": [
+    "dlg.sunspire_seal_b.root",
+    "dlg.sunspire_seal_b.root.c_close",
+    "dlg.sunspire_seal_b.speaker"
+   ]
+  },
+  {
+   "id": "dialogue.sunspire_seal_c",
+   "file": "data/dialogue/SunspireSealC.tres",
+   "source": "generated",
+   "speaker": "dlg.sunspire_seal_c.speaker",
+   "start": "root",
+   "startVariants": [],
+   "nodes": [
+    {
+     "id": "root",
+     "choices": 1,
+     "gotos": []
+    }
+   ],
+   "flagsSet": [],
+   "flagsCleared": [],
+   "flagsRead": [],
+   "questsStarted": [],
+   "sites": [],
+   "locKeys": [
+    "dlg.sunspire_seal_c.root",
+    "dlg.sunspire_seal_c.root.c_close",
+    "dlg.sunspire_seal_c.speaker"
+   ]
+  },
+  {
+   "id": "dialogue.sunspire_stacks_door",
+   "file": "data/dialogue/SunspireStacksDoor.tres",
+   "source": "generated",
+   "speaker": "dlg.sunspire_stacks_door.speaker",
+   "start": "root",
+   "startVariants": [],
+   "nodes": [
+    {
+     "id": "root",
+     "choices": 2,
+     "gotos": [
+      "more"
+     ]
+    },
+    {
+     "id": "more",
+     "choices": 1,
+     "gotos": []
+    }
+   ],
+   "flagsSet": [],
+   "flagsCleared": [],
+   "flagsRead": [],
+   "questsStarted": [],
+   "sites": [],
+   "locKeys": [
+    "dlg.sunspire_stacks_door.more",
+    "dlg.sunspire_stacks_door.more.c_close",
+    "dlg.sunspire_stacks_door.root",
+    "dlg.sunspire_stacks_door.root.c_close",
+    "dlg.sunspire_stacks_door.root.c_more",
+    "dlg.sunspire_stacks_door.speaker"
    ]
   },
   {
@@ -9650,7 +13867,33 @@
    "source": "hand",
    "speaker": "pale.dlg.baker.speaker",
    "start": "root",
-   "startVariants": [],
+   "startVariants": [
+    {
+     "cond": 5,
+     "arg": "flag.hollow_queen_defeated",
+     "node": "root"
+    },
+    {
+     "cond": 5,
+     "arg": "flag.fork.queen_released",
+     "node": "v_released"
+    },
+    {
+     "cond": 5,
+     "arg": "flag.fork.queen_kept",
+     "node": "v_kept"
+    },
+    {
+     "cond": 7,
+     "arg": "40",
+     "node": "v_recoil"
+    },
+    {
+     "cond": 5,
+     "arg": "flag.main.pale_door_done",
+     "node": "v_clue"
+    }
+   ],
    "nodes": [
     {
      "id": "root",
@@ -9677,6 +13920,47 @@
     },
     {
      "id": "freed",
+     "choices": 3,
+     "gotos": [
+      "freed_released",
+      "freed_kept"
+     ]
+    },
+    {
+     "id": "v_clue",
+     "choices": 2,
+     "gotos": [
+      "root"
+     ]
+    },
+    {
+     "id": "v_recoil",
+     "choices": 2,
+     "gotos": [
+      "v_clue"
+     ]
+    },
+    {
+     "id": "v_released",
+     "choices": 2,
+     "gotos": [
+      "root"
+     ]
+    },
+    {
+     "id": "v_kept",
+     "choices": 2,
+     "gotos": [
+      "root"
+     ]
+    },
+    {
+     "id": "freed_released",
+     "choices": 1,
+     "gotos": []
+    },
+    {
+     "id": "freed_kept",
      "choices": 1,
      "gotos": []
     }
@@ -9684,7 +13968,10 @@
    "flagsSet": [],
    "flagsCleared": [],
    "flagsRead": [
-    "flag.hollow_queen_defeated"
+    "flag.fork.queen_kept",
+    "flag.fork.queen_released",
+    "flag.hollow_queen_defeated",
+    "flag.main.pale_door_done"
    ],
    "questsStarted": [],
    "sites": [
@@ -9699,6 +13986,42 @@
      "kind": "read",
      "node": "root",
      "at": "choice[2]"
+    },
+    {
+     "flag": "flag.fork.queen_released",
+     "kind": "read",
+     "node": "freed",
+     "at": "choice[0]"
+    },
+    {
+     "flag": "flag.fork.queen_kept",
+     "kind": "read",
+     "node": "freed",
+     "at": "choice[1]"
+    },
+    {
+     "flag": "flag.hollow_queen_defeated",
+     "kind": "read",
+     "node": "root",
+     "at": "startVariant"
+    },
+    {
+     "flag": "flag.fork.queen_released",
+     "kind": "read",
+     "node": "v_released",
+     "at": "startVariant"
+    },
+    {
+     "flag": "flag.fork.queen_kept",
+     "kind": "read",
+     "node": "v_kept",
+     "at": "startVariant"
+    },
+    {
+     "flag": "flag.main.pale_door_done",
+     "kind": "read",
+     "node": "v_clue",
+     "at": "startVariant"
     }
    ],
    "locKeys": [
@@ -9709,9 +14032,17 @@
     "pale.dlg.baker.c_freed",
     "pale.dlg.baker.c_queen",
     "pale.dlg.baker.freed",
+    "pale.dlg.baker.freed_kept",
+    "pale.dlg.baker.freed_released",
     "pale.dlg.baker.queen",
     "pale.dlg.baker.root",
-    "pale.dlg.baker.speaker"
+    "pale.dlg.baker.speaker",
+    "pale.dlg.baker.v_clue",
+    "pale.dlg.baker.v_kept",
+    "pale.dlg.baker.v_recoil",
+    "pale.dlg.baker.v_released",
+    "pale.dlg.undying.c_freed_how",
+    "pale.dlg.undying.c_recoil_ask"
    ]
   },
   {
@@ -9720,7 +14051,33 @@
    "source": "hand",
    "speaker": "pale.dlg.clockkeeper.speaker",
    "start": "root",
-   "startVariants": [],
+   "startVariants": [
+    {
+     "cond": 5,
+     "arg": "flag.hollow_queen_defeated",
+     "node": "root"
+    },
+    {
+     "cond": 5,
+     "arg": "flag.fork.queen_released",
+     "node": "v_released"
+    },
+    {
+     "cond": 5,
+     "arg": "flag.fork.queen_kept",
+     "node": "v_kept"
+    },
+    {
+     "cond": 7,
+     "arg": "40",
+     "node": "v_recoil"
+    },
+    {
+     "cond": 5,
+     "arg": "flag.main.pale_door_done",
+     "node": "v_clue"
+    }
+   ],
    "nodes": [
     {
      "id": "root",
@@ -9748,8 +14105,11 @@
     },
     {
      "id": "freed",
-     "choices": 1,
-     "gotos": []
+     "choices": 3,
+     "gotos": [
+      "freed_released",
+      "freed_kept"
+     ]
     },
     {
      "id": "mg_teach",
@@ -9765,12 +14125,53 @@
      "gotos": [
       "root"
      ]
+    },
+    {
+     "id": "v_clue",
+     "choices": 2,
+     "gotos": [
+      "root"
+     ]
+    },
+    {
+     "id": "v_recoil",
+     "choices": 2,
+     "gotos": [
+      "v_clue"
+     ]
+    },
+    {
+     "id": "v_released",
+     "choices": 2,
+     "gotos": [
+      "root"
+     ]
+    },
+    {
+     "id": "v_kept",
+     "choices": 2,
+     "gotos": [
+      "root"
+     ]
+    },
+    {
+     "id": "freed_released",
+     "choices": 1,
+     "gotos": []
+    },
+    {
+     "id": "freed_kept",
+     "choices": 1,
+     "gotos": []
     }
    ],
    "flagsSet": [],
    "flagsCleared": [],
    "flagsRead": [
-    "flag.hollow_queen_defeated"
+    "flag.fork.queen_kept",
+    "flag.fork.queen_released",
+    "flag.hollow_queen_defeated",
+    "flag.main.pale_door_done"
    ],
    "questsStarted": [],
    "sites": [
@@ -9785,6 +14186,42 @@
      "kind": "read",
      "node": "root",
      "at": "choice[2]"
+    },
+    {
+     "flag": "flag.fork.queen_released",
+     "kind": "read",
+     "node": "freed",
+     "at": "choice[0]"
+    },
+    {
+     "flag": "flag.fork.queen_kept",
+     "kind": "read",
+     "node": "freed",
+     "at": "choice[1]"
+    },
+    {
+     "flag": "flag.hollow_queen_defeated",
+     "kind": "read",
+     "node": "root",
+     "at": "startVariant"
+    },
+    {
+     "flag": "flag.fork.queen_released",
+     "kind": "read",
+     "node": "v_released",
+     "at": "startVariant"
+    },
+    {
+     "flag": "flag.fork.queen_kept",
+     "kind": "read",
+     "node": "v_kept",
+     "at": "startVariant"
+    },
+    {
+     "flag": "flag.main.pale_door_done",
+     "kind": "read",
+     "node": "v_clue",
+     "at": "startVariant"
     }
    ],
    "locKeys": [
@@ -9795,9 +14232,17 @@
     "pale.dlg.clockkeeper.c_freed",
     "pale.dlg.clockkeeper.c_queen",
     "pale.dlg.clockkeeper.freed",
+    "pale.dlg.clockkeeper.freed_kept",
+    "pale.dlg.clockkeeper.freed_released",
     "pale.dlg.clockkeeper.queen",
     "pale.dlg.clockkeeper.root",
     "pale.dlg.clockkeeper.speaker",
+    "pale.dlg.clockkeeper.v_clue",
+    "pale.dlg.clockkeeper.v_kept",
+    "pale.dlg.clockkeeper.v_recoil",
+    "pale.dlg.clockkeeper.v_released",
+    "pale.dlg.undying.c_freed_how",
+    "pale.dlg.undying.c_recoil_ask",
     "spell.grave_mark.ask",
     "spell.teach.ask_menu",
     "spell.teach.back",
@@ -9812,7 +14257,33 @@
    "source": "hand",
    "speaker": "pale.dlg.lamplighter.speaker",
    "start": "root",
-   "startVariants": [],
+   "startVariants": [
+    {
+     "cond": 5,
+     "arg": "flag.hollow_queen_defeated",
+     "node": "root"
+    },
+    {
+     "cond": 5,
+     "arg": "flag.fork.queen_released",
+     "node": "v_released"
+    },
+    {
+     "cond": 5,
+     "arg": "flag.fork.queen_kept",
+     "node": "v_kept"
+    },
+    {
+     "cond": 7,
+     "arg": "40",
+     "node": "v_recoil"
+    },
+    {
+     "cond": 5,
+     "arg": "flag.main.pale_door_done",
+     "node": "v_clue"
+    }
+   ],
    "nodes": [
     {
      "id": "root",
@@ -9839,6 +14310,47 @@
     },
     {
      "id": "freed",
+     "choices": 3,
+     "gotos": [
+      "freed_released",
+      "freed_kept"
+     ]
+    },
+    {
+     "id": "v_clue",
+     "choices": 2,
+     "gotos": [
+      "root"
+     ]
+    },
+    {
+     "id": "v_recoil",
+     "choices": 2,
+     "gotos": [
+      "v_clue"
+     ]
+    },
+    {
+     "id": "v_released",
+     "choices": 2,
+     "gotos": [
+      "root"
+     ]
+    },
+    {
+     "id": "v_kept",
+     "choices": 2,
+     "gotos": [
+      "root"
+     ]
+    },
+    {
+     "id": "freed_released",
+     "choices": 1,
+     "gotos": []
+    },
+    {
+     "id": "freed_kept",
      "choices": 1,
      "gotos": []
     }
@@ -9846,7 +14358,10 @@
    "flagsSet": [],
    "flagsCleared": [],
    "flagsRead": [
-    "flag.hollow_queen_defeated"
+    "flag.fork.queen_kept",
+    "flag.fork.queen_released",
+    "flag.hollow_queen_defeated",
+    "flag.main.pale_door_done"
    ],
    "questsStarted": [],
    "sites": [
@@ -9861,6 +14376,42 @@
      "kind": "read",
      "node": "root",
      "at": "choice[2]"
+    },
+    {
+     "flag": "flag.fork.queen_released",
+     "kind": "read",
+     "node": "freed",
+     "at": "choice[0]"
+    },
+    {
+     "flag": "flag.fork.queen_kept",
+     "kind": "read",
+     "node": "freed",
+     "at": "choice[1]"
+    },
+    {
+     "flag": "flag.hollow_queen_defeated",
+     "kind": "read",
+     "node": "root",
+     "at": "startVariant"
+    },
+    {
+     "flag": "flag.fork.queen_released",
+     "kind": "read",
+     "node": "v_released",
+     "at": "startVariant"
+    },
+    {
+     "flag": "flag.fork.queen_kept",
+     "kind": "read",
+     "node": "v_kept",
+     "at": "startVariant"
+    },
+    {
+     "flag": "flag.main.pale_door_done",
+     "kind": "read",
+     "node": "v_clue",
+     "at": "startVariant"
     }
    ],
    "locKeys": [
@@ -9871,9 +14422,17 @@
     "pale.dlg.lamplighter.c_freed",
     "pale.dlg.lamplighter.c_queen",
     "pale.dlg.lamplighter.freed",
+    "pale.dlg.lamplighter.freed_kept",
+    "pale.dlg.lamplighter.freed_released",
     "pale.dlg.lamplighter.queen",
     "pale.dlg.lamplighter.root",
-    "pale.dlg.lamplighter.speaker"
+    "pale.dlg.lamplighter.speaker",
+    "pale.dlg.lamplighter.v_clue",
+    "pale.dlg.lamplighter.v_kept",
+    "pale.dlg.lamplighter.v_recoil",
+    "pale.dlg.lamplighter.v_released",
+    "pale.dlg.undying.c_freed_how",
+    "pale.dlg.undying.c_recoil_ask"
    ]
   },
   {
@@ -9882,7 +14441,33 @@
    "source": "hand",
    "speaker": "pale.dlg.steward.speaker",
    "start": "root",
-   "startVariants": [],
+   "startVariants": [
+    {
+     "cond": 5,
+     "arg": "flag.hollow_queen_defeated",
+     "node": "root"
+    },
+    {
+     "cond": 5,
+     "arg": "flag.fork.queen_released",
+     "node": "v_released"
+    },
+    {
+     "cond": 5,
+     "arg": "flag.fork.queen_kept",
+     "node": "v_kept"
+    },
+    {
+     "cond": 7,
+     "arg": "40",
+     "node": "v_recoil"
+    },
+    {
+     "cond": 5,
+     "arg": "flag.main.pale_door_done",
+     "node": "v_clue"
+    }
+   ],
    "nodes": [
     {
      "id": "root",
@@ -9910,8 +14495,11 @@
     },
     {
      "id": "freed",
-     "choices": 1,
-     "gotos": []
+     "choices": 3,
+     "gotos": [
+      "freed_released",
+      "freed_kept"
+     ]
     },
     {
      "id": "mg_teach",
@@ -9927,12 +14515,53 @@
      "gotos": [
       "root"
      ]
+    },
+    {
+     "id": "v_clue",
+     "choices": 2,
+     "gotos": [
+      "root"
+     ]
+    },
+    {
+     "id": "v_recoil",
+     "choices": 2,
+     "gotos": [
+      "v_clue"
+     ]
+    },
+    {
+     "id": "v_released",
+     "choices": 2,
+     "gotos": [
+      "root"
+     ]
+    },
+    {
+     "id": "v_kept",
+     "choices": 2,
+     "gotos": [
+      "root"
+     ]
+    },
+    {
+     "id": "freed_released",
+     "choices": 1,
+     "gotos": []
+    },
+    {
+     "id": "freed_kept",
+     "choices": 1,
+     "gotos": []
     }
    ],
    "flagsSet": [],
    "flagsCleared": [],
    "flagsRead": [
-    "flag.hollow_queen_defeated"
+    "flag.fork.queen_kept",
+    "flag.fork.queen_released",
+    "flag.hollow_queen_defeated",
+    "flag.main.pale_door_done"
    ],
    "questsStarted": [],
    "sites": [
@@ -9947,6 +14576,42 @@
      "kind": "read",
      "node": "root",
      "at": "choice[2]"
+    },
+    {
+     "flag": "flag.fork.queen_released",
+     "kind": "read",
+     "node": "freed",
+     "at": "choice[0]"
+    },
+    {
+     "flag": "flag.fork.queen_kept",
+     "kind": "read",
+     "node": "freed",
+     "at": "choice[1]"
+    },
+    {
+     "flag": "flag.hollow_queen_defeated",
+     "kind": "read",
+     "node": "root",
+     "at": "startVariant"
+    },
+    {
+     "flag": "flag.fork.queen_released",
+     "kind": "read",
+     "node": "v_released",
+     "at": "startVariant"
+    },
+    {
+     "flag": "flag.fork.queen_kept",
+     "kind": "read",
+     "node": "v_kept",
+     "at": "startVariant"
+    },
+    {
+     "flag": "flag.main.pale_door_done",
+     "kind": "read",
+     "node": "v_clue",
+     "at": "startVariant"
     }
    ],
    "locKeys": [
@@ -9957,9 +14622,17 @@
     "pale.dlg.steward.c_freed",
     "pale.dlg.steward.c_queen",
     "pale.dlg.steward.freed",
+    "pale.dlg.steward.freed_kept",
+    "pale.dlg.steward.freed_released",
     "pale.dlg.steward.queen",
     "pale.dlg.steward.root",
     "pale.dlg.steward.speaker",
+    "pale.dlg.steward.v_clue",
+    "pale.dlg.steward.v_kept",
+    "pale.dlg.steward.v_recoil",
+    "pale.dlg.steward.v_released",
+    "pale.dlg.undying.c_freed_how",
+    "pale.dlg.undying.c_recoil_ask",
     "spell.soul_tithe.ask",
     "spell.teach.ask_menu",
     "spell.teach.back",
@@ -10471,8 +15144,958 @@
     "data/bosses/BeastLord.tres",
     "scenes/regions/ashen_wilds/beast_lair.tscn",
     "src/Bootstrap/HeadlessStory.cs",
+    "src/Narrative/CampaignCatchUp.cs",
     "src/Narrative/HiddenRealmReveal.cs"
    ]
+  },
+  "flag.beat.anchor_a": {
+   "writers": [
+    {
+     "kind": "quest",
+     "id": "quest.main.godfall_choir",
+     "via": "objective[4].completion"
+    }
+   ],
+   "readers": [],
+   "code": false,
+   "externalRefs": [
+    "data/story/rules/spec2.json"
+   ]
+  },
+  "flag.beat.anchor_b": {
+   "writers": [
+    {
+     "kind": "quest",
+     "id": "quest.main.godfall_choir",
+     "via": "objective[5].completion"
+    }
+   ],
+   "readers": [],
+   "code": false,
+   "externalRefs": [
+    "data/story/rules/spec2.json"
+   ]
+  },
+  "flag.beat.anchor_c": {
+   "writers": [
+    {
+     "kind": "quest",
+     "id": "quest.main.godfall_choir",
+     "via": "objective[6].completion"
+    }
+   ],
+   "readers": [],
+   "code": false,
+   "externalRefs": [
+    "data/story/rules/spec2.json"
+   ]
+  },
+  "flag.beat.anchors_lit": {
+   "writers": [],
+   "readers": [
+    {
+     "kind": "quest",
+     "id": "quest.main.godfall_choir",
+     "via": "objective[7].required"
+    }
+   ],
+   "code": true,
+   "externalRefs": [
+    "data/story/rules/spec2.json"
+   ]
+  },
+  "flag.beat.choir_answered": {
+   "writers": [
+    {
+     "kind": "dialogue",
+     "id": "dialogue.choir_echo",
+     "via": "root/choice[0]"
+    }
+   ],
+   "readers": [
+    {
+     "kind": "quest",
+     "id": "quest.main.godfall_choir",
+     "via": "objective[1].forbidden"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.choir_echo",
+     "via": "passed/startVariant"
+    }
+   ],
+   "code": false,
+   "externalRefs": [
+    "data/story/rules/spec2.json"
+   ]
+  },
+  "flag.beat.choir_passed": {
+   "writers": [],
+   "readers": [
+    {
+     "kind": "quest",
+     "id": "quest.main.godfall_choir",
+     "via": "objective[2].milestone"
+    },
+    {
+     "kind": "quest",
+     "id": "quest.main.godfall_choir",
+     "via": "objective[3].required"
+    }
+   ],
+   "code": true,
+   "externalRefs": [
+    "data/story/rules/spec2.json"
+   ]
+  },
+  "flag.beat.choir_reached": {
+   "writers": [
+    {
+     "kind": "quest",
+     "id": "quest.main.godfall_choir",
+     "via": "objective[0].completion"
+    }
+   ],
+   "readers": [
+    {
+     "kind": "quest",
+     "id": "quest.main.godfall_choir",
+     "via": "objective[1].required"
+    },
+    {
+     "kind": "quest",
+     "id": "quest.main.godfall_choir",
+     "via": "objective[2].required"
+    }
+   ],
+   "code": false,
+   "externalRefs": []
+  },
+  "flag.beat.choir_silenced": {
+   "writers": [
+    {
+     "kind": "quest",
+     "id": "quest.main.godfall_choir",
+     "via": "objective[1].completion"
+    }
+   ],
+   "readers": [],
+   "code": false,
+   "externalRefs": [
+    "data/story/rules/spec2.json"
+   ]
+  },
+  "flag.beat.codex_cards_seen": {
+   "writers": [
+    {
+     "kind": "dialogue",
+     "id": "dialogue.sunspire_codex",
+     "via": "root/choice[0]"
+    }
+   ],
+   "readers": [
+    {
+     "kind": "dialogue",
+     "id": "dialogue.sunspire_codex",
+     "via": "root/choice[0]"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.sunspire_codex",
+     "via": "root/choice[1]"
+    }
+   ],
+   "code": false,
+   "externalRefs": []
+  },
+  "flag.beat.codex_read": {
+   "writers": [
+    {
+     "kind": "quest",
+     "id": "quest.main.deep_stacks",
+     "via": "objective[8].completion"
+    }
+   ],
+   "readers": [
+    {
+     "kind": "quest",
+     "id": "quest.main.truth",
+     "via": "objective[0].required"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.sunspire_archivist",
+     "via": "root/choice[0]"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.sunspire_archivist",
+     "via": "reading/startVariant"
+    }
+   ],
+   "code": false,
+   "externalRefs": [
+    "data/story/reactions/spec2.json"
+   ]
+  },
+  "flag.beat.gate_vigil_done": {
+   "writers": [
+    {
+     "kind": "dialogue",
+     "id": "dialogue.rival_gate",
+     "via": "root/choice[0]"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.rival_gate",
+     "via": "root/choice[1]"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.rival_gate",
+     "via": "root/choice[2]"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.rival_gate",
+     "via": "root_trust/choice[0]"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.rival_gate",
+     "via": "root_trust/choice[1]"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.rival_gate",
+     "via": "root_trust/choice[2]"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.rival_gate",
+     "via": "root_defy/choice[0]"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.rival_gate",
+     "via": "root_defy/choice[1]"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.rival_gate",
+     "via": "root_defy/choice[2]"
+    }
+   ],
+   "readers": [
+    {
+     "kind": "dialogue",
+     "id": "dialogue.rival_gate",
+     "via": "after/startVariant"
+    }
+   ],
+   "code": false,
+   "externalRefs": []
+  },
+  "flag.beat.godfall_held": {
+   "writers": [
+    {
+     "kind": "quest",
+     "id": "quest.main.godfall_choir",
+     "via": "objective[7].completion"
+    }
+   ],
+   "readers": [],
+   "code": false,
+   "externalRefs": []
+  },
+  "flag.beat.godfall_reached": {
+   "writers": [
+    {
+     "kind": "quest",
+     "id": "quest.main.godfall_choir",
+     "via": "objective[3].completion"
+    }
+   ],
+   "readers": [
+    {
+     "kind": "quest",
+     "id": "quest.main.godfall_choir",
+     "via": "objective[4].required"
+    },
+    {
+     "kind": "quest",
+     "id": "quest.main.godfall_choir",
+     "via": "objective[5].required"
+    },
+    {
+     "kind": "quest",
+     "id": "quest.main.godfall_choir",
+     "via": "objective[6].required"
+    }
+   ],
+   "code": false,
+   "externalRefs": []
+  },
+  "flag.beat.golems_down": {
+   "writers": [
+    {
+     "kind": "quest",
+     "id": "quest.main.deep_stacks",
+     "via": "objective[2].completion"
+    }
+   ],
+   "readers": [
+    {
+     "kind": "quest",
+     "id": "quest.main.deep_stacks",
+     "via": "objective[3].required"
+    },
+    {
+     "kind": "quest",
+     "id": "quest.main.deep_stacks",
+     "via": "objective[4].required"
+    },
+    {
+     "kind": "quest",
+     "id": "quest.main.deep_stacks",
+     "via": "objective[5].required"
+    }
+   ],
+   "code": false,
+   "externalRefs": []
+  },
+  "flag.beat.graves_read": {
+   "writers": [
+    {
+     "kind": "quest",
+     "id": "quest.main.celestial_landing",
+     "via": "objective[4].completion"
+    }
+   ],
+   "readers": [],
+   "code": false,
+   "externalRefs": [
+    "data/story/reactions/spec2.json"
+   ]
+  },
+  "flag.beat.lamp_cradle": {
+   "writers": [
+    {
+     "kind": "quest",
+     "id": "quest.main.vesperhold",
+     "via": "objective[7].completion"
+    }
+   ],
+   "readers": [],
+   "code": false,
+   "externalRefs": [
+    "data/story/reactions/spec2.json"
+   ]
+  },
+  "flag.beat.lamp_queen": {
+   "writers": [
+    {
+     "kind": "quest",
+     "id": "quest.main.vesperhold",
+     "via": "objective[8].completion"
+    }
+   ],
+   "readers": [],
+   "code": false,
+   "externalRefs": []
+  },
+  "flag.beat.lamp_signing": {
+   "writers": [
+    {
+     "kind": "quest",
+     "id": "quest.main.vesperhold",
+     "via": "objective[6].completion"
+    }
+   ],
+   "readers": [],
+   "code": false,
+   "externalRefs": []
+  },
+  "flag.beat.landing_beacon_lit": {
+   "writers": [
+    {
+     "kind": "quest",
+     "id": "quest.main.celestial_landing",
+     "via": "objective[1].completion"
+    }
+   ],
+   "readers": [],
+   "code": false,
+   "externalRefs": []
+  },
+  "flag.beat.landing_held": {
+   "writers": [
+    {
+     "kind": "quest",
+     "id": "quest.main.celestial_landing",
+     "via": "objective[2].completion"
+    }
+   ],
+   "readers": [],
+   "code": false,
+   "externalRefs": []
+  },
+  "flag.beat.library_defended": {
+   "writers": [
+    {
+     "kind": "quest",
+     "id": "quest.main.deep_stacks",
+     "via": "objective[6].completion"
+    }
+   ],
+   "readers": [
+    {
+     "kind": "quest",
+     "id": "quest.main.deep_stacks",
+     "via": "objective[7].required"
+    }
+   ],
+   "code": false,
+   "externalRefs": []
+  },
+  "flag.beat.pages_laid": {
+   "writers": [
+    {
+     "kind": "dialogue",
+     "id": "dialogue.sunspire_archivist",
+     "via": "pages/onEnter"
+    }
+   ],
+   "readers": [],
+   "code": false,
+   "externalRefs": []
+  },
+  "flag.beat.pages_read": {
+   "writers": [
+    {
+     "kind": "quest",
+     "id": "quest.main.sundering_pages",
+     "via": "objective[3].completion"
+    }
+   ],
+   "readers": [
+    {
+     "kind": "dialogue",
+     "id": "dialogue.archive_keeper",
+     "via": "pages_key/startVariant"
+    }
+   ],
+   "code": false,
+   "externalRefs": []
+  },
+  "flag.beat.pale_landing_lit": {
+   "writers": [
+    {
+     "kind": "quest",
+     "id": "quest.main.pale_door",
+     "via": "objective[2].completion"
+    }
+   ],
+   "readers": [
+    {
+     "kind": "dialogue",
+     "id": "dialogue.sunspire_archivist",
+     "via": "lamp_turned/startVariant"
+    }
+   ],
+   "code": false,
+   "externalRefs": [
+    "data/story/reactions/spec2.json"
+   ]
+  },
+  "flag.beat.plinth_a": {
+   "writers": [
+    {
+     "kind": "quest",
+     "id": "quest.main.deep_stacks",
+     "via": "objective[3].completion"
+    }
+   ],
+   "readers": [],
+   "code": false,
+   "externalRefs": [
+    "data/story/rules/spec2.json"
+   ]
+  },
+  "flag.beat.plinth_b": {
+   "writers": [
+    {
+     "kind": "quest",
+     "id": "quest.main.deep_stacks",
+     "via": "objective[4].completion"
+    }
+   ],
+   "readers": [],
+   "code": false,
+   "externalRefs": [
+    "data/story/rules/spec2.json"
+   ]
+  },
+  "flag.beat.plinth_c": {
+   "writers": [
+    {
+     "kind": "quest",
+     "id": "quest.main.deep_stacks",
+     "via": "objective[5].completion"
+    }
+   ],
+   "readers": [],
+   "code": false,
+   "externalRefs": [
+    "data/story/rules/spec2.json"
+   ]
+  },
+  "flag.beat.queen_truce": {
+   "writers": [
+    {
+     "kind": "dialogue",
+     "id": "dialogue.hollow_queen_parley",
+     "via": "truce_taken/onEnter"
+    }
+   ],
+   "readers": [
+    {
+     "kind": "dialogue",
+     "id": "dialogue.hollow_queen_parley",
+     "via": "after/choice[3]"
+    }
+   ],
+   "code": false,
+   "externalRefs": []
+  },
+  "flag.beat.registry_read": {
+   "writers": [
+    {
+     "kind": "quest",
+     "id": "quest.main.vesperhold",
+     "via": "objective[5].completion"
+    }
+   ],
+   "readers": [],
+   "code": false,
+   "externalRefs": [
+    "data/story/reactions/spec2.json"
+   ]
+  },
+  "flag.beat.rival_parley_done": {
+   "writers": [
+    {
+     "kind": "dialogue",
+     "id": "dialogue.rival_library",
+     "via": "root/onEnter"
+    }
+   ],
+   "readers": [
+    {
+     "kind": "quest",
+     "id": "quest.main.deep_stacks",
+     "via": "objective[8].required"
+    }
+   ],
+   "code": false,
+   "externalRefs": []
+  },
+  "flag.beat.seals_broken": {
+   "writers": [],
+   "readers": [
+    {
+     "kind": "quest",
+     "id": "quest.main.deep_stacks",
+     "via": "objective[6].required"
+    }
+   ],
+   "code": true,
+   "externalRefs": [
+    "data/story/rules/spec2.json"
+   ]
+  },
+  "flag.beat.sentinels_down": {
+   "writers": [
+    {
+     "kind": "quest",
+     "id": "quest.main.sundered_stair",
+     "via": "objective[3].completion"
+    }
+   ],
+   "readers": [
+    {
+     "kind": "quest",
+     "id": "quest.main.sundered_stair",
+     "via": "objective[4].required"
+    }
+   ],
+   "code": false,
+   "externalRefs": []
+  },
+  "flag.beat.stacks_key_given": {
+   "writers": [
+    {
+     "kind": "dialogue",
+     "id": "dialogue.archive_keeper",
+     "via": "pages_key/onEnter"
+    }
+   ],
+   "readers": [
+    {
+     "kind": "dialogue",
+     "id": "dialogue.archive_keeper",
+     "via": "root/startVariant"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.sunspire_archivist",
+     "via": "stacks_wait/startVariant"
+    }
+   ],
+   "code": false,
+   "externalRefs": []
+  },
+  "flag.beat.stacks_open": {
+   "writers": [
+    {
+     "kind": "quest",
+     "id": "quest.main.deep_stacks",
+     "via": "objective[1].completion"
+    }
+   ],
+   "readers": [
+    {
+     "kind": "quest",
+     "id": "quest.main.deep_stacks",
+     "via": "objective[2].required"
+    }
+   ],
+   "code": false,
+   "externalRefs": []
+  },
+  "flag.beat.stair_echo": {
+   "writers": [
+    {
+     "kind": "quest",
+     "id": "quest.main.sundered_stair",
+     "via": "objective[6].completion"
+    }
+   ],
+   "readers": [
+    {
+     "kind": "quest",
+     "id": "quest.main.sundered_stair",
+     "via": "objective[7].required"
+    }
+   ],
+   "code": false,
+   "externalRefs": [
+    "data/story/reactions/spec2.json"
+   ]
+  },
+  "flag.beat.stair_held": {
+   "writers": [
+    {
+     "kind": "quest",
+     "id": "quest.main.sundered_stair",
+     "via": "objective[4].completion"
+    }
+   ],
+   "readers": [
+    {
+     "kind": "quest",
+     "id": "quest.main.sundered_stair",
+     "via": "objective[6].required"
+    }
+   ],
+   "code": false,
+   "externalRefs": []
+  },
+  "flag.beat.stair_reached": {
+   "writers": [
+    {
+     "kind": "quest",
+     "id": "quest.main.sundered_stair",
+     "via": "objective[0].completion"
+    }
+   ],
+   "readers": [
+    {
+     "kind": "quest",
+     "id": "quest.main.sundered_stair",
+     "via": "objective[1].required"
+    },
+    {
+     "kind": "quest",
+     "id": "quest.main.sundered_stair",
+     "via": "objective[2].required"
+    }
+   ],
+   "code": false,
+   "externalRefs": []
+  },
+  "flag.beat.stair_unsealed": {
+   "writers": [],
+   "readers": [
+    {
+     "kind": "quest",
+     "id": "quest.main.sundered_stair",
+     "via": "objective[3].required"
+    }
+   ],
+   "code": true,
+   "externalRefs": [
+    "data/story/rules/spec2.json"
+   ]
+  },
+  "flag.beat.throne_decided": {
+   "writers": [
+    {
+     "kind": "dialogue",
+     "id": "dialogue.ash_throne",
+     "via": "dawn/choice[0]"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.ash_throne",
+     "via": "embers/choice[0]"
+    }
+   ],
+   "readers": [
+    {
+     "kind": "quest",
+     "id": "quest.main.throne",
+     "via": "objective[3].milestone"
+    }
+   ],
+   "code": false,
+   "externalRefs": []
+  },
+  "flag.beat.winch_a": {
+   "writers": [
+    {
+     "kind": "quest",
+     "id": "quest.main.sundered_stair",
+     "via": "objective[1].completion"
+    }
+   ],
+   "readers": [],
+   "code": false,
+   "externalRefs": [
+    "data/story/rules/spec2.json"
+   ]
+  },
+  "flag.beat.winch_b": {
+   "writers": [
+    {
+     "kind": "quest",
+     "id": "quest.main.sundered_stair",
+     "via": "objective[2].completion"
+    }
+   ],
+   "readers": [],
+   "code": false,
+   "externalRefs": [
+    "data/story/rules/spec2.json"
+   ]
+  },
+  "flag.boon.dray_pressed": {
+   "writers": [
+    {
+     "kind": "dialogue",
+     "id": "dialogue.ally_dray_pressed",
+     "via": "root/choice[0]"
+    }
+   ],
+   "readers": [
+    {
+     "kind": "dialogue",
+     "id": "dialogue.ally_dray_pressed",
+     "via": "root/choice[0]"
+    }
+   ],
+   "code": false,
+   "externalRefs": []
+  },
+  "flag.boon.dray_spared": {
+   "writers": [
+    {
+     "kind": "dialogue",
+     "id": "dialogue.ally_dray_spared",
+     "via": "root/choice[0]"
+    }
+   ],
+   "readers": [
+    {
+     "kind": "dialogue",
+     "id": "dialogue.ally_dray_spared",
+     "via": "root/choice[0]"
+    }
+   ],
+   "code": false,
+   "externalRefs": []
+  },
+  "flag.boon.flock_exposed": {
+   "writers": [
+    {
+     "kind": "dialogue",
+     "id": "dialogue.ally_flock_exposed",
+     "via": "root/choice[0]"
+    }
+   ],
+   "readers": [
+    {
+     "kind": "dialogue",
+     "id": "dialogue.ally_flock_exposed",
+     "via": "root/choice[0]"
+    }
+   ],
+   "code": false,
+   "externalRefs": []
+  },
+  "flag.boon.flock_kin": {
+   "writers": [
+    {
+     "kind": "dialogue",
+     "id": "dialogue.ally_flock_kin",
+     "via": "root/choice[0]"
+    }
+   ],
+   "readers": [
+    {
+     "kind": "dialogue",
+     "id": "dialogue.ally_flock_kin",
+     "via": "root/choice[0]"
+    }
+   ],
+   "code": false,
+   "externalRefs": []
+  },
+  "flag.boon.flock_turned": {
+   "writers": [
+    {
+     "kind": "dialogue",
+     "id": "dialogue.ally_flock_turned",
+     "via": "root/choice[0]"
+    }
+   ],
+   "readers": [
+    {
+     "kind": "dialogue",
+     "id": "dialogue.ally_flock_turned",
+     "via": "root/choice[0]"
+    }
+   ],
+   "code": false,
+   "externalRefs": []
+  },
+  "flag.boon.halvar": {
+   "writers": [
+    {
+     "kind": "dialogue",
+     "id": "dialogue.ally_halvar",
+     "via": "root/choice[0]"
+    }
+   ],
+   "readers": [
+    {
+     "kind": "dialogue",
+     "id": "dialogue.ally_halvar",
+     "via": "root/choice[0]"
+    }
+   ],
+   "code": false,
+   "externalRefs": []
+  },
+  "flag.boon.herd_calmed": {
+   "writers": [
+    {
+     "kind": "dialogue",
+     "id": "dialogue.ally_herd_calmed",
+     "via": "root/choice[0]"
+    }
+   ],
+   "readers": [
+    {
+     "kind": "dialogue",
+     "id": "dialogue.ally_herd_calmed",
+     "via": "root/choice[0]"
+    }
+   ],
+   "code": false,
+   "externalRefs": []
+  },
+  "flag.boon.herd_slain": {
+   "writers": [
+    {
+     "kind": "dialogue",
+     "id": "dialogue.ally_herd_slain",
+     "via": "root/choice[0]"
+    }
+   ],
+   "readers": [
+    {
+     "kind": "dialogue",
+     "id": "dialogue.ally_herd_slain",
+     "via": "root/choice[0]"
+    }
+   ],
+   "code": false,
+   "externalRefs": []
+  },
+  "flag.boon.hjalvar": {
+   "writers": [
+    {
+     "kind": "dialogue",
+     "id": "dialogue.ally_hjalvar",
+     "via": "root/choice[0]"
+    }
+   ],
+   "readers": [
+    {
+     "kind": "dialogue",
+     "id": "dialogue.ally_hjalvar",
+     "via": "root/choice[0]"
+    }
+   ],
+   "code": false,
+   "externalRefs": []
+  },
+  "flag.boon.queen_kept": {
+   "writers": [
+    {
+     "kind": "dialogue",
+     "id": "dialogue.ally_queen_kept",
+     "via": "root/choice[0]"
+    }
+   ],
+   "readers": [
+    {
+     "kind": "dialogue",
+     "id": "dialogue.ally_queen_kept",
+     "via": "root/choice[0]"
+    }
+   ],
+   "code": false,
+   "externalRefs": []
+  },
+  "flag.boon.queen_released": {
+   "writers": [
+    {
+     "kind": "dialogue",
+     "id": "dialogue.ally_queen_released",
+     "via": "root/choice[0]"
+    }
+   ],
+   "readers": [
+    {
+     "kind": "dialogue",
+     "id": "dialogue.ally_queen_released",
+     "via": "root/choice[0]"
+    }
+   ],
+   "code": false,
+   "externalRefs": []
   },
   "flag.celestial_gate_open": {
    "writers": [
@@ -10485,8 +16108,8 @@
    "readers": [
     {
      "kind": "quest",
-     "id": "quest.main.celestial",
-     "via": "autoStart"
+     "id": "quest.main.truth",
+     "via": "objective[1].milestone"
     },
     {
      "kind": "dialogue",
@@ -10497,12 +16120,18 @@
      "kind": "dialogue",
      "id": "dialogue.sunspire_archivist",
      "via": "throne/choice[0]"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.sunspire_archivist",
+     "via": "root/startVariant"
     }
    ],
    "code": false,
    "externalRefs": [
     "data/regions/CelestialRealm.tres",
-    "src/Bootstrap/HeadlessStory.cs"
+    "src/Bootstrap/HeadlessStory.cs",
+    "src/Narrative/CampaignCatchUp.cs"
    ]
   },
   "flag.clan.bloodfeud": {
@@ -10639,6 +16268,7 @@
     "data/bosses/CrimsonProphet.tres",
     "scenes/regions/sunspire/temple.tscn",
     "src/Bootstrap/HeadlessStory.cs",
+    "src/Narrative/CampaignCatchUp.cs",
     "src/Narrative/HiddenRealmReveal.cs"
    ]
   },
@@ -11019,6 +16649,146 @@
     "src/UI/EndingSequence.cs"
    ]
   },
+  "flag.fork.queen_kept": {
+   "writers": [
+    {
+     "kind": "dialogue",
+     "id": "dialogue.pale_count_stone",
+     "via": "root/choice[3]"
+    }
+   ],
+   "readers": [
+    {
+     "kind": "dialogue",
+     "id": "dialogue.hollow_queen_parley",
+     "via": "after/choice[2]"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.hollow_queen_parley",
+     "via": "kept/startVariant"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.sunspire_archivist",
+     "via": "pages/choice[1]"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.undying_baker",
+     "via": "freed/choice[1]"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.undying_baker",
+     "via": "v_kept/startVariant"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.undying_clockkeeper",
+     "via": "freed/choice[1]"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.undying_clockkeeper",
+     "via": "v_kept/startVariant"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.undying_lamplighter",
+     "via": "freed/choice[1]"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.undying_lamplighter",
+     "via": "v_kept/startVariant"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.undying_steward",
+     "via": "freed/choice[1]"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.undying_steward",
+     "via": "v_kept/startVariant"
+    }
+   ],
+   "code": false,
+   "externalRefs": [
+    "data/story/reactions/spec2.json"
+   ]
+  },
+  "flag.fork.queen_released": {
+   "writers": [
+    {
+     "kind": "dialogue",
+     "id": "dialogue.pale_count_stone",
+     "via": "root/choice[2]"
+    }
+   ],
+   "readers": [
+    {
+     "kind": "dialogue",
+     "id": "dialogue.hollow_queen_parley",
+     "via": "after/choice[1]"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.hollow_queen_parley",
+     "via": "released/startVariant"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.sunspire_archivist",
+     "via": "pages/choice[0]"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.undying_baker",
+     "via": "freed/choice[0]"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.undying_baker",
+     "via": "v_released/startVariant"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.undying_clockkeeper",
+     "via": "freed/choice[0]"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.undying_clockkeeper",
+     "via": "v_released/startVariant"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.undying_lamplighter",
+     "via": "freed/choice[0]"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.undying_lamplighter",
+     "via": "v_released/startVariant"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.undying_steward",
+     "via": "freed/choice[0]"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.undying_steward",
+     "via": "v_released/startVariant"
+    }
+   ],
+   "code": false,
+   "externalRefs": [
+    "data/story/reactions/spec2.json"
+   ]
+  },
   "flag.frostfang.passage_open": {
    "writers": [
     {
@@ -11029,7 +16799,9 @@
    ],
    "readers": [],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "src/Narrative/CampaignCatchUp.cs"
+   ]
   },
   "flag.hollow_queen_absorbed": {
    "writers": [
@@ -11055,19 +16827,19 @@
    "writers": [],
    "readers": [
     {
-     "kind": "quest",
-     "id": "quest.main.truth",
-     "via": "autoStart"
-    },
-    {
      "kind": "dialogue",
-     "id": "dialogue.sunspire_archivist",
-     "via": "root/choice[0]"
+     "id": "dialogue.hollow_queen_parley",
+     "via": "after/startVariant"
     },
     {
      "kind": "dialogue",
      "id": "dialogue.sunspire_archivist",
      "via": "root/choice[2]"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.sunspire_archivist",
+     "via": "testimony_missing/startVariant"
     },
     {
      "kind": "dialogue",
@@ -11081,6 +16853,11 @@
     },
     {
      "kind": "dialogue",
+     "id": "dialogue.undying_baker",
+     "via": "root/startVariant"
+    },
+    {
+     "kind": "dialogue",
      "id": "dialogue.undying_clockkeeper",
      "via": "root/choice[1]"
     },
@@ -11088,6 +16865,11 @@
      "kind": "dialogue",
      "id": "dialogue.undying_clockkeeper",
      "via": "root/choice[2]"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.undying_clockkeeper",
+     "via": "root/startVariant"
     },
     {
      "kind": "dialogue",
@@ -11101,6 +16883,11 @@
     },
     {
      "kind": "dialogue",
+     "id": "dialogue.undying_lamplighter",
+     "via": "root/startVariant"
+    },
+    {
+     "kind": "dialogue",
      "id": "dialogue.undying_steward",
      "via": "root/choice[1]"
     },
@@ -11108,13 +16895,19 @@
      "kind": "dialogue",
      "id": "dialogue.undying_steward",
      "via": "root/choice[2]"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.undying_steward",
+     "via": "root/startVariant"
     }
    ],
    "code": true,
    "externalRefs": [
     "data/bosses/HollowQueen.tres",
     "scenes/regions/pale_concord/palace.tscn",
-    "src/Bootstrap/HeadlessStory.cs"
+    "src/Bootstrap/HeadlessStory.cs",
+    "src/Narrative/CampaignCatchUp.cs"
    ]
   },
   "flag.hollowreach.barrels_declared": {
@@ -11284,7 +17077,8 @@
     "data/shops/EmberCrownApothecary.tres",
     "scenes/regions/frostfang_reach/stormcrown.tscn",
     "src/Bootstrap/HeadlessStory.cs",
-    "src/Enemies/BossEncounterDirector.cs"
+    "src/Enemies/BossEncounterDirector.cs",
+    "src/Narrative/CampaignCatchUp.cs"
    ]
   },
   "flag.iron_syndicate.finale_fidelity": {
@@ -11392,6 +17186,223 @@
    "code": false,
    "externalRefs": []
   },
+  "flag.main.celestial_done": {
+   "writers": [
+    {
+     "kind": "quest",
+     "id": "quest.main.celestial",
+     "via": "completion"
+    }
+   ],
+   "readers": [
+    {
+     "kind": "quest",
+     "id": "quest.main.throne",
+     "via": "autoStart"
+    }
+   ],
+   "code": false,
+   "externalRefs": []
+  },
+  "flag.main.celestial_landing_done": {
+   "writers": [
+    {
+     "kind": "quest",
+     "id": "quest.main.celestial_landing",
+     "via": "completion"
+    }
+   ],
+   "readers": [
+    {
+     "kind": "quest",
+     "id": "quest.main.godfall_choir",
+     "via": "autoStart"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.assembly_marshal",
+     "via": "later/startVariant"
+    }
+   ],
+   "code": false,
+   "externalRefs": []
+  },
+  "flag.main.deep_stacks_done": {
+   "writers": [
+    {
+     "kind": "quest",
+     "id": "quest.main.deep_stacks",
+     "via": "completion"
+    }
+   ],
+   "readers": [
+    {
+     "kind": "quest",
+     "id": "quest.main.truth",
+     "via": "autoStart"
+    }
+   ],
+   "code": false,
+   "externalRefs": []
+  },
+  "flag.main.godfall_choir_done": {
+   "writers": [
+    {
+     "kind": "quest",
+     "id": "quest.main.godfall_choir",
+     "via": "completion"
+    }
+   ],
+   "readers": [
+    {
+     "kind": "quest",
+     "id": "quest.main.sundered_stair",
+     "via": "autoStart"
+    }
+   ],
+   "code": false,
+   "externalRefs": []
+  },
+  "flag.main.hidden_done": {
+   "writers": [
+    {
+     "kind": "quest",
+     "id": "quest.main.hidden",
+     "via": "completion"
+    }
+   ],
+   "readers": [
+    {
+     "kind": "quest",
+     "id": "quest.main.sundering_pages",
+     "via": "autoStart"
+    }
+   ],
+   "code": false,
+   "externalRefs": []
+  },
+  "flag.main.pale_door_done": {
+   "writers": [
+    {
+     "kind": "quest",
+     "id": "quest.main.pale_door",
+     "via": "completion"
+    }
+   ],
+   "readers": [
+    {
+     "kind": "quest",
+     "id": "quest.main.vesperhold",
+     "via": "autoStart"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.undying_baker",
+     "via": "v_clue/startVariant"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.undying_clockkeeper",
+     "via": "v_clue/startVariant"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.undying_lamplighter",
+     "via": "v_clue/startVariant"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.undying_steward",
+     "via": "v_clue/startVariant"
+    }
+   ],
+   "code": false,
+   "externalRefs": []
+  },
+  "flag.main.sundered_stair_done": {
+   "writers": [
+    {
+     "kind": "quest",
+     "id": "quest.main.sundered_stair",
+     "via": "completion"
+    }
+   ],
+   "readers": [
+    {
+     "kind": "quest",
+     "id": "quest.main.celestial",
+     "via": "autoStart"
+    }
+   ],
+   "code": false,
+   "externalRefs": []
+  },
+  "flag.main.sundering_pages_done": {
+   "writers": [
+    {
+     "kind": "quest",
+     "id": "quest.main.sundering_pages",
+     "via": "completion"
+    }
+   ],
+   "readers": [
+    {
+     "kind": "quest",
+     "id": "quest.main.deep_stacks",
+     "via": "autoStart"
+    }
+   ],
+   "code": false,
+   "externalRefs": []
+  },
+  "flag.main.throne_done": {
+   "writers": [
+    {
+     "kind": "quest",
+     "id": "quest.main.throne",
+     "via": "completion"
+    }
+   ],
+   "readers": [],
+   "code": false,
+   "externalRefs": []
+  },
+  "flag.main.truth_done": {
+   "writers": [
+    {
+     "kind": "quest",
+     "id": "quest.main.truth",
+     "via": "completion"
+    }
+   ],
+   "readers": [
+    {
+     "kind": "quest",
+     "id": "quest.main.celestial_landing",
+     "via": "autoStart"
+    }
+   ],
+   "code": false,
+   "externalRefs": []
+  },
+  "flag.main.vesperhold_done": {
+   "writers": [
+    {
+     "kind": "quest",
+     "id": "quest.main.vesperhold",
+     "via": "completion"
+    }
+   ],
+   "readers": [
+    {
+     "kind": "quest",
+     "id": "quest.main.queens_count",
+     "via": "autoStart"
+    }
+   ],
+   "code": false,
+   "externalRefs": []
+  },
   "flag.morthul_defeated": {
    "writers": [],
    "readers": [
@@ -11404,21 +17415,95 @@
      "kind": "dialogue",
      "id": "dialogue.ash_throne",
      "via": "gate/choice[1]"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.ash_throne",
+     "via": "gate_kneel/choice[0]"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.ash_throne",
+     "via": "gate_kneel/choice[1]"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.ash_throne",
+     "via": "gate_draw/choice[0]"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.ash_throne",
+     "via": "gate_draw/choice[1]"
     }
    ],
    "code": true,
    "externalRefs": [
     "data/bosses/Morthul.tres",
-    "scenes/regions/celestial/ash_throne.tscn"
+    "scenes/regions/celestial/ash_throne.tscn",
+    "src/Narrative/CampaignCatchUp.cs"
    ]
+  },
+  "flag.pale.court_open": {
+   "writers": [
+    {
+     "kind": "quest",
+     "id": "quest.main.queens_count",
+     "via": "completion"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.pale_count_stone",
+     "via": "root/choice[2]"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.pale_count_stone",
+     "via": "root/choice[3]"
+    }
+   ],
+   "readers": [
+    {
+     "kind": "quest",
+     "id": "quest.main.hidden",
+     "via": "autoStart"
+    },
+    {
+     "kind": "quest",
+     "id": "quest.main.queens_count",
+     "via": "objective[2].milestone"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.pale_count_stone",
+     "via": "root/choice[2]"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.pale_count_stone",
+     "via": "root/choice[3]"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.pale_count_stone",
+     "via": "settled/startVariant"
+    }
+   ],
+   "code": false,
+   "externalRefs": []
   },
   "flag.pale_concord_revealed": {
    "writers": [],
    "readers": [
     {
      "kind": "quest",
-     "id": "quest.main.hidden",
+     "id": "quest.main.pale_door",
      "via": "autoStart"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.sunspire_archivist",
+     "via": "door/startVariant"
     }
    ],
    "code": true,
@@ -11428,8 +17513,21 @@
     "data/map_locations/PalePalace.tres",
     "data/regions/PaleConcord.tres",
     "src/Bootstrap/HeadlessStory.cs",
+    "src/Narrative/CampaignCatchUp.cs",
     "src/Narrative/HiddenRealmReveal.cs"
    ]
+  },
+  "flag.party.companion.kael": {
+   "writers": [],
+   "readers": [
+    {
+     "kind": "quest",
+     "id": "quest.main.sundered_stair",
+     "via": "objective[5].required"
+    }
+   ],
+   "code": true,
+   "externalRefs": []
   },
   "flag.rival.duel1_won": {
    "writers": [],
@@ -11463,6 +17561,150 @@
     "src/Bootstrap/HeadlessStory.cs"
    ]
   },
+  "flag.rival.gate_draw": {
+   "writers": [
+    {
+     "kind": "dialogue",
+     "id": "dialogue.rival_gate",
+     "via": "root/choice[1]"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.rival_gate",
+     "via": "root_trust/choice[1]"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.rival_gate",
+     "via": "root_defy/choice[1]"
+    }
+   ],
+   "readers": [
+    {
+     "kind": "dialogue",
+     "id": "dialogue.ash_throne",
+     "via": "gate_draw/startVariant"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.ashen_knight_absorb",
+     "via": "last_words/choice[5]"
+    }
+   ],
+   "code": false,
+   "externalRefs": []
+  },
+  "flag.rival.gate_kneel": {
+   "writers": [
+    {
+     "kind": "dialogue",
+     "id": "dialogue.rival_gate",
+     "via": "root/choice[0]"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.rival_gate",
+     "via": "root_trust/choice[0]"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.rival_gate",
+     "via": "root_defy/choice[0]"
+    }
+   ],
+   "readers": [
+    {
+     "kind": "dialogue",
+     "id": "dialogue.ash_throne",
+     "via": "gate_kneel/startVariant"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.ashen_knight_absorb",
+     "via": "last_words/choice[4]"
+    }
+   ],
+   "code": false,
+   "externalRefs": [
+    "data/story/reactions/spec2.json"
+   ]
+  },
+  "flag.rival.library_defy": {
+   "writers": [
+    {
+     "kind": "dialogue",
+     "id": "dialogue.rival_library",
+     "via": "root/choice[3]"
+    }
+   ],
+   "readers": [
+    {
+     "kind": "dialogue",
+     "id": "dialogue.ashen_knight_absorb",
+     "via": "last_words/choice[3]"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.rival_gate",
+     "via": "root_defy/startVariant"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.rival_library",
+     "via": "root/choice[2]"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.rival_library",
+     "via": "root/choice[3]"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.rival_library",
+     "via": "after_defy/startVariant"
+    }
+   ],
+   "code": false,
+   "externalRefs": []
+  },
+  "flag.rival.library_trust": {
+   "writers": [
+    {
+     "kind": "dialogue",
+     "id": "dialogue.rival_library",
+     "via": "root/choice[2]"
+    }
+   ],
+   "readers": [
+    {
+     "kind": "dialogue",
+     "id": "dialogue.ashen_knight_absorb",
+     "via": "last_words/choice[2]"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.rival_gate",
+     "via": "root_trust/startVariant"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.rival_library",
+     "via": "root/choice[2]"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.rival_library",
+     "via": "root/choice[3]"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.rival_library",
+     "via": "after_trust/startVariant"
+    }
+   ],
+   "code": false,
+   "externalRefs": []
+  },
   "flag.storm_tyrant_absorbed": {
    "writers": [
     {
@@ -11482,6 +17724,57 @@
    "externalRefs": [
     "src/UI/EndingSequence.cs"
    ]
+  },
+  "flag.testimonies_all": {
+   "writers": [
+    {
+     "kind": "dialogue",
+     "id": "dialogue.sunspire_archivist",
+     "via": "testimony_missing/choice[0]"
+    }
+   ],
+   "readers": [
+    {
+     "kind": "quest",
+     "id": "quest.main.sundering_pages",
+     "via": "objective[0].milestone"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.sunspire_archivist",
+     "via": "pages/startVariant"
+    }
+   ],
+   "code": true,
+   "externalRefs": [
+    "src/Narrative/StoryRules.cs"
+   ]
+  },
+  "flag.testimony.queen": {
+   "writers": [
+    {
+     "kind": "dialogue",
+     "id": "dialogue.hollow_queen_parley",
+     "via": "after/onEnter"
+    }
+   ],
+   "readers": [],
+   "code": false,
+   "externalRefs": [
+    "src/Narrative/StoryRules.cs"
+   ]
+  },
+  "flag.truth.reading_done": {
+   "writers": [
+    {
+     "kind": "dialogue",
+     "id": "dialogue.sunspire_archivist",
+     "via": "throne/choice[0]"
+    }
+   ],
+   "readers": [],
+   "code": false,
+   "externalRefs": []
   },
   "flag.veiled_archive.custody_preserve": {
    "writers": [
@@ -11814,5 +18107,146 @@
    "externalRefs": []
   }
  },
- "forks": []
+ "forks": [
+  {
+   "flag": "flag.fork.queen_kept",
+   "writers": [
+    {
+     "kind": "dialogue",
+     "id": "dialogue.pale_count_stone",
+     "via": "root/choice[3]"
+    }
+   ],
+   "readers": [
+    {
+     "kind": "dialogue",
+     "id": "dialogue.hollow_queen_parley",
+     "via": "after/choice[2]"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.hollow_queen_parley",
+     "via": "kept/startVariant"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.sunspire_archivist",
+     "via": "pages/choice[1]"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.undying_baker",
+     "via": "freed/choice[1]"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.undying_baker",
+     "via": "v_kept/startVariant"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.undying_clockkeeper",
+     "via": "freed/choice[1]"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.undying_clockkeeper",
+     "via": "v_kept/startVariant"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.undying_lamplighter",
+     "via": "freed/choice[1]"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.undying_lamplighter",
+     "via": "v_kept/startVariant"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.undying_steward",
+     "via": "freed/choice[1]"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.undying_steward",
+     "via": "v_kept/startVariant"
+    }
+   ],
+   "externalRefs": [
+    "data/story/reactions/spec2.json"
+   ]
+  },
+  {
+   "flag": "flag.fork.queen_released",
+   "writers": [
+    {
+     "kind": "dialogue",
+     "id": "dialogue.pale_count_stone",
+     "via": "root/choice[2]"
+    }
+   ],
+   "readers": [
+    {
+     "kind": "dialogue",
+     "id": "dialogue.hollow_queen_parley",
+     "via": "after/choice[1]"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.hollow_queen_parley",
+     "via": "released/startVariant"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.sunspire_archivist",
+     "via": "pages/choice[0]"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.undying_baker",
+     "via": "freed/choice[0]"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.undying_baker",
+     "via": "v_released/startVariant"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.undying_clockkeeper",
+     "via": "freed/choice[0]"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.undying_clockkeeper",
+     "via": "v_released/startVariant"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.undying_lamplighter",
+     "via": "freed/choice[0]"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.undying_lamplighter",
+     "via": "v_released/startVariant"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.undying_steward",
+     "via": "freed/choice[0]"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.undying_steward",
+     "via": "v_released/startVariant"
+    }
+   ],
+   "externalRefs": [
+    "data/story/reactions/spec2.json"
+   ]
+  }
+ ]
 }

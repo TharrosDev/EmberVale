@@ -130,3 +130,5 @@ RewardItemId = "item.relic.ashen_heart"
 RewardQuantity = 1
 DefeatFlagId = "flag.ashen_knight_defeated"
 DefeatDialogueId = "dialogue.ashen_knight_absorb"
+EpithetKey = "boss.ashen_knight.epithet"
+IntroLineKey = "boss.ashen_knight.intro"

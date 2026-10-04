@@ -12,20 +12,39 @@ TargetId = "dialogue.sunspire_archivist"
 RequiredCount = 1
 Description = "quest.main.truth.obj"
 LocationId = "location.sunspire.library"
+RequiredFlagId = "flag.beat.codex_read"
+HintKey = "quest.main.truth.hint_reading"
+JournalEntryKey = "quest.main.truth.log_reading"
+
+[sub_resource type="Resource" id="Obj_1"]
+script = ExtResource("2_obj")
+Type = 8
+TargetId = "flag.celestial_gate_open"
+RequiredCount = 1
+Description = "quest.main.truth.obj_open"
+LocationId = "location.sunspire.library"
+HintKey = "quest.main.truth.hint_open"
+JournalEntryKey = "quest.main.truth.log_open"
 
 [resource]
 script = ExtResource("1_quest")
 Id = "quest.main.truth"
 Title = "quest.main.truth.title"
 Summary = "quest.main.truth.summary"
-Objectives = Array[Resource]([SubResource("Obj_talk")])
+Objectives = Array[Resource]([SubResource("Obj_talk"), SubResource("Obj_1")])
 XpReward = 600
 GoldReward = 200
 GoldItemId = "item.currency.gold"
-SequentialObjectives = false
-CompletionFlagId = ""
-AutoStartFlagId = "flag.hollow_queen_defeated"
+SequentialObjectives = true
+CompletionFlagId = "flag.main.truth_done"
+AutoStartFlagId = "flag.main.deep_stacks_done"
 IsMainQuest = true
 ; One-shot bosses: each one's realm door or brazier is gated on this quest's own AutoStartFlagId,
 ; so the quest is always active before its target can die.
 AllowsOneShotTarget = true
+ChapterKey = "ch.3"
+OrderInAct = 25
+RegionId = "region.sunspire"
+GiverNameKey = "dlg.sunspire_archivist.speaker"
+RecommendedLevel = 24
+DetailKey = "quest.main.truth.detail"

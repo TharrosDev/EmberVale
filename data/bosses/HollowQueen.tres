@@ -81,3 +81,5 @@ RewardItemId = "item.relic.hollow_heart"
 RewardQuantity = 1
 DefeatFlagId = "flag.hollow_queen_defeated"
 DefeatDialogueId = "dialogue.hollow_queen_absorb"
+EpithetKey = "boss.hollow_queen.epithet"
+IntroLineKey = "boss.hollow_queen.intro"

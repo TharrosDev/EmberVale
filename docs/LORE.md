@@ -68,7 +68,7 @@ Or its final doom.
 
 The world was once united under the protection of seven gods.
 
-Following a divine war known as The Shattering, civilization fractured into four major realms.
+Following a divine war known as the Sundering, and the Cataclysm that fell on the mortal world after it, civilization fractured into four major realms.
 
 Each realm preserves a different piece of the world's lost glory.
 
@@ -415,9 +415,11 @@ The closest to victory.
 
 The strongest of all.
 
-Failed at the final battle.
+The only one of the Six to reach the Ash Throne.
 
-Now serves directly beneath Morthul.
+Could neither sit in it nor leave it empty, and knelt.
+
+Keeps the throne and its last gate, not Morthul's servant.
 
 The player's greatest rival.
 
@@ -786,3 +788,17 @@ The Age of Embers begins.
 # Core Vision Statement
 
 Embervale is a first-person open-world fantasy RPG where players explore a beautiful but dying world, battle fallen heroes, forge powerful alliances, uncover the secrets of dead gods, and decide whether they will become the savior of creation or the next Ash King.
+
+---
+
+# Canon (campaign overhaul)
+
+The campaign overhaul fixed these facts. New text must agree with them; `docs/playbook/campaign.md` carries the mission list that tells them.
+
+* **The Sundering** is the divine war that broke the Celestial Realm. **The Cataclysm** is its fallout on the mortal world. "The Shattering" is retired.
+* **Timeline.** The Cataclysm is year 0. The Six climbed the Stair about year 20. The five who were thrown down landed in the realms and have ruled them for roughly 380 years. The Concord was sealed about 400 years ago.
+* **The Six.** Six Flamebearers climbed the Stair to the Ash Throne. Five were thrown down at the top (the graves at the Celestial landing read THROWN, NOT FALLEN): the Iron King, the Hollow Queen, the Storm Tyrant, the Beast Lord and the Crimson Prophet. The Sixth reached the throne, broke Morthul at its foot and could neither sit nor leave it empty, so he knelt.
+* **The Ashen Knight** is the throne's keeper, not Morthul's servant: he keeps the chair against whoever wants it and the way to it against whoever is not ready. He buried the five himself. The player is the Seventh.
+* **Morthul** is what the throne makes of whoever sits on it. The Archivist's truth, the Sundering codex and the Knight's last words all say the same: the seat must never be empty, and must not be anyone who wants it.
+* **The Beast Lord is "he".** **Six gods died**; Morthul survived.
+* **The Pale Concord's name** stays out of player-visible text outside `pale.*` keys until its reveal (NOW.md invariant 34).

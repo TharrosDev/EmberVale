@@ -168,3 +168,5 @@ RewardItemId = ""
 RewardQuantity = 1
 DefeatFlagId = "flag.morthul_defeated"
 DefeatDialogueId = "dialogue.ash_throne"
+EpithetKey = "boss.morthul.epithet"
+IntroLineKey = "boss.morthul.intro"
