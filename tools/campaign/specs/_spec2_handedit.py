@@ -236,7 +236,7 @@ def patch_dialogue(path: Path, plan: dict, write: bool) -> bool:
                   lambda m: m.group(1) + ", " + ", ".join(node_refs) + "])", tail, count=1)
     if variant_refs:
         tail = tail.rstrip("\n") + f"\nStartVariants = Array[Resource]([{', '.join(variant_refs)}])\n"
-        if "4_variant" not in head:
+        if 'id="4_variant"]' not in head:
             head = head.replace('id="3_choice"]\n', 'id="3_choice"]\n' +
                                 f'[ext_resource type="Script" path="{emit.START_VARIANT_SCRIPT}" id="4_variant"]\n', 1)
     out = (head.rstrip("\n") + "\n" + marker + tail).replace("\n", nl)

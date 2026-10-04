@@ -3,6 +3,7 @@
 [ext_resource type="Script" path="res://src/Dialogue/DialogueResource.cs" id="1_dlg"]
 [ext_resource type="Script" path="res://src/Dialogue/DialogueNode.cs" id="2_node"]
 [ext_resource type="Script" path="res://src/Dialogue/DialogueChoice.cs" id="3_choice"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueStartVariant.cs" id="4_variant"]
 
 ; An undying resident of the hidden realm. Condition 5/6 = HasFlag/MissingFlag on the
 ; Queen's defeat: before it they speak of the bargain and the Court; after it, of release.

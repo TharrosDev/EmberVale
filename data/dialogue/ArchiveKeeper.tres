@@ -3,6 +3,7 @@
 [ext_resource type="Script" path="res://src/Dialogue/DialogueResource.cs" id="1_dlg"]
 [ext_resource type="Script" path="res://src/Dialogue/DialogueNode.cs" id="2_node"]
 [ext_resource type="Script" path="res://src/Dialogue/DialogueChoice.cs" id="3_choice"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueStartVariant.cs" id="4_variant"]
 
 ; Keeper Ysolde Marr (faction.veiled_archive). Scaffold from tools/gen_guild_dialogue.py; prose is hand-written in
 ; data/locale/strings.csv. Phase 42B.
