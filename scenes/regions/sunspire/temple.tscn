@@ -10,6 +10,15 @@
 [ext_resource type="Script" path="res://src/Enemies/ArenaHookComponent.cs" id="e8"]
 [ext_resource type="Script" path="res://src/World/CellNavBaker.cs" id="e9"]
 [ext_resource type="Script" path="res://src/World/MapLocationComponent.cs" id="maploc_39_5a"]
+[ext_resource type="PackedScene" path="res://scenes/props/prp_sanctum_door.tscn" id="wb_prp_sanctum_door"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueComponent.cs" id="wb_dialoguecomponent"]
+[ext_resource type="Script" path="res://src/World/FlagVisibilityComponent.cs" id="wb_flagvisibilitycomponent"]
+[ext_resource type="PackedScene" path="res://assets/models/characters/npc_townsman.glb" id="wb_npc_townsman"]
+[ext_resource type="Script" path="res://src/Animation/CharacterAnimationComponent.cs" id="wb_characteranimationcomponent"]
+[ext_resource type="Script" path="res://src/Animation/EquipmentPresentationComponent.cs" id="wb_equipmentpresentationcomponent"]
+[ext_resource type="Script" path="res://src/Factions/FactionComponent.cs" id="wb_factioncomponent"]
+[ext_resource type="PackedScene" path="res://scenes/props/prp_ladle.tscn" id="wb_prp_ladle"]
+[ext_resource type="Script" path="res://src/Enemies/SetPieceSpawnComponent.cs" id="wb_setpiecespawncomponent"]
 
 ; THE CRIMSON MISSION (sunspire.temple) - the Crimson Prophet's seat and arena. Content frame,
 ; moved to Cell.origin by tools/shift_cell_content.py.
@@ -58,6 +67,16 @@ size = Vector3(7.2, 4, 1)
 
 [sub_resource type="BoxShape3D" id="Shape_brazier_box"]
 size = Vector3(1, 1.4, 1)
+
+[sub_resource type="BoxShape3D" id="WB_Shape_SanctumDoor"]
+size = Vector3(1.8, 2.4, 0.5)
+
+[sub_resource type="CapsuleShape3D" id="WB_Shape_npc_Deacon"]
+radius = 0.4
+height = 1.8
+
+[sub_resource type="BoxShape3D" id="WB_Shape_HangingLadle"]
+size = Vector3(0.5, 0.6, 0.3)
 
 [node name="TempleCell" type="Node3D"]
 metadata/content_offset = Vector2(45, -20)
@@ -243,7 +262,7 @@ light_energy = 2.4
 omni_range = 11.0
 
 [node name="MissionChapel" parent="Nav" instance=ExtResource("e5")]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 14, 0, -29)
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 14, 0, -29)
 
 [node name="ChapelBrazierA" type="Node3D" parent="Nav"]
 transform = Transform3D(1, 0, -0, 0, 1, 0, 0, 0, 1, 19, 0, -34)
@@ -291,10 +310,11 @@ omni_range = 7.0
 script = ExtResource("e7")
 SpawnOffset = Vector3(0, 0, 9)
 RequiredQuestId = ""
+RequiredFlagId = "flag.arc.sunspire_ready"
 BossTemplateId = "enemy.crimson_prophet"
 DefeatedFlagId = "flag.crimson_prophet_defeated"
 PromptKey = "boss.crimson_prophet.challenge_prompt"
-LockedPromptKey = "boss.crimson_prophet.challenge_locked"
+LockedPromptKey = "boss.crimson_prophet.arc_locked"
 
 ; Phase 47.5: the Ashen Knight's rival duel 2. An optional second challenge in this arena, cold until
 ; flag.crimson_prophet_defeated and closed for good once the Knight falls in Act IV. FightId runs boss.ashen_knight_duel2
@@ -390,3 +410,101 @@ Reveals = Array[NodePath]([NodePath("../CrimsonVents/VentC"), NodePath("../Crims
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 45, 0, -20)
 script = ExtResource("maploc_39_5a")
 LocationId = "location.sunspire.mission"
+
+; CAMPAIGN (WR-spec1-16, 28, 29, 52, 68): the Crimson Mission's flock. MissionChapel is turned a quarter turn so its door faces
+; the sanctum (east), which is where the layout's own pair of chapel braziers (x = 19) stand and where the spec puts the deacon.
+; The sanctum door the kin route reads is a side door on the outside of the sanctum's north wall, beside the gate: a door in the gate
+; itself would shut the arena off from every other route.
+
+[node name="SanctumDoor" type="Node3D" parent="."]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 34.2, 0, -35)
+script = ExtResource("e6")
+DisplayName = "The Sanctum Door"
+PersistentId = "sunspire.temple.sanctum_door"
+
+[node name="Model" parent="SanctumDoor" instance=ExtResource("wb_prp_sanctum_door")]
+
+[node name="Collider" type="StaticBody3D" parent="SanctumDoor"]
+
+[node name="Shape" type="CollisionShape3D" parent="SanctumDoor/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
+shape = SubResource("WB_Shape_SanctumDoor")
+
+[node name="Dialogue" type="Node" parent="SanctumDoor"]
+script = ExtResource("wb_dialoguecomponent")
+DialogueId = "dialogue.sanctum_seal"
+InteractId = "interact.sunspire.sanctum_seal"
+PromptKey = "interact.worldb.sanctum_door"
+
+[node name="Visibility" type="Node" parent="SanctumDoor"]
+script = ExtResource("wb_flagvisibilitycomponent")
+VisibleWhenFlagId = "flag.fork.flock_kin"
+
+[node name="Deacon" type="Node3D" parent="."]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 18.7, 0, -28.3)
+script = ExtResource("e6")
+DisplayName = "Deacon Haddan Voll"
+TemplateId = "npc.halder"
+PersistentId = "sunspire.temple.deacon"
+
+[node name="Model" parent="Deacon" instance=ExtResource("wb_npc_townsman")]
+
+[node name="Animation" type="Node" parent="Deacon"]
+script = ExtResource("wb_characteranimationcomponent")
+BodyMeshPath = "Model"
+
+[node name="EquipmentVisuals" type="Node" parent="Deacon"]
+script = ExtResource("wb_equipmentpresentationcomponent")
+BodyMeshPath = "Model"
+
+[node name="Collider" type="StaticBody3D" parent="Deacon"]
+
+[node name="Shape" type="CollisionShape3D" parent="Deacon/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("WB_Shape_npc_Deacon")
+
+[node name="Faction" type="Node" parent="Deacon"]
+script = ExtResource("wb_factioncomponent")
+FactionId = "faction.villagers"
+
+[node name="Dialogue" type="Node" parent="Deacon"]
+script = ExtResource("wb_dialoguecomponent")
+DialogueId = "dialogue.flock_deacon"
+
+[node name="Visibility" type="Node" parent="Deacon"]
+script = ExtResource("wb_flagvisibilitycomponent")
+HiddenWhenFlagId = "flag.beat.flock_decided"
+
+[node name="HangingLadle" type="Node3D" parent="."]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 17.45, 1.55, -28.5)
+script = ExtResource("e6")
+DisplayName = "The Hanging Ladle"
+PersistentId = "sunspire.temple.hanging_ladle"
+
+[node name="Model" parent="HangingLadle" instance=ExtResource("wb_prp_ladle")]
+
+[node name="Collider" type="StaticBody3D" parent="HangingLadle"]
+
+[node name="Shape" type="CollisionShape3D" parent="HangingLadle/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.15, 0)
+shape = SubResource("WB_Shape_HangingLadle")
+
+[node name="Dialogue" type="Node" parent="HangingLadle"]
+script = ExtResource("wb_dialoguecomponent")
+DialogueId = "dialogue.flock_deacon"
+PromptKey = "interact.worldb.ladle"
+
+[node name="Visibility" type="Node" parent="HangingLadle"]
+script = ExtResource("wb_flagvisibilitycomponent")
+VisibleWhenFlagId = "flag.beat.flock_decided"
+
+[node name="NaveZealots" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 24.5, 0, -29)
+script = ExtResource("wb_setpiecespawncomponent")
+TriggerFlagId = "flag.fork.flock_exposed"
+TemplateIds = PackedStringArray("enemy.cultist")
+CountPerWave = 5
+Waves = 1
+WaveDelaySeconds = 15
+SpawnRadius = 6
+ClearedFlagId = "flag.beat.zealots_down"

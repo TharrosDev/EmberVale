@@ -1,0 +1,148 @@
+[gd_scene load_steps=31 format=3]
+
+; A well-gauge tablet (WR-spec1-13..15): pale stone, seven scored lines, Oda's chalk beside them and the
+; grey water stain. Front face is local +Z. Flat-shaded primitives, no texture.
+
+[sub_resource type="StandardMaterial3D" id="Mat_stone"]
+albedo_color = Color(0.6, 0.56, 0.5, 1)
+roughness = 0.95
+
+[sub_resource type="StandardMaterial3D" id="Mat_score"]
+albedo_color = Color(0.22, 0.19, 0.16, 1)
+roughness = 1
+
+[sub_resource type="StandardMaterial3D" id="Mat_chalk"]
+albedo_color = Color(0.85, 0.83, 0.78, 1)
+roughness = 1
+
+[sub_resource type="StandardMaterial3D" id="Mat_stain"]
+albedo_color = Color(0.34, 0.36, 0.34, 1)
+roughness = 1
+
+[sub_resource type="BoxMesh" id="Mesh_slab"]
+size = Vector3(0.95, 1.5, 0.32)
+
+[sub_resource type="BoxMesh" id="Mesh_line"]
+size = Vector3(0.62, 0.02, 0.02)
+
+[sub_resource type="BoxMesh" id="Mesh_mark"]
+size = Vector3(0.07, 0.012, 0.014)
+
+[sub_resource type="BoxMesh" id="Mesh_stain"]
+size = Vector3(0.78, 0.2, 0.016)
+
+[sub_resource type="StandardMaterial3D" id="Mat_foot"]
+albedo_color = Color(0.46, 0.43, 0.39, 1)
+roughness = 1
+
+[sub_resource type="BoxMesh" id="Mesh_foot"]
+size = Vector3(1.25, 0.14, 0.62)
+
+[node name="GaugeStone" type="Node3D"]
+
+[node name="Model" type="Node3D" parent="."]
+
+[node name="Slab" type="MeshInstance3D" parent="Model"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.72, 0)
+mesh = SubResource("Mesh_slab")
+material_override = SubResource("Mat_stone")
+
+[node name="Line0" type="MeshInstance3D" parent="Model"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.28, 0.163)
+mesh = SubResource("Mesh_line")
+material_override = SubResource("Mat_score")
+
+[node name="Chalk0A" type="MeshInstance3D" parent="Model"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.36, 0.31, 0.164)
+mesh = SubResource("Mesh_mark")
+material_override = SubResource("Mat_chalk")
+
+[node name="Chalk0B" type="MeshInstance3D" parent="Model"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.28, 0.31, 0.164)
+mesh = SubResource("Mesh_mark")
+material_override = SubResource("Mat_chalk")
+
+[node name="Line1" type="MeshInstance3D" parent="Model"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.425, 0.163)
+mesh = SubResource("Mesh_line")
+material_override = SubResource("Mat_score")
+
+[node name="Chalk1A" type="MeshInstance3D" parent="Model"]
+transform = Transform3D(0.9816, -0.1908, 0, 0.1908, 0.9816, 0, 0, 0, 1, 0.36, 0.455, 0.164)
+mesh = SubResource("Mesh_mark")
+material_override = SubResource("Mat_chalk")
+
+[node name="Line2" type="MeshInstance3D" parent="Model"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.57, 0.163)
+mesh = SubResource("Mesh_line")
+material_override = SubResource("Mat_score")
+
+[node name="Chalk2A" type="MeshInstance3D" parent="Model"]
+transform = Transform3D(0.9272, -0.3746, 0, 0.3746, 0.9272, 0, 0, 0, 1, 0.36, 0.6, 0.164)
+mesh = SubResource("Mesh_mark")
+material_override = SubResource("Mat_chalk")
+
+[node name="Chalk2B" type="MeshInstance3D" parent="Model"]
+transform = Transform3D(0.9945, -0.1045, 0, 0.1045, 0.9945, 0, 0, 0, 1, 0.28, 0.6, 0.164)
+mesh = SubResource("Mesh_mark")
+material_override = SubResource("Mat_chalk")
+
+[node name="Line3" type="MeshInstance3D" parent="Model"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.715, 0.163)
+mesh = SubResource("Mesh_line")
+material_override = SubResource("Mat_score")
+
+[node name="Chalk3A" type="MeshInstance3D" parent="Model"]
+transform = Transform3D(0.9903, -0.1392, 0, 0.1392, 0.9903, 0, 0, 0, 1, 0.36, 0.745, 0.164)
+mesh = SubResource("Mesh_mark")
+material_override = SubResource("Mat_chalk")
+
+[node name="Line4" type="MeshInstance3D" parent="Model"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.86, 0.163)
+mesh = SubResource("Mesh_line")
+material_override = SubResource("Mat_score")
+
+[node name="Chalk4A" type="MeshInstance3D" parent="Model"]
+transform = Transform3D(0.9455, -0.3256, 0, 0.3256, 0.9455, 0, 0, 0, 1, 0.36, 0.89, 0.164)
+mesh = SubResource("Mesh_mark")
+material_override = SubResource("Mat_chalk")
+
+[node name="Chalk4B" type="MeshInstance3D" parent="Model"]
+transform = Transform3D(0.9781, -0.2079, 0, 0.2079, 0.9781, 0, 0, 0, 1, 0.28, 0.89, 0.164)
+mesh = SubResource("Mesh_mark")
+material_override = SubResource("Mat_chalk")
+
+[node name="Line5" type="MeshInstance3D" parent="Model"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.005, 0.163)
+mesh = SubResource("Mesh_line")
+material_override = SubResource("Mat_score")
+
+[node name="Chalk5A" type="MeshInstance3D" parent="Model"]
+transform = Transform3D(0.9962, -0.0872, 0, 0.0872, 0.9962, 0, 0, 0, 1, 0.36, 1.035, 0.164)
+mesh = SubResource("Mesh_mark")
+material_override = SubResource("Mat_chalk")
+
+[node name="Line6" type="MeshInstance3D" parent="Model"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.15, 0.163)
+mesh = SubResource("Mesh_line")
+material_override = SubResource("Mat_score")
+
+[node name="Chalk6A" type="MeshInstance3D" parent="Model"]
+transform = Transform3D(0.9613, -0.2756, 0, 0.2756, 0.9613, 0, 0, 0, 1, 0.36, 1.18, 0.164)
+mesh = SubResource("Mesh_mark")
+material_override = SubResource("Mat_chalk")
+
+[node name="Chalk6B" type="MeshInstance3D" parent="Model"]
+transform = Transform3D(0.9511, -0.309, 0, 0.309, 0.9511, 0, 0, 0, 1, 0.28, 1.18, 0.164)
+mesh = SubResource("Mesh_mark")
+material_override = SubResource("Mat_chalk")
+
+[node name="Stain" type="MeshInstance3D" parent="Model"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0.164)
+mesh = SubResource("Mesh_stain")
+material_override = SubResource("Mat_stain")
+
+[node name="Foot" type="MeshInstance3D" parent="Model"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.07, 0.02)
+mesh = SubResource("Mesh_foot")
+material_override = SubResource("Mat_foot")

@@ -1,0 +1,84 @@
+[gd_scene load_steps=20 format=3]
+
+; The sanctum door with the red wax disc hanging from its latch (WR-spec1-16). Local +Z is the face the
+; player reads. Flat-shaded primitives, no texture.
+
+[sub_resource type="StandardMaterial3D" id="Mat_wood"]
+albedo_color = Color(0.26, 0.15, 0.1, 1)
+roughness = 0.9
+
+[sub_resource type="StandardMaterial3D" id="Mat_iron"]
+albedo_color = Color(0.08, 0.08, 0.09, 1)
+roughness = 0.5
+metallic = 0.4
+
+[sub_resource type="StandardMaterial3D" id="Mat_wax"]
+albedo_color = Color(0.62, 0.06, 0.05, 1)
+roughness = 0.5
+
+[sub_resource type="StandardMaterial3D" id="Mat_cord"]
+albedo_color = Color(0.5, 0.42, 0.3, 1)
+roughness = 1
+
+[sub_resource type="BoxMesh" id="Mesh_door"]
+size = Vector3(1.4, 2.3, 0.14)
+
+[sub_resource type="BoxMesh" id="Mesh_frame_side"]
+size = Vector3(0.16, 2.5, 0.28)
+
+[sub_resource type="BoxMesh" id="Mesh_frame_top"]
+size = Vector3(1.72, 0.18, 0.28)
+
+[sub_resource type="BoxMesh" id="Mesh_latch"]
+size = Vector3(0.22, 0.05, 0.05)
+
+[sub_resource type="CylinderMesh" id="Mesh_wax"]
+top_radius = 0.1
+bottom_radius = 0.1
+height = 0.025
+radial_segments = 12
+
+[sub_resource type="CylinderMesh" id="Mesh_cord"]
+top_radius = 0.006
+bottom_radius = 0.006
+height = 0.28
+radial_segments = 5
+
+[node name="SanctumDoor" type="Node3D"]
+
+[node name="Model" type="Node3D" parent="."]
+
+[node name="Door" type="MeshInstance3D" parent="Model"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.15, 0)
+mesh = SubResource("Mesh_door")
+material_override = SubResource("Mat_wood")
+
+[node name="FrameL" type="MeshInstance3D" parent="Model"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.78, 1.25, 0)
+mesh = SubResource("Mesh_frame_side")
+material_override = SubResource("Mat_iron")
+
+[node name="FrameR" type="MeshInstance3D" parent="Model"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.78, 1.25, 0)
+mesh = SubResource("Mesh_frame_side")
+material_override = SubResource("Mat_iron")
+
+[node name="FrameTop" type="MeshInstance3D" parent="Model"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.4, 0)
+mesh = SubResource("Mesh_frame_top")
+material_override = SubResource("Mat_iron")
+
+[node name="Latch" type="MeshInstance3D" parent="Model"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 1.15, 0.09)
+mesh = SubResource("Mesh_latch")
+material_override = SubResource("Mat_iron")
+
+[node name="Cord" type="MeshInstance3D" parent="Model"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.56, 1, 0.1)
+mesh = SubResource("Mesh_cord")
+material_override = SubResource("Mat_cord")
+
+[node name="Wax" type="MeshInstance3D" parent="Model"]
+transform = Transform3D(1, 0, 0, 0, 0, -1, 0, 1, 0, 0.56, 0.84, 0.1)
+mesh = SubResource("Mesh_wax")
+material_override = SubResource("Mat_wax")

@@ -20,6 +20,10 @@
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_vendor.glb" id="c_vendor"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_innkeeper.glb" id="c_mender"]
 [ext_resource type="Script" path="res://src/World/MapLocationComponent.cs" id="maploc_39_5a"]
+[ext_resource type="Script" path="res://src/Enemies/SetPieceSpawnComponent.cs" id="wb_setpiecespawncomponent"]
+[ext_resource type="PackedScene" path="res://assets/models/creatures/enm_dire_wolf.glb" id="wb_enm_dire_wolf"]
+[ext_resource type="PackedScene" path="res://assets/models/creatures/enm_ashfall_elk.glb" id="wb_enm_ashfall_elk"]
+[ext_resource type="Script" path="res://src/World/FlagVisibilityComponent.cs" id="wb_flagvisibilitycomponent"]
 
 ; LAST HEARTH (the Ashen Wilds, 2026-09) - the survivors who came through the Breach and stayed.
 ;
@@ -314,3 +318,33 @@ LocationId = "location.ashen.waystone"
 [node name="MapPin" type="Node3D" parent="Scavenger"]
 script = ExtResource("maploc_39_5a")
 LocationId = "location.ashen.scavenger"
+
+; CAMPAIGN (WR-spec1-38, 65): the hearth raid and the Last Hearth herd. HearthRaid rings 28 m round the fire (no markers).
+; The calmed herd's two strays lie by the fire once the choice is made; the Hearth's ground is a levelled pad, so no tilt.
+
+[node name="HearthRaid" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -14, 0, 34)
+script = ExtResource("wb_setpiecespawncomponent")
+TriggerFlagId = "flag.beat.hearth_raid"
+TemplateIds = PackedStringArray("enemy.wolf", "enemy.wolf", "enemy.dire_wolf")
+CountPerWave = 6
+Waves = 3
+WaveDelaySeconds = 18
+SpawnRadius = 28
+ClearedFlagId = "flag.beat.hearth_raid_cleared"
+
+[node name="HearthStrays" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11.7, 0, 31.3)
+script = ExtResource("1_entity")
+DisplayName = "The Hearth Strays"
+PersistentId = "ashen_wilds.last_hearth.herd_strays"
+
+[node name="Wolf" parent="HearthStrays" instance=ExtResource("wb_enm_dire_wolf")]
+transform = Transform3D(0.7612, 0, -0.6485, 0, 1, 0, 0.6485, 0, 0.7612, 0, -0.45, 0)
+
+[node name="Calf" parent="HearthStrays" instance=ExtResource("wb_enm_ashfall_elk")]
+transform = Transform3D(0.2148, 0, -0.5063, 0, 0.55, 0, 0.5063, 0, 0.2148, 1, -0.28, 1.25)
+
+[node name="Visibility" type="Node" parent="HearthStrays"]
+script = ExtResource("wb_flagvisibilitycomponent")
+VisibleWhenFlagId = "flag.fork.herd_calmed"
