@@ -53,6 +53,30 @@ class Result:
         self.summary: List[str] = []
 
 
+def _outside_scope(scoped: dict):
+    """A run scoped to some specs (`only`) can see just part of the campaign. Judging that part alone, the content
+    that is not in the scoped graph (read from the real tree) is treated like code: a flag it writes is a code flag
+    for the scoped content that reads it, and a flag it reads is terminal for the scoped content that sets it. The
+    full run (`only` is None) never gets this, so the real tree is validated against every writer and reader."""
+    inside = {q["id"] for q in scoped["quests"]} | {d["id"] for d in scoped["dialogues"]}
+    full = graph.build(ROOT, {}, set(), {}, {}, config.ENTRY_QUESTS)
+    code: Dict[str, str] = {}
+    terminal: Dict[str, str] = {}
+    for q in full["quests"]:
+        if q["id"] not in inside:
+            for w in q["writes"]:
+                code[w["flag"]] = f"out of scope: {q['id']}"
+            for rd in q["reads"]:
+                terminal[rd["flag"]] = f"out of scope: {q['id']}"
+    for d in full["dialogues"]:
+        if d["id"] not in inside:
+            for flag in d["flagsSet"]:
+                code[flag] = f"out of scope: {d['id']}"
+            for flag in d["flagsRead"]:
+                terminal[flag] = f"out of scope: {d['id']}"
+    return code, terminal
+
+
 def compute(root: Path = ROOT, only: List[str] = None, extra_modules=()) -> Result:
     r = Result()
     c = registry.discover(only, extra_modules)
@@ -135,6 +159,14 @@ def compute(root: Path = ROOT, only: List[str] = None, extra_modules=()) -> Resu
     terminal.update(c.terminal_flags)
     overrides = {k: v for k, v in r.files.items() if k.startswith(("data/quests/", "data/dialogue/"))}
     g = graph.build(root, overrides, r.patched, code, terminal, config.ENTRY_QUESTS)
+    if only is not None:
+        out_code, out_terminal = _outside_scope(g)
+        if out_code or out_terminal:
+            for flag, why in out_code.items():
+                code.setdefault(flag, why)
+            for flag, why in out_terminal.items():
+                terminal.setdefault(flag, why)
+            g = graph.build(root, overrides, r.patched, code, terminal, config.ENTRY_QUESTS)
     r.files[GRAPH] = graph.dumps(g)
 
     errs, warns = validate.validate(root, c, lowered_q, lowered_d, lowered_p, g, csv_text,

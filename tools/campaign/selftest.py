@@ -358,7 +358,9 @@ def end_to_end_in_a_scratch_root():
             gen_campaign._write(tmp / "data" / "quests" / f"{n}.tres", pristine(n))
         csv_path = tmp / gen_campaign.LOCALE
         csv_text = read_path(csv_path)
-        for tag in re.findall(r"^# --- BEGIN campaign:(\w+) ---", csv_text, re.M):
+        # Only the blocks of the specs under test are emptied: the other specs' blocks stay, because the legacy
+        # quests and dialogues borrow rows from them (K(...)) and those rows are out of scope, not missing.
+        for tag in ("legacy", "example", "pale", "leak", "patchtag"):
             csv_text = locale.rewrite_block(csv_text, tag, [])
         gen_campaign._write(csv_path, csv_text)
         (tmp / "data" / "story").mkdir()
@@ -392,7 +394,7 @@ def end_to_end_in_a_scratch_root():
                 return ([q] if broken else []), [], [], "leak"
 
             patchmod = types.SimpleNamespace(__name__="spec_patch", build=lambda: (
-                [Patch("quest.warband.heart", append=[interact("interact.arena_gate", "Open the arena gate", tag="arena")],
+                [Patch("quest.warband.heart", append=[interact("interact.arena_gate", "Open the arena gate", tag="arena_selftest")],
                        start_flag="flag.main.heart_started")], [], [], "patchtag"))
             return [ex, pale, types.SimpleNamespace(__name__="spec_leak", build=leak_build), patchmod]
 
@@ -413,10 +415,10 @@ def end_to_end_in_a_scratch_root():
 
         csv_text = read_path(tmp / gen_campaign.LOCALE)
         assert "# --- BEGIN campaign:example ---" in csv_text and "pale.quest.pale_door_test.title,The Door" in csv_text
-        assert "quest.warband.heart.obj_arena,Open the arena gate" in csv_text
+        assert "quest.warband.heart.obj_arena_selftest,Open the arena gate" in csv_text
         assert "quest.main.example_square.obj_hold,Hold the square" in csv_text
         assert "chapter.act1,Act I: Embers at the Crown" in csv_text
-        assert "Pale Concord" not in "".join(ln for ln in csv_text.split("\r\n") if not ln.startswith("pale."))
+        assert locale.audit(csv_text) == [], locale.audit(csv_text)   # no duplicate key, the name only under pale.* keys
         heart = read_path(tmp / "data/quests/WarbandHeart.tres")
         assert 'StartFlagId = "flag.main.heart_started"' in heart and 'Description = "quest.warband.heart.obj"' in heart
         assert read("data/quests/WarbandHeart.tres").count("heart_started") == 0, "real tree untouched"
@@ -424,7 +426,7 @@ def end_to_end_in_a_scratch_root():
         g = __import__("json").loads(read_path(tmp / gen_campaign.GRAPH))
         ids = {q["id"]: q for q in g["quests"]}
         assert ids["quest.main.example_square"]["source"] == "generated" and ids["quest.warband.heart"]["source"] == "patched"
-        assert [f["flag"] for f in g["forks"]] == ["flag.fork.example_parley"], g["forks"]
+        assert [f["flag"] for f in g["forks"] if "example" in f["flag"]] == ["flag.fork.example_parley"], g["forks"]
         assert "quest.main.example_square" in graph.reachable(g)
     finally:
         shutil.rmtree(tmp, ignore_errors=True)

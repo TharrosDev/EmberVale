@@ -9,7 +9,8 @@ namespace Embervale.UI;
 /// <summary>
 /// The game's ending (finish run): the throne choice in <c>dialogue.ash_throne</c> sets
 /// <see cref="DawnfireFlag"/> or <see cref="EmbersFlag"/>, and this plays that ending's cards, an
-/// epilogue card chosen by how many Flamebearer embers the player took, and the credits. When they
+/// epilogue card chosen by how many Flamebearer embers the player took, one card for each fork the
+/// player decided (<see cref="ForkEpilogues"/>, Act I to Act IV), and the credits. When they
 /// lift the player is still standing in the world — the save carries <see cref="CompleteFlag"/> and
 /// free roam continues. <see cref="CompleteFlag"/> is also what stops a reload replaying it.
 /// </summary>
@@ -24,6 +25,22 @@ public partial class EndingSequence : NarrationSequence
     {
         "flag.iron_king_absorbed", "flag.storm_tyrant_absorbed", "flag.beast_lord_absorbed",
         "flag.crimson_prophet_absorbed", "flag.hollow_queen_absorbed", "flag.ashen_knight_absorbed",
+    };
+
+    /// <summary>
+    /// The campaign's decided forks in story order. Each row is a fork slug and the flags that select
+    /// its epilogue card: the first flag plays <c>ending.epilogue.&lt;slug&gt;.a</c>, the second
+    /// <c>.b</c>, the third <c>.c</c> (rows authored in spec2_act4.py). A fork with none of its flags
+    /// held contributes no card; the Knight's vigil has a third answer, "neither", which is no card.
+    /// </summary>
+    public static readonly (string Slug, string[] Flags)[] ForkEpilogues =
+    {
+        ("dray", new[] { "flag.fork.dray_spared", "flag.fork.dray_pressed" }),
+        ("succession", new[] { "flag.fork.succession_hjalvar", "flag.fork.succession_halvar" }),
+        ("herd", new[] { "flag.fork.herd_slain", "flag.fork.herd_calmed" }),
+        ("flock", new[] { "flag.fork.flock_exposed", "flag.fork.flock_turned", "flag.fork.flock_kin" }),
+        ("queen", new[] { "flag.fork.queen_released", "flag.fork.queen_kept" }),
+        ("vigil", new[] { "flag.rival.gate_kneel", "flag.rival.gate_draw" }),
     };
 
     private static readonly string[] DawnfireCards =
@@ -59,15 +76,41 @@ public partial class EndingSequence : NarrationSequence
             return;
         }
 
-        PlayCards(Script(e.Flag == DawnfireFlag, CountAbsorbed(flags.Has)), string.Empty);
+        PlayCards(Script(e.Flag == DawnfireFlag, CountAbsorbed(flags.Has), flags.Has), string.Empty);
     }
 
-    /// <summary>The card list for an ending. Pure, so the branch table is unit-testable.</summary>
-    public static string[] Script(bool dawnfire, int absorbed)
+    /// <summary>The card list for an ending: the ending, the ember epilogue, one card per decided fork
+    /// (when <paramref name="has"/> is given), the credits. Pure, so the branch table is unit-testable.</summary>
+    public static string[] Script(bool dawnfire, int absorbed, System.Func<string, bool>? has = null)
     {
         var cards = new List<string>(dawnfire ? DawnfireCards : EmbersCards);
         cards.Add(EpilogueKey(dawnfire, absorbed));
+        if (has != null)
+        {
+            cards.AddRange(ForkCards(has));
+        }
+
         cards.AddRange(CreditCards);
+        return cards.ToArray();
+    }
+
+    /// <summary>One epilogue key per fork whose flag is held, Act I to Act IV. A fork with several
+    /// flags held (a debug state) plays its first answer only.</summary>
+    public static string[] ForkCards(System.Func<string, bool> has)
+    {
+        var cards = new List<string>();
+        foreach ((string slug, string[] flags) in ForkEpilogues)
+        {
+            for (int i = 0; i < flags.Length; i++)
+            {
+                if (has(flags[i]))
+                {
+                    cards.Add($"ending.epilogue.{slug}.{(char)('a' + i)}");
+                    break;
+                }
+            }
+        }
+
         return cards.ToArray();
     }
 

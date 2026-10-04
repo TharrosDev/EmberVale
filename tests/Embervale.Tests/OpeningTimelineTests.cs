@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using Embervale.UI;
 using Xunit;
 
@@ -11,7 +13,7 @@ namespace Embervale.Tests;
 /// </summary>
 public class OpeningTimelineTests
 {
-    private const int Cards = 5;
+    private static readonly int Cards = OpeningSequence.CardKeys.Length;
 
     [Fact]
     public void StartsFullyFadedOut()
@@ -92,5 +94,26 @@ public class OpeningTimelineTests
 
         Assert.False(frame.Finished);
         Assert.Equal(0, frame.CardIndex);
+    }
+
+    [Fact]
+    public void ThePrologueIsShortAndEndsOnTheName()
+    {
+        // The Elder tells the town's side in mission 01, so the narration is only the premise: a few
+        // cards, well under the old half-minute, and the last one is the character's own name.
+        Assert.InRange(OpeningSequence.CardKeys.Length, 2, 3);
+        Assert.True(OpeningTimeline.Duration(OpeningSequence.CardKeys.Length) < 20f);
+
+        Dictionary<string, string> rows = StringsCsv.Rows();
+        foreach (string key in OpeningSequence.CardKeys)
+        {
+            Assert.True(rows.TryGetValue(key, out string? text) && text.Length > 2, $"'{key}' has no text");
+            Assert.DoesNotContain('—', text);
+        }
+
+        Assert.Contains("{0}", rows[OpeningSequence.CardKeys[^1]]);
+        Assert.Contains("seventh", rows[OpeningSequence.CardKeys[^1]], StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("dying", rows[OpeningSequence.CardKeys[0]], StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("gods are dead", rows[OpeningSequence.CardKeys[0]], StringComparison.OrdinalIgnoreCase);
     }
 }

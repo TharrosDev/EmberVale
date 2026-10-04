@@ -132,6 +132,7 @@ public sealed partial class GameSession : Node3D, IServiceScopeHost
         AddChild(new VisionSequence { Name = "Visions" });
         AddChild(new ChapterBanner { Name = "ChapterBanner" });
         AddChild(new StoryCardSequence { Name = "StoryCards" });
+        AddChild(new PaleRevealSequence { Name = "PaleReveal" });
 
         // 4. Quick save/load keys exist in every build. Only the overlays and cheat controls are
         // developer affordances; DeveloperToolsHost filters those when capture/shipping is active.

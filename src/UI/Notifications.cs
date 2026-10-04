@@ -97,6 +97,7 @@ public partial class Notifications : CanvasLayer
         SubscribeMagic(bus);
 
         bus?.Subscribe<CompanionBarkEvent>(OnCompanionBark);
+        bus?.Subscribe<Narrative.StoryToastRequestedEvent>(OnStoryToast);
     }
 
     public override void _Process(double delta)
@@ -143,6 +144,7 @@ public partial class Notifications : CanvasLayer
         bus.Unsubscribe<WorldHazardNoticeEvent>(OnWorldHazard);
         UnsubscribeMagic(bus);
         bus.Unsubscribe<CompanionBarkEvent>(OnCompanionBark);
+        bus.Unsubscribe<Narrative.StoryToastRequestedEvent>(OnStoryToast);
     }
 
     private void OnLeveledUp(LeveledUpEvent e) =>
@@ -269,6 +271,20 @@ public partial class Notifications : CanvasLayer
     }
 
     private void OnCompanionBark(CompanionBarkEvent e) => PushBark(e.CompanionId, e.TextKey);
+
+    /// <summary>A story moment's toast (the Pale Concord reveal): a major notice, with an optional detail
+    /// line. A key with no text is dropped rather than shown raw.</summary>
+    private void OnStoryToast(Narrative.StoryToastRequestedEvent e)
+    {
+        if (e.TextKey.Length == 0 || !Loc.Has(e.TextKey))
+        {
+            return;
+        }
+
+        Push(
+            Loc.T(e.TextKey), UiTheme.Accent, NoticeCategory.Major,
+            secondary: e.DetailKey.Length > 0 && Loc.Has(e.DetailKey) ? Loc.T(e.DetailKey) : null);
+    }
 
     /// <summary>A companion's reaction line as a portrait-less toast: the line, and who said it beneath.
     /// Public so a harness can drive it through the feed's own path.</summary>

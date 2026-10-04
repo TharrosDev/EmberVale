@@ -23286,7 +23286,8 @@
    "code": true,
    "externalRefs": [
     "data/story/reactions/spec1.json",
-    "data/story/rules/spec1.json"
+    "data/story/rules/spec1.json",
+    "src/UI/EndingSequence.cs"
    ]
   },
   "flag.fork.dray_spared": {
@@ -23322,7 +23323,8 @@
    "code": true,
    "externalRefs": [
     "data/story/reactions/spec1.json",
-    "data/story/rules/spec1.json"
+    "data/story/rules/spec1.json",
+    "src/UI/EndingSequence.cs"
    ]
   },
   "flag.fork.flock_exposed": {
@@ -23353,7 +23355,8 @@
    "code": true,
    "externalRefs": [
     "data/story/reactions/spec1.json",
-    "data/story/rules/spec1.json"
+    "data/story/rules/spec1.json",
+    "src/UI/EndingSequence.cs"
    ]
   },
   "flag.fork.flock_kin": {
@@ -23384,7 +23387,8 @@
    "code": true,
    "externalRefs": [
     "data/story/reactions/spec1.json",
-    "data/story/rules/spec1.json"
+    "data/story/rules/spec1.json",
+    "src/UI/EndingSequence.cs"
    ]
   },
   "flag.fork.flock_turned": {
@@ -23419,7 +23423,8 @@
    ],
    "code": true,
    "externalRefs": [
-    "data/story/rules/spec1.json"
+    "data/story/rules/spec1.json",
+    "src/UI/EndingSequence.cs"
    ]
   },
   "flag.fork.herd_calmed": {
@@ -23450,7 +23455,8 @@
    "code": true,
    "externalRefs": [
     "data/story/reactions/spec1.json",
-    "data/story/rules/spec1.json"
+    "data/story/rules/spec1.json",
+    "src/UI/EndingSequence.cs"
    ]
   },
   "flag.fork.herd_slain": {
@@ -23486,7 +23492,8 @@
    "code": true,
    "externalRefs": [
     "data/story/reactions/spec1.json",
-    "data/story/rules/spec1.json"
+    "data/story/rules/spec1.json",
+    "src/UI/EndingSequence.cs"
    ]
   },
   "flag.fork.queen_kept": {
@@ -23556,7 +23563,8 @@
    ],
    "code": false,
    "externalRefs": [
-    "data/story/reactions/spec2.json"
+    "data/story/reactions/spec2.json",
+    "src/UI/EndingSequence.cs"
    ]
   },
   "flag.fork.queen_released": {
@@ -23626,7 +23634,8 @@
    ],
    "code": false,
    "externalRefs": [
-    "data/story/reactions/spec2.json"
+    "data/story/reactions/spec2.json",
+    "src/UI/EndingSequence.cs"
    ]
   },
   "flag.fork.succession_halvar": {
@@ -23657,7 +23666,8 @@
    "code": true,
    "externalRefs": [
     "data/story/reactions/spec1.json",
-    "data/story/rules/spec1.json"
+    "data/story/rules/spec1.json",
+    "src/UI/EndingSequence.cs"
    ]
   },
   "flag.fork.succession_hjalvar": {
@@ -23687,7 +23697,8 @@
    ],
    "code": true,
    "externalRefs": [
-    "data/story/rules/spec1.json"
+    "data/story/rules/spec1.json",
+    "src/UI/EndingSequence.cs"
    ]
   },
   "flag.frostfang.passage_open": {
@@ -24960,7 +24971,9 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "src/UI/EndingSequence.cs"
+   ]
   },
   "flag.rival.gate_kneel": {
    "writers": [
@@ -24994,7 +25007,8 @@
    ],
    "code": false,
    "externalRefs": [
-    "data/story/reactions/spec2.json"
+    "data/story/reactions/spec2.json",
+    "src/UI/EndingSequence.cs"
    ]
   },
   "flag.rival.glimpsed": {
@@ -25619,7 +25633,8 @@
    ],
    "externalRefs": [
     "data/story/reactions/spec1.json",
-    "data/story/rules/spec1.json"
+    "data/story/rules/spec1.json",
+    "src/UI/EndingSequence.cs"
    ]
   },
   {
@@ -25660,7 +25675,8 @@
    ],
    "externalRefs": [
     "data/story/reactions/spec1.json",
-    "data/story/rules/spec1.json"
+    "data/story/rules/spec1.json",
+    "src/UI/EndingSequence.cs"
    ]
   },
   {
@@ -25696,7 +25712,8 @@
    ],
    "externalRefs": [
     "data/story/reactions/spec1.json",
-    "data/story/rules/spec1.json"
+    "data/story/rules/spec1.json",
+    "src/UI/EndingSequence.cs"
    ]
   },
   {
@@ -25732,7 +25749,8 @@
    ],
    "externalRefs": [
     "data/story/reactions/spec1.json",
-    "data/story/rules/spec1.json"
+    "data/story/rules/spec1.json",
+    "src/UI/EndingSequence.cs"
    ]
   },
   {
@@ -25772,7 +25790,8 @@
     }
    ],
    "externalRefs": [
-    "data/story/rules/spec1.json"
+    "data/story/rules/spec1.json",
+    "src/UI/EndingSequence.cs"
    ]
   },
   {
@@ -25808,7 +25827,8 @@
    ],
    "externalRefs": [
     "data/story/reactions/spec1.json",
-    "data/story/rules/spec1.json"
+    "data/story/rules/spec1.json",
+    "src/UI/EndingSequence.cs"
    ]
   },
   {
@@ -25849,7 +25869,8 @@
    ],
    "externalRefs": [
     "data/story/reactions/spec1.json",
-    "data/story/rules/spec1.json"
+    "data/story/rules/spec1.json",
+    "src/UI/EndingSequence.cs"
    ]
   },
   {
@@ -25919,7 +25940,8 @@
     }
    ],
    "externalRefs": [
-    "data/story/reactions/spec2.json"
+    "data/story/reactions/spec2.json",
+    "src/UI/EndingSequence.cs"
    ]
   },
   {
@@ -25989,7 +26011,8 @@
     }
    ],
    "externalRefs": [
-    "data/story/reactions/spec2.json"
+    "data/story/reactions/spec2.json",
+    "src/UI/EndingSequence.cs"
    ]
   },
   {
@@ -26025,7 +26048,8 @@
    ],
    "externalRefs": [
     "data/story/reactions/spec1.json",
-    "data/story/rules/spec1.json"
+    "data/story/rules/spec1.json",
+    "src/UI/EndingSequence.cs"
    ]
   },
   {
@@ -26060,7 +26084,8 @@
     }
    ],
    "externalRefs": [
-    "data/story/rules/spec1.json"
+    "data/story/rules/spec1.json",
+    "src/UI/EndingSequence.cs"
    ]
   }
  ]

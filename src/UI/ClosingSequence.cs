@@ -4,11 +4,12 @@ using Embervale.Narrative;
 namespace Embervale.UI;
 
 /// <summary>
-/// The slice's closing card (Phase 33D). Three narration cards on
-/// <see cref="SliceCompletedEvent"/>: what the player did with the Iron King's ember, what noticed,
-/// and where the story goes next.
+/// The slice's closing card (Phase 33D). One narration card on <see cref="SliceCompletedEvent"/>:
+/// what the player did with the Iron King's ember, and what noticed. It used to run on to a third
+/// card naming the next realms; missions 10 to 18 and the Elder's aftermath now say where to go, so
+/// the card stops at the hook.
 ///
-/// The first card <b>branches on the choice</b> — that single branch is what makes the ending feel
+/// The card <b>branches on the choice</b> — that single branch is what makes the ending feel
 /// like the game was paying attention, and it is the cheapest possible way to pay off the beat the
 /// whole slice is built around.
 ///
@@ -18,19 +19,13 @@ namespace Embervale.UI;
 /// </summary>
 public partial class ClosingSequence : NarrationSequence
 {
-    private static readonly string[] AbsorbedCards =
-    {
-        "closing.absorbed",
-        "closing.answer",
-        "closing.next",
-    };
+    private static readonly string[] AbsorbedCards = { "closing.absorbed" };
 
-    private static readonly string[] RefusedCards =
-    {
-        "closing.refused",
-        "closing.answer",
-        "closing.next",
-    };
+    private static readonly string[] RefusedCards = { "closing.refused" };
+
+    /// <summary>The closing card for what the player did with the Iron King's ember. Pure, so the
+    /// branch is unit-testable.</summary>
+    public static string[] CardsFor(bool absorbedEmber) => absorbedEmber ? AbsorbedCards : RefusedCards;
 
     protected override void OnReady()
     {
@@ -43,7 +38,7 @@ public partial class ClosingSequence : NarrationSequence
     }
 
     private void OnSliceCompleted(SliceCompletedEvent e) =>
-        PlayCards(e.AbsorbedEmber ? AbsorbedCards : RefusedCards, string.Empty);
+        PlayCards(CardsFor(e.AbsorbedEmber), string.Empty);
 
     protected override void OnSequenceFinished()
     {

@@ -29,3 +29,10 @@ public readonly record struct StoryBannerRequestedEvent(string ChapterKey) : IGa
 /// depends on it, and it is never saved.
 /// </summary>
 public readonly record struct StoryBeatEvent(string Key) : IGameEvent;
+
+/// <summary>
+/// A story moment's toast: <paramref name="TextKey"/> as the line and <paramref name="DetailKey"/> (may be
+/// empty) as the dim line beneath it. Published by story code that has no toast of its own (the Pale
+/// Concord reveal); the notification feed subscribes and holds it behind any menu or cinematic.
+/// </summary>
+public readonly record struct StoryToastRequestedEvent(string TextKey, string DetailKey = "") : IGameEvent;
