@@ -30,22 +30,22 @@ script = ExtResource("3_choice")
 Text = "pale.dlg.pale_count_stone.root.c_release"
 Goto = "released"
 Condition = 6
-ConditionArg = "flag.pale.court_open"
+ConditionArg = "flag.beat.count_answered"
 Effect = 2
 EffectArg = "flag.fork.queen_released"
 Effect2 = 2
-Effect2Arg = "flag.pale.court_open"
+Effect2Arg = "flag.beat.count_answered"
 
 [sub_resource type="Resource" id="ch_root_3"]
 script = ExtResource("3_choice")
 Text = "pale.dlg.pale_count_stone.root.c_keep"
 Goto = "kept"
 Condition = 6
-ConditionArg = "flag.pale.court_open"
+ConditionArg = "flag.beat.count_answered"
 Effect = 2
 EffectArg = "flag.fork.queen_kept"
 Effect2 = 2
-Effect2Arg = "flag.pale.court_open"
+Effect2Arg = "flag.beat.count_answered"
 
 [sub_resource type="Resource" id="ch_root_4"]
 script = ExtResource("3_choice")
@@ -166,7 +166,7 @@ Choices = Array[Resource]([SubResource("ch_settled_0")])
 [sub_resource type="Resource" id="start_0"]
 script = ExtResource("4_variant")
 Condition = 5
-ConditionArg = "flag.pale.court_open"
+ConditionArg = "flag.beat.count_answered"
 NodeId = "settled"
 
 [resource]

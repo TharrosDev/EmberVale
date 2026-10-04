@@ -4179,7 +4179,7 @@
     },
     {
      "type": 8,
-     "target": "flag.pale.court_open",
+     "target": "flag.beat.count_answered",
      "count": 1,
      "location": "location.pale.court_approach",
      "reqFlag": "",
@@ -4204,7 +4204,7 @@
      "via": "autoStart"
     },
     {
-     "flag": "flag.pale.court_open",
+     "flag": "flag.beat.count_answered",
      "via": "objective[2].milestone"
     }
    ],
@@ -15482,7 +15482,7 @@
    "startVariants": [
     {
      "cond": 5,
-     "arg": "flag.pale.court_open",
+     "arg": "flag.beat.count_answered",
      "node": "settled"
     }
    ],
@@ -15528,18 +15528,18 @@
     }
    ],
    "flagsSet": [
+    "flag.beat.count_answered",
     "flag.fork.queen_kept",
-    "flag.fork.queen_released",
-    "flag.pale.court_open"
+    "flag.fork.queen_released"
    ],
    "flagsCleared": [],
    "flagsRead": [
-    "flag.pale.court_open"
+    "flag.beat.count_answered"
    ],
    "questsStarted": [],
    "sites": [
     {
-     "flag": "flag.pale.court_open",
+     "flag": "flag.beat.count_answered",
      "kind": "read",
      "node": "root",
      "at": "choice[2]"
@@ -15551,13 +15551,13 @@
      "at": "choice[2]"
     },
     {
-     "flag": "flag.pale.court_open",
+     "flag": "flag.beat.count_answered",
      "kind": "set",
      "node": "root",
      "at": "choice[2]"
     },
     {
-     "flag": "flag.pale.court_open",
+     "flag": "flag.beat.count_answered",
      "kind": "read",
      "node": "root",
      "at": "choice[3]"
@@ -15569,13 +15569,13 @@
      "at": "choice[3]"
     },
     {
-     "flag": "flag.pale.court_open",
+     "flag": "flag.beat.count_answered",
      "kind": "set",
      "node": "root",
      "at": "choice[3]"
     },
     {
-     "flag": "flag.pale.court_open",
+     "flag": "flag.beat.count_answered",
      "kind": "read",
      "node": "settled",
      "at": "startVariant"
@@ -21217,6 +21217,44 @@
     "data/story/reactions/spec2.json"
    ]
   },
+  "flag.beat.count_answered": {
+   "writers": [
+    {
+     "kind": "dialogue",
+     "id": "dialogue.pale_count_stone",
+     "via": "root/choice[2]"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.pale_count_stone",
+     "via": "root/choice[3]"
+    }
+   ],
+   "readers": [
+    {
+     "kind": "quest",
+     "id": "quest.main.queens_count",
+     "via": "objective[2].milestone"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.pale_count_stone",
+     "via": "root/choice[2]"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.pale_count_stone",
+     "via": "root/choice[3]"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.pale_count_stone",
+     "via": "settled/startVariant"
+    }
+   ],
+   "code": false,
+   "externalRefs": []
+  },
   "flag.beat.crate_opened": {
    "writers": [
     {
@@ -24902,16 +24940,6 @@
      "kind": "quest",
      "id": "quest.main.queens_count",
      "via": "completion"
-    },
-    {
-     "kind": "dialogue",
-     "id": "dialogue.pale_count_stone",
-     "via": "root/choice[2]"
-    },
-    {
-     "kind": "dialogue",
-     "id": "dialogue.pale_count_stone",
-     "via": "root/choice[3]"
     }
    ],
    "readers": [
@@ -24919,26 +24947,6 @@
      "kind": "quest",
      "id": "quest.main.hidden",
      "via": "autoStart"
-    },
-    {
-     "kind": "quest",
-     "id": "quest.main.queens_count",
-     "via": "objective[2].milestone"
-    },
-    {
-     "kind": "dialogue",
-     "id": "dialogue.pale_count_stone",
-     "via": "root/choice[2]"
-    },
-    {
-     "kind": "dialogue",
-     "id": "dialogue.pale_count_stone",
-     "via": "root/choice[3]"
-    },
-    {
-     "kind": "dialogue",
-     "id": "dialogue.pale_count_stone",
-     "via": "settled/startVariant"
     }
    ],
    "code": false,

@@ -27,7 +27,7 @@ JournalEntryKey = "pale.quest.queens_count.log_husks"
 [sub_resource type="Resource" id="Obj_2"]
 script = ExtResource("2_obj")
 Type = 8
-TargetId = "flag.pale.court_open"
+TargetId = "flag.beat.count_answered"
 RequiredCount = 1
 Description = "pale.quest.queens_count.obj_stone"
 LocationId = "location.pale.court_approach"

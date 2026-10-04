@@ -124,7 +124,7 @@ QUEENS_COUNT = Quest(
              location="location.pale.court_approach",
              hint="The husks stand in the road, the ones the count could not hold. They come at anyone who nears the Court wall.",
              journal="The husks did not defend themselves. They had been standing in the road for four hundred years, waiting to be released from the road."),
-        milestone("flag.pale.court_open", "Answer the count-stone at the end of the processional", tag="stone",
+        milestone("flag.beat.count_answered", "Answer the count-stone at the end of the processional", tag="stone",
                   location="location.pale.court_approach",
                   hint="Touch the stone and it will ask whether the count goes on. Whatever you answer, the Court's gate opens.",
                   journal="The stone asked, and I answered. The gate of the Hollow Court stands open."),
@@ -168,15 +168,15 @@ LAMP_QUEEN = read_clue(
 def _count_stone() -> Dialogue:
     return Dialogue(
         id="dialogue.pale_count_stone", speaker=t("The Count-Stone"), start="root",
-        start_variants=[StartVariant(has_flag("flag.pale.court_open"), "settled")],
+        start_variants=[StartVariant(has_flag("flag.beat.count_answered"), "settled")],
         nodes=[
             Node("root", t("A standing stone, black and wet-looking though nothing here ever rains, cut with ring upon ring of names. Under your hand it is cold, and then it speaks in a voice made of every dusk: <<The count is eleven hundred and four. Shall it go on?>>"), [
                 go(t("What happens if it ends?"), "ends", tag="ask_end"),
                 go(t("What happens if it goes on?"), "goes_on", tag="ask_on"),
-                say(t("End the count."), "released", tag="release", when=missing_flag("flag.pale.court_open"),
-                    do=(E.SET_FLAG, "flag.fork.queen_released"), do2=(E.SET_FLAG, "flag.pale.court_open")),
-                say(t("Let the count go on."), "kept", tag="keep", when=missing_flag("flag.pale.court_open"),
-                    do=(E.SET_FLAG, "flag.fork.queen_kept"), do2=(E.SET_FLAG, "flag.pale.court_open")),
+                say(t("End the count."), "released", tag="release", when=missing_flag("flag.beat.count_answered"),
+                    do=(E.SET_FLAG, "flag.fork.queen_released"), do2=(E.SET_FLAG, "flag.beat.count_answered")),
+                say(t("Let the count go on."), "kept", tag="keep", when=missing_flag("flag.beat.count_answered"),
+                    do=(E.SET_FLAG, "flag.fork.queen_kept"), do2=(E.SET_FLAG, "flag.beat.count_answered")),
                 leave(t("Not yet."), tag="later"),
             ]),
             Node("ends", t("The stone answers plainly. <<Then the evening ends. Every name here is owed the years it was spared. They come due gently, if the count is broken first, and all at once if it is not. Some will be glad. Some will not live out the winter. The Queen will feel each one go.>>"), [
