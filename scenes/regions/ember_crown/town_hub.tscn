@@ -57,6 +57,11 @@
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_watch_tower.glb" id="dx_watch_tower"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_well.glb" id="dx_well"]
 [ext_resource type="PackedScene" path="res://scenes/props/bld_workshop_open.tscn" id="dx_workshop_open"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_bell_tower.glb" id="wa_prp_bell_tower"]
+[ext_resource type="PackedScene" path="res://assets/models/characters/npc_townsman.glb" id="wa_npc_townsman"]
+[ext_resource type="Script" path="res://src/World/FlagVisibilityComponent.cs" id="wa_FlagVisibilityComponent"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_bench.glb" id="wa_prp_bench"]
+[ext_resource type="Script" path="res://src/Enemies/SetPieceSpawnComponent.cs" id="wa_SetPieceSpawnComponent"]
 
 ; THE EMBER CROWN TOWN HUB (the 2026-08-28 layout rebuild) — the realm's heart, and no longer a plan drawn on a
 ; drawing board.
@@ -196,6 +201,13 @@ size = Vector3(0.93, 1.07, 0.82)
 
 [sub_resource type="BoxShape3D" id="Shape_workbench"]
 size = Vector3(2.02, 0.89, 1.02)
+
+[sub_resource type="BoxShape3D" id="wa_box_1p4_3p3_1p6"]
+size = Vector3(1.4, 3.3, 1.6)
+
+[sub_resource type="CapsuleShape3D" id="wa_cap_0p4_1p8"]
+radius = 0.4
+height = 1.8
 
 ; --- The 2026-08-28 layout rebuild: the Kingsway and the two yards. -------------------------------------------------------
 ; Ground skins only — 6 cm slabs with NO collider, exactly as embermarket authors them (a 6 cm lip is
@@ -1166,3 +1178,99 @@ transform = Transform3D(0.9583, 0, -0.2857, 0, 1, 0, 0.2857, 0, 0.9583, 76.12, 0
 
 [node name="Dx_EgS2" parent="Nav" instance=ExtResource("dx_cottage_modular")]
 transform = Transform3D(0.9759, 0, -0.2181, 0, 1, 0, 0.2181, 0, 0.9759, 91.25, 0, -14.04)
+
+; WR-spec1-01 (campaign): the bronze alarm bell, a belfry-frame model scaled to a post-height bell. Quest smoke_over_the_square obj bell.
+[node name="AlarmBell" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9.5, 0, 3.5)
+script = ExtResource("1_entity")
+DisplayName = "The Alarm Bell"
+PersistentId = "ember_crown.town_hub.alarm_bell"
+
+[node name="Model" parent="AlarmBell" instance=ExtResource("wa_prp_bell_tower")]
+transform = Transform3D(0.3, 0, 0, 0, 0.3, 0, 0, 0, 0.3, 0, 0, 0)
+
+[node name="Collider" type="StaticBody3D" parent="AlarmBell"]
+
+[node name="Shape" type="CollisionShape3D" parent="AlarmBell/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.65, 0)
+shape = SubResource("wa_box_1p4_3p3_1p6")
+
+[node name="Dialogue" type="Node" parent="AlarmBell"]
+script = ExtResource("7_dialogue")
+DialogueId = "dialogue.alarm_bell"
+InteractId = "interact.ember_crown.alarm_bell"
+PromptKey = "prompt.worlda.alarm_bell"
+
+; WR-spec1-20 (campaign): the wounded carter, there from the alarm until he is carried in.
+[node name="CarterJoss" type="Node3D" parent="."]
+transform = Transform3D(0.3714, 0, -0.9285, 0, 1, 0, 0.9285, 0, 0.3714, 19, 0, -5.8)
+script = ExtResource("1_entity")
+DisplayName = "Joss Harrow, Carter"
+PersistentId = "ember_crown.town_hub.carter_joss"
+TemplateId = "npc.traveller"
+
+[node name="Animation" type="Node" parent="CarterJoss"]
+script = ExtResource("24_charanim")
+BodyMeshPath = "Model"
+
+[node name="EquipmentVisuals" type="Node" parent="CarterJoss"]
+script = ExtResource("90_equipment")
+BodyMeshPath = "Model"
+
+[node name="Collider" type="StaticBody3D" parent="CarterJoss"]
+
+[node name="Shape" type="CollisionShape3D" parent="CarterJoss/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("wa_cap_0p4_1p8")
+
+[node name="Dialogue" type="Node" parent="CarterJoss"]
+script = ExtResource("7_dialogue")
+DialogueId = "dialogue.wounded_carter"
+
+[node name="Model" parent="CarterJoss" instance=ExtResource("wa_npc_townsman")]
+
+[node name="Visibility" type="Node" parent="CarterJoss"]
+script = ExtResource("wa_FlagVisibilityComponent")
+HiddenWhenFlagId = "flag.beat.carter_helped"
+VisibleWhenFlagId = "flag.beat.alarm_rung"
+
+[node name="CarterWreck" type="Node3D" parent="."]
+transform = Transform3D(0.866, 0, -0.5, 0, 1, 0, 0.5, 0, 0.866, 21, 0, -3.8)
+script = ExtResource("1_entity")
+DisplayName = "Toppled Cart"
+
+[node name="Model" parent="CarterWreck" instance=ExtResource("dx_cart")]
+transform = Transform3D(0, -1, 0, 1, 0, 0, 0, 0, 1, 0, 0.47, 0)
+
+[node name="Trough" parent="CarterWreck" instance=ExtResource("wa_prp_bench")]
+transform = Transform3D(0.342, 0, 0.9397, 0, 1, 0, -0.9397, 0, 0.342, -2.6, 0, 2.2)
+
+[node name="Visibility" type="Node" parent="CarterWreck"]
+script = ExtResource("wa_FlagVisibilityComponent")
+VisibleWhenFlagId = "flag.beat.alarm_rung"
+
+; WR-spec1-60 (campaign): the square raid, 14 to 18 m north of the Waystone along the Kingsway.
+[node name="SquareRaid" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, -9.5)
+script = ExtResource("wa_SetPieceSpawnComponent")
+TriggerFlagId = "flag.beat.alarm_rung"
+TemplateIds = PackedStringArray("enemy.goblin")
+CountPerWave = 4
+Waves = 3
+WaveDelaySeconds = 14.0
+ClearedFlagId = "flag.beat.square_raid_cleared"
+
+[node name="Spawn0" type="Marker3D" parent="SquareRaid"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 2)
+
+[node name="Spawn1" type="Marker3D" parent="SquareRaid"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+
+[node name="Spawn2" type="Marker3D" parent="SquareRaid"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5, 0, -1)
+
+[node name="Spawn3" type="Marker3D" parent="SquareRaid"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1, 0, -2)
+
+[node name="Spawn4" type="Marker3D" parent="SquareRaid"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 0, 1)

@@ -134,11 +134,11 @@ omni_range = 7.0
 script = ExtResource("st_summon")
 SpawnOffset = Vector3(12, 0, -1)
 RequiredQuestId = ""
-RequiredFlagId = "flag.iron_king_defeated"
+RequiredFlagId = "flag.arc.frostfang_ready"
 BossTemplateId = "enemy.storm_tyrant"
 DefeatedFlagId = "flag.storm_tyrant_defeated"
 PromptKey = "boss.storm_tyrant.prompt"
-LockedPromptKey = "boss.storm_tyrant.locked"
+LockedPromptKey = "boss.storm_tyrant.arc_locked"
 
 [node name="Model" parent="Brazier" instance=ExtResource("st_brazier")]
 

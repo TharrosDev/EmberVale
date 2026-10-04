@@ -18,6 +18,11 @@
 [ext_resource type="Script" path="res://src/Shrines/ShrineComponent.cs" id="shrine_41_5b"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_bench.glb" id="shrine_bench_41_5b"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_guild_rep.glb" id="shrine_spectator_41_5b"]
+[ext_resource type="Script" path="res://src/Animation/CharacterAnimationComponent.cs" id="wa_CharacterAnimationComponent"]
+[ext_resource type="Script" path="res://src/Animation/EquipmentPresentationComponent.cs" id="wa_EquipmentPresentationComponent"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueComponent.cs" id="wa_DialogueComponent"]
+[ext_resource type="PackedScene" path="res://assets/models/creatures/boss_ashen_knight.glb" id="wa_boss_ashen_knight"]
+[ext_resource type="Script" path="res://src/World/FlagVisibilityComponent.cs" id="wa_FlagVisibilityComponent"]
 
 ; ⚠️ THE NAV VOXEL GRID COARSENED WITH THE WORLD (the 2026-08-29 geography overhaul). Cells
 ; went from 52 m squares on a flat slab to 90-200 m of real terrain, and a 0.25 m voxel over
@@ -109,6 +114,31 @@ size = Vector3(2.26, 1.41, 1.84)
 ;   Phase2Hook/3Hook    their Reveals arrays are NodePaths to those vents — renaming a vent breaks
 ;                       the boss's phase telegraph SILENTLY, and nothing logs it
 ; ====================================================================================================
+
+[sub_resource type="CapsuleShape3D" id="wa_cap_0p5_2p1"]
+radius = 0.5
+height = 2.1
+
+[sub_resource type="BoxShape3D" id="wa_box_0p9_1p1_0p9"]
+size = Vector3(0.9, 1.1, 0.9)
+
+[sub_resource type="StandardMaterial3D" id="wa_mat_token"]
+albedo_color = Color(0.05, 0.05, 0.06, 1)
+metallic = 0.9
+roughness = 0.35
+emission_enabled = true
+emission = Color(0.5, 0.12, 0.05, 1)
+emission_energy_multiplier = 0.5
+
+[sub_resource type="CylinderMesh" id="wa_cm_token"]
+material = SubResource("wa_mat_token")
+top_radius = 0.17
+bottom_radius = 0.17
+height = 0.035
+radial_segments = 20
+
+[sub_resource type="BoxShape3D" id="wa_box_0p45_0p25_0p45"]
+size = Vector3(0.45, 0.25, 0.45)
 
 [node name="ArenaCell" type="Node3D"]
 metadata/content_offset = Vector2(20, -10)
@@ -769,3 +799,76 @@ transform = Transform3D(0.766, 0, 0.6428, 0, 1, 0, -0.6428, 0, 0.766, 8.6, 0, -2
 [node name="MapPin" type="Node3D" parent="Nav/ShrineDrakar"]
 script = ExtResource("maploc_39_5a")
 LocationId = "location.shrine.drakar"
+
+; WR-spec1-26 (campaign): the Ashen Knight watching from the north rim by the brazier, weapons not drawn.
+; The north tiers are four-metre ruin walls the player cannot reach, so he stands at ground level on the rim, 3 m from the
+; player's interact range of the sand side.
+[node name="RivalRider" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 0, -25)
+script = ExtResource("2_entity")
+DisplayName = "The Rider in Black Iron"
+PersistentId = "ember_crown.arena.rival_rider"
+TemplateId = "npc.ashen_knight"
+
+[node name="Animation" type="Node" parent="RivalRider"]
+script = ExtResource("wa_CharacterAnimationComponent")
+BodyMeshPath = "Model"
+
+[node name="EquipmentVisuals" type="Node" parent="RivalRider"]
+script = ExtResource("wa_EquipmentPresentationComponent")
+BodyMeshPath = "Model"
+
+[node name="Collider" type="StaticBody3D" parent="RivalRider"]
+
+[node name="Shape" type="CollisionShape3D" parent="RivalRider/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.05, 0)
+shape = SubResource("wa_cap_0p5_2p1")
+
+[node name="Dialogue" type="Node" parent="RivalRider"]
+script = ExtResource("wa_DialogueComponent")
+DialogueId = "dialogue.rival_arena"
+
+[node name="Model" parent="RivalRider" instance=ExtResource("wa_boss_ashen_knight")]
+
+[node name="Visibility" type="Node" parent="RivalRider"]
+script = ExtResource("wa_FlagVisibilityComponent")
+HiddenWhenFlagId = "flag.rival.met1"
+VisibleWhenFlagId = "flag.iron_king_defeated"
+
+[node name="BoxRail" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18.2, 0, -26.2)
+
+[node name="Model" parent="Nav/BoxRail" instance=ExtResource("10_pillar")]
+transform = Transform3D(0.9, 0, 0, 0, 0.35, 0, 0, 0, 0.9, 0, 0, 0)
+
+[node name="Collider" type="StaticBody3D" parent="Nav/BoxRail"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/BoxRail/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.55, 0)
+shape = SubResource("wa_box_0p9_1p1_0p9")
+
+; WR-spec1-27 (campaign): the token the rider leaves warm on the rail.
+[node name="EmptyBox" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18.2, 1.12, -26.2)
+script = ExtResource("2_entity")
+DisplayName = "The Empty Royal Box"
+PersistentId = "ember_crown.arena.empty_box"
+
+[node name="Disc" type="MeshInstance3D" parent="EmptyBox"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.02, 0)
+mesh = SubResource("wa_cm_token")
+
+[node name="Collider" type="StaticBody3D" parent="EmptyBox"]
+
+[node name="Shape" type="CollisionShape3D" parent="EmptyBox/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, 0)
+shape = SubResource("wa_box_0p45_0p25_0p45")
+
+[node name="Dialogue" type="Node" parent="EmptyBox"]
+script = ExtResource("wa_DialogueComponent")
+DialogueId = "dialogue.rival_arena"
+PromptKey = "prompt.worlda.rival_token"
+
+[node name="Visibility" type="Node" parent="EmptyBox"]
+script = ExtResource("wa_FlagVisibilityComponent")
+VisibleWhenFlagId = "flag.rival.met1"
