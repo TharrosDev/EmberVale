@@ -4051,14 +4051,14 @@ pale.dlg.hollow_queen_parley.root.c_light,I will light it.
 pale.dlg.hollow_queen_parley.counting,"""Everything that is still mine. It is not a long list any more. It was a kingdom once."""
 pale.dlg.hollow_queen_parley.counting.c_back,Something else.
 pale.dlg.hollow_queen_parley.counting.c_light,I will light it.
-pale.dlg.hollow_queen_parley.released,"""You broke the count. I felt eleven hundred and four names leave my hands, one after another, like candles going out down a long hall. I have not been so empty since the day I signed. Do not expect me to thank you, and do not expect me to forgive you. Expect me at the ring."""
+pale.dlg.hollow_queen_parley.released,"""You broke the count. I felt eleven hundred and four names leave my hands, one after another, like candles going out down a long hall. I have not been so empty since the day I signed. Do not expect me to thank you, and do not expect me to forgive you. Expect me at the brazier."""
 pale.dlg.hollow_queen_parley.released.c_why,You held them against their will.
-pale.dlg.hollow_queen_parley.released.c_ring,Then I will see you at the ring.
+pale.dlg.hollow_queen_parley.released.c_ring,Then I will see you at the brazier.
 pale.dlg.hollow_queen_parley.released_why,"""Against their will. Yes. By their own signatures, which I wrote the terms for. It is a very old argument and I lost it the day they stopped making it. Go on. Light it."""
 pale.dlg.hollow_queen_parley.released_why.c_light,I will.
 pale.dlg.hollow_queen_parley.kept,"""You let the count stand. You will think it was a kindness, and it was, a little. But I know what it is to be kept, Seventh. I tell myself each dusk that the next name will be the one I can bear to lose. Light the brazier. Take the choice from me, since you would not take it from them."""
 pale.dlg.hollow_queen_parley.kept.c_why,Would you have broken it yourself?
-pale.dlg.hollow_queen_parley.kept.c_ring,Then I will see you at the ring.
+pale.dlg.hollow_queen_parley.kept.c_ring,Then I will see you at the brazier.
 pale.dlg.hollow_queen_parley.kept_why,"""Every dusk. Every dusk I stand at the stone with my hand on it, and every dusk I count instead."" The voice is quiet for a while. ""Light it."""
 pale.dlg.hollow_queen_parley.kept_why.c_light,I will.
 pale.dlg.hollow_queen_parley.truce,"The voice is quiet a moment longer than courtesy allows. ""You smell of us. Of cold and keeping, and the kind of hunger that learns to call itself patience. How many of the fallen did you take in? Do not answer. I can hear them."" The chair creaks as nothing sits in it. ""You are not here to end me. You are here to find out what you become. I will teach you the last craft I learned, and you may fight me for it afterwards, if you still want to. Sit with me a moment, Seventh. Nobody has in four hundred years."""

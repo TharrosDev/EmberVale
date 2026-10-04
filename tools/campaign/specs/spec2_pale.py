@@ -223,14 +223,14 @@ def _queen_parley() -> Dialogue:
                 bye("I will light it.", tag="light")]),
             Node("counting", t("<<Everything that is still mine. It is not a long list any more. It was a kingdom once.>>"), [
                 back("root", "Something else.", tag="back"), bye("I will light it.", tag="light")]),
-            Node("released", t("<<You broke the count. I felt eleven hundred and four names leave my hands, one after another, like candles going out down a long hall. I have not been so empty since the day I signed. Do not expect me to thank you, and do not expect me to forgive you. Expect me at the ring.>>"), [
+            Node("released", t("<<You broke the count. I felt eleven hundred and four names leave my hands, one after another, like candles going out down a long hall. I have not been so empty since the day I signed. Do not expect me to thank you, and do not expect me to forgive you. Expect me at the brazier.>>"), [
                 go(t("You held them against their will."), "released_why", tag="why"),
-                bye("Then I will see you at the ring.", tag="ring")]),
+                bye("Then I will see you at the brazier.", tag="ring")]),
             Node("released_why", t("<<Against their will. Yes. By their own signatures, which I wrote the terms for. It is a very old argument and I lost it the day they stopped making it. Go on. Light it.>>"), [
                 bye("I will.", tag="light")]),
             Node("kept", t("<<You let the count stand. You will think it was a kindness, and it was, a little. But I know what it is to be kept, Seventh. I tell myself each dusk that the next name will be the one I can bear to lose. Light the brazier. Take the choice from me, since you would not take it from them.>>"), [
                 go(t("Would you have broken it yourself?"), "kept_why", tag="why"),
-                bye("Then I will see you at the ring.", tag="ring")]),
+                bye("Then I will see you at the brazier.", tag="ring")]),
             Node("kept_why", t("<<Every dusk. Every dusk I stand at the stone with my hand on it, and every dusk I count instead.>> The voice is quiet for a while. <<Light it.>>"), [
                 bye("I will.", tag="light")]),
             Node("truce", t("The voice is quiet a moment longer than courtesy allows. <<You smell of us. Of cold and keeping, and the kind of hunger that learns to call itself patience. How many of the fallen did you take in? Do not answer. I can hear them.>> The chair creaks as nothing sits in it. <<You are not here to end me. You are here to find out what you become. I will teach you the last craft I learned, and you may fight me for it afterwards, if you still want to. Sit with me a moment, Seventh. Nobody has in four hundred years.>>"), [
