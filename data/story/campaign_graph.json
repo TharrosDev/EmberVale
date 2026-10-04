@@ -26,12 +26,12 @@
   "flag.main.opening_done",
   "flag.morthul_defeated",
   "flag.pale_concord_revealed",
+  "flag.party.companion.kael",
   "flag.rival.duel1_won",
   "flag.rival.duel2_won",
   "flag.storm_tyrant_defeated"
  ],
  "terminalFlags": [
-  "flag.frostfang.passage_open",
   "flag.game_complete"
  ],
  "entryQuests": [],
@@ -3863,6 +3863,20 @@
      "journalKey": "quest.main.the_pass_kept.log_pass"
     },
     {
+     "type": 4,
+     "target": "companion.kael",
+     "count": 1,
+     "location": "location.ember_crown.ashen_breach",
+     "reqFlag": "flag.party.companion.kael",
+     "forbidFlag": "",
+     "completionFlag": "",
+     "activatedFlag": "",
+     "optional": true,
+     "description": "quest.main.the_pass_kept.obj_kael_escort",
+     "hintKey": "quest.main.the_pass_kept.hint_kael_escort",
+     "journalKey": "quest.main.the_pass_kept.log_kael_escort"
+    },
+    {
      "type": 6,
      "target": "interact.ashen_breach.toren_cairn",
      "count": 1,
@@ -3917,8 +3931,12 @@
      "via": "autoStart"
     },
     {
+     "flag": "flag.party.companion.kael",
+     "via": "objective[1].required"
+    },
+    {
      "flag": "flag.beat.black_token_taken",
-     "via": "objective[2].milestone"
+     "via": "objective[3].milestone"
     }
    ],
    "locKeys": [
@@ -3927,14 +3945,17 @@
     "quest.main.the_pass_kept.detail",
     "quest.main.the_pass_kept.hint_cairn",
     "quest.main.the_pass_kept.hint_kael",
+    "quest.main.the_pass_kept.hint_kael_escort",
     "quest.main.the_pass_kept.hint_pass",
     "quest.main.the_pass_kept.hint_token",
     "quest.main.the_pass_kept.log_cairn",
     "quest.main.the_pass_kept.log_kael",
+    "quest.main.the_pass_kept.log_kael_escort",
     "quest.main.the_pass_kept.log_pass",
     "quest.main.the_pass_kept.log_token",
     "quest.main.the_pass_kept.obj_cairn",
     "quest.main.the_pass_kept.obj_kael",
+    "quest.main.the_pass_kept.obj_kael_escort",
     "quest.main.the_pass_kept.obj_pass",
     "quest.main.the_pass_kept.obj_token",
     "quest.main.the_pass_kept.summary",
@@ -6339,8 +6360,9 @@
    "nodes": [
     {
      "id": "root",
-     "choices": 3,
+     "choices": 4,
      "gotos": [
+      "slay",
       "slay",
       "calm"
      ]
@@ -6392,10 +6414,16 @@
      "at": "choice[0]"
     },
     {
-     "flag": "flag.fork.herd_calmed",
+     "flag": "flag.fork.herd_slain",
      "kind": "set",
      "node": "root",
      "at": "choice[1]"
+    },
+    {
+     "flag": "flag.fork.herd_calmed",
+     "kind": "set",
+     "node": "root",
+     "at": "choice[2]"
     },
     {
      "flag": "flag.beat.herd_decided",
@@ -6415,6 +6443,7 @@
     "dlg.ashen_herd_choice.root.c_bye",
     "dlg.ashen_herd_choice.root.c_calm",
     "dlg.ashen_herd_choice.root.c_slay",
+    "dlg.ashen_herd_choice.root.c_slay_hunter",
     "dlg.ashen_herd_choice.slay",
     "dlg.ashen_herd_choice.slay.c_pelts",
     "dlg.ashen_herd_choice.slay_pelts",
@@ -8346,11 +8375,17 @@
     },
     {
      "id": "cq_sigil",
-     "choices": 3,
+     "choices": 4,
      "gotos": [
       "cq_honest",
+      "cq_honest_badge",
       "root"
      ]
+    },
+    {
+     "id": "cq_honest_badge",
+     "choices": 1,
+     "gotos": []
     },
     {
      "id": "cq_honest",
@@ -8452,6 +8487,18 @@
      "at": "choice[0]"
     },
     {
+     "flag": "flag.beat.armed_by_known",
+     "kind": "read",
+     "node": "cq_sigil",
+     "at": "choice[1]"
+    },
+    {
+     "flag": "flag.beat.armed_honest",
+     "kind": "set",
+     "node": "cq_sigil",
+     "at": "choice[1]"
+    },
+    {
      "flag": "flag.main.crossway_whispers_done",
      "kind": "read",
      "node": "root",
@@ -8486,9 +8533,12 @@
     "dlg.dawnwarden_captain.cq_honest.c_go",
     "dlg.dawnwarden_captain.cq_honest_after",
     "dlg.dawnwarden_captain.cq_honest_after.c_else",
+    "dlg.dawnwarden_captain.cq_honest_badge",
+    "dlg.dawnwarden_captain.cq_honest_badge.c_go",
     "dlg.dawnwarden_captain.cq_sigil",
     "dlg.dawnwarden_captain.cq_sigil.c_else",
     "dlg.dawnwarden_captain.cq_sigil.c_honest",
+    "dlg.dawnwarden_captain.cq_sigil.c_honest_badge",
     "dlg.dawnwarden_captain.cq_sigil.c_later",
     "dlg.dawnwarden_captain.finale_state",
     "dlg.dawnwarden_captain.finale_state_authority",
@@ -9096,12 +9146,14 @@
    "nodes": [
     {
      "id": "root",
-     "choices": 5,
+     "choices": 7,
      "gotos": [
       "who",
       "ring",
       "spared",
-      "pressed"
+      "pressed",
+      "spared_watch",
+      "pressed_syndicate"
      ]
     },
     {
@@ -9135,6 +9187,18 @@
      "id": "pressed_purse",
      "choices": 1,
      "gotos": []
+    },
+    {
+     "id": "spared_watch",
+     "choices": 1,
+     "gotos": []
+    },
+    {
+     "id": "pressed_syndicate",
+     "choices": 1,
+     "gotos": [
+      "pressed_purse"
+     ]
     },
     {
      "id": "spared_after",
@@ -9172,6 +9236,18 @@
     },
     {
      "flag": "flag.fork.dray_spared",
+     "kind": "set",
+     "node": "root",
+     "at": "choice[4]"
+    },
+    {
+     "flag": "flag.fork.dray_pressed",
+     "kind": "set",
+     "node": "root",
+     "at": "choice[5]"
+    },
+    {
+     "flag": "flag.fork.dray_spared",
      "kind": "read",
      "node": "spared_after",
      "at": "startVariant"
@@ -9190,18 +9266,24 @@
     "dlg.dray.pressed_after.c_bye",
     "dlg.dray.pressed_purse",
     "dlg.dray.pressed_purse.c_go",
+    "dlg.dray.pressed_syndicate",
+    "dlg.dray.pressed_syndicate.c_take",
     "dlg.dray.ring",
     "dlg.dray.ring.c_back",
     "dlg.dray.root",
     "dlg.dray.root.c_bye",
     "dlg.dray.root.c_press",
+    "dlg.dray.root.c_press_syndicate",
     "dlg.dray.root.c_ring",
     "dlg.dray.root.c_spare",
+    "dlg.dray.root.c_spare_watch",
     "dlg.dray.root.c_who",
     "dlg.dray.spared",
     "dlg.dray.spared.c_go",
     "dlg.dray.spared_after",
     "dlg.dray.spared_after.c_bye",
+    "dlg.dray.spared_watch",
+    "dlg.dray.spared_watch.c_go",
     "dlg.dray.speaker",
     "dlg.dray.who",
     "dlg.dray.who.c_back",
@@ -10200,15 +10282,27 @@
    "nodes": [
     {
      "id": "root",
-     "choices": 4,
+     "choices": 6,
      "gotos": [
       "expose",
+      "expose_archive",
       "turned",
-      "kin"
+      "kin",
+      "kin_emberbound"
      ]
     },
     {
      "id": "expose",
+     "choices": 1,
+     "gotos": []
+    },
+    {
+     "id": "expose_archive",
+     "choices": 1,
+     "gotos": []
+    },
+    {
+     "id": "kin_emberbound",
      "choices": 1,
      "gotos": []
     },
@@ -10253,16 +10347,34 @@
      "at": "choice[0]"
     },
     {
-     "flag": "flag.fork.flock_turned",
+     "flag": "flag.beat.gauges_read",
+     "kind": "read",
+     "node": "root",
+     "at": "choice[1]"
+    },
+    {
+     "flag": "flag.fork.flock_exposed",
      "kind": "set",
      "node": "root",
      "at": "choice[1]"
     },
     {
-     "flag": "flag.fork.flock_kin",
+     "flag": "flag.fork.flock_turned",
      "kind": "set",
      "node": "root",
      "at": "choice[2]"
+    },
+    {
+     "flag": "flag.fork.flock_kin",
+     "kind": "set",
+     "node": "root",
+     "at": "choice[3]"
+    },
+    {
+     "flag": "flag.fork.flock_kin",
+     "kind": "set",
+     "node": "root",
+     "at": "choice[4]"
     },
     {
      "flag": "flag.beat.flock_decided",
@@ -10276,12 +10388,18 @@
     "dlg.flock_deacon.after.c_bye",
     "dlg.flock_deacon.expose",
     "dlg.flock_deacon.expose.c_go",
+    "dlg.flock_deacon.expose_archive",
+    "dlg.flock_deacon.expose_archive.c_go",
     "dlg.flock_deacon.kin",
     "dlg.flock_deacon.kin.c_go",
+    "dlg.flock_deacon.kin_emberbound",
+    "dlg.flock_deacon.kin_emberbound.c_go",
     "dlg.flock_deacon.root",
     "dlg.flock_deacon.root.c_bye",
     "dlg.flock_deacon.root.c_expose",
+    "dlg.flock_deacon.root.c_expose_archive",
     "dlg.flock_deacon.root.c_kin",
+    "dlg.flock_deacon.root.c_kin_emberbound",
     "dlg.flock_deacon.root.c_turn",
     "dlg.flock_deacon.speaker",
     "dlg.flock_deacon.turned",
@@ -12156,6 +12274,66 @@
     "dlg.nessa.root",
     "dlg.nessa.speaker",
     "dlg.nessa.talk"
+   ]
+  },
+  {
+   "id": "dialogue.oda_grandson",
+   "file": "data/dialogue/OdaGrandson.tres",
+   "source": "generated",
+   "speaker": "dlg.oda_grandson.speaker",
+   "start": "root",
+   "startVariants": [
+    {
+     "cond": 5,
+     "arg": "flag.fork.flock_turned",
+     "node": "turned"
+    }
+   ],
+   "nodes": [
+    {
+     "id": "root",
+     "choices": 2,
+     "gotos": [
+      "hear"
+     ]
+    },
+    {
+     "id": "hear",
+     "choices": 2,
+     "gotos": [
+      "root"
+     ]
+    },
+    {
+     "id": "turned",
+     "choices": 1,
+     "gotos": []
+    }
+   ],
+   "flagsSet": [],
+   "flagsCleared": [],
+   "flagsRead": [
+    "flag.fork.flock_turned"
+   ],
+   "questsStarted": [],
+   "sites": [
+    {
+     "flag": "flag.fork.flock_turned",
+     "kind": "read",
+     "node": "turned",
+     "at": "startVariant"
+    }
+   ],
+   "locKeys": [
+    "dlg.oda_grandson.hear",
+    "dlg.oda_grandson.hear.c_bye",
+    "dlg.oda_grandson.hear.c_else",
+    "dlg.oda_grandson.root",
+    "dlg.oda_grandson.root.c_bye",
+    "dlg.oda_grandson.root.c_hear",
+    "dlg.oda_grandson.speaker",
+    "dlg.oda_grandson.turned",
+    "dlg.oda_grandson.turned.c_drink"
    ]
   },
   {
@@ -15786,8 +15964,10 @@
    "code": true,
    "externalRefs": [
     "data/bosses/BeastLord.tres",
+    "data/story/rules/spec1.json",
     "scenes/regions/ashen_wilds/beast_lair.tscn",
     "src/Bootstrap/HeadlessStory.cs",
+    "src/Narrative/CampaignCatchUp.cs",
     "src/Narrative/HiddenRealmReveal.cs"
    ]
   },
@@ -15878,7 +16058,9 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "data/story/rules/spec1.json"
+   ]
   },
   "flag.beat.armed_broker": {
    "writers": [
@@ -15896,7 +16078,9 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "data/story/rules/spec1.json"
+   ]
   },
   "flag.beat.armed_by_known": {
    "writers": [],
@@ -15910,10 +16094,17 @@
      "kind": "dialogue",
      "id": "dialogue.dawnwarden_captain",
      "via": "cq_sigil/choice[0]"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.dawnwarden_captain",
+     "via": "cq_sigil/choice[1]"
     }
    ],
    "code": true,
-   "externalRefs": []
+   "externalRefs": [
+    "data/story/rules/spec1.json"
+   ]
   },
   "flag.beat.armed_heist": {
    "writers": [
@@ -15936,7 +16127,9 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "data/story/rules/spec1.json"
+   ]
   },
   "flag.beat.armed_honest": {
    "writers": [
@@ -15944,6 +16137,11 @@
      "kind": "dialogue",
      "id": "dialogue.dawnwarden_captain",
      "via": "cq_sigil/choice[0]"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.dawnwarden_captain",
+     "via": "cq_sigil/choice[1]"
     }
    ],
    "readers": [
@@ -15954,7 +16152,9 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "data/story/rules/spec1.json"
+   ]
   },
   "flag.beat.banner_burned": {
    "writers": [
@@ -16043,7 +16243,9 @@
     }
    ],
    "code": true,
-   "externalRefs": []
+   "externalRefs": [
+    "data/story/rules/spec1.json"
+   ]
   },
   "flag.beat.beastend_slain": {
    "writers": [],
@@ -16055,7 +16257,9 @@
     }
    ],
    "code": true,
-   "externalRefs": []
+   "externalRefs": [
+    "data/story/rules/spec1.json"
+   ]
   },
   "flag.beat.black_token_taken": {
    "writers": [
@@ -16069,7 +16273,7 @@
     {
      "kind": "quest",
      "id": "quest.main.the_pass_kept",
-     "via": "objective[2].milestone"
+     "via": "objective[3].milestone"
     },
     {
      "kind": "dialogue",
@@ -16083,7 +16287,9 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "data/story/reactions/spec1.json"
+   ]
   },
   "flag.beat.cairn_mid_lit": {
    "writers": [
@@ -16166,7 +16372,9 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "data/story/reactions/spec1.json"
+   ]
   },
   "flag.beat.dray_decided": {
    "writers": [],
@@ -16178,7 +16386,9 @@
     }
    ],
    "code": true,
-   "externalRefs": []
+   "externalRefs": [
+    "data/story/rules/spec1.json"
+   ]
   },
   "flag.beat.fenn_briefed": {
    "writers": [
@@ -16207,7 +16417,9 @@
     }
    ],
    "code": true,
-   "externalRefs": []
+   "externalRefs": [
+    "data/story/rules/spec1.json"
+   ]
   },
   "flag.beat.gap_seen": {
    "writers": [
@@ -16245,6 +16457,11 @@
      "kind": "dialogue",
      "id": "dialogue.flock_deacon",
      "via": "root/choice[0]"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.flock_deacon",
+     "via": "root/choice[1]"
     }
    ],
    "code": false,
@@ -16353,7 +16570,9 @@
     }
    ],
    "code": true,
-   "externalRefs": []
+   "externalRefs": [
+    "data/story/rules/spec1.json"
+   ]
   },
   "flag.beat.hjalvar_briefed": {
    "writers": [
@@ -16493,7 +16712,9 @@
     }
    ],
    "code": true,
-   "externalRefs": []
+   "externalRefs": [
+    "data/story/rules/spec1.json"
+   ]
   },
   "flag.beat.prophetend_kin": {
    "writers": [],
@@ -16505,7 +16726,9 @@
     }
    ],
    "code": true,
-   "externalRefs": []
+   "externalRefs": [
+    "data/story/rules/spec1.json"
+   ]
   },
   "flag.beat.prophetend_turned": {
    "writers": [],
@@ -16517,7 +16740,9 @@
     }
    ],
    "code": true,
-   "externalRefs": []
+   "externalRefs": [
+    "data/story/rules/spec1.json"
+   ]
   },
   "flag.beat.sacrament_known": {
    "writers": [
@@ -16654,7 +16879,9 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "data/story/reactions/spec1.json"
+   ]
   },
   "flag.beat.stormcrown_held": {
    "writers": [
@@ -16683,7 +16910,9 @@
     }
    ],
    "code": true,
-   "externalRefs": []
+   "externalRefs": [
+    "data/story/rules/spec1.json"
+   ]
   },
   "flag.beat.stormend_hjalvar": {
    "writers": [],
@@ -16700,7 +16929,9 @@
     }
    ],
    "code": true,
-   "externalRefs": []
+   "externalRefs": [
+    "data/story/rules/spec1.json"
+   ]
   },
   "flag.beat.succession_decided": {
    "writers": [],
@@ -16727,7 +16958,9 @@
     }
    ],
    "code": true,
-   "externalRefs": []
+   "externalRefs": [
+    "data/story/rules/spec1.json"
+   ]
   },
   "flag.beat.toren_cairn_seen": {
    "writers": [
@@ -16877,7 +17110,8 @@
    "code": false,
    "externalRefs": [
     "data/regions/CelestialRealm.tres",
-    "src/Bootstrap/HeadlessStory.cs"
+    "src/Bootstrap/HeadlessStory.cs",
+    "src/Narrative/CampaignCatchUp.cs"
    ]
   },
   "flag.clan.bloodfeud": {
@@ -17027,8 +17261,10 @@
    "code": true,
    "externalRefs": [
     "data/bosses/CrimsonProphet.tres",
+    "data/story/rules/spec1.json",
     "scenes/regions/sunspire/temple.tscn",
     "src/Bootstrap/HeadlessStory.cs",
+    "src/Narrative/CampaignCatchUp.cs",
     "src/Narrative/HiddenRealmReveal.cs"
    ]
   },
@@ -17415,6 +17651,11 @@
      "kind": "dialogue",
      "id": "dialogue.dray",
      "via": "root/choice[3]"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.dray",
+     "via": "root/choice[5]"
     }
    ],
    "readers": [
@@ -17435,7 +17676,10 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "data/story/reactions/spec1.json",
+    "data/story/rules/spec1.json"
+   ]
   },
   "flag.fork.dray_spared": {
    "writers": [
@@ -17443,6 +17687,11 @@
      "kind": "dialogue",
      "id": "dialogue.dray",
      "via": "root/choice[2]"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.dray",
+     "via": "root/choice[4]"
     }
    ],
    "readers": [
@@ -17463,7 +17712,10 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "data/story/reactions/spec1.json",
+    "data/story/rules/spec1.json"
+   ]
   },
   "flag.fork.flock_exposed": {
    "writers": [
@@ -17471,6 +17723,11 @@
      "kind": "dialogue",
      "id": "dialogue.flock_deacon",
      "via": "root/choice[0]"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.flock_deacon",
+     "via": "root/choice[1]"
     }
    ],
    "readers": [
@@ -17486,14 +17743,22 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "data/story/reactions/spec1.json",
+    "data/story/rules/spec1.json"
+   ]
   },
   "flag.fork.flock_kin": {
    "writers": [
     {
      "kind": "dialogue",
      "id": "dialogue.flock_deacon",
-     "via": "root/choice[2]"
+     "via": "root/choice[3]"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.flock_deacon",
+     "via": "root/choice[4]"
     }
    ],
    "readers": [
@@ -17509,14 +17774,17 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "data/story/reactions/spec1.json",
+    "data/story/rules/spec1.json"
+   ]
   },
   "flag.fork.flock_turned": {
    "writers": [
     {
      "kind": "dialogue",
      "id": "dialogue.flock_deacon",
-     "via": "root/choice[1]"
+     "via": "root/choice[2]"
     }
    ],
    "readers": [
@@ -17524,6 +17792,11 @@
      "kind": "quest",
      "id": "quest.main.prophets_flock",
      "via": "objective[4].required"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.oda_grandson",
+     "via": "turned/startVariant"
     },
     {
      "kind": "dialogue",
@@ -17537,14 +17810,16 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "data/story/rules/spec1.json"
+   ]
   },
   "flag.fork.herd_calmed": {
    "writers": [
     {
      "kind": "dialogue",
      "id": "dialogue.ashen_herd_choice",
-     "via": "root/choice[1]"
+     "via": "root/choice[2]"
     }
    ],
    "readers": [
@@ -17565,7 +17840,10 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "data/story/reactions/spec1.json",
+    "data/story/rules/spec1.json"
+   ]
   },
   "flag.fork.herd_slain": {
    "writers": [
@@ -17573,6 +17851,11 @@
      "kind": "dialogue",
      "id": "dialogue.ashen_herd_choice",
      "via": "root/choice[0]"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.ashen_herd_choice",
+     "via": "root/choice[1]"
     }
    ],
    "readers": [
@@ -17593,7 +17876,10 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "data/story/reactions/spec1.json",
+    "data/story/rules/spec1.json"
+   ]
   },
   "flag.fork.succession_halvar": {
    "writers": [
@@ -17621,7 +17907,10 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "data/story/reactions/spec1.json",
+    "data/story/rules/spec1.json"
+   ]
   },
   "flag.fork.succession_hjalvar": {
    "writers": [
@@ -17649,7 +17938,9 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "data/story/rules/spec1.json"
+   ]
   },
   "flag.frostfang.passage_open": {
    "writers": [
@@ -17667,7 +17958,9 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "src/Narrative/CampaignCatchUp.cs"
+   ]
   },
   "flag.hollow_queen_absorbed": {
    "writers": [
@@ -17752,7 +18045,8 @@
    "externalRefs": [
     "data/bosses/HollowQueen.tres",
     "scenes/regions/pale_concord/palace.tscn",
-    "src/Bootstrap/HeadlessStory.cs"
+    "src/Bootstrap/HeadlessStory.cs",
+    "src/Narrative/CampaignCatchUp.cs"
    ]
   },
   "flag.hollowreach.barrels_declared": {
@@ -17947,7 +18241,8 @@
     "data/shops/EmberCrownApothecary.tres",
     "scenes/regions/frostfang_reach/stormcrown.tscn",
     "src/Bootstrap/HeadlessStory.cs",
-    "src/Enemies/BossEncounterDirector.cs"
+    "src/Enemies/BossEncounterDirector.cs",
+    "src/Narrative/CampaignCatchUp.cs"
    ]
   },
   "flag.iron_syndicate.finale_fidelity": {
@@ -18076,7 +18371,9 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "data/story/rules/spec1.json"
+   ]
   },
   "flag.main.bounty_done": {
    "writers": [
@@ -18094,7 +18391,9 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "src/Narrative/CampaignCatchUp.cs"
+   ]
   },
   "flag.main.citadel_approach_done": {
    "writers": [
@@ -18153,7 +18452,9 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "data/story/rules/spec1.json"
+   ]
   },
   "flag.main.crossway_whispers_done": {
    "writers": [
@@ -18232,7 +18533,9 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "src/Narrative/CampaignCatchUp.cs"
+   ]
   },
   "flag.main.herd_and_hearth_done": {
    "writers": [
@@ -18250,7 +18553,9 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "data/story/rules/spec1.json"
+   ]
   },
   "flag.main.iron_king_done": {
    "writers": [
@@ -18318,7 +18623,9 @@
     }
    ],
    "code": true,
-   "externalRefs": []
+   "externalRefs": [
+    "data/story/rules/spec1.json"
+   ]
   },
   "flag.main.prophets_flock_done": {
    "writers": [
@@ -18341,7 +18648,9 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "data/story/rules/spec1.json"
+   ]
   },
   "flag.main.remedies_done": {
    "writers": [
@@ -18364,7 +18673,9 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "src/Narrative/CampaignCatchUp.cs"
+   ]
   },
   "flag.main.smoke_over_the_square_done": {
    "writers": [
@@ -18387,7 +18698,9 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "src/Narrative/CampaignCatchUp.cs"
+   ]
   },
   "flag.main.storm_tyrant_done": {
    "writers": [
@@ -18410,7 +18723,9 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "data/story/rules/spec1.json"
+   ]
   },
   "flag.main.succession_done": {
    "writers": [
@@ -18428,7 +18743,9 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "data/story/rules/spec1.json"
+   ]
   },
   "flag.main.the_pass_kept_done": {
    "writers": [
@@ -18470,7 +18787,8 @@
    "code": true,
    "externalRefs": [
     "data/bosses/Morthul.tres",
-    "scenes/regions/celestial/ash_throne.tscn"
+    "scenes/regions/celestial/ash_throne.tscn",
+    "src/Narrative/CampaignCatchUp.cs"
    ]
   },
   "flag.pale_concord_revealed": {
@@ -18489,8 +18807,21 @@
     "data/map_locations/PalePalace.tres",
     "data/regions/PaleConcord.tres",
     "src/Bootstrap/HeadlessStory.cs",
+    "src/Narrative/CampaignCatchUp.cs",
     "src/Narrative/HiddenRealmReveal.cs"
    ]
+  },
+  "flag.party.companion.kael": {
+   "writers": [],
+   "readers": [
+    {
+     "kind": "quest",
+     "id": "quest.main.the_pass_kept",
+     "via": "objective[1].required"
+    }
+   ],
+   "code": true,
+   "externalRefs": []
   },
   "flag.rival.duel1_won": {
    "writers": [],
@@ -18652,8 +18983,10 @@
    "code": true,
    "externalRefs": [
     "data/bosses/StormTyrant.tres",
+    "data/story/rules/spec1.json",
     "scenes/regions/frostfang_reach/stormcrown.tscn",
     "src/Bootstrap/HeadlessStory.cs",
+    "src/Narrative/CampaignCatchUp.cs",
     "src/Narrative/HiddenRealmReveal.cs"
    ]
   },
@@ -18996,6 +19329,11 @@
      "kind": "dialogue",
      "id": "dialogue.dray",
      "via": "root/choice[3]"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.dray",
+     "via": "root/choice[5]"
     }
    ],
    "readers": [
@@ -19015,7 +19353,10 @@
      "via": "root/choice[14]"
     }
    ],
-   "externalRefs": []
+   "externalRefs": [
+    "data/story/reactions/spec1.json",
+    "data/story/rules/spec1.json"
+   ]
   },
   {
    "flag": "flag.fork.dray_spared",
@@ -19024,6 +19365,11 @@
      "kind": "dialogue",
      "id": "dialogue.dray",
      "via": "root/choice[2]"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.dray",
+     "via": "root/choice[4]"
     }
    ],
    "readers": [
@@ -19043,7 +19389,10 @@
      "via": "root/choice[13]"
     }
    ],
-   "externalRefs": []
+   "externalRefs": [
+    "data/story/reactions/spec1.json",
+    "data/story/rules/spec1.json"
+   ]
   },
   {
    "flag": "flag.fork.flock_exposed",
@@ -19052,6 +19401,11 @@
      "kind": "dialogue",
      "id": "dialogue.flock_deacon",
      "via": "root/choice[0]"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.flock_deacon",
+     "via": "root/choice[1]"
     }
    ],
    "readers": [
@@ -19066,7 +19420,10 @@
      "via": "root/choice[4]"
     }
    ],
-   "externalRefs": []
+   "externalRefs": [
+    "data/story/reactions/spec1.json",
+    "data/story/rules/spec1.json"
+   ]
   },
   {
    "flag": "flag.fork.flock_kin",
@@ -19074,7 +19431,12 @@
     {
      "kind": "dialogue",
      "id": "dialogue.flock_deacon",
-     "via": "root/choice[2]"
+     "via": "root/choice[3]"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.flock_deacon",
+     "via": "root/choice[4]"
     }
    ],
    "readers": [
@@ -19089,7 +19451,10 @@
      "via": "root/choice[6]"
     }
    ],
-   "externalRefs": []
+   "externalRefs": [
+    "data/story/reactions/spec1.json",
+    "data/story/rules/spec1.json"
+   ]
   },
   {
    "flag": "flag.fork.flock_turned",
@@ -19097,7 +19462,7 @@
     {
      "kind": "dialogue",
      "id": "dialogue.flock_deacon",
-     "via": "root/choice[1]"
+     "via": "root/choice[2]"
     }
    ],
    "readers": [
@@ -19105,6 +19470,11 @@
      "kind": "quest",
      "id": "quest.main.prophets_flock",
      "via": "objective[4].required"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.oda_grandson",
+     "via": "turned/startVariant"
     },
     {
      "kind": "dialogue",
@@ -19117,7 +19487,9 @@
      "via": "root/choice[5]"
     }
    ],
-   "externalRefs": []
+   "externalRefs": [
+    "data/story/rules/spec1.json"
+   ]
   },
   {
    "flag": "flag.fork.herd_calmed",
@@ -19125,7 +19497,7 @@
     {
      "kind": "dialogue",
      "id": "dialogue.ashen_herd_choice",
-     "via": "root/choice[1]"
+     "via": "root/choice[2]"
     }
    ],
    "readers": [
@@ -19145,7 +19517,10 @@
      "via": "root/choice[6]"
     }
    ],
-   "externalRefs": []
+   "externalRefs": [
+    "data/story/reactions/spec1.json",
+    "data/story/rules/spec1.json"
+   ]
   },
   {
    "flag": "flag.fork.herd_slain",
@@ -19154,6 +19529,11 @@
      "kind": "dialogue",
      "id": "dialogue.ashen_herd_choice",
      "via": "root/choice[0]"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.ashen_herd_choice",
+     "via": "root/choice[1]"
     }
    ],
    "readers": [
@@ -19173,7 +19553,10 @@
      "via": "root/choice[5]"
     }
    ],
-   "externalRefs": []
+   "externalRefs": [
+    "data/story/reactions/spec1.json",
+    "data/story/rules/spec1.json"
+   ]
   },
   {
    "flag": "flag.fork.succession_halvar",
@@ -19201,7 +19584,10 @@
      "via": "root/choice[6]"
     }
    ],
-   "externalRefs": []
+   "externalRefs": [
+    "data/story/reactions/spec1.json",
+    "data/story/rules/spec1.json"
+   ]
   },
   {
    "flag": "flag.fork.succession_hjalvar",
@@ -19229,7 +19615,9 @@
      "via": "root/choice[4]"
     }
    ],
-   "externalRefs": []
+   "externalRefs": [
+    "data/story/rules/spec1.json"
+   ]
   }
  ]
 }

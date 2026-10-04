@@ -106,6 +106,19 @@ EffectArg = "flag.beat.armed_honest"
 Effect2 = 13
 Effect2Arg = "faction.dawnwardens:5"
 
+[sub_resource type="Resource" id="ch_cq_sigil_honest_badge"]
+script = ExtResource("3_choice")
+Text = "dlg.dawnwarden_captain.cq_sigil.c_honest_badge"
+Goto = "cq_honest_badge"
+Condition = 14
+ConditionArg = "faction.dawnwardens:0"
+Effect = 2
+EffectArg = "flag.beat.armed_honest"
+Condition2 = 6
+Condition2Arg = "flag.beat.armed_by_known"
+Effect2 = 13
+Effect2Arg = "faction.dawnwardens:10"
+
 [sub_resource type="Resource" id="ch_cq_sigil_else"]
 script = ExtResource("3_choice")
 Text = "dlg.dawnwarden_captain.cq_sigil.c_else"
@@ -118,6 +131,15 @@ EffectArg = ""
 [sub_resource type="Resource" id="ch_cq_sigil_later"]
 script = ExtResource("3_choice")
 Text = "dlg.dawnwarden_captain.cq_sigil.c_later"
+Goto = ""
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_cq_honest_badge_go"]
+script = ExtResource("3_choice")
+Text = "dlg.dawnwarden_captain.cq_honest_badge.c_go"
 Goto = ""
 Condition = 0
 ConditionArg = ""
@@ -279,7 +301,13 @@ Choices = Array[Resource]([SubResource("ch_cq_brief_else"), SubResource("ch_cq_b
 script = ExtResource("2_node")
 Id = "cq_sigil"
 Text = "dlg.dawnwarden_captain.cq_sigil"
-Choices = Array[Resource]([SubResource("ch_cq_sigil_honest"), SubResource("ch_cq_sigil_else"), SubResource("ch_cq_sigil_later")])
+Choices = Array[Resource]([SubResource("ch_cq_sigil_honest"), SubResource("ch_cq_sigil_honest_badge"), SubResource("ch_cq_sigil_else"), SubResource("ch_cq_sigil_later")])
+
+[sub_resource type="Resource" id="node_cq_honest_badge"]
+script = ExtResource("2_node")
+Id = "cq_honest_badge"
+Text = "dlg.dawnwarden_captain.cq_honest_badge"
+Choices = Array[Resource]([SubResource("ch_cq_honest_badge_go")])
 
 [sub_resource type="Resource" id="node_cq_honest"]
 script = ExtResource("2_node")
@@ -334,5 +362,5 @@ script = ExtResource("1_dlg")
 Id = "dialogue.dawnwarden_captain"
 SpeakerName = "dlg.dawnwarden_captain.speaker"
 StartNodeId = "root"
-Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_member"), SubResource("node_stranger"), SubResource("node_finale_state"), SubResource("node_finale_state_service"), SubResource("node_finale_state_authority"), SubResource("node_mg_teach"), SubResource("node_mg_taught"), SubResource("node_cq_brief"), SubResource("node_cq_sigil"), SubResource("node_cq_honest"), SubResource("node_cq_heist_after"), SubResource("node_cq_honest_after"), SubResource("node_cq_dray_spared"), SubResource("node_cq_dray_pressed")])
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_member"), SubResource("node_stranger"), SubResource("node_finale_state"), SubResource("node_finale_state_service"), SubResource("node_finale_state_authority"), SubResource("node_mg_teach"), SubResource("node_mg_taught"), SubResource("node_cq_brief"), SubResource("node_cq_sigil"), SubResource("node_cq_honest_badge"), SubResource("node_cq_honest"), SubResource("node_cq_heist_after"), SubResource("node_cq_honest_after"), SubResource("node_cq_dray_spared"), SubResource("node_cq_dray_pressed")])
 StartVariants = Array[Resource]([SubResource("start_root_5_9a91"), SubResource("start_cq_sigil_5_2479"), SubResource("start_cq_brief_2_0506")])

@@ -56,6 +56,8 @@ public class KaelContentTests
         string source = DialogueSource;
         HashSet<string> reachable = Captures(source, @"^Goto = ""([^""]+)""");
         reachable.Add("root");
+        // Start variants (the campaign's NPC aftermath openers) are entry points too.
+        reachable.UnionWith(Captures(source, @"^NodeId = ""([^""]+)"""));
 
         foreach (string node in NodeIds(source))
         {

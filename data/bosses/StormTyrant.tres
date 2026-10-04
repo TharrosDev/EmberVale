@@ -136,3 +136,5 @@ RewardItemId = "item.relic.storm_heart"
 RewardQuantity = 1
 DefeatFlagId = "flag.storm_tyrant_defeated"
 DefeatDialogueId = "dialogue.storm_tyrant_absorb"
+EpithetKey = "boss.storm_tyrant.epithet"
+IntroLineKey = "boss.storm_tyrant.intro"

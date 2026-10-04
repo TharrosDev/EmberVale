@@ -20,6 +20,19 @@ Effect2Arg = "faction.veiled_archive:8"
 
 [sub_resource type="Resource" id="ch_root_1"]
 script = ExtResource("3_choice")
+Text = "dlg.flock_deacon.root.c_expose_archive"
+Goto = "expose_archive"
+Condition = 5
+ConditionArg = "flag.beat.gauges_read"
+Effect = 2
+EffectArg = "flag.fork.flock_exposed"
+Condition2 = 14
+Condition2Arg = "faction.veiled_archive:0"
+Effect2 = 13
+Effect2Arg = "faction.veiled_archive:16"
+
+[sub_resource type="Resource" id="ch_root_2"]
+script = ExtResource("3_choice")
 Text = "dlg.flock_deacon.root.c_turn"
 Goto = "turned"
 Condition = 0
@@ -29,7 +42,7 @@ EffectArg = "flag.fork.flock_turned"
 Effect2 = 4
 Effect2Arg = "3"
 
-[sub_resource type="Resource" id="ch_root_2"]
+[sub_resource type="Resource" id="ch_root_3"]
 script = ExtResource("3_choice")
 Text = "dlg.flock_deacon.root.c_kin"
 Goto = "kin"
@@ -40,7 +53,20 @@ EffectArg = "flag.fork.flock_kin"
 Effect2 = 4
 Effect2Arg = "5"
 
-[sub_resource type="Resource" id="ch_root_3"]
+[sub_resource type="Resource" id="ch_root_4"]
+script = ExtResource("3_choice")
+Text = "dlg.flock_deacon.root.c_kin_emberbound"
+Goto = "kin_emberbound"
+Condition = 7
+ConditionArg = "40"
+Effect = 2
+EffectArg = "flag.fork.flock_kin"
+Condition2 = 14
+Condition2Arg = "faction.emberbound:0"
+Effect2 = 13
+Effect2Arg = "faction.emberbound:12"
+
+[sub_resource type="Resource" id="ch_root_5"]
 script = ExtResource("3_choice")
 Text = "dlg.flock_deacon.root.c_bye"
 Goto = ""
@@ -53,7 +79,7 @@ EffectArg = ""
 script = ExtResource("2_node")
 Id = "root"
 Text = "dlg.flock_deacon.root"
-Choices = Array[Resource]([SubResource("ch_root_0"), SubResource("ch_root_1"), SubResource("ch_root_2"), SubResource("ch_root_3")])
+Choices = Array[Resource]([SubResource("ch_root_0"), SubResource("ch_root_1"), SubResource("ch_root_2"), SubResource("ch_root_3"), SubResource("ch_root_4"), SubResource("ch_root_5")])
 
 [sub_resource type="Resource" id="ch_expose_0"]
 script = ExtResource("3_choice")
@@ -69,6 +95,36 @@ script = ExtResource("2_node")
 Id = "expose"
 Text = "dlg.flock_deacon.expose"
 Choices = Array[Resource]([SubResource("ch_expose_0")])
+
+[sub_resource type="Resource" id="ch_expose_archive_0"]
+script = ExtResource("3_choice")
+Text = "dlg.flock_deacon.expose_archive.c_go"
+Goto = ""
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="node_expose_archive"]
+script = ExtResource("2_node")
+Id = "expose_archive"
+Text = "dlg.flock_deacon.expose_archive"
+Choices = Array[Resource]([SubResource("ch_expose_archive_0")])
+
+[sub_resource type="Resource" id="ch_kin_emberbound_0"]
+script = ExtResource("3_choice")
+Text = "dlg.flock_deacon.kin_emberbound.c_go"
+Goto = ""
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="node_kin_emberbound"]
+script = ExtResource("2_node")
+Id = "kin_emberbound"
+Text = "dlg.flock_deacon.kin_emberbound"
+Choices = Array[Resource]([SubResource("ch_kin_emberbound_0")])
 
 [sub_resource type="Resource" id="ch_turned_0"]
 script = ExtResource("3_choice")
@@ -126,5 +182,5 @@ script = ExtResource("1_dlg")
 Id = "dialogue.flock_deacon"
 SpeakerName = "dlg.flock_deacon.speaker"
 StartNodeId = "root"
-Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_expose"), SubResource("node_turned"), SubResource("node_kin"), SubResource("node_after")])
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_expose"), SubResource("node_expose_archive"), SubResource("node_kin_emberbound"), SubResource("node_turned"), SubResource("node_kin"), SubResource("node_after")])
 StartVariants = Array[Resource]([SubResource("start_0")])

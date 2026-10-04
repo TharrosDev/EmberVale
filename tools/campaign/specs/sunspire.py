@@ -164,10 +164,16 @@ DEACON = Dialogue(
              [go("Show him the three readings from the gauge stones.", "expose", tag="expose",
                  when=has_flag("flag.beat.gauges_read"), do=(E.SET_FLAG, "flag.fork.flock_exposed"),
                  do2=rep("faction.veiled_archive", 8)),
+              go("Lay the readings out as a reader of the Veiled Archive.", "expose_archive", tag="expose_archive",
+                 when=has_flag("flag.beat.gauges_read"), when2=(C.GUILD_RANK_AT_LEAST, "faction.veiled_archive:0"),
+                 do=(E.SET_FLAG, "flag.fork.flock_exposed"), do2=rep("faction.veiled_archive", 16)),
               go("Walk into the nave and speak to the flock.", "turned", tag="turn", do=(E.SET_FLAG, "flag.fork.flock_turned"),
                  do2=(E.ADD_CORRUPTION, "3")),
               go("Tell him you already hear it too.", "kin", tag="kin", when=corruption_at_least(40),
                  do=(E.SET_FLAG, "flag.fork.flock_kin"), do2=(E.ADD_CORRUPTION, "5")),
+              go("Show the Emberbound sigil and tell him you already hear it too.", "kin_emberbound", tag="kin_emberbound",
+                 when=corruption_at_least(40), when2=(C.GUILD_RANK_AT_LEAST, "faction.emberbound:0"),
+                 do=(E.SET_FLAG, "flag.fork.flock_kin"), do2=rep("faction.emberbound", 12)),
               leave("Not yet.", tag="bye")]),
         Node("expose", "You do not shout. You set the three readings on his ledger one on top of another, grey on grey, and "
                        "tell him what is in the water he blesses: not the Prophet's voice, only ash from his own altar, "
@@ -177,6 +183,21 @@ DEACON = Dialogue(
                        "hand. Someone starts to cry. Within the hour half the chapel is walking north with its jars "
                        "poured out on the red flats. The other half stays on its knees and does not look at you.",
              [leave("Step aside and let them pass.", tag="go")]),
+        Node("expose_archive", "You set the three readings on his ledger, and under them the Archive's own gauge-tablet "
+                               "seal, which he has seen on the oasis wall since boyhood. 'The Archive does not ask for belief,' "
+                               "you tell him. 'It asks for the same measure, read twice, by two people who do not like each "
+                               "other.' The deacon reads the numbers aloud in his kind voice. When he stops, no one in the nave "
+                               "is looking at the wall of heat. Half the chapel is walking north with its jars poured out by "
+                               "dusk, and a girl in the last row asks the nearest of you, shyly, what a gauge is. The other half "
+                               "stays on its knees and does not look at you.",
+             [leave("Step aside and let them pass.", tag="go")]),
+        Node("kin_emberbound", "You show the sigil you were given at the Emberbound's table and say it quietly: 'I hear it "
+                               "too.' The deacon's face opens like a door. 'The Brothers of the Flame sent one of theirs "
+                               "to the Mission before,' he says. 'They did not stay. You will.' He kneels, and the nave "
+                               "kneels with him. He lifts the chapel key from around his neck and puts it in your palm. "
+                               "'The sanctum is open to you. He is waiting. He would like to speak before whatever comes "
+                               "after.'",
+             [leave("Take the key.", tag="go")]),
         Node("turned", "You walk past him into the nave and no one stops you. You stand where the heat is worst and say "
                        "nothing for a long time. Then you say their names back to them, the ones he has in his ledger, "
                        "not the ones the voice calls them. They look at the one who knows their names. 'The voice speaks "
@@ -203,7 +224,27 @@ SANCTUM_SEAL = clue(
     "Pocket the seal.", "The latch is bare. The door is warm and does not breathe any more.",
     do2=(E.ADD_CORRUPTION, "2"))
 
-DIALOGUES = [GAUGE_E, GAUGE_M, GAUGE_W, DEACON, SANCTUM_SEAL]
+GRANDSON = Dialogue(
+    id="dialogue.oda_grandson", speaker="Rafe Sarn", start="root",
+    start_variants=[StartVariant(has_flag("flag.fork.flock_turned"), "turned")],
+    nodes=[
+        Node("root", "Rafe Sarn sits on the stone lip of the cistern with his boots in the sand, thin, in a robe washed so "
+                     "often it has gone from red to the colour of weak tea. 'I walked south at midsummer because it was "
+                     "quiet there,' he says to the water. 'It is very quiet. I did not know quiet could be a hunger.' He "
+                     "coughs into his sleeve. 'The Archive's readers let me hold the chalk this morning. A two, and a three. "
+                     "I got the three wrong. Nobody told me off.'",
+             [go("Do you still hear it?", "hear", tag="hear"), leave("Look after your grandmother.", tag="bye")]),
+        Node("hear", "'A little. Like a tune from the next house.' He picks at the hem of the sleeve. 'Grandmother says it "
+                     "fades if you give it something else to listen to. She sets me the gauges at dawn, and numbers are very "
+                     "loud when you let them be.'",
+             [go("Something else.", "root", tag="else"), leave("Keep reading them.", tag="bye")]),
+        Node("turned", "Rafe Sarn stands among the grey cloaks at the cistern with a ladle in his hands, looking at the road "
+                       "you came by. 'Tamsin says you told it no in front of everyone,' he says. 'I want to be able to do "
+                       "that. I do not know how yet. Do you want a drink? It is only water. I check.'",
+             [leave("Gladly.", tag="drink")]),
+    ])
+
+DIALOGUES = [GAUGE_E, GAUGE_M, GAUGE_W, DEACON, SANCTUM_SEAL, GRANDSON]
 
 LOCALE = [
     ("ch.2.sunspire", "Act II: Dry Wells"),

@@ -19,9 +19,6 @@ CODE_FLAGS = {
 # file (a chain gap otherwise).
 TERMINAL_FLAGS = {
     "flag.game_complete": "the last quest's completion; nothing follows the credits",
-    # TEMPORARY: the playbook's mission 08/09 spec makes quest.main.iron_king auto-start on this flag;
-    # delete this entry then so a reader is required again.
-    "flag.frostfang.passage_open": "quest.warband.heart completion; unread until the iron_king spec lands",
 }
 
 # Quests that exist at New Game without an auto-start flag or a dialogue that starts them.

@@ -7,7 +7,7 @@ Ashen Knight beats A1 (cairn glimpse), A2 (crate sigil), A3 (dialogue.rival_aren
 """
 
 from tools.campaign.model import (
-    C, E, K, Dialogue, Node, Patch, Quest, StartVariant, defend, go, has_flag, interact, kill, leave, milestone,
+    C, E, K, Dialogue, Node, Patch, Quest, StartVariant, defend, escort, go, has_flag, interact, kill, leave, milestone,
     reach, say, set_flag, talk)
 from tools.campaign.specs._s1 import (
     CH1, CROWN, clue, give, has_item, rep, seen, take)
@@ -17,6 +17,7 @@ CODE_FLAGS = {
     "flag.main.opening_done": "story rule rule.opening_done (OpeningFinishedEvent), data/story/rules/spec1.json",
     "flag.beat.armed_by_known": "story rules rule.armed_* (honest, broker or heist path), data/story/rules/spec1.json",
     "flag.beat.dray_decided": "story rules rule.dray_decided_*, data/story/rules/spec1.json",
+    "flag.party.companion.kael": "StoryRuleDirector party mirror (flag.party.<companion id> while recruited and in the party)",
 }
 
 # ---------------------------------------------------------------------------------------------------
@@ -71,6 +72,10 @@ Q02 = Quest(
         reach("location.ember_crown.ashen_breach", "Walk out to the Ashen Breach, the old Ashfall pass", tag="pass",
               hint="East of the capital, in the hills past the mine road: look for the burnt cut and follow the dead grass.",
               journal="The Breach is a wound in the hills. The old road runs through it and ends in sky."),
+        escort("companion.kael", "location.ember_crown.ashen_breach", "Walk Kael out to the Breach", tag="kael_escort",
+               optional=True, req_flag="flag.party.companion.kael",
+               hint="Optional. Kael is in your party: keep him with you on the walk and he will come to the cut. Do not leave him behind.",
+               journal="Kael walked the old road beside you and stopped at the mouth of the cut without being asked."),
         interact("interact.ashen_breach.toren_cairn", "Find Toren's cairn in the cut", tag="cairn",
                  location="location.ember_crown.ashen_breach",
                  hint="The cairn stands near the rubble heap at the western mouth of the cut.",
@@ -106,7 +111,7 @@ Q04 = Quest(
              journal="Fenn said he could not cut the seal on the impounded crate himself. He did not say you could not."),
         interact("interact.crossway.impound_crate", "Open the sealed crate at the Impound Counter", tag="crate",
                  location="location.crossway.impound", completion_flag="flag.beat.crate_opened",
-                 hint="The Impound Counter is on the south side of the post, past the Search Table.",
+                 hint="The Impound Counter is at the east end of the post, beyond the Search Table, with the clerk standing over it.",
                  journal="Forty unfinished spearheads in garrison straw, each stamped twice: the Citadel's square, and a ring with a gap."),
         milestone("flag.beat.armed_by_known", "Find out who signed for the warband's arms", tag="armed",
                   location="location.crossway.watch",
@@ -187,7 +192,7 @@ P_BOUNTY = Patch(
     "quest.warband.bounty", auto_start="flag.main.the_pass_kept_done", completion_flag="flag.main.bounty_done",
     append=[milestone("flag.beat.banner_burned", "Burn the warband's banner at the goblin camp", tag="banner",
                       location="location.wilds.north",
-                      hint="The camp is in the ruin south-east of the Deadfall Lodge. The banner hangs from a pole of lashed deadfall.",
+                      hint="The camp is in the broken ruin on the western side of the Northern Wilds, a short walk from the Deadfall Lodge. The banner hangs from a pole of lashed deadfall.",
                       journal="The banner burned. Its corner carried the Citadel quartermaster's stamp.")],
     fields={"ChapterKey": CH1, "OrderInAct": 3, "RegionId": CROWN, "RecommendedLevel": 2,
             "GiverNameKey": "dlg.guild_board.speaker", "DetailKey": "quest.warband.bounty.detail"})
@@ -359,6 +364,12 @@ DRAY = Dialogue(
                  do2=rep("faction.dawnwardens", 10)),
               go("Press him for what he knows.", "pressed", tag="press", do=(E.SET_FLAG, "flag.fork.dray_pressed"),
                  do2=(E.ADD_CORRUPTION, "4")),
+              go("Show your Dawnwarden badge and swear him to the Watch.", "spared_watch", tag="spare_watch",
+                 when=(C.GUILD_RANK_AT_LEAST, "faction.dawnwardens:0"), do=(E.SET_FLAG, "flag.fork.dray_spared"),
+                 do2=rep("faction.dawnwardens", 18)),
+              go("Offer his name to the Syndicate's ledger.", "pressed_syndicate", tag="press_syndicate",
+                 when=(C.GUILD_RANK_AT_LEAST, "faction.iron_syndicate:0"), do=(E.SET_FLAG, "flag.fork.dray_pressed"),
+                 do2=rep("faction.iron_syndicate", 12)),
               leave("I am not done yet. Wait.", tag="bye")]),
         Node("who", "'The King. Not for love, for use. A king who keeps a warband on his own roads has an excuse to close "
                     "the Kingsway to everyone else and take the tolls himself. The goblins get iron, he gets a siege he "
@@ -388,6 +399,21 @@ DRAY = Dialogue(
              on_enter=rep("faction.dawnwardens", -10)),
         Node("pressed_purse", "The drawer opens on the third try. The purse is heavy, and what is under it is only "
                               "paper. You leave him the chain.", [leave("Climb back down.", tag="go")]),
+        Node("spared_watch", "You hold the badge where the lamp can find it, and the Marshal reads the sigil twice as if "
+                             "it might be a trick. 'The Watch does not take a man who signed for goblin spears.' 'The Watch "
+                             "takes a man who stopped signing,' you say, and turn the key on the nail. He does not weep. He "
+                             "stands very straight and says the Watch's oath into the dust of the cell floor, all of it, "
+                             "including the part about the weak. Then he walks out of the hall with his chain over one "
+                             "shoulder like a stole, and the sentries who never came do not come now.",
+             [leave("Go well, Captain.", tag="go")]),
+        Node("pressed_syndicate", "You do not touch the chain. You say a number, and then a name, and Dray's face changes "
+                                  "because the number is what the Ledger House pays for a marshal's confession and the name "
+                                  "is yours. 'You are the Syndicate's now,' he says, with a sort of tired wonder. 'Good. At "
+                                  "least they keep books.' He gives you the roster, the drain door and the strongbox key, in "
+                                  "that order, and does not look up while he does it. The Ledger House will hear before the "
+                                  "Watch does.",
+             [go("Take the key and the Citadel's purse.", "pressed_purse", tag="take", do=give("item.currency.gold", 150))],
+             on_enter=rep("faction.dawnwardens", -10)),
         Node("spared_after", "The cell is empty. The chain lies in a pile where it fell, and the ring in the wall "
                              "has a bright new scar where it was forced.", [leave("Leave.", tag="bye")]),
         Node("pressed_after", "Dray does not look up. 'Whatever you wanted from me, you have it,' he says to the "
@@ -451,7 +477,7 @@ LOCALE = [
     ("chapter.ch.1.subtitle", "Smoke on the north road, a name in black iron, and a king who will not be reasoned with."),
     ("quest.warband.bounty.detail",
      "Goblins have always raided the roads out of the Ember Crown, but never in step and never at noon. The guild pays "
-     "three heads. The camp they come from sits in the ruin south-east of the Deadfall Lodge, and the banner that hangs "
+     "three heads. The camp they come from sits in the broken ruin west of the Deadfall Lodge, in the Northern Wilds, and the banner that hangs "
      "there is the first thing in this war that was made by someone who can sew."),
     ("quest.warband.forge.detail",
      "The Citadel's factors bought every ingot in the Crown last spring and never said what for. Bryn's forge has been "

@@ -2911,6 +2911,9 @@ quest.main.the_pass_kept.detail,"The Emberguard held a cut in the eastern hills 
 quest.main.the_pass_kept.obj_pass,"Walk out to the Ashen Breach, the old Ashfall pass"
 quest.main.the_pass_kept.hint_pass,"East of the capital, in the hills past the mine road: look for the burnt cut and follow the dead grass."
 quest.main.the_pass_kept.log_pass,The Breach is a wound in the hills. The old road runs through it and ends in sky.
+quest.main.the_pass_kept.obj_kael_escort,Walk Kael out to the Breach
+quest.main.the_pass_kept.hint_kael_escort,Optional. Kael is in your party: keep him with you on the walk and he will come to the cut. Do not leave him behind.
+quest.main.the_pass_kept.log_kael_escort,Kael walked the old road beside you and stopped at the mouth of the cut without being asked.
 quest.main.the_pass_kept.obj_cairn,Find Toren's cairn in the cut
 quest.main.the_pass_kept.hint_cairn,The cairn stands near the rubble heap at the western mouth of the cut.
 quest.main.the_pass_kept.log_cairn,"Black stones, stacked shoulder high, and a name cut under a buckle: TOREN. HE HELD."
@@ -2930,7 +2933,7 @@ quest.main.crossway_whispers.obj_fenn,Put the banner's stamp to Captain Fenn
 quest.main.crossway_whispers.hint_fenn,Fenn keeps the gate ledger by the door of the keep.
 quest.main.crossway_whispers.log_fenn,Fenn said he could not cut the seal on the impounded crate himself. He did not say you could not.
 quest.main.crossway_whispers.obj_crate,Open the sealed crate at the Impound Counter
-quest.main.crossway_whispers.hint_crate,"The Impound Counter is on the south side of the post, past the Search Table."
+quest.main.crossway_whispers.hint_crate,"The Impound Counter is at the east end of the post, beyond the Search Table, with the clerk standing over it."
 quest.main.crossway_whispers.log_crate,"Forty unfinished spearheads in garrison straw, each stamped twice: the Citadel's square, and a ring with a gap."
 quest.main.crossway_whispers.obj_armed,Find out who signed for the warband's arms
 quest.main.crossway_whispers.hint_armed,"Take the stamps to Fenn. The Iron Syndicate broker at Hollowreach sells that kind of reading for gold, and the carter ledger at the Search Table is there for anyone quick."
@@ -3083,10 +3086,10 @@ quest.main.storm_tyrant.title,What the Storm Keeps
 quest.main.storm_tyrant.summary,"The road to the Stormcrown is open and you stand under the spire. The Third Flamebearer comes down at the challenge brazier. When he falls, tell whoever holds the Stormbound hearth that the sky is quiet."
 quest.main.storm_tyrant.detail,"The Storm Tyrant came home from the Celestial stair to find his clan hold burned by men who swore they were saving it, and he has been answering them with lightning for four hundred years. The Stormbound call him the storm and do not say his name. The clans did not go to the Stormcrown when the weather began, and they will not go now, but they have stopped pretending he is only weather."
 quest.main.storm_tyrant.obj_tyrant,Break the Storm Tyrant at the Stormcrown
-quest.main.storm_tyrant.hint_tyrant,Light the challenge brazier on the west side of the duelling ground. His motes gather early: use the pillars.
+quest.main.storm_tyrant.hint_tyrant,Light the Lightning Rod brazier on the duelling ground. His motes gather early: use the storm pillars for cover.
 quest.main.storm_tyrant.log_tyrant,"The Storm Tyrant fell, and for the first time in an age the Stormcrown was quiet."
 quest.main.storm_tyrant.obj_duel,Answer the black-iron brazier
-quest.main.storm_tyrant.hint_duel,"A black-iron brazier stands cold on the east of the ring. The Ashen Knight will answer it. He yields before he dies: it is a duel, not a kill."
+quest.main.storm_tyrant.hint_duel,"A black-iron brazier stands cold a few paces from the Lightning Rod. The Ashen Knight will answer it. He yields before he dies: it is a duel, not a kill."
 quest.main.storm_tyrant.log_duel,The rider in black iron yielded the field and said you would cross blades again.
 quest.main.storm_tyrant.obj_hjalvar,Tell Hjalvar the storm is done
 quest.main.storm_tyrant.hint_hjalvar,Hjalvar waits by the hearth in the Clan Hold.
@@ -3155,7 +3158,7 @@ quest.main.crimson_prophet.obj_oda,Tell Mother Oda the voice is silent
 quest.main.crimson_prophet.hint_oda,Mother Oda is at the cistern in Saffra Wells.
 quest.main.crimson_prophet.log_oda,Mother Oda poured the first cup from a clean draw.
 quest.warband.bounty.obj_banner,Burn the warband's banner at the goblin camp
-quest.warband.bounty.hint_banner,The camp is in the ruin south-east of the Deadfall Lodge. The banner hangs from a pole of lashed deadfall.
+quest.warband.bounty.hint_banner,"The camp is in the broken ruin on the western side of the Northern Wilds, a short walk from the Deadfall Lodge. The banner hangs from a pole of lashed deadfall."
 quest.warband.bounty.log_banner,The banner burned. Its corner carried the Citadel quartermaster's stamp.
 quest.warband.forge.obj_handin,Bring the iron to Bryn
 quest.warband.forge.hint_handin,"Bryn is at the Iron Anvil in the Crown Square. He wants the ore in your hands, not in a ledger."
@@ -3230,6 +3233,8 @@ dlg.dray.root.c_who,Who is paying the warband?
 dlg.dray.root.c_ring,What do you know about the ring with a gap?
 dlg.dray.root.c_spare,Cut his chains.
 dlg.dray.root.c_press,Press him for what he knows.
+dlg.dray.root.c_spare_watch,Show your Dawnwarden badge and swear him to the Watch.
+dlg.dray.root.c_press_syndicate,Offer his name to the Syndicate's ledger.
 dlg.dray.root.c_bye,I am not done yet. Wait.
 dlg.dray.who,"'The King. Not for love, for use. A king who keeps a warband on his own roads has an excuse to close the Kingsway to everyone else and take the tolls himself. The goblins get iron, he gets a siege he can ration. The captains drink at the arena's side gate: cut those and he has no road.' He laughs without breath. 'Nothing in this Citadel has been about the realm for ten years. It is about the King's weather.'"
 dlg.dray.who.c_ring,What do you know about the ring with a gap?
@@ -3242,6 +3247,10 @@ dlg.dray.pressed,"You do not cut the chain. You stand in the doorway, close enou
 dlg.dray.pressed.c_take,Take the strongbox key and the Citadel's purse.
 dlg.dray.pressed_purse,"The drawer opens on the third try. The purse is heavy, and what is under it is only paper. You leave him the chain."
 dlg.dray.pressed_purse.c_go,Climb back down.
+dlg.dray.spared_watch,"You hold the badge where the lamp can find it, and the Marshal reads the sigil twice as if it might be a trick. 'The Watch does not take a man who signed for goblin spears.' 'The Watch takes a man who stopped signing,' you say, and turn the key on the nail. He does not weep. He stands very straight and says the Watch's oath into the dust of the cell floor, all of it, including the part about the weak. Then he walks out of the hall with his chain over one shoulder like a stole, and the sentries who never came do not come now."
+dlg.dray.spared_watch.c_go,"Go well, Captain."
+dlg.dray.pressed_syndicate,"You do not touch the chain. You say a number, and then a name, and Dray's face changes because the number is what the Ledger House pays for a marshal's confession and the name is yours. 'You are the Syndicate's now,' he says, with a sort of tired wonder. 'Good. At least they keep books.' He gives you the roster, the drain door and the strongbox key, in that order, and does not look up while he does it. The Ledger House will hear before the Watch does."
+dlg.dray.pressed_syndicate.c_take,Take the key and the Citadel's purse.
 dlg.dray.spared_after,"The cell is empty. The chain lies in a pile where it fell, and the ring in the wall has a bright new scar where it was forced."
 dlg.dray.spared_after.c_bye,Leave.
 dlg.dray.pressed_after,"Dray does not look up. 'Whatever you wanted from me, you have it,' he says to the floor. 'Close the door on your way out.'"
@@ -3284,6 +3293,7 @@ dlg.beast_track_c.after.c_bye,Leave it be.
 dlg.ashen_herd_choice.speaker,The Herd
 dlg.ashen_herd_choice.root,"In a shallow of ash stands the herd: forty animals of six kinds, shoulder to shoulder, not grazing, not sleeping. At their heart a grey-eyed elk cow looks at you with perfectly ordinary elk eyes, and behind her a great dire wolf lies in the ash like a hound at a hearth. Antlers and fangs point nowhere. They are waiting for something to tell them to go on. The ember in your chest tugs at you, as though it knew the voice."
 dlg.ashen_herd_choice.root.c_slay,Cull the herd before it reaches him.
+dlg.ashen_herd_choice.root.c_slay_hunter,"Cull the herd as the Hunters' book says, by the numbers."
 dlg.ashen_herd_choice.root.c_calm,Burn three healing herbs and break the call.
 dlg.ashen_herd_choice.root.c_bye,Not yet.
 dlg.ashen_herd_choice.slay,"You do not pretend to speak to them. You draw, and the herd, which has been waiting for a voice, hears one: yours. They come at you in a wave with no fear in it, and it is the absence of fear that you will remember. When the ash settles there is a trampled shallow, a smell of copper, and an elk calf standing untouched among the dead, looking at you without understanding. Hask will want the count."
@@ -3353,11 +3363,17 @@ dlg.well_gauge_west.after.c_bye,Leave it be.
 dlg.flock_deacon.speaker,Deacon Haddan Voll
 dlg.flock_deacon.root,"Deacon Haddan Voll stands at the chapel door in red with a ladle in one hand and a ledger of names in the other. He is perhaps forty and looks sixty. Behind him two hundred people kneel in rows facing a wall of heat, and the whole nave smells of warm water and burnt sugar. 'You walked the pilgrim track,' he says, kindly. 'Most of us did it on our knees. You have the look of someone who has seen the wells. Have you come to tell me they taste of ash?'"
 dlg.flock_deacon.root.c_expose,Show him the three readings from the gauge stones.
+dlg.flock_deacon.root.c_expose_archive,Lay the readings out as a reader of the Veiled Archive.
 dlg.flock_deacon.root.c_turn,Walk into the nave and speak to the flock.
 dlg.flock_deacon.root.c_kin,Tell him you already hear it too.
+dlg.flock_deacon.root.c_kin_emberbound,Show the Emberbound sigil and tell him you already hear it too.
 dlg.flock_deacon.root.c_bye,Not yet.
 dlg.flock_deacon.expose,"You do not shout. You set the three readings on his ledger one on top of another, grey on grey, and tell him what is in the water he blesses: not the Prophet's voice, only ash from his own altar, poured upstream twice a day by people he trusts. For a long moment the deacon looks at the readings the way a man looks at a doctor's face. Then he turns to the nave and reads them aloud in the same kind voice he uses for the names. The rows do not rise. They look at the ladle in his hand. Someone starts to cry. Within the hour half the chapel is walking north with its jars poured out on the red flats. The other half stays on its knees and does not look at you."
 dlg.flock_deacon.expose.c_go,Step aside and let them pass.
+dlg.flock_deacon.expose_archive,"You set the three readings on his ledger, and under them the Archive's own gauge-tablet seal, which he has seen on the oasis wall since boyhood. 'The Archive does not ask for belief,' you tell him. 'It asks for the same measure, read twice, by two people who do not like each other.' The deacon reads the numbers aloud in his kind voice. When he stops, no one in the nave is looking at the wall of heat. Half the chapel is walking north with its jars poured out by dusk, and a girl in the last row asks the nearest of you, shyly, what a gauge is. The other half stays on its knees and does not look at you."
+dlg.flock_deacon.expose_archive.c_go,Step aside and let them pass.
+dlg.flock_deacon.kin_emberbound,"You show the sigil you were given at the Emberbound's table and say it quietly: 'I hear it too.' The deacon's face opens like a door. 'The Brothers of the Flame sent one of theirs to the Mission before,' he says. 'They did not stay. You will.' He kneels, and the nave kneels with him. He lifts the chapel key from around his neck and puts it in your palm. 'The sanctum is open to you. He is waiting. He would like to speak before whatever comes after.'"
+dlg.flock_deacon.kin_emberbound.c_go,Take the key.
 dlg.flock_deacon.turned,"You walk past him into the nave and no one stops you. You stand where the heat is worst and say nothing for a long time. Then you say their names back to them, the ones he has in his ledger, not the ones the voice calls them. They look at the one who knows their names. 'The voice speaks to everyone,' you tell them. 'It asked me too. I said no. You can do the same.' Some weep. Some look at you the way they used to look at the wall of heat, and that frightens you more than the weeping. Tamsin Reed, who followed you down the pilgrim track, begins to hand out water from a cistern jar. Real water. The first cup is yours."
 dlg.flock_deacon.turned.c_go,"Drink, and step out of the heat."
 dlg.flock_deacon.kin,"'I hear it too,' you say, and the deacon's face opens like a door. 'Seventh of the Flame. He said you would come. He said you would not need telling.' He kneels, and the whole nave kneels with him, two hundred people moving like a field of wheat. He lifts the chapel key from around his neck and puts it in your palm. 'The sanctum is open to you. He is waiting. He would like to speak before whatever comes after.' Behind you, the heat in the wall rises to meet the heat in you."
@@ -3369,10 +3385,19 @@ dlg.sanctum_seal.root,"A disc of red wax pressed with the Prophet's flame hangs 
 dlg.sanctum_seal.root.c_close,Pocket the seal.
 dlg.sanctum_seal.after,The latch is bare. The door is warm and does not breathe any more.
 dlg.sanctum_seal.after.c_bye,Leave it be.
+dlg.oda_grandson.speaker,Rafe Sarn
+dlg.oda_grandson.root,"Rafe Sarn sits on the stone lip of the cistern with his boots in the sand, thin, in a robe washed so often it has gone from red to the colour of weak tea. 'I walked south at midsummer because it was quiet there,' he says to the water. 'It is very quiet. I did not know quiet could be a hunger.' He coughs into his sleeve. 'The Archive's readers let me hold the chalk this morning. A two, and a three. I got the three wrong. Nobody told me off.'"
+dlg.oda_grandson.root.c_hear,Do you still hear it?
+dlg.oda_grandson.root.c_bye,Look after your grandmother.
+dlg.oda_grandson.hear,"'A little. Like a tune from the next house.' He picks at the hem of the sleeve. 'Grandmother says it fades if you give it something else to listen to. She sets me the gauges at dawn, and numbers are very loud when you let them be.'"
+dlg.oda_grandson.hear.c_else,Something else.
+dlg.oda_grandson.hear.c_bye,Keep reading them.
+dlg.oda_grandson.turned,"Rafe Sarn stands among the grey cloaks at the cistern with a ladle in his hands, looking at the road you came by. 'Tamsin says you told it no in front of everyone,' he says. 'I want to be able to do that. I do not know how yet. Do you want a drink? It is only water. I check.'"
+dlg.oda_grandson.turned.c_drink,Gladly.
 ch.1,Act I: Embers at the Crown
 chapter.ch.1.title,Act I: Embers at the Crown
 chapter.ch.1.subtitle,"Smoke on the north road, a name in black iron, and a king who will not be reasoned with."
-quest.warband.bounty.detail,"Goblins have always raided the roads out of the Ember Crown, but never in step and never at noon. The guild pays three heads. The camp they come from sits in the ruin south-east of the Deadfall Lodge, and the banner that hangs there is the first thing in this war that was made by someone who can sew."
+quest.warband.bounty.detail,"Goblins have always raided the roads out of the Ember Crown, but never in step and never at noon. The guild pays three heads. The camp they come from sits in the broken ruin west of the Deadfall Lodge, in the Northern Wilds, and the banner that hangs there is the first thing in this war that was made by someone who can sew."
 quest.warband.forge.detail,"The Citadel's factors bought every ingot in the Crown last spring and never said what for. Bryn's forge has been cold since. Three lumps of iron from the hills and the town can make its own steel again, with no black in it."
 quest.warband.remedies.detail,"The Green Retort is out of everything but complaints. Goblin wounds fill the cots and the Citadel's factors bought up the linen. Four sprigs of healing herb for Mirela, and if you have a draught to spare, a scout in a ditch below the Citadel may be worth it."
 quest.warband.heart.detail,"A warband that wears Citadel scrip does not break because five goblins died. It breaks when its road ends. Cut the captains down, then follow the black road to where it ends: the Ember Arena, and whatever holds it."
@@ -3437,8 +3462,11 @@ dlg.dawnwarden_captain.cq_brief.c_else,Something else.
 dlg.dawnwarden_captain.cq_brief.c_go,I will look.
 dlg.dawnwarden_captain.cq_sigil,"You set a spearhead on his desk and the stamps beside it. Fenn touches neither. 'Garrison stores. The square is the Citadel quartermaster's. And that.' He taps the desk beside the ring with a gap. 'That is in the Citadel's own ledger too, in a hand older than any clerk they have, and every time I have asked who signs for it I have been offered a year's pay and a quieter road.' He takes a long breath. 'The square is easy. Orsolo Dray, Marshal of the garrison, has signed for every arms consignment through this gate. Either he is a traitor or a hostage, and I would give the year's pay to know which.'"
 dlg.dawnwarden_captain.cq_sigil.c_honest,Then I will find out which.
+dlg.dawnwarden_captain.cq_sigil.c_honest_badge,Show your Dawnwarden badge and ask to read the Watch's own armament book.
 dlg.dawnwarden_captain.cq_sigil.c_else,Something else.
 dlg.dawnwarden_captain.cq_sigil.c_later,Not yet.
+dlg.dawnwarden_captain.cq_honest_badge,"Fenn looks at the badge for a long moment, then pushes the Watch's own armament book across the desk. 'One of ours does not need a chisel,' he says. 'You do not need to explain.' His finger finds the page: Orsolo Dray, Marshal of the garrison, countersigning every consignment for eleven years. 'Take that to Bryn, and tell him the Watch buys steel from the town this season, not from the spur.'"
+dlg.dawnwarden_captain.cq_honest_badge.c_go,I will see Bryn.
 dlg.dawnwarden_captain.cq_honest,"'Good. Not the answer I wanted, but the question was never going to be comfortable.' He opens the ledger again, which is how Fenn dismisses people. 'Go home first. The Citadel's factors bought every ingot in the Crown, and Bryn's forge has been cold for it. If you are going up that spur you will want steel that never went through their hands.'"
 dlg.dawnwarden_captain.cq_honest.c_go,I will see Bryn.
 dlg.dawnwarden_captain.cq_heist_after,"Fenn does not look up. 'A page is missing from the carter ledger. It was there when the clerk went for his tea, so I have decided it was removed by a thief and not an investigator. Do not do that again, and do not tell me where it went.'"
@@ -3538,6 +3566,37 @@ dlg.sunspire_pilgrim.cq_dw_tamsin.c_go,I will see the deacon.
 dlg.sunspire_pilgrim.cq_pf_turned,"Tamsin Reed has found a plain grey cloak from somewhere and wears it like armour. Behind her two dozen former pilgrims stand in a line with empty jars, looking at you the way people look at a lighthouse. 'They want to go home,' she says. 'They do not know where that is. I am taking them to the wells to teach them to fetch water. Real water.' Her voice shakes. 'You said no to the voice in front of them. Do you know what that did? It did not free them. It gave them somebody else to listen to.' She breathes. 'I will spend the rest of my life teaching them to listen to themselves. Please do not make it harder.'"
 dlg.sunspire_pilgrim.cq_pf_turned.c_else,Something else.
 dlg.sunspire_pilgrim.cq_pf_turned.c_go,I will not.
+boss.storm_tyrant.arc_locked,"The lightning rod stands dead. The clans have not yet named who climbs, and the storm will not answer a stranger."
+boss.beast_lord.arc_locked,"The brazier will not take. The herds still answer a voice on the plateau, and it is not yours yet."
+boss.crimson_prophet.arc_locked,"The altar fire will not take. His flock still kneels in the nave, and he is not ready to hear you."
+landing.fork.dray_spared,"A squad of Dawnwardens holds the first beacon under a Watch banner, and Captain Orsolo Dray is drilling them in a voice that does not shake. 'The Crossway sends what it can,' he says. 'It sends me too, which is more than I had a right to expect.'"
+epilogue.fork.dray_spared,"Orsolo Dray took a captain's chair at the Crossway and kept the road open to everyone, whether they could pay the toll or not. They say a stranger unlocked his cell, and nobody at the post will say who."
+landing.fork.dray_pressed,"The first beacon is held by hired iron and a Syndicate crew who count the cost of everything aloud. A scrap of black mail hangs at their quartermaster's belt, stamped with a marshal's seal, and nobody meets your eye when you notice it."
+epilogue.fork.dray_pressed,The Citadel's strongbox paid for a season of barley and a season of silence. The Watch at the Crossway still keeps a page in its book about a marshal whose pockets were emptied in his own cell.
+landing.fork.succession_hjalvar,"Hjalvar Stormbound has climbed the Stair on a litter carried by his own grandsons, and the clans stand behind him in a wall, shamans in the middle and the young on the flanks. 'We came as we said we would,' he tells you. 'Slowly. All of us.'"
+epilogue.fork.succession_hjalvar,Hjalvar kept the high seat until the spring thaw and gave it up to a granddaughter who could read the cairns before she could read letters. The eight clans still walk to the moot stone together.
+landing.fork.succession_halvar,"Halvar One-Hand waits at the second beacon with a dozen of the quick and the unjudged, rope still coiled at their hips. 'Three hours up and no breakfast,' he says. 'The Syndicate would like its rope back.'"
+epilogue.fork.succession_halvar,"Halvar sat the high seat and found it colder than the fire outside the gate. The clans changed their law once, to let an exile speak at the moot, and he never abused it."
+landing.fork.herd_slain,"A line of Ash Hunters in scorched leathers holds the third beacon with long bows and no small talk. 'The count was clean,' their warden says. 'It was the cleanest cull the station ever logged. We would rather it had not been.'"
+epilogue.fork.herd_slain,"The Wilds quieted, and the Hunters' ledger was the thicker for it. Last Hearth ate well that winter and did not ask where the meat had come from."
+landing.fork.herd_calmed,"A grey elk cow and a dire wolf stand together at the edge of the landing, perfectly calm, with a calf asleep between them. Maeve Ashby's people hold the beacon beside them, laughing at something the wolf has done."
+epilogue.fork.herd_calmed,"Last Hearth named the calf. The Hunters wrote one word in the margin of their manual, and by the third winter other stations were writing it too: smoke."
+landing.fork.flock_exposed,"Mother Oda's grandson stands at the landing in a faded red robe with a cup of clean water in both hands, coughing and trying not to. Behind him a handful of former pilgrims carry jars that are empty and that they are proud of."
+epilogue.fork.flock_exposed,"The wells at Saffra ran clear, and the Archive's readers came every dawn to measure them. Mother Oda's grandson learned the gauges and read them aloud each morning to anyone who asked."
+landing.fork.flock_turned,"Tamsin Reed leads two dozen former pilgrims in plain grey up the landing steps, in step, looking at you the way people look at a lamp. 'They asked to come,' she says. 'I have not yet taught them how to say no to you.'"
+epilogue.fork.flock_turned,Two dozen grey cloaks still fetch water at Saffra Wells and still look up when a stranger passes. Tamsin teaches them to look at the water instead. Some days it works.
+landing.fork.flock_kin,"The deacon's red robe hangs from a post at the landing like a flag nobody raised. The warm air that drifts from somewhere behind the beacons knows your name, and does not seem surprised to see you."
+epilogue.fork.flock_kin,"The pilgrim track is empty now. Mother Oda pours a cup into the sand at dusk for a grandson who did not come home, and the sand has stopped answering."
+bark.kael_toren,"Toren's cairn. Somebody has kept the grass pulled for twelve winters, and I never asked who."
+bark.wren_square,You held the line instead of running. In my trade that is half the wage.
+bark.tessa_crate,Stamped twice. Whoever stamps a thing twice is hiding who paid for the first.
+bark.kael_dray_spared,"You cut his chains. I did not think you would, and I am glad I was wrong."
+bark.kael_dray_pressed,That was not a question you put to him. That was a hand on his throat. Mind where it goes next.
+bark.wren_halvar,A one-handed guide and a Syndicate rope crew. I have worked worse contracts.
+bark.tessa_herd_calmed,"Smoke, not steel. Nobody on the wharf will believe me when I tell it."
+bark.kael_herd_slain,They did not know they were doing wrong. I keep thinking about the calf.
+bark.wren_flock_kin,You told him you hear it. Say it was a lie told on purpose and I will keep walking.
+bark.tessa_flock_exposed,"Numbers on a page, and a whole chapel believed them. I should have kept a ledger like that at the hull."
 ch.2.sunspire,Act II: Dry Wells
 chapter.ch.2.sunspire.title,Act II: Dry Wells
 chapter.ch.2.sunspire.subtitle,The oldest law in the Dominion is that water is free. Someone is poisoning it.

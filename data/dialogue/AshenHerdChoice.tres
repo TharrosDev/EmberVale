@@ -20,6 +20,17 @@ Effect2Arg = "faction.ash_hunters:10"
 
 [sub_resource type="Resource" id="ch_root_1"]
 script = ExtResource("3_choice")
+Text = "dlg.ashen_herd_choice.root.c_slay_hunter"
+Goto = "slay"
+Condition = 14
+ConditionArg = "faction.ash_hunters:0"
+Effect = 2
+EffectArg = "flag.fork.herd_slain"
+Effect2 = 13
+Effect2Arg = "faction.ash_hunters:18"
+
+[sub_resource type="Resource" id="ch_root_2"]
+script = ExtResource("3_choice")
 Text = "dlg.ashen_herd_choice.root.c_calm"
 Goto = "calm"
 Condition = 19
@@ -29,7 +40,7 @@ EffectArg = "flag.fork.herd_calmed"
 Effect2 = 15
 Effect2Arg = "item.material.healing_herb:3"
 
-[sub_resource type="Resource" id="ch_root_2"]
+[sub_resource type="Resource" id="ch_root_3"]
 script = ExtResource("3_choice")
 Text = "dlg.ashen_herd_choice.root.c_bye"
 Goto = ""
@@ -42,7 +53,7 @@ EffectArg = ""
 script = ExtResource("2_node")
 Id = "root"
 Text = "dlg.ashen_herd_choice.root"
-Choices = Array[Resource]([SubResource("ch_root_0"), SubResource("ch_root_1"), SubResource("ch_root_2")])
+Choices = Array[Resource]([SubResource("ch_root_0"), SubResource("ch_root_1"), SubResource("ch_root_2"), SubResource("ch_root_3")])
 
 [sub_resource type="Resource" id="ch_slay_0"]
 script = ExtResource("3_choice")

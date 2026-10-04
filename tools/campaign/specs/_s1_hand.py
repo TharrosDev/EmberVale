@@ -211,8 +211,18 @@ FENN = Extension(
              "traitor or a hostage, and I would give the year's pay to know which.'",
              [go("Then I will find out which.", "cq_honest", tag="honest", when=missing_flag("flag.beat.armed_by_known"),
                  do=(E.SET_FLAG, "flag.beat.armed_honest"), do2=rep("faction.dawnwardens", 5)),
+              go("Show your Dawnwarden badge and ask to read the Watch's own armament book.", "cq_honest_badge",
+                 tag="honest_badge", when=(C.GUILD_RANK_AT_LEAST, "faction.dawnwardens:0"),
+                 when2=(C.MISSING_FLAG, "flag.beat.armed_by_known"), do=(E.SET_FLAG, "flag.beat.armed_honest"),
+                 do2=rep("faction.dawnwardens", 10)),
               go("Something else.", ROOT, tag="else"),
               leave("Not yet.", tag="later")]),
+        Node("cq_honest_badge",
+             "Fenn looks at the badge for a long moment, then pushes the Watch's own armament book across the desk. 'One of "
+             "ours does not need a chisel,' he says. 'You do not need to explain.' His finger finds the page: Orsolo Dray, "
+             "Marshal of the garrison, countersigning every consignment for eleven years. 'Take that to Bryn, and tell him "
+             "the Watch buys steel from the town this season, not from the spur.'",
+             [leave("I will see Bryn.", tag="go")]),
         Node("cq_honest",
              "'Good. Not the answer I wanted, but the question was never going to be comfortable.' He opens the ledger "
              "again, which is how Fenn dismisses people. 'Go home first. The Citadel's factors bought every ingot in the "

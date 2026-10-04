@@ -120,11 +120,11 @@ Q12 = Quest(
     objectives=[
         kill("enemy.storm_tyrant", 1, "Break the Storm Tyrant at the Stormcrown", tag="tyrant",
              location="location.frostfang.stormcrown",
-             hint="Light the challenge brazier on the west side of the duelling ground. His motes gather early: use the pillars.",
+             hint="Light the Lightning Rod brazier on the duelling ground. His motes gather early: use the storm pillars for cover.",
              journal="The Storm Tyrant fell, and for the first time in an age the Stormcrown was quiet."),
         milestone("flag.rival.duel1_won", "Answer the black-iron brazier", tag="duel", optional=True,
                   location="location.frostfang.stormcrown", req_flag="flag.storm_tyrant_defeated",
-                  hint="A black-iron brazier stands cold on the east of the ring. The Ashen Knight will answer it. He yields before he dies: it is a duel, not a kill.",
+                  hint="A black-iron brazier stands cold a few paces from the Lightning Rod. The Ashen Knight will answer it. He yields before he dies: it is a duel, not a kill.",
                   journal="The rider in black iron yielded the field and said you would cross blades again."),
         talk("dialogue.clan_chief", "Tell Hjalvar the storm is done", tag="hjalvar", location="location.frostfang.clan_hold",
              req_flag="flag.beat.stormend_hjalvar", hint="Hjalvar waits by the hearth in the Clan Hold.",
