@@ -15,10 +15,11 @@ SECRET = "pale"
 
 CODE_FLAGS = {
     # Fork F5 and the testimony the Queen's aftermath writes are consumed here; everything else is spec1's.
-    "flag.testimony.iron": "W-Spec-1 aftermath dialogue (testimony of the Iron King)",
-    "flag.testimony.storm": "W-Spec-1 aftermath dialogue (testimony of the Storm Tyrant)",
-    "flag.testimony.beast": "W-Spec-1 aftermath dialogue (testimony of the Beast Lord)",
-    "flag.testimony.prophet": "W-Spec-1 aftermath dialogue (testimony of the Crimson Prophet)",
+    # Hand-authored data: the OnEnter effect of the ember conversation's first node (_spec2_handedit.py ABSORB_TESTIMONY).
+    "flag.testimony.iron": "dialogue.iron_king_absorb offer node (patched by _spec2_handedit.py)",
+    "flag.testimony.storm": "dialogue.storm_tyrant_absorb offer node (patched by _spec2_handedit.py)",
+    "flag.testimony.beast": "dialogue.beast_lord_absorb offer node (patched by _spec2_handedit.py)",
+    "flag.testimony.prophet": "dialogue.crimson_prophet_absorb offer node (patched by _spec2_handedit.py)",
     "flag.testimonies_all": "StoryRuleDirector: all five flag.testimony.* set (W-Core-B code rule)",
 }
 
@@ -29,8 +30,8 @@ TERMINAL_FLAGS = {}
 # --------------------------------------------------------------------------------------------------
 PALE_DOOR = Quest(
     id="quest.main.pale_door",
-    title="The Door Under the Stacks",
-    summary="Three of the fallen are gone, and the embers you carry will not settle. They lean west, toward a country that is on no map. Archivist Seren Adaru says the door under her library has begun to open. Walk through it and learn what four hundred years of silence were hiding.",
+    title="The Forecourt Door",
+    summary="Four of the fallen are gone, and the embers you carry will not settle. They lean west, toward a country that is on no map. Archivist Seren Adaru says a door in her library's forecourt has begun to open. Walk through it and learn what four hundred years of silence were hiding.",
     detail="The Second Flamebearer hid her whole realm from death and from history, and the hiding held until her fellow fallen began to go out one by one. The Archivist has listened to the door breathe for forty years and never opened it. She will not stop you, and she will not follow.",
     chapter_key="ch.2.pale", order=19, region="region.pale_concord", level=20,
     giver_key="dlg.sunspire_archivist.speaker",
@@ -40,14 +41,14 @@ PALE_DOOR = Quest(
         talk("dialogue.sunspire_archivist", "Speak with Archivist Seren Adaru in the great library", tag="archivist",
              location="location.sunspire.library",
              hint="She keeps the reading hall at the head of the library stair. The new door stands in the forecourt.",
-             journal="The Archivist put down her book for the first time in my memory. A door that was bare wall for four hundred years had opened in the night."),
+             journal="The Archivist put down her book for the first time in my memory. A door that had always been bare wall had opened in the night."),
         reach("location.pale.landing", "Go through the door to the Still Quay", tag="quay",
-              hint="The door is in the library forecourt. It opens only for someone carrying embers.",
+              hint="The door stands in the library forecourt, in the wall that was bare until now. Walk through it.",
               journal="The door let out onto a stone quay where every lamp burns at an hour that never ends."),
         interact("interact.pale.landing_lamp", "Touch the first lamp on the quay", tag="lamp",
                  location="location.pale.landing", completion_flag="flag.beat.pale_landing_lit",
                  hint="The first lamp stands a few steps from where you arrive, at the quay's south end.",
-                 journal="The lamp was warm, and had not gone out in four hundred years. Something far off felt the touch."),
+                 journal="The lamp was warm, and had never once gone out. Something far off felt the touch."),
     ])
 
 # --------------------------------------------------------------------------------------------------
@@ -61,7 +62,9 @@ VESPERHOLD = Quest(
     chapter_key="ch.2.pale", order=20, region="region.pale_concord", level=20,
     giver_key="pale.dlg.steward.speaker",
     auto_start="flag.main.pale_door_done", completion_flag="flag.main.vesperhold_done",
-    sequential=True, xp=900, gold=300, reward_items=[("item.potion.health", 2)],
+    # Not sequential: the four residents send you to one another, but a visitor who speaks to them in another order
+    # (or reads a lamp first) must not have those conversations ignored and have to repeat them.
+    xp=900, gold=300, reward_items=[("item.potion.health", 2)],
     faction_reward=("faction.villagers", 10),
     objectives=[
         reach("location.pale.city", "Follow the quay road north to Vesperhold", tag="city",
@@ -74,7 +77,7 @@ VESPERHOLD = Quest(
         talk("dialogue.undying_lamplighter", "Speak with Oswin the Lamplighter", tag="lamplighter",
              location="location.pale.city",
              hint="He walks the lamps on the south side of the plaza.",
-             journal="Oswin signed because he could not bear to watch his daughter grow old. She has not grown at all."),
+             journal="Oswin signed because he could not bear to lose his newborn daughter to a dying world. She has not grown a day since."),
         talk("dialogue.undying_baker", "Speak with Maren Loaf at her stall", tag="baker",
              location="location.pale.city",
              hint="The bakery stall stands on the north side of the plaza.",
@@ -82,7 +85,7 @@ VESPERHOLD = Quest(
         talk("dialogue.undying_clockkeeper", "Speak with Old Corwen at the clock tower", tag="clockkeeper",
              location="location.pale.city",
              hint="The clock tower stands at the plaza's west end.",
-             journal="Corwen winds a clock that has said the same hour for four hundred years. He told me where the dusk-count is written."),
+             journal="Corwen winds a clock that has said the same hour since the signing. He told me where the dusk-count is written."),
         interact("interact.pale.dusk_registry", "Read the dusk-count registry at the foot of the clock tower",
                  tag="registry", location="location.pale.city", completion_flag="flag.beat.registry_read",
                  hint="Corwen keeps it on a lectern beside the tower's door.",
@@ -112,21 +115,23 @@ QUEENS_COUNT = Quest(
     chapter_key="ch.2.pale", order=21, region="region.pale_concord", level=21,
     giver_key="pale.dlg.steward.speaker",
     auto_start="flag.main.vesperhold_done",
-    # The count-stone dialogue raises this flag; it is also this quest's completion flag, and quest.main.hidden
-    # starts on it. The Hollow Queen's brazier is gated on it.
+    # Completing this quest raises this flag (the count-stone only raises flag.beat.count_answered, the last
+    # objective); quest.main.hidden starts on it and the Hollow Queen's brazier is gated on it.
     completion_flag="flag.pale.court_open",
-    sequential=True, xp=1000, gold=350,
+    # Not sequential: the husks stand in the road 12 to 28 m short of the stone, so a player fights them BEFORE
+    # the Reach radius at the stone is entered; a locked Kill would never count them and could not be redone.
+    xp=1000, gold=350,
     objectives=[
         reach("location.pale.court_approach", "Climb the processional to the Court approach", tag="approach",
               hint="The processional leaves Vesperhold by the north street and climbs to the Hollow Court.",
               journal="The processional climbed out of the preserved city into fields that never ripen and never rot."),
         kill("enemy.hollow_husk", 5, "Cut down the husks on the processional", tag="husks",
-             location="location.pale.court_approach",
+             location="location.pale.court_approach", completion_flag="flag.beat.husks_down",
              hint="The husks stand in the road, the ones the count could not hold. They come at anyone who nears the Court wall.",
-             journal="The husks did not defend themselves. They had been standing in the road for four hundred years, waiting to be released from the road."),
+             journal="The husks did not defend themselves. They had been standing in the road since the count began, waiting to be released from it."),
         milestone("flag.beat.count_answered", "Answer the count-stone at the end of the processional", tag="stone",
                   location="location.pale.court_approach",
-                  hint="Touch the stone and it will ask whether the count goes on. Whatever you answer, the Court's gate opens.",
+                  hint="Touch the stone and it will ask whether the count goes on. It stays silent while the husks stand. Either answer opens the Court's gate.",
                   journal="The stone asked, and I answered. The gate of the Hollow Court stands open."),
     ])
 
@@ -168,8 +173,13 @@ LAMP_QUEEN = read_clue(
 def _count_stone() -> Dialogue:
     return Dialogue(
         id="dialogue.pale_count_stone", speaker=t("The Count-Stone"), start="root",
-        start_variants=[StartVariant(has_flag("flag.beat.count_answered"), "settled")],
+        start_variants=[StartVariant(has_flag("flag.beat.count_answered"), "settled"),
+                        # The husks on the road are the Kill objective that gates the answer: until they are down
+                        # the stone is silent (an answer given early would open the Queen's brazier over them).
+                        StartVariant(missing_flag("flag.beat.husks_down"), "unready")],
         nodes=[
+            Node("unready", t("A standing stone, black and wet-looking though nothing here ever rains, cut with ring upon ring of names. Under your hand it is cold and silent. Something is not finished on the road behind you, and the stone will not answer until it is."),
+                 [leave(t("Step back."), tag="back")]),
             Node("root", t("A standing stone, black and wet-looking though nothing here ever rains, cut with ring upon ring of names. Under your hand it is cold, and then it speaks in a voice made of every dusk: <<The count is eleven hundred and four. Shall it go on?>>"), [
                 go(t("What happens if it ends?"), "ends", tag="ask_end"),
                 go(t("What happens if it goes on?"), "goes_on", tag="ask_on"),
@@ -204,6 +214,7 @@ def _queen_parley() -> Dialogue:
         id="dialogue.hollow_queen_parley", speaker=t("The Hollow Queen"), start="root",
         start_variants=[
             StartVariant(has_flag("flag.hollow_queen_defeated"), "after"),
+            StartVariant(has_flag("flag.beat.queen_truce"), "truce_after"),
             StartVariant(corruption_at_least(60), "truce"),
             StartVariant(has_flag("flag.fork.queen_released"), "released"),
             StartVariant(has_flag("flag.fork.queen_kept"), "kept"),
@@ -214,25 +225,31 @@ def _queen_parley() -> Dialogue:
                 bye("I will light it.", tag="light")]),
             Node("counting", t("<<Everything that is still mine. It is not a long list any more. It was a kingdom once.>>"), [
                 back("root", "Something else.", tag="back"), bye("I will light it.", tag="light")]),
-            Node("released", t("<<You broke the count. I felt eleven hundred and four names leave my hands, one after another, like candles going out down a long hall. I have not been so empty since the day I signed. Do not expect me to thank you, and do not expect me to forgive you. Expect me at the ring.>>"), [
+            Node("released", t("<<You broke the count. I felt eleven hundred and four names leave my hands, one after another, like candles going out down a long hall. I have not been so empty since the day I signed. Do not expect me to thank you, and do not expect me to forgive you. Expect me at the brazier.>>"), [
                 go(t("You held them against their will."), "released_why", tag="why"),
-                bye("Then I will see you at the ring.", tag="ring")]),
+                bye("Then I will see you at the brazier.", tag="ring")]),
             Node("released_why", t("<<Against their will. Yes. By their own signatures, which I wrote the terms for. It is a very old argument and I lost it the day they stopped making it. Go on. Light it.>>"), [
                 bye("I will.", tag="light")]),
             Node("kept", t("<<You let the count stand. You will think it was a kindness, and it was, a little. But I know what it is to be kept, Seventh. I tell myself each dusk that the next name will be the one I can bear to lose. Light the brazier. Take the choice from me, since you would not take it from them.>>"), [
                 go(t("Would you have broken it yourself?"), "kept_why", tag="why"),
-                bye("Then I will see you at the ring.", tag="ring")]),
+                bye("Then I will see you at the brazier.", tag="ring")]),
             Node("kept_why", t("<<Every dusk. Every dusk I stand at the stone with my hand on it, and every dusk I count instead.>> The voice is quiet for a while. <<Light it.>>"), [
                 bye("I will.", tag="light")]),
             Node("truce", t("The voice is quiet a moment longer than courtesy allows. <<You smell of us. Of cold and keeping, and the kind of hunger that learns to call itself patience. How many of the fallen did you take in? Do not answer. I can hear them.>> The chair creaks as nothing sits in it. <<You are not here to end me. You are here to find out what you become. I will teach you the last craft I learned, and you may fight me for it afterwards, if you still want to. Sit with me a moment, Seventh. Nobody has in four hundred years.>>"), [
                 say(t("Accept the craft."), "truce_taken", tag="accept",
                     do=(E.LEARN_SPELL, "spell.grave_mark"), do2=(E.ADD_CORRUPTION, "5")),
+                go(t("Ask about the count you broke."), "released", tag="count_released",
+                   when=has_flag("flag.fork.queen_released")),
+                go(t("Ask about the count you kept."), "kept", tag="count_kept",
+                   when=has_flag("flag.fork.queen_kept")),
                 say(t("Refuse. Light the brazier."), "truce_refused", tag="refuse")]),
+            Node("truce_after", t("The chair is as empty as before. <<A truce is only a pause, Seventh,>> says the dry voice. <<You have what I could give. Light the brazier, and let us finish it.>>"), [
+                bye("I will.", tag="light")]),
             Node("truce_taken", t("The cold passes into your hands, patient and exact, and you know how to mark a thing so that it cannot hide from its ending. <<Good,>> she says, and sounds almost grateful. <<That is the whole of what I kept for myself. Now do it properly: light the brazier. A truce is only a pause.>>"), [
                 bye("I will.", tag="light")], on_enter=(E.SET_FLAG, "flag.beat.queen_truce")),
             Node("truce_refused", t("<<Good,>> she says, and sounds almost proud. <<Then do it properly.>>"), [
                 bye("I will.", tag="light")]),
-            Node("after", t("The chair is still empty. The voice is gone from it. What is left is not a voice at all, only the shape of one: the count, carried on without her, one last time, until it reaches the end of the book. Then, far down the processional, the stone rings, and the shape says the thing it was waiting to say to someone who would carry it out. <<I was the Second. I did not fall from the Stair. I was thrown. Five of us were. The sixth climbed on. We heard him from below, a long time of armour on stone, and then nothing, a very long nothing, and that was the sound of the throne asking. Tell whoever asks that the Knight did not fall. He knelt.>>"), [
+            Node("after", t("The chair is still empty. The voice is gone from it. What is left is not a voice at all, only the shape of one: the count, carried on without her, one last time, until it reaches the end of the book. Then, far down the processional, the stone rings, and the shape says the thing it was waiting to say to someone who would carry it out. <<I was the Second. I did not fall from the Stair. I was thrown. Five of us were. The sixth climbed on. We heard him from below, a long time of armour on stone, and then nothing, a very long nothing, and that was the sound of the throne asking. Armour does not stop like that unless the man in it has knelt. Tell whoever asks that the Knight did not fall. He knelt.>>"), [
                 go(t("What was the throne asking?"), "after_throne", tag="throne"),
                 go(t("What happened to your people?"), "after_released", tag="fate_released",
                    when=has_flag("flag.fork.queen_released")),
@@ -262,7 +279,7 @@ LOCALE = [
     ("pale.boss.challenge_locked_count", "The brazier will not take a flame. The count at the foot of the processional has not been answered."),
     # Story cards (PlayCards prefixes) for the count-stone's answer.
     ("pale.card.count_release.1", t("The rings go dark from the outside in. The Queen feels each name leave her hands, and does not call any of them back.")),
-    ("pale.card.count_release.2", t("In Vesperhold a lamplighter lifts his daughter onto his shoulder and notices, for the first time in four hundred years, that she is heavier than she was.")),
+    ("pale.card.count_release.2", t("In Vesperhold a lamplighter lifts his daughter onto his shoulder and notices, for the first time since the signing, that she is heavier than she was.")),
     ("pale.card.count_keep.1", t("The rings brighten. The count rolls on into the dusk as though it had never been asked, and eleven hundred and four people feel the evening settle back over them like a hand.")),
     ("pale.card.count_keep.2", t("In Vesperhold the Steward reads the proclamation a little louder. She does not look up, and she does not stop.")),
     # Mission 22 (quest.main.hidden, legacy.py): text for the appended objective and the new hints.
@@ -274,11 +291,11 @@ LOCALE = [
     ("pale.quest.hidden.hint_aftermath", "The chair stands beside the brazier in the forecourt. It still has something to say."),
     ("pale.quest.hidden.log_aftermath", "The chair kept the Queen's last account: that the Six climbed the Stair, five were thrown down, and the sixth knelt at the top and did not fall."),
     # The Archivist's pale variants (dialogue.sunspire_archivist in legacy.py).
-    ("pale.dlg.archivist.door", t("She has put the book down, and that alone is new. <<It opened in the night. Not the door in the floor: the other one, in the forecourt, that was bare wall for four hundred years. I have listened to it breathe for forty. Last night it breathed out.>> Her hands are not quite steady on the table. <<There is a country on the other side. I have a thousand names for it and none I trust. You carry five embers that all lean the same way. I do not need to tell you which.>>")),
+    ("pale.dlg.archivist.door", t("She has put the book down, and that alone is new. <<It opened in the night. The door in the forecourt, the one that was bare wall for as long as the library has stood. I have listened to it breathe for forty years. Last night it breathed out.>> Her hands are not quite steady on the table. <<There is a country on the other side. I have a thousand names for it and none I trust. The fire you carry leans toward that door. I do not need to tell you why.>>")),
     ("pale.dlg.archivist.c_door_what", "What is on the other side?"),
     ("pale.dlg.archivist.door_what", t("<<The Concord. That is what the oldest of my books call it, when they call it anything: a signed arrangement between a dying world and a woman with a very good pen. Nobody who went in came back to say whether it worked. The books stop at the signing. Whoever kept that secret kept it better than anyone has kept anything.>>")),
     ("pale.dlg.archivist.c_door_why", "Why has it opened now?"),
-    ("pale.dlg.archivist.door_why", t("<<Because three of the fallen are dead, and she is the Second. A seal like that is held up by a set of keys, and you have been taking the keys one by one. You did not know. I did, and I let you. I am sorry for that, and not sorry enough to have stopped you.>>")),
+    ("pale.dlg.archivist.door_why", t("<<Because four of the fallen are dead, and she is the Second. A seal like that is held up by a set of keys, and you have been taking the keys one by one. You did not know. I did, and I let you. I am sorry for that, and not sorry enough to have stopped you.>>")),
     ("pale.dlg.archivist.c_door_go", "I will go and see."),
     ("pale.dlg.archivist.lamp_turned", t("The old lamp on her desk has turned to face the forecourt door on its own. She is watching it the way she watched the book. <<You touched something over there,>> she says. <<At that moment this lamp turned. I have trimmed it for forty years and it has never once moved. Whatever is on the other side knows you are coming. Mind the Steward: she talks, and she means what she says.>>")),
 ] + HE.ROWS

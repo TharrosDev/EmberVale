@@ -21,6 +21,7 @@ TargetId = "enemy.hollow_husk"
 RequiredCount = 5
 Description = "pale.quest.queens_count.obj_husks"
 LocationId = "location.pale.court_approach"
+CompletionFlagId = "flag.beat.husks_down"
 HintKey = "pale.quest.queens_count.hint_husks"
 JournalEntryKey = "pale.quest.queens_count.log_husks"
 
@@ -43,7 +44,7 @@ Objectives = Array[Resource]([SubResource("Obj_0"), SubResource("Obj_1"), SubRes
 XpReward = 1000
 GoldReward = 350
 GoldItemId = "item.currency.gold"
-SequentialObjectives = true
+SequentialObjectives = false
 CompletionFlagId = "flag.pale.court_open"
 AutoStartFlagId = "flag.main.vesperhold_done"
 IsMainQuest = true

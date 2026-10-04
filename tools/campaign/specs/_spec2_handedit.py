@@ -164,6 +164,19 @@ PLANS.append({
 })
 
 # --------------------------------------------------------------------------------------------------
+# The four Act I-II testimonies. An "account" is the fallen Flamebearer's last word: the ember conversation that
+# opens at their defeat, and the vision it plays when it closes. Opening it records the testimony (the OnEnter of
+# its first node), so flag.testimonies_all (the built-in rule) has four writers besides the Queen's parley.
+# --------------------------------------------------------------------------------------------------
+ABSORB_TESTIMONY = {
+    "IronKingAbsorb.tres": "flag.testimony.iron",
+    "StormTyrantAbsorb.tres": "flag.testimony.storm",
+    "BeastLordAbsorb.tres": "flag.testimony.beast",
+    "CrimsonProphetAbsorb.tres": "flag.testimony.prophet",
+}
+
+
+# --------------------------------------------------------------------------------------------------
 # Boss epithets and intro lines (BossResource.EpithetKey / IntroLineKey)
 # --------------------------------------------------------------------------------------------------
 BOSSES = {
@@ -245,6 +258,23 @@ def patch_dialogue(path: Path, plan: dict, write: bool) -> bool:
     return True
 
 
+def patch_onenter(path: Path, node_id: str, flag: str, write: bool) -> bool:
+    """Adds `OnEnterEffect = SetFlag(flag)` after the Choices line of an existing node that has none (the generator's
+    field order, which DialogueContentTests.EveryNodeOffersAWayOut relies on). Idempotent."""
+    text = path.read_text(encoding="utf-8")
+    if f'OnEnterEffectArg = "{flag}"' in text:
+        return False
+    nl = "\r\n" if "\r\n" in text else "\n"
+    body = text.replace("\r\n", "\n")
+    m = re.search(rf'\[sub_resource type="Resource" id="node_{node_id}"\]\n(?:(?!\n\[).)*?\nChoices = [^\n]*\n', body, re.S)
+    if not m or "OnEnterEffect" in m.group(0):
+        raise SystemExit(f"{path.name}: node '{node_id}' not found or already has an OnEnter effect")
+    out = body[:m.end()] + f'OnEnterEffect = {int(E.SET_FLAG)}\nOnEnterEffectArg = "{flag}"\n' + body[m.end():]
+    if write:
+        path.write_text(out.replace("\n", nl), encoding="utf-8", newline="")
+    return True
+
+
 def patch_boss(path: Path, epithet: str, intro: str, write: bool) -> bool:
     text = path.read_text(encoding="utf-8")
     if "EpithetKey" in text:
@@ -262,6 +292,9 @@ def main(check: bool) -> int:
         path = ROOT / "data/dialogue" / plan["file"]
         if patch_dialogue(path, plan, write=not check):
             pending.append(plan["file"])
+    for name, flag in ABSORB_TESTIMONY.items():
+        if patch_onenter(ROOT / "data/dialogue" / name, "offer", flag, write=not check):
+            pending.append(name)
     for name, (epithet, intro) in BOSSES.items():
         if patch_boss(ROOT / "data/bosses" / name, epithet, intro, write=not check):
             pending.append(name)

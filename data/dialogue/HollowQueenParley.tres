@@ -146,6 +146,24 @@ Effect2Arg = "5"
 
 [sub_resource type="Resource" id="ch_truce_1"]
 script = ExtResource("3_choice")
+Text = "pale.dlg.hollow_queen_parley.truce.c_count_released"
+Goto = "released"
+Condition = 5
+ConditionArg = "flag.fork.queen_released"
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_truce_2"]
+script = ExtResource("3_choice")
+Text = "pale.dlg.hollow_queen_parley.truce.c_count_kept"
+Goto = "kept"
+Condition = 5
+ConditionArg = "flag.fork.queen_kept"
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_truce_3"]
+script = ExtResource("3_choice")
 Text = "pale.dlg.hollow_queen_parley.truce.c_refuse"
 Goto = "truce_refused"
 Condition = 0
@@ -157,7 +175,22 @@ EffectArg = ""
 script = ExtResource("2_node")
 Id = "truce"
 Text = "pale.dlg.hollow_queen_parley.truce"
-Choices = Array[Resource]([SubResource("ch_truce_0"), SubResource("ch_truce_1")])
+Choices = Array[Resource]([SubResource("ch_truce_0"), SubResource("ch_truce_1"), SubResource("ch_truce_2"), SubResource("ch_truce_3")])
+
+[sub_resource type="Resource" id="ch_truce_after_0"]
+script = ExtResource("3_choice")
+Text = "pale.dlg.hollow_queen_parley.truce_after.c_light"
+Goto = ""
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="node_truce_after"]
+script = ExtResource("2_node")
+Id = "truce_after"
+Text = "pale.dlg.hollow_queen_parley.truce_after"
+Choices = Array[Resource]([SubResource("ch_truce_after_0")])
 
 [sub_resource type="Resource" id="ch_truce_taken_0"]
 script = ExtResource("3_choice")
@@ -348,17 +381,23 @@ NodeId = "after"
 
 [sub_resource type="Resource" id="start_1"]
 script = ExtResource("4_variant")
+Condition = 5
+ConditionArg = "flag.beat.queen_truce"
+NodeId = "truce_after"
+
+[sub_resource type="Resource" id="start_2"]
+script = ExtResource("4_variant")
 Condition = 7
 ConditionArg = "60"
 NodeId = "truce"
 
-[sub_resource type="Resource" id="start_2"]
+[sub_resource type="Resource" id="start_3"]
 script = ExtResource("4_variant")
 Condition = 5
 ConditionArg = "flag.fork.queen_released"
 NodeId = "released"
 
-[sub_resource type="Resource" id="start_3"]
+[sub_resource type="Resource" id="start_4"]
 script = ExtResource("4_variant")
 Condition = 5
 ConditionArg = "flag.fork.queen_kept"
@@ -369,5 +408,5 @@ script = ExtResource("1_dlg")
 Id = "dialogue.hollow_queen_parley"
 SpeakerName = "pale.dlg.hollow_queen_parley.speaker"
 StartNodeId = "root"
-Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_counting"), SubResource("node_released"), SubResource("node_released_why"), SubResource("node_kept"), SubResource("node_kept_why"), SubResource("node_truce"), SubResource("node_truce_taken"), SubResource("node_truce_refused"), SubResource("node_after"), SubResource("node_after_throne"), SubResource("node_after_released"), SubResource("node_after_kept"), SubResource("node_after_truce")])
-StartVariants = Array[Resource]([SubResource("start_0"), SubResource("start_1"), SubResource("start_2"), SubResource("start_3")])
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_counting"), SubResource("node_released"), SubResource("node_released_why"), SubResource("node_kept"), SubResource("node_kept_why"), SubResource("node_truce"), SubResource("node_truce_after"), SubResource("node_truce_taken"), SubResource("node_truce_refused"), SubResource("node_after"), SubResource("node_after_throne"), SubResource("node_after_released"), SubResource("node_after_kept"), SubResource("node_after_truce")])
+StartVariants = Array[Resource]([SubResource("start_0"), SubResource("start_1"), SubResource("start_2"), SubResource("start_3"), SubResource("start_4")])

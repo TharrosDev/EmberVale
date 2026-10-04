@@ -17,16 +17,28 @@ JournalEntryKey = "quest.main.deep_stacks.log_library"
 
 [sub_resource type="Resource" id="Obj_1"]
 script = ExtResource("2_obj")
+Type = 3
+TargetId = "dialogue.sunspire_archivist"
+RequiredCount = 1
+Description = "quest.main.deep_stacks.obj_half"
+LocationId = "location.sunspire.library"
+CompletionFlagId = "flag.beat.stacks_half_given"
+HintKey = "quest.main.deep_stacks.hint_half"
+JournalEntryKey = "quest.main.deep_stacks.log_half"
+
+[sub_resource type="Resource" id="Obj_2"]
+script = ExtResource("2_obj")
 Type = 6
 TargetId = "interact.sunspire.stacks_door"
 RequiredCount = 1
 Description = "quest.main.deep_stacks.obj_door"
 LocationId = "location.sunspire.library"
+RequiredFlagId = "flag.beat.stacks_half_given"
 CompletionFlagId = "flag.beat.stacks_open"
 HintKey = "quest.main.deep_stacks.hint_door"
 JournalEntryKey = "quest.main.deep_stacks.log_door"
 
-[sub_resource type="Resource" id="Obj_2"]
+[sub_resource type="Resource" id="Obj_3"]
 script = ExtResource("2_obj")
 Type = 0
 TargetId = "enemy.ward_golem"
@@ -38,7 +50,7 @@ CompletionFlagId = "flag.beat.golems_down"
 HintKey = "quest.main.deep_stacks.hint_golems"
 JournalEntryKey = "quest.main.deep_stacks.log_golems"
 
-[sub_resource type="Resource" id="Obj_3"]
+[sub_resource type="Resource" id="Obj_4"]
 script = ExtResource("2_obj")
 Type = 6
 TargetId = "interact.sunspire.seal_plinth_a"
@@ -50,7 +62,7 @@ CompletionFlagId = "flag.beat.plinth_a"
 HintKey = "quest.main.deep_stacks.hint_plinth_a"
 JournalEntryKey = "quest.main.deep_stacks.log_plinth_a"
 
-[sub_resource type="Resource" id="Obj_4"]
+[sub_resource type="Resource" id="Obj_5"]
 script = ExtResource("2_obj")
 Type = 6
 TargetId = "interact.sunspire.seal_plinth_b"
@@ -62,7 +74,7 @@ CompletionFlagId = "flag.beat.plinth_b"
 HintKey = "quest.main.deep_stacks.hint_plinth_b"
 JournalEntryKey = "quest.main.deep_stacks.log_plinth_b"
 
-[sub_resource type="Resource" id="Obj_5"]
+[sub_resource type="Resource" id="Obj_6"]
 script = ExtResource("2_obj")
 Type = 6
 TargetId = "interact.sunspire.seal_plinth_c"
@@ -74,7 +86,7 @@ CompletionFlagId = "flag.beat.plinth_c"
 HintKey = "quest.main.deep_stacks.hint_plinth_c"
 JournalEntryKey = "quest.main.deep_stacks.log_plinth_c"
 
-[sub_resource type="Resource" id="Obj_6"]
+[sub_resource type="Resource" id="Obj_7"]
 script = ExtResource("2_obj")
 Type = 5
 TargetId = "location.sunspire.deep_stacks"
@@ -85,7 +97,7 @@ CompletionFlagId = "flag.beat.library_defended"
 HintKey = "quest.main.deep_stacks.hint_hold"
 JournalEntryKey = "quest.main.deep_stacks.log_hold"
 
-[sub_resource type="Resource" id="Obj_7"]
+[sub_resource type="Resource" id="Obj_8"]
 script = ExtResource("2_obj")
 Type = 3
 TargetId = "dialogue.rival_library"
@@ -93,13 +105,14 @@ RequiredCount = 1
 Description = "quest.main.deep_stacks.obj_rival"
 LocationId = "location.sunspire.deep_stacks"
 RequiredFlagId = "flag.beat.library_defended"
+CompletionFlagId = "flag.beat.rival_parley_done"
 HintKey = "quest.main.deep_stacks.hint_rival"
 JournalEntryKey = "quest.main.deep_stacks.log_rival"
 
-[sub_resource type="Resource" id="Obj_8"]
+[sub_resource type="Resource" id="Obj_9"]
 script = ExtResource("2_obj")
-Type = 6
-TargetId = "interact.sunspire.sundering_codex"
+Type = 8
+TargetId = "flag.beat.codex_cards_seen"
 RequiredCount = 1
 Description = "quest.main.deep_stacks.obj_codex"
 LocationId = "location.sunspire.deep_stacks"
@@ -118,7 +131,7 @@ script = ExtResource("1_quest")
 Id = "quest.main.deep_stacks"
 Title = "quest.main.deep_stacks.title"
 Summary = "quest.main.deep_stacks.summary"
-Objectives = Array[Resource]([SubResource("Obj_0"), SubResource("Obj_1"), SubResource("Obj_2"), SubResource("Obj_3"), SubResource("Obj_4"), SubResource("Obj_5"), SubResource("Obj_6"), SubResource("Obj_7"), SubResource("Obj_8")])
+Objectives = Array[Resource]([SubResource("Obj_0"), SubResource("Obj_1"), SubResource("Obj_2"), SubResource("Obj_3"), SubResource("Obj_4"), SubResource("Obj_5"), SubResource("Obj_6"), SubResource("Obj_7"), SubResource("Obj_8"), SubResource("Obj_9")])
 XpReward = 1300
 GoldReward = 450
 GoldItemId = "item.currency.gold"
