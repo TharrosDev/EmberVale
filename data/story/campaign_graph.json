@@ -20713,7 +20713,8 @@
    "readers": [],
    "code": false,
    "externalRefs": [
-    "data/story/rules/spec2.json"
+    "data/story/rules/spec2.json",
+    "scenes/regions/celestial/godfall.tscn"
    ]
   },
   "flag.beat.anchor_b": {
@@ -20727,7 +20728,8 @@
    "readers": [],
    "code": false,
    "externalRefs": [
-    "data/story/rules/spec2.json"
+    "data/story/rules/spec2.json",
+    "scenes/regions/celestial/godfall.tscn"
    ]
   },
   "flag.beat.anchor_c": {
@@ -20741,7 +20743,8 @@
    "readers": [],
    "code": false,
    "externalRefs": [
-    "data/story/rules/spec2.json"
+    "data/story/rules/spec2.json",
+    "scenes/regions/celestial/godfall.tscn"
    ]
   },
   "flag.beat.anchors_lit": {
@@ -20755,7 +20758,8 @@
    ],
    "code": true,
    "externalRefs": [
-    "data/story/rules/spec2.json"
+    "data/story/rules/spec2.json",
+    "scenes/regions/celestial/godfall.tscn"
    ]
   },
   "flag.beat.arcs_complete": {
@@ -21088,7 +21092,8 @@
    ],
    "code": false,
    "externalRefs": [
-    "data/story/rules/spec2.json"
+    "data/story/rules/spec2.json",
+    "scenes/regions/celestial/fallen_choir.tscn"
    ]
   },
   "flag.beat.choir_passed": {
@@ -21131,7 +21136,9 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "scenes/regions/celestial/fallen_choir.tscn"
+   ]
   },
   "flag.beat.choir_silenced": {
    "writers": [
@@ -21144,7 +21151,8 @@
    "readers": [],
    "code": false,
    "externalRefs": [
-    "data/story/rules/spec2.json"
+    "data/story/rules/spec2.json",
+    "scenes/regions/celestial/fallen_choir.tscn"
    ]
   },
   "flag.beat.codex_cards_seen": {
@@ -21344,7 +21352,9 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "scenes/regions/celestial/knight_gate.tscn"
+   ]
   },
   "flag.beat.gauges_read": {
    "writers": [
@@ -21683,7 +21693,9 @@
    ],
    "readers": [],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "scenes/regions/celestial/landing.tscn"
+   ]
   },
   "flag.beat.landing_held": {
    "writers": [
@@ -21695,7 +21707,9 @@
    ],
    "readers": [],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "scenes/regions/celestial/landing.tscn"
+   ]
   },
   "flag.beat.library_defended": {
    "writers": [
@@ -22064,7 +22078,9 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "scenes/regions/celestial/sundered_stair.tscn"
+   ]
   },
   "flag.beat.signal_brazier_seen": {
    "writers": [
@@ -22179,7 +22195,8 @@
    ],
    "code": false,
    "externalRefs": [
-    "data/story/reactions/spec2.json"
+    "data/story/reactions/spec2.json",
+    "scenes/regions/celestial/sundered_stair.tscn"
    ]
   },
   "flag.beat.stair_held": {
@@ -22198,7 +22215,9 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "scenes/regions/celestial/sundered_stair.tscn"
+   ]
   },
   "flag.beat.stair_reached": {
    "writers": [
@@ -22234,7 +22253,8 @@
    ],
    "code": true,
    "externalRefs": [
-    "data/story/rules/spec2.json"
+    "data/story/rules/spec2.json",
+    "scenes/regions/celestial/sundered_stair.tscn"
    ]
   },
   "flag.beat.stormcrown_held": {
@@ -23286,7 +23306,8 @@
    "code": true,
    "externalRefs": [
     "data/story/reactions/spec1.json",
-    "data/story/rules/spec1.json"
+    "data/story/rules/spec1.json",
+    "scenes/regions/celestial/landing.tscn"
    ]
   },
   "flag.fork.dray_spared": {
@@ -23322,7 +23343,8 @@
    "code": true,
    "externalRefs": [
     "data/story/reactions/spec1.json",
-    "data/story/rules/spec1.json"
+    "data/story/rules/spec1.json",
+    "scenes/regions/celestial/landing.tscn"
    ]
   },
   "flag.fork.flock_exposed": {
@@ -23353,7 +23375,8 @@
    "code": true,
    "externalRefs": [
     "data/story/reactions/spec1.json",
-    "data/story/rules/spec1.json"
+    "data/story/rules/spec1.json",
+    "scenes/regions/celestial/landing.tscn"
    ]
   },
   "flag.fork.flock_kin": {
@@ -23384,7 +23407,8 @@
    "code": true,
    "externalRefs": [
     "data/story/reactions/spec1.json",
-    "data/story/rules/spec1.json"
+    "data/story/rules/spec1.json",
+    "scenes/regions/celestial/landing.tscn"
    ]
   },
   "flag.fork.flock_turned": {
@@ -23419,7 +23443,8 @@
    ],
    "code": true,
    "externalRefs": [
-    "data/story/rules/spec1.json"
+    "data/story/rules/spec1.json",
+    "scenes/regions/celestial/landing.tscn"
    ]
   },
   "flag.fork.herd_calmed": {
@@ -23450,7 +23475,8 @@
    "code": true,
    "externalRefs": [
     "data/story/reactions/spec1.json",
-    "data/story/rules/spec1.json"
+    "data/story/rules/spec1.json",
+    "scenes/regions/celestial/landing.tscn"
    ]
   },
   "flag.fork.herd_slain": {
@@ -23486,7 +23512,8 @@
    "code": true,
    "externalRefs": [
     "data/story/reactions/spec1.json",
-    "data/story/rules/spec1.json"
+    "data/story/rules/spec1.json",
+    "scenes/regions/celestial/landing.tscn"
    ]
   },
   "flag.fork.queen_kept": {
@@ -23556,7 +23583,8 @@
    ],
    "code": false,
    "externalRefs": [
-    "data/story/reactions/spec2.json"
+    "data/story/reactions/spec2.json",
+    "scenes/regions/celestial/landing.tscn"
    ]
   },
   "flag.fork.queen_released": {
@@ -23626,7 +23654,8 @@
    ],
    "code": false,
    "externalRefs": [
-    "data/story/reactions/spec2.json"
+    "data/story/reactions/spec2.json",
+    "scenes/regions/celestial/landing.tscn"
    ]
   },
   "flag.fork.succession_halvar": {
@@ -23657,7 +23686,8 @@
    "code": true,
    "externalRefs": [
     "data/story/reactions/spec1.json",
-    "data/story/rules/spec1.json"
+    "data/story/rules/spec1.json",
+    "scenes/regions/celestial/landing.tscn"
    ]
   },
   "flag.fork.succession_hjalvar": {
@@ -23687,7 +23717,8 @@
    ],
    "code": true,
    "externalRefs": [
-    "data/story/rules/spec1.json"
+    "data/story/rules/spec1.json",
+    "scenes/regions/celestial/landing.tscn"
    ]
   },
   "flag.frostfang.passage_open": {
@@ -24664,7 +24695,9 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "scenes/regions/celestial/knight_gate.tscn"
+   ]
   },
   "flag.main.sundering_pages_done": {
    "writers": [
@@ -24753,7 +24786,9 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "scenes/regions/pale_concord/processional.tscn"
+   ]
   },
   "flag.morthul_defeated": {
    "writers": [],
@@ -24843,7 +24878,9 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "scenes/regions/pale_concord/palace.tscn"
+   ]
   },
   "flag.pale_concord_revealed": {
    "writers": [],
@@ -24862,6 +24899,7 @@
    "code": true,
    "externalRefs": [
     "data/map_locations/PaleCity.tres",
+    "data/map_locations/PaleCourtApproach.tres",
     "data/map_locations/PaleLanding.tres",
     "data/map_locations/PalePalace.tres",
     "data/regions/PaleConcord.tres",
@@ -25619,7 +25657,8 @@
    ],
    "externalRefs": [
     "data/story/reactions/spec1.json",
-    "data/story/rules/spec1.json"
+    "data/story/rules/spec1.json",
+    "scenes/regions/celestial/landing.tscn"
    ]
   },
   {
@@ -25660,7 +25699,8 @@
    ],
    "externalRefs": [
     "data/story/reactions/spec1.json",
-    "data/story/rules/spec1.json"
+    "data/story/rules/spec1.json",
+    "scenes/regions/celestial/landing.tscn"
    ]
   },
   {
@@ -25696,7 +25736,8 @@
    ],
    "externalRefs": [
     "data/story/reactions/spec1.json",
-    "data/story/rules/spec1.json"
+    "data/story/rules/spec1.json",
+    "scenes/regions/celestial/landing.tscn"
    ]
   },
   {
@@ -25732,7 +25773,8 @@
    ],
    "externalRefs": [
     "data/story/reactions/spec1.json",
-    "data/story/rules/spec1.json"
+    "data/story/rules/spec1.json",
+    "scenes/regions/celestial/landing.tscn"
    ]
   },
   {
@@ -25772,7 +25814,8 @@
     }
    ],
    "externalRefs": [
-    "data/story/rules/spec1.json"
+    "data/story/rules/spec1.json",
+    "scenes/regions/celestial/landing.tscn"
    ]
   },
   {
@@ -25808,7 +25851,8 @@
    ],
    "externalRefs": [
     "data/story/reactions/spec1.json",
-    "data/story/rules/spec1.json"
+    "data/story/rules/spec1.json",
+    "scenes/regions/celestial/landing.tscn"
    ]
   },
   {
@@ -25849,7 +25893,8 @@
    ],
    "externalRefs": [
     "data/story/reactions/spec1.json",
-    "data/story/rules/spec1.json"
+    "data/story/rules/spec1.json",
+    "scenes/regions/celestial/landing.tscn"
    ]
   },
   {
@@ -25919,7 +25964,8 @@
     }
    ],
    "externalRefs": [
-    "data/story/reactions/spec2.json"
+    "data/story/reactions/spec2.json",
+    "scenes/regions/celestial/landing.tscn"
    ]
   },
   {
@@ -25989,7 +26035,8 @@
     }
    ],
    "externalRefs": [
-    "data/story/reactions/spec2.json"
+    "data/story/reactions/spec2.json",
+    "scenes/regions/celestial/landing.tscn"
    ]
   },
   {
@@ -26025,7 +26072,8 @@
    ],
    "externalRefs": [
     "data/story/reactions/spec1.json",
-    "data/story/rules/spec1.json"
+    "data/story/rules/spec1.json",
+    "scenes/regions/celestial/landing.tscn"
    ]
   },
   {
@@ -26060,7 +26108,8 @@
     }
    ],
    "externalRefs": [
-    "data/story/rules/spec1.json"
+    "data/story/rules/spec1.json",
+    "scenes/regions/celestial/landing.tscn"
    ]
   }
  ]

@@ -1666,6 +1666,14 @@ location.celestial.knight_gate.name,The Knight's Gate
 location.celestial.knight_gate.desc,"The last gate before the throne, at the far end of the only bridge over the void."
 location.celestial.ash_throne.name,The Ash Throne
 location.celestial.ash_throne.desc,"The highest dais in the ruined heaven. Someone must always sit upon it."
+location.pale.court_approach.name,The Court Approach
+location.pale.court_approach.desc,"The last stretch of the processional way, where it ends at the count-stone below the palace terrace."
+location.celestial.fallen_choir.name,The Fallen Choir
+location.celestial.fallen_choir.desc,"A ruined nave on the western terraces, where the choir that sang the gods to their war still answers."
+location.celestial.godfall.name,Godfall
+location.celestial.godfall.desc,"The broken ground where a god's hall came down, with three split anchors up the flank."
+location.celestial.sundered_stair.name,The Sundered Stair
+location.celestial.sundered_stair.desc,"A stair to nowhere on the east flank of the gate terrace, worked by two black iron winches."
 # --- END generated map location names ---
 # --- Phase 41D: the branching barrels errand (quest.hollowreach.barrels) ---
 quest.hollowreach.barrels.title,"What the Post Took"
@@ -4195,6 +4203,19 @@ boss.morthul.intro,"Sit, little ember. Everyone does, in the end."
 # --- BEGIN campaign:worldb ---
 # --- END campaign:worldb ---
 # --- BEGIN campaign:worldc ---
+pale.prompt.quay_lamp,"Touch the quay lamp"
+pale.prompt.registry,"Read the registry"
+pale.prompt.signing_lamp,"Look into the signing lamp"
+pale.prompt.cradle_lamp,"Look into the cradle lamp"
+pale.prompt.queens_lamp,"Look into the white lamp"
+pale.prompt.count_stone,"Lay a hand on the count-stone"
+pale.prompt.queen_chair,"Address the empty chair"
+celestial.prompt.beacon,"Kindle the cold beacon"
+celestial.prompt.graves,"Read the five cairns"
+celestial.prompt.anchor,"Lay a hand on the anchor"
+celestial.prompt.winch,"Take hold of the winch"
+celestial.prompt.stele,"Read the stele"
+celestial.prompt.choir,"Listen to the echo"
 # --- END campaign:worldc ---
 # --- BEGIN campaign:ui ---
 questui.journal_title,QUEST JOURNAL
