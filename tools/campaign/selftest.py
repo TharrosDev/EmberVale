@@ -32,6 +32,13 @@ def read(rel: str) -> str:
         return f.read()
 
 
+def pristine(name: str) -> str:
+    """A hand-authored quest or dialogue as it was before the campaign touched it (tools/campaign/fixtures/<name>.orig). The
+    tests that exercise the patcher need a file no spec has touched yet."""
+    with open(ROOT / "tools" / "campaign" / "fixtures" / f"{name}.orig", encoding="utf-8", newline="") as f:
+        return f.read()
+
+
 # --- model and lowering ---------------------------------------------------------------------------
 
 def sample_quest() -> Quest:
@@ -149,7 +156,7 @@ def dialogue_emit_and_dialoguecontenttests_shape():
 
 @check
 def legacy_round_trip_matches_disk():
-    r = gen_campaign.compute(ROOT, ["legacy"])
+    r = gen_campaign.compute(ROOT)   # every spec: the quests the other specs add read flags only they write
     assert r.errors == [], r.errors
     for rel in ("data/quests/MainGathering.tres", "data/quests/MainHidden.tres", "data/quests/MainTruth.tres",
                 "data/quests/MainCelestial.tres", "data/dialogue/SunspireArchivist.tres", "data/dialogue/AshThrone.tres"):
@@ -202,7 +209,7 @@ def locale_audit_rules():
 
 @check
 def patcher_on_a_copy():
-    original = read("data/quests/WarbandHeart.tres")
+    original = pristine("WarbandHeart")
     patch = Patch("quest.warband.heart",
                   append=[interact("interact.arena_gate", K("quest.warband.heart.obj_arena"), tag="arena",
                                    location="location.frostfang.arena"),
@@ -331,8 +338,29 @@ def end_to_end_in_a_scratch_root():
 
     tmp = Path(tempfile.mkdtemp(prefix="campaign_selftest_"))
     try:
-        for sub in ("quests", "dialogue", "bosses", "locale"):
+        # A scratch tree holding only what the legacy spec owns: the campaign specs' quests, dialogues, patches and
+        # locale blocks are left out (and the warband quests are restored to their pristine fixtures), so the checks
+        # below keep meaning "new content on top of the legacy four" however much real content the tree gains.
+        for sub in ("bosses", "locale"):
             shutil.copytree(ROOT / "data" / sub, tmp / "data" / sub)
+        (tmp / "data" / "quests").mkdir(parents=True)
+        for n in ("MainGathering", "MainHidden", "MainTruth", "MainCelestial"):
+            shutil.copy(ROOT / "data" / "quests" / f"{n}.tres", tmp / "data" / "quests" / f"{n}.tres")
+        (tmp / "data" / "dialogue").mkdir(parents=True)
+        for path in (ROOT / "data" / "dialogue").glob("*.tres"):
+            text = read_path(path)
+            # legacy output, and the hand-authored files no campaign spec has extended (an extension adds StartVariants)
+            if path.stem in ("SunspireArchivist", "AshThrone") or (not emit.is_generated(text) and "StartVariants" not in text):
+                shutil.copy(path, tmp / "data" / "dialogue" / path.name)
+        for n in ("Elder", "Smith", "Apothecary"):   # the givers of the warband quests, before the campaign extended them
+            gen_campaign._write(tmp / "data" / "dialogue" / f"{n}.tres", pristine(n))
+        for n in ("WarbandBounty", "WarbandForge", "WarbandRemedies", "WarbandHeart"):
+            gen_campaign._write(tmp / "data" / "quests" / f"{n}.tres", pristine(n))
+        csv_path = tmp / gen_campaign.LOCALE
+        csv_text = read_path(csv_path)
+        for tag in re.findall(r"^# --- BEGIN campaign:(\w+) ---", csv_text, re.M):
+            csv_text = locale.rewrite_block(csv_text, tag, [])
+        gen_campaign._write(csv_path, csv_text)
         (tmp / "data" / "story").mkdir()
 
         def modules(broken: bool):
@@ -343,8 +371,9 @@ def end_to_end_in_a_scratch_root():
                     dialogues[0].nodes[0].choices[2].effect2 = (E.NONE, "")
                 return items, dialogues, rows, tag
 
-            ex = types.SimpleNamespace(__name__="spec_example", build=ex_build,
-                                       CODE_FLAGS={"flag.main.opening_done": "story rule"})
+            ex = types.SimpleNamespace(
+                __name__="spec_example", build=ex_build, CODE_FLAGS={"flag.main.opening_done": "story rule"},
+                TERMINAL_FLAGS={"flag.frostfang.passage_open": "its reader (quest.main.iron_king) is not in the scratch tree"})
 
             def pale_build():
                 q = Quest(id="quest.main.pale_door_test", title="The Door", summary="Behind it waits the Pale Concord.",
@@ -391,6 +420,7 @@ def end_to_end_in_a_scratch_root():
         heart = read_path(tmp / "data/quests/WarbandHeart.tres")
         assert 'StartFlagId = "flag.main.heart_started"' in heart and 'Description = "quest.warband.heart.obj"' in heart
         assert read("data/quests/WarbandHeart.tres").count("heart_started") == 0, "real tree untouched"
+        assert pristine("WarbandHeart").count("heart_started") == 0, "fixture untouched"
         g = __import__("json").loads(read_path(tmp / gen_campaign.GRAPH))
         ids = {q["id"]: q for q in g["quests"]}
         assert ids["quest.main.example_square"]["source"] == "generated" and ids["quest.warband.heart"]["source"] == "patched"

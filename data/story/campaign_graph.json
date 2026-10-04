@@ -18788,6 +18788,7 @@
    "externalRefs": [
     "data/bosses/Morthul.tres",
     "scenes/regions/celestial/ash_throne.tscn",
+    "src/Bootstrap/HeadlessStory.cs",
     "src/Narrative/CampaignCatchUp.cs"
    ]
   },
