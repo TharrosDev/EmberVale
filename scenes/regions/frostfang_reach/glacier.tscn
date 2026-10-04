@@ -25,6 +25,10 @@
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_waystone.glb" id="wr_waystone"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_rock_cluster.glb" id="dx_rock_cluster"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_tent.glb" id="dx_tent"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_brazier.glb" id="wa_prp_brazier"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueComponent.cs" id="wa_DialogueComponent"]
+[ext_resource type="Script" path="res://src/World/FlagVisibilityComponent.cs" id="wa_FlagVisibilityComponent"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_ice_chunk.glb" id="wa_prp_ice_chunk"]
 
 ; ⚠️ THE NAV VOXEL GRID COARSENED WITH THE WORLD (the 2026-08-29 geography overhaul). Cells
 ; went from 52 m squares on a flat slab to 90-200 m of real terrain, and a 0.25 m voxel over
@@ -78,6 +82,51 @@ height = 1.6
 [sub_resource type="CylinderShape3D" id="Shape_pine"]
 radius = 0.4
 height = 5.0
+
+[sub_resource type="BoxShape3D" id="wa_box_1p695_1p4161_1p38"]
+size = Vector3(1.695, 1.4161, 1.38)
+
+[sub_resource type="StandardMaterial3D" id="wa_mat_leather"]
+albedo_color = Color(0.2, 0.1, 0.05, 1)
+metallic = 0
+roughness = 0.85
+
+[sub_resource type="BoxMesh" id="wa_bm_mitten"]
+material = SubResource("wa_mat_leather")
+size = Vector3(0.13, 0.07, 0.2)
+
+[sub_resource type="StandardMaterial3D" id="wa_mat_flame"]
+albedo_color = Color(1, 0.55, 0.15, 1)
+metallic = 0
+roughness = 0.5
+emission_enabled = true
+emission = Color(1, 0.5, 0.12, 1)
+emission_energy_multiplier = 3
+
+[sub_resource type="SphereMesh" id="wa_sm_flame_flame"]
+material = SubResource("wa_mat_flame")
+radius = 0.13
+height = 0.26
+radial_segments = 10
+rings = 6
+
+[sub_resource type="BoxShape3D" id="wa_box_2_1p6_1p8"]
+size = Vector3(2, 1.6, 1.8)
+
+[sub_resource type="StandardMaterial3D" id="wa_mat_frostflame"]
+albedo_color = Color(0.7, 0.85, 1, 1)
+metallic = 0
+roughness = 0.5
+emission_enabled = true
+emission = Color(0.55, 0.78, 1, 1)
+emission_energy_multiplier = 3
+
+[sub_resource type="SphereMesh" id="wa_sm_flame_frostflame"]
+material = SubResource("wa_mat_frostflame")
+radius = 0.13
+height = 0.26
+radial_segments = 10
+rings = 6
 
 [node name="GlacierCell" type="Node3D"]
 metadata/content_offset = Vector2(-20, -15)
@@ -205,3 +254,95 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 0, 41)
 [node name="Shape" type="CollisionShape3D" parent="Nav/Dx_GlacierOldCampRing/Collider"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
 shape = SubResource("DxShape_rock_cluster")
+
+; WR-spec1-06 (campaign): the middle scout cairn on the saddle yard, clear of the east arm's shoulder.
+[node name="ScoutCairnMid" type="Node3D" parent="."]
+transform = Transform3D(0.9659, 0, -0.2588, 0, 1, 0, 0.2588, 0, 0.9659, -14.5, 0, -21)
+script = ExtResource("wr_entity")
+DisplayName = "The Middle Scout Cairn"
+PersistentId = "frostfang_reach.glacier.scout_cairn_mid"
+
+[node name="Model" parent="ScoutCairnMid" instance=ExtResource("3_rock")]
+transform = Transform3D(0.75, 0, 0, 0, 0.8625, 0, 0, 0, 0.75, 0, 0, 0)
+
+[node name="Collider" type="StaticBody3D" parent="ScoutCairnMid"]
+
+[node name="Shape" type="CollisionShape3D" parent="ScoutCairnMid/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7081, 0)
+shape = SubResource("wa_box_1p695_1p4161_1p38")
+
+[node name="LanternBowl" parent="ScoutCairnMid" instance=ExtResource("wa_prp_brazier")]
+transform = Transform3D(0.55, 0, 0, 0, 0.55, 0, 0, 0, 0.55, 0, 1.085, 0)
+
+[node name="Mitten" type="MeshInstance3D" parent="ScoutCairnMid"]
+transform = Transform3D(0.9063, 0, 0.4226, 0, 1, 0, -0.4226, 0, 0.9063, 0.16, 1.481, 0.1)
+mesh = SubResource("wa_bm_mitten")
+
+[node name="Dialogue" type="Node" parent="ScoutCairnMid"]
+script = ExtResource("wa_DialogueComponent")
+DialogueId = "dialogue.scout_cairn_mid"
+InteractId = "interact.frostfang.scout_cairn_mid"
+PromptKey = "prompt.worlda.scout_cairn"
+
+[node name="ScoutCairnMidLight" type="Node3D" parent="."]
+transform = Transform3D(0.9659, 0, -0.2588, 0, 1, 0, 0.2588, 0, 0.9659, -14.5, 0, -21)
+script = ExtResource("wr_entity")
+DisplayName = "The Middle Scout Cairn Flame"
+
+[node name="Flame" type="MeshInstance3D" parent="ScoutCairnMidLight"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.581, 0)
+mesh = SubResource("wa_sm_flame_flame")
+
+[node name="Glow" type="OmniLight3D" parent="ScoutCairnMidLight"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.781, 0)
+light_color = Color(1.0, 0.62, 0.3, 1)
+light_energy = 2.2
+omni_range = 9.0
+
+[node name="Visibility" type="Node" parent="ScoutCairnMidLight"]
+script = ExtResource("wa_FlagVisibilityComponent")
+VisibleWhenFlagId = "flag.beat.scout_cairn_mid_seen"
+
+; WR-spec1-07 (campaign): the north scout cairn at the head of the pass, in a block of blue ice beside the road.
+[node name="ScoutCairnNorth" type="Node3D" parent="."]
+transform = Transform3D(0.9848, 0, 0.1736, 0, 1, 0, -0.1736, 0, 0.9848, -15.2, 0, -51.3)
+script = ExtResource("wr_entity")
+DisplayName = "The North Scout Cairn"
+PersistentId = "frostfang_reach.glacier.scout_cairn_north"
+
+[node name="Model" parent="ScoutCairnNorth" instance=ExtResource("wa_prp_ice_chunk")]
+transform = Transform3D(1.6, 0, 0, 0, 1.7, 0, 0, 0, 1.6, 0, 0, 0)
+
+[node name="Collider" type="StaticBody3D" parent="ScoutCairnNorth"]
+
+[node name="Shape" type="CollisionShape3D" parent="ScoutCairnNorth/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
+shape = SubResource("wa_box_2_1p6_1p8")
+
+[node name="LanternBowl" parent="ScoutCairnNorth" instance=ExtResource("wa_prp_brazier")]
+transform = Transform3D(0.55, 0, 0, 0, 0.55, 0, 0, 0, 0.55, 0, 1.25, 0)
+
+[node name="Dialogue" type="Node" parent="ScoutCairnNorth"]
+script = ExtResource("wa_DialogueComponent")
+DialogueId = "dialogue.scout_cairn_north"
+InteractId = "interact.frostfang.scout_cairn_north"
+PromptKey = "prompt.worlda.scout_cairn"
+
+[node name="ScoutCairnNorthLight" type="Node3D" parent="."]
+transform = Transform3D(0.9848, 0, 0.1736, 0, 1, 0, -0.1736, 0, 0.9848, -15.2, 0, -51.3)
+script = ExtResource("wr_entity")
+DisplayName = "The North Scout Cairn Flame"
+
+[node name="Flame" type="MeshInstance3D" parent="ScoutCairnNorthLight"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.746, 0)
+mesh = SubResource("wa_sm_flame_frostflame")
+
+[node name="Glow" type="OmniLight3D" parent="ScoutCairnNorthLight"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.946, 0)
+light_color = Color(0.55, 0.78, 1.0, 1)
+light_energy = 2.2
+omni_range = 9.0
+
+[node name="Visibility" type="Node" parent="ScoutCairnNorthLight"]
+script = ExtResource("wa_FlagVisibilityComponent")
+VisibleWhenFlagId = "flag.beat.scout_cairn_north_seen"

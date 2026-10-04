@@ -27,6 +27,9 @@
 [ext_resource type="PackedScene" path="res://scenes/props/bld_longhouse_stone.tscn" id="60_longhouse_stone"]
 [ext_resource type="PackedScene" path="res://scenes/props/bld_workshop_open.tscn" id="61_workshop_open"]
 [ext_resource type="Script" path="res://src/World/MapLocationComponent.cs" id="maploc_39_5a"]
+[ext_resource type="Script" path="res://src/World/FlagVisibilityComponent.cs" id="wa_FlagVisibilityComponent"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_rock_medium.glb" id="wa_prp_rock_medium"]
+[ext_resource type="Script" path="res://src/Enemies/SetPieceSpawnComponent.cs" id="wa_SetPieceSpawnComponent"]
 
 ; THE CLAN HOLD (the 2026-08-28 layout rebuild) - Frostfang Reach's only settlement.
 ;
@@ -112,6 +115,31 @@ height = 1.6
 [sub_resource type="CylinderShape3D" id="Shape_brazier"]
 radius = 0.5
 height = 1.2
+
+[sub_resource type="BoxShape3D" id="wa_box_1p695_1p4161_1p38"]
+size = Vector3(1.695, 1.4161, 1.38)
+
+[sub_resource type="StandardMaterial3D" id="wa_mat_flame"]
+albedo_color = Color(1, 0.55, 0.15, 1)
+metallic = 0
+roughness = 0.5
+emission_enabled = true
+emission = Color(1, 0.5, 0.12, 1)
+emission_energy_multiplier = 3
+
+[sub_resource type="SphereMesh" id="wa_sm_flame_flame"]
+material = SubResource("wa_mat_flame")
+radius = 0.13
+height = 0.26
+radial_segments = 10
+rings = 6
+
+[sub_resource type="BoxShape3D" id="wa_box_1p3_0p95_1p2"]
+size = Vector3(1.3, 0.95, 1.2)
+
+[sub_resource type="CapsuleShape3D" id="wa_cap_0p4_1p8"]
+radius = 0.4
+height = 1.8
 
 [node name="ClanHoldCell" type="Node3D"]
 metadata/content_offset = Vector2(15, -10)
@@ -621,8 +649,16 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -3.4, 0)
 
 [node name="Model" parent="Exile" instance=ExtResource("23_npc_inn")]
 
-[node name="ExileFire" parent="." instance=ExtResource("24_campfire")]
+[node name="ExileFire" type="Node3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 35, 0, 14)
+script = ExtResource("1_entity")
+DisplayName = "The Exile's Fire"
+
+[node name="Model" parent="ExileFire" instance=ExtResource("24_campfire")]
+
+[node name="LeavesAtStormend" type="Node" parent="ExileFire"]
+script = ExtResource("wa_FlagVisibilityComponent")
+HiddenWhenFlagId = "flag.beat.stormend_halvar"
 
 [node name="ExileFireLight" type="OmniLight3D" parent="ExileFire"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
@@ -644,3 +680,131 @@ LocationId = "location.frostfang.clan_hold"
 [node name="MapPin" type="Node3D" parent="Waystone"]
 script = ExtResource("maploc_39_5a")
 LocationId = "location.frostfang.waystone"
+
+; WR-spec1-05 (campaign): the south scout cairn on the first rise of the north road, outside the ring of braziers.
+[node name="ScoutCairnSouth" type="Node3D" parent="."]
+transform = Transform3D(0.9397, 0, 0.342, 0, 1, 0, -0.342, 0, 0.9397, 27.4, 0, -32.8)
+script = ExtResource("1_entity")
+DisplayName = "The South Scout Cairn"
+PersistentId = "frostfang_reach.clan_hold.scout_cairn_south"
+
+[node name="Model" parent="ScoutCairnSouth" instance=ExtResource("19_rock")]
+transform = Transform3D(0.75, 0, 0, 0, 0.8625, 0, 0, 0, 0.75, 0, 0, 0)
+
+[node name="Collider" type="StaticBody3D" parent="ScoutCairnSouth"]
+
+[node name="Shape" type="CollisionShape3D" parent="ScoutCairnSouth/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7081, 0)
+shape = SubResource("wa_box_1p695_1p4161_1p38")
+
+[node name="LanternBowl" parent="ScoutCairnSouth" instance=ExtResource("17_brazier")]
+transform = Transform3D(0.55, 0, 0, 0, 0.55, 0, 0, 0, 0.55, 0, 1.085, 0)
+
+[node name="Dialogue" type="Node" parent="ScoutCairnSouth"]
+script = ExtResource("5_dialogue")
+DialogueId = "dialogue.scout_cairn_south"
+InteractId = "interact.frostfang.scout_cairn_south"
+PromptKey = "prompt.worlda.scout_cairn"
+
+[node name="ScoutCairnSouthLight" type="Node3D" parent="."]
+transform = Transform3D(0.9397, 0, 0.342, 0, 1, 0, -0.342, 0, 0.9397, 27.4, 0, -32.8)
+script = ExtResource("1_entity")
+DisplayName = "The South Scout Cairn Flame"
+
+[node name="Flame" type="MeshInstance3D" parent="ScoutCairnSouthLight"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.581, 0)
+mesh = SubResource("wa_sm_flame_flame")
+
+[node name="Glow" type="OmniLight3D" parent="ScoutCairnSouthLight"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.781, 0)
+light_color = Color(1.0, 0.62, 0.3, 1)
+light_energy = 2.2
+omni_range = 9.0
+
+[node name="Visibility" type="Node" parent="ScoutCairnSouthLight"]
+script = ExtResource("wa_FlagVisibilityComponent")
+VisibleWhenFlagId = "flag.beat.scout_cairn_south_seen"
+
+; WR-spec1-30 (campaign): the waist-high moot stone inside the ring.
+[node name="MootStone" type="Node3D" parent="."]
+transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, 14, 0, -15)
+script = ExtResource("1_entity")
+DisplayName = "The Moot Stone"
+PersistentId = "frostfang_reach.clan_hold.moot_stone"
+
+[node name="Model" parent="MootStone" instance=ExtResource("wa_prp_rock_medium")]
+transform = Transform3D(0.42, 0, 0, 0, 0.42, 0, 0, 0, 0.42, 0, 0.12, 0)
+
+[node name="Collider" type="StaticBody3D" parent="MootStone"]
+
+[node name="Shape" type="CollisionShape3D" parent="MootStone/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.47, 0)
+shape = SubResource("wa_box_1p3_0p95_1p2")
+
+[node name="Dialogue" type="Node" parent="MootStone"]
+script = ExtResource("5_dialogue")
+DialogueId = "dialogue.frostfang_moot_stone"
+InteractId = "interact.frostfang.moot_stone"
+PromptKey = "prompt.worlda.moot_stone"
+
+; WR-spec1-35 (campaign): Halvar by the moot stone once he has the Stormcrown; his fire and the original go out.
+[node name="HalvarAtStone" type="Node3D" parent="."]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 14, 0, -13.2)
+script = ExtResource("1_entity")
+DisplayName = "Halvar One-Hand"
+PersistentId = "frostfang_reach.clan_hold.halvar_at_stone"
+TemplateId = "npc.clan_exile"
+
+[node name="Animation" type="Node" parent="HalvarAtStone"]
+script = ExtResource("25_charanim")
+BodyMeshPath = "Model"
+
+[node name="EquipmentVisuals" type="Node" parent="HalvarAtStone"]
+script = ExtResource("90_equipment")
+BodyMeshPath = "Model"
+
+[node name="Collider" type="StaticBody3D" parent="HalvarAtStone"]
+
+[node name="Shape" type="CollisionShape3D" parent="HalvarAtStone/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("wa_cap_0p4_1p8")
+
+[node name="Dialogue" type="Node" parent="HalvarAtStone"]
+script = ExtResource("5_dialogue")
+DialogueId = "dialogue.clan_exile"
+
+[node name="Model" parent="HalvarAtStone" instance=ExtResource("23_npc_inn")]
+
+[node name="Visibility" type="Node" parent="HalvarAtStone"]
+script = ExtResource("wa_FlagVisibilityComponent")
+VisibleWhenFlagId = "flag.beat.stormend_halvar"
+
+[node name="LeavesAtStormend" type="Node" parent="Exile"]
+script = ExtResource("wa_FlagVisibilityComponent")
+HiddenWhenFlagId = "flag.beat.stormend_halvar"
+
+; WR-spec1-63 (campaign): the storm-mote raid out of the north gap, closing on the moot ring.
+[node name="HoldRaid" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18, 0, -33)
+script = ExtResource("wa_SetPieceSpawnComponent")
+TriggerFlagId = "flag.beat.cairns_lit"
+TemplateIds = PackedStringArray("enemy.storm_mote")
+CountPerWave = 6
+Waves = 3
+WaveDelaySeconds = 20.0
+ClearedFlagId = "flag.beat.hold_raid_cleared"
+
+[node name="Spawn0" type="Marker3D" parent="HoldRaid"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4, 0, -3)
+
+[node name="Spawn1" type="Marker3D" parent="HoldRaid"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+
+[node name="Spawn2" type="Marker3D" parent="HoldRaid"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, 3)
+
+[node name="Spawn3" type="Marker3D" parent="HoldRaid"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 0, -2)
+
+[node name="Spawn4" type="Marker3D" parent="HoldRaid"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7, 0, 2)
