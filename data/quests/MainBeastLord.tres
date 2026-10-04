@@ -34,7 +34,6 @@ TargetId = "dialogue.ashen_headwoman"
 RequiredCount = 1
 Description = "quest.main.beast_lord.obj_maeve"
 LocationId = "location.ashen.last_hearth"
-RequiredFlagId = "flag.beast_lord_defeated"
 HintKey = "quest.main.beast_lord.hint_maeve"
 JournalEntryKey = "quest.main.beast_lord.log_maeve"
 

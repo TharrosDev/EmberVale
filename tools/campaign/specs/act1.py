@@ -29,7 +29,7 @@ Q01 = Quest(
     title="Smoke over the Square",
     summary="Black smoke stands over the north road and the Elder has stopped calling it a hearth fire. Ring the alarm "
             "bell, hold the square, and learn why a goblin warband is marching in daylight.",
-    detail="Goblins raid at night, in threes, and run when they bleed. This warband walked up the Kingsway at noon in "
+    detail="Goblins raid at night, in threes, and run when they bleed. This warband walked up the Kingsway in daylight, in "
            "step. The Elder wants the old bell by the Waystone rung and the square held until the town has barred its "
            "doors. Whoever is giving the orders has put a warband at the gate, and the town has you and a well.",
     chapter_key=CH1, order=1, region=CROWN, level=1, giver_key=K("dlg.elder.speaker"),
@@ -37,11 +37,11 @@ Q01 = Quest(
     sequential=True, xp=100, gold=30, reward_items=[("item.potion.health", 1)],
     objectives=[
         talk("dialogue.elder", "Hear the Elder out", tag="warn", location="location.ember_crown.town",
-             hint="The Elder stands by the Waystone in the Crown Square.",
+             hint="The Elder keeps to the Crown Square: the well and the Waystone by morning, the forge later. The compass finds him.",
              journal="The Elder pointed north at the smoke and told you to ring the bell."),
         interact("interact.ember_crown.alarm_bell", "Ring the alarm bell by the Waystone", tag="bell",
                  location="location.ember_crown.town", completion_flag="flag.beat.alarm_rung",
-                 hint="The bell hangs from a post beside the Waystone, a few paces from the Elder.",
+                 hint="The bell hangs from a post beside the Waystone, in the middle of the square.",
                  journal="You rang the bell. Shutters banged shut across the square."),
         milestone("flag.beat.carter_helped", "Help the wounded carter indoors", tag="carter", optional=True,
                   location="location.ember_crown.town", req_flag="flag.beat.alarm_rung",
@@ -52,7 +52,7 @@ Q01 = Quest(
                hint="Stay near the well and the Waystone and cut down what reaches you. Holding your ground is what counts.",
                journal="The raiders broke on the stones of the square and ran."),
         talk("dialogue.elder", "Tell the Elder it is over", tag="report", req_flag="flag.beat.square_held",
-             location="location.ember_crown.town", hint="Return to the Elder at the Waystone.",
+             location="location.ember_crown.town", hint="Go back to the Elder in the Crown Square. The compass finds him.",
              journal="The Elder turned a black-iron token over in his fingers and did not like it."),
     ])
 
@@ -62,7 +62,7 @@ Q02 = Quest(
     summary="Twelve years ago Kael Aldemar's sword-brother held the old Ashfall pass so the Emberguard could run. Black "
             "iron on a raider has sent you to look at it. Walk out to the Ashen Breach, see what was left there, and "
             "take it to Kael.",
-    detail="The Emberguard held a cut in the eastern hills until the Breach opened and the ash came down. Kael ran. "
+    detail="The Emberguard held a cut in the eastern hills until the ash came down from the Wilds. Kael ran. "
            "Toren did not. The goblins took everything of his but the name, and somebody has kept his cairn ever since. "
            "The Citadel's scrip is stamped square. Something at that cairn is not.",
     chapter_key=CH1, order=2, region=CROWN, level=1, giver_key=K("companion.kael.name"),
@@ -82,7 +82,7 @@ Q02 = Quest(
                  journal="Black stones, stacked shoulder high, and a name cut under a buckle: TOREN. HE HELD."),
         milestone("flag.beat.black_token_taken", "Take the black-iron token from the cairn", tag="token",
                   location="location.ember_crown.ashen_breach",
-                  hint="It lies on the cap-stone. Pick it up.",
+                  hint="It lies on the cap-stone once you have read the cairn. If the stone is bare, read the cairn again.",
                   journal="You took a round black token with a ring cut into it, broken at the top."),
         talk("dialogue.kael", "Show the token to Kael Aldemar", tag="kael", location="location.ember_crown.town",
              hint="Kael is in the Crown Square, sharpening a blade that does not need it.",
@@ -105,7 +105,7 @@ Q04 = Quest(
         reach("location.crossway.post", "Reach the Wardens' post at the Crossway", tag="post",
               hint="North up the Kingsway from the capital, past the north moor, to the gate with the towers.",
               journal="The Crossway post: two towers, a gate, and a road that everything north has to use."),
-        talk("dialogue.dawnwarden_captain", "Put the banner's stamp to Captain Fenn", tag="fenn",
+        talk("dialogue.dawnwarden_captain", "Show Captain Fenn the quartermaster's stamp", tag="fenn",
              location="location.crossway.watch", completion_flag="flag.beat.fenn_briefed",
              hint="Fenn keeps the gate ledger by the door of the keep.",
              journal="Fenn said he could not cut the seal on the impounded crate himself. He did not say you could not."),
@@ -115,8 +115,7 @@ Q04 = Quest(
                  journal="Forty unfinished spearheads in garrison straw, each stamped twice: the Citadel's square, and a ring with a gap."),
         milestone("flag.beat.armed_by_known", "Find out who signed for the warband's arms", tag="armed",
                   location="location.crossway.watch",
-                  hint="Take the stamps to Fenn. The Iron Syndicate broker at Hollowreach sells that kind of reading "
-                      "for gold, and the carter ledger at the Search Table is there for anyone quick.",
+                  hint="Take the stamps back to Fenn, or buy the reading from the Syndicate broker at Hollowreach, or slip the carter ledger at the Search Table.",
                   journal="The quartermaster's mark is the Marshal's. Now you know whose name is on the arms."),
     ])
 
@@ -128,8 +127,8 @@ Q07 = Quest(
             "whether Orsolo Dray is a traitor or a prisoner.",
     detail="The Citadel has two ways in: the front ramp, which is watched, and a postern in the west wall that a "
            "wounded scout may have mentioned. The brazier at the ramp keeps burning because it is a signal; every pair "
-           "of sentries you cut down is replaced from the garrison hall until its smoke goes out. In the lowest cell "
-           "of that hall sits the man whose name is on the arms, and what you do with him is yours to answer for.",
+           "of sentries you cut down is replaced from the garrison hall until its smoke goes out. In a stockade pen "
+           "in the court sits the man whose name is on the arms, and what you do with him is yours to answer for.",
     chapter_key=CH1, order=7, region=CROWN, level=4, giver_key=K("dlg.dawnwarden_captain.speaker"),
     auto_start="flag.main.remedies_done", completion_flag="flag.main.citadel_approach_done",
     sequential=True, xp=200, gold=80, reward_items=[("item.potion.health", 2)],
@@ -143,7 +142,7 @@ Q07 = Quest(
              journal="The ramp sentries are down. Their smoke still climbs."),
         kill("enemy.soldier", 3, "Cut down the sentries at the postern", tag="postern",
              location="location.ember_crown.iron_citadel", req_flag="flag.beat.postern_known",
-             hint="The scout's drain door lets you in behind the ramp. Only three stand between it and the court.",
+             hint="The scout's tip thins the guard: only three stand between you and the court. Her drain door is in the west wall.",
              journal="You came in by the drain door and the court was half empty."),
         interact("interact.citadel.signal_brazier", "Douse the signal brazier", tag="brazier",
                  location="location.ember_crown.iron_citadel", completion_flag="flag.beat.signal_doused",
@@ -151,8 +150,8 @@ Q07 = Quest(
                  journal="The signal is out. Nothing is coming up the ramp behind you."),
         talk("dialogue.dray", "Find Marshal Orsolo Dray in the garrison hall", tag="dray",
              location="location.ember_crown.iron_citadel",
-             hint="The cell is in the lowest level of the garrison hall, behind the court well.",
-             journal="Dray is chained in the lowest cell. He signed for the arms until the day he stopped."),
+             hint="Dray is held in a wooden stockade pen in the Citadel court, east of the court well.",
+             journal="Dray is chained in a stockade pen in the court. He signed for the arms until the day he stopped."),
         milestone("flag.beat.dray_decided", "Decide what becomes of the Marshal", tag="decide",
                   location="location.ember_crown.iron_citadel",
                   hint="Cut his chains or press him for what he knows. Speak to him again if you walked away.",
@@ -178,12 +177,12 @@ Q09 = Quest(
              hint="Light the challenge brazier at the edge of the sand. In the second phase the garrison comes down to him: use the pillars.",
              journal="The Iron King fell, and his ember lay on the sand like a second sun."),
         milestone("flag.rival.met1", "Speak to the rider in the arena gallery", tag="rival",
-                  location="location.ember_crown.arena", req_flag="flag.iron_king_defeated",
+                  location="location.ember_crown.arena",
                   hint="A rider in black iron sits in the royal box above the sand. Walk up the gallery stair.",
                   journal="A tall rider in black iron watched the whole fight and spoke to you after."),
         talk("dialogue.elder", "Return to the Elder with what you learned", tag="elder",
-             location="location.ember_crown.town", req_flag="flag.rival.met1",
-             hint="The Elder is at the Waystone in the Crown Square.",
+             location="location.ember_crown.town",
+             hint="The Elder is in the Crown Square. He will tell you where the Flamebearers went.",
              journal="The Elder sang a counting rhyme about a stair, five who fell, and one who stayed to kneel."),
     ])
 
@@ -220,7 +219,7 @@ P_REMEDIES = Patch(
 P_HEART = Patch(
     "quest.warband.heart", auto_start="flag.main.citadel_approach_done",
     append=[reach("location.ember_crown.arena", "Follow the warband's road to the Ember Arena", tag="arena",
-                  hint="The arena road leaves the mine road and runs north-east. The black-iron scrip stops at its gate.",
+                  hint="The arena road leaves the mine road and runs north to the arena gate. The black-iron scrip stops there.",
                   journal="The warband's road ends at the arena gate, and the gate is open.")],
     fields={"ChapterKey": CH1, "OrderInAct": 8, "RegionId": CROWN, "RecommendedLevel": 5, "SequentialObjectives": True,
             "GiverNameKey": "dlg.elder.speaker", "DetailKey": "quest.warband.heart.detail"})
@@ -293,7 +292,8 @@ BANNER = Dialogue(
              [go("Put a torch to it.", "burned", tag="burn", do=(E.SET_FLAG, "flag.beat.banner_burned")),
               leave("Leave it. Count the camp first.", tag="bye")]),
         Node("burned", "The hide curls and spits. The Citadel's stamp blackens last. Whoever this camp answers to will "
-                       "know by dusk that someone has been here, and what they looked at.",
+                       "know by dusk that someone has been here, and what they looked at. The cart ruts at the camp's "
+                       "edge all run north, towards the Crossway, where every cart bound for the Citadel passes.",
              [leave("Back to your work.", tag="go")]),
         Node("after", "Ash on the ground and a charred pole. The camp's goblins keep well away from the spot.",
              [leave("Leave it be.", tag="bye")]),
@@ -320,8 +320,9 @@ CARTER_LEDGER = Dialogue(
                  do2=rep("faction.dawnwardens", -8)),
               leave("Put the spur back. Not like this.", tag="bye")]),
         Node("taken", "The sound is smaller than you feared. The page folds into your sleeve, and the quartermaster's "
-                      "signature on it is Orsolo Dray's. The drover wins his argument about the toll, which is the most "
-                      "anyone at the Crossway will notice today.",
+                      "signature on it is Orsolo Dray's. The page also lists a year of Citadel factors carting Crown iron north; "
+                      "Bryn at the Iron Anvil will want to hear about that. The drover wins his argument about the toll, "
+                      "which is the most anyone at the Crossway will notice today.",
              [leave("Walk away at a normal pace.", tag="go")], on_enter=rep("faction.iron_syndicate", 3)),
         Node("after", "The ledger lies open to a page with a ragged edge. The clerk has not noticed yet.",
              [leave("Leave it be.", tag="bye")]),
@@ -353,8 +354,8 @@ DRAY = Dialogue(
     start_variants=[StartVariant(has_flag("flag.fork.dray_spared"), "spared_after"),
                     StartVariant(has_flag("flag.fork.dray_pressed"), "pressed_after")],
     nodes=[
-        Node("root", "A man in a marshal's coat with the rank cords torn off sits chained to a ring in the wall of the "
-                     "garrison hall's lowest cell. His boots are good, and he has not seen a razor in a month. 'You "
+        Node("root", "A man in a marshal's coat with the rank cords torn off sits chained to a post in a wooden stockade pen "
+                     "in the Citadel court, straw under him. His boots are good, and he has not seen a razor in a month. 'You "
                      "came up the ramp alone and the brazier is out. Either you are very good, or someone wants me to "
                      "think so.' He rattles the chain. 'Orsolo Dray. I signed what they put in front of me for eleven "
                      "years, and when they put the spearheads in front of me I stopped, and this is what stopping buys.'",
@@ -392,7 +393,8 @@ DRAY = Dialogue(
         Node("pressed", "You do not cut the chain. You stand in the doorway, close enough that he has to look at what "
                         "burns behind your eyes. You ask for the strongbox key. He says nothing. You ask for the roster, "
                         "and say something else, quietly, and he gives you all of it in the order you asked, and a "
-                        "few things you did not. When he has done he does not look at you. 'The Wardens will come when "
+                        "few things you did not: the postern drain, and the arena's side gate where the captains drink. "
+                        "When he has done he does not look at you. 'The Wardens will come when "
                         "the brazier does not answer. I will tell them I was no use to you.'",
              [go("Take the strongbox key and the Citadel's purse.", "pressed_purse", tag="take",
                  do=give("item.currency.gold", 250))],
@@ -402,22 +404,22 @@ DRAY = Dialogue(
         Node("spared_watch", "You hold the badge where the lamp can find it, and the Marshal reads the sigil twice as if "
                              "it might be a trick. 'The Watch does not take a man who signed for goblin spears.' 'The Watch "
                              "takes a man who stopped signing,' you say, and turn the key on the nail. He does not weep. He "
-                             "stands very straight and says the Watch's oath into the dust of the cell floor, all of it, "
+                             "stands very straight and says the Watch's oath into the straw of the pen, all of it, "
                              "including the part about the weak. Then he walks out of the hall with his chain over one "
                              "shoulder like a stole, and the sentries who never came do not come now.",
              [leave("Go well, Captain.", tag="go")]),
         Node("pressed_syndicate", "You do not touch the chain. You say a number, and then a name, and Dray's face changes "
                                   "because the number is what the Ledger House pays for a marshal's confession and the name "
                                   "is yours. 'You are the Syndicate's now,' he says, with a sort of tired wonder. 'Good. At "
-                                  "least they keep books.' He gives you the roster, the drain door and the strongbox key, in "
-                                  "that order, and does not look up while he does it. The Ledger House will hear before the "
-                                  "Watch does.",
+                                  "least they keep books.' He gives you the roster, the drain door, the strongbox key and the arena's side "
+                                  "gate, in that order, and keeps his eyes on the straw while he does it. The Ledger House "
+                                  "will hear before the Watch does.",
              [go("Take the key and the Citadel's purse.", "pressed_purse", tag="take", do=give("item.currency.gold", 150))],
              on_enter=rep("faction.dawnwardens", -10)),
-        Node("spared_after", "The cell is empty. The chain lies in a pile where it fell, and the ring in the wall "
-                             "has a bright new scar where it was forced.", [leave("Leave.", tag="bye")]),
-        Node("pressed_after", "Dray does not look up. 'Whatever you wanted from me, you have it,' he says to the "
-                              "floor. 'Close the door on your way out.'", [leave("Leave.", tag="bye")]),
+        Node("spared_after", "The pen is empty. The chain lies in a pile where it fell, and the post "
+                             "has a bright new scar where the lock was forced.", [leave("Leave.", tag="bye")]),
+        Node("pressed_after", "Dray studies the straw. 'Whatever you wanted from me, you have it,' he says to the "
+                              "floor. 'Close the gate on your way out.'", [leave("Leave.", tag="bye")]),
     ])
 
 RIVAL_ARENA = Dialogue(
@@ -471,9 +473,10 @@ DIALOGUES = [BELL, CARTER, TOREN_CAIRN, BLACK_TOKEN, BANNER, IMPOUND_CRATE, CART
 
 LOCALE = [
     # ChapterKey is an identifier. The generator treats any key-shaped quest field as a locale key, so the identifier
-    # itself carries a short row too; the banner reads chapter.<key>.title / .subtitle.
-    ("ch.1", "Act I: Embers at the Crown"),
-    ("chapter.ch.1.title", "Act I: Embers at the Crown"),
+    # itself carries a short row too; the banner reads chapter.<key>.title / .subtitle. The titles carry no "Act N"
+    # prefix: the banner prints its own act line from the key, and the tracker shows the title above the quest name.
+    ("ch.1", "Embers at the Crown"),
+    ("chapter.ch.1.title", "Embers at the Crown"),
     ("chapter.ch.1.subtitle", "Smoke on the north road, a name in black iron, and a king who will not be reasoned with."),
     ("quest.warband.bounty.detail",
      "Goblins have always raided the roads out of the Ember Crown, but never in step and never at noon. The guild pays "

@@ -138,11 +138,22 @@ ConditionArg = ""
 Effect = 0
 EffectArg = ""
 
+[sub_resource type="Resource" id="ch_root_restart_fence"]
+script = ExtResource("3_choice")
+Text = "dlg.ashen_headwoman.root.c_restart_fence"
+Goto = ""
+Condition = 1
+ConditionArg = "quest.main.last_hearth"
+Effect = 1
+EffectArg = "quest.main.last_hearth"
+Condition2 = 5
+Condition2Arg = "flag.main.iron_king_done"
+
 [sub_resource type="Resource" id="node_root"]
 script = ExtResource("2_node")
 Id = "root"
 Text = "dlg.ashen_headwoman.root"
-Choices = Array[Resource]([SubResource("ch_ending_dawnfire"), SubResource("ch_ending_embers"), SubResource("ch_place"), SubResource("ch_east"), SubResource("ch_after"), SubResource("ch_root_cq_herd_slain_note"), SubResource("ch_root_cq_herd_calmed_note"), SubResource("ch_bye")])
+Choices = Array[Resource]([SubResource("ch_ending_dawnfire"), SubResource("ch_ending_embers"), SubResource("ch_place"), SubResource("ch_east"), SubResource("ch_after"), SubResource("ch_root_cq_herd_slain_note"), SubResource("ch_root_cq_herd_calmed_note"), SubResource("ch_root_restart_fence"), SubResource("ch_bye")])
 
 [sub_resource type="Resource" id="node_place"]
 script = ExtResource("2_node")

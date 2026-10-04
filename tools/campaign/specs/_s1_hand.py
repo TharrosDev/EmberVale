@@ -60,29 +60,38 @@ ELDER = Extension(
         Node("cq_sq_after",
              "The Elder sits on the well's edge with a disc of black iron in his hand. 'It was around a goblin's neck. "
              "Goblins do not stamp iron. This is Citadel scrip, black iron, the kind the Iron King's marshals pay in, and it "
-             "was paying for that warband.' He closes his fist on it. 'Someone on the spur above this square is arming the "
-             "roads against us. I cannot prove it and I cannot stop it. Kael Aldemar can tell you what the last warband "
-             "cost him. He is the one in the square with a sword and nothing to say. Ask him about the Ashfall pass, and "
-             "then go and look at it. There may be more black iron out there than the Citadel's.'",
+             "was paying for that warband.' He closes his fist on it. 'The old rhymes have a verse about black iron on a "
+             "stair. I took it for a children's song. Someone on the spur above this square is arming the roads against us, "
+             "and I cannot prove it and I cannot stop it. Kael Aldemar can tell you what the last warband cost him: his "
+             "sword-brother, in the old Ashfall pass, twelve years ago. Walk out to the Ashen Breach, east past the mine "
+             "road, and look at what was left in the cut. There may be more black iron out there than the Citadel's. Then "
+             "take it to Kael. He is the one in the square with a sword and nothing to say.'",
              [go("Something else.", ROOT, tag="else"), leave("I will find Kael.", tag="go")]),
         Node("cq_ik_after",
              "The Elder is on the well's edge as if he never left it, but the square behind him is full of people carrying "
              "things home. 'It is done, then.' He listens while you tell it, and when you reach the rider in the gallery he "
-             "stops you with a raised hand. 'My grandmother's grandmother sang a counting rhyme at the washing, and nobody "
-             "remembers who taught her. Six went up the Stair. Five fell down it. One stayed to kneel. I took it for a "
-             "children's song.' He turns the token he has been holding over once more. 'Six climbed, so six were given the "
-             "fire. The Iron King was the first of the five who fell, and you carry a piece of him now. The Storm Tyrant "
-             "sits above the Frostfang clans. The Beast Lord holds a plateau beyond the Breach. The Crimson Prophet "
-             "preaches in the Sunspire, where the old library stands. The song never agrees on the fifth.' He stands, "
-             "slowly. 'At the top of the Stair, the rhyme says, there is a seat, and whoever takes it ends the dying or ends "
-             "everything else. The ones who kept the records will know which. Do not go to any of the three alone, ember "
-             "or no ember.'",
+             "stops you with a raised hand. 'I told you there was a verse about black iron on a stair. Here is the rest "
+             "of it, as my grandmother's grandmother sang it at the washing, and nobody remembers who taught her. Six went "
+             "up the Stair. Five fell down it. One stayed to kneel.' He turns the token he has been holding over once more. "
+             "'Six climbed, so six were given the fire. The Iron King was the first of the five who fell, and you carry a "
+             "piece of him now. The Storm Tyrant sits above the Frostfang clans. The Beast Lord holds a plateau beyond the "
+             "Breach. The Crimson Prophet preaches in the Sunspire, where the old library stands. The song never agrees on "
+             "the fifth.' He stands, slowly. 'At the top of the Stair, the rhyme says, there is a seat, and whoever takes "
+             "it ends the dying or ends everything else. The ones who kept the records will know which. Do not take any of "
+             "the three lightly, ember or no ember.'",
              [leave("I will go.", tag="go")]),
+        Node("cq_ik_roads",
+             "'Three roads, then, and you may walk them in any order.' The Elder counts them off on the rim of the well. "
+             "'North up the Kingsway and through the Crossway pass is Frostfang. Fenn's wardens take twenty-five gold from "
+             "anyone coming back down it, so keep a purse. East, through the burnt cut at the Ashen Breach, is the Ashen "
+             "Wilds. South, by the caravan road to the Southmarch Gate, is the Sunspire.' He nods at your belt, where the "
+             "journal hangs. 'It will hold all three. Mark the one you mean to walk first.'",
+             [go("Back.", "cq_ik_after", tag="back"), leave("I will go.", tag="go")]),
         Node("cq_dray_spared",
-             "'Dray? He walked through the south gate yesterday with no rank cords and a limp, and asked the first warden "
-             "he met whether the Watch took a man who had signed the wrong papers for eleven years. The warden said it took "
-             "anyone who stood watches. He is on the wall tonight.' The Elder allows himself something near a smile. 'You "
-             "freed a man the Citadel would have broken. The garrison remembers who unlocked that cell. It will matter.'",
+             "'Dray? Word came down from the Crossway that he walked in at the gate with no rank cords and a limp, and asked "
+             "Fenn whether the Watch took a man who had signed the wrong papers for eleven years. Fenn said it took anyone "
+             "who stood watches. He is on the Crossway book tonight.' The Elder allows himself something near a smile. 'You "
+             "freed a man the Citadel would have broken. The garrison remembers who unlocked that pen. It will matter.'",
              [go("Something else.", ROOT, tag="else")]),
         Node("cq_dray_pressed",
              "'Dray? Nobody has seen him. The garrison says the Marshal's strongbox came up empty and that he sits with his "
@@ -98,9 +107,15 @@ ELDER = Extension(
              [go("Something else.", ROOT, tag="else")]),
     ],
     node_choices=[
+        root_choice("cq_ik_after", "roads", "Which roads do I take?", "cq_ik_roads", idx=0),
         root_choice("root", "cq_dray_spared", "About the Marshal.", "cq_dray_spared", when=has_flag("flag.fork.dray_spared")),
         root_choice("root", "cq_dray_pressed", "About the Marshal.", "cq_dray_pressed", when=has_flag("flag.fork.dray_pressed")),
         root_choice("root", "cq_arcs_done", "The three realms are quiet.", "cq_arcs_done", when=has_flag("flag.beat.arcs_complete")),
+        # A Defend objective fails the quest when the player dies and nothing restarts a failed main quest on its own
+        # (auto-start never fires for a quest already in the log). The giver offers the task again.
+        root_choice("root", "restart_smoke", "I fell holding the square. I will take the bell again.", "",
+                    when=(C.QUEST_AVAILABLE, "quest.main.smoke_over_the_square"), when2=has_flag("flag.main.opening_done"),
+                    do=(E.START_QUEST, "quest.main.smoke_over_the_square")),
     ])
 
 KAEL = Extension(
@@ -121,8 +136,9 @@ KAEL = Extension(
              "'Want? The Citadel sells iron to goblins, and somebody I cannot name sits at the other end of the same road "
              "and draws a ring on it. I do not know whether he is for us or against us, and I do not like how little that "
              "seems to matter to him.' He closes your fingers over the token. 'Keep it. It will not leave me alone, and you "
-             "seem to be the one it was left for. The guild board has a bounty up for goblins. Take it, and look at what "
-             "they carry. If there is more black iron out there, I want to hear it from you before I hear it from the "
+             "seem to be the one it was left for. The guild board has put a bounty on the goblins, and their camp is the "
+             "broken ruin west of the Deadfall Lodge, in the Northern Wilds. Kill three, and look at what they march "
+             "under. If there is more black iron out there, I want to hear it from you before I hear it from the "
              "Elder.'",
              [go("Something else.", ROOT, tag="else"), leave("I will.", tag="go")]),
     ])
@@ -142,9 +158,10 @@ SMITH = Extension(
               leave("Not yet.", tag="later")]),
         Node("cq_forge_thanks",
              "He weighs the lumps in his palm one at a time, the way a man counts his children after a storm. 'Good iron. "
-             "Clean.' The bellows wake with a roar and he does not look up for a long moment. 'There. A forge that answers "
+             "Clean.' The bellows wake with a roar and he keeps his back to you for a long moment. 'There. A forge that answers "
              "to the town and not to the spur. If you are going where I think you are going, you will want steel that is "
-             "ours.'",
+             "ours. Mirela at the Green Retort has the cots full and nothing to dress them with. She will tell you what "
+             "she needs.'",
              [leave("I will bring it back in one piece.", tag="go")]),
     ])
 
@@ -184,8 +201,9 @@ BROKER = Extension(
         Node("cq_broker_paid",
              "He counts it twice, folds the coins away, and slides a page across the doorframe without letting go of it. "
              "'Orsolo Dray, Marshal of the Citadel garrison, on every line for eleven years. Make of that what you like. "
-             "The Ledger House sold you a fact. What it means is yours.' He allows a very thin smile. 'The Syndicate "
-             "remembers a customer who pays on delivery.'",
+             "The Ledger House sold you a fact. What it means is yours.' He allows a very thin smile. 'If you want to know "
+             "where the iron came from, Bryn at the Iron Anvil has not had an ingot since spring. The Syndicate remembers "
+             "a customer who pays on delivery.'",
              [leave("Good day, broker.", tag="go")], on_enter=rep("faction.iron_syndicate", 8)),
     ])
 
@@ -196,11 +214,11 @@ FENN = Extension(
     nodes=[
         Node("cq_brief",
              "Fenn finishes the line he is on before he looks up. 'A Citadel wax on a cart means do not open. I was told so "
-             "in a letter signed by someone I have never met. Your banner carries the same quartermaster's stamp as those "
-             "carts, so I am being ordered not to look at the very thing I was posted here to look at.' He closes the "
-             "ledger over a finger. 'There is a crate in the Impound Counter that came up from Hollowreach last week under "
-             "Citadel wax. My clerks log it and I cannot cut it. A traveller with a chisel answers to nobody's letters but "
-             "her own.'",
+             "in a letter signed by someone I have never met. The stamp you are showing me is the same quartermaster's stamp "
+             "as on those carts, so I am being ordered not to look at the very thing I was posted here to look at.' He closes "
+             "the ledger over a finger. 'There is a crate in the Impound Counter that came up from Hollowreach last week "
+             "under Citadel wax. My clerks log it and I cannot cut it. A traveller with a chisel answers to nobody's letters "
+             "but their own.'",
              [go("Something else.", ROOT, tag="else"), leave("I will look.", tag="go")]),
         Node("cq_sigil",
              "You set a spearhead on his desk and the stamps beside it. Fenn touches neither. 'Garrison stores. The square "
@@ -230,7 +248,7 @@ FENN = Extension(
              "went through their hands.'",
              [leave("I will see Bryn.", tag="go")]),
         Node("cq_heist_after",
-             "Fenn does not look up. 'A page is missing from the carter ledger. It was there when the clerk went for his "
+             "Fenn keeps his eyes on the ledger. 'A page is missing from the carter ledger. It was there when the clerk went for his "
              "tea, so I have decided it was removed by a thief and not an investigator. Do not do that again, and do not "
              "tell me where it went.'",
              [go("Something else.", ROOT, tag="else")]),

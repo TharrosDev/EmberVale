@@ -163,3 +163,31 @@ Within each fork the two or three flags are mutually exclusive in practice (the 
 `flag.beat.<fork>_decided` holds). Absent flag means the neutral variant: a legacy save that skipped an arc has none of them, so the
 landing and epilogue must treat each fork as optional. The landing rows describe a non-combat ally cluster; the epilogue rows are
 one or two sentences each, for the ending cards.
+
+## I. Audit-1 amendments (read-through of missions 01 to 18)
+
+Spec changes already applied (nothing for W-World to do unless a line says so):
+
+* **Aftermath objectives no longer wait on defeat flags.** `iron_king` (rival, Elder), `storm_tyrant`, `beast_lord` and `crimson_prophet`
+  gated their aftermath objectives on `flag.*_defeated` / `flag.beat.stormend_*`, which `BossEncounterDirector` and the story rules
+  set AFTER `QuestLogComponent` has already seen the kill (the player is built before the director, so its handler runs first). With the
+  boss flag still unset every aftermath objective was gate-closed and the quest completed on the kill, skipping the rival, the Elder's
+  debrief and every "tell X it is done" talk. The sequential order already holds them behind the kill, so those gates are gone; the two
+  Frostfang aftermath talks now gate on the fork flag itself (`flag.fork.succession_hjalvar` / `_halvar`), which is set long before.
+  The scene visibility flags in section B (rival rider, Halvar at the stone) still follow the defeat flags and are unchanged.
+* **dry_wells** now opens with `location.sunspire.caravan_gap` (the player arrives beside its cairn, so it completes on arrival) and then
+  `location.sunspire.wells`; the old "walk back north to the gap" step is gone. `flag.beat.gap_seen` is therefore set on arrival.
+* Chapter titles carry no "Act N" prefix (the banner prints its own act line): `ch.1` "Embers at the Crown", the three Act II arcs are
+  named for their realms.
+* The Elder's debrief after the Iron King has a second node, `cq_ik_roads`, naming the three doors and the Crossway toll.
+* Restart offers: a Defend objective fails its quest when the player dies, and nothing restarts a failed main quest, so the Elder, the clan
+  chief, Maeve and Hask each offer the failed task again (`QuestAvailable` plus the quest's own auto-start flag).
+
+Requests for the orchestrator (scene or C# work this audit may not do):
+
+| Where | What |
+| --- | --- |
+| `src/Quests/QuestLogComponent.cs` `FailQuestsWith` | Do not fail a main-thread quest for the player's death. Reset the Defend hold instead (`_defendHeld.Clear()`, `Counts[i] = 0`), or restart the quest. As it stands a death during the first Defend (mission 01) soft-locks the campaign unless the player finds the Elder's restart line. Applies to every main-quest Defend, Acts III and IV included. |
+| `scenes/regions/ember_crown/citadel.tscn` | Optional: a drain-door prop in the west wall for the scout's tip (no node carries the "drain door" the hint and the Marshal's lines name). The postern route works without it (the ramp set piece despawns at `flag.beat.postern_known`). |
+| `scenes/regions/ember_crown/arena.tscn`, Iron King `AddSpawns` | Optional fork echo of F1 (section D, "three fewer `enemy.soldier` when `flag.fork.dray_spared`"); no scene carries it yet. Same for the Storm Tyrant, Beast Lord and Prophet echoes listed there. |
+| `data/locale/strings.csv` `dlg.rival.duel2.yield` | Opens "This time he yields a step at a time" and the Knight says "Better. Much better": wrong when the Sunspire arc is taken before Frostfang (duel 2 before duel 1). Reword so it reads on its own, for instance "He yields a step at a time, and he is smiling behind the visor; you can hear it." |

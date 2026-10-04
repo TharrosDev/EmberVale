@@ -9,13 +9,23 @@
 [sub_resource type="Resource" id="Obj_0"]
 script = ExtResource("2_obj")
 Type = 2
+TargetId = "location.sunspire.caravan_gap"
+RequiredCount = 1
+Description = "quest.main.dry_wells.obj_gap"
+CompletionFlagId = "flag.beat.gap_seen"
+HintKey = "quest.main.dry_wells.hint_gap"
+JournalEntryKey = "quest.main.dry_wells.log_gap"
+
+[sub_resource type="Resource" id="Obj_1"]
+script = ExtResource("2_obj")
+Type = 2
 TargetId = "location.sunspire.wells"
 RequiredCount = 1
 Description = "quest.main.dry_wells.obj_wells"
 HintKey = "quest.main.dry_wells.hint_wells"
 JournalEntryKey = "quest.main.dry_wells.log_wells"
 
-[sub_resource type="Resource" id="Obj_1"]
+[sub_resource type="Resource" id="Obj_2"]
 script = ExtResource("2_obj")
 Type = 3
 TargetId = "dialogue.sunspire_wellkeeper"
@@ -26,7 +36,7 @@ CompletionFlagId = "flag.beat.oda_briefed"
 HintKey = "quest.main.dry_wells.hint_oda"
 JournalEntryKey = "quest.main.dry_wells.log_oda"
 
-[sub_resource type="Resource" id="Obj_2"]
+[sub_resource type="Resource" id="Obj_3"]
 script = ExtResource("2_obj")
 Type = 6
 TargetId = "interact.sunspire.well_gauge_east"
@@ -36,7 +46,7 @@ LocationId = "location.sunspire.wells"
 HintKey = "quest.main.dry_wells.hint_gauge_e"
 JournalEntryKey = "quest.main.dry_wells.log_gauge_e"
 
-[sub_resource type="Resource" id="Obj_3"]
+[sub_resource type="Resource" id="Obj_4"]
 script = ExtResource("2_obj")
 Type = 6
 TargetId = "interact.sunspire.well_gauge_mid"
@@ -46,7 +56,7 @@ LocationId = "location.sunspire.wells"
 HintKey = "quest.main.dry_wells.hint_gauge_m"
 JournalEntryKey = "quest.main.dry_wells.log_gauge_m"
 
-[sub_resource type="Resource" id="Obj_4"]
+[sub_resource type="Resource" id="Obj_5"]
 script = ExtResource("2_obj")
 Type = 6
 TargetId = "interact.sunspire.well_gauge_west"
@@ -56,16 +66,6 @@ LocationId = "location.sunspire.wells"
 CompletionFlagId = "flag.beat.gauges_read"
 HintKey = "quest.main.dry_wells.hint_gauge_w"
 JournalEntryKey = "quest.main.dry_wells.log_gauge_w"
-
-[sub_resource type="Resource" id="Obj_5"]
-script = ExtResource("2_obj")
-Type = 2
-TargetId = "location.sunspire.caravan_gap"
-RequiredCount = 1
-Description = "quest.main.dry_wells.obj_gap"
-CompletionFlagId = "flag.beat.gap_seen"
-HintKey = "quest.main.dry_wells.hint_gap"
-JournalEntryKey = "quest.main.dry_wells.log_gap"
 
 [sub_resource type="Resource" id="Obj_6"]
 script = ExtResource("2_obj")

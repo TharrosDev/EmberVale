@@ -22,9 +22,9 @@ CODE_FLAGS = {
 Q16 = Quest(
     id="quest.main.dry_wells",
     title="Dry Wells",
-    summary="The oldest law in the Dominion is that the water at Saffra Wells is free. This season it tastes of ash. Reach "
-            "the wells, hear Mother Oda, read the three gauge stones, follow the dead water to the Caravan Gap, and ask "
-            "the people the Prophet's pilgrims have left behind.",
+    summary="The oldest law in the Dominion is that the water at Saffra Wells is free. This season it tastes of ash. Cross "
+            "the Caravan Gap, reach the wells, hear Mother Oda, read the three gauge stones, and ask the people the "
+            "Prophet's pilgrims have left behind.",
     detail="Mother Oda Sarn has kept the wells for forty years and measured every season by three gauge stones the Archive "
            "set into the oasis wall. All three have gone grey. Her grandson walked south with the Prophet's people at "
            "midsummer, and the water has tasted worse every week since. Idrys Vane's caravans are turning back at the gap. "
@@ -33,8 +33,12 @@ Q16 = Quest(
     auto_start="flag.main.iron_king_done", completion_flag="flag.main.dry_wells_done",
     sequential=True, xp=250, gold=80, reward_items=[("item.potion.health", 2)],
     objectives=[
-        reach("location.sunspire.wells", "Reach Saffra Wells", tag="wells",
-              hint="Go south through the Southmarch Gate and across the Caravan Gap. The oasis is the only green for a day's walk.",
+        reach("location.sunspire.caravan_gap", "Cross the Caravan Gap into the Dominion", tag="gap",
+              completion_flag="flag.beat.gap_seen",
+              hint="Take the caravan road south from the Crown to the Southmarch Gate and step through. A cairn on the far side marks the gap.",
+              journal="A cairn marks the gap. Past it the road is scuffed bare by thousands of feet, every print pointing south."),
+        reach("location.sunspire.wells", "Follow the caravan road south to Saffra Wells", tag="wells",
+              hint="The road runs south across the dry basins. The oasis is the only green for a day's walk.",
               journal="Saffra Wells: a ring of green, a ring of carts, and not one caravan loading."),
         talk("dialogue.sunspire_wellkeeper", "Speak with Mother Oda at the wells", tag="oda", location="location.sunspire.wells",
              completion_flag="flag.beat.oda_briefed",
@@ -50,10 +54,6 @@ Q16 = Quest(
                  completion_flag="flag.beat.gauges_read",
                  hint="The west stone is nearest the road north.",
                  journal="The west gauge is black to the top. Whatever fouls the water comes from upstream, and from the south."),
-        reach("location.sunspire.caravan_gap", "Follow the dead water north to the Caravan Gap", tag="gap",
-              completion_flag="flag.beat.gap_seen",
-              hint="The one gap in the northern escarpment where the road from the Southmarch Gate comes in.",
-              journal="At the gap, two hundred pilgrims in red walk south in a line, each carrying a stoppered jar."),
         talk("dialogue.sunspire_caravan_master", "Hear Idrys Vane out", tag="vane", location="location.sunspire.wells",
              hint="Vane is back at the wells with his turned-back carts.",
              journal="Vane has hired four swords this week. He never needed one in twenty years."),
@@ -117,12 +117,12 @@ Q18 = Quest(
              location="location.sunspire.mission",
              hint="Kindle the altar fire in the sanctum. His zealots fight in the nave, and they mean it.",
              journal="The Crimson Prophet fell, and his voice went on a while without him."),
-        milestone("flag.rival.duel2_won", "Answer the black-iron brazier", tag="duel", optional=True,
-                  location="location.sunspire.mission", req_flag="flag.crimson_prophet_defeated",
-                  hint="A black-iron brazier stands cold at the sanctum's edge. The Ashen Knight will answer it. He yields rather than dies.",
-                  journal="The rider in black iron yielded a step at a time, smiling, and said he would not yield a third time."),
+        milestone("flag.rival.duel2_won", "Answer the black-iron brazier in the sanctum", tag="duel", optional=True,
+                  location="location.sunspire.mission",
+                  hint="A black-iron brazier stands cold at the sanctum's edge. The rider in black iron will answer it, and yields rather than dies. Optional.",
+                  journal="The rider in black iron yielded a step at a time, smiling, and said he would not yield again."),
         talk("dialogue.sunspire_wellkeeper", "Tell Mother Oda the voice is silent", tag="oda", location="location.sunspire.wells",
-             req_flag="flag.crimson_prophet_defeated", hint="Mother Oda is at the cistern in Saffra Wells.",
+             hint="Mother Oda is at the cistern in Saffra Wells.",
              journal="Mother Oda poured the first cup from a clean draw."),
     ])
 
@@ -247,8 +247,8 @@ GRANDSON = Dialogue(
 DIALOGUES = [GAUGE_E, GAUGE_M, GAUGE_W, DEACON, SANCTUM_SEAL, GRANDSON]
 
 LOCALE = [
-    ("ch.2.sunspire", "Act II: Dry Wells"),
-    ("chapter.ch.2.sunspire.title", "Act II: Dry Wells"),
+    ("ch.2.sunspire", "The Sunspire Dominion"),
+    ("chapter.ch.2.sunspire.title", "The Sunspire Dominion"),
     ("chapter.ch.2.sunspire.subtitle", "The oldest law in the Dominion is that water is free. Someone is poisoning it."),
     ("boss.crimson_prophet.epithet", "The Voice in the Altar"),
     ("boss.crimson_prophet.intro", "'Come closer. It has been waiting to speak to you, and so have I.'"),
