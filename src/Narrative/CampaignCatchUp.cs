@@ -58,6 +58,30 @@ public static class CampaignCatchUp
     /// <summary>The first new mission's done flag. Present means the save has run the new chain.</summary>
     public const string NewFlowMarker = "flag.main.smoke_over_the_square_done";
 
+    /// <summary>Raised when the prologue ends; the first mission's auto-start flag.</summary>
+    public const string OpeningDoneFlag = "flag.main.opening_done";
+
+    /// <summary>
+    /// A load never plays the prologue (it runs on New Game only), so a save that never reached the end of
+    /// it (an old save made before the first errand, or a new game closed during the narration) would
+    /// otherwise start no mission at all: nothing raises <see cref="OpeningDoneFlag"/> for it. True when the
+    /// flag is missing and a load should raise it, after the catch-up has set the later mission flags (a
+    /// mission whose own done flag is held never auto-starts, so only the right one starts).
+    /// </summary>
+    public static bool LoadNeedsOpeningDone(Func<string, bool> has) => !has(OpeningDoneFlag);
+
+    /// <summary>
+    /// A legacy save can hold a main quest the campaign now starts further along its chain (the Hollow
+    /// Queen, the Archivist truth, the Celestial assault), started by the old flow and untouched. Left
+    /// in the journal it outranks the mission the save has actually reached (the tracker prefers the
+    /// first active main quest) and aims the player at a locked fight. True for a main, non-ledger quest
+    /// that is Active, has an auto-start flag that is NOT held, and has no progress; such a quest is taken
+    /// out of the log and starts by itself when its flag arrives. Only for saves that have not run the new chain.
+    /// </summary>
+    public static bool IsPrematureLegacyQuest(
+        bool newFlow, bool isMain, bool isLedger, bool active, string autoStartFlag, bool autoStartHeld, bool anyProgress) =>
+        !newFlow && isMain && !isLedger && active && autoStartFlag.Length > 0 && !autoStartHeld && !anyProgress;
+
     public const string FrostfangReady = "flag.arc.frostfang_ready";
     public const string AshenReady = "flag.arc.ashen_ready";
     public const string SunspireReady = "flag.arc.sunspire_ready";

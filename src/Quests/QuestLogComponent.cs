@@ -225,6 +225,14 @@ public partial class QuestLogComponent : EntityComponent, ISaveable
     private void OnGameLoaded(GameLoadedEvent e)
     {
         RunCampaignCatchUp();
+
+        // A load never plays the prologue, so a save that never finished it would start no mission.
+        // After the catch-up: it has set the later missions done flags, and a done mission never auto-starts.
+        if (_flags != null && Narrative.CampaignCatchUp.LoadNeedsOpeningDone(_flags.Has))
+        {
+            _flags.Set(Narrative.CampaignCatchUp.OpeningDoneFlag);
+        }
+
         Reconcile(silent: true);
         if (_stampSeenOnLoad)
         {
@@ -251,10 +259,12 @@ public partial class QuestLogComponent : EntityComponent, ISaveable
             return;
         }
 
+        bool newFlow = _flags.Has(Narrative.CampaignCatchUp.NewFlowMarker);
         Narrative.CampaignCatchUpPlan plan = Narrative.CampaignCatchUp.Plan(
             _flags.Has, IsCompleted, id => QuestDatabase.Get(id) != null);
         if (plan.IsEmpty)
         {
+            DropPrematureLegacyQuests(newFlow);
             return;
         }
 
@@ -276,7 +286,50 @@ public partial class QuestLogComponent : EntityComponent, ISaveable
             _suspend--;
         }
 
+        DropPrematureLegacyQuests(newFlow);
         Log.Info($"Campaign catch-up: {plan.SetFlags.Count} flag(s), {plan.CompleteQuests.Count} quest(s).");
+    }
+
+    /// <summary>Takes untouched legacy main quests out of the journal when the campaign starts them later
+    /// in its chain (<see cref="Narrative.CampaignCatchUp.IsPrematureLegacyQuest"/>); the auto-start brings
+    /// them back when their flag is raised.</summary>
+    private void DropPrematureLegacyQuests(bool newFlow)
+    {
+        if (_flags == null || newFlow)
+        {
+            return;
+        }
+
+        var drop = new List<string>();
+        foreach (QuestProgress progress in _quests.Values)
+        {
+            bool anyProgress = false;
+            foreach (int count in progress.Counts)
+            {
+                anyProgress |= count > 0;
+            }
+
+            QuestResource quest = progress.Quest;
+            if (Narrative.CampaignCatchUp.IsPrematureLegacyQuest(
+                    newFlow, quest.IsMainQuest, quest.IsLedger, progress.Status == QuestStatus.Active,
+                    quest.AutoStartFlagId, _flags.Has(quest.AutoStartFlagId), anyProgress))
+            {
+                drop.Add(quest.Id);
+            }
+        }
+
+        foreach (string questId in drop)
+        {
+            _quests.Remove(questId);
+            ForgetActivations(questId);
+            _seen.Remove(questId);
+            if (TrackedQuestId == questId)
+            {
+                TrackedQuestId = string.Empty;
+            }
+
+            Log.Info($"Campaign catch-up: '{questId}' is ahead of this save chain position; it starts when its flag is raised.");
+        }
     }
 
     /// <summary>

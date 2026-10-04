@@ -198,7 +198,7 @@ python tools/world_bake.py --bake | --check
 python tools/world_atlas.py --check        # realm bands, crossings, hidden-realm secrecy, this doc table
 godot --headless --path . -- --validate
 godot --headless --path . -- --lifecycle   # session teardown gate
-godot --headless --path . -- --story       # main story: act chain, reveal, save/load, ending
+godot --headless --path . -- --story       # plays all 30 missions New Game to credits through the real systems: run A (Dawnfire), run B (Lord of Embers), run C (legacy-save fixtures); --story-only=A|B|C filters while debugging
 godot --headless --path . -- --worldgen    # generator report: relief, pads, wet anchors
 godot --headless --path . -- --state       # content census
 godot --path . -- --play                   # newest save, straight into the world

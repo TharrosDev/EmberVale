@@ -20620,7 +20620,7 @@
     "data/bosses/BeastLord.tres",
     "data/story/rules/spec1.json",
     "scenes/regions/ashen_wilds/beast_lair.tscn",
-    "src/Bootstrap/HeadlessStory.cs",
+    "src/Bootstrap/LegacyFixtures.cs",
     "src/Narrative/CampaignCatchUp.cs",
     "src/Narrative/HiddenRealmReveal.cs"
    ]
@@ -20775,7 +20775,8 @@
    ],
    "code": false,
    "externalRefs": [
-    "data/story/rules/spec1.json"
+    "data/story/rules/spec1.json",
+    "src/Bootstrap/HeadlessStory.cs"
    ]
   },
   "flag.beat.armed_broker": {
@@ -21102,7 +21103,8 @@
    "code": false,
    "externalRefs": [
     "data/story/rules/spec2.json",
-    "scenes/regions/celestial/fallen_choir.tscn"
+    "scenes/regions/celestial/fallen_choir.tscn",
+    "src/Bootstrap/HeadlessStory.cs"
    ]
   },
   "flag.beat.choir_passed": {
@@ -21161,7 +21163,8 @@
    "code": false,
    "externalRefs": [
     "data/story/rules/spec2.json",
-    "scenes/regions/celestial/fallen_choir.tscn"
+    "scenes/regions/celestial/fallen_choir.tscn",
+    "src/Bootstrap/HeadlessStory.cs"
    ]
   },
   "flag.beat.codex_cards_seen": {
@@ -21992,7 +21995,9 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "src/Bootstrap/StoryPlaythrough.cs"
+   ]
   },
   "flag.beat.registry_read": {
    "writers": [
@@ -22816,6 +22821,7 @@
    "externalRefs": [
     "data/regions/CelestialRealm.tres",
     "src/Bootstrap/HeadlessStory.cs",
+    "src/Bootstrap/LegacyFixtures.cs",
     "src/Narrative/CampaignCatchUp.cs"
    ]
   },
@@ -22968,7 +22974,7 @@
     "data/bosses/CrimsonProphet.tres",
     "data/story/rules/spec1.json",
     "scenes/regions/sunspire/temple.tscn",
-    "src/Bootstrap/HeadlessStory.cs",
+    "src/Bootstrap/LegacyFixtures.cs",
     "src/Narrative/CampaignCatchUp.cs",
     "src/Narrative/HiddenRealmReveal.cs"
    ]
@@ -23306,6 +23312,7 @@
     "data/weather/Fog.tres",
     "data/weather/Rain.tres",
     "data/weather/Storm.tres",
+    "src/Bootstrap/LegacyFixtures.cs",
     "src/UI/EndingSequence.cs"
    ]
   },
@@ -23385,6 +23392,7 @@
     "data/story/reactions/spec1.json",
     "data/story/rules/spec1.json",
     "scenes/regions/celestial/landing.tscn",
+    "src/Bootstrap/HeadlessStory.cs",
     "src/UI/EndingSequence.cs"
    ]
   },
@@ -23424,6 +23432,7 @@
     "data/story/rules/spec1.json",
     "scenes/regions/celestial/landing.tscn",
     "scenes/regions/ember_crown/citadel.tscn",
+    "src/Bootstrap/HeadlessStory.cs",
     "src/UI/EndingSequence.cs"
    ]
   },
@@ -23458,6 +23467,7 @@
     "data/story/rules/spec1.json",
     "scenes/regions/celestial/landing.tscn",
     "scenes/regions/sunspire/temple.tscn",
+    "src/Bootstrap/HeadlessStory.cs",
     "src/UI/EndingSequence.cs"
    ]
   },
@@ -23493,6 +23503,7 @@
     "scenes/regions/celestial/landing.tscn",
     "scenes/regions/sunspire/temple.tscn",
     "scenes/regions/sunspire/wells.tscn",
+    "src/Bootstrap/HeadlessStory.cs",
     "src/UI/EndingSequence.cs"
    ]
   },
@@ -23531,6 +23542,7 @@
     "data/story/rules/spec1.json",
     "scenes/regions/celestial/landing.tscn",
     "scenes/regions/sunspire/wells.tscn",
+    "src/Bootstrap/HeadlessStory.cs",
     "src/UI/EndingSequence.cs"
    ]
   },
@@ -23566,6 +23578,7 @@
     "scenes/regions/ashen_wilds/lair_approach.tscn",
     "scenes/regions/ashen_wilds/last_hearth.tscn",
     "scenes/regions/celestial/landing.tscn",
+    "src/Bootstrap/HeadlessStory.cs",
     "src/UI/EndingSequence.cs"
    ]
   },
@@ -23605,6 +23618,7 @@
     "data/story/rules/spec1.json",
     "scenes/regions/ashen_wilds/lair_approach.tscn",
     "scenes/regions/celestial/landing.tscn",
+    "src/Bootstrap/HeadlessStory.cs",
     "src/UI/EndingSequence.cs"
    ]
   },
@@ -23677,6 +23691,7 @@
    "externalRefs": [
     "data/story/reactions/spec2.json",
     "scenes/regions/celestial/landing.tscn",
+    "src/Bootstrap/HeadlessStory.cs",
     "src/UI/EndingSequence.cs"
    ]
   },
@@ -23749,6 +23764,7 @@
    "externalRefs": [
     "data/story/reactions/spec2.json",
     "scenes/regions/celestial/landing.tscn",
+    "src/Bootstrap/HeadlessStory.cs",
     "src/UI/EndingSequence.cs"
    ]
   },
@@ -23783,6 +23799,7 @@
     "data/story/rules/spec1.json",
     "scenes/regions/celestial/landing.tscn",
     "scenes/regions/frostfang_reach/stormfall.tscn",
+    "src/Bootstrap/HeadlessStory.cs",
     "src/UI/EndingSequence.cs"
    ]
   },
@@ -23816,6 +23833,7 @@
     "data/story/rules/spec1.json",
     "scenes/regions/celestial/landing.tscn",
     "scenes/regions/frostfang_reach/stormfall.tscn",
+    "src/Bootstrap/HeadlessStory.cs",
     "src/UI/EndingSequence.cs"
    ]
   },
@@ -23836,6 +23854,7 @@
    ],
    "code": false,
    "externalRefs": [
+    "src/Bootstrap/LegacyFixtures.cs",
     "src/Narrative/CampaignCatchUp.cs"
    ]
   },
@@ -23943,6 +23962,7 @@
     "data/bosses/HollowQueen.tres",
     "scenes/regions/pale_concord/palace.tscn",
     "src/Bootstrap/HeadlessStory.cs",
+    "src/Bootstrap/LegacyFixtures.cs",
     "src/Narrative/CampaignCatchUp.cs"
    ]
   },
@@ -24137,7 +24157,7 @@
     "data/regions/Sunspire.tres",
     "data/shops/EmberCrownApothecary.tres",
     "scenes/regions/ember_crown/arena.tscn",
-    "src/Bootstrap/HeadlessStory.cs",
+    "src/Bootstrap/LegacyFixtures.cs",
     "src/Enemies/BossEncounterDirector.cs",
     "src/Narrative/CampaignCatchUp.cs"
    ]
@@ -24620,7 +24640,9 @@
    ],
    "code": true,
    "externalRefs": [
-    "data/story/rules/spec1.json"
+    "data/story/rules/spec1.json",
+    "src/Bootstrap/StoryPlaythrough.cs",
+    "src/Narrative/CampaignCatchUp.cs"
    ]
   },
   "flag.main.pale_door_done": {
@@ -24840,7 +24862,9 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "src/Bootstrap/LegacyFixtures.cs"
+   ]
   },
   "flag.main.throne_done": {
    "writers": [
@@ -24931,6 +24955,8 @@
     "data/bosses/Morthul.tres",
     "scenes/regions/celestial/ash_throne.tscn",
     "src/Bootstrap/HeadlessStory.cs",
+    "src/Bootstrap/LegacyFixtures.cs",
+    "src/Bootstrap/StoryPlaythrough.cs",
     "src/Narrative/CampaignCatchUp.cs"
    ]
   },
@@ -24976,6 +25002,7 @@
     "data/map_locations/PalePalace.tres",
     "data/regions/PaleConcord.tres",
     "src/Bootstrap/HeadlessStory.cs",
+    "src/Bootstrap/LegacyFixtures.cs",
     "src/Narrative/CampaignCatchUp.cs",
     "src/Narrative/HiddenRealmReveal.cs"
    ]
@@ -25014,8 +25041,7 @@
    "code": true,
    "externalRefs": [
     "data/bosses/AshenKnightDuel1.tres",
-    "scenes/regions/frostfang_reach/stormcrown.tscn",
-    "src/Bootstrap/HeadlessStory.cs"
+    "scenes/regions/frostfang_reach/stormcrown.tscn"
    ]
   },
   "flag.rival.duel2_won": {
@@ -25035,8 +25061,7 @@
    "code": true,
    "externalRefs": [
     "data/bosses/AshenKnightDuel2.tres",
-    "scenes/regions/sunspire/temple.tscn",
-    "src/Bootstrap/HeadlessStory.cs"
+    "scenes/regions/sunspire/temple.tscn"
    ]
   },
   "flag.rival.gate_draw": {
@@ -25071,6 +25096,7 @@
    ],
    "code": false,
    "externalRefs": [
+    "src/Bootstrap/HeadlessStory.cs",
     "src/UI/EndingSequence.cs"
    ]
   },
@@ -25107,6 +25133,7 @@
    "code": false,
    "externalRefs": [
     "data/story/reactions/spec2.json",
+    "src/Bootstrap/HeadlessStory.cs",
     "src/UI/EndingSequence.cs"
    ]
   },
@@ -25308,7 +25335,7 @@
     "data/bosses/StormTyrant.tres",
     "data/story/rules/spec1.json",
     "scenes/regions/frostfang_reach/stormcrown.tscn",
-    "src/Bootstrap/HeadlessStory.cs",
+    "src/Bootstrap/LegacyFixtures.cs",
     "src/Narrative/CampaignCatchUp.cs",
     "src/Narrative/HiddenRealmReveal.cs"
    ]
@@ -25736,6 +25763,7 @@
     "data/story/reactions/spec1.json",
     "data/story/rules/spec1.json",
     "scenes/regions/celestial/landing.tscn",
+    "src/Bootstrap/HeadlessStory.cs",
     "src/UI/EndingSequence.cs"
    ]
   },
@@ -25780,6 +25808,7 @@
     "data/story/rules/spec1.json",
     "scenes/regions/celestial/landing.tscn",
     "scenes/regions/ember_crown/citadel.tscn",
+    "src/Bootstrap/HeadlessStory.cs",
     "src/UI/EndingSequence.cs"
    ]
   },
@@ -25819,6 +25848,7 @@
     "data/story/rules/spec1.json",
     "scenes/regions/celestial/landing.tscn",
     "scenes/regions/sunspire/temple.tscn",
+    "src/Bootstrap/HeadlessStory.cs",
     "src/UI/EndingSequence.cs"
    ]
   },
@@ -25859,6 +25889,7 @@
     "scenes/regions/celestial/landing.tscn",
     "scenes/regions/sunspire/temple.tscn",
     "scenes/regions/sunspire/wells.tscn",
+    "src/Bootstrap/HeadlessStory.cs",
     "src/UI/EndingSequence.cs"
    ]
   },
@@ -25902,6 +25933,7 @@
     "data/story/rules/spec1.json",
     "scenes/regions/celestial/landing.tscn",
     "scenes/regions/sunspire/wells.tscn",
+    "src/Bootstrap/HeadlessStory.cs",
     "src/UI/EndingSequence.cs"
    ]
   },
@@ -25942,6 +25974,7 @@
     "scenes/regions/ashen_wilds/lair_approach.tscn",
     "scenes/regions/ashen_wilds/last_hearth.tscn",
     "scenes/regions/celestial/landing.tscn",
+    "src/Bootstrap/HeadlessStory.cs",
     "src/UI/EndingSequence.cs"
    ]
   },
@@ -25986,6 +26019,7 @@
     "data/story/rules/spec1.json",
     "scenes/regions/ashen_wilds/lair_approach.tscn",
     "scenes/regions/celestial/landing.tscn",
+    "src/Bootstrap/HeadlessStory.cs",
     "src/UI/EndingSequence.cs"
    ]
   },
@@ -26058,6 +26092,7 @@
    "externalRefs": [
     "data/story/reactions/spec2.json",
     "scenes/regions/celestial/landing.tscn",
+    "src/Bootstrap/HeadlessStory.cs",
     "src/UI/EndingSequence.cs"
    ]
   },
@@ -26130,6 +26165,7 @@
    "externalRefs": [
     "data/story/reactions/spec2.json",
     "scenes/regions/celestial/landing.tscn",
+    "src/Bootstrap/HeadlessStory.cs",
     "src/UI/EndingSequence.cs"
    ]
   },
@@ -26169,6 +26205,7 @@
     "data/story/rules/spec1.json",
     "scenes/regions/celestial/landing.tscn",
     "scenes/regions/frostfang_reach/stormfall.tscn",
+    "src/Bootstrap/HeadlessStory.cs",
     "src/UI/EndingSequence.cs"
    ]
   },
@@ -26207,6 +26244,7 @@
     "data/story/rules/spec1.json",
     "scenes/regions/celestial/landing.tscn",
     "scenes/regions/frostfang_reach/stormfall.tscn",
+    "src/Bootstrap/HeadlessStory.cs",
     "src/UI/EndingSequence.cs"
    ]
   }

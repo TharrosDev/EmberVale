@@ -327,4 +327,27 @@ public class CampaignCatchUpTests
         Assert.Contains("flag.arc.sunspire_ready", written);
         Assert.Contains("flag.main.throne_done", written);
     }
+
+    [Fact]
+    public void ALoadRaisesTheOpeningFlagOnlyWhenItIsMissing()
+    {
+        Assert.True(CampaignCatchUp.LoadNeedsOpeningDone(_ => false));
+        Assert.False(CampaignCatchUp.LoadNeedsOpeningDone(f => f == CampaignCatchUp.OpeningDoneFlag));
+    }
+
+    [Theory]
+    // an untouched legacy main quest whose auto-start flag is not held steps back
+    [InlineData(false, true, false, true, "flag.main.x_done", false, false, true)]
+    // a save already on the new chain keeps everything
+    [InlineData(true, true, false, true, "flag.main.x_done", false, false, false)]
+    // progress, a held flag, no auto-start flag, the ledger, a side quest or a finished quest all stay
+    [InlineData(false, true, false, true, "flag.main.x_done", false, true, false)]
+    [InlineData(false, true, false, true, "flag.main.x_done", true, false, false)]
+    [InlineData(false, true, false, true, "", false, false, false)]
+    [InlineData(false, true, true, true, "flag.main.x_done", false, false, false)]
+    [InlineData(false, false, false, true, "flag.main.x_done", false, false, false)]
+    [InlineData(false, true, false, false, "flag.main.x_done", false, false, false)]
+    public void OnlyAnUntouchedPrematureLegacyQuestIsTakenOutOfTheLog(
+        bool newFlow, bool isMain, bool isLedger, bool active, string autoStart, bool autoStartHeld, bool anyProgress, bool expected) =>
+        Assert.Equal(expected, CampaignCatchUp.IsPrematureLegacyQuest(newFlow, isMain, isLedger, active, autoStart, autoStartHeld, anyProgress));
 }

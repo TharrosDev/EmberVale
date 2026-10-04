@@ -5,8 +5,10 @@ using Embervale.Core.Events;
 using Embervale.Core.Services;
 using Embervale.Corruption;
 using Embervale.Dialogue;
+using Embervale.Enemies;
 using Embervale.Entities;
 using Embervale.Interaction;
+using Embervale.Items;
 using Embervale.Quests;
 using Embervale.World;
 using Godot;
@@ -38,7 +40,9 @@ public sealed class StoryDriver
 {
     /// <summary>World-clock speed-up while a Defend hold runs. The poll counts game seconds.</summary>
     private const float DefendTimeScale = 30f;
-    private const int PositionalFrameBudget = 1200;
+    private const int PositionalFrameBudget = 6000;
+    /// <summary>A poll counts an arrival within a second or two; a place that is not counted in this many frames never will be.</summary>
+    private const int ArrivalFrameBudget = 900;
 
     private readonly ApplicationRoot _root;
     private readonly IEntity _player;
@@ -141,6 +145,236 @@ public sealed class StoryDriver
         return true;
     }
 
+    /// <summary>The choices on offer right now (the objects, so a caller can read their effects).</summary>
+    public List<DialogueChoice> Visible() => _session?.VisibleChoices() ?? new List<DialogueChoice>();
+
+    /// <summary>
+    /// Runs the open conversation to its end the way a player who knows what they want would: an
+    /// explicit pick from <see cref="DialogueAim.Picks"/> first (in order, full text key or a
+    /// <c>.suffix</c>), then a reply whose effect raises a wanted flag or starts a wanted quest, then a
+    /// reply that leads (through any number of nodes) to one, then a way out. A reply with a side effect
+    /// nobody asked for (corruption, a fork or ending flag, recruiting, joining, taking items, opening a
+    /// shop) is never taken unless it is the only way on. Closing publishes the end event, as the panel does.
+    /// </summary>
+    public ConversationResult Converse(DialogueAim aim, int maxSteps = 60)
+    {
+        var trace = new StringBuilder();
+        var picks = new Queue<string>(aim.Picks);
+        var visited = new Dictionary<string, int>();
+        StoryFlagsComponent? flags = _player.GetComponent<StoryFlagsComponent>();
+        bool Has(string f) => flags != null && flags.Has(f);
+        for (int step = 0; step < maxSteps && _session is { CurrentNode: { } node } session; step++)
+        {
+            visited[node.Id] = visited.GetValueOrDefault(node.Id) + 1;
+            List<DialogueChoice> choices = session.VisibleChoices();
+            if (choices.Count == 0)
+            {
+                trace.Append($"{node.Id}:(dead end) ");
+                break;
+            }
+
+            DialogueChoice choice = SelectChoice(session.Dialogue, node, choices, aim, picks, visited, Has);
+            trace.Append($"{node.Id}:{choice.Text} ");
+            if (session.Choose(choice))
+            {
+                EndDialogue();
+                return new ConversationResult(trace.ToString().TrimEnd(), picks.ToArray(), true);
+            }
+        }
+
+        bool forced = _session != null;
+        if (forced)
+        {
+            EndDialogue();
+        }
+
+        return new ConversationResult(trace.ToString().TrimEnd(), picks.ToArray(), !forced);
+    }
+
+    private static DialogueChoice SelectChoice(
+        DialogueResource dialogue, DialogueNode node, List<DialogueChoice> choices, DialogueAim aim,
+        Queue<string> picks, Dictionary<string, int> visited, System.Func<string, bool> has)
+    {
+        if (picks.Count > 0)
+        {
+            string wanted = picks.Peek();
+            foreach (DialogueChoice choice in choices)
+            {
+                if (choice.Text == wanted || (wanted.StartsWith('.') && choice.Text.EndsWith(wanted)))
+                {
+                    picks.Dequeue();
+                    return choice;
+                }
+            }
+        }
+
+        // 1. a reply that does the wanted thing itself (a hand-in that takes an item is part of doing it)
+        foreach (DialogueChoice choice in choices)
+        {
+            if (Advances(choice, aim, has) && !Dangerous(choice, aim, allowTake: true))
+            {
+                return choice;
+            }
+        }
+
+        // 2. a reply that leads to one, nearest first, never back into a node already walked twice
+        DialogueChoice? leading = null;
+        int bestDepth = int.MaxValue;
+        foreach (DialogueChoice choice in choices)
+        {
+            if (Dangerous(choice, aim) || choice.Goto.Length == 0 || visited.GetValueOrDefault(choice.Goto) > 1)
+            {
+                continue;
+            }
+
+            int depth = DepthToAim(dialogue, choice.Goto, aim, has, new HashSet<string> { node.Id });
+            if (depth >= 0 && depth < bestDepth)
+            {
+                bestDepth = depth;
+                leading = choice;
+            }
+        }
+
+        if (leading != null)
+        {
+            return leading;
+        }
+
+        // 3. a way out that costs nothing, else any unvisited step on, else whatever is left
+        foreach (DialogueChoice choice in choices)
+        {
+            if (!Dangerous(choice, aim) && IsExit(dialogue, choice))
+            {
+                return choice;
+            }
+        }
+
+        foreach (DialogueChoice choice in choices)
+        {
+            if (!Dangerous(choice, aim) && !visited.ContainsKey(choice.Goto))
+            {
+                return choice;
+            }
+        }
+
+        foreach (DialogueChoice choice in choices)
+        {
+            if (!Dangerous(choice, aim))
+            {
+                return choice;
+            }
+        }
+
+        foreach (DialogueChoice choice in choices)
+        {
+            if (IsExit(dialogue, choice))
+            {
+                return choice;
+            }
+        }
+
+        return choices[0];
+    }
+
+    private static bool IsExit(DialogueResource dialogue, DialogueChoice choice) =>
+        choice.Goto.Length == 0 || dialogue.FindNode(choice.Goto) == null;
+
+    /// <summary>Whether a reply is one the aim wants: a listed pick, or an effect that raises a wanted flag.</summary>
+    internal static bool IsWanted(DialogueChoice choice, DialogueAim aim, System.Func<string, bool> has)
+    {
+        foreach (string pick in aim.Picks)
+        {
+            if (choice.Text == pick || (pick.StartsWith('.') && choice.Text.EndsWith(pick)))
+            {
+                return true;
+            }
+        }
+
+        return Advances(choice, aim, has);
+    }
+
+    private static bool Advances(DialogueChoice choice, DialogueAim aim, System.Func<string, bool> has) =>
+        AdvancesEffect(choice.Effect, choice.EffectArg, aim, has) ||
+        AdvancesEffect(choice.Effect2, choice.Effect2Arg, aim, has);
+
+    private static bool AdvancesEffect(DialogueEffect effect, string arg, DialogueAim aim, System.Func<string, bool> has) =>
+        (effect == DialogueEffect.SetFlag && aim.Flags.Contains(arg) && !has(arg)) ||
+        (effect == DialogueEffect.StartQuest && aim.Quests.Contains(arg));
+
+    /// <summary>Fewest steps to a node whose choices (or entry) do something wanted, or -1.</summary>
+    private static int DepthToAim(
+        DialogueResource dialogue, string nodeId, DialogueAim aim, System.Func<string, bool> has, HashSet<string> seen)
+    {
+        if (dialogue.FindNode(nodeId) is not { } node || !seen.Add(nodeId))
+        {
+            return -1;
+        }
+
+        if (AdvancesEffect(node.OnEnterEffect, node.OnEnterEffectArg, aim, has))
+        {
+            return 0;
+        }
+
+        int best = -1;
+        foreach (DialogueChoice choice in node.ChoiceList())
+        {
+            if (Advances(choice, aim, has))
+            {
+                return 0;
+            }
+
+            if (choice.Goto.Length == 0)
+            {
+                continue;
+            }
+
+            int below = DepthToAim(dialogue, choice.Goto, aim, has, seen);
+            if (below >= 0 && (best < 0 || below + 1 < best))
+            {
+                best = below + 1;
+            }
+        }
+
+        return best;
+    }
+
+    /// <summary>A reply with a side effect the caller did not ask for. The price attached to a reply that
+    /// raises a flag the caller wants (the Choir's verse costs corruption) is part of the ask.</summary>
+    private static bool Dangerous(DialogueChoice choice, DialogueAim aim, bool allowTake = false)
+    {
+        bool priced = SetsWanted(choice.Effect, choice.EffectArg, aim) || SetsWanted(choice.Effect2, choice.Effect2Arg, aim);
+        return DangerousEffect(choice.Effect, choice.EffectArg, aim, allowTake, priced) ||
+               DangerousEffect(choice.Effect2, choice.Effect2Arg, aim, allowTake, priced);
+    }
+
+    private static bool SetsWanted(DialogueEffect effect, string arg, DialogueAim aim) =>
+        effect == DialogueEffect.SetFlag && aim.Flags.Contains(arg);
+
+    private static bool DangerousEffect(DialogueEffect effect, string arg, DialogueAim aim, bool allowTake, bool priced)
+    {
+        switch (effect)
+        {
+            case DialogueEffect.AddCorruption:
+                return !priced && (!int.TryParse(arg, out int amount) || amount > 0);
+            case DialogueEffect.SetFlag:
+                return !aim.Flags.Contains(arg) &&
+                       (arg.StartsWith("flag.fork.") || arg.StartsWith("flag.rival.gate_") || arg.StartsWith("flag.ending_"));
+            case DialogueEffect.StartQuest:
+                return !aim.Quests.Contains(arg);
+            case DialogueEffect.RecruitCompanion:
+            case DialogueEffect.JoinGuild:
+            case DialogueEffect.GuildRank:
+            case DialogueEffect.OpenShop:
+            case DialogueEffect.OpenService:
+            case DialogueEffect.LearnSpell:
+                return true;
+            case DialogueEffect.TakeItem:
+                return !allowTake;
+            default:
+                return false;
+        }
+    }
+
     /// <summary>Moves corruption to <paramref name="value"/> through a real AddCorruption dialogue
     /// effect (a one-node conversation, entered the way any other is).</summary>
     public bool SetCorruption(int value)
@@ -192,41 +426,136 @@ public sealed class StoryDriver
         }
     }
 
-    /// <summary>Stands the player at the location and waits for the quest log's own poll to see it.
-    /// False when the position is unknown or <paramref name="done"/> never became true.</summary>
-    public async Task<bool> Reach(string locationId, System.Func<bool> done)
+    /// <summary>The player picks up <paramref name="count"/> of an item: into the pack and then the
+    /// very event the world pickup publishes (which is what a Collect objective counts).</summary>
+    public bool Pickup(string itemId, int count)
     {
-        if (!StandAt(locationId, out Vector3 home))
+        if (ItemDatabase.Get(itemId) is not { } item || _player.GetComponent<InventoryComponent>() is not { } pack)
         {
             return false;
         }
 
-        bool ok = await WaitFor(done);
-        _player.Body.GlobalPosition = home;
+        int added = pack.AddInstance(ItemInstance.Plain(item), count);
+        if (added > 0)
+        {
+            EventBus.Instance?.Publish(new ItemPickedUpEvent(_player, item, added));
+        }
+
+        return added == count;
+    }
+
+    /// <summary>
+    /// A real boss entity falls to the player's blow: built by the template registry, in the tree beside
+    /// the player (its controller resolves its fight there), then the death event the damage pipeline
+    /// would publish. <c>BossEncounterDirector</c> and the quest log answer it exactly as in play. The
+    /// fight itself cannot be played headless; this is its end. Null when the template is no boss.
+    /// </summary>
+    public BossEntity? KillBoss(string templateId, string fightId = "")
+    {
+        BossEntity? boss = SpawnBoss(templateId, fightId);
+        if (boss == null)
+        {
+            return null;
+        }
+
+        EventBus.Instance?.Publish(new EntityDiedEvent(boss, _player));
+        boss.Free();
+        return boss;
+    }
+
+    /// <summary>A yielding duel boss withdraws (the rival's duels): the same fight-end the director
+    /// handles for a death, without a kill. Null when the template is no boss.</summary>
+    public BossEntity? WithdrawBoss(string templateId, string fightId)
+    {
+        BossEntity? boss = SpawnBoss(templateId, fightId);
+        if (boss == null)
+        {
+            return null;
+        }
+
+        EventBus.Instance?.Publish(new BossWithdrewEvent(boss));
+        boss.Free();
+        return boss;
+    }
+
+    private BossEntity? SpawnBoss(string templateId, string fightId)
+    {
+        EnemyEntity enemy = EnemyTemplateRegistry.Create(templateId, Vector3.Zero);
+        if (enemy is not BossEntity boss)
+        {
+            enemy.Free();
+            return null;
+        }
+
+        if (fightId.Length > 0 && boss.GetNodeOrNull<BossController>("BossController") is { } controller)
+        {
+            controller.BossId = fightId;
+        }
+
+        (_player.Body.GetParent() ?? _player.Body).AddChild(boss);
+        boss.GlobalPosition = _player.Body.GlobalPosition;
+        return boss;
+    }
+
+    /// <summary>
+    /// Arrives at a place and waits for the quest log's own poll to count it. The place is brought to the
+    /// player rather than the player to the place: the realms lie hundreds of metres apart in separate
+    /// regions, no terrain is streamed at their coordinates, and a body teleported there falls out of the
+    /// world. The place must exist (a baked or scene-placed map pin); only where it stands is borrowed.
+    /// False when the place has no position or <paramref name="done"/> never became true.
+    /// </summary>
+    public async Task<bool> Reach(string locationId, System.Func<bool> done)
+    {
+        if (!Bring(locationId, out Vector3? original))
+        {
+            return false;
+        }
+
+        bool ok = await WaitFor(done, ArrivalFrameBudget);
+        Return(locationId, original);
         return ok;
     }
 
-    /// <summary>Holds a place: stands at it with the clock sped up until <paramref name="done"/>.</summary>
+    /// <summary>Holds a place: the player stands at it with the clock sped up until <paramref name="done"/>.
+    /// The physics steps per frame are capped while it runs: the hold counts one poll per frame, so more
+    /// simulation per frame buys nothing.</summary>
     public async Task<bool> Defend(string locationId, System.Func<bool> done)
     {
-        if (!StandAt(locationId, out Vector3 home))
+        if (!Bring(locationId, out Vector3? original))
         {
             return false;
         }
 
         float previous = (float)Engine.TimeScale;
+        int steps = Engine.MaxPhysicsStepsPerFrame;
         Engine.TimeScale = DefendTimeScale;
+        Engine.MaxPhysicsStepsPerFrame = 1;
         bool ok;
         try
         {
-            ok = await WaitFor(done);
+            ok = await WaitFor(done, PositionalFrameBudget, HoldPollsPerFrame);
         }
         finally
         {
             Engine.TimeScale = previous;
+            Engine.MaxPhysicsStepsPerFrame = steps;
         }
 
-        _player.Body.GlobalPosition = home;
+        Return(locationId, original);
+        return ok;
+    }
+
+    /// <summary>Puts a companion's destination where the companion stands, for an Escort the companion
+    /// then completes by standing at it.</summary>
+    public async Task<bool> EscortTo(string locationId, Vector3 companionAt, System.Func<bool> done)
+    {
+        if (!Bring(locationId, out Vector3? original, companionAt))
+        {
+            return false;
+        }
+
+        bool ok = await WaitFor(done, ArrivalFrameBudget);
+        Return(locationId, original);
         return ok;
     }
 
@@ -259,29 +588,101 @@ public sealed class StoryDriver
         return best;
     }
 
-    private bool StandAt(string locationId, out Vector3 home)
+    /// <summary>Where a place is when the map has no position for it (the bake is stale for a location
+    /// authored since): the scene-text answer. Null leaves the place unresolvable.</summary>
+    public System.Func<string, Vector3?>? PositionFallback { get; set; }
+
+    /// <summary>Locations that had no baked position and were placed from scene text instead. A master bake empties it.</summary>
+    public static HashSet<string> Unbaked { get; } = new();
+
+    /// <summary>The map position for a place; when the bake has none, the fallback position, registered with
+    /// the map the way a streaming cell registers its pins (so the quest log poll sees it).</summary>
+    public Vector3? Resolve(string locationId)
     {
-        home = _player.Body.GlobalPosition;
-        if (ServiceLocator.Instance is not { } locator || !locator.TryGet(out MapService map) ||
-            map.PositionOf(locationId) is not { } at)
+        if (ServiceLocator.Instance is not { } locator || !locator.TryGet(out MapService map))
+        {
+            return null;
+        }
+
+        if (map.PositionOf(locationId) is { } known)
+        {
+            return known;
+        }
+
+        if (PositionFallback?.Invoke(locationId) is not { } fallback)
+        {
+            return null;
+        }
+
+        map.RegisterLocation(locationId, fallback);
+        Unbaked.Add(locationId);
+        return fallback;
+    }
+
+    private static readonly Vector3 Parked = new(1_000_000f, 0f, 1_000_000f);
+
+    private bool Bring(string locationId, out Vector3? original, Vector3? at = null)
+    {
+        original = Resolve(locationId);
+        if (original == null || ServiceLocator.Instance is not { } locator || !locator.TryGet(out MapService map))
         {
             return false;
         }
 
-        _player.Body.GlobalPosition = at;
+        _brought = (locationId, at);
+        map.RegisterLocation(locationId, at ?? _player.Body.GlobalPosition);
         return true;
     }
 
-    private async Task<bool> WaitFor(System.Func<bool> done)
+    private (string Id, Vector3? At)? _brought;
+
+    /// <summary>The streamer re-registers a resident cell's pins at their baked positions while the world
+    /// is still filling in (right after a load); the place is put back where the player stands each frame.</summary>
+    private void KeepBrought()
     {
-        for (int frame = 0; frame < PositionalFrameBudget; frame++)
+        if (_brought is { } brought && ServiceLocator.Instance is { } locator && locator.TryGet(out MapService map))
+        {
+            map.RegisterLocation(brought.Id, brought.At ?? _player.Body.GlobalPosition);
+        }
+    }
+
+    private void Return(string locationId, Vector3? original)
+    {
+        _brought = null;
+        if (ServiceLocator.Instance is { } locator && locator.TryGet(out MapService map))
+        {
+            map.RegisterLocation(locationId, original ?? Parked);
+        }
+    }
+
+    /// <summary>
+    /// The quest log counts a hold one poll (a quarter second) per frame. Extra polls are run through its
+    /// own <c>_Process</c> (the same code, the same quarter-second step) so a minute of holding costs a
+    /// handful of frames instead of two hundred; the frames are what the headless run spends its time on.
+    /// </summary>
+    private void HoldPollsPerFrame()
+    {
+        if (_player.GetComponent<QuestLogComponent>() is { } log)
+        {
+            for (int i = 0; i < 7; i++)
+            {
+                log._Process(0.25);
+            }
+        }
+    }
+
+    private async Task<bool> WaitFor(System.Func<bool> done, int budget = PositionalFrameBudget, System.Action? pump = null)
+    {
+        for (int frame = 0; frame < budget; frame++)
         {
             if (done())
             {
                 return true;
             }
 
-            await HeadlessLifecycle.Frames(_root, 2);
+            pump?.Invoke();
+            await HeadlessLifecycle.Frames(_root, 1);
+            KeepBrought();
         }
 
         return done();
@@ -358,3 +759,19 @@ internal sealed partial class DriverInteractable : InteractableComponent
 
     public override bool Interact(IEntity instigator) => true;
 }
+
+/// <summary>What a conversation is meant to achieve, for <see cref="StoryDriver.Converse"/>.</summary>
+public sealed class DialogueAim
+{
+    /// <summary>Explicit choices, in the order they are met: a full text key or a <c>.suffix</c>.</summary>
+    public List<string> Picks { get; } = new();
+
+    /// <summary>Flags the talk should raise (a reply that sets one is preferred).</summary>
+    public HashSet<string> Flags { get; } = new();
+
+    /// <summary>Quests the talk may start.</summary>
+    public HashSet<string> Quests { get; } = new();
+}
+
+/// <summary>How a conversation went: the node:choice path, picks never met, and whether it ended by a choice.</summary>
+public sealed record ConversationResult(string Trace, string[] UnusedPicks, bool Ended);
