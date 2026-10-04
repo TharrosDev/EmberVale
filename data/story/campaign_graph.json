@@ -1723,7 +1723,7 @@
      "target": "dialogue.ashen_headwoman",
      "count": 1,
      "location": "location.ashen.last_hearth",
-     "reqFlag": "flag.beast_lord_defeated",
+     "reqFlag": "",
      "forbidFlag": "",
      "completionFlag": "",
      "activatedFlag": "",
@@ -1743,10 +1743,6 @@
     {
      "flag": "flag.main.herd_and_hearth_done",
      "via": "autoStart"
-    },
-    {
-     "flag": "flag.beast_lord_defeated",
-     "via": "objective[2].required"
     }
    ],
    "locKeys": [
@@ -2361,7 +2357,7 @@
      "target": "flag.rival.duel2_won",
      "count": 1,
      "location": "location.sunspire.mission",
-     "reqFlag": "flag.crimson_prophet_defeated",
+     "reqFlag": "",
      "forbidFlag": "",
      "completionFlag": "",
      "activatedFlag": "",
@@ -2375,7 +2371,7 @@
      "target": "dialogue.sunspire_wellkeeper",
      "count": 1,
      "location": "location.sunspire.wells",
-     "reqFlag": "flag.crimson_prophet_defeated",
+     "reqFlag": "",
      "forbidFlag": "",
      "completionFlag": "",
      "activatedFlag": "",
@@ -2397,16 +2393,8 @@
      "via": "autoStart"
     },
     {
-     "flag": "flag.crimson_prophet_defeated",
-     "via": "objective[1].required"
-    },
-    {
      "flag": "flag.rival.duel2_won",
      "via": "objective[1].milestone"
-    },
-    {
-     "flag": "flag.crimson_prophet_defeated",
-     "via": "objective[2].required"
     }
    ],
    "locKeys": [
@@ -2852,6 +2840,20 @@
    "objectives": [
     {
      "type": 2,
+     "target": "location.sunspire.caravan_gap",
+     "count": 1,
+     "location": "",
+     "reqFlag": "",
+     "forbidFlag": "",
+     "completionFlag": "flag.beat.gap_seen",
+     "activatedFlag": "",
+     "optional": false,
+     "description": "quest.main.dry_wells.obj_gap",
+     "hintKey": "quest.main.dry_wells.hint_gap",
+     "journalKey": "quest.main.dry_wells.log_gap"
+    },
+    {
+     "type": 2,
      "target": "location.sunspire.wells",
      "count": 1,
      "location": "",
@@ -2921,20 +2923,6 @@
      "journalKey": "quest.main.dry_wells.log_gauge_w"
     },
     {
-     "type": 2,
-     "target": "location.sunspire.caravan_gap",
-     "count": 1,
-     "location": "",
-     "reqFlag": "",
-     "forbidFlag": "",
-     "completionFlag": "flag.beat.gap_seen",
-     "activatedFlag": "",
-     "optional": false,
-     "description": "quest.main.dry_wells.obj_gap",
-     "hintKey": "quest.main.dry_wells.hint_gap",
-     "journalKey": "quest.main.dry_wells.log_gap"
-    },
-    {
      "type": 3,
      "target": "dialogue.sunspire_caravan_master",
      "count": 1,
@@ -2969,15 +2957,15 @@
      "via": "completion"
     },
     {
+     "flag": "flag.beat.gap_seen",
+     "via": "objective[0].completion"
+    },
+    {
      "flag": "flag.beat.oda_briefed",
-     "via": "objective[1].completion"
+     "via": "objective[2].completion"
     },
     {
      "flag": "flag.beat.gauges_read",
-     "via": "objective[4].completion"
-    },
-    {
-     "flag": "flag.beat.gap_seen",
      "via": "objective[5].completion"
     },
     {
@@ -3700,7 +3688,7 @@
      "target": "flag.rival.met1",
      "count": 1,
      "location": "location.ember_crown.arena",
-     "reqFlag": "flag.iron_king_defeated",
+     "reqFlag": "",
      "forbidFlag": "",
      "completionFlag": "",
      "activatedFlag": "",
@@ -3714,7 +3702,7 @@
      "target": "dialogue.elder",
      "count": 1,
      "location": "location.ember_crown.town",
-     "reqFlag": "flag.rival.met1",
+     "reqFlag": "",
      "forbidFlag": "",
      "completionFlag": "",
      "activatedFlag": "",
@@ -3736,16 +3724,8 @@
      "via": "autoStart"
     },
     {
-     "flag": "flag.iron_king_defeated",
-     "via": "objective[1].required"
-    },
-    {
      "flag": "flag.rival.met1",
      "via": "objective[1].milestone"
-    },
-    {
-     "flag": "flag.rival.met1",
-     "via": "objective[2].required"
     }
    ],
    "locKeys": [
@@ -4451,7 +4431,7 @@
      "target": "flag.rival.duel1_won",
      "count": 1,
      "location": "location.frostfang.stormcrown",
-     "reqFlag": "flag.storm_tyrant_defeated",
+     "reqFlag": "",
      "forbidFlag": "",
      "completionFlag": "",
      "activatedFlag": "",
@@ -4465,7 +4445,7 @@
      "target": "dialogue.clan_chief",
      "count": 1,
      "location": "location.frostfang.clan_hold",
-     "reqFlag": "flag.beat.stormend_hjalvar",
+     "reqFlag": "flag.fork.succession_hjalvar",
      "forbidFlag": "",
      "completionFlag": "",
      "activatedFlag": "",
@@ -4479,7 +4459,7 @@
      "target": "dialogue.clan_exile",
      "count": 1,
      "location": "location.frostfang.clan_hold",
-     "reqFlag": "flag.beat.stormend_halvar",
+     "reqFlag": "flag.fork.succession_halvar",
      "forbidFlag": "",
      "completionFlag": "",
      "activatedFlag": "",
@@ -4501,19 +4481,15 @@
      "via": "autoStart"
     },
     {
-     "flag": "flag.storm_tyrant_defeated",
-     "via": "objective[1].required"
-    },
-    {
      "flag": "flag.rival.duel1_won",
      "via": "objective[1].milestone"
     },
     {
-     "flag": "flag.beat.stormend_hjalvar",
+     "flag": "flag.fork.succession_hjalvar",
      "via": "objective[2].required"
     },
     {
-     "flag": "flag.beat.stormend_halvar",
+     "flag": "flag.fork.succession_halvar",
      "via": "objective[3].required"
     }
    ],
@@ -8107,7 +8083,7 @@
    "nodes": [
     {
      "id": "root",
-     "choices": 8,
+     "choices": 9,
      "gotos": [
       "lord",
       "station",
@@ -8192,9 +8168,12 @@
     "flag.fork.herd_calmed",
     "flag.fork.herd_slain",
     "flag.main.beast_lord_done",
+    "flag.main.last_hearth_done",
     "flag.rival.hearsay"
    ],
-   "questsStarted": [],
+   "questsStarted": [
+    "quest.main.herd_and_hearth"
+   ],
    "sites": [
     {
      "flag": "flag.beast_lord_defeated",
@@ -8213,6 +8192,12 @@
      "kind": "read",
      "node": "root",
      "at": "choice[6]"
+    },
+    {
+     "flag": "flag.main.last_hearth_done",
+     "kind": "read",
+     "node": "root",
+     "at": "choice[7]"
     },
     {
      "flag": "flag.rival.hearsay",
@@ -8264,6 +8249,7 @@
     "dlg.ash_hunter_warden.root",
     "dlg.ash_hunter_warden.root.c_cq_herd_calmed_hask",
     "dlg.ash_hunter_warden.root.c_cq_herd_slain_hask",
+    "dlg.ash_hunter_warden.root.c_restart_herd",
     "dlg.ash_hunter_warden.speaker",
     "dlg.ash_hunter_warden.station"
    ]
@@ -8490,7 +8476,7 @@
    "nodes": [
     {
      "id": "root",
-     "choices": 8,
+     "choices": 9,
      "gotos": [
       "ending_dawnfire",
       "ending_embers",
@@ -8579,9 +8565,12 @@
     "flag.ending_embers",
     "flag.fork.herd_calmed",
     "flag.fork.herd_slain",
-    "flag.main.beast_lord_done"
+    "flag.main.beast_lord_done",
+    "flag.main.iron_king_done"
    ],
-   "questsStarted": [],
+   "questsStarted": [
+    "quest.main.last_hearth"
+   ],
    "sites": [
     {
      "flag": "flag.ending_dawnfire",
@@ -8612,6 +8601,12 @@
      "kind": "read",
      "node": "root",
      "at": "choice[6]"
+    },
+    {
+     "flag": "flag.main.iron_king_done",
+     "kind": "read",
+     "node": "root",
+     "at": "choice[7]"
     },
     {
      "flag": "flag.main.beast_lord_done",
@@ -8670,6 +8665,7 @@
     "dlg.ashen_headwoman.root",
     "dlg.ashen_headwoman.root.c_cq_herd_calmed_note",
     "dlg.ashen_headwoman.root.c_cq_herd_slain_note",
+    "dlg.ashen_headwoman.root.c_restart_fence",
     "dlg.ashen_headwoman.speaker"
    ]
   },
@@ -8689,11 +8685,19 @@
    "nodes": [
     {
      "id": "root",
-     "choices": 4,
+     "choices": 5,
      "gotos": [
       "slay",
       "slay",
-      "calm"
+      "calm",
+      "calm_hint"
+     ]
+    },
+    {
+     "id": "calm_hint",
+     "choices": 1,
+     "gotos": [
+      "root"
      ]
     },
     {
@@ -8768,9 +8772,12 @@
     "dlg.ashen_herd_choice.calm.c_watch",
     "dlg.ashen_herd_choice.calm_end",
     "dlg.ashen_herd_choice.calm_end.c_go",
+    "dlg.ashen_herd_choice.calm_hint",
+    "dlg.ashen_herd_choice.calm_hint.c_back",
     "dlg.ashen_herd_choice.root",
     "dlg.ashen_herd_choice.root.c_bye",
     "dlg.ashen_herd_choice.root.c_calm",
+    "dlg.ashen_herd_choice.root.c_hint",
     "dlg.ashen_herd_choice.root.c_slay",
     "dlg.ashen_herd_choice.root.c_slay_hunter",
     "dlg.ashen_herd_choice.slay",
@@ -10144,7 +10151,7 @@
    "nodes": [
     {
      "id": "root",
-     "choices": 8,
+     "choices": 10,
      "gotos": [
       "kin",
       "work",
@@ -10296,11 +10303,15 @@
     "flag.clan.oathbreaker",
     "flag.fork.succession_halvar",
     "flag.fork.succession_hjalvar",
+    "flag.main.closed_hold_done",
+    "flag.main.iron_king_done",
     "flag.main.storm_tyrant_done"
    ],
    "questsStarted": [
     "quest.clan.hollow",
-    "quest.clan.proving"
+    "quest.clan.proving",
+    "quest.main.closed_hold",
+    "quest.main.succession"
    ],
    "sites": [
     {
@@ -10326,6 +10337,18 @@
      "kind": "read",
      "node": "root",
      "at": "choice[6]"
+    },
+    {
+     "flag": "flag.main.iron_king_done",
+     "kind": "read",
+     "node": "root",
+     "at": "choice[7]"
+    },
+    {
+     "flag": "flag.main.closed_hold_done",
+     "kind": "read",
+     "node": "root",
+     "at": "choice[8]"
     },
     {
      "flag": "flag.clan.named",
@@ -10417,6 +10440,8 @@
     "dlg.clan_chief.root",
     "dlg.clan_chief.root.c_cq_seat_halvar",
     "dlg.clan_chief.root.c_cq_seat_hjalvar",
+    "dlg.clan_chief.root.c_restart_hold",
+    "dlg.clan_chief.root.c_restart_succession",
     "dlg.clan_chief.speaker",
     "dlg.clan_chief.tyrant",
     "dlg.clan_chief.who",
@@ -12218,7 +12243,7 @@
    "nodes": [
     {
      "id": "root",
-     "choices": 17,
+     "choices": 18,
      "gotos": [
       "ending_dawnfire",
       "ending_embers",
@@ -12365,8 +12390,10 @@
     },
     {
      "id": "cq_ik_after",
-     "choices": 1,
-     "gotos": []
+     "choices": 2,
+     "gotos": [
+      "cq_ik_roads"
+     ]
     },
     {
      "id": "cq_dray_spared",
@@ -12388,6 +12415,13 @@
      "gotos": [
       "root"
      ]
+    },
+    {
+     "id": "cq_ik_roads",
+     "choices": 2,
+     "gotos": [
+      "cq_ik_after"
+     ]
     }
    ],
    "flagsSet": [
@@ -12403,11 +12437,13 @@
     "flag.fork.dray_pressed",
     "flag.fork.dray_spared",
     "flag.main.iron_king_done",
+    "flag.main.opening_done",
     "flag.main.smoke_over_the_square_done",
     "flag.rival.met1"
    ],
    "questsStarted": [
     "quest.gather_iron",
+    "quest.main.smoke_over_the_square",
     "quest.warband.heart"
    ],
    "sites": [
@@ -12446,6 +12482,12 @@
      "kind": "read",
      "node": "root",
      "at": "choice[15]"
+    },
+    {
+     "flag": "flag.main.opening_done",
+     "kind": "read",
+     "node": "root",
+     "at": "choice[16]"
     },
     {
      "flag": "flag.elder_thanked",
@@ -12506,6 +12548,10 @@
     "dlg.elder.cq_dray_spared.c_else",
     "dlg.elder.cq_ik_after",
     "dlg.elder.cq_ik_after.c_go",
+    "dlg.elder.cq_ik_after.c_roads",
+    "dlg.elder.cq_ik_roads",
+    "dlg.elder.cq_ik_roads.c_back",
+    "dlg.elder.cq_ik_roads.c_go",
     "dlg.elder.cq_sq_after",
     "dlg.elder.cq_sq_after.c_else",
     "dlg.elder.cq_sq_after.c_go",
@@ -12549,6 +12595,7 @@
     "dlg.elder.root.c_cq_arcs_done",
     "dlg.elder.root.c_cq_dray_pressed",
     "dlg.elder.root.c_cq_dray_spared",
+    "dlg.elder.root.c_restart_smoke",
     "dlg.elder.speaker",
     "dlg.elder.thanks"
    ]
@@ -20979,11 +21026,6 @@
    "writers": [],
    "readers": [
     {
-     "kind": "quest",
-     "id": "quest.main.beast_lord",
-     "via": "objective[2].required"
-    },
-    {
      "kind": "dialogue",
      "id": "dialogue.ash_hunter_warden",
      "via": "root/choice[2]"
@@ -21724,7 +21766,7 @@
     {
      "kind": "quest",
      "id": "quest.main.dry_wells",
-     "via": "objective[5].completion"
+     "via": "objective[0].completion"
     }
    ],
    "readers": [
@@ -21807,7 +21849,7 @@
     {
      "kind": "quest",
      "id": "quest.main.dry_wells",
-     "via": "objective[4].completion"
+     "via": "objective[5].completion"
     }
    ],
    "readers": [
@@ -22236,7 +22278,7 @@
     {
      "kind": "quest",
      "id": "quest.main.dry_wells",
-     "via": "objective[1].completion"
+     "via": "objective[2].completion"
     }
    ],
    "readers": [
@@ -22852,11 +22894,6 @@
    "writers": [],
    "readers": [
     {
-     "kind": "quest",
-     "id": "quest.main.storm_tyrant",
-     "via": "objective[3].required"
-    },
-    {
      "kind": "dialogue",
      "id": "dialogue.clan_exile",
      "via": "cq_st_after/startVariant"
@@ -22871,11 +22908,6 @@
   "flag.beat.stormend_hjalvar": {
    "writers": [],
    "readers": [
-    {
-     "kind": "quest",
-     "id": "quest.main.storm_tyrant",
-     "via": "objective[2].required"
-    },
     {
      "kind": "dialogue",
      "id": "dialogue.clan_chief",
@@ -23449,16 +23481,6 @@
   "flag.crimson_prophet_defeated": {
    "writers": [],
    "readers": [
-    {
-     "kind": "quest",
-     "id": "quest.main.crimson_prophet",
-     "via": "objective[1].required"
-    },
-    {
-     "kind": "quest",
-     "id": "quest.main.crimson_prophet",
-     "via": "objective[2].required"
-    },
     {
      "kind": "dialogue",
      "id": "dialogue.sunspire_archivist",
@@ -24290,6 +24312,11 @@
    "readers": [
     {
      "kind": "quest",
+     "id": "quest.main.storm_tyrant",
+     "via": "objective[3].required"
+    },
+    {
+     "kind": "quest",
      "id": "quest.main.succession",
      "via": "objective[5].required"
     },
@@ -24323,6 +24350,11 @@
     }
    ],
    "readers": [
+    {
+     "kind": "quest",
+     "id": "quest.main.storm_tyrant",
+     "via": "objective[2].required"
+    },
     {
      "kind": "quest",
      "id": "quest.main.succession",
@@ -24640,11 +24672,6 @@
      "via": "autoStart"
     },
     {
-     "kind": "quest",
-     "id": "quest.main.iron_king",
-     "via": "objective[1].required"
-    },
-    {
      "kind": "dialogue",
      "id": "dialogue.dawnwarden_partner",
      "via": "command/choice[0]"
@@ -24900,6 +24927,11 @@
     },
     {
      "kind": "dialogue",
+     "id": "dialogue.clan_chief",
+     "via": "root/choice[8]"
+    },
+    {
+     "kind": "dialogue",
      "id": "dialogue.clan_quartermaster",
      "via": "root/startVariant"
     }
@@ -25108,6 +25140,16 @@
     },
     {
      "kind": "dialogue",
+     "id": "dialogue.ashen_headwoman",
+     "via": "root/choice[7]"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.clan_chief",
+     "via": "root/choice[7]"
+    },
+    {
+     "kind": "dialogue",
      "id": "dialogue.elder",
      "via": "root/startVariant"
     }
@@ -25131,6 +25173,11 @@
     },
     {
      "kind": "dialogue",
+     "id": "dialogue.ash_hunter_warden",
+     "via": "root/choice[7]"
+    },
+    {
+     "kind": "dialogue",
      "id": "dialogue.ashen_mender",
      "via": "root/startVariant"
     }
@@ -25147,6 +25194,11 @@
      "kind": "quest",
      "id": "quest.main.smoke_over_the_square",
      "via": "autoStart"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.elder",
+     "via": "root/choice[16]"
     }
    ],
    "code": true,
@@ -25774,11 +25826,6 @@
      "via": "objective[1].milestone"
     },
     {
-     "kind": "quest",
-     "id": "quest.main.iron_king",
-     "via": "objective[2].required"
-    },
-    {
      "kind": "dialogue",
      "id": "dialogue.elder",
      "via": "cq_ik_after/startVariant"
@@ -25830,25 +25877,6 @@
    "code": false,
    "externalRefs": [
     "src/UI/EndingSequence.cs"
-   ]
-  },
-  "flag.storm_tyrant_defeated": {
-   "writers": [],
-   "readers": [
-    {
-     "kind": "quest",
-     "id": "quest.main.storm_tyrant",
-     "via": "objective[1].required"
-    }
-   ],
-   "code": true,
-   "externalRefs": [
-    "data/bosses/StormTyrant.tres",
-    "data/story/rules/spec1.json",
-    "scenes/regions/frostfang_reach/stormcrown.tscn",
-    "src/Bootstrap/LegacyFixtures.cs",
-    "src/Narrative/CampaignCatchUp.cs",
-    "src/Narrative/HiddenRealmReveal.cs"
    ]
   },
   "flag.testimonies_all": {
@@ -26763,6 +26791,11 @@
    "readers": [
     {
      "kind": "quest",
+     "id": "quest.main.storm_tyrant",
+     "via": "objective[3].required"
+    },
+    {
+     "kind": "quest",
      "id": "quest.main.succession",
      "via": "objective[5].required"
     },
@@ -26801,6 +26834,11 @@
     }
    ],
    "readers": [
+    {
+     "kind": "quest",
+     "id": "quest.main.storm_tyrant",
+     "via": "objective[2].required"
+    },
     {
      "kind": "quest",
      "id": "quest.main.succession",
