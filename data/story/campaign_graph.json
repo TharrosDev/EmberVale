@@ -21850,7 +21850,8 @@
    ],
    "code": false,
    "externalRefs": [
-    "scenes/regions/celestial/knight_gate.tscn"
+    "scenes/regions/celestial/knight_gate.tscn",
+    "src/Bootstrap/StoryPlaythrough.cs"
    ]
   },
   "flag.beat.gauges_read": {
