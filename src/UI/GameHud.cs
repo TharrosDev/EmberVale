@@ -1219,12 +1219,16 @@ public partial class GameHud : CanvasLayer
                 done ? UiTheme.QuestComplete : locked ? UiTheme.Dim : UiTheme.Text);
             text.AutowrapMode = TextServer.AutowrapMode.WordSmart;
             text.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+            // Without a floor the chip and count win the row and the objective wraps a word per line.
+            text.CustomMinimumSize = new Vector2(110f, 0f);
             line.AddChild(text);
 
             // Optional steps are told apart by a word, not by being dimmer.
             if (objectives[i].IsOptional)
             {
-                line.AddChild(UiTheme.Chip(Loc.T("questui.chip.optional_short"), UiTheme.Dim));
+                PanelContainer optionalChip = UiTheme.Chip(Loc.T("questui.chip.optional_short"), UiTheme.Dim);
+                optionalChip.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
+                line.AddChild(optionalChip);
             }
 
             // A 1-of-1 objective's "0/1" is noise — the bullet already says done or not.

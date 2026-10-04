@@ -66,8 +66,8 @@ public partial class Notifications : CanvasLayer
         _stack.GrowVertical = Control.GrowDirection.End;
         _stack.OffsetLeft = -UiTheme.SpaceLg;
         _stack.OffsetRight = -UiTheme.SpaceLg;
-        _stack.OffsetTop = 190;
-        _stack.OffsetBottom = 190;
+        _stack.OffsetTop = 306;
+        _stack.OffsetBottom = 306;
         AddChild(_stack);
 
         EventBus bus = EventBus.Instance;

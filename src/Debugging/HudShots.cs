@@ -50,7 +50,7 @@ public sealed partial class HudShots : ShotHarness
             return "player has no StatsComponent";
         if (player.GetComponent<PlayerCameraRig>()?.Camera is not { Current: true })
             return "player has no current gameplay camera";
-        if (GetTree().Root.FindChild("GameHud", recursive: true, owned: false) is null)
+        if (Hud() is null)
             return "GameHud is missing";
         if (name == "02-health-low" && stats.GetCurrent(StatType.Health) > stats.GetMax(StatType.Health) * 0.2f)
             return "low-health state was not reached";

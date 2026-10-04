@@ -91,7 +91,7 @@ internal static class QuestShotFixtures
         Add("shot.choice.rep", "\"Hand it to the Syndicate.\"");
         Add("shot.choice.leave", "\"Not now.\"");
 
-        Add(BossEpithetKey, "The Black-Iron King");
+        Add(BossEpithetKey, "Warden of the Iron Gate");
         Add(BossIntroKey, "\"Kneel, or be a wall I build on.\"");
 
         TranslationServer.AddTranslation(t);
