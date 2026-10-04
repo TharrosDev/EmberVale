@@ -34,7 +34,6 @@ public partial class ChapterBanner : CanvasLayer
 
     private string? _showing;
     private float _elapsed;
-    private System.Action? _unsubscribeRequest;
 
     /// <summary>The chapter key currently on screen, or null. For harness validation.</summary>
     public string? Showing => _showing;
@@ -91,18 +90,14 @@ public partial class ChapterBanner : CanvasLayer
 
         EventBus.Instance?.Subscribe<ChapterStartedEvent>(OnChapterStarted);
 
-        // A banner request from a story beat or dialogue effect. The event is added by the story branch, so
-        // it is subscribed by name; absent from a build means only the quest-start path exists.
-        _unsubscribeRequest = OptionalEventBridge.Subscribe(
-            "Embervale.Narrative.StoryBannerRequestedEvent",
-            e => Request(OptionalEventBridge.StringOf(e, "Key")));
+        // A banner request from a story beat or a dialogue Banner effect.
+        EventBus.Instance?.Subscribe<Narrative.StoryBannerRequestedEvent>(OnBannerRequested);
     }
 
     public override void _ExitTree()
     {
         EventBus.Instance?.Unsubscribe<ChapterStartedEvent>(OnChapterStarted);
-        _unsubscribeRequest?.Invoke();
-        _unsubscribeRequest = null;
+        EventBus.Instance?.Unsubscribe<Narrative.StoryBannerRequestedEvent>(OnBannerRequested);
     }
 
     private static Control Rule()
@@ -117,6 +112,8 @@ public partial class ChapterBanner : CanvasLayer
     }
 
     private void OnChapterStarted(ChapterStartedEvent e) => Request(e.ChapterKey);
+
+    private void OnBannerRequested(Narrative.StoryBannerRequestedEvent e) => Request(e.ChapterKey);
 
     /// <summary>Asks for a chapter's banner. Queued; shown when the screen is free, once per save.</summary>
     public void Request(string chapterKey) => _queue.Enqueue(chapterKey);

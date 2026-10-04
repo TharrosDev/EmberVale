@@ -397,35 +397,22 @@ public partial class DialoguePanel : UiPanel
 
     // --- Consequence tags ----------------------------------------------------------------
 
-    /// <summary>The chips for a choice: both of its effects and the on-enter effect of the node it leads to.
-    /// The second effect and the on-enter effect come from the story branch's dialogue extensions; they are
-    /// read through the resource's property bag so this compiles with or without those fields.</summary>
+    /// <summary>The chips for a choice: both of its effects and the on-enter effect of the node it leads to
+    /// (taking the choice is what triggers it).</summary>
     private List<ConsequenceTag> TagsFor(DialogueChoice choice)
     {
         int onEnter = 0;
         string onEnterArg = string.Empty;
         if (choice.Goto.Length > 0 && _dialogue?.FindNode(choice.Goto) is { } target)
         {
-            onEnter = IntOf(target, "OnEnterEffect");
-            onEnterArg = StringOf(target, "OnEnterEffectArg");
+            onEnter = (int)target.OnEnterEffect;
+            onEnterArg = target.OnEnterEffectArg;
         }
 
         return DialogueConsequenceTags.ForChoice(
             (int)choice.Effect, choice.EffectArg,
-            IntOf(choice, "Effect2"), StringOf(choice, "Effect2Arg"),
+            (int)choice.Effect2, choice.Effect2Arg,
             onEnter, onEnterArg);
-    }
-
-    private static int IntOf(GodotObject resource, string property)
-    {
-        Variant value = resource.Get(property);
-        return value.VariantType == Variant.Type.Int ? value.AsInt32() : 0;
-    }
-
-    private static string StringOf(GodotObject resource, string property)
-    {
-        Variant value = resource.Get(property);
-        return value.VariantType == Variant.Type.String ? value.AsString() : string.Empty;
     }
 
     private static (string Text, Color Color) TagLook(ConsequenceTag tag)

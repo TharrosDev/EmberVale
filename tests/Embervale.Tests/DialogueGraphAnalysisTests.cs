@@ -71,6 +71,26 @@ public class DialogueGraphAnalysisTests
     }
 
     [Fact]
+    public void NodeReachableOnlyThroughAStartVariant_IsNotAnOrphan()
+    {
+        var nodes = new List<DialogueGraphAnalysis.Node>
+        {
+            Node("root", terminal: true),
+            Node("after", terminal: true, "after_more"),
+            Node("after_more", terminal: true),
+            Node("lost", terminal: true),
+        };
+
+        Assert.Equal(new[] { "after", "after_more", "lost" },
+            DialogueGraphAnalysis.Analyze("root", nodes).Unreachable);
+
+        DialogueGraphAnalysis.Result withVariant = DialogueGraphAnalysis.Analyze(new[] { "root", "after" }, nodes);
+
+        Assert.Equal(new[] { "lost" }, withVariant.Unreachable);
+        Assert.Empty(withVariant.DeadEnds);
+    }
+
+    [Fact]
     public void LoopWithAnExit_IsNotADeadEnd()
     {
         // root → a ⇄ b, but b can also end: the whole reachable set can reach an end.

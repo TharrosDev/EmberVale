@@ -28,6 +28,26 @@ public partial class DialogueResource : Resource
     /// elements are read back as <see cref="DialogueNode"/>.</summary>
     [Export] public Godot.Collections.Array Nodes { get; set; } = new();
 
+    /// <summary>Conditional entry points, tried top-down when a conversation opens (first match wins;
+    /// none matching opens <see cref="StartNodeId"/>). Untyped like <see cref="Nodes"/>; elements are
+    /// <see cref="DialogueStartVariant"/>. Appended by the campaign overhaul.</summary>
+    [Export] public Godot.Collections.Array StartVariants { get; set; } = new();
+
+    /// <summary>The start variants read back as their concrete type, skipping bad entries.</summary>
+    public List<DialogueStartVariant> StartVariantList()
+    {
+        var list = new List<DialogueStartVariant>();
+        foreach (Variant element in StartVariants)
+        {
+            if (element.As<DialogueStartVariant>() is { } variant)
+            {
+                list.Add(variant);
+            }
+        }
+
+        return list;
+    }
+
     /// <summary>The nodes read back as their concrete type, skipping bad entries.</summary>
     public List<DialogueNode> NodeList()
     {

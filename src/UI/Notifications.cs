@@ -50,7 +50,6 @@ public partial class Notifications : CanvasLayer
     // One player action publishes several quest events in one frame; they are collected here and turned into
     // the toasts worth showing once per frame (QuestNoticeCoalescer).
     private readonly QuestNoticeCoalescer _questNotices = new();
-    private System.Action? _unsubscribeBark;
 
     public override void _Ready()
     {
@@ -97,11 +96,7 @@ public partial class Notifications : CanvasLayer
         bus?.Subscribe<WorldHazardNoticeEvent>(OnWorldHazard);
         SubscribeMagic(bus);
 
-        // A companion's reaction line. The event lives on the story branch, so it is subscribed by name.
-        _unsubscribeBark = OptionalEventBridge.Subscribe(
-            "Embervale.Companions.CompanionBarkEvent",
-            e => PushBark(
-                OptionalEventBridge.StringOf(e, "CompanionId"), OptionalEventBridge.StringOf(e, "TextKey")));
+        bus?.Subscribe<CompanionBarkEvent>(OnCompanionBark);
     }
 
     public override void _Process(double delta)
@@ -147,8 +142,7 @@ public partial class Notifications : CanvasLayer
         bus.Unsubscribe<ShrineRefusedEvent>(OnShrineRefused);
         bus.Unsubscribe<WorldHazardNoticeEvent>(OnWorldHazard);
         UnsubscribeMagic(bus);
-        _unsubscribeBark?.Invoke();
-        _unsubscribeBark = null;
+        bus.Unsubscribe<CompanionBarkEvent>(OnCompanionBark);
     }
 
     private void OnLeveledUp(LeveledUpEvent e) =>
@@ -273,6 +267,8 @@ public partial class Notifications : CanvasLayer
 
         return QuestDatabase.Get(questId);
     }
+
+    private void OnCompanionBark(CompanionBarkEvent e) => PushBark(e.CompanionId, e.TextKey);
 
     /// <summary>A companion's reaction line as a portrait-less toast: the line, and who said it beneath.
     /// Public so a harness can drive it through the feed's own path.</summary>

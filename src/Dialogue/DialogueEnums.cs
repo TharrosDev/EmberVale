@@ -101,6 +101,34 @@ public enum DialogueEffect
     /// player already holds is a no-op rather than a second promotion.
     /// </summary>
     GuildRank,
+
+    /// <summary>Shift the player's standing with a faction: <c>EffectArg</c> is
+    /// <c>&lt;factionId&gt;:&lt;delta&gt;</c> (e.g. <c>faction.dawnwardens:10</c>; the delta may be
+    /// negative). Goes through <c>ReputationComponent.Add</c>, so it is clamped and announced like any
+    /// other standing change. Appended by the campaign overhaul.</summary>
+    AddReputation,
+
+    /// <summary>Give the player items: <c>EffectArg</c> is <c>&lt;itemId&gt;:&lt;count&gt;</c> (count
+    /// defaults to 1). Goes through <c>ItemGrant</c>, so a full pack spills the rest at the player's
+    /// feet instead of destroying the gift.</summary>
+    GiveItem,
+
+    /// <summary>Take items from the player: <c>EffectArg</c> is <c>&lt;itemId&gt;:&lt;count&gt;</c>.
+    /// The player must hold the full count; otherwise the effect is skipped (nothing is taken), so the
+    /// choice carrying it should also carry a <see cref="DialogueCondition.HasItem"/> gate.</summary>
+    TakeItem,
+
+    /// <summary>Play a run of full-screen story cards: <c>EffectArg</c> is a locale key prefix, and the
+    /// cards are <c>&lt;prefix&gt;.1</c>, <c>&lt;prefix&gt;.2</c>, ... until a key is missing. Published
+    /// as <c>StoryCardsRequestedEvent</c> so dialogue code never references UI.</summary>
+    PlayCards,
+
+    /// <summary>Follow the quest whose id is <c>EffectArg</c> on the HUD (no-op unless it is active).</summary>
+    TrackQuest,
+
+    /// <summary>Request a chapter banner: <c>EffectArg</c> is a chapter key. Published as
+    /// <c>StoryBannerRequestedEvent</c>; the UI renders it.</summary>
+    Banner,
 }
 
 /// <summary>
@@ -192,4 +220,21 @@ public enum DialogueCondition
     /// player reads the success line with nothing granted. <c>--validate</c> enforces the pairing.
     /// </summary>
     GuildCanJoin,
+
+    /// <summary>Shown only while the player's EARNED standing with a faction (<c>ReputationComponent.Get</c>,
+    /// before the corruption "dread" penalty) is at or above a threshold: <c>ConditionArg</c> is
+    /// <c>&lt;factionId&gt;:&lt;amount&gt;</c> (e.g. <c>faction.iron_syndicate:20</c>). Earned standing is
+    /// used on purpose: an authored fork should read what the player did, not what their corruption
+    /// currently shaves off it. Appended by the campaign overhaul.</summary>
+    ReputationAtLeast,
+
+    /// <summary>Shown only while the companion (<c>ConditionArg</c>, an id) is in the active party
+    /// right now. The same test as <see cref="CompanionRecruited"/>; named for the party semantics the
+    /// campaign's variant NPCs and optional objectives read.</summary>
+    CompanionInParty,
+
+    /// <summary>Shown only while the player holds the items: <c>ConditionArg</c> is
+    /// <c>&lt;itemId&gt;:&lt;count&gt;</c> (count defaults to 1). The gate a <see cref="DialogueEffect.TakeItem"/>
+    /// choice should carry.</summary>
+    HasItem,
 }

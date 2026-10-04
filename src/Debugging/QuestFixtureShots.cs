@@ -242,19 +242,10 @@ internal static class QuestShotFixtures
         RegisterText();
         var root = new DialogueNode { Id = "root", Text = ElderDialogue + ".text" };
 
-        DialogueChoice Choice(string text, DialogueEffect effect, string arg, int effectOrdinal = -1)
+        DialogueChoice Choice(string text, DialogueEffect effect, string arg)
         {
             var choice = new DialogueChoice { Text = text, Goto = string.Empty };
-            if (effectOrdinal >= 0)
-            {
-                // Effects past the base enum (reputation and friends) are written by ordinal.
-                choice.Effect = (DialogueEffect)effectOrdinal;
-            }
-            else
-            {
-                choice.Effect = effect;
-            }
-
+            choice.Effect = effect;
             choice.EffectArg = arg;
             return choice;
         }
@@ -265,14 +256,14 @@ internal static class QuestShotFixtures
         root.Choices.Add(Choice("shot.choice.story", DialogueEffect.SetFlag, "flag.shot.knight_seen"));
         root.Choices.Add(Choice("shot.choice.loyal", DialogueEffect.AddCompanionLoyalty, "companion.kael:1"));
         root.Choices.Add(Choice("shot.choice.guild", DialogueEffect.JoinGuild, "faction.dawnwardens"));
-        root.Choices.Add(Choice("shot.choice.rep", DialogueEffect.None, "faction.iron_syndicate:-4", effectOrdinal: 13));
+        root.Choices.Add(Choice("shot.choice.rep", DialogueEffect.AddReputation, "faction.iron_syndicate:-4"));
         root.Choices.Add(Choice("shot.choice.leave", DialogueEffect.None, string.Empty));
 
-        // A second effect and an item hand-over, once the dialogue extensions are in this build.
+        // A second effect on the corruption choice: an item hand-over.
         if (root.Choices[1].As<DialogueChoice>() is { } corrupt)
         {
-            corrupt.Set("Effect2", 14);
-            corrupt.Set("Effect2Arg", $"{item}:1");
+            corrupt.Effect2 = DialogueEffect.GiveItem;
+            corrupt.Effect2Arg = $"{item}:1";
         }
 
         var dialogue = new DialogueResource { Id = ElderDialogue, SpeakerName = "shot.giver.elder", StartNodeId = "root" };

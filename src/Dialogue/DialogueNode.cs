@@ -26,6 +26,13 @@ public partial class DialogueNode : Resource
     /// bind cleanly; elements are read back as <see cref="DialogueChoice"/>.</summary>
     [Export] public Godot.Collections.Array Choices { get; set; } = new();
 
+    /// <summary>Effect applied once each time this node is entered (including the conversation's start
+    /// node). Appended by the campaign overhaul; <c>None</c> for every older node. Must not be
+    /// <c>OpenShop</c>/<c>OpenService</c> (a panel opening under a live conversation).</summary>
+    [Export] public DialogueEffect OnEnterEffect { get; set; } = DialogueEffect.None;
+
+    [Export] public string OnEnterEffectArg { get; set; } = string.Empty;
+
     /// <summary>The choices read back as their concrete type, skipping bad entries.</summary>
     public List<DialogueChoice> ChoiceList()
     {

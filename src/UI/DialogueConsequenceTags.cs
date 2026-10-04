@@ -27,18 +27,15 @@ public readonly record struct ConsequenceTag(ConsequenceKind Kind, string Arg, i
 /// costs corruption" or "this starts a quest" before choosing. Pure: it reads only the effect ordinal and
 /// its argument. The chips are text, never colour alone.
 ///
-/// Effects added after the base enum (13 onward: reputation, give/take item, play cards, track quest,
-/// banner) are matched by ordinal so this compiles with or without them in <see cref="DialogueEffect"/>;
-/// their ordinals are append-only and pinned by the enum stability tests.
 /// </summary>
 public static class DialogueConsequenceTags
 {
-    public const int AddReputation = 13;
-    public const int GiveItem = 14;
-    public const int TakeItem = 15;
-    public const int PlayCards = 16;
-    public const int TrackQuest = 17;
-    public const int Banner = 18;
+    public const int AddReputation = (int)DialogueEffect.AddReputation;
+    public const int GiveItem = (int)DialogueEffect.GiveItem;
+    public const int TakeItem = (int)DialogueEffect.TakeItem;
+    public const int PlayCards = (int)DialogueEffect.PlayCards;
+    public const int TrackQuest = (int)DialogueEffect.TrackQuest;
+    public const int Banner = (int)DialogueEffect.Banner;
 
     /// <summary>The chips for one choice: its two effects, then the target node's on-enter effect (taking the
     /// choice is what triggers it). Identical chips collapse to one.</summary>
