@@ -4140,7 +4140,7 @@
    "level": 21,
    "isMain": true,
    "isLedger": false,
-   "sequential": true,
+   "sequential": false,
    "autoStart": "flag.main.vesperhold_done",
    "completionFlag": "flag.pale.court_open",
    "startFlag": "",
@@ -4170,7 +4170,7 @@
      "location": "location.pale.court_approach",
      "reqFlag": "",
      "forbidFlag": "",
-     "completionFlag": "",
+     "completionFlag": "flag.beat.husks_down",
      "activatedFlag": "",
      "optional": false,
      "description": "pale.quest.queens_count.obj_husks",
@@ -4196,6 +4196,10 @@
     {
      "flag": "flag.pale.court_open",
      "via": "completion"
+    },
+    {
+     "flag": "flag.beat.husks_down",
+     "via": "objective[1].completion"
     }
    ],
    "reads": [
@@ -6534,9 +6538,9 @@
    "locKeys": [
     "dlg.ally.c_leave",
     "dlg.ally.c_take",
-    "dlg.ally.gift",
     "dlg.ally_dray_pressed.speaker",
-    "landing2.fork.dray_pressed"
+    "landing.fork.dray_pressed",
+    "landing2.gift.dray_pressed"
    ]
   },
   {
@@ -6585,9 +6589,9 @@
    "locKeys": [
     "dlg.ally.c_leave",
     "dlg.ally.c_take",
-    "dlg.ally.gift",
     "dlg.ally_dray_spared.speaker",
-    "landing2.fork.dray_spared"
+    "landing.fork.dray_spared",
+    "landing2.gift.dray_spared"
    ]
   },
   {
@@ -6636,9 +6640,9 @@
    "locKeys": [
     "dlg.ally.c_leave",
     "dlg.ally.c_take",
-    "dlg.ally.gift",
     "dlg.ally_flock_exposed.speaker",
-    "landing2.fork.flock_exposed"
+    "landing.fork.flock_exposed",
+    "landing2.gift.flock_exposed"
    ]
   },
   {
@@ -6687,9 +6691,9 @@
    "locKeys": [
     "dlg.ally.c_leave",
     "dlg.ally.c_take",
-    "dlg.ally.gift",
     "dlg.ally_flock_kin.speaker",
-    "landing2.fork.flock_kin"
+    "landing.fork.flock_kin",
+    "landing2.gift.flock_kin"
    ]
   },
   {
@@ -6738,9 +6742,9 @@
    "locKeys": [
     "dlg.ally.c_leave",
     "dlg.ally.c_take",
-    "dlg.ally.gift",
     "dlg.ally_flock_turned.speaker",
-    "landing2.fork.flock_turned"
+    "landing.fork.flock_turned",
+    "landing2.gift.flock_turned"
    ]
   },
   {
@@ -6789,9 +6793,9 @@
    "locKeys": [
     "dlg.ally.c_leave",
     "dlg.ally.c_take",
-    "dlg.ally.gift",
     "dlg.ally_halvar.speaker",
-    "landing2.fork.halvar"
+    "landing.fork.succession_halvar",
+    "landing2.gift.halvar"
    ]
   },
   {
@@ -6840,9 +6844,9 @@
    "locKeys": [
     "dlg.ally.c_leave",
     "dlg.ally.c_take",
-    "dlg.ally.gift",
     "dlg.ally_herd_calmed.speaker",
-    "landing2.fork.herd_calmed"
+    "landing.fork.herd_calmed",
+    "landing2.gift.herd_calmed"
    ]
   },
   {
@@ -6891,9 +6895,9 @@
    "locKeys": [
     "dlg.ally.c_leave",
     "dlg.ally.c_take",
-    "dlg.ally.gift",
     "dlg.ally_herd_slain.speaker",
-    "landing2.fork.herd_slain"
+    "landing.fork.herd_slain",
+    "landing2.gift.herd_slain"
    ]
   },
   {
@@ -6942,9 +6946,9 @@
    "locKeys": [
     "dlg.ally.c_leave",
     "dlg.ally.c_take",
-    "dlg.ally.gift",
     "dlg.ally_hjalvar.speaker",
-    "landing2.fork.hjalvar"
+    "landing.fork.succession_hjalvar",
+    "landing2.gift.hjalvar"
    ]
   },
   {
@@ -6993,9 +6997,9 @@
    "locKeys": [
     "dlg.ally.c_leave",
     "dlg.ally.c_take",
-    "dlg.ally.gift",
     "dlg.ally_queen_kept.speaker",
-    "landing2.fork.queen_kept"
+    "landing2.fork.queen_kept",
+    "landing2.gift.queen_kept"
    ]
   },
   {
@@ -7044,9 +7048,9 @@
    "locKeys": [
     "dlg.ally.c_leave",
     "dlg.ally.c_take",
-    "dlg.ally.gift",
     "dlg.ally_queen_released.speaker",
-    "landing2.fork.queen_released"
+    "landing2.fork.queen_released",
+    "landing2.gift.queen_released"
    ]
   },
   {
@@ -9190,7 +9194,8 @@
     }
    ],
    "flagsSet": [
-    "flag.beast_lord_absorbed"
+    "flag.beast_lord_absorbed",
+    "flag.testimony.beast"
    ],
    "flagsCleared": [],
    "flagsRead": [
@@ -9198,6 +9203,12 @@
    ],
    "questsStarted": [],
    "sites": [
+    {
+     "flag": "flag.testimony.beast",
+     "kind": "set",
+     "node": "offer",
+     "at": "onEnter"
+    },
     {
      "flag": "flag.beast_lord_absorbed",
      "kind": "read",
@@ -9580,20 +9591,42 @@
    "source": "generated",
    "speaker": "dlg.celestial_anchor_a.speaker",
    "start": "root",
-   "startVariants": [],
+   "startVariants": [
+    {
+     "cond": 6,
+     "arg": "flag.beat.godfall_reached",
+     "node": "dormant"
+    }
+   ],
    "nodes": [
     {
      "id": "root",
+     "choices": 1,
+     "gotos": []
+    },
+    {
+     "id": "dormant",
      "choices": 1,
      "gotos": []
     }
    ],
    "flagsSet": [],
    "flagsCleared": [],
-   "flagsRead": [],
+   "flagsRead": [
+    "flag.beat.godfall_reached"
+   ],
    "questsStarted": [],
-   "sites": [],
+   "sites": [
+    {
+     "flag": "flag.beat.godfall_reached",
+     "kind": "read",
+     "node": "dormant",
+     "at": "startVariant"
+    }
+   ],
    "locKeys": [
+    "dlg.celestial_anchor_a.dormant",
+    "dlg.celestial_anchor_a.dormant.c_back",
     "dlg.celestial_anchor_a.root",
     "dlg.celestial_anchor_a.root.c_close",
     "dlg.celestial_anchor_a.speaker"
@@ -9605,20 +9638,42 @@
    "source": "generated",
    "speaker": "dlg.celestial_anchor_b.speaker",
    "start": "root",
-   "startVariants": [],
+   "startVariants": [
+    {
+     "cond": 6,
+     "arg": "flag.beat.godfall_reached",
+     "node": "dormant"
+    }
+   ],
    "nodes": [
     {
      "id": "root",
+     "choices": 1,
+     "gotos": []
+    },
+    {
+     "id": "dormant",
      "choices": 1,
      "gotos": []
     }
    ],
    "flagsSet": [],
    "flagsCleared": [],
-   "flagsRead": [],
+   "flagsRead": [
+    "flag.beat.godfall_reached"
+   ],
    "questsStarted": [],
-   "sites": [],
+   "sites": [
+    {
+     "flag": "flag.beat.godfall_reached",
+     "kind": "read",
+     "node": "dormant",
+     "at": "startVariant"
+    }
+   ],
    "locKeys": [
+    "dlg.celestial_anchor_b.dormant",
+    "dlg.celestial_anchor_b.dormant.c_back",
     "dlg.celestial_anchor_b.root",
     "dlg.celestial_anchor_b.root.c_close",
     "dlg.celestial_anchor_b.speaker"
@@ -9630,20 +9685,42 @@
    "source": "generated",
    "speaker": "dlg.celestial_anchor_c.speaker",
    "start": "root",
-   "startVariants": [],
+   "startVariants": [
+    {
+     "cond": 6,
+     "arg": "flag.beat.godfall_reached",
+     "node": "dormant"
+    }
+   ],
    "nodes": [
     {
      "id": "root",
+     "choices": 1,
+     "gotos": []
+    },
+    {
+     "id": "dormant",
      "choices": 1,
      "gotos": []
     }
    ],
    "flagsSet": [],
    "flagsCleared": [],
-   "flagsRead": [],
+   "flagsRead": [
+    "flag.beat.godfall_reached"
+   ],
    "questsStarted": [],
-   "sites": [],
+   "sites": [
+    {
+     "flag": "flag.beat.godfall_reached",
+     "kind": "read",
+     "node": "dormant",
+     "at": "startVariant"
+    }
+   ],
    "locKeys": [
+    "dlg.celestial_anchor_c.dormant",
+    "dlg.celestial_anchor_c.dormant.c_back",
     "dlg.celestial_anchor_c.root",
     "dlg.celestial_anchor_c.root.c_close",
     "dlg.celestial_anchor_c.speaker"
@@ -9740,20 +9817,42 @@
    "source": "generated",
    "speaker": "dlg.celestial_winch_a.speaker",
    "start": "root",
-   "startVariants": [],
+   "startVariants": [
+    {
+     "cond": 6,
+     "arg": "flag.beat.stair_reached",
+     "node": "dormant"
+    }
+   ],
    "nodes": [
     {
      "id": "root",
+     "choices": 1,
+     "gotos": []
+    },
+    {
+     "id": "dormant",
      "choices": 1,
      "gotos": []
     }
    ],
    "flagsSet": [],
    "flagsCleared": [],
-   "flagsRead": [],
+   "flagsRead": [
+    "flag.beat.stair_reached"
+   ],
    "questsStarted": [],
-   "sites": [],
+   "sites": [
+    {
+     "flag": "flag.beat.stair_reached",
+     "kind": "read",
+     "node": "dormant",
+     "at": "startVariant"
+    }
+   ],
    "locKeys": [
+    "dlg.celestial_winch_a.dormant",
+    "dlg.celestial_winch_a.dormant.c_back",
     "dlg.celestial_winch_a.root",
     "dlg.celestial_winch_a.root.c_close",
     "dlg.celestial_winch_a.speaker"
@@ -9765,20 +9864,42 @@
    "source": "generated",
    "speaker": "dlg.celestial_winch_b.speaker",
    "start": "root",
-   "startVariants": [],
+   "startVariants": [
+    {
+     "cond": 6,
+     "arg": "flag.beat.stair_reached",
+     "node": "dormant"
+    }
+   ],
    "nodes": [
     {
      "id": "root",
+     "choices": 1,
+     "gotos": []
+    },
+    {
+     "id": "dormant",
      "choices": 1,
      "gotos": []
     }
    ],
    "flagsSet": [],
    "flagsCleared": [],
-   "flagsRead": [],
+   "flagsRead": [
+    "flag.beat.stair_reached"
+   ],
    "questsStarted": [],
-   "sites": [],
+   "sites": [
+    {
+     "flag": "flag.beat.stair_reached",
+     "kind": "read",
+     "node": "dormant",
+     "at": "startVariant"
+    }
+   ],
    "locKeys": [
+    "dlg.celestial_winch_b.dormant",
+    "dlg.celestial_winch_b.dormant.c_back",
     "dlg.celestial_winch_b.root",
     "dlg.celestial_winch_b.root.c_close",
     "dlg.celestial_winch_b.speaker"
@@ -10927,7 +11048,8 @@
     }
    ],
    "flagsSet": [
-    "flag.crimson_prophet_absorbed"
+    "flag.crimson_prophet_absorbed",
+    "flag.testimony.prophet"
    ],
    "flagsCleared": [],
    "flagsRead": [
@@ -10935,6 +11057,12 @@
    ],
    "questsStarted": [],
    "sites": [
+    {
+     "flag": "flag.testimony.prophet",
+     "kind": "set",
+     "node": "offer",
+     "at": "onEnter"
+    },
     {
      "flag": "flag.crimson_prophet_absorbed",
      "kind": "read",
@@ -13737,6 +13865,11 @@
      "node": "after"
     },
     {
+     "cond": 5,
+     "arg": "flag.beat.queen_truce",
+     "node": "truce_after"
+    },
+    {
      "cond": 7,
      "arg": "60",
      "node": "truce"
@@ -13793,11 +13926,18 @@
     },
     {
      "id": "truce",
-     "choices": 2,
+     "choices": 4,
      "gotos": [
       "truce_taken",
+      "released",
+      "kept",
       "truce_refused"
      ]
+    },
+    {
+     "id": "truce_after",
+     "choices": 1,
+     "gotos": []
     },
     {
      "id": "truce_taken",
@@ -13862,6 +14002,18 @@
    "questsStarted": [],
    "sites": [
     {
+     "flag": "flag.fork.queen_released",
+     "kind": "read",
+     "node": "truce",
+     "at": "choice[1]"
+    },
+    {
+     "flag": "flag.fork.queen_kept",
+     "kind": "read",
+     "node": "truce",
+     "at": "choice[2]"
+    },
+    {
      "flag": "flag.beat.queen_truce",
      "kind": "set",
      "node": "truce_taken",
@@ -13895,6 +14047,12 @@
      "flag": "flag.hollow_queen_defeated",
      "kind": "read",
      "node": "after",
+     "at": "startVariant"
+    },
+    {
+     "flag": "flag.beat.queen_truce",
+     "kind": "read",
+     "node": "truce_after",
      "at": "startVariant"
     },
     {
@@ -13948,7 +14106,11 @@
     "pale.dlg.hollow_queen_parley.speaker",
     "pale.dlg.hollow_queen_parley.truce",
     "pale.dlg.hollow_queen_parley.truce.c_accept",
+    "pale.dlg.hollow_queen_parley.truce.c_count_kept",
+    "pale.dlg.hollow_queen_parley.truce.c_count_released",
     "pale.dlg.hollow_queen_parley.truce.c_refuse",
+    "pale.dlg.hollow_queen_parley.truce_after",
+    "pale.dlg.hollow_queen_parley.truce_after.c_light",
     "pale.dlg.hollow_queen_parley.truce_refused",
     "pale.dlg.hollow_queen_parley.truce_refused.c_light",
     "pale.dlg.hollow_queen_parley.truce_taken",
@@ -14804,7 +14966,8 @@
     }
    ],
    "flagsSet": [
-    "flag.iron_king_absorbed"
+    "flag.iron_king_absorbed",
+    "flag.testimony.iron"
    ],
    "flagsCleared": [],
    "flagsRead": [
@@ -14812,6 +14975,12 @@
    ],
    "questsStarted": [],
    "sites": [
+    {
+     "flag": "flag.testimony.iron",
+     "kind": "set",
+     "node": "offer",
+     "at": "onEnter"
+    },
     {
      "flag": "flag.iron_king_absorbed",
      "kind": "read",
@@ -15484,9 +15653,19 @@
      "cond": 5,
      "arg": "flag.beat.count_answered",
      "node": "settled"
+    },
+    {
+     "cond": 6,
+     "arg": "flag.beat.husks_down",
+     "node": "unready"
     }
    ],
    "nodes": [
+    {
+     "id": "unready",
+     "choices": 1,
+     "gotos": []
+    },
     {
      "id": "root",
      "choices": 5,
@@ -15534,7 +15713,8 @@
    ],
    "flagsCleared": [],
    "flagsRead": [
-    "flag.beat.count_answered"
+    "flag.beat.count_answered",
+    "flag.beat.husks_down"
    ],
    "questsStarted": [],
    "sites": [
@@ -15579,6 +15759,12 @@
      "kind": "read",
      "node": "settled",
      "at": "startVariant"
+    },
+    {
+     "flag": "flag.beat.husks_down",
+     "kind": "read",
+     "node": "unready",
+     "at": "startVariant"
     }
    ],
    "locKeys": [
@@ -15600,7 +15786,9 @@
     "pale.dlg.pale_count_stone.root.c_release",
     "pale.dlg.pale_count_stone.settled",
     "pale.dlg.pale_count_stone.settled.c_leave",
-    "pale.dlg.pale_count_stone.speaker"
+    "pale.dlg.pale_count_stone.speaker",
+    "pale.dlg.pale_count_stone.unready",
+    "pale.dlg.pale_count_stone.unready.c_back"
    ]
   },
   {
@@ -17109,7 +17297,8 @@
     }
    ],
    "flagsSet": [
-    "flag.storm_tyrant_absorbed"
+    "flag.storm_tyrant_absorbed",
+    "flag.testimony.storm"
    ],
    "flagsCleared": [],
    "flagsRead": [
@@ -17117,6 +17306,12 @@
    ],
    "questsStarted": [],
    "sites": [
+    {
+     "flag": "flag.testimony.storm",
+     "kind": "set",
+     "node": "offer",
+     "at": "onEnter"
+    },
     {
      "flag": "flag.storm_tyrant_absorbed",
      "kind": "read",
@@ -17816,20 +18011,42 @@
    "source": "generated",
    "speaker": "dlg.sunspire_seal_a.speaker",
    "start": "root",
-   "startVariants": [],
+   "startVariants": [
+    {
+     "cond": 6,
+     "arg": "flag.beat.golems_down",
+     "node": "dormant"
+    }
+   ],
    "nodes": [
     {
      "id": "root",
+     "choices": 1,
+     "gotos": []
+    },
+    {
+     "id": "dormant",
      "choices": 1,
      "gotos": []
     }
    ],
    "flagsSet": [],
    "flagsCleared": [],
-   "flagsRead": [],
+   "flagsRead": [
+    "flag.beat.golems_down"
+   ],
    "questsStarted": [],
-   "sites": [],
+   "sites": [
+    {
+     "flag": "flag.beat.golems_down",
+     "kind": "read",
+     "node": "dormant",
+     "at": "startVariant"
+    }
+   ],
    "locKeys": [
+    "dlg.sunspire_seal_a.dormant",
+    "dlg.sunspire_seal_a.dormant.c_back",
     "dlg.sunspire_seal_a.root",
     "dlg.sunspire_seal_a.root.c_close",
     "dlg.sunspire_seal_a.speaker"
@@ -17841,20 +18058,42 @@
    "source": "generated",
    "speaker": "dlg.sunspire_seal_b.speaker",
    "start": "root",
-   "startVariants": [],
+   "startVariants": [
+    {
+     "cond": 6,
+     "arg": "flag.beat.golems_down",
+     "node": "dormant"
+    }
+   ],
    "nodes": [
     {
      "id": "root",
+     "choices": 1,
+     "gotos": []
+    },
+    {
+     "id": "dormant",
      "choices": 1,
      "gotos": []
     }
    ],
    "flagsSet": [],
    "flagsCleared": [],
-   "flagsRead": [],
+   "flagsRead": [
+    "flag.beat.golems_down"
+   ],
    "questsStarted": [],
-   "sites": [],
+   "sites": [
+    {
+     "flag": "flag.beat.golems_down",
+     "kind": "read",
+     "node": "dormant",
+     "at": "startVariant"
+    }
+   ],
    "locKeys": [
+    "dlg.sunspire_seal_b.dormant",
+    "dlg.sunspire_seal_b.dormant.c_back",
     "dlg.sunspire_seal_b.root",
     "dlg.sunspire_seal_b.root.c_close",
     "dlg.sunspire_seal_b.speaker"
@@ -17866,20 +18105,42 @@
    "source": "generated",
    "speaker": "dlg.sunspire_seal_c.speaker",
    "start": "root",
-   "startVariants": [],
+   "startVariants": [
+    {
+     "cond": 6,
+     "arg": "flag.beat.golems_down",
+     "node": "dormant"
+    }
+   ],
    "nodes": [
     {
      "id": "root",
+     "choices": 1,
+     "gotos": []
+    },
+    {
+     "id": "dormant",
      "choices": 1,
      "gotos": []
     }
    ],
    "flagsSet": [],
    "flagsCleared": [],
-   "flagsRead": [],
+   "flagsRead": [
+    "flag.beat.golems_down"
+   ],
    "questsStarted": [],
-   "sites": [],
+   "sites": [
+    {
+     "flag": "flag.beat.golems_down",
+     "kind": "read",
+     "node": "dormant",
+     "at": "startVariant"
+    }
+   ],
    "locKeys": [
+    "dlg.sunspire_seal_c.dormant",
+    "dlg.sunspire_seal_c.dormant.c_back",
     "dlg.sunspire_seal_c.root",
     "dlg.sunspire_seal_c.root.c_close",
     "dlg.sunspire_seal_c.speaker"
@@ -17891,7 +18152,13 @@
    "source": "generated",
    "speaker": "dlg.sunspire_stacks_door.speaker",
    "start": "root",
-   "startVariants": [],
+   "startVariants": [
+    {
+     "cond": 6,
+     "arg": "flag.main.sundering_pages_done",
+     "node": "dormant"
+    }
+   ],
    "nodes": [
     {
      "id": "root",
@@ -17904,14 +18171,30 @@
      "id": "more",
      "choices": 1,
      "gotos": []
+    },
+    {
+     "id": "dormant",
+     "choices": 1,
+     "gotos": []
     }
    ],
    "flagsSet": [],
    "flagsCleared": [],
-   "flagsRead": [],
+   "flagsRead": [
+    "flag.main.sundering_pages_done"
+   ],
    "questsStarted": [],
-   "sites": [],
+   "sites": [
+    {
+     "flag": "flag.main.sundering_pages_done",
+     "kind": "read",
+     "node": "dormant",
+     "at": "startVariant"
+    }
+   ],
    "locKeys": [
+    "dlg.sunspire_stacks_door.dormant",
+    "dlg.sunspire_stacks_door.dormant.c_back",
     "dlg.sunspire_stacks_door.more",
     "dlg.sunspire_stacks_door.more.c_close",
     "dlg.sunspire_stacks_door.root",
@@ -21463,6 +21746,21 @@
      "kind": "quest",
      "id": "quest.main.godfall_choir",
      "via": "objective[6].required"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.celestial_anchor_a",
+     "via": "dormant/startVariant"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.celestial_anchor_b",
+     "via": "dormant/startVariant"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.celestial_anchor_c",
+     "via": "dormant/startVariant"
     }
    ],
    "code": false,
@@ -21491,6 +21789,21 @@
      "kind": "quest",
      "id": "quest.main.deep_stacks",
      "via": "objective[5].required"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.sunspire_seal_a",
+     "via": "dormant/startVariant"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.sunspire_seal_b",
+     "via": "dormant/startVariant"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.sunspire_seal_c",
+     "via": "dormant/startVariant"
     }
    ],
    "code": false,
@@ -21677,6 +21990,24 @@
      "kind": "dialogue",
      "id": "dialogue.clan_chief",
      "via": "cq_su_hjalvar/startVariant"
+    }
+   ],
+   "code": false,
+   "externalRefs": []
+  },
+  "flag.beat.husks_down": {
+   "writers": [
+    {
+     "kind": "quest",
+     "id": "quest.main.queens_count",
+     "via": "objective[1].completion"
+    }
+   ],
+   "readers": [
+    {
+     "kind": "dialogue",
+     "id": "dialogue.pale_count_stone",
+     "via": "unready/startVariant"
     }
    ],
    "code": false,
@@ -21989,6 +22320,11 @@
      "kind": "dialogue",
      "id": "dialogue.hollow_queen_parley",
      "via": "after/choice[3]"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.hollow_queen_parley",
+     "via": "truce_after/startVariant"
     }
    ],
    "code": false,
@@ -22310,6 +22646,16 @@
      "kind": "quest",
      "id": "quest.main.sundered_stair",
      "via": "objective[2].required"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.celestial_winch_a",
+     "via": "dormant/startVariant"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.celestial_winch_b",
+     "via": "dormant/startVariant"
     }
    ],
    "code": false,
@@ -23620,6 +23966,11 @@
     {
      "kind": "dialogue",
      "id": "dialogue.hollow_queen_parley",
+     "via": "truce/choice[2]"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.hollow_queen_parley",
      "via": "after/choice[2]"
     },
     {
@@ -23689,6 +24040,11 @@
     }
    ],
    "readers": [
+    {
+     "kind": "dialogue",
+     "id": "dialogue.hollow_queen_parley",
+     "via": "truce/choice[1]"
+    },
     {
      "kind": "dialogue",
      "id": "dialogue.hollow_queen_parley",
@@ -24814,6 +25170,11 @@
      "kind": "quest",
      "id": "quest.main.deep_stacks",
      "via": "autoStart"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.sunspire_stacks_door",
+     "via": "dormant/startVariant"
     }
    ],
    "code": false,
@@ -25338,6 +25699,48 @@
     "src/Narrative/StoryRules.cs"
    ]
   },
+  "flag.testimony.beast": {
+   "writers": [
+    {
+     "kind": "dialogue",
+     "id": "dialogue.beast_lord_absorb",
+     "via": "offer/onEnter"
+    }
+   ],
+   "readers": [],
+   "code": true,
+   "externalRefs": [
+    "src/Narrative/StoryRules.cs"
+   ]
+  },
+  "flag.testimony.iron": {
+   "writers": [
+    {
+     "kind": "dialogue",
+     "id": "dialogue.iron_king_absorb",
+     "via": "offer/onEnter"
+    }
+   ],
+   "readers": [],
+   "code": true,
+   "externalRefs": [
+    "src/Narrative/StoryRules.cs"
+   ]
+  },
+  "flag.testimony.prophet": {
+   "writers": [
+    {
+     "kind": "dialogue",
+     "id": "dialogue.crimson_prophet_absorb",
+     "via": "offer/onEnter"
+    }
+   ],
+   "readers": [],
+   "code": true,
+   "externalRefs": [
+    "src/Narrative/StoryRules.cs"
+   ]
+  },
   "flag.testimony.queen": {
    "writers": [
     {
@@ -25348,6 +25751,20 @@
    ],
    "readers": [],
    "code": false,
+   "externalRefs": [
+    "src/Narrative/StoryRules.cs"
+   ]
+  },
+  "flag.testimony.storm": {
+   "writers": [
+    {
+     "kind": "dialogue",
+     "id": "dialogue.storm_tyrant_absorb",
+     "via": "offer/onEnter"
+    }
+   ],
+   "readers": [],
+   "code": true,
    "externalRefs": [
     "src/Narrative/StoryRules.cs"
    ]
@@ -26002,6 +26419,11 @@
     {
      "kind": "dialogue",
      "id": "dialogue.hollow_queen_parley",
+     "via": "truce/choice[2]"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.hollow_queen_parley",
      "via": "after/choice[2]"
     },
     {
@@ -26071,6 +26493,11 @@
     }
    ],
    "readers": [
+    {
+     "kind": "dialogue",
+     "id": "dialogue.hollow_queen_parley",
+     "via": "truce/choice[1]"
+    },
     {
      "kind": "dialogue",
      "id": "dialogue.hollow_queen_parley",

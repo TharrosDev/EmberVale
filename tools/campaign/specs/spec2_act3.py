@@ -8,7 +8,7 @@ their new text lives here as rows. Nothing in this module names the hidden realm
 from tools.campaign.model import (
     C, E, Dialogue, Node, Quest, StartVariant, defend, go, has_flag, interact, kill, leave, milestone,
     missing_flag, reach, say, set_flag, talk)
-from tools.campaign.specs._spec2_common import back, bye, read_clue, t
+from tools.campaign.specs._spec2_common import back, bye, gated_clue, read_clue, t
 
 CODE_FLAGS = {
     # data/story/rules/spec2.json: rule.spec2.seals_broken (all three plinth completion flags).
@@ -31,9 +31,9 @@ SUNDERING_PAGES = Quest(
     auto_start="flag.main.hidden_done", completion_flag="flag.main.sundering_pages_done",
     sequential=True, xp=1100, gold=400,
     objectives=[
-        milestone("flag.testimonies_all", "Carry all five accounts: the Iron King, the Storm Tyrant, the Beast Lord, the Prophet and the Queen",
+        milestone("flag.testimonies_all", "Carry the last words of all five fallen to the Archivist",
                   tag="gather",
-                  hint="Each fallen Flamebearer's last words are heard in the aftermath of their defeat. If one slipped past you and cannot be found again, tell the Archivist so.",
+                  hint="Each fallen Flamebearer speaks once more over their ember. If one slipped past you and cannot be found again, tell the Archivist so.",
                   journal="Five voices, five endings, and a hole of the same shape in each."),
         reach(SUNSPIRE_LIBRARY, "Carry the five accounts to the great library", tag="library",
               hint="The great library is in the Sunspire Dominion, at the end of the pilgrim road.",
@@ -114,24 +114,29 @@ READING_TABLE = read_clue(
     then="Side by side they say the same thing in five voices. There was a Stair. Six climbed it. Five were thrown down at the top, not one of them fallen, and each of them heard a question that would not stop being asked. And in every account, in the same place, there is a gap where a sixth voice should be: the one who stayed.",
     then_button="Read them together.", close="Close the accounts.")
 
-STACKS_DOOR = read_clue(
+STACKS_DOOR = gated_clue(
     "dialogue.sunspire_stacks_door", "The Deep Stacks Door",
     "Behind the last shelf the wall is not a wall. It is a door the Archive stopped believing in: bare stone with a seam of lead down the middle, and no handle, no lock, nothing to turn. You say the Keeper's sentence to it, both halves, one after the other. The lead seam runs with light.",
     then="The door opens without a sound onto a stair that goes down a very long way. The air that comes up is dry and cold and smells of lamp oil. Somewhere below, stone shifts that has been still for a long time.",
-    then_button="Say the sentence.", close="Go down.")
+    then_button="Say the sentence.", close="Go down.",
+    gate_flag="flag.main.sundering_pages_done",
+    dormant="Behind the last shelf the wall is not a wall: bare stone with a seam of lead down the middle, and no handle, no lock, nothing to turn. It does not answer. Whatever sentence opens it, you have not yet been given.")
 
-PLINTH_A = read_clue(
+PLINTH_A = gated_clue(
     "dialogue.sunspire_seal_a", "The First Plinth",
     "The first plinth is a block of black stone at hip height, cut with a ring of script that reads, in a hand you understand now, <<Not yet.>> When you lay your hand on the ring, the first seal on the codex cover lets go with a sound like a held breath.",
-    close="Step back.")
-PLINTH_B = read_clue(
+    close="Step back.", gate_flag="flag.beat.golems_down",
+    dormant="A block of black stone, cut with a ring of script. The ring is cold. Whatever guards the vault is still awake, and the plinth will not answer while it stands.")
+PLINTH_B = gated_clue(
     "dialogue.sunspire_seal_b", "The Second Plinth",
     "The second plinth reads <<Not you.>> It gives a little harder. Under your palm the ring warms, and a second seal on the codex cover cracks along its length. Somewhere behind the walls the wards stir.",
-    close="Step back.")
-PLINTH_C = read_clue(
+    close="Step back.", gate_flag="flag.beat.golems_down",
+    dormant="A block of black stone, cut with a ring of script. The ring is cold. Whatever guards the vault is still awake, and the plinth will not answer while it stands.")
+PLINTH_C = gated_clue(
     "dialogue.sunspire_seal_c", "The Third Plinth",
     "The third plinth reads <<Not ever.>> It does not give at all until you stop pushing and simply lean on it, the way you would on a tired friend. Then the third seal falls, and the vault floods with a light that is not any colour the library has.",
-    close="Step back.")
+    close="Step back.", gate_flag="flag.beat.golems_down",
+    dormant="A block of black stone, cut with a ring of script. The ring is cold. Whatever guards the vault is still awake, and the plinth will not answer while it stands.")
 
 
 def _codex() -> Dialogue:
@@ -197,14 +202,14 @@ LOCALE = [
     # Mission 25 (quest.main.truth, legacy.py).
     ("quest.main.truth.detail", "Every fallen Flamebearer died saying the same thing in a different way, and now you have read why. The Archivist has kept the gods' own records for forty years without once saying them aloud. She will say them to someone who has read the codex, and then she will open the way."),
     ("quest.main.truth.hint_reading", "Ask her for the truth, all of it. She will tell it now that you have read the codex for yourself."),
-    ("quest.main.truth.log_reading", "The Archivist told it as the Archive tells it: a war fought for the right to stop, and a seat that must never be empty."),
+    ("quest.main.truth.log_reading", "The Archivist was waiting with the lamp turned low. She wanted to hear the truth said aloud, since a thing read alone is only a rumour."),
     ("quest.main.truth.obj_open", "Open the way to the Celestial Realm"),
-    ("quest.main.truth.hint_open", "At the end of her telling, ask her to open the stair. The gate in the library forecourt will answer."),
-    ("quest.main.truth.log_open", "The stair behind the last shelf is open. It was only ever waiting for someone who knew what was at the end of it."),
+    ("quest.main.truth.hint_open", "At the end of her telling, ask her to open the way. The gate in the library forecourt will answer."),
+    ("quest.main.truth.log_open", "She told it as the Archive tells it: a war fought for the right to stop, and a seat that must never be empty. The gate in the forecourt stands open."),
     # The Archivist's variants (dialogue.sunspire_archivist in legacy.py).
     ("dlg.archivist.reading", t("She is waiting at the head of the vault stair with the lamp turned low, and she does not ask what you read. She asks whether you are ready to hear it said aloud, since a thing read alone is only a rumour. <<I will tell it as the Archive tells it,>> she says, <<the way no one has told it in four hundred years. When I have finished, the way to the Celestial Realm will be open. It has always been open. It only wants someone who knows what is at the end of it.>>")),
     ("dlg.archivist.c_not_yet", "Not yet."),
-    ("dlg.archivist.stacks_wait", t("<<You have Ysolde's half and I have the door,>> she says. <<I will not go down with you. I read the first leaf of that codex once, forty years ago, and it was enough. The wards are not guards: they are older than that, and they take a very literal view of trespass. Bring whatever you can fight with, and do not stay down once the seals fall.>>")),
+    ("dlg.archivist.stacks_wait", t("<<You have Ysolde's half,>> she says, and gives you hers, once, so level and so quietly that you know you will never lose it. <<Say them one after the other at the door. I will not go down with you. I read the first leaf of that codex once, forty years ago, and it was enough. The wards are not guards: they are older than that, and they take a very literal view of trespass. Bring whatever you can fight with, and do not stay down once the seals fall.>>")),
     ("dlg.archivist.pages", t("She has cleared the long table before you reach it. <<Lay them down,>> she says, <<all five.>> You have nothing in your hands. You lay them down anyway: the Tyrant's grief, the Beast's loneliness, the Prophet's certainty, the Iron King's fear, the Queen's count. She reads them off your face. When she is finished she does not look up for a long time. <<Five accounts, each true, each with a hole of the same shape. Read them together at the reading table, and then take what is missing to the Archive's Annexe in Embermarket. Ysolde Marr keeps half a sentence that opens the deep stacks. I keep the other half. Neither of us may say it for the other.>>")),
     ("dlg.archivist.c_pages_fate", "What became of the hidden country?"),
     ("dlg.archivist.c_testimony_carry", "I cannot go back. Read me what I carry."),

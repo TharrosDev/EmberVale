@@ -15,10 +15,11 @@ SECRET = "pale"
 
 CODE_FLAGS = {
     # Fork F5 and the testimony the Queen's aftermath writes are consumed here; everything else is spec1's.
-    "flag.testimony.iron": "W-Spec-1 aftermath dialogue (testimony of the Iron King)",
-    "flag.testimony.storm": "W-Spec-1 aftermath dialogue (testimony of the Storm Tyrant)",
-    "flag.testimony.beast": "W-Spec-1 aftermath dialogue (testimony of the Beast Lord)",
-    "flag.testimony.prophet": "W-Spec-1 aftermath dialogue (testimony of the Crimson Prophet)",
+    # Hand-authored data: the OnEnter effect of the ember conversation's first node (_spec2_handedit.py ABSORB_TESTIMONY).
+    "flag.testimony.iron": "dialogue.iron_king_absorb offer node (patched by _spec2_handedit.py)",
+    "flag.testimony.storm": "dialogue.storm_tyrant_absorb offer node (patched by _spec2_handedit.py)",
+    "flag.testimony.beast": "dialogue.beast_lord_absorb offer node (patched by _spec2_handedit.py)",
+    "flag.testimony.prophet": "dialogue.crimson_prophet_absorb offer node (patched by _spec2_handedit.py)",
     "flag.testimonies_all": "StoryRuleDirector: all five flag.testimony.* set (W-Core-B code rule)",
 }
 
@@ -29,8 +30,8 @@ TERMINAL_FLAGS = {}
 # --------------------------------------------------------------------------------------------------
 PALE_DOOR = Quest(
     id="quest.main.pale_door",
-    title="The Door Under the Stacks",
-    summary="Three of the fallen are gone, and the embers you carry will not settle. They lean west, toward a country that is on no map. Archivist Seren Adaru says the door under her library has begun to open. Walk through it and learn what four hundred years of silence were hiding.",
+    title="The Forecourt Door",
+    summary="Three of the fallen are gone, and the embers you carry will not settle. They lean west, toward a country that is on no map. Archivist Seren Adaru says a door in her library's forecourt has begun to open. Walk through it and learn what four hundred years of silence were hiding.",
     detail="The Second Flamebearer hid her whole realm from death and from history, and the hiding held until her fellow fallen began to go out one by one. The Archivist has listened to the door breathe for forty years and never opened it. She will not stop you, and she will not follow.",
     chapter_key="ch.2.pale", order=19, region="region.pale_concord", level=20,
     giver_key="dlg.sunspire_archivist.speaker",
@@ -115,18 +116,20 @@ QUEENS_COUNT = Quest(
     # The count-stone dialogue raises this flag; it is also this quest's completion flag, and quest.main.hidden
     # starts on it. The Hollow Queen's brazier is gated on it.
     completion_flag="flag.pale.court_open",
-    sequential=True, xp=1000, gold=350,
+    # Not sequential: the husks stand in the road 12 to 28 m short of the stone, so a player fights them BEFORE
+    # the Reach radius at the stone is entered; a locked Kill would never count them and could not be redone.
+    xp=1000, gold=350,
     objectives=[
         reach("location.pale.court_approach", "Climb the processional to the Court approach", tag="approach",
               hint="The processional leaves Vesperhold by the north street and climbs to the Hollow Court.",
               journal="The processional climbed out of the preserved city into fields that never ripen and never rot."),
         kill("enemy.hollow_husk", 5, "Cut down the husks on the processional", tag="husks",
-             location="location.pale.court_approach",
+             location="location.pale.court_approach", completion_flag="flag.beat.husks_down",
              hint="The husks stand in the road, the ones the count could not hold. They come at anyone who nears the Court wall.",
              journal="The husks did not defend themselves. They had been standing in the road for four hundred years, waiting to be released from the road."),
         milestone("flag.beat.count_answered", "Answer the count-stone at the end of the processional", tag="stone",
                   location="location.pale.court_approach",
-                  hint="Touch the stone and it will ask whether the count goes on. Whatever you answer, the Court's gate opens.",
+                  hint="Touch the stone and it will ask whether the count goes on. It stays silent while the husks stand. Either answer opens the Court's gate.",
                   journal="The stone asked, and I answered. The gate of the Hollow Court stands open."),
     ])
 
@@ -168,8 +171,13 @@ LAMP_QUEEN = read_clue(
 def _count_stone() -> Dialogue:
     return Dialogue(
         id="dialogue.pale_count_stone", speaker=t("The Count-Stone"), start="root",
-        start_variants=[StartVariant(has_flag("flag.beat.count_answered"), "settled")],
+        start_variants=[StartVariant(has_flag("flag.beat.count_answered"), "settled"),
+                        # The husks on the road are the Kill objective that gates the answer: until they are down
+                        # the stone is silent (an answer given early would open the Queen's brazier over them).
+                        StartVariant(missing_flag("flag.beat.husks_down"), "unready")],
         nodes=[
+            Node("unready", t("A standing stone, black and wet-looking though nothing here ever rains, cut with ring upon ring of names. Under your hand it is cold and silent. Something is not finished on the road behind you, and the stone will not answer until it is."),
+                 [leave(t("Step back."), tag="back")]),
             Node("root", t("A standing stone, black and wet-looking though nothing here ever rains, cut with ring upon ring of names. Under your hand it is cold, and then it speaks in a voice made of every dusk: <<The count is eleven hundred and four. Shall it go on?>>"), [
                 go(t("What happens if it ends?"), "ends", tag="ask_end"),
                 go(t("What happens if it goes on?"), "goes_on", tag="ask_on"),
@@ -204,6 +212,7 @@ def _queen_parley() -> Dialogue:
         id="dialogue.hollow_queen_parley", speaker=t("The Hollow Queen"), start="root",
         start_variants=[
             StartVariant(has_flag("flag.hollow_queen_defeated"), "after"),
+            StartVariant(has_flag("flag.beat.queen_truce"), "truce_after"),
             StartVariant(corruption_at_least(60), "truce"),
             StartVariant(has_flag("flag.fork.queen_released"), "released"),
             StartVariant(has_flag("flag.fork.queen_kept"), "kept"),
@@ -227,12 +236,18 @@ def _queen_parley() -> Dialogue:
             Node("truce", t("The voice is quiet a moment longer than courtesy allows. <<You smell of us. Of cold and keeping, and the kind of hunger that learns to call itself patience. How many of the fallen did you take in? Do not answer. I can hear them.>> The chair creaks as nothing sits in it. <<You are not here to end me. You are here to find out what you become. I will teach you the last craft I learned, and you may fight me for it afterwards, if you still want to. Sit with me a moment, Seventh. Nobody has in four hundred years.>>"), [
                 say(t("Accept the craft."), "truce_taken", tag="accept",
                     do=(E.LEARN_SPELL, "spell.grave_mark"), do2=(E.ADD_CORRUPTION, "5")),
+                go(t("Ask about the count you broke."), "released", tag="count_released",
+                   when=has_flag("flag.fork.queen_released")),
+                go(t("Ask about the count you kept."), "kept", tag="count_kept",
+                   when=has_flag("flag.fork.queen_kept")),
                 say(t("Refuse. Light the brazier."), "truce_refused", tag="refuse")]),
+            Node("truce_after", t("The chair is as empty as before. <<A truce is only a pause, Seventh,>> says the dry voice. <<You have what I could give. Light the brazier, and let us finish it.>>"), [
+                bye("I will.", tag="light")]),
             Node("truce_taken", t("The cold passes into your hands, patient and exact, and you know how to mark a thing so that it cannot hide from its ending. <<Good,>> she says, and sounds almost grateful. <<That is the whole of what I kept for myself. Now do it properly: light the brazier. A truce is only a pause.>>"), [
                 bye("I will.", tag="light")], on_enter=(E.SET_FLAG, "flag.beat.queen_truce")),
             Node("truce_refused", t("<<Good,>> she says, and sounds almost proud. <<Then do it properly.>>"), [
                 bye("I will.", tag="light")]),
-            Node("after", t("The chair is still empty. The voice is gone from it. What is left is not a voice at all, only the shape of one: the count, carried on without her, one last time, until it reaches the end of the book. Then, far down the processional, the stone rings, and the shape says the thing it was waiting to say to someone who would carry it out. <<I was the Second. I did not fall from the Stair. I was thrown. Five of us were. The sixth climbed on. We heard him from below, a long time of armour on stone, and then nothing, a very long nothing, and that was the sound of the throne asking. Tell whoever asks that the Knight did not fall. He knelt.>>"), [
+            Node("after", t("The chair is still empty. The voice is gone from it. What is left is not a voice at all, only the shape of one: the count, carried on without her, one last time, until it reaches the end of the book. Then, far down the processional, the stone rings, and the shape says the thing it was waiting to say to someone who would carry it out. <<I was the Second. I did not fall from the Stair. I was thrown. Five of us were. The sixth climbed on. We heard him from below, a long time of armour on stone, and then nothing, a very long nothing, and that was the sound of the throne asking. Armour does not stop like that unless the man in it has knelt. Tell whoever asks that the Knight did not fall. He knelt.>>"), [
                 go(t("What was the throne asking?"), "after_throne", tag="throne"),
                 go(t("What happened to your people?"), "after_released", tag="fate_released",
                    when=has_flag("flag.fork.queen_released")),
@@ -274,7 +289,7 @@ LOCALE = [
     ("pale.quest.hidden.hint_aftermath", "The chair stands beside the brazier in the forecourt. It still has something to say."),
     ("pale.quest.hidden.log_aftermath", "The chair kept the Queen's last account: that the Six climbed the Stair, five were thrown down, and the sixth knelt at the top and did not fall."),
     # The Archivist's pale variants (dialogue.sunspire_archivist in legacy.py).
-    ("pale.dlg.archivist.door", t("She has put the book down, and that alone is new. <<It opened in the night. Not the door in the floor: the other one, in the forecourt, that was bare wall for four hundred years. I have listened to it breathe for forty. Last night it breathed out.>> Her hands are not quite steady on the table. <<There is a country on the other side. I have a thousand names for it and none I trust. You carry five embers that all lean the same way. I do not need to tell you which.>>")),
+    ("pale.dlg.archivist.door", t("She has put the book down, and that alone is new. <<It opened in the night. The door in the forecourt, the one that was bare wall for four hundred years. I have listened to it breathe for forty. Last night it breathed out.>> Her hands are not quite steady on the table. <<There is a country on the other side. I have a thousand names for it and none I trust. The fire you carry leans toward that door. I do not need to tell you why.>>")),
     ("pale.dlg.archivist.c_door_what", "What is on the other side?"),
     ("pale.dlg.archivist.door_what", t("<<The Concord. That is what the oldest of my books call it, when they call it anything: a signed arrangement between a dying world and a woman with a very good pen. Nobody who went in came back to say whether it worked. The books stop at the signing. Whoever kept that secret kept it better than anyone has kept anything.>>")),
     ("pale.dlg.archivist.c_door_why", "Why has it opened now?"),

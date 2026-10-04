@@ -29,7 +29,7 @@ EffectArg = ""
 [sub_resource type="Resource" id="node_root"]
 script = ExtResource("2_node")
 Id = "root"
-Text = "landing2.fork.flock_kin"
+Text = "landing.fork.flock_kin"
 Choices = Array[Resource]([SubResource("ch_root_0"), SubResource("ch_root_1")])
 
 [sub_resource type="Resource" id="ch_gift_0"]
@@ -44,7 +44,7 @@ EffectArg = ""
 [sub_resource type="Resource" id="node_gift"]
 script = ExtResource("2_node")
 Id = "gift"
-Text = "dlg.ally.gift"
+Text = "landing2.gift.flock_kin"
 Choices = Array[Resource]([SubResource("ch_gift_0")])
 
 [resource]

@@ -34,6 +34,8 @@ script = ExtResource("2_node")
 Id = "offer"
 Text = "dlg.beastlord.absorb.offer"
 Choices = Array[Resource]([SubResource("ch_absorb"), SubResource("ch_decline")])
+OnEnterEffect = 2
+OnEnterEffectArg = "flag.testimony.beast"
 
 [sub_resource type="Resource" id="node_absorbed"]
 script = ExtResource("2_node")

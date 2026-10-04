@@ -11,7 +11,8 @@ choir (west), stair (east) and godfall (north-east of the stair) are short spurs
 from tools.campaign.model import (
     C, E, K, Dialogue, Node, Quest, StartVariant, corruption_at_least, corruption_below, defend, escort, go,
     has_flag, interact, kill, leave, milestone, missing_flag, reach, say, talk)
-from tools.campaign.specs._spec2_common import back, bye, read_clue, t
+from tools.campaign.specs._spec2_common import back, bye, gated_clue, read_clue, t
+from tools.campaign.specs.spec1_story import EPILOGUE as S1_EPILOGUE
 
 CODE_FLAGS = {
     "flag.fork.dray_spared": "W-Spec-1 dialogue (F1)", "flag.fork.dray_pressed": "W-Spec-1 dialogue (F1)",
@@ -84,12 +85,12 @@ GODFALL_CHOIR = Quest(
     objectives=[
         reach(CHOIR, "Cross the bridge and follow the terrace west to the Fallen Choir", tag="choir",
               completion_flag="flag.beat.choir_reached",
-              hint="The Fallen Choir lies on the western terraces, past the Knight's bridge. Do not light the gate's brazier yet.",
+              hint="The Fallen Choir lies on the western terraces, past the Knight's bridge. The way is a short spur off the gate terrace.",
               journal="The Choir sang the last hour of the Sundering to nobody, and the sound was beautiful and wrong."),
         kill("enemy.arcane_echo", 4, "Silence the echoes in the Choir's nave", tag="echoes", location=CHOIR,
              req_flag="flag.beat.choir_reached", forbid_flag="flag.beat.choir_answered",
              completion_flag="flag.beat.choir_silenced",
-             hint="If you carry enough of the fallen's fire, one of the echoes may answer you instead of striking. Otherwise, break them.",
+             hint="If the fallen's fire runs strong in you, the stone singer in the nave may answer instead of striking. Otherwise, break the echoes.",
              journal="The echoes did not scream when they broke. They finished the verse."),
         milestone("flag.beat.choir_passed", "Pass through the Choir", tag="pass", location=CHOIR,
                   req_flag="flag.beat.choir_reached",
@@ -124,7 +125,7 @@ SUNDERED_STAIR = Quest(
     id="quest.main.sundered_stair",
     title="The Sundered Stair",
     summary="The Stair the Six climbed lies in pieces across the eastern terraces, and its winches still turn if anyone remembers how. Lower the missing flights, break the sentinels the Stair still obeys, and hold it while it settles. What waits at the top is not the Knight. It is the memory he left there.",
-    detail="The Stair was the gods' own road to the throne, and only the last flights are gone. The sentinels were set to turn back anyone who had not been asked. The echo at the top was left by a man who spent four hundred years standing on this Stair so that he would not have to stand anywhere else.",
+    detail="The Stair was the gods' own road to the throne, and only the last flights are gone. The sentinels were set to turn back anyone who had not been asked. The echo at the top was left by a man who stopped on this Stair once, with one foot raised, and has been trying to take the step ever since.",
     chapter_key="ch.4", order=28, region="region.celestial", level=27,
     giver_key="dlg.assembly_marshal.speaker",
     auto_start="flag.main.godfall_choir_done", completion_flag="flag.main.sundered_stair_done",
@@ -137,7 +138,7 @@ SUNDERED_STAIR = Quest(
         interact("interact.celestial.winch_a", "Turn the western winch", tag="winch_a", location=STAIR,
                  req_flag="flag.beat.stair_reached", completion_flag="flag.beat.winch_a",
                  hint="Two winches flank the broken flights. Turn both, in either order.",
-                 journal="The winch groaned for the first time in four hundred years."),
+                 journal="The winch groaned awake for the first time since the gods died."),
         interact("interact.celestial.winch_b", "Turn the eastern winch", tag="winch_b", location=STAIR,
                  req_flag="flag.beat.stair_reached", completion_flag="flag.beat.winch_b",
                  hint="This one is jammed with ash. Clear it with your hands.",
@@ -145,7 +146,7 @@ SUNDERED_STAIR = Quest(
         kill("enemy.stone_sentinel", 3, "Break the stone sentinels the Stair still obeys", tag="sentinels",
              location=STAIR, req_flag="flag.beat.stair_unsealed", completion_flag="flag.beat.sentinels_down",
              hint="They wake when both winches have turned. They are slow and hit hard: stay out of their reach and strike after a swing.",
-             journal="The sentinels had been turning people back for four hundred years. I was the first they could not."),
+             journal="The sentinels had been turning travellers back since the gods died. I was the first they could not."),
         defend(STAIR, 45, "Hold the Stair while the last flight lowers", tag="hold", req_flag="flag.beat.sentinels_down",
                completion_flag="flag.beat.stair_held",
                hint="More of the Stair's guardians wake as it settles. Stay near the winches until the last flight meets its landing.",
@@ -270,30 +271,35 @@ def _choir_echo() -> Dialogue:
 
 CHOIR_ECHO = _choir_echo()
 
-ANCHOR_A = read_clue(
+ANCHOR_A = gated_clue(
     "dialogue.celestial_anchor_a", "The First Anchor",
     "The anchor is a standing stone as tall as a man, split down the middle and held together by a collar of bronze that was never made by hands. It is cold. When you lay your palm on the split, the bronze warms, and the stone remembers that it is meant to be holding something up.",
-    close="Step back.")
-ANCHOR_B = read_clue(
+    close="Step back.", gate_flag="flag.beat.godfall_reached",
+    dormant="A split standing stone in a collar of bronze that was never made by hands. It is cold and it does not answer. Something is not finished behind you, in the Choir's nave, and the anchor knows it.")
+ANCHOR_B = gated_clue(
     "dialogue.celestial_anchor_b", "The Second Anchor",
     "The second anchor is half sunk in the rubble of a hall. A line of white fire runs from it toward the first, thin as a thread, and tightens as you touch it.",
-    close="Step back.")
-ANCHOR_C = read_clue(
+    close="Step back.", gate_flag="flag.beat.godfall_reached",
+    dormant="A standing stone half sunk in rubble. It is cold and it does not answer. Something is not finished behind you, in the Choir's nave, and the anchor knows it.")
+ANCHOR_C = gated_clue(
     "dialogue.celestial_anchor_c", "The Third Anchor",
     "The third anchor is the highest, on a spur over the void. When it takes the flame, the line of fire runs the whole way down the terrace, and far to the south the bridge stops shuddering.",
-    close="Step back.")
+    close="Step back.", gate_flag="flag.beat.godfall_reached",
+    dormant="The highest of the anchors, on a spur over the void. It is cold and it does not answer. Something is not finished behind you, in the Choir's nave, and the anchor knows it.")
 
 # --------------------------------------------------------------------------------------------------
 # The Stair: winches and the Knight's echo (A9)
 # --------------------------------------------------------------------------------------------------
-WINCH_A = read_clue(
+WINCH_A = gated_clue(
     "dialogue.celestial_winch_a", "The Western Winch",
     "The winch is a drum of black iron wound with chain as thick as your arm, and the chain runs off into the void. The crank is worn smooth in two places, a hand's width apart, by hands you will not meet. When you set your shoulders to it the drum turns, and far below, stone grinds against stone.",
-    close="Step back.")
-WINCH_B = read_clue(
+    close="Step back.", gate_flag="flag.beat.stair_reached",
+    dormant="A drum of black iron wound with chain. It will not turn under your hands: the Stair has not yet taken notice of you.")
+WINCH_B = gated_clue(
     "dialogue.celestial_winch_b", "The Eastern Winch",
     "The second winch is jammed with ash. You clear it with your hands. When it catches, the first drum answers across the gap, and the whole Stair begins, with a great slow groan, to settle toward its landing.",
-    close="Step back.")
+    close="Step back.", gate_flag="flag.beat.stair_reached",
+    dormant="A second drum, jammed with ash. It will not turn under your hands: the Stair has not yet taken notice of you.")
 
 
 def _rival_concourse() -> Dialogue:
@@ -376,67 +382,68 @@ STELE_C = read_clue(
 # --------------------------------------------------------------------------------------------------
 # The fork allies at the landing: one short conversation each, a payoff line and a once-only gift
 # --------------------------------------------------------------------------------------------------
+# (dialogue stem, speaker, fork flag, gift item:count, spec1 payoff row or None, gift line)
+# The nine Act I-II forks reuse spec1's landing.fork.<name> rows (spec1_story.py: "W-Spec-2 reads them with K()"), so the
+# people on the terrace are the ones the player met. The two Pale forks have no spec1 row and speak from landing2.fork.*.
 ALLIES = [
-    # (dialogue stem, speaker, fork flag, gift item:count)
-    ("dray_spared", "Marshal Orsolo Dray", "flag.fork.dray_spared", "item.armor.warden_aegis:1"),
-    ("dray_pressed", "Dawnwarden Serjeant", "flag.fork.dray_pressed", "item.potion.health:3"),
-    ("hjalvar", "Captain of Hjalvar's Archers", "flag.fork.succession_hjalvar", "item.ammo.arrows:60"),
-    ("halvar", "Halvar's Exile", "flag.fork.succession_halvar", "item.potion.stamina:3"),
-    ("herd_slain", "Master Hunter", "flag.fork.herd_slain", "item.ammo.arrows:40"),
-    ("herd_calmed", "Ashen Herder", "flag.fork.herd_calmed", "item.food.field_ration:4"),
-    ("flock_exposed", "Pilgrim of the Wells", "flag.fork.flock_exposed", "item.potion.health:3"),
-    ("flock_turned", "Convert of the Archive", "flag.fork.flock_turned", "item.material.warding_chalk:3"),
-    ("flock_kin", "A Kneeling Zealot", "flag.fork.flock_kin", "item.material.emberbloom:3"),
-    ("queen_released", "Lamplighter of Vesperhold", "flag.fork.queen_released", "item.food.bread:4"),
-    ("queen_kept", "Runner of Vesperhold", "flag.fork.queen_kept", "item.material.grave_dust:2"),
+    ("dray_spared", "Orsolo Dray", "flag.fork.dray_spared", "item.armor.warden_aegis:1", "dray_spared",
+     "He unbuckles the aegis of his own watch and holds it out by the straps. <<It was never mine to keep. Nor is it yours to refuse.>>"),
+    ("dray_pressed", "Syndicate Quartermaster", "flag.fork.dray_pressed", "item.potion.health:3", "dray_pressed",
+     "A crate is opened without comment. Three draughts, each stamped with a seal that has been scratched out. <<Paid for,>> says the quartermaster. <<Do not ask by whom.>>"),
+    ("hjalvar", "Hjalvar Stormbound", "flag.fork.succession_hjalvar", "item.ammo.arrows:60", "succession_hjalvar",
+     "His grandsons set down a quiver of clan arrows, sixty fletched for the Stair. <<Count them as you spend them, stranger. We do.>>"),
+    ("halvar", "Halvar One-Hand", "flag.fork.succession_halvar", "item.potion.stamina:3", "succession_halvar",
+     "He passes you three flasks of something the exiles brew from lichen, bitter and warming. <<For the climb. The Syndicate does not need to know.>>"),
+    ("herd_slain", "Hunters' Warden", "flag.fork.herd_slain", "item.ammo.arrows:40", "herd_slain",
+     "The warden counts out forty arrows from the station's own stores, as carefully as if they were coin. <<The hunt gives what it can.>>"),
+    ("herd_calmed", "Maeve's Herders", "flag.fork.herd_calmed", "item.food.field_ration:4", "herd_calmed",
+     "Someone passes you a pack of smoked meat and flat bread, still warm. The wolf watches the hand that gives it, and lets it go."),
+    ("flock_exposed", "Mother Oda's Grandson", "flag.fork.flock_exposed", "item.potion.health:3", "flock_exposed",
+     "He sets his cup on the stone and digs three draughts out of the bundle at his feet, from the Wells' own clean stores. <<She said you would know what they are for.>>"),
+    ("flock_turned", "Tamsin Reed", "flag.fork.flock_turned", "item.material.warding_chalk:3", "flock_turned",
+     "She presses three sticks of warding chalk into your palm, plain grey, from the Archive's stores. <<Draw a line they cannot cross, and then tell me which side you stand on.>>"),
+    ("flock_kin", "A Voice at the Landing", "flag.fork.flock_kin", "item.material.emberbloom:3", "flock_kin",
+     "A bundle lies on the stone beneath the red robe, tied with a cord. Three blooms of emberbloom, warm and unwithered. The voice does not speak again."),
+    ("queen_released", "Lamplighter of Vesperhold", "flag.fork.queen_released", "item.food.bread:4", None,
+     "He puts a warm loaf into your hands, and another, and two more, with the air of a man who has just learned what bread is for."),
+    ("queen_kept", "Runner of Vesperhold", "flag.fork.queen_kept", "item.material.grave_dust:2", None,
+     "The girl opens her hand and tips two pinches of grey dust into yours without looking at it. <<It keeps,>> she says again."),
 ]
 
 
-def _ally(stem, speaker, fork_flag, gift) -> Dialogue:
+def _ally(stem, speaker, fork_flag, gift, spec1_name, gift_line) -> Dialogue:
     boon = f"flag.boon.{stem}"
+    root = K(f"landing.fork.{spec1_name}") if spec1_name else K(f"landing2.fork.{stem}")
     return Dialogue(
         id=f"dialogue.ally_{stem}", speaker=t(speaker), start="root", nodes=[
-            Node("root", K(f"landing2.fork.{stem}"), [
+            Node("root", root, [
                 say(K("dlg.ally.c_take"), "gift", tag="take", when=missing_flag(boon), do=(E.GIVE_ITEM, gift),
                     do2=(E.SET_FLAG, boon)),
                 leave(K("dlg.ally.c_leave"), tag="leave")]),
-            Node("gift", K("dlg.ally.gift"), [leave(K("dlg.ally.c_leave"), tag="leave")]),
+            Node("gift", K(f"landing2.gift.{stem}"), [leave(K("dlg.ally.c_leave"), tag="leave")]),
         ])
 
 
 ALLY_DIALOGUES = [_ally(*a) for a in ALLIES]
 
 LANDING2 = {
-    "dray_spared": "Marshal Orsolo Dray stands at the head of a picket of Dawnwardens, and when he sees you he does not salute. He bows, once, the way a man bows to the one who gave him back his own name. <<You could have taken my watch from me, Seventh. You took my fear instead. The picket is mine to lend, and I am lending it. Take this: it is the aegis of my own watch.>>",
-    "dray_pressed": "A Dawnwarden serjeant stands at the edge of the lines with the stiff manners of a man who has been told to be civil. <<The Marshal told you what you needed, and the Watch will not forget how. We are here because the Watch does not leave a Seventh alone on a terrace. We are not here for you. Take the rations. That much we will give.>>",
-    "hjalvar": "Hjalvar's archers have taken the east pillar and strung their bows already. Their captain does not waste breath. <<The Stormcrown is held, and so is its chief. He sent us to hold this wall for the one who held the hold. Arrows for the Stair, Seventh. Count them as you spend them.>>",
-    "halvar": "Halvar One-Hand's exiles sit round a fire against the wall with the easy silence of people who have already lost everything once. <<He said to tell you the Reach is his now, and that it was your doing, and that he does not know whether to curse you or sing. We are here to see which. Drink, and stand a little closer to the fire.>>",
-    "herd_slain": "Ash Hunters in trophy-cloaks hold the west wall, each wearing a strip of the great herd's hide. The master hunter nods to you like one craftsman to another. <<The herd is on the station's wall and the Wilds are quiet. We hear the quiet is expensive, and that you will pay for it in time. Take what the hunt gives.>>",
-    "herd_calmed": "The Ashen herders have come with the elk behind them, grey and patient as the ash, and the animals stand in the lee of the pillars as though the terraces of heaven were pasture. A herder holds out a pack. <<The herd walked here by itself, Seventh. We only followed. There is bread and meat in this. It is more than the Wilds ever gave anyone before you.>>",
-    "flock_exposed": "Pilgrims in plain grey sit in a ring on the cold stone, their robes cut short where the temple's red had been. The oldest rises first. <<We read what the Prophet really wrote. It was kinder than what he taught us, and a good deal harder to follow. We are not his flock any more. We are only people who came a long way to say we are sorry. Take this: it is what the Wells gave us.>>",
-    "flock_turned": "Converts walk the lines in Archive grey, singing the Prophet's old hymns under their breath with the words changed. Their leader stops you with a gentle hand. <<You turned us, Seventh, and we have not stopped turning. We will hold this terrace with song and chalk. Take this, from the Archive's own stores: it will see you through the Stair.>>",
-    "flock_kin": "Figures in ash-grey robes kneel in a half circle with their foreheads on the stone, and not one of them looks up as you pass. A voice among them says, very low, <<Kin.>> It is not a greeting. It is a recognition. <<We will not ask what the Seventh intends at the top. Our prayers are your prayers, whichever god hears them. Take the emberbloom. It is the Prophet's last gift, and it was meant for you.>>",
     "queen_released": "A handful of Vesperhold's people stand at the pillars in coats that do not fit them yet, looking at the sky with the expression of people who have never seen it do anything. One of them carries a lamp that is not lit. <<We aged,>> he says, as if announcing a birthday. <<We have come to see what it was worth. Oswin sent this: bread, hot. He says it will be stale by morning, and that this is the point.>>",
     "queen_kept": "Vesperhold's Steward has sent a runner, a girl of fifteen with a black ribbon at her wrist, standing very straight. <<The Steward says you kept the count and the Queen fell, and the evening ended all at once. She says to tell you it is still evening in the places that matter. She says you will understand.>> The girl does not look away. <<She sends this. It is grave-dust from the Court's own steps. She says it keeps.>>",
 }
 
 EPILOGUES = {
-    # ending.epilogue.<fork>.<a|b|c>: one card per resolved fork, played after the ending's own epilogue card.
-    # a = the first option in the order of the flag list in campaign.md, b = the second, c = the third.
-    "ending.epilogue.dray.a": "Marshal Dray kept the Crown's gates for another thirty years and never once spoke of the day you let him live. The wardens say he taught every recruit one rule: a prisoner is still someone's watch.",
-    "ending.epilogue.dray.b": "Marshal Dray told the Assembly everything it needed, and never again told anyone anything. The wardens still argue about whether you were hard or only thorough.",
-    "ending.epilogue.succession.a": "Hjalvar held the Stormcrown through the long spring, and the clans learned to follow a chief who asked before he commanded.",
-    "ending.epilogue.succession.b": "Halvar One-Hand brought the exiles home across the pass, and the Reach learned that a clan can survive a chief it once cast out.",
-    "ending.epilogue.herd.a": "The Hunters hung the herd's antlers in the station hall and called it a fair price for the Wilds. Nobody could say, afterward, what the Wilds thought of the bargain.",
-    "ending.epilogue.herd.b": "The herds came down out of the ash that autumn and grazed the burned fields without fear. Last Hearth set a place at its table for them, and it is not a figure of speech there.",
-    "ending.epilogue.flock.a": "The Wells struck their prophet's name from the ledgers. Pilgrims still walk the track, and ask better questions at the end of it.",
-    "ending.epilogue.flock.b": "The turned flock carried the Prophet's old hymns into the Archive and sang them quietly until the words meant something else.",
-    "ending.epilogue.flock.c": "The Prophet's kin wore ash for a generation and called it faithfulness. In the dark of the year, some of them still pray to a voice that is not there.",
+    # ending.epilogue.<fork>.<a|b|c>: one card per resolved fork, played after the ending's own epilogue card
+    # (EndingSequence.ForkEpilogues). a = the first flag of the fork's row, b = the second, c = the third.
+    # The nine Act I-II forks take spec1's epilogue.fork.<name> text (spec1_story.py), so one voice tells each arc.
     "ending.epilogue.queen.a": "The people of Vesperhold aged. Some died that winter and said it was worth it. Oswin's daughter learned to walk, and there is a lamp in the plaza now that he lets go out.",
     "ending.epilogue.queen.b": "Vesperhold's years came due in a single night. The Archive wrote the names of the ones who sat down in the Concord's old registry, and left the last page open for whoever came to count them.",
     "ending.epilogue.vigil.a": "The Knight's greatsword still stands upright before the Ash Throne. No one has moved it. Those who have knelt before it say it feels like being forgiven by something that did not forget.",
     "ending.epilogue.vigil.b": "The songs say you drew first at the gate, and that you never again drew first on anyone who knelt. Nobody has been able to confirm it, and nobody has been willing to test it.",
 }
+for _slug, _names in (("dray", ("dray_spared", "dray_pressed")), ("succession", ("succession_hjalvar", "succession_halvar")),
+                      ("herd", ("herd_slain", "herd_calmed")), ("flock", ("flock_exposed", "flock_turned", "flock_kin"))):
+    for _i, _name in enumerate(_names):
+        EPILOGUES[f"ending.epilogue.{_slug}.{'abc'[_i]}"] = S1_EPILOGUE[_name]
 
 BARKS = {
     # Companion reactions (data/story/reactions/spec2.json); one toast line each, spoken only by a party member.
@@ -455,9 +462,8 @@ BARKS = {
 LOCALE = [
     ("chapter.ch.4.title", "The Celestial War"),
     ("chapter.ch.4.subtitle", "A stair, a gate, and a chair that must never be empty"),
-    ("dlg.ally.c_take", "Accept the Assembly's gift."),
+    ("dlg.ally.c_take", "Accept what they offer."),
     ("dlg.ally.c_leave", "Hold the line."),
-    ("dlg.ally.gift", "They press it into your hands without ceremony, and step back into the line."),
     # The brazier at the Knight's gate while the vigil has not been kept (BossSummonComponent.LockedPromptKey).
     ("celestial.ashen_knight.challenge_locked_vigil", "A knight kneels beside the brazier, keeping a vigil. Speak to him before you light it."),
     # The Ash Throne's opening line, remembering fork F6 (dialogue.ash_throne in legacy.py).
@@ -469,7 +475,8 @@ LOCALE = [
     ("quest.main.celestial.log_knight", "The Ashen Knight is dead, and the only door to the throne stands open."),
     ("quest.main.celestial.hint_morthul", "Light the brazier at the foot of the dais. Morthul rises once the Knight's vigil is over."),
     ("quest.main.celestial.log_morthul", "Morthul came apart into ash, and the ash did not settle."),
-] + [(k, t(v)) for k, v in BARKS.items()] + [(f"landing2.fork.{k}", t(v)) for k, v in LANDING2.items()] + [(k, t(v)) for k, v in EPILOGUES.items()]
+] + [(k, t(v)) for k, v in BARKS.items()] + [(f"landing2.fork.{k}", t(v)) for k, v in LANDING2.items()] \
+  + [(f"landing2.gift.{a[0]}", t(a[5])) for a in ALLIES] + [(k, t(v)) for k, v in EPILOGUES.items()]
 
 
 def build():

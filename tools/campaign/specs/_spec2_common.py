@@ -33,3 +33,14 @@ def read_clue(dialogue_id, speaker, first, then=None, then_button="Read on.", cl
     if then:
         nodes.append(Node("more", t(then), [leave(t(close), tag="close")]))
     return Dialogue(id=dialogue_id, speaker=t(speaker), start="root", nodes=nodes, secret=secret)
+
+
+def gated_clue(dialogue_id, speaker, first, dormant, gate_flag, then=None, then_button="Read on.", close="Let it be.") -> Dialogue:
+    """A read_clue whose objective is only live once `gate_flag` is held (the objective's own req_flag or its quest's
+    auto-start flag). Before that the object answers with `dormant` and a way out, so touching it early (a sequence
+    break: the vault, the Stair, Godfall) never narrates a step the quest did not count."""
+    from tools.campaign.model import StartVariant, missing_flag
+    d = read_clue(dialogue_id, speaker, first, then=then, then_button=then_button, close=close)
+    d.nodes.append(Node("dormant", t(dormant), [leave(t("Step back."), tag="back")]))
+    d.start_variants = [StartVariant(missing_flag(gate_flag), "dormant")]
+    return d
