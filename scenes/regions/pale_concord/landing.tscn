@@ -4,6 +4,8 @@
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_bench.glb" id="prp_bench"]
 [ext_resource type="Script" path="res://src/World/CellNavBaker.cs" id="s_navbaker"]
 [ext_resource type="Script" path="res://src/World/MapLocationComponent.cs" id="maploc_39_5a"]
+[ext_resource type="Script" path="res://src/Entities/Entity.cs" id="wc_entity_cs"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueComponent.cs" id="wc_dialoguecomponent_cs"]
 
 ; THE STILL QUAY (hidden realm) — where the way from the Sunspire library lets out. Authored in the
 ; content frame; tools/shift_cell_content.py moves it to the spec's origin. The door home is built by
@@ -18,6 +20,9 @@ agent_height = 1.8
 agent_radius = 0.8
 agent_max_climb = 0.3
 agent_max_slope = 40.0
+
+[sub_resource type="BoxShape3D" id="WC_Box_0p7_3p4_0p7"]
+size = Vector3(0.7, 3.4, 0.7)
 
 [node name="LandingCell" type="Node3D"]
 metadata/content_offset = Vector2(-45, 65)
@@ -37,8 +42,10 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -40, 0, 57)
 [node name="QuayLamp2" parent="Nav" instance=ExtResource("prp_lamp_post")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -50, 0, 71)
 
-[node name="QuayLamp3" parent="Nav" instance=ExtResource("prp_lamp_post")]
+[node name="QuayLamp3" type="Node3D" parent="Nav"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -40, 0, 71)
+script = ExtResource("wc_entity_cs")
+DisplayName = "The Quay Lamp"
 
 [node name="QuayBenchW" parent="Nav" instance=ExtResource("prp_bench")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -52, 0, 64)
@@ -50,3 +57,17 @@ transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -38, 0, 64)
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -45, 0, 65)
 script = ExtResource("maploc_39_5a")
 LocationId = "location.pale.landing"
+
+[node name="Model" parent="Nav/QuayLamp3" instance=ExtResource("prp_lamp_post")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/QuayLamp3"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/QuayLamp3/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.7, 0)
+shape = SubResource("WC_Box_0p7_3p4_0p7")
+
+[node name="Dialogue" type="Node" parent="Nav/QuayLamp3"]
+script = ExtResource("wc_dialoguecomponent_cs")
+DialogueId = "dialogue.pale_landing_lamp"
+InteractId = "interact.pale.landing_lamp"
+PromptKey = "pale.prompt.quay_lamp"
