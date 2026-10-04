@@ -84,6 +84,22 @@ public static class NpcVisualKit
         ["npc.dawnwarden_serjeant"] = P("dawnwarden_serjeant", Build.Broad,
             Chest("GuildTabardBlue"), Chest("Pauldron", -0.02f), Hips("BeltPouches")),
 
+        // The Celestial landing's fork allies and its Assembly Marshal (campaign overhaul). They wear the
+        // same outfits as the guild officers they echo, under their own ids: those officers' template ids
+        // are guild roster entries that ValidateGuildRosterIsPlaced requires to be placed exactly once.
+        ["npc.landing_marshal"] = P("landing_marshal", Build.Broad,
+            Chest("GuildTabardBlue"), Chest("ShoulderCape"), Chest("Pauldron"), Hips("BeltPouches")),
+        ["npc.landing_dray"] = P("landing_dray", Build.Broad,
+            Chest("GuildTabardBlue"), Chest("ShoulderCape"), Chest("Pauldron"), Hips("BeltPouches")),
+        ["npc.landing_serjeant"] = P("landing_serjeant", Build.Broad,
+            Chest("GuildTabardBlue"), Chest("Pauldron", -0.02f), Hips("BeltPouches")),
+        ["npc.landing_hunter"] = P("landing_hunter", Build.Broad,
+            Chest("GuildTabardAsh"), Chest("ShoulderCape"), Chest("Quiver"), Hips("Knife")),
+        ["npc.landing_reader"] = P("landing_reader", Build.Standard,
+            Chest("GuildTabardArchive"), Hips("Ledger"), Hips("ScrollCase")),
+        ["npc.landing_seeker"] = P("landing_seeker", Build.Slim,
+            Chest("GuildTabardEmber"), Hips("ScrollCase")),
+
         // Embermarket professions. Shared bodies now communicate different work at a glance.
         ["npc.corvin"] = P("provisioner", Build.Standard,
             Chest("OuterVest"), Chest("Satchel"), Hips("CoinPouch")),

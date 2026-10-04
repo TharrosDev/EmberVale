@@ -68,11 +68,47 @@ EffectArg = "flag.ashen_knight_absorbed"
 script = ExtResource("3_choice")
 Text = "dlg.ashenknight.absorb.c_declined_bye"
 
+[sub_resource type="Resource" id="ch_s2_last_words_x0"]
+script = ExtResource("3_choice")
+Text = "dlg.ashenknight.absorb.c_library_trust"
+Goto = "library_trust"
+Condition = 5
+ConditionArg = "flag.rival.library_trust"
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_s2_last_words_x1"]
+script = ExtResource("3_choice")
+Text = "dlg.ashenknight.absorb.c_library_defy"
+Goto = "library_defy"
+Condition = 5
+ConditionArg = "flag.rival.library_defy"
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_s2_last_words_x2"]
+script = ExtResource("3_choice")
+Text = "dlg.ashenknight.absorb.c_gate_kneel"
+Goto = "gate_kneel"
+Condition = 5
+ConditionArg = "flag.rival.gate_kneel"
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_s2_last_words_x3"]
+script = ExtResource("3_choice")
+Text = "dlg.ashenknight.absorb.c_gate_draw"
+Goto = "gate_draw"
+Condition = 5
+ConditionArg = "flag.rival.gate_draw"
+Effect = 0
+EffectArg = ""
+
 [sub_resource type="Resource" id="node_last_words"]
 script = ExtResource("2_node")
 Id = "last_words"
 Text = "dlg.ashenknight.absorb.last_words"
-Choices = Array[Resource]([SubResource("ch_duel_storm"), SubResource("ch_duel_mission"), SubResource("ch_listen")])
+Choices = Array[Resource]([SubResource("ch_duel_storm"), SubResource("ch_duel_mission"), SubResource("ch_s2_last_words_x0"), SubResource("ch_s2_last_words_x1"), SubResource("ch_s2_last_words_x2"), SubResource("ch_s2_last_words_x3"), SubResource("ch_listen")])
 
 [sub_resource type="Resource" id="node_last_words_2"]
 script = ExtResource("2_node")
@@ -110,9 +146,69 @@ Id = "declined"
 Text = "dlg.ashenknight.absorb.declined"
 Choices = Array[Resource]([SubResource("ch_declined_bye")])
 
+[sub_resource type="Resource" id="ch_s2_library_trust_0"]
+script = ExtResource("3_choice")
+Text = "dlg.ashenknight.absorb.c_listen"
+Goto = "last_words_2"
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="node_library_trust"]
+script = ExtResource("2_node")
+Id = "library_trust"
+Text = "dlg.ashenknight.absorb.library_trust"
+Choices = Array[Resource]([SubResource("ch_s2_library_trust_0")])
+
+[sub_resource type="Resource" id="ch_s2_library_defy_0"]
+script = ExtResource("3_choice")
+Text = "dlg.ashenknight.absorb.c_listen"
+Goto = "last_words_2"
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="node_library_defy"]
+script = ExtResource("2_node")
+Id = "library_defy"
+Text = "dlg.ashenknight.absorb.library_defy"
+Choices = Array[Resource]([SubResource("ch_s2_library_defy_0")])
+
+[sub_resource type="Resource" id="ch_s2_gate_kneel_0"]
+script = ExtResource("3_choice")
+Text = "dlg.ashenknight.absorb.c_listen"
+Goto = "last_words_2"
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="node_gate_kneel"]
+script = ExtResource("2_node")
+Id = "gate_kneel"
+Text = "dlg.ashenknight.absorb.gate_kneel"
+Choices = Array[Resource]([SubResource("ch_s2_gate_kneel_0")])
+
+[sub_resource type="Resource" id="ch_s2_gate_draw_0"]
+script = ExtResource("3_choice")
+Text = "dlg.ashenknight.absorb.c_listen"
+Goto = "last_words_2"
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="node_gate_draw"]
+script = ExtResource("2_node")
+Id = "gate_draw"
+Text = "dlg.ashenknight.absorb.gate_draw"
+Choices = Array[Resource]([SubResource("ch_s2_gate_draw_0")])
+
 [resource]
 script = ExtResource("1_dlg")
 Id = "dialogue.ashen_knight_absorb"
 SpeakerName = "dlg.ashenknight.absorb.speaker"
 StartNodeId = "last_words"
-Nodes = Array[Resource]([SubResource("node_last_words"), SubResource("node_last_words_2"), SubResource("node_duel_storm"), SubResource("node_duel_mission"), SubResource("node_offer"), SubResource("node_absorbed"), SubResource("node_declined")])
+Nodes = Array[Resource]([SubResource("node_last_words"), SubResource("node_last_words_2"), SubResource("node_duel_storm"), SubResource("node_duel_mission"), SubResource("node_offer"), SubResource("node_absorbed"), SubResource("node_declined"), SubResource("node_library_trust"), SubResource("node_library_defy"), SubResource("node_gate_kneel"), SubResource("node_gate_draw")])

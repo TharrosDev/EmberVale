@@ -1,0 +1,49 @@
+[gd_scene load_steps=11 format=3]
+
+; The ladle on its nail by the chapel door (WR-spec1-29): the deacon has left. Origin is the nail; hang it at
+; about 1.6 m clearance.
+
+[sub_resource type="StandardMaterial3D" id="Mat_iron"]
+albedo_color = Color(0.08, 0.08, 0.09, 1)
+roughness = 0.5
+metallic = 0.4
+
+[sub_resource type="StandardMaterial3D" id="Mat_brass"]
+albedo_color = Color(0.5, 0.36, 0.14, 1)
+roughness = 0.45
+metallic = 0.5
+
+[sub_resource type="CylinderMesh" id="Mesh_handle"]
+top_radius = 0.012
+bottom_radius = 0.012
+height = 0.34
+radial_segments = 6
+
+[sub_resource type="SphereMesh" id="Mesh_bowl"]
+radius = 0.075
+height = 0.09
+
+[sub_resource type="CylinderMesh" id="Mesh_nail"]
+top_radius = 0.01
+bottom_radius = 0.01
+height = 0.09
+radial_segments = 5
+
+[node name="HangingLadle" type="Node3D"]
+
+[node name="Model" type="Node3D" parent="."]
+
+[node name="Nail" type="MeshInstance3D" parent="Model"]
+transform = Transform3D(1, 0, 0, 0, 0, -1, 0, 1, 0, 0, 0.1, 0.02)
+mesh = SubResource("Mesh_nail")
+material_override = SubResource("Mat_iron")
+
+[node name="Handle" type="MeshInstance3D" parent="Model"]
+transform = Transform3D(0.9994, -0.0349, 0, 0.0349, 0.9994, 0, 0, 0, 1, 0, -0.07, 0.03)
+mesh = SubResource("Mesh_handle")
+material_override = SubResource("Mat_brass")
+
+[node name="Bowl" type="MeshInstance3D" parent="Model"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.27, 0.03)
+mesh = SubResource("Mesh_bowl")
+material_override = SubResource("Mat_brass")

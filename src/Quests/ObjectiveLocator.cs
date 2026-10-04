@@ -65,6 +65,8 @@ public static class ObjectiveLocator
             // walking beside you, and an arrow pointing at your own escort is the least useful thing
             // the compass could draw. It falls through to LocationOf below, which is the destination.
             ObjectiveType.Reach or ObjectiveType.Defend => LocationPosition(objective.TargetId),
+            // Milestone's TargetId is a story flag, not a thing in the world: it falls through to
+            // LocationOf below (its optional LocationId) and otherwise points nowhere.
             _ => null,
         };
 

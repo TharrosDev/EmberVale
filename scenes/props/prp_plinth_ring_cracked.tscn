@@ -1,0 +1,46 @@
+[gd_scene load_steps=10 format=3]
+
+; The cracked ring of a seal plinth once its seal has let go (WR-spec2-08..10): the script glows through the break.
+
+[sub_resource type="StandardMaterial3D" id="Mat_broken"]
+albedo_color = Color(0.4, 0.14, 0.08, 1)
+roughness = 0.6
+emission_enabled = true
+emission = Color(1, 0.35, 0.12, 1)
+emission_energy_multiplier = 1.8
+
+[sub_resource type="StandardMaterial3D" id="Mat_crack"]
+albedo_color = Color(0.02, 0.02, 0.025, 1)
+roughness = 0.8
+
+[sub_resource type="TorusMesh" id="Mesh_ring"]
+inner_radius = 0.22
+outer_radius = 0.32
+rings = 20
+ring_segments = 8
+
+[sub_resource type="BoxMesh" id="Mesh_crack"]
+size = Vector3(0.05, 0.05, 0.7)
+
+[node name="PlinthRingCracked" type="Node3D"]
+
+[node name="Ring" type="MeshInstance3D" parent="."]
+transform = Transform3D(0.9945, -0.0366, 0, 0.1032, 0.3438, -0.1564, 0.0164, 0.0545, 0.9877, 0, 1.15, 0)
+mesh = SubResource("Mesh_ring")
+material_override = SubResource("Mat_broken")
+
+[node name="CrackA" type="MeshInstance3D" parent="."]
+transform = Transform3D(0.9397, 0, 0.342, 0, 1, 0, -0.342, 0, 0.9397, 0, 1.17, 0)
+mesh = SubResource("Mesh_crack")
+material_override = SubResource("Mat_crack")
+
+[node name="CrackB" type="MeshInstance3D" parent="."]
+transform = Transform3D(0.4226, 0, -0.6344, 0, 1, 0, 0.9063, 0, 0.2958, 0, 1.17, 0)
+mesh = SubResource("Mesh_crack")
+material_override = SubResource("Mat_crack")
+
+[node name="Glow" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
+light_color = Color(1, 0.4, 0.15, 1)
+light_energy = 0.9
+omni_range = 3.5

@@ -3,6 +3,7 @@ using Embervale.Companions;
 using Embervale.Core;
 using Embervale.Core.Events;
 using Embervale.Economy;
+using Embervale.Items;
 using Embervale.Localization;
 using Embervale.Movement;
 using Embervale.Progression;
@@ -24,13 +25,20 @@ public partial class Notifications : CanvasLayer
     private const int MaxVisible = 3;
     private const int MaxQueued = 12;
 
-    private enum NoticeCategory { Minor, Reward, Quest, Warning, Major }
+    private enum NoticeCategory { Minor, Reward, Quest, Warning, Major, Bark }
 
     private sealed class Notice
     {
         public required string Text { get; init; }
         public required Color Accent { get; init; }
         public required NoticeCategory Category { get; init; }
+
+        /// <summary>A dim second line: the quest a step belongs to, the speaker of a bark.</summary>
+        public string? Secondary { get; init; }
+
+        /// <summary>The audio cue played when the toast is shown (not when it is queued).</summary>
+        public string? Cue { get; init; }
+
         public int Count { get; set; } = 1;
     }
 
@@ -38,6 +46,10 @@ public partial class Notifications : CanvasLayer
     private readonly Queue<Notice> _queue = new();
     private readonly Dictionary<string, Notice> _coalesced = new();
     private int _visible;
+
+    // One player action publishes several quest events in one frame; they are collected here and turned into
+    // the toasts worth showing once per frame (QuestNoticeCoalescer).
+    private readonly QuestNoticeCoalescer _questNotices = new();
 
     public override void _Ready()
     {
@@ -54,14 +66,15 @@ public partial class Notifications : CanvasLayer
         _stack.GrowVertical = Control.GrowDirection.End;
         _stack.OffsetLeft = -UiTheme.SpaceLg;
         _stack.OffsetRight = -UiTheme.SpaceLg;
-        _stack.OffsetTop = 190;
-        _stack.OffsetBottom = 190;
+        _stack.OffsetTop = 306;
+        _stack.OffsetBottom = 306;
         AddChild(_stack);
 
         EventBus bus = EventBus.Instance;
         bus?.Subscribe<LeveledUpEvent>(OnLeveledUp);
         bus?.Subscribe<QuestStartedEvent>(OnQuestStarted);
-        bus?.Subscribe<QuestObjectiveAdvancedEvent>(OnObjectiveAdvanced);
+        bus?.Subscribe<QuestObjectiveActivatedEvent>(OnObjectiveActivated);
+        bus?.Subscribe<QuestStageChangedEvent>(OnStageChanged);
         bus?.Subscribe<QuestCompletedEvent>(OnQuestCompleted);
         bus?.Subscribe<QuestFailedEvent>(OnQuestFailed);
         bus?.Subscribe<WorldEventStartedEvent>(OnWorldEventStarted);
@@ -82,10 +95,14 @@ public partial class Notifications : CanvasLayer
         bus?.Subscribe<ShrineRefusedEvent>(OnShrineRefused);
         bus?.Subscribe<WorldHazardNoticeEvent>(OnWorldHazard);
         SubscribeMagic(bus);
+
+        bus?.Subscribe<CompanionBarkEvent>(OnCompanionBark);
+        bus?.Subscribe<Narrative.StoryToastRequestedEvent>(OnStoryToast);
     }
 
     public override void _Process(double delta)
     {
+        FlushQuestNotices();
         bool protectedState = UiState.MenuOpen || GameManager.Instance?.State != GameState.Playing;
         _stack.Visible = !protectedState;
         if (!protectedState)
@@ -104,7 +121,8 @@ public partial class Notifications : CanvasLayer
 
         bus.Unsubscribe<LeveledUpEvent>(OnLeveledUp);
         bus.Unsubscribe<QuestStartedEvent>(OnQuestStarted);
-        bus.Unsubscribe<QuestObjectiveAdvancedEvent>(OnObjectiveAdvanced);
+        bus.Unsubscribe<QuestObjectiveActivatedEvent>(OnObjectiveActivated);
+        bus.Unsubscribe<QuestStageChangedEvent>(OnStageChanged);
         bus.Unsubscribe<QuestCompletedEvent>(OnQuestCompleted);
         bus.Unsubscribe<QuestFailedEvent>(OnQuestFailed);
         bus.Unsubscribe<WorldEventStartedEvent>(OnWorldEventStarted);
@@ -125,52 +143,163 @@ public partial class Notifications : CanvasLayer
         bus.Unsubscribe<ShrineRefusedEvent>(OnShrineRefused);
         bus.Unsubscribe<WorldHazardNoticeEvent>(OnWorldHazard);
         UnsubscribeMagic(bus);
+        bus.Unsubscribe<CompanionBarkEvent>(OnCompanionBark);
+        bus.Unsubscribe<Narrative.StoryToastRequestedEvent>(OnStoryToast);
     }
 
     private void OnLeveledUp(LeveledUpEvent e) =>
         Push(Loc.TF("notify.levelup", e.NewLevel), UiTheme.Accent, NoticeCategory.Major);
 
-    // Quest.Title is a Loc key (data-authored), so it must be resolved before display.
-    private void OnQuestStarted(QuestStartedEvent e) =>
-        Push(Loc.TF("notify.quest_started", Loc.T(e.Quest.Title)), UiTheme.Text, NoticeCategory.Quest);
+    // --- Quests ---------------------------------------------------------------------------
+    //
+    // Every quest event is FED to the coalescer and turned into toasts once per frame (FlushQuestNotices).
+    // A single action publishes several events - the step advanced, the stage changed, the next step
+    // activated, sometimes the quest completed - and announcing each would read as a bug. Quest.Title and
+    // an objective's text are Loc keys (data-authored), resolved at display time.
 
-    /// <summary>
-    /// An objective ticking over (§24). Reuses this feed rather than adding a second notification
-    /// system (§75) — the toast stack already knows how to queue, hold and fade.
-    ///
-    /// ⚠️ <b>Only on completion, and only for multi-objective quests.</b> Toasting every increment
-    /// puts nine chips on screen for a ten-pelt errand, which is how a feed stops being read at all;
-    /// the tracker's own progress bar is the at-a-glance channel for counting, and that is what it
-    /// was added for in 37.5B. A single-objective quest is skipped because finishing its one
-    /// objective IS finishing the quest, and <see cref="OnQuestCompleted"/> already says so — two
-    /// chips for one event reads as a bug.
-    /// </summary>
-    private void OnObjectiveAdvanced(QuestObjectiveAdvancedEvent e)
+    private void OnQuestStarted(QuestStartedEvent e) => _questNotices.OnStarted(e.Quest.Id);
+
+    private void OnObjectiveActivated(QuestObjectiveActivatedEvent e) =>
+        _questNotices.OnObjectiveActivated(e.QuestId, e.ObjectiveIndex, IsOptional(e.QuestId, e.ObjectiveIndex));
+
+    /// <summary>Only the completing half of a stage change matters here: the activating half is the same
+    /// moment as <see cref="QuestObjectiveActivatedEvent"/> and would double-count.</summary>
+    private void OnStageChanged(QuestStageChangedEvent e)
     {
-        if (e.Count < e.Required)
+        if (e.Completed)
+        {
+            _questNotices.OnObjectiveCompleted(e.QuestId, e.ObjectiveIndex, IsOptional(e.QuestId, e.ObjectiveIndex));
+        }
+    }
+
+    private void OnQuestCompleted(QuestCompletedEvent e) => _questNotices.OnCompleted(e.Quest.Id);
+
+    /// <summary>A quest lost (41B). It shares the world event's failure colour rather than the
+    /// companion-downed one: what the player needs told apart here is "this ended badly" from "this
+    /// ended well", and the downed toast that caused an escort failure has already fired beside it.</summary>
+    private void OnQuestFailed(QuestFailedEvent e) => _questNotices.OnFailed(e.Quest.Id);
+
+    private void FlushQuestNotices()
+    {
+        if (!_questNotices.HasPending)
         {
             return;
         }
 
-        var objectives = e.Quest.ObjectiveList();
-        if (objectives.Count <= 1 || e.ObjectiveIndex < 0 || e.ObjectiveIndex >= objectives.Count)
+        foreach (QuestNoticeIntent intent in _questNotices.Flush())
+        {
+            if (FindQuest(intent.QuestId) is not { } quest)
+            {
+                continue;
+            }
+
+            List<ObjectiveResource> objectives = quest.ObjectiveList();
+            string title = Loc.T(quest.Title);
+            string? Describe(int index) =>
+                index >= 0 && index < objectives.Count ? Loc.T(objectives[index].ShortLabel()) : null;
+            Color tint = quest.IsMainQuest ? UiTheme.QuestMain : UiTheme.QuestSide;
+            string? cue = QuestNoticeCues.For(intent.Kind);
+
+            switch (intent.Kind)
+            {
+                case QuestNoticeKind.Completed:
+                    Push(Loc.TF("notify.quest_complete", title), UiTheme.Good, NoticeCategory.Major, cue: cue);
+                    break;
+
+                case QuestNoticeKind.Failed:
+                    Push(Loc.TF("notify.quest_failed", title), UiTheme.Bad, NoticeCategory.Warning);
+                    break;
+
+                case QuestNoticeKind.Started:
+                    Push(
+                        Loc.TF("notify.quest_started", title), UiTheme.Text, NoticeCategory.Quest,
+                        secondary: Describe(intent.ObjectiveIndex) is { } first ? Loc.TF("questui.new_objective", first) : null,
+                        cue: cue);
+                    break;
+
+                case QuestNoticeKind.NewObjective:
+                    Push(
+                        Loc.TF("questui.new_objective", Describe(intent.ObjectiveIndex) ?? title), tint,
+                        NoticeCategory.Quest, secondary: title, cue: cue);
+                    break;
+
+                case QuestNoticeKind.Updated:
+                    Push(
+                        Loc.TF("questui.updated_toast", title), UiTheme.QuestComplete, NoticeCategory.Quest,
+                        secondary: Describe(intent.CompletedIndex) is { } met ? Loc.TF("hud.quest.objective_done", met) : null,
+                        cue: cue);
+                    break;
+
+                case QuestNoticeKind.OptionalDone:
+                    Push(
+                        Loc.TF("questui.optional_done", Describe(intent.ObjectiveIndex) ?? title),
+                        UiTheme.QuestComplete, NoticeCategory.Quest, secondary: title, cue: cue);
+                    break;
+            }
+        }
+    }
+
+    private static bool IsOptional(string questId, int index)
+    {
+        if (FindQuest(questId) is not { } quest)
+        {
+            return false;
+        }
+
+        List<ObjectiveResource> objectives = quest.ObjectiveList();
+        return index >= 0 && index < objectives.Count && objectives[index].IsOptional;
+    }
+
+    /// <summary>The quest by id, preferring the player's own log (the instance the events describe, which
+    /// also covers a quest that is not in the database) over the database.</summary>
+    private static QuestResource? FindQuest(string questId)
+    {
+        if (Core.Services.ServiceLocator.Instance is { } locator &&
+            locator.TryGet(out Player.PlayerCharacter player) &&
+            player.GetComponent<QuestLogComponent>() is { } log)
+        {
+            foreach (QuestProgress progress in log.Quests)
+            {
+                if (progress.Quest.Id == questId)
+                {
+                    return progress.Quest;
+                }
+            }
+        }
+
+        return QuestDatabase.Get(questId);
+    }
+
+    private void OnCompanionBark(CompanionBarkEvent e) => PushBark(e.CompanionId, e.TextKey);
+
+    /// <summary>A story moment's toast (the Pale Concord reveal): a major notice, with an optional detail
+    /// line. A key with no text is dropped rather than shown raw.</summary>
+    private void OnStoryToast(Narrative.StoryToastRequestedEvent e)
+    {
+        if (e.TextKey.Length == 0 || !Loc.Has(e.TextKey))
         {
             return;
         }
 
         Push(
-            Loc.TF("hud.quest.objective_done", Loc.T(objectives[e.ObjectiveIndex].ShortLabel())),
-            UiTheme.QuestComplete, NoticeCategory.Quest);
+            Loc.T(e.TextKey), UiTheme.Accent, NoticeCategory.Major,
+            secondary: e.DetailKey.Length > 0 && Loc.Has(e.DetailKey) ? Loc.T(e.DetailKey) : null);
     }
 
-    private void OnQuestCompleted(QuestCompletedEvent e) =>
-        Push(Loc.TF("notify.quest_complete", Loc.T(e.Quest.Title)), UiTheme.Good, NoticeCategory.Major);
+    /// <summary>A companion's reaction line as a portrait-less toast: the line, and who said it beneath.
+    /// Public so a harness can drive it through the feed's own path.</summary>
+    public void PushBark(string companionId, string textKey)
+    {
+        if (textKey.Length == 0 || !Loc.Has(textKey))
+        {
+            return;
+        }
 
-    /// <summary>A quest lost (41B). It shares the world event's failure colour rather than the
-    /// companion-downed one: what the player needs told apart here is "this ended badly" from "this
-    /// ended well", and the downed toast that caused an escort failure has already fired beside it.</summary>
-    private void OnQuestFailed(QuestFailedEvent e) =>
-        Push(Loc.TF("notify.quest_failed", Loc.T(e.Quest.Title)), UiTheme.Bad, NoticeCategory.Warning);
+        string name = CompanionDatabase.Get(companionId) is { } companion ? Loc.T(companion.NameKey) : string.Empty;
+        Push(
+            Loc.T(textKey), UiTheme.Accent, NoticeCategory.Bark,
+            secondary: name.Length > 0 ? Loc.TF("questui.bark_by", name) : null);
+    }
 
     private void OnWorldEventStarted(WorldEventStartedEvent e) =>
         Push(Loc.TF("notify.event_started", Loc.T(e.NameKey)), UiTheme.Accent, NoticeCategory.Warning);
@@ -267,9 +396,12 @@ public partial class Notifications : CanvasLayer
     // the whole point of authoring a key per shrine rather than one shared line.
     private void OnShrineRefused(ShrineRefusedEvent e) => Push(Loc.T(e.Shrine.RefusalKey), UiTheme.Bad);
 
-    private void Push(string text, Color color, NoticeCategory category = NoticeCategory.Minor)
+    private void Push(
+        string text, Color color, NoticeCategory category = NoticeCategory.Minor, string? secondary = null,
+        string? cue = null)
     {
-        if (_coalesced.TryGetValue(text, out Notice? existing))
+        string key = secondary == null ? text : $"{text}\n{secondary}";
+        if (_coalesced.TryGetValue(key, out Notice? existing))
         {
             existing.Count++;
             return;
@@ -281,9 +413,9 @@ public partial class Notifications : CanvasLayer
             return;
         }
 
-        var notice = new Notice { Text = text, Accent = color, Category = category };
+        var notice = new Notice { Text = text, Accent = color, Category = category, Secondary = secondary, Cue = cue };
         _queue.Enqueue(notice);
-        _coalesced[text] = notice;
+        _coalesced[key] = notice;
         PresentQueued();
     }
 
@@ -304,7 +436,7 @@ public partial class Notifications : CanvasLayer
         while (_visible < MaxVisible && _queue.Count > 0)
         {
             Notice notice = _queue.Dequeue();
-            _coalesced.Remove(notice.Text);
+            _coalesced.Remove(notice.Secondary == null ? notice.Text : $"{notice.Text}\n{notice.Secondary}");
             Present(notice);
         }
     }
@@ -320,6 +452,7 @@ public partial class Notifications : CanvasLayer
                 NoticeCategory.Minor => 3.2,
                 NoticeCategory.Warning => 5.5,
                 NoticeCategory.Major => 6.0,
+                NoticeCategory.Bark => 5.0,
                 _ => 4.5,
             },
         };
@@ -327,7 +460,10 @@ public partial class Notifications : CanvasLayer
         MarginContainer pad = UiTheme.Padding(UiTheme.SpaceMd);
         var row = new HBoxContainer();
         row.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
-        row.AddChild(UiIcon.Create(IconFor(notice.Category), 22f, notice.Accent));
+        if (notice.Category != NoticeCategory.Bark)
+        {
+            row.AddChild(UiIcon.Create(IconFor(notice.Category), 22f, notice.Accent));
+        }
 
         var copy = new VBoxContainer();
         copy.AddThemeConstantOverride("separation", 0);
@@ -337,6 +473,14 @@ public partial class Notifications : CanvasLayer
         label.AutowrapMode = TextServer.AutowrapMode.WordSmart;
         label.CustomMinimumSize = new Vector2(220f, 0f);
         copy.AddChild(label);
+        if (notice.Secondary != null)
+        {
+            Label second = UiTheme.Caption(notice.Secondary, UiTheme.Dim);
+            second.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+            second.CustomMinimumSize = new Vector2(220f, 0f);
+            copy.AddChild(second);
+        }
+
         if (notice.Count > 1)
         {
             copy.AddChild(UiTheme.Caption($"×{notice.Count}", UiTheme.Dim));
@@ -344,6 +488,11 @@ public partial class Notifications : CanvasLayer
         row.AddChild(copy);
         pad.AddChild(row);
         toast.AddContent(pad);
+
+        if (notice.Cue != null)
+        {
+            EventBus.Instance?.Publish(new SoundCueRequestedEvent(notice.Cue, Vector3.Zero));
+        }
 
         _visible++;
         toast.TreeExited += () =>

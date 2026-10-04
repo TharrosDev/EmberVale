@@ -206,10 +206,11 @@ omni_range = 7.0
 script = ExtResource("8_summon")
 SpawnOffset = Vector3(0, 0, -13)
 RequiredQuestId = ""
+RequiredFlagId = "flag.arc.ashen_ready"
 BossTemplateId = "enemy.beast_lord"
 DefeatedFlagId = "flag.beast_lord_defeated"
 PromptKey = "boss.beast_lord.challenge_prompt"
-LockedPromptKey = "boss.beast_lord.challenge_locked"
+LockedPromptKey = "boss.beast_lord.arc_locked"
 
 [node name="Model" parent="Brazier" instance=ExtResource("p_brazier")]
 

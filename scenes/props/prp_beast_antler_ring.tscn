@@ -1,0 +1,84 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_pebble_d.glb" id="1_pebble"]
+
+; A ring of small stones set round a single antler (WR-spec1-12): the herd trail's third stake. Pure decor;
+; the stake that carries the interactable stands beside it. Twelve pebbles at 0.85 m, half the size the
+; vendored pebble ships at, so they read as stones a hand set down rather than boulders.
+
+[sub_resource type="StandardMaterial3D" id="Mat_bone"]
+albedo_color = Color(0.8, 0.76, 0.66, 1)
+roughness = 0.9
+
+[sub_resource type="CylinderMesh" id="Mesh_tine"]
+top_radius = 0.012
+bottom_radius = 0.028
+height = 0.55
+radial_segments = 6
+
+[sub_resource type="CylinderMesh" id="Mesh_tine_s"]
+top_radius = 0.008
+bottom_radius = 0.02
+height = 0.32
+radial_segments = 6
+
+[node name="AntlerRing" type="Node3D"]
+
+[node name="Antler" type="Node3D" parent="."]
+transform = Transform3D(1.4095, 0, 0.513, 0, 1.5, 0, -0.513, 0, 1.4095, 0, 0.06, 0)
+
+[node name="Beam" type="MeshInstance3D" parent="Antler"]
+transform = Transform3D(0.2079, -0.9781, 0, 0.9781, 0.2079, 0, 0, 0, 1, 0, 0.1, 0)
+mesh = SubResource("Mesh_tine")
+material_override = SubResource("Mat_bone")
+
+[node name="TineA" type="MeshInstance3D" parent="Antler"]
+transform = Transform3D(0.9659, 0.2588, 0, -0.2588, 0.9659, 0, 0, 0, 1, 0.12, 0.2, 0)
+mesh = SubResource("Mesh_tine_s")
+material_override = SubResource("Mat_bone")
+
+[node name="TineB" type="MeshInstance3D" parent="Antler"]
+transform = Transform3D(0.7103, -0.287, 0.6428, 0.3746, 0.9272, 0, -0.596, 0.2408, 0.766, -0.08, 0.17, 0.04)
+mesh = SubResource("Mesh_tine_s")
+material_override = SubResource("Mat_bone")
+
+[node name="TineC" type="MeshInstance3D" parent="Antler"]
+transform = Transform3D(0.75, 0.433, -0.5, -0.5, 0.866, 0, 0.433, 0.25, 0.866, 0.22, 0.12, -0.03)
+mesh = SubResource("Mesh_tine_s")
+material_override = SubResource("Mat_bone")
+
+[node name="Stone0" parent="." instance=ExtResource("1_pebble")]
+transform = Transform3D(0.5473, 0, -0.2070, 0, 0.5852, 0, 0.2070, 0, 0.5473, 0.8693, 0, 0.0107)
+
+[node name="Stone1" parent="." instance=ExtResource("1_pebble")]
+transform = Transform3D(-0.4444, 0, 0.0975, 0, 0.4549, 0, -0.0975, 0, -0.4444, 0.7546, 0, 0.4601)
+
+[node name="Stone2" parent="." instance=ExtResource("1_pebble")]
+transform = Transform3D(0.4569, 0, 0.3937, 0, 0.6032, 0, -0.3937, 0, 0.4569, 0.3975, 0, 0.7648)
+
+[node name="Stone3" parent="." instance=ExtResource("1_pebble")]
+transform = Transform3D(-0.4849, 0, -0.2430, 0, 0.5424, 0, 0.2430, 0, -0.4849, 0.0026, 0, 0.8297)
+
+[node name="Stone4" parent="." instance=ExtResource("1_pebble")]
+transform = Transform3D(0.4304, 0, -0.2496, 0, 0.4975, 0, 0.2496, 0, 0.4304, -0.3783, 0, 0.7358)
+
+[node name="Stone5" parent="." instance=ExtResource("1_pebble")]
+transform = Transform3D(0.3767, 0, 0.4482, 0, 0.5855, 0, -0.4482, 0, 0.3767, -0.7232, 0, 0.3923)
+
+[node name="Stone6" parent="." instance=ExtResource("1_pebble")]
+transform = Transform3D(0.3111, 0, -0.3255, 0, 0.4503, 0, 0.3255, 0, 0.3111, -0.8201, 0, -0.0096)
+
+[node name="Stone7" parent="." instance=ExtResource("1_pebble")]
+transform = Transform3D(0.4291, 0, -0.4433, 0, 0.6170, 0, 0.4433, 0, 0.4291, -0.7281, 0, -0.3926)
+
+[node name="Stone8" parent="." instance=ExtResource("1_pebble")]
+transform = Transform3D(-0.2373, 0, -0.4869, 0, 0.5417, 0, 0.4869, 0, -0.2373, -0.4595, 0, -0.7586)
+
+[node name="Stone9" parent="." instance=ExtResource("1_pebble")]
+transform = Transform3D(0.5549, 0, -0.1183, 0, 0.5674, 0, 0.1183, 0, 0.5549, -0.0261, 0, -0.8849)
+
+[node name="Stone10" parent="." instance=ExtResource("1_pebble")]
+transform = Transform3D(0.2577, 0, 0.4417, 0, 0.5114, 0, -0.4417, 0, 0.2577, 0.4451, 0, -0.7052)
+
+[node name="Stone11" parent="." instance=ExtResource("1_pebble")]
+transform = Transform3D(-0.3997, 0, -0.3025, 0, 0.5012, 0, 0.3025, 0, -0.3997, 0.6911, 0, -0.4324)

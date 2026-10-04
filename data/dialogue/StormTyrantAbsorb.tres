@@ -33,6 +33,8 @@ script = ExtResource("2_node")
 Id = "offer"
 Text = "dlg.stormtyrant.absorb.offer"
 Choices = Array[Resource]([SubResource("ch_absorb"), SubResource("ch_decline")])
+OnEnterEffect = 2
+OnEnterEffectArg = "flag.testimony.storm"
 
 [sub_resource type="Resource" id="node_absorbed"]
 script = ExtResource("2_node")

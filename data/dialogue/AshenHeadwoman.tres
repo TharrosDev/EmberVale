@@ -3,6 +3,7 @@
 [ext_resource type="Script" path="res://src/Dialogue/DialogueResource.cs" id="1_dlg"]
 [ext_resource type="Script" path="res://src/Dialogue/DialogueNode.cs" id="2_node"]
 [ext_resource type="Script" path="res://src/Dialogue/DialogueChoice.cs" id="3_choice"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueStartVariant.cs" id="9_variant"]
 
 [sub_resource type="Resource" id="ch_place"]
 script = ExtResource("3_choice")
@@ -65,11 +66,94 @@ script = ExtResource("3_choice")
 Text = "dlg.ashen_headwoman.c_back"
 Goto = "root"
 
+[sub_resource type="Resource" id="ch_root_cq_herd_slain_note"]
+script = ExtResource("3_choice")
+Text = "dlg.ashen_headwoman.root.c_cq_herd_slain_note"
+Goto = "cq_herd_slain_note"
+Condition = 5
+ConditionArg = "flag.fork.herd_slain"
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_root_cq_herd_calmed_note"]
+script = ExtResource("3_choice")
+Text = "dlg.ashen_headwoman.root.c_cq_herd_calmed_note"
+Goto = "cq_herd_calmed_note"
+Condition = 5
+ConditionArg = "flag.fork.herd_calmed"
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_cq_lh_hook_else"]
+script = ExtResource("3_choice")
+Text = "dlg.ashen_headwoman.cq_lh_hook.c_else"
+Goto = "root"
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_cq_lh_hook_go"]
+script = ExtResource("3_choice")
+Text = "dlg.ashen_headwoman.cq_lh_hook.c_go"
+Goto = ""
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_cq_bl_after_slain_take"]
+script = ExtResource("3_choice")
+Text = "dlg.ashen_headwoman.cq_bl_after_slain.c_take"
+Goto = ""
+Condition = 0
+ConditionArg = ""
+Effect = 14
+EffectArg = "item.food.field_ration:3"
+
+[sub_resource type="Resource" id="ch_cq_bl_after_calmed_take"]
+script = ExtResource("3_choice")
+Text = "dlg.ashen_headwoman.cq_bl_after_calmed.c_take"
+Goto = ""
+Condition = 0
+ConditionArg = ""
+Effect = 14
+EffectArg = "item.potion.health:2"
+
+[sub_resource type="Resource" id="ch_cq_herd_slain_note_else"]
+script = ExtResource("3_choice")
+Text = "dlg.ashen_headwoman.cq_herd_slain_note.c_else"
+Goto = "root"
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_cq_herd_calmed_note_else"]
+script = ExtResource("3_choice")
+Text = "dlg.ashen_headwoman.cq_herd_calmed_note.c_else"
+Goto = "root"
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_root_restart_fence"]
+script = ExtResource("3_choice")
+Text = "dlg.ashen_headwoman.root.c_restart_fence"
+Goto = ""
+Condition = 1
+ConditionArg = "quest.main.last_hearth"
+Effect = 1
+EffectArg = "quest.main.last_hearth"
+Condition2 = 5
+Condition2Arg = "flag.main.iron_king_done"
+
 [sub_resource type="Resource" id="node_root"]
 script = ExtResource("2_node")
 Id = "root"
 Text = "dlg.ashen_headwoman.root"
-Choices = Array[Resource]([SubResource("ch_ending_dawnfire"), SubResource("ch_ending_embers"), SubResource("ch_place"), SubResource("ch_east"), SubResource("ch_after"), SubResource("ch_bye")])
+Choices = Array[Resource]([SubResource("ch_ending_dawnfire"), SubResource("ch_ending_embers"), SubResource("ch_place"), SubResource("ch_east"), SubResource("ch_after"), SubResource("ch_root_cq_herd_slain_note"), SubResource("ch_root_cq_herd_calmed_note"), SubResource("ch_root_restart_fence"), SubResource("ch_bye")])
 
 [sub_resource type="Resource" id="node_place"]
 script = ExtResource("2_node")
@@ -101,9 +185,76 @@ Id = "ending_embers"
 Text = "dlg.ashen_headwoman.ending_embers"
 Choices = Array[Resource]([SubResource("ch_ending_embers_back")])
 
+[sub_resource type="Resource" id="node_cq_lh_hook"]
+script = ExtResource("2_node")
+Id = "cq_lh_hook"
+Text = "dlg.ashen_headwoman.cq_lh_hook"
+Choices = Array[Resource]([SubResource("ch_cq_lh_hook_else"), SubResource("ch_cq_lh_hook_go")])
+
+[sub_resource type="Resource" id="node_cq_bl_after_slain"]
+script = ExtResource("2_node")
+Id = "cq_bl_after_slain"
+Text = "dlg.ashen_headwoman.cq_bl_after_slain"
+Choices = Array[Resource]([SubResource("ch_cq_bl_after_slain_take")])
+
+[sub_resource type="Resource" id="node_cq_bl_after_calmed"]
+script = ExtResource("2_node")
+Id = "cq_bl_after_calmed"
+Text = "dlg.ashen_headwoman.cq_bl_after_calmed"
+Choices = Array[Resource]([SubResource("ch_cq_bl_after_calmed_take")])
+
+[sub_resource type="Resource" id="node_cq_herd_slain_note"]
+script = ExtResource("2_node")
+Id = "cq_herd_slain_note"
+Text = "dlg.ashen_headwoman.cq_herd_slain_note"
+Choices = Array[Resource]([SubResource("ch_cq_herd_slain_note_else")])
+
+[sub_resource type="Resource" id="node_cq_herd_calmed_note"]
+script = ExtResource("2_node")
+Id = "cq_herd_calmed_note"
+Text = "dlg.ashen_headwoman.cq_herd_calmed_note"
+Choices = Array[Resource]([SubResource("ch_cq_herd_calmed_note_else")])
+
+[sub_resource type="Resource" id="start_root_5_c44c"]
+script = ExtResource("9_variant")
+Condition = 5
+ConditionArg = "flag.main.beast_lord_done"
+NodeId = "root"
+
+[sub_resource type="Resource" id="start_cq_bl_after_slain_5_6333"]
+script = ExtResource("9_variant")
+Condition = 5
+ConditionArg = "flag.beat.beastend_slain"
+NodeId = "cq_bl_after_slain"
+
+[sub_resource type="Resource" id="start_cq_bl_after_calmed_5_0c59"]
+script = ExtResource("9_variant")
+Condition = 5
+ConditionArg = "flag.beat.beastend_calmed"
+NodeId = "cq_bl_after_calmed"
+
+[sub_resource type="Resource" id="start_after_5_c770"]
+script = ExtResource("9_variant")
+Condition = 5
+ConditionArg = "flag.beast_lord_defeated"
+NodeId = "after"
+
+[sub_resource type="Resource" id="start_root_5_7270"]
+script = ExtResource("9_variant")
+Condition = 5
+ConditionArg = "flag.beat.hearth_raid"
+NodeId = "root"
+
+[sub_resource type="Resource" id="start_cq_lh_hook_2_3cd1"]
+script = ExtResource("9_variant")
+Condition = 2
+ConditionArg = "quest.main.last_hearth"
+NodeId = "cq_lh_hook"
+
 [resource]
 script = ExtResource("1_dlg")
 Id = "dialogue.ashen_headwoman"
 SpeakerName = "dlg.ashen_headwoman.speaker"
 StartNodeId = "root"
-Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_place"), SubResource("node_east"), SubResource("node_after"), SubResource("node_ending_dawnfire"), SubResource("node_ending_embers")])
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_place"), SubResource("node_east"), SubResource("node_after"), SubResource("node_ending_dawnfire"), SubResource("node_ending_embers"), SubResource("node_cq_lh_hook"), SubResource("node_cq_bl_after_slain"), SubResource("node_cq_bl_after_calmed"), SubResource("node_cq_herd_slain_note"), SubResource("node_cq_herd_calmed_note")])
+StartVariants = Array[Resource]([SubResource("start_root_5_c44c"), SubResource("start_cq_bl_after_slain_5_6333"), SubResource("start_cq_bl_after_calmed_5_0c59"), SubResource("start_after_5_c770"), SubResource("start_root_5_7270"), SubResource("start_cq_lh_hook_2_3cd1")])

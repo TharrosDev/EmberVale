@@ -5,6 +5,7 @@ using Embervale.Dialogue;
 using Embervale.Economy;
 using Embervale.Factions;
 using Embervale.Items;
+using Embervale.Localization;
 using Embervale.Save;
 using Embervale.Player;
 using Embervale.Quests;
@@ -64,6 +65,28 @@ public sealed partial class PanelShots : ShotHarness
             return Journal.IsOpen ? null : "journal did not open";
         if (name == "13-journal-closed" && Journal.IsOpen)
             return "journal did not close";
+
+        // The campaign quest UI. Each frame proves it is the card it meant to photograph, because a journal
+        // that quietly opened on another quest would still be a valid-looking PNG.
+        if (name == "12b-journal-chapters")
+        {
+            if (!Journal.IsOpen || Journal.CurrentSection != JournalSection.Main ||
+                Journal.SelectedQuestId != QuestShotFixtures.LastHearth)
+                return "journal is not on the Main tab with the Last Hearth card";
+            if (!Loc.Has("chapter.ch.2.ashen.title"))
+                return "chapter title text did not resolve";
+        }
+        if (name == "12c-journal-detail" &&
+            (!Journal.IsOpen || Journal.SelectedQuestId != QuestShotFixtures.AshWind))
+            return "journal is not showing the Ash on the Wind card";
+        if (name == "12d-journal-completed" &&
+            (!Journal.IsOpen || Journal.CurrentSection != JournalSection.Completed))
+            return "journal is not on the Completed tab";
+        if (name == "12e-journal-errands" &&
+            (!Journal.IsOpen || Journal.CurrentSection != JournalSection.Errands))
+            return "journal is not on the Errands tab";
+        if (name == "16b-dialogue-tags" && !Dialogue.IsOpen)
+            return "dialogue panel did not open on the tags fixture";
         if ((name.StartsWith("14-") || name.StartsWith("18-") || name.StartsWith("19-")) && !Character.IsOpen)
             return "character/inventory panel did not open";
         if (name == "15-shop" && !Vendor.IsOpen)
@@ -182,6 +205,31 @@ public sealed partial class PanelShots : ShotHarness
             Journal?.SetOpen(true);
         });
 
+        // The campaign quest UI. A set of quests shaped like the campaign's (chapters, a ledger umbrella, an
+        // errand, finished errands) is built in memory, because no authored quest uses the new fields yet.
+        // Chapter groups first: the Last Hearth card is open so the index shows three chapters, the Ledger
+        // fold and the updated dots on the quests that have not been read.
+        Shot("12b-journal-chapters", () =>
+        {
+            if (QuestShotFixtures.Log() is { } log)
+            {
+                QuestShotFixtures.StartCampaignSet(log);
+            }
+
+            Journal?.Select(QuestShotFixtures.LastHearth);
+            Journal?.SetOpen(true);
+        });
+
+        // The detail card: region, level and main chips, the giver, the long prose, the stage log with a ticked
+        // first step, the current step with its hint and place, an Optional chip, locked steps, and the full
+        // rewards (xp, gold, an item, a faction gain).
+        Shot("12c-journal-detail", () => Journal?.Select(QuestShotFixtures.AshWind));
+
+        // Finished errands, newest first, folded after five.
+        Shot("12d-journal-completed", () => Journal?.Select(QuestShotFixtures.OldErrandPrefix + QuestShotFixtures.OldErrands));
+
+        Shot("12e-journal-errands", () => Journal?.Select(QuestShotFixtures.Errand));
+
         Shot("13-journal-closed", () => Journal?.SetOpen(false));
 
         Shot("14-inventory-full", () =>
@@ -206,6 +254,24 @@ public sealed partial class PanelShots : ShotHarness
             if (Player() is { } player && DialogueFixture() is { } dialogue)
             {
                 EventBus.Instance?.Publish(new DialogueStartedEvent(player, player, dialogue));
+            }
+        });
+
+        // Consequence chips on every kind of choice, the quest line under the speaker (the Elder is the Talk
+        // objective of the tracked Ash on the Wind), and the numbered choices. The first conversation is ended
+        // properly first: an overlapping start is ignored by design, and would photograph the old node.
+        Shot("16b-dialogue-tags", () =>
+        {
+            Dialogue?.EndConversation();
+            if (QuestShotFixtures.Log() is { } log)
+            {
+                log.Track(QuestShotFixtures.AshWind);
+            }
+
+            if (Player() is { } player)
+            {
+                EventBus.Instance?.Publish(
+                    new DialogueStartedEvent(player, player, QuestShotFixtures.BuildElderDialogue()));
             }
         });
 

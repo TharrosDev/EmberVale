@@ -3,6 +3,7 @@
 [ext_resource type="Script" path="res://src/Dialogue/DialogueResource.cs" id="1_dlg"]
 [ext_resource type="Script" path="res://src/Dialogue/DialogueNode.cs" id="2_node"]
 [ext_resource type="Script" path="res://src/Dialogue/DialogueChoice.cs" id="3_choice"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueStartVariant.cs" id="9_variant"]
 
 ; Magic upgrade: this NPC teaches spellcraft (spell.teach.* strings, LearnSpell effect).
 [sub_resource type="Resource" id="ch_mg_menu"]
@@ -26,6 +27,42 @@ Goto = "root"
 script = ExtResource("3_choice")
 Text = "spell.teach.thanks"
 Goto = "root"
+
+[sub_resource type="Resource" id="ch_cq_rem_check_herbs"]
+script = ExtResource("3_choice")
+Text = "dlg.apothecary.cq_rem_check.c_herbs"
+Goto = "cq_rem_thanks"
+Condition = 19
+ConditionArg = "item.material.healing_herb:4"
+Effect = 15
+EffectArg = "item.material.healing_herb:4"
+
+[sub_resource type="Resource" id="ch_cq_rem_check_else"]
+script = ExtResource("3_choice")
+Text = "dlg.apothecary.cq_rem_check.c_else"
+Goto = "root"
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_cq_rem_check_later"]
+script = ExtResource("3_choice")
+Text = "dlg.apothecary.cq_rem_check.c_later"
+Goto = ""
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_cq_rem_thanks_go"]
+script = ExtResource("3_choice")
+Text = "dlg.apothecary.cq_rem_thanks.c_go"
+Goto = ""
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
 
 [sub_resource type="Resource" id="node_mg_teach"]
 script = ExtResource("2_node")
@@ -143,9 +180,34 @@ Id = "closed"
 Text = "dlg.apothecary.closed"
 Choices = Array[Resource]([SubResource("ch_bye")])
 
+[sub_resource type="Resource" id="node_cq_rem_check"]
+script = ExtResource("2_node")
+Id = "cq_rem_check"
+Text = "dlg.apothecary.cq_rem_check"
+Choices = Array[Resource]([SubResource("ch_cq_rem_check_herbs"), SubResource("ch_cq_rem_check_else"), SubResource("ch_cq_rem_check_later")])
+
+[sub_resource type="Resource" id="node_cq_rem_thanks"]
+script = ExtResource("2_node")
+Id = "cq_rem_thanks"
+Text = "dlg.apothecary.cq_rem_thanks"
+Choices = Array[Resource]([SubResource("ch_cq_rem_thanks_go")])
+
+[sub_resource type="Resource" id="start_root_5_242c"]
+script = ExtResource("9_variant")
+Condition = 5
+ConditionArg = "flag.main.remedies_done"
+NodeId = "root"
+
+[sub_resource type="Resource" id="start_cq_rem_check_2_ce4b"]
+script = ExtResource("9_variant")
+Condition = 2
+ConditionArg = "quest.warband.remedies"
+NodeId = "cq_rem_check"
+
 [resource]
 script = ExtResource("1_dlg")
 Id = "dialogue.apothecary"
 SpeakerName = "dlg.apothecary.speaker"
 StartNodeId = "root"
-Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_offer"), SubResource("node_accepted"), SubResource("node_inprogress"), SubResource("node_thanks"), SubResource("node_closed"), SubResource("node_mg_teach"), SubResource("node_mg_taught")])
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_offer"), SubResource("node_accepted"), SubResource("node_inprogress"), SubResource("node_thanks"), SubResource("node_closed"), SubResource("node_mg_teach"), SubResource("node_mg_taught"), SubResource("node_cq_rem_check"), SubResource("node_cq_rem_thanks")])
+StartVariants = Array[Resource]([SubResource("start_root_5_242c"), SubResource("start_cq_rem_check_2_ce4b")])

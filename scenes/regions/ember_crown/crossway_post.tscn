@@ -36,6 +36,7 @@
 [ext_resource type="PackedScene" path="res://scenes/props/bld_wardens_watch.tscn" id="42b_bld_wardens_watch"]
 [ext_resource type="Script" path="res://src/Npc/ScheduleComponent.cs" id="42b_schedulecomponent"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_townsman.glb" id="42b_npc_townsman"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_table_large.gltf" id="wa_prp_table_large"]
 
 ; THE CROSSWAY POST (Phase 38M2) — the wardens' gate on the road north, and the place 38M's toll is
 ; actually about. 38M built the toll, the permit and the bribe and left them standing in the town
@@ -208,6 +209,45 @@ height = 1.8
 ; other files by hand.
 [sub_resource type="BoxMesh" id="BoxMesh_board_face"]
 size = Vector3(1.6, 1.1, 0.09)
+
+[sub_resource type="StandardMaterial3D" id="wa_mat_wax"]
+albedo_color = Color(0.55, 0.06, 0.05, 1)
+metallic = 0
+roughness = 0.5
+
+[sub_resource type="CylinderMesh" id="wa_cm_wax"]
+material = SubResource("wa_mat_wax")
+top_radius = 0.16
+bottom_radius = 0.16
+height = 0.02
+radial_segments = 16
+
+[sub_resource type="BoxShape3D" id="wa_box_1p24_1p24_1p24"]
+size = Vector3(1.24, 1.24, 1.24)
+
+[sub_resource type="BoxShape3D" id="wa_box_2p85_0p81_1p1"]
+size = Vector3(2.85, 0.81, 1.1)
+
+[sub_resource type="StandardMaterial3D" id="wa_mat_leather"]
+albedo_color = Color(0.2, 0.1, 0.05, 1)
+metallic = 0
+roughness = 0.85
+
+[sub_resource type="BoxMesh" id="wa_bm_ledger_cover"]
+material = SubResource("wa_mat_leather")
+size = Vector3(0.38, 0.05, 0.27)
+
+[sub_resource type="StandardMaterial3D" id="wa_mat_paper"]
+albedo_color = Color(0.74, 0.69, 0.54, 1)
+metallic = 0
+roughness = 0.95
+
+[sub_resource type="BoxMesh" id="wa_bm_ledger_pages"]
+material = SubResource("wa_mat_paper")
+size = Vector3(0.34, 0.03, 0.23)
+
+[sub_resource type="BoxShape3D" id="wa_box_0p5_0p2_0p4"]
+size = Vector3(0.5, 0.2, 0.4)
 
 [node name="CrosswayPost" type="Node3D"]
 metadata/content_offset = Vector2(30, 5)
@@ -1070,3 +1110,65 @@ DialogueId = "dialogue.dawnwarden_partner"
 [node name="MapPin" type="Node3D" parent="Nav/WardensWatch"]
 script = ExtResource("maploc_39_5a")
 LocationId = "location.crossway.watch"
+
+; WR-spec1-03 (campaign): the wax-sealed crate beside the Impound Clerk.
+[node name="ImpoundCrate" type="Node3D" parent="."]
+transform = Transform3D(0.9397, 0, 0.342, 0, 1, 0, -0.342, 0, 0.9397, 42, 0, 12)
+script = ExtResource("2_entity")
+DisplayName = "The Sealed Crate"
+PersistentId = "ember_crown.crossway_post.impound_crate"
+
+[node name="Model" parent="ImpoundCrate" instance=ExtResource("16_crate")]
+
+[node name="Seal" type="MeshInstance3D" parent="ImpoundCrate"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.25, 0)
+mesh = SubResource("wa_cm_wax")
+
+[node name="Collider" type="StaticBody3D" parent="ImpoundCrate"]
+
+[node name="Shape" type="CollisionShape3D" parent="ImpoundCrate/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.62, 0)
+shape = SubResource("wa_box_1p24_1p24_1p24")
+
+[node name="Dialogue" type="Node" parent="ImpoundCrate"]
+script = ExtResource("43_dialogue")
+DialogueId = "dialogue.impound_crate"
+InteractId = "interact.crossway.impound_crate"
+PromptKey = "prompt.worlda.impound_crate"
+
+[node name="SearchTable" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 27, 0, 12.2)
+
+[node name="Model" parent="Nav/SearchTable" instance=ExtResource("wa_prp_table_large")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/SearchTable"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/SearchTable/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.405, 0)
+shape = SubResource("wa_box_2p85_0p81_1p1")
+
+; WR-spec1-23 (campaign): the carter's ledger, open on the Search Table (the table is new).
+[node name="CarterLedger" type="Node3D" parent="."]
+transform = Transform3D(0.9848, 0, -0.1736, 0, 1, 0, 0.1736, 0, 0.9848, 27, 0.81, 12.2)
+script = ExtResource("2_entity")
+DisplayName = "The Carter Ledger"
+PersistentId = "ember_crown.crossway_post.carter_ledger"
+
+[node name="Cover" type="MeshInstance3D" parent="CarterLedger"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.025, 0)
+mesh = SubResource("wa_bm_ledger_cover")
+
+[node name="Pages" type="MeshInstance3D" parent="CarterLedger"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.062, 0)
+mesh = SubResource("wa_bm_ledger_pages")
+
+[node name="Collider" type="StaticBody3D" parent="CarterLedger"]
+
+[node name="Shape" type="CollisionShape3D" parent="CarterLedger/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, 0)
+shape = SubResource("wa_box_0p5_0p2_0p4")
+
+[node name="Dialogue" type="Node" parent="CarterLedger"]
+script = ExtResource("43_dialogue")
+DialogueId = "dialogue.carter_ledger"
+PromptKey = "prompt.worlda.carter_ledger"

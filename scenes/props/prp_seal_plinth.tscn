@@ -1,0 +1,42 @@
+[gd_scene load_steps=11 format=3]
+
+; One of the three black seal plinths ringing the Sundering Codex (WR-spec2-08..10). Hip-high block of black
+; stone; the ring of script on its cap is a separate flag-driven node (intact / cracked).
+
+[sub_resource type="StandardMaterial3D" id="Mat_black"]
+albedo_color = Color(0.045, 0.045, 0.055, 1)
+roughness = 0.55
+metallic = 0.15
+
+[sub_resource type="StandardMaterial3D" id="Mat_trim"]
+albedo_color = Color(0.1, 0.1, 0.12, 1)
+roughness = 0.6
+metallic = 0.1
+
+[sub_resource type="BoxMesh" id="Mesh_base"]
+size = Vector3(0.86, 0.16, 0.86)
+
+[sub_resource type="BoxMesh" id="Mesh_shaft"]
+size = Vector3(0.62, 0.84, 0.62)
+
+[sub_resource type="BoxMesh" id="Mesh_cap"]
+size = Vector3(0.8, 0.12, 0.8)
+
+[node name="SealPlinth" type="Node3D"]
+
+[node name="Model" type="Node3D" parent="."]
+
+[node name="Base" type="MeshInstance3D" parent="Model"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.08, 0)
+mesh = SubResource("Mesh_base")
+material_override = SubResource("Mat_trim")
+
+[node name="Shaft" type="MeshInstance3D" parent="Model"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.58, 0)
+mesh = SubResource("Mesh_shaft")
+material_override = SubResource("Mat_black")
+
+[node name="Cap" type="MeshInstance3D" parent="Model"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.06, 0)
+mesh = SubResource("Mesh_cap")
+material_override = SubResource("Mat_trim")

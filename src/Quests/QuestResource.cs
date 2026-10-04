@@ -126,6 +126,37 @@ public partial class QuestResource : Resource
     /// </summary>
     [Export] public bool AllowsOneShotTarget { get; set; }
 
+    [ExportGroup("Campaign")]
+
+    /// <summary>Chapter identifier (e.g. <c>act1</c>), empty = none. Not a locale key: the UI derives its
+    /// title text from it, and <see cref="ChapterStartedEvent"/> carries it on start.</summary>
+    [Export] public string ChapterKey { get; set; } = string.Empty;
+
+    /// <summary>Sort position of this quest within its act in the journal (ascending).</summary>
+    [Export] public int OrderInAct { get; set; }
+
+    /// <summary>Region (<c>region.*</c>) the quest belongs to, shown as a journal chip; empty = none.</summary>
+    [Export] public string RegionId { get; set; } = string.Empty;
+
+    /// <summary>Locale key of the quest giver's display name; empty = none.</summary>
+    [Export] public string GiverNameKey { get; set; } = string.Empty;
+
+    /// <summary>Recommended character level, 0 = none.</summary>
+    [Export] public int RecommendedLevel { get; set; }
+
+    /// <summary>Locale key of the long journal prose for this quest; empty = none.</summary>
+    [Export] public string DetailKey { get; set; } = string.Empty;
+
+    /// <summary>Story flag (<c>flag.*</c>) set when this quest starts.</summary>
+    [Export] public string StartFlagId { get; set; } = string.Empty;
+
+    /// <summary>Story flag (<c>flag.*</c>) set when this quest fails.</summary>
+    [Export] public string FailFlagId { get; set; } = string.Empty;
+
+    /// <summary>A ledger quest is a umbrella record: never auto-tracked, never the tracker fallback,
+    /// still listed in the journal.</summary>
+    [Export] public bool IsLedger { get; set; }
+
     /// <summary>The objectives read back as their concrete type, skipping bad entries.</summary>
     public System.Collections.Generic.List<ObjectiveResource> ObjectiveList()
     {

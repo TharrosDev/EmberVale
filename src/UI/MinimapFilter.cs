@@ -34,7 +34,7 @@ public static class MinimapFilter
     /// </summary>
     public static void Select(
         IReadOnlyList<MapPin> all, Vector2 centre, float radius, int max, List<MapPin> into,
-        string? objectiveId = null)
+        string? objectiveId = null, ISet<string>? questIds = null)
     {
         into.Clear();
         if (max <= 0)
@@ -59,6 +59,15 @@ public static class MinimapFilter
             if (byTracked != 0)
             {
                 return byTracked;
+            }
+
+            // Every other live quest's objective outranks ordinary pins, so a busy district never culls it.
+            int aQuest = questIds != null && questIds.Contains(a.Id) ? 0 : 1;
+            int bQuest = questIds != null && questIds.Contains(b.Id) ? 0 : 1;
+            int byQuest = aQuest.CompareTo(bQuest);
+            if (byQuest != 0)
+            {
+                return byQuest;
             }
 
             int byRank = Rank(a.Tier).CompareTo(Rank(b.Tier));

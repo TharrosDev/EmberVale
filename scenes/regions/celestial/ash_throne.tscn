@@ -49,6 +49,9 @@ size = Vector3(1, 1.4, 1)
 [sub_resource type="BoxShape3D" id="Shape_relic"]
 size = Vector3(1.2, 1.2, 1.2)
 
+[sub_resource type="BoxShape3D" id="WC_Box_2p2_2p6_1"]
+size = Vector3(2.2, 2.6, 1)
+
 [node name="AshThroneCell" type="Node3D"]
 
 [node name="Nav" type="NavigationRegion3D" parent="."]
@@ -230,3 +233,66 @@ shape = SubResource("Shape_throne_talk")
 [node name="Dialogue" type="Node" parent="ThroneTalk"]
 script = ExtResource("throne_dialogue")
 DialogueId = "dialogue.ash_throne"
+
+; WR-spec2-19: stele A, west rim between PillarW1 and PillarW2.
+[node name="SteleA" type="Node3D" parent="Nav"]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -50.5, 0, -36)
+script = ExtResource("2_entity")
+DisplayName = "The Stele of Light and Order"
+
+[node name="Model" parent="Nav/SteleA" instance=ExtResource("4_wall")]
+transform = Transform3D(0.55, 0, 0, 0, 0.65, 0, 0, 0, 1.2, 0, 0, 0)
+
+[node name="Collider" type="StaticBody3D" parent="Nav/SteleA"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/SteleA/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.3, 0)
+shape = SubResource("WC_Box_2p2_2p6_1")
+
+[node name="Dialogue" type="Node" parent="Nav/SteleA"]
+script = ExtResource("throne_dialogue")
+DialogueId = "dialogue.entropy_stele_a"
+InteractId = "interact.celestial.entropy_stele_a"
+PromptKey = "celestial.prompt.stele"
+
+; WR-spec2-20: stele B, east rim between PillarE1 and PillarE2.
+[node name="SteleB" type="Node3D" parent="Nav"]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -7.5, 0, -36)
+script = ExtResource("2_entity")
+DisplayName = "The Stele of Life and Wisdom"
+
+[node name="Model" parent="Nav/SteleB" instance=ExtResource("4_wall")]
+transform = Transform3D(0.55, 0, 0, 0, 0.65, 0, 0, 0, 1.2, 0, 0, 0)
+
+[node name="Collider" type="StaticBody3D" parent="Nav/SteleB"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/SteleB/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.3, 0)
+shape = SubResource("WC_Box_2p2_2p6_1")
+
+[node name="Dialogue" type="Node" parent="Nav/SteleB"]
+script = ExtResource("throne_dialogue")
+DialogueId = "dialogue.entropy_stele_b"
+InteractId = "interact.celestial.entropy_stele_b"
+PromptKey = "celestial.prompt.stele"
+
+; WR-spec2-21: stele C, south-west of the approach beside PillarSW. All three stand on the rim, outside the fight circle.
+[node name="SteleC" type="Node3D" parent="Nav"]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -39.5, 0, -18.5)
+script = ExtResource("2_entity")
+DisplayName = "The Stele of Strength and Nature"
+
+[node name="Model" parent="Nav/SteleC" instance=ExtResource("4_wall")]
+transform = Transform3D(0.55, 0, 0, 0, 0.65, 0, 0, 0, 1.2, 0, 0, 0)
+
+[node name="Collider" type="StaticBody3D" parent="Nav/SteleC"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/SteleC/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.3, 0)
+shape = SubResource("WC_Box_2p2_2p6_1")
+
+[node name="Dialogue" type="Node" parent="Nav/SteleC"]
+script = ExtResource("throne_dialogue")
+DialogueId = "dialogue.entropy_stele_c"
+InteractId = "interact.celestial.entropy_stele_c"
+PromptKey = "celestial.prompt.stele"

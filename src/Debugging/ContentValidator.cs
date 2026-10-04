@@ -764,6 +764,7 @@ public static class ContentValidator
     /// </summary>
     private static void ValidateBosses(List<string> issues)
     {
+        HashSet<string>? bossKeys = LocaleKeys();
         foreach (BossResource boss in BossDatabase.All)
         {
             if (string.IsNullOrEmpty(boss.Id))
@@ -788,6 +789,21 @@ public static class ContentValidator
             }
 
             ValidateEncounter(boss, issues);
+
+            // Campaign presentation keys: empty is fine, a set value must resolve.
+            if (bossKeys != null)
+            {
+                foreach ((string what, string key) in new[]
+                         {
+                             ("EpithetKey", boss.EpithetKey), ("IntroLineKey", boss.IntroLineKey),
+                         })
+                {
+                    if (!string.IsNullOrEmpty(key) && !bossKeys.Contains(key))
+                    {
+                        issues.Add($"boss '{boss.Id}' {what} '{key}' is not a key in data/locale/strings.csv");
+                    }
+                }
+            }
 
             if (boss.EnrageSeconds < 0f)
             {
@@ -3606,43 +3622,41 @@ public static class ContentValidator
     {
         foreach (DialogueResource dialogue in DialogueDatabase.All)
         {
-            foreach (DialogueNode node in dialogue.NodeList())
+            // Both condition pairs of every choice and every start variant's condition.
+            foreach ((DialogueCondition condition, string conditionArg) in DialogueConditionsOf(dialogue))
             {
-                foreach (DialogueChoice choice in node.ChoiceList())
+                if (condition == DialogueCondition.GuildCanJoin)
                 {
-                    if (choice.Condition == DialogueCondition.GuildCanJoin)
+                    if (FactionDatabase.Get(conditionArg) is not { IsGuild: true })
                     {
-                        if (FactionDatabase.Get(choice.ConditionArg) is not { IsGuild: true })
-                        {
-                            issues.Add($"dialogue '{dialogue.Id}' GuildCanJoin condition argument " +
-                                       $"'{choice.ConditionArg}' is not a guild faction id");
-                        }
-
-                        continue;
+                        issues.Add($"dialogue '{dialogue.Id}' GuildCanJoin condition argument " +
+                                   $"'{conditionArg}' is not a guild faction id");
                     }
 
-                    if (choice.Condition is not (DialogueCondition.GuildRankAtLeast or DialogueCondition.GuildNotMember))
-                    {
-                        continue;
-                    }
+                    continue;
+                }
 
-                    string where = $"dialogue '{dialogue.Id}' {choice.Condition} condition";
-                    if (!GuildRules.TryParseRankArg(choice.ConditionArg, out string factionId, out int rank))
-                    {
-                        issues.Add($"{where} argument '{choice.ConditionArg}' is not a faction id, " +
-                                   $"optionally followed by ':<rank 0..{GuildRules.MaxRanks}>'");
-                        continue;
-                    }
+                if (condition is not (DialogueCondition.GuildRankAtLeast or DialogueCondition.GuildNotMember))
+                {
+                    continue;
+                }
 
-                    if (FactionDatabase.Get(factionId) is not { } faction || !faction.IsGuild)
-                    {
-                        issues.Add($"{where} names '{factionId}', which is not a guild");
-                    }
-                    else if (rank > faction.RankNameKeys.Count)
-                    {
-                        issues.Add($"{where} requires rank {rank} of guild '{factionId}', which declares " +
-                                   $"only {faction.RankNameKeys.Count} - the choice can never be offered");
-                    }
+                string where = $"dialogue '{dialogue.Id}' {condition} condition";
+                if (!GuildRules.TryParseRankArg(conditionArg, out string factionId, out int rank))
+                {
+                    issues.Add($"{where} argument '{conditionArg}' is not a faction id, " +
+                               $"optionally followed by ':<rank 0..{GuildRules.MaxRanks}>'");
+                    continue;
+                }
+
+                if (FactionDatabase.Get(factionId) is not { } faction || !faction.IsGuild)
+                {
+                    issues.Add($"{where} names '{factionId}', which is not a guild");
+                }
+                else if (rank > faction.RankNameKeys.Count)
+                {
+                    issues.Add($"{where} requires rank {rank} of guild '{factionId}', which declares " +
+                               $"only {faction.RankNameKeys.Count} - the choice can never be offered");
                 }
             }
         }
@@ -3758,6 +3772,21 @@ public static class ContentValidator
                 // to a generic when Description is missing, so an unauthored objective would render as
                 // the word "objective" to the player. Authoring the line is the rule.
                 Require(objectives[i].Description, $"objective {i} description", issues, keys, quest.Id);
+                RequireIfSet(objectives[i].HintKey, $"objective {i} HintKey", issues, keys, quest.Id);
+                RequireIfSet(objectives[i].JournalEntryKey, $"objective {i} JournalEntryKey", issues, keys, quest.Id);
+            }
+
+            // Campaign presentation keys: empty is a real answer (the UI omits the row), a set value
+            // must resolve.
+            RequireIfSet(quest.GiverNameKey, "GiverNameKey", issues, keys, quest.Id);
+            RequireIfSet(quest.DetailKey, "DetailKey", issues, keys, quest.Id);
+        }
+
+        static void RequireIfSet(string value, string what, List<string> issues, HashSet<string> keys, string questId)
+        {
+            if (!string.IsNullOrEmpty(value) && !keys.Contains(value))
+            {
+                issues.Add($"quest '{questId}' {what} '{value}' is not a key in data/locale/strings.csv");
             }
         }
 
@@ -3894,6 +3923,29 @@ public static class ContentValidator
 
                         break;
 
+                    // Campaign overhaul. A milestone's target is a story flag; whether anything WRITES
+                    // that flag is ValidateStoryFlags' question (same machinery as a branch gate).
+                    case ObjectiveType.Milestone:
+                        if (!objective.TargetId.StartsWith("flag.", System.StringComparison.Ordinal))
+                        {
+                            issues.Add($"quest '{quest.Id}' milestone objective target '{objective.TargetId}' " +
+                                       "must be a story flag starting with 'flag.'");
+                        }
+
+                        if (objective.RequiredCount != 1)
+                        {
+                            issues.Add($"quest '{quest.Id}' milestone objective '{objective.TargetId}' has " +
+                                       $"RequiredCount {objective.RequiredCount} - a milestone is met by one flag, so it must be 1");
+                        }
+
+                        if (objective.TargetId.Length > 0 && objective.TargetId == objective.CompletionFlagId)
+                        {
+                            issues.Add($"quest '{quest.Id}' milestone '{objective.TargetId}' sets its own target " +
+                                       "as its CompletionFlagId - it would wait for itself");
+                        }
+
+                        break;
+
                     case ObjectiveType.Defend:
                         RequireMapLocation(objective.TargetId, $"quest '{quest.Id}' defend objective", issues);
 
@@ -3906,6 +3958,19 @@ public static class ContentValidator
                         }
 
                         break;
+                }
+
+                // Campaign flag fields are written through the flag family only.
+                if (!QuestCompletionRules.IsValidFlagId(objective.CompletionFlagId))
+                {
+                    issues.Add($"quest '{quest.Id}' objective CompletionFlagId '{objective.CompletionFlagId}' " +
+                               "must start with 'flag.'");
+                }
+
+                if (!QuestCompletionRules.IsValidFlagId(objective.ActivatedFlagId))
+                {
+                    issues.Add($"quest '{quest.Id}' objective ActivatedFlagId '{objective.ActivatedFlagId}' " +
+                               "must start with 'flag.'");
                 }
 
                 // 41D. A gate that is its own opposite can never be open, so the objective is one
@@ -3970,6 +4035,37 @@ public static class ContentValidator
             {
                 issues.Add($"quest '{quest.Id}' requires unknown quest '{quest.PrerequisiteQuestId}'");
             }
+
+            // Campaign presentation/world fields.
+            if (!QuestCompletionRules.IsValidFlagId(quest.StartFlagId))
+            {
+                issues.Add($"quest '{quest.Id}' StartFlagId '{quest.StartFlagId}' must start with 'flag.'");
+            }
+
+            if (!QuestCompletionRules.IsValidFlagId(quest.FailFlagId))
+            {
+                issues.Add($"quest '{quest.Id}' FailFlagId '{quest.FailFlagId}' must start with 'flag.'");
+            }
+
+            if (!string.IsNullOrEmpty(quest.RegionId) && RegionDatabase.Get(quest.RegionId) == null)
+            {
+                issues.Add($"quest '{quest.Id}' RegionId '{quest.RegionId}' is not a known region");
+            }
+
+            if (quest.RecommendedLevel < 0)
+            {
+                issues.Add($"quest '{quest.Id}' has a negative RecommendedLevel ({quest.RecommendedLevel})");
+            }
+
+            if (quest.OrderInAct < 0)
+            {
+                issues.Add($"quest '{quest.Id}' has a negative OrderInAct ({quest.OrderInAct})");
+            }
+
+            if (quest.ChapterKey.Length > 0 && quest.ChapterKey.Trim() != quest.ChapterKey)
+            {
+                issues.Add($"quest '{quest.Id}' ChapterKey '{quest.ChapterKey}' has surrounding whitespace");
+            }
         }
     }
 
@@ -3982,8 +4078,38 @@ public static class ContentValidator
                 issues.Add($"dialogue '{dialogue.Id}' has no start node '{dialogue.StartNodeId}'");
             }
 
+            // Campaign extension: conditional entry points. Each must name a real node and carry a
+            // well-formed condition.
+            foreach (DialogueStartVariant variant in dialogue.StartVariantList())
+            {
+                if (dialogue.FindNode(variant.NodeId) == null)
+                {
+                    issues.Add($"dialogue '{dialogue.Id}' start variant points at unknown node '{variant.NodeId}'");
+                }
+
+                ValidateDialogueCondition(dialogue.Id, variant.Condition, variant.ConditionArg, issues);
+            }
+
             foreach (DialogueNode node in dialogue.NodeList())
             {
+                // Campaign extension: a node's OnEnter effect runs while the conversation is on screen,
+                // so it must not open a panel over it, and it takes the same argument checks as a choice.
+                if (node.OnEnterEffect != DialogueEffect.None)
+                {
+                    if (DialogueRules.OpensPanel(node.OnEnterEffect))
+                    {
+                        issues.Add(
+                            $"dialogue '{dialogue.Id}' node '{node.Id}' OnEnter effect is {node.OnEnterEffect}, " +
+                            "which opens a panel over the live conversation");
+                    }
+                    else
+                    {
+                        ValidateDialogueEffect(
+                            dialogue.Id, node.OnEnterEffect, node.OnEnterEffectArg, string.Empty,
+                            DialogueCondition.Always, string.Empty, DialogueCondition.Always, string.Empty, issues);
+                    }
+                }
+
                 foreach (DialogueChoice choice in node.ChoiceList())
                 {
                     // A non-empty Goto must resolve to a real node.
@@ -3992,140 +4118,280 @@ public static class ContentValidator
                         issues.Add($"dialogue '{dialogue.Id}' choice points at unknown node '{choice.Goto}'");
                     }
 
-                    // Quest-typed conditions/effects must reference a real quest.
-                    if (IsQuestCondition(choice.Condition) && !string.IsNullOrEmpty(choice.ConditionArg) &&
-                        QuestDatabase.Get(choice.ConditionArg) == null)
-                    {
-                        issues.Add($"dialogue '{dialogue.Id}' condition references unknown quest '{choice.ConditionArg}'");
-                    }
+                    ValidateDialogueCondition(dialogue.Id, choice.Condition, choice.ConditionArg, issues);
+                    ValidateDialogueCondition(dialogue.Id, choice.Condition2, choice.Condition2Arg, issues);
 
-                    if (choice.Effect == DialogueEffect.StartQuest && QuestDatabase.Get(choice.EffectArg) == null)
-                    {
-                        issues.Add($"dialogue '{dialogue.Id}' StartQuest effect references unknown quest '{choice.EffectArg}'");
-                    }
+                    // Both effects are checked with both conditions in view: the rules that demand a
+                    // specific gate (shop hours, guild join, take-item) are satisfied by either pair.
+                    ValidateDialogueEffect(
+                        dialogue.Id, choice.Effect, choice.EffectArg, choice.Goto,
+                        choice.Condition, choice.ConditionArg, choice.Condition2, choice.Condition2Arg, issues);
+                    ValidateDialogueEffect(
+                        dialogue.Id, choice.Effect2, choice.Effect2Arg, choice.Goto,
+                        choice.Condition, choice.ConditionArg, choice.Condition2, choice.Condition2Arg, issues);
 
-                    // 35F: a mistyped taught spell is the whole reward for a boss fight, silently gone.
-                    if (choice.Effect == DialogueEffect.LearnSpell && SpellDatabase.Get(choice.EffectArg) == null)
+                    if (DialogueRules.OpensPanel(choice.Effect2) && DialogueRules.OpensPanel(choice.Effect))
                     {
-                        issues.Add($"dialogue '{dialogue.Id}' LearnSpell effect references unknown spell '{choice.EffectArg}'");
-                    }
-
-                    // 38E: the first shop id anywhere the validator can see. The same typo on a
-                    // VendorComponent.ShopId in a .tscn gives no prompt at all, because .tscn is not scanned.
-                    if (choice.Effect == DialogueEffect.OpenShop && ShopDatabase.Get(choice.EffectArg) == null)
-                    {
-                        issues.Add($"dialogue '{dialogue.Id}' OpenShop effect references unknown shop '{choice.EffectArg}'");
-                    }
-
-                    // A shop choice with a Goto leaves the conversation open behind the vendor window, so
-                    // closing the shop drops the player back into a dialogue they thought they had left.
-                    if (choice.Effect == DialogueEffect.OpenShop && !string.IsNullOrEmpty(choice.Goto))
-                    {
-                        issues.Add($"dialogue '{dialogue.Id}' OpenShop choice must end the conversation but points at '{choice.Goto}'");
-                    }
-
-                    // 38R: the same two rules for the service route, plus one that is genuinely new.
-                    if (choice.Effect == DialogueEffect.OpenService &&
-                        ServiceDatabase.Get(choice.EffectArg) == null)
-                    {
-                        issues.Add($"dialogue '{dialogue.Id}' OpenService effect references unknown service '{choice.EffectArg}'");
-                    }
-
-                    if (choice.Effect == DialogueEffect.OpenService && !string.IsNullOrEmpty(choice.Goto))
-                    {
-                        issues.Add($"dialogue '{dialogue.Id}' OpenService choice must end the conversation but points at '{choice.Goto}'");
-                    }
-
-                    // ⚠️ The one that is not a copy. A Bank opens the *host entity's* inventory, and a
-                    // conversation has no host entity — the vault it would open does not exist. The
-                    // failure is silent at runtime (a log line and a press that does nothing), so it is
-                    // refused in the data instead. A banker who talks keeps the ServiceComponent on his
-                    // vault and points the player at it; he does not open it mid-sentence.
-                    if (choice.Effect == DialogueEffect.OpenService &&
-                        ServiceDatabase.Get(choice.EffectArg) is { Kind: ServiceKind.Bank } vaultless)
-                    {
-                        issues.Add(
-                            $"dialogue '{dialogue.Id}' OpenService names '{vaultless.Id}', which is a Bank — " +
-                            "a bank opens its own entity's inventory and a conversation has no entity, " +
-                            "so the choice would do nothing");
-                    }
-
-                    // 38J: the shop-hours condition pair, checked the way the quest conditions are.
-                    if (IsShopCondition(choice.Condition) && ShopDatabase.Get(choice.ConditionArg) == null)
-                    {
-                        issues.Add(
-                            $"dialogue '{dialogue.Id}' {choice.Condition} condition references unknown " +
-                            $"shop '{choice.ConditionArg}'");
-                    }
-
-                    // ⚠️ 38J's load-bearing rule. A trade choice on a shop that closes must be gated on
-                    // that shop being open, or the player picks "let's trade" at midnight and *nothing
-                    // happens* — the effect's backstop refuses silently, which is a dead choice rather
-                    // than a refusal. The condition is also what lets the merchant say she is shut.
-                    if (choice.Effect == DialogueEffect.OpenShop &&
-                        ShopDatabase.Get(choice.EffectArg) is { } gated &&
-                        gated.OpenHour != gated.CloseHour &&
-                        (choice.Condition != DialogueCondition.ShopOpen ||
-                            choice.ConditionArg != choice.EffectArg))
-                    {
-                        issues.Add(
-                            $"dialogue '{dialogue.Id}' opens shop '{choice.EffectArg}', which keeps hours, " +
-                            "without a ShopOpen condition naming it — outside those hours the choice is " +
-                            "shown and does nothing");
-                    }
-
-                    // Corruption-typed conditions/effects take an integer threshold/amount.
-                    if (IsCorruptionCondition(choice.Condition) && !int.TryParse(choice.ConditionArg, out _))
-                    {
-                        issues.Add($"dialogue '{dialogue.Id}' corruption condition has non-numeric threshold '{choice.ConditionArg}'");
-                    }
-
-                    if (choice.Effect == DialogueEffect.AddCorruption && !int.TryParse(choice.EffectArg, out _))
-                    {
-                        issues.Add($"dialogue '{dialogue.Id}' AddCorruption effect has non-numeric amount '{choice.EffectArg}'");
-                    }
-
-                    // 42I: JoinGuild/GuildRank route through GuildRules' own flag-name builders at
-                    // runtime, but the faction id (and, for GuildRank, the rank) is still authored
-                    // text here — the same typo class StartQuest/OpenShop/OpenService already guard.
-                    if (choice.Effect == DialogueEffect.JoinGuild &&
-                        FactionDatabase.Get(choice.EffectArg) is not { IsGuild: true })
-                    {
-                        issues.Add($"dialogue '{dialogue.Id}' JoinGuild effect references unknown or non-guild faction '{choice.EffectArg}'");
-                    }
-
-                    // The effect can refuse (RejoinAllowed = false) but Goto fires regardless, so a
-                    // JoinGuild choice that navigates anywhere must be hidden when the join would fail.
-                    if (choice.Effect == DialogueEffect.JoinGuild && choice.Goto.Length > 0 &&
-                        (choice.Condition != DialogueCondition.GuildCanJoin || choice.ConditionArg != choice.EffectArg))
-                    {
-                        issues.Add($"dialogue '{dialogue.Id}' JoinGuild choice goes to '{choice.Goto}' without " +
-                                   $"Condition GuildCanJoin '{choice.EffectArg}' - a refused join would still show that node");
-                    }
-
-                    if (choice.Effect == DialogueEffect.GuildRank)
-                    {
-                        if (!GuildRules.TryParseRankArg(choice.EffectArg, out string rankFactionId, out int rank))
-                        {
-                            issues.Add(
-                                $"dialogue '{dialogue.Id}' GuildRank argument '{choice.EffectArg}' is not a " +
-                                $"faction id followed by ':<rank 1..{GuildRules.MaxRanks}>'");
-                        }
-                        else if (FactionDatabase.Get(rankFactionId) is not { IsGuild: true } rankGuild)
-                        {
-                            issues.Add($"dialogue '{dialogue.Id}' GuildRank effect references unknown or non-guild faction '{rankFactionId}'");
-                        }
-                        else if (rank < 1 || rank > rankGuild.RankNameKeys.Count)
-                        {
-                            issues.Add(
-                                $"dialogue '{dialogue.Id}' GuildRank effect names rank {rank} for '{rankFactionId}', " +
-                                $"which declares only {rankGuild.RankNameKeys.Count}");
-                        }
+                        issues.Add($"dialogue '{dialogue.Id}' choice opens two panels (Effect and Effect2)");
                     }
                 }
             }
         }
+    }
 
+    /// <summary>Argument checks for one dialogue condition (a choice's first or second pair, or a start variant).</summary>
+    private static void ValidateDialogueCondition(
+        string dialogueId, DialogueCondition condition, string arg, List<string> issues)
+    {
+        // Quest-typed conditions/effects must reference a real quest.
+        if (IsQuestCondition(condition) && !string.IsNullOrEmpty(arg) && QuestDatabase.Get(arg) == null)
+        {
+            issues.Add($"dialogue '{dialogueId}' condition references unknown quest '{arg}'");
+        }
+
+        // 38J: the shop-hours condition pair, checked the way the quest conditions are.
+        if (IsShopCondition(condition) && ShopDatabase.Get(arg) == null)
+        {
+            issues.Add($"dialogue '{dialogueId}' {condition} condition references unknown shop '{arg}'");
+        }
+
+        // Corruption-typed conditions/effects take an integer threshold/amount.
+        if (IsCorruptionCondition(condition) && !int.TryParse(arg, out _))
+        {
+            issues.Add($"dialogue '{dialogueId}' corruption condition has non-numeric threshold '{arg}'");
+        }
+
+        switch (condition)
+        {
+            case DialogueCondition.ReputationAtLeast:
+                if (!arg.Contains(':') || !DialogueRules.TryParseIdAmount(arg, 0, out string repFaction, out _))
+                {
+                    issues.Add($"dialogue '{dialogueId}' ReputationAtLeast argument '{arg}' is not '<faction id>:<number>'");
+                }
+                else if (FactionDatabase.Get(repFaction) == null)
+                {
+                    issues.Add($"dialogue '{dialogueId}' ReputationAtLeast references unknown faction '{repFaction}'");
+                }
+
+                break;
+            case DialogueCondition.CompanionInParty:
+                if (CompanionDatabase.Get(arg) == null)
+                {
+                    issues.Add($"dialogue '{dialogueId}' CompanionInParty references unknown companion '{arg}'");
+                }
+
+                break;
+            case DialogueCondition.HasItem:
+                if (!DialogueRules.TryParseIdAmount(arg, 1, out string heldItem, out int heldCount) || heldCount < 1)
+                {
+                    issues.Add($"dialogue '{dialogueId}' HasItem argument '{arg}' is not '<item id>[:<count >= 1>]'");
+                }
+                else if (ItemDatabase.Get(heldItem) == null)
+                {
+                    issues.Add($"dialogue '{dialogueId}' HasItem references unknown item '{heldItem}'");
+                }
+
+                break;
+        }
+    }
+
+    /// <summary>Argument checks for one dialogue effect. <paramref name="gotoId"/> is the carrying
+    /// choice's Goto (empty for an OnEnter effect); the two condition pairs are the carrying choice's.</summary>
+    private static void ValidateDialogueEffect(
+        string dialogueId, DialogueEffect effect, string effectArg, string gotoId,
+        DialogueCondition condition, string conditionArg, DialogueCondition condition2, string condition2Arg,
+        List<string> issues)
+    {
+        if (effect == DialogueEffect.None)
+        {
+            return;
+        }
+
+        bool Gated(DialogueCondition wanted, string wantedArg) =>
+            (condition == wanted && conditionArg == wantedArg) ||
+            (condition2 == wanted && condition2Arg == wantedArg);
+
+        if (effect == DialogueEffect.StartQuest && QuestDatabase.Get(effectArg) == null)
+        {
+            issues.Add($"dialogue '{dialogueId}' StartQuest effect references unknown quest '{effectArg}'");
+        }
+
+        // 35F: a mistyped taught spell is the whole reward for a boss fight, silently gone.
+        if (effect == DialogueEffect.LearnSpell && SpellDatabase.Get(effectArg) == null)
+        {
+            issues.Add($"dialogue '{dialogueId}' LearnSpell effect references unknown spell '{effectArg}'");
+        }
+
+        // 38E: the first shop id anywhere the validator can see. The same typo on a
+        // VendorComponent.ShopId in a .tscn gives no prompt at all, because .tscn is not scanned.
+        if (effect == DialogueEffect.OpenShop && ShopDatabase.Get(effectArg) == null)
+        {
+            issues.Add($"dialogue '{dialogueId}' OpenShop effect references unknown shop '{effectArg}'");
+        }
+
+        // A shop choice with a Goto leaves the conversation open behind the vendor window, so
+        // closing the shop drops the player back into a dialogue they thought they had left.
+        if (effect == DialogueEffect.OpenShop && !string.IsNullOrEmpty(gotoId))
+        {
+            issues.Add($"dialogue '{dialogueId}' OpenShop choice must end the conversation but points at '{gotoId}'");
+        }
+
+        // 38R: the same two rules for the service route, plus one that is genuinely new.
+        if (effect == DialogueEffect.OpenService && ServiceDatabase.Get(effectArg) == null)
+        {
+            issues.Add($"dialogue '{dialogueId}' OpenService effect references unknown service '{effectArg}'");
+        }
+
+        if (effect == DialogueEffect.OpenService && !string.IsNullOrEmpty(gotoId))
+        {
+            issues.Add($"dialogue '{dialogueId}' OpenService choice must end the conversation but points at '{gotoId}'");
+        }
+
+        // ⚠️ The one that is not a copy. A Bank opens the *host entity's* inventory, and a
+        // conversation has no host entity — the vault it would open does not exist. The
+        // failure is silent at runtime (a log line and a press that does nothing), so it is
+        // refused in the data instead. A banker who talks keeps the ServiceComponent on his
+        // vault and points the player at it; he does not open it mid-sentence.
+        if (effect == DialogueEffect.OpenService &&
+            ServiceDatabase.Get(effectArg) is { Kind: ServiceKind.Bank } vaultless)
+        {
+            issues.Add(
+                $"dialogue '{dialogueId}' OpenService names '{vaultless.Id}', which is a Bank — " +
+                "a bank opens its own entity's inventory and a conversation has no entity, " +
+                "so the choice would do nothing");
+        }
+
+        // ⚠️ 38J's load-bearing rule. A trade choice on a shop that closes must be gated on
+        // that shop being open, or the player picks "let's trade" at midnight and *nothing
+        // happens* — the effect's backstop refuses silently, which is a dead choice rather
+        // than a refusal. The condition is also what lets the merchant say she is shut.
+        if (effect == DialogueEffect.OpenShop &&
+            ShopDatabase.Get(effectArg) is { } gated &&
+            gated.OpenHour != gated.CloseHour &&
+            !Gated(DialogueCondition.ShopOpen, effectArg))
+        {
+            issues.Add(
+                $"dialogue '{dialogueId}' opens shop '{effectArg}', which keeps hours, " +
+                "without a ShopOpen condition naming it — outside those hours the choice is " +
+                "shown and does nothing");
+        }
+
+        if (effect == DialogueEffect.AddCorruption && !int.TryParse(effectArg, out _))
+        {
+            issues.Add($"dialogue '{dialogueId}' AddCorruption effect has non-numeric amount '{effectArg}'");
+        }
+
+        // 42I: JoinGuild/GuildRank route through GuildRules' own flag-name builders at
+        // runtime, but the faction id (and, for GuildRank, the rank) is still authored
+        // text here — the same typo class StartQuest/OpenShop/OpenService already guard.
+        if (effect == DialogueEffect.JoinGuild && FactionDatabase.Get(effectArg) is not { IsGuild: true })
+        {
+            issues.Add($"dialogue '{dialogueId}' JoinGuild effect references unknown or non-guild faction '{effectArg}'");
+        }
+
+        // The effect can refuse (RejoinAllowed = false) but Goto fires regardless, so a
+        // JoinGuild choice that navigates anywhere must be hidden when the join would fail.
+        if (effect == DialogueEffect.JoinGuild && gotoId.Length > 0 &&
+            !Gated(DialogueCondition.GuildCanJoin, effectArg))
+        {
+            issues.Add($"dialogue '{dialogueId}' JoinGuild choice goes to '{gotoId}' without " +
+                       $"Condition GuildCanJoin '{effectArg}' - a refused join would still show that node");
+        }
+
+        if (effect == DialogueEffect.GuildRank)
+        {
+            if (!GuildRules.TryParseRankArg(effectArg, out string rankFactionId, out int rank))
+            {
+                issues.Add(
+                    $"dialogue '{dialogueId}' GuildRank argument '{effectArg}' is not a " +
+                    $"faction id followed by ':<rank 1..{GuildRules.MaxRanks}>'");
+            }
+            else if (FactionDatabase.Get(rankFactionId) is not { IsGuild: true } rankGuild)
+            {
+                issues.Add($"dialogue '{dialogueId}' GuildRank effect references unknown or non-guild faction '{rankFactionId}'");
+            }
+            else if (rank < 1 || rank > rankGuild.RankNameKeys.Count)
+            {
+                issues.Add(
+                    $"dialogue '{dialogueId}' GuildRank effect names rank {rank} for '{rankFactionId}', " +
+                    $"which declares only {rankGuild.RankNameKeys.Count}");
+            }
+        }
+
+        // Campaign extension effects.
+        switch (effect)
+        {
+            case DialogueEffect.AddReputation:
+                if (!effectArg.Contains(':') ||
+                    !DialogueRules.TryParseIdAmount(effectArg, 0, out string repFaction, out int repDelta))
+                {
+                    issues.Add($"dialogue '{dialogueId}' AddReputation argument '{effectArg}' is not '<faction id>:<delta>'");
+                }
+                else if (FactionDatabase.Get(repFaction) == null)
+                {
+                    issues.Add($"dialogue '{dialogueId}' AddReputation references unknown faction '{repFaction}'");
+                }
+                else if (repDelta == 0)
+                {
+                    issues.Add($"dialogue '{dialogueId}' AddReputation delta is 0 and does nothing");
+                }
+
+                break;
+            case DialogueEffect.GiveItem:
+            case DialogueEffect.TakeItem:
+                if (!DialogueRules.TryParseIdAmount(effectArg, 1, out string itemId, out int count) || count < 1)
+                {
+                    issues.Add($"dialogue '{dialogueId}' {effect} argument '{effectArg}' is not '<item id>[:<count >= 1>]'");
+                }
+                else if (ItemDatabase.Get(itemId) == null)
+                {
+                    issues.Add($"dialogue '{dialogueId}' {effect} references unknown item '{itemId}'");
+                }
+                else if (effect == DialogueEffect.TakeItem && !HoldsItemGate(condition, conditionArg, condition2, condition2Arg, itemId, count))
+                {
+                    // The effect is skipped when the player lacks the items, so an ungated choice would
+                    // advance the story (Goto, the other pair's effect) without taking anything.
+                    issues.Add(
+                        $"dialogue '{dialogueId}' TakeItem '{effectArg}' has no HasItem condition for that item " +
+                        "(at least that count) on the same choice");
+                }
+
+                break;
+            case DialogueEffect.PlayCards:
+                if (string.IsNullOrEmpty(effectArg) || !Loc.Has(effectArg + ".1"))
+                {
+                    issues.Add($"dialogue '{dialogueId}' PlayCards prefix '{effectArg}' has no first card key '{effectArg}.1'");
+                }
+
+                break;
+            case DialogueEffect.TrackQuest:
+                if (QuestDatabase.Get(effectArg) == null)
+                {
+                    issues.Add($"dialogue '{dialogueId}' TrackQuest references unknown quest '{effectArg}'");
+                }
+
+                break;
+            case DialogueEffect.Banner:
+                if (string.IsNullOrEmpty(effectArg) ||
+                    (!Loc.Has($"chapter.{effectArg}.title") && !Loc.Has($"pale.chapter.{effectArg}.title")))
+                {
+                    issues.Add(
+                        $"dialogue '{dialogueId}' Banner chapter '{effectArg}' has no locale key " +
+                        $"'chapter.{effectArg}.title' (or 'pale.chapter.{effectArg}.title')");
+                }
+
+                break;
+        }
+    }
+
+    private static bool HoldsItemGate(
+        DialogueCondition c1, string a1, DialogueCondition c2, string a2, string itemId, int count)
+    {
+        static bool Matches(DialogueCondition c, string a, string itemId, int count) =>
+            c == DialogueCondition.HasItem &&
+            DialogueRules.TryParseIdAmount(a, 1, out string id, out int held) && id == itemId && held >= count;
+
+        return Matches(c1, a1, itemId, count) || Matches(c2, a2, itemId, count);
     }
 
     private static bool IsQuestCondition(DialogueCondition condition) => condition switch
@@ -5024,7 +5290,14 @@ public static class ContentValidator
                 nodes.Add(new DialogueGraphAnalysis.Node(node.Id, gotos, terminal));
             }
 
-            DialogueGraphAnalysis.Result result = DialogueGraphAnalysis.Analyze(start.Id, nodes);
+            // A start variant's node is an entry point too: reachable only through a variant is fine.
+            var entries = new List<string> { start.Id };
+            foreach (DialogueStartVariant variant in dialogue.StartVariantList())
+            {
+                entries.Add(variant.NodeId);
+            }
+
+            DialogueGraphAnalysis.Result result = DialogueGraphAnalysis.Analyze(entries, nodes);
             foreach (string id in result.Unreachable)
             {
                 issues.Add($"dialogue '{dialogue.Id}' node '{id}' is unreachable from start '{start.Id}'");
@@ -5063,16 +5336,24 @@ public static class ContentValidator
             // 41C. A Stealth objective is seeded already met, so a quest made only of stealth
             // conditions completes on the frame it starts, silently, with rewards.
             bool anythingToDo = false;
+            bool anyRequired = false;
             foreach (ObjectiveResource objective in objectives)
             {
-                if (objective.Type != ObjectiveType.Stealth)
+                anyRequired |= !objective.IsOptional;
+                if (objective.Type != ObjectiveType.Stealth && !objective.IsOptional)
                 {
                     anythingToDo = true;
-                    break;
                 }
             }
 
-            if (!anythingToDo)
+            // An optional objective never blocks completion, so a quest of nothing else would have
+            // no way to finish (the completion rule needs at least one required live objective).
+            if (!anyRequired)
+            {
+                issues.Add($"quest '{quest.Id}' has only optional objectives - it needs at least one " +
+                           "required objective or it can never complete");
+            }
+            else if (!anythingToDo)
             {
                 issues.Add($"quest '{quest.Id}' has only stealth objectives — a stealth condition " +
                            "starts met, so the quest would complete the instant it is accepted");
@@ -5158,6 +5439,12 @@ public static class ContentValidator
                     issues.Add($"quest '{quest.Id}' objective requires its own completion flag " +
                                $"'{quest.CompletionFlagId}' — the flag is set only after the " +
                                "objective completes, so this branch can never be entered");
+                }
+
+                if (objective.Type == ObjectiveType.Milestone && objective.TargetId == quest.CompletionFlagId)
+                {
+                    issues.Add($"quest '{quest.Id}' milestone waits on its own completion flag " +
+                               $"'{quest.CompletionFlagId}' - it can never be met");
                 }
             }
         }
@@ -5781,6 +6068,45 @@ public static class ContentValidator
 
         CollectSceneAuthoredFlags(written);
 
+        // Flags the code writes by itself: built-in story rules, the party mirror, and every
+        // data-authored story rule's `set` list. (Parse problems are ValidateStoryData's to report.)
+        var companionIds = new List<string>();
+        foreach (CompanionResource companion in CompanionDatabase.All)
+        {
+            companionIds.Add(companion.Id);
+        }
+
+        foreach (string flag in Narrative.StoryRuleData.CodeWrittenFlags(companionIds))
+        {
+            written.Add(flag);
+        }
+
+        // The load catch-up writes mission done flags and the arc-ready flags for legacy saves.
+        foreach (string flag in Narrative.CampaignCatchUp.WrittenFlags())
+        {
+            written.Add(flag);
+        }
+
+        foreach (Narrative.StoryRule rule in Narrative.StoryDataFiles.LoadRules(new List<string>()))
+        {
+            foreach (string flag in rule.Set)
+            {
+                written.Add(flag);
+            }
+        }
+
+        // Scene-authored set pieces write their ClearedFlagId when beaten.
+        foreach (string flag in CollectSceneSetPieceWriters())
+        {
+            written.Add(flag);
+        }
+
+        // Companion reactions record themselves as flag.bark.<slug>.
+        foreach (Companions.CompanionReaction reaction in Narrative.StoryDataFiles.LoadReactions(new List<string>()))
+        {
+            written.Add(reaction.BarkFlag);
+        }
+
         // Every boss writes its own defeat flag through BossDefeat (36E), not only the Iron King.
         foreach (Enemies.BossResource boss in Enemies.BossDatabase.All)
         {
@@ -5790,17 +6116,14 @@ public static class ContentValidator
             }
         }
 
+        // Writers: SetFlag/ClearFlag in either effect of a choice and in a node's OnEnter effect.
         foreach (DialogueResource dialogue in DialogueDatabase.All)
         {
-            foreach (DialogueNode node in dialogue.NodeList())
+            foreach ((DialogueEffect effect, string arg) in DialogueEffectsOf(dialogue))
             {
-                foreach (DialogueChoice choice in node.ChoiceList())
+                if (effect is DialogueEffect.SetFlag or DialogueEffect.ClearFlag && !string.IsNullOrEmpty(arg))
                 {
-                    if (choice.Effect is DialogueEffect.SetFlag or DialogueEffect.ClearFlag &&
-                        !string.IsNullOrEmpty(choice.EffectArg))
-                    {
-                        written.Add(choice.EffectArg);
-                    }
+                    written.Add(arg);
                 }
             }
         }
@@ -5816,19 +6139,37 @@ public static class ContentValidator
             {
                 written.Add(quest.CompletionFlagId);
             }
+
+            // The campaign flag fields are writers too (the quest log sets them idempotently).
+            foreach (string flag in new[] { quest.StartFlagId, quest.FailFlagId })
+            {
+                if (!string.IsNullOrEmpty(flag))
+                {
+                    written.Add(flag);
+                }
+            }
+
+            foreach (ObjectiveResource objective in quest.ObjectiveList())
+            {
+                foreach (string flag in new[] { objective.CompletionFlagId, objective.ActivatedFlagId })
+                {
+                    if (!string.IsNullOrEmpty(flag))
+                    {
+                        written.Add(flag);
+                    }
+                }
+            }
         }
 
+        // Readers: HasFlag/MissingFlag in either condition of a choice and in a start variant.
         foreach (DialogueResource dialogue in DialogueDatabase.All)
         {
-            foreach (DialogueNode node in dialogue.NodeList())
+            foreach ((DialogueCondition condition, string arg) in DialogueConditionsOf(dialogue))
             {
-                foreach (DialogueChoice choice in node.ChoiceList())
+                if (condition is DialogueCondition.HasFlag or DialogueCondition.MissingFlag &&
+                    !string.IsNullOrEmpty(arg) && !written.Contains(arg))
                 {
-                    if (choice.Condition is DialogueCondition.HasFlag or DialogueCondition.MissingFlag &&
-                        !string.IsNullOrEmpty(choice.ConditionArg) && !written.Contains(choice.ConditionArg))
-                    {
-                        issues.Add($"dialogue '{dialogue.Id}' reads flag '{choice.ConditionArg}', which nothing ever sets");
-                    }
+                    issues.Add($"dialogue '{dialogue.Id}' reads flag '{arg}', which nothing ever sets");
                 }
             }
         }
@@ -5857,6 +6198,10 @@ public static class ContentValidator
             {
                 RequireWritten(objective.RequiredFlagId, "requires", quest.Id, written, issues);
                 RequireWritten(objective.ForbiddenFlagId, "is blocked by", quest.Id, written, issues);
+                if (objective.Type == ObjectiveType.Milestone)
+                {
+                    RequireWritten(objective.TargetId, "waits as a milestone on", quest.Id, written, issues);
+                }
             }
         }
 
@@ -5893,10 +6238,240 @@ public static class ContentValidator
                 issues.Add($"world actor hides after flag '{flag}', which nothing ever sets");
             }
         }
+
+        foreach (string flag in CollectSceneVisibilityFlagReaders("VisibleWhenFlagId"))
+        {
+            if (!written.Contains(flag))
+            {
+                issues.Add($"world actor appears on flag '{flag}', which nothing ever sets");
+            }
+        }
+
+        ValidateSceneStoryHooks(written, issues);
+        ValidateStoryData(written, issues);
+    }
+
+    private const string BossSummonScript = "/BossSummonComponent.cs";
+    private const string SetPieceScript = "/SetPieceSpawnComponent.cs";
+
+    /// <summary>Every scene node carrying a given script (matched by the script path's suffix).</summary>
+    private static IEnumerable<(string Path, SceneNodeText Node)> SceneNodesWithScript(string scriptSuffix)
+    {
+        foreach (string path in ScenePaths("res://scenes"))
+        {
+            using FileAccess? file = FileAccess.Open(path, FileAccess.ModeFlags.Read);
+            if (file == null)
+            {
+                continue;
+            }
+
+            string text = file.GetAsText();
+            if (!text.Contains(scriptSuffix, System.StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            foreach (SceneNodeText node in SceneTextParser.Nodes(text))
+            {
+                if (node.ScriptPath.EndsWith(scriptSuffix, System.StringComparison.Ordinal))
+                {
+                    yield return (path, node);
+                }
+            }
+        }
+    }
+
+    private static IEnumerable<string> CollectSceneSetPieceWriters()
+    {
+        foreach ((string _, SceneNodeText node) in SceneNodesWithScript(SetPieceScript))
+        {
+            string cleared = node.Str("ClearedFlagId");
+            if (cleared.Length > 0)
+            {
+                yield return cleared;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Scene-authored story hooks, cross-checked against the flag writers and the quest database (they
+    /// were unvalidated until now: a typo in a scene is a brazier or raid that silently never opens).
+    /// <c>BossSummonComponent</c>: RequiredQuestId must be a quest, RequiredFlagId / ClosedFlagId /
+    /// DefeatedFlagId must be flags something writes, FightId a boss fight. Property defaults apply when
+    /// a scene omits a property, so the default <c>quest.warband.heart</c> is checked too.
+    /// <c>SetPieceSpawnComponent</c>: trigger/required/despawn flags written, a ClearedFlagId authored
+    /// (the durable record), templates registered, numeric ranges in bounds.
+    /// </summary>
+    private static void ValidateSceneStoryHooks(HashSet<string> written, List<string> issues)
+    {
+        foreach ((string path, SceneNodeText node) in SceneNodesWithScript(BossSummonScript))
+        {
+            string where = $"scene '{path}' BossSummonComponent '{node.Name}'";
+            string quest = node.Str("RequiredQuestId", "quest.warband.heart");
+            if (quest.Length > 0 && QuestDatabase.Get(quest) == null)
+            {
+                issues.Add($"{where} RequiredQuestId '{quest}' is not a quest");
+            }
+
+            RequireSceneFlag(node.Str("RequiredFlagId"), "RequiredFlagId", where, written, issues);
+            RequireSceneFlag(node.Str("ClosedFlagId"), "ClosedFlagId", where, written, issues);
+            RequireSceneFlag(
+                node.Str("DefeatedFlagId", Enemies.BossEncounterDirector.DefeatedFlag), "DefeatedFlagId", where,
+                written, issues);
+
+            string template = node.Str("BossTemplateId", GameIds.Enemies.IronKing);
+            RequireEnemy(template, where + " BossTemplateId", issues);
+            string fight = node.Str("FightId");
+            if (fight.Length > 0 && Enemies.BossDatabase.Get(fight) == null)
+            {
+                issues.Add($"{where} FightId '{fight}' is not a boss fight");
+            }
+        }
+
+        foreach ((string path, SceneNodeText node) in SceneNodesWithScript(SetPieceScript))
+        {
+            string where = $"scene '{path}' SetPieceSpawnComponent '{node.Name}'";
+            string trigger = node.Str("TriggerFlagId");
+            RequireSceneFlag(trigger, "TriggerFlagId", where, written, issues);
+            RequireSceneFlag(node.Str("RequiredFlagId"), "RequiredFlagId", where, written, issues);
+            RequireSceneFlag(node.Str("DespawnFlagId"), "DespawnFlagId", where, written, issues);
+
+            string cleared = node.Str("ClearedFlagId");
+            if (cleared.Length == 0)
+            {
+                issues.Add($"{where} has no ClearedFlagId; the story flag is the durable record that it was beaten");
+            }
+            else if (!cleared.StartsWith("flag.", System.StringComparison.Ordinal))
+            {
+                issues.Add($"{where} ClearedFlagId '{cleared}' must start with 'flag.'");
+            }
+
+            IReadOnlyList<string> templates = node.StrList("TemplateIds", System.Array.Empty<string>());
+            foreach (string template in templates)
+            {
+                RequireEnemy(template, where + " TemplateIds", issues);
+            }
+
+            (float sx, float sy, float sz) = node.Vector3("TriggerSize", (24f, 8f, 24f));
+            foreach (string problem in Enemies.SetPieceWaves.ConfigProblems(
+                         node.Int("Waves", 1), node.Int("CountPerWave", 3), node.Float("WaveDelaySeconds", 15f),
+                         trigger.Length > 0, sx, sy, sz, node.Float("SpawnRadius", 8f), templates.Count))
+            {
+                issues.Add($"{where}: {problem}");
+            }
+        }
+    }
+
+    private static void RequireSceneFlag(
+        string flag, string property, string where, HashSet<string> written, List<string> issues)
+    {
+        if (flag.Length == 0)
+        {
+            return;
+        }
+
+        if (!flag.StartsWith("flag.", System.StringComparison.Ordinal))
+        {
+            issues.Add($"{where} {property} '{flag}' must start with 'flag.'");
+        }
+        else if (!written.Contains(flag))
+        {
+            issues.Add($"{where} {property} '{flag}' is a flag nothing ever sets");
+        }
+    }
+
+    /// <summary>
+    /// The story JSON tables: parse problems, rule ids, and that every flag a rule or reaction READS has a
+    /// writer, every reaction names a real companion and an existing locale key. (Rule <c>set</c> flags and
+    /// reaction bark flags are already in the writer set.)
+    /// </summary>
+    private static void ValidateStoryData(HashSet<string> written, List<string> issues)
+    {
+        var ruleErrors = new List<string>();
+        foreach (Narrative.StoryRule rule in Narrative.StoryDataFiles.LoadRules(ruleErrors))
+        {
+            if (rule.Id.StartsWith("rule.builtin.", System.StringComparison.Ordinal))
+            {
+                issues.Add($"story rule '{rule.Id}': the 'rule.builtin.' prefix is reserved for rules written in code");
+            }
+
+            var read = new List<string>(rule.All);
+            read.AddRange(rule.None);
+            foreach (string flag in read)
+            {
+                if (!written.Contains(flag))
+                {
+                    issues.Add($"story rule '{rule.Id}' reads flag '{flag}', which nothing ever sets");
+                }
+            }
+        }
+
+        foreach (string error in ruleErrors)
+        {
+            issues.Add($"story rules: {error}");
+        }
+
+        var reactionErrors = new List<string>();
+        foreach (Companions.CompanionReaction reaction in Narrative.StoryDataFiles.LoadReactions(reactionErrors))
+        {
+            if (CompanionDatabase.Get(reaction.Companion) == null)
+            {
+                issues.Add($"companion reaction '{reaction.Id}' names unknown companion '{reaction.Companion}'");
+            }
+
+            if (!Loc.Has(reaction.TextKey))
+            {
+                issues.Add($"companion reaction '{reaction.Id}' text key '{reaction.TextKey}' is not in the locale catalogue");
+            }
+
+            if (!written.Contains(reaction.Flag))
+            {
+                issues.Add($"companion reaction '{reaction.Id}' waits on flag '{reaction.Flag}', which nothing ever sets");
+            }
+        }
+
+        foreach (string error in reactionErrors)
+        {
+            issues.Add($"companion reactions: {error}");
+        }
+    }
+
+    /// <summary>Every (effect, argument) a dialogue can apply: both effects of each choice and each
+    /// node's OnEnter effect.</summary>
+    private static IEnumerable<(DialogueEffect Effect, string Arg)> DialogueEffectsOf(DialogueResource dialogue)
+    {
+        foreach (DialogueNode node in dialogue.NodeList())
+        {
+            yield return (node.OnEnterEffect, node.OnEnterEffectArg);
+            foreach (DialogueChoice choice in node.ChoiceList())
+            {
+                yield return (choice.Effect, choice.EffectArg);
+                yield return (choice.Effect2, choice.Effect2Arg);
+            }
+        }
+    }
+
+    /// <summary>Every (condition, argument) a dialogue can test: both conditions of each choice and
+    /// each start variant's.</summary>
+    private static IEnumerable<(DialogueCondition Condition, string Arg)> DialogueConditionsOf(DialogueResource dialogue)
+    {
+        foreach (DialogueStartVariant variant in dialogue.StartVariantList())
+        {
+            yield return (variant.Condition, variant.ConditionArg);
+        }
+
+        foreach (DialogueNode node in dialogue.NodeList())
+        {
+            foreach (DialogueChoice choice in node.ChoiceList())
+            {
+                yield return (choice.Condition, choice.ConditionArg);
+                yield return (choice.Condition2, choice.Condition2Arg);
+            }
+        }
     }
 
     /// <summary>Scene-authored readers used by <see cref="World.FlagVisibilityComponent"/>.</summary>
-    private static IEnumerable<string> CollectSceneVisibilityFlagReaders()
+    private static IEnumerable<string> CollectSceneVisibilityFlagReaders(string property = "HiddenWhenFlagId")
     {
         foreach (string path in ScenePaths("res://scenes"))
         {
@@ -5907,7 +6482,7 @@ public static class ContentValidator
             }
 
             foreach (System.Text.RegularExpressions.Match match in
-                     System.Text.RegularExpressions.Regex.Matches(file.GetAsText(), "HiddenWhenFlagId = \"([^\"]+)\""))
+                     System.Text.RegularExpressions.Regex.Matches(file.GetAsText(), property + " = \"([^\"]+)\""))
             {
                 yield return match.Groups[1].Value;
             }

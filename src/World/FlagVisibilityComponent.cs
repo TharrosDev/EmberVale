@@ -21,6 +21,11 @@ public partial class FlagVisibilityComponent : EntityComponent
     /// <summary>When this player flag is set, hide this actor. Empty leaves it present.</summary>
     [Export] public string HiddenWhenFlagId { get; set; } = string.Empty;
 
+    /// <summary>When non-empty, this actor stays hidden (and non-interactive) until this player flag is
+    /// set. Combines with <see cref="HiddenWhenFlagId"/>: an actor can appear on one flag and leave on
+    /// another, and hidden wins if both are set.</summary>
+    [Export] public string VisibleWhenFlagId { get; set; } = string.Empty;
+
     private readonly Dictionary<CollisionObject3D, uint> _hiddenLayers = new();
 
     protected override void OnInitialize()
@@ -38,7 +43,7 @@ public partial class FlagVisibilityComponent : EntityComponent
 
     private void OnFlagChanged(StoryFlagChangedEvent e)
     {
-        if (e.Flag == HiddenWhenFlagId)
+        if (e.Flag == HiddenWhenFlagId || e.Flag == VisibleWhenFlagId)
         {
             Refresh();
         }
@@ -49,9 +54,12 @@ public partial class FlagVisibilityComponent : EntityComponent
 
     private void Refresh()
     {
-        bool hasFlag = ServiceLocator.Instance is { } locator && locator.TryGet(out PlayerCharacter player) &&
-            player.GetComponent<StoryFlagsComponent>()?.Has(HiddenWhenFlagId) == true;
-        SetPresent(!FlagVisibilityRules.ShouldHide(HiddenWhenFlagId, hasFlag));
+        StoryFlagsComponent? flags = ServiceLocator.Instance is { } locator && locator.TryGet(out PlayerCharacter player)
+            ? player.GetComponent<StoryFlagsComponent>()
+            : null;
+        SetPresent(FlagVisibilityRules.ShouldBePresent(
+            HiddenWhenFlagId, flags?.Has(HiddenWhenFlagId) == true,
+            VisibleWhenFlagId, flags?.Has(VisibleWhenFlagId) == true));
     }
 
     private void SetPresent(bool present)

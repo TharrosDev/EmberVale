@@ -3,6 +3,7 @@
 [ext_resource type="Script" path="res://src/Dialogue/DialogueResource.cs" id="1_dlg"]
 [ext_resource type="Script" path="res://src/Dialogue/DialogueNode.cs" id="2_node"]
 [ext_resource type="Script" path="res://src/Dialogue/DialogueChoice.cs" id="3_choice"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueStartVariant.cs" id="9_variant"]
 
 ; Magic upgrade: this NPC teaches spellcraft (spell.teach.* strings, LearnSpell effect).
 [sub_resource type="Resource" id="ch_mg_menu"]
@@ -26,6 +27,109 @@ Goto = "root"
 script = ExtResource("3_choice")
 Text = "spell.teach.thanks"
 Goto = "root"
+
+[sub_resource type="Resource" id="ch_root_cq_seat_hjalvar"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_chief.root.c_cq_seat_hjalvar"
+Goto = "cq_seat_hjalvar"
+Condition = 5
+ConditionArg = "flag.fork.succession_hjalvar"
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_root_cq_seat_halvar"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_chief.root.c_cq_seat_halvar"
+Goto = "cq_seat_halvar"
+Condition = 5
+ConditionArg = "flag.fork.succession_halvar"
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_cq_ch_hook_else"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_chief.cq_ch_hook.c_else"
+Goto = "root"
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_cq_ch_hook_go"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_chief.cq_ch_hook.c_go"
+Goto = ""
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_cq_su_hjalvar_else"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_chief.cq_su_hjalvar.c_else"
+Goto = "root"
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_cq_su_hjalvar_go"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_chief.cq_su_hjalvar.c_go"
+Goto = ""
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_cq_st_after_eat"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_chief.cq_st_after.c_eat"
+Goto = ""
+Condition = 0
+ConditionArg = ""
+Effect = 13
+EffectArg = "faction.frostfang_clans:10"
+
+[sub_resource type="Resource" id="ch_cq_seat_hjalvar_else"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_chief.cq_seat_hjalvar.c_else"
+Goto = "root"
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_cq_seat_halvar_else"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_chief.cq_seat_halvar.c_else"
+Goto = "root"
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_root_restart_hold"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_chief.root.c_restart_hold"
+Goto = ""
+Condition = 1
+ConditionArg = "quest.main.closed_hold"
+Effect = 1
+EffectArg = "quest.main.closed_hold"
+Condition2 = 5
+Condition2Arg = "flag.main.iron_king_done"
+
+[sub_resource type="Resource" id="ch_root_restart_succession"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_chief.root.c_restart_succession"
+Goto = ""
+Condition = 1
+ConditionArg = "quest.main.succession"
+Effect = 1
+EffectArg = "quest.main.succession"
+Condition2 = 5
+Condition2Arg = "flag.main.closed_hold_done"
 
 [sub_resource type="Resource" id="node_mg_teach"]
 script = ExtResource("2_node")
@@ -183,7 +287,7 @@ EffectArg = "flag.clan.hearth_kin"
 script = ExtResource("2_node")
 Id = "root"
 Text = "dlg.clan_chief.root"
-Choices = Array[Resource]([SubResource("ch_kin"), SubResource("ch_work"), SubResource("ch_who"), SubResource("ch_tyrant"), SubResource("ch_mg_menu"), SubResource("ch_bye")])
+Choices = Array[Resource]([SubResource("ch_kin"), SubResource("ch_work"), SubResource("ch_who"), SubResource("ch_tyrant"), SubResource("ch_mg_menu"), SubResource("ch_root_cq_seat_hjalvar"), SubResource("ch_root_cq_seat_halvar"), SubResource("ch_root_restart_hold"), SubResource("ch_root_restart_succession"), SubResource("ch_bye")])
 
 [sub_resource type="Resource" id="node_who"]
 script = ExtResource("2_node")
@@ -257,9 +361,76 @@ Id = "hol_thanks"
 Text = "dlg.clan_chief.hollow.thanks"
 Choices = Array[Resource]([SubResource("ch_hol_thanks_bye")])
 
+[sub_resource type="Resource" id="node_cq_ch_hook"]
+script = ExtResource("2_node")
+Id = "cq_ch_hook"
+Text = "dlg.clan_chief.cq_ch_hook"
+Choices = Array[Resource]([SubResource("ch_cq_ch_hook_else"), SubResource("ch_cq_ch_hook_go")])
+
+[sub_resource type="Resource" id="node_cq_su_hjalvar"]
+script = ExtResource("2_node")
+Id = "cq_su_hjalvar"
+Text = "dlg.clan_chief.cq_su_hjalvar"
+Choices = Array[Resource]([SubResource("ch_cq_su_hjalvar_else"), SubResource("ch_cq_su_hjalvar_go")])
+
+[sub_resource type="Resource" id="node_cq_st_after"]
+script = ExtResource("2_node")
+Id = "cq_st_after"
+Text = "dlg.clan_chief.cq_st_after"
+Choices = Array[Resource]([SubResource("ch_cq_st_after_eat")])
+
+[sub_resource type="Resource" id="node_cq_seat_hjalvar"]
+script = ExtResource("2_node")
+Id = "cq_seat_hjalvar"
+Text = "dlg.clan_chief.cq_seat_hjalvar"
+Choices = Array[Resource]([SubResource("ch_cq_seat_hjalvar_else")])
+
+[sub_resource type="Resource" id="node_cq_seat_halvar"]
+script = ExtResource("2_node")
+Id = "cq_seat_halvar"
+Text = "dlg.clan_chief.cq_seat_halvar"
+Choices = Array[Resource]([SubResource("ch_cq_seat_halvar_else")])
+
+[sub_resource type="Resource" id="start_root_5_5ad0"]
+script = ExtResource("9_variant")
+Condition = 5
+ConditionArg = "flag.main.storm_tyrant_done"
+NodeId = "root"
+
+[sub_resource type="Resource" id="start_cq_st_after_5_1e80"]
+script = ExtResource("9_variant")
+Condition = 5
+ConditionArg = "flag.beat.stormend_hjalvar"
+NodeId = "cq_st_after"
+
+[sub_resource type="Resource" id="start_root_5_2782"]
+script = ExtResource("9_variant")
+Condition = 5
+ConditionArg = "flag.beat.succession_decided"
+NodeId = "root"
+
+[sub_resource type="Resource" id="start_cq_su_hjalvar_5_c353"]
+script = ExtResource("9_variant")
+Condition = 5
+ConditionArg = "flag.beat.hold_held"
+NodeId = "cq_su_hjalvar"
+
+[sub_resource type="Resource" id="start_root_5_aec7"]
+script = ExtResource("9_variant")
+Condition = 5
+ConditionArg = "flag.beat.hjalvar_briefed"
+NodeId = "root"
+
+[sub_resource type="Resource" id="start_cq_ch_hook_2_ca40"]
+script = ExtResource("9_variant")
+Condition = 2
+ConditionArg = "quest.main.closed_hold"
+NodeId = "cq_ch_hook"
+
 [resource]
 script = ExtResource("1_dlg")
 Id = "dialogue.clan_chief"
 SpeakerName = "dlg.clan_chief.speaker"
 StartNodeId = "root"
-Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_who"), SubResource("node_tyrant"), SubResource("node_kin"), SubResource("node_work"), SubResource("node_prov_offer"), SubResource("node_prov_accepted"), SubResource("node_prov_inprogress"), SubResource("node_prov_thanks"), SubResource("node_hol_offer"), SubResource("node_hol_accepted"), SubResource("node_hol_inprogress"), SubResource("node_hol_thanks"), SubResource("node_mg_teach"), SubResource("node_mg_taught")])
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_who"), SubResource("node_tyrant"), SubResource("node_kin"), SubResource("node_work"), SubResource("node_prov_offer"), SubResource("node_prov_accepted"), SubResource("node_prov_inprogress"), SubResource("node_prov_thanks"), SubResource("node_hol_offer"), SubResource("node_hol_accepted"), SubResource("node_hol_inprogress"), SubResource("node_hol_thanks"), SubResource("node_mg_teach"), SubResource("node_mg_taught"), SubResource("node_cq_ch_hook"), SubResource("node_cq_su_hjalvar"), SubResource("node_cq_st_after"), SubResource("node_cq_seat_hjalvar"), SubResource("node_cq_seat_halvar")])
+StartVariants = Array[Resource]([SubResource("start_root_5_5ad0"), SubResource("start_cq_st_after_5_1e80"), SubResource("start_root_5_2782"), SubResource("start_cq_su_hjalvar_5_c353"), SubResource("start_root_5_aec7"), SubResource("start_cq_ch_hook_2_ca40")])

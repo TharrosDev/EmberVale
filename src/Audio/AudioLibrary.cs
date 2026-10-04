@@ -117,6 +117,29 @@ public sealed class AudioLibrary
             ["ui.back"] = Load("res://assets/audio/ui/back.wav",
                 () => ProceduralAudio.Sine(660f, 0.05f, gain: 0.3f, releaseSeconds: 0.04f)),
 
+            // Quest feedback (2D, UI bus), published by the toast feed and the chapter banner. No recordings
+            // are vendored yet, so each is a procedural chime until a CC0 one lands at the named path; they are
+            // told apart by contour (a rising triad, a two-note tick, a full chord, a low pad, a bright blip)
+            // so a player can learn which event they heard without looking. shipped: false keeps the absence
+            // at info, like the other procedural-until-sourced cues.
+            ["ui.quest.started"] = Load("res://assets/audio/ui/quest_started.ogg", () => ProceduralAudio.Mix(
+                ProceduralAudio.Sine(293.7f, 0.42f, gain: 0.22f, attackSeconds: 0.01f, releaseSeconds: 0.3f),
+                ProceduralAudio.Sine(440.0f, 0.38f, gain: 0.18f, attackSeconds: 0.05f, releaseSeconds: 0.28f),
+                ProceduralAudio.Sine(587.3f, 0.34f, gain: 0.14f, attackSeconds: 0.09f, releaseSeconds: 0.25f)), shipped: false),
+            ["ui.quest.updated"] = Load("res://assets/audio/ui/quest_updated.ogg", () => ProceduralAudio.Mix(
+                ProceduralAudio.Sine(659.3f, 0.2f, gain: 0.24f, attackSeconds: 0.005f, releaseSeconds: 0.14f),
+                ProceduralAudio.Sine(880.0f, 0.16f, gain: 0.14f, attackSeconds: 0.03f, releaseSeconds: 0.1f)), shipped: false),
+            ["ui.quest.completed"] = Load("res://assets/audio/ui/quest_completed.ogg", () => ProceduralAudio.Mix(
+                ProceduralAudio.Sine(392.0f, 0.7f, gain: 0.22f, attackSeconds: 0.02f, releaseSeconds: 0.4f),
+                ProceduralAudio.Sine(493.9f, 0.7f, gain: 0.2f, attackSeconds: 0.04f, releaseSeconds: 0.4f),
+                ProceduralAudio.Sine(587.3f, 0.65f, gain: 0.18f, attackSeconds: 0.06f, releaseSeconds: 0.38f),
+                ProceduralAudio.Sine(784.0f, 0.6f, gain: 0.14f, attackSeconds: 0.08f, releaseSeconds: 0.35f)), shipped: false),
+            ["ui.chapter.title"] = Load("res://assets/audio/ui/chapter_title.ogg", () => ProceduralAudio.Pad(
+                new[] { 110.0f, 164.8f, 220.0f }, 2.6f, gain: 0.2f, tremoloHz: 0.3f, tremoloDepth: 0.2f), shipped: false),
+            ["ui.objective.optional"] = Load("res://assets/audio/ui/objective_optional.ogg", () => ProceduralAudio.Mix(
+                ProceduralAudio.Sine(1046.5f, 0.14f, gain: 0.18f, attackSeconds: 0.004f, releaseSeconds: 0.1f),
+                ProceduralAudio.Sine(1568.0f, 0.1f, gain: 0.09f, releaseSeconds: 0.07f)), shipped: false),
+
             // Adaptive music beds (2D, looping) — Phase 31B. Real CC0 tracks swap in per state; the
             // procedural fallbacks are distinct chord pads (calm minor / warm major / tense / dark heavy).
             ["music.explore"] = Load("res://assets/audio/music/explore.ogg",

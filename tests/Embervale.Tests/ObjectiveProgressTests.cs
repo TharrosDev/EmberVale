@@ -187,4 +187,84 @@ public class ObjectiveProgressTests
         Assert.False(ObjectiveProgress.IsActive(-1, BothOpen, new[] { 0, 0 }, new[] { 1, 1 }, false));
         Assert.False(ObjectiveProgress.IsActive(5, BothOpen, new[] { 0, 0 }, new[] { 1, 1 }, false));
     }
+
+    // --- Campaign overhaul: optional objectives and milestones ---------------------------------
+
+    [Fact]
+    public void AllLiveMet_OptionalObjective_NeverBlocksCompletion()
+    {
+        bool[] optional = { false, true };
+        Assert.True(ObjectiveProgress.AllLiveMet(BothOpen, new[] { 1, 0 }, new[] { 1, 1 }, false, optional));
+    }
+
+    [Fact]
+    public void AllLiveMet_OnlyOptionalObjectivesLive_IsNotCompletion()
+    {
+        // The required objective is gated off; the finished optional one must not complete the quest.
+        bool[] optional = { false, true };
+        Assert.False(ObjectiveProgress.AllLiveMet(
+            new[] { false, true }, new[] { 0, 1 }, new[] { 1, 1 }, false, optional));
+    }
+
+    [Fact]
+    public void AllLiveMet_RequiredLiveButUnmet_BlocksEvenWhenOptionalIsDone()
+    {
+        bool[] optional = { false, true };
+        Assert.False(ObjectiveProgress.AllLiveMet(BothOpen, new[] { 0, 1 }, new[] { 1, 1 }, false, optional));
+    }
+
+    [Fact]
+    public void AllLiveMet_RequiredSequentiallyLockedStillBlocks()
+    {
+        // Locked is live-and-unmet (gate open): it blocks completion until it is done.
+        bool[] optional = { false, false };
+        Assert.False(ObjectiveProgress.AllLiveMet(BothOpen, new[] { 1, 0 }, new[] { 1, 1 }, true, optional));
+        Assert.True(ObjectiveProgress.AllLiveMet(BothOpen, new[] { 1, 1 }, new[] { 1, 1 }, true, optional));
+    }
+
+    [Fact]
+    public void AllLiveMet_AllRequiredGatedOff_GatedTalkIsNotCompletion()
+    {
+        // The legacy-quest shape from the plan (a Talk gated behind a flag nobody has set yet): the
+        // quest must wait, not complete instantly with its rewards.
+        Assert.False(ObjectiveProgress.AllLiveMet(
+            new[] { false }, new[] { 0 }, new[] { 1 }, false, new[] { false }));
+    }
+
+    [Fact]
+    public void AllLiveMet_NullOptional_BehavesAsBefore()
+    {
+        Assert.True(ObjectiveProgress.AllLiveMet(BothOpen, new[] { 1, 1 }, new[] { 1, 1 }, false, null));
+        Assert.False(ObjectiveProgress.AllLiveMet(BothOpen, new[] { 1, 0 }, new[] { 1, 1 }, false, null));
+    }
+
+    [Fact]
+    public void IsActive_Sequential_OptionalObjectiveDoesNotLockTheNextStep()
+    {
+        // Objective 1 is optional and untouched; objective 2 still unlocks once objective 0 is done.
+        bool[] open = { true, true, true };
+        bool[] optional = { false, true, false };
+        int[] required = { 1, 1, 1 };
+        Assert.False(ObjectiveProgress.IsActive(2, open, new[] { 0, 0, 0 }, required, true, optional));
+        Assert.True(ObjectiveProgress.IsActive(2, open, new[] { 1, 0, 0 }, required, true, optional));
+    }
+
+    [Fact]
+    public void IsActive_Sequential_OptionalObjectiveIsItselfLockedUntilEarlierRequiredStepsAreDone()
+    {
+        bool[] open = { true, true };
+        bool[] optional = { false, true };
+        Assert.False(ObjectiveProgress.IsActive(1, open, new[] { 0, 0 }, new[] { 1, 1 }, true, optional));
+        Assert.True(ObjectiveProgress.IsActive(1, open, new[] { 1, 0 }, new[] { 1, 1 }, true, optional));
+    }
+
+    [Fact]
+    public void MilestoneMet_FollowsTheNamedFlag()
+    {
+        var held = new System.Collections.Generic.HashSet<string> { "flag.a" };
+        Assert.True(ObjectiveProgress.MilestoneMet("flag.a", held.Contains));
+        Assert.False(ObjectiveProgress.MilestoneMet("flag.b", held.Contains));
+        Assert.False(ObjectiveProgress.MilestoneMet(string.Empty, held.Contains));
+        Assert.False(ObjectiveProgress.MilestoneMet("flag.a", null));
+    }
 }

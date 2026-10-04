@@ -29,4 +29,17 @@ public sealed class QuestWorldChangeRulesTests
         Assert.False(FlagVisibilityRules.ShouldHide("flag.coyle.departed", hasFlag: false));
         Assert.True(FlagVisibilityRules.ShouldHide("flag.coyle.departed", hasFlag: true));
     }
+
+    [Theory]
+    [InlineData("", false, "", false, true)]                      // ungated: present
+    [InlineData("flag.gone", true, "", false, false)]             // HiddenWhen set: gone
+    [InlineData("", false, "flag.arrived", false, false)]         // VisibleWhen unset: not yet
+    [InlineData("", false, "flag.arrived", true, true)]           // VisibleWhen set: present
+    [InlineData("flag.gone", true, "flag.arrived", true, false)]  // hidden wins
+    [InlineData("flag.gone", false, "flag.arrived", true, true)]
+    public void WorldActor_ShouldBePresent_CombinesBothGates(
+        string hiddenWhen, bool hiddenSet, string visibleWhen, bool visibleSet, bool expected)
+    {
+        Assert.Equal(expected, FlagVisibilityRules.ShouldBePresent(hiddenWhen, hiddenSet, visibleWhen, visibleSet));
+    }
 }

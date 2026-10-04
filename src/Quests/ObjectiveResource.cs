@@ -24,6 +24,8 @@ public partial class ObjectiveResource : Resource
     /// <see cref="LocationId"/>, which this type <b>requires</b> (41B).</item>
     /// <item><see cref="ObjectiveType.Defend"/> — a <c>location.*</c> id to hold, for
     /// <see cref="RequiredCount"/> seconds (41B).</item>
+    /// <item><see cref="ObjectiveType.Milestone"/> — a <c>flag.*</c> story flag that completes the
+    /// objective when set (campaign overhaul).</item>
     /// </list>
     /// Every one of the six is checked by <c>--validate</c> against its own database, so a typo is a
     /// failed gate rather than an objective that can never advance.
@@ -96,6 +98,28 @@ public partial class ObjectiveResource : Resource
     /// never be active, which is an objective that silently does not exist.
     /// </summary>
     [Export] public string ForbiddenFlagId { get; set; } = string.Empty;
+
+    [ExportGroup("Campaign")]
+
+    /// <summary>Story flag (<c>flag.*</c>) set when THIS objective completes; empty = none. The quest
+    /// log writes it through the idempotent flag setter, so another quest's milestone or gate can chain
+    /// on a single step of this one.</summary>
+    [Export] public string CompletionFlagId { get; set; } = string.Empty;
+
+    /// <summary>Story flag (<c>flag.*</c>) set when this objective becomes active — its gates or
+    /// sequence unlocked it, or its quest started and it was live from the first moment.</summary>
+    [Export] public string ActivatedFlagId { get; set; } = string.Empty;
+
+    /// <summary>An optional objective is shown but never blocks quest completion, never locks a later
+    /// step of a <c>SequentialObjectives</c> quest, and can never fail the quest. A quest must keep at
+    /// least one required objective (the validator refuses otherwise).</summary>
+    [Export] public bool IsOptional { get; set; }
+
+    /// <summary>Locale key of a one-line hint shown while this objective is current; empty = none.</summary>
+    [Export] public string HintKey { get; set; } = string.Empty;
+
+    /// <summary>Locale key of the journal's stage-log line recorded for this objective; empty = none.</summary>
+    [Export] public string JournalEntryKey { get; set; } = string.Empty;
 
     /// <summary>Whether this objective carries any branch gate at all — the cheap early-out for the
     /// common case, since almost every objective ever authored is ungated.</summary>

@@ -3,6 +3,7 @@
 [ext_resource type="Script" path="res://src/Dialogue/DialogueResource.cs" id="1_dlg"]
 [ext_resource type="Script" path="res://src/Dialogue/DialogueNode.cs" id="2_node"]
 [ext_resource type="Script" path="res://src/Dialogue/DialogueChoice.cs" id="3_choice"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueStartVariant.cs" id="9_variant"]
 
 ; Magic upgrade: this NPC teaches spellcraft (spell.teach.* strings, LearnSpell effect).
 [sub_resource type="Resource" id="ch_mg_menu"]
@@ -26,6 +27,51 @@ Goto = "root"
 script = ExtResource("3_choice")
 Text = "spell.teach.thanks"
 Goto = "root"
+
+[sub_resource type="Resource" id="ch_root_cq_seat_hjalvar_exile"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_exile.root.c_cq_seat_hjalvar_exile"
+Goto = "cq_seat_hjalvar_exile"
+Condition = 5
+ConditionArg = "flag.fork.succession_hjalvar"
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_cq_su_halvar_else"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_exile.cq_su_halvar.c_else"
+Goto = "root"
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_cq_su_halvar_go"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_exile.cq_su_halvar.c_go"
+Goto = ""
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_cq_st_after_take"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_exile.cq_st_after.c_take"
+Goto = ""
+Condition = 0
+ConditionArg = ""
+Effect = 14
+EffectArg = "item.currency.gold:200"
+
+[sub_resource type="Resource" id="ch_cq_seat_hjalvar_exile_else"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_exile.cq_seat_hjalvar_exile.c_else"
+Goto = "root"
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
 
 [sub_resource type="Resource" id="node_mg_teach"]
 script = ExtResource("2_node")
@@ -173,7 +219,7 @@ EffectArg = "flag.clan.bloodfeud"
 script = ExtResource("2_node")
 Id = "root"
 Text = "dlg.clan_exile.root"
-Choices = Array[Resource]([SubResource("ch_feud"), SubResource("ch_work"), SubResource("ch_who"), SubResource("ch_mg_menu"), SubResource("ch_bye")])
+Choices = Array[Resource]([SubResource("ch_feud"), SubResource("ch_work"), SubResource("ch_who"), SubResource("ch_mg_menu"), SubResource("ch_root_cq_seat_hjalvar_exile"), SubResource("ch_bye")])
 
 [sub_resource type="Resource" id="node_who"]
 script = ExtResource("2_node")
@@ -241,9 +287,52 @@ Id = "rit_thanks"
 Text = "dlg.clan_exile.rite.thanks"
 Choices = Array[Resource]([SubResource("ch_rit_thanks_bye")])
 
+[sub_resource type="Resource" id="node_cq_su_halvar"]
+script = ExtResource("2_node")
+Id = "cq_su_halvar"
+Text = "dlg.clan_exile.cq_su_halvar"
+Choices = Array[Resource]([SubResource("ch_cq_su_halvar_else"), SubResource("ch_cq_su_halvar_go")])
+
+[sub_resource type="Resource" id="node_cq_st_after"]
+script = ExtResource("2_node")
+Id = "cq_st_after"
+Text = "dlg.clan_exile.cq_st_after"
+Choices = Array[Resource]([SubResource("ch_cq_st_after_take")])
+
+[sub_resource type="Resource" id="node_cq_seat_hjalvar_exile"]
+script = ExtResource("2_node")
+Id = "cq_seat_hjalvar_exile"
+Text = "dlg.clan_exile.cq_seat_hjalvar_exile"
+Choices = Array[Resource]([SubResource("ch_cq_seat_hjalvar_exile_else")])
+
+[sub_resource type="Resource" id="start_root_5_5ad0"]
+script = ExtResource("9_variant")
+Condition = 5
+ConditionArg = "flag.main.storm_tyrant_done"
+NodeId = "root"
+
+[sub_resource type="Resource" id="start_cq_st_after_5_e372"]
+script = ExtResource("9_variant")
+Condition = 5
+ConditionArg = "flag.beat.stormend_halvar"
+NodeId = "cq_st_after"
+
+[sub_resource type="Resource" id="start_root_5_2782"]
+script = ExtResource("9_variant")
+Condition = 5
+ConditionArg = "flag.beat.succession_decided"
+NodeId = "root"
+
+[sub_resource type="Resource" id="start_cq_su_halvar_5_6960"]
+script = ExtResource("9_variant")
+Condition = 5
+ConditionArg = "flag.beat.hjalvar_heard"
+NodeId = "cq_su_halvar"
+
 [resource]
 script = ExtResource("1_dlg")
 Id = "dialogue.clan_exile"
 SpeakerName = "dlg.clan_exile.speaker"
 StartNodeId = "root"
-Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_who"), SubResource("node_feud"), SubResource("node_work"), SubResource("node_prf_offer"), SubResource("node_prf_accepted"), SubResource("node_prf_inprogress"), SubResource("node_prf_thanks"), SubResource("node_rit_offer"), SubResource("node_rit_accepted"), SubResource("node_rit_inprogress"), SubResource("node_rit_thanks"), SubResource("node_mg_teach"), SubResource("node_mg_taught")])
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_who"), SubResource("node_feud"), SubResource("node_work"), SubResource("node_prf_offer"), SubResource("node_prf_accepted"), SubResource("node_prf_inprogress"), SubResource("node_prf_thanks"), SubResource("node_rit_offer"), SubResource("node_rit_accepted"), SubResource("node_rit_inprogress"), SubResource("node_rit_thanks"), SubResource("node_mg_teach"), SubResource("node_mg_taught"), SubResource("node_cq_su_halvar"), SubResource("node_cq_st_after"), SubResource("node_cq_seat_hjalvar_exile")])
+StartVariants = Array[Resource]([SubResource("start_root_5_5ad0"), SubResource("start_cq_st_after_5_e372"), SubResource("start_root_5_2782"), SubResource("start_cq_su_halvar_5_6960")])

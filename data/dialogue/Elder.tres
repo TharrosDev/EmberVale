@@ -1,8 +1,9 @@
-[gd_resource type="Resource" script_class="DialogueResource" load_steps=46 format=3 uid="uid://cmbrvldlgeldr"]
+[gd_resource type="Resource" script_class="DialogueResource" load_steps=78 format=3 uid="uid://cmbrvldlgeldr"]
 
 [ext_resource type="Script" path="res://src/Dialogue/DialogueResource.cs" id="1_dlg"]
 [ext_resource type="Script" path="res://src/Dialogue/DialogueNode.cs" id="2_node"]
 [ext_resource type="Script" path="res://src/Dialogue/DialogueChoice.cs" id="3_choice"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueStartVariant.cs" id="9_variant"]
 
 [sub_resource type="Resource" id="ch_root_friend"]
 script = ExtResource("3_choice")
@@ -198,11 +199,175 @@ script = ExtResource("3_choice")
 Text = "dlg.elder.c_ending_back"
 Goto = "root"
 
+[sub_resource type="Resource" id="ch_root_cq_dray_spared"]
+script = ExtResource("3_choice")
+Text = "dlg.elder.root.c_cq_dray_spared"
+Goto = "cq_dray_spared"
+Condition = 5
+ConditionArg = "flag.fork.dray_spared"
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_root_cq_dray_pressed"]
+script = ExtResource("3_choice")
+Text = "dlg.elder.root.c_cq_dray_pressed"
+Goto = "cq_dray_pressed"
+Condition = 5
+ConditionArg = "flag.fork.dray_pressed"
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_root_cq_arcs_done"]
+script = ExtResource("3_choice")
+Text = "dlg.elder.root.c_cq_arcs_done"
+Goto = "cq_arcs_done"
+Condition = 5
+ConditionArg = "flag.beat.arcs_complete"
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_cq_sq_hook_who"]
+script = ExtResource("3_choice")
+Text = "dlg.elder.cq_sq_hook.c_who"
+Goto = "cq_sq_who"
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_cq_sq_hook_else"]
+script = ExtResource("3_choice")
+Text = "dlg.elder.cq_sq_hook.c_else"
+Goto = "root"
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_cq_sq_hook_go"]
+script = ExtResource("3_choice")
+Text = "dlg.elder.cq_sq_hook.c_go"
+Goto = ""
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_cq_sq_who_else"]
+script = ExtResource("3_choice")
+Text = "dlg.elder.cq_sq_who.c_else"
+Goto = "root"
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_cq_sq_who_go"]
+script = ExtResource("3_choice")
+Text = "dlg.elder.cq_sq_who.c_go"
+Goto = ""
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_cq_sq_after_else"]
+script = ExtResource("3_choice")
+Text = "dlg.elder.cq_sq_after.c_else"
+Goto = "root"
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_cq_sq_after_go"]
+script = ExtResource("3_choice")
+Text = "dlg.elder.cq_sq_after.c_go"
+Goto = ""
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_cq_ik_after_go"]
+script = ExtResource("3_choice")
+Text = "dlg.elder.cq_ik_after.c_go"
+Goto = ""
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_cq_dray_spared_else"]
+script = ExtResource("3_choice")
+Text = "dlg.elder.cq_dray_spared.c_else"
+Goto = "root"
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_cq_dray_pressed_else"]
+script = ExtResource("3_choice")
+Text = "dlg.elder.cq_dray_pressed.c_else"
+Goto = "root"
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_cq_arcs_done_else"]
+script = ExtResource("3_choice")
+Text = "dlg.elder.cq_arcs_done.c_else"
+Goto = "root"
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_root_restart_smoke"]
+script = ExtResource("3_choice")
+Text = "dlg.elder.root.c_restart_smoke"
+Goto = ""
+Condition = 1
+ConditionArg = "quest.main.smoke_over_the_square"
+Effect = 1
+EffectArg = "quest.main.smoke_over_the_square"
+Condition2 = 5
+Condition2Arg = "flag.main.opening_done"
+
+[sub_resource type="Resource" id="ch_cq_ik_after_roads"]
+script = ExtResource("3_choice")
+Text = "dlg.elder.cq_ik_after.c_roads"
+Goto = "cq_ik_roads"
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_cq_ik_roads_back"]
+script = ExtResource("3_choice")
+Text = "dlg.elder.cq_ik_roads.c_back"
+Goto = "cq_ik_after"
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_cq_ik_roads_go"]
+script = ExtResource("3_choice")
+Text = "dlg.elder.cq_ik_roads.c_go"
+Goto = ""
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
 [sub_resource type="Resource" id="node_root"]
 script = ExtResource("2_node")
 Id = "root"
 Text = "dlg.elder.root"
-Choices = Array[Resource]([SubResource("ch_ending_dawnfire"), SubResource("ch_ending_embers"), SubResource("ch_root_friend"), SubResource("ch_root_pure"), SubResource("ch_root_marked"), SubResource("ch_heart_thanks"), SubResource("ch_heart_offer"), SubResource("ch_heart_active"), SubResource("ch_root_thanks"), SubResource("ch_root_offer"), SubResource("ch_root_active"), SubResource("ch_root_kael"), SubResource("ch_root_dread"), SubResource("ch_root_bye")])
+Choices = Array[Resource]([SubResource("ch_ending_dawnfire"), SubResource("ch_ending_embers"), SubResource("ch_root_friend"), SubResource("ch_root_pure"), SubResource("ch_root_marked"), SubResource("ch_heart_thanks"), SubResource("ch_heart_offer"), SubResource("ch_heart_active"), SubResource("ch_root_thanks"), SubResource("ch_root_offer"), SubResource("ch_root_active"), SubResource("ch_root_kael"), SubResource("ch_root_dread"), SubResource("ch_root_cq_dray_spared"), SubResource("ch_root_cq_dray_pressed"), SubResource("ch_root_cq_arcs_done"), SubResource("ch_root_restart_smoke"), SubResource("ch_root_bye")])
 
 [sub_resource type="Resource" id="node_offer"]
 script = ExtResource("2_node")
@@ -306,9 +471,88 @@ Id = "ending_embers"
 Text = "dlg.elder.ending_embers"
 Choices = Array[Resource]([SubResource("ch_ending_embers_back")])
 
+[sub_resource type="Resource" id="node_cq_sq_hook"]
+script = ExtResource("2_node")
+Id = "cq_sq_hook"
+Text = "dlg.elder.cq_sq_hook"
+Choices = Array[Resource]([SubResource("ch_cq_sq_hook_who"), SubResource("ch_cq_sq_hook_else"), SubResource("ch_cq_sq_hook_go")])
+
+[sub_resource type="Resource" id="node_cq_sq_who"]
+script = ExtResource("2_node")
+Id = "cq_sq_who"
+Text = "dlg.elder.cq_sq_who"
+Choices = Array[Resource]([SubResource("ch_cq_sq_who_else"), SubResource("ch_cq_sq_who_go")])
+
+[sub_resource type="Resource" id="node_cq_sq_after"]
+script = ExtResource("2_node")
+Id = "cq_sq_after"
+Text = "dlg.elder.cq_sq_after"
+Choices = Array[Resource]([SubResource("ch_cq_sq_after_else"), SubResource("ch_cq_sq_after_go")])
+
+[sub_resource type="Resource" id="node_cq_ik_after"]
+script = ExtResource("2_node")
+Id = "cq_ik_after"
+Text = "dlg.elder.cq_ik_after"
+Choices = Array[Resource]([SubResource("ch_cq_ik_after_roads"), SubResource("ch_cq_ik_after_go")])
+
+[sub_resource type="Resource" id="node_cq_dray_spared"]
+script = ExtResource("2_node")
+Id = "cq_dray_spared"
+Text = "dlg.elder.cq_dray_spared"
+Choices = Array[Resource]([SubResource("ch_cq_dray_spared_else")])
+
+[sub_resource type="Resource" id="node_cq_dray_pressed"]
+script = ExtResource("2_node")
+Id = "cq_dray_pressed"
+Text = "dlg.elder.cq_dray_pressed"
+Choices = Array[Resource]([SubResource("ch_cq_dray_pressed_else")])
+
+[sub_resource type="Resource" id="node_cq_arcs_done"]
+script = ExtResource("2_node")
+Id = "cq_arcs_done"
+Text = "dlg.elder.cq_arcs_done"
+Choices = Array[Resource]([SubResource("ch_cq_arcs_done_else")])
+
+[sub_resource type="Resource" id="start_root_5_50e7"]
+script = ExtResource("9_variant")
+Condition = 5
+ConditionArg = "flag.main.iron_king_done"
+NodeId = "root"
+
+[sub_resource type="Resource" id="start_cq_ik_after_5_d7fa"]
+script = ExtResource("9_variant")
+Condition = 5
+ConditionArg = "flag.rival.met1"
+NodeId = "cq_ik_after"
+
+[sub_resource type="Resource" id="start_root_5_fef3"]
+script = ExtResource("9_variant")
+Condition = 5
+ConditionArg = "flag.main.smoke_over_the_square_done"
+NodeId = "root"
+
+[sub_resource type="Resource" id="start_cq_sq_after_5_f85e"]
+script = ExtResource("9_variant")
+Condition = 5
+ConditionArg = "flag.beat.square_held"
+NodeId = "cq_sq_after"
+
+[sub_resource type="Resource" id="start_cq_sq_hook_2_ef3a"]
+script = ExtResource("9_variant")
+Condition = 2
+ConditionArg = "quest.main.smoke_over_the_square"
+NodeId = "cq_sq_hook"
+
+[sub_resource type="Resource" id="node_cq_ik_roads"]
+script = ExtResource("2_node")
+Id = "cq_ik_roads"
+Text = "dlg.elder.cq_ik_roads"
+Choices = Array[Resource]([SubResource("ch_cq_ik_roads_back"), SubResource("ch_cq_ik_roads_go")])
+
 [resource]
 script = ExtResource("1_dlg")
 Id = "dialogue.elder"
 SpeakerName = "dlg.elder.speaker"
 StartNodeId = "root"
-Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_offer"), SubResource("node_accepted"), SubResource("node_inprogress"), SubResource("node_thanks"), SubResource("node_friend"), SubResource("node_pure"), SubResource("node_marked"), SubResource("node_heart_offer"), SubResource("node_heart_accepted"), SubResource("node_heart_inprogress"), SubResource("node_heart_thanks"), SubResource("node_kael_ask"), SubResource("node_kael_where"), SubResource("node_kael_already"), SubResource("node_dread"), SubResource("node_ending_dawnfire"), SubResource("node_ending_embers")])
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_offer"), SubResource("node_accepted"), SubResource("node_inprogress"), SubResource("node_thanks"), SubResource("node_friend"), SubResource("node_pure"), SubResource("node_marked"), SubResource("node_heart_offer"), SubResource("node_heart_accepted"), SubResource("node_heart_inprogress"), SubResource("node_heart_thanks"), SubResource("node_kael_ask"), SubResource("node_kael_where"), SubResource("node_kael_already"), SubResource("node_dread"), SubResource("node_ending_dawnfire"), SubResource("node_ending_embers"), SubResource("node_cq_sq_hook"), SubResource("node_cq_sq_who"), SubResource("node_cq_sq_after"), SubResource("node_cq_ik_after"), SubResource("node_cq_dray_spared"), SubResource("node_cq_dray_pressed"), SubResource("node_cq_arcs_done"), SubResource("node_cq_ik_roads")])
+StartVariants = Array[Resource]([SubResource("start_root_5_50e7"), SubResource("start_cq_ik_after_5_d7fa"), SubResource("start_root_5_fef3"), SubResource("start_cq_sq_after_5_f85e"), SubResource("start_cq_sq_hook_2_ef3a")])

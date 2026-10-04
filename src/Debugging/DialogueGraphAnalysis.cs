@@ -57,7 +57,12 @@ public static class DialogueGraphAnalysis
     }
 
     /// <summary>Analyses one graph for orphan and dead-end nodes.</summary>
-    public static Result Analyze(string startId, IReadOnlyList<Node> nodes)
+    public static Result Analyze(string startId, IReadOnlyList<Node> nodes) =>
+        Analyze(new[] { startId }, nodes);
+
+    /// <summary>Analyses one graph with several entry points: the authored start node plus every
+    /// conditional start variant's node (a node reachable only through a variant is not an orphan).</summary>
+    public static Result Analyze(IReadOnlyList<string> startIds, IReadOnlyList<Node> nodes)
     {
         var byId = new Dictionary<string, Node>();
         foreach (Node node in nodes)
@@ -70,20 +75,23 @@ public static class DialogueGraphAnalysis
 
         // Forward reachability from the start node along goto edges.
         var reachable = new HashSet<string>();
-        if (!string.IsNullOrEmpty(startId) && byId.ContainsKey(startId))
+        var stack = new Stack<string>();
+        foreach (string startId in startIds)
         {
-            var stack = new Stack<string>();
-            stack.Push(startId);
-            reachable.Add(startId);
-            while (stack.Count > 0)
+            if (!string.IsNullOrEmpty(startId) && byId.ContainsKey(startId) && reachable.Add(startId))
             {
-                Node node = byId[stack.Pop()];
-                foreach (string target in node.Gotos)
+                stack.Push(startId);
+            }
+        }
+
+        while (stack.Count > 0)
+        {
+            Node node = byId[stack.Pop()];
+            foreach (string target in node.Gotos)
+            {
+                if (byId.ContainsKey(target) && reachable.Add(target))
                 {
-                    if (byId.ContainsKey(target) && reachable.Add(target))
-                    {
-                        stack.Push(target);
-                    }
+                    stack.Push(target);
                 }
             }
         }

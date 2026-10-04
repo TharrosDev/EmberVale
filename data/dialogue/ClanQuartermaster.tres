@@ -3,6 +3,7 @@
 [ext_resource type="Script" path="res://src/Dialogue/DialogueResource.cs" id="1_dlg"]
 [ext_resource type="Script" path="res://src/Dialogue/DialogueNode.cs" id="2_node"]
 [ext_resource type="Script" path="res://src/Dialogue/DialogueChoice.cs" id="3_choice"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueStartVariant.cs" id="9_variant"]
 
 [sub_resource type="Resource" id="ch_work"]
 script = ExtResource("3_choice")
@@ -75,6 +76,24 @@ Text = "dlg.clan_quartermaster.stores.c_thanks_bye"
 Effect = 2
 EffectArg = "flag.clan.sworn"
 
+[sub_resource type="Resource" id="ch_cq_ch_kit_else"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_quartermaster.cq_ch_kit.c_else"
+Goto = "root"
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_cq_ch_kit_go"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_quartermaster.cq_ch_kit.c_go"
+Goto = ""
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
 [sub_resource type="Resource" id="node_root"]
 script = ExtResource("2_node")
 Id = "root"
@@ -117,9 +136,28 @@ Id = "str_thanks"
 Text = "dlg.clan_quartermaster.stores.thanks"
 Choices = Array[Resource]([SubResource("ch_str_thanks_bye")])
 
+[sub_resource type="Resource" id="node_cq_ch_kit"]
+script = ExtResource("2_node")
+Id = "cq_ch_kit"
+Text = "dlg.clan_quartermaster.cq_ch_kit"
+Choices = Array[Resource]([SubResource("ch_cq_ch_kit_else"), SubResource("ch_cq_ch_kit_go")])
+
+[sub_resource type="Resource" id="start_root_5_c0fb"]
+script = ExtResource("9_variant")
+Condition = 5
+ConditionArg = "flag.main.closed_hold_done"
+NodeId = "root"
+
+[sub_resource type="Resource" id="start_cq_ch_kit_5_aec7"]
+script = ExtResource("9_variant")
+Condition = 5
+ConditionArg = "flag.beat.hjalvar_briefed"
+NodeId = "cq_ch_kit"
+
 [resource]
 script = ExtResource("1_dlg")
 Id = "dialogue.clan_quartermaster"
 SpeakerName = "dlg.clan_quartermaster.speaker"
 StartNodeId = "root"
-Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_trade"), SubResource("node_work"), SubResource("node_str_offer"), SubResource("node_str_accepted"), SubResource("node_str_inprogress"), SubResource("node_str_thanks")])
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_trade"), SubResource("node_work"), SubResource("node_str_offer"), SubResource("node_str_accepted"), SubResource("node_str_inprogress"), SubResource("node_str_thanks"), SubResource("node_cq_ch_kit")])
+StartVariants = Array[Resource]([SubResource("start_root_5_c0fb"), SubResource("start_cq_ch_kit_5_aec7")])

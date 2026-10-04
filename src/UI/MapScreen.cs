@@ -58,6 +58,9 @@ public partial class MapScreen : UiPanel
     private Vector3 _lastPlayerAt = Vector3.Zero;
 
     private int _shownRevision = -1;
+
+    // The quest pins last handed to the plot, kept so the legend can name only the kinds actually drawn.
+    private List<QuestPin> _questPins = new();
     private int _shownTravelRevision = -1;
 
     protected override string? ToggleAction => GameInput.Map;
@@ -223,11 +226,33 @@ public partial class MapScreen : UiPanel
     protected override void OnReady()
     {
         EventBus.Instance?.Subscribe<GameLoadedEvent>(OnGameLoaded);
+
+        // Quest pins follow the quest log, which changes without the map's own revision moving.
+        EventBus.Instance?.Subscribe<QuestStartedEvent>(OnQuestStarted);
+        EventBus.Instance?.Subscribe<QuestObjectiveActivatedEvent>(OnObjectiveActivated);
+        EventBus.Instance?.Subscribe<QuestStageChangedEvent>(OnStageChanged);
+        EventBus.Instance?.Subscribe<QuestCompletedEvent>(OnQuestCompleted);
+        EventBus.Instance?.Subscribe<QuestFailedEvent>(OnQuestFailed);
     }
+
+    private void OnQuestStarted(QuestStartedEvent e) => MarkDirty();
+
+    private void OnObjectiveActivated(QuestObjectiveActivatedEvent e) => MarkDirty();
+
+    private void OnStageChanged(QuestStageChangedEvent e) => MarkDirty();
+
+    private void OnQuestCompleted(QuestCompletedEvent e) => MarkDirty();
+
+    private void OnQuestFailed(QuestFailedEvent e) => MarkDirty();
 
     public override void _ExitTree()
     {
         EventBus.Instance?.Unsubscribe<GameLoadedEvent>(OnGameLoaded);
+        EventBus.Instance?.Unsubscribe<QuestStartedEvent>(OnQuestStarted);
+        EventBus.Instance?.Unsubscribe<QuestObjectiveActivatedEvent>(OnObjectiveActivated);
+        EventBus.Instance?.Unsubscribe<QuestStageChangedEvent>(OnStageChanged);
+        EventBus.Instance?.Unsubscribe<QuestCompletedEvent>(OnQuestCompleted);
+        EventBus.Instance?.Unsubscribe<QuestFailedEvent>(OnQuestFailed);
     }
 
     public void SetMapService(MapService? map)
@@ -490,6 +515,8 @@ public partial class MapScreen : UiPanel
         _view.Pins = _pins;
         _view.HiddenCategories = _hidden;
         _view.SelectedId = _selectedId;
+        _questPins = QuestProgressViews.Pins(Resolve<PlayerCharacter>()?.GetComponent<QuestLogComponent>());
+        _view.QuestPins = _questPins;
         _view.ObjectiveId = TrackedObjectiveLocationId();
         _view.Waypoint = _map?.Waypoint;
         _view.Regions = _map != null ? new List<MapMarker>(_map.RegionMarkers()) : new List<MapMarker>();
@@ -964,6 +991,23 @@ public partial class MapScreen : UiPanel
         }
 
         _legend.AddChild(UiTheme.IconLabel(UiIcon.Kind.Waypoint, Loc.T("map.legend_player"), tint: UiTheme.Text));
+
+        // Quest pins: a filled diamond is the main thread, an outlined one an errand, a ring the tracked one.
+        // Each line is shown only when this map draws it.
+        if (_questPins.Exists(p => p.IsMain))
+        {
+            _legend.AddChild(UiTheme.IconLabel(UiIcon.Kind.Quest, Loc.T("questui.legend.main"), tint: UiTheme.Adapt(UiTheme.QuestMain)));
+        }
+
+        if (_questPins.Exists(p => !p.IsMain))
+        {
+            _legend.AddChild(UiTheme.IconLabel(UiIcon.Kind.Quest, Loc.T("questui.legend.side"), tint: UiTheme.Adapt(UiTheme.QuestSide)));
+        }
+
+        if (_questPins.Exists(p => p.Tracked))
+        {
+            _legend.AddChild(UiTheme.IconLabel(UiIcon.Kind.Waypoint, Loc.T("questui.legend.tracked"), tint: UiTheme.Text));
+        }
         if (_map?.Waypoint != null)
         {
             _legend.AddChild(UiTheme.IconLabel(UiIcon.Kind.Waypoint, Loc.T("map.legend_waypoint"), tint: UiTheme.AccentHot));
@@ -1063,6 +1107,9 @@ public partial class MapScreen : UiPanel
     private static string? TrackedObjectiveLocationId() =>
         ObjectiveNavigation.ActiveLocationId(
             Resolve<PlayerCharacter>()?.GetComponent<QuestLogComponent>()?.Tracked);
+
+    // ObjectiveNavigation answers for the tracked quest alone; every other live quest's pin comes from
+    // QuestProgressViews.Pins, which applies the same rule per quest.
 
     private static Vector3? PlayerPosition() => Resolve<PlayerCharacter>()?.GlobalPosition;
 

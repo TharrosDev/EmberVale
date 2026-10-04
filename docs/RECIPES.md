@@ -321,6 +321,13 @@ lists every spell**, so set `PlayerLearnable = false` on anything authored for a
 4. **Story flags** have no database: `--validate` catches a flag nothing sets, not a `SetFlag` typo.
 5. Start it with `DialogueEffect.StartQuest`, `QuestLogComponent.StartQuest`, or `AutoStartFlagId`.
    `QuestGiverComponent` no longer exists. Drive it with `quest start/advance/complete/reset`.
+6. **Campaign fields (append-only):** type 8 **Milestone** (`TargetId` = a `flag.*` with a writer,
+   `RequiredCount` 1; completes when the flag is set, on unlock and on load). Objective: `CompletionFlagId`,
+   `ActivatedFlagId`, `IsOptional` (never blocks, never fails the quest; a quest needs one required objective),
+   `HintKey`/`JournalEntryKey`. Quest: `StartFlagId`, `FailFlagId`, `IsLedger` (never auto-tracked), `ChapterKey`
+   (an id, not a locale key), `OrderInAct`, `RegionId`, `GiverNameKey`, `RecommendedLevel`, `DetailKey`. ⚠️ **Completion
+   needs at least one required live objective and no unmet required live one** (`ObjectiveProgress.AllLiveMet`), and a quest whose own
+   `CompletionFlagId` is held never auto-starts. Placed actors: `FlagVisibilityComponent.VisibleWhenFlagId`.
 
 ### A chained story quest (`AutoStartFlagId`)
 

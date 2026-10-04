@@ -1,0 +1,29 @@
+{
+  "rules": [
+    {
+      "id": "rule.spec2.seals_broken",
+      "all": ["flag.beat.plinth_a", "flag.beat.plinth_b", "flag.beat.plinth_c"],
+      "set": ["flag.beat.seals_broken"]
+    },
+    {
+      "id": "rule.spec2.anchors_lit",
+      "all": ["flag.beat.anchor_a", "flag.beat.anchor_b", "flag.beat.anchor_c"],
+      "set": ["flag.beat.anchors_lit"]
+    },
+    {
+      "id": "rule.spec2.winches_turned",
+      "all": ["flag.beat.winch_a", "flag.beat.winch_b"],
+      "set": ["flag.beat.stair_unsealed"]
+    },
+    {
+      "id": "rule.spec2.choir_silenced",
+      "all": ["flag.beat.choir_silenced"],
+      "set": ["flag.beat.choir_passed"]
+    },
+    {
+      "id": "rule.spec2.choir_answered",
+      "all": ["flag.beat.choir_answered"],
+      "set": ["flag.beat.choir_passed"]
+    }
+  ]
+}

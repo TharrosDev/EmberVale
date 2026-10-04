@@ -6,8 +6,8 @@ namespace Embervale.UI;
 
 /// <summary>
 /// The prologue (Phase 33A): the beat between character creation and the Ember Crown. A black field
-/// with narration cards fading through the premise — the dying world, the six who fell, the seventh
-/// who remains — closing on the player's own name before the world is revealed underneath.
+/// with narration cards fading through the premise (the dying world, the seven who were made to mend it and
+/// the six who fell, the seventh who remains), closing on the player's own name before the world is revealed underneath.
 ///
 /// It exists so a new game <em>starts</em> instead of merely beginning: the world is already built
 /// and streaming behind this screen, so when the last card fades the player is standing in the town
@@ -19,15 +19,16 @@ namespace Embervale.UI;
 /// </summary>
 public partial class OpeningSequence : NarrationSequence
 {
-    /// <summary>The narration, as <c>Loc</c> keys. The last card is formatted with the character's
-    /// name, so the prologue ends on who the player just made rather than on lore.</summary>
-    private static readonly string[] Cards =
+    /// <summary>The narration, as <c>Loc</c> keys: the dying world, the seven made to mend it, and the
+    /// seventh. Three cards, because everything after them is the first mission: the Elder carries the
+    /// town's side of the story, so the prologue gives only the premise the player will not hear
+    /// otherwise. The last card is formatted with the character's name, so the prologue ends on who the
+    /// player just made rather than on lore.</summary>
+    public static readonly string[] CardKeys =
     {
         "opening.card1",
         "opening.card2",
         "opening.card3",
-        "opening.card4",
-        "opening.card5",
     };
 
     /// <summary>Starts the prologue for <paramref name="profile"/>'s character.</summary>
@@ -37,7 +38,7 @@ public partial class OpeningSequence : NarrationSequence
             ? Loc.T("opening.nameless")
             : profile.CharacterName;
 
-        PlayCards(Cards, name);
+        PlayCards(CardKeys, name);
     }
 
     protected override void OnSequenceFinished() =>

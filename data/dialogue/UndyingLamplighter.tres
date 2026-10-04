@@ -3,6 +3,7 @@
 [ext_resource type="Script" path="res://src/Dialogue/DialogueResource.cs" id="1_dlg"]
 [ext_resource type="Script" path="res://src/Dialogue/DialogueNode.cs" id="2_node"]
 [ext_resource type="Script" path="res://src/Dialogue/DialogueChoice.cs" id="3_choice"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueStartVariant.cs" id="4_variant"]
 
 ; An undying resident of the hidden realm. Condition 5/6 = HasFlag/MissingFlag on the
 ; Queen's defeat: before it they speak of the bargain and the Court; after it, of release.
@@ -54,15 +55,190 @@ Id = "queen"
 Text = "pale.dlg.lamplighter.queen"
 Choices = Array[Resource]([SubResource("ch_back"), SubResource("ch_bye")])
 
+[sub_resource type="Resource" id="ch_s2_freed_x0"]
+script = ExtResource("3_choice")
+Text = "pale.dlg.undying.c_freed_how"
+Goto = "freed_released"
+Condition = 5
+ConditionArg = "flag.fork.queen_released"
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_s2_freed_x1"]
+script = ExtResource("3_choice")
+Text = "pale.dlg.undying.c_freed_how"
+Goto = "freed_kept"
+Condition = 5
+ConditionArg = "flag.fork.queen_kept"
+Effect = 0
+EffectArg = ""
+
 [sub_resource type="Resource" id="node_freed"]
 script = ExtResource("2_node")
 Id = "freed"
 Text = "pale.dlg.lamplighter.freed"
-Choices = Array[Resource]([SubResource("ch_bye")])
+Choices = Array[Resource]([SubResource("ch_s2_freed_x0"), SubResource("ch_s2_freed_x1"), SubResource("ch_bye")])
+
+[sub_resource type="Resource" id="ch_s2_v_clue_0"]
+script = ExtResource("3_choice")
+Text = "pale.dlg.lamplighter.c_back"
+Goto = "root"
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_s2_v_clue_1"]
+script = ExtResource("3_choice")
+Text = "pale.dlg.lamplighter.c_bye"
+Goto = ""
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="node_v_clue"]
+script = ExtResource("2_node")
+Id = "v_clue"
+Text = "pale.dlg.lamplighter.v_clue"
+Choices = Array[Resource]([SubResource("ch_s2_v_clue_0"), SubResource("ch_s2_v_clue_1")])
+
+[sub_resource type="Resource" id="ch_s2_v_recoil_0"]
+script = ExtResource("3_choice")
+Text = "pale.dlg.undying.c_recoil_ask"
+Goto = "v_clue"
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_s2_v_recoil_1"]
+script = ExtResource("3_choice")
+Text = "pale.dlg.lamplighter.c_bye"
+Goto = ""
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="node_v_recoil"]
+script = ExtResource("2_node")
+Id = "v_recoil"
+Text = "pale.dlg.lamplighter.v_recoil"
+Choices = Array[Resource]([SubResource("ch_s2_v_recoil_0"), SubResource("ch_s2_v_recoil_1")])
+
+[sub_resource type="Resource" id="ch_s2_v_released_0"]
+script = ExtResource("3_choice")
+Text = "pale.dlg.lamplighter.c_back"
+Goto = "root"
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_s2_v_released_1"]
+script = ExtResource("3_choice")
+Text = "pale.dlg.lamplighter.c_bye"
+Goto = ""
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="node_v_released"]
+script = ExtResource("2_node")
+Id = "v_released"
+Text = "pale.dlg.lamplighter.v_released"
+Choices = Array[Resource]([SubResource("ch_s2_v_released_0"), SubResource("ch_s2_v_released_1")])
+
+[sub_resource type="Resource" id="ch_s2_v_kept_0"]
+script = ExtResource("3_choice")
+Text = "pale.dlg.lamplighter.c_back"
+Goto = "root"
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_s2_v_kept_1"]
+script = ExtResource("3_choice")
+Text = "pale.dlg.lamplighter.c_bye"
+Goto = ""
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="node_v_kept"]
+script = ExtResource("2_node")
+Id = "v_kept"
+Text = "pale.dlg.lamplighter.v_kept"
+Choices = Array[Resource]([SubResource("ch_s2_v_kept_0"), SubResource("ch_s2_v_kept_1")])
+
+[sub_resource type="Resource" id="ch_s2_freed_released_0"]
+script = ExtResource("3_choice")
+Text = "pale.dlg.lamplighter.c_bye"
+Goto = ""
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="node_freed_released"]
+script = ExtResource("2_node")
+Id = "freed_released"
+Text = "pale.dlg.lamplighter.freed_released"
+Choices = Array[Resource]([SubResource("ch_s2_freed_released_0")])
+
+[sub_resource type="Resource" id="ch_s2_freed_kept_0"]
+script = ExtResource("3_choice")
+Text = "pale.dlg.lamplighter.c_bye"
+Goto = ""
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="node_freed_kept"]
+script = ExtResource("2_node")
+Id = "freed_kept"
+Text = "pale.dlg.lamplighter.freed_kept"
+Choices = Array[Resource]([SubResource("ch_s2_freed_kept_0")])
+
+[sub_resource type="Resource" id="start_0"]
+script = ExtResource("4_variant")
+Condition = 5
+ConditionArg = "flag.hollow_queen_defeated"
+NodeId = "root"
+
+[sub_resource type="Resource" id="start_1"]
+script = ExtResource("4_variant")
+Condition = 5
+ConditionArg = "flag.fork.queen_released"
+NodeId = "v_released"
+
+[sub_resource type="Resource" id="start_2"]
+script = ExtResource("4_variant")
+Condition = 5
+ConditionArg = "flag.fork.queen_kept"
+NodeId = "v_kept"
+
+[sub_resource type="Resource" id="start_3"]
+script = ExtResource("4_variant")
+Condition = 7
+ConditionArg = "40"
+NodeId = "v_recoil"
+
+[sub_resource type="Resource" id="start_4"]
+script = ExtResource("4_variant")
+Condition = 5
+ConditionArg = "flag.main.pale_door_done"
+NodeId = "v_clue"
 
 [resource]
 script = ExtResource("1_dlg")
 Id = "dialogue.undying_lamplighter"
 SpeakerName = "pale.dlg.lamplighter.speaker"
 StartNodeId = "root"
-Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_bargain"), SubResource("node_queen"), SubResource("node_freed")])
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_bargain"), SubResource("node_queen"), SubResource("node_freed"), SubResource("node_v_clue"), SubResource("node_v_recoil"), SubResource("node_v_released"), SubResource("node_v_kept"), SubResource("node_freed_released"), SubResource("node_freed_kept")])
+StartVariants = Array[Resource]([SubResource("start_0"), SubResource("start_1"), SubResource("start_2"), SubResource("start_3"), SubResource("start_4")])

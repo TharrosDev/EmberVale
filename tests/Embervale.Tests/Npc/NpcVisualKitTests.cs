@@ -23,6 +23,8 @@ public sealed class NpcVisualKitTests
         "npc.clan_quartermaster", "npc.clan_beast_tamer", "npc.clan_hearthkeeper",
         "npc.clan_exile", "npc.bregan", "npc.marta", "npc.odger", "npc.wenna",
         "npc.undying_steward", "npc.undying_lamplighter", "npc.undying_baker", "npc.undying_clockkeeper",
+        "npc.landing_marshal", "npc.landing_dray", "npc.landing_serjeant", "npc.landing_hunter",
+        "npc.landing_reader", "npc.landing_seeker",
     };
 
     [Fact]

@@ -20,6 +20,7 @@
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_merchant_m.glb" id="npc_merchant_m"]
 [ext_resource type="Script" path="res://src/World/CellNavBaker.cs" id="s_navbaker"]
 [ext_resource type="Script" path="res://src/World/MapLocationComponent.cs" id="maploc_39_5a"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_book_stand.gltf" id="wc_prp_book_stand_gltf"]
 
 ; THE PRESERVED CITY (hidden realm) — Vesperhold. Every house is in perfect repair and nobody has
 ; needed one in four hundred years. Its four residents are UNDYING, not undead: peaceful villagers who
@@ -51,6 +52,12 @@ size = Vector3(3.0, 2.6, 2.0)
 [sub_resource type="CapsuleShape3D" id="Shape_npc"]
 radius = 0.4
 height = 1.8
+
+[sub_resource type="BoxShape3D" id="WC_Box_0p7_3p4_0p7"]
+size = Vector3(0.7, 3.4, 0.7)
+
+[sub_resource type="BoxShape3D" id="WC_Box_0p8_1p7_0p8"]
+size = Vector3(0.8, 1.7, 0.8)
 
 [node name="CityCell" type="Node3D"]
 metadata/content_offset = Vector2(25, -37)
@@ -112,17 +119,23 @@ shape = SubResource("Box_prp_market_stand")
 [node name="StreetLamp0" parent="Nav" instance=ExtResource("prp_lamp_post")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 19.5, 0, -21)
 
-[node name="StreetLamp1" parent="Nav" instance=ExtResource("prp_lamp_post")]
+[node name="StreetLamp1" type="Node3D" parent="Nav"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 30.5, 0, -21)
+script = ExtResource("s_entity")
+DisplayName = "The Signing Lamp"
 
 [node name="StreetLamp2" parent="Nav" instance=ExtResource("prp_lamp_post")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 19.5, 0, -54)
 
-[node name="StreetLamp3" parent="Nav" instance=ExtResource("prp_lamp_post")]
+[node name="StreetLamp3" type="Node3D" parent="Nav"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 30.5, 0, -54)
+script = ExtResource("s_entity")
+DisplayName = "The Queen's Lamp"
 
-[node name="StreetLamp4" parent="Nav" instance=ExtResource("prp_lamp_post")]
+[node name="StreetLamp4" type="Node3D" parent="Nav"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 39, 0, -32)
+script = ExtResource("s_entity")
+DisplayName = "The Cradle Lamp"
 
 [node name="StreetLamp5" parent="Nav" instance=ExtResource("prp_lamp_post")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 45, 0, -42)
@@ -270,3 +283,66 @@ ScheduleId = "schedule.undying_clockkeeper"
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 25, 0, -37)
 script = ExtResource("maploc_39_5a")
 LocationId = "location.pale.city"
+
+[node name="Model" parent="Nav/StreetLamp1" instance=ExtResource("prp_lamp_post")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/StreetLamp1"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/StreetLamp1/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.7, 0)
+shape = SubResource("WC_Box_0p7_3p4_0p7")
+
+[node name="Dialogue" type="Node" parent="Nav/StreetLamp1"]
+script = ExtResource("s_dialogue")
+DialogueId = "dialogue.pale_lamp_signing"
+InteractId = "interact.pale.lamp_signing"
+PromptKey = "pale.prompt.signing_lamp"
+
+[node name="Model" parent="Nav/StreetLamp4" instance=ExtResource("prp_lamp_post")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/StreetLamp4"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/StreetLamp4/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.7, 0)
+shape = SubResource("WC_Box_0p7_3p4_0p7")
+
+[node name="Dialogue" type="Node" parent="Nav/StreetLamp4"]
+script = ExtResource("s_dialogue")
+DialogueId = "dialogue.pale_lamp_cradle"
+InteractId = "interact.pale.lamp_cradle"
+PromptKey = "pale.prompt.cradle_lamp"
+
+[node name="Model" parent="Nav/StreetLamp3" instance=ExtResource("prp_lamp_post")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/StreetLamp3"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/StreetLamp3/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.7, 0)
+shape = SubResource("WC_Box_0p7_3p4_0p7")
+
+[node name="Dialogue" type="Node" parent="Nav/StreetLamp3"]
+script = ExtResource("s_dialogue")
+DialogueId = "dialogue.pale_lamp_queen"
+InteractId = "interact.pale.lamp_queen"
+PromptKey = "pale.prompt.queens_lamp"
+
+; WR-spec2-02: the chained registry on its lectern, beside the clock tower's door.
+[node name="DuskRegistry" type="Node3D" parent="Nav"]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 20.8, 0, -34)
+script = ExtResource("s_entity")
+DisplayName = "The Dusk-Count Registry"
+
+[node name="Model" parent="Nav/DuskRegistry" instance=ExtResource("wc_prp_book_stand_gltf")]
+transform = Transform3D(1.2, 0, 0, 0, 1.2, 0, 0, 0, 1.2, 0, 0, 0)
+
+[node name="Collider" type="StaticBody3D" parent="Nav/DuskRegistry"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/DuskRegistry/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.85, 0)
+shape = SubResource("WC_Box_0p8_1p7_0p8")
+
+[node name="Dialogue" type="Node" parent="Nav/DuskRegistry"]
+script = ExtResource("s_dialogue")
+DialogueId = "dialogue.pale_dusk_registry"
+InteractId = "interact.pale.dusk_registry"
+PromptKey = "pale.prompt.registry"

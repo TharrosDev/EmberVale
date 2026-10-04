@@ -1,0 +1,43 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/props/prp_ash_patch.tscn" id="1_patch"]
+
+; A red-painted track stake (campaign: Hask's beast tracks, WR-spec1-10..12). Flat-shaded primitives,
+; no texture. The interactable lives on the Entity that instances this in the cell scene.
+
+[sub_resource type="StandardMaterial3D" id="Mat_red"]
+albedo_color = Color(0.62, 0.08, 0.06, 1)
+roughness = 0.85
+
+[sub_resource type="StandardMaterial3D" id="Mat_chalk"]
+albedo_color = Color(0.78, 0.74, 0.66, 1)
+roughness = 0.95
+
+[sub_resource type="CylinderMesh" id="Mesh_stake"]
+top_radius = 0.035
+bottom_radius = 0.05
+height = 1.3
+radial_segments = 8
+
+[sub_resource type="CylinderMesh" id="Mesh_cap"]
+top_radius = 0.037
+bottom_radius = 0.037
+height = 0.1
+radial_segments = 8
+
+[node name="BeastStake" type="Node3D"]
+
+[node name="Model" type="Node3D" parent="."]
+
+[node name="Stake" type="MeshInstance3D" parent="Model"]
+transform = Transform3D(0.9986, -0.0523, 0, 0.0523, 0.9986, 0, 0, 0, 1, 0, 0.6, 0)
+mesh = SubResource("Mesh_stake")
+material_override = SubResource("Mat_red")
+
+[node name="Cap" type="MeshInstance3D" parent="Model"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.03, 1.22, 0)
+mesh = SubResource("Mesh_cap")
+material_override = SubResource("Mat_chalk")
+
+[node name="Trample" parent="." instance=ExtResource("1_patch")]
+transform = Transform3D(1.15, 0, 0, 0, 1, 0, 0, 0, 1.15, 0, 0, 0)

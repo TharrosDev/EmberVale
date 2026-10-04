@@ -181,10 +181,11 @@ missing font must never stop the game drawing its menus.
 | Size token | px | Use |
 | ---------- | -- | --- |
 | `CaptionFontSize` | 12 | slot numbers, hints, metadata — the legibility **floor** |
-| `BodyFontSize` | 14 | default text |
-| `HeaderFontSize` | 16 | section headers (ember gold) |
-| `TitleFontSize` | 20 | screen/panel titles |
-| `DisplayFontSize` | 26 | boss names, level-up, big moments |
+| `BodyFontSize` | 15 | default text |
+| `HeaderFontSize` | 18 | section headers (ember gold) |
+| `TitleFontSize` | 24 | screen/panel titles |
+| `DisplayFontSize` | 32 | boss names, level-up, big moments |
+| `ShoutFontSize` | 40 | a word thrown across the screen (combat feedback); nothing else |
 
 **Always size through `UiTheme.FontSize(token)`, never the const directly.** It returns
 the token unchanged today; Phase 37.5G multiplies by the player's text-scale setting
@@ -195,9 +196,9 @@ Builders: `Title/Display/Header/Body/Prose/Flavour/Caption` — reach for these 
 
 ## 4. Spacing & radius
 
-Spacing scale (`SpaceXs..SpaceXl` = 4/6/10/16/24): use tokens for separations, paddings
-and margins; `UiTheme.Padding()` defaults to `SpaceMd`. Radii: `RadiusSm` 3 (bars, wells,
-chips), `RadiusMd` 4 (buttons), `RadiusLg` 6 (panels).
+Spacing scale (`SpaceXs..SpaceXl` = 5/8/12/18/28): use tokens for separations, paddings
+and margins; `UiTheme.Padding()` defaults to `SpaceMd`. Radii: `RadiusSm` 1 (bars, wells,
+chips), `RadiusMd` 2 (buttons), `RadiusLg` 2 (panels).
 
 Radii stay tight on purpose: this world's surfaces are cut and bound, not moulded. A
 large radius is the fastest way to make a fantasy panel read as a web app.
@@ -430,3 +431,60 @@ digits.
   **thirteen** widgets still on `Panel()`. **Phase 37.5 is complete (A-H).**
 
 When those passes land, update this document — it must stay the single source of truth.
+
+## 12. Quest UI (campaign overhaul)
+
+The quest surfaces (journal, tracker, toasts, chapter banner, compass, map pins, dialogue chips, boss
+frame) share one vocabulary and one set of pure rules. Every decision that is not drawing lives in a
+Godot-free class with xUnit coverage in `QuestUiRulesTests` (`JournalIndexRules`, `StageLogRules`,
+`ObjectiveFocusRules`, `QuestNoticeCoalescer`, `ChapterBannerRules`, `DialogueConsequenceTags`,
+`CompassRoutingRules`, `MapQuestPinRules`); the panels only lay the answers out.
+
+**Tokens.** `QuestMain` (ember) is the main thread, `QuestSide` an errand, `QuestComplete`/`QuestFailed`
+finished and lost. One colour means one thing on every surface: the journal spine, the tracker band
+(retinted per quest), the compass chevron and the map badge all read `IsMainQuest` and pick the same pair.
+
+**Colour is never the only channel.** Every state has a word, a shape or a glyph beside it:
+- *Done* steps carry a text tick (`questui.tick_line`), *locked* ones a padlock, *optional* ones an
+  "Optional" chip (`UiTheme.Chip`), the tracked quest the word "Tracked", a quest with news a small dot
+  (a drawn square, no font) and an asterisk on its tab.
+- On the map a *filled* diamond is the main thread and an *outlined* one an errand; the ring is the
+  tracked quest's alone. On the compass an *optional* objective is a hollow chevron.
+
+**Journal.** Section tabs (Main Thread, Errands, Completed, Failed) exist only when they hold quests and step
+with Q/E or LB/RB. Main groups under collapsible chapter headings (`chapter.<key>.title`, then
+`pale.chapter.<key>.title`; a key-less group needs no heading). The detail card reads top to bottom: chips
+(type, chapter, region, level), giver, prose (`DetailKey`, else the summary), Track, the stage log, rewards.
+The stage log is ordered done, current (with its hint and its place), optional, locked; the place goes through
+`ObjectiveNavigation.LocationId`, so Reach and Defend name their destination like every other type. Ledger
+quests are listed under a folded "Ledger" row and are never tracked. Completed lists newest first and folds
+after five.
+
+**Tracker.** A chapter label above the title; the spine takes the quest's colour; optional rows carry the
+Optional chip; the current objective's hint appears under it after `TrackerRules.HintDelaySeconds` (90 s)
+on the same step; the header reads "Now tracking" for three seconds after the tracked quest changes.
+
+**Toasts.** One player action publishes several quest events; `QuestNoticeCoalescer` folds a frame's worth
+into one toast per quest (completion beats failure beats start beats next objective beats "updated"; an
+optional step met is its own toast). Each plays one of five cues (`ui.quest.started`, `.updated`,
+`.completed`, `ui.chapter.title`, `ui.objective.optional`) when it is actually shown. Companion barks are a
+portrait-less toast: the line, then the speaker.
+
+**Chapter banner.** `ChapterBanner` shows an act line, the chapter title and a subtitle in the lower third, once
+per save per chapter (`flag.chapter.<key>`), without pausing the world. It queues behind any menu, dialogue or
+narration sequence (they all register with `UiState`). Reduced motion keeps the fade and drops the rise; the
+fade is deliberately not routed through `UiTheme.Duration`, which would collapse it. A chapter with no title
+text is skipped rather than drawn as a raw key.
+
+**Dialogue.** Each choice carries chips for what it will do (`DialogueConsequenceTags`): a quest start, corruption
+`+N`/`-N`, reputation, companion loyalty, guild join/rank, items, and a neutral "Story" chip for flags and story
+cards. Choices are numbered 1-9; the last three lines of the conversation replay on H or RB; a line under the
+speaker names the objective when this person is the tracked quest's live Talk target.
+
+**Compass.** The chevron takes the quest's colour. An objective whose place is in another realm points at this
+realm's door toward it (`CompassRoutingRules.NextHop` over the region graph, skipping sealed realms) and labels
+the realm; if no door resolves it falls back to the direct pointer.
+
+**Map.** Quest pins show the current objective of every live non-ledger quest. Reveal is spoiler-safe
+(`MapQuestReveal`): a quest reveals only the places its live objectives name and each later place when that
+objective opens, never both branches of a fork. The legend names only the pin kinds on screen.

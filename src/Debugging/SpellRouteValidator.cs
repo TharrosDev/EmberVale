@@ -75,6 +75,11 @@ public static class SpellRouteValidator
                 pending.Push(start.Id);
             }
 
+            foreach (DialogueStartVariant variant in dialogue.StartVariantList())
+            {
+                pending.Push(variant.NodeId);
+            }
+
             while (pending.Count > 0)
             {
                 string id = pending.Pop();
@@ -99,11 +104,21 @@ public static class SpellRouteValidator
                     continue;
                 }
 
+                if (node.OnEnterEffect == DialogueEffect.LearnSpell && node.OnEnterEffectArg.Length > 0)
+                {
+                    Add(node.OnEnterEffectArg, $"teacher {dialogue.Id}");
+                }
+
                 foreach (DialogueChoice choice in node.ChoiceList())
                 {
                     if (choice.Effect == DialogueEffect.LearnSpell && choice.EffectArg.Length > 0)
                     {
                         Add(choice.EffectArg, $"teacher {dialogue.Id}");
+                    }
+
+                    if (choice.Effect2 == DialogueEffect.LearnSpell && choice.Effect2Arg.Length > 0)
+                    {
+                        Add(choice.Effect2Arg, $"teacher {dialogue.Id}");
                     }
                 }
             }

@@ -34,4 +34,14 @@ public class ObjectiveNavigationTests
     {
         Assert.Empty(ObjectiveNavigation.LocationId(ObjectiveType.Kill, "enemy.goblin", null));
     }
+
+    [Fact]
+    public void Milestone_UsesAuthoredLocationFallback_NeverItsFlagTarget()
+    {
+        Assert.Equal(
+            "location.frostfang.ash_roost",
+            ObjectiveNavigation.LocationId(
+                ObjectiveType.Milestone, "flag.main.something", "location.frostfang.ash_roost"));
+        Assert.Empty(ObjectiveNavigation.LocationId(ObjectiveType.Milestone, "flag.main.something", string.Empty));
+    }
 }
