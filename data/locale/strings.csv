@@ -4191,6 +4191,17 @@ boss.morthul.epithet,The Ash King
 boss.morthul.intro,"Sit, little ember. Everyone does, in the end."
 # --- END campaign:spec2 ---
 # --- BEGIN campaign:worlda ---
+prompt.worlda.alarm_bell,Ring the alarm bell
+prompt.worlda.toren_cairn,Examine the cairn of black stones
+prompt.worlda.black_token,Examine the black-iron token
+prompt.worlda.impound_crate,Break the wax on the crate
+prompt.worlda.carter_ledger,Read the carter's ledger
+prompt.worlda.signal_brazier,Douse the signal brazier
+prompt.worlda.warband_banner,Examine the warband's banner
+prompt.worlda.rival_token,Examine the token on the rail
+prompt.worlda.scout_cairn,Tend the scout cairn
+prompt.worlda.moot_stone,Lay a hand on the moot stone
+prompt.worlda.aerie_winch,Work the winch
 # --- END campaign:worlda ---
 # --- BEGIN campaign:worldb ---
 # --- END campaign:worldb ---

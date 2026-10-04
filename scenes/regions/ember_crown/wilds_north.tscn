@@ -25,6 +25,7 @@
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_townsman.glb" id="42b_npc_townsman"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_hooded.glb" id="42b_npc_hooded"]
 [ext_resource type="Script" path="res://src/Enemies/LairSpawnComponent.cs" id="42e_lairspawn"]
+[ext_resource type="Script" path="res://src/World/FlagVisibilityComponent.cs" id="wa_FlagVisibilityComponent"]
 
 ; THE NORTHERN WILDS (the 2026-08-28 layout rebuild) — the frontier between the Crossway gate and the arena, and
 ; the cell the EncounterDirector uses more than any other.
@@ -127,6 +128,51 @@ size = Vector3(1.0, 3.13, 1.0)
 [sub_resource type="CapsuleShape3D" id="Shape_npc"]
 radius = 0.4
 height = 1.8
+[sub_resource type="StandardMaterial3D" id="wa_mat_wood"]
+albedo_color = Color(0.28, 0.17, 0.09, 1)
+metallic = 0
+roughness = 0.9
+
+[sub_resource type="CylinderMesh" id="wa_cm_pole"]
+material = SubResource("wa_mat_wood")
+top_radius = 0.07
+bottom_radius = 0.1
+height = 3.3
+radial_segments = 8
+
+[sub_resource type="StandardMaterial3D" id="wa_mat_leather"]
+albedo_color = Color(0.2, 0.1, 0.05, 1)
+metallic = 0
+roughness = 0.85
+
+[sub_resource type="BoxMesh" id="wa_bm_hide"]
+material = SubResource("wa_mat_leather")
+size = Vector3(1, 1.4, 0.05)
+
+[sub_resource type="StandardMaterial3D" id="wa_mat_iron"]
+albedo_color = Color(0.07, 0.07, 0.08, 1)
+metallic = 0.8
+roughness = 0.45
+
+[sub_resource type="BoxMesh" id="wa_bm_patch"]
+material = SubResource("wa_mat_iron")
+size = Vector3(0.3, 0.3, 0.07)
+
+[sub_resource type="BoxShape3D" id="wa_box_1p4_3p2_0p6"]
+size = Vector3(1.4, 3.2, 0.6)
+
+[sub_resource type="StandardMaterial3D" id="wa_mat_char"]
+albedo_color = Color(0.04, 0.035, 0.03, 1)
+metallic = 0
+roughness = 1
+
+[sub_resource type="CylinderMesh" id="wa_cm_pole_char"]
+material = SubResource("wa_mat_char")
+top_radius = 0.05
+bottom_radius = 0.1
+height = 2.2
+radial_segments = 8
+
 [node name="WildsNorthCell" type="Node3D"]
 metadata/content_offset = Vector2(10, 35)
 
@@ -710,3 +756,51 @@ DefeatFlagId = "flag.ash_hunters.grimtusk_defeated"
 [node name="MapPin" type="Node3D" parent="GrimtuskDen"]
 script = ExtResource("maploc_39_5a")
 LocationId = "location.wilds.grimtusk_den"
+
+; WR-spec1-22 (campaign): the goblin warband's banner in the ruin. A charred pole replaces it once burned.
+[node name="WarbandBanner" type="Node3D" parent="."]
+transform = Transform3D(0.9063, 0, -0.4226, 0, 1, 0, 0.4226, 0, 0.9063, 11, 0, 31)
+script = ExtResource("2_entity")
+DisplayName = "The Warband's Banner"
+PersistentId = "ember_crown.wilds_north.warband_banner"
+
+[node name="Pole" type="MeshInstance3D" parent="WarbandBanner"]
+transform = Transform3D(0.9986, -0.0523, 0, 0.0523, 0.9986, 0, 0, 0, 1, 0, 1.65, 0)
+mesh = SubResource("wa_cm_pole")
+
+[node name="Hide" type="MeshInstance3D" parent="WarbandBanner"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.55, 2.35, 0)
+mesh = SubResource("wa_bm_hide")
+
+[node name="IronPatch" type="MeshInstance3D" parent="WarbandBanner"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.9, 1.85, 0)
+mesh = SubResource("wa_bm_patch")
+
+[node name="Collider" type="StaticBody3D" parent="WarbandBanner"]
+
+[node name="Shape" type="CollisionShape3D" parent="WarbandBanner/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.4, 1.6, 0)
+shape = SubResource("wa_box_1p4_3p2_0p6")
+
+[node name="Dialogue" type="Node" parent="WarbandBanner"]
+script = ExtResource("42b_dialoguecomponent")
+DialogueId = "dialogue.warband_banner"
+InteractId = "interact.wilds_north.warband_banner"
+PromptKey = "prompt.worlda.warband_banner"
+
+[node name="Visibility" type="Node" parent="WarbandBanner"]
+script = ExtResource("wa_FlagVisibilityComponent")
+HiddenWhenFlagId = "flag.beat.banner_burned"
+
+[node name="WarbandBannerCharred" type="Node3D" parent="."]
+transform = Transform3D(0.9063, 0, -0.4226, 0, 1, 0, 0.4226, 0, 0.9063, 11, 0, 31)
+script = ExtResource("2_entity")
+DisplayName = "Charred Pole"
+
+[node name="Pole" type="MeshInstance3D" parent="WarbandBannerCharred"]
+transform = Transform3D(0.9877, -0.1564, 0, 0.1564, 0.9877, 0, 0, 0, 1, 0, 1, 0)
+mesh = SubResource("wa_cm_pole_char")
+
+[node name="Visibility" type="Node" parent="WarbandBannerCharred"]
+script = ExtResource("wa_FlagVisibilityComponent")
+VisibleWhenFlagId = "flag.beat.banner_burned"
