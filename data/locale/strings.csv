@@ -2326,9 +2326,9 @@ pale.dlg.clockkeeper.c_back,"Tell me something else."
 pale.dlg.clockkeeper.c_bye,"Keep well."
 # Celestial Realm (the finish run, Act IV): the Ashen Knight, Morthul, the braziers and the throne placeholder.
 enemy.ashen_knight.name,The Ashen Knight
-enemy.ashen_knight.lore,"The Sixth Flamebearer, and the closest any of them came. He reached the Ash Throne, raised his blade over Morthul and did not bring it down. Whatever he saw in that moment, he has served the god of endings ever since, and he waits at the last gate for the one who might finish what he could not."
+enemy.ashen_knight.lore,"The Sixth Flamebearer, and the closest any of them came. He alone of the Six reached the Ash Throne and broke Morthul at its foot, and could not bring himself to sit in it or to leave it empty. He knelt instead, and has kept the throne and its last gate ever since, for the one who might do what he could not."
 enemy.morthul.name,"Morthul, the Ash King"
-enemy.morthul.lore,"The god of entropy, who looked at creation and judged that everything ends, even gods, and so everything should. He killed the six who stood against him and has sat in their ruined heaven ever since, while the world he broke goes on dying."
+enemy.morthul.lore,"The god of entropy, who kept the world's endings until holding them was all he was. The Sundering that followed broke heaven and killed six gods, and left him seated in its ruins: less a tyrant than what the throne makes of whoever sits in it, while the world he broke goes on dying."
 celestial.ashen_knight.challenge_prompt,"Light the brazier and face the Ashen Knight"
 celestial.ashen_knight.challenge_locked,"The brazier will not take."
 celestial.morthul.challenge_prompt,"Light the last fire and challenge the Ash King"
@@ -2367,10 +2367,10 @@ quest.main.celestial.obj_morthul,"Confront Morthul at the Ash Throne"
 dlg.archivist.c_hidden,"Where do I go next?"
 dlg.archivist.hidden,"The fallen hold the realms you can find on a map. There were seven of you, and the Second hid her country from death itself. When the Tyrant, the Beast and the Prophet are gone, her door will stop hiding from you. It opens here, under my floor. I have been listening to it breathe for forty years."
 dlg.archivist.c_truth,"Tell me the truth. All of it."
-dlg.archivist.cataclysm,"Seven gods kept the world. Morthul was the one who kept its endings: death, rot, the last page. One day he decided the whole book was flawed and should be burned so it could be written again. The others refused. The war that followed broke the continents. Six gods died. He did not."
+dlg.archivist.cataclysm,"Seven gods kept the world. Morthul was the one who kept its endings: death, rot, the last page. When the others grew afraid of their own ending, they asked him to hold it off, and then to hold it off longer, until holding was all he was. The war that followed we call the Sundering, and what fell on us afterwards the Cataclysm. Six gods died. He did not."
 dlg.archivist.c_more,"Go on."
 dlg.archivist.morthul,"Here is what the songs leave out. Morthul is not a tyrant who took a throne. He is what the throne makes of whoever sits on it. Something must hold the world's endings, or nothing ends at all and nothing can begin. He sat because someone had to. It hollowed him into the Ash King."
-dlg.archivist.throne,"The gods made seven Flamebearers to unseat him. Not one of them was ever told the rest: that when he falls, the throne will ask for you. The fallen all heard it, in the end. Some ran from it. Some said yes too early. You carry their fire. What you do with it at the top of the Celestial stair is the only choice that has ever mattered."
+dlg.archivist.throne,"Here is what the songs leave out about the Stair. The gods did not make seven Flamebearers to kill him. They made them to climb. Six went up in the twentieth year after the Cataclysm. Five were thrown down at the top into the realms you have walked, and they have ruled their ruins for four hundred years, hearing the throne's question in their sleep. One reached the summit and could neither sit nor leave the chair empty, and he is there now, on one knee, keeping it. He buried the five himself, five stones where the Stair begins. You are the Seventh. The throne will ask you what it asked him, and the fire you carry is theirs. What you do at the top is the only choice that has ever mattered."
 dlg.archivist.c_open,"Open the way to the Celestial Realm."
 dlg.archivist.opened,"Then go. The stair is behind the last shelf; it has always been there, waiting for someone who knew what it was. Whatever you choose up there, Seventh, choose it awake."
 dlg.archivist.c_gate,"About the stair..."
@@ -2396,9 +2396,9 @@ vision.iron_king.3,"By the end he is not fighting Morthul at all. He is building
 vision.storm_tyrant.1,"A VISION. The Third Flamebearer comes home from the Celestial stair to find his clan hold burned by men who swore they were saving it."
 vision.storm_tyrant.2,"He calls the storm down on them. It answers so gladly that he never quite lets it go again."
 vision.storm_tyrant.3,"He climbs the Stormcrown to be alone with the only thing that has never lied to him: the lightning, and the hatred it carries."
-vision.beast_lord.1,"A VISION. The Fourth Flamebearer walks into the Ashen Wilds to cure the corruption at its root, alone, because she will not ask anyone else to risk it."
-vision.beast_lord.2,"The rot does not fight her. It offers. Strength that never tires, senses that never sleep. Only a little of her, at first."
-vision.beast_lord.3,"The last of her that could say no is buried under antler and fur and hunger. The Wilds remember her name. The beast does not."
+vision.beast_lord.1,"A VISION. The Fourth Flamebearer walks into the Ashen Wilds to cure the corruption at its root, alone, because he will not ask anyone else to risk it."
+vision.beast_lord.2,"The rot does not fight him. It offers. Strength that never tires, senses that never sleep. Only a little of him, at first."
+vision.beast_lord.3,The last of him that could say no is buried under antler and fur and hunger. The Wilds remember his name. The beast does not.
 vision.crimson_prophet.1,"A VISION. The Fifth Flamebearer reads in the great library for thirty years, looking for a way to win that does not cost the world."
 vision.crimson_prophet.2,"One night a voice answers his prayers. It is patient, and kind, and it tells him that endings are a mercy."
 vision.crimson_prophet.3,"He does not think he betrayed anyone. He thinks he found the truth first, and he has been building a church to share it ever since."
@@ -2407,7 +2407,7 @@ vision.hollow_queen.2,"She takes her people out of time. No one dies. No one gro
 vision.hollow_queen.3,"The price was her own soul, and she paid it without looking. She has been counting her people every dusk for four hundred years."
 vision.ashen_knight.1,"A VISION. The Sixth Flamebearer climbs the Celestial stair with five companions. He is the only one who reaches the top."
 vision.ashen_knight.2,"He stands before the Ash Throne with Morthul broken at his feet, and hears what the throne asks of whoever wins."
-vision.ashen_knight.3,"He could not sit, and he could not leave it empty. So he knelt, and has guarded the one who would, ever since. He was waiting for you."
+vision.ashen_knight.3,"He could not sit, and he could not leave it empty. So he knelt, and has kept the throne and the gate to it ever since: the chair against whoever wants it, and the way against whoever is not ready. He was waiting for you."
 # Phase 42F/H/J/L/M - guild finales (Ash Hunters, Veiled Archive, Iron Syndicate, Emberbound) and reactions
 quest.ash_hunters.scar_count.title,Counting the Scar
 quest.ash_hunters.scar_count.summary,"Huntmaster Yrsa Kesk's counts from the Ashen Wilds no longer add up. Stand on Hask Morrow's rise above the scar road, hear his count, and see the ash-maws for yourself."
@@ -3604,6 +3604,591 @@ boss.crimson_prophet.epithet,The Voice in the Altar
 boss.crimson_prophet.intro,"'Come closer. It has been waiting to speak to you, and so have I.'"
 # --- END campaign:spec1 ---
 # --- BEGIN campaign:spec2 ---
+quest.main.sundering_pages.title,The Five Accounts
+quest.main.sundering_pages.summary,"The fallen did not die as strangers. Each of them said one true thing at the end, and the five things together are a record of the Stair the gods never wrote down. Lay them before the Archivist, read them side by side, and take what is missing to the Archive's Annexe in Embermarket, where half of the key to the deep stacks is kept."
+quest.main.sundering_pages.detail,"Five accounts, five Flamebearers, one hole in the same place in each. The Archivist cannot read what comes next without the library's deep stacks, and the deep stacks are sealed with a sentence split between two keepers, one in the desert and one in the Ember Crown. Whoever has heard all five may ask for both halves."
+quest.main.sundering_pages.obj_gather,"Carry all five accounts: the Iron King, the Storm Tyrant, the Beast Lord, the Prophet and the Queen"
+quest.main.sundering_pages.hint_gather,"Each fallen Flamebearer's last words are heard in the aftermath of their defeat. If one slipped past you and cannot be found again, tell the Archivist so."
+quest.main.sundering_pages.log_gather,"Five voices, five endings, and a hole of the same shape in each."
+quest.main.sundering_pages.obj_library,Carry the five accounts to the great library
+quest.main.sundering_pages.hint_library,"The great library is in the Sunspire Dominion, at the end of the pilgrim road."
+quest.main.sundering_pages.log_library,"The library was as I left it, except that the Archivist had cleared the long table."
+quest.main.sundering_pages.obj_archivist,Lay the five accounts before Archivist Seren Adaru
+quest.main.sundering_pages.hint_archivist,She is at the reading hall's long table.
+quest.main.sundering_pages.log_archivist,"The Archivist read all five off my face and said every one of them was true, and every one had a hole."
+quest.main.sundering_pages.obj_table,Read the five accounts side by side at the reading table
+quest.main.sundering_pages.hint_table,The table stands in the middle of the reading hall. She has laid the accounts out for you.
+quest.main.sundering_pages.log_table,"Laid side by side the five accounts agree on a Stair, a throne, and a sixth Flamebearer who speaks in none of them."
+quest.main.sundering_pages.obj_annexe,Take the missing page to the Archive Annexe in Embermarket
+quest.main.sundering_pages.hint_annexe,The Annexe is in the Ember Crown's great market. Waystones will bring you most of the way.
+quest.main.sundering_pages.log_annexe,"The Annexe door was open and the Keeper stood in front of it with her hands behind her back, as though she had been told to expect me."
+quest.main.sundering_pages.obj_keeper,Ask Keeper Ysolde Marr for her half of the key
+quest.main.sundering_pages.hint_keeper,She keeps the Annexe door. Tell her you have read the five accounts together.
+quest.main.sundering_pages.log_keeper,The Keeper said her half of the sentence once. I find that I cannot forget it.
+quest.main.deep_stacks.title,The Deep Stacks
+quest.main.deep_stacks.summary,Behind the last shelf of the great library a stair descends to the vault where the gods' own record is kept. The Archive sealed it with a sentence and set wards on the door. What is written there is the reason six champions climbed to a throne and five of them did not come back.
+quest.main.deep_stacks.detail,"The wards are older than the library. They take trespass literally and they do not rest. Break them, break the three seal plinths that hold the codex shut, and hold the vault while the seals fall. Someone else has been waiting four hundred years to see the codex read, and he is not far behind you."
+quest.main.deep_stacks.obj_library,Return to the great library
+quest.main.deep_stacks.hint_library,The stacks stair is behind the Archivist's last shelf.
+quest.main.deep_stacks.log_library,"I went down past the last shelf, where the air changes."
+quest.main.deep_stacks.obj_door,Speak the sentence at the deep stacks door
+quest.main.deep_stacks.hint_door,The door is behind the last shelf. Say both halves of the Keeper's sentence to it.
+quest.main.deep_stacks.log_door,The door took the sentence in two halves and opened without a sound.
+quest.main.deep_stacks.obj_golems,Break the ward golems that guard the vault
+quest.main.deep_stacks.hint_golems,They wake when you cross the threshold. They are slow and they hit very hard: keep moving and strike when a swing has missed.
+quest.main.deep_stacks.log_golems,"The golems were set to keep out thieves, not to tell the invited from the uninvited. They did not try."
+quest.main.deep_stacks.obj_plinth_a,Break the first seal plinth
+quest.main.deep_stacks.hint_plinth_a,Three plinths stand in a triangle around the codex. Break them in any order.
+quest.main.deep_stacks.log_plinth_a,The first seal let go with a sound like a held breath.
+quest.main.deep_stacks.obj_plinth_b,Break the second seal plinth
+quest.main.deep_stacks.hint_plinth_b,Each plinth takes a moment to answer. Do not walk away from it early.
+quest.main.deep_stacks.log_plinth_b,The second seal cracked along its length. Somewhere behind the walls the wards stirred.
+quest.main.deep_stacks.obj_plinth_c,Break the third seal plinth
+quest.main.deep_stacks.hint_plinth_c,The last one gives only when you stop pushing it.
+quest.main.deep_stacks.log_plinth_c,"The third seal fell, and the vault filled with a light that was not any colour the library has."
+quest.main.deep_stacks.obj_hold,Hold the vault while the seals fall
+quest.main.deep_stacks.hint_hold,"The seals release what they held back. Stand in the vault, fight inside the ring of plinths, and do not leave it."
+quest.main.deep_stacks.log_hold,The wards had one last thing in them: whatever the gods had set them to keep out. I held the vault until it spent itself.
+quest.main.deep_stacks.obj_rival,Speak with the knight waiting among the broken seals
+quest.main.deep_stacks.hint_rival,"He stands at the vault's far end, beyond the plinths."
+quest.main.deep_stacks.log_rival,The Ashen Knight was standing among the broken seals as though he had been there all along.
+quest.main.deep_stacks.obj_codex,Read the Sundering codex
+quest.main.deep_stacks.hint_codex,The codex lies open on its lectern at the vault's heart.
+quest.main.deep_stacks.log_codex,The codex said what the Archivist had feared it would say. It also said what the Knight had been afraid I would read.
+quest.main.celestial_landing.title,The Landing
+quest.main.celestial_landing.summary,"The library gate lets out on a broken terrace over a void, and the realms you helped have sent what they could spare: an Assembly of banners and bad weather, led by a marshal who has never seen the sky look like this. Light the landing beacon, hold the terrace until the Assembly is through, and learn what the Sixth Flamebearer left at the edge of it."
+quest.main.celestial_landing.detail,"Nothing in the Celestial Realm has been tended since the Sundering. The terrace still holds a whole floor, and the beacon on it still takes a flame. What answers the beacon is not friendly: the dead of heaven come to see who is lighting fires. Hold until the Assembly's banners cross. Then speak to its marshal, and walk to the row of cairns at the terrace's edge."
+quest.main.celestial_landing.obj_gate,Step through the library gate onto the Celestial landing
+quest.main.celestial_landing.hint_gate,The gate is in the library forecourt. It stands open now.
+quest.main.celestial_landing.log_gate,"The gate let out on a terrace of cracked white stone, under a sky the colour of an old wound."
+quest.main.celestial_landing.obj_beacon,Light the cold beacon on the landing
+quest.main.celestial_landing.hint_beacon,"The cold brazier stands at the terrace's east edge, past the arrival pillars."
+quest.main.celestial_landing.log_beacon,The beacon took the flame at once. Whatever was watching from the dark took notice.
+quest.main.celestial_landing.obj_hold,Hold the landing until the Assembly crosses
+quest.main.celestial_landing.hint_hold,"Revenants, thralls and zealots will cross the terrace. Fight among the old pillars and keep the beacon alight."
+quest.main.celestial_landing.log_hold,"The dead of heaven came for the light, and the landing held."
+quest.main.celestial_landing.obj_marshal,Speak with the Assembly's marshal
+quest.main.celestial_landing.hint_marshal,"She stands at the head of the Assembly's lines, near the arrival pillars."
+quest.main.celestial_landing.log_marshal,"The marshal gave me the Assembly's numbers and then stopped, and said that the only thing she knew about the Stair she had learned from the stones behind her."
+quest.main.celestial_landing.obj_graves,Read the stones of the five cairns
+quest.main.celestial_landing.hint_graves,"A row of five cairns stands on the terrace's north edge, and a sixth stone beside them is blank."
+quest.main.celestial_landing.log_graves,"Five names, and a sixth stone with nothing on it. Someone kept this row for four hundred years."
+quest.main.godfall_choir.title,The Choir and Godfall
+quest.main.godfall_choir.summary,"The Knight's bridge stands on stone that was never meant to bear it, and the Assembly cannot cross until the anchors under Godfall are lit. West of the gate the Fallen Choir still sings the last hour of the Sundering to no one. Pass through the Choir, climb to Godfall, and light the three anchors."
+quest.main.godfall_choir.detail,"The Choir was heaven's own singers, and they sing the end of the war over and over. If you carry enough of the fallen's fire, they will take you for kin and let you pass for a small price. If you do not, the echoes must be silenced one by one. Beyond them, where a god's hall came down, three anchors hold the rift's edge together. Light them, and hold the terrace while they catch."
+quest.main.godfall_choir.obj_choir,Cross the bridge and follow the terrace west to the Fallen Choir
+quest.main.godfall_choir.hint_choir,"The Fallen Choir lies on the western terraces, past the Knight's bridge. Do not light the gate's brazier yet."
+quest.main.godfall_choir.log_choir,"The Choir sang the last hour of the Sundering to nobody, and the sound was beautiful and wrong."
+quest.main.godfall_choir.obj_echoes,Silence the echoes in the Choir's nave
+quest.main.godfall_choir.hint_echoes,"If you carry enough of the fallen's fire, one of the echoes may answer you instead of striking. Otherwise, break them."
+quest.main.godfall_choir.log_echoes,The echoes did not scream when they broke. They finished the verse.
+quest.main.godfall_choir.obj_pass,Pass through the Choir
+quest.main.godfall_choir.hint_pass,"The way through opens once the echoes are silenced, or once the Choir has answered you."
+quest.main.godfall_choir.log_pass,"The Choir let me through, one way or another."
+quest.main.godfall_choir.obj_godfall,"Climb to Godfall, where a god's hall came down"
+quest.main.godfall_choir.hint_godfall,"Godfall is on the north-eastern terraces, beyond the Sundered Stair."
+quest.main.godfall_choir.log_godfall,"Godfall was a hall's worth of broken heaven, and the three anchors stood in its ruin like candles in a ribcage."
+quest.main.godfall_choir.obj_anchor_a,Light the first anchor
+quest.main.godfall_choir.hint_anchor_a,"The anchors stand in a line up the terrace. Light all three, in any order."
+quest.main.godfall_choir.log_anchor_a,The first anchor remembered it was meant to be holding something up.
+quest.main.godfall_choir.obj_anchor_b,Light the second anchor
+quest.main.godfall_choir.hint_anchor_b,A thread of white fire runs between the anchors as each one takes the flame.
+quest.main.godfall_choir.log_anchor_b,"The second anchor drew a thread of fire to the first, and the thread tightened."
+quest.main.godfall_choir.obj_anchor_c,Light the third anchor
+quest.main.godfall_choir.hint_anchor_c,"The last anchor stands highest, on a spur over the void."
+quest.main.godfall_choir.log_anchor_c,"The third anchor closed the line, and far to the south the bridge stopped shuddering."
+quest.main.godfall_choir.obj_hold,Hold Godfall while the anchors catch
+quest.main.godfall_choir.hint_hold,"The anchors draw the dead. Keep them alight, and fight within the ring of the fallen hall."
+quest.main.godfall_choir.log_hold,"The anchors held. When the last of the dead had fallen back, the bridge was still."
+quest.main.sundered_stair.title,The Sundered Stair
+quest.main.sundered_stair.summary,"The Stair the Six climbed lies in pieces across the eastern terraces, and its winches still turn if anyone remembers how. Lower the missing flights, break the sentinels the Stair still obeys, and hold it while it settles. What waits at the top is not the Knight. It is the memory he left there."
+quest.main.sundered_stair.detail,"The Stair was the gods' own road to the throne, and only the last flights are gone. The sentinels were set to turn back anyone who had not been asked. The echo at the top was left by a man who spent four hundred years standing on this Stair so that he would not have to stand anywhere else."
+quest.main.sundered_stair.obj_stair,Climb down to the Sundered Stair on the eastern terraces
+quest.main.sundered_stair.hint_stair,"The Stair is east of the Knight's gate, across the terrace."
+quest.main.sundered_stair.log_stair,"The Stair hung over the void in pieces, a road that went nowhere any more."
+quest.main.sundered_stair.obj_winch_a,Turn the western winch
+quest.main.sundered_stair.hint_winch_a,"Two winches flank the broken flights. Turn both, in either order."
+quest.main.sundered_stair.log_winch_a,The winch groaned for the first time in four hundred years.
+quest.main.sundered_stair.obj_winch_b,Turn the eastern winch
+quest.main.sundered_stair.hint_winch_b,This one is jammed with ash. Clear it with your hands.
+quest.main.sundered_stair.log_winch_b,"The second winch caught, and the whole Stair began to settle."
+quest.main.sundered_stair.obj_sentinels,Break the stone sentinels the Stair still obeys
+quest.main.sundered_stair.hint_sentinels,They wake when both winches have turned. They are slow and hit hard: stay out of their reach and strike after a swing.
+quest.main.sundered_stair.log_sentinels,The sentinels had been turning people back for four hundred years. I was the first they could not.
+quest.main.sundered_stair.obj_hold,Hold the Stair while the last flight lowers
+quest.main.sundered_stair.hint_hold,More of the Stair's guardians wake as it settles. Stay near the winches until the last flight meets its landing.
+quest.main.sundered_stair.log_hold,"The Stair settled, and the last flight met its landing."
+quest.main.sundered_stair.obj_kael,Let Kael walk the Stair beside you
+quest.main.sundered_stair.hint_kael,Kael wants to climb it himself. Keep pace and keep him alive.
+quest.main.sundered_stair.log_kael,Kael climbed the Stair with a hand on the wall and said nothing until the top.
+quest.main.sundered_stair.obj_echo,Speak with the Knight's echo at the head of the Stair
+quest.main.sundered_stair.hint_echo,It stands where the last flight meets the terrace.
+quest.main.sundered_stair.log_echo,"The echo was not the Knight, only what he left here: a man who had stopped on a stair and never started again."
+quest.main.sundered_stair.obj_gate,Go to the Knight's Gate
+quest.main.sundered_stair.hint_gate,"The gate stands west of the Stair, across the terrace."
+quest.main.sundered_stair.log_gate,"The road to the gate was open, and the Assembly's banners were already on the bridge."
+quest.main.throne.title,The Ash Throne
+quest.main.throne.summary,"Morthul is ash, and the throne is empty for the first time since the gods died. Someone must always sit there. Read what is left of the gods on the dais, if you want to, and then answer it."
+quest.main.throne.detail,"The throne asks whoever is nearest, and it is patient. What you have become decides which doors it leaves open: a clean hand has one, a hand that has taken everything has the other, and a hand in between may choose. The steles on the dais are the gods' last words about endings. They change nothing, and they may be the only thing worth reading before you answer."
+quest.main.throne.obj_stele_a,Read the stele of Light and Order
+quest.main.throne.hint_stele_a,"Three steles stand on the dais rim, one for each pair of the dead gods."
+quest.main.throne.log_stele_a,Light and Order said they were afraid of the order.
+quest.main.throne.obj_stele_b,Read the stele of Life and Wisdom
+quest.main.throne.hint_stele_b,"Read them in any order, before or after you speak to the throne."
+quest.main.throne.log_stele_b,Life and Wisdom understood too late that an ending is not an injury.
+quest.main.throne.obj_stele_c,Read the stele of Strength and Nature
+quest.main.throne.hint_stele_c,The last stele has a line scratched under the gods' own.
+quest.main.throne.log_stele_c,Strength and Nature remembered that endings are why the seasons are beautiful.
+quest.main.throne.obj_decide,Answer the Ash Throne
+quest.main.throne.hint_decide,Speak to the throne on the dais. What you have become decides which doors it leaves open.
+quest.main.throne.log_decide,"The throne asked, and I answered."
+pale.quest.pale_door.title,The Door Under the Stacks
+pale.quest.pale_door.summary,"Three of the fallen are gone, and the embers you carry will not settle. They lean west, toward a country that is on no map. Archivist Seren Adaru says the door under her library has begun to open. Walk through it and learn what four hundred years of silence were hiding."
+pale.quest.pale_door.detail,"The Second Flamebearer hid her whole realm from death and from history, and the hiding held until her fellow fallen began to go out one by one. The Archivist has listened to the door breathe for forty years and never opened it. She will not stop you, and she will not follow."
+pale.quest.pale_door.obj_archivist,Speak with Archivist Seren Adaru in the great library
+pale.quest.pale_door.hint_archivist,She keeps the reading hall at the head of the library stair. The new door stands in the forecourt.
+pale.quest.pale_door.log_archivist,The Archivist put down her book for the first time in my memory. A door that was bare wall for four hundred years had opened in the night.
+pale.quest.pale_door.obj_quay,Go through the door to the Still Quay
+pale.quest.pale_door.hint_quay,The door is in the library forecourt. It opens only for someone carrying embers.
+pale.quest.pale_door.log_quay,The door let out onto a stone quay where every lamp burns at an hour that never ends.
+pale.quest.pale_door.obj_lamp,Touch the first lamp on the quay
+pale.quest.pale_door.hint_lamp,"The first lamp stands a few steps from where you arrive, at the quay's south end."
+pale.quest.pale_door.log_lamp,"The lamp was warm, and had not gone out in four hundred years. Something far off felt the touch."
+pale.quest.vesperhold.title,Vesperhold
+pale.quest.vesperhold.summary,"The Still Quay opens onto a city kept in perfect repair by people who no longer remember why. Its undying residents signed the Concord and have kept the same hour ever since. Somewhere in Vesperhold is the ledger the Hollow Queen counts at every dusk, and the reason she cannot stop counting."
+pale.quest.vesperhold.detail,"Four of Vesperhold's people will talk to a stranger, and each holds a piece of the same bargain. Hear them, find the registry the count is written in, and read the three old lamps whose flames keep the oldest memories. Whatever the Queen has become, she began as someone who could not bear to lose one more name."
+pale.quest.vesperhold.obj_city,Follow the quay road north to Vesperhold
+pale.quest.vesperhold.hint_city,The road runs from the Still Quay to the town gate. The Queen's servants do not walk inside the city.
+pale.quest.vesperhold.log_city,"Vesperhold stood in perfect repair, every roof sound and every window clean, and not one door had been opened in a very long time."
+pale.quest.vesperhold.obj_steward,Speak with Steward Ismene Vael in the plaza
+pale.quest.vesperhold.hint_steward,She stands near the well and reads the proclamation to anyone who stops.
+pale.quest.vesperhold.log_steward,"The Steward reads the Queen's proclamation to every visitor. She says it is still evening, and has been since the signing."
+pale.quest.vesperhold.obj_lamplighter,Speak with Oswin the Lamplighter
+pale.quest.vesperhold.hint_lamplighter,He walks the lamps on the south side of the plaza.
+pale.quest.vesperhold.log_lamplighter,Oswin signed because he could not bear to watch his daughter grow old. She has not grown at all.
+pale.quest.vesperhold.obj_baker,Speak with Maren Loaf at her stall
+pale.quest.vesperhold.hint_baker,The bakery stall stands on the north side of the plaza.
+pale.quest.vesperhold.log_baker,Maren bakes bread nobody eats. She says most of the city stopped wanting the exemption long ago.
+pale.quest.vesperhold.obj_clockkeeper,Speak with Old Corwen at the clock tower
+pale.quest.vesperhold.hint_clockkeeper,The clock tower stands at the plaza's west end.
+pale.quest.vesperhold.log_clockkeeper,Corwen winds a clock that has said the same hour for four hundred years. He told me where the dusk-count is written.
+pale.quest.vesperhold.obj_registry,Read the dusk-count registry at the foot of the clock tower
+pale.quest.vesperhold.hint_registry,Corwen keeps it on a lectern beside the tower's door.
+pale.quest.vesperhold.log_registry,"The registry holds eleven hundred and four names. The first signature is the Queen's, and it has been struck through."
+pale.quest.vesperhold.obj_lamp_signing,Touch the signing lamp at the plaza's south end
+pale.quest.vesperhold.hint_lamp_signing,It stands between the lamplighter's beat and the south road.
+pale.quest.vesperhold.log_lamp_signing,The first lamp remembered the morning of the signing: a whole kingdom's hands on one page.
+pale.quest.vesperhold.obj_lamp_cradle,Touch the cradle lamp by the east townhouse
+pale.quest.vesperhold.hint_lamp_cradle,"It stands at the corner of the east lane, near the well."
+pale.quest.vesperhold.log_lamp_cradle,"The second lamp remembered the last child born in Vesperhold, and the Queen running with her through the streets."
+pale.quest.vesperhold.obj_lamp_queen,Touch the Queen's lamp at the plaza's north edge
+pale.quest.vesperhold.hint_lamp_queen,"It is the last lamp before the north street, the one that climbs toward the Court."
+pale.quest.vesperhold.log_lamp_queen,The third lamp remembered the Queen on the morning she signed her own name out. She was already counting.
+pale.quest.queens_count.title,The Queen's Count
+pale.quest.queens_count.summary,"Every dusk the Hollow Queen counts her people, and the count is what holds the Concord together. Past Vesperhold the processional climbs to the Hollow Court, and at its foot a stone keeps the count. Whoever answers the stone decides whether the count goes on."
+pale.quest.queens_count.detail,"The undying cannot stop the count and no longer want to. The stone will take an answer from anyone who carries an ember. Break the count and the years arrive gently, for every name. Keep it and the Concord holds until the Queen falls, and then it all comes due at once. Either answer opens the Court's gate. Neither is free."
+pale.quest.queens_count.obj_approach,Climb the processional to the Court approach
+pale.quest.queens_count.hint_approach,The processional leaves Vesperhold by the north street and climbs to the Hollow Court.
+pale.quest.queens_count.log_approach,The processional climbed out of the preserved city into fields that never ripen and never rot.
+pale.quest.queens_count.obj_husks,Cut down the husks on the processional
+pale.quest.queens_count.hint_husks,"The husks stand in the road, the ones the count could not hold. They come at anyone who nears the Court wall."
+pale.quest.queens_count.log_husks,"The husks did not defend themselves. They had been standing in the road for four hundred years, waiting to be released from the road."
+pale.quest.queens_count.obj_stone,Answer the count-stone at the end of the processional
+pale.quest.queens_count.hint_stone,"Touch the stone and it will ask whether the count goes on. Whatever you answer, the Court's gate opens."
+pale.quest.queens_count.log_stone,"The stone asked, and I answered. The gate of the Hollow Court stands open."
+dlg.sunspire_reading_table.speaker,The Reading Table
+dlg.sunspire_reading_table.root,"Seren has laid the five accounts out the way she would lay out five witnesses, a hand's width apart, with a lamp burning at the head. You read them in the order you earned them: the Iron King's fear, the Tyrant's grief, the Beast's loneliness, the Prophet's certainty, the Queen's count."
+dlg.sunspire_reading_table.root.c_more,Read them together.
+dlg.sunspire_reading_table.root.c_close,Close the accounts.
+dlg.sunspire_reading_table.more,"Side by side they say the same thing in five voices. There was a Stair. Six climbed it. Five were thrown down at the top, not one of them fallen, and each of them heard a question that would not stop being asked. And in every account, in the same place, there is a gap where a sixth voice should be: the one who stayed."
+dlg.sunspire_reading_table.more.c_close,Close the accounts.
+dlg.sunspire_stacks_door.speaker,The Deep Stacks Door
+dlg.sunspire_stacks_door.root,"Behind the last shelf the wall is not a wall. It is a door the Archive stopped believing in: bare stone with a seam of lead down the middle, and no handle, no lock, nothing to turn. You say the Keeper's sentence to it, both halves, one after the other. The lead seam runs with light."
+dlg.sunspire_stacks_door.root.c_more,Say the sentence.
+dlg.sunspire_stacks_door.root.c_close,Go down.
+dlg.sunspire_stacks_door.more,"The door opens without a sound onto a stair that goes down a very long way. The air that comes up is dry and cold and smells of lamp oil. Somewhere below, stone shifts that has been still for a long time."
+dlg.sunspire_stacks_door.more.c_close,Go down.
+dlg.sunspire_seal_a.speaker,The First Plinth
+dlg.sunspire_seal_a.root,"The first plinth is a block of black stone at hip height, cut with a ring of script that reads, in a hand you understand now, ""Not yet."" When you lay your hand on the ring, the first seal on the codex cover lets go with a sound like a held breath."
+dlg.sunspire_seal_a.root.c_close,Step back.
+dlg.sunspire_seal_b.speaker,The Second Plinth
+dlg.sunspire_seal_b.root,"The second plinth reads ""Not you."" It gives a little harder. Under your palm the ring warms, and a second seal on the codex cover cracks along its length. Somewhere behind the walls the wards stir."
+dlg.sunspire_seal_b.root.c_close,Step back.
+dlg.sunspire_seal_c.speaker,The Third Plinth
+dlg.sunspire_seal_c.root,"The third plinth reads ""Not ever."" It does not give at all until you stop pushing and simply lean on it, the way you would on a tired friend. Then the third seal falls, and the vault floods with a light that is not any colour the library has."
+dlg.sunspire_seal_c.root.c_close,Step back.
+dlg.sunspire_codex.speaker,The Sundering Codex
+dlg.sunspire_codex.root,"The codex lies open on its lectern at the vault's heart, bound in something that was never an animal. The first leaf is blank. The second is a single line in a hand that is not human, repeated until it fills the page: ""WE KEPT IT. WE KEPT IT. WE KEPT IT."" Turn the page, and the book will tell you the rest."
+dlg.sunspire_codex.root.c_turn_first,Turn the page.
+dlg.sunspire_codex.root.c_turn,Turn the page.
+dlg.sunspire_codex.root.c_close,Close the codex.
+dlg.sunspire_codex.read,"The rest is the Sundering, told by the ones who were there, and it is not the story in the songs. Morthul did not rise against the gods. He kept the ending of things, and when the gods grew afraid of their own ending they asked him to hold it off for them, longer and longer, until holding was all he was. The war was not for the world. It was for the right to stop. The last leaf is in a rougher hand, a soldier's, written long after: ""Whoever sits is not a god. Whoever sits is a gate. The gate must not be asked to hold more than it can bear. The gate must not be empty. The gate must not be anyone who wants it."""
+dlg.sunspire_codex.read.c_again,Read it again.
+dlg.sunspire_codex.read.c_close,Close the codex.
+dlg.rival_library.speaker,The Ashen Knight
+dlg.rival_library.root,"He is standing among the broken seals with his helm under one arm, and he has been standing there a long time. It is the first time you have seen his face. It is a tired, ordinary face, older than it should be. ""Seventh. I came up through the floor of the world to stop you reading that book. I find I cannot say why. Four hundred years of knowing, and I have never once been sure."""
+dlg.rival_library.root.c_why,Why would you stop me?
+dlg.rival_library.root.c_what,What is in the codex?
+dlg.rival_library.root.c_trust,Read it with me.
+dlg.rival_library.root.c_defy,Stand aside. I will read it alone.
+dlg.rival_library.root.c_later,We will speak at the gate.
+dlg.rival_library.why,"""Because everyone who reads it wants the throne. The fallen read it on the Stair, a page each, and each of them went down thinking the same thing: that it should be them. You will read it differently. Or you will not."""
+dlg.rival_library.why.c_back,Something else.
+dlg.rival_library.why.c_later,We will speak at the gate.
+dlg.rival_library.what,"""The Sundering, and how it ended, which is not how the songs have it. And what the throne is for. There is a line near the end I have read four hundred times. Read it yourself, and then tell me I was wrong to be afraid."""
+dlg.rival_library.what.c_back,Something else.
+dlg.rival_library.what.c_later,We will speak at the gate.
+dlg.rival_library.trust,"He sets the helm down on a plinth, carefully, as if it might wake. ""Then read it aloud. I would like to hear what it sounds like, once."" Something in his shoulders lowers. ""Take this for the Stair. Where I am going I will not need it."" A flask is in your hand, and he is a few paces off again, as though he had not moved."
+dlg.rival_library.trust.c_go,I will read it aloud.
+dlg.rival_library.defy,"""So be it."" He steps back, and the helm goes on. ""You will find me at the gate, Seventh, and I will not be gentle. I was given a vigil, and I would rather keep it than be thanked."""
+dlg.rival_library.defy.c_go,Then I will see you there.
+dlg.rival_library.after_trust,"He has not moved from where you left him, and the helm is still on the plinth. ""Read,"" he says gently. ""I will be here. I find I do not mind being here."""
+dlg.rival_library.after_trust.c_go,I will.
+dlg.rival_library.after_defy,"""You have your answer,"" he says, from behind the helm. ""The book is open. Go and read it, and then go and make me regret it. At the gate."""
+dlg.rival_library.after_defy.c_go,At the gate.
+dlg.celestial_landing_beacon.speaker,The Cold Beacon
+dlg.celestial_landing_beacon.root,"The brazier is cold and has been cold since heaven fell. Someone left a faggot of grey wood in it, and a flint, as though they had meant to come back. The flint is warm when you pick it up. The wood takes at the first spark, a pale fire that gives no heat and no smoke, and a long way off, something in the dark turns its head."
+dlg.celestial_landing_beacon.root.c_more,Strike the flint.
+dlg.celestial_landing_beacon.root.c_close,Ready your weapon.
+dlg.celestial_landing_beacon.more,"The beacon throws a circle of grey light across the terrace. Beyond the pillars, shapes begin to move toward it."
+dlg.celestial_landing_beacon.more.c_close,Ready your weapon.
+dlg.assembly_marshal.speaker,Marshal Iselle Hearne
+dlg.assembly_marshal.root,"She is a broad woman in dented plate, with the look of someone who has given a great many orders she did not believe in and has finally been given one she does. ""The Assembly stands behind you, Seventh. Wardens from the Crown, clansmen from the Reach, Hunters from the Wilds, Archive hands and a few of the Prophet's lapsed. Whoever you did right by, you will find among them. Whoever you did wrong, the road remembers that too."""
+dlg.assembly_marshal.root.c_allies,Who answered the call?
+dlg.assembly_marshal.root.c_place,What do you know about this place?
+dlg.assembly_marshal.root.c_plan,What happens to the Assembly now?
+dlg.assembly_marshal.root.c_hold,"Hold the line, Marshal."
+dlg.assembly_marshal.allies,"""Look about you. The pickets by the pillars. The fires along the wall. They came on your word, each for their own reasons, and each of them is carrying something they mean you to take. I would take it. Nobody here is a stranger to what the Stair costs."""
+dlg.assembly_marshal.allies.c_back,Something else.
+dlg.assembly_marshal.allies.c_hold,"Hold the line, Marshal."
+dlg.assembly_marshal.place,"""Nothing but what the gate told us, and the gate tells nothing. A bridge, a gate, a throne. A knight, if the Archive's tales are true, the last of six. The cairns behind me were here when we came. Someone lit a fire in front of them every morning, once. The ashes are very old."""
+dlg.assembly_marshal.place.c_back,Something else.
+dlg.assembly_marshal.place.c_hold,"Hold the line, Marshal."
+dlg.assembly_marshal.plan,"""We hold this terrace and anything we can reach from it. You go on. If the bridge falls, we go home. If you fall, we go home. If you reach the throne..."" She does not finish. ""Then it is yours to say what we go home to."""
+dlg.assembly_marshal.plan.c_back,Something else.
+dlg.assembly_marshal.plan.c_hold,"Hold the line, Marshal."
+dlg.assembly_marshal.later,"She is at the bridge end, watching the sky as if it might do something. ""We hold the terrace and you hold the road. If you need me, I am the one not looking up."""
+dlg.assembly_marshal.later.c_hold,"Hold the line, Marshal."
+dlg.celestial_graves.speaker,The Five Cairns
+dlg.celestial_graves.root,"Five stones in a row at the terrace's edge, each cut by a hand that was not a mason's. The letters are deep and slightly crooked, as though the carver was working in the dark, or in grief. A sixth stone stands at the end of the row, taller than the rest and blank."
+dlg.celestial_graves.root.c_names,Read the five names.
+dlg.celestial_graves.root.c_sixth,Look at the sixth stone.
+dlg.celestial_graves.root.c_close,Step back.
+dlg.celestial_graves.names,"HADRIK, who carried the first fire and would not set it down. ILSABET, who counted every name and could not stop. SKELD, who called the storm and was answered. ORRIN, who walked into the rot to cure it. CALDUS, who read until a voice answered. Under each name the same line is cut last and cut deepest: THROWN, NOT FALLEN."
+dlg.celestial_graves.names.c_sixth,Look at the sixth stone.
+dlg.celestial_graves.names.c_close,Step back.
+dlg.celestial_graves.sixth,"The sixth stone has no name and no line. It stands as tall as a kneeling man. Someone has worn a hollow in the ground before it, the shape of two knees, over a very long time. There is no seventh stone. You look for one anyway."
+dlg.celestial_graves.sixth.c_names,Read the five names.
+dlg.celestial_graves.sixth.c_close,Step back.
+dlg.choir_echo.speaker,The Choir's Echo
+dlg.choir_echo.root,"One of the echoes does not break pattern when you approach. It turns its face to you instead, a singer of white stone with a mouth full of ash, and it sings your name: not the one you were given. The one the fallen use. ""Kin,"" it sings. ""You have the Six in you. Come. The Choir will let you through, if you sing the last verse with us. It will cost you a little of what you were."""
+dlg.choir_echo.root.c_sing,Sing the last verse.
+dlg.choir_echo.root.c_refuse,No. I will break the echoes instead.
+dlg.choir_echo.sung,"The Choir takes your voice and gives it back different. The echoes part around you like a congregation around a bell. ""Go on, kin,"" they sing. ""The throne has been waiting for a voice like yours."""
+dlg.choir_echo.sung.c_go,Walk on through.
+dlg.choir_echo.unknown,"The echoes sing past you. None of them turns. There is nothing in you the Choir recognises, and no part of the song is meant for you. It is a mercy, and it is not."
+dlg.choir_echo.unknown.c_go,Then I will break them.
+dlg.choir_echo.passed,"The echoes sing on behind you. The road west is open, and the song, at last, is only a song."
+dlg.choir_echo.passed.c_go,Walk on.
+dlg.celestial_anchor_a.speaker,The First Anchor
+dlg.celestial_anchor_a.root,"The anchor is a standing stone as tall as a man, split down the middle and held together by a collar of bronze that was never made by hands. It is cold. When you lay your palm on the split, the bronze warms, and the stone remembers that it is meant to be holding something up."
+dlg.celestial_anchor_a.root.c_close,Step back.
+dlg.celestial_anchor_b.speaker,The Second Anchor
+dlg.celestial_anchor_b.root,"The second anchor is half sunk in the rubble of a hall. A line of white fire runs from it toward the first, thin as a thread, and tightens as you touch it."
+dlg.celestial_anchor_b.root.c_close,Step back.
+dlg.celestial_anchor_c.speaker,The Third Anchor
+dlg.celestial_anchor_c.root,"The third anchor is the highest, on a spur over the void. When it takes the flame, the line of fire runs the whole way down the terrace, and far to the south the bridge stops shuddering."
+dlg.celestial_anchor_c.root.c_close,Step back.
+dlg.celestial_winch_a.speaker,The Western Winch
+dlg.celestial_winch_a.root,"The winch is a drum of black iron wound with chain as thick as your arm, and the chain runs off into the void. The crank is worn smooth in two places, a hand's width apart, by hands you will not meet. When you set your shoulders to it the drum turns, and far below, stone grinds against stone."
+dlg.celestial_winch_a.root.c_close,Step back.
+dlg.celestial_winch_b.speaker,The Eastern Winch
+dlg.celestial_winch_b.root,"The second winch is jammed with ash. You clear it with your hands. When it catches, the first drum answers across the gap, and the whole Stair begins, with a great slow groan, to settle toward its landing."
+dlg.celestial_winch_b.root.c_close,Step back.
+dlg.rival_concourse.speaker,The Echo of the Ashen Knight
+dlg.rival_concourse.root,"It is not him. It has his height and his stance and no face at all, a shape of grey ember standing at the head of the last flight, and when it speaks the voice is the Knight's, but younger. ""Seventh. This is where I stopped. Not at the throne: here, with one foot on the last stair, because I knew what was at the top and I could not make my foot move. So I stopped, and part of me has been standing here since. The rest of me went on up."""
+dlg.rival_concourse.root.c_know,What did you know?
+dlg.rival_concourse.root.c_why,"Why guard it, then?"
+dlg.rival_concourse.root.c_want,What do you want from me?
+dlg.rival_concourse.root.c_go,I will be there.
+dlg.rival_concourse.know,"""That it asks. That it does not ask for the strong or the wicked. It asks for whoever is nearest, and it is patient. That is why five of us were thrown down: not because we were weak, but because we all said yes too fast."""
+dlg.rival_concourse.know.c_back,Something else.
+dlg.rival_concourse.know.c_go,I will be there.
+dlg.rival_concourse.why,"""Because someone must sit, or nothing ends. Because it must not be anyone who wants to. I have kept it for four hundred years against everyone who wanted to, and I have kept it for you against everyone who did not."""
+dlg.rival_concourse.why.c_back,Something else.
+dlg.rival_concourse.why.c_go,I will be there.
+dlg.rival_concourse.want,"""When you reach the gate I will be there, and I will not be an echo. Choose how you meet me. I would like it to be honest, whichever it is."""
+dlg.rival_concourse.want.c_back,Something else.
+dlg.rival_concourse.want.c_go,I will be there.
+dlg.rival_gate.speaker,The Ashen Knight
+dlg.rival_gate.root,"He is on one knee in the ring's mouth, the greatsword planted point-down before him, his helm on the ground at his side. He does not look up. ""You came by the Stair,"" he says. ""Then you have met what I left on it. I am not going to ask you to turn back, Seventh. I never could ask that of anyone. There is one door left, and I stand in it. You have a choice about how you cross the ring. You may kneel with me a moment, before. Or you may draw."""
+dlg.rival_gate.root.c_kneel,Kneel beside him.
+dlg.rival_gate.root.c_draw,Draw.
+dlg.rival_gate.root.c_fight,Neither. I came to fight.
+dlg.rival_gate.root.c_later,Not yet.
+dlg.rival_gate.root_trust,"He is on one knee in the ring's mouth with the greatsword planted before him, and he lifts his head when he hears you, which he did not do before. ""You read it beside me,"" he says. ""I have been thinking about that for the whole of the time you were climbing. I am not going to ask you to turn back, Seventh. There is one door left, and I stand in it. You may kneel with me a moment, before. Or you may draw."""
+dlg.rival_gate.root_trust.c_kneel,Kneel beside him.
+dlg.rival_gate.root_trust.c_draw,Draw.
+dlg.rival_gate.root_trust.c_fight,Neither. I came to fight.
+dlg.rival_gate.root_trust.c_later,Not yet.
+dlg.rival_gate.root_defy,"He is on one knee in the ring's mouth, and the helm is on, and the voice behind it is level. ""You read it over my objection,"" he says. ""I told you I would not be gentle. I am not going to ask you to turn back. There is one door left, and I stand in it. You may kneel with me a moment, before. Or you may draw."""
+dlg.rival_gate.root_defy.c_kneel,Kneel beside him.
+dlg.rival_gate.root_defy.c_draw,Draw.
+dlg.rival_gate.root_defy.c_fight,Neither. I came to fight.
+dlg.rival_gate.root_defy.c_later,Not yet.
+dlg.rival_gate.kneel,"You kneel in the ash across from him. Neither of you speaks. It is the longest silence of your life, and the shortest, and in it you hear what he has heard for four hundred years: very far off, something patient, asking. ""Yes,"" he says at last, gently. ""That. You hear it too."" He puts on the helm. ""Rise, Seventh. Do not kneel again. It is the only thing I ask of you, and I will ask it with a sword."""
+dlg.rival_gate.kneel.c_rise,Rise.
+dlg.rival_gate.draw,"The blade comes out of its scabbard in the quiet, like a word nobody else would say first. He lifts his head. There is something in his face that might be relief. ""Good,"" he says, and takes up the greatsword. ""I was afraid you would be kind. Kindness is what the throne would use."""
+dlg.rival_gate.draw.c_light,Light the brazier.
+dlg.rival_gate.fight,"""Neither,"" he says, and something like a smile goes across the dark of the visor. ""The honest answer. Very well."" He takes up the greatsword and stands, slowly, like a man getting out of cold water."
+dlg.rival_gate.fight.c_light,Light the brazier.
+dlg.rival_gate.after,"He has risen, and the helm is on, and he is waiting beside the brazier with the greatsword in both hands. There is nothing left to say, and neither of you says it."
+dlg.rival_gate.after.c_light,Light the brazier.
+dlg.entropy_stele_a.speaker,The Stele of Light and Order
+dlg.entropy_stele_a.root,"SOLARYN: ""We held it up as long as we could be the ones holding."" THAROS: ""Everything must end in order. We were afraid of the order."" Under both, in a rougher hand, one line cut very small: ""Nothing that ends has failed."""
+dlg.entropy_stele_a.root.c_close,Step back.
+dlg.entropy_stele_b.speaker,The Stele of Life and Wisdom
+dlg.entropy_stele_b.root,"VEYRA: ""I would have healed him if he had let me. He did not need healing. He needed to be allowed to stop."" NYTH: ""I read it all, and the last page was blank. I understood then. I should have left it blank."""
+dlg.entropy_stele_b.root.c_close,Step back.
+dlg.entropy_stele_c.speaker,The Stele of Strength and Nature
+dlg.entropy_stele_c.root,"DRAKAR: ""I could have stood against him forever. That was the trouble. I could have stood forever."" ELYNDRA: ""The seasons end. That is why they are beautiful. We forgot."" Beneath, scratched with a blade: ""Whoever sits: remember that it is beautiful."""
+dlg.entropy_stele_c.root.c_close,Step back.
+dlg.ally_dray_spared.speaker,Marshal Orsolo Dray
+dlg.ally_dray_pressed.speaker,Dawnwarden Serjeant
+dlg.ally_hjalvar.speaker,Captain of Hjalvar's Archers
+dlg.ally_halvar.speaker,Halvar's Exile
+dlg.ally_herd_slain.speaker,Master Hunter
+dlg.ally_herd_calmed.speaker,Ashen Herder
+dlg.ally_flock_exposed.speaker,Pilgrim of the Wells
+dlg.ally_flock_turned.speaker,Convert of the Archive
+dlg.ally_flock_kin.speaker,A Kneeling Zealot
+dlg.ally_queen_released.speaker,Lamplighter of Vesperhold
+dlg.ally_queen_kept.speaker,Runner of Vesperhold
+pale.dlg.pale_landing_lamp.speaker,The Quay Lamp
+pale.dlg.pale_landing_lamp.root,"The lamp is lit at an hour that never ends. The glass is warm. When you lay a hand on it the flame leans toward you, and then, slowly, away from you, toward the city."
+pale.dlg.pale_landing_lamp.root.c_more,Hold the glass a moment longer.
+pale.dlg.pale_landing_lamp.root.c_close,Let it burn.
+pale.dlg.pale_landing_lamp.more,"A thin bell sounds, once, far off. Somewhere a door that has not moved in four hundred years moves. Back in the Archive's library an old lamp will have turned in its stand by now."
+pale.dlg.pale_landing_lamp.more.c_close,Let it burn.
+pale.dlg.pale_dusk_registry.speaker,The Dusk-Count Registry
+pale.dlg.pale_dusk_registry.root,"The registry is chained to its lectern, a heavy book kept open at the last page. Eleven hundred and four names in eleven hundred and four hands, every one signed in the same black ink. At the head of the first page a signature has been struck through so hard the paper has torn."
+pale.dlg.pale_dusk_registry.root.c_more,Read the margin.
+pale.dlg.pale_dusk_registry.root.c_close,Close the book.
+pale.dlg.pale_dusk_registry.more,"The margin is in a single hand, small and level, written at dusk: ""Counted. Counted. Counted."" It repeats down every page for four hundred years. Near the end the hand begins to shake. On the last line it has written only: ""Still counted. Is that enough?"""
+pale.dlg.pale_dusk_registry.more.c_close,Close the book.
+pale.dlg.pale_lamp_signing.speaker,The Signing Lamp
+pale.dlg.pale_lamp_signing.root,"The flame stands up straight in its glass, the plaza goes quiet around you, and then it is morning. A table is carried into the square. A kingdom lines up to sign: smiths, midwives, the old, the very young held up to make a mark. Nobody weeps. They are afraid of the world outside, and the table is the only door it has left."
+pale.dlg.pale_lamp_signing.root.c_more,Look closer at the table.
+pale.dlg.pale_lamp_signing.root.c_close,Let the flame settle.
+pale.dlg.pale_lamp_signing.more,"At the head of the table a tall woman in a plain coat reads the terms aloud, twice. When she reaches the clause that says none of them will die, her voice does not change. When she reaches the clause that says none will leave, her hand goes white on the page."
+pale.dlg.pale_lamp_signing.more.c_close,Let the flame settle.
+pale.dlg.pale_lamp_cradle.speaker,The Cradle Lamp
+pale.dlg.pale_lamp_cradle.root,"The flame leans toward the east lane, and you see it. A woman running with a bundle no older than nine days, while the bell rings the hour for signing. She does not run toward the table. She runs past it, and stops, and holds the child up to the sky one last time so that it will have seen the sky."
+pale.dlg.pale_lamp_cradle.root.c_more,Follow the woman.
+pale.dlg.pale_lamp_cradle.root.c_close,Let the flame settle.
+pale.dlg.pale_lamp_cradle.more,"She is the Queen. The coat is the same. She carries the child to its father at the table and says, ""This one is last in the count. Keep her warm."" The child was Oswin's daughter. She has not grown a day since. The Queen has known which house she sleeps in for four hundred years."
+pale.dlg.pale_lamp_cradle.more.c_close,Let the flame settle.
+pale.dlg.pale_lamp_queen.speaker,The Queen's Lamp
+pale.dlg.pale_lamp_queen.root,"The third flame burns white, and the plaza empties of everyone but one. A tall woman in a plain coat stands at the registry with a pen, alone, at dusk. She writes her own name first, and then draws a line through it. Then she begins to count from the top."
+pale.dlg.pale_lamp_queen.root.c_more,Ask why she crossed herself out.
+pale.dlg.pale_lamp_queen.root.c_close,Let the flame settle.
+pale.dlg.pale_lamp_queen.more,"A voice that is not quite hers and not quite the lamp's: ""A name in the count must be kept. A keeper cannot be a name in her own count, or who would be counting? She chose the count. She has chosen it every dusk since."" The flame gutters. Somewhere north, a stone rings."
+pale.dlg.pale_lamp_queen.more.c_close,Let the flame settle.
+pale.dlg.pale_count_stone.speaker,The Count-Stone
+pale.dlg.pale_count_stone.root,"A standing stone, black and wet-looking though nothing here ever rains, cut with ring upon ring of names. Under your hand it is cold, and then it speaks in a voice made of every dusk: ""The count is eleven hundred and four. Shall it go on?"""
+pale.dlg.pale_count_stone.root.c_ask_end,What happens if it ends?
+pale.dlg.pale_count_stone.root.c_ask_on,What happens if it goes on?
+pale.dlg.pale_count_stone.root.c_release,End the count.
+pale.dlg.pale_count_stone.root.c_keep,Let the count go on.
+pale.dlg.pale_count_stone.root.c_later,Not yet.
+pale.dlg.pale_count_stone.ends,"The stone answers plainly. ""Then the evening ends. Every name here is owed the years it was spared. They come due gently, if the count is broken first, and all at once if it is not. Some will be glad. Some will not live out the winter. The Queen will feel each one go."""
+pale.dlg.pale_count_stone.ends.c_back,Ask again.
+pale.dlg.pale_count_stone.ends.c_bye,Step back.
+pale.dlg.pale_count_stone.goes_on,"""Then the count goes on. Nobody here dies, nobody leaves, nobody is born. The Queen keeps counting and her people keep her company. When she falls the bargain falls with her, and every year it held back arrives in a night. She will not remember what she counts for, long before that."""
+pale.dlg.pale_count_stone.goes_on.c_back,Ask again.
+pale.dlg.pale_count_stone.goes_on.c_bye,Step back.
+pale.dlg.pale_count_stone.released,"The rings on the stone go dark, one by one, from the outside in. Far south, in a city of perfect repair, a bell that has not rung in four hundred years rings once. It is a very small sound and it goes on a long time. Behind you the gate of the Hollow Court unbars itself."
+pale.dlg.pale_count_stone.released.c_go,Go on.
+pale.dlg.pale_count_stone.kept,"The rings on the stone brighten, ring after ring, until the black is shining. The count rolls on into the dusk as though it had never been asked. Far south, nothing changes at all, and every soul in Vesperhold feels it. Behind you the gate of the Hollow Court unbars itself."
+pale.dlg.pale_count_stone.kept.c_go,Go on.
+pale.dlg.pale_count_stone.settled,"The stone is quiet. Its rings have settled into whatever you chose, and it does not ask again."
+pale.dlg.pale_count_stone.settled.c_leave,Leave it.
+pale.dlg.hollow_queen_parley.speaker,The Hollow Queen
+pale.dlg.hollow_queen_parley.root,"The chair at the head of the forecourt is empty, and still a voice answers you from it, dry and level. ""You have come a long way to stand where nobody stands. State your business, Seventh, or light the brazier. I have not refused an audience in four hundred years."""
+pale.dlg.hollow_queen_parley.root.c_counting,What are you counting?
+pale.dlg.hollow_queen_parley.root.c_light,I will light it.
+pale.dlg.hollow_queen_parley.counting,"""Everything that is still mine. It is not a long list any more. It was a kingdom once."""
+pale.dlg.hollow_queen_parley.counting.c_back,Something else.
+pale.dlg.hollow_queen_parley.counting.c_light,I will light it.
+pale.dlg.hollow_queen_parley.released,"""You broke the count. I felt eleven hundred and four names leave my hands, one after another, like candles going out down a long hall. I have not been so empty since the day I signed. Do not expect me to thank you, and do not expect me to forgive you. Expect me at the ring."""
+pale.dlg.hollow_queen_parley.released.c_why,You held them against their will.
+pale.dlg.hollow_queen_parley.released.c_ring,Then I will see you at the ring.
+pale.dlg.hollow_queen_parley.released_why,"""Against their will. Yes. By their own signatures, which I wrote the terms for. It is a very old argument and I lost it the day they stopped making it. Go on. Light it."""
+pale.dlg.hollow_queen_parley.released_why.c_light,I will.
+pale.dlg.hollow_queen_parley.kept,"""You let the count stand. You will think it was a kindness, and it was, a little. But I know what it is to be kept, Seventh. I tell myself each dusk that the next name will be the one I can bear to lose. Light the brazier. Take the choice from me, since you would not take it from them."""
+pale.dlg.hollow_queen_parley.kept.c_why,Would you have broken it yourself?
+pale.dlg.hollow_queen_parley.kept.c_ring,Then I will see you at the ring.
+pale.dlg.hollow_queen_parley.kept_why,"""Every dusk. Every dusk I stand at the stone with my hand on it, and every dusk I count instead."" The voice is quiet for a while. ""Light it."""
+pale.dlg.hollow_queen_parley.kept_why.c_light,I will.
+pale.dlg.hollow_queen_parley.truce,"The voice is quiet a moment longer than courtesy allows. ""You smell of us. Of cold and keeping, and the kind of hunger that learns to call itself patience. How many of the fallen did you take in? Do not answer. I can hear them."" The chair creaks as nothing sits in it. ""You are not here to end me. You are here to find out what you become. I will teach you the last craft I learned, and you may fight me for it afterwards, if you still want to. Sit with me a moment, Seventh. Nobody has in four hundred years."""
+pale.dlg.hollow_queen_parley.truce.c_accept,Accept the craft.
+pale.dlg.hollow_queen_parley.truce.c_refuse,Refuse. Light the brazier.
+pale.dlg.hollow_queen_parley.truce_taken,"The cold passes into your hands, patient and exact, and you know how to mark a thing so that it cannot hide from its ending. ""Good,"" she says, and sounds almost grateful. ""That is the whole of what I kept for myself. Now do it properly: light the brazier. A truce is only a pause."""
+pale.dlg.hollow_queen_parley.truce_taken.c_light,I will.
+pale.dlg.hollow_queen_parley.truce_refused,"""Good,"" she says, and sounds almost proud. ""Then do it properly."""
+pale.dlg.hollow_queen_parley.truce_refused.c_light,I will.
+pale.dlg.hollow_queen_parley.after,"The chair is still empty. The voice is gone from it. What is left is not a voice at all, only the shape of one: the count, carried on without her, one last time, until it reaches the end of the book. Then, far down the processional, the stone rings, and the shape says the thing it was waiting to say to someone who would carry it out. ""I was the Second. I did not fall from the Stair. I was thrown. Five of us were. The sixth climbed on. We heard him from below, a long time of armour on stone, and then nothing, a very long nothing, and that was the sound of the throne asking. Tell whoever asks that the Knight did not fall. He knelt."""
+pale.dlg.hollow_queen_parley.after.c_throne,What was the throne asking?
+pale.dlg.hollow_queen_parley.after.c_fate_released,What happened to your people?
+pale.dlg.hollow_queen_parley.after.c_fate_kept,What happened to your people?
+pale.dlg.hollow_queen_parley.after.c_truce,"You made the offer, before the fight."
+pale.dlg.hollow_queen_parley.after.c_carry,I will carry it.
+pale.dlg.hollow_queen_parley.after_throne,"""Whoever sits is the end of everything, or the end of the end. It is a very long chair. I never saw it. I think about it every dusk. Take what you carry to the Archive, Seventh. You have five voices now, and they were never meant to be heard one at a time."""
+pale.dlg.hollow_queen_parley.after_throne.c_again,Tell me again.
+pale.dlg.hollow_queen_parley.after_throne.c_carry,I will carry it.
+pale.dlg.hollow_queen_parley.after_released,"Far south a bell is ringing, a very small bell. ""They are growing old,"" says the shape. ""A grey hair. A knee that aches in the rain. I would have given a great deal to see it. I will have to settle for knowing."""
+pale.dlg.hollow_queen_parley.after_released.c_again,Tell me again.
+pale.dlg.hollow_queen_parley.after_released.c_carry,I will carry it.
+pale.dlg.hollow_queen_parley.after_kept,"""The count stood, and I fell, and the years came due in one night,"" says the shape, without any reproach at all. ""It was a hard night. I am glad it was a night and not a century. Some of them chose it, at the end. Remember that, when you hear the other half of the story."""
+pale.dlg.hollow_queen_parley.after_kept.c_again,Tell me again.
+pale.dlg.hollow_queen_parley.after_kept.c_carry,I will carry it.
+pale.dlg.hollow_queen_parley.after_truce,"""I offered you what I had, and you took it. I do not know if that was a mercy or a trap. I hope you never find out which."""
+pale.dlg.hollow_queen_parley.after_truce.c_again,Tell me again.
+pale.dlg.hollow_queen_parley.after_truce.c_carry,I will carry it.
+chapter.ch.3.title,Truth of the Gods
+chapter.ch.3.subtitle,"What the library kept, and what it was afraid to say"
+card.sundering.1,"Before the Sundering the gods kept the world between them: Light and Order, Life and Wisdom, Strength and Nature. And Morthul, who kept its endings, the one task none of the others would take."
+card.sundering.2,"When the gods grew afraid of their own endings they asked Morthul to hold them off, a little longer, and then a little longer than that, until holding was all he was. The war that followed was fought for the right to stop."
+card.sundering.3,"Six of the gods died in the Sundering. The world broke in the Cataclysm after it. And on a high terrace in heaven a seat remained that must never be empty, and began to make of whoever sat in it something that could bear it."
+quest.main.truth.detail,"Every fallen Flamebearer died saying the same thing in a different way, and now you have read why. The Archivist has kept the gods' own records for forty years without once saying them aloud. She will say them to someone who has read the codex, and then she will open the way."
+quest.main.truth.hint_reading,"Ask her for the truth, all of it. She will tell it now that you have read the codex for yourself."
+quest.main.truth.log_reading,"The Archivist told it as the Archive tells it: a war fought for the right to stop, and a seat that must never be empty."
+quest.main.truth.obj_open,Open the way to the Celestial Realm
+quest.main.truth.hint_open,"At the end of her telling, ask her to open the stair. The gate in the library forecourt will answer."
+quest.main.truth.log_open,The stair behind the last shelf is open. It was only ever waiting for someone who knew what was at the end of it.
+dlg.archivist.reading,"She is waiting at the head of the vault stair with the lamp turned low, and she does not ask what you read. She asks whether you are ready to hear it said aloud, since a thing read alone is only a rumour. ""I will tell it as the Archive tells it,"" she says, ""the way no one has told it in four hundred years. When I have finished, the way to the Celestial Realm will be open. It has always been open. It only wants someone who knows what is at the end of it."""
+dlg.archivist.c_not_yet,Not yet.
+dlg.archivist.stacks_wait,"""You have Ysolde's half and I have the door,"" she says. ""I will not go down with you. I read the first leaf of that codex once, forty years ago, and it was enough. The wards are not guards: they are older than that, and they take a very literal view of trespass. Bring whatever you can fight with, and do not stay down once the seals fall."""
+dlg.archivist.pages,"She has cleared the long table before you reach it. ""Lay them down,"" she says, ""all five."" You have nothing in your hands. You lay them down anyway: the Tyrant's grief, the Beast's loneliness, the Prophet's certainty, the Iron King's fear, the Queen's count. She reads them off your face. When she is finished she does not look up for a long time. ""Five accounts, each true, each with a hole of the same shape. Read them together at the reading table, and then take what is missing to the Archive's Annexe in Embermarket. Ysolde Marr keeps half a sentence that opens the deep stacks. I keep the other half. Neither of us may say it for the other."""
+dlg.archivist.c_pages_fate,What became of the hidden country?
+dlg.archivist.c_testimony_carry,I cannot go back. Read me what I carry.
+dlg.archivist.pages_released,"""My book on the Concord has a new last page this morning, in my own hand, and I did not write it. It says the count ended and the people began to age. It says some of them have already died, quietly, with their families, and some have taken up the lamplighter's trade for the first time in four hundred years. I will keep that page. It is the only one in the whole book that ends well."""
+dlg.archivist.pages_kept,"""The book has a new last page. It says the count stood, and the Queen fell, and the years arrived in one night. It says half of a street sat down. I will not tell you it was wrong; I was not there. I will tell you I read it twice and then put the book where I could not see it."""
+dlg.archivist.testimony_missing,"""Five voices go into the book, Seventh, and you have brought me fewer. The Iron King, the Storm Tyrant, the Beast Lord, the Prophet, the Queen: each of them said the one true thing they knew at the end, if you stayed to hear it. Go back to whoever you did not wait for. A fallen Flamebearer's last word is the only record of the Stair that was never written down. And if one of them died unheard, and no road leads back, tell me, and I will read what you carry and be sorry for the rest."""
+chapter.ch.4.title,The Celestial War
+chapter.ch.4.subtitle,"A stair, a gate, and a chair that must never be empty"
+dlg.ally.c_take,Accept the Assembly's gift.
+dlg.ally.c_leave,Hold the line.
+dlg.ally.gift,"They press it into your hands without ceremony, and step back into the line."
+celestial.ashen_knight.challenge_locked_vigil,"A knight kneels beside the brazier, keeping a vigil. Speak to him before you light it."
+dlg.throne.gate_kneel,"The Ash Throne. It is carved from something that was once alive, and it is never empty for long. The stone before its foot is worn into the shape of a kneeling man, and you can feel in your own knees where you knelt beside him."
+dlg.throne.gate_draw,"The Ash Throne. It is carved from something that was once alive, and it is never empty for long. A grey blade lies across the foot of the dais where the Knight let it fall, and you can feel the weight of the one you drew."
+quest.main.celestial.detail,"The Ashen Knight keeps the one door left to the throne, and keeps it because someone must. He will speak to you before the fight, and what you say to him is remembered. Beyond him, on the highest dais in heaven, Morthul sits in a chair that makes of whoever sits in it a god, and a god, in the end, something that cannot get up."
+quest.main.celestial.hint_knight,"A knight kneels beside the brazier. Speak to him first, then light it. He will rise for the fight whatever you say."
+quest.main.celestial.log_knight,"The Ashen Knight is dead, and the only door to the throne stands open."
+quest.main.celestial.hint_morthul,Light the brazier at the foot of the dais. Morthul rises once the Knight's vigil is over.
+quest.main.celestial.log_morthul,"Morthul came apart into ash, and the ash did not settle."
+bark.spec2_kael_quay,Four hundred years of the same lamp. I would be mad inside a week. How do they stand it?
+bark.spec2_wren_registry,"One hand, eleven hundred names, written at dusk. That is not a tyrant. That is someone who could not stop."
+bark.spec2_tessa_cradle,Hull-hands learn early that the sea gives things back late or not at all. This place has the opposite trouble.
+bark.spec2_kael_released,"Did you hear the bell? I would ring one like that for my brother, if I knew where he was."
+bark.spec2_wren_kept,"Kinder to let them keep it, probably. Do not make me say probably twice."
+bark.spec2_tessa_codex,I liked the line about the gate better than the lines about the gods. A gate I understand.
+bark.spec2_kael_graves,"Thrown, not fallen. Somebody dug five graves for people who were not dead yet. That is a man who expected to be wrong."
+bark.spec2_wren_stair,The echo said it stopped here. I know that stair. Everybody has one.
+bark.spec2_tessa_vigil,"You knelt. So would I, I think. Do not tell Wren."
+landing2.fork.dray_spared,"Marshal Orsolo Dray stands at the head of a picket of Dawnwardens, and when he sees you he does not salute. He bows, once, the way a man bows to the one who gave him back his own name. ""You could have taken my watch from me, Seventh. You took my fear instead. The picket is mine to lend, and I am lending it. Take this: it is the aegis of my own watch."""
+landing2.fork.dray_pressed,"A Dawnwarden serjeant stands at the edge of the lines with the stiff manners of a man who has been told to be civil. ""The Marshal told you what you needed, and the Watch will not forget how. We are here because the Watch does not leave a Seventh alone on a terrace. We are not here for you. Take the rations. That much we will give."""
+landing2.fork.hjalvar,"Hjalvar's archers have taken the east pillar and strung their bows already. Their captain does not waste breath. ""The Stormcrown is held, and so is its chief. He sent us to hold this wall for the one who held the hold. Arrows for the Stair, Seventh. Count them as you spend them."""
+landing2.fork.halvar,"Halvar One-Hand's exiles sit round a fire against the wall with the easy silence of people who have already lost everything once. ""He said to tell you the Reach is his now, and that it was your doing, and that he does not know whether to curse you or sing. We are here to see which. Drink, and stand a little closer to the fire."""
+landing2.fork.herd_slain,"Ash Hunters in trophy-cloaks hold the west wall, each wearing a strip of the great herd's hide. The master hunter nods to you like one craftsman to another. ""The herd is on the station's wall and the Wilds are quiet. We hear the quiet is expensive, and that you will pay for it in time. Take what the hunt gives."""
+landing2.fork.herd_calmed,"The Ashen herders have come with the elk behind them, grey and patient as the ash, and the animals stand in the lee of the pillars as though the terraces of heaven were pasture. A herder holds out a pack. ""The herd walked here by itself, Seventh. We only followed. There is bread and meat in this. It is more than the Wilds ever gave anyone before you."""
+landing2.fork.flock_exposed,"Pilgrims in plain grey sit in a ring on the cold stone, their robes cut short where the temple's red had been. The oldest rises first. ""We read what the Prophet really wrote. It was kinder than what he taught us, and a good deal harder to follow. We are not his flock any more. We are only people who came a long way to say we are sorry. Take this: it is what the Wells gave us."""
+landing2.fork.flock_turned,"Converts walk the lines in Archive grey, singing the Prophet's old hymns under their breath with the words changed. Their leader stops you with a gentle hand. ""You turned us, Seventh, and we have not stopped turning. We will hold this terrace with song and chalk. Take this, from the Archive's own stores: it will see you through the Stair."""
+landing2.fork.flock_kin,"Figures in ash-grey robes kneel in a half circle with their foreheads on the stone, and not one of them looks up as you pass. A voice among them says, very low, ""Kin."" It is not a greeting. It is a recognition. ""We will not ask what the Seventh intends at the top. Our prayers are your prayers, whichever god hears them. Take the emberbloom. It is the Prophet's last gift, and it was meant for you."""
+landing2.fork.queen_released,"A handful of Vesperhold's people stand at the pillars in coats that do not fit them yet, looking at the sky with the expression of people who have never seen it do anything. One of them carries a lamp that is not lit. ""We aged,"" he says, as if announcing a birthday. ""We have come to see what it was worth. Oswin sent this: bread, hot. He says it will be stale by morning, and that this is the point."""
+landing2.fork.queen_kept,"Vesperhold's Steward has sent a runner, a girl of fifteen with a black ribbon at her wrist, standing very straight. ""The Steward says you kept the count and the Queen fell, and the evening ended all at once. She says to tell you it is still evening in the places that matter. She says you will understand."" The girl does not look away. ""She sends this. It is grave-dust from the Court's own steps. She says it keeps."""
+ending.epilogue.dray.a,Marshal Dray kept the Crown's gates for another thirty years and never once spoke of the day you let him live. The wardens say he taught every recruit one rule: a prisoner is still someone's watch.
+ending.epilogue.dray.b,"Marshal Dray told the Assembly everything it needed, and never again told anyone anything. The wardens still argue about whether you were hard or only thorough."
+ending.epilogue.succession.a,"Hjalvar held the Stormcrown through the long spring, and the clans learned to follow a chief who asked before he commanded."
+ending.epilogue.succession.b,"Halvar One-Hand brought the exiles home across the pass, and the Reach learned that a clan can survive a chief it once cast out."
+ending.epilogue.herd.a,"The Hunters hung the herd's antlers in the station hall and called it a fair price for the Wilds. Nobody could say, afterward, what the Wilds thought of the bargain."
+ending.epilogue.herd.b,"The herds came down out of the ash that autumn and grazed the burned fields without fear. Last Hearth set a place at its table for them, and it is not a figure of speech there."
+ending.epilogue.flock.a,"The Wells struck their prophet's name from the ledgers. Pilgrims still walk the track, and ask better questions at the end of it."
+ending.epilogue.flock.b,The turned flock carried the Prophet's old hymns into the Archive and sang them quietly until the words meant something else.
+ending.epilogue.flock.c,"The Prophet's kin wore ash for a generation and called it faithfulness. In the dark of the year, some of them still pray to a voice that is not there."
+ending.epilogue.queen.a,"The people of Vesperhold aged. Some died that winter and said it was worth it. Oswin's daughter learned to walk, and there is a lamp in the plaza now that he lets go out."
+ending.epilogue.queen.b,"Vesperhold's years came due in a single night. The Archive wrote the names of the ones who sat down in the Concord's old registry, and left the last page open for whoever came to count them."
+ending.epilogue.vigil.a,The Knight's greatsword still stands upright before the Ash Throne. No one has moved it. Those who have knelt before it say it feels like being forgiven by something that did not forget.
+ending.epilogue.vigil.b,"The songs say you drew first at the gate, and that you never again drew first on anyone who knelt. Nobody has been able to confirm it, and nobody has been willing to test it."
+pale.chapter.ch.2.pale.title,The Pale Concord
+pale.chapter.ch.2.pale.subtitle,A kingdom that signed away its endings
+pale.boss.challenge_locked_count,The brazier will not take a flame. The count at the foot of the processional has not been answered.
+pale.card.count_release.1,"The rings go dark from the outside in. The Queen feels each name leave her hands, and does not call any of them back."
+pale.card.count_release.2,"In Vesperhold a lamplighter lifts his daughter onto his shoulder and notices, for the first time in four hundred years, that she is heavier than she was."
+pale.card.count_keep.1,"The rings brighten. The count rolls on into the dusk as though it had never been asked, and eleven hundred and four people feel the evening settle back over them like a hand."
+pale.card.count_keep.2,"In Vesperhold the Steward reads the proclamation a little louder. She does not look up, and she does not stop."
+pale.quest.hidden.summary,"The count-stone has answered, and the gate of the Hollow Court stands open. The Second Flamebearer waits at the end of the processional with eleven hundred and four names in her hands. End her reign, and hear what the Court remembers when she is gone."
+pale.quest.hidden.detail,"The Hollow Queen bargained for her kingdom's lives and paid with her own soul, and the bargain has held for four hundred years. Light the brazier in the forecourt and she will give you an audience. If you carry enough of the fallen's fire she may offer you something first. When she is gone, her empty chair keeps one last account of the stair, and it was only ever meant for someone who would carry it out."
+pale.quest.hidden.hint_queen,"Light the brazier in the Court's forecourt. A voice speaks from the empty chair beside it, and what it says depends on what you answered at the stone."
+pale.quest.hidden.log_queen,The Second Flamebearer is dead. For the first time in four hundred years the light moved.
+pale.quest.hidden.obj_aftermath,Hear what the Court remembers at the Queen's empty chair
+pale.quest.hidden.hint_aftermath,The chair stands beside the brazier in the forecourt. It still has something to say.
+pale.quest.hidden.log_aftermath,"The chair kept the Queen's last account: that the Six climbed the Stair, five were thrown down, and the sixth knelt at the top and did not fall."
+pale.dlg.archivist.door,"She has put the book down, and that alone is new. ""It opened in the night. Not the door in the floor: the other one, in the forecourt, that was bare wall for four hundred years. I have listened to it breathe for forty. Last night it breathed out."" Her hands are not quite steady on the table. ""There is a country on the other side. I have a thousand names for it and none I trust. You carry five embers that all lean the same way. I do not need to tell you which."""
+pale.dlg.archivist.c_door_what,What is on the other side?
+pale.dlg.archivist.door_what,"""The Concord. That is what the oldest of my books call it, when they call it anything: a signed arrangement between a dying world and a woman with a very good pen. Nobody who went in came back to say whether it worked. The books stop at the signing. Whoever kept that secret kept it better than anyone has kept anything."""
+pale.dlg.archivist.c_door_why,Why has it opened now?
+pale.dlg.archivist.door_why,"""Because three of the fallen are dead, and she is the Second. A seal like that is held up by a set of keys, and you have been taking the keys one by one. You did not know. I did, and I let you. I am sorry for that, and not sorry enough to have stopped you."""
+pale.dlg.archivist.c_door_go,I will go and see.
+pale.dlg.archivist.lamp_turned,"The old lamp on her desk has turned to face the forecourt door on its own. She is watching it the way she watched the book. ""You touched something over there,"" she says. ""At that moment this lamp turned. I have trimmed it for forty years and it has never once moved. Whatever is on the other side knows you are coming. Mind the Steward: she talks, and she means what she says."""
+pale.dlg.undying.c_recoil_ask,I need to understand the count.
+pale.dlg.undying.c_freed_how,"And how is it out here, now?"
+pale.dlg.steward.v_clue,"The Steward begins the proclamation before you can speak, and stops halfway, because you are not listening. ""You want the count. Everyone who comes through that gate wants the count, in the end. Corwen keeps the ledger under the clock, but he will not open it to a stranger who has not met the lamps. Speak to Oswin first. The lamps are older than the ledger, and he lights them."""
+pale.dlg.steward.v_recoil,"The proclamation stops in the Steward's throat. She has seen that look before, on the only person who ever signed for all of them. ""You carry her cold,"" she says, ""or something that wants to learn it. Forgive me, I will not offer you my hand. I do not know whose it would be."""
+pale.dlg.steward.v_released,"The Steward is sitting on the well's edge with the proclamation open on her knee, and she is not reading it. ""I have a headache,"" she says wonderingly. ""A headache. Oswin says his knees hurt. The stone has let go of us, and I find I do not know what to do with an afternoon. The Queen is at the Court. Go, if you are going. Go quickly, for her sake."""
+pale.dlg.steward.v_kept,"The Steward is reading the proclamation to the empty plaza, level and loud, because it is still evening and the count still stands. ""You kept it,"" she says without turning, ""and I thank you, and I am ashamed of how glad I am. The Queen is waiting at the Court. She has always been waiting."""
+pale.dlg.steward.freed_released,"""It came slowly, the way it should have. A grey hair on Tuesday. A knee that aches in the rain. I am old now, Seventh, a little, and growing older by the hour, and I would not trade one hour of it back."""
+pale.dlg.steward.freed_kept,"""It came all at once, the years. Half of the street sat down on their steps and did not get up. I do not blame you. I do not forgive you. I read their names every dusk now, the ones who sat down, and I am grateful for the count that let me say goodbye."""
+pale.dlg.lamplighter.v_clue,"Oswin does not look up from the wick he is trimming. ""Ismene sent you. She sends all of them. Three of my lamps are older than the rest, and they remember things, if you touch them at the wrong hour. It is always the wrong hour here. Maren has the other half of it. She bakes for the count."""
+pale.dlg.lamplighter.v_recoil,"Oswin steps back so fast that he drops his wick. Every flame in the plaza leans away from you at once. ""I have lit these lamps for four hundred years, and not one of them has ever done that. Whatever you carry, friend, it is looking for a bargain. Take it elsewhere."""
+pale.dlg.lamplighter.v_released,"Oswin has his daughter on his shoulder. She is heavier than she was yesterday, and he cannot stop saying so. ""She has gained an ounce. I weighed her on the baker's scale. An ounce, friend. Go and do what you must. I will light the lamps tonight and let them go out."""
+pale.dlg.lamplighter.v_kept,"Oswin is lighting the lamps one by one, the way he always does, but his hand shakes. ""Same evening. Same lamps. My daughter is the same weight she was yesterday."" He does not say the rest. ""Go on. Someone should finish this. I cannot, and I do not think I would want to."""
+pale.dlg.lamplighter.freed_released,"""She turned over in her sleep last night. Turned over, by herself, for the first time. I sat up until morning and cried like a child, and then I started on a bigger cradle."""
+pale.dlg.lamplighter.freed_kept,"""It was a hard night. She woke up crying, hungry, only hungry, and I held her until I stopped shaking. Half of this plaza sat down on its steps. I lit the lamps for them one last time. It is the only right thing I have done in four hundred years."""
+pale.dlg.baker.v_clue,"Maren does not stop kneading. ""Every dusk the ovens go warm on their own. Eleven hundred and four loaves' worth of heat, and not one loaf in them. That is her counting, Seventh. You can feel it in the walls. Go to Corwen. He wrote the numbers down once, and he is the only one of us who kept a copy of the terms."""
+pale.dlg.baker.v_recoil,"Maren's hands go still in the dough. ""You smell of the ovens before they warm. Of that hour. I would know it anywhere."" She does not look at you. ""Is it the Court you are walking toward, or are you walking out of it?"""
+pale.dlg.baker.v_released,"Maren has flour on her face and has started to cry, quite badly, over a loaf that has gone slightly stale. ""I have waited so long for something to go off."" She wipes her hands. ""Go and finish it. We will bake for whatever comes after."""
+pale.dlg.baker.v_kept,"Maren is kneading. The dough is the dough it has always been. ""You kept it,"" she says to the bread. ""Well. Somebody had to say yes to it again."" The ovens are warm, and nobody has lit them."
+pale.dlg.baker.freed_released,"""The loaves go off in a day now. I bake six and eat two. Last night I burnt one on purpose, to see what it smelled like. It smelled like Tuesday."""
+pale.dlg.baker.freed_kept,"""The ovens went cold in the night, all at once, and I knew. I baked one loaf for each of the ones who sat down. There are a great many loaves. We ate them standing, in the plaza. I would not call it a mercy. I would call it bread."""
+pale.dlg.clockkeeper.v_clue,"Corwen does not stop winding. ""You want the registry. It is on the lectern by my door. Read the margin before you read the names: the names are only ours, the margin is hers. And when you have read it, stand by the three old lamps, one after another. You will understand why she cannot stop. I have never been able to hate her since."""
+pale.dlg.clockkeeper.v_recoil,"Corwen's key stops in the winding-hole. ""The hand moved when you came through the gate. Just a hair. It has not moved in four hundred years, and it moved for you. I do not know what that means, and I would very much like not to find out."""
+pale.dlg.clockkeeper.v_released,"Corwen has stopped winding. The hand of the clock is trembling, a hair past five and twenty past five. ""It is going to move,"" he says. ""I can feel it in the spring. When it does I think I shall be a very old man. Thank you for that. Go and do the rest."""
+pale.dlg.clockkeeper.v_kept,"Corwen is winding. The hand does not move. ""Five and twenty past five,"" he says gently, ""for a little longer. You have made us a gift of the evening. I would ask you not to make a habit of such gifts. Go on, Seventh. Finish what the stone began."""
+pale.dlg.clockkeeper.freed_released,"""It moved, the hand. Six o'clock, and then ten past, and then it simply went on, as if it had never stopped. I wound it once more out of habit. I do not think it needs me."""
+pale.dlg.clockkeeper.freed_kept,"""It struck every hour it had missed, one after another, until noon. Then it stopped, and the street was very quiet, and it was a Tuesday. I stood there a long time. I do not know whether to thank you, Seventh. I wound it anyway."""
+dlg.archive_keeper.pages_key,"She reads your face before she reads your hands. ""Seren sent you. She sends nobody. And you have read the five accounts together at her table, which the Archive tried to forbid and then forgot to."" Her hands come apart. ""The key to the deep stacks is not a key. It is a sentence, split in two. She keeps the first half and I keep the second, and neither of us may say ours except to someone who has heard all five. I will say mine once."" She tells you the sentence. You find that you cannot forget it. ""What is in that vault is why we exist. Do not tell me what it says."""
+dlg.archive_keeper.pages_key_why,"""The Archive is a thousand people who each know a little of it, and none of them the whole. It is the only reason any of it has survived. Do not make me the exception."""
+dlg.archive_keeper.pages_key_member,"She looks at the ring and then at you. ""Then you will not need the lecture. Take this as well, from the Annexe stores. The stacks bite, and a member's life is on our books."""
+dlg.archive_keeper.c_pages_why,Does the Archive know what is down there?
+dlg.archive_keeper.c_pages_ring,(Show your member's ring.)
+dlg.archive_keeper.c_pages_keep,I will keep it safe.
+dlg.archive_keeper.c_pages_thanks,Thank you.
+dlg.ashenknight.absorb.library_trust,"""You read it beside me. I did not stop you, and I did not know what I would feel. Relief, as it turns out. I was tired of keeping a secret from the only person who could use it."""
+dlg.ashenknight.absorb.library_defy,"""You read it alone, over my objection. Good. Whoever sits there must be able to read over someone's objection. I hope you were able to carry what it said."""
+dlg.ashenknight.absorb.gate_kneel,"""You knelt, at the gate. Nobody has knelt in front of me since the last of my five. I asked you not to do it twice, and you have not. That is all I ever wanted of you."""
+dlg.ashenknight.absorb.gate_draw,"""You drew. I was afraid you would not. A drawn blade means you are still able to refuse. Keep that, Seventh, whatever else you keep."""
+dlg.ashenknight.absorb.c_library_trust,"In the stacks, you let me read beside you."
+dlg.ashenknight.absorb.c_library_defy,"In the stacks, I read over your objection."
+dlg.ashenknight.absorb.c_gate_kneel,"At the gate, I knelt with you."
+dlg.ashenknight.absorb.c_gate_draw,"At the gate, I drew on you."
+boss.hollow_queen.epithet,She Who Counts the Evening
+boss.hollow_queen.intro,"Eleven hundred and four. And one more, tonight."
+boss.ashen_knight.epithet,Keeper of the Throne
+boss.ashen_knight.intro,"I have waited four hundred years for someone worth drawing on. Do not disappoint me, Seventh."
+boss.morthul.epithet,The Ash King
+boss.morthul.intro,"Sit, little ember. Everyone does, in the end."
 # --- END campaign:spec2 ---
 # --- BEGIN campaign:world ---
 # --- END campaign:world ---

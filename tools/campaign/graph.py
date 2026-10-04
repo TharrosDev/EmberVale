@@ -88,7 +88,9 @@ def parse_quest(text: str, rel: str, source: str) -> dict:
         if o["type"] == OT_MILESTONE and o["target"]:
             reads.append(_w(o["target"], f"objective[{i}].milestone"))
     quest["writes"], quest["reads"] = writes, reads
-    keys = {quest["title"], quest["summary"], quest["detailKey"], quest["chapter"], quest["giverKey"]}
+    # ChapterKey is an identifier (ch.1, ch.2.pale, ...), not a locale key: its text is chapter.<key>.title /
+    # pale.chapter.<key>.title, which the specs' locale rows supply.
+    keys = {quest["title"], quest["summary"], quest["detailKey"], quest["giverKey"]}
     for o in objectives:
         keys.update((o["description"], o["hintKey"], o["journalKey"]))
     quest["locKeys"] = sorted(k for k in keys if k and looks_like_key(k))
@@ -231,8 +233,14 @@ def build(root: Path, overrides: Dict[str, str], patched: Set[str],
             entry(s["flag"])[side].append({"kind": "dialogue", "id": dd["id"], "via": f"{s['node']}/{s['at']}"})
     for f, e in flags.items():
         e["externalRefs"] = sorted(ext.get(f, ()))
-    forks = [{"flag": f, **{k: e[k] for k in ("writers", "readers", "externalRefs")}}
-             for f, e in sorted(flags.items()) if f.startswith("flag.fork.")]
+    forks = []
+    for f, e in sorted(flags.items()):
+        if f.startswith("flag.fork."):
+            fork = {"flag": f, **{k: list(e[k]) for k in ("writers", "readers", "externalRefs")}}
+            if f in code:
+                # a fork flag another workstream's dialogue sets, declared in CODE_FLAGS until that spec merges
+                fork["writers"].append({"kind": "code", "id": code[f], "via": "codeFlag"})
+            forks.append(fork)
     return {
         "schema": 1,
         "generator": "tools/gen_campaign.py",

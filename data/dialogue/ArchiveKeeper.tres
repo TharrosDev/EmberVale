@@ -468,9 +468,87 @@ Id = "advance_ranked"
 Text = "dlg.archive_keeper.advance_ranked"
 Choices = Array[Resource]([SubResource("ch_advance_confirm")])
 
+[sub_resource type="Resource" id="ch_s2_pages_key_0"]
+script = ExtResource("3_choice")
+Text = "dlg.archive_keeper.c_pages_why"
+Goto = "pages_key_why"
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_s2_pages_key_1"]
+script = ExtResource("3_choice")
+Text = "dlg.archive_keeper.c_pages_ring"
+Goto = "pages_key_member"
+Condition = 14
+ConditionArg = "faction.veiled_archive:1"
+Effect = 14
+EffectArg = "item.potion.health:2"
+
+[sub_resource type="Resource" id="ch_s2_pages_key_2"]
+script = ExtResource("3_choice")
+Text = "dlg.archive_keeper.c_pages_keep"
+Goto = ""
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="node_pages_key"]
+script = ExtResource("2_node")
+Id = "pages_key"
+Text = "dlg.archive_keeper.pages_key"
+Choices = Array[Resource]([SubResource("ch_s2_pages_key_0"), SubResource("ch_s2_pages_key_1"), SubResource("ch_s2_pages_key_2")])
+OnEnterEffect = 2
+OnEnterEffectArg = "flag.beat.stacks_key_given"
+
+[sub_resource type="Resource" id="ch_s2_pages_key_why_0"]
+script = ExtResource("3_choice")
+Text = "dlg.archive_keeper.c_pages_keep"
+Goto = ""
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="node_pages_key_why"]
+script = ExtResource("2_node")
+Id = "pages_key_why"
+Text = "dlg.archive_keeper.pages_key_why"
+Choices = Array[Resource]([SubResource("ch_s2_pages_key_why_0")])
+
+[sub_resource type="Resource" id="ch_s2_pages_key_member_0"]
+script = ExtResource("3_choice")
+Text = "dlg.archive_keeper.c_pages_thanks"
+Goto = ""
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="node_pages_key_member"]
+script = ExtResource("2_node")
+Id = "pages_key_member"
+Text = "dlg.archive_keeper.pages_key_member"
+Choices = Array[Resource]([SubResource("ch_s2_pages_key_member_0")])
+
+[sub_resource type="Resource" id="start_0"]
+script = ExtResource("4_variant")
+Condition = 5
+ConditionArg = "flag.beat.stacks_key_given"
+NodeId = "root"
+
+[sub_resource type="Resource" id="start_1"]
+script = ExtResource("4_variant")
+Condition = 5
+ConditionArg = "flag.beat.pages_read"
+NodeId = "pages_key"
+
 [resource]
 script = ExtResource("1_dlg")
 Id = "dialogue.archive_keeper"
 SpeakerName = "dlg.archive_keeper.speaker"
 StartNodeId = "root"
-Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_member"), SubResource("node_stranger"), SubResource("node_trial_offer"), SubResource("node_trial_accepted"), SubResource("node_trial_declined"), SubResource("node_trial_active"), SubResource("node_trial_ready"), SubResource("node_admitted"), SubResource("node_advance"), SubResource("node_advance_ranked"), SubResource("node_h42_a_offer"), SubResource("node_h42_a_accepted"), SubResource("node_h42_a_active"), SubResource("node_h42_hub"), SubResource("node_h42_b_offer"), SubResource("node_h42_b_accepted"), SubResource("node_h42_b_active"), SubResource("node_h42_b_report"), SubResource("node_h42_verdict"), SubResource("node_h42_v_custody_preserve"), SubResource("node_h42_after_custody_preserve"), SubResource("node_h42_v_custody_share"), SubResource("node_h42_after_custody_share"), SubResource("node_h42_v_custody_seal"), SubResource("node_h42_after_custody_seal"), SubResource("node_h42_sealed"), SubResource("node_h42_ranked")])
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_member"), SubResource("node_stranger"), SubResource("node_trial_offer"), SubResource("node_trial_accepted"), SubResource("node_trial_declined"), SubResource("node_trial_active"), SubResource("node_trial_ready"), SubResource("node_admitted"), SubResource("node_advance"), SubResource("node_advance_ranked"), SubResource("node_h42_a_offer"), SubResource("node_h42_a_accepted"), SubResource("node_h42_a_active"), SubResource("node_h42_hub"), SubResource("node_h42_b_offer"), SubResource("node_h42_b_accepted"), SubResource("node_h42_b_active"), SubResource("node_h42_b_report"), SubResource("node_h42_verdict"), SubResource("node_h42_v_custody_preserve"), SubResource("node_h42_after_custody_preserve"), SubResource("node_h42_v_custody_share"), SubResource("node_h42_after_custody_share"), SubResource("node_h42_v_custody_seal"), SubResource("node_h42_after_custody_seal"), SubResource("node_h42_sealed"), SubResource("node_h42_ranked"), SubResource("node_pages_key"), SubResource("node_pages_key_why"), SubResource("node_pages_key_member")])
+StartVariants = Array[Resource]([SubResource("start_0"), SubResource("start_1")])

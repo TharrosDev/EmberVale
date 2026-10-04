@@ -1,0 +1,13 @@
+{
+  "reactions": [
+    {"id": "bark.spec2_kael_quay", "flag": "flag.beat.pale_landing_lit", "companion": "companion.kael", "textKey": "bark.spec2_kael_quay", "loyaltyDelta": 1},
+    {"id": "bark.spec2_wren_registry", "flag": "flag.beat.registry_read", "companion": "companion.wren", "textKey": "bark.spec2_wren_registry", "loyaltyDelta": 1},
+    {"id": "bark.spec2_tessa_cradle", "flag": "flag.beat.lamp_cradle", "companion": "companion.tessa", "textKey": "bark.spec2_tessa_cradle", "loyaltyDelta": 1},
+    {"id": "bark.spec2_kael_released", "flag": "flag.fork.queen_released", "companion": "companion.kael", "textKey": "bark.spec2_kael_released", "loyaltyDelta": 2},
+    {"id": "bark.spec2_wren_kept", "flag": "flag.fork.queen_kept", "companion": "companion.wren", "textKey": "bark.spec2_wren_kept", "loyaltyDelta": -1},
+    {"id": "bark.spec2_tessa_codex", "flag": "flag.beat.codex_read", "companion": "companion.tessa", "textKey": "bark.spec2_tessa_codex", "loyaltyDelta": 1},
+    {"id": "bark.spec2_kael_graves", "flag": "flag.beat.graves_read", "companion": "companion.kael", "textKey": "bark.spec2_kael_graves", "loyaltyDelta": 1},
+    {"id": "bark.spec2_wren_stair", "flag": "flag.beat.stair_echo", "companion": "companion.wren", "textKey": "bark.spec2_wren_stair", "loyaltyDelta": 1},
+    {"id": "bark.spec2_tessa_vigil", "flag": "flag.rival.gate_kneel", "companion": "companion.tessa", "textKey": "bark.spec2_tessa_vigil", "loyaltyDelta": 1}
+  ]
+}
