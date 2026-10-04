@@ -1,0 +1,14 @@
+{
+  "reactions": [
+    {"id": "bark.kael_toren", "flag": "flag.beat.black_token_taken", "companion": "companion.kael", "textKey": "bark.kael_toren", "loyaltyDelta": 2},
+    {"id": "bark.wren_square", "flag": "flag.beat.square_held", "companion": "companion.wren", "textKey": "bark.wren_square", "loyaltyDelta": 1},
+    {"id": "bark.tessa_crate", "flag": "flag.beat.crate_opened", "companion": "companion.tessa", "textKey": "bark.tessa_crate", "loyaltyDelta": 1},
+    {"id": "bark.kael_dray_spared", "flag": "flag.fork.dray_spared", "companion": "companion.kael", "textKey": "bark.kael_dray_spared", "loyaltyDelta": 2},
+    {"id": "bark.kael_dray_pressed", "flag": "flag.fork.dray_pressed", "companion": "companion.kael", "textKey": "bark.kael_dray_pressed", "loyaltyDelta": -2},
+    {"id": "bark.wren_halvar", "flag": "flag.fork.succession_halvar", "companion": "companion.wren", "textKey": "bark.wren_halvar", "loyaltyDelta": 1},
+    {"id": "bark.tessa_herd_calmed", "flag": "flag.fork.herd_calmed", "companion": "companion.tessa", "textKey": "bark.tessa_herd_calmed", "loyaltyDelta": 1},
+    {"id": "bark.kael_herd_slain", "flag": "flag.fork.herd_slain", "companion": "companion.kael", "textKey": "bark.kael_herd_slain", "loyaltyDelta": -1},
+    {"id": "bark.wren_flock_kin", "flag": "flag.fork.flock_kin", "companion": "companion.wren", "textKey": "bark.wren_flock_kin", "loyaltyDelta": -2},
+    {"id": "bark.tessa_flock_exposed", "flag": "flag.fork.flock_exposed", "companion": "companion.tessa", "textKey": "bark.tessa_flock_exposed", "loyaltyDelta": 1}
+  ]
+}

@@ -3,6 +3,7 @@
 [ext_resource type="Script" path="res://src/Dialogue/DialogueResource.cs" id="1_dlg"]
 [ext_resource type="Script" path="res://src/Dialogue/DialogueNode.cs" id="2_node"]
 [ext_resource type="Script" path="res://src/Dialogue/DialogueChoice.cs" id="3_choice"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueStartVariant.cs" id="9_variant"]
 
 ; Captain Aldric Fenn (faction.dawnwardens). Scaffold from tools/gen_guild_dialogue.py; prose is hand-written in
 ; data/locale/strings.csv. Phase 42B.
@@ -39,6 +40,156 @@ Goto = "root"
 script = ExtResource("3_choice")
 Text = "spell.teach.thanks"
 Goto = "root"
+
+[sub_resource type="Resource" id="ch_root_cq_heist_after"]
+script = ExtResource("3_choice")
+Text = "dlg.dawnwarden_captain.root.c_cq_heist_after"
+Goto = "cq_heist_after"
+Condition = 5
+ConditionArg = "flag.beat.armed_heist"
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_root_cq_honest_after"]
+script = ExtResource("3_choice")
+Text = "dlg.dawnwarden_captain.root.c_cq_honest_after"
+Goto = "cq_honest_after"
+Condition = 5
+ConditionArg = "flag.beat.armed_honest"
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_root_cq_dray_spared"]
+script = ExtResource("3_choice")
+Text = "dlg.dawnwarden_captain.root.c_cq_dray_spared"
+Goto = "cq_dray_spared"
+Condition = 5
+ConditionArg = "flag.fork.dray_spared"
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_root_cq_dray_pressed"]
+script = ExtResource("3_choice")
+Text = "dlg.dawnwarden_captain.root.c_cq_dray_pressed"
+Goto = "cq_dray_pressed"
+Condition = 5
+ConditionArg = "flag.fork.dray_pressed"
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_cq_brief_else"]
+script = ExtResource("3_choice")
+Text = "dlg.dawnwarden_captain.cq_brief.c_else"
+Goto = "root"
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_cq_brief_go"]
+script = ExtResource("3_choice")
+Text = "dlg.dawnwarden_captain.cq_brief.c_go"
+Goto = ""
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_cq_sigil_honest"]
+script = ExtResource("3_choice")
+Text = "dlg.dawnwarden_captain.cq_sigil.c_honest"
+Goto = "cq_honest"
+Condition = 6
+ConditionArg = "flag.beat.armed_by_known"
+Effect = 2
+EffectArg = "flag.beat.armed_honest"
+Effect2 = 13
+Effect2Arg = "faction.dawnwardens:5"
+
+[sub_resource type="Resource" id="ch_cq_sigil_honest_badge"]
+script = ExtResource("3_choice")
+Text = "dlg.dawnwarden_captain.cq_sigil.c_honest_badge"
+Goto = "cq_honest_badge"
+Condition = 14
+ConditionArg = "faction.dawnwardens:0"
+Effect = 2
+EffectArg = "flag.beat.armed_honest"
+Condition2 = 6
+Condition2Arg = "flag.beat.armed_by_known"
+Effect2 = 13
+Effect2Arg = "faction.dawnwardens:10"
+
+[sub_resource type="Resource" id="ch_cq_sigil_else"]
+script = ExtResource("3_choice")
+Text = "dlg.dawnwarden_captain.cq_sigil.c_else"
+Goto = "root"
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_cq_sigil_later"]
+script = ExtResource("3_choice")
+Text = "dlg.dawnwarden_captain.cq_sigil.c_later"
+Goto = ""
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_cq_honest_badge_go"]
+script = ExtResource("3_choice")
+Text = "dlg.dawnwarden_captain.cq_honest_badge.c_go"
+Goto = ""
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_cq_honest_go"]
+script = ExtResource("3_choice")
+Text = "dlg.dawnwarden_captain.cq_honest.c_go"
+Goto = ""
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_cq_heist_after_else"]
+script = ExtResource("3_choice")
+Text = "dlg.dawnwarden_captain.cq_heist_after.c_else"
+Goto = "root"
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_cq_honest_after_else"]
+script = ExtResource("3_choice")
+Text = "dlg.dawnwarden_captain.cq_honest_after.c_else"
+Goto = "root"
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_cq_dray_spared_else"]
+script = ExtResource("3_choice")
+Text = "dlg.dawnwarden_captain.cq_dray_spared.c_else"
+Goto = "root"
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_cq_dray_pressed_else"]
+script = ExtResource("3_choice")
+Text = "dlg.dawnwarden_captain.cq_dray_pressed.c_else"
+Goto = "root"
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
 
 [sub_resource type="Resource" id="node_mg_teach"]
 script = ExtResource("2_node")
@@ -108,7 +259,7 @@ Goto = "finale_state_authority"
 script = ExtResource("2_node")
 Id = "root"
 Text = "dlg.dawnwarden_captain.root"
-Choices = Array[Resource]([SubResource("ch_member"), SubResource("ch_stranger"), SubResource("ch_mg_menu"), SubResource("ch_bye")])
+Choices = Array[Resource]([SubResource("ch_member"), SubResource("ch_stranger"), SubResource("ch_mg_menu"), SubResource("ch_root_cq_heist_after"), SubResource("ch_root_cq_honest_after"), SubResource("ch_root_cq_dray_spared"), SubResource("ch_root_cq_dray_pressed"), SubResource("ch_bye")])
 
 [sub_resource type="Resource" id="node_member"]
 script = ExtResource("2_node")
@@ -140,9 +291,76 @@ Id = "finale_state_authority"
 Text = "dlg.dawnwarden_captain.finale_state_authority"
 Choices = Array[Resource]([SubResource("ch_back"), SubResource("ch_end")])
 
+[sub_resource type="Resource" id="node_cq_brief"]
+script = ExtResource("2_node")
+Id = "cq_brief"
+Text = "dlg.dawnwarden_captain.cq_brief"
+Choices = Array[Resource]([SubResource("ch_cq_brief_else"), SubResource("ch_cq_brief_go")])
+
+[sub_resource type="Resource" id="node_cq_sigil"]
+script = ExtResource("2_node")
+Id = "cq_sigil"
+Text = "dlg.dawnwarden_captain.cq_sigil"
+Choices = Array[Resource]([SubResource("ch_cq_sigil_honest"), SubResource("ch_cq_sigil_honest_badge"), SubResource("ch_cq_sigil_else"), SubResource("ch_cq_sigil_later")])
+
+[sub_resource type="Resource" id="node_cq_honest_badge"]
+script = ExtResource("2_node")
+Id = "cq_honest_badge"
+Text = "dlg.dawnwarden_captain.cq_honest_badge"
+Choices = Array[Resource]([SubResource("ch_cq_honest_badge_go")])
+
+[sub_resource type="Resource" id="node_cq_honest"]
+script = ExtResource("2_node")
+Id = "cq_honest"
+Text = "dlg.dawnwarden_captain.cq_honest"
+Choices = Array[Resource]([SubResource("ch_cq_honest_go")])
+
+[sub_resource type="Resource" id="node_cq_heist_after"]
+script = ExtResource("2_node")
+Id = "cq_heist_after"
+Text = "dlg.dawnwarden_captain.cq_heist_after"
+Choices = Array[Resource]([SubResource("ch_cq_heist_after_else")])
+
+[sub_resource type="Resource" id="node_cq_honest_after"]
+script = ExtResource("2_node")
+Id = "cq_honest_after"
+Text = "dlg.dawnwarden_captain.cq_honest_after"
+Choices = Array[Resource]([SubResource("ch_cq_honest_after_else")])
+
+[sub_resource type="Resource" id="node_cq_dray_spared"]
+script = ExtResource("2_node")
+Id = "cq_dray_spared"
+Text = "dlg.dawnwarden_captain.cq_dray_spared"
+Choices = Array[Resource]([SubResource("ch_cq_dray_spared_else")])
+
+[sub_resource type="Resource" id="node_cq_dray_pressed"]
+script = ExtResource("2_node")
+Id = "cq_dray_pressed"
+Text = "dlg.dawnwarden_captain.cq_dray_pressed"
+Choices = Array[Resource]([SubResource("ch_cq_dray_pressed_else")])
+
+[sub_resource type="Resource" id="start_root_5_9a91"]
+script = ExtResource("9_variant")
+Condition = 5
+ConditionArg = "flag.main.crossway_whispers_done"
+NodeId = "root"
+
+[sub_resource type="Resource" id="start_cq_sigil_5_2479"]
+script = ExtResource("9_variant")
+Condition = 5
+ConditionArg = "flag.beat.crate_opened"
+NodeId = "cq_sigil"
+
+[sub_resource type="Resource" id="start_cq_brief_2_0506"]
+script = ExtResource("9_variant")
+Condition = 2
+ConditionArg = "quest.main.crossway_whispers"
+NodeId = "cq_brief"
+
 [resource]
 script = ExtResource("1_dlg")
 Id = "dialogue.dawnwarden_captain"
 SpeakerName = "dlg.dawnwarden_captain.speaker"
 StartNodeId = "root"
-Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_member"), SubResource("node_stranger"), SubResource("node_finale_state"), SubResource("node_finale_state_service"), SubResource("node_finale_state_authority"), SubResource("node_mg_teach"), SubResource("node_mg_taught")])
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_member"), SubResource("node_stranger"), SubResource("node_finale_state"), SubResource("node_finale_state_service"), SubResource("node_finale_state_authority"), SubResource("node_mg_teach"), SubResource("node_mg_taught"), SubResource("node_cq_brief"), SubResource("node_cq_sigil"), SubResource("node_cq_honest_badge"), SubResource("node_cq_honest"), SubResource("node_cq_heist_after"), SubResource("node_cq_honest_after"), SubResource("node_cq_dray_spared"), SubResource("node_cq_dray_pressed")])
+StartVariants = Array[Resource]([SubResource("start_root_5_9a91"), SubResource("start_cq_sigil_5_2479"), SubResource("start_cq_brief_2_0506")])

@@ -3,6 +3,7 @@
 [ext_resource type="Script" path="res://src/Dialogue/DialogueResource.cs" id="1_dlg"]
 [ext_resource type="Script" path="res://src/Dialogue/DialogueNode.cs" id="2_node"]
 [ext_resource type="Script" path="res://src/Dialogue/DialogueChoice.cs" id="3_choice"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueStartVariant.cs" id="9_variant"]
 
 [sub_resource type="Resource" id="ch_lord"]
 script = ExtResource("3_choice")
@@ -56,6 +57,78 @@ Condition = 14
 ConditionArg = "faction.ash_hunters:3"
 Goto = "f42_react"
 
+[sub_resource type="Resource" id="ch_root_cq_herd_slain_hask"]
+script = ExtResource("3_choice")
+Text = "dlg.ash_hunter_warden.root.c_cq_herd_slain_hask"
+Goto = "cq_herd_slain_hask"
+Condition = 5
+ConditionArg = "flag.fork.herd_slain"
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_root_cq_herd_calmed_hask"]
+script = ExtResource("3_choice")
+Text = "dlg.ash_hunter_warden.root.c_cq_herd_calmed_hask"
+Goto = "cq_herd_calmed_hask"
+Condition = 5
+ConditionArg = "flag.fork.herd_calmed"
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_cq_hh_hook_else"]
+script = ExtResource("3_choice")
+Text = "dlg.ash_hunter_warden.cq_hh_hook.c_else"
+Goto = "root"
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_cq_hh_hook_go"]
+script = ExtResource("3_choice")
+Text = "dlg.ash_hunter_warden.cq_hh_hook.c_go"
+Goto = ""
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_cq_bl_hearsay_else"]
+script = ExtResource("3_choice")
+Text = "dlg.ash_hunter_warden.cq_bl_hearsay.c_else"
+Goto = "root"
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_cq_bl_hearsay_go"]
+script = ExtResource("3_choice")
+Text = "dlg.ash_hunter_warden.cq_bl_hearsay.c_go"
+Goto = ""
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_cq_herd_slain_hask_else"]
+script = ExtResource("3_choice")
+Text = "dlg.ash_hunter_warden.cq_herd_slain_hask.c_else"
+Goto = "root"
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_cq_herd_calmed_hask_else"]
+script = ExtResource("3_choice")
+Text = "dlg.ash_hunter_warden.cq_herd_calmed_hask.c_else"
+Goto = "root"
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
 [sub_resource type="Resource" id="node_f42_count"]
 script = ExtResource("2_node")
 Id = "f42_count"
@@ -72,7 +145,7 @@ Choices = Array[Resource]([SubResource("ch_lord_back")])
 script = ExtResource("2_node")
 Id = "root"
 Text = "dlg.ash_hunter_warden.root"
-Choices = Array[Resource]([SubResource("ch_lord"), SubResource("ch_station"), SubResource("ch_done"), SubResource("ch_f42_count"), SubResource("ch_f42_react"), SubResource("ch_bye")])
+Choices = Array[Resource]([SubResource("ch_lord"), SubResource("ch_station"), SubResource("ch_done"), SubResource("ch_f42_count"), SubResource("ch_f42_react"), SubResource("ch_root_cq_herd_slain_hask"), SubResource("ch_root_cq_herd_calmed_hask"), SubResource("ch_bye")])
 
 [sub_resource type="Resource" id="node_lord"]
 script = ExtResource("2_node")
@@ -92,9 +165,66 @@ Id = "done"
 Text = "dlg.ash_hunter_warden.done"
 Choices = Array[Resource]([SubResource("ch_done_back")])
 
+[sub_resource type="Resource" id="node_cq_hh_hook"]
+script = ExtResource("2_node")
+Id = "cq_hh_hook"
+Text = "dlg.ash_hunter_warden.cq_hh_hook"
+Choices = Array[Resource]([SubResource("ch_cq_hh_hook_else"), SubResource("ch_cq_hh_hook_go")])
+
+[sub_resource type="Resource" id="node_cq_bl_hearsay"]
+script = ExtResource("2_node")
+Id = "cq_bl_hearsay"
+Text = "dlg.ash_hunter_warden.cq_bl_hearsay"
+Choices = Array[Resource]([SubResource("ch_cq_bl_hearsay_else"), SubResource("ch_cq_bl_hearsay_go")])
+OnEnterEffect = 2
+OnEnterEffectArg = "flag.rival.hearsay"
+
+[sub_resource type="Resource" id="node_cq_herd_slain_hask"]
+script = ExtResource("2_node")
+Id = "cq_herd_slain_hask"
+Text = "dlg.ash_hunter_warden.cq_herd_slain_hask"
+Choices = Array[Resource]([SubResource("ch_cq_herd_slain_hask_else")])
+
+[sub_resource type="Resource" id="node_cq_herd_calmed_hask"]
+script = ExtResource("2_node")
+Id = "cq_herd_calmed_hask"
+Text = "dlg.ash_hunter_warden.cq_herd_calmed_hask"
+Choices = Array[Resource]([SubResource("ch_cq_herd_calmed_hask_else")])
+
+[sub_resource type="Resource" id="start_root_5_c44c"]
+script = ExtResource("9_variant")
+Condition = 5
+ConditionArg = "flag.main.beast_lord_done"
+NodeId = "root"
+
+[sub_resource type="Resource" id="start_root_5_7afa"]
+script = ExtResource("9_variant")
+Condition = 5
+ConditionArg = "flag.rival.hearsay"
+NodeId = "root"
+
+[sub_resource type="Resource" id="start_cq_bl_hearsay_2_089b"]
+script = ExtResource("9_variant")
+Condition = 2
+ConditionArg = "quest.main.beast_lord"
+NodeId = "cq_bl_hearsay"
+
+[sub_resource type="Resource" id="start_root_5_c0e1"]
+script = ExtResource("9_variant")
+Condition = 5
+ConditionArg = "flag.beat.hask_briefed"
+NodeId = "root"
+
+[sub_resource type="Resource" id="start_cq_hh_hook_2_6742"]
+script = ExtResource("9_variant")
+Condition = 2
+ConditionArg = "quest.main.herd_and_hearth"
+NodeId = "cq_hh_hook"
+
 [resource]
 script = ExtResource("1_dlg")
 Id = "dialogue.ash_hunter_warden"
 SpeakerName = "dlg.ash_hunter_warden.speaker"
 StartNodeId = "root"
-Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_lord"), SubResource("node_station"), SubResource("node_done"), SubResource("node_f42_count"), SubResource("node_f42_react")])
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_lord"), SubResource("node_station"), SubResource("node_done"), SubResource("node_f42_count"), SubResource("node_f42_react"), SubResource("node_cq_hh_hook"), SubResource("node_cq_bl_hearsay"), SubResource("node_cq_herd_slain_hask"), SubResource("node_cq_herd_calmed_hask")])
+StartVariants = Array[Resource]([SubResource("start_root_5_c44c"), SubResource("start_root_5_7afa"), SubResource("start_cq_bl_hearsay_2_089b"), SubResource("start_root_5_c0e1"), SubResource("start_cq_hh_hook_2_6742")])

@@ -140,3 +140,5 @@ RewardItemId = "item.relic.wild_heart"
 RewardQuantity = 1
 DefeatFlagId = "flag.beast_lord_defeated"
 DefeatDialogueId = "dialogue.beast_lord_absorb"
+EpithetKey = "boss.beast_lord.epithet"
+IntroLineKey = "boss.beast_lord.intro"

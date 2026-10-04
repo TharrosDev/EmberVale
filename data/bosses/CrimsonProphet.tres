@@ -155,3 +155,5 @@ RewardItemId = "item.relic.crimson_heart"
 RewardQuantity = 1
 DefeatFlagId = "flag.crimson_prophet_defeated"
 DefeatDialogueId = "dialogue.crimson_prophet_absorb"
+EpithetKey = "boss.crimson_prophet.epithet"
+IntroLineKey = "boss.crimson_prophet.intro"

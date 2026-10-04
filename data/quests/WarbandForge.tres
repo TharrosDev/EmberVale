@@ -16,15 +16,34 @@ script = ExtResource("3_reward")
 ItemId = "item.potion.health"
 Quantity = 1
 
+[sub_resource type="Resource" id="Obj_handin"]
+script = ExtResource("2_obj")
+Type = 3
+TargetId = "dialogue.smith"
+RequiredCount = 1
+Description = "quest.warband.forge.obj_handin"
+LocationId = "location.ember_crown.smith"
+HintKey = "quest.warband.forge.hint_handin"
+JournalEntryKey = "quest.warband.forge.log_handin"
+
 [resource]
 script = ExtResource("1_quest")
 Id = "quest.warband.forge"
 Title = "quest.warband.forge.title"
 Summary = "quest.warband.forge.summary"
-Objectives = Array[Resource]([SubResource("Obj_collect")])
+Objectives = Array[Resource]([SubResource("Obj_collect"), SubResource("Obj_handin")])
 XpReward = 70
 GoldReward = 25
 GoldItemId = "item.currency.gold"
 RewardItems = Array[Resource]([SubResource("Reward_potion")])
 PrerequisiteQuestId = "quest.warband.bounty"
 IsMainQuest = true
+AutoStartFlagId = "flag.main.crossway_whispers_done"
+CompletionFlagId = "flag.main.forge_done"
+ChapterKey = "ch.1"
+OrderInAct = 5
+RegionId = "region.ember_crown"
+RecommendedLevel = 3
+SequentialObjectives = true
+GiverNameKey = "dlg.smith.speaker"
+DetailKey = "quest.warband.forge.detail"

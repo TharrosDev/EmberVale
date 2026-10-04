@@ -10,15 +10,33 @@ TargetId = "enemy.goblin"
 RequiredCount = 3
 Description = "quest.warband.bounty.obj"
 
+[sub_resource type="Resource" id="Obj_banner"]
+script = ExtResource("2_obj")
+Type = 8
+TargetId = "flag.beat.banner_burned"
+RequiredCount = 1
+Description = "quest.warband.bounty.obj_banner"
+LocationId = "location.wilds.north"
+HintKey = "quest.warband.bounty.hint_banner"
+JournalEntryKey = "quest.warband.bounty.log_banner"
+
 [resource]
 script = ExtResource("1_quest")
 Id = "quest.warband.bounty"
 Title = "quest.warband.bounty.title"
 Summary = "quest.warband.bounty.summary"
-Objectives = Array[Resource]([SubResource("Obj_kill")])
+Objectives = Array[Resource]([SubResource("Obj_kill"), SubResource("Obj_banner")])
 XpReward = 60
 GoldReward = 20
 GoldItemId = "item.currency.gold"
 RewardItems = []
 PrerequisiteQuestId = ""
 IsMainQuest = true
+AutoStartFlagId = "flag.main.the_pass_kept_done"
+CompletionFlagId = "flag.main.bounty_done"
+ChapterKey = "ch.1"
+OrderInAct = 3
+RegionId = "region.ember_crown"
+RecommendedLevel = 2
+GiverNameKey = "dlg.guild_board.speaker"
+DetailKey = "quest.warband.bounty.detail"

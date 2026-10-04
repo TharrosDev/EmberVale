@@ -3,6 +3,7 @@
 [ext_resource type="Script" path="res://src/Dialogue/DialogueResource.cs" id="1_dlg"]
 [ext_resource type="Script" path="res://src/Dialogue/DialogueNode.cs" id="2_node"]
 [ext_resource type="Script" path="res://src/Dialogue/DialogueChoice.cs" id="3_choice"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueStartVariant.cs" id="9_variant"]
 
 ; Magic upgrade: this NPC teaches spellcraft (spell.teach.* strings, LearnSpell effect).
 [sub_resource type="Resource" id="ch_mg_menu"]
@@ -26,6 +27,44 @@ Goto = "root"
 script = ExtResource("3_choice")
 Text = "spell.teach.thanks"
 Goto = "root"
+
+[sub_resource type="Resource" id="ch_cq_lh_ada_herbs"]
+script = ExtResource("3_choice")
+Text = "dlg.ashen_mender.cq_lh_ada.c_herbs"
+Goto = "cq_lh_ada_herbs"
+Condition = 19
+ConditionArg = "item.material.healing_herb:3"
+Effect = 15
+EffectArg = "item.material.healing_herb:3"
+Effect2 = 13
+Effect2Arg = "faction.villagers:5"
+
+[sub_resource type="Resource" id="ch_cq_lh_ada_else"]
+script = ExtResource("3_choice")
+Text = "dlg.ashen_mender.cq_lh_ada.c_else"
+Goto = "root"
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_cq_lh_ada_go"]
+script = ExtResource("3_choice")
+Text = "dlg.ashen_mender.cq_lh_ada.c_go"
+Goto = ""
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_cq_lh_ada_herbs_go"]
+script = ExtResource("3_choice")
+Text = "dlg.ashen_mender.cq_lh_ada_herbs.c_go"
+Goto = ""
+Condition = 0
+ConditionArg = ""
+Effect = 14
+EffectArg = "item.potion.health:2"
 
 [sub_resource type="Resource" id="node_mg_teach"]
 script = ExtResource("2_node")
@@ -65,9 +104,34 @@ Id = "ash"
 Text = "dlg.ashen_mender.ash"
 Choices = Array[Resource]([SubResource("ch_ash_back")])
 
+[sub_resource type="Resource" id="node_cq_lh_ada"]
+script = ExtResource("2_node")
+Id = "cq_lh_ada"
+Text = "dlg.ashen_mender.cq_lh_ada"
+Choices = Array[Resource]([SubResource("ch_cq_lh_ada_herbs"), SubResource("ch_cq_lh_ada_else"), SubResource("ch_cq_lh_ada_go")])
+
+[sub_resource type="Resource" id="node_cq_lh_ada_herbs"]
+script = ExtResource("2_node")
+Id = "cq_lh_ada_herbs"
+Text = "dlg.ashen_mender.cq_lh_ada_herbs"
+Choices = Array[Resource]([SubResource("ch_cq_lh_ada_herbs_go")])
+
+[sub_resource type="Resource" id="start_root_5_a0f4"]
+script = ExtResource("9_variant")
+Condition = 5
+ConditionArg = "flag.main.last_hearth_done"
+NodeId = "root"
+
+[sub_resource type="Resource" id="start_cq_lh_ada_5_9912"]
+script = ExtResource("9_variant")
+Condition = 5
+ConditionArg = "flag.beat.hearth_held"
+NodeId = "cq_lh_ada"
+
 [resource]
 script = ExtResource("1_dlg")
 Id = "dialogue.ashen_mender"
 SpeakerName = "dlg.ashen_mender.speaker"
 StartNodeId = "root"
-Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_ash"), SubResource("node_mg_teach"), SubResource("node_mg_taught")])
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_ash"), SubResource("node_mg_teach"), SubResource("node_mg_taught"), SubResource("node_cq_lh_ada"), SubResource("node_cq_lh_ada_herbs")])
+StartVariants = Array[Resource]([SubResource("start_root_5_a0f4"), SubResource("start_cq_lh_ada_5_9912")])

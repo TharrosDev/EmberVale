@@ -3,6 +3,7 @@
 [ext_resource type="Script" path="res://src/Dialogue/DialogueResource.cs" id="1_dlg"]
 [ext_resource type="Script" path="res://src/Dialogue/DialogueNode.cs" id="2_node"]
 [ext_resource type="Script" path="res://src/Dialogue/DialogueChoice.cs" id="3_choice"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueStartVariant.cs" id="9_variant"]
 
 ; Broker Ilder Vance (faction.iron_syndicate). Scaffold from tools/gen_guild_dialogue.py; prose is hand-written in
 ; data/locale/strings.csv. Phase 42B.
@@ -241,6 +242,44 @@ Text = "dlg.syndicate_broker.j42_c_finale"
 Effect = 2
 EffectArg = "guild.iron_syndicate.finale"
 
+[sub_resource type="Resource" id="ch_cq_broker_pay"]
+script = ExtResource("3_choice")
+Text = "dlg.syndicate_broker.cq_broker.c_pay"
+Goto = "cq_broker_paid"
+Condition = 19
+ConditionArg = "item.currency.gold:60"
+Effect = 15
+EffectArg = "item.currency.gold:60"
+Effect2 = 2
+Effect2Arg = "flag.beat.armed_broker"
+
+[sub_resource type="Resource" id="ch_cq_broker_else"]
+script = ExtResource("3_choice")
+Text = "dlg.syndicate_broker.cq_broker.c_else"
+Goto = "root"
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_cq_broker_no"]
+script = ExtResource("3_choice")
+Text = "dlg.syndicate_broker.cq_broker.c_no"
+Goto = ""
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_cq_broker_paid_go"]
+script = ExtResource("3_choice")
+Text = "dlg.syndicate_broker.cq_broker_paid.c_go"
+Goto = ""
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
 [sub_resource type="Resource" id="node_j42_a_offer"]
 script = ExtResource("2_node")
 Id = "j42_a_offer"
@@ -379,9 +418,42 @@ Id = "advance"
 Text = "dlg.syndicate_broker.advance"
 Choices = Array[Resource]([SubResource("ch_advance_confirm")])
 
+[sub_resource type="Resource" id="node_cq_broker"]
+script = ExtResource("2_node")
+Id = "cq_broker"
+Text = "dlg.syndicate_broker.cq_broker"
+Choices = Array[Resource]([SubResource("ch_cq_broker_pay"), SubResource("ch_cq_broker_else"), SubResource("ch_cq_broker_no")])
+
+[sub_resource type="Resource" id="node_cq_broker_paid"]
+script = ExtResource("2_node")
+Id = "cq_broker_paid"
+Text = "dlg.syndicate_broker.cq_broker_paid"
+Choices = Array[Resource]([SubResource("ch_cq_broker_paid_go")])
+OnEnterEffect = 13
+OnEnterEffectArg = "faction.iron_syndicate:8"
+
+[sub_resource type="Resource" id="start_root_5_9a91"]
+script = ExtResource("9_variant")
+Condition = 5
+ConditionArg = "flag.main.crossway_whispers_done"
+NodeId = "root"
+
+[sub_resource type="Resource" id="start_root_5_dba4"]
+script = ExtResource("9_variant")
+Condition = 5
+ConditionArg = "flag.beat.armed_broker"
+NodeId = "root"
+
+[sub_resource type="Resource" id="start_cq_broker_5_6705"]
+script = ExtResource("9_variant")
+Condition = 5
+ConditionArg = "flag.rival.sigil"
+NodeId = "cq_broker"
+
 [resource]
 script = ExtResource("1_dlg")
 Id = "dialogue.syndicate_broker"
 SpeakerName = "dlg.syndicate_broker.speaker"
 StartNodeId = "root"
-Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_member"), SubResource("node_stranger"), SubResource("node_joined_now"), SubResource("node_declined"), SubResource("node_advance"), SubResource("node_j42_a_offer"), SubResource("node_j42_a_accepted"), SubResource("node_j42_a_active"), SubResource("node_j42_hub"), SubResource("node_j42_b_offer"), SubResource("node_j42_b_accepted"), SubResource("node_j42_b_active"), SubResource("node_j42_b_report"), SubResource("node_j42_verdict"), SubResource("node_j42_v_finale_fidelity"), SubResource("node_j42_after_finale_fidelity"), SubResource("node_j42_v_finale_offer"), SubResource("node_j42_after_finale_offer"), SubResource("node_j42_v_finale_rook"), SubResource("node_j42_after_finale_rook"), SubResource("node_j42_sealed"), SubResource("node_j42_ranked")])
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_member"), SubResource("node_stranger"), SubResource("node_joined_now"), SubResource("node_declined"), SubResource("node_advance"), SubResource("node_j42_a_offer"), SubResource("node_j42_a_accepted"), SubResource("node_j42_a_active"), SubResource("node_j42_hub"), SubResource("node_j42_b_offer"), SubResource("node_j42_b_accepted"), SubResource("node_j42_b_active"), SubResource("node_j42_b_report"), SubResource("node_j42_verdict"), SubResource("node_j42_v_finale_fidelity"), SubResource("node_j42_after_finale_fidelity"), SubResource("node_j42_v_finale_offer"), SubResource("node_j42_after_finale_offer"), SubResource("node_j42_v_finale_rook"), SubResource("node_j42_after_finale_rook"), SubResource("node_j42_sealed"), SubResource("node_j42_ranked"), SubResource("node_cq_broker"), SubResource("node_cq_broker_paid")])
+StartVariants = Array[Resource]([SubResource("start_root_5_9a91"), SubResource("start_root_5_dba4"), SubResource("start_cq_broker_5_6705")])

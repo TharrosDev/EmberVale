@@ -156,3 +156,5 @@ RewardItemId = "item.relic.iron_heart"
 RewardQuantity = 1
 DefeatFlagId = "flag.iron_king_defeated"
 DefeatDialogueId = "dialogue.iron_king_absorb"
+EpithetKey = "boss.iron_king.epithet"
+IntroLineKey = "boss.iron_king.intro"

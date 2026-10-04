@@ -1,0 +1,35 @@
+{
+  "rules": [
+    {"id": "rule.opening_done", "on": "opening_finished", "set": ["flag.main.opening_done"]},
+
+    {"id": "rule.armed_honest", "all": ["flag.beat.armed_honest"], "set": ["flag.beat.armed_by_known"]},
+    {"id": "rule.armed_broker", "all": ["flag.beat.armed_broker"], "set": ["flag.beat.armed_by_known"]},
+    {"id": "rule.armed_heist", "all": ["flag.beat.armed_heist"], "set": ["flag.beat.armed_by_known"]},
+
+    {"id": "rule.dray_decided_spared", "all": ["flag.fork.dray_spared"], "set": ["flag.beat.dray_decided"]},
+    {"id": "rule.dray_decided_pressed", "all": ["flag.fork.dray_pressed"], "set": ["flag.beat.dray_decided"]},
+
+    {"id": "rule.arc_frostfang", "all": ["flag.main.succession_done"], "set": ["flag.arc.frostfang_ready"]},
+    {"id": "rule.arc_ashen", "all": ["flag.main.herd_and_hearth_done"], "set": ["flag.arc.ashen_ready"]},
+    {"id": "rule.arc_sunspire", "all": ["flag.main.prophets_flock_done"], "set": ["flag.arc.sunspire_ready"]},
+
+    {"id": "rule.succession_decided_hjalvar", "all": ["flag.fork.succession_hjalvar"], "set": ["flag.beat.succession_decided"]},
+    {"id": "rule.succession_decided_halvar", "all": ["flag.fork.succession_halvar"], "set": ["flag.beat.succession_decided"]},
+    {"id": "rule.stormend_hjalvar", "all": ["flag.storm_tyrant_defeated", "flag.fork.succession_hjalvar"], "set": ["flag.beat.stormend_hjalvar"]},
+    {"id": "rule.stormend_halvar", "all": ["flag.storm_tyrant_defeated", "flag.fork.succession_halvar"], "set": ["flag.beat.stormend_halvar"]},
+
+    {"id": "rule.herd_decided_slain", "all": ["flag.fork.herd_slain"], "set": ["flag.beat.herd_decided"]},
+    {"id": "rule.herd_decided_calmed", "all": ["flag.fork.herd_calmed"], "set": ["flag.beat.herd_decided"]},
+    {"id": "rule.beastend_slain", "all": ["flag.beast_lord_defeated", "flag.fork.herd_slain"], "set": ["flag.beat.beastend_slain"]},
+    {"id": "rule.beastend_calmed", "all": ["flag.beast_lord_defeated", "flag.fork.herd_calmed"], "set": ["flag.beat.beastend_calmed"]},
+
+    {"id": "rule.flock_decided_exposed", "all": ["flag.fork.flock_exposed"], "set": ["flag.beat.flock_decided"]},
+    {"id": "rule.flock_decided_turned", "all": ["flag.fork.flock_turned"], "set": ["flag.beat.flock_decided"]},
+    {"id": "rule.flock_decided_kin", "all": ["flag.fork.flock_kin"], "set": ["flag.beat.flock_decided"]},
+    {"id": "rule.prophetend_exposed", "all": ["flag.crimson_prophet_defeated", "flag.fork.flock_exposed"], "set": ["flag.beat.prophetend_exposed"]},
+    {"id": "rule.prophetend_turned", "all": ["flag.crimson_prophet_defeated", "flag.fork.flock_turned"], "set": ["flag.beat.prophetend_turned"]},
+    {"id": "rule.prophetend_kin", "all": ["flag.crimson_prophet_defeated", "flag.fork.flock_kin"], "set": ["flag.beat.prophetend_kin"]},
+
+    {"id": "rule.arcs_complete", "all": ["flag.main.storm_tyrant_done", "flag.main.beast_lord_done", "flag.main.crimson_prophet_done"], "set": ["flag.beat.arcs_complete"]}
+  ]
+}
