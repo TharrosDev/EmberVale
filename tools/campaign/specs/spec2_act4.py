@@ -465,7 +465,7 @@ LOCALE = [
     ("dlg.ally.c_take", "Accept what they offer."),
     ("dlg.ally.c_leave", "Hold the line."),
     # The brazier at the Knight's gate while the vigil has not been kept (BossSummonComponent.LockedPromptKey).
-    ("celestial.ashen_knight.challenge_locked_vigil", "The brazier will not take a flame yet. The keeper of this gate kneels in vigil beside it once the Stair is lowered. Speak to him first."),
+    ("celestial.ashen_knight.challenge_locked_vigil", "The brazier will not take a flame yet. Lower the Stair, then speak to the knight who keeps this gate."),
     # The Ash Throne's opening line, remembering fork F6 (dialogue.ash_throne in legacy.py).
     ("dlg.throne.gate_kneel", "The Ash Throne. It is carved from something that was once alive, and it is never empty for long. The stone before its foot is worn into the shape of a kneeling man, and your knees remember the ash of the gate, where you knelt beside the one who wore it."),
     ("dlg.throne.gate_draw", "The Ash Throne. It is carved from something that was once alive, and it is never empty for long. The weight of the blade you drew at the gate is still in your shoulders, and the throne seems to know it."),
