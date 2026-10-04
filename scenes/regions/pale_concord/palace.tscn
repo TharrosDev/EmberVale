@@ -9,6 +9,8 @@
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_lamp_post.glb" id="prp_lamp_post"]
 [ext_resource type="Script" path="res://src/World/CellNavBaker.cs" id="s_navbaker"]
 [ext_resource type="Script" path="res://src/World/MapLocationComponent.cs" id="maploc_39_5a"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_chair.gltf" id="wc_prp_chair_gltf"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueComponent.cs" id="wc_dialoguecomponent_cs"]
 
 ; THE HOLLOW COURT (hidden realm) — the Hollow Queen's palace and the ring in its forecourt.
 ; Authored in the content frame; tools/shift_cell_content.py moves it to the spec's origin.
@@ -37,6 +39,9 @@ size = Vector3(1, 1.4, 1)
 
 [sub_resource type="BoxShape3D" id="Box_prp_ruin_pillar"]
 size = Vector3(1.2, 4.0, 1.2)
+
+[sub_resource type="BoxShape3D" id="WC_Box_1_1p9_1"]
+size = Vector3(1, 1.9, 1)
 
 [node name="PalaceCell" type="Node3D"]
 metadata/content_offset = Vector2(-35, 25)
@@ -130,10 +135,11 @@ omni_range = 7.0
 script = ExtResource("s_summon")
 SpawnOffset = Vector3(-6.5, 0, -14)
 RequiredQuestId = ""
+RequiredFlagId = "flag.pale.court_open"
 BossTemplateId = "enemy.hollow_queen"
 DefeatedFlagId = "flag.hollow_queen_defeated"
 PromptKey = "pale.boss.challenge_prompt"
-LockedPromptKey = "pale.boss.challenge_locked"
+LockedPromptKey = "pale.boss.challenge_locked_count"
 
 [node name="Model" parent="Brazier" instance=ExtResource("prp_brazier")]
 
@@ -197,3 +203,23 @@ Reveals = Array[NodePath]([NodePath("../GraveLights/LightC"), NodePath("../Grave
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -35, 0, 25)
 script = ExtResource("maploc_39_5a")
 LocationId = "location.pale.palace"
+
+; WR-spec2-23: the Hollow Queen's empty chair. The parley dialogue lives here; it is never hidden.
+[node name="QueenChair" type="Node3D" parent="Nav"]
+transform = Transform3D(-0.816, 0, -0.578, 0, 1, 0, 0.578, 0, -0.816, -26.5, 0, 47)
+script = ExtResource("s_entity")
+DisplayName = "The Hollow Queen"
+
+[node name="Model" parent="Nav/QueenChair" instance=ExtResource("wc_prp_chair_gltf")]
+transform = Transform3D(1.7, 0, 0, 0, 1.7, 0, 0, 0, 1.7, 0, 0, 0)
+
+[node name="Collider" type="StaticBody3D" parent="Nav/QueenChair"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/QueenChair/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.95, 0)
+shape = SubResource("WC_Box_1_1p9_1")
+
+[node name="Dialogue" type="Node" parent="Nav/QueenChair"]
+script = ExtResource("wc_dialoguecomponent_cs")
+DialogueId = "dialogue.hollow_queen_parley"
+PromptKey = "pale.prompt.queen_chair"

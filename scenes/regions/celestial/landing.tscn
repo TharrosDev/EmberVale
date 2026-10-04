@@ -5,6 +5,22 @@
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_ruin_wall.glb" id="3_wall"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_brazier.glb" id="4_brazier"]
 [ext_resource type="Script" path="res://src/World/MapLocationComponent.cs" id="maploc_39_5a"]
+[ext_resource type="Script" path="res://src/Entities/Entity.cs" id="wc_entity_cs"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueComponent.cs" id="wc_dialoguecomponent_cs"]
+[ext_resource type="Script" path="res://src/World/FlagVisibilityComponent.cs" id="wc_flagvisibilitycomponent_cs"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_rock_cluster.glb" id="wc_prp_rock_cluster_glb"]
+[ext_resource type="Script" path="res://src/Animation/CharacterAnimationComponent.cs" id="wc_characteranimationcomponent_cs"]
+[ext_resource type="Script" path="res://src/Animation/EquipmentPresentationComponent.cs" id="wc_equipmentpresentationcomponent_cs"]
+[ext_resource type="Script" path="res://src/Factions/FactionComponent.cs" id="wc_factioncomponent_cs"]
+[ext_resource type="PackedScene" path="res://assets/models/characters/npc_guild_rep.glb" id="wc_npc_guild_rep_glb"]
+[ext_resource type="PackedScene" path="res://assets/models/characters/npc_townsman.glb" id="wc_npc_townsman_glb"]
+[ext_resource type="PackedScene" path="res://assets/models/characters/npc_townswoman.glb" id="wc_npc_townswoman_glb"]
+[ext_resource type="PackedScene" path="res://assets/models/characters/npc_vendor.glb" id="wc_npc_vendor_glb"]
+[ext_resource type="PackedScene" path="res://assets/models/characters/npc_adventurer_f.glb" id="wc_npc_adventurer_f_glb"]
+[ext_resource type="PackedScene" path="res://assets/models/characters/npc_innkeeper.glb" id="wc_npc_innkeeper_glb"]
+[ext_resource type="PackedScene" path="res://assets/models/characters/npc_hooded.glb" id="wc_npc_hooded_glb"]
+[ext_resource type="PackedScene" path="res://assets/models/characters/npc_woman_dress.glb" id="wc_npc_woman_dress_glb"]
+[ext_resource type="Script" path="res://src/Enemies/SetPieceSpawnComponent.cs" id="wc_setpiecespawncomponent_cs"]
 
 ; THE LANDING (the finish run, Act IV) — where the Sunspire library's story gate lets the player out.
 ;
@@ -30,6 +46,53 @@ size = Vector3(4, 4, 0.88)
 
 [sub_resource type="BoxShape3D" id="Shape_brazier"]
 size = Vector3(1, 1.4, 1)
+
+[sub_resource type="StandardMaterial3D" id="WC_Mat_BeaconFlame"]
+albedo_color = Color(1, 0.62, 0.3, 1)
+metallic = 0
+roughness = 0.9
+emission_enabled = true
+emission = Color(1, 0.5, 0.2, 1)
+emission_energy_multiplier = 3
+shading_mode = 0
+
+[sub_resource type="StandardMaterial3D" id="WC_Mat_BeaconAsh"]
+albedo_color = Color(0.17, 0.16, 0.16, 1)
+metallic = 0
+roughness = 1
+
+[sub_resource type="CylinderMesh" id="WC_Mesh_BeaconFlame"]
+material = SubResource("WC_Mat_BeaconFlame")
+top_radius = 0
+bottom_radius = 0.2
+height = 0.7
+radial_segments = 10
+
+[sub_resource type="CylinderMesh" id="WC_Mesh_BeaconAsh"]
+material = SubResource("WC_Mat_BeaconAsh")
+top_radius = 0.24
+bottom_radius = 0.26
+height = 0.05
+radial_segments = 12
+
+[sub_resource type="StandardMaterial3D" id="WC_Mat_KneeHollow"]
+albedo_color = Color(0.12, 0.1, 0.1, 1)
+metallic = 0
+roughness = 1
+
+[sub_resource type="CylinderMesh" id="WC_Mesh_KneeHollow"]
+material = SubResource("WC_Mat_KneeHollow")
+top_radius = 0.75
+bottom_radius = 0.75
+height = 0.04
+radial_segments = 16
+
+[sub_resource type="BoxShape3D" id="WC_Box_14p6_1p1_1p8"]
+size = Vector3(14.6, 1.1, 1.8)
+
+[sub_resource type="CapsuleShape3D" id="WC_Capsule_0p4_1p8"]
+radius = 0.4
+height = 1.8
 
 [node name="LandingCell" type="Node3D"]
 
@@ -66,8 +129,10 @@ transform = Transform3D(0.94, 0, 0.342, 0, 1, 0, -0.342, 0, 0.94, 20, 0, 66)
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
 shape = SubResource("Shape_wall")
 
-[node name="ColdBrazier" parent="Nav" instance=ExtResource("4_brazier")]
+[node name="ColdBrazier" type="Node3D" parent="Nav"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 52, 0, 64)
+script = ExtResource("wc_entity_cs")
+DisplayName = "The Cold Beacon"
 
 [node name="Col" type="StaticBody3D" parent="Nav/ColdBrazier"]
 
@@ -78,3 +143,704 @@ shape = SubResource("Shape_brazier")
 [node name="MapPin" type="Node3D" parent="Nav/ArrivalPillarW"]
 script = ExtResource("maploc_39_5a")
 LocationId = "location.celestial.landing"
+
+[node name="Model" parent="Nav/ColdBrazier" instance=ExtResource("4_brazier")]
+
+[node name="Dialogue" type="Node" parent="Nav/ColdBrazier"]
+script = ExtResource("wc_dialoguecomponent_cs")
+DialogueId = "dialogue.celestial_landing_beacon"
+InteractId = "interact.celestial.landing_beacon"
+PromptKey = "celestial.prompt.beacon"
+
+; WR-spec2-12: the beacon's lit state (flame and light), shown once flag.beat.landing_beacon_lit is set.
+[node name="BeaconLit" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 52, 0, 64)
+script = ExtResource("wc_entity_cs")
+DisplayName = "The Lit Beacon"
+
+[node name="Flame" type="MeshInstance3D" parent="BeaconLit"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.6, 0)
+mesh = SubResource("WC_Mesh_BeaconFlame")
+
+[node name="Glow" type="OmniLight3D" parent="BeaconLit"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.7, 0)
+light_color = Color(1, 0.62, 0.35, 1)
+light_energy = 2.6
+omni_range = 10
+
+[node name="Visibility" type="Node" parent="BeaconLit"]
+script = ExtResource("wc_flagvisibilitycomponent_cs")
+VisibleWhenFlagId = "flag.beat.landing_beacon_lit"
+
+[node name="BeaconCold" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 52, 0, 64)
+script = ExtResource("wc_entity_cs")
+DisplayName = "The Cold Beacon"
+
+[node name="Ash" type="MeshInstance3D" parent="BeaconCold"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
+mesh = SubResource("WC_Mesh_BeaconAsh")
+
+[node name="Visibility" type="Node" parent="BeaconCold"]
+script = ExtResource("wc_flagvisibilitycomponent_cs")
+HiddenWhenFlagId = "flag.beat.landing_beacon_lit"
+
+; WR-spec2-13: five cairns and a blank sixth stone, north edge of the landing terrace.
+[node name="FiveGraves" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 32.5, 0, 41)
+script = ExtResource("wc_entity_cs")
+DisplayName = "The Five Cairns"
+
+[node name="Cairn1" parent="Nav/FiveGraves" instance=ExtResource("wc_prp_rock_cluster_glb")]
+transform = Transform3D(0.55, 0, 0, 0, 0.55, 0, 0, 0, 0.55, -6.5, 0, 0)
+
+[node name="Cairn2" parent="Nav/FiveGraves" instance=ExtResource("wc_prp_rock_cluster_glb")]
+transform = Transform3D(0.4392, 0, 0.331, 0, 0.55, 0, -0.331, 0, 0.4392, -4, 0, 0)
+
+[node name="Cairn3" parent="Nav/FiveGraves" instance=ExtResource("wc_prp_rock_cluster_glb")]
+transform = Transform3D(0.1516, 0, 0.5287, 0, 0.55, 0, -0.5287, 0, 0.1516, -1.5, 0, 0)
+
+[node name="Cairn4" parent="Nav/FiveGraves" instance=ExtResource("wc_prp_rock_cluster_glb")]
+transform = Transform3D(-0.1971, 0, 0.5135, 0, 0.55, 0, -0.5135, 0, -0.1971, 1, 0, 0)
+
+[node name="Cairn5" parent="Nav/FiveGraves" instance=ExtResource("wc_prp_rock_cluster_glb")]
+transform = Transform3D(-0.4664, 0, 0.2915, 0, 0.55, 0, -0.2915, 0, -0.4664, 3.5, 0, 0)
+
+[node name="BlankStone" parent="Nav/FiveGraves" instance=ExtResource("2_pillar")]
+transform = Transform3D(0.9, 0, 0, 0, 0.7, 0, 0, 0, 0.9, 6.5, 0, 0)
+
+[node name="KneeHollow" type="MeshInstance3D" parent="Nav/FiveGraves"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.5, 0.03, 2.3)
+mesh = SubResource("WC_Mesh_KneeHollow")
+
+[node name="Collider" type="StaticBody3D" parent="Nav/FiveGraves"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/FiveGraves/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.55, 0)
+shape = SubResource("WC_Box_14p6_1p1_1p8")
+
+[node name="Dialogue" type="Node" parent="Nav/FiveGraves"]
+script = ExtResource("wc_dialoguecomponent_cs")
+DialogueId = "dialogue.celestial_graves"
+InteractId = "interact.celestial.five_graves"
+PromptKey = "celestial.prompt.graves"
+
+; WR-spec2-25: the Assembly Marshal. Appears once the landing has been held.
+[node name="AssemblyMarshal" type="Node3D" parent="."]
+transform = Transform3D(0.7372, 0, 0.6757, 0, 1, 0, -0.6757, 0, 0.7372, 31.5, 0, 56)
+script = ExtResource("wc_entity_cs")
+DisplayName = "Marshal Iselle Hearne"
+TemplateId = "npc.landing_marshal"
+
+[node name="Animation" type="Node" parent="AssemblyMarshal"]
+script = ExtResource("wc_characteranimationcomponent_cs")
+BodyMeshPath = "Model"
+
+[node name="EquipmentVisuals" type="Node" parent="AssemblyMarshal"]
+script = ExtResource("wc_equipmentpresentationcomponent_cs")
+BodyMeshPath = "Model"
+
+[node name="Collider" type="StaticBody3D" parent="AssemblyMarshal"]
+
+[node name="Shape" type="CollisionShape3D" parent="AssemblyMarshal/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("WC_Capsule_0p4_1p8")
+
+[node name="Faction" type="Node" parent="AssemblyMarshal"]
+script = ExtResource("wc_factioncomponent_cs")
+FactionId = "faction.dawnwardens"
+
+[node name="Dialogue" type="Node" parent="AssemblyMarshal"]
+script = ExtResource("wc_dialoguecomponent_cs")
+DialogueId = "dialogue.assembly_marshal"
+
+[node name="Visibility" type="Node" parent="AssemblyMarshal"]
+script = ExtResource("wc_flagvisibilitycomponent_cs")
+VisibleWhenFlagId = "flag.beat.landing_held"
+
+[node name="Model" parent="AssemblyMarshal" instance=ExtResource("wc_npc_guild_rep_glb")]
+
+; WR-spec2 ally cluster (dray_spared): two figures, one speaker, visible on flag.fork.dray_spared.
+[node name="AllyDraySpared" type="Node3D" parent="."]
+transform = Transform3D(0.2249, 0, 0.9744, 0, 1, 0, -0.9744, 0, 0.2249, 24, 0, 58)
+script = ExtResource("wc_entity_cs")
+DisplayName = "Marshal Orsolo Dray"
+TemplateId = "npc.landing_dray"
+
+[node name="Animation" type="Node" parent="AllyDraySpared"]
+script = ExtResource("wc_characteranimationcomponent_cs")
+BodyMeshPath = "Model"
+
+[node name="EquipmentVisuals" type="Node" parent="AllyDraySpared"]
+script = ExtResource("wc_equipmentpresentationcomponent_cs")
+BodyMeshPath = "Model"
+
+[node name="Animation2" type="Node" parent="AllyDraySpared"]
+script = ExtResource("wc_characteranimationcomponent_cs")
+BodyMeshPath = "Model2"
+
+[node name="EquipmentVisuals2" type="Node" parent="AllyDraySpared"]
+script = ExtResource("wc_equipmentpresentationcomponent_cs")
+BodyMeshPath = "Model2"
+
+[node name="Collider" type="StaticBody3D" parent="AllyDraySpared"]
+
+[node name="Shape" type="CollisionShape3D" parent="AllyDraySpared/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("WC_Capsule_0p4_1p8")
+
+[node name="Collider2" type="StaticBody3D" parent="AllyDraySpared"]
+
+[node name="Shape" type="CollisionShape3D" parent="AllyDraySpared/Collider2"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5, 0.9, 0.6)
+shape = SubResource("WC_Capsule_0p4_1p8")
+
+[node name="Faction" type="Node" parent="AllyDraySpared"]
+script = ExtResource("wc_factioncomponent_cs")
+FactionId = "faction.dawnwardens"
+
+[node name="Dialogue" type="Node" parent="AllyDraySpared"]
+script = ExtResource("wc_dialoguecomponent_cs")
+DialogueId = "dialogue.ally_dray_spared"
+
+[node name="Visibility" type="Node" parent="AllyDraySpared"]
+script = ExtResource("wc_flagvisibilitycomponent_cs")
+VisibleWhenFlagId = "flag.fork.dray_spared"
+
+[node name="Model" parent="AllyDraySpared" instance=ExtResource("wc_npc_guild_rep_glb")]
+
+[node name="Model2" parent="AllyDraySpared" instance=ExtResource("wc_npc_townsman_glb")]
+transform = Transform3D(0.9063, 0, -0.4226, 0, 1, 0, 0.4226, 0, 0.9063, 1.5, 0, 0.6)
+
+; WR-spec2 ally cluster (dray_pressed): two figures, one speaker, visible on flag.fork.dray_pressed.
+[node name="AllyDrayPressed" type="Node3D" parent="."]
+transform = Transform3D(0.2249, 0, 0.9744, 0, 1, 0, -0.9744, 0, 0.2249, 24, 0, 58)
+script = ExtResource("wc_entity_cs")
+DisplayName = "Dawnwarden Serjeant"
+TemplateId = "npc.landing_serjeant"
+
+[node name="Animation" type="Node" parent="AllyDrayPressed"]
+script = ExtResource("wc_characteranimationcomponent_cs")
+BodyMeshPath = "Model"
+
+[node name="EquipmentVisuals" type="Node" parent="AllyDrayPressed"]
+script = ExtResource("wc_equipmentpresentationcomponent_cs")
+BodyMeshPath = "Model"
+
+[node name="Animation2" type="Node" parent="AllyDrayPressed"]
+script = ExtResource("wc_characteranimationcomponent_cs")
+BodyMeshPath = "Model2"
+
+[node name="EquipmentVisuals2" type="Node" parent="AllyDrayPressed"]
+script = ExtResource("wc_equipmentpresentationcomponent_cs")
+BodyMeshPath = "Model2"
+
+[node name="Collider" type="StaticBody3D" parent="AllyDrayPressed"]
+
+[node name="Shape" type="CollisionShape3D" parent="AllyDrayPressed/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("WC_Capsule_0p4_1p8")
+
+[node name="Collider2" type="StaticBody3D" parent="AllyDrayPressed"]
+
+[node name="Shape" type="CollisionShape3D" parent="AllyDrayPressed/Collider2"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5, 0.9, 0.6)
+shape = SubResource("WC_Capsule_0p4_1p8")
+
+[node name="Faction" type="Node" parent="AllyDrayPressed"]
+script = ExtResource("wc_factioncomponent_cs")
+FactionId = "faction.dawnwardens"
+
+[node name="Dialogue" type="Node" parent="AllyDrayPressed"]
+script = ExtResource("wc_dialoguecomponent_cs")
+DialogueId = "dialogue.ally_dray_pressed"
+
+[node name="Visibility" type="Node" parent="AllyDrayPressed"]
+script = ExtResource("wc_flagvisibilitycomponent_cs")
+VisibleWhenFlagId = "flag.fork.dray_pressed"
+
+[node name="Model" parent="AllyDrayPressed" instance=ExtResource("wc_npc_townsman_glb")]
+
+[node name="Model2" parent="AllyDrayPressed" instance=ExtResource("wc_npc_townswoman_glb")]
+transform = Transform3D(0.9063, 0, -0.4226, 0, 1, 0, 0.4226, 0, 0.9063, 1.5, 0, 0.6)
+
+; WR-spec2 ally cluster (hjalvar): two figures, one speaker, visible on flag.fork.succession_hjalvar.
+[node name="AllyHjalvar" type="Node3D" parent="."]
+transform = Transform3D(-0.7071, 0, 0.7071, 0, 1, 0, -0.7071, 0, -0.7071, 26, 0, 72)
+script = ExtResource("wc_entity_cs")
+DisplayName = "Captain of Hjalvar's Archers"
+TemplateId = "npc.clan_quartermaster"
+
+[node name="Animation" type="Node" parent="AllyHjalvar"]
+script = ExtResource("wc_characteranimationcomponent_cs")
+BodyMeshPath = "Model"
+
+[node name="EquipmentVisuals" type="Node" parent="AllyHjalvar"]
+script = ExtResource("wc_equipmentpresentationcomponent_cs")
+BodyMeshPath = "Model"
+
+[node name="Animation2" type="Node" parent="AllyHjalvar"]
+script = ExtResource("wc_characteranimationcomponent_cs")
+BodyMeshPath = "Model2"
+
+[node name="EquipmentVisuals2" type="Node" parent="AllyHjalvar"]
+script = ExtResource("wc_equipmentpresentationcomponent_cs")
+BodyMeshPath = "Model2"
+
+[node name="Collider" type="StaticBody3D" parent="AllyHjalvar"]
+
+[node name="Shape" type="CollisionShape3D" parent="AllyHjalvar/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("WC_Capsule_0p4_1p8")
+
+[node name="Collider2" type="StaticBody3D" parent="AllyHjalvar"]
+
+[node name="Shape" type="CollisionShape3D" parent="AllyHjalvar/Collider2"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5, 0.9, 0.6)
+shape = SubResource("WC_Capsule_0p4_1p8")
+
+[node name="Faction" type="Node" parent="AllyHjalvar"]
+script = ExtResource("wc_factioncomponent_cs")
+FactionId = "faction.villagers"
+
+[node name="Dialogue" type="Node" parent="AllyHjalvar"]
+script = ExtResource("wc_dialoguecomponent_cs")
+DialogueId = "dialogue.ally_hjalvar"
+
+[node name="Visibility" type="Node" parent="AllyHjalvar"]
+script = ExtResource("wc_flagvisibilitycomponent_cs")
+VisibleWhenFlagId = "flag.fork.succession_hjalvar"
+
+[node name="Model" parent="AllyHjalvar" instance=ExtResource("wc_npc_vendor_glb")]
+
+[node name="Model2" parent="AllyHjalvar" instance=ExtResource("wc_npc_adventurer_f_glb")]
+transform = Transform3D(0.9063, 0, -0.4226, 0, 1, 0, 0.4226, 0, 0.9063, 1.5, 0, 0.6)
+
+; WR-spec2 ally cluster (halvar): two figures, one speaker, visible on flag.fork.succession_halvar.
+[node name="AllyHalvar" type="Node3D" parent="."]
+transform = Transform3D(-0.7071, 0, 0.7071, 0, 1, 0, -0.7071, 0, -0.7071, 26, 0, 72)
+script = ExtResource("wc_entity_cs")
+DisplayName = "Halvar's Exile"
+TemplateId = "npc.clan_exile"
+
+[node name="Animation" type="Node" parent="AllyHalvar"]
+script = ExtResource("wc_characteranimationcomponent_cs")
+BodyMeshPath = "Model"
+
+[node name="EquipmentVisuals" type="Node" parent="AllyHalvar"]
+script = ExtResource("wc_equipmentpresentationcomponent_cs")
+BodyMeshPath = "Model"
+
+[node name="Animation2" type="Node" parent="AllyHalvar"]
+script = ExtResource("wc_characteranimationcomponent_cs")
+BodyMeshPath = "Model2"
+
+[node name="EquipmentVisuals2" type="Node" parent="AllyHalvar"]
+script = ExtResource("wc_equipmentpresentationcomponent_cs")
+BodyMeshPath = "Model2"
+
+[node name="Collider" type="StaticBody3D" parent="AllyHalvar"]
+
+[node name="Shape" type="CollisionShape3D" parent="AllyHalvar/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("WC_Capsule_0p4_1p8")
+
+[node name="Collider2" type="StaticBody3D" parent="AllyHalvar"]
+
+[node name="Shape" type="CollisionShape3D" parent="AllyHalvar/Collider2"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5, 0.9, 0.6)
+shape = SubResource("WC_Capsule_0p4_1p8")
+
+[node name="Faction" type="Node" parent="AllyHalvar"]
+script = ExtResource("wc_factioncomponent_cs")
+FactionId = "faction.villagers"
+
+[node name="Dialogue" type="Node" parent="AllyHalvar"]
+script = ExtResource("wc_dialoguecomponent_cs")
+DialogueId = "dialogue.ally_halvar"
+
+[node name="Visibility" type="Node" parent="AllyHalvar"]
+script = ExtResource("wc_flagvisibilitycomponent_cs")
+VisibleWhenFlagId = "flag.fork.succession_halvar"
+
+[node name="Model" parent="AllyHalvar" instance=ExtResource("wc_npc_innkeeper_glb")]
+
+[node name="Model2" parent="AllyHalvar" instance=ExtResource("wc_npc_hooded_glb")]
+transform = Transform3D(0.9063, 0, -0.4226, 0, 1, 0, 0.4226, 0, 0.9063, 1.5, 0, 0.6)
+
+; WR-spec2 ally cluster (herd_slain): two figures, one speaker, visible on flag.fork.herd_slain.
+[node name="AllyHerdSlain" type="Node3D" parent="."]
+transform = Transform3D(0.5408, 0, -0.8412, 0, 1, 0, 0.8412, 0, 0.5408, 51, 0, 52)
+script = ExtResource("wc_entity_cs")
+DisplayName = "Master Hunter"
+TemplateId = "npc.landing_hunter"
+
+[node name="Animation" type="Node" parent="AllyHerdSlain"]
+script = ExtResource("wc_characteranimationcomponent_cs")
+BodyMeshPath = "Model"
+
+[node name="EquipmentVisuals" type="Node" parent="AllyHerdSlain"]
+script = ExtResource("wc_equipmentpresentationcomponent_cs")
+BodyMeshPath = "Model"
+
+[node name="Animation2" type="Node" parent="AllyHerdSlain"]
+script = ExtResource("wc_characteranimationcomponent_cs")
+BodyMeshPath = "Model2"
+
+[node name="EquipmentVisuals2" type="Node" parent="AllyHerdSlain"]
+script = ExtResource("wc_equipmentpresentationcomponent_cs")
+BodyMeshPath = "Model2"
+
+[node name="Collider" type="StaticBody3D" parent="AllyHerdSlain"]
+
+[node name="Shape" type="CollisionShape3D" parent="AllyHerdSlain/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("WC_Capsule_0p4_1p8")
+
+[node name="Collider2" type="StaticBody3D" parent="AllyHerdSlain"]
+
+[node name="Shape" type="CollisionShape3D" parent="AllyHerdSlain/Collider2"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5, 0.9, 0.6)
+shape = SubResource("WC_Capsule_0p4_1p8")
+
+[node name="Faction" type="Node" parent="AllyHerdSlain"]
+script = ExtResource("wc_factioncomponent_cs")
+FactionId = "faction.villagers"
+
+[node name="Dialogue" type="Node" parent="AllyHerdSlain"]
+script = ExtResource("wc_dialoguecomponent_cs")
+DialogueId = "dialogue.ally_herd_slain"
+
+[node name="Visibility" type="Node" parent="AllyHerdSlain"]
+script = ExtResource("wc_flagvisibilitycomponent_cs")
+VisibleWhenFlagId = "flag.fork.herd_slain"
+
+[node name="Model" parent="AllyHerdSlain" instance=ExtResource("wc_npc_adventurer_f_glb")]
+
+[node name="Model2" parent="AllyHerdSlain" instance=ExtResource("wc_npc_townsman_glb")]
+transform = Transform3D(0.9063, 0, -0.4226, 0, 1, 0, 0.4226, 0, 0.9063, 1.5, 0, 0.6)
+
+; WR-spec2 ally cluster (herd_calmed): two figures, one speaker, visible on flag.fork.herd_calmed.
+[node name="AllyHerdCalmed" type="Node3D" parent="."]
+transform = Transform3D(0.5408, 0, -0.8412, 0, 1, 0, 0.8412, 0, 0.5408, 51, 0, 52)
+script = ExtResource("wc_entity_cs")
+DisplayName = "Ashen Herder"
+TemplateId = "npc.ashen_headwoman"
+
+[node name="Animation" type="Node" parent="AllyHerdCalmed"]
+script = ExtResource("wc_characteranimationcomponent_cs")
+BodyMeshPath = "Model"
+
+[node name="EquipmentVisuals" type="Node" parent="AllyHerdCalmed"]
+script = ExtResource("wc_equipmentpresentationcomponent_cs")
+BodyMeshPath = "Model"
+
+[node name="Animation2" type="Node" parent="AllyHerdCalmed"]
+script = ExtResource("wc_characteranimationcomponent_cs")
+BodyMeshPath = "Model2"
+
+[node name="EquipmentVisuals2" type="Node" parent="AllyHerdCalmed"]
+script = ExtResource("wc_equipmentpresentationcomponent_cs")
+BodyMeshPath = "Model2"
+
+[node name="Collider" type="StaticBody3D" parent="AllyHerdCalmed"]
+
+[node name="Shape" type="CollisionShape3D" parent="AllyHerdCalmed/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("WC_Capsule_0p4_1p8")
+
+[node name="Collider2" type="StaticBody3D" parent="AllyHerdCalmed"]
+
+[node name="Shape" type="CollisionShape3D" parent="AllyHerdCalmed/Collider2"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5, 0.9, 0.6)
+shape = SubResource("WC_Capsule_0p4_1p8")
+
+[node name="Faction" type="Node" parent="AllyHerdCalmed"]
+script = ExtResource("wc_factioncomponent_cs")
+FactionId = "faction.villagers"
+
+[node name="Dialogue" type="Node" parent="AllyHerdCalmed"]
+script = ExtResource("wc_dialoguecomponent_cs")
+DialogueId = "dialogue.ally_herd_calmed"
+
+[node name="Visibility" type="Node" parent="AllyHerdCalmed"]
+script = ExtResource("wc_flagvisibilitycomponent_cs")
+VisibleWhenFlagId = "flag.fork.herd_calmed"
+
+[node name="Model" parent="AllyHerdCalmed" instance=ExtResource("wc_npc_guild_rep_glb")]
+
+[node name="Model2" parent="AllyHerdCalmed" instance=ExtResource("wc_npc_townswoman_glb")]
+transform = Transform3D(0.9063, 0, -0.4226, 0, 1, 0, 0.4226, 0, 0.9063, 1.5, 0, 0.6)
+
+; WR-spec2 ally cluster (flock_exposed): two figures, one speaker, visible on flag.fork.flock_exposed.
+[node name="AllyFlockExposed" type="Node3D" parent="."]
+transform = Transform3D(-0.7071, 0, -0.7071, 0, 1, 0, 0.7071, 0, -0.7071, 48, 0, 72)
+script = ExtResource("wc_entity_cs")
+DisplayName = "Pilgrim of the Wells"
+TemplateId = "npc.sunspire_pilgrim"
+
+[node name="Animation" type="Node" parent="AllyFlockExposed"]
+script = ExtResource("wc_characteranimationcomponent_cs")
+BodyMeshPath = "Model"
+
+[node name="EquipmentVisuals" type="Node" parent="AllyFlockExposed"]
+script = ExtResource("wc_equipmentpresentationcomponent_cs")
+BodyMeshPath = "Model"
+
+[node name="Animation2" type="Node" parent="AllyFlockExposed"]
+script = ExtResource("wc_characteranimationcomponent_cs")
+BodyMeshPath = "Model2"
+
+[node name="EquipmentVisuals2" type="Node" parent="AllyFlockExposed"]
+script = ExtResource("wc_equipmentpresentationcomponent_cs")
+BodyMeshPath = "Model2"
+
+[node name="Collider" type="StaticBody3D" parent="AllyFlockExposed"]
+
+[node name="Shape" type="CollisionShape3D" parent="AllyFlockExposed/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("WC_Capsule_0p4_1p8")
+
+[node name="Collider2" type="StaticBody3D" parent="AllyFlockExposed"]
+
+[node name="Shape" type="CollisionShape3D" parent="AllyFlockExposed/Collider2"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5, 0.9, 0.6)
+shape = SubResource("WC_Capsule_0p4_1p8")
+
+[node name="Faction" type="Node" parent="AllyFlockExposed"]
+script = ExtResource("wc_factioncomponent_cs")
+FactionId = "faction.villagers"
+
+[node name="Dialogue" type="Node" parent="AllyFlockExposed"]
+script = ExtResource("wc_dialoguecomponent_cs")
+DialogueId = "dialogue.ally_flock_exposed"
+
+[node name="Visibility" type="Node" parent="AllyFlockExposed"]
+script = ExtResource("wc_flagvisibilitycomponent_cs")
+VisibleWhenFlagId = "flag.fork.flock_exposed"
+
+[node name="Model" parent="AllyFlockExposed" instance=ExtResource("wc_npc_townsman_glb")]
+
+[node name="Model2" parent="AllyFlockExposed" instance=ExtResource("wc_npc_hooded_glb")]
+transform = Transform3D(0.9063, 0, -0.4226, 0, 1, 0, 0.4226, 0, 0.9063, 1.5, 0, 0.6)
+
+; WR-spec2 ally cluster (flock_turned): two figures, one speaker, visible on flag.fork.flock_turned.
+[node name="AllyFlockTurned" type="Node3D" parent="."]
+transform = Transform3D(-0.7071, 0, -0.7071, 0, 1, 0, 0.7071, 0, -0.7071, 48, 0, 72)
+script = ExtResource("wc_entity_cs")
+DisplayName = "Convert of the Archive"
+TemplateId = "npc.landing_reader"
+
+[node name="Animation" type="Node" parent="AllyFlockTurned"]
+script = ExtResource("wc_characteranimationcomponent_cs")
+BodyMeshPath = "Model"
+
+[node name="EquipmentVisuals" type="Node" parent="AllyFlockTurned"]
+script = ExtResource("wc_equipmentpresentationcomponent_cs")
+BodyMeshPath = "Model"
+
+[node name="Animation2" type="Node" parent="AllyFlockTurned"]
+script = ExtResource("wc_characteranimationcomponent_cs")
+BodyMeshPath = "Model2"
+
+[node name="EquipmentVisuals2" type="Node" parent="AllyFlockTurned"]
+script = ExtResource("wc_equipmentpresentationcomponent_cs")
+BodyMeshPath = "Model2"
+
+[node name="Collider" type="StaticBody3D" parent="AllyFlockTurned"]
+
+[node name="Shape" type="CollisionShape3D" parent="AllyFlockTurned/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("WC_Capsule_0p4_1p8")
+
+[node name="Collider2" type="StaticBody3D" parent="AllyFlockTurned"]
+
+[node name="Shape" type="CollisionShape3D" parent="AllyFlockTurned/Collider2"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5, 0.9, 0.6)
+shape = SubResource("WC_Capsule_0p4_1p8")
+
+[node name="Faction" type="Node" parent="AllyFlockTurned"]
+script = ExtResource("wc_factioncomponent_cs")
+FactionId = "faction.villagers"
+
+[node name="Dialogue" type="Node" parent="AllyFlockTurned"]
+script = ExtResource("wc_dialoguecomponent_cs")
+DialogueId = "dialogue.ally_flock_turned"
+
+[node name="Visibility" type="Node" parent="AllyFlockTurned"]
+script = ExtResource("wc_flagvisibilitycomponent_cs")
+VisibleWhenFlagId = "flag.fork.flock_turned"
+
+[node name="Model" parent="AllyFlockTurned" instance=ExtResource("wc_npc_townsman_glb")]
+
+[node name="Model2" parent="AllyFlockTurned" instance=ExtResource("wc_npc_townswoman_glb")]
+transform = Transform3D(0.9063, 0, -0.4226, 0, 1, 0, 0.4226, 0, 0.9063, 1.5, 0, 0.6)
+
+; WR-spec2 ally cluster (flock_kin): two figures, one speaker, visible on flag.fork.flock_kin.
+[node name="AllyFlockKin" type="Node3D" parent="."]
+transform = Transform3D(-0.7071, 0, -0.7071, 0, 1, 0, 0.7071, 0, -0.7071, 48, 0, 72)
+script = ExtResource("wc_entity_cs")
+DisplayName = "A Kneeling Zealot"
+TemplateId = "npc.landing_seeker"
+
+[node name="Animation" type="Node" parent="AllyFlockKin"]
+script = ExtResource("wc_characteranimationcomponent_cs")
+BodyMeshPath = "Model"
+
+[node name="EquipmentVisuals" type="Node" parent="AllyFlockKin"]
+script = ExtResource("wc_equipmentpresentationcomponent_cs")
+BodyMeshPath = "Model"
+
+[node name="Animation2" type="Node" parent="AllyFlockKin"]
+script = ExtResource("wc_characteranimationcomponent_cs")
+BodyMeshPath = "Model2"
+
+[node name="EquipmentVisuals2" type="Node" parent="AllyFlockKin"]
+script = ExtResource("wc_equipmentpresentationcomponent_cs")
+BodyMeshPath = "Model2"
+
+[node name="Collider" type="StaticBody3D" parent="AllyFlockKin"]
+
+[node name="Shape" type="CollisionShape3D" parent="AllyFlockKin/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("WC_Capsule_0p4_1p8")
+
+[node name="Collider2" type="StaticBody3D" parent="AllyFlockKin"]
+
+[node name="Shape" type="CollisionShape3D" parent="AllyFlockKin/Collider2"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5, 0.9, 0.6)
+shape = SubResource("WC_Capsule_0p4_1p8")
+
+[node name="Faction" type="Node" parent="AllyFlockKin"]
+script = ExtResource("wc_factioncomponent_cs")
+FactionId = "faction.villagers"
+
+[node name="Dialogue" type="Node" parent="AllyFlockKin"]
+script = ExtResource("wc_dialoguecomponent_cs")
+DialogueId = "dialogue.ally_flock_kin"
+
+[node name="Visibility" type="Node" parent="AllyFlockKin"]
+script = ExtResource("wc_flagvisibilitycomponent_cs")
+VisibleWhenFlagId = "flag.fork.flock_kin"
+
+[node name="Model" parent="AllyFlockKin" instance=ExtResource("wc_npc_hooded_glb")]
+
+[node name="Model2" parent="AllyFlockKin" instance=ExtResource("wc_npc_hooded_glb")]
+transform = Transform3D(0.9063, 0, -0.4226, 0, 1, 0, 0.4226, 0, 0.9063, 1.5, 0, 0.6)
+
+; WR-spec2 ally cluster (queen_released): two figures, one speaker, visible on flag.fork.queen_released.
+[node name="AllyQueenReleased" type="Node3D" parent="."]
+transform = Transform3D(-0.8878, 0, 0.4603, 0, 1, 0, -0.4603, 0, -0.8878, 30, 0, 74.5)
+script = ExtResource("wc_entity_cs")
+DisplayName = "Lamplighter of Vesperhold"
+TemplateId = "npc.undying_lamplighter"
+
+[node name="Animation" type="Node" parent="AllyQueenReleased"]
+script = ExtResource("wc_characteranimationcomponent_cs")
+BodyMeshPath = "Model"
+
+[node name="EquipmentVisuals" type="Node" parent="AllyQueenReleased"]
+script = ExtResource("wc_equipmentpresentationcomponent_cs")
+BodyMeshPath = "Model"
+
+[node name="Animation2" type="Node" parent="AllyQueenReleased"]
+script = ExtResource("wc_characteranimationcomponent_cs")
+BodyMeshPath = "Model2"
+
+[node name="EquipmentVisuals2" type="Node" parent="AllyQueenReleased"]
+script = ExtResource("wc_equipmentpresentationcomponent_cs")
+BodyMeshPath = "Model2"
+
+[node name="Collider" type="StaticBody3D" parent="AllyQueenReleased"]
+
+[node name="Shape" type="CollisionShape3D" parent="AllyQueenReleased/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("WC_Capsule_0p4_1p8")
+
+[node name="Collider2" type="StaticBody3D" parent="AllyQueenReleased"]
+
+[node name="Shape" type="CollisionShape3D" parent="AllyQueenReleased/Collider2"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5, 0.9, 0.6)
+shape = SubResource("WC_Capsule_0p4_1p8")
+
+[node name="Faction" type="Node" parent="AllyQueenReleased"]
+script = ExtResource("wc_factioncomponent_cs")
+FactionId = "faction.villagers"
+
+[node name="Dialogue" type="Node" parent="AllyQueenReleased"]
+script = ExtResource("wc_dialoguecomponent_cs")
+DialogueId = "dialogue.ally_queen_released"
+
+[node name="Visibility" type="Node" parent="AllyQueenReleased"]
+script = ExtResource("wc_flagvisibilitycomponent_cs")
+VisibleWhenFlagId = "flag.fork.queen_released"
+
+[node name="Model" parent="AllyQueenReleased" instance=ExtResource("wc_npc_townsman_glb")]
+
+[node name="Model2" parent="AllyQueenReleased" instance=ExtResource("wc_npc_townswoman_glb")]
+transform = Transform3D(0.9063, 0, -0.4226, 0, 1, 0, 0.4226, 0, 0.9063, 1.5, 0, 0.6)
+
+; WR-spec2 ally cluster (queen_kept): two figures, one speaker, visible on flag.fork.queen_kept.
+[node name="AllyQueenKept" type="Node3D" parent="."]
+transform = Transform3D(-0.8878, 0, 0.4603, 0, 1, 0, -0.4603, 0, -0.8878, 30, 0, 74.5)
+script = ExtResource("wc_entity_cs")
+DisplayName = "Runner of Vesperhold"
+TemplateId = "npc.traveller"
+
+[node name="Animation" type="Node" parent="AllyQueenKept"]
+script = ExtResource("wc_characteranimationcomponent_cs")
+BodyMeshPath = "Model"
+
+[node name="EquipmentVisuals" type="Node" parent="AllyQueenKept"]
+script = ExtResource("wc_equipmentpresentationcomponent_cs")
+BodyMeshPath = "Model"
+
+[node name="Animation2" type="Node" parent="AllyQueenKept"]
+script = ExtResource("wc_characteranimationcomponent_cs")
+BodyMeshPath = "Model2"
+
+[node name="EquipmentVisuals2" type="Node" parent="AllyQueenKept"]
+script = ExtResource("wc_equipmentpresentationcomponent_cs")
+BodyMeshPath = "Model2"
+
+[node name="Collider" type="StaticBody3D" parent="AllyQueenKept"]
+
+[node name="Shape" type="CollisionShape3D" parent="AllyQueenKept/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("WC_Capsule_0p4_1p8")
+
+[node name="Collider2" type="StaticBody3D" parent="AllyQueenKept"]
+
+[node name="Shape" type="CollisionShape3D" parent="AllyQueenKept/Collider2"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5, 0.9, 0.6)
+shape = SubResource("WC_Capsule_0p4_1p8")
+
+[node name="Faction" type="Node" parent="AllyQueenKept"]
+script = ExtResource("wc_factioncomponent_cs")
+FactionId = "faction.villagers"
+
+[node name="Dialogue" type="Node" parent="AllyQueenKept"]
+script = ExtResource("wc_dialoguecomponent_cs")
+DialogueId = "dialogue.ally_queen_kept"
+
+[node name="Visibility" type="Node" parent="AllyQueenKept"]
+script = ExtResource("wc_flagvisibilitycomponent_cs")
+VisibleWhenFlagId = "flag.fork.queen_kept"
+
+[node name="Model" parent="AllyQueenKept" instance=ExtResource("wc_npc_woman_dress_glb")]
+transform = Transform3D(0.86, 0, 0, 0, 0.86, 0, 0, 0, 0.86, 0, 0, 0)
+
+[node name="Model2" parent="AllyQueenKept" instance=ExtResource("wc_npc_townsman_glb")]
+transform = Transform3D(0.9063, 0, -0.4226, 0, 1, 0, 0.4226, 0, 0.9063, 1.5, 0, 0.6)
+
+; WR-spec2-46: the raid on the landing (3 x 4 waves, 12 s apart).
+[node name="LandingRaid" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 38, 0, 56)
+script = ExtResource("wc_setpiecespawncomponent_cs")
+TriggerFlagId = "flag.beat.landing_beacon_lit"
+TemplateIds = PackedStringArray("enemy.bone_knight", "enemy.cinder_thrall", "enemy.cultist")
+CountPerWave = 3
+Waves = 4
+WaveDelaySeconds = 12
+SpawnRadius = 13
+ClearedFlagId = "flag.beat.landing_raid_cleared"

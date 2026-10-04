@@ -20700,7 +20700,9 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "scenes/regions/ember_crown/town_hub.tscn"
+   ]
   },
   "flag.beat.anchor_a": {
    "writers": [
@@ -20713,7 +20715,8 @@
    "readers": [],
    "code": false,
    "externalRefs": [
-    "data/story/rules/spec2.json"
+    "data/story/rules/spec2.json",
+    "scenes/regions/celestial/godfall.tscn"
    ]
   },
   "flag.beat.anchor_b": {
@@ -20727,7 +20730,8 @@
    "readers": [],
    "code": false,
    "externalRefs": [
-    "data/story/rules/spec2.json"
+    "data/story/rules/spec2.json",
+    "scenes/regions/celestial/godfall.tscn"
    ]
   },
   "flag.beat.anchor_c": {
@@ -20741,7 +20745,8 @@
    "readers": [],
    "code": false,
    "externalRefs": [
-    "data/story/rules/spec2.json"
+    "data/story/rules/spec2.json",
+    "scenes/regions/celestial/godfall.tscn"
    ]
   },
   "flag.beat.anchors_lit": {
@@ -20755,7 +20760,8 @@
    ],
    "code": true,
    "externalRefs": [
-    "data/story/rules/spec2.json"
+    "data/story/rules/spec2.json",
+    "scenes/regions/celestial/godfall.tscn"
    ]
   },
   "flag.beat.arcs_complete": {
@@ -20887,7 +20893,9 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "scenes/regions/ember_crown/wilds_north.tscn"
+   ]
   },
   "flag.beat.beast_track_a_seen": {
    "writers": [
@@ -20998,7 +21006,8 @@
    ],
    "code": false,
    "externalRefs": [
-    "data/story/reactions/spec1.json"
+    "data/story/reactions/spec1.json",
+    "scenes/regions/ember_crown/ashen_breach.tscn"
    ]
   },
   "flag.beat.cairn_mid_lit": {
@@ -21041,7 +21050,9 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "scenes/regions/frostfang_reach/clan_hold.tscn"
+   ]
   },
   "flag.beat.carter_helped": {
    "writers": [
@@ -21064,7 +21075,9 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "scenes/regions/ember_crown/town_hub.tscn"
+   ]
   },
   "flag.beat.choir_answered": {
    "writers": [
@@ -21088,7 +21101,8 @@
    ],
    "code": false,
    "externalRefs": [
-    "data/story/rules/spec2.json"
+    "data/story/rules/spec2.json",
+    "scenes/regions/celestial/fallen_choir.tscn"
    ]
   },
   "flag.beat.choir_passed": {
@@ -21131,7 +21145,9 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "scenes/regions/celestial/fallen_choir.tscn"
+   ]
   },
   "flag.beat.choir_silenced": {
    "writers": [
@@ -21144,7 +21160,8 @@
    "readers": [],
    "code": false,
    "externalRefs": [
-    "data/story/rules/spec2.json"
+    "data/story/rules/spec2.json",
+    "scenes/regions/celestial/fallen_choir.tscn"
    ]
   },
   "flag.beat.codex_cards_seen": {
@@ -21262,7 +21279,9 @@
    ],
    "code": true,
    "externalRefs": [
-    "data/story/rules/spec1.json"
+    "data/story/rules/spec1.json",
+    "scenes/regions/sunspire/temple.tscn",
+    "scenes/regions/sunspire/wells.tscn"
    ]
   },
   "flag.beat.gap_seen": {
@@ -21344,7 +21363,9 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "scenes/regions/celestial/knight_gate.tscn"
+   ]
   },
   "flag.beat.gauges_read": {
    "writers": [
@@ -21479,7 +21500,10 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "scenes/regions/ashen_wilds/hunters_rise.tscn",
+    "scenes/regions/ashen_wilds/lair_approach.tscn"
+   ]
   },
   "flag.beat.hearth_held": {
    "writers": [
@@ -21525,7 +21549,9 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "scenes/regions/ashen_wilds/last_hearth.tscn"
+   ]
   },
   "flag.beat.herd_calm_held": {
    "writers": [
@@ -21555,7 +21581,8 @@
    ],
    "code": true,
    "externalRefs": [
-    "data/story/rules/spec1.json"
+    "data/story/rules/spec1.json",
+    "scenes/regions/ashen_wilds/lair_approach.tscn"
    ]
   },
   "flag.beat.hjalvar_briefed": {
@@ -21683,7 +21710,9 @@
    ],
    "readers": [],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "scenes/regions/celestial/landing.tscn"
+   ]
   },
   "flag.beat.landing_held": {
    "writers": [
@@ -21695,7 +21724,9 @@
    ],
    "readers": [],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "scenes/regions/celestial/landing.tscn"
+   ]
   },
   "flag.beat.library_defended": {
    "writers": [
@@ -21713,7 +21744,9 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "scenes/regions/sunspire/library.tscn"
+   ]
   },
   "flag.beat.oda_briefed": {
    "writers": [
@@ -21794,7 +21827,8 @@
    "readers": [],
    "code": false,
    "externalRefs": [
-    "data/story/rules/spec2.json"
+    "data/story/rules/spec2.json",
+    "scenes/regions/sunspire/library.tscn"
    ]
   },
   "flag.beat.plinth_b": {
@@ -21808,7 +21842,8 @@
    "readers": [],
    "code": false,
    "externalRefs": [
-    "data/story/rules/spec2.json"
+    "data/story/rules/spec2.json",
+    "scenes/regions/sunspire/library.tscn"
    ]
   },
   "flag.beat.plinth_c": {
@@ -21822,7 +21857,8 @@
    "readers": [],
    "code": false,
    "externalRefs": [
-    "data/story/rules/spec2.json"
+    "data/story/rules/spec2.json",
+    "scenes/regions/sunspire/library.tscn"
    ]
   },
   "flag.beat.postern_known": {
@@ -21856,7 +21892,9 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "scenes/regions/ember_crown/citadel.tscn"
+   ]
   },
   "flag.beat.prophetend_exposed": {
    "writers": [],
@@ -21996,7 +22034,9 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "scenes/regions/frostfang_reach/glacier.tscn"
+   ]
   },
   "flag.beat.scout_cairn_north_seen": {
    "writers": [
@@ -22014,7 +22054,9 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "scenes/regions/frostfang_reach/glacier.tscn"
+   ]
   },
   "flag.beat.scout_cairn_south_seen": {
    "writers": [
@@ -22032,7 +22074,9 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "scenes/regions/frostfang_reach/clan_hold.tscn"
+   ]
   },
   "flag.beat.seals_broken": {
    "writers": [],
@@ -22045,7 +22089,8 @@
    ],
    "code": true,
    "externalRefs": [
-    "data/story/rules/spec2.json"
+    "data/story/rules/spec2.json",
+    "scenes/regions/sunspire/library.tscn"
    ]
   },
   "flag.beat.sentinels_down": {
@@ -22064,7 +22109,9 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "scenes/regions/celestial/sundered_stair.tscn"
+   ]
   },
   "flag.beat.signal_brazier_seen": {
    "writers": [
@@ -22094,7 +22141,9 @@
    ],
    "readers": [],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "scenes/regions/ember_crown/citadel.tscn"
+   ]
   },
   "flag.beat.square_held": {
    "writers": [
@@ -22160,7 +22209,9 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "scenes/regions/sunspire/library.tscn"
+   ]
   },
   "flag.beat.stair_echo": {
    "writers": [
@@ -22179,7 +22230,8 @@
    ],
    "code": false,
    "externalRefs": [
-    "data/story/reactions/spec2.json"
+    "data/story/reactions/spec2.json",
+    "scenes/regions/celestial/sundered_stair.tscn"
    ]
   },
   "flag.beat.stair_held": {
@@ -22198,7 +22250,9 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "scenes/regions/celestial/sundered_stair.tscn"
+   ]
   },
   "flag.beat.stair_reached": {
    "writers": [
@@ -22234,7 +22288,8 @@
    ],
    "code": true,
    "externalRefs": [
-    "data/story/rules/spec2.json"
+    "data/story/rules/spec2.json",
+    "scenes/regions/celestial/sundered_stair.tscn"
    ]
   },
   "flag.beat.stormcrown_held": {
@@ -22265,7 +22320,8 @@
    ],
    "code": true,
    "externalRefs": [
-    "data/story/rules/spec1.json"
+    "data/story/rules/spec1.json",
+    "scenes/regions/frostfang_reach/clan_hold.tscn"
    ]
   },
   "flag.beat.stormend_hjalvar": {
@@ -22313,7 +22369,8 @@
    ],
    "code": true,
    "externalRefs": [
-    "data/story/rules/spec1.json"
+    "data/story/rules/spec1.json",
+    "scenes/regions/frostfang_reach/stormfall.tscn"
    ]
   },
   "flag.beat.throne_decided": {
@@ -22355,7 +22412,9 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "scenes/regions/ember_crown/ashen_breach.tscn"
+   ]
   },
   "flag.beat.track_a_read": {
    "writers": [
@@ -23287,6 +23346,7 @@
    "externalRefs": [
     "data/story/reactions/spec1.json",
     "data/story/rules/spec1.json",
+    "scenes/regions/celestial/landing.tscn",
     "src/UI/EndingSequence.cs"
    ]
   },
@@ -23324,6 +23384,8 @@
    "externalRefs": [
     "data/story/reactions/spec1.json",
     "data/story/rules/spec1.json",
+    "scenes/regions/celestial/landing.tscn",
+    "scenes/regions/ember_crown/citadel.tscn",
     "src/UI/EndingSequence.cs"
    ]
   },
@@ -23356,6 +23418,8 @@
    "externalRefs": [
     "data/story/reactions/spec1.json",
     "data/story/rules/spec1.json",
+    "scenes/regions/celestial/landing.tscn",
+    "scenes/regions/sunspire/temple.tscn",
     "src/UI/EndingSequence.cs"
    ]
   },
@@ -23388,6 +23452,9 @@
    "externalRefs": [
     "data/story/reactions/spec1.json",
     "data/story/rules/spec1.json",
+    "scenes/regions/celestial/landing.tscn",
+    "scenes/regions/sunspire/temple.tscn",
+    "scenes/regions/sunspire/wells.tscn",
     "src/UI/EndingSequence.cs"
    ]
   },
@@ -23424,6 +23491,8 @@
    "code": true,
    "externalRefs": [
     "data/story/rules/spec1.json",
+    "scenes/regions/celestial/landing.tscn",
+    "scenes/regions/sunspire/wells.tscn",
     "src/UI/EndingSequence.cs"
    ]
   },
@@ -23456,6 +23525,9 @@
    "externalRefs": [
     "data/story/reactions/spec1.json",
     "data/story/rules/spec1.json",
+    "scenes/regions/ashen_wilds/lair_approach.tscn",
+    "scenes/regions/ashen_wilds/last_hearth.tscn",
+    "scenes/regions/celestial/landing.tscn",
     "src/UI/EndingSequence.cs"
    ]
   },
@@ -23493,6 +23565,8 @@
    "externalRefs": [
     "data/story/reactions/spec1.json",
     "data/story/rules/spec1.json",
+    "scenes/regions/ashen_wilds/lair_approach.tscn",
+    "scenes/regions/celestial/landing.tscn",
     "src/UI/EndingSequence.cs"
    ]
   },
@@ -23564,6 +23638,7 @@
    "code": false,
    "externalRefs": [
     "data/story/reactions/spec2.json",
+    "scenes/regions/celestial/landing.tscn",
     "src/UI/EndingSequence.cs"
    ]
   },
@@ -23635,6 +23710,7 @@
    "code": false,
    "externalRefs": [
     "data/story/reactions/spec2.json",
+    "scenes/regions/celestial/landing.tscn",
     "src/UI/EndingSequence.cs"
    ]
   },
@@ -23667,6 +23743,8 @@
    "externalRefs": [
     "data/story/reactions/spec1.json",
     "data/story/rules/spec1.json",
+    "scenes/regions/celestial/landing.tscn",
+    "scenes/regions/frostfang_reach/stormfall.tscn",
     "src/UI/EndingSequence.cs"
    ]
   },
@@ -23698,6 +23776,8 @@
    "code": true,
    "externalRefs": [
     "data/story/rules/spec1.json",
+    "scenes/regions/celestial/landing.tscn",
+    "scenes/regions/frostfang_reach/stormfall.tscn",
     "src/UI/EndingSequence.cs"
    ]
   },
@@ -24018,7 +24098,7 @@
     "data/regions/AshenWilds.tres",
     "data/regions/Sunspire.tres",
     "data/shops/EmberCrownApothecary.tres",
-    "scenes/regions/frostfang_reach/stormcrown.tscn",
+    "scenes/regions/ember_crown/arena.tscn",
     "src/Bootstrap/HeadlessStory.cs",
     "src/Enemies/BossEncounterDirector.cs",
     "src/Narrative/CampaignCatchUp.cs"
@@ -24231,7 +24311,9 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "scenes/regions/ember_crown/kings_approach.tscn"
+   ]
   },
   "flag.main.closed_hold_done": {
    "writers": [
@@ -24485,7 +24567,9 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "scenes/regions/ashen_wilds/lair_approach.tscn"
+   ]
   },
   "flag.main.opening_done": {
    "writers": [],
@@ -24675,7 +24759,9 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "scenes/regions/celestial/knight_gate.tscn"
+   ]
   },
   "flag.main.sundering_pages_done": {
    "writers": [
@@ -24764,7 +24850,9 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "scenes/regions/pale_concord/processional.tscn"
+   ]
   },
   "flag.morthul_defeated": {
    "writers": [],
@@ -24854,7 +24942,9 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "scenes/regions/pale_concord/palace.tscn"
+   ]
   },
   "flag.pale_concord_revealed": {
    "writers": [],
@@ -24873,6 +24963,7 @@
    "code": true,
    "externalRefs": [
     "data/map_locations/PaleCity.tres",
+    "data/map_locations/PaleCourtApproach.tres",
     "data/map_locations/PaleLanding.tres",
     "data/map_locations/PalePalace.tres",
     "data/regions/PaleConcord.tres",
@@ -25153,7 +25244,9 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "scenes/regions/ember_crown/arena.tscn"
+   ]
   },
   "flag.rival.sigil": {
    "writers": [
@@ -25634,6 +25727,7 @@
    "externalRefs": [
     "data/story/reactions/spec1.json",
     "data/story/rules/spec1.json",
+    "scenes/regions/celestial/landing.tscn",
     "src/UI/EndingSequence.cs"
    ]
   },
@@ -25676,6 +25770,8 @@
    "externalRefs": [
     "data/story/reactions/spec1.json",
     "data/story/rules/spec1.json",
+    "scenes/regions/celestial/landing.tscn",
+    "scenes/regions/ember_crown/citadel.tscn",
     "src/UI/EndingSequence.cs"
    ]
   },
@@ -25713,6 +25809,8 @@
    "externalRefs": [
     "data/story/reactions/spec1.json",
     "data/story/rules/spec1.json",
+    "scenes/regions/celestial/landing.tscn",
+    "scenes/regions/sunspire/temple.tscn",
     "src/UI/EndingSequence.cs"
    ]
   },
@@ -25750,6 +25848,9 @@
    "externalRefs": [
     "data/story/reactions/spec1.json",
     "data/story/rules/spec1.json",
+    "scenes/regions/celestial/landing.tscn",
+    "scenes/regions/sunspire/temple.tscn",
+    "scenes/regions/sunspire/wells.tscn",
     "src/UI/EndingSequence.cs"
    ]
   },
@@ -25791,6 +25892,8 @@
    ],
    "externalRefs": [
     "data/story/rules/spec1.json",
+    "scenes/regions/celestial/landing.tscn",
+    "scenes/regions/sunspire/wells.tscn",
     "src/UI/EndingSequence.cs"
    ]
   },
@@ -25828,6 +25931,9 @@
    "externalRefs": [
     "data/story/reactions/spec1.json",
     "data/story/rules/spec1.json",
+    "scenes/regions/ashen_wilds/lair_approach.tscn",
+    "scenes/regions/ashen_wilds/last_hearth.tscn",
+    "scenes/regions/celestial/landing.tscn",
     "src/UI/EndingSequence.cs"
    ]
   },
@@ -25870,6 +25976,8 @@
    "externalRefs": [
     "data/story/reactions/spec1.json",
     "data/story/rules/spec1.json",
+    "scenes/regions/ashen_wilds/lair_approach.tscn",
+    "scenes/regions/celestial/landing.tscn",
     "src/UI/EndingSequence.cs"
    ]
   },
@@ -25941,6 +26049,7 @@
    ],
    "externalRefs": [
     "data/story/reactions/spec2.json",
+    "scenes/regions/celestial/landing.tscn",
     "src/UI/EndingSequence.cs"
    ]
   },
@@ -26012,6 +26121,7 @@
    ],
    "externalRefs": [
     "data/story/reactions/spec2.json",
+    "scenes/regions/celestial/landing.tscn",
     "src/UI/EndingSequence.cs"
    ]
   },
@@ -26049,6 +26159,8 @@
    "externalRefs": [
     "data/story/reactions/spec1.json",
     "data/story/rules/spec1.json",
+    "scenes/regions/celestial/landing.tscn",
+    "scenes/regions/frostfang_reach/stormfall.tscn",
     "src/UI/EndingSequence.cs"
    ]
   },
@@ -26085,6 +26197,8 @@
    ],
    "externalRefs": [
     "data/story/rules/spec1.json",
+    "scenes/regions/celestial/landing.tscn",
+    "scenes/regions/frostfang_reach/stormfall.tscn",
     "src/UI/EndingSequence.cs"
    ]
   }
