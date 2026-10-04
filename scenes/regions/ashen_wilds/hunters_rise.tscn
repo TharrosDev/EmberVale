@@ -14,6 +14,8 @@
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_watch_tower.glb" id="p_tower"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_guild_rep.glb" id="c_warden"]
 [ext_resource type="Script" path="res://src/World/MapLocationComponent.cs" id="maploc_39_5a"]
+[ext_resource type="PackedScene" path="res://scenes/props/prp_beast_stake.tscn" id="wb_prp_beast_stake"]
+[ext_resource type="Script" path="res://src/World/FlagVisibilityComponent.cs" id="wb_flagvisibilitycomponent"]
 
 ; THE HUNTERS' RISE - the Ash Hunters' field station (location.ashen.station), on a low rise above the
 ; scar road where the Hunters can watch both Last Hearth and the Beast Lord's plateau. A watch tower,
@@ -45,6 +47,14 @@ agent_height = 1.8
 agent_radius = 0.6
 agent_max_climb = 0.3
 agent_max_slope = 42.0
+
+[sub_resource type="CylinderShape3D" id="WB_Shape_BeastTrackA"]
+radius = 0.3
+height = 1.4
+
+[sub_resource type="CylinderShape3D" id="WB_Shape_BeastTrackB"]
+radius = 0.3
+height = 1.4
 
 [node name="HuntersRiseCell" type="Node3D"]
 metadata/content_offset = Vector2(35, 5)
@@ -142,3 +152,54 @@ DialogueId = "dialogue.ash_hunter_warden"
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 35, 0, 5)
 script = ExtResource("maploc_39_5a")
 LocationId = "location.ashen.station"
+
+; CAMPAIGN (WR-spec1-10, 11): Hask Morrow's red stakes. Two staked beast tracks on the rise, shown once he has briefed you.
+; Each is an Entity (Model + Collider + Dialogue + FlagVisibility) on the cell root; the interactable is the stake.
+
+[node name="BeastTrackA" type="Node3D" parent="."]
+transform = Transform3D(0.9063, 0, 0.4226, 0, 1, 0, -0.4226, 0, 0.9063, 27, 0, -8)
+script = ExtResource("1_entity")
+DisplayName = "A Staked Track"
+PersistentId = "ashen_wilds.hunters_rise.beast_track_a"
+
+[node name="Model" parent="BeastTrackA" instance=ExtResource("wb_prp_beast_stake")]
+
+[node name="Collider" type="StaticBody3D" parent="BeastTrackA"]
+
+[node name="Shape" type="CollisionShape3D" parent="BeastTrackA/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
+shape = SubResource("WB_Shape_BeastTrackA")
+
+[node name="Dialogue" type="Node" parent="BeastTrackA"]
+script = ExtResource("3_dialogue")
+DialogueId = "dialogue.beast_track_a"
+InteractId = "interact.ashen.beast_track_a"
+PromptKey = "interact.worldb.track"
+
+[node name="Visibility" type="Node" parent="BeastTrackA"]
+script = ExtResource("wb_flagvisibilitycomponent")
+VisibleWhenFlagId = "flag.beat.hask_briefed"
+
+[node name="BeastTrackB" type="Node3D" parent="."]
+transform = Transform3D(0.766, 0, -0.6428, 0, 1, 0, 0.6428, 0, 0.766, 38, 0, -14)
+script = ExtResource("1_entity")
+DisplayName = "A Staked Track"
+PersistentId = "ashen_wilds.hunters_rise.beast_track_b"
+
+[node name="Model" parent="BeastTrackB" instance=ExtResource("wb_prp_beast_stake")]
+
+[node name="Collider" type="StaticBody3D" parent="BeastTrackB"]
+
+[node name="Shape" type="CollisionShape3D" parent="BeastTrackB/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
+shape = SubResource("WB_Shape_BeastTrackB")
+
+[node name="Dialogue" type="Node" parent="BeastTrackB"]
+script = ExtResource("3_dialogue")
+DialogueId = "dialogue.beast_track_b"
+InteractId = "interact.ashen.beast_track_b"
+PromptKey = "interact.worldb.track"
+
+[node name="Visibility" type="Node" parent="BeastTrackB"]
+script = ExtResource("wb_flagvisibilitycomponent")
+VisibleWhenFlagId = "flag.beat.hask_briefed"
