@@ -1,0 +1,40 @@
+[gd_scene load_steps=10 format=3]
+
+; The child's scratched lettering under the middle gauge stone (WR-spec1-14). A small plaque of scratched
+; lines; the words themselves are in the dialogue, not on the mesh (invariant 4).
+
+[sub_resource type="StandardMaterial3D" id="Mat_plaque"]
+albedo_color = Color(0.56, 0.52, 0.45, 1)
+roughness = 1
+
+[sub_resource type="StandardMaterial3D" id="Mat_scratch"]
+albedo_color = Color(0.25, 0.22, 0.19, 1)
+roughness = 1
+
+[sub_resource type="BoxMesh" id="Mesh_plaque"]
+size = Vector3(0.62, 0.2, 0.025)
+
+[sub_resource type="BoxMesh" id="Mesh_scratch"]
+size = Vector3(0.5, 0.012, 0.012)
+
+[node name="GaugePlaque" type="Node3D"]
+
+[node name="Plaque" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.9976, 0.0698, 0, -0.0698, 0.9976, 0, 0.2, 0.125)
+mesh = SubResource("Mesh_plaque")
+material_override = SubResource("Mat_plaque")
+
+[node name="Scratch0" type="MeshInstance3D" parent="."]
+transform = Transform3D(0.9986, 0.0523, 0, -0.0523, 0.9986, 0, 0, 0, 1, -0.01, 0.15, 0.14)
+mesh = SubResource("Mesh_scratch")
+material_override = SubResource("Mat_scratch")
+
+[node name="Scratch1" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.2, 0.14)
+mesh = SubResource("Mesh_scratch")
+material_override = SubResource("Mat_scratch")
+
+[node name="Scratch2" type="MeshInstance3D" parent="."]
+transform = Transform3D(0.9986, -0.0523, 0, 0.0523, 0.9986, 0, 0, 0, 1, 0.01, 0.25, 0.14)
+mesh = SubResource("Mesh_scratch")
+material_override = SubResource("Mat_scratch")

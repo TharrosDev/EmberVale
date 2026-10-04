@@ -1,0 +1,41 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_ruin_wall.glb" id="1_wall"]
+
+; The Deep Stacks door (WR-spec2-07): a ruin wall slab with a seam of lead down the middle, no handle and
+; no lock. It fills the vault court's gate, so it IS the gate: hidden by flag.beat.stacks_open. The slab is
+; 4 m wide and 4 m tall (the model's own 2 m, doubled by its glTF root scale); the lead runs as one vertical
+; seam with two short ties across it, deliberately not a cross.
+
+[sub_resource type="StandardMaterial3D" id="Mat_lead"]
+albedo_color = Color(0.3, 0.32, 0.36, 1)
+roughness = 0.35
+metallic = 0.7
+emission_enabled = true
+emission = Color(0.5, 0.75, 0.9, 1)
+emission_energy_multiplier = 0.15
+
+[sub_resource type="BoxMesh" id="Mesh_seam"]
+size = Vector3(0.1, 3.5, 0.98)
+
+[sub_resource type="BoxMesh" id="Mesh_tie"]
+size = Vector3(0.5, 0.1, 0.98)
+
+[node name="VaultDoor" type="Node3D"]
+
+[node name="Model" parent="." instance=ExtResource("1_wall")]
+
+[node name="Seam" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.95, 0)
+mesh = SubResource("Mesh_seam")
+material_override = SubResource("Mat_lead")
+
+[node name="TieLow" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
+mesh = SubResource("Mesh_tie")
+material_override = SubResource("Mat_lead")
+
+[node name="TieHigh" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.2, 0)
+mesh = SubResource("Mesh_tie")
+material_override = SubResource("Mat_lead")

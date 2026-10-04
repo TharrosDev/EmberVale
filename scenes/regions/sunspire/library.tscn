@@ -18,6 +18,13 @@
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_archivist.glb" id="e16"]
 [ext_resource type="Script" path="res://src/World/CellNavBaker.cs" id="e17"]
 [ext_resource type="Script" path="res://src/World/MapLocationComponent.cs" id="maploc_39_5a"]
+[ext_resource type="PackedScene" path="res://scenes/props/prp_vault_door.tscn" id="wb_prp_vault_door"]
+[ext_resource type="Script" path="res://src/World/FlagVisibilityComponent.cs" id="wb_flagvisibilitycomponent"]
+[ext_resource type="PackedScene" path="res://scenes/props/prp_seal_plinth.tscn" id="wb_prp_seal_plinth"]
+[ext_resource type="PackedScene" path="res://scenes/props/prp_plinth_ring_intact.tscn" id="wb_prp_plinth_ring_intact"]
+[ext_resource type="PackedScene" path="res://scenes/props/prp_plinth_ring_cracked.tscn" id="wb_prp_plinth_ring_cracked"]
+[ext_resource type="PackedScene" path="res://assets/models/creatures/boss_ashen_knight.glb" id="wb_boss_ashen_knight"]
+[ext_resource type="Script" path="res://src/Enemies/SetPieceSpawnComponent.cs" id="wb_setpiecespawncomponent"]
 
 ; THE GREAT LIBRARY (sunspire.library) - the Veiled Archive's great library, the Act III/IV story hub.
 ; Authored in the cell's CONTENT frame and moved to Cell.origin by tools/shift_cell_content.py.
@@ -52,6 +59,29 @@ size = Vector3(4, 4, 0.88)
 [sub_resource type="CylinderShape3D" id="Shape_brazier"]
 radius = 0.5
 height = 1.2
+
+[sub_resource type="BoxShape3D" id="WB_Shape_desk"]
+size = Vector3(2.9, 0.9, 1.15)
+
+[sub_resource type="BoxShape3D" id="WB_Shape_DeepStacksDoor"]
+size = Vector3(4, 4, 1)
+
+[sub_resource type="BoxShape3D" id="WB_Shape_SealPlinthA"]
+size = Vector3(0.9, 1.2, 0.9)
+
+[sub_resource type="BoxShape3D" id="WB_Shape_SealPlinthB"]
+size = Vector3(0.9, 1.2, 0.9)
+
+[sub_resource type="BoxShape3D" id="WB_Shape_SealPlinthC"]
+size = Vector3(0.9, 1.2, 0.9)
+
+[sub_resource type="CylinderShape3D" id="WB_Shape_SunderingCodex"]
+radius = 0.7
+height = 1.5
+
+[sub_resource type="CapsuleShape3D" id="WB_Shape_npc_AshenKnight"]
+radius = 0.4
+height = 1.8
 
 [node name="LibraryCell" type="Node3D"]
 metadata/content_offset = Vector2(45, -50)
@@ -102,6 +132,9 @@ transform = Transform3D(1, 0, -0, 0, 1, 0, 0, 0, 1, 0, 0, -4.55)
 
 [node name="ReadingDesk" type="Node3D" parent="Nav/GreatLibrary"]
 transform = Transform3D(1, 0, -0, 0, 1, 0, 0, 0, 1, 0, 0, -1.6)
+script = ExtResource("e11")
+DisplayName = "The Reading Table"
+PersistentId = "sunspire.library.reading_table"
 
 [node name="Model" parent="Nav/GreatLibrary/ReadingDesk" instance=ExtResource("e4")]
 
@@ -258,3 +291,512 @@ DialogueId = "dialogue.sunspire_archivist"
 [node name="MapPin" type="Node3D" parent="Nav/GreatLibrary"]
 script = ExtResource("maploc_39_5a")
 LocationId = "location.sunspire.library"
+
+; CAMPAIGN (WR-spec2-06..11, 24, 44, 45 and the map location location.sunspire.deep_stacks): ACT III'S VAULT.
+; THE DEEP STACKS is a walled court sunk behind the great hall. The ground does the work: the library's pad stands 1.8 m
+; above a natural basin to its north (generated ground, x -262..-238, z 1437..1456), whose far side climbs into the mesa, so
+; the court's floor rises gently north (0.11) and the way in is a short drop behind the hall's back wall. The door slab is
+; the court's south gate (hidden by flag.beat.stacks_open, collision with it); four ruin-wall runs and six pillars close the
+; rest. Inside: the three seal plinths in a triangle (ring intact until its plinth flag, cracked after), the codex lectern at
+; the centre (the map pin), the two set pieces and, beyond the plinths, the Ashen Knight once the vault is held.
+; Court interior (cell-local): x 35..55, z -65.4..-81.4, centre (45, -73.4).
+
+[node name="Collider" type="StaticBody3D" parent="Nav/GreatLibrary/ReadingDesk"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/GreatLibrary/ReadingDesk/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.45, 0)
+shape = SubResource("WB_Shape_desk")
+
+[node name="Dialogue" type="Node" parent="Nav/GreatLibrary/ReadingDesk"]
+script = ExtResource("e15")
+DialogueId = "dialogue.sunspire_reading_table"
+InteractId = "interact.sunspire.reading_table"
+PromptKey = "interact.worldb.reading_table"
+
+[node name="VaultWallS0" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 37, 0, -65.4)
+
+[node name="Model" parent="Nav/VaultWallS0" instance=ExtResource("e9")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/VaultWallS0"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/VaultWallS0/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+shape = SubResource("Shape_ruinwall")
+
+[node name="VaultWallS1" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 41, 0, -65.4)
+
+[node name="Model" parent="Nav/VaultWallS1" instance=ExtResource("e9")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/VaultWallS1"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/VaultWallS1/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+shape = SubResource("Shape_ruinwall")
+
+[node name="VaultWallS2" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 49, 0, -65.4)
+
+[node name="Model" parent="Nav/VaultWallS2" instance=ExtResource("e9")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/VaultWallS2"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/VaultWallS2/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+shape = SubResource("Shape_ruinwall")
+
+[node name="VaultWallS3" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 53, 0, -65.4)
+
+[node name="Model" parent="Nav/VaultWallS3" instance=ExtResource("e9")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/VaultWallS3"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/VaultWallS3/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+shape = SubResource("Shape_ruinwall")
+
+[node name="VaultWallN4" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 37, 0, -81.4)
+
+[node name="Model" parent="Nav/VaultWallN4" instance=ExtResource("e9")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/VaultWallN4"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/VaultWallN4/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+shape = SubResource("Shape_ruinwall")
+
+[node name="VaultWallN5" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 41, 0, -81.4)
+
+[node name="Model" parent="Nav/VaultWallN5" instance=ExtResource("e9")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/VaultWallN5"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/VaultWallN5/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+shape = SubResource("Shape_ruinwall")
+
+[node name="VaultWallN6" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 45, 0, -81.4)
+
+[node name="Model" parent="Nav/VaultWallN6" instance=ExtResource("e9")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/VaultWallN6"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/VaultWallN6/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+shape = SubResource("Shape_ruinwall")
+
+[node name="VaultWallN7" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 49, 0, -81.4)
+
+[node name="Model" parent="Nav/VaultWallN7" instance=ExtResource("e9")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/VaultWallN7"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/VaultWallN7/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+shape = SubResource("Shape_ruinwall")
+
+[node name="VaultWallN8" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 53, 0, -81.4)
+
+[node name="Model" parent="Nav/VaultWallN8" instance=ExtResource("e9")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/VaultWallN8"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/VaultWallN8/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+shape = SubResource("Shape_ruinwall")
+
+[node name="VaultWallW9" type="Node3D" parent="Nav"]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 35, 0, -67.4)
+
+[node name="Model" parent="Nav/VaultWallW9" instance=ExtResource("e9")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/VaultWallW9"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/VaultWallW9/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+shape = SubResource("Shape_ruinwall")
+
+[node name="VaultWallE10" type="Node3D" parent="Nav"]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 55, 0, -67.4)
+
+[node name="Model" parent="Nav/VaultWallE10" instance=ExtResource("e9")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/VaultWallE10"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/VaultWallE10/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+shape = SubResource("Shape_ruinwall")
+
+[node name="VaultWallW11" type="Node3D" parent="Nav"]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 35, 0, -71.4)
+
+[node name="Model" parent="Nav/VaultWallW11" instance=ExtResource("e9")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/VaultWallW11"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/VaultWallW11/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+shape = SubResource("Shape_ruinwall")
+
+[node name="VaultWallE12" type="Node3D" parent="Nav"]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 55, 0, -71.4)
+
+[node name="Model" parent="Nav/VaultWallE12" instance=ExtResource("e9")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/VaultWallE12"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/VaultWallE12/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+shape = SubResource("Shape_ruinwall")
+
+[node name="VaultWallW13" type="Node3D" parent="Nav"]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 35, 0, -75.4)
+
+[node name="Model" parent="Nav/VaultWallW13" instance=ExtResource("e9")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/VaultWallW13"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/VaultWallW13/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+shape = SubResource("Shape_ruinwall")
+
+[node name="VaultWallE14" type="Node3D" parent="Nav"]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 55, 0, -75.4)
+
+[node name="Model" parent="Nav/VaultWallE14" instance=ExtResource("e9")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/VaultWallE14"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/VaultWallE14/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+shape = SubResource("Shape_ruinwall")
+
+[node name="VaultWallW15" type="Node3D" parent="Nav"]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 35, 0, -79.4)
+
+[node name="Model" parent="Nav/VaultWallW15" instance=ExtResource("e9")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/VaultWallW15"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/VaultWallW15/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+shape = SubResource("Shape_ruinwall")
+
+[node name="VaultWallE16" type="Node3D" parent="Nav"]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 55, 0, -79.4)
+
+[node name="Model" parent="Nav/VaultWallE16" instance=ExtResource("e9")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/VaultWallE16"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/VaultWallE16/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+shape = SubResource("Shape_ruinwall")
+
+[node name="Pillar0" type="Node3D" parent="Nav/VaultWallS0"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2, 0, 0)
+
+[node name="Model" parent="Nav/VaultWallS0/Pillar0" instance=ExtResource("e8")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/VaultWallS0/Pillar0"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/VaultWallS0/Pillar0/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.55, 0)
+shape = SubResource("Shape_pillar")
+
+[node name="Pillar1" type="Node3D" parent="Nav/VaultWallS3"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, 0)
+
+[node name="Model" parent="Nav/VaultWallS3/Pillar1" instance=ExtResource("e8")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/VaultWallS3/Pillar1"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/VaultWallS3/Pillar1/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.55, 0)
+shape = SubResource("Shape_pillar")
+
+[node name="Pillar2" type="Node3D" parent="Nav/VaultWallN4"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2, 0, 0)
+
+[node name="Model" parent="Nav/VaultWallN4/Pillar2" instance=ExtResource("e8")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/VaultWallN4/Pillar2"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/VaultWallN4/Pillar2/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.55, 0)
+shape = SubResource("Shape_pillar")
+
+[node name="Pillar3" type="Node3D" parent="Nav/VaultWallN8"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, 0)
+
+[node name="Model" parent="Nav/VaultWallN8/Pillar3" instance=ExtResource("e8")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/VaultWallN8/Pillar3"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/VaultWallN8/Pillar3/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.55, 0)
+shape = SubResource("Shape_pillar")
+
+[node name="Pillar4" type="Node3D" parent="Nav/VaultWallS1"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5, 0, 0)
+
+[node name="Model" parent="Nav/VaultWallS1/Pillar4" instance=ExtResource("e8")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/VaultWallS1/Pillar4"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/VaultWallS1/Pillar4/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.55, 0)
+shape = SubResource("Shape_pillar")
+
+[node name="Pillar5" type="Node3D" parent="Nav/VaultWallS2"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.5, 0, 0)
+
+[node name="Model" parent="Nav/VaultWallS2/Pillar5" instance=ExtResource("e8")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/VaultWallS2/Pillar5"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/VaultWallS2/Pillar5/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.55, 0)
+shape = SubResource("Shape_pillar")
+
+[node name="DeepStacksDoor" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 45, 0, -65.4)
+script = ExtResource("e11")
+DisplayName = "The Deep Stacks Door"
+PersistentId = "sunspire.library.deep_stacks_door"
+
+[node name="Model" parent="DeepStacksDoor" instance=ExtResource("wb_prp_vault_door")]
+
+[node name="Collider" type="StaticBody3D" parent="DeepStacksDoor"]
+
+[node name="Shape" type="CollisionShape3D" parent="DeepStacksDoor/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+shape = SubResource("WB_Shape_DeepStacksDoor")
+
+[node name="Dialogue" type="Node" parent="DeepStacksDoor"]
+script = ExtResource("e15")
+DialogueId = "dialogue.sunspire_stacks_door"
+InteractId = "interact.sunspire.stacks_door"
+PromptKey = "interact.worldb.stacks_door"
+
+[node name="Visibility" type="Node" parent="DeepStacksDoor"]
+script = ExtResource("wb_flagvisibilitycomponent")
+HiddenWhenFlagId = "flag.beat.stacks_open"
+
+[node name="SealPlinthA" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 45, 0, -77.6)
+script = ExtResource("e11")
+DisplayName = "The First Plinth"
+PersistentId = "sunspire.library.seal_plinth_a"
+
+[node name="Model" parent="SealPlinthA" instance=ExtResource("wb_prp_seal_plinth")]
+
+[node name="Collider" type="StaticBody3D" parent="SealPlinthA"]
+
+[node name="Shape" type="CollisionShape3D" parent="SealPlinthA/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("WB_Shape_SealPlinthA")
+
+[node name="Dialogue" type="Node" parent="SealPlinthA"]
+script = ExtResource("e15")
+DialogueId = "dialogue.sunspire_seal_a"
+InteractId = "interact.sunspire.seal_plinth_a"
+PromptKey = "interact.worldb.plinth"
+
+[node name="PlinthARingIntact" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 45, 0, -77.6)
+script = ExtResource("e11")
+DisplayName = "Seal Ring"
+PersistentId = "sunspire.library.plinth_a_ring_intact"
+
+[node name="Model" parent="PlinthARingIntact" instance=ExtResource("wb_prp_plinth_ring_intact")]
+
+[node name="Visibility" type="Node" parent="PlinthARingIntact"]
+script = ExtResource("wb_flagvisibilitycomponent")
+HiddenWhenFlagId = "flag.beat.plinth_a"
+
+[node name="PlinthARingCracked" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 45, 0, -77.6)
+script = ExtResource("e11")
+DisplayName = "Broken Seal Ring"
+PersistentId = "sunspire.library.plinth_a_ring_cracked"
+
+[node name="Model" parent="PlinthARingCracked" instance=ExtResource("wb_prp_plinth_ring_cracked")]
+
+[node name="Visibility" type="Node" parent="PlinthARingCracked"]
+script = ExtResource("wb_flagvisibilitycomponent")
+VisibleWhenFlagId = "flag.beat.plinth_a"
+
+[node name="SealPlinthB" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 41.36, 0, -71.3)
+script = ExtResource("e11")
+DisplayName = "The Second Plinth"
+PersistentId = "sunspire.library.seal_plinth_b"
+
+[node name="Model" parent="SealPlinthB" instance=ExtResource("wb_prp_seal_plinth")]
+
+[node name="Collider" type="StaticBody3D" parent="SealPlinthB"]
+
+[node name="Shape" type="CollisionShape3D" parent="SealPlinthB/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("WB_Shape_SealPlinthB")
+
+[node name="Dialogue" type="Node" parent="SealPlinthB"]
+script = ExtResource("e15")
+DialogueId = "dialogue.sunspire_seal_b"
+InteractId = "interact.sunspire.seal_plinth_b"
+PromptKey = "interact.worldb.plinth"
+
+[node name="PlinthBRingIntact" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 41.36, 0, -71.3)
+script = ExtResource("e11")
+DisplayName = "Seal Ring"
+PersistentId = "sunspire.library.plinth_b_ring_intact"
+
+[node name="Model" parent="PlinthBRingIntact" instance=ExtResource("wb_prp_plinth_ring_intact")]
+
+[node name="Visibility" type="Node" parent="PlinthBRingIntact"]
+script = ExtResource("wb_flagvisibilitycomponent")
+HiddenWhenFlagId = "flag.beat.plinth_b"
+
+[node name="PlinthBRingCracked" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 41.36, 0, -71.3)
+script = ExtResource("e11")
+DisplayName = "Broken Seal Ring"
+PersistentId = "sunspire.library.plinth_b_ring_cracked"
+
+[node name="Model" parent="PlinthBRingCracked" instance=ExtResource("wb_prp_plinth_ring_cracked")]
+
+[node name="Visibility" type="Node" parent="PlinthBRingCracked"]
+script = ExtResource("wb_flagvisibilitycomponent")
+VisibleWhenFlagId = "flag.beat.plinth_b"
+
+[node name="SealPlinthC" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 48.64, 0, -71.3)
+script = ExtResource("e11")
+DisplayName = "The Third Plinth"
+PersistentId = "sunspire.library.seal_plinth_c"
+
+[node name="Model" parent="SealPlinthC" instance=ExtResource("wb_prp_seal_plinth")]
+
+[node name="Collider" type="StaticBody3D" parent="SealPlinthC"]
+
+[node name="Shape" type="CollisionShape3D" parent="SealPlinthC/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("WB_Shape_SealPlinthC")
+
+[node name="Dialogue" type="Node" parent="SealPlinthC"]
+script = ExtResource("e15")
+DialogueId = "dialogue.sunspire_seal_c"
+InteractId = "interact.sunspire.seal_plinth_c"
+PromptKey = "interact.worldb.plinth"
+
+[node name="PlinthCRingIntact" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 48.64, 0, -71.3)
+script = ExtResource("e11")
+DisplayName = "Seal Ring"
+PersistentId = "sunspire.library.plinth_c_ring_intact"
+
+[node name="Model" parent="PlinthCRingIntact" instance=ExtResource("wb_prp_plinth_ring_intact")]
+
+[node name="Visibility" type="Node" parent="PlinthCRingIntact"]
+script = ExtResource("wb_flagvisibilitycomponent")
+HiddenWhenFlagId = "flag.beat.plinth_c"
+
+[node name="PlinthCRingCracked" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 48.64, 0, -71.3)
+script = ExtResource("e11")
+DisplayName = "Broken Seal Ring"
+PersistentId = "sunspire.library.plinth_c_ring_cracked"
+
+[node name="Model" parent="PlinthCRingCracked" instance=ExtResource("wb_prp_plinth_ring_cracked")]
+
+[node name="Visibility" type="Node" parent="PlinthCRingCracked"]
+script = ExtResource("wb_flagvisibilitycomponent")
+VisibleWhenFlagId = "flag.beat.plinth_c"
+
+[node name="SunderingCodex" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 45, 0, -73.4)
+script = ExtResource("e11")
+DisplayName = "The Sundering Codex"
+PersistentId = "sunspire.library.sundering_codex"
+
+[node name="Model" parent="SunderingCodex" instance=ExtResource("e10")]
+transform = Transform3D(1.35, 0, 0, 0, 1.35, 0, 0, 0, 1.35, 0, 0, 0)
+
+[node name="Collider" type="StaticBody3D" parent="SunderingCodex"]
+
+[node name="Shape" type="CollisionShape3D" parent="SunderingCodex/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.75, 0)
+shape = SubResource("WB_Shape_SunderingCodex")
+
+[node name="Dialogue" type="Node" parent="SunderingCodex"]
+script = ExtResource("e15")
+DialogueId = "dialogue.sunspire_codex"
+InteractId = "interact.sunspire.sundering_codex"
+PromptKey = "interact.worldb.codex"
+
+[node name="CodexGlow" type="OmniLight3D" parent="SunderingCodex"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.9, 0)
+light_color = Color(0.55, 0.72, 1, 1)
+light_energy = 1.6
+omni_range = 12
+
+[node name="AshenKnight" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 45, 0, -79)
+script = ExtResource("e11")
+DisplayName = "The Ashen Knight"
+PersistentId = "sunspire.library.ashen_knight"
+
+[node name="Model" parent="AshenKnight" instance=ExtResource("wb_boss_ashen_knight")]
+
+[node name="Animation" type="Node" parent="AshenKnight"]
+script = ExtResource("e12")
+BodyMeshPath = "Model"
+
+[node name="Collider" type="StaticBody3D" parent="AshenKnight"]
+
+[node name="Shape" type="CollisionShape3D" parent="AshenKnight/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("WB_Shape_npc_AshenKnight")
+
+[node name="Dialogue" type="Node" parent="AshenKnight"]
+script = ExtResource("e15")
+DialogueId = "dialogue.rival_library"
+
+[node name="Visibility" type="Node" parent="AshenKnight"]
+script = ExtResource("wb_flagvisibilitycomponent")
+VisibleWhenFlagId = "flag.beat.library_defended"
+
+[node name="VaultWards" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 45, 0, -73.4)
+script = ExtResource("wb_setpiecespawncomponent")
+TriggerFlagId = "flag.beat.stacks_open"
+TemplateIds = PackedStringArray("enemy.ward_golem")
+CountPerWave = 3
+Waves = 1
+WaveDelaySeconds = 15
+SpawnRadius = 6.5
+ClearedFlagId = "flag.beat.golems_cleared"
+
+[node name="VaultRaid" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 45, 0, -73.4)
+script = ExtResource("wb_setpiecespawncomponent")
+TriggerFlagId = "flag.beat.seals_broken"
+TemplateIds = PackedStringArray("enemy.arcane_echo", "enemy.grave_shade")
+CountPerWave = 3
+Waves = 4
+WaveDelaySeconds = 12
+SpawnRadius = 7
+ClearedFlagId = "flag.beat.vault_raid_cleared"
+
+[node name="MapPin" type="Node3D" parent="SunderingCodex"]
+script = ExtResource("maploc_39_5a")
+LocationId = "location.sunspire.deep_stacks"

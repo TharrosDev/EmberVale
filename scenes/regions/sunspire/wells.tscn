@@ -23,6 +23,11 @@
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_townsman.glb" id="e21"]
 [ext_resource type="Script" path="res://src/World/CellNavBaker.cs" id="e22"]
 [ext_resource type="Script" path="res://src/World/MapLocationComponent.cs" id="maploc_39_5a"]
+[ext_resource type="PackedScene" path="res://scenes/props/prp_gauge_stone.tscn" id="wb_prp_gauge_stone"]
+[ext_resource type="PackedScene" path="res://scenes/props/prp_gauge_plaque.tscn" id="wb_prp_gauge_plaque"]
+[ext_resource type="Script" path="res://src/World/FlagVisibilityComponent.cs" id="wb_flagvisibilitycomponent"]
+[ext_resource type="PackedScene" path="res://assets/models/characters/npc_hooded.glb" id="wb_npc_hooded"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_pot.gltf" id="wb_prp_pot"]
 
 ; SAFFRA WELLS (sunspire.wells) - the caravan town at the oasis. Content frame, moved to Cell.origin
 ; by tools/shift_cell_content.py. The plaza pad is Area_wells_plaza; the caravanserai is Area_wells_caravanserai.
@@ -69,6 +74,19 @@ size = Vector3(2.4, 2.2, 1.4)
 
 [sub_resource type="BoxShape3D" id="Shape_bed"]
 size = Vector3(1.1, 0.8, 2.1)
+
+[sub_resource type="BoxShape3D" id="WB_Shape_GaugeStoneEast"]
+size = Vector3(1, 1.6, 0.4)
+
+[sub_resource type="BoxShape3D" id="WB_Shape_GaugeStoneMid"]
+size = Vector3(1, 1.6, 0.4)
+
+[sub_resource type="BoxShape3D" id="WB_Shape_GaugeStoneWest"]
+size = Vector3(1, 1.6, 0.4)
+
+[sub_resource type="CapsuleShape3D" id="WB_Shape_npc_RafeSarn"]
+radius = 0.4
+height = 1.8
 
 [node name="WellsCell" type="Node3D"]
 metadata/content_offset = Vector2(30, -50)
@@ -306,3 +324,374 @@ LocationId = "location.sunspire.waystone"
 [node name="MapPin" type="Node3D" parent="CaravanseraiCot"]
 script = ExtResource("maploc_39_5a")
 LocationId = "location.sunspire.caravanserai"
+
+; CAMPAIGN (WR-spec1-13, 14, 15, 33, 34): the three well gauges, Rafe Sarn on the cistern lip and the grey pilgrims.
+; The gauges are free-standing stones: the spec's oasis wall does not exist in this cell, so the slabs stand in a loose arc that
+; the plaza's reading order (east, middle, west) follows. The plaza and the caravanserai are levelled pads, so the pilgrims need no tilt.
+
+[node name="GaugeStoneEast" type="Node3D" parent="."]
+transform = Transform3D(0.9119, 0, -0.4104, 0, 1, 0, 0.4104, 0, 0.9119, 50, 0, -50)
+script = ExtResource("e9")
+DisplayName = "The East Gauge Stone"
+PersistentId = "sunspire.wells.gauge_east"
+
+[node name="Model" parent="GaugeStoneEast" instance=ExtResource("wb_prp_gauge_stone")]
+
+[node name="Collider" type="StaticBody3D" parent="GaugeStoneEast"]
+
+[node name="Shape" type="CollisionShape3D" parent="GaugeStoneEast/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
+shape = SubResource("WB_Shape_GaugeStoneEast")
+
+[node name="Dialogue" type="Node" parent="GaugeStoneEast"]
+script = ExtResource("e17")
+DialogueId = "dialogue.well_gauge_east"
+InteractId = "interact.sunspire.well_gauge_east"
+PromptKey = "interact.worldb.gauge"
+
+[node name="GaugeStoneMid" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 38, 0, -52)
+script = ExtResource("e9")
+DisplayName = "The Mid Gauge Stone"
+PersistentId = "sunspire.wells.gauge_mid"
+
+[node name="Model" parent="GaugeStoneMid" instance=ExtResource("wb_prp_gauge_stone")]
+
+[node name="Collider" type="StaticBody3D" parent="GaugeStoneMid"]
+
+[node name="Shape" type="CollisionShape3D" parent="GaugeStoneMid/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
+shape = SubResource("WB_Shape_GaugeStoneMid")
+
+[node name="Dialogue" type="Node" parent="GaugeStoneMid"]
+script = ExtResource("e17")
+DialogueId = "dialogue.well_gauge_mid"
+InteractId = "interact.sunspire.well_gauge_mid"
+PromptKey = "interact.worldb.gauge"
+
+[node name="GaugeStoneWest" type="Node3D" parent="."]
+transform = Transform3D(0.9119, 0, 0.4104, 0, 1, 0, -0.4104, 0, 0.9119, 24.5, 0, -48.6)
+script = ExtResource("e9")
+DisplayName = "The West Gauge Stone"
+PersistentId = "sunspire.wells.gauge_west"
+
+[node name="Model" parent="GaugeStoneWest" instance=ExtResource("wb_prp_gauge_stone")]
+
+[node name="Collider" type="StaticBody3D" parent="GaugeStoneWest"]
+
+[node name="Shape" type="CollisionShape3D" parent="GaugeStoneWest/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
+shape = SubResource("WB_Shape_GaugeStoneWest")
+
+[node name="Dialogue" type="Node" parent="GaugeStoneWest"]
+script = ExtResource("e17")
+DialogueId = "dialogue.well_gauge_west"
+InteractId = "interact.sunspire.well_gauge_west"
+PromptKey = "interact.worldb.gauge"
+
+[node name="Letters" parent="GaugeStoneMid" instance=ExtResource("wb_prp_gauge_plaque")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.45)
+
+[node name="RafeSarn" type="Node3D" parent="."]
+transform = Transform3D(0.8682, 0, 0.4961, 0, 1, 0, -0.4961, 0, 0.8682, 35.3, 0, -55.6)
+script = ExtResource("e9")
+DisplayName = "Rafe Sarn"
+TemplateId = "npc.sunspire_pilgrim"
+PersistentId = "sunspire.wells.rafe_sarn"
+
+[node name="Model" parent="RafeSarn" instance=ExtResource("e21")]
+
+[node name="Animation" type="Node" parent="RafeSarn"]
+script = ExtResource("e14")
+BodyMeshPath = "Model"
+
+[node name="EquipmentVisuals" type="Node" parent="RafeSarn"]
+script = ExtResource("e15")
+BodyMeshPath = "Model"
+
+[node name="Collider" type="StaticBody3D" parent="RafeSarn"]
+
+[node name="Shape" type="CollisionShape3D" parent="RafeSarn/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("WB_Shape_npc_RafeSarn")
+
+[node name="Faction" type="Node" parent="RafeSarn"]
+script = ExtResource("e16")
+FactionId = "faction.villagers"
+
+[node name="Dialogue" type="Node" parent="RafeSarn"]
+script = ExtResource("e17")
+DialogueId = "dialogue.oda_grandson"
+
+[node name="Visibility" type="Node" parent="RafeSarn"]
+script = ExtResource("wb_flagvisibilitycomponent")
+HiddenWhenFlagId = "flag.fork.flock_kin"
+VisibleWhenFlagId = "flag.beat.flock_decided"
+
+[node name="GreyPilgrims" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 37, 0, -54)
+script = ExtResource("e9")
+DisplayName = "Grey Pilgrims"
+PersistentId = "sunspire.wells.grey_pilgrims"
+
+[node name="Pilgrim00" type="Node3D" parent="GreyPilgrims"]
+transform = Transform3D(-0.8801, 0, 0.4748, 0, 1, 0, -0.4748, 0, -0.8801, -0.6536, 0, 3.6058)
+script = ExtResource("e9")
+DisplayName = "Grey Pilgrim"
+PersistentId = "sunspire.wells.grey_pilgrims.00"
+
+[node name="Model" parent="GreyPilgrims/Pilgrim00" instance=ExtResource("wb_npc_hooded")]
+
+[node name="Animation" type="Node" parent="GreyPilgrims/Pilgrim00"]
+script = ExtResource("e14")
+BodyMeshPath = "Model"
+
+[node name="Jar" parent="GreyPilgrims/Pilgrim00" instance=ExtResource("wb_prp_pot")]
+transform = Transform3D(0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 0.34, 0, -0.3)
+
+[node name="Pilgrim01" type="Node3D" parent="GreyPilgrims"]
+transform = Transform3D(-0.904, 0, 0.4275, 0, 1, 0, -0.4275, 0, -0.904, -1.512, 0, 3.1775)
+script = ExtResource("e9")
+DisplayName = "Grey Pilgrim"
+PersistentId = "sunspire.wells.grey_pilgrims.01"
+
+[node name="Model" parent="GreyPilgrims/Pilgrim01" instance=ExtResource("wb_npc_hooded")]
+
+[node name="Animation" type="Node" parent="GreyPilgrims/Pilgrim01"]
+script = ExtResource("e14")
+BodyMeshPath = "Model"
+
+[node name="Pilgrim02" type="Node3D" parent="GreyPilgrims"]
+transform = Transform3D(-0.7748, 0, 0.6322, 0, 1, 0, -0.6322, 0, -0.7748, -2.3563, 0, 2.6239)
+script = ExtResource("e9")
+DisplayName = "Grey Pilgrim"
+PersistentId = "sunspire.wells.grey_pilgrims.02"
+
+[node name="Model" parent="GreyPilgrims/Pilgrim02" instance=ExtResource("wb_npc_hooded")]
+
+[node name="Animation" type="Node" parent="GreyPilgrims/Pilgrim02"]
+script = ExtResource("e14")
+BodyMeshPath = "Model"
+
+[node name="Jar" parent="GreyPilgrims/Pilgrim02" instance=ExtResource("wb_prp_pot")]
+transform = Transform3D(0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 0.34, 0, -0.3)
+
+[node name="Pilgrim03" type="Node3D" parent="GreyPilgrims"]
+transform = Transform3D(-0.4129, 0, 0.9108, 0, 1, 0, -0.9108, 0, -0.4129, -3.1028, 0, 1.823)
+script = ExtResource("e9")
+DisplayName = "Grey Pilgrim"
+PersistentId = "sunspire.wells.grey_pilgrims.03"
+
+[node name="Model" parent="GreyPilgrims/Pilgrim03" instance=ExtResource("wb_npc_hooded")]
+
+[node name="Animation" type="Node" parent="GreyPilgrims/Pilgrim03"]
+script = ExtResource("e14")
+BodyMeshPath = "Model"
+
+[node name="Pilgrim04" type="Node3D" parent="GreyPilgrims"]
+transform = Transform3D(-0.4587, 0, 0.8886, 0, 1, 0, -0.8886, 0, -0.4587, -3.4956, 0, 1.0055)
+script = ExtResource("e9")
+DisplayName = "Grey Pilgrim"
+PersistentId = "sunspire.wells.grey_pilgrims.04"
+
+[node name="Model" parent="GreyPilgrims/Pilgrim04" instance=ExtResource("wb_npc_hooded")]
+
+[node name="Animation" type="Node" parent="GreyPilgrims/Pilgrim04"]
+script = ExtResource("e14")
+BodyMeshPath = "Model"
+
+[node name="Jar" parent="GreyPilgrims/Pilgrim04" instance=ExtResource("wb_prp_pot")]
+transform = Transform3D(0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 0.34, 0, -0.3)
+
+[node name="Pilgrim05" type="Node3D" parent="GreyPilgrims"]
+transform = Transform3D(0.3524, 0, 0.9358, 0, 1, 0, -0.9358, 0, 0.3524, -3.8029, 0, -0.0786)
+script = ExtResource("e9")
+DisplayName = "Grey Pilgrim"
+PersistentId = "sunspire.wells.grey_pilgrims.05"
+
+[node name="Model" parent="GreyPilgrims/Pilgrim05" instance=ExtResource("wb_npc_hooded")]
+
+[node name="Animation" type="Node" parent="GreyPilgrims/Pilgrim05"]
+script = ExtResource("e14")
+BodyMeshPath = "Model"
+
+[node name="Pilgrim06" type="Node3D" parent="GreyPilgrims"]
+transform = Transform3D(0.1664, 0, 0.9861, 0, 1, 0, -0.9861, 0, 0.1664, -3.5548, 0, -0.8927)
+script = ExtResource("e9")
+DisplayName = "Grey Pilgrim"
+PersistentId = "sunspire.wells.grey_pilgrims.06"
+
+[node name="Model" parent="GreyPilgrims/Pilgrim06" instance=ExtResource("wb_npc_hooded")]
+
+[node name="Animation" type="Node" parent="GreyPilgrims/Pilgrim06"]
+script = ExtResource("e14")
+BodyMeshPath = "Model"
+
+[node name="Jar" parent="GreyPilgrims/Pilgrim06" instance=ExtResource("wb_prp_pot")]
+transform = Transform3D(0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 0.34, 0, -0.3)
+
+[node name="Pilgrim07" type="Node3D" parent="GreyPilgrims"]
+transform = Transform3D(-0.9874, 0, 0.1584, 0, 1, 0, -0.1584, 0, -0.9874, -2.2778, 0, 5.8064)
+script = ExtResource("e9")
+DisplayName = "Grey Pilgrim"
+PersistentId = "sunspire.wells.grey_pilgrims.07"
+
+[node name="Model" parent="GreyPilgrims/Pilgrim07" instance=ExtResource("wb_npc_hooded")]
+
+[node name="Animation" type="Node" parent="GreyPilgrims/Pilgrim07"]
+script = ExtResource("e14")
+BodyMeshPath = "Model"
+
+[node name="Pilgrim08" type="Node3D" parent="GreyPilgrims"]
+transform = Transform3D(-0.9025, 0, 0.4306, 0, 1, 0, -0.4306, 0, -0.9025, -3.5507, 0, 5.221)
+script = ExtResource("e9")
+DisplayName = "Grey Pilgrim"
+PersistentId = "sunspire.wells.grey_pilgrims.08"
+
+[node name="Model" parent="GreyPilgrims/Pilgrim08" instance=ExtResource("wb_npc_hooded")]
+
+[node name="Animation" type="Node" parent="GreyPilgrims/Pilgrim08"]
+script = ExtResource("e14")
+BodyMeshPath = "Model"
+
+[node name="Jar" parent="GreyPilgrims/Pilgrim08" instance=ExtResource("wb_prp_pot")]
+transform = Transform3D(0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 0.34, 0, -0.3)
+
+[node name="Pilgrim09" type="Node3D" parent="GreyPilgrims"]
+transform = Transform3D(-0.4334, 0, 0.9012, 0, 1, 0, -0.9012, 0, -0.4334, -4.3086, 0, 4.5084)
+script = ExtResource("e9")
+DisplayName = "Grey Pilgrim"
+PersistentId = "sunspire.wells.grey_pilgrims.09"
+
+[node name="Model" parent="GreyPilgrims/Pilgrim09" instance=ExtResource("wb_npc_hooded")]
+
+[node name="Animation" type="Node" parent="GreyPilgrims/Pilgrim09"]
+script = ExtResource("e14")
+BodyMeshPath = "Model"
+
+[node name="Pilgrim10" type="Node3D" parent="GreyPilgrims"]
+transform = Transform3D(-0.3915, 0, 0.9202, 0, 1, 0, -0.9202, 0, -0.3915, -5.2306, 0, 3.5265)
+script = ExtResource("e9")
+DisplayName = "Grey Pilgrim"
+PersistentId = "sunspire.wells.grey_pilgrims.10"
+
+[node name="Model" parent="GreyPilgrims/Pilgrim10" instance=ExtResource("wb_npc_hooded")]
+
+[node name="Animation" type="Node" parent="GreyPilgrims/Pilgrim10"]
+script = ExtResource("e14")
+BodyMeshPath = "Model"
+
+[node name="Jar" parent="GreyPilgrims/Pilgrim10" instance=ExtResource("wb_prp_pot")]
+transform = Transform3D(0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 0.34, 0, -0.3)
+
+[node name="Pilgrim11" type="Node3D" parent="GreyPilgrims"]
+transform = Transform3D(-0.6808, 0, 0.7325, 0, 1, 0, -0.7325, 0, -0.6808, -5.6625, 0, 2.4723)
+script = ExtResource("e9")
+DisplayName = "Grey Pilgrim"
+PersistentId = "sunspire.wells.grey_pilgrims.11"
+
+[node name="Model" parent="GreyPilgrims/Pilgrim11" instance=ExtResource("wb_npc_hooded")]
+
+[node name="Animation" type="Node" parent="GreyPilgrims/Pilgrim11"]
+script = ExtResource("e14")
+BodyMeshPath = "Model"
+
+[node name="Pilgrim12" type="Node3D" parent="GreyPilgrims"]
+transform = Transform3D(-0.104, 0, 0.9946, 0, 1, 0, -0.9946, 0, -0.104, -6.0247, 0, 1.2836)
+script = ExtResource("e9")
+DisplayName = "Grey Pilgrim"
+PersistentId = "sunspire.wells.grey_pilgrims.12"
+
+[node name="Model" parent="GreyPilgrims/Pilgrim12" instance=ExtResource("wb_npc_hooded")]
+
+[node name="Animation" type="Node" parent="GreyPilgrims/Pilgrim12"]
+script = ExtResource("e14")
+BodyMeshPath = "Model"
+
+[node name="Jar" parent="GreyPilgrims/Pilgrim12" instance=ExtResource("wb_prp_pot")]
+transform = Transform3D(0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 0.34, 0, -0.3)
+
+[node name="Pilgrim13" type="Node3D" parent="GreyPilgrims"]
+transform = Transform3D(0.0535, 0, 0.9986, 0, 1, 0, -0.9986, 0, 0.0535, -6.2986, 0, 0.0769)
+script = ExtResource("e9")
+DisplayName = "Grey Pilgrim"
+PersistentId = "sunspire.wells.grey_pilgrims.13"
+
+[node name="Model" parent="GreyPilgrims/Pilgrim13" instance=ExtResource("wb_npc_hooded")]
+
+[node name="Animation" type="Node" parent="GreyPilgrims/Pilgrim13"]
+script = ExtResource("e14")
+BodyMeshPath = "Model"
+
+[node name="Pilgrim14" type="Node3D" parent="GreyPilgrims"]
+transform = Transform3D(0.094, 0, 0.9956, 0, 1, 0, -0.9956, 0, 0.094, -6.1005, 0, -1.1019)
+script = ExtResource("e9")
+DisplayName = "Grey Pilgrim"
+PersistentId = "sunspire.wells.grey_pilgrims.14"
+
+[node name="Model" parent="GreyPilgrims/Pilgrim14" instance=ExtResource("wb_npc_hooded")]
+
+[node name="Animation" type="Node" parent="GreyPilgrims/Pilgrim14"]
+script = ExtResource("e14")
+BodyMeshPath = "Model"
+
+[node name="Jar" parent="GreyPilgrims/Pilgrim14" instance=ExtResource("wb_prp_pot")]
+transform = Transform3D(0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 0.34, 0, -0.3)
+
+[node name="Pilgrim15" type="Node3D" parent="GreyPilgrims"]
+transform = Transform3D(-0.0054, 0, 1, 0, 1, 0, -1, 0, -0.0054, -6.0337, 0, -2.1311)
+script = ExtResource("e9")
+DisplayName = "Grey Pilgrim"
+PersistentId = "sunspire.wells.grey_pilgrims.15"
+
+[node name="Model" parent="GreyPilgrims/Pilgrim15" instance=ExtResource("wb_npc_hooded")]
+
+[node name="Animation" type="Node" parent="GreyPilgrims/Pilgrim15"]
+script = ExtResource("e14")
+BodyMeshPath = "Model"
+
+[node name="Pilgrim16" type="Node3D" parent="GreyPilgrims"]
+transform = Transform3D(0.7938, 0, 0.6082, 0, 1, 0, -0.6082, 0, 0.7938, -5.4892, 0, -3.3923)
+script = ExtResource("e9")
+DisplayName = "Grey Pilgrim"
+PersistentId = "sunspire.wells.grey_pilgrims.16"
+
+[node name="Model" parent="GreyPilgrims/Pilgrim16" instance=ExtResource("wb_npc_hooded")]
+
+[node name="Animation" type="Node" parent="GreyPilgrims/Pilgrim16"]
+script = ExtResource("e14")
+BodyMeshPath = "Model"
+
+[node name="Jar" parent="GreyPilgrims/Pilgrim16" instance=ExtResource("wb_prp_pot")]
+transform = Transform3D(0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 0.34, 0, -0.3)
+
+[node name="Pilgrim17" type="Node3D" parent="GreyPilgrims"]
+transform = Transform3D(0.5001, 0, 0.866, 0, 1, 0, -0.866, 0, 0.5001, -9.4881, 0, -1.5448)
+script = ExtResource("e9")
+DisplayName = "Grey Pilgrim"
+PersistentId = "sunspire.wells.grey_pilgrims.17"
+
+[node name="Model" parent="GreyPilgrims/Pilgrim17" instance=ExtResource("wb_npc_hooded")]
+
+[node name="Animation" type="Node" parent="GreyPilgrims/Pilgrim17"]
+script = ExtResource("e14")
+BodyMeshPath = "Model"
+
+[node name="Pilgrim18" type="Node3D" parent="GreyPilgrims"]
+transform = Transform3D(-0.0268, 0, 0.9996, 0, 1, 0, -0.9996, 0, -0.0268, -10.601, 0, 1.0263)
+script = ExtResource("e9")
+DisplayName = "Grey Pilgrim"
+PersistentId = "sunspire.wells.grey_pilgrims.18"
+
+[node name="Model" parent="GreyPilgrims/Pilgrim18" instance=ExtResource("wb_npc_hooded")]
+
+[node name="Animation" type="Node" parent="GreyPilgrims/Pilgrim18"]
+script = ExtResource("e14")
+BodyMeshPath = "Model"
+
+[node name="Jar" parent="GreyPilgrims/Pilgrim18" instance=ExtResource("wb_prp_pot")]
+transform = Transform3D(0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 0.34, 0, -0.3)
+
+[node name="Visibility" type="Node" parent="GreyPilgrims"]
+script = ExtResource("wb_flagvisibilitycomponent")
+VisibleWhenFlagId = "flag.fork.flock_turned"
