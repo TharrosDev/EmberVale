@@ -21262,7 +21262,9 @@
    ],
    "code": true,
    "externalRefs": [
-    "data/story/rules/spec1.json"
+    "data/story/rules/spec1.json",
+    "scenes/regions/sunspire/temple.tscn",
+    "scenes/regions/sunspire/wells.tscn"
    ]
   },
   "flag.beat.gap_seen": {
@@ -21479,7 +21481,10 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "scenes/regions/ashen_wilds/hunters_rise.tscn",
+    "scenes/regions/ashen_wilds/lair_approach.tscn"
+   ]
   },
   "flag.beat.hearth_held": {
    "writers": [
@@ -21525,7 +21530,9 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "scenes/regions/ashen_wilds/last_hearth.tscn"
+   ]
   },
   "flag.beat.herd_calm_held": {
    "writers": [
@@ -21555,7 +21562,8 @@
    ],
    "code": true,
    "externalRefs": [
-    "data/story/rules/spec1.json"
+    "data/story/rules/spec1.json",
+    "scenes/regions/ashen_wilds/lair_approach.tscn"
    ]
   },
   "flag.beat.hjalvar_briefed": {
@@ -21713,7 +21721,9 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "scenes/regions/sunspire/library.tscn"
+   ]
   },
   "flag.beat.oda_briefed": {
    "writers": [
@@ -21794,7 +21804,8 @@
    "readers": [],
    "code": false,
    "externalRefs": [
-    "data/story/rules/spec2.json"
+    "data/story/rules/spec2.json",
+    "scenes/regions/sunspire/library.tscn"
    ]
   },
   "flag.beat.plinth_b": {
@@ -21808,7 +21819,8 @@
    "readers": [],
    "code": false,
    "externalRefs": [
-    "data/story/rules/spec2.json"
+    "data/story/rules/spec2.json",
+    "scenes/regions/sunspire/library.tscn"
    ]
   },
   "flag.beat.plinth_c": {
@@ -21822,7 +21834,8 @@
    "readers": [],
    "code": false,
    "externalRefs": [
-    "data/story/rules/spec2.json"
+    "data/story/rules/spec2.json",
+    "scenes/regions/sunspire/library.tscn"
    ]
   },
   "flag.beat.postern_known": {
@@ -22045,7 +22058,8 @@
    ],
    "code": true,
    "externalRefs": [
-    "data/story/rules/spec2.json"
+    "data/story/rules/spec2.json",
+    "scenes/regions/sunspire/library.tscn"
    ]
   },
   "flag.beat.sentinels_down": {
@@ -22160,7 +22174,9 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "scenes/regions/sunspire/library.tscn"
+   ]
   },
   "flag.beat.stair_echo": {
    "writers": [
@@ -23353,7 +23369,8 @@
    "code": true,
    "externalRefs": [
     "data/story/reactions/spec1.json",
-    "data/story/rules/spec1.json"
+    "data/story/rules/spec1.json",
+    "scenes/regions/sunspire/temple.tscn"
    ]
   },
   "flag.fork.flock_kin": {
@@ -23384,7 +23401,9 @@
    "code": true,
    "externalRefs": [
     "data/story/reactions/spec1.json",
-    "data/story/rules/spec1.json"
+    "data/story/rules/spec1.json",
+    "scenes/regions/sunspire/temple.tscn",
+    "scenes/regions/sunspire/wells.tscn"
    ]
   },
   "flag.fork.flock_turned": {
@@ -23419,7 +23438,8 @@
    ],
    "code": true,
    "externalRefs": [
-    "data/story/rules/spec1.json"
+    "data/story/rules/spec1.json",
+    "scenes/regions/sunspire/wells.tscn"
    ]
   },
   "flag.fork.herd_calmed": {
@@ -23450,7 +23470,9 @@
    "code": true,
    "externalRefs": [
     "data/story/reactions/spec1.json",
-    "data/story/rules/spec1.json"
+    "data/story/rules/spec1.json",
+    "scenes/regions/ashen_wilds/lair_approach.tscn",
+    "scenes/regions/ashen_wilds/last_hearth.tscn"
    ]
   },
   "flag.fork.herd_slain": {
@@ -23486,7 +23508,8 @@
    "code": true,
    "externalRefs": [
     "data/story/reactions/spec1.json",
-    "data/story/rules/spec1.json"
+    "data/story/rules/spec1.json",
+    "scenes/regions/ashen_wilds/lair_approach.tscn"
    ]
   },
   "flag.fork.queen_kept": {
@@ -24474,7 +24497,9 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "scenes/regions/ashen_wilds/lair_approach.tscn"
+   ]
   },
   "flag.main.opening_done": {
    "writers": [],
@@ -25696,7 +25721,8 @@
    ],
    "externalRefs": [
     "data/story/reactions/spec1.json",
-    "data/story/rules/spec1.json"
+    "data/story/rules/spec1.json",
+    "scenes/regions/sunspire/temple.tscn"
    ]
   },
   {
@@ -25732,7 +25758,9 @@
    ],
    "externalRefs": [
     "data/story/reactions/spec1.json",
-    "data/story/rules/spec1.json"
+    "data/story/rules/spec1.json",
+    "scenes/regions/sunspire/temple.tscn",
+    "scenes/regions/sunspire/wells.tscn"
    ]
   },
   {
@@ -25772,7 +25800,8 @@
     }
    ],
    "externalRefs": [
-    "data/story/rules/spec1.json"
+    "data/story/rules/spec1.json",
+    "scenes/regions/sunspire/wells.tscn"
    ]
   },
   {
@@ -25808,7 +25837,9 @@
    ],
    "externalRefs": [
     "data/story/reactions/spec1.json",
-    "data/story/rules/spec1.json"
+    "data/story/rules/spec1.json",
+    "scenes/regions/ashen_wilds/lair_approach.tscn",
+    "scenes/regions/ashen_wilds/last_hearth.tscn"
    ]
   },
   {
@@ -25849,7 +25880,8 @@
    ],
    "externalRefs": [
     "data/story/reactions/spec1.json",
-    "data/story/rules/spec1.json"
+    "data/story/rules/spec1.json",
+    "scenes/regions/ashen_wilds/lair_approach.tscn"
    ]
   },
   {
