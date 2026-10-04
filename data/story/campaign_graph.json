@@ -25012,7 +25012,9 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "scenes/regions/sunspire/library.tscn"
+   ]
   },
   "flag.main.dry_wells_done": {
    "writers": [
