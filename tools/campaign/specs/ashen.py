@@ -43,7 +43,7 @@ Q13 = Quest(
                journal="The wolves broke at the fence and went back into the scar all at once, as if something had called them off."),
         collect("item.material.healing_herb", 3, "Gather three healing herbs for Ada Voss", tag="herbs", optional=True,
                 location="location.ashen.last_hearth",
-                hint="Healing herb grows in the green patches at the edge of the scar. Optional: Ada can make a calming smoke from it.",
+                hint="Wolves sometimes carry healing herb, and Crown apothecaries sell it. Optional: Ada trades two health potions for three.",
                 journal="You brought Ada herbs for a calming smoke."),
         talk("dialogue.ashen_mender", "See to Ada Voss's wounded", tag="ada", location="location.ashen.last_hearth",
              req_flag="flag.beat.hearth_held",
@@ -88,7 +88,7 @@ Q14 = Quest(
               journal="Forty animals of six kinds, standing shoulder to shoulder in the ash, waiting."),
         talk("dialogue.ashen_herd_choice", "Decide what to do with the herd", tag="herd",
              location="location.ashen.herd_trail",
-             hint="Cull the herd, or break the call with calming smoke. The smoke needs three healing herbs.",
+             hint="Cull the herd, or break the call with smoke from three healing herbs (apothecaries sell them). Ask the herd again if you walk away.",
              journal="You stood in front of them and picked."),
         milestone("flag.beat.herd_decided", "Settle the herd's fate", tag="decide", location="location.ashen.herd_trail",
                   hint="Speak to the herd again if you walked away. Cull it, or burn three healing herbs for the smoke.",
@@ -123,7 +123,7 @@ Q15 = Quest(
              hint="Light the blighted brazier at the head of the ramp. In the second phase he calls his pack, and in the third the scar answers.",
              journal="The Beast Lord fell, and the Wilds went quiet the way a forest does when the hunter has gone."),
         talk("dialogue.ashen_headwoman", "Tell Maeve the plateau is quiet", tag="maeve", location="location.ashen.last_hearth",
-             req_flag="flag.beast_lord_defeated", hint="Maeve is at the fence at Last Hearth.",
+             hint="Maeve is at the fence at Last Hearth.",
              journal="Maeve said she may sleep a night through for the first time in thirty years."),
     ])
 
@@ -168,7 +168,12 @@ HERD = Dialogue(
               go("Burn three healing herbs and break the call.", "calm", tag="calm",
                  when=has_item("item.material.healing_herb", 3), do=(E.SET_FLAG, "flag.fork.herd_calmed"),
                  do2=take("item.material.healing_herb", 3)),
+              go("Is there another way?", "calm_hint", tag="hint"),
               leave("Not yet.", tag="bye")]),
+        Node("calm_hint", "You think of Ada's smoke: green-grey, sweet, the one thing that let a bitten man sleep through the "
+                          "calling. It wants three healing herbs burned on coals. Apothecaries in the Crown sell them, and "
+                          "wolves sometimes carry a sprig. The herd will wait. It has been waiting a month.",
+             [go("Back.", "root", tag="back")]),
         Node("slay", "You do not pretend to speak to them. You draw, and the herd, which has been waiting for a voice, "
                      "hears one: yours. They come at you in a wave with no fear in it, and it is the absence of fear "
                      "that you will remember. When the ash settles there is a trampled shallow, a smell of copper, and "
@@ -197,8 +202,8 @@ HERD = Dialogue(
 DIALOGUES = [TRACK_A, TRACK_B, TRACK_C, HERD]
 
 LOCALE = [
-    ("ch.2.ashen", "Act II: Last Hearth"),
-    ("chapter.ch.2.ashen.title", "Act II: Last Hearth"),
+    ("ch.2.ashen", "The Ashen Wilds"),
+    ("chapter.ch.2.ashen.title", "The Ashen Wilds"),
     ("chapter.ch.2.ashen.subtitle", "Something calls the beasts of the Ashen Wilds, and eleven survivors are in its way."),
     ("boss.beast_lord.epithet", "He Who Let It In"),
     ("boss.beast_lord.intro", "'Do you remember a name? Say it. It has been so long since anyone said it.'"),

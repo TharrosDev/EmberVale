@@ -92,11 +92,11 @@ Q11 = Quest(
                   journal="The stone has been named. The clans moved."),
         defend("location.frostfang.stormcrown", 75, "Hold the Stormcrown road while the clans climb", tag="wall",
                req_flag="flag.fork.succession_hjalvar", completion_flag="flag.beat.stormcrown_held",
-               hint="Stand in the track-head under the spire. The clans climb behind you, slowly, and the storm will try the line.",
+               hint="Stormfall is the track-head under the spire, far north-east of the hold past the glacier. Hold it while the clans climb.",
                journal="The clans climbed behind your shield wall and the storm did not break it."),
         interact("interact.frostfang.aerie_winch_a", "Crank the first winch at Stormfall", tag="winch_a",
                  location="location.frostfang.stormcrown", req_flag="flag.fork.succession_halvar",
-                 hint="Two old winches stand at the head of the Stormfall track. Halvar says a Syndicate crew oils them every year.",
+                 hint="Two old winches stand at the head of the Stormfall track, far north-east of the hold past the glacier. A Syndicate crew oils them.",
                  journal="The first winch turned as if it had been waiting for you."),
         interact("interact.frostfang.aerie_winch_b", "Crank the second winch to the Stormcrown ledge", tag="winch_b",
                  location="location.frostfang.stormcrown", req_flag="flag.fork.succession_halvar",
@@ -111,7 +111,7 @@ Q12 = Quest(
     summary="The road to the Stormcrown is open and you stand under the spire. The Third Flamebearer comes down at the "
             "challenge brazier. When he falls, tell whoever holds the Stormbound hearth that the sky is quiet.",
     detail="The Storm Tyrant came home from the Celestial stair to find his clan hold burned by men who swore they were "
-           "saving it, and he has been answering them with lightning for four hundred years. The Stormbound call him "
+           "saving it, and he has been answering them with lightning for nearly four hundred years. The Stormbound call him "
            "the storm and do not say his name. The clans did not go to the Stormcrown when the weather began, and they "
            "will not go now, but they have stopped pretending he is only weather.",
     chapter_key=CH2_FROST, order=3, region=FROST, level=10, giver_key=K("dlg.clan_chief.speaker"),
@@ -122,15 +122,15 @@ Q12 = Quest(
              location="location.frostfang.stormcrown",
              hint="Light the Lightning Rod brazier on the duelling ground. His motes gather early: use the storm pillars for cover.",
              journal="The Storm Tyrant fell, and for the first time in an age the Stormcrown was quiet."),
-        milestone("flag.rival.duel1_won", "Answer the black-iron brazier", tag="duel", optional=True,
-                  location="location.frostfang.stormcrown", req_flag="flag.storm_tyrant_defeated",
-                  hint="A black-iron brazier stands cold a few paces from the Lightning Rod. The Ashen Knight will answer it. He yields before he dies: it is a duel, not a kill.",
+        milestone("flag.rival.duel1_won", "Answer the black-iron brazier at the Stormcrown", tag="duel", optional=True,
+                  location="location.frostfang.stormcrown",
+                  hint="A black-iron brazier stands cold near the Lightning Rod. The rider in black iron will answer it, and yields before he dies. Optional.",
                   journal="The rider in black iron yielded the field and said you would cross blades again."),
         talk("dialogue.clan_chief", "Tell Hjalvar the storm is done", tag="hjalvar", location="location.frostfang.clan_hold",
-             req_flag="flag.beat.stormend_hjalvar", hint="Hjalvar waits by the hearth in the Clan Hold.",
+             req_flag="flag.fork.succession_hjalvar", hint="Hjalvar waits by the hearth in the Clan Hold.",
              journal="Hjalvar asked you to eat at his hearth as kin."),
         talk("dialogue.clan_exile", "Tell Halvar the storm is done", tag="halvar", location="location.frostfang.clan_hold",
-             req_flag="flag.beat.stormend_halvar", hint="Halvar sits on the moot stone, which no exile has touched in twenty years.",
+             req_flag="flag.fork.succession_halvar", hint="Halvar sits on the moot stone, which no exile has touched in twenty years.",
              journal="The clans asked Halvar to take the high seat. He said he would think."),
     ])
 
@@ -217,8 +217,8 @@ WINCH_B = clue(
 DIALOGUES = [CAIRN_S, CAIRN_M, CAIRN_N, MOOT_STONE, WINCH_A, WINCH_B]
 
 LOCALE = [
-    ("ch.2.frostfang", "Act II: The Closed Hold"),
-    ("chapter.ch.2.frostfang.title", "Act II: The Closed Hold"),
+    ("ch.2.frostfang", "Frostfang Reach"),
+    ("chapter.ch.2.frostfang.title", "Frostfang Reach"),
     ("chapter.ch.2.frostfang.subtitle", "The clans of Frostfang Reach have buried their dead twice and will not bury a third."),
     ("boss.storm_tyrant.epithet", "The Storm That Remembers"),
     ("boss.storm_tyrant.intro", "'Four hundred years I have waited for someone who was not afraid of the thunder.'"),

@@ -23,7 +23,6 @@ TargetId = "flag.rival.met1"
 RequiredCount = 1
 Description = "quest.main.iron_king.obj_rival"
 LocationId = "location.ember_crown.arena"
-RequiredFlagId = "flag.iron_king_defeated"
 HintKey = "quest.main.iron_king.hint_rival"
 JournalEntryKey = "quest.main.iron_king.log_rival"
 
@@ -34,7 +33,6 @@ TargetId = "dialogue.elder"
 RequiredCount = 1
 Description = "quest.main.iron_king.obj_elder"
 LocationId = "location.ember_crown.town"
-RequiredFlagId = "flag.rival.met1"
 HintKey = "quest.main.iron_king.hint_elder"
 JournalEntryKey = "quest.main.iron_king.log_elder"
 

@@ -3,7 +3,7 @@ Applied by tools/campaign/extend_hand.py. Not discovered by the registry (leadin
 """
 
 from tools.campaign.extend_hand import Extension
-from tools.campaign.model import E, Node, go, has_flag, leave
+from tools.campaign.model import C, E, Node, go, has_flag, leave
 from tools.campaign.specs._s1 import give, has_item, rep, take
 from tools.campaign.specs._s1_hand import ROOT, active, at, root_choice, shield
 
@@ -47,7 +47,8 @@ CLAN_CHIEF = Extension(
              "mother said a Stormbound man went up to the Celestial stair and came home to find the hold on fire. We do not "
              "say his name. We say the storm. I have told the young it was weather for sixty years, and you went up there "
              "and ended weather.' His voice cracks and he turns it into a cough. 'The hearth is yours, Seventh. Not as "
-             "chief. As kin.'",
+             "chief. As kin. Mind the Crossway on the road south: the Watch takes twenty-five gold from anyone coming "
+             "down from here.'",
              [leave("Eat at his hearth.", tag="eat", do=rep("faction.frostfang_clans", 10))]),
         Node("cq_seat_hjalvar",
              "'Eight clans still sit at my fire and none of them has asked me to step down. A chief who cannot climb is a "
@@ -62,6 +63,13 @@ CLAN_CHIEF = Extension(
     node_choices=[
         root_choice("root", "cq_seat_hjalvar", "About the chief's seat.", "cq_seat_hjalvar", when=has_flag("flag.fork.succession_hjalvar")),
         root_choice("root", "cq_seat_halvar", "About the chief's seat.", "cq_seat_halvar", when=has_flag("flag.fork.succession_halvar")),
+        # A failed Defend (the player fell) is taken up again here; see the Elder's restart_smoke.
+        root_choice("root", "restart_hold", "The storm broke the line with me in it. I will hold the hold again.", "",
+                    when=(C.QUEST_AVAILABLE, "quest.main.closed_hold"), when2=has_flag("flag.main.iron_king_done"),
+                    do=(E.START_QUEST, "quest.main.closed_hold")),
+        root_choice("root", "restart_succession", "I fell on the Stormcrown road. I will hold it again.", "",
+                    when=(C.QUEST_AVAILABLE, "quest.main.succession"), when2=has_flag("flag.main.closed_hold_done"),
+                    do=(E.START_QUEST, "quest.main.succession")),
     ])
 
 CLAN_EXILE = Extension(
@@ -75,8 +83,9 @@ CLAN_EXILE = Extension(
     nodes=[
         Node("cq_su_halvar",
              "Halvar does not get up from his fire, and the fire is still too far from the hold's to be an accident. 'He has "
-             "told you to be careful of me. Good. I would tell you the same.' He turns the stump to the flames. 'The winches "
-             "at Stormfall. They are older than the hold. The first Stormbound raised the Stormcrown by them and then, when "
+             "told you to be careful of me. Good. I would tell you the same. He calls the storm weather. It is a man, ours "
+             "once, who went up a stair and came home to a burned hold, and I will not call him weather to spare anyone's "
+             "feelings.' He turns the stump to the flames. 'The winches at Stormfall. They are older than the hold. The first Stormbound raised the Stormcrown by them and then, when "
              "the Tyrant took it, cut the cables to keep him in. I found a crew who would splice them. The Syndicate paid "
              "for rope. I paid in whatever Hjalvar left me, which was one hand. Three hours up, if you have the nerve, and "
              "the clans will not climb behind us because they will not follow a man who has been judged. But they will "
@@ -88,7 +97,8 @@ CLAN_EXILE = Extension(
              "tastes the word. 'I thought it would sound like winning.' He turns his one hand over. 'The clans have asked "
              "me to sit the high seat. I told them I would think. I am thinking. Hjalvar has not spoken to me, but he has "
              "sent bread, and among the Stormbound that is a sentence.' He looks up. 'You did a thing nobody else could. I "
-             "will not forget whose hand it was, even when I would like to.'",
+             "will not forget whose hand it was, even when I would like to. Keep some of that coin for the Crossway: "
+             "twenty-five gold, going south.'",
              [leave("Take the clans' thanks.", tag="take", do=give("item.currency.gold", 200))]),
         Node("cq_seat_hjalvar_exile",
              "'My fire is still outside the hold's, and it is still the wrong distance. But I was not judged twice. The old "
@@ -104,7 +114,7 @@ CLAN_QUARTERMASTER = Extension(
     variants=[shield("flag.main.closed_hold_done"), at("flag.beat.hjalvar_briefed", "cq_ch_kit")],
     nodes=[
         Node("cq_ch_kit",
-             "Sigrun does not look up from the tally. 'Oil, four lamps' worth. Flint, a good one, and you will bring it back. "
+             "Sigrun counts the jars on her shelf twice before she answers. 'Oil, four lamps' worth. Flint, a good one, and you will bring it back. "
              "If you do not bring it back I will count you instead.' She pushes a stoppered jar and a flint haft across the "
              "table. 'The cairns are on the north ridge. If you see a mitten, do not touch it. The scout who wore it is not "
              "going to want it back.' She looks at you properly for the first time. 'The hold will know if the cairns "
@@ -161,6 +171,9 @@ MAEVE = Extension(
     node_choices=[
         root_choice("root", "cq_herd_slain_note", "How is the fence?", "cq_herd_slain_note", when=has_flag("flag.fork.herd_slain")),
         root_choice("root", "cq_herd_calmed_note", "How is the fence?", "cq_herd_calmed_note", when=has_flag("flag.fork.herd_calmed")),
+        root_choice("root", "restart_fence", "The fence broke when I did. Let me hold it again.", "",
+                    when=(C.QUEST_AVAILABLE, "quest.main.last_hearth"), when2=has_flag("flag.main.iron_king_done"),
+                    do=(E.START_QUEST, "quest.main.last_hearth")),
     ])
 
 ADA = Extension(
@@ -174,7 +187,8 @@ ADA = Extension(
              "bites go grey in a day, and the ones who have them hear the beasts as if they were talking. The ash is calling "
              "them and it is calling my patients and I am out of things to burn.' She finally looks up. 'The Hunters on the "
              "rise keep a count. Go and see Hask Morrow. If you can spare three healing herbs on the way, I can make smoke "
-             "that lets a bitten man sleep through the calling.' She almost smiles. 'If you cannot, go anyway.'",
+             "that lets a bitten man sleep through the calling. Burned where the calling is loudest, it might quiet it for "
+             "a while.' She almost smiles. 'If you cannot spare them, go anyway.'",
              [go("Here are three healing herbs.", "cq_lh_ada_herbs", tag="herbs", when=has_item("item.material.healing_herb", 3),
                  do=take("item.material.healing_herb", 3), do2=rep("faction.villagers", 5)),
               go("Something else.", ROOT, tag="else"),
@@ -225,6 +239,9 @@ HASK = Extension(
     node_choices=[
         root_choice("root", "cq_herd_slain_hask", "About the cull.", "cq_herd_slain_hask", when=has_flag("flag.fork.herd_slain")),
         root_choice("root", "cq_herd_calmed_hask", "About the smoke.", "cq_herd_calmed_hask", when=has_flag("flag.fork.herd_calmed")),
+        root_choice("root", "restart_herd", "The smoke went out when I fell. I will go back to the herd.", "",
+                    when=(C.QUEST_AVAILABLE, "quest.main.herd_and_hearth"), when2=has_flag("flag.main.last_hearth_done"),
+                    do=(E.START_QUEST, "quest.main.herd_and_hearth")),
     ])
 
 # ---------------------------------------------------------------------------------------------------
@@ -269,7 +286,7 @@ ODA = Extension(
              "for the next somebody. I am not sure I like what you have made, and I am not sure I would have done better.'",
              [leave("Thank her.", tag="take", do=give("item.potion.health", 2))]),
         Node("cq_cp_after_kin",
-             "Mother Oda Sarn does not look up from the ledger she keeps at the cistern. The water in the cup beside her is "
+             "Mother Oda Sarn keeps her eyes on the ledger at the cistern. The water in the cup beside her is "
              "still faintly grey. 'You came back alone,' she says. 'No word of my grandson. The pilgrims say there is an "
              "open place for anyone who hears the voice, and that the voice has gone quiet since you went in.' She turns the "
              "page. 'I have decided not to ask what you said to him at the door. I have decided that many times.' She "

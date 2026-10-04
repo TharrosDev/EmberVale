@@ -42,6 +42,15 @@ Effect2Arg = "item.material.healing_herb:3"
 
 [sub_resource type="Resource" id="ch_root_3"]
 script = ExtResource("3_choice")
+Text = "dlg.ashen_herd_choice.root.c_hint"
+Goto = "calm_hint"
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="ch_root_4"]
+script = ExtResource("3_choice")
 Text = "dlg.ashen_herd_choice.root.c_bye"
 Goto = ""
 Condition = 0
@@ -53,7 +62,22 @@ EffectArg = ""
 script = ExtResource("2_node")
 Id = "root"
 Text = "dlg.ashen_herd_choice.root"
-Choices = Array[Resource]([SubResource("ch_root_0"), SubResource("ch_root_1"), SubResource("ch_root_2"), SubResource("ch_root_3")])
+Choices = Array[Resource]([SubResource("ch_root_0"), SubResource("ch_root_1"), SubResource("ch_root_2"), SubResource("ch_root_3"), SubResource("ch_root_4")])
+
+[sub_resource type="Resource" id="ch_calm_hint_0"]
+script = ExtResource("3_choice")
+Text = "dlg.ashen_herd_choice.calm_hint.c_back"
+Goto = "root"
+Condition = 0
+ConditionArg = ""
+Effect = 0
+EffectArg = ""
+
+[sub_resource type="Resource" id="node_calm_hint"]
+script = ExtResource("2_node")
+Id = "calm_hint"
+Text = "dlg.ashen_herd_choice.calm_hint"
+Choices = Array[Resource]([SubResource("ch_calm_hint_0")])
 
 [sub_resource type="Resource" id="ch_slay_0"]
 script = ExtResource("3_choice")
@@ -145,5 +169,5 @@ script = ExtResource("1_dlg")
 Id = "dialogue.ashen_herd_choice"
 SpeakerName = "dlg.ashen_herd_choice.speaker"
 StartNodeId = "root"
-Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_slay"), SubResource("node_slay_pelts"), SubResource("node_calm"), SubResource("node_calm_end"), SubResource("node_after")])
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_calm_hint"), SubResource("node_slay"), SubResource("node_slay_pelts"), SubResource("node_calm"), SubResource("node_calm_end"), SubResource("node_after")])
 StartVariants = Array[Resource]([SubResource("start_0")])

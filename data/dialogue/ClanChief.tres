@@ -109,6 +109,28 @@ ConditionArg = ""
 Effect = 0
 EffectArg = ""
 
+[sub_resource type="Resource" id="ch_root_restart_hold"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_chief.root.c_restart_hold"
+Goto = ""
+Condition = 1
+ConditionArg = "quest.main.closed_hold"
+Effect = 1
+EffectArg = "quest.main.closed_hold"
+Condition2 = 5
+Condition2Arg = "flag.main.iron_king_done"
+
+[sub_resource type="Resource" id="ch_root_restart_succession"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_chief.root.c_restart_succession"
+Goto = ""
+Condition = 1
+ConditionArg = "quest.main.succession"
+Effect = 1
+EffectArg = "quest.main.succession"
+Condition2 = 5
+Condition2Arg = "flag.main.closed_hold_done"
+
 [sub_resource type="Resource" id="node_mg_teach"]
 script = ExtResource("2_node")
 Id = "mg_teach"
@@ -265,7 +287,7 @@ EffectArg = "flag.clan.hearth_kin"
 script = ExtResource("2_node")
 Id = "root"
 Text = "dlg.clan_chief.root"
-Choices = Array[Resource]([SubResource("ch_kin"), SubResource("ch_work"), SubResource("ch_who"), SubResource("ch_tyrant"), SubResource("ch_mg_menu"), SubResource("ch_root_cq_seat_hjalvar"), SubResource("ch_root_cq_seat_halvar"), SubResource("ch_bye")])
+Choices = Array[Resource]([SubResource("ch_kin"), SubResource("ch_work"), SubResource("ch_who"), SubResource("ch_tyrant"), SubResource("ch_mg_menu"), SubResource("ch_root_cq_seat_hjalvar"), SubResource("ch_root_cq_seat_halvar"), SubResource("ch_root_restart_hold"), SubResource("ch_root_restart_succession"), SubResource("ch_bye")])
 
 [sub_resource type="Resource" id="node_who"]
 script = ExtResource("2_node")

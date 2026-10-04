@@ -129,6 +129,17 @@ ConditionArg = ""
 Effect = 0
 EffectArg = ""
 
+[sub_resource type="Resource" id="ch_root_restart_herd"]
+script = ExtResource("3_choice")
+Text = "dlg.ash_hunter_warden.root.c_restart_herd"
+Goto = ""
+Condition = 1
+ConditionArg = "quest.main.herd_and_hearth"
+Effect = 1
+EffectArg = "quest.main.herd_and_hearth"
+Condition2 = 5
+Condition2Arg = "flag.main.last_hearth_done"
+
 [sub_resource type="Resource" id="node_f42_count"]
 script = ExtResource("2_node")
 Id = "f42_count"
@@ -145,7 +156,7 @@ Choices = Array[Resource]([SubResource("ch_lord_back")])
 script = ExtResource("2_node")
 Id = "root"
 Text = "dlg.ash_hunter_warden.root"
-Choices = Array[Resource]([SubResource("ch_lord"), SubResource("ch_station"), SubResource("ch_done"), SubResource("ch_f42_count"), SubResource("ch_f42_react"), SubResource("ch_root_cq_herd_slain_hask"), SubResource("ch_root_cq_herd_calmed_hask"), SubResource("ch_bye")])
+Choices = Array[Resource]([SubResource("ch_lord"), SubResource("ch_station"), SubResource("ch_done"), SubResource("ch_f42_count"), SubResource("ch_f42_react"), SubResource("ch_root_cq_herd_slain_hask"), SubResource("ch_root_cq_herd_calmed_hask"), SubResource("ch_root_restart_herd"), SubResource("ch_bye")])
 
 [sub_resource type="Resource" id="node_lord"]
 script = ExtResource("2_node")

@@ -23,7 +23,6 @@ TargetId = "flag.rival.duel1_won"
 RequiredCount = 1
 Description = "quest.main.storm_tyrant.obj_duel"
 LocationId = "location.frostfang.stormcrown"
-RequiredFlagId = "flag.storm_tyrant_defeated"
 IsOptional = true
 HintKey = "quest.main.storm_tyrant.hint_duel"
 JournalEntryKey = "quest.main.storm_tyrant.log_duel"
@@ -35,7 +34,7 @@ TargetId = "dialogue.clan_chief"
 RequiredCount = 1
 Description = "quest.main.storm_tyrant.obj_hjalvar"
 LocationId = "location.frostfang.clan_hold"
-RequiredFlagId = "flag.beat.stormend_hjalvar"
+RequiredFlagId = "flag.fork.succession_hjalvar"
 HintKey = "quest.main.storm_tyrant.hint_hjalvar"
 JournalEntryKey = "quest.main.storm_tyrant.log_hjalvar"
 
@@ -46,7 +45,7 @@ TargetId = "dialogue.clan_exile"
 RequiredCount = 1
 Description = "quest.main.storm_tyrant.obj_halvar"
 LocationId = "location.frostfang.clan_hold"
-RequiredFlagId = "flag.beat.stormend_halvar"
+RequiredFlagId = "flag.fork.succession_halvar"
 HintKey = "quest.main.storm_tyrant.hint_halvar"
 JournalEntryKey = "quest.main.storm_tyrant.log_halvar"
 
