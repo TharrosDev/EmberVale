@@ -113,7 +113,31 @@ public static class HeadlessStory
         Check(!flags.Has("flag.rival.duel1_won") && !flags.Has("flag.rival.duel2_won"),
             "a rival duel flag was set without a duel; the duels must stay optional");
 
-        await Raise(root, flags, EndingSequence.DawnfireFlag);
+        var driver = new StoryDriver(root, loaded);
+        await CheckDriverObjectives(root, driver, flags, log);
+
+        // The throne conversation, driven the way a player would: corruption set through a real dialogue
+        // effect decides which of the two endings it offers, and the confirmed choice sets the flag.
+        flags.Set("flag.morthul_defeated");
+        foreach ((int corruption, bool refuse, bool sit) in new[] { (10, true, false), (50, true, true), (70, false, true) })
+        {
+            Check(driver.SetCorruption(corruption), $"the driver could not set corruption to {corruption}");
+            Check(driver.OpenDialogue("dialogue.ash_throne") != null, "dialogue.ash_throne is missing");
+            Check(driver.ChooseText("dlg.throne.c_approach"), "the throne gate offered no approach");
+            List<string> offered = driver.ChoiceKeys();
+            Check(offered.Contains("dlg.throne.c_refuse") == refuse && offered.Contains("dlg.throne.c_sit") == sit,
+                $"at corruption {corruption} the throne offered [{string.Join(", ", offered)}]");
+            driver.EndDialogue();
+        }
+
+        driver.SetCorruption(10);
+        driver.OpenDialogue("dialogue.ash_throne");
+        Check(driver.ChooseText("dlg.throne.c_approach") && driver.ChooseText("dlg.throne.c_refuse") &&
+              driver.NodeId == "dawn", "the throne did not lead to the Dawnfire confirmation");
+        Check(driver.ChooseText("dlg.throne.c_dawn_yes") && driver.Session == null,
+            "confirming the Dawnfire ending did not close the conversation");
+        Check(flags.Has(EndingSequence.DawnfireFlag), "the driven throne conversation did not set the Dawnfire flag");
+        await HeadlessLifecycle.Frames(root, 4);
         EndingSequence? ending = lifecycle.Session!.GetNodeOrNull<EndingSequence>("Ending");
         Check(ending?.IsPlaying == true, "setting the Dawnfire flag did not play the ending");
         Check(Weather()?.Current?.Id == "weather.dawnfire", "the Dawnfire ending did not bring the Dawnfire sky");
@@ -145,6 +169,74 @@ public static class HeadlessStory
             $"after load the ember sky was not re-derived from the ending flag (weather '{Weather()?.Current?.Id}')");
 
         Finish(root, null);
+    }
+
+    /// <summary>
+    /// Proves the driver on an in-memory quest, objective type by objective type through the real event
+    /// paths: Milestone (flag), Interact, Kill (and that a kill of an objective not yet live does not
+    /// count), Talk, Reach, Defend. The quest is left one step short on purpose: completing it would
+    /// autosave into the developer's own ring slots (completion itself is covered by the unit tests).
+    /// </summary>
+    private static async Task CheckDriverObjectives(
+        ApplicationRoot root, StoryDriver driver, StoryFlagsComponent flags, QuestLogComponent log)
+    {
+        const string questId = "quest.test.driver";
+        const string gate = "flag.test.driver_gate";
+        string place = driver.NearestLocation();
+        Check(place.Length > 0, "no map location resolves to a position for the driver's Reach/Defend");
+
+        var list = new List<ObjectiveResource>
+        {
+            StoryDriver.Objective(ObjectiveType.Milestone, gate),
+            StoryDriver.Objective(ObjectiveType.Interact, "interact.test.driver_lever"),
+            StoryDriver.Objective(ObjectiveType.Kill, "enemy.goblin", 2),
+            StoryDriver.Objective(ObjectiveType.Talk, "dialogue.ash_throne"),
+        };
+        if (place.Length > 0)
+        {
+            list.Add(StoryDriver.Objective(ObjectiveType.Reach, place));
+            list.Add(StoryDriver.Objective(ObjectiveType.Defend, place, 2));
+        }
+
+        // A last step nothing ever meets: the quest must not complete here, because completing publishes
+        // the event that autosaves into the developer's own ring slots.
+        list.Add(StoryDriver.Objective(ObjectiveType.Milestone, "flag.test.driver_never"));
+
+        QuestResource quest = StoryDriver.Quest(questId, true, list.ToArray());
+        Check(log.StartQuest(quest), "the in-memory driver quest did not start");
+        string state() => driver.Report(questId);
+
+        driver.Kill("enemy.goblin"); // objective 2 is not live yet: must not count
+        driver.Interact("interact.test.driver_lever");
+        Check(!log.IsCompleted(questId) && state().Contains("[0* Milestone"),
+            $"events for objectives that are not live advanced the quest: {state()}");
+
+        flags.Set(gate);
+        Check(state().Contains("[0+ Milestone") && state().Contains("[1* Interact"), $"the milestone flag did not open the next step: {state()}");
+
+        driver.Interact("interact.other"); // wrong id
+        Check(state().Contains("[1* Interact"), $"an interactable with another id advanced the objective: {state()}");
+        driver.Interact("interact.test.driver_lever");
+        Check(state().Contains("[1+ Interact") && state().Contains("[2* Kill"), $"Interact did not complete: {state()}");
+
+        driver.Kill("enemy.goblin", 2);
+        Check(state().Contains("[2+ Kill") && state().Contains("[3* Talk"), $"Kill did not complete: {state()}");
+
+        Check(driver.Talk("dialogue.ash_throne"), "the driver could not hold the throne conversation");
+        Check(state().Contains("[3+ Talk"), $"Talk did not complete: {state()}");
+
+        if (place.Length > 0)
+        {
+            Check(await driver.Reach(place, () => state().Contains("[4+ Reach")), $"Reach did not complete: {state()}");
+
+            Check(await driver.Defend(place, () => state().Contains("[5+ Defend")), $"Defend did not complete: {state()}");
+            Check(state().Contains("[6* Milestone") && log.IsActive(questId),
+                $"the quest should wait on its last step: {state()}");
+        }
+
+        log.Reset(questId);
+        flags.Clear(gate);
+        await HeadlessLifecycle.Frames(root, 2);
     }
 
     private static WeatherDirector? Weather() =>

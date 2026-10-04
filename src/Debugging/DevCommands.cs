@@ -45,6 +45,8 @@ public static class DevCommands
         console.Register(new ConsoleCommand("heal", "heal", "Refill the player's resources.", Heal));
         console.Register(new ConsoleCommand("mount", "mount [own] [now]", "Whistle or dismount; 'own' grants the stable flag first, 'now' skips the run-in (Phase 39A).", Mount));
         console.Register(new ConsoleCommand("rep", "rep <factionId> <delta>", "Shift faction standing.", Rep));
+        console.Register(new ConsoleCommand("flag", "flag <set|clear|has|list> [flag.id|prefix]", "Set, clear or inspect a story flag through StoryFlagsComponent (the same choke point dialogue uses).", FlagCmd));
+        console.Register(new ConsoleCommand("story", "story <chapter <key>|catchup>", "Show a chapter banner, or re-run the legacy-save campaign catch-up.", StoryCmd));
         console.Register(new ConsoleCommand("guild", "guild <list|<guildId> <offer|join|rank N|leave|refuse|finale|clear>>", "Inspect or drive guild membership through the real story-flag path (Phase 42A).", Guild));
         console.Register(new ConsoleCommand("corruption", "corruption <get|set N|add N|tier>", "Inspect or drive the player's corruption.", Corruption));
         console.Register(new ConsoleCommand("learn", "learn <spellId|perkId>", "Learn a spell or perk (respects corruption gating).", Learn));
@@ -590,6 +592,64 @@ public static class DevCommands
             ? string.Empty
             : $"  ⚠ {standing.Contradiction}";
         return $"{guild.Id,-28} {standing.State,-9} {rank}{problem}";
+    }
+
+    private static string FlagCmd(DevConsole console, string[] args)
+    {
+        if (!TryPlayer(out PlayerCharacter player) ||
+            player.GetComponent<Dialogue.StoryFlagsComponent>() is not { } flags)
+        {
+            return "no story flags";
+        }
+
+        string verb = args.Length > 0 ? args[0].ToLowerInvariant() : "list";
+        string id = args.Length > 1 ? args[1] : string.Empty;
+        switch (verb)
+        {
+            case "list":
+            {
+                var held = new System.Collections.Generic.List<string>();
+                foreach (string flag in flags.Flags)
+                {
+                    if (id.Length == 0 || flag.StartsWith(id, System.StringComparison.Ordinal))
+                    {
+                        held.Add(flag);
+                    }
+                }
+
+                held.Sort(System.StringComparer.Ordinal);
+                return held.Count == 0 ? "no flags set" : $"{held.Count} flag(s):\n" + string.Join("\n", held);
+            }
+            case "has" when id.Length > 0:
+                return $"{id}: {(flags.Has(id) ? "set" : "not set")}";
+            case "set" when id.Length > 0:
+                flags.Set(id);
+                return $"{id}: set";
+            case "clear" when id.Length > 0:
+                flags.Clear(id);
+                return $"{id}: cleared";
+            default:
+                return "usage: flag <set|clear|has> <flag.id> | flag list [prefix]";
+        }
+    }
+
+    private static string StoryCmd(DevConsole console, string[] args)
+    {
+        string verb = args.Length > 0 ? args[0].ToLowerInvariant() : string.Empty;
+        if (verb == "chapter" && args.Length > 1)
+        {
+            Core.Events.EventBus.Instance?.Publish(new Narrative.StoryBannerRequestedEvent(args[1]));
+            return $"banner requested for '{args[1]}'";
+        }
+
+        if (verb == "catchup" && TryPlayer(out PlayerCharacter player) &&
+            player.GetComponent<QuestLogComponent>() is { } log)
+        {
+            log.RunCampaignCatchUp();
+            return "campaign catch-up ran (a save already on the new chain is left alone)";
+        }
+
+        return "usage: story chapter <key> | story catchup";
     }
 
     private static string Corruption(DevConsole console, string[] args)

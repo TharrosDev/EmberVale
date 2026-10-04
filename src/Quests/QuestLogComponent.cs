@@ -244,7 +244,7 @@ public partial class QuestLogComponent : EntityComponent, ISaveable
     /// quests completed in the journal, silently. Reconciliation is suspended while it runs, so the
     /// flags it sets cannot narrate a load; the silent reconcile that follows settles the rest.
     /// </summary>
-    private void RunCampaignCatchUp()
+    public void RunCampaignCatchUp()
     {
         if (_flags == null)
         {
