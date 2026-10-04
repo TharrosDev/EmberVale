@@ -64,7 +64,7 @@ Choices = Array[Resource]([SubResource("ch_dormant_0")])
 [sub_resource type="Resource" id="start_0"]
 script = ExtResource("4_variant")
 Condition = 6
-ConditionArg = "flag.main.sundering_pages_done"
+ConditionArg = "flag.beat.stacks_half_given"
 NodeId = "dormant"
 
 [resource]

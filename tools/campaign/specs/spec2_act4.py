@@ -196,7 +196,7 @@ THRONE_QUEST = Quest(
 # --------------------------------------------------------------------------------------------------
 BEACON = read_clue(
     "dialogue.celestial_landing_beacon", "The Cold Beacon",
-    "The brazier is cold and has been cold since heaven fell. Someone left a faggot of grey wood in it, and a flint, as though they had meant to come back. The flint is warm when you pick it up. The wood takes at the first spark, a pale fire that gives no heat and no smoke, and a long way off, something in the dark turns its head.",
+    "The brazier is cold and has been cold since heaven fell. Someone left a bundle of grey kindling in it, and a flint, as though they had meant to come back. The flint is warm when you pick it up. The kindling takes at the first spark, a pale fire that gives no heat and no smoke, and a long way off, something in the dark turns its head.",
     then="The beacon throws a circle of grey light across the terrace. Beyond the pillars, shapes begin to move toward it.",
     then_button="Strike the flint.", close="Ready your weapon.")
 
@@ -436,8 +436,8 @@ EPILOGUES = {
     # (EndingSequence.ForkEpilogues). a = the first flag of the fork's row, b = the second, c = the third.
     # The nine Act I-II forks take spec1's epilogue.fork.<name> text (spec1_story.py), so one voice tells each arc.
     "ending.epilogue.queen.a": "The people of Vesperhold aged. Some died that winter and said it was worth it. Oswin's daughter learned to walk, and there is a lamp in the plaza now that he lets go out.",
-    "ending.epilogue.queen.b": "Vesperhold's years came due in a single night. The Archive wrote the names of the ones who sat down in the Concord's old registry, and left the last page open for whoever came to count them.",
-    "ending.epilogue.vigil.a": "The Knight's greatsword still stands upright before the Ash Throne. No one has moved it. Those who have knelt before it say it feels like being forgiven by something that did not forget.",
+    "ending.epilogue.queen.b": "Vesperhold's years came due in a single night. The Archive wrote the names of the ones who sat down in the old registry at Vesperhold, and left the last page open for whoever came to count them.",
+    "ending.epilogue.vigil.a": "The Knight's greatsword still stands upright in the ash at the gate to the throne. No one has moved it. Those who have knelt before it say it feels like being forgiven by something that did not forget.",
     "ending.epilogue.vigil.b": "The songs say you drew first at the gate, and that you never again drew first on anyone who knelt. Nobody has been able to confirm it, and nobody has been willing to test it.",
 }
 for _slug, _names in (("dray", ("dray_spared", "dray_pressed")), ("succession", ("succession_hjalvar", "succession_halvar")),
@@ -465,15 +465,15 @@ LOCALE = [
     ("dlg.ally.c_take", "Accept what they offer."),
     ("dlg.ally.c_leave", "Hold the line."),
     # The brazier at the Knight's gate while the vigil has not been kept (BossSummonComponent.LockedPromptKey).
-    ("celestial.ashen_knight.challenge_locked_vigil", "A knight kneels beside the brazier, keeping a vigil. Speak to him before you light it."),
+    ("celestial.ashen_knight.challenge_locked_vigil", "The brazier will not take a flame yet. The keeper of this gate kneels in vigil beside it once the Stair is lowered. Speak to him first."),
     # The Ash Throne's opening line, remembering fork F6 (dialogue.ash_throne in legacy.py).
-    ("dlg.throne.gate_kneel", "The Ash Throne. It is carved from something that was once alive, and it is never empty for long. The stone before its foot is worn into the shape of a kneeling man, and you can feel in your own knees where you knelt beside him."),
-    ("dlg.throne.gate_draw", "The Ash Throne. It is carved from something that was once alive, and it is never empty for long. A grey blade lies across the foot of the dais where the Knight let it fall, and you can feel the weight of the one you drew."),
+    ("dlg.throne.gate_kneel", "The Ash Throne. It is carved from something that was once alive, and it is never empty for long. The stone before its foot is worn into the shape of a kneeling man, and your knees remember the ash of the gate, where you knelt beside the one who wore it."),
+    ("dlg.throne.gate_draw", "The Ash Throne. It is carved from something that was once alive, and it is never empty for long. The weight of the blade you drew at the gate is still in your shoulders, and the throne seems to know it."),
     # Mission 29 (quest.main.celestial, legacy.py).
-    ("quest.main.celestial.detail", "The Ashen Knight keeps the one door left to the throne, and keeps it because someone must. He will speak to you before the fight, and what you say to him is remembered. Beyond him, on the highest dais in heaven, Morthul sits in a chair that makes of whoever sits in it a god, and a god, in the end, something that cannot get up."),
-    ("quest.main.celestial.hint_knight", "A knight kneels beside the brazier. Speak to him first, then light it. He will rise for the fight whatever you say."),
+    ("quest.main.celestial.detail", "The Ashen Knight keeps the one door left to the throne, and keeps it because someone must. He will speak to you before the fight, and what you say to him is remembered. Beyond him, on the highest dais in heaven, Morthul sits in a chair that makes of whoever sits in it a gate, and a gate, in the end, something that cannot get up."),
+    ("quest.main.celestial.hint_knight", "Speak to the knight kneeling by the gate's brazier, then light it. He will rise for the fight whatever you say."),
     ("quest.main.celestial.log_knight", "The Ashen Knight is dead, and the only door to the throne stands open."),
-    ("quest.main.celestial.hint_morthul", "Light the brazier at the foot of the dais. Morthul rises once the Knight's vigil is over."),
+    ("quest.main.celestial.hint_morthul", "Climb to the dais and light its brazier. The Knight's death has unbarred it."),
     ("quest.main.celestial.log_morthul", "Morthul came apart into ash, and the ash did not settle."),
 ] + [(k, t(v)) for k, v in BARKS.items()] + [(f"landing2.fork.{k}", t(v)) for k, v in LANDING2.items()] \
   + [(f"landing2.gift.{a[0]}", t(a[5])) for a in ALLIES] + [(k, t(v)) for k, v in EPILOGUES.items()]

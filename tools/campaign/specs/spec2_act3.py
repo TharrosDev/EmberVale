@@ -69,11 +69,17 @@ DEEP_STACKS = Quest(
     xp=1300, gold=450, reward_items=[("item.potion.health", 3)],
     objectives=[
         reach(SUNSPIRE_LIBRARY, "Return to the great library", tag="library",
-              hint="The stacks stair is behind the Archivist's last shelf.",
-              journal="I went down past the last shelf, where the air changes."),
+              hint="The stacks stair is behind the Archivist's last shelf. She keeps the other half of the Keeper's sentence.",
+              journal="The library was quiet. The Archivist was at her table with the lamp turned low."),
+        # The Archivist's node also raises flag.beat.stacks_half_given on entry; naming it as the completion flag too
+        # means the door's gate can never stay shut after this step is done, whichever node opened the conversation.
+        talk("dialogue.sunspire_archivist", "Take Seren's half of the sentence", tag="half", location=SUNSPIRE_LIBRARY,
+             completion_flag="flag.beat.stacks_half_given",
+             hint="She is in the reading hall. Ysolde's half opens nothing alone; Seren will give hers freely now.",
+             journal="Seren gave me her half, once, so level and so quietly that I will never lose it."),
         interact("interact.sunspire.stacks_door", "Speak the sentence at the deep stacks door", tag="door",
-                 location=SUNSPIRE_LIBRARY, completion_flag="flag.beat.stacks_open",
-                 hint="The door is behind the last shelf. Say both halves of the Keeper's sentence to it.",
+                 location=SUNSPIRE_LIBRARY, req_flag="flag.beat.stacks_half_given", completion_flag="flag.beat.stacks_open",
+                 hint="The door is behind the last shelf. Say both halves of the sentence to it, one after the other.",
                  journal="The door took the sentence in two halves and opened without a sound."),
         kill("enemy.ward_golem", 3, "Break the ward golems that guard the vault", tag="golems",
              location=STACKS, req_flag="flag.beat.stacks_open", completion_flag="flag.beat.golems_down",
@@ -96,31 +102,36 @@ DEEP_STACKS = Quest(
                hint="The seals release what they held back. Stand in the vault, fight inside the ring of plinths, and do not leave it.",
                journal="The wards had one last thing in them: whatever the gods had set them to keep out. I held the vault until it spent itself."),
         talk("dialogue.rival_library", "Speak with the knight waiting among the broken seals", tag="rival",
-             location=STACKS, req_flag="flag.beat.library_defended",
+             location=STACKS, req_flag="flag.beat.library_defended", completion_flag="flag.beat.rival_parley_done",
              hint="He stands at the vault's far end, beyond the plinths.",
              journal="The Ashen Knight was standing among the broken seals as though he had been there all along."),
-        interact("interact.sunspire.sundering_codex", "Read the Sundering codex", tag="codex", location=STACKS,
+        # A Milestone on the first turned page, not an Interact on the touch: the codex's reading cards play on that
+        # choice, so the revelation cannot be skipped by closing the book unread. flag.beat.codex_read is still the
+        # objective's completion flag, which is what the Archivist and the truth quest read.
+        milestone("flag.beat.codex_cards_seen", "Read the Sundering codex", tag="codex", location=STACKS,
                  req_flag="flag.beat.rival_parley_done", completion_flag="flag.beat.codex_read",
-                 hint="The codex lies open on its lectern at the vault's heart.",
+                 hint="The codex lies open on its lectern at the vault's heart. Turn the page.",
                  journal="The codex said what the Archivist had feared it would say. It also said what the Knight had been afraid I would read."),
     ])
 
 # --------------------------------------------------------------------------------------------------
 # Interactables
 # --------------------------------------------------------------------------------------------------
-READING_TABLE = read_clue(
+READING_TABLE = gated_clue(
     "dialogue.sunspire_reading_table", "The Reading Table",
     "Seren has laid the five accounts out the way she would lay out five witnesses, a hand's width apart, with a lamp burning at the head. You read them in the order you earned them: the Iron King's fear, the Tyrant's grief, the Beast's loneliness, the Prophet's certainty, the Queen's count.",
-    then="Side by side they say the same thing in five voices. There was a Stair. Six climbed it. Five were thrown down at the top, not one of them fallen, and each of them heard a question that would not stop being asked. And in every account, in the same place, there is a gap where a sixth voice should be: the one who stayed.",
-    then_button="Read them together.", close="Close the accounts.")
+    then="Side by side they say the same thing in five voices. There was a Stair. Six climbed it. Five were thrown down from it, not one of them fallen, and each of them heard a question that would not stop being asked. And in every account, in the same place, there is a gap where a sixth voice should be: the one who stayed.",
+    then_button="Read them together.", close="Close the accounts.",
+    gate_flag="flag.beat.pages_laid",
+    dormant="The long reading table is bare but for a lamp burning at its head. Whatever is meant to be read here has not been laid out yet.")
 
 STACKS_DOOR = gated_clue(
     "dialogue.sunspire_stacks_door", "The Deep Stacks Door",
     "Behind the last shelf the wall is not a wall. It is a door the Archive stopped believing in: bare stone with a seam of lead down the middle, and no handle, no lock, nothing to turn. You say the Keeper's sentence to it, both halves, one after the other. The lead seam runs with light.",
     then="The door opens without a sound onto a stair that goes down a very long way. The air that comes up is dry and cold and smells of lamp oil. Somewhere below, stone shifts that has been still for a long time.",
     then_button="Say the sentence.", close="Go down.",
-    gate_flag="flag.main.sundering_pages_done",
-    dormant="Behind the last shelf the wall is not a wall: bare stone with a seam of lead down the middle, and no handle, no lock, nothing to turn. It does not answer. Whatever sentence opens it, you have not yet been given.")
+    gate_flag="flag.beat.stacks_half_given",
+    dormant="Behind the last shelf the wall is not a wall: bare stone with a seam of lead down the middle, and no handle, no lock, nothing to turn. It does not answer. Whatever sentence opens it, you have not yet been given all of it.")
 
 PLINTH_A = gated_clue(
     "dialogue.sunspire_seal_a", "The First Plinth",
@@ -141,7 +152,14 @@ PLINTH_C = gated_clue(
 
 def _codex() -> Dialogue:
     return Dialogue(
-        id="dialogue.sunspire_codex", speaker=t("The Sundering Codex"), start="root", nodes=[
+        id="dialogue.sunspire_codex", speaker=t("The Sundering Codex"), start="root",
+        # The vault holds one more conversation before the book: until the knight among the seals has spoken, the page
+        # will not turn (the objective counts the reading only after that, and a reading it did not count would have to
+        # be repeated).
+        start_variants=[StartVariant(missing_flag("flag.beat.rival_parley_done"), "dormant")],
+        nodes=[
+            Node("dormant", t("The codex lies open on its lectern at the vault's heart, and your hand stops short of the page. You are not alone down here. Someone is standing among the broken seals, and whatever he has to say comes before the book."), [
+                leave(t("Step back."), tag="back")]),
             Node("root", t("The codex lies open on its lectern at the vault's heart, bound in something that was never an animal. The first leaf is blank. The second is a single line in a hand that is not human, repeated until it fills the page: <<WE KEPT IT. WE KEPT IT. WE KEPT IT.>> Turn the page, and the book will tell you the rest."), [
                 say(t("Turn the page."), "read", tag="turn_first", when=missing_flag("flag.beat.codex_cards_seen"),
                     do=(E.PLAY_CARDS, "card.sundering"), do2=(E.SET_FLAG, "flag.beat.codex_cards_seen")),
@@ -169,13 +187,14 @@ def _rival_library() -> Dialogue:
     return Dialogue(
         id="dialogue.rival_library", speaker=t("The Ashen Knight"), start="root",
         start_variants=[
+            StartVariant(has_flag("flag.beat.codex_read"), "after_read"),
             StartVariant(has_flag("flag.rival.library_trust"), "after_trust"),
             StartVariant(has_flag("flag.rival.library_defy"), "after_defy"),
         ],
         nodes=[
             Node("root", t("He is standing among the broken seals with his helm under one arm, and he has been standing there a long time. It is the first time you have seen his face. It is a tired, ordinary face, older than it should be. <<Seventh. I came up through the floor of the world to stop you reading that book. I find I cannot say why. Four hundred years of knowing, and I have never once been sure.>>"),
                  choose, on_enter=(E.SET_FLAG, "flag.beat.rival_parley_done")),
-            Node("why", t("<<Because everyone who reads it wants the throne. The fallen read it on the Stair, a page each, and each of them went down thinking the same thing: that it should be them. You will read it differently. Or you will not.>>"), [
+            Node("why", t("<<Because everyone who reads it wants the throne. The Six read it before the climb, a page each, and every one of us went up thinking the same thing: that it should be me. You will read it differently. Or you will not.>>"), [
                 back("root", "Something else.", tag="back"), bye("We will speak at the gate.", tag="later")]),
             Node("what", t("<<The Sundering, and how it ended, which is not how the songs have it. And what the throne is for. There is a line near the end I have read four hundred times. Read it yourself, and then tell me I was wrong to be afraid.>>"), [
                 back("root", "Something else.", tag="back"), bye("We will speak at the gate.", tag="later")]),
@@ -185,6 +204,8 @@ def _rival_library() -> Dialogue:
                 bye("Then I will see you there.", tag="go")], on_enter=(E.ADD_CORRUPTION, "2")),
             Node("after_trust", t("He has not moved from where you left him, and the helm is still on the plinth. <<Read,>> he says gently. <<I will be here. I find I do not mind being here.>>"), [
                 bye("I will.", tag="go")]),
+            Node("after_read", t("He is standing where you left him, with the helm under his arm again. <<Now you know what I know,>> he says. <<It does not get lighter. I will see you at the gate, Seventh.>>"), [
+                bye("At the gate.", tag="go")]),
             Node("after_defy", t("<<You have your answer,>> he says, from behind the helm. <<The book is open. Go and read it, and then go and make me regret it. At the gate.>>"), [
                 bye("At the gate.", tag="go")]),
         ])
@@ -207,14 +228,14 @@ LOCALE = [
     ("quest.main.truth.hint_open", "At the end of her telling, ask her to open the way. The gate in the library forecourt will answer."),
     ("quest.main.truth.log_open", "She told it as the Archive tells it: a war fought for the right to stop, and a seat that must never be empty. The gate in the forecourt stands open."),
     # The Archivist's variants (dialogue.sunspire_archivist in legacy.py).
-    ("dlg.archivist.reading", t("She is waiting at the head of the vault stair with the lamp turned low, and she does not ask what you read. She asks whether you are ready to hear it said aloud, since a thing read alone is only a rumour. <<I will tell it as the Archive tells it,>> she says, <<the way no one has told it in four hundred years. When I have finished, the way to the Celestial Realm will be open. It has always been open. It only wants someone who knows what is at the end of it.>>")),
+    ("dlg.archivist.reading", t("She is waiting at the long table with the lamp turned low, and she does not ask what you read. She asks whether you are ready to hear it said aloud, since a thing read alone is only a rumour. <<I will tell it as the Archive tells it,>> she says, <<the way no one has told it in four hundred years. When I have finished, the way to the Celestial Realm will be open. It has always been open. It only wants someone who knows what is at the end of it.>>")),
     ("dlg.archivist.c_not_yet", "Not yet."),
     ("dlg.archivist.stacks_wait", t("<<You have Ysolde's half,>> she says, and gives you hers, once, so level and so quietly that you know you will never lose it. <<Say them one after the other at the door. I will not go down with you. I read the first leaf of that codex once, forty years ago, and it was enough. The wards are not guards: they are older than that, and they take a very literal view of trespass. Bring whatever you can fight with, and do not stay down once the seals fall.>>")),
     ("dlg.archivist.pages", t("She has cleared the long table before you reach it. <<Lay them down,>> she says, <<all five.>> You have nothing in your hands. You lay them down anyway: the Tyrant's grief, the Beast's loneliness, the Prophet's certainty, the Iron King's fear, the Queen's count. She reads them off your face. When she is finished she does not look up for a long time. <<Five accounts, each true, each with a hole of the same shape. Read them together at the reading table, and then take what is missing to the Archive's Annexe in Embermarket. Ysolde Marr keeps half a sentence that opens the deep stacks. I keep the other half. Neither of us may say it for the other.>>")),
     ("dlg.archivist.c_pages_fate", "What became of the hidden country?"),
     ("dlg.archivist.c_testimony_carry", "I cannot go back. Read me what I carry."),
-    ("dlg.archivist.pages_released", t("<<My book on the Concord has a new last page this morning, in my own hand, and I did not write it. It says the count ended and the people began to age. It says some of them have already died, quietly, with their families, and some have taken up the lamplighter's trade for the first time in four hundred years. I will keep that page. It is the only one in the whole book that ends well.>>")),
-    ("dlg.archivist.pages_kept", t("<<The book has a new last page. It says the count stood, and the Queen fell, and the years arrived in one night. It says half of a street sat down. I will not tell you it was wrong; I was not there. I will tell you I read it twice and then put the book where I could not see it.>>")),
+    ("pale.dlg.archivist.pages_released", t("<<My book on the Concord has a new last page this morning, in my own hand, and I did not write it. It says the count ended and the people began to age. It says some of them have already died, quietly, with their families, and some have taken up the lamplighter's trade for the first time since the signing. I will keep that page. It is the only one in the whole book that ends well.>>")),
+    ("pale.dlg.archivist.pages_kept", t("<<The book has a new last page. It says the count stood, and the Queen fell, and the years arrived in one night. It says half of a street sat down. I will not tell you it was wrong; I was not there. I will tell you I read it twice and then put the book where I could not see it.>>")),
     ("dlg.archivist.testimony_missing", t("<<Five voices go into the book, Seventh, and you have brought me fewer. The Iron King, the Storm Tyrant, the Beast Lord, the Prophet, the Queen: each of them said the one true thing they knew at the end, if you stayed to hear it. Go back to whoever you did not wait for. A fallen Flamebearer's last word is the only record of the Stair that was never written down. And if one of them died unheard, and no road leads back, tell me, and I will read what you carry and be sorry for the rest.>>")),
 ]
 

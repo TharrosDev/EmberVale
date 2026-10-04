@@ -31,7 +31,7 @@ TERMINAL_FLAGS = {}
 PALE_DOOR = Quest(
     id="quest.main.pale_door",
     title="The Forecourt Door",
-    summary="Three of the fallen are gone, and the embers you carry will not settle. They lean west, toward a country that is on no map. Archivist Seren Adaru says a door in her library's forecourt has begun to open. Walk through it and learn what four hundred years of silence were hiding.",
+    summary="Four of the fallen are gone, and the embers you carry will not settle. They lean west, toward a country that is on no map. Archivist Seren Adaru says a door in her library's forecourt has begun to open. Walk through it and learn what four hundred years of silence were hiding.",
     detail="The Second Flamebearer hid her whole realm from death and from history, and the hiding held until her fellow fallen began to go out one by one. The Archivist has listened to the door breathe for forty years and never opened it. She will not stop you, and she will not follow.",
     chapter_key="ch.2.pale", order=19, region="region.pale_concord", level=20,
     giver_key="dlg.sunspire_archivist.speaker",
@@ -41,14 +41,14 @@ PALE_DOOR = Quest(
         talk("dialogue.sunspire_archivist", "Speak with Archivist Seren Adaru in the great library", tag="archivist",
              location="location.sunspire.library",
              hint="She keeps the reading hall at the head of the library stair. The new door stands in the forecourt.",
-             journal="The Archivist put down her book for the first time in my memory. A door that was bare wall for four hundred years had opened in the night."),
+             journal="The Archivist put down her book for the first time in my memory. A door that had always been bare wall had opened in the night."),
         reach("location.pale.landing", "Go through the door to the Still Quay", tag="quay",
-              hint="The door is in the library forecourt. It opens only for someone carrying embers.",
+              hint="The door stands in the library forecourt, in the wall that was bare until now. Walk through it.",
               journal="The door let out onto a stone quay where every lamp burns at an hour that never ends."),
         interact("interact.pale.landing_lamp", "Touch the first lamp on the quay", tag="lamp",
                  location="location.pale.landing", completion_flag="flag.beat.pale_landing_lit",
                  hint="The first lamp stands a few steps from where you arrive, at the quay's south end.",
-                 journal="The lamp was warm, and had not gone out in four hundred years. Something far off felt the touch."),
+                 journal="The lamp was warm, and had never once gone out. Something far off felt the touch."),
     ])
 
 # --------------------------------------------------------------------------------------------------
@@ -62,7 +62,9 @@ VESPERHOLD = Quest(
     chapter_key="ch.2.pale", order=20, region="region.pale_concord", level=20,
     giver_key="pale.dlg.steward.speaker",
     auto_start="flag.main.pale_door_done", completion_flag="flag.main.vesperhold_done",
-    sequential=True, xp=900, gold=300, reward_items=[("item.potion.health", 2)],
+    # Not sequential: the four residents send you to one another, but a visitor who speaks to them in another order
+    # (or reads a lamp first) must not have those conversations ignored and have to repeat them.
+    xp=900, gold=300, reward_items=[("item.potion.health", 2)],
     faction_reward=("faction.villagers", 10),
     objectives=[
         reach("location.pale.city", "Follow the quay road north to Vesperhold", tag="city",
@@ -75,7 +77,7 @@ VESPERHOLD = Quest(
         talk("dialogue.undying_lamplighter", "Speak with Oswin the Lamplighter", tag="lamplighter",
              location="location.pale.city",
              hint="He walks the lamps on the south side of the plaza.",
-             journal="Oswin signed because he could not bear to watch his daughter grow old. She has not grown at all."),
+             journal="Oswin signed because he could not bear to lose his newborn daughter to a dying world. She has not grown a day since."),
         talk("dialogue.undying_baker", "Speak with Maren Loaf at her stall", tag="baker",
              location="location.pale.city",
              hint="The bakery stall stands on the north side of the plaza.",
@@ -83,7 +85,7 @@ VESPERHOLD = Quest(
         talk("dialogue.undying_clockkeeper", "Speak with Old Corwen at the clock tower", tag="clockkeeper",
              location="location.pale.city",
              hint="The clock tower stands at the plaza's west end.",
-             journal="Corwen winds a clock that has said the same hour for four hundred years. He told me where the dusk-count is written."),
+             journal="Corwen winds a clock that has said the same hour since the signing. He told me where the dusk-count is written."),
         interact("interact.pale.dusk_registry", "Read the dusk-count registry at the foot of the clock tower",
                  tag="registry", location="location.pale.city", completion_flag="flag.beat.registry_read",
                  hint="Corwen keeps it on a lectern beside the tower's door.",
@@ -113,8 +115,8 @@ QUEENS_COUNT = Quest(
     chapter_key="ch.2.pale", order=21, region="region.pale_concord", level=21,
     giver_key="pale.dlg.steward.speaker",
     auto_start="flag.main.vesperhold_done",
-    # The count-stone dialogue raises this flag; it is also this quest's completion flag, and quest.main.hidden
-    # starts on it. The Hollow Queen's brazier is gated on it.
+    # Completing this quest raises this flag (the count-stone only raises flag.beat.count_answered, the last
+    # objective); quest.main.hidden starts on it and the Hollow Queen's brazier is gated on it.
     completion_flag="flag.pale.court_open",
     # Not sequential: the husks stand in the road 12 to 28 m short of the stone, so a player fights them BEFORE
     # the Reach radius at the stone is entered; a locked Kill would never count them and could not be redone.
@@ -126,7 +128,7 @@ QUEENS_COUNT = Quest(
         kill("enemy.hollow_husk", 5, "Cut down the husks on the processional", tag="husks",
              location="location.pale.court_approach", completion_flag="flag.beat.husks_down",
              hint="The husks stand in the road, the ones the count could not hold. They come at anyone who nears the Court wall.",
-             journal="The husks did not defend themselves. They had been standing in the road for four hundred years, waiting to be released from the road."),
+             journal="The husks did not defend themselves. They had been standing in the road since the count began, waiting to be released from it."),
         milestone("flag.beat.count_answered", "Answer the count-stone at the end of the processional", tag="stone",
                   location="location.pale.court_approach",
                   hint="Touch the stone and it will ask whether the count goes on. It stays silent while the husks stand. Either answer opens the Court's gate.",
@@ -277,7 +279,7 @@ LOCALE = [
     ("pale.boss.challenge_locked_count", "The brazier will not take a flame. The count at the foot of the processional has not been answered."),
     # Story cards (PlayCards prefixes) for the count-stone's answer.
     ("pale.card.count_release.1", t("The rings go dark from the outside in. The Queen feels each name leave her hands, and does not call any of them back.")),
-    ("pale.card.count_release.2", t("In Vesperhold a lamplighter lifts his daughter onto his shoulder and notices, for the first time in four hundred years, that she is heavier than she was.")),
+    ("pale.card.count_release.2", t("In Vesperhold a lamplighter lifts his daughter onto his shoulder and notices, for the first time since the signing, that she is heavier than she was.")),
     ("pale.card.count_keep.1", t("The rings brighten. The count rolls on into the dusk as though it had never been asked, and eleven hundred and four people feel the evening settle back over them like a hand.")),
     ("pale.card.count_keep.2", t("In Vesperhold the Steward reads the proclamation a little louder. She does not look up, and she does not stop.")),
     # Mission 22 (quest.main.hidden, legacy.py): text for the appended objective and the new hints.
@@ -289,11 +291,11 @@ LOCALE = [
     ("pale.quest.hidden.hint_aftermath", "The chair stands beside the brazier in the forecourt. It still has something to say."),
     ("pale.quest.hidden.log_aftermath", "The chair kept the Queen's last account: that the Six climbed the Stair, five were thrown down, and the sixth knelt at the top and did not fall."),
     # The Archivist's pale variants (dialogue.sunspire_archivist in legacy.py).
-    ("pale.dlg.archivist.door", t("She has put the book down, and that alone is new. <<It opened in the night. The door in the forecourt, the one that was bare wall for four hundred years. I have listened to it breathe for forty. Last night it breathed out.>> Her hands are not quite steady on the table. <<There is a country on the other side. I have a thousand names for it and none I trust. The fire you carry leans toward that door. I do not need to tell you why.>>")),
+    ("pale.dlg.archivist.door", t("She has put the book down, and that alone is new. <<It opened in the night. The door in the forecourt, the one that was bare wall for as long as the library has stood. I have listened to it breathe for forty years. Last night it breathed out.>> Her hands are not quite steady on the table. <<There is a country on the other side. I have a thousand names for it and none I trust. The fire you carry leans toward that door. I do not need to tell you why.>>")),
     ("pale.dlg.archivist.c_door_what", "What is on the other side?"),
     ("pale.dlg.archivist.door_what", t("<<The Concord. That is what the oldest of my books call it, when they call it anything: a signed arrangement between a dying world and a woman with a very good pen. Nobody who went in came back to say whether it worked. The books stop at the signing. Whoever kept that secret kept it better than anyone has kept anything.>>")),
     ("pale.dlg.archivist.c_door_why", "Why has it opened now?"),
-    ("pale.dlg.archivist.door_why", t("<<Because three of the fallen are dead, and she is the Second. A seal like that is held up by a set of keys, and you have been taking the keys one by one. You did not know. I did, and I let you. I am sorry for that, and not sorry enough to have stopped you.>>")),
+    ("pale.dlg.archivist.door_why", t("<<Because four of the fallen are dead, and she is the Second. A seal like that is held up by a set of keys, and you have been taking the keys one by one. You did not know. I did, and I let you. I am sorry for that, and not sorry enough to have stopped you.>>")),
     ("pale.dlg.archivist.c_door_go", "I will go and see."),
     ("pale.dlg.archivist.lamp_turned", t("The old lamp on her desk has turned to face the forecourt door on its own. She is watching it the way she watched the book. <<You touched something over there,>> she says. <<At that moment this lamp turned. I have trimmed it for forty years and it has never once moved. Whatever is on the other side knows you are coming. Mind the Steward: she talks, and she means what she says.>>")),
 ] + HE.ROWS

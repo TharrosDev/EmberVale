@@ -436,7 +436,7 @@ EffectArg = ""
 [sub_resource type="Resource" id="node_pages_released"]
 script = ExtResource("2_node")
 Id = "pages_released"
-Text = "dlg.archivist.pages_released"
+Text = "pale.dlg.archivist.pages_released"
 Choices = Array[Resource]([SubResource("ch_pages_released_0")])
 
 [sub_resource type="Resource" id="ch_pages_kept_0"]
@@ -451,7 +451,7 @@ EffectArg = ""
 [sub_resource type="Resource" id="node_pages_kept"]
 script = ExtResource("2_node")
 Id = "pages_kept"
-Text = "dlg.archivist.pages_kept"
+Text = "pale.dlg.archivist.pages_kept"
 Choices = Array[Resource]([SubResource("ch_pages_kept_0")])
 
 [sub_resource type="Resource" id="ch_stacks_wait_0"]
@@ -477,6 +477,8 @@ script = ExtResource("2_node")
 Id = "stacks_wait"
 Text = "dlg.archivist.stacks_wait"
 Choices = Array[Resource]([SubResource("ch_stacks_wait_0"), SubResource("ch_stacks_wait_1")])
+OnEnterEffect = 2
+OnEnterEffectArg = "flag.beat.stacks_half_given"
 
 [sub_resource type="Resource" id="ch_reading_0"]
 script = ExtResource("3_choice")

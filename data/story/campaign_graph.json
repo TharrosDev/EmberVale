@@ -2582,11 +2582,25 @@
      "journalKey": "quest.main.deep_stacks.log_library"
     },
     {
+     "type": 3,
+     "target": "dialogue.sunspire_archivist",
+     "count": 1,
+     "location": "location.sunspire.library",
+     "reqFlag": "",
+     "forbidFlag": "",
+     "completionFlag": "flag.beat.stacks_half_given",
+     "activatedFlag": "",
+     "optional": false,
+     "description": "quest.main.deep_stacks.obj_half",
+     "hintKey": "quest.main.deep_stacks.hint_half",
+     "journalKey": "quest.main.deep_stacks.log_half"
+    },
+    {
      "type": 6,
      "target": "interact.sunspire.stacks_door",
      "count": 1,
      "location": "location.sunspire.library",
-     "reqFlag": "",
+     "reqFlag": "flag.beat.stacks_half_given",
      "forbidFlag": "",
      "completionFlag": "flag.beat.stacks_open",
      "activatedFlag": "",
@@ -2672,7 +2686,7 @@
      "location": "location.sunspire.deep_stacks",
      "reqFlag": "flag.beat.library_defended",
      "forbidFlag": "",
-     "completionFlag": "",
+     "completionFlag": "flag.beat.rival_parley_done",
      "activatedFlag": "",
      "optional": false,
      "description": "quest.main.deep_stacks.obj_rival",
@@ -2680,8 +2694,8 @@
      "journalKey": "quest.main.deep_stacks.log_rival"
     },
     {
-     "type": 6,
-     "target": "interact.sunspire.sundering_codex",
+     "type": 8,
+     "target": "flag.beat.codex_cards_seen",
      "count": 1,
      "location": "location.sunspire.deep_stacks",
      "reqFlag": "flag.beat.rival_parley_done",
@@ -2700,32 +2714,40 @@
      "via": "completion"
     },
     {
-     "flag": "flag.beat.stacks_open",
+     "flag": "flag.beat.stacks_half_given",
      "via": "objective[1].completion"
     },
     {
-     "flag": "flag.beat.golems_down",
+     "flag": "flag.beat.stacks_open",
      "via": "objective[2].completion"
     },
     {
-     "flag": "flag.beat.plinth_a",
+     "flag": "flag.beat.golems_down",
      "via": "objective[3].completion"
     },
     {
-     "flag": "flag.beat.plinth_b",
+     "flag": "flag.beat.plinth_a",
      "via": "objective[4].completion"
     },
     {
-     "flag": "flag.beat.plinth_c",
+     "flag": "flag.beat.plinth_b",
      "via": "objective[5].completion"
     },
     {
-     "flag": "flag.beat.library_defended",
+     "flag": "flag.beat.plinth_c",
      "via": "objective[6].completion"
     },
     {
-     "flag": "flag.beat.codex_read",
+     "flag": "flag.beat.library_defended",
+     "via": "objective[7].completion"
+    },
+    {
+     "flag": "flag.beat.rival_parley_done",
      "via": "objective[8].completion"
+    },
+    {
+     "flag": "flag.beat.codex_read",
+     "via": "objective[9].completion"
     }
    ],
    "reads": [
@@ -2734,11 +2756,11 @@
      "via": "autoStart"
     },
     {
-     "flag": "flag.beat.stacks_open",
+     "flag": "flag.beat.stacks_half_given",
      "via": "objective[2].required"
     },
     {
-     "flag": "flag.beat.golems_down",
+     "flag": "flag.beat.stacks_open",
      "via": "objective[3].required"
     },
     {
@@ -2750,16 +2772,24 @@
      "via": "objective[5].required"
     },
     {
-     "flag": "flag.beat.seals_broken",
+     "flag": "flag.beat.golems_down",
      "via": "objective[6].required"
     },
     {
-     "flag": "flag.beat.library_defended",
+     "flag": "flag.beat.seals_broken",
      "via": "objective[7].required"
     },
     {
-     "flag": "flag.beat.rival_parley_done",
+     "flag": "flag.beat.library_defended",
      "via": "objective[8].required"
+    },
+    {
+     "flag": "flag.beat.rival_parley_done",
+     "via": "objective[9].required"
+    },
+    {
+     "flag": "flag.beat.codex_cards_seen",
+     "via": "objective[9].milestone"
     }
    ],
    "locKeys": [
@@ -2768,6 +2798,7 @@
     "quest.main.deep_stacks.hint_codex",
     "quest.main.deep_stacks.hint_door",
     "quest.main.deep_stacks.hint_golems",
+    "quest.main.deep_stacks.hint_half",
     "quest.main.deep_stacks.hint_hold",
     "quest.main.deep_stacks.hint_library",
     "quest.main.deep_stacks.hint_plinth_a",
@@ -2777,6 +2808,7 @@
     "quest.main.deep_stacks.log_codex",
     "quest.main.deep_stacks.log_door",
     "quest.main.deep_stacks.log_golems",
+    "quest.main.deep_stacks.log_half",
     "quest.main.deep_stacks.log_hold",
     "quest.main.deep_stacks.log_library",
     "quest.main.deep_stacks.log_plinth_a",
@@ -2786,6 +2818,7 @@
     "quest.main.deep_stacks.obj_codex",
     "quest.main.deep_stacks.obj_door",
     "quest.main.deep_stacks.obj_golems",
+    "quest.main.deep_stacks.obj_half",
     "quest.main.deep_stacks.obj_hold",
     "quest.main.deep_stacks.obj_library",
     "quest.main.deep_stacks.obj_plinth_a",
@@ -5417,7 +5450,7 @@
    "level": 20,
    "isMain": true,
    "isLedger": false,
-   "sequential": true,
+   "sequential": false,
    "autoStart": "flag.main.pale_door_done",
    "completionFlag": "flag.main.vesperhold_done",
    "startFlag": "",
@@ -16512,6 +16545,11 @@
    "startVariants": [
     {
      "cond": 5,
+     "arg": "flag.beat.codex_read",
+     "node": "after_read"
+    },
+    {
+     "cond": 5,
      "arg": "flag.rival.library_trust",
      "node": "after_trust"
     },
@@ -16562,6 +16600,11 @@
      "gotos": []
     },
     {
+     "id": "after_read",
+     "choices": 1,
+     "gotos": []
+    },
+    {
      "id": "after_defy",
      "choices": 1,
      "gotos": []
@@ -16574,6 +16617,7 @@
    ],
    "flagsCleared": [],
    "flagsRead": [
+    "flag.beat.codex_read",
     "flag.rival.library_defy",
     "flag.rival.library_trust"
    ],
@@ -16622,6 +16666,12 @@
      "at": "choice[3]"
     },
     {
+     "flag": "flag.beat.codex_read",
+     "kind": "read",
+     "node": "after_read",
+     "at": "startVariant"
+    },
+    {
      "flag": "flag.rival.library_trust",
      "kind": "read",
      "node": "after_trust",
@@ -16637,6 +16687,8 @@
    "locKeys": [
     "dlg.rival_library.after_defy",
     "dlg.rival_library.after_defy.c_go",
+    "dlg.rival_library.after_read",
+    "dlg.rival_library.after_read.c_go",
     "dlg.rival_library.after_trust",
     "dlg.rival_library.after_trust.c_go",
     "dlg.rival_library.defy",
@@ -17537,6 +17589,7 @@
    ],
    "flagsSet": [
     "flag.beat.pages_laid",
+    "flag.beat.stacks_half_given",
     "flag.celestial_gate_open",
     "flag.testimonies_all",
     "flag.truth.reading_done"
@@ -17623,6 +17676,12 @@
      "at": "choice[1]"
     },
     {
+     "flag": "flag.beat.stacks_half_given",
+     "kind": "set",
+     "node": "stacks_wait",
+     "at": "onEnter"
+    },
+    {
      "flag": "flag.celestial_gate_open",
      "kind": "read",
      "node": "root",
@@ -17681,8 +17740,6 @@
     "dlg.archivist.morthul",
     "dlg.archivist.opened",
     "dlg.archivist.pages",
-    "dlg.archivist.pages_kept",
-    "dlg.archivist.pages_released",
     "dlg.archivist.reading",
     "dlg.archivist.stacks_wait",
     "dlg.archivist.testimony_missing",
@@ -17703,6 +17760,8 @@
     "pale.dlg.archivist.door_what",
     "pale.dlg.archivist.door_why",
     "pale.dlg.archivist.lamp_turned",
+    "pale.dlg.archivist.pages_kept",
+    "pale.dlg.archivist.pages_released",
     "spell.blink.ask",
     "spell.teach.ask_menu",
     "spell.teach.back",
@@ -17807,8 +17866,19 @@
    "source": "generated",
    "speaker": "dlg.sunspire_codex.speaker",
    "start": "root",
-   "startVariants": [],
+   "startVariants": [
+    {
+     "cond": 6,
+     "arg": "flag.beat.rival_parley_done",
+     "node": "dormant"
+    }
+   ],
    "nodes": [
+    {
+     "id": "dormant",
+     "choices": 1,
+     "gotos": []
+    },
     {
      "id": "root",
      "choices": 3,
@@ -17830,7 +17900,8 @@
    ],
    "flagsCleared": [],
    "flagsRead": [
-    "flag.beat.codex_cards_seen"
+    "flag.beat.codex_cards_seen",
+    "flag.beat.rival_parley_done"
    ],
    "questsStarted": [],
    "sites": [
@@ -17851,9 +17922,17 @@
      "kind": "read",
      "node": "root",
      "at": "choice[1]"
+    },
+    {
+     "flag": "flag.beat.rival_parley_done",
+     "kind": "read",
+     "node": "dormant",
+     "at": "startVariant"
     }
    ],
    "locKeys": [
+    "dlg.sunspire_codex.dormant",
+    "dlg.sunspire_codex.dormant.c_back",
     "dlg.sunspire_codex.read",
     "dlg.sunspire_codex.read.c_again",
     "dlg.sunspire_codex.read.c_close",
@@ -17976,7 +18055,13 @@
    "source": "generated",
    "speaker": "dlg.sunspire_reading_table.speaker",
    "start": "root",
-   "startVariants": [],
+   "startVariants": [
+    {
+     "cond": 6,
+     "arg": "flag.beat.pages_laid",
+     "node": "dormant"
+    }
+   ],
    "nodes": [
     {
      "id": "root",
@@ -17989,14 +18074,30 @@
      "id": "more",
      "choices": 1,
      "gotos": []
+    },
+    {
+     "id": "dormant",
+     "choices": 1,
+     "gotos": []
     }
    ],
    "flagsSet": [],
    "flagsCleared": [],
-   "flagsRead": [],
+   "flagsRead": [
+    "flag.beat.pages_laid"
+   ],
    "questsStarted": [],
-   "sites": [],
+   "sites": [
+    {
+     "flag": "flag.beat.pages_laid",
+     "kind": "read",
+     "node": "dormant",
+     "at": "startVariant"
+    }
+   ],
    "locKeys": [
+    "dlg.sunspire_reading_table.dormant",
+    "dlg.sunspire_reading_table.dormant.c_back",
     "dlg.sunspire_reading_table.more",
     "dlg.sunspire_reading_table.more.c_close",
     "dlg.sunspire_reading_table.root",
@@ -18155,7 +18256,7 @@
    "startVariants": [
     {
      "cond": 6,
-     "arg": "flag.main.sundering_pages_done",
+     "arg": "flag.beat.stacks_half_given",
      "node": "dormant"
     }
    ],
@@ -18181,12 +18282,12 @@
    "flagsSet": [],
    "flagsCleared": [],
    "flagsRead": [
-    "flag.main.sundering_pages_done"
+    "flag.beat.stacks_half_given"
    ],
    "questsStarted": [],
    "sites": [
     {
-     "flag": "flag.main.sundering_pages_done",
+     "flag": "flag.beat.stacks_half_given",
      "kind": "read",
      "node": "dormant",
      "at": "startVariant"
@@ -21457,6 +21558,11 @@
    ],
    "readers": [
     {
+     "kind": "quest",
+     "id": "quest.main.deep_stacks",
+     "via": "objective[9].milestone"
+    },
+    {
      "kind": "dialogue",
      "id": "dialogue.sunspire_codex",
      "via": "root/choice[0]"
@@ -21475,7 +21581,7 @@
     {
      "kind": "quest",
      "id": "quest.main.deep_stacks",
-     "via": "objective[8].completion"
+     "via": "objective[9].completion"
     }
    ],
    "readers": [
@@ -21483,6 +21589,11 @@
      "kind": "quest",
      "id": "quest.main.truth",
      "via": "objective[0].required"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.rival_library",
+     "via": "after_read/startVariant"
     },
     {
      "kind": "dialogue",
@@ -21771,15 +21882,10 @@
     {
      "kind": "quest",
      "id": "quest.main.deep_stacks",
-     "via": "objective[2].completion"
+     "via": "objective[3].completion"
     }
    ],
    "readers": [
-    {
-     "kind": "quest",
-     "id": "quest.main.deep_stacks",
-     "via": "objective[3].required"
-    },
     {
      "kind": "quest",
      "id": "quest.main.deep_stacks",
@@ -21789,6 +21895,11 @@
      "kind": "quest",
      "id": "quest.main.deep_stacks",
      "via": "objective[5].required"
+    },
+    {
+     "kind": "quest",
+     "id": "quest.main.deep_stacks",
+     "via": "objective[6].required"
     },
     {
      "kind": "dialogue",
@@ -22102,14 +22213,14 @@
     {
      "kind": "quest",
      "id": "quest.main.deep_stacks",
-     "via": "objective[6].completion"
+     "via": "objective[7].completion"
     }
    ],
    "readers": [
     {
      "kind": "quest",
      "id": "quest.main.deep_stacks",
-     "via": "objective[7].required"
+     "via": "objective[8].required"
     }
    ],
    "code": false,
@@ -22143,7 +22254,13 @@
      "via": "pages/onEnter"
     }
    ],
-   "readers": [],
+   "readers": [
+    {
+     "kind": "dialogue",
+     "id": "dialogue.sunspire_reading_table",
+     "via": "dormant/startVariant"
+    }
+   ],
    "code": false,
    "externalRefs": []
   },
@@ -22190,7 +22307,7 @@
     {
      "kind": "quest",
      "id": "quest.main.deep_stacks",
-     "via": "objective[3].completion"
+     "via": "objective[4].completion"
     }
    ],
    "readers": [],
@@ -22205,7 +22322,7 @@
     {
      "kind": "quest",
      "id": "quest.main.deep_stacks",
-     "via": "objective[4].completion"
+     "via": "objective[5].completion"
     }
    ],
    "readers": [],
@@ -22220,7 +22337,7 @@
     {
      "kind": "quest",
      "id": "quest.main.deep_stacks",
-     "via": "objective[5].completion"
+     "via": "objective[6].completion"
     }
    ],
    "readers": [],
@@ -22347,6 +22464,11 @@
   "flag.beat.rival_parley_done": {
    "writers": [
     {
+     "kind": "quest",
+     "id": "quest.main.deep_stacks",
+     "via": "objective[8].completion"
+    },
+    {
      "kind": "dialogue",
      "id": "dialogue.rival_library",
      "via": "root/onEnter"
@@ -22356,7 +22478,12 @@
     {
      "kind": "quest",
      "id": "quest.main.deep_stacks",
-     "via": "objective[8].required"
+     "via": "objective[9].required"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.sunspire_codex",
+     "via": "dormant/startVariant"
     }
    ],
    "code": false,
@@ -22458,7 +22585,7 @@
     {
      "kind": "quest",
      "id": "quest.main.deep_stacks",
-     "via": "objective[6].required"
+     "via": "objective[7].required"
     }
    ],
    "code": true,
@@ -22544,6 +22671,34 @@
     "data/story/reactions/spec1.json"
    ]
   },
+  "flag.beat.stacks_half_given": {
+   "writers": [
+    {
+     "kind": "quest",
+     "id": "quest.main.deep_stacks",
+     "via": "objective[1].completion"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.sunspire_archivist",
+     "via": "stacks_wait/onEnter"
+    }
+   ],
+   "readers": [
+    {
+     "kind": "quest",
+     "id": "quest.main.deep_stacks",
+     "via": "objective[2].required"
+    },
+    {
+     "kind": "dialogue",
+     "id": "dialogue.sunspire_stacks_door",
+     "via": "dormant/startVariant"
+    }
+   ],
+   "code": false,
+   "externalRefs": []
+  },
   "flag.beat.stacks_key_given": {
    "writers": [
     {
@@ -22572,14 +22727,14 @@
     {
      "kind": "quest",
      "id": "quest.main.deep_stacks",
-     "via": "objective[1].completion"
+     "via": "objective[2].completion"
     }
    ],
    "readers": [
     {
      "kind": "quest",
      "id": "quest.main.deep_stacks",
-     "via": "objective[2].required"
+     "via": "objective[3].required"
     }
    ],
    "code": false,
@@ -25170,11 +25325,6 @@
      "kind": "quest",
      "id": "quest.main.deep_stacks",
      "via": "autoStart"
-    },
-    {
-     "kind": "dialogue",
-     "id": "dialogue.sunspire_stacks_door",
-     "via": "dormant/startVariant"
     }
    ],
    "code": false,

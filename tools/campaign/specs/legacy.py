@@ -158,10 +158,12 @@ ARCHIVIST = Dialogue(
             _c("dlg.archivist.c_pages_fate", "pages_kept", C.HAS_FLAG, "flag.fork.queen_kept"),
             _c("dlg.archivist.c_back", "root"), _c("dlg.sunspire_archivist.c_bye")],
              on_enter=(E.SET_FLAG, "flag.beat.pages_laid")),
-        _n("pages_released", "dlg.archivist.pages_released", _c("dlg.archivist.c_back", "pages")),
-        _n("pages_kept", "dlg.archivist.pages_kept", _c("dlg.archivist.c_back", "pages")),
-        _n("stacks_wait", "dlg.archivist.stacks_wait",
-           _c("dlg.archivist.c_back", "root"), _c("dlg.sunspire_archivist.c_bye")),
+        _n("pages_released", "pale.dlg.archivist.pages_released", _c("dlg.archivist.c_back", "pages")),
+        _n("pages_kept", "pale.dlg.archivist.pages_kept", _c("dlg.archivist.c_back", "pages")),
+        # Her half of the Keeper's sentence is given on entry; the stacks door answers only once it is held.
+        Node("stacks_wait", K("dlg.archivist.stacks_wait"), [
+            _c("dlg.archivist.c_back", "root"), _c("dlg.sunspire_archivist.c_bye")],
+             on_enter=(E.SET_FLAG, "flag.beat.stacks_half_given")),
         _n("reading", "dlg.archivist.reading",
            _c("dlg.archivist.c_truth", "cataclysm"),
            _c("dlg.archivist.c_not_yet", "root")),
