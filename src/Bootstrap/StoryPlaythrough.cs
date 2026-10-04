@@ -1079,10 +1079,21 @@ internal sealed class StoryPlaythrough
         }
     }
 
+    private const string KnightVigilFlag = "flag.beat.gate_vigil_done";
+
     /// <summary>The brazier in the scene must be lightable now: its quest/flag gate held, not closed, not
     /// already beaten. If the gate waits on a conversation, the player has it (as the locked prompt says).</summary>
     private async Task AssertBrazierGateAsync(string template)
     {
+        // An export ships binary scenes, so no brazier can be read and the Knight's vigil (the optional
+        // conversation his gate brazier waits on, with fork F6) would never be played there. The one gate
+        // that waits on a conversation is known by name, so raise it the same way when the scenes are opaque.
+        if (ScenePlacement.Placed == null && template == "enemy.ashen_knight" &&
+            !_flags.Has(KnightVigilFlag))
+        {
+            await SatisfyFlagAsync(KnightVigilFlag, null);
+        }
+
         foreach (SceneBrazier brazier in ScenePlacement.Braziers(template))
         {
             if (brazier.FightId.Length > 0)
