@@ -694,8 +694,9 @@ public static class UiTheme
     }
 
     /// <summary>A titled section break: a header with an engraved rule running out to the right.
-    /// The workhorse for giving a long panel readable structure.</summary>
-    public static Control SectionRule(string text)
+    /// The workhorse for giving a long panel readable structure. The first section of a container
+    /// passes <c>first: true</c> so it does not add a gap above itself.</summary>
+    public static Control SectionRule(string text, bool first = false)
     {
         var row = new HBoxContainer();
         row.AddThemeConstantOverride("separation", SpaceMd);
@@ -708,9 +709,20 @@ public static class UiTheme
 
         // The space above is part of the section, so every caller gets a gap without adding a spacer.
         var section = new MarginContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
-        section.AddThemeConstantOverride("margin_top", SectionGap);
+        section.AddThemeConstantOverride("margin_top", first ? 0 : SectionGap);
         section.AddChild(row);
         return section;
+    }
+
+    /// <summary>A row of chips or small buttons that wraps instead of widening its parent: <see cref="ChipGap"/>
+    /// across, <see cref="SpaceXs"/> down. A plain <c>HBoxContainer</c> of chips reports the sum of their widths as
+    /// its minimum, so three affixes on one item could stretch a whole panel past the viewport.</summary>
+    public static HFlowContainer FlowRow()
+    {
+        var row = new HFlowContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
+        row.AddThemeConstantOverride("h_separation", ChipGap);
+        row.AddThemeConstantOverride("v_separation", SpaceXs);
+        return row;
     }
 
     private static ColorRect Rule(Color color, float height)

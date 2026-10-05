@@ -46,13 +46,13 @@ public partial class CraftingPanel : UiPanel
         shell.AddChild(margin);
 
         var column = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
-        column.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
+        column.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
         margin.AddChild(column);
 
         _title = UiTheme.Header(string.Empty);
         column.AddChild(_title);
 
-        // Craft / Salvage switch — static layout; the pages rebuild inside the list below.
+        // Craft / Salvage switch - static layout; the pages rebuild inside the list below.
         _modeTabs = new UiTabs();
         _modeTabs.Add(Loc.T("craft.mode_craft"));
         _modeTabs.Add(Loc.T("craft.mode_salvage"));
@@ -62,22 +62,13 @@ public partial class CraftingPanel : UiPanel
             MarkDirty();
         };
         column.AddChild(_modeTabs);
-        column.AddChild(new HSeparator());
+        column.AddChild(UiTheme.Divider());
 
-        var scroll = new ScrollContainer
-        {
-            // Height is viewport-relative since 37.5G; a fixed 500 overflowed the Steam Deck's
-            // 533 px logical viewport at UI scale 1.5.
-            CustomMinimumSize = new Vector2(0f, 240f),
-            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-            SizeFlagsVertical = Control.SizeFlags.ExpandFill,
-            HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled,
-        };
+        // The shared list: row gap, and a gutter so the scrollbar stays off the row borders. No fixed
+        // height (a literal overflowed the Steam Deck's 533 px viewport once already); the workspace
+        // shell sets the floor.
+        (ScrollContainer scroll, _list) = UiTheme.ScrollList();
         column.AddChild(scroll);
-
-        _list = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
-        _list.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
-        scroll.AddChild(_list);
     }
 
     protected override void OnReady()
@@ -289,20 +280,31 @@ public partial class CraftingPanel : UiPanel
         // yields hang inside the card rather than as loose indented lines under it, so a long
         // salvage list stops reading as one undifferentiated paragraph.
         PanelContainer card = UiTheme.Card(UiTheme.RarityColor(instance.Rarity));
-        var col = new VBoxContainer();
-        col.AddThemeConstantOverride("separation", 2);
+        var row = new HBoxContainer();
+        row.AddThemeConstantOverride("separation", UiTheme.SpaceMd);
+
+        Button slot = ItemSlot.Build(instance, quantity, selected: false, size: ItemSlot.RowSize);
+        slot.FocusMode = Control.FocusModeEnum.None;
+        slot.MouseFilter = Control.MouseFilterEnum.Ignore;
+        slot.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
+        row.AddChild(slot);
+
+        // Text stack on the left, the verb on the right and centred against the whole stack: with the
+        // button in the title line, its 44 px set the row's top band and left dead air beside the title.
+        var col = new VBoxContainer
+        {
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            SizeFlagsVertical = Control.SizeFlags.ShrinkCenter,
+        };
+        col.AddThemeConstantOverride("separation", UiTheme.LineGap);
 
         var titleRow = new HBoxContainer();
         titleRow.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
 
-        Button slot = ItemSlot.Build(instance, quantity, selected: false, size: 34f);
-        slot.FocusMode = Control.FocusModeEnum.None;
-        slot.MouseFilter = Control.MouseFilterEnum.Ignore;
-        titleRow.AddChild(slot);
-
         Label title = UiTheme.Body(instance.DisplayName, UiTheme.RarityColor(instance.Rarity));
         title.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
         title.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
+        title.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
         titleRow.AddChild(title);
 
         // Worn gear gets an accent chip so it reads apart from loose copies before the player
@@ -314,16 +316,9 @@ public partial class CraftingPanel : UiPanel
             titleRow.AddChild(badge);
         }
 
-        Button button = UiTheme.Action(Loc.T("craft.deconstruct"));
-        ItemInstance captured = instance;
-        button.Pressed += () => Deconstruct(captured);
-        button.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
-        titleRow.AddChild(button);
-
         col.AddChild(titleRow);
 
-        var yields = new HBoxContainer();
-        yields.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
+        HFlowContainer yields = UiTheme.FlowRow();
 
         if (recipe != null)
         {
@@ -351,8 +346,15 @@ public partial class CraftingPanel : UiPanel
         int xp = Deconstruction.Xp(instance.Template.Value, instance.Rarity);
         yields.AddChild(UiTheme.Chip(Loc.TF("craft.yield_xp", xp), UiTheme.Good));
         col.AddChild(yields);
+        row.AddChild(col);
 
-        card.AddChild(col);
+        Button button = UiTheme.Action(Loc.T("craft.deconstruct"));
+        ItemInstance captured = instance;
+        button.Pressed += () => Deconstruct(captured);
+        button.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
+        row.AddChild(button);
+
+        card.AddChild(row);
         _list.AddChild(card);
     }
 
@@ -377,23 +379,52 @@ public partial class CraftingPanel : UiPanel
         // announces it before the player reads a word. A recipe they cannot afford is dimmed as a
         // whole rather than only in its title.
         PanelContainer card = UiTheme.Card(canCraft ? UiTheme.RarityColor(recipe.OutputRarity) : UiTheme.Disabled);
-        var col = new VBoxContainer();
-        col.AddThemeConstantOverride("separation", 2);
+        var row = new HBoxContainer();
+        row.AddThemeConstantOverride("separation", UiTheme.SpaceMd);
 
-        var titleRow = new HBoxContainer();
-        titleRow.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
+        // Text stack on the left, the verb on the right and centred against the whole stack: with the
+        // button in the title line, its 44 px set the row's top band and left dead air beside the title.
+        var col = new VBoxContainer
+        {
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            SizeFlagsVertical = Control.SizeFlags.ShrinkCenter,
+        };
+        col.AddThemeConstantOverride("separation", UiTheme.LineGap);
 
         Label title = UiTheme.Body(recipe.DisplayName, canCraft ? UiTheme.Text : UiTheme.Disabled);
-        title.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-        title.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
-        titleRow.AddChild(title);
+        col.AddChild(title);
+
+        ItemResource? output = ItemDatabase.Get(recipe.OutputItemId);
+        string outName = output?.DisplayName ?? recipe.OutputItemId;
+        col.AddChild(UiTheme.Caption(
+            $"→ {recipe.OutputQuantity}x {outName}", UiTheme.RarityColor(recipe.OutputRarity)));
+
+        // Ingredients as chips: green when you have enough, red when you do not. The old indented
+        // "(have 2)" lines made the player do the subtraction that decides whether they can craft.
+        HFlowContainer costs = UiTheme.FlowRow();
+        foreach (RecipeIngredient ingredient in recipe.IngredientList())
+        {
+            int have = _inventory?.CountOf(ingredient.ItemId) ?? 0;
+            ItemResource? item = ItemDatabase.Get(ingredient.ItemId);
+            string itemName = item?.DisplayName ?? ingredient.ItemId;
+            bool enough = have >= ingredient.Quantity;
+
+            // A shortfall at a master's desk is not a refusal, it is a line on the bill - so it reads
+            // as him supplying it rather than as red missing materials. Same numbers, opposite
+            // meaning, and showing it red would tell the player the button is broken.
+            Color colour = enough ? UiTheme.Good : IsCommission ? UiTheme.Accent : UiTheme.Bad;
+            costs.AddChild(UiTheme.Chip($"{itemName} {have}/{ingredient.Quantity}", colour));
+        }
+
+        col.AddChild(costs);
+        row.AddChild(col);
 
         Button craft = UiTheme.Action(
             IsCommission ? Loc.TF("craft.commission", price) : Loc.T("craft.craft"));
         craft.Disabled = !canCraft;
 
         // 38U: the fee splits into the work and each material the player failed to bring. Without it a
-        // player who walked in carrying half the recipe could not tell they had saved anything — the
+        // player who walked in carrying half the recipe could not tell they had saved anything - the
         // window quoted one figure either way. A Button is hoverable even when disabled, so the
         // breakdown is readable exactly when the player is deciding whether to go and fetch the rest.
         if (IsCommission)
@@ -404,36 +435,9 @@ public partial class CraftingPanel : UiPanel
         CraftingRecipeResource captured = recipe;
         craft.Pressed += () => Craft(captured);
         craft.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
-        titleRow.AddChild(craft);
+        row.AddChild(craft);
 
-        col.AddChild(titleRow);
-
-        ItemResource? output = ItemDatabase.Get(recipe.OutputItemId);
-        string outName = output?.DisplayName ?? recipe.OutputItemId;
-        col.AddChild(UiTheme.Caption(
-            $"→ {recipe.OutputQuantity}x {outName}", UiTheme.RarityColor(recipe.OutputRarity)));
-
-        // Ingredients as chips: green when you have enough, red when you do not. The old indented
-        // "(have 2)" lines made the player do the subtraction that decides whether they can craft.
-        var costs = new HBoxContainer();
-        costs.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
-        foreach (RecipeIngredient ingredient in recipe.IngredientList())
-        {
-            int have = _inventory?.CountOf(ingredient.ItemId) ?? 0;
-            ItemResource? item = ItemDatabase.Get(ingredient.ItemId);
-            string itemName = item?.DisplayName ?? ingredient.ItemId;
-            bool enough = have >= ingredient.Quantity;
-
-            // A shortfall at a master's desk is not a refusal, it is a line on the bill — so it reads
-            // as him supplying it rather than as red missing materials. Same numbers, opposite
-            // meaning, and showing it red would tell the player the button is broken.
-            Color colour = enough ? UiTheme.Good : IsCommission ? UiTheme.Accent : UiTheme.Bad;
-            costs.AddChild(UiTheme.Chip($"{itemName} {have}/{ingredient.Quantity}", colour));
-        }
-
-        col.AddChild(costs);
-
-        card.AddChild(col);
+        card.AddChild(row);
         _list.AddChild(card);
     }
 }

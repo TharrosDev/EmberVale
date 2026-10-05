@@ -53,7 +53,11 @@ public sealed partial class UiAuditShots : ShotHarness
 
     protected override void BuildShotList()
     {
-        Shot("01-pause", () => Find<PauseMenu>()?.OpenForCapture());
+        Shot("01-pause", () =>
+        {
+            PanelShots.StageInventory();
+            Find<PauseMenu>()?.OpenForCapture();
+        });
 
         Shot("02-pause-closed", () => Find<PauseMenu>()?.CloseForCapture());
 
@@ -89,6 +93,15 @@ public sealed partial class UiAuditShots : ShotHarness
             }
         });
 
+        // The salvage page: rows with a yield chip line and a verb, which the craft page does not exercise.
+        Shot("06b-crafting-salvage", () =>
+        {
+            if (Find<CraftingPanel>() is { } crafting)
+            {
+                QuestShotFixtures.FindFirst<UiTabs>(crafting)?.Select(1);
+            }
+        });
+
         Shot("07-storage", () =>
         {
             Find<CraftingPanel>()?.SetOpen(false);
@@ -97,6 +110,9 @@ public sealed partial class UiAuditShots : ShotHarness
                 EventBus.Instance?.Publish(new StorageOpenedEvent(player, pack, "Chest"));
             }
         });
+
+        // The foot of both lists, where the staged pack keeps its rolled pieces: rows carrying affix chips.
+        Shot("07b-storage-scrolled", () => ScrollToEnd(Find<StoragePanel>()));
 
         Shot("08-contracts", () =>
         {
@@ -126,6 +142,26 @@ public sealed partial class UiAuditShots : ShotHarness
         });
 
         Shot("11-save-slots-closed", () => GetTree().Root.GetNodeOrNull("AuditSaveSlots")?.QueueFree());
+    }
+
+    /// <summary>Scrolls every list under <paramref name="root"/> to its end, so a capture can show the rows a
+    /// first view hides.</summary>
+    internal static void ScrollToEnd(Node? root)
+    {
+        if (root is null)
+        {
+            return;
+        }
+
+        foreach (Node child in root.GetChildren())
+        {
+            if (child is ScrollContainer scroll)
+            {
+                scroll.ScrollVertical = 100000;
+            }
+
+            ScrollToEnd(child);
+        }
     }
 
     /// <summary>Gives the bestiary a few discovered pages so its list is not the empty state.</summary>

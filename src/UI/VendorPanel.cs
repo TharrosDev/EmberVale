@@ -77,11 +77,17 @@ public partial class VendorPanel : UiPanel
         _purse = UiTheme.Body(string.Empty, UiTheme.Accent);
         purseLockup.AddChild(_purse);
         identity.AddChild(purseLockup);
-        column.AddChild(identity);
+
+        // The standing band is its own group, so the title gets a full SpaceMd under it (the column's
+        // SpaceSm plus this) instead of the banner sitting flush against it.
+        var identityGap = new MarginContainer();
+        identityGap.AddThemeConstantOverride("margin_bottom", UiTheme.SpaceXs);
+        identityGap.AddChild(identity);
+        column.AddChild(identityGap);
 
         PanelContainer context = UiTheme.Band(UiTheme.IronLit);
         var contextCopy = new VBoxContainer();
-        contextCopy.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
+        contextCopy.AddThemeConstantOverride("separation", UiTheme.LineGap);
         context.AddChild(contextCopy);
 
         // A price that moved must say why it moved. Without this line the discount is invisible and
@@ -137,23 +143,28 @@ public partial class VendorPanel : UiPanel
         contextCopy.AddChild(_haggleRow);
         column.AddChild(context);
 
-        PanelContainer detail = UiTheme.Band(UiTheme.Accent);
-        detail.CustomMinimumSize = new Vector2(0f, 118f);
+        // The detail is a Card already (ItemSlot.Detail), so it sits straight on the panel: wrapping it in a
+        // Band drew two frames and two left spines around one item.
         _tradeDetail = new VBoxContainer();
         _tradeDetail.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
-        detail.AddChild(_tradeDetail);
-        column.AddChild(detail);
-
-        column.AddChild(UiTheme.Divider());
+        column.AddChild(_tradeDetail);
 
         var columns = new HBoxContainer
         {
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-            CustomMinimumSize = new Vector2(0, 200),
             SizeFlagsVertical = Control.SizeFlags.ExpandFill,
         };
-        columns.AddThemeConstantOverride("separation", UiTheme.SpaceMd);
-        column.AddChild(columns);
+        columns.AddThemeConstantOverride("separation", UiTheme.SpaceLg);
+
+        // A section's worth of space above the lists, in place of a rule: each list names itself.
+        var body = new MarginContainer
+        {
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            SizeFlagsVertical = Control.SizeFlags.ExpandFill,
+        };
+        body.AddThemeConstantOverride("margin_top", UiTheme.SpaceXs);
+        body.AddChild(columns);
+        column.AddChild(body);
 
         (_waresHeader, _waresList) = BuildColumn(columns);
         (_packHeader, _packList) = BuildColumn(columns);
@@ -162,18 +173,15 @@ public partial class VendorPanel : UiPanel
     /// <summary>One titled scroll column; both sides are the same shape.</summary>
     private static (Label Header, VBoxContainer List) BuildColumn(Node parent)
     {
-        PanelContainer frame = UiTheme.Band();
-        frame.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-        frame.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
-        parent.AddChild(frame);
-
+        // Bare on the panel, like the stash: a Band around a list of Cards was a frame inside a frame
+        // that cost every row 32 px of width.
         var side = new VBoxContainer
         {
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
             SizeFlagsVertical = Control.SizeFlags.ExpandFill,
         };
-        side.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
-        frame.AddChild(side);
+        side.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
+        parent.AddChild(side);
 
         Label header = UiTheme.Header(string.Empty);
         side.AddChild(header);
@@ -1050,8 +1058,9 @@ public partial class VendorPanel : UiPanel
         var row = new HBoxContainer();
         row.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
 
-        Button slot = ItemSlot.Build(instance, quantity, selected: false, size: 34f);
+        Button slot = ItemSlot.Build(instance, quantity, selected: false, size: ItemSlot.RowSize);
         slot.FocusMode = Control.FocusModeEnum.All;
+        slot.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
         slot.TooltipText = Loc.T("shop.inspect_hint");
         slot.Pressed += () =>
         {
@@ -1065,10 +1074,11 @@ public partial class VendorPanel : UiPanel
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
             SizeFlagsVertical = Control.SizeFlags.ShrinkCenter,
         };
-        text.AddThemeConstantOverride("separation", 0);
+        text.AddThemeConstantOverride("separation", UiTheme.LineGap);
 
         Label name = UiTheme.Body(instance.DisplayName, UiTheme.RarityColor(instance.Rarity));
         name.TooltipText = instance.Template.Description;
+        name.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
         text.AddChild(name);
 
         // A price that moved must say why it moved — the same rule the standing caption follows. The
@@ -1076,8 +1086,7 @@ public partial class VendorPanel : UiPanel
         // 25% above the shop across the square reads as one of the two being mispriced.
         if (specialty || glutted || locked)
         {
-            var trade = new HBoxContainer();
-            trade.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
+            HFlowContainer trade = UiTheme.FlowRow();
             if (specialty)
             {
                 trade.AddChild(UiTheme.Chip(Loc.T("shop.specialty"), UiTheme.Accent));
@@ -1102,8 +1111,7 @@ public partial class VendorPanel : UiPanel
 
         if (instance.HasAffixes)
         {
-            var chips = new HBoxContainer();
-            chips.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
+            HFlowContainer chips = UiTheme.FlowRow();
             foreach (ItemAffix affix in instance.Affixes)
             {
                 chips.AddChild(UiTheme.Chip(affix.DisplayValue, UiTheme.Good));
