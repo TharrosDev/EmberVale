@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="PerkResource" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/Progression/PerkResource.cs" id="1_perk"]
+[ext_resource type="Script" path="res://src/Progression/PerkEffectResource.cs" id="2_effect"]
+
+[sub_resource type="Resource" id="Effect_1"]
+script = ExtResource("2_effect")
+Kind = 13
+ValuePerRank = 0.08
+
+[resource]
+script = ExtResource("1_perk")
+Id = "perk.master_artisan"
+DisplayName = "Master Artisan"
+Description = "A craftsman's economy. A craft has an 8% chance to give one unit of its largest material back."
+MaxRank = 1
+Cost = 1
+ValuePerRank = 0.0
+Branch = 5
+Tier = 3
+Column = 0
+PrerequisiteIds = Array[String](["perk.thrifty_hands"])
+BranchPointsRequired = 5
+Effects = [SubResource("Effect_1")]

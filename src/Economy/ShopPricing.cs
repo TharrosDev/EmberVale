@@ -113,10 +113,15 @@ public static class ShopPricing
     /// <b>38S folds the day's haggle in here too</b>, for the same reason and with the same result: it
     /// is a multiplier over one item's value, so the clamp already covers it and no new invariant
     /// appears. What it can close is the round-trip margin, which <c>--validate</c> checks at Allied.
+    /// <b>The player's perks fold in last</b> as <paramref name="perkFactor"/> (<c>PerkEffectMath.BuyFactor</c>,
+    /// at best <c>PerkEffectMath.BestBuyFactor</c>), passed in so this file stays pure; <c>1</c> is no perk and
+    /// leaves every earlier result bit for bit. It is one more multiplier over one item's value, so the clamp
+    /// covers it for the reason it covers the haggle, and <c>ValidateShopTrade</c> proves the margin with it at best.
     public static float MarkupFor(
-        float markup, ReputationTier tier, bool specialty = false, bool haggled = false) =>
+        float markup, ReputationTier tier, bool specialty = false, bool haggled = false,
+        float perkFactor = 1f) =>
         markup * PriceMultiplierFor(tier) * (specialty ? SpecialtyBuyDiscount : 1f) *
-        HaggleRules.BuyFactor(haggled);
+        HaggleRules.BuyFactor(haggled) * perkFactor;
 
     /// <summary>
     /// The fraction to hand <see cref="SellPrice"/> once the merchant's trade is taken into account
@@ -134,8 +139,12 @@ public static class ShopPricing
     /// authored data clear of even that is the margin rule in <c>ValidateShopTrade</c>, which now asks
     /// its question with the haggle applied.
     /// </summary>
-    public static float SellFractionFor(float fraction, bool specialty, bool haggled = false) =>
-        fraction * (specialty ? SpecialtySellBonus : 1f) * HaggleRules.SellFactor(haggled);
+    ///
+    /// <b>Perks fold in last</b> as <paramref name="perkFactor"/> (<c>PerkEffectMath.SellFactor</c>, at best
+    /// <c>PerkEffectMath.BestSellFactor</c>), for the reason <see cref="MarkupFor"/> gives; <c>1</c> changes nothing.
+    public static float SellFractionFor(
+        float fraction, bool specialty, bool haggled = false, float perkFactor = 1f) =>
+        fraction * (specialty ? SpecialtySellBonus : 1f) * HaggleRules.SellFactor(haggled) * perkFactor;
 
     /// <summary>
     /// What a flat-priced service costs at a given standing (Phase 38D). Services have a price rather
@@ -147,14 +156,17 @@ public static class ShopPricing
     /// service free — the same rule and the same reason as <see cref="BuyPrice"/>. A base price of
     /// <c>0</c> stays <c>0</c>: that is a service authored as genuinely free, not one discounted into it.
     /// </summary>
-    public static int ServicePrice(int basePrice, ReputationTier tier)
+    ///
+    /// <paramref name="perkFactor"/> is the player's <c>PerkEffectMath.ServiceFactor</c> (<c>1</c> for none); it
+    /// only scales a priced service, so the floor of <c>1</c> still holds at its cheapest.
+    public static int ServicePrice(int basePrice, ReputationTier tier, float perkFactor = 1f)
     {
         if (basePrice <= 0)
         {
             return 0;
         }
 
-        return Math.Max(1, (int)Math.Ceiling(basePrice * PriceMultiplierFor(tier)));
+        return Math.Max(1, (int)Math.Ceiling(basePrice * PriceMultiplierFor(tier) * perkFactor));
     }
 
     /// <summary>

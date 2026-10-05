@@ -74,8 +74,13 @@ The game is complete from New Game to credits. The finish run's contract and id 
   (caps in `PerkEffectMath`); `ContentValidator.ValidatePerks` checks the data. The six original perks are unchanged. Seven
   combat perks (`iron_stance`, `brawler`, `riposte`, `steady_aim`, `evasion`, `light_feet`, `backstep_adept`) use the
   stamina-cost kinds, wired at the dodge, block, parry, attack, plunge, bow-draw and sprint sites; their tree gates are
-  placeholders until the catalogue (P5). The dodge cost does not yet fold in the Dex derivation (P2). Dev commands
-  `perk`, `respec`, `sp`.
+  placeholders until the catalogue (P5). The dodge cost does not yet fold in the Dex derivation (P2). Eleven economy
+  perks (`silver_tongue`, `road_wise`, `fair_dealer`, `appraiser`, `quick_study`, `thrifty_hands`, `salvager`, `reclaimer`,
+  `master_artisan`, `cutpurse`, `fortune`) use the haggle, buy, sell, service, XP, material-save, salvage and loot-quality
+  kinds, wired in `VendorPanel`/`PriceBreakdown`/`AppraisalPanel`, `ServiceComponent.PriceOf`, `ProgressionComponent.AddXp`,
+  `CraftingComponent` (saved `crafts` serial) and `LootComponent` (the killer from `EntityDiedEvent`). The shop-margin,
+  contract, commission and wager validator rules are proved at the `PerkEffectMath.Best*` caps. `RepGainMult` and
+  `CraftXpMult` have no hook yet (no craft XP exists; no perk uses reputation gain). Dev commands `perk`, `respec`, `sp`.
 
 - **Guilds.** All five guilds reach rank three and a finale (Phase 42 closed 2026-09-28). Each arc is
   two quests off the leader's `member` branch (rank two, then a finale whose three-way verdict is

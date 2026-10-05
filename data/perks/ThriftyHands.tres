@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="PerkResource" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/Progression/PerkResource.cs" id="1_perk"]
+[ext_resource type="Script" path="res://src/Progression/PerkEffectResource.cs" id="2_effect"]
+
+[sub_resource type="Resource" id="Effect_1"]
+script = ExtResource("2_effect")
+Kind = 13
+ValuePerRank = 0.04
+
+[resource]
+script = ExtResource("1_perk")
+Id = "perk.thrifty_hands"
+DisplayName = "Thrifty Hands"
+Description = "Nothing wasted at the bench. A craft has a 4% chance per rank to give one unit of its largest material back."
+MaxRank = 3
+Cost = 1
+ValuePerRank = 0.0
+Branch = 5
+Tier = 1
+Column = 0
+PrerequisiteIds = Array[String]([])
+BranchPointsRequired = 0
+Effects = [SubResource("Effect_1")]

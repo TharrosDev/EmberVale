@@ -229,7 +229,10 @@ caps the first two at 25%).
   `Respec` sells every bought rank back for gold (`RespecRules`). `PerksComponent`, `PerkResource`. Seven combat perks
   (Iron Stance, Brawler, Riposte, Steady Aim, Evasion, Light Feet, Backstep Adept) cut the Stamina price of blocking,
   attacks (swing, heavy, charge, plunge), parrying, bow draw, dodging and sprinting through `PerkQuery.Factor`, never below
-  half. *Partial:* no tree UI; the dev commands `perk`, `respec`, `sp` drive it.
+  half. Eleven economy perks (Silver Tongue, Road Wise, Fair Dealer, Appraiser, Quick Study, Thrifty Hands, Salvager,
+  Reclaimer, Master Artisan, Cutpurse, Fortune) change haggle chance, shop buy and sell prices, service prices, XP gained,
+  materials saved on a craft, salvage yield and loot quality, each capped by `PerkEffectMath`. *Partial:* no tree UI; the
+  dev commands `perk`, `respec`, `sp` drive it.
 - **Stats** — resources, primaries, derived stats and six resistances with flat/percent modifiers.
   `StatsComponent`, `Stat` (`src/Stats`).
 - **Races and character creation** — six playable races (Human, Valari, Sylthari, Grondar, Draekyn,
@@ -256,15 +259,19 @@ caps the first two at 25%).
 
 - **Recipes at stations** — 15 recipes (`data/recipes`) at hand, forge, workbench or alchemy
   stations; affixed output; learned from trainers. `CraftingComponent`, `CraftingStationComponent`.
-- **Salvage** — deconstruct for a fraction of materials plus XP. `Deconstruction`.
+- **Salvage** — deconstruct for a fraction of materials plus XP; salvage perks raise the fraction to at most 75%.
+  `Deconstruction`. A crafting perk can hand one unit of the largest ingredient back after a craft (a derived roll over a
+  saved craft count, never a free craft). `MaterialSaving`.
 - **Commission** — pay a smith to craft for you. `CommissionRules`.
 
 ## Economy
 
 - **Shops** — 24 (`data/shops`) with opening hours, travel days, stock, restock, purses and
   specialties; one price authority. `ShopPricing`, `ShopStock`, `ShopHours`, `VendorPanel`.
-- **Standing prices and haggling** — faction tier moves buy prices; one haggle per merchant per day.
-  `HaggleRules`, `PriceBreakdown`.
+- **Standing prices and haggling** — faction tier moves buy prices; one haggle per merchant per day. Perks add to the
+  haggle chance (never opening a merchant who does not haggle) and take up to 5% off buy prices and add up to 5% to sell
+  prices, shown as a line in the price tooltip; `--validate` proves the shop margin at those caps. `HaggleRules`,
+  `PriceBreakdown`.
 - **Regional supply and demand** — surplus and demand tags change local value, so hauling between
   settlements pays; timed supply shocks. `RegionDemand`, `SupplyShockService`.
 - **Services** — 16 (`data/services`): trainer, bank, inn (rest), stable, passage, search, redeem,

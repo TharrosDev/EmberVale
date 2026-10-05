@@ -102,6 +102,7 @@ internal static class PerksLifecycleProbe
             "perks probe: Load of an empty save left a perk stat modifier applied.");
 
         VerifyCombatEffects(player, perks, check);
+        EconomyPerksProbe.Verify(player, perks, check);
     }
 
     /// <summary>The authored combat-stamina perks reach <see cref="PerkQuery"/> through the real

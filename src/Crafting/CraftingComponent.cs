@@ -34,6 +34,10 @@ public partial class CraftingComponent : EntityComponent, ISaveable
     private InventoryComponent? _inventory;
     private EquipmentComponent? _equipment;
 
+    /// <summary>Completed crafts so far: the serial <see cref="MaterialSaving"/> derives its roll from. Saved,
+    /// so a quickload replays a craft's outcome instead of rerolling it.</summary>
+    private int _crafts;
+
     public string SaveId => SaveKey("crafting");
 
     public IReadOnlyCollection<string> KnownRecipes => _known;
@@ -177,12 +181,43 @@ public partial class CraftingComponent : EntityComponent, ISaveable
             return false;
         }
 
+        ReturnSavedMaterial(recipe);
+        _crafts++;
+
         if (Entity != null)
         {
             EventBus.Instance?.Publish(new ItemCraftedEvent(Entity, recipe.Id, recipe.OutputItemId, quantity));
         }
 
         return true;
+    }
+
+    /// <summary>
+    /// A material-saving perk hands one unit of the recipe's largest ingredient back after a completed craft
+    /// (<see cref="MaterialSaving"/> says whether and which). Runs after the output is safely placed, so it can
+    /// never turn a refused craft into a gain; a pack with no room for the unit simply forgoes it.
+    /// </summary>
+    private void ReturnSavedMaterial(CraftingRecipeResource recipe)
+    {
+        int chance = PerkEffectMath.SaveChancePercent(PerkQuery.Of(Entity, PerkEffectKind.MaterialSaveChance));
+        if (chance <= 0 || !MaterialSaving.Saves(_crafts, recipe.Id, chance))
+        {
+            return;
+        }
+
+        List<RecipeIngredient> ingredients = recipe.IngredientList();
+        var quantities = new List<int>(ingredients.Count);
+        foreach (RecipeIngredient ingredient in ingredients)
+        {
+            quantities.Add(ingredient.Quantity);
+        }
+
+        int index = MaterialSaving.SavedIngredient(quantities);
+        if (index >= 0 && ItemDatabase.Get(ingredients[index].ItemId) is { } material)
+        {
+            _inventory!.AddItem(material, 1);
+            Log.Info($"Crafting '{recipe.Id}' saved a unit of '{material.Id}'.");
+        }
     }
 
     /// <summary>
@@ -360,11 +395,12 @@ public partial class CraftingComponent : EntityComponent, ISaveable
             }
         }
 
+        float yieldBonus = PerkQuery.Of(Entity, PerkEffectKind.SalvageYieldBonus);
         if (recipe != null)
         {
             foreach (RecipeIngredient ingredient in recipe.IngredientList())
             {
-                int recovered = Deconstruction.RecoveredQuantity(ingredient.Quantity);
+                int recovered = Deconstruction.RecoveredQuantity(ingredient.Quantity, yieldBonus);
                 if (recovered <= 0)
                 {
                     continue;
@@ -386,7 +422,7 @@ public partial class CraftingComponent : EntityComponent, ISaveable
         else
         {
             // No recipe to reverse — return generic scrap so any item is still worth salvaging.
-            int scrap = Deconstruction.ScrapYield(instance.Rarity);
+            int scrap = Deconstruction.ScrapYield(instance.Rarity, yieldBonus);
             if (scrap > 0 && ItemDatabase.Get(GameIds.Items.Scrap) is { } scrapItem)
             {
                 _inventory.AddItem(scrapItem, scrap);
@@ -414,11 +450,15 @@ public partial class CraftingComponent : EntityComponent, ISaveable
             known.Add(id);
         }
 
-        return new Godot.Collections.Dictionary { ["known"] = known };
+        return new Godot.Collections.Dictionary { ["known"] = known, ["crafts"] = _crafts };
     }
 
     public void Load(Godot.Collections.Dictionary data)
     {
+        // Replaced, never merged: a save with no serial (or 0) must zero a live one. Before the early return
+        // below, which only guards the recipe list.
+        _crafts = data.TryGetValue("crafts", out Variant craftsVar) ? Mathf.Max(0, craftsVar.AsInt32()) : 0;
+
         if (!data.TryGetValue("known", out Variant knownVar))
         {
             return;

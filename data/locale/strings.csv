@@ -4377,3 +4377,28 @@ perk.light_feet.desc,A runner's economy of effort. Sprinting costs 8% less Stami
 perk.backstep_adept.name,Backstep Adept
 perk.backstep_adept.desc,Give ground without paying for it. Backsteps cost 10% less Stamina per rank.
 # --- END progression:p4a ---
+# --- BEGIN progression:p4b ---
+perk.silver_tongue.name,Silver Tongue
+perk.silver_tongue.desc,"Smooth words, softer prices. Haggling succeeds 5 points more often per rank, wherever a merchant haggles at all."
+perk.road_wise.name,Road Wise
+perk.road_wise.desc,You know what a bed and a ferry should cost. Services cost 2% less per rank.
+perk.fair_dealer.name,Fair Dealer
+perk.fair_dealer.desc,A reputation for honest trade. Merchants ask 1% less per rank.
+perk.appraiser.name,Appraiser
+perk.appraiser.desc,You know what your goods are worth. Merchants pay 1% more per rank.
+perk.quick_study.name,Quick Study
+perk.quick_study.desc,Lessons stick. You earn 2% more experience per rank.
+perk.thrifty_hands.name,Thrifty Hands
+perk.thrifty_hands.desc,Nothing wasted at the bench. A craft has a 4% chance per rank to give one unit of its largest material back.
+perk.salvager.name,Salvager
+perk.salvager.desc,Strip it clean. Salvaging recovers 5% more of the materials per rank.
+perk.reclaimer.name,Reclaimer
+perk.reclaimer.desc,Nothing is truly broken. Salvaging recovers 15% more of the materials.
+perk.master_artisan.name,Master Artisan
+perk.master_artisan.desc,A craftsman's economy. A craft has an 8% chance to give one unit of its largest material back.
+perk.cutpurse.name,Cutpurse
+perk.cutpurse.desc,You know a fence who asks no questions. Merchants pay 1% more per rank.
+perk.fortune.name,Fortune
+perk.fortune.desc,"Luck follows the bold. Slain foes drop better gear, raising loot quality by 0.05 per rank."
+shop.line.perk,"your perks {0}% — {1}g"
+# --- END progression:p4b ---

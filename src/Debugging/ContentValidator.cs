@@ -1482,7 +1482,8 @@ public static class ContentValidator
             // Thursday. This is 38G's carried warning — "the demand table is a floor under other
             // people's rules" — made mechanical, and it is the same rule asked a harder question rather
             // than a second rule about shocks that would drift from this one.
-            EconomyReport.BestBuyers(item, item.TagList(), out Offer best, out _, PriceView.Peak);
+            EconomyReport.BestBuyers(
+                item, item.TagList(), out Offer best, out _, PriceView.Peak, PerkEffectMath.BestSellFactor);
             long shelf = (long)best.Price * Mathf.Max(1, contract.Quantity);
             if (best.Has && contract.RewardGold <= shelf)
             {
@@ -2091,7 +2092,9 @@ public static class ContentValidator
         // PriceOf runs the stake through ShopPricing.ServicePrice, so an Allied player stakes 15% less
         // against a payout that does not move — a house authored as a sink at Neutral can be a printer
         // at the top of the ramp, and only the discounted stake shows it.
-        int cheapestStake = ShopPricing.ServicePrice(service.PriceGold, ReputationTier.Allied);
+        // The service perks cut it again, at their cap (PerkEffectMath.BestServiceFactor).
+        int cheapestStake = ShopPricing.ServicePrice(
+            service.PriceGold, ReputationTier.Allied, PerkEffectMath.BestServiceFactor);
         if (WagerRules.Exploitable(cheapestStake, service.WinPercent, service.PayoutGold))
         {
             issues.Add(
@@ -2175,7 +2178,11 @@ public static class ContentValidator
             int cost = EconomyReport.CommissionCost(
                 recipe, shop, ReputationTier.Allied, pack: null, service.PriceGold,
                 haggled: shop.HaggleChance > 0, view: PriceView.Trough);
-            EconomyReport.BestBuyers(output, output.TagList(), out Offer best, out _, PriceView.Peak);
+            // Priced at the keenest buyer perks allow too (SellBonus at its cap): a commission is not a counter
+            // purchase, so BuyDiscount never reaches its materials, but the sale of the result is a sale.
+            EconomyReport.BestBuyers(
+                output, output.TagList(), out Offer best, out _, PriceView.Peak,
+                PerkEffectMath.BestSellFactor);
 
             if (best.Has && CommissionRules.Exploitable(cost, best.Price, recipe.OutputQuantity))
             {
@@ -2505,10 +2512,16 @@ public static class ContentValidator
         // spread is the one round trip in the game that could reach zero.
         const float Margin = 1.25f;
         bool haggles = shop.HaggleChance > 0;
+        //
+        // ⚠️ The progression perks widen both ends again: BuyDiscount and SellBonus are folded in at their
+        // caps (PerkEffectMath.BestBuyFactor / BestSellFactor, the same constants the live prices clamp to),
+        // so the round trip stays open however many perks the player stacks. Haggle perks only change the
+        // chance of a deal, never a price, and cannot open a shop that does not haggle.
         float widestSell = ShopPricing.SellFractionFor(
-            shop.SellFraction, specialty: true, haggled: haggles);
+            shop.SellFraction, specialty: true, haggled: haggles, perkFactor: PerkEffectMath.BestSellFactor);
         float narrowestBuy = ShopPricing.MarkupFor(
-            shop.BuyMarkup, Factions.ReputationTier.Allied, specialty: true, haggled: haggles);
+            shop.BuyMarkup, Factions.ReputationTier.Allied, specialty: true, haggled: haggles,
+            perkFactor: PerkEffectMath.BestBuyFactor);
 
         if (widestSell * Margin > narrowestBuy)
         {

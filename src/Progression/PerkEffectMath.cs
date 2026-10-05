@@ -28,6 +28,22 @@ public static class PerkEffectMath
     /// <summary>Highest XP multiplier perks can reach.</summary>
     public const float XpFactorMax = 1.10f;
 
+    /// <summary>Most a perk can cut a service price (a fraction); a flat service never goes free.</summary>
+    public const float ServiceDiscountMax = 0.05f;
+
+    /// <summary>Most a perk can add to a service price (a fraction; a penalty, for a perk that trades it away).</summary>
+    public const float ServiceSurchargeMax = 0.25f;
+
+    /// <summary>The cheapest perks can make a shop's asking price, as a factor: what the shop-margin proof in
+    /// <c>ContentValidator.ValidateShopTrade</c> assumes the buy side can reach.</summary>
+    public const float BestBuyFactor = 1f - BuyDiscountMax;
+
+    /// <summary>The most perks can raise a shop's payout, as a factor: the sell side of the same proof.</summary>
+    public const float BestSellFactor = 1f + SellBonusMax;
+
+    /// <summary>The cheapest perks can make a flat-priced service, as a factor.</summary>
+    public const float BestServiceFactor = 1f - ServiceDiscountMax;
+
     /// <summary>
     /// The bounds of a kind's summed value. Units: <c>*Mult</c> kinds are a signed fraction added to 1
     /// (-0.2 = 20% cheaper); <c>HaggleChanceBonus</c> is percentage points; every other kind is a fraction
@@ -42,7 +58,7 @@ public static class PerkEffectMath
         PerkEffectKind.HaggleChanceBonus => (0f, HaggleBonusMaxPercent),
         PerkEffectKind.BuyDiscount => (0f, BuyDiscountMax),
         PerkEffectKind.SellBonus => (0f, SellBonusMax),
-        PerkEffectKind.ServicePriceMult => (-0.05f, 0.25f),
+        PerkEffectKind.ServicePriceMult => (-ServiceDiscountMax, ServiceSurchargeMax),
         PerkEffectKind.XpGainMult => (0f, XpFactorMax - 1f),
         PerkEffectKind.SchoolPowerBonus or PerkEffectKind.SalvageYieldBonus or PerkEffectKind.LootQuality
             or PerkEffectKind.CraftXpMult or PerkEffectKind.RangedPowerBonus => (0f, 0.5f),
@@ -76,4 +92,32 @@ public static class PerkEffectMath
         float bonus = Clamp(PerkEffectKind.HaggleChanceBonus, bonusTotal);
         return Math.Min(100, baseChancePercent + (int)MathF.Round(bonus));
     }
+
+    /// <summary>The factor on a shop's asking price from a summed <c>BuyDiscount</c>: <c>1 - the capped discount</c>.</summary>
+    public static float BuyFactor(float discountTotal) => 1f - Clamp(PerkEffectKind.BuyDiscount, discountTotal);
+
+    /// <summary>The factor on a shop's payout from a summed <c>SellBonus</c>: <c>1 + the capped bonus</c>.</summary>
+    public static float SellFactor(float bonusTotal) => 1f + Clamp(PerkEffectKind.SellBonus, bonusTotal);
+
+    /// <summary>The factor on a flat service price from a summed <c>ServicePriceMult</c>.</summary>
+    public static float ServiceFactor(float total) => Factor(PerkEffectKind.ServicePriceMult, total);
+
+    /// <summary>
+    /// <paramref name="amount"/> XP with a summed <c>XpGainMult</c> applied, rounded to the nearest point. A
+    /// positive grant stays at least 1, and the multiplier is capped at <see cref="XpFactorMax"/>, so a level
+    /// is never trivial.
+    /// </summary>
+    public static int ScaleXp(int amount, float xpTotal)
+    {
+        if (amount <= 0)
+        {
+            return amount;
+        }
+
+        return Math.Max(1, (int)MathF.Round(amount * Factor(PerkEffectKind.XpGainMult, xpTotal)));
+    }
+
+    /// <summary>A summed <c>MaterialSaveChance</c> as a whole percent (0..25), the unit of <c>StableRoll.Percent</c>.</summary>
+    public static int SaveChancePercent(float total) =>
+        (int)MathF.Round(Clamp(PerkEffectKind.MaterialSaveChance, total) * 100f);
 }

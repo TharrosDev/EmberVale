@@ -94,7 +94,9 @@ flags any volatile key (`SaveKeyPolicy.IsVolatile`); there should be none.
 absent means. `perks:<pid>` holds `ranks` (id -> rank), and since perks v2 `free` (id -> ranks that cost no points, kept
 by a respec), `spent` (skill points invested) and `respecs` (count). Absent `free`: the race's innate perk ids count as
 one free rank each. Absent `spent`: the sum of `(rank - free) * Cost` over held perks. Absent `respecs`: 0. `Load` strips
-what it applied, replaces everything from the save and never re-checks prerequisites.
+what it applied, replaces everything from the save and never re-checks prerequisites. `crafting:<pid>` holds `known`
+(recipe ids) and `crafts` (completed crafts: the serial the material-saving perk's roll is derived from, so a quickload replays
+a craft's outcome instead of rerolling it). Absent `crafts`: 0, and `Load` replaces a live serial even when the key is missing.
 
 **References are ids, never paths or indices.** Spawned actors round-trip as
 `{pid, tid, x, y, z, yaw}` and are rebuilt through `PersistentActorRegistry.Create`. Nothing in a save

@@ -5,6 +5,7 @@ using Embervale.Economy;
 using Embervale.Entities;
 using Embervale.Items;
 using Embervale.Localization;
+using Embervale.Progression;
 using Godot;
 
 namespace Embervale.UI;
@@ -143,7 +144,9 @@ public partial class AppraisalPanel : UiPanel
         }
 
         List<string> tags = instance.Template.TagList();
-        EconomyReport.BestBuyers(instance.Template, tags, out Offer best, out _);
+        EconomyReport.BestBuyers(
+            instance.Template, tags, out Offer best, out _,
+            sellPerkFactor: PerkEffectMath.SellFactor(PerkQuery.Of(_pack?.Entity, PerkEffectKind.SellBonus)));
         ConsignQuote quote = EconomyReport.BestConsignment(instance.Template, tags);
 
         if (!best.Has && !quote.Has)

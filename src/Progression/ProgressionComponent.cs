@@ -109,6 +109,10 @@ public partial class ProgressionComponent : EntityComponent, ISaveable
             return;
         }
 
+        // Perks scale every grant (a kill, a quest, a salvage) before it is resolved into levels, so the
+        // XpGained event and the level maths see the same number. Capped at +10% by PerkEffectMath.
+        amount = PerkEffectMath.ScaleXp(amount, PerkQuery.Of(Entity, PerkEffectKind.XpGainMult));
+
         (int newLevel, int newXp, int levelsGained) = ProgressionMath.Resolve(
             Level, CurrentXp, Curve.MaxLevel, amount, Curve.XpToReach);
         Level = newLevel;

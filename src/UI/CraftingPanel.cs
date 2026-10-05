@@ -5,6 +5,7 @@ using Embervale.Economy;
 using Embervale.Entities;
 using Embervale.Items;
 using Embervale.Localization;
+using Embervale.Progression;
 using Godot;
 
 namespace Embervale.UI;
@@ -325,11 +326,12 @@ public partial class CraftingPanel : UiPanel
         var yields = new HBoxContainer();
         yields.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
 
+        float yieldBonus = PerkQuery.Of(_player, PerkEffectKind.SalvageYieldBonus);
         if (recipe != null)
         {
             foreach (RecipeIngredient ingredient in recipe.IngredientList())
             {
-                int recovered = Deconstruction.RecoveredQuantity(ingredient.Quantity);
+                int recovered = Deconstruction.RecoveredQuantity(ingredient.Quantity, yieldBonus);
                 if (recovered <= 0)
                 {
                     continue;
@@ -343,7 +345,7 @@ public partial class CraftingPanel : UiPanel
         else
         {
             // Recipe-less: generic scrap, scaled by rarity.
-            int scrap = Deconstruction.ScrapYield(instance.Rarity);
+            int scrap = Deconstruction.ScrapYield(instance.Rarity, yieldBonus);
             string scrapName = ItemDatabase.Get(GameIds.Items.Scrap)?.DisplayName ?? "Scrap";
             yields.AddChild(UiTheme.Chip($"{scrap}x {scrapName}", UiTheme.Accent));
         }

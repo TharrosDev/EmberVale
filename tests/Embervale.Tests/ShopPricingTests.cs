@@ -1,6 +1,7 @@
 using Embervale.Economy;
 using Embervale.Factions;
 using Embervale.Items;
+using Embervale.Progression;
 using Xunit;
 
 namespace Embervale.Tests;
@@ -286,6 +287,101 @@ public class ShopPricingTests
                                 $"round trip is free at tier {tier}, markup {markup}, " +
                                 $"fraction {fraction}, specialty {specialty}, value {value}");
                         }
+                    }
+                }
+            }
+        }
+    }
+
+    [Fact]
+    public void APerkFactorOfOneChangesNothing()
+    {
+        foreach (ReputationTier tier in System.Enum.GetValues<ReputationTier>())
+        {
+            Assert.Equal(
+                ShopPricing.MarkupFor(1.6f, tier, true, true),
+                ShopPricing.MarkupFor(1.6f, tier, true, true, perkFactor: 1f));
+        }
+
+        Assert.Equal(
+            ShopPricing.SellFractionFor(0.45f, true, true),
+            ShopPricing.SellFractionFor(0.45f, true, true, perkFactor: 1f));
+        Assert.Equal(
+            ShopPricing.ServicePrice(37, ReputationTier.Friendly),
+            ShopPricing.ServicePrice(37, ReputationTier.Friendly, 1f));
+    }
+
+    [Fact]
+    public void PerkFactorsMovePricesTheRightWay()
+    {
+        Assert.True(ShopPricing.MarkupFor(1.5f, ReputationTier.Neutral, perkFactor: 0.95f) < 1.5f);
+        Assert.True(ShopPricing.SellFractionFor(0.4f, false, perkFactor: 1.05f) > 0.4f);
+        Assert.Equal(19, ShopPricing.ServicePrice(20, ReputationTier.Neutral, PerkEffectMath.BestServiceFactor));
+    }
+
+    [Fact]
+    public void ServicePerksNeverMakeAPricedServiceFreeOrAFreeOneDear()
+    {
+        Assert.Equal(1, ShopPricing.ServicePrice(1, ReputationTier.Allied, PerkEffectMath.BestServiceFactor));
+        Assert.Equal(0, ShopPricing.ServicePrice(0, ReputationTier.Allied, 1.25f));
+        Assert.Equal(0, ShopPricing.ServicePrice(0, ReputationTier.Hated, PerkEffectMath.BestServiceFactor));
+    }
+
+    /// <summary>
+    /// The shop-margin proof with every perk at its cap, mirroring <c>ValidateShopTrade</c> (which folds in the
+    /// same <c>PerkEffectMath.Best*</c> constants): over the spreads actually authored, the haggle and the
+    /// specialty premium together, a round trip still costs the player something.
+    /// </summary>
+    [Fact]
+    public void AuthoredSpreadsStillCostSomethingToRoundTripWithMaxPerks()
+    {
+        float[] markups = { 1.5f, 1.55f, 1.6f, 1.65f, 1.7f };
+        float[] fractions = { 0.4f, 0.42f, 0.45f };
+
+        foreach (float markup in markups)
+        {
+            foreach (float fraction in fractions)
+            {
+                foreach (bool specialty in new[] { false, true })
+                {
+                    foreach (bool haggled in new[] { false, true })
+                    {
+                        for (int value = 1; value <= 500; value++)
+                        {
+                            int buy = ShopPricing.BuyPrice(value, ShopPricing.MarkupFor(
+                                markup, ReputationTier.Allied, specialty, haggled, PerkEffectMath.BestBuyFactor));
+                            int sell = ShopPricing.SellPrice(value, ShopPricing.SellFractionFor(
+                                fraction, specialty, haggled, PerkEffectMath.BestSellFactor));
+
+                            Assert.True(
+                                sell < buy,
+                                $"round trip is free with max perks at markup {markup}, fraction {fraction}, " +
+                                $"specialty {specialty}, haggled {haggled}, value {value}");
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /// <summary>The clamps keep <c>sell &lt;= buy</c> for ANY perk factor, authored spread or not, which is why
+    /// the perk caps are a margin question for the validator and never a money-printer question.</summary>
+    [Fact]
+    public void NoPerkFactorLetsSellingBeatBuying()
+    {
+        foreach (float buyPerk in new[] { 0.5f, PerkEffectMath.BestBuyFactor, 1f })
+        {
+            foreach (float sellPerk in new[] { 1f, PerkEffectMath.BestSellFactor, 3f })
+            {
+                foreach (float fraction in new[] { 0.05f, 0.45f, 0.99f })
+                {
+                    for (int value = 0; value <= 300; value++)
+                    {
+                        int buy = ShopPricing.BuyPrice(value, ShopPricing.MarkupFor(
+                            1.2f, ReputationTier.Allied, true, true, buyPerk));
+                        int sell = ShopPricing.SellPrice(value, ShopPricing.SellFractionFor(
+                            fraction, true, true, sellPerk));
+                        Assert.True(sell <= buy, $"sell {sell} > buy {buy} at value {value}");
                     }
                 }
             }
