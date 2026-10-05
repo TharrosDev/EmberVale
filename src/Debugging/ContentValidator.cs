@@ -108,6 +108,7 @@ public static class ContentValidator
         ValidateRegions(issues);
         ValidateRaces(issues);
         BackgroundValidator.Validate(issues);
+        AppearanceValidator.Validate(issues);
         ValidateShrines(issues);
         ValidateGuilds(issues);
         ValidateGuildHubs(issues);

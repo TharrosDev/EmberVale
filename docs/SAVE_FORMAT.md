@@ -54,7 +54,7 @@ through `SaveManager.HeaderProvider` so the manager stays free of gameplay types
 | `region`, `region_id` | display name, **and the region a load restores into** |
 | `player_x/y/z`, `player_yaw` | **the transform a load restores** |
 | `race_id`, `char_name` | the character `StartLoadedGame` spawns |
-| `appearance`, `background` | optional creator choices; appearance ids use `CharacterProfile`'s semicolon encoding; `background` is a `background.*` id (anything else, such as a pre-background free-text line, reads as no background). A background's kit, perk rank, flag and standing live in the Inventory/Perks/StoryFlags/Reputation saves; its stat deltas are re-derived from this header on load |
+| `appearance`, `background` | optional creator choices; appearance ids (`appearance.*`, one per slot) use `CharacterProfile`'s semicolon encoding, and an absent, stale or not-offered id resolves to the slot default (`AppearanceRules.Resolve`) so nothing is saved beyond the ids; `background` is a `background.*` id (anything else, such as a pre-background free-text line, reads as no background). A background's kit, perk rank, flag and standing live in the Inventory/Perks/StoryFlags/Reputation saves; its stat deltas are re-derived from this header on load |
 | `level`, `corruption_tier` | slot browser |
 
 ⚠️ **The header is not decoration — it is load-bearing.** Since the 2026-08-15 audit it drives where

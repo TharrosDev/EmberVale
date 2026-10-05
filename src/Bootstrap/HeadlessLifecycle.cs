@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Embervale.Appearance;
 using Embervale.Backgrounds;
 using Embervale.Core;
 using Embervale.Core.Diagnostics;
@@ -176,10 +177,40 @@ public static class HeadlessLifecycle
         RaceId = "race.umbral",
         CharacterName = "Lifecycle Audit",
         Background = AuditBackground,
-        AppearanceOptionIds = ["appearance.audit_one", "appearance.audit_two"],
+        AppearanceOptionIds = AuditLook,
     };
 
+    // Real options the Umbral offers, none of them a slot default, so the body must visibly differ from the unmodified model.
+    private static readonly string[] AuditLook =
+    [
+        "appearance.skin.ashen", "appearance.hair.midnight", "appearance.eyes.violet", "appearance.ember.violet", "appearance.build.slim",
+    ];
+
     private const string AuditBackground = "background.soldier";
+
+    /// <summary>The chosen look reaches the body after New Game and again after Load: the shader carries the chosen
+    /// tints (and not the unmodified references) and the Slim build narrows X/Z without changing height.</summary>
+    private static void CheckAuditLook(Node3D player, string label)
+    {
+        Node3D? body = player.GetNodeOrNull<Node3D>("BodyMesh");
+        ShaderMaterial? material = body == null ? null : PlayerAppearance.FindMaterial(body);
+        if (body == null || material == null)
+        {
+            Failures.Add($"{label}: the player body has no appearance shader.");
+            return;
+        }
+
+        Check(material.GetShaderParameter("skin_tint").AsColor().IsEqualApprox(AppearanceDatabase.Get("appearance.skin.ashen")!.Tint),
+            $"{label}: the body skin tint is not the chosen Ashen.");
+        Check(material.GetShaderParameter("hair_tint").AsColor().IsEqualApprox(AppearanceDatabase.Get("appearance.hair.midnight")!.Tint),
+            $"{label}: the body hair tint is not the chosen Midnight.");
+        Check(material.GetShaderParameter("eye_tint").AsColor().IsEqualApprox(AppearanceDatabase.Get("appearance.eyes.violet")!.Tint),
+            $"{label}: the body eye tint is not the chosen Violet.");
+        Check(material.GetShaderParameter("ember_tint").AsColor().IsEqualApprox(AppearanceDatabase.Get("appearance.ember.violet")!.Tint),
+            $"{label}: the body ember tint is not the chosen Violet.");
+        Check(Math.Abs(body.Scale.X - 0.92f) < 0.001f && Math.Abs(body.Scale.Z - 0.92f) < 0.001f && Math.Abs(body.Scale.Y - 1f) < 0.001f,
+            $"{label}: the Slim build is not 0.92 wide and 1.0 tall (scale {body.Scale}).");
+    }
 
     /// <summary>
     /// The audit character's identity and grants, asserted identically after New Game and after Load. The
@@ -198,6 +229,8 @@ public static class HeadlessLifecycle
 
         Check(session.Profile.RaceId == "race.umbral" && session.Profile.Background == AuditBackground,
             $"{label}: the character profile did not round-trip (race '{session.Profile.RaceId}', background '{session.Profile.Background}').");
+
+        CheckAuditLook(player, label);
 
         StatsComponent? stats = player.GetComponent<StatsComponent>();
         Check(stats != null && Math.Abs(stats.GetStat(StatType.Strength).Value - stats.GetStat(StatType.Strength).BaseValue - 1f) < 0.001f,
@@ -303,7 +336,7 @@ public static class HeadlessLifecycle
         Check(restored.Profile.RaceId == "race.umbral" && restored.Profile.CharacterName == "Lifecycle Audit",
             $"reload cycle {cycle}: loaded character came from the abandoned session instead of the header.");
         Check(restored.Profile.Background == AuditBackground &&
-              restored.Profile.AppearanceOptionIds is ["appearance.audit_one", "appearance.audit_two"],
+              restored.Profile.AppearanceOptionIds.AsSpan().SequenceEqual(AuditLook),
             $"reload cycle {cycle}: background or appearance choices were lost.");
         Check(!lifecycle.RequestReload(original, slot), $"reload cycle {cycle}: a stale session could reload over its replacement.");
 

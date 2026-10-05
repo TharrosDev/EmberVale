@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Text;
+using Embervale.Appearance;
 using Embervale.Backgrounds;
 using Embervale.Factions;
 using Embervale.Items;
@@ -37,6 +39,10 @@ public partial class CharacterCreator : CanvasLayer
     private GridContainer _raceGrid = null!;
     private GridContainer _backgroundGrid = null!;
     private ScrollContainer _scroll = null!;
+    private VBoxContainer _appearanceBox = null!;
+    private CharacterPreview _preview = null!;
+    // The chosen option id per AppearanceSlot; the slot default until the player picks.
+    private string[] _appearancePicks = Enumerable.Repeat(string.Empty, AppearanceRules.SlotCount).ToArray();
 
     public void Configure(Action<CharacterProfile> onConfirm, Action onBack)
     {
@@ -93,8 +99,19 @@ public partial class CharacterCreator : CanvasLayer
             HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled,
             FollowFocus = true,
         };
-        outer.AddChild(scroll);
+        // The scroll column sits beside a live preview of the body, so every appearance pick is visible
+        // however far down the list the player has scrolled.
+        var row = new HBoxContainer();
+        row.AddThemeConstantOverride("separation", UiTheme.SpaceMd);
+        outer.AddChild(row);
+        scroll.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        row.AddChild(scroll);
         _scroll = scroll;
+
+        PanelContainer previewWell = UiTheme.Well();
+        _preview = new CharacterPreview();
+        previewWell.AddChild(_preview);
+        row.AddChild(previewWell);
 
         // Same scrollbar gutter as the settings screen: the bar is drawn inside the scroll's rect,
         // over whatever is beneath it.
@@ -130,6 +147,14 @@ public partial class CharacterCreator : CanvasLayer
         _summary.CustomMinimumSize = new Vector2(0, 72);
         _summary.VerticalAlignment = VerticalAlignment.Top;
         col.AddChild(_summary);
+
+        col.AddChild(UiTheme.Divider());
+
+        // Looks are cosmetic and filtered by race (RaceResource.AppearanceOptionIds); the section is rebuilt on a race change.
+        col.AddChild(UiTheme.SectionRule(Loc.T("create.appearance")));
+        _appearanceBox = new VBoxContainer();
+        _appearanceBox.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
+        col.AddChild(_appearanceBox);
 
         col.AddChild(UiTheme.Divider());
 
@@ -292,6 +317,30 @@ public partial class CharacterCreator : CanvasLayer
             : Mathf.Max(0, (int)(_backgroundGrid.GlobalPosition.Y - _scroll.GlobalPosition.Y) + _scroll.ScrollVertical - 24);
     }
 
+    /// <summary>Capture/dev hook: choose a race by id, then appearance options by id (each as a click on its swatch
+    /// would; an id the race does not offer is ignored), and scroll the appearance section into view.</summary>
+    public void SelectLookForCapture(string raceId, params string[] optionIds)
+    {
+        OnRaceSelected(_races.FindIndex(r => r.Id == raceId));
+        foreach (string id in optionIds)
+        {
+            if (_selected != null && _selected.AppearanceOptionIds.Contains(id) && AppearanceDatabase.Get(id) is { } option)
+            {
+                _appearancePicks[(int)option.Slot] = id;
+            }
+        }
+
+        RebuildAppearance();
+        ScrollAppearanceIntoView();
+    }
+
+    private async void ScrollAppearanceIntoView()
+    {
+        await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+        await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+        _scroll.ScrollVertical = Mathf.Max(0, (int)(_appearanceBox.GlobalPosition.Y - _scroll.GlobalPosition.Y) + _scroll.ScrollVertical - 40);
+    }
+
     /// <summary>Capture/dev hook: choose a background by id as a click on its card would.</summary>
     public void SelectBackgroundForCapture(string id) =>
         OnBackgroundSelected(_backgrounds.FindIndex(b => b.Id == id));
@@ -374,6 +423,99 @@ public partial class CharacterCreator : CanvasLayer
         _selected = _races[(int)index];
         _summary.Text = BuildSummary(_selected);
         RebuildRaceCards();
+
+        // Keep each pick the new race also offers; anything else falls back to the slot default.
+        _appearancePicks = AppearanceRules.Resolve(
+            _appearancePicks,
+            id => AppearanceDatabase.Get(id)?.Slot,
+            id => _selected.AppearanceOptionIds.Contains(id),
+            slot => AppearanceDatabase.DefaultFor(slot)?.Id);
+        RebuildAppearance();
+    }
+
+    /// <summary>One row per slot: its name and the chosen option, then a swatch per option the race offers
+    /// (build options are small cards). Redraws the preview with the current picks.</summary>
+    private void RebuildAppearance()
+    {
+        UiTheme.ClearChildren(_appearanceBox);
+        _appearanceBox.AddChild(UiTheme.Caption(Loc.T("create.appearance_hint")));
+
+        for (int i = 0; i < AppearanceRules.SlotCount; i++)
+        {
+            var slot = (AppearanceSlot)i;
+            List<AppearanceOptionResource> options = PlayerAppearance.OptionsFor(_selected, slot);
+            if (options.Count < 2)
+            {
+                continue; // nothing to choose between
+            }
+
+            AppearanceOptionResource? chosen = AppearanceDatabase.Get(_appearancePicks[i]);
+            string chosenName = chosen != null ? Loc.T(chosen.NameKey) : string.Empty;
+            _appearanceBox.AddChild(UiTheme.Body(
+                $"{Loc.T($"create.appearance.{slot.ToString().ToLowerInvariant()}")}: {chosenName}", UiTheme.Dim));
+
+            var flow = new HFlowContainer();
+            flow.AddThemeConstantOverride("h_separation", UiTheme.SpaceXs);
+            flow.AddThemeConstantOverride("v_separation", UiTheme.SpaceXs);
+            foreach (AppearanceOptionResource option in options)
+            {
+                bool active = option.Id == _appearancePicks[i];
+                int slotIndex = i;
+                string id = option.Id;
+                void Pick() => OnAppearancePicked(slotIndex, id);
+                flow.AddChild(slot == AppearanceSlot.Build
+                    ? BuildCard(option, active, Pick)
+                    : Swatch(option, active, Pick));
+            }
+
+            _appearanceBox.AddChild(flow);
+        }
+
+        _preview.SetLook(PlayerAppearance.Resolve(_selected, _appearancePicks));
+    }
+
+    private void OnAppearancePicked(int slot, string id)
+    {
+        _appearancePicks[slot] = id;
+        RebuildAppearance();
+    }
+
+    /// <summary>A square colour button for one option; the chosen one wears a bright border.</summary>
+    private static Button Swatch(AppearanceOptionResource option, bool active, System.Action onPressed)
+    {
+        var button = new Button
+        {
+            CustomMinimumSize = new Vector2(34f, 34f),
+            FocusMode = Control.FocusModeEnum.All,
+            TooltipText = Loc.T(option.NameKey),
+        };
+
+        // True colour, not UiTheme.Adapt: the swatch is the thing the player is choosing.
+        StyleBoxFlat Style(Color border, int width)
+        {
+            var box = new StyleBoxFlat { BgColor = option.Tint, BorderColor = border };
+            box.SetBorderWidthAll(width);
+            box.SetCornerRadiusAll(UiTheme.RadiusSm);
+            return box;
+        }
+
+        StyleBoxFlat normal = Style(active ? UiTheme.Accent : UiTheme.Iron, active ? 3 : 1);
+        StyleBoxFlat hover = Style(UiTheme.AccentHot, 2);
+        button.AddThemeStyleboxOverride("normal", normal);
+        button.AddThemeStyleboxOverride("hover", hover);
+        button.AddThemeStyleboxOverride("pressed", hover);
+        button.AddThemeStyleboxOverride("focus", Style(Colors.White, 3));
+        button.Pressed += () => onPressed();
+        return button;
+    }
+
+    /// <summary>A small named card for one Build option.</summary>
+    private static PanelContainer BuildCard(AppearanceOptionResource option, bool active, System.Action onPressed)
+    {
+        PanelContainer card = UiTheme.CardButton(active ? UiTheme.Accent : null, out Button input, out VBoxContainer col);
+        input.Pressed += () => onPressed();
+        col.AddChild(UiTheme.Body(Loc.T(option.NameKey), active ? UiTheme.Accent : UiTheme.Text));
+        return card;
     }
 
     private static string BuildSummary(RaceResource race)
@@ -444,6 +586,7 @@ public partial class CharacterCreator : CanvasLayer
         {
             RaceId = _selected.Id,
             Background = _selectedBackground?.Id ?? string.Empty,
+            AppearanceOptionIds = AppearanceRules.ToProfileIds(_appearancePicks),
         };
 
         string name = _name.Text.Trim();

@@ -1,3 +1,4 @@
+using Embervale.Appearance;
 using Embervale.Backgrounds;
 using Embervale.Companions;
 using Embervale.Crafting;
@@ -46,6 +47,7 @@ public static class ContentDatabases
         FactionDatabase.Initialize();
         WorldEventDatabase.Initialize();
         RaceDatabase.Initialize();
+        AppearanceDatabase.Initialize();       // creator looks (P8); races list the ids they offer
         BackgroundDatabase.Initialize();       // character-creation nudges (P7); the validator cross-checks perks/items/flags
         AIProfileDatabase.Initialize();        // before the enemy registry: factories resolve profiles by id
         BossDatabase.Initialize();             // before the archetypes: the validator cross-checks their BossIds
