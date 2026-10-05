@@ -218,6 +218,8 @@ Roles, which the shared widgets already apply:
 | `LineGap` | `Space2xs` | stacked text lines in one card or row, `Meter`, `CardButton` |
 | `ControlHeight` | 44 | minimum height of an `Action`, tab or menu entry (was 38) |
 | `ScrollGutter` | `SpaceMd` | clear space between a list and its scrollbar |
+| `HudGap` | `SpaceMd` | between stacked HUD widgets (party over vitals) and between the HUD bar's cells (`SpaceLg`) |
+| `CompactPadY` / `CompactPadX` | `SpaceSm` / `SpaceMd` | content margins of a HUD card, toast or hint (`UiTheme.Compact`) |
 
 Rules: (1) no literal gap, margin or padding below 4 px in a panel; a literal is a reason to add a token.
 (2) A card's own content margins are its padding, so never wrap a `Card` or `Band` child in a second
@@ -226,6 +228,8 @@ Rules: (1) no literal gap, margin or padding below 4 px in a panel; a literal is
 presses is at least `ControlHeight` tall. (5) Every screen still has to fit 1280x720: a list that grows
 past the panel scrolls (`ScrollList`), the frame never does. Radii: `RadiusSm` 1 (bars, wells, chips),
 `RadiusMd` 2 (buttons), `RadiusLg` 2 (panels).
+
+**HUD, toasts and shell (pass 3).** (1) A HUD card is a `Band`/`Card` whose stylebox is its padding: call `UiTheme.Compact(card)` and add the content directly. The old `Padding` wrapped inside a stylebox that already had 16 px margins left about 26 px of dead space above and below every HUD card, and made the cards tall enough to collide. (2) Inside a card, group by distance: bars or rows of one kind sit `SpaceXs` apart, groups `SpaceSm` apart, a heading hugs its title at `LineGap`. A tracker objective is one block (text row, "Optional" tag on its own line, bar, hint) so its parts stay together and objectives stand apart. (3) Chips that can multiply (status effects) live in an `HFlowContainer` with `ChipGap`; a box row stretches the card. A chip's `trailing` label is hidden until used, since an empty label still takes its separation. (4) Toasts start under the tracker wherever it ends and stop above the minimap: `Notifications` reads `GameHud.TopRightBottom`/`BottomRightTop`, admits as many toasts as fit (1 to 3) and lets the oldest fade early if the tracker grows. Never place a toast stack with a fixed offset. (5) Anything centred above the hotbar (prompt, tutorial hint, placement strip) sits at `HudLayout.BottomClearance` or higher. (6) A settings or slot list takes a row height of `ControlHeight` and `RowGap` between rows, scrolls inside the workspace frame, and gives the scroll a small floor so the frame keeps a visible margin from the window edge; a frame that is taller than its anchors only grows when something inside it has a large minimum height. (7) A shell button is `ControlHeight` tall; pause entries are not shrunk below it.
 
 Check spacing by looking, not by arithmetic: `godot --path . -- --uishots` (pause, spellbook, bestiary, character Progression, crafting, storage, contracts, appraisal, save slots), `--panelshots`, `--hudshots` and `--shellshots` capture every screen. `EMBERVALE_RES=1920x1080` re-shoots at another window size (a 16:9 size lays out identically to 1280x720, because the project stretches `canvas_items`, so use `1280x800` for the handheld aspect), `EMBERVALE_SLOT` picks the save and `EMBERVALE_USER_DIR` + `EMBERVALE_ARTIFACTS` keep a run's saves and PNGs out of the shared user folder.
 

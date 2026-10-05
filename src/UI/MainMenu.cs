@@ -106,7 +106,7 @@ public partial class MainMenu : CanvasLayer
         col.AddChild(subtitle);
 
         col.AddChild(UiTheme.Divider());
-        col.AddChild(new Control { CustomMinimumSize = new Vector2(0f, UiTheme.SpaceSm) });
+        col.AddChild(new Control { CustomMinimumSize = new Vector2(0f, UiTheme.SpaceMd) });
 
         bool hasSaves = (SaveManager.Instance?.ListSlots().Count ?? 0) > 0;
 
@@ -176,7 +176,7 @@ public partial class MainMenu : CanvasLayer
     private static Button MenuButton(string text, System.Action? onPressed)
     {
         Button button = UiTheme.Action(text);
-        button.CustomMinimumSize = new Vector2(0, 46);
+        button.CustomMinimumSize = new Vector2(0, UiTheme.ControlHeight + UiTheme.Space2xs);
         button.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
         if (onPressed == null)
         {

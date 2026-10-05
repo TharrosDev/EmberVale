@@ -55,14 +55,14 @@ public partial class LoadingScreen : CanvasLayer
 		_panel.AnchorBottom = 0.88f;
 		_panel.GrowHorizontal = Control.GrowDirection.Both;
 		_panel.GrowVertical = Control.GrowDirection.Both;
-		_panel.CustomMinimumSize = new Vector2(360, 96);
+		_panel.CustomMinimumSize = new Vector2(360, 112);
 		AddChild(_panel);
 
-		MarginContainer pad = UiTheme.Padding(UiTheme.SpaceMd);
+		MarginContainer pad = UiTheme.Padding(UiTheme.SpaceLg);
 		_panel.AddChild(pad);
 
 		var identity = new HBoxContainer();
-		identity.AddThemeConstantOverride("separation", UiTheme.SpaceMd);
+		identity.AddThemeConstantOverride("separation", UiTheme.SpaceLg);
 		identity.AddChild(new TextureRect
 		{
 			Texture = GD.Load<Texture2D>("res://assets/ui/emblems/embervale_seal.png"),

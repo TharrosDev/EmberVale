@@ -249,6 +249,18 @@ public static class UiTheme
     /// <summary>Clear space kept between a scrolling list and its scrollbar.</summary>
     public const int ScrollGutter = SpaceMd;
 
+    /// <summary>Gap between the stacked widgets of one HUD corner (party card over vitals, toasts under the
+    /// tracker) and between the HUD bar's cells. HUD cards sit on the live world, so they need more air
+    /// between them than the rows inside one panel do.</summary>
+    public const int HudGap = SpaceMd;
+
+    /// <summary>Content margins of a HUD card, toast or hint (<see cref="Compact(StyleBoxFlat)"/>): tighter
+    /// than a list card's <see cref="SpaceMd"/> all round, because these are glanced at, not read.</summary>
+    public const int CompactPadY = SpaceSm;
+
+    /// <summary>See <see cref="CompactPadY"/>.</summary>
+    public const int CompactPadX = SpaceMd;
+
     // --- Radii -----------------------------------------------------------------
     // Tight radii throughout: this world's surfaces are cut and bound, not moulded. A large
     // radius is the fastest way to make a fantasy panel read as a web app.
@@ -588,6 +600,28 @@ public static class UiTheme
         return card;
     }
 
+    /// <summary>Gives a card or band the compact HUD margins. The stylebox is the padding, so the content is
+    /// added straight to the card: wrapping it in <see cref="Padding"/> as well doubles every edge.</summary>
+    public static StyleBoxFlat Compact(StyleBoxFlat box)
+    {
+        box.ContentMarginTop = CompactPadY;
+        box.ContentMarginBottom = CompactPadY;
+        box.ContentMarginLeft = CompactPadX;
+        box.ContentMarginRight = CompactPadX;
+        return box;
+    }
+
+    /// <summary><see cref="Compact(StyleBoxFlat)"/> for a <see cref="Card"/> or <see cref="Band"/> already built.</summary>
+    public static PanelContainer Compact(PanelContainer card)
+    {
+        if (card.GetThemeStylebox("panel") is StyleBoxFlat box)
+        {
+            Compact(box);
+        }
+
+        return card;
+    }
+
     /// <summary>The standard inner padding container panels wrap their content in.</summary>
     public static MarginContainer Padding(int amount = SpaceMd)
     {
@@ -741,7 +775,10 @@ public static class UiTheme
         row.AddThemeConstantOverride("separation", SpaceXs);
         row.AddChild(Caption(text, color));
 
+        // Hidden until a caller wants it: an empty label still takes its separation, which padded every
+        // plain chip with a dead SpaceXs on its right edge.
         trailing = Caption("");
+        trailing.Visible = false;
         row.AddChild(trailing);
         chip.AddChild(row);
         return chip;
