@@ -48,13 +48,15 @@ public abstract partial class ShotHarness : Node
     private string CaptureDirectory => string.IsNullOrEmpty(OS.GetEnvironment("EMBERVALE_ARTIFACTS"))
         ? OutputDir : System.IO.Path.Combine(OS.GetEnvironment("EMBERVALE_ARTIFACTS"), Flag.TrimStart('-'));
 
-    /// <summary>Capture size in pixels: 1280x720 unless <c>EMBERVALE_SHOT_SIZE</c> says <c>WIDTHxHEIGHT</c>
-    /// (e.g. <c>1920x1080</c>), so a layout can be photographed at more than one resolution.</summary>
+    /// <summary>Capture size in pixels: 1280x720 unless <c>EMBERVALE_RES</c> (or its older alias
+    /// <c>EMBERVALE_SHOT_SIZE</c>) says <c>WIDTHxHEIGHT</c> (e.g. <c>1920x1080</c>, or <c>1280x800</c> for the
+    /// handheld aspect), so a layout can be photographed at more than one resolution.</summary>
     private static Vector2I ShotSize
     {
         get
         {
-            string[] parts = OS.GetEnvironment("EMBERVALE_SHOT_SIZE").Split('x');
+            string size = OS.GetEnvironment("EMBERVALE_RES");
+            string[] parts = (size.Length > 0 ? size : OS.GetEnvironment("EMBERVALE_SHOT_SIZE")).Split('x');
             return parts.Length == 2 && int.TryParse(parts[0], out int w) && int.TryParse(parts[1], out int h) && w >= 640 && h >= 360
                 ? new Vector2I(w, h)
                 : new Vector2I(1280, 720);

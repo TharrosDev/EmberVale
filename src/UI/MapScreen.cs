@@ -129,7 +129,6 @@ public partial class MapScreen : UiPanel
     {
         var rail = new VBoxContainer();
         rail.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
-        rail.CustomMinimumSize = new Vector2(320f, 0f);
         rail.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
 
         _search = new LineEdit
@@ -183,7 +182,22 @@ public partial class MapScreen : UiPanel
         _legend.AddThemeConstantOverride("separation", 2);
         rail.AddChild(_legend);
 
-        return rail;
+        // The rail's pinned section heights add up to more than a 720 px screen, which stretched the
+        // whole shell past the viewport and pushed the footer off it. The rail scrolls as one instead.
+        rail.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        var gutter = new MarginContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+        gutter.AddThemeConstantOverride("margin_right", UiTheme.ScrollGutter);
+        gutter.AddChild(rail);
+
+        var railScroll = new ScrollContainer
+        {
+            CustomMinimumSize = new Vector2(340f, 0f),
+            SizeFlagsVertical = Control.SizeFlags.ExpandFill,
+            HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled,
+            FollowFocus = true,
+        };
+        railScroll.AddChild(gutter);
+        return railScroll;
     }
 
     private Control BuildFooter()

@@ -55,7 +55,7 @@ public partial class VendorPanel : UiPanel
     {
         UiTheme.ApplyScreenInset(shell);
 
-        MarginContainer margin = UiTheme.Padding(12);
+        MarginContainer margin = UiTheme.Padding(UiTheme.PanelPad);
         shell.AddChild(margin);
 
         var column = new VBoxContainer
@@ -150,7 +150,7 @@ public partial class VendorPanel : UiPanel
         var columns = new HBoxContainer
         {
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-            CustomMinimumSize = new Vector2(0, 360),
+            CustomMinimumSize = new Vector2(0, 200),
             SizeFlagsVertical = Control.SizeFlags.ExpandFill,
         };
         columns.AddThemeConstantOverride("separation", UiTheme.SpaceMd);
@@ -1145,9 +1145,7 @@ public partial class VendorPanel : UiPanel
         button.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
         row.AddChild(button);
 
-        MarginContainer pad = UiTheme.Padding(UiTheme.SpaceXs);
-        pad.AddChild(row);
-        card.AddChild(pad);
+        card.AddChild(row);
         list.AddChild(card);
     }
 

@@ -144,7 +144,7 @@ public partial class DebugHud : CanvasLayer
         _controlsPanel.GrowVertical = Control.GrowDirection.Begin;
         AddChild(_controlsPanel);
 
-        MarginContainer pad = UiTheme.Padding(8);
+        MarginContainer pad = UiTheme.Padding(UiTheme.SpaceSm);
         _controlsPanel.AddChild(pad);
 
         Label hint = UiTheme.Body(

@@ -196,9 +196,38 @@ Builders: `Title/Display/Header/Body/Prose/Flavour/Caption` — reach for these 
 
 ## 4. Spacing & radius
 
-Spacing scale (`SpaceXs..SpaceXl` = 5/8/12/18/28): use tokens for separations, paddings
-and margins; `UiTheme.Padding()` defaults to `SpaceMd`. Radii: `RadiusSm` 1 (bars, wells,
-chips), `RadiusMd` 2 (buttons), `RadiusLg` 2 (panels).
+**Breathing room is a rule, not a mood.** The UI had drifted into packed screens: list rows 3 px apart,
+stat lines 1 px apart, chips with 2 px of padding, scrollbars sitting on row borders. The 2026-10 pass
+widened the scale and moved the gaps into tokens, so a screen follows it by using the shared widgets
+and the roles below instead of a number. Legibility comes first: when in doubt, more room, never less.
+
+Scale (px at reference scale, `UiTheme`): `Space2xs` 4 (a label over its caption, an icon beside its
+text) / `SpaceXs` 6 (inside one control) / `SpaceSm` 10 (between related controls) / `SpaceMd` 16
+(panel padding, between groups) / `SpaceLg` 24 (between sections, narrow gutter, HUD safe margin) /
+`SpaceXl` 32 (around a modal's content on a bare screen). Steps are named by size, never by use.
+
+Roles, which the shared widgets already apply:
+
+| Role | Value | Where it lands |
+| ---- | ----- | -------------- |
+| `RowGap` | 8 | `ScrollList` separation (was 3) |
+| `SectionGap` | `SpaceMd` | space above every `SectionRule` |
+| `ChipGap` | `SpaceSm` | between chips |
+| `GridGap` | `SpaceSm` | between cells of a stat or slot grid |
+| `PanelPad` | `SpaceMd` | a full-screen panel's inner margin (`Padding` adds 2 at the sides) |
+| `LineGap` | `Space2xs` | stacked text lines in one card or row, `Meter`, `CardButton` |
+| `ControlHeight` | 44 | minimum height of an `Action`, tab or menu entry (was 38) |
+| `ScrollGutter` | `SpaceMd` | clear space between a list and its scrollbar |
+
+Rules: (1) no literal gap, margin or padding below 4 px in a panel; a literal is a reason to add a token.
+(2) A card's own content margins are its padding, so never wrap a `Card` or `Band` child in a second
+`Padding`; that doubles the left edge. (3) Rows in a list are separated by `RowGap`, sections by
+`SectionGap`, and nothing sits flush against a panel edge or a scrollbar. (4) A control the player
+presses is at least `ControlHeight` tall. (5) Every screen still has to fit 1280x720: a list that grows
+past the panel scrolls (`ScrollList`), the frame never does. Radii: `RadiusSm` 1 (bars, wells, chips),
+`RadiusMd` 2 (buttons), `RadiusLg` 2 (panels).
+
+Check spacing by looking, not by arithmetic: `godot --path . -- --uishots` (pause, spellbook, bestiary, character Progression, crafting, storage, contracts, appraisal, save slots), `--panelshots`, `--hudshots` and `--shellshots` capture every screen. `EMBERVALE_RES=1920x1080` re-shoots at another window size (a 16:9 size lays out identically to 1280x720, because the project stretches `canvas_items`, so use `1280x800` for the handheld aspect), `EMBERVALE_SLOT` picks the save and `EMBERVALE_USER_DIR` + `EMBERVALE_ARTIFACTS` keep a run's saves and PNGs out of the shared user folder.
 
 Radii stay tight on purpose: this world's surfaces are cut and bound, not moulded. A
 large radius is the fastest way to make a fantasy panel read as a web app.

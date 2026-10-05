@@ -71,7 +71,7 @@ public partial class PauseMenu : CanvasLayer
 		_panel.CustomMinimumSize = new Vector2(280, 0);
 		AddChild(_panel);
 
-		MarginContainer pad = UiTheme.Padding(16);
+		MarginContainer pad = UiTheme.Padding(UiTheme.SpaceMd);
 		_panel.AddChild(pad);
 
 		var col = new VBoxContainer();
@@ -179,6 +179,11 @@ public partial class PauseMenu : CanvasLayer
 		SetPanelVisible(false);
 		SettingsPanel.Open(this, () => SetPanelVisible(true));
 	}
+
+	/// <summary>Opens and closes the menu for the screenshot harnesses, which cannot press Esc.</summary>
+	public void OpenForCapture() => Open();
+
+	public void CloseForCapture() => Resume();
 
 	private void Open()
 	{

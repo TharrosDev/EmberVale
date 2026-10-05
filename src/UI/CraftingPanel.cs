@@ -43,7 +43,7 @@ public partial class CraftingPanel : UiPanel
     {
         UiTheme.ApplyWorkspace(shell, 0.66f);
 
-        MarginContainer margin = UiTheme.Padding(12);
+        MarginContainer margin = UiTheme.Padding(UiTheme.PanelPad);
         shell.AddChild(margin);
 
         var column = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
@@ -355,9 +355,7 @@ public partial class CraftingPanel : UiPanel
         yields.AddChild(UiTheme.Chip(Loc.TF("craft.yield_xp", xp), UiTheme.Good));
         col.AddChild(yields);
 
-        MarginContainer pad = UiTheme.Padding(UiTheme.SpaceXs);
-        pad.AddChild(col);
-        card.AddChild(pad);
+        card.AddChild(col);
         _list.AddChild(card);
     }
 
@@ -438,9 +436,7 @@ public partial class CraftingPanel : UiPanel
 
         col.AddChild(costs);
 
-        MarginContainer pad = UiTheme.Padding(UiTheme.SpaceXs);
-        pad.AddChild(col);
-        card.AddChild(pad);
+        card.AddChild(col);
         _list.AddChild(card);
     }
 }
