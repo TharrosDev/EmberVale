@@ -79,7 +79,8 @@ internal static class EconomyPerksProbe
         int before = progression.CurrentXp;
         int expected = PerkEffectMath.ScaleXp(10, PerkProbeMath.Expected(PerkIds, PerkEffectKind.XpGainMult));
         progression.AddXp(10);
-        check(expected > 10 && (progression.Level != level || progression.CurrentXp - before == expected),
+        // At the level cap AddXp zeroes XP, so there is nothing to measure there (the lifecycle plays a max-level character).
+        check(expected > 10 && (progression.IsMaxLevel || progression.Level != level || progression.CurrentXp - before == expected),
             $"economy perks probe: a 10 xp grant with the xp perks landed as {progression.CurrentXp - before}, not {expected}.");
         progression.Load(snapshot);
     }

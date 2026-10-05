@@ -21,6 +21,8 @@ internal static class PerksLifecycleProbe
     private const string Endurance = "perk.endurance_training";
 
     private static float _expectedPower;
+    // Free Might the character already holds (a Soldier starts with one), so the ranks asserted below are relative to it.
+    private static int _baseMight;
 
     /// <summary>Learns, respecs and relearns on the live player, leaving 3 Might, 1 Toughness and 1 free
     /// Endurance Training, 4 points spent and one respec taken.</summary>
@@ -39,6 +41,7 @@ internal static class PerksLifecycleProbe
             return;
         }
 
+        _baseMight = perks.RankOf(Might);
         float basePower = stats.GetValue(StatType.PhysicalPower);
         int pointsBefore = progression.SkillPoints;
         int goldBefore = pack.CountOf(gold);
@@ -66,7 +69,7 @@ internal static class PerksLifecycleProbe
             pack.AddItem(gold, goldBefore);
         }
 
-        check(perks.PointsSpent == 0 && perks.RespecCount == 1 && perks.RankOf(Might) == 0 && progression.SkillPoints == pointsBefore + 6,
+        check(perks.PointsSpent == 0 && perks.RespecCount == 1 && perks.RankOf(Might) == _baseMight && progression.SkillPoints == pointsBefore + 6,
             "perks probe: respec did not refund every point.");
         check(Near(stats.GetValue(StatType.PhysicalPower), basePower), "perks probe: respec left a stat modifier behind.");
 
@@ -87,9 +90,9 @@ internal static class PerksLifecycleProbe
             return;
         }
 
-        check(perks.RankOf(Might) == 3 && perks.RankOf(Toughness) == 1 && perks.RankOf(Endurance) == 1,
+        check(perks.RankOf(Might) == _baseMight + 3 && perks.RankOf(Toughness) == 1 && perks.RankOf(Endurance) == 1,
             "perks probe: loaded ranks differ from the saved ones.");
-        check(perks.FreeRankOf(Endurance) == 1 && perks.FreeRankOf(Might) == 0, "perks probe: loaded free ranks differ.");
+        check(perks.FreeRankOf(Endurance) == 1 && perks.FreeRankOf(Might) == _baseMight, "perks probe: loaded free ranks differ.");
         check(perks.PointsSpent == 4 && perks.RespecCount == 1, "perks probe: loaded points spent or respecs differ.");
         check(Near(stats.GetValue(StatType.PhysicalPower), _expectedPower), "perks probe: loaded ranks did not re-apply their stat bonus.");
 
@@ -98,7 +101,7 @@ internal static class PerksLifecycleProbe
         check(perks.RankOf(Might) == 0 && perks.RankOf(Endurance) == 0 && perks.PointsSpent == 0 && perks.RespecCount == 0,
             "perks probe: Load of an empty save kept live perk state.");
         check(perks.FreeRankOf(Endurance) == 0 && perks.Effects.IsEmpty, "perks probe: Load of an empty save kept free ranks or effect totals.");
-        check(Near(stats.GetValue(StatType.PhysicalPower), _expectedPower - (3f * (PerkDatabase.Get(Might)?.ValuePerRank ?? 0f))),
+        check(Near(stats.GetValue(StatType.PhysicalPower), _expectedPower - ((_baseMight + 3f) * (PerkDatabase.Get(Might)?.ValuePerRank ?? 0f))),
             "perks probe: Load of an empty save left a perk stat modifier applied.");
 
         VerifyCombatEffects(player, perks, check);

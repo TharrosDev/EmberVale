@@ -138,12 +138,13 @@ public static class HeadlessLifecycle
         }
 
         CheckLandingReady(session, $"cycle {cycle} new-game");
-        PerksLifecycleProbe.Drive(session.Players.Player, Check);
-
         // Max level before the save, so the load half proves primaries re-derive from the restored level.
         session.Players.Player?.GetComponent<ProgressionComponent>()?.AddXp(1_000_000);
         CheckStatDerivation(session, $"cycle {cycle} new-game");
         CheckAuditCharacter(session, $"cycle {cycle} new-game");
+
+        // Last, because it respecs and learns on the live player (and Verify below wipes it on purpose).
+        PerksLifecycleProbe.Drive(session.Players.Player, Check);
 
         Check(SaveManager.Instance?.SaveGame(slot) == true, $"cycle {cycle} new-game: the session failed to save.");
     }
@@ -172,8 +173,8 @@ public static class HeadlessLifecycle
         }
         CheckLandingReady(lifecycle.Session!, $"cycle {cycle} load");
         CheckStatDerivation(lifecycle.Session!, $"cycle {cycle} load");
-        PerksLifecycleProbe.Verify(lifecycle.Session!.Players.Player, Check);
         CheckAuditCharacter(lifecycle.Session!, $"cycle {cycle} load");
+        PerksLifecycleProbe.Verify(lifecycle.Session!.Players.Player, Check);
     }
 
     /// <summary>
@@ -197,15 +198,52 @@ public static class HeadlessLifecycle
         float levels = progression.Level - 1;
         Stat strength = stats.GetStat(StatType.Strength);
         Stat vitality = stats.GetStat(StatType.Vitality);
+        PerksComponent? perks = player.GetComponent<PerksComponent>();
         float expectedPower = stats.GetStat(StatType.PhysicalPower).BaseValue + (curve.PhysicalPowerPerLevel * levels)
-            + (0.8f * (strength.Value - strength.BaseValue));
+            + (0.8f * (strength.Value - strength.BaseValue)) + FlatPerkBonus(perks, StatType.PhysicalPower);
         float expectedHealth = stats.GetStat(StatType.Health).BaseValue + (curve.HealthPerLevel * levels)
-            + (5f * (vitality.Value - vitality.BaseValue));
+            + (5f * (vitality.Value - vitality.BaseValue)) + FlatPerkBonus(perks, StatType.Health);
         Check(Mathf.Abs(stats.GetValue(StatType.PhysicalPower) - expectedPower) < 0.01f,
             $"{label}: Physical Power {stats.GetValue(StatType.PhysicalPower)} != derived {expectedPower}.");
         Check(Mathf.Abs(stats.GetValue(StatType.Health) - expectedHealth) < 0.01f,
             $"{label}: Max Health {stats.GetValue(StatType.Health)} != derived {expectedHealth}.");
         Check(strength.Value - strength.BaseValue > 0f, $"{label}: Strength did not grow with level.");
+    }
+
+    /// <summary>What the curve has added to a stat by the player's current level (per-level gain times levels gained).</summary>
+    private static float LevelGrowth(ProgressionComponent? progression, StatType stat)
+    {
+        if (progression?.Curve is not { } curve)
+        {
+            return 0f;
+        }
+
+        float perLevel = 0f;
+        foreach ((StatType gained, float gain) in curve.StatGains())
+        {
+            if (gained == stat)
+            {
+                perLevel += gain;
+            }
+        }
+
+        return perLevel * (progression.Level - 1);
+    }
+
+    /// <summary>What the held perks add to a stat as Flat modifiers (the legacy single-stat effect), so the derivation
+    /// check compares only primaries against the stat, not a Soldier's free Might or the perks probe's ranks.</summary>
+    private static float FlatPerkBonus(PerksComponent? perks, StatType stat)
+    {
+        float total = 0f;
+        foreach (PerkResource perk in PerkDatabase.All)
+        {
+            if (perk.Stat == stat && perk.ModifierType == ModifierType.Flat)
+            {
+                total += perk.ValueAtRank(perks?.RankOf(perk.Id) ?? 0);
+            }
+        }
+
+        return total;
     }
 
     /// <summary>The non-default character every cycle plays: Umbral (Dexterity, an innate perk, a standing
@@ -272,13 +310,15 @@ public static class HeadlessLifecycle
         CheckAuditLook(player, label);
 
         StatsComponent? stats = player.GetComponent<StatsComponent>();
-        Check(stats != null && Math.Abs(stats.GetStat(StatType.Strength).Value - stats.GetStat(StatType.Strength).BaseValue - 1f) < 0.001f,
+        // The character may be at any level, and the curve grows the primaries per level: count only what is left over.
+        ProgressionComponent? progression = player.GetComponent<ProgressionComponent>();
+        Check(stats != null && Math.Abs(stats.GetStat(StatType.Strength).Value - stats.GetStat(StatType.Strength).BaseValue - LevelGrowth(progression, StatType.Strength) - 1f) < 0.001f,
             $"{label}: the background's Strength point was not applied exactly once.");
-        Check(stats != null && Math.Abs(stats.GetStat(StatType.Dexterity).Value - stats.GetStat(StatType.Dexterity).BaseValue - 4f) < 0.001f,
+        Check(stats != null && Math.Abs(stats.GetStat(StatType.Dexterity).Value - stats.GetStat(StatType.Dexterity).BaseValue - LevelGrowth(progression, StatType.Dexterity) - 4f) < 0.001f,
             $"{label}: the race's Dexterity delta was not applied exactly once.");
 
         PerksComponent? perks = player.GetComponent<PerksComponent>();
-        Check(perks?.RankOf("perk.might") == 1, $"{label}: the Soldier's free perk is not at rank 1.");
+        Check(perks?.FreeRankOf("perk.might") == 1, $"{label}: the Soldier's free perk is not at rank 1.");
         Check(perks?.RankOf("perk.precision") == 1, $"{label}: the Umbral innate perk is not at rank 1.");
 
         InventoryComponent? pack = player.GetComponent<InventoryComponent>();
