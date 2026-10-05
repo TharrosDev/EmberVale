@@ -478,6 +478,11 @@ char.stats_attributes,Attributes
 char.stats_combat,Offence
 char.stats_defence,Defence
 char.stat_reduced,"{0}% reduced"
+# --- BEGIN progression:stats ---
+char.stat_per_point,Per point: {0}
+char.pp_dodge,dodge stamina cost
+char.pp_mana_cost,spell mana cost
+# --- END progression:stats ---
 char.level_badge,"Level {0}"
 char.xp_progress,"{0} / {1} XP"
 char.points_skill,"{0} skill"

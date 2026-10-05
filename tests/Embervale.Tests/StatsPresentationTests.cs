@@ -134,4 +134,46 @@ public class StatsPresentationTests
         int mitigators = Enum.GetValues<StatType>().Count(StatsPresentation.IsMitigation);
         Assert.Equal(7, mitigators); // Armor + six schools
     }
+
+    // --- Per-point effects ----------------------------------------------------
+
+    [Fact]
+    public void PerPointAmountsReadAsSignedPercentagesOrNumbers()
+    {
+        Assert.Equal("+0.8", StatsPresentation.FormatPerPoint(StatType.PhysicalPower, 0.8f));
+        Assert.Equal("+4", StatsPresentation.FormatPerPoint(StatType.Mana, 4f));
+        Assert.Equal("+0.2%", StatsPresentation.FormatPerPoint(StatType.CritChance, 0.002f));
+        Assert.Equal("+0.3%", StatsPresentation.FormatPerPoint(StatType.AttackSpeed, 0.003f));
+        Assert.Equal("-5", StatsPresentation.FormatPerPoint(StatType.Health, -5f));
+    }
+
+    [Fact]
+    public void EveryPrimaryHasPerPointTextAndNothingElseDoes()
+    {
+        foreach (StatType primary in StatDerivation.Primaries)
+        {
+            Assert.NotEmpty(StatsPresentation.PerPoint(primary));
+        }
+
+        Assert.Empty(StatsPresentation.PerPoint(StatType.Armor));
+    }
+
+    [Fact]
+    public void PerPointTextComesFromTheDerivationTable()
+    {
+        foreach (StatType primary in StatDerivation.Primaries)
+        {
+            var named = StatsPresentation.PerPoint(primary).Where(p => p.Stat != null).ToList();
+            Assert.Equal(StatDerivation.Effects(primary).Select(e => e.Stat), named.Select(p => p.Stat!.Value));
+        }
+    }
+
+    [Fact]
+    public void DexterityAndIntelligenceAlsoListTheirNonStatEffects()
+    {
+        var dex = StatsPresentation.PerPoint(StatType.Dexterity).Single(p => p.NameKey == "char.pp_dodge");
+        Assert.Equal("-0.5%", dex.Amount);
+        var intel = StatsPresentation.PerPoint(StatType.Intelligence).Single(p => p.NameKey == "char.pp_mana_cost");
+        Assert.Equal("-0.4%", intel.Amount);
+    }
 }

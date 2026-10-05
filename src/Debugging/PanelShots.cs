@@ -89,6 +89,8 @@ public sealed partial class PanelShots : ShotHarness
             return "dialogue panel did not open on the tags fixture";
         if ((name.StartsWith("14-") || name.StartsWith("18-") || name.StartsWith("19-")) && !Character.IsOpen)
             return "character/inventory panel did not open";
+        if (name == "14b-progression-stats" && !Character.IsOpen)
+            return "character panel did not stay open on the progression tab";
         if (name == "15-shop" && !Vendor.IsOpen)
             return "vendor panel did not open";
         if (name == "16-dialogue" && !Dialogue.IsOpen)
@@ -238,6 +240,9 @@ public sealed partial class PanelShots : ShotHarness
             Character?.SetOpen(true);
             Character?.ShowGear();
         });
+
+        // The stat block with its per-point lines under each primary (progression P2).
+        Shot("14b-progression-stats", () => Character?.ShowProgression());
 
         Shot("15-shop", () =>
         {

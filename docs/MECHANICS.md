@@ -226,7 +226,15 @@ caps the first two at 25%).
   recomputed from level. `ProgressionComponent`, `data/progression`.
 - **Perks** — 6 perks (`data/perks`) bought with skill points. `PerksComponent`.
 - **Stats** — resources, primaries, derived stats and six resistances with flat/percent modifiers.
-  `StatsComponent`, `Stat` (`src/Stats`).
+  `StatsComponent`, `Stat` (`src/Stats`). **Primaries are real for the player:** each point above its
+  base gives Strength +0.8 Physical Power; Dexterity +0.2% crit and +0.3% attack speed; Intelligence
+  +0.7 Spell Power and +4 Mana; Vitality +5 Health and +0.3 Armor; Endurance +3 Stamina (plus the
+  existing regen scaling). Levelling grows each primary 0.25 per level, so level-50 Health, Stamina,
+  Physical Power and Armor match the old totals, and casters now gain Spell Power and Mana. Race
+  deltas, gear and perks on a primary move the derived stats too. The stat screen shows "Per point"
+  under each primary, and the `derived` dev command dumps it. `StatDerivation`, `StatDerivationComponent`.
+  *Not hooked yet:* Dexterity's dodge stamina factor (-0.5%/pt, floor 0.75) and Intelligence's spell mana
+  factor (-0.4%/pt, floor 0.8) exist as pure functions only.
 - **Races and character creation** — six playable races (Human, Valari, Sylthari, Grondar, Draekyn,
   Umbral) with stat deltas, innate perks and starting standing; name and race picked at New Game.
   `RaceResource`, `CharacterCreator` (`data/races`). *Partial:* appearance options are data only.

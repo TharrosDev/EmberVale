@@ -105,6 +105,7 @@ Everything here resets on load, deliberately. **Check this list before assuming 
 | `MusicDirector`, `AmbienceDirector`, `AudioDirector` | audio re-derives from world state |
 | `PlacementDirector` | intentional — a placed prop persists through `PersistentSpawnDirector`, which already records template, position and yaw |
 | `GameManager.State` | the loader decides the state |
+| `StatDerivationComponent` | primaries' derived-stat modifiers are rebuilt from the primaries, which come back from level, race, gear and perks |
 | Player transform / active region | **not** an `ISaveable` — they live in the header (§3) |
 
 ## 6. Failure policy
