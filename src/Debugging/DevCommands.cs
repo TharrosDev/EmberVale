@@ -90,6 +90,7 @@ public static class DevCommands
         console.Register(new ConsoleCommand("pdespawn", "pdespawn <persistentId>", "Free a persistent actor (recreated on load).", PDespawn));
         console.Register(new ConsoleCommand("plist", "plist", "List tracked persistent actors.", PList));
         console.Register(new ConsoleCommand("stats", "stats", "Frame/object counts.", StatsCmd));
+        console.Register(new ConsoleCommand("derived", "derived", "Dump the player's primaries, what each grants, and the derived stats.", Derived));
     }
 
     private static string Help(DevConsole console, string[] args)
@@ -1410,6 +1411,45 @@ public static class DevCommands
         _ = args;
         return "repro is unavailable in a shipping build";
 #endif
+    }
+
+    private static string Derived(DevConsole console, string[] args)
+    {
+        if (!TryPlayer(out PlayerCharacter player) || player.GetComponent<StatsComponent>() is not { } stats)
+        {
+            return "no player stats";
+        }
+
+        var lines = new List<string>();
+        foreach (StatType primary in StatDerivation.Primaries)
+        {
+            Stat stat = stats.GetStat(primary);
+            float points = stat.Value - stat.BaseValue;
+            var grants = new List<string>();
+            foreach (StatDerivation.Effect bonus in StatDerivation.Bonuses(primary, points))
+            {
+                grants.Add($"{bonus.Stat} {bonus.PerPoint:+0.###;-0.###;0}");
+            }
+
+            lines.Add($"{primary,-12} base {stat.BaseValue:0.##}  now {stat.Value:0.##}  points {points:0.##}  -> {string.Join(", ", grants)}");
+        }
+
+        StatType[] derived =
+        {
+            StatType.Health, StatType.Stamina, StatType.Mana, StatType.PhysicalPower, StatType.SpellPower,
+            StatType.Armor, StatType.CritChance, StatType.AttackSpeed,
+        };
+        var values = new List<string>();
+        foreach (StatType type in derived)
+        {
+            values.Add($"{type} {stats.GetValue(type):0.###}");
+        }
+
+        lines.Add(string.Join("  ", values));
+        float dex = stats.GetStat(StatType.Dexterity).Value - stats.GetStat(StatType.Dexterity).BaseValue;
+        float intel = stats.GetStat(StatType.Intelligence).Value - stats.GetStat(StatType.Intelligence).BaseValue;
+        lines.Add($"dodge stamina x{StatDerivation.DodgeStaminaFactor(dex):0.###}  spell mana x{StatDerivation.ManaCostFactor(intel):0.###}");
+        return string.Join("\n", lines);
     }
 
     private static string StatsCmd(DevConsole console, string[] args)

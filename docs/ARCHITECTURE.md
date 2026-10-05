@@ -88,6 +88,12 @@ from `_Ready` (bottom-up), so the host exists but a sibling may not have initial
 - `Stat`: `final = (base + Σflat) × (1 + ΣpercentAdd) × Π(1 + percentMult)`, lazily cached, fires
   `Changed`. `StatModifier(value, Flat|PercentAdd|PercentMult, Source)`; `RemoveModifiersFromSource`.
 - `AttributeSet` (`.tres` presets, `ToBaseValues`, `CreateDefault`). A missing stat reads 0.
+- `StatDerivation` (pure): the per-point table for the five primaries, `Bonuses`, `GrowthTotals`, and
+  `DodgeStaminaFactor` / `ManaCostFactor`. `StatDerivationComponent` (player only, after Progression/Perks,
+  before `RaceComponent`) listens to each primary's `Changed` and keeps one Flat modifier per derived stat,
+  sourced to itself, sized `(Value - BaseValue) * coefficient`: an actor at its base primaries is untouched,
+  re-applying is remove-then-add, and it never writes a primary so it cannot loop. Nothing is saved; it
+  re-derives from the primaries, which re-derive from level, race, gear and perks.
 - `StatsComponent`: one `Stat` per type, current values for resources, `ApplyDamage(amount, source)` /
   `Heal`, passive regen (never on a corpse), `ISaveable` (current resources), raises
   `ResourceChanged`/`EntityDamaged`/`EntityDied`/`EntityHealed` events.

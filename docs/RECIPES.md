@@ -263,7 +263,10 @@ line in `StatBonuses()`. Bonuses apply through `EquipmentComponent`.
 
 ### A new XP-bearing enemy (or tuning the curve)
 
-`XpValue` on the archetype. Tune levelling in `data/progression/PlayerProgression.tres`.
+`XpValue` on the archetype. Tune levelling in `data/progression/PlayerProgression.tres`. The player's
+per-level primaries (`StrengthPerLevel` ... `EndurancePerLevel`) also feed derived stats through
+`StatDerivation`, so retune the pair together: `--validate` (`ValidatePlayerGrowth`) pins level-cap Health,
+Stamina, Physical Power and Armor, and `StatDerivationTests` pins the arithmetic.
 
 ### A new crafting recipe
 

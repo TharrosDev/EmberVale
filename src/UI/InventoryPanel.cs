@@ -143,6 +143,19 @@ public partial class InventoryPanel : UiPanel
         }
     }
 
+    /// <summary>Selects the Progression tab (level, XP and the stat block) through the real tab strip.</summary>
+    public void ShowProgression()
+    {
+        for (int i = 0; i < TabDefs.Length; i++)
+        {
+            if (TabDefs[i].Tab == CharTab.Progression)
+            {
+                _tabs.Select(i);
+                return;
+            }
+        }
+    }
+
     /// <summary>Opens the authored equipment / backpack / inspection composition through the real tab strip.</summary>
     public void ShowGear()
     {
@@ -500,10 +513,32 @@ public partial class InventoryPanel : UiPanel
                 }
 
                 grid.AddChild(right);
+
+                if (Embervale.Stats.StatDerivation.IsPrimary(stat))
+                {
+                    grid.AddChild(new Control());
+                    Label perPoint = UiTheme.Caption(PerPointText(stat));
+                    perPoint.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+                    perPoint.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+                    grid.AddChild(perPoint);
+                }
             }
 
             _list.AddChild(grid);
         }
+    }
+
+    /// <summary>"Per point: +0.8 Physical Power" for a primary, built from <see cref="StatsPresentation.PerPoint"/>.</summary>
+    private static string PerPointText(Embervale.Stats.StatType primary)
+    {
+        var parts = new List<string>();
+        foreach (StatsPresentation.PerPointPart part in StatsPresentation.PerPoint(primary))
+        {
+            string name = part.NameKey != null ? Loc.T(part.NameKey) : Embervale.Stats.StatNames.Label(part.Stat!.Value);
+            parts.Add($"{part.Amount} {name}");
+        }
+
+        return Loc.TF("char.stat_per_point", string.Join(", ", parts));
     }
 
     /// <summary>Wraps a control so it centres vertically against taller siblings.</summary>

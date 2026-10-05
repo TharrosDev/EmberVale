@@ -219,6 +219,9 @@ public static class PlayerFactory
         // Progression before perks: perks spend the skill points progression awards.
         player.AddChild(new ProgressionComponent { Name = "Progression", CurvePath = ProgressionPath });
         player.AddChild(new PerksComponent { Name = "Perks" });
+        // Primaries (growth, race, gear, perks) become derived-stat bonuses: after the sources of
+        // primaries above, before RaceComponent, whose delta re-applications this reacts to.
+        player.AddChild(new StatDerivationComponent { Name = "StatDerivation" });
 
         // 41.5A: shrine visits persist as ids and re-derive their stat passives on load; shrines
         // themselves remain world callers, never a second save record.

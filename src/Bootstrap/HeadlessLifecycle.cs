@@ -7,8 +7,10 @@ using Embervale.Core.Events;
 using Embervale.Core.Pooling;
 using Embervale.Core.Services;
 using Embervale.Entities;
+using Embervale.Progression;
 using Embervale.Races;
 using Embervale.Save;
+using Embervale.Stats;
 using Embervale.UI;
 using Embervale.World;
 using Godot;
@@ -136,6 +138,10 @@ public static class HeadlessLifecycle
 
         CheckLandingReady(session, $"cycle {cycle} new-game");
 
+        // Max level before the save, so the load half proves primaries re-derive from the restored level.
+        session.Players.Player?.GetComponent<ProgressionComponent>()?.AddXp(1_000_000);
+        CheckStatDerivation(session, $"cycle {cycle} new-game");
+
         Check(SaveManager.Instance?.SaveGame(slot) == true, $"cycle {cycle} new-game: the session failed to save.");
     }
 
@@ -162,6 +168,39 @@ public static class HeadlessLifecycle
             return;
         }
         CheckLandingReady(lifecycle.Session!, $"cycle {cycle} load");
+        CheckStatDerivation(lifecycle.Session!, $"cycle {cycle} load");
+    }
+
+    /// <summary>
+    /// The primaries are real: at the player's current level, Physical Power and Health equal their base
+    /// plus per-level growth plus what the invested Strength / Vitality points buy (StatDerivation), and
+    /// the level itself came back from the save. Run at max level on both halves of a round trip.
+    /// </summary>
+    private static void CheckStatDerivation(GameSession session, string label)
+    {
+        if (session.Players.Player is not { } player ||
+            player.GetComponent<StatsComponent>() is not { } stats ||
+            player.GetComponent<ProgressionComponent>() is not { Curve: { } curve } progression)
+        {
+            Failures.Add($"{label}: the player has no stats/progression to derive from.");
+            return;
+        }
+
+        Check(player.GetComponent<StatDerivationComponent>() != null, $"{label}: the player has no StatDerivationComponent.");
+        Check(progression.Level == curve.MaxLevel, $"{label}: expected level {curve.MaxLevel}, found {progression.Level}.");
+
+        float levels = progression.Level - 1;
+        Stat strength = stats.GetStat(StatType.Strength);
+        Stat vitality = stats.GetStat(StatType.Vitality);
+        float expectedPower = stats.GetStat(StatType.PhysicalPower).BaseValue + (curve.PhysicalPowerPerLevel * levels)
+            + (0.8f * (strength.Value - strength.BaseValue));
+        float expectedHealth = stats.GetStat(StatType.Health).BaseValue + (curve.HealthPerLevel * levels)
+            + (5f * (vitality.Value - vitality.BaseValue));
+        Check(Mathf.Abs(stats.GetValue(StatType.PhysicalPower) - expectedPower) < 0.01f,
+            $"{label}: Physical Power {stats.GetValue(StatType.PhysicalPower)} != derived {expectedPower}.");
+        Check(Mathf.Abs(stats.GetValue(StatType.Health) - expectedHealth) < 0.01f,
+            $"{label}: Max Health {stats.GetValue(StatType.Health)} != derived {expectedHealth}.");
+        Check(strength.Value - strength.BaseValue > 0f, $"{label}: Strength did not grow with level.");
     }
 
     private static void CheckLandingReady(GameSession session, string label)

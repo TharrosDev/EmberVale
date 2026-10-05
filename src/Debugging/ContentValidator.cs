@@ -24,6 +24,7 @@ using Embervale.Progression;
 using Embervale.Quests;
 using Embervale.Races;
 using Embervale.Shrines;
+using Embervale.Stats;
 using Embervale.World;
 using Godot;
 
@@ -107,6 +108,7 @@ public static class ContentValidator
         ValidateWorldEvents(issues);
         ValidateRegions(issues);
         ValidateRaces(issues);
+        ValidatePlayerGrowth(issues);
         ValidateShrines(issues);
         ValidateGuilds(issues);
         ValidateGuildHubs(issues);
@@ -3358,6 +3360,45 @@ public static class ContentValidator
             }
 
             RequireItem(recipe.OutputItemId, $"recipe '{recipe.Id}' output", issues);
+        }
+    }
+
+    /// <summary>
+    /// The player's primaries are real now (<see cref="StatDerivation"/>), so growth is tuned as a pair:
+    /// per-level gains plus what the primaries' growth buys. At the cap that pair must still land on the
+    /// pre-derivation totals for the four stats the retune rebalanced (8/4/1.5/0.5 per level), and every
+    /// primary must actually grow, or the stat screen shows numbers that never move.
+    /// </summary>
+    private static void ValidatePlayerGrowth(List<string> issues)
+    {
+        ProgressionResource? curve = ResidentResources.Load<ProgressionResource>(PlayerFactory.ProgressionPath);
+        if (curve == null)
+        {
+            return; // ValidateResourcePaths already reports the missing curve
+        }
+
+        Dictionary<StatType, float> totals =
+            StatDerivation.GrowthTotals(curve.StatGains(), curve.MaxLevel);
+        float levels = curve.MaxLevel - 1;
+        (StatType Stat, float PerLevel)[] expected =
+        {
+            (StatType.Health, 8f), (StatType.Stamina, 4f), (StatType.PhysicalPower, 1.5f), (StatType.Armor, 0.5f),
+        };
+        foreach ((StatType stat, float perLevel) in expected)
+        {
+            float want = perLevel * levels;
+            if (Mathf.Abs(totals.GetValueOrDefault(stat) - want) > 0.01f)
+            {
+                issues.Add($"player progression: level-{curve.MaxLevel} {stat} total {totals.GetValueOrDefault(stat):0.###} should stay {want:0.###}");
+            }
+        }
+
+        foreach (StatType primary in StatDerivation.Primaries)
+        {
+            if (!totals.ContainsKey(primary))
+            {
+                issues.Add($"player progression: primary {primary} never grows with level");
+            }
         }
     }
 
