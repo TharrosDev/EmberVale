@@ -76,7 +76,7 @@ public partial class SpellbookPanel : UiPanel
         // Ambient sigils, behind everything. Added first so every widget draws over it.
         shell.AddChild(UiOrnament.SigilField(alphaMax: 0.07f, density: 11f));
 
-        MarginContainer margin = UiTheme.Padding(12);
+        MarginContainer margin = UiTheme.Padding(UiTheme.PanelPad);
         shell.AddChild(margin);
 
         _body = new VBoxContainer
@@ -566,9 +566,7 @@ public partial class SpellbookPanel : UiPanel
             col.AddChild(UiTheme.Flavour(SpellText.Description(spell)));
         }
 
-        MarginContainer pad = UiTheme.Padding(UiTheme.SpaceXs);
-        pad.AddChild(col);
-        card.AddChild(pad);
+        card.AddChild(col);
         return card;
     }
 
@@ -683,9 +681,7 @@ public partial class SpellbookPanel : UiPanel
                 "spellbook.synergy_line",
                 Loc.T(SchoolKey(_school)), statusName, rule.BonusDamage.ToString("0"))));
 
-            MarginContainer pad = UiTheme.Padding(UiTheme.SpaceXs);
-            pad.AddChild(col);
-            card.AddChild(pad);
+            card.AddChild(col);
             yield return card;
         }
     }

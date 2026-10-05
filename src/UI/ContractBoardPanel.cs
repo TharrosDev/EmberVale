@@ -45,7 +45,7 @@ public partial class ContractBoardPanel : UiPanel
     {
         UiTheme.ApplyWorkspace(shell, 0.68f);
 
-        MarginContainer margin = UiTheme.Padding(12);
+        MarginContainer margin = UiTheme.Padding(UiTheme.PanelPad);
         shell.AddChild(margin);
 
         var column = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
@@ -251,9 +251,7 @@ public partial class ContractBoardPanel : UiPanel
 
         column.AddChild(chips);
 
-        MarginContainer pad = UiTheme.Padding(UiTheme.SpaceXs);
-        pad.AddChild(column);
-        card.AddChild(pad);
+        card.AddChild(column);
         _list.AddChild(card);
     }
 

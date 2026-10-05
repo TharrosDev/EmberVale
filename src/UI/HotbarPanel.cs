@@ -59,7 +59,7 @@ public partial class HotbarPanel : CanvasLayer
             AddChild(panel);
         }
 
-        MarginContainer pad = UiTheme.Padding(8);
+        MarginContainer pad = UiTheme.Padding(UiTheme.SpaceSm);
         panel.AddChild(pad);
 
         var column = new VBoxContainer();

@@ -1415,7 +1415,7 @@ public partial class GameHud : CanvasLayer
     /// <paramref name="panel"/> (a single inner margin container).</summary>
     private static void WrapPadded(PanelContainer panel, Control content)
     {
-        MarginContainer pad = UiTheme.Padding(10);
+        MarginContainer pad = UiTheme.Padding(UiTheme.SpaceSm);
         pad.AddChild(content);
         panel.AddChild(pad);
     }

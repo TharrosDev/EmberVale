@@ -33,6 +33,19 @@ public abstract partial class ShotHarness : Node
     /// catches the transition rather than the state.</summary>
     private const int HoldFrames = 30;
 
+    /// <summary>Capture size. Defaults to the project's 1280x720; <c>EMBERVALE_RES=1920x1080</c> (or
+    /// <c>1280x800</c> for the handheld aspect) re-shoots the same states at another window size.</summary>
+    private static Vector2I CaptureSize
+    {
+        get
+        {
+            string[] parts = OS.GetEnvironment("EMBERVALE_RES").Split('x');
+            return parts.Length == 2 && int.TryParse(parts[0], out int w) && int.TryParse(parts[1], out int h) && w >= 640 && h >= 360
+                ? new Vector2I(w, h)
+                : new Vector2I(1280, 720);
+        }
+    }
+
     private readonly List<(string Name, Action Drive)> _shots = new();
     private readonly List<string> _failures = new();
     private int _index = -1;
@@ -71,7 +84,7 @@ public abstract partial class ShotHarness : Node
             GetTree().Quit(2);
             return;
         }
-        DisplayServer.WindowSetSize(new Vector2I(1280, 720));
+        DisplayServer.WindowSetSize(CaptureSize);
         if (DirAccess.MakeDirRecursiveAbsolute(CaptureDirectory) != Error.Ok)
         {
             Fail($"could not create output directory {ProjectSettings.GlobalizePath(CaptureDirectory)}");
@@ -153,9 +166,9 @@ public abstract partial class ShotHarness : Node
             return;
         }
 
-        if (image.IsEmpty() || image.GetWidth() != 1280 || image.GetHeight() != 720)
+        if (image.IsEmpty() || image.GetWidth() != CaptureSize.X || image.GetHeight() != CaptureSize.Y)
         {
-            Fail($"'{name}' returned {image.GetWidth()}x{image.GetHeight()}, expected 1280x720");
+            Fail($"'{name}' returned {image.GetWidth()}x{image.GetHeight()}, expected {CaptureSize.X}x{CaptureSize.Y}");
             return;
         }
         if (IsBlank(image))

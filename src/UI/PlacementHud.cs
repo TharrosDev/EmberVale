@@ -45,7 +45,7 @@ public partial class PlacementHud : UiPanel
         shell.GrowHorizontal = Control.GrowDirection.Both;
         shell.GrowVertical = Control.GrowDirection.Begin;
 
-        MarginContainer margin = UiTheme.Padding(10);
+        MarginContainer margin = UiTheme.Padding(UiTheme.SpaceSm);
         shell.AddChild(margin);
 
         var column = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };

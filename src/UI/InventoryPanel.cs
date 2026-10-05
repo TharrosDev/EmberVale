@@ -91,7 +91,7 @@ public partial class InventoryPanel : UiPanel
     {
         UiTheme.ApplyScreenInset(shell);
 
-        MarginContainer margin = UiTheme.Padding(12);
+        MarginContainer margin = UiTheme.Padding(UiTheme.PanelPad);
         shell.AddChild(margin);
 
         var column = new VBoxContainer

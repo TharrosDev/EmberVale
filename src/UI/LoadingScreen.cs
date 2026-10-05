@@ -58,7 +58,7 @@ public partial class LoadingScreen : CanvasLayer
 		_panel.CustomMinimumSize = new Vector2(360, 96);
 		AddChild(_panel);
 
-		MarginContainer pad = UiTheme.Padding(16);
+		MarginContainer pad = UiTheme.Padding(UiTheme.SpaceMd);
 		_panel.AddChild(pad);
 
 		var identity = new HBoxContainer();

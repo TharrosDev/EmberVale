@@ -38,7 +38,7 @@ public partial class StoragePanel : UiPanel
     {
         UiTheme.ApplyWorkspace(shell, 0.82f);
 
-        MarginContainer margin = UiTheme.Padding(12);
+        MarginContainer margin = UiTheme.Padding(UiTheme.PanelPad);
         shell.AddChild(margin);
 
         var column = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
@@ -295,9 +295,7 @@ public partial class StoragePanel : UiPanel
         button.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
         row.AddChild(button);
 
-        MarginContainer pad = UiTheme.Padding(UiTheme.SpaceXs);
-        pad.AddChild(row);
-        card.AddChild(pad);
+        card.AddChild(row);
         list.AddChild(card);
     }
 }

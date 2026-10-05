@@ -50,7 +50,7 @@ public partial class BestiaryPanel : UiPanel
     {
         UiTheme.ApplyScreenInset(shell);
 
-        MarginContainer margin = UiTheme.Padding(12);
+        MarginContainer margin = UiTheme.Padding(UiTheme.PanelPad);
         shell.AddChild(margin);
 
         var column = new VBoxContainer
@@ -153,9 +153,7 @@ public partial class BestiaryPanel : UiPanel
         if (stage == BestiaryStage.Unseen)
         {
             PanelContainer sealedCard = UiTheme.Card(UiTheme.Disabled);
-            MarginContainer sealedPad = UiTheme.Padding(UiTheme.SpaceXs);
-            sealedPad.AddChild(UiTheme.Body(Loc.T("bestiary.unknown"), UiTheme.Disabled));
-            sealedCard.AddChild(sealedPad);
+            sealedCard.AddChild(UiTheme.Body(Loc.T("bestiary.unknown"), UiTheme.Disabled));
             _list.AddChild(sealedCard);
             return;
         }
@@ -209,9 +207,7 @@ public partial class BestiaryPanel : UiPanel
             col.AddChild(toward);
         }
 
-        MarginContainer pad = UiTheme.Padding(UiTheme.SpaceXs);
-        pad.AddChild(col);
-        card.AddChild(pad);
+        card.AddChild(col);
         _list.AddChild(card);
     }
 

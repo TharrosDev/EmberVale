@@ -73,7 +73,7 @@ public partial class SettingsPanel : CanvasLayer
         UiTheme.ApplyWorkspace(panel, 0.68f);
         AddChild(panel);
 
-        MarginContainer pad = UiTheme.Padding(18);
+        MarginContainer pad = UiTheme.Padding(UiTheme.SpaceLg);
         panel.AddChild(pad);
 
         var col = new VBoxContainer();

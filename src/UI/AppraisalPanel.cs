@@ -43,7 +43,7 @@ public partial class AppraisalPanel : UiPanel
     {
         UiTheme.ApplyWorkspace(shell, 0.70f);
 
-        MarginContainer margin = UiTheme.Padding(12);
+        MarginContainer margin = UiTheme.Padding(UiTheme.PanelPad);
         shell.AddChild(margin);
 
         var column = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };

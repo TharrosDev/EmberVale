@@ -130,7 +130,7 @@ public static class ItemSlot
         if (instance.HasAffixes)
         {
             var chips = new HBoxContainer();
-            chips.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
+            chips.AddThemeConstantOverride("separation", UiTheme.ChipGap);
             foreach (ItemAffix affix in instance.Affixes)
             {
                 chips.AddChild(UiTheme.Chip(affix.DisplayValue, UiTheme.Good));
@@ -154,9 +154,7 @@ public static class ItemSlot
             col.AddChild(UiTheme.Flavour(instance.Template.Description));
         }
 
-        MarginContainer pad = UiTheme.Padding(UiTheme.SpaceSm);
-        pad.AddChild(col);
-        card.AddChild(pad);
+        card.AddChild(col); // the card's own margins are the padding; a second pad doubled the left edge
         return card;
     }
 
@@ -177,7 +175,7 @@ public static class ItemSlot
         }
 
         var col = new VBoxContainer();
-        col.AddThemeConstantOverride("separation", 1);
+        col.AddThemeConstantOverride("separation", UiTheme.LineGap);
         col.AddChild(UiTheme.Caption(Loc.T(equipped is null ? "item.vs_empty" : "item.vs_equipped")));
 
         foreach ((StatType stat, float delta) in deltas)

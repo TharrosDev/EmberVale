@@ -208,11 +208,46 @@ public static class UiTheme
     }
 
     // --- Spacing scale (px at reference scale) ---------------------------------
-    public const int SpaceXs = 5;
-    public const int SpaceSm = 8;
-    public const int SpaceMd = 12;
-    public const int SpaceLg = 18;
-    public const int SpaceXl = 28;
+    // Widened in the 2026-10 breathing-room pass (was 5/8/12/18/28 and the UI read as packed). The
+    // steps are named by size, never by use, so a screen picks the rung that matches the gap it means.
+    // Everything below the roles is derived from these, so a future retune is one edit.
+    public const int Space2xs = 4; // hairline: a label and the line under it, an icon and its text
+    public const int SpaceXs = 6;  // inside a control: a chip's items, a tab's padding
+    public const int SpaceSm = 10; // between related controls; a card's vertical padding
+    public const int SpaceMd = 16; // panel padding; a card's side padding; between groups
+    public const int SpaceLg = 24; // between sections; the narrow-viewport gutter; the HUD safe margin
+    public const int SpaceXl = 32; // around a modal's content on a bare screen
+
+    // --- Spacing roles ------------------------------------------------------------
+    // What the shared widgets use, so a panel that reaches for the role instead of a number follows
+    // the scale without knowing it. A panel with a literal gap has opted out of the system.
+
+    /// <summary>Vertical gap between rows or cards in a list (<see cref="ScrollList"/>). Was 3, which
+    /// is why every list read as one slab with hairlines.</summary>
+    public const int RowGap = 8;
+
+    /// <summary>Extra space above a titled section (<see cref="SectionRule"/>), on top of the
+    /// container's own separation, so a header belongs to what follows it and not to what precedes it.</summary>
+    public const int SectionGap = SpaceMd;
+
+    /// <summary>Gap between chips, in a row or wrapped.</summary>
+    public const int ChipGap = SpaceSm;
+
+    /// <summary>Gap between cells of a slot or stat grid.</summary>
+    public const int GridGap = SpaceSm;
+
+    /// <summary>Inner margin of a full-screen panel's frame (<see cref="Padding"/> adds 2 on the sides).</summary>
+    public const int PanelPad = SpaceMd;
+
+    /// <summary>Gap between stacked text lines inside one card or row (a title over its caption).</summary>
+    public const int LineGap = Space2xs;
+
+    /// <summary>Minimum height of a button, tab or menu entry: comfortable for a controller cursor and
+    /// a thumb on a handheld. Was 38.</summary>
+    public const int ControlHeight = 44;
+
+    /// <summary>Clear space kept between a scrolling list and its scrollbar.</summary>
+    public const int ScrollGutter = SpaceMd;
 
     // --- Radii -----------------------------------------------------------------
     // Tight radii throughout: this world's surfaces are cut and bound, not moulded. A large
@@ -420,7 +455,7 @@ public static class UiTheme
         row.AddChild(UiIcon.Create(icon, 20f, color));
 
         var copy = new VBoxContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
-        copy.AddThemeConstantOverride("separation", 0);
+        copy.AddThemeConstantOverride("separation", LineGap);
         copy.AddChild(Body(primary));
         if (!string.IsNullOrEmpty(secondary))
         {
@@ -498,7 +533,7 @@ public static class UiTheme
     {
         float width = shell.GetViewportRect().Size.X;
         int gutter = width < 1100f ? SpaceLg : 70;
-        return Mathf.Max(320f, width - (gutter * 2f) - 28f);
+        return Mathf.Max(320f, width - (gutter * 2f) - ((PanelPad + 2f) * 2f));
     }
 
     /// <summary>
@@ -531,7 +566,7 @@ public static class UiTheme
 
         MarginContainer pad = Padding(SpaceSm);
         content = new VBoxContainer();
-        content.AddThemeConstantOverride("separation", 2);
+        content.AddThemeConstantOverride("separation", LineGap);
         pad.AddChild(content);
         card.AddChild(pad);
 
@@ -553,7 +588,7 @@ public static class UiTheme
         return card;
     }
 
-    /// <summary>The standard inner padding container panels wrap their content in.</summary>    /// <summary>The standard inner padding container panels wrap their content in.</summary>
+    /// <summary>The standard inner padding container panels wrap their content in.</summary>
     public static MarginContainer Padding(int amount = SpaceMd)
     {
         var margin = new MarginContainer();
@@ -670,7 +705,12 @@ public static class UiTheme
         rule.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
         rule.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
         row.AddChild(rule);
-        return row;
+
+        // The space above is part of the section, so every caller gets a gap without adding a spacer.
+        var section = new MarginContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
+        section.AddThemeConstantOverride("margin_top", SectionGap);
+        section.AddChild(row);
+        return section;
     }
 
     private static ColorRect Rule(Color color, float height)
@@ -712,7 +752,7 @@ public static class UiTheme
         var box = new StyleBoxFlat { BgColor = WellBg, BorderColor = color with { A = 0.55f } };
         box.SetBorderWidthAll(1);
         box.SetCornerRadiusAll(RadiusSm);
-        box.SetContentMarginAll(2);
+        box.SetContentMarginAll(Space2xs);
         box.ContentMarginLeft = SpaceSm;
         box.ContentMarginRight = SpaceSm;
 
@@ -767,7 +807,7 @@ public static class UiTheme
         {
             Text = text,
             Alignment = HorizontalAlignment.Left,
-            CustomMinimumSize = new Vector2(0f, 38f),
+            CustomMinimumSize = new Vector2(0f, ControlHeight),
         };
         ApplyInteractiveStyle(button);
         ApplyType(button, FontRole.Display, BodyFontSize);
@@ -831,7 +871,7 @@ public static class UiTheme
     public static (VBoxContainer Root, Label Caption, ProgressBar Bar) Meter(string label, Color fill, float width = 168f)
     {
         var root = new VBoxContainer();
-        root.AddThemeConstantOverride("separation", 2);
+        root.AddThemeConstantOverride("separation", LineGap);
 
         Label caption = Caption(label);
         ProgressBar bar = Bar(fill, width);
@@ -898,8 +938,14 @@ public static class UiTheme
         };
 
         var list = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
-        list.AddThemeConstantOverride("separation", 3);
-        scroll.AddChild(list);
+        list.AddThemeConstantOverride("separation", RowGap);
+
+        // The scrollbar overlays the right edge of the content, so without a gutter it sits on top of
+        // every row's border. The margin is inside the scroll, so the bar stays at the panel edge.
+        var gutter = new MarginContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+        gutter.AddThemeConstantOverride("margin_right", ScrollGutter);
+        gutter.AddChild(list);
+        scroll.AddChild(gutter);
         return (scroll, list);
     }
 
@@ -962,7 +1008,7 @@ public static class UiTheme
         box.BorderWidthBottom = 1;
         box.SetCornerRadiusAll(RadiusSm);
         box.SetContentMarginAll(SpaceMd);
-        box.ContentMarginLeft = SpaceLg;
+        box.ContentMarginLeft = edge is null ? SpaceMd : SpaceLg;
         return box;
     }
 

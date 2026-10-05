@@ -58,7 +58,7 @@ public partial class SaveSlotPanel : CanvasLayer
         UiTheme.ApplyWorkspace(panel, 0.58f);
         AddChild(panel);
 
-        MarginContainer pad = UiTheme.Padding(18);
+        MarginContainer pad = UiTheme.Padding(UiTheme.SpaceLg);
         panel.AddChild(pad);
 
         var col = new VBoxContainer();
