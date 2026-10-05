@@ -58,7 +58,7 @@ public partial class BestiaryPanel : UiPanel
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
             SizeFlagsVertical = Control.SizeFlags.ExpandFill,
         };
-        column.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
+        column.AddThemeConstantOverride("separation", UiTheme.SpaceMd);
         margin.AddChild(column);
 
         column.AddChild(UiTheme.IconLabel(
@@ -109,13 +109,13 @@ public partial class BestiaryPanel : UiPanel
         // part-written or complete. The staging was always in the data - BestiaryStage has had three
         // values since 34G - and the old flat list spent it on three differently-worded text lines.
         var head = new VBoxContainer();
-        head.AddThemeConstantOverride("separation", 2);
+        head.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
         head.AddChild(UiTheme.Title(Loc.TF(
             "bestiary.progress", _bestiary.DiscoveredCount, BestiaryDatabase.All.Count)));
 
         ProgressBar meter = UiTheme.Bar(UiTheme.Accent);
         meter.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-        meter.CustomMinimumSize = new Vector2(0f, 4f);
+        meter.CustomMinimumSize = new Vector2(0f, UiTheme.Space2xs);
         meter.Value = BestiaryDatabase.All.Count == 0
             ? 0d
             : _bestiary.DiscoveredCount / (double)BestiaryDatabase.All.Count;
@@ -163,7 +163,7 @@ public partial class BestiaryPanel : UiPanel
 
         PanelContainer card = UiTheme.Card(known ? UiTheme.Accent : UiTheme.Dim);
         var col = new VBoxContainer();
-        col.AddThemeConstantOverride("separation", 2);
+        col.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
 
         var titleRow = new HBoxContainer();
         titleRow.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
@@ -202,7 +202,7 @@ public partial class BestiaryPanel : UiPanel
             int needed = Mathf.Max(1, entry.KillsToKnow);
             ProgressBar toward = UiTheme.Bar(UiTheme.Dim);
             toward.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-            toward.CustomMinimumSize = new Vector2(0f, 3f);
+            toward.CustomMinimumSize = new Vector2(0f, UiTheme.Space2xs);
             toward.Value = Mathf.Clamp(kills / (double)needed, 0d, 1d);
             col.AddChild(toward);
         }

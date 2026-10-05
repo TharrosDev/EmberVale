@@ -273,8 +273,8 @@ public partial class SpellbookPanel : UiPanel
     {
         // A flow, not a row: a full roster is up to 25 chips and must wrap rather than run off the page.
         var row = new HFlowContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
-        row.AddThemeConstantOverride("h_separation", UiTheme.SpaceXs);
-        row.AddThemeConstantOverride("v_separation", UiTheme.SpaceXs);
+        row.AddThemeConstantOverride("h_separation", UiTheme.ChipGap);
+        row.AddThemeConstantOverride("v_separation", UiTheme.ChipGap);
         row.AddChild(Centred(UiTheme.Caption(Loc.T("spellbook.prepared"))));
 
         IReadOnlyList<SpellResource> known = _spellcasting!.Spells;
@@ -314,10 +314,11 @@ public partial class SpellbookPanel : UiPanel
         ring.Position = new Vector2(0f, 10f);
         frame.AddChild(ring);
 
-        var col = new VBoxContainer();
-        col.SetAnchorsPreset(Control.LayoutPreset.FullRect);
-        col.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
-        frame.AddChild(col);
+        // Six two-line rows plus their gaps are taller than a 720 px page, so the list scrolls over the
+        // ring (Necrotic, the last school, was cut off the bottom without it).
+        (ScrollContainer scroll, VBoxContainer col) = UiTheme.ScrollList();
+        scroll.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+        frame.AddChild(scroll);
 
         foreach (DamageType school in Schools)
         {
@@ -352,7 +353,7 @@ public partial class SpellbookPanel : UiPanel
         col.AddChild(name);
 
         var meter = new HBoxContainer();
-        meter.AddThemeConstantOverride("separation", 2);
+        meter.AddThemeConstantOverride("separation", UiTheme.Space2xs);
         for (int i = 0; i < SchoolMasteryMath.MaxRank; i++)
         {
             meter.AddChild(new ColorRect
@@ -377,14 +378,21 @@ public partial class SpellbookPanel : UiPanel
     private Control BuildSpellList()
     {
         (ScrollContainer scroll, VBoxContainer col) = UiTheme.ScrollList();
-        col.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
 
         Color tint = SpellSchools.Color(_school);
         col.AddChild(UiTheme.SectionRule(Loc.T(SchoolKey(_school))));
 
+        // The rank line, its bar and the three perk lines are one block, tighter inside than the cards below.
+        var masteryBlock = new VBoxContainer();
+        masteryBlock.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
         foreach (Control mastery in BuildMastery(tint))
         {
-            col.AddChild(mastery);
+            masteryBlock.AddChild(mastery);
+        }
+
+        if (masteryBlock.GetChildCount() > 0)
+        {
+            col.AddChild(masteryBlock);
         }
 
         var spells = new List<SpellResource>();
@@ -483,7 +491,7 @@ public partial class SpellbookPanel : UiPanel
 
         PanelContainer card = UiTheme.Card(known ? tint : corrupted ? UiTheme.CorruptionText : UiTheme.Disabled);
         var col = new VBoxContainer();
-        col.AddThemeConstantOverride("separation", 2);
+        col.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
 
         var head = new HBoxContainer();
         head.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
@@ -514,8 +522,8 @@ public partial class SpellbookPanel : UiPanel
         // The at-a-glance costs. A spell's mana, cooldown, wind-up and shape decide whether it is usable
         // in the fight you are in, and they were previously only in the description text.
         var chips = new HFlowContainer();
-        chips.AddThemeConstantOverride("h_separation", UiTheme.SpaceXs);
-        chips.AddThemeConstantOverride("v_separation", UiTheme.SpaceXs);
+        chips.AddThemeConstantOverride("h_separation", UiTheme.ChipGap);
+        chips.AddThemeConstantOverride("v_separation", UiTheme.ChipGap);
         chips.AddChild(UiTheme.Chip(Loc.TF("spellbook.mana", spell.ManaCost.ToString("0")), UiTheme.Mana));
         chips.AddChild(UiTheme.Chip(Loc.TF("spellbook.cooldown", spell.Cooldown.ToString("0.#")), UiTheme.Dim));
 
@@ -675,7 +683,7 @@ public partial class SpellbookPanel : UiPanel
 
             PanelContainer card = UiTheme.Card(tint);
             var col = new VBoxContainer();
-            col.AddThemeConstantOverride("separation", 1);
+            col.AddThemeConstantOverride("separation", UiTheme.LineGap);
             col.AddChild(UiTheme.Body(rule.Name, tint));
             col.AddChild(UiTheme.Caption(Loc.TF(
                 "spellbook.synergy_line",
@@ -822,7 +830,7 @@ public partial class SpellbookPanel : UiPanel
     private static Control RankPips(int rank, int maxRank, Color tint)
     {
         var row = new HBoxContainer();
-        row.AddThemeConstantOverride("separation", 2);
+        row.AddThemeConstantOverride("separation", UiTheme.Space2xs);
         for (int i = 0; i < Mathf.Max(1, maxRank); i++)
         {
             row.AddChild(new ColorRect

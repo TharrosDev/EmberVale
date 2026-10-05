@@ -35,6 +35,7 @@ public partial class DialoguePanel : UiPanel
     protected override bool CloseOnCancel => false;
 
     private VBoxContainer _list = null!;
+    private VBoxContainer _choices = null!;
     private ColorRect _scrim = null!;
 
     private DialogueSession? _session;
@@ -67,19 +68,12 @@ public partial class DialoguePanel : UiPanel
         MarginContainer margin = UiTheme.Padding(UiTheme.SpaceLg);
         shell.AddChild(margin);
 
-        var scroll = new ScrollContainer
-        {
-            HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled,
-            FollowFocus = true,
-            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-            SizeFlagsVertical = Control.SizeFlags.ExpandFill,
-        };
+        // ScrollList keeps the scrollbar's gutter, so a choice card never sits flush against it.
+        (ScrollContainer scroll, VBoxContainer list) = UiTheme.ScrollList();
         margin.AddChild(scroll);
 
-        _list = new VBoxContainer();
-        _list.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        _list = list;
         _list.AddThemeConstantOverride("separation", UiTheme.SpaceMd);
-        scroll.AddChild(_list);
     }
 
     protected override void OnReady()
@@ -109,8 +103,9 @@ public partial class DialoguePanel : UiPanel
         float width = Mathf.Clamp(viewport.X * 0.68f, 560f, 920f);
 
         // Taller than the original 42%: a choice now carries consequence chips and the speaker a quest
-        // line, and a window that scrolls on the first conversation reads as clipped.
-        float height = Mathf.Clamp(viewport.Y * 0.52f, 280f, 480f);
+        // line, and a window that scrolls on the first conversation reads as clipped. The 2026-10 spacing
+        // pass gave every card and chip row its breathing room, so it grew again (52% to 60%).
+        float height = Mathf.Clamp(viewport.Y * 0.60f, 320f, 560f);
         ShellOrFallback().OffsetLeft = -width * 0.5f;
         ShellOrFallback().OffsetRight = width * 0.5f;
         ShellOrFallback().OffsetTop = -height - UiTheme.SpaceLg;
@@ -278,6 +273,12 @@ public partial class DialoguePanel : UiPanel
         _list.AddChild(UiTheme.Prose(text));
 
         _list.AddChild(UiTheme.Divider());
+
+        // The choices are one group, a row gap apart, so they read as a list under the line and not as more
+        // sections of the page.
+        _choices = new VBoxContainer();
+        _choices.AddThemeConstantOverride("separation", UiTheme.RowGap);
+        _list.AddChild(_choices);
 
         List<DialogueChoice> choices = _session.VisibleChoices();
         if (choices.Count == 0)
@@ -466,6 +467,9 @@ public partial class DialoguePanel : UiPanel
     {
         PanelContainer card = UiTheme.CardButton(spine, out Button input, out VBoxContainer content);
 
+        // The chips are a second line of the card, not part of the sentence: a full gap between them.
+        content.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
+
         Label words = UiTheme.Prose(
             index < 9 ? Loc.TF("questui.dialogue.choice_number", index + 1, text) : text, UiTheme.Text);
         words.MouseFilter = Control.MouseFilterEnum.Ignore;
@@ -474,8 +478,8 @@ public partial class DialoguePanel : UiPanel
         if (tags is { Count: > 0 })
         {
             var chips = new HFlowContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
-            chips.AddThemeConstantOverride("h_separation", UiTheme.SpaceXs);
-            chips.AddThemeConstantOverride("v_separation", UiTheme.SpaceXs);
+            chips.AddThemeConstantOverride("h_separation", UiTheme.ChipGap);
+            chips.AddThemeConstantOverride("v_separation", UiTheme.ChipGap);
             foreach (ConsequenceTag tag in tags)
             {
                 (string label, Color color) = TagLook(tag);
@@ -487,6 +491,6 @@ public partial class DialoguePanel : UiPanel
 
         input.Pressed += () => onPressed();
         _choiceActions.Add(onPressed);
-        _list.AddChild(card);
+        _choices.AddChild(card);
     }
 }
