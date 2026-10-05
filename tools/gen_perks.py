@@ -248,7 +248,7 @@ perk("thrifty_hands", "Thrifty Hands", C, 1, 0, 3,
      "Nothing wasted at the bench. A craft has a {0} chance per rank to give one unit of its largest material back.",
      fx=[E("MaterialSaveChance", 0.04)])
 perk("salvager", "Salvager", C, 1, 1, 2, "Strip it clean. Salvaging recovers {0} more of the materials per rank.",
-     fx=[E("SalvageYieldBonus", 0.05)])
+     fx=[E("SalvageYieldBonus", 0.04)])
 perk("forge_lore", "Forge Lore", C, 1, 2, 3, "You know how fire behaves. +{0} Fire resistance per rank.",
      fx=[S("FireResist", 5.0)])
 perk("stout_back", "Stout Back", C, 1, 3, 4, "Hauling ore builds a frame. +{0} maximum Health per rank.",
@@ -258,7 +258,7 @@ perk("artisans_eye", "Artisan's Eye", C, 2, 0, 3,
      fx=[E("CraftXpMult", 0.10)], pre=["thrifty_hands"])
 perk("reclaimer", "Reclaimer", C, 2, 1, 2,
      "Nothing is truly broken. Salvaging recovers {0} more of the materials per rank.",
-     fx=[E("SalvageYieldBonus", 0.06)], pre=["salvager"])
+     fx=[E("SalvageYieldBonus", 0.04)], pre=["salvager"])
 perk("leather_apron", "Leather Apron", C, 2, 2, 3, "Sparks find leather instead of skin. +{0} Armor per rank.",
      fx=[S("Armor", 2.0)], pre=["forge_lore"])
 perk("efficient_hands", "Efficient Hands", C, 3, 0, 2,
@@ -266,7 +266,7 @@ perk("efficient_hands", "Efficient Hands", C, 3, 0, 2,
      fx=[E("MaterialSaveChance", 0.03)], pre=["thrifty_hands"])
 perk("deep_salvage", "Deep Salvage", C, 3, 1, 2,
      "Down to the last rivet. Salvaging recovers {0} more of the materials per rank.",
-     fx=[E("SalvageYieldBonus", 0.06)], pre=["reclaimer"])
+     fx=[E("SalvageYieldBonus", 0.03)], pre=["reclaimer"])
 perk("forge_ward", "Forge Ward", C, 3, 2, 2, "+{0} Fire resistance and +{1} Armor per rank.",
      fx=[S("FireResist", 8.0), S("Armor", 3.0)], pre=["leather_apron"])
 perk("bench_mastery", "Bench Mastery", C, 4, 1, 2,
@@ -274,7 +274,7 @@ perk("bench_mastery", "Bench Mastery", C, 4, 1, 2,
      fx=[E("CraftXpMult", 0.05)], pre=["artisans_eye"])
 perk("master_artisan", "Master Artisan", C, 5, 1, 1,
      "A craftsman's economy. A craft has a further {0} chance to give a material back, and salvaging recovers {1} more.",
-     fx=[E("MaterialSaveChance", 0.07), E("SalvageYieldBonus", 0.08)], pre=["bench_mastery"])
+     fx=[E("MaterialSaveChance", 0.07), E("SalvageYieldBonus", 0.03)], pre=["bench_mastery"])
 
 # -- Social: coin, standing, learning ------------------------------------------------------------
 So = "Social"

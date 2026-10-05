@@ -571,10 +571,12 @@ public static class UiTheme
     /// The button is added last so it sits above the content and takes the input, and its normal
     /// state is fully transparent so the card underneath supplies the whole look.
     /// </summary>
-    public static PanelContainer CardButton(Color? edge, out Button input, out VBoxContainer content)
+    public static PanelContainer CardButton(Color? edge, out Button input, out VBoxContainer content, StyleBoxFlat? frame = null)
     {
         var card = new PanelContainer();
-        StyleBoxFlat style = CardStyle(edge);
+        // A caller with a smaller card (a grid node) passes its own frame so the hover and focus rings below are
+        // sized from the margins that card really has, not from a list row's.
+        StyleBoxFlat style = frame ?? CardStyle(edge);
         card.AddThemeStyleboxOverride("panel", style);
 
         // The card's own content margins are the padding. A second Padding inside it doubled every edge
@@ -609,6 +611,18 @@ public static class UiTheme
         input.AddThemeStyleboxOverride("pressed", hover);
         input.AddThemeStyleboxOverride("focus", focus);
         card.AddChild(input);
+
+        // The button only fills the card's content box, so a click on the card's outer band would do nothing
+        // while the hover ring promises the whole card: forward a left click anywhere on the card to the button.
+        Button forwardTo = input;
+        card.GuiInput += ev =>
+        {
+            if (ev is InputEventMouseButton { Pressed: true, ButtonIndex: MouseButton.Left } && !forwardTo.Disabled)
+            {
+                forwardTo.GrabFocus();
+                forwardTo.EmitSignal(BaseButton.SignalName.Pressed);
+            }
+        };
         return card;
     }
 

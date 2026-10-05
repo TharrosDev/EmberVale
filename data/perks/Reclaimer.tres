@@ -6,13 +6,13 @@
 [sub_resource type="Resource" id="Effect_1"]
 script = ExtResource("2_effect")
 Kind = 14
-ValuePerRank = 0.06
+ValuePerRank = 0.04
 
 [resource]
 script = ExtResource("1_perk")
 Id = "perk.reclaimer"
 DisplayName = "Reclaimer"
-Description = "Nothing is truly broken. Salvaging recovers 6% more of the materials per rank."
+Description = "Nothing is truly broken. Salvaging recovers 4% more of the materials per rank."
 MaxRank = 2
 Cost = 1
 ValuePerRank = 0.0

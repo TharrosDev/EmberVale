@@ -273,20 +273,12 @@ public sealed partial class PerkTreePanel : VBoxContainer
             _ => rank > 0 ? UiTheme.Brass : UiTheme.Disabled,
         };
 
-        PanelContainer card = UiTheme.CardButton(spine, out Button input, out VBoxContainer content);
-
-        // CardButton's frame is sized for a list row; a grid node is smaller, so tighten both its stylebox and its pad.
+        // A grid node is smaller than a list row, so it brings its own tighter frame; CardButton sizes its hover and
+        // focus rings from that frame's margins.
         StyleBoxFlat box = UiTheme.CardStyle(spine);
         box.SetContentMarginAll(UiTheme.SpaceXs);
         box.ContentMarginLeft = UiTheme.SpaceSm;
-        card.AddThemeStyleboxOverride("panel", box);
-        if (content.GetParent() is MarginContainer pad)
-        {
-            foreach (string side in new[] { "margin_left", "margin_right", "margin_top", "margin_bottom" })
-            {
-                pad.AddThemeConstantOverride(side, 0);
-            }
-        }
+        PanelContainer card = UiTheme.CardButton(spine, out Button input, out VBoxContainer content, box);
 
         content.AddThemeConstantOverride("separation", 1);
 

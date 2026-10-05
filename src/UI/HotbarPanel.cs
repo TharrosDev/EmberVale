@@ -21,7 +21,7 @@ public partial class HotbarPanel : CanvasLayer
     private bool _dirty = true;
 
     /// <summary>Cell size: wide enough for a two-line item name, tall enough for the number line and both.</summary>
-    private const float CellWidth = 96f;
+    private const float CellWidth = 90f;
     private const float CellHeight = 72f;
 
     /// <summary>When set (by the bootstrap, to <see cref="GameHud.BottomDock"/>), the bar parents

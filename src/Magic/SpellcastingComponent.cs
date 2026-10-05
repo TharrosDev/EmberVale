@@ -827,7 +827,7 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
         }
 
         float tickCost = spell.ChannelManaPerSecond * spell.ChannelTickInterval
-            * Weave.CostMultiplier(IsCorrupted(spell));
+            * Weave.CostMultiplier(IsCorrupted(spell)) * CasterCostFactor();
         if (_stats == null || !_stats.IsAlive || _stats.GetCurrent(StatType.Mana) < tickCost)
         {
             EndCast(); // out of mana / dead — the channel is interrupted
@@ -960,7 +960,15 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
     /// <see cref="PerkEffectKind.ManaCostMult"/> perks (floored by <see cref="PerkEffectMath"/>). Public so
     /// the HUD shows the price the cast will really charge.</summary>
     public float EffectiveManaCost(SpellResource spell) => SpellRules.ManaCost(
-        spell.ManaCost, Weave.CostMultiplier(IsCorrupted(spell)), PerkQuery.Factor(Entity, PerkEffectKind.ManaCostMult));
+        spell.ManaCost, Weave.CostMultiplier(IsCorrupted(spell)), CasterCostFactor());
+
+    /// <summary>What this caster's perks and invested Intelligence (the player only) do to every mana price, under
+    /// one floor so they cannot stack past it. Applies to a channel's per-tick drain as well as an up-front cost.</summary>
+    private float CasterCostFactor() => Mathf.Max(CombinedManaFloor,
+        PerkQuery.Factor(Entity, PerkEffectKind.ManaCostMult) * StatDerivationComponent.ManaFactor(Entity));
+
+    /// <summary>The cheapest a spell can get from perks and Intelligence together, as a fraction of its base cost.</summary>
+    public const float CombinedManaFloor = 0.5f;
 
     /// <summary>Combined cast power: the charge multiplier × the spell's own rank × the caster's
     /// school mastery (Phase 29.5C) × the caster's school-power perks × the region's Weave potency (Phase 29.5E).</summary>

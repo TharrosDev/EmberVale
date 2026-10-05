@@ -48,6 +48,24 @@ public partial class StatDerivationComponent : EntityComponent
         }
     }
 
+    /// <summary>Multiplier on this entity's dodge stamina cost from invested Dexterity; 1 for an entity without the
+    /// derivation (enemies, NPCs), so only the player's primaries pay off.</summary>
+    public static float DodgeFactor(IEntity? entity) => Invested(entity, StatType.Dexterity, StatDerivation.DodgeStaminaFactor);
+
+    /// <summary>Multiplier on this entity's spell mana cost from invested Intelligence; 1 without the derivation.</summary>
+    public static float ManaFactor(IEntity? entity) => Invested(entity, StatType.Intelligence, StatDerivation.ManaCostFactor);
+
+    private static float Invested(IEntity? entity, StatType primary, System.Func<float, float> factor)
+    {
+        if (entity?.GetComponent<StatDerivationComponent>() == null || entity.GetComponent<StatsComponent>() is not { } stats)
+        {
+            return 1f;
+        }
+
+        Stat stat = stats.GetStat(primary);
+        return factor(stat.Value - stat.BaseValue);
+    }
+
     private void OnPrimaryChanged(Stat stat) => Apply(stat.Type);
 
     private void Apply(StatType primary)

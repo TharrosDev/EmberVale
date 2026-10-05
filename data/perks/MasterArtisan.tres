@@ -11,13 +11,13 @@ ValuePerRank = 0.07
 [sub_resource type="Resource" id="Effect_2"]
 script = ExtResource("2_effect")
 Kind = 14
-ValuePerRank = 0.08
+ValuePerRank = 0.03
 
 [resource]
 script = ExtResource("1_perk")
 Id = "perk.master_artisan"
 DisplayName = "Master Artisan"
-Description = "A craftsman's economy. A craft has a further 7% chance to give a material back, and salvaging recovers 8% more."
+Description = "A craftsman's economy. A craft has a further 7% chance to give a material back, and salvaging recovers 3% more."
 MaxRank = 1
 Cost = 3
 ValuePerRank = 0.0

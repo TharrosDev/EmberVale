@@ -148,6 +148,9 @@ public partial class RaceComponent : EntityComponent
         if (grantBackground && background != null)
         {
             BackgroundApplier.GrantStarting(owner, background);
+
+            // The perk's Health/Stamina arrived after the refill above: top up so New Game starts at full.
+            owner.GetComponent<StatsComponent>()?.RefillResources();
         }
     }
 

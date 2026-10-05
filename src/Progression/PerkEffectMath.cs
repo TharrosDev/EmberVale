@@ -60,7 +60,9 @@ public static class PerkEffectMath
         PerkEffectKind.SellBonus => (0f, SellBonusMax),
         PerkEffectKind.ServicePriceMult => (-ServiceDiscountMax, ServiceSurchargeMax),
         PerkEffectKind.XpGainMult => (0f, XpFactorMax - 1f),
-        PerkEffectKind.SchoolPowerBonus or PerkEffectKind.SalvageYieldBonus or PerkEffectKind.LootQuality
+        // Salvage perks can lift recovery only as far as Deconstruction lets it go, or the surplus is silently wasted.
+        PerkEffectKind.SalvageYieldBonus => (0f, Crafting.Deconstruction.MaxRecoveryRate - Crafting.Deconstruction.RecoveryRate),
+        PerkEffectKind.SchoolPowerBonus or PerkEffectKind.LootQuality
             or PerkEffectKind.CraftXpMult or PerkEffectKind.RangedPowerBonus => (0f, 0.5f),
         PerkEffectKind.MaterialSaveChance or PerkEffectKind.RepGainMult
             or PerkEffectKind.SpellCritBonus => (0f, 0.25f),

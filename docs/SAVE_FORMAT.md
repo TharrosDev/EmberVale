@@ -98,6 +98,8 @@ what it applied, replaces everything from the save and never re-checks prerequis
 (recipe ids) and `crafts` (completed crafts: the serial the material-saving perk's roll is derived from, so a quickload replays
 a craft's outcome instead of rerolling it). Absent `crafts`: 0, and `Load` replaces a live serial even when the key is missing.
 
+**Progression** (`progression:player`) also carries `ms`: the highest level whose milestone bonus skill point has been paid (levels 10, 20, 30, 40 and 50 each pay one). Absent `ms` (a save from before milestones): the points for every milestone at or below the saved level are paid once on load and `ms` is set to that level, so the key is written from then on.
+
 **References are ids, never paths or indices.** Spawned actors round-trip as
 `{pid, tid, x, y, z, yaw}` and are rebuilt through `PersistentActorRegistry.Create`. Nothing in a save
 points at a scene path or an array position, which is why authoring can move freely.

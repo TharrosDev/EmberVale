@@ -217,7 +217,18 @@ public partial class CharacterCreator : CanvasLayer
     /// stat deltas as signed chips — green up, red down — so the trade a race makes is legible
     /// before it is picked rather than after.
     /// </summary>
-    private void RebuildRaceCards()
+    /// <summary>Runs a rebuild that frees the control the player just pressed, then puts focus back at the same place
+    /// in the tree: without it a gamepad or keyboard pick leaves no focus owner and the next press does nothing.</summary>
+    private void KeepFocus(System.Action rebuild)
+    {
+        int[]? path = UiFocus.PathOf(_panel);
+        rebuild();
+        UiFocus.Restore(_panel, path);
+    }
+
+    private void RebuildRaceCards() => KeepFocus(RebuildRaceCardsCore);
+
+    private void RebuildRaceCardsCore()
     {
         UiTheme.ClearChildren(_raceGrid);
 
@@ -260,7 +271,9 @@ public partial class CharacterCreator : CanvasLayer
 
     /// <summary>Rebuilds the background cards: the name, and a chip naming the perk branch it leans toward.
     /// The lean is a badge only; it unlocks and blocks nothing.</summary>
-    private void RebuildBackgroundCards()
+    private void RebuildBackgroundCards() => KeepFocus(RebuildBackgroundCardsCore);
+
+    private void RebuildBackgroundCardsCore()
     {
         UiTheme.ClearChildren(_backgroundGrid);
 
@@ -435,7 +448,9 @@ public partial class CharacterCreator : CanvasLayer
 
     /// <summary>One row per slot: its name and the chosen option, then a swatch per option the race offers
     /// (build options are small cards). Redraws the preview with the current picks.</summary>
-    private void RebuildAppearance()
+    private void RebuildAppearance() => KeepFocus(RebuildAppearanceCore);
+
+    private void RebuildAppearanceCore()
     {
         UiTheme.ClearChildren(_appearanceBox);
         _appearanceBox.AddChild(UiTheme.Caption(Loc.T("create.appearance_hint")));

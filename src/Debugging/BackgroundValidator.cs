@@ -83,6 +83,10 @@ public static class BackgroundValidator
                 {
                     issues.Add($"background '{id}' starting perk '{perk.Id}' is corruption-gated; a background grants a plain perk");
                 }
+                else if (perk.Tier != 1 || perk.BranchPointsRequired > 0 || perk.PrerequisiteIds.Count > 0)
+                {
+                    issues.Add($"background '{id}' starting perk '{perk.Id}' is not a tier-1 perk; a background grants an opening rank, not a mid-tree one");
+                }
             }
 
             foreach (RaceStatDelta delta in background.StatDeltaList())

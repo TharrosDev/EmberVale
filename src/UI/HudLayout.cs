@@ -82,7 +82,7 @@ public partial class HudLayout : Control
         // remaining space by twin spacers. Flow layout means these can never overlap, no matter
         // how small the effective viewport gets (high UI scale, low resolution, Steam Deck).
         var bar = new HBoxContainer { Name = "BottomBar", MouseFilter = MouseFilterEnum.Ignore };
-        bar.AddThemeConstantOverride("separation", UiTheme.SpaceLg);
+        bar.AddThemeConstantOverride("separation", UiTheme.SpaceMd);
         bar.AnchorLeft = 0f;
         bar.AnchorRight = 1f;
         bar.AnchorTop = 1f;

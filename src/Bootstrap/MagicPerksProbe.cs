@@ -77,7 +77,10 @@ internal static class MagicPerksProbe
             return;
         }
 
-        float perkFactor = 1f + PerkProbeMath.Expected(PerkIds, PerkEffectKind.ManaCostMult);
+        // The caster's real factor: the perks, times what invested Intelligence takes off (a max-level player has
+        // grown some), under the shared floor.
+        float perkFactor = Mathf.Max(SpellcastingComponent.CombinedManaFloor,
+            (1f + PerkProbeMath.Expected(PerkIds, PerkEffectKind.ManaCostMult)) * StatDerivationComponent.ManaFactor(player));
         float expected = spell.ManaCost * Weave.CostMultiplier(false) * perkFactor;
         check(Near(casting.EffectiveManaCost(spell), expected),
             $"magic perks probe: {spell.Id} costs {casting.EffectiveManaCost(spell):0.###}, not {expected:0.###} with the mana perks.");

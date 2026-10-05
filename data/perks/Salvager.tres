@@ -6,13 +6,13 @@
 [sub_resource type="Resource" id="Effect_1"]
 script = ExtResource("2_effect")
 Kind = 14
-ValuePerRank = 0.05
+ValuePerRank = 0.04
 
 [resource]
 script = ExtResource("1_perk")
 Id = "perk.salvager"
 DisplayName = "Salvager"
-Description = "Strip it clean. Salvaging recovers 5% more of the materials per rank."
+Description = "Strip it clean. Salvaging recovers 4% more of the materials per rank."
 MaxRank = 2
 Cost = 1
 ValuePerRank = 0.0

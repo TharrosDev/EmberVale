@@ -8,6 +8,7 @@ MaxLevel = 50
 BaseXpToLevel = 100
 XpCurveExponent = 1.5
 SkillPointsPerLevel = 1
+MilestoneLevels = PackedInt32Array(10, 20, 30, 40, 50)
 HealthPerLevel = 6.75
 StaminaPerLevel = 3.25
 ManaPerLevel = 1.0

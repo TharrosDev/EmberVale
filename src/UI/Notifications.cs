@@ -158,8 +158,17 @@ public partial class Notifications : CanvasLayer
         bus.Unsubscribe<Narrative.StoryToastRequestedEvent>(OnStoryToast);
     }
 
-    private void OnLeveledUp(LeveledUpEvent e) =>
-        Push(Loc.TF("notify.levelup", e.NewLevel), UiTheme.Accent, NoticeCategory.Major);
+    private void OnLeveledUp(LeveledUpEvent e)
+    {
+        // Say what the level bought: a milestone level pays two points, an ordinary one pays one.
+        string text = e.SkillPointsGained switch
+        {
+            <= 0 => Loc.TF("notify.levelup", e.NewLevel),
+            1 => Loc.TF("notify.levelup_point", e.NewLevel, e.SkillPointsGained),
+            _ => Loc.TF("notify.levelup_points", e.NewLevel, e.SkillPointsGained),
+        };
+        Push(text, UiTheme.Accent, NoticeCategory.Major);
+    }
 
     // --- Quests ---------------------------------------------------------------------------
     //

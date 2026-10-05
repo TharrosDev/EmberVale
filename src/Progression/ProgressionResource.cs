@@ -37,6 +37,14 @@ public partial class ProgressionResource : Resource
     [Export] public float StrengthPerLevel { get; set; }
     [Export] public float DexterityPerLevel { get; set; }
     [Export] public float IntelligencePerLevel { get; set; }
+    /// <summary>Levels that each pay one bonus skill point on top of <see cref="SkillPointsPerLevel"/>: the tree is sized
+    /// for (MaxLevel - 1) level points plus one per milestone (PerkCatalogue.SkillPointSupply).</summary>
+    [Export] public int[] MilestoneLevels { get; set; } = System.Array.Empty<int>();
+
+    /// <summary>Skill points a character can earn in total by <see cref="MaxLevel"/>.</summary>
+    public int SkillPointSupply => ((MaxLevel - 1) * SkillPointsPerLevel)
+        + ProgressionMath.MilestonesCrossed(0, MaxLevel, MilestoneLevels);
+
     [Export] public float VitalityPerLevel { get; set; }
     [Export] public float EndurancePerLevel { get; set; }
 

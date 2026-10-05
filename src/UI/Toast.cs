@@ -22,8 +22,12 @@ public partial class Toast : MarginContainer
     /// <summary>Fraction of <see cref="Life"/> after which the toast fades out.</summary>
     private const float FadeStart = 0.6f;
 
+    /// <summary>How long a shed toast takes to fade out, in seconds.</summary>
+    private const double ExpediteSeconds = 0.25;
+
     private readonly PanelContainer _chip = new();
     private double _age;
+    private double _expediteAge = -1d; // < 0: not being shed
 
     /// <summary>The semantic colour of the thing being announced (a level-up, a failed event, an
     /// autosave). Painted as the chip's left spine. Set before the toast enters the tree.</summary>
@@ -52,11 +56,17 @@ public partial class Toast : MarginContainer
     }
 
     /// <summary>True once the toast has started its fade-out, so it no longer counts against the feed's room.</summary>
-    public bool Expiring => _age >= Life * FadeStart;
+    public bool Expiring => _expediteAge >= 0d || _age >= Life * FadeStart;
 
-    /// <summary>Jumps the toast to the last moments of its fade, so the feed gets its room back within a few frames
-    /// without the toast vanishing between two frames.</summary>
-    public void Expedite() => _age = Mathf.Max(_age, Life * 0.97);
+    /// <summary>Starts a short fade-out (<see cref="ExpediteSeconds"/>) so the feed gets its room back soon, without the
+    /// toast the player is reading disappearing between two frames. A toast already fading is left alone.</summary>
+    public void Expedite()
+    {
+        if (_expediteAge < 0d && _age < Life * FadeStart)
+        {
+            _expediteAge = 0d;
+        }
+    }
 
     /// <summary>Parents <paramref name="content"/> into the visible chip.</summary>
     public void AddContent(Control content) => _chip.AddChild(content);
@@ -78,6 +88,18 @@ public partial class Toast : MarginContainer
 
         // Fade up with the entrance; hold; then fade out over the final 40% of the lifetime.
         float alpha = t < FadeStart ? entrance : 1f - ((t - FadeStart) / (1f - FadeStart));
+        if (_expediteAge >= 0d)
+        {
+            _expediteAge += delta;
+            if (_expediteAge >= ExpediteSeconds)
+            {
+                QueueFree();
+                return;
+            }
+
+            alpha = Mathf.Min(alpha, 1f - (float)(_expediteAge / ExpediteSeconds));
+        }
+
         Modulate = new Color(1f, 1f, 1f, Mathf.Clamp(alpha, 0f, 1f));
     }
 

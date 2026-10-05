@@ -116,4 +116,34 @@ public class ProgressionMathTests
         Assert.Equal(1000, xp);
         Assert.Equal(0, gained);
     }
+
+    // --- Milestones (bonus skill points) -----------------------------------
+
+    private static readonly int[] Milestones = { 10, 20, 30, 40, 50 };
+
+    [Theory]
+    [InlineData(0, 9, 0)]    // below the first milestone
+    [InlineData(0, 10, 1)]   // exactly on it
+    [InlineData(9, 10, 1)]   // crossing it by one level
+    [InlineData(10, 10, 0)]  // already paid
+    [InlineData(0, 50, 5)]   // a fresh character jumping to the cap is paid every milestone
+    [InlineData(19, 41, 3)]  // 20, 30 and 40 only
+    public void MilestonesCrossed_CountsOnlyUnpaidMilestonesInRange(int claimedUpTo, int level, int expected)
+    {
+        Assert.Equal(expected, ProgressionMath.MilestonesCrossed(claimedUpTo, level, Milestones));
+    }
+
+    [Fact]
+    public void MilestonesCrossed_WithNoMilestones_IsZero()
+    {
+        Assert.Equal(0, ProgressionMath.MilestonesCrossed(0, 50, null));
+        Assert.Equal(0, ProgressionMath.MilestonesCrossed(0, 50, System.Array.Empty<int>()));
+    }
+
+    [Fact]
+    public void ShippedCurve_EarnsThePerkCatalogueSupply()
+    {
+        // 49 level points + 5 milestone points = 54, the figure the perk trees are sized for.
+        Assert.Equal(PerkCatalogue.SkillPointSupply, ((MaxLevel - 1) * 1) + ProgressionMath.MilestonesCrossed(0, MaxLevel, Milestones));
+    }
 }

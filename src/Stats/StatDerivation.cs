@@ -67,12 +67,12 @@ public static class StatDerivation
     }
 
     /// <summary>Multiplier on dodge stamina cost from Dexterity invested above base. 1 at base, never below
-    /// <see cref="DodgeFloor"/>. Not hooked into the dodge yet.</summary>
+    /// <see cref="DodgeFloor"/>. Applied to the player's dodge by <c>StatDerivationComponent.DodgeFactor</c>.</summary>
     public static float DodgeStaminaFactor(float dexDelta) =>
         Math.Max(DodgeFloor, 1f + (dexDelta * DodgePerPoint));
 
     /// <summary>Multiplier on spell mana cost from Intelligence invested above base. 1 at base, never below
-    /// <see cref="ManaCostFloor"/>. Not hooked into spellcasting yet.</summary>
+    /// <see cref="ManaCostFloor"/>. Applied to the player's spells by <c>StatDerivationComponent.ManaFactor</c>.</summary>
     public static float ManaCostFactor(float intDelta) =>
         Math.Max(ManaCostFloor, 1f + (intDelta * ManaCostPerPoint));
 

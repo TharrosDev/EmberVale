@@ -74,14 +74,14 @@ internal static class EconomyPerksProbe
             return;
         }
 
+        // The lifecycle plays a max-level character, and at the cap AddXp zeroes XP, so measure from level 1 and
+        // put the character back exactly as it was afterwards.
         Godot.Collections.Dictionary snapshot = progression.Save();
-        int level = progression.Level;
-        int before = progression.CurrentXp;
+        progression.Load(new Godot.Collections.Dictionary { ["level"] = 1, ["xp"] = 0, ["ms"] = 0 });
         int expected = PerkEffectMath.ScaleXp(10, PerkProbeMath.Expected(PerkIds, PerkEffectKind.XpGainMult));
         progression.AddXp(10);
-        // At the level cap AddXp zeroes XP, so there is nothing to measure there (the lifecycle plays a max-level character).
-        check(expected > 10 && (progression.IsMaxLevel || progression.Level != level || progression.CurrentXp - before == expected),
-            $"economy perks probe: a 10 xp grant with the xp perks landed as {progression.CurrentXp - before}, not {expected}.");
+        check(expected > 10 && progression.Level == 1 && progression.CurrentXp == expected,
+            $"economy perks probe: a 10 xp grant with the xp perks landed as {progression.CurrentXp} (level {progression.Level}), not {expected}.");
         progression.Load(snapshot);
     }
 

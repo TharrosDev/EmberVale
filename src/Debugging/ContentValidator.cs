@@ -2181,8 +2181,12 @@ public static class ContentValidator
             // the keenest a shortage anywhere could ever make a buyer. Neither end is a day the game
             // will necessarily roll — one shock runs at a cell at a time — but the loop has to be shut
             // on the worst pair of days rather than on a pairing nobody thought to simulate.
+            // The labour goes through ServicePrice like every service fee: standing takes it down and the service
+            // perks cut it again at their cap, so it is proved at that price and not the authored PriceGold.
+            int cheapestLabour = ShopPricing.ServicePrice(
+                service.PriceGold, ReputationTier.Allied, PerkEffectMath.BestServiceFactor);
             int cost = EconomyReport.CommissionCost(
-                recipe, shop, ReputationTier.Allied, pack: null, service.PriceGold,
+                recipe, shop, ReputationTier.Allied, pack: null, cheapestLabour,
                 haggled: shop.HaggleChance > 0, view: PriceView.Trough);
             // Priced at the keenest buyer perks allow too (SellBonus at its cap): a commission is not a counter
             // purchase, so BuyDiscount never reaches its materials, but the sale of the result is a sale.
@@ -3393,6 +3397,12 @@ public static class ContentValidator
         if (curve == null)
         {
             return; // ValidateResourcePaths already reports the missing curve
+        }
+
+        if (curve.SkillPointSupply != PerkCatalogue.SkillPointSupply)
+        {
+            issues.Add($"player progression: the curve earns {curve.SkillPointSupply} skill points by level {curve.MaxLevel}, " +
+                       $"but the perk catalogue is sized for {PerkCatalogue.SkillPointSupply}");
         }
 
         Dictionary<StatType, float> totals =
