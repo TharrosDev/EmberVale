@@ -24,7 +24,7 @@ one body leave the second silent.
   [yielding duel fight](#a-yielding-duel-fight) · [weapon](#a-new-weapon) ·
   [companion](#a-new-companion)
 - Items: [item](#a-new-item) · [equipment](#a-new-piece-of-equipment) · [affix](#a-new-loot-affix) ·
-  [loot table](#a-new-loot-table--dropper) · [perk](#a-new-perk) · [XP / curve](#a-new-xp-bearing-enemy-or-tuning-the-curve) ·
+  [loot table](#a-new-loot-table--dropper) · [perk](#a-new-perk) · [background](#a-new-background) · [XP / curve](#a-new-xp-bearing-enemy-or-tuning-the-curve) ·
   [crafting recipe](#a-new-crafting-recipe) · [spell](#a-new-spell) · [status effect](#a-new-status-effect)
 - Story: [quest](#a-new-quest) · [chained story quest](#a-chained-story-quest-autostartflagid) ·
   [conversation](#a-new-conversation) · [faction](#a-new-faction) · [NPC routine](#a-new-npc-routine)
@@ -260,6 +260,20 @@ line in `StatBonuses()`. Bonuses apply through `EquipmentComponent`.
 
 `data/perks/Xxx.tres` (`PerkResource`): `Id`, name, description, `MaxRank`, `Cost`, `Stat`,
 `ModifierType`, `ValuePerRank`.
+
+### A new background
+
+1. `data/backgrounds/Xxx.tres` (`BackgroundResource`, `Id = "background.<name>"`). `NameKey`/`DescKey` are
+   Loc keys (`background.<name>.name` / `.desc`); a set `LeanBranch` also needs `background.lean.<branch>`.
+2. Grants: `StartingPerkId` (a plain, ungated perk, granted free), `StartingItems` (`"item.id"` or
+   `"item.id:count"`, real ids only), `StartingGold`, `StatDeltas` (`RaceStatDelta`, |x| <= 1),
+   `ReputationTweaks` (`RaceReputationTweak`, |x| <= 5), `FlavorFlags` (`flag.background.<name>`).
+3. ⚠️ **Caps are validator-enforced** (`BackgroundRules`): items at `Value` plus gold <= 80, so a
+   background nudges and never carries a build. `background.wayfarer` must stay empty.
+4. ⚠️ **Every flag needs a reader.** Add a `HasFlag` root choice and node to a hub dialogue (Elder,
+   Innkeeper, Smith have them) and its Loc rows; `--validate` rejects a flag nothing reads.
+5. Grants run once, from `RaceComponent`, on New Game; a load restores them from the component saves.
+   No code change; the creator lists whatever `BackgroundDatabase` holds.
 
 ### A new XP-bearing enemy (or tuning the curve)
 

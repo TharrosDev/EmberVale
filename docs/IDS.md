@@ -72,6 +72,7 @@ Pattern column shows the canonical shape; examples are real ids from `data/**`.
 | `travel.*` | `travel.<region>.<node>` | `travel.frostfang_reach.clan_hold` | ✅ fast-travel node (`TravelNodeComponent` in a cell scene, discovered at runtime by `FastTravelService`); **not validated** — a typo in its `RegionId` fails silently |
 | `region.*` | `region.<name>` | `region.ember_crown` | ✅ `RegionDatabase` — Phase 25 |
 | `race.*` | `race.<name>` | `race.human` | ✅ `RaceDatabase` — Phase 26 |
+| `background.*` | `background.<name>` | `background.soldier` | ✅ `BackgroundDatabase` — P7. The value stored in `CharacterProfile.Background`; empty or old free text means none. Each sets `flag.background.<name>`, which a hub dialogue must read (`--validate`) |
 | `companion.*` | `companion.<name>` | `companion.kael` | ✅ `CompanionDatabase` — Phase 32 |
 | `ai.*` | `ai.<name>` | `ai.pack_flanker` | ✅ enemy AI personality (`AIProfileDatabase`) — Phase 34A |
 | `boss.*` | `boss.<name>` | `boss.iron_king` | ✅ `BossDatabase` — Phase 36A. Names a fight's *structure*; the actor stays an `enemy.*` archetype pointing at it via `BossId`, which is how one shape can serve several bosses |

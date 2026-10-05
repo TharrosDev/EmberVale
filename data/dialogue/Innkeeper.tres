@@ -97,11 +97,36 @@ Text = "dlg.innkeeper.word.c_inprogress_bye"
 script = ExtResource("3_choice")
 Text = "dlg.innkeeper.word.c_thanks_bye"
 
+; P7 backgrounds: one HasFlag line per background that set its flag at New Game (the flag's reader).
+[sub_resource type="Resource" id="ch_bg_hunter"]
+script = ExtResource("3_choice")
+Text = "dlg.innkeeper.bg.hunter.c"
+Goto = "bg_hunter"
+Condition = 5
+ConditionArg = "flag.background.hunter"
+
+[sub_resource type="Resource" id="ch_bg_hunter_back"]
+script = ExtResource("3_choice")
+Text = "dlg.innkeeper.bg.c_back"
+Goto = "root"
+
+[sub_resource type="Resource" id="ch_bg_cutpurse"]
+script = ExtResource("3_choice")
+Text = "dlg.innkeeper.bg.cutpurse.c"
+Goto = "bg_cutpurse"
+Condition = 5
+ConditionArg = "flag.background.cutpurse"
+
+[sub_resource type="Resource" id="ch_bg_cutpurse_back"]
+script = ExtResource("3_choice")
+Text = "dlg.innkeeper.bg.c_back"
+Goto = "root"
+
 [sub_resource type="Resource" id="node_root"]
 script = ExtResource("2_node")
 Id = "root"
 Text = "dlg.innkeeper.root"
-Choices = Array[Resource]([SubResource("ch_word_thanks"), SubResource("ch_word_offer"), SubResource("ch_word_active"), SubResource("ch_use"), SubResource("ch_talk"), SubResource("ch_bye")])
+Choices = Array[Resource]([SubResource("ch_word_thanks"), SubResource("ch_word_offer"), SubResource("ch_word_active"), SubResource("ch_use"), SubResource("ch_talk"), SubResource("ch_bg_hunter"), SubResource("ch_bg_cutpurse"), SubResource("ch_bye")])
 
 [sub_resource type="Resource" id="node_talk"]
 script = ExtResource("2_node")
@@ -133,9 +158,21 @@ Id = "word_thanks"
 Text = "dlg.innkeeper.word.thanks"
 Choices = Array[Resource]([SubResource("ch_word_thanks_bye")])
 
+[sub_resource type="Resource" id="node_bg_hunter"]
+script = ExtResource("2_node")
+Id = "bg_hunter"
+Text = "dlg.innkeeper.bg.hunter"
+Choices = Array[Resource]([SubResource("ch_bg_hunter_back")])
+
+[sub_resource type="Resource" id="node_bg_cutpurse"]
+script = ExtResource("2_node")
+Id = "bg_cutpurse"
+Text = "dlg.innkeeper.bg.cutpurse"
+Choices = Array[Resource]([SubResource("ch_bg_cutpurse_back")])
+
 [resource]
 script = ExtResource("1_dlg")
 Id = "dialogue.innkeeper"
 SpeakerName = "dlg.innkeeper.speaker"
 StartNodeId = "root"
-Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_talk"), SubResource("node_word_offer"), SubResource("node_word_accepted"), SubResource("node_word_inprogress"), SubResource("node_word_thanks")])
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_talk"), SubResource("node_word_offer"), SubResource("node_word_accepted"), SubResource("node_word_inprogress"), SubResource("node_word_thanks"), SubResource("node_bg_hunter"), SubResource("node_bg_cutpurse")])

@@ -107,6 +107,7 @@ public static class ContentValidator
         ValidateWorldEvents(issues);
         ValidateRegions(issues);
         ValidateRaces(issues);
+        BackgroundValidator.Validate(issues);
         ValidateShrines(issues);
         ValidateGuilds(issues);
         ValidateGuildHubs(issues);
@@ -6083,6 +6084,12 @@ public static class ContentValidator
 
         // The load catch-up writes mission done flags and the arc-ready flags for legacy saves.
         foreach (string flag in Narrative.CampaignCatchUp.WrittenFlags())
+        {
+            written.Add(flag);
+        }
+
+        // Backgrounds set their flavour flags on New Game.
+        foreach (string flag in BackgroundValidator.WrittenFlags())
         {
             written.Add(flag);
         }

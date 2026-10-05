@@ -51,6 +51,7 @@ public static class DevCommands
         console.Register(new ConsoleCommand("corruption", "corruption <get|set N|add N|tier>", "Inspect or drive the player's corruption.", Corruption));
         console.Register(new ConsoleCommand("learn", "learn <spellId|perkId>", "Learn a spell or perk (respects corruption gating).", Learn));
         console.Register(new ConsoleCommand("race", "race [id]", "Show races, or live-apply one to the player (Phase 26C).", RaceCmd));
+        console.Register(new ConsoleCommand("background", "background [id]", "Show backgrounds, or live-apply one (kit, perk, flags, standing) to the player (P7).", BackgroundCmd));
         console.Register(new ConsoleCommand("mastery", "mastery", "Show the player's per-school spell mastery (Phase 29.5C).", Mastery));
         console.Register(new ConsoleCommand("weave", "weave [<0..1>|set <0..1>|restore]", "Inspect or tune the region's magic potency — the fading Weave (Phase 29.5E).", WeaveCmd));
         console.Register(new ConsoleCommand("spells", "spells [all]", "List the spells the player knows (or every player spell with ids and lock state).", Spells));
@@ -1035,6 +1036,30 @@ public static class DevCommands
         }
 
         return raceComponent.SwapRaceForDebug(args[0]);
+    }
+
+    private static string BackgroundCmd(DevConsole console, string[] args)
+    {
+        if (args.Length < 1)
+        {
+            var ids = new List<string>();
+            foreach (Backgrounds.BackgroundResource background in Backgrounds.BackgroundDatabase.All)
+            {
+                ids.Add(background.Id);
+            }
+
+            string current = TryPlayer(out PlayerCharacter held) && held.GetComponent<RaceComponent>() is { } race
+                ? Backgrounds.BackgroundRules.ResolveId(race.Profile.Background)
+                : string.Empty;
+            return $"backgrounds: {string.Join(", ", ids)}; current: {(current.Length > 0 ? current : "none")}";
+        }
+
+        if (!TryPlayer(out PlayerCharacter player) || player.GetComponent<RaceComponent>() is not { } raceComponent)
+        {
+            return "no race component";
+        }
+
+        return raceComponent.SwapBackgroundForDebug(args[0]);
     }
 
     private static string Time(DevConsole console, string[] args)

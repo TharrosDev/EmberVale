@@ -230,6 +230,11 @@ caps the first two at 25%).
 - **Races and character creation** — six playable races (Human, Valari, Sylthari, Grondar, Draekyn,
   Umbral) with stat deltas, innate perks and starting standing; name and race picked at New Game.
   `RaceResource`, `CharacterCreator` (`data/races`). *Partial:* appearance options are data only.
+- **Backgrounds** — eight soft nudges picked at New Game (Wayfarer is the no-op default): a free tier-1
+  perk rank, a small kit capped at 80 gold in value, a story flag read by a hub dialogue, a standing
+  tweak and at most +1 on a stat. Kit and perk are New Game only; stat deltas are re-derived from the
+  profile on load. The lean badge is cosmetic. `BackgroundResource`, `BackgroundApplier`,
+  `BackgroundRules` (`data/backgrounds`).
 
 ## Items, equipment and loot
 
