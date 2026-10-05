@@ -13,7 +13,7 @@ public class ProgressionMathTests
 {
     private const int BaseXp = 100;
     private const float Exponent = 1.5f;
-    private const int MaxLevel = 30;
+    private const int MaxLevel = 50; // pins data/progression/PlayerProgression.tres
 
     private static int Curve(int level) => ProgressionMath.XpToReach(level, BaseXp, Exponent, MaxLevel);
 
@@ -33,8 +33,8 @@ public class ProgressionMathTests
     }
 
     [Theory]
-    [InlineData(30)] // exactly the cap
-    [InlineData(31)] // beyond the cap
+    [InlineData(50)] // exactly the cap
+    [InlineData(51)] // beyond the cap
     public void XpToReach_IsZeroAtOrBeyondCap(int level)
     {
         Assert.Equal(0, Curve(level));

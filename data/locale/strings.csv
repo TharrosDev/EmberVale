@@ -366,8 +366,6 @@ rep.tier.friendly,Friendly
 rep.tier.honored,Honored
 rep.tier.allied,Allied
 char.xp_max,MAX
-char.level_line,Level {0}    XP {1}
-char.skill_points,Skill points: {0}
 char.spell_points,Spell points: {0}
 char.corruption,CORRUPTION
 char.corruption_line,{0}   ({1}/{2})
@@ -378,7 +376,6 @@ corruption.tier.marked,Marked
 corruption.tier.ashbound,Ashbound
 corruption.tier.embers,Embers
 char.perks,PERKS
-char.perk_rank,{0}  ({1}/{2})
 char.perk_learn,Learn ({0})
 char.perk_maxed,[maxed]
 char.perk_needs,[needs {0}]
@@ -473,7 +470,6 @@ item.empty_slot,Empty
 item.select_hint,Select an item to inspect it.
 
 # --- Character stats & progression (Phase 37.5C2) ---
-char.tab_stats,STATS
 char.stats_attributes,Attributes
 char.stats_combat,Offence
 char.stats_defence,Defence
