@@ -429,7 +429,8 @@ public partial class CraftingComponent : EntityComponent, ISaveable
             }
         }
 
-        int xp = Deconstruction.Xp(instance.Template.Value, instance.Rarity);
+        int xp = PerkEffectMath.ScaleCraftXp(
+            Deconstruction.Xp(instance.Template.Value, instance.Rarity), PerkQuery.Of(Entity, PerkEffectKind.CraftXpMult));
         Entity?.GetComponent<ProgressionComponent>()?.AddXp(xp);
 
         if (Entity != null)

@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="PerkResource" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://src/Progression/PerkResource.cs" id="1_perk"]
+[ext_resource type="Script" path="res://src/Progression/PerkEffectResource.cs" id="2_effect"]
+
+[sub_resource type="Resource" id="Effect_1"]
+script = ExtResource("2_effect")
+Kind = 17
+ValuePerRank = 0.05
+
+[sub_resource type="Resource" id="Effect_2"]
+script = ExtResource("2_effect")
+Kind = 12
+ValuePerRank = -0.01
+
+[resource]
+script = ExtResource("1_perk")
+Id = "perk.diplomat"
+DisplayName = "Diplomat"
+Description = "Rooms settle when you walk in. Standing with factions rises 5% faster and services cost 1% less."
+MaxRank = 1
+Cost = 3
+ValuePerRank = 0.0
+Branch = 6
+Tier = 5
+Column = 1
+PrerequisiteIds = Array[String](["perk.negotiator"])
+BranchPointsRequired = 14
+IsCapstone = true
+Effects = [SubResource("Effect_1"), SubResource("Effect_2")]

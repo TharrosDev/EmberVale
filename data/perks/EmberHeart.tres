@@ -1,0 +1,32 @@
+[gd_resource type="Resource" script_class="PerkResource" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://src/Progression/PerkResource.cs" id="1_perk"]
+[ext_resource type="Script" path="res://src/Progression/PerkEffectResource.cs" id="2_effect"]
+
+[sub_resource type="Resource" id="Effect_1"]
+script = ExtResource("2_effect")
+Stat = 0
+ModifierType = 0
+ValuePerRank = 15.0
+
+[sub_resource type="Resource" id="Effect_2"]
+script = ExtResource("2_effect")
+Stat = 9
+ModifierType = 0
+ValuePerRank = 2.0
+
+[resource]
+script = ExtResource("1_perk")
+Id = "perk.ember_heart"
+DisplayName = "Ember Heart"
+Description = "Something burns where the pulse was. +15 maximum Health and +2 Physical Power per rank. Only the Ashbound may take it."
+MaxRank = 3
+Cost = 2
+ValuePerRank = 0.0
+MinCorruptionTier = 3
+Branch = 7
+Tier = 2
+Column = 1
+PrerequisiteIds = Array[String](["perk.ashborn_might"])
+BranchPointsRequired = 2
+Effects = [SubResource("Effect_1"), SubResource("Effect_2")]

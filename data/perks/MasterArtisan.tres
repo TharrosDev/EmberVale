@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="PerkResource" load_steps=3 format=3]
+[gd_resource type="Resource" script_class="PerkResource" load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://src/Progression/PerkResource.cs" id="1_perk"]
 [ext_resource type="Script" path="res://src/Progression/PerkEffectResource.cs" id="2_effect"]
@@ -6,19 +6,25 @@
 [sub_resource type="Resource" id="Effect_1"]
 script = ExtResource("2_effect")
 Kind = 13
+ValuePerRank = 0.07
+
+[sub_resource type="Resource" id="Effect_2"]
+script = ExtResource("2_effect")
+Kind = 14
 ValuePerRank = 0.08
 
 [resource]
 script = ExtResource("1_perk")
 Id = "perk.master_artisan"
 DisplayName = "Master Artisan"
-Description = "A craftsman's economy. A craft has an 8% chance to give one unit of its largest material back."
+Description = "A craftsman's economy. A craft has a further 7% chance to give a material back, and salvaging recovers 8% more."
 MaxRank = 1
-Cost = 1
+Cost = 3
 ValuePerRank = 0.0
 Branch = 5
-Tier = 3
-Column = 0
-PrerequisiteIds = Array[String](["perk.thrifty_hands"])
-BranchPointsRequired = 5
-Effects = [SubResource("Effect_1")]
+Tier = 5
+Column = 1
+PrerequisiteIds = Array[String](["perk.bench_mastery"])
+BranchPointsRequired = 14
+IsCapstone = true
+Effects = [SubResource("Effect_1"), SubResource("Effect_2")]

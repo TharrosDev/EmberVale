@@ -350,7 +350,8 @@ public partial class CraftingPanel : UiPanel
             yields.AddChild(UiTheme.Chip($"{scrap}x {scrapName}", UiTheme.Accent));
         }
 
-        int xp = Deconstruction.Xp(instance.Template.Value, instance.Rarity);
+        int xp = PerkEffectMath.ScaleCraftXp(
+            Deconstruction.Xp(instance.Template.Value, instance.Rarity), PerkQuery.Of(_player, PerkEffectKind.CraftXpMult));
         yields.AddChild(UiTheme.Chip(Loc.TF("craft.yield_xp", xp), UiTheme.Good));
         col.AddChild(yields);
 

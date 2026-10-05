@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="PerkResource" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/Progression/PerkResource.cs" id="1_perk"]
+[ext_resource type="Script" path="res://src/Progression/PerkEffectResource.cs" id="2_effect"]
+
+[sub_resource type="Resource" id="Effect_1"]
+script = ExtResource("2_effect")
+Kind = 15
+ValuePerRank = 0.04
+
+[resource]
+script = ExtResource("1_perk")
+Id = "perk.hunters_eye"
+DisplayName = "Hunter's Eye"
+Description = "You know what is worth taking. Slain foes drop better gear, raising loot quality by 0.04 per rank."
+MaxRank = 3
+Cost = 1
+ValuePerRank = 0.0
+Branch = 2
+Tier = 2
+Column = 1
+PrerequisiteIds = Array[String]([])
+BranchPointsRequired = 2
+Effects = [SubResource("Effect_1")]

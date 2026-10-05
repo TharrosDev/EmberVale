@@ -108,6 +108,7 @@ public static class ContentValidator
         ValidateRegions(issues);
         ValidateRaces(issues);
         ValidatePerks(issues);
+        ValidatePerkCatalogue(issues);
         ValidateShrines(issues);
         ValidateGuilds(issues);
         ValidateGuildHubs(issues);
@@ -3386,10 +3387,8 @@ public static class ContentValidator
     /// <summary>
     /// Perk v2 well-formedness: id prefix, rank/cost/tier/column ranges, prerequisites that exist and
     /// do not loop, effects that do something, name and description keys in the locale, and the six
-    /// legacy ids still present.
-    /// <para>P5 hook (the catalogue does not exist yet, so these cannot hold): every
-    /// <see cref="PerkEffectKind"/> is used by at least one perk, each branch's capstone is reachable
-    /// within the 54 skill points a character earns, and each branch totals 25-60 points.</para>
+    /// legacy ids still present. The catalogue-wide rules (tree gates, capstones, branch totals, every
+    /// effect kind used) are <see cref="ValidatePerkCatalogue"/>.
     /// </summary>
     private static void ValidatePerks(List<string> issues)
     {
@@ -3491,6 +3490,119 @@ public static class ContentValidator
             if (PerkDatabase.Get(legacy) == null)
             {
                 issues.Add($"legacy perk '{legacy}' is missing; its id is in saves and race files");
+            }
+        }
+    }
+
+    /// <summary>
+    /// The perk catalogue as a whole (P5, <c>tools/gen_perks.py</c>): every perk sits in a branch with the
+    /// tier gate its tier owns, a capstone is exactly the tier-5 perk and has a prerequisite, prerequisites
+    /// are earlier tiers of the same branch, no two perks share a cell, only Ashbound perks are corruption
+    /// gated, every effect kind has a perk and no perk's full-rank value passes its cap, each main branch is
+    /// worth <see cref="PerkCatalogue.BranchTotalMin"/>..<see cref="PerkCatalogue.BranchTotalMax"/> points
+    /// with one capstone, and every perk (so every capstone) is reachable within
+    /// <see cref="PerkCatalogue.SkillPointSupply"/>.
+    /// </summary>
+    private static void ValidatePerkCatalogue(List<string> issues)
+    {
+        var nodes = new Dictionary<string, PerkNode>();
+        var used = new HashSet<PerkEffectKind>();
+        var cells = new HashSet<(PerkBranch, int, int)>();
+        var capstones = new Dictionary<PerkBranch, int>();
+
+        foreach (PerkResource perk in PerkDatabase.All)
+        {
+            string who = $"perk '{perk.Id}'";
+            nodes[perk.Id] = new PerkNode(perk.Id, perk.Branch, perk.Tier, perk.MaxRank, perk.Cost,
+                perk.BranchPointsRequired, new List<string>(perk.PrerequisiteIds), perk.IsCapstone);
+
+            if (perk.Branch == PerkBranch.None)
+            {
+                issues.Add($"{who} has no branch");
+            }
+
+            if (!cells.Add((perk.Branch, perk.Tier, perk.Column)))
+            {
+                issues.Add($"{who} shares branch {perk.Branch} tier {perk.Tier} column {perk.Column} with another perk");
+            }
+
+            if (perk.BranchPointsRequired != PerkCatalogue.TierGate(perk.Tier))
+            {
+                issues.Add($"{who} needs {perk.BranchPointsRequired} branch points but tier {perk.Tier} gates at " +
+                    $"{PerkCatalogue.TierGate(perk.Tier)}");
+            }
+
+            if (perk.IsCapstone != (perk.Tier == PerkRules.MaxTier))
+            {
+                issues.Add($"{who} IsCapstone {perk.IsCapstone} disagrees with Tier {perk.Tier} (the capstone is the tier-{PerkRules.MaxTier} perk)");
+            }
+
+            if (perk.IsCapstone)
+            {
+                capstones[perk.Branch] = capstones.GetValueOrDefault(perk.Branch) + 1;
+                if (perk.PrerequisiteIds.Count == 0)
+                {
+                    issues.Add($"{who} is a capstone with no prerequisite");
+                }
+            }
+
+            foreach (string prerequisite in perk.PrerequisiteIds)
+            {
+                if (PerkDatabase.Get(prerequisite) is { } before && (before.Branch != perk.Branch || before.Tier >= perk.Tier))
+                {
+                    issues.Add($"{who} prerequisite '{prerequisite}' must be an earlier tier of the same branch");
+                }
+            }
+
+            if ((perk.MinCorruptionTier != CorruptionTier.Untainted) != (perk.Branch == PerkBranch.Ashbound))
+            {
+                issues.Add($"{who} corruption gate and the Ashbound branch must go together (perks shape, never gate)");
+            }
+
+            foreach (PerkEffectEntry entry in perk.EffectEntries())
+            {
+                used.Add(entry.Kind);
+                float full = entry.ValuePerRank * perk.MaxRank;
+                if (System.MathF.Abs(PerkEffectMath.Clamp(entry.Kind, full) - full) > 0.0001f)
+                {
+                    issues.Add($"{who} {entry.Kind} reaches {full} at full rank, past its cap");
+                }
+            }
+        }
+
+        foreach (string id in nodes.Keys)
+        {
+            int cost = PerkCatalogue.PointsToReach(nodes, id);
+            if (cost < 0 || cost > PerkCatalogue.SkillPointSupply)
+            {
+                issues.Add($"perk '{id}' cannot be reached within the {PerkCatalogue.SkillPointSupply} skill points a character earns (plan costs {cost})");
+            }
+        }
+
+        foreach (PerkEffectKind kind in System.Enum.GetValues<PerkEffectKind>())
+        {
+            if (kind != PerkEffectKind.None && !used.Contains(kind))
+            {
+                issues.Add($"no perk uses effect kind {kind}");
+            }
+        }
+
+        foreach (PerkBranch branch in System.Enum.GetValues<PerkBranch>())
+        {
+            if (!PerkCatalogue.IsMainBranch(branch))
+            {
+                continue;
+            }
+
+            int total = PerkCatalogue.BranchTotal(nodes.Values, branch);
+            if (total < PerkCatalogue.BranchTotalMin || total > PerkCatalogue.BranchTotalMax)
+            {
+                issues.Add($"branch {branch} is worth {total} points; it should be {PerkCatalogue.BranchTotalMin}..{PerkCatalogue.BranchTotalMax}");
+            }
+
+            if (capstones.GetValueOrDefault(branch) != 1)
+            {
+                issues.Add($"branch {branch} has {capstones.GetValueOrDefault(branch)} capstones; it needs exactly one");
             }
         }
     }

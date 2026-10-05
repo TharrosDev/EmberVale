@@ -127,13 +127,17 @@ internal static class PerksLifecycleProbe
             }
         }
 
-        check(Near(PerkQuery.Factor(player, PerkEffectKind.BlockStaminaMult), 0.76f), "perks probe: iron stance did not give 0.76 block cost.");
-        check(Near(PerkQuery.Factor(player, PerkEffectKind.AttackStaminaMult), 0.85f), "perks probe: brawler did not give 0.85 attack cost.");
-        check(Near(PerkQuery.Factor(player, PerkEffectKind.ParryStaminaMult), 0.70f), "perks probe: riposte did not give 0.70 parry cost.");
-        check(Near(PerkQuery.Factor(player, PerkEffectKind.BowDrawStaminaMult), 0.76f), "perks probe: steady aim did not give 0.76 draw cost.");
-        check(Near(PerkQuery.Factor(player, PerkEffectKind.SprintStaminaMult), 0.76f), "perks probe: light feet did not give 0.76 sprint cost.");
-        check(Near(PerkQuery.Factor(player, PerkEffectKind.DodgeStaminaMult, "roll"), 0.82f), "perks probe: evasion did not give 0.82 roll cost.");
-        check(Near(PerkQuery.Factor(player, PerkEffectKind.DodgeStaminaMult, "backstep"), 0.62f), "perks probe: backstep adept did not stack to 0.62 backstep cost.");
+        foreach ((PerkEffectKind kind, string? arg) in new (PerkEffectKind, string?)[]
+        {
+            (PerkEffectKind.BlockStaminaMult, null), (PerkEffectKind.AttackStaminaMult, null),
+            (PerkEffectKind.ParryStaminaMult, null), (PerkEffectKind.BowDrawStaminaMult, null),
+            (PerkEffectKind.SprintStaminaMult, null), (PerkEffectKind.DodgeStaminaMult, "roll"),
+            (PerkEffectKind.DodgeStaminaMult, "backstep"),
+        })
+        {
+            PerkProbeMath.CheckTotal(player, ids, kind, arg, "perks probe", check);
+        }
+
         check(Near(PerkQuery.Factor(null, PerkEffectKind.BlockStaminaMult), 1f), "perks probe: an entity without perks is not neutral.");
 
         perks.Load(new Godot.Collections.Dictionary());

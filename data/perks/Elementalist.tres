@@ -32,6 +32,6 @@ ValuePerRank = 0.0
 Branch = 3
 Tier = 2
 Column = 0
-PrerequisiteIds = Array[String](["perk.thrift"])
+PrerequisiteIds = Array[String](["perk.arcane_focus"])
 BranchPointsRequired = 2
 Effects = [SubResource("Effect_1"), SubResource("Effect_2"), SubResource("Effect_3")]

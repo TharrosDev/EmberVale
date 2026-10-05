@@ -6,7 +6,7 @@
 [sub_resource type="Resource" id="Effect_1"]
 script = ExtResource("2_effect")
 Kind = 9
-ValuePerRank = 5
+ValuePerRank = 5.0
 
 [resource]
 script = ExtResource("1_perk")

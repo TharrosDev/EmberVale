@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="PerkResource" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/Progression/PerkResource.cs" id="1_perk"]
+[ext_resource type="Script" path="res://src/Progression/PerkEffectResource.cs" id="2_effect"]
+
+[sub_resource type="Resource" id="Effect_1"]
+script = ExtResource("2_effect")
+Stat = 8
+ModifierType = 0
+ValuePerRank = 2.0
+
+[resource]
+script = ExtResource("1_perk")
+Id = "perk.leather_apron"
+DisplayName = "Leather Apron"
+Description = "Sparks find leather instead of skin. +2 Armor per rank."
+MaxRank = 3
+Cost = 1
+ValuePerRank = 0.0
+Branch = 5
+Tier = 2
+Column = 2
+PrerequisiteIds = Array[String](["perk.forge_lore"])
+BranchPointsRequired = 2
+Effects = [SubResource("Effect_1")]

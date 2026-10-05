@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="PerkResource" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://src/Progression/PerkResource.cs" id="1_perk"]
+[ext_resource type="Script" path="res://src/Progression/PerkEffectResource.cs" id="2_effect"]
+
+[sub_resource type="Resource" id="Effect_1"]
+script = ExtResource("2_effect")
+Kind = 19
+ValuePerRank = 0.06
+
+[sub_resource type="Resource" id="Effect_2"]
+script = ExtResource("2_effect")
+Stat = 13
+ModifierType = 0
+ValuePerRank = 0.02
+
+[resource]
+script = ExtResource("1_perk")
+Id = "perk.marksman"
+DisplayName = "Marksman"
+Description = "Every shot is placed. Arrows hit 6% harder and +2% Crit Chance per rank."
+MaxRank = 2
+Cost = 2
+ValuePerRank = 0.0
+Branch = 2
+Tier = 4
+Column = 0
+PrerequisiteIds = Array[String](["perk.far_shot"])
+BranchPointsRequired = 9
+Effects = [SubResource("Effect_1"), SubResource("Effect_2")]

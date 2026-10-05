@@ -18,7 +18,10 @@ namespace Embervale.Bootstrap;
 /// </summary>
 internal static class MagicPerksProbe
 {
-    private static readonly string[] PerkIds = { "perk.thrift", "perk.elementalist", "perk.channeler", "perk.archmage" };
+    private static readonly string[] PerkIds =
+    {
+        "perk.thrift", "perk.arcane_economy", "perk.elementalist", "perk.wild_attunement", "perk.channeler", "perk.archmage",
+    };
 
     public static void Verify(PlayerCharacter player, PerksComponent perks, Action<bool, string> check)
     {
@@ -36,12 +39,11 @@ internal static class MagicPerksProbe
             }
         }
 
-        check(Near(PerkQuery.Factor(player, PerkEffectKind.ManaCostMult), 0.85f), "magic perks probe: thrift did not give 0.85 mana cost.");
-        check(Near(PerkQuery.Of(player, PerkEffectKind.SchoolPowerBonus, nameof(Combat.DamageType.Fire)), 0.22f),
-            "magic perks probe: elementalist and archmage did not give +22% fire power.");
-        check(Near(PerkQuery.Of(player, PerkEffectKind.SchoolPowerBonus, nameof(Combat.DamageType.Arcane)), 0.10f),
-            "magic perks probe: archmage alone did not give +10% arcane power.");
-        check(Near(PerkQuery.Of(player, PerkEffectKind.SpellCritBonus), 0.09f), "magic perks probe: channeler did not give +9% spell crit.");
+        PerkProbeMath.CheckTotal(player, PerkIds, PerkEffectKind.ManaCostMult, null, "magic perks probe", check);
+        PerkProbeMath.CheckTotal(player, PerkIds, PerkEffectKind.SchoolPowerBonus, nameof(Combat.DamageType.Fire), "magic perks probe", check);
+        PerkProbeMath.CheckTotal(player, PerkIds, PerkEffectKind.SchoolPowerBonus, nameof(Combat.DamageType.Arcane), "magic perks probe", check);
+        PerkProbeMath.CheckTotal(player, PerkIds, PerkEffectKind.SchoolPowerBonus, nameof(Combat.DamageType.Nature), "magic perks probe", check);
+        PerkProbeMath.CheckTotal(player, PerkIds, PerkEffectKind.SpellCritBonus, null, "magic perks probe", check);
 
         VerifyCost(player, check);
 
@@ -75,9 +77,10 @@ internal static class MagicPerksProbe
             return;
         }
 
-        float expected = spell.ManaCost * Weave.CostMultiplier(false) * 0.85f;
+        float perkFactor = 1f + PerkProbeMath.Expected(PerkIds, PerkEffectKind.ManaCostMult);
+        float expected = spell.ManaCost * Weave.CostMultiplier(false) * perkFactor;
         check(Near(casting.EffectiveManaCost(spell), expected),
-            $"magic perks probe: {spell.Id} costs {casting.EffectiveManaCost(spell):0.###}, not {expected:0.###} with thrift.");
+            $"magic perks probe: {spell.Id} costs {casting.EffectiveManaCost(spell):0.###}, not {expected:0.###} with the mana perks.");
 
         float mana = stats.GetCurrent(StatType.Mana);
         stats.SetCurrent(StatType.Mana, stats.GetMax(StatType.Mana));

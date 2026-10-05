@@ -1,0 +1,37 @@
+[gd_resource type="Resource" script_class="PerkResource" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://src/Progression/PerkResource.cs" id="1_perk"]
+[ext_resource type="Script" path="res://src/Progression/PerkEffectResource.cs" id="2_effect"]
+
+[sub_resource type="Resource" id="Effect_1"]
+script = ExtResource("2_effect")
+Kind = 1
+ValuePerRank = -0.1
+
+[sub_resource type="Resource" id="Effect_2"]
+script = ExtResource("2_effect")
+Stat = 11
+ModifierType = 0
+ValuePerRank = 0.3
+
+[sub_resource type="Resource" id="Effect_3"]
+script = ExtResource("2_effect")
+Stat = 13
+ModifierType = 0
+ValuePerRank = 0.04
+
+[resource]
+script = ExtResource("1_perk")
+Id = "perk.shadowdancer"
+DisplayName = "Shadowdancer"
+Description = "You are never where the blow lands. Dodging costs 10% less Stamina, +0.3 Move Speed and +4% Crit Chance."
+MaxRank = 1
+Cost = 3
+ValuePerRank = 0.0
+Branch = 4
+Tier = 5
+Column = 1
+PrerequisiteIds = Array[String](["perk.shadowstep"])
+BranchPointsRequired = 14
+IsCapstone = true
+Effects = [SubResource("Effect_1"), SubResource("Effect_2"), SubResource("Effect_3")]

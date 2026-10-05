@@ -117,6 +117,32 @@ public static class PerkEffectMath
         return Math.Max(1, (int)MathF.Round(amount * Factor(PerkEffectKind.XpGainMult, xpTotal)));
     }
 
+    /// <summary>
+    /// A reputation <paramref name="delta"/> with a summed <c>RepGainMult</c> applied. Only a gain is scaled (a
+    /// penalty is never softened by a perk), rounded to the nearest point and never below the 1 it was.
+    /// </summary>
+    public static int ScaleReputation(int delta, float repTotal)
+    {
+        if (delta <= 0)
+        {
+            return delta;
+        }
+
+        return Math.Max(delta, (int)MathF.Round(delta * Factor(PerkEffectKind.RepGainMult, repTotal)));
+    }
+
+    /// <summary>Salvage experience <paramref name="amount"/> with a summed <c>CraftXpMult</c> applied, rounded to the
+    /// nearest point; a positive grant stays at least what it was.</summary>
+    public static int ScaleCraftXp(int amount, float craftXpTotal)
+    {
+        if (amount <= 0)
+        {
+            return amount;
+        }
+
+        return Math.Max(amount, (int)MathF.Round(amount * Factor(PerkEffectKind.CraftXpMult, craftXpTotal)));
+    }
+
     /// <summary>A summed <c>MaterialSaveChance</c> as a whole percent (0..25), the unit of <c>StableRoll.Percent</c>.</summary>
     public static int SaveChancePercent(float total) =>
         (int)MathF.Round(Clamp(PerkEffectKind.MaterialSaveChance, total) * 100f);

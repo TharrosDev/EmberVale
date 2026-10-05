@@ -69,22 +69,20 @@ The game is complete from New Game to credits. The finish run's contract and id 
   cannot be played headless. Not proved: a human play-through, boss/duel balance, eye-level review of the
   new props and NPCs.
 
-- **Perks v2 core (progression upgrade, in progress).** `PerksComponent` has free ranks, points spent, a gold respec
-  (`RespecRules`), prerequisite and branch-point gates with `WhyNot`, and non-stat effect totals read through `PerkQuery`
-  (caps in `PerkEffectMath`); `ContentValidator.ValidatePerks` checks the data. The six original perks are unchanged. Seven
-  combat perks (`iron_stance`, `brawler`, `riposte`, `steady_aim`, `evasion`, `light_feet`, `backstep_adept`) use the
-  stamina-cost kinds, wired at the dodge, block, parry, attack, plunge, bow-draw and sprint sites; their tree gates are
-  placeholders until the catalogue (P5). The dodge cost does not yet fold in the Dex derivation (P2). Eleven economy
-  perks (`silver_tongue`, `road_wise`, `fair_dealer`, `appraiser`, `quick_study`, `thrifty_hands`, `salvager`, `reclaimer`,
-  `master_artisan`, `cutpurse`, `fortune`) use the haggle, buy, sell, service, XP, material-save, salvage and loot-quality
-  kinds, wired in `VendorPanel`/`PriceBreakdown`/`AppraisalPanel`, `ServiceComponent.PriceOf`, `ProgressionComponent.AddXp`,
-  `CraftingComponent` (saved `crafts` serial) and `LootComponent` (the killer from `EntityDiedEvent`). The shop-margin,
-  contract, commission and wager validator rules are proved at the `PerkEffectMath.Best*` caps. `RepGainMult` and
-  `CraftXpMult` have no hook yet (no craft XP exists; no perk uses reputation gain). Four Mage perks (`thrift`, `elementalist`,
-  `channeler`, `archmage`) use `ManaCostMult` (read in `SpellcastingComponent.EffectiveManaCost`, also shown by the HUD and
-  spellbook), `SchoolPowerBonus` (Arg = the school's `DamageType` name, read in `Empower`) and `SpellCritBonus` (added to the
-  spell crit roll in `CombatMath.RollSpell`). The spell mana cost does not yet fold in the Int derivation (P2). Dev commands
-  `perk`, `respec`, `sp`.
+- **Perk catalogue (progression upgrade, in progress).** `tools/gen_perks.py` is the one source of the 71 `data/perks/*.tres`
+  and their `perk.<id>.name/.desc` rows (the `progression:perks` block of `strings.csv`); `python tools/gen_perks.py --check`
+  is the drift gate. `PerksComponent` has free ranks, points spent, a gold respec (`RespecRules`), prerequisite and
+  branch-point gates with `WhyNot`, and non-stat effect totals read through `PerkQuery` (caps in `PerkEffectMath`). Every
+  `PerkEffectKind` has a hook and a perk: stamina costs at the dodge, block, parry, attack, bow-draw and sprint sites, mana
+  cost, school power and spell crit in `SpellcastingComponent`, haggle/buy/sell/service in the shop and service code,
+  XP in `AddXp`, material saving in `CraftingComponent`, salvage yield and salvage XP (`CraftXpMult`) there too, loot
+  quality in `LootComponent`, arrow damage (`RangedPowerBonus`) in `RangedAttack.Fire`, and standing gains (`RepGainMult`)
+  in `ReputationComponent.Add` (gains only). `ContentValidator.ValidatePerks` and `ValidatePerkCatalogue` check the tree
+  gates, capstones, branch totals (34-46 points each), reachability within `PerkCatalogue.SkillPointSupply` (54) and that
+  every kind is used; `PerkCatalogueTests` re-checks them from the `.tres` text and proves the caps and the shop margins hold
+  with the whole catalogue taken. The dodge cost does not yet fold in the Dex derivation, nor the spell mana cost the Int
+  derivation (P2). Not done: the perk tree UI (P6), milestone points (P9, so 49 points are earned today), playtest
+  tuning of the numbers.
 
 - **Guilds.** All five guilds reach rank three and a finale (Phase 42 closed 2026-09-28). Each arc is
   two quests off the leader's `member` branch (rank two, then a finale whose three-way verdict is

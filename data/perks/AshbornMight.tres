@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="PerkResource" format=3 uid="uid://ckvejmxnois6t"]
+[gd_resource type="Resource" script_class="PerkResource" load_steps=2 format=3 uid="uid://ckvejmxnois6t"]
 
 [ext_resource type="Script" path="res://src/Progression/PerkResource.cs" id="1_perk"]
 
@@ -13,3 +13,8 @@ Stat = 10
 ModifierType = 0
 ValuePerRank = 3.0
 MinCorruptionTier = 2
+Branch = 7
+Tier = 1
+Column = 1
+PrerequisiteIds = Array[String]([])
+BranchPointsRequired = 0

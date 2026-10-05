@@ -258,28 +258,29 @@ line in `StatBonuses()`. Bonuses apply through `EquipmentComponent`.
 
 ### A new perk
 
-`data/perks/Xxx.tres` (`PerkResource`): `Id` (`perk.<name>`), `MaxRank`, `Cost`, then the stat bonus (`Stat`,
-`ModifierType`, `ValuePerRank`; leave `ValuePerRank` at 0 for a perk that is only non-stat effects).
-Name and description are **locale keys** `<id>.name` / `<id>.desc` in `data/locale/strings.csv`
-(`DisplayName`/`Description` are only the fallback); `--validate` fails a perk without both rows.
+**Do not hand-edit `data/perks/*.tres` or the `perk.*` rows in `strings.csv`: `tools/gen_perks.py` owns both and deletes
+a perk file it does not name.** Add a `perk(...)` line to the table in that file and run `python tools/gen_perks.py`
+(`--check` exits 1 if anything is out of date). A perk is `perk(id_tail, "Name", branch, tier, column, max_rank, "Description", fx=[...], pre=[...])`:
 
-Tree fields, all defaulted: `Branch`, `Tier` (1-5), `Column` (0-4), `PrerequisiteIds` (each needs one rank),
-`BranchPointsRequired` (points already spent in the branch), `IsCapstone`. Extra effects go in `Effects`, each a
-`PerkEffectResource`: `Kind` None is one more stat modifier (`Stat`, `ModifierType`), any other `Kind` is a
-non-stat effect with an optional `Arg` (e.g. a spell school) that call sites read with `PerkQuery.Of(entity, kind, arg)`.
-⚠️ Values are summed over ranks and then **capped by `PerkEffectMath`**, so a perk cannot buy past the cap; read the
-unit of each kind on `PerkEffectMath.RangeOf`. ⚠️ A prerequisite and a branch-points gate are enforced by `Learn`, **not
-by `Load`**: a save is restored as it was, and `GrantFree` (race innate perks) skips both gates. Test it with the dev
-commands `sp <n>`, `perk <id> [rank]`, `learn <id>` and `respec`. A `*StaminaMult` effect is read at its call site with
-`PerkQuery.Factor(entity, kind, arg)` (1 for an entity with no perks); the dodge also passes `roll` or `backstep` as `Arg`.
-Magic kinds: `ManaCostMult` (`SpellcastingComponent.EffectiveManaCost` via `SpellRules.ManaCost`), `SchoolPowerBonus` (`Arg` =
-the `DamageType` name, e.g. `Fire`; an effect with no `Arg` counts for every school) and `SpellCritBonus` (a flat crit chance
-added before the clamp). Economy kinds: `HaggleChanceBonus` (percentage points, via `PerkEffectMath.HaggleChance`), `BuyDiscount` and `SellBonus`
-(fractions, `PerkEffectMath.BuyFactor` / `SellFactor`, passed into `ShopPricing.MarkupFor` / `SellFractionFor` as `perkFactor`),
-`ServicePriceMult` (`ServicePrice`), `MaterialSaveChance`, `SalvageYieldBonus`, `LootQuality` (added to the killer's table
-quality) and `XpGainMult` (applied in `ProgressionComponent.AddXp`). ⚠️ Raising a price cap means re-proving the shop margin:
-`ValidateShopTrade`, the contract-board and commission rules and the wager rule read the same `PerkEffectMath.Best*`
-constants, so change the cap there and nowhere else.
+- **Position.** `tier` 1-5 fixes the gate (0, 2, 5, 9, 14 branch points) and the cost (1 for tiers 1-2, 2 for tiers 3-4,
+  3 for the tier-5 capstone, which is the only one per branch). `column` is layout only and unique per tier and branch.
+  `pre` lists id tails that must each hold a rank; they must be an earlier tier of the same branch.
+- **Effects.** `E("Kind", value, arg="")` is a non-stat effect (`PerkEffectKind`), `S("Stat", value, "Flat"|"PercentAdd")` an extra
+  stat modifier; `value` is per rank. Use `{0}`, `{1}` in the description for each effect's value, in order: they are
+  filled in with the right unit, so a retune cannot leave a stale number in the text. The six pre-tree perks keep their stat
+  in `legacy=(stat, mod, value)` so their `.tres` shape and ids (in saves and `data/races`) never change.
+- **Caps.** Values are summed over ranks and then capped by `PerkEffectMath` (read each kind's unit on `RangeOf`). The whole
+  catalogue stays under every cap, so a cap is a backstop and not a tuning knob: before raising a total, check the
+  `PerkCatalogueTests` sum, and ⚠️ never raise a price cap without re-proving the shop margin (`ValidateShopTrade`, the
+  contract, commission and wager rules read `PerkEffectMath.Best*`).
+- **Budget.** A main branch must total 34-46 points (`PerkCatalogue.BranchTotalMin/Max`) so one branch fits the 54-point
+  supply and two do not. Only the Ashbound branch is corruption-gated (`corr=`); nothing else may be ("perks shape, never gate").
+
+A new `PerkEffectKind` (append-only) needs three things before a perk may use it: a range in `PerkEffectMath.RangeOf`, a call
+site reading `PerkQuery.Of`/`Factor` (ranged damage in `RangedAttack.Fire`, standing in `ReputationComponent.Add`, salvage XP in
+`CraftingComponent.Deconstruct`, and the others as listed in `docs/NOW.md`), and a perk: `--validate` fails a kind no perk uses.
+A prerequisite and a gate are enforced by `Learn`, **not by `Load`**: a save is restored as it was, and `GrantFree` skips both.
+Drive it with the dev commands `sp <n>`, `perk <id> [rank]`, `learn <id>` and `respec`.
 
 ### A new XP-bearing enemy (or tuning the curve)
 

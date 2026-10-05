@@ -3,6 +3,7 @@ using Embervale.Core.Events;
 using Embervale.Entities;
 using Embervale.Movement;
 using Embervale.Player;
+using Embervale.Progression;
 using Embervale.Stats;
 using Godot;
 
@@ -67,7 +68,7 @@ public sealed class RangedAttack
         // ⚠️ THE DRAW SCALES THE ROLLED DAMAGE, NOT THE WEAPON'S BASE. RollAttack adds the archer's power
         // stat to the base, and on a levelled character that stat is most of the number: scaling only
         // the base made a snap shot hit for 92% of a full draw.
-        amount *= RangedMath.DamageScale(charge);
+        amount *= RangedMath.DamageScale(charge) * PerkQuery.Factor(shooter, PerkEffectKind.RangedPowerBonus);
 
         Vector3 from = body.GlobalPosition + (Vector3.Up * 1.4f);
         float speed = bow.ProjectileSpeed * RangedMath.SpeedScale(charge);

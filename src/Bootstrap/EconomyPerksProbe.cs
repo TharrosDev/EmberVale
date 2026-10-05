@@ -19,8 +19,10 @@ internal static class EconomyPerksProbe
 {
     private static readonly string[] PerkIds =
     {
-        "perk.silver_tongue", "perk.road_wise", "perk.fair_dealer", "perk.appraiser", "perk.quick_study",
-        "perk.thrifty_hands", "perk.salvager", "perk.reclaimer", "perk.master_artisan", "perk.cutpurse", "perk.fortune",
+        "perk.silver_tongue", "perk.negotiator", "perk.road_wise", "perk.fair_dealer", "perk.shrewd_buyer", "perk.appraiser",
+        "perk.cutpurse", "perk.quick_study", "perk.scholar", "perk.well_regarded", "perk.respected", "perk.diplomat",
+        "perk.thrifty_hands", "perk.efficient_hands", "perk.master_artisan", "perk.salvager", "perk.reclaimer",
+        "perk.deep_salvage", "perk.artisans_eye", "perk.bench_mastery", "perk.fortune", "perk.lucky_break",
     };
 
     public static void Verify(PlayerCharacter player, PerksComponent perks, Action<bool, string> check)
@@ -40,23 +42,22 @@ internal static class EconomyPerksProbe
         }
 
         float haggle = PerkQuery.Of(player, PerkEffectKind.HaggleChanceBonus);
-        check(Near(haggle, 15f), "economy perks probe: silver tongue did not give +15 haggle.");
-        check(PerkEffectMath.HaggleChance(30, haggle) == 45 && PerkEffectMath.HaggleChance(0, haggle) == 0,
+        foreach (PerkEffectKind kind in new[]
+        {
+            PerkEffectKind.HaggleChanceBonus, PerkEffectKind.BuyDiscount, PerkEffectKind.SellBonus,
+            PerkEffectKind.ServicePriceMult, PerkEffectKind.XpGainMult, PerkEffectKind.MaterialSaveChance,
+            PerkEffectKind.SalvageYieldBonus, PerkEffectKind.LootQuality, PerkEffectKind.RepGainMult,
+            PerkEffectKind.CraftXpMult,
+        })
+        {
+            PerkProbeMath.CheckTotal(player, PerkIds, kind, null, "economy perks probe", check);
+        }
+
+        check(PerkEffectMath.HaggleChance(30, haggle) == 30 + (int)Math.Round(haggle) && PerkEffectMath.HaggleChance(0, haggle) == 0,
             "economy perks probe: a haggle perk changed a 30 chance wrongly or opened a 0 chance.");
-        check(Near(PerkEffectMath.BuyFactor(PerkQuery.Of(player, PerkEffectKind.BuyDiscount)), 0.97f),
-            "economy perks probe: fair dealer did not give 0.97 buy.");
-        check(Near(PerkEffectMath.SellFactor(PerkQuery.Of(player, PerkEffectKind.SellBonus)), 1.05f),
-            "economy perks probe: appraiser and cutpurse did not stack to 1.05 sell.");
-        check(Near(PerkEffectMath.ServiceFactor(PerkQuery.Of(player, PerkEffectKind.ServicePriceMult)), 0.96f),
-            "economy perks probe: road wise did not give 0.96 service.");
-        check(Near(PerkQuery.Of(player, PerkEffectKind.XpGainMult), 0.06f), "economy perks probe: quick study did not give +6% xp.");
-        check(PerkEffectMath.SaveChancePercent(PerkQuery.Of(player, PerkEffectKind.MaterialSaveChance)) == 20,
-            "economy perks probe: thrifty hands and master artisan did not give 20%.");
-        check(Near(PerkQuery.Of(player, PerkEffectKind.SalvageYieldBonus), 0.25f),
-            "economy perks probe: salvager and reclaimer did not give +25% salvage.");
-        check(Near(PerkQuery.Of(player, PerkEffectKind.LootQuality), 0.15f), "economy perks probe: fortune did not give +0.15 loot quality.");
 
         VerifyXp(player, check);
+        VerifyReputation(player, check);
         VerifyCraft(player, check);
 
         perks.Load(new Godot.Collections.Dictionary());
@@ -64,7 +65,7 @@ internal static class EconomyPerksProbe
             "economy perks probe: Load of an empty save kept economy perk effects.");
     }
 
-    /// <summary>A grant of 10 xp lands as 11 with +6%, through the real <c>AddXp</c>.</summary>
+    /// <summary>A grant of 10 xp lands as the scaled amount, through the real <c>AddXp</c>.</summary>
     private static void VerifyXp(PlayerCharacter player, Action<bool, string> check)
     {
         if (player.GetComponent<ProgressionComponent>() is not { } progression)
@@ -76,10 +77,51 @@ internal static class EconomyPerksProbe
         Godot.Collections.Dictionary snapshot = progression.Save();
         int level = progression.Level;
         int before = progression.CurrentXp;
+        int expected = PerkEffectMath.ScaleXp(10, PerkProbeMath.Expected(PerkIds, PerkEffectKind.XpGainMult));
         progression.AddXp(10);
-        check(progression.Level != level || progression.CurrentXp - before == 11,
-            $"economy perks probe: a 10 xp grant with +6% landed as {progression.CurrentXp - before}, not 11.");
+        check(expected > 10 && (progression.Level != level || progression.CurrentXp - before == expected),
+            $"economy perks probe: a 10 xp grant with the xp perks landed as {progression.CurrentXp - before}, not {expected}.");
         progression.Load(snapshot);
+    }
+
+    /// <summary>A reputation gain through the live <c>ReputationComponent.Add</c> is raised by the standing perks, and
+    /// a loss is not softened by them. Restored from a snapshot.</summary>
+    private static void VerifyReputation(PlayerCharacter player, Action<bool, string> check)
+    {
+        if (player.GetComponent<Factions.ReputationComponent>() is not { } reputation || Factions.FactionDatabase.All.Count == 0)
+        {
+            check(false, "economy perks probe: the player has no reputation or no faction is authored.");
+            return;
+        }
+
+        // A faction well inside the range, so the clamp cannot hide a gain or a loss.
+        string? faction = null;
+        foreach (Factions.FactionResource candidate in Factions.FactionDatabase.All)
+        {
+            if (Math.Abs(candidate.DefaultReputation) <= 50)
+            {
+                faction = candidate.Id;
+                break;
+            }
+        }
+
+        if (faction == null)
+        {
+            check(false, "economy perks probe: no faction starts near neutral standing.");
+            return;
+        }
+
+        Godot.Collections.Dictionary snapshot = reputation.Save();
+        reputation.Load(new Godot.Collections.Dictionary());
+        int start = reputation.Get(faction);
+        int expected = PerkEffectMath.ScaleReputation(20, PerkProbeMath.Expected(PerkIds, PerkEffectKind.RepGainMult));
+        reputation.Add(faction, 20);
+        int gained = reputation.Get(faction) - start;
+        reputation.Add(faction, -10);
+        int lost = start + gained - reputation.Get(faction);
+        reputation.Load(snapshot);
+        check(expected > 20 && gained == expected, $"economy perks probe: a +20 standing gain landed as {gained}, not {expected}.");
+        check(lost == 10, $"economy perks probe: a -10 standing loss landed as {lost}, not 10.");
     }
 
     /// <summary>A craft on a serial the roll saves hands one unit of the largest ingredient back; on a serial it
@@ -100,11 +142,12 @@ internal static class EconomyPerksProbe
             return;
         }
 
+        int percent = PerkEffectMath.SaveChancePercent(PerkProbeMath.Expected(PerkIds, PerkEffectKind.MaterialSaveChance));
         int saving = -1;
         int sparing = -1;
         for (int serial = 0; serial < 1000 && (saving < 0 || sparing < 0); serial++)
         {
-            if (MaterialSaving.Saves(serial, recipe.Id, 20))
+            if (MaterialSaving.Saves(serial, recipe.Id, percent))
             {
                 saving = saving < 0 ? serial : saving;
             }
@@ -114,7 +157,7 @@ internal static class EconomyPerksProbe
             }
         }
 
-        check(saving >= 0 && sparing >= 0, "economy perks probe: the 20% roll never saved, or always did, in 1000 serials.");
+        check(saving >= 0 && sparing >= 0, $"economy perks probe: the {percent}% roll never saved, or always did, in 1000 serials.");
         if (saving < 0 || sparing < 0)
         {
             return;

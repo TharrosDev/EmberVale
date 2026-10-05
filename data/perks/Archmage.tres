@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="PerkResource" load_steps=3 format=3]
+[gd_resource type="Resource" script_class="PerkResource" load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://src/Progression/PerkResource.cs" id="1_perk"]
 [ext_resource type="Script" path="res://src/Progression/PerkEffectResource.cs" id="2_effect"]
@@ -6,20 +6,25 @@
 [sub_resource type="Resource" id="Effect_1"]
 script = ExtResource("2_effect")
 Kind = 8
-ValuePerRank = 0.05
+ValuePerRank = 0.1
+
+[sub_resource type="Resource" id="Effect_2"]
+script = ExtResource("2_effect")
+Kind = 20
+ValuePerRank = 0.04
 
 [resource]
 script = ExtResource("1_perk")
 Id = "perk.archmage"
 DisplayName = "Archmage"
-Description = "Every school bends to you. All spells hit 5% harder per rank."
-MaxRank = 2
-Cost = 1
+Description = "Every school bends to you. All spells hit 10% harder and crit 4% more often."
+MaxRank = 1
+Cost = 3
 ValuePerRank = 0.0
 Branch = 3
-Tier = 4
-Column = 0
+Tier = 5
+Column = 1
 PrerequisiteIds = Array[String](["perk.channeler"])
-BranchPointsRequired = 9
+BranchPointsRequired = 14
 IsCapstone = true
-Effects = [SubResource("Effect_1")]
+Effects = [SubResource("Effect_1"), SubResource("Effect_2")]

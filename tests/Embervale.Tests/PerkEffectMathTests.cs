@@ -121,4 +121,25 @@ public class PerkEffectMathTests
         Assert.Equal(PerkEffectMath.StaminaFactorFloor,
             PerkEffectMath.Factor(PerkEffectKind.DodgeStaminaMult, totals.Get(PerkEffectKind.DodgeStaminaMult, "backstep")), 5);
     }
+
+    [Fact]
+    public void ScaleReputation_RaisesGainsOnly_AndNeverShrinksOne()
+    {
+        Assert.Equal(25, PerkEffectMath.ScaleReputation(20, 0.24f));
+        Assert.Equal(20, PerkEffectMath.ScaleReputation(20, 0f));
+        Assert.Equal(1, PerkEffectMath.ScaleReputation(1, 0.24f));
+        Assert.Equal(-10, PerkEffectMath.ScaleReputation(-10, 0.24f));
+        Assert.Equal(0, PerkEffectMath.ScaleReputation(0, 0.24f));
+        // The cap holds: 4.0 is read as the 0.25 maximum.
+        Assert.Equal(25, PerkEffectMath.ScaleReputation(20, 4f));
+    }
+
+    [Fact]
+    public void ScaleCraftXp_RaisesAGrant_UpToItsCap()
+    {
+        Assert.Equal(14, PerkEffectMath.ScaleCraftXp(10, 0.4f));
+        Assert.Equal(10, PerkEffectMath.ScaleCraftXp(10, 0f));
+        Assert.Equal(15, PerkEffectMath.ScaleCraftXp(10, 9f));
+        Assert.Equal(0, PerkEffectMath.ScaleCraftXp(0, 0.4f));
+    }
 }
