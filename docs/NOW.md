@@ -69,6 +69,12 @@ The game is complete from New Game to credits. The finish run's contract and id 
   cannot be played headless. Not proved: a human play-through, boss/duel balance, eye-level review of the
   new props and NPCs.
 
+- **Perks v2 core (progression upgrade, in progress).** `PerksComponent` has free ranks, points spent, a gold respec
+  (`RespecRules`), prerequisite and branch-point gates with `WhyNot`, and non-stat effect totals read through `PerkQuery`
+  (caps in `PerkEffectMath`); `ContentValidator.ValidatePerks` checks the data. The six original perks are unchanged and no
+  perk uses a non-stat effect or a tree position yet: the catalogue, effect hooks and tree UI are the next phases. Dev
+  commands `perk`, `respec`, `sp`.
+
 - **Guilds.** All five guilds reach rank three and a finale (Phase 42 closed 2026-09-28). Each arc is
   two quests off the leader's `member` branch (rank two, then a finale whose three-way verdict is
   given at the hand-in and recorded as a `flag.<guild>.*` flag): Ash Hunters `quest.ash_hunters.

@@ -140,6 +140,15 @@ public partial class ProgressionComponent : EntityComponent, ISaveable
         return true;
     }
 
+    /// <summary>Returns skill points to the pool: a respec refund, or the dev <c>sp</c> command's grant.</summary>
+    public void RefundSkillPoints(int amount)
+    {
+        if (amount > 0)
+        {
+            SkillPoints += amount;
+        }
+    }
+
     /// <summary>Spends spell-book points (buying/upgrading spells). Returns false if too few are available.</summary>
     public bool SpendSpellPoints(int cost)
     {

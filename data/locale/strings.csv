@@ -4347,3 +4347,17 @@ questui.tag.guild_rank,{0} rank {1}
 questui.tag.item,{0} {1}
 questui.tag.story,Story
 # --- END campaign:ui ---
+# --- BEGIN progression:perks ---
+perk.ashborn_might.name,Ashborn Might
+perk.ashborn_might.desc,The corruption answers when called. +3 Spell Power per rank. Only the Marked may take it.
+perk.endurance_training.name,Endurance Training
+perk.endurance_training.desc,Lungs and legs that last. +10 maximum Stamina per rank.
+perk.might.name,Might
+perk.might.desc,Blows land harder. +2 Physical Power per rank.
+perk.precision.name,Precision
+perk.precision.desc,A keener eye for weak points. +2% Crit Chance per rank.
+perk.toughness.name,Toughness
+perk.toughness.desc,Hardened against harm. +15 maximum Health per rank.
+perk.warding.name,Warding
+perk.warding.desc,"Thicker hide, sturdier guard. +3 Armor per rank."
+# --- END progression:perks ---

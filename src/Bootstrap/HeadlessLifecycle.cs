@@ -135,6 +135,7 @@ public static class HeadlessLifecycle
         }
 
         CheckLandingReady(session, $"cycle {cycle} new-game");
+        PerksLifecycleProbe.Drive(session.Players.Player, Check);
 
         Check(SaveManager.Instance?.SaveGame(slot) == true, $"cycle {cycle} new-game: the session failed to save.");
     }
@@ -162,6 +163,7 @@ public static class HeadlessLifecycle
             return;
         }
         CheckLandingReady(lifecycle.Session!, $"cycle {cycle} load");
+        PerksLifecycleProbe.Verify(lifecycle.Session!.Players.Player, Check);
     }
 
     private static void CheckLandingReady(GameSession session, string label)

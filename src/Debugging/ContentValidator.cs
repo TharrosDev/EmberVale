@@ -107,6 +107,7 @@ public static class ContentValidator
         ValidateWorldEvents(issues);
         ValidateRegions(issues);
         ValidateRaces(issues);
+        ValidatePerks(issues);
         ValidateShrines(issues);
         ValidateGuilds(issues);
         ValidateGuildHubs(issues);
@@ -3358,6 +3359,126 @@ public static class ContentValidator
             }
 
             RequireItem(recipe.OutputItemId, $"recipe '{recipe.Id}' output", issues);
+        }
+    }
+
+    /// <summary>The six perks that predate the trees. Their ids are in saves and race files, so they
+    /// may be re-tiered and re-branched but never removed or renamed.</summary>
+    private static readonly string[] LegacyPerkIds =
+    {
+        "perk.might", "perk.toughness", "perk.precision",
+        "perk.endurance_training", "perk.warding", "perk.ashborn_might",
+    };
+
+    /// <summary>
+    /// Perk v2 well-formedness: id prefix, rank/cost/tier/column ranges, prerequisites that exist and
+    /// do not loop, effects that do something, name and description keys in the locale, and the six
+    /// legacy ids still present.
+    /// <para>P5 hook (the catalogue does not exist yet, so these cannot hold): every
+    /// <see cref="PerkEffectKind"/> is used by at least one perk, each branch's capstone is reachable
+    /// within the 54 skill points a character earns, and each branch totals 25-60 points.</para>
+    /// </summary>
+    private static void ValidatePerks(List<string> issues)
+    {
+        HashSet<string>? keys = LocaleKeys();
+        var prerequisites = new Dictionary<string, IReadOnlyList<string>>();
+
+        foreach (PerkResource perk in PerkDatabase.All)
+        {
+            string who = $"perk '{perk.Id}'";
+            if (!perk.Id.StartsWith("perk.", System.StringComparison.Ordinal))
+            {
+                issues.Add($"{who} id must start with 'perk.'");
+            }
+
+            if (perk.MaxRank < 1)
+            {
+                issues.Add($"{who} MaxRank {perk.MaxRank} must be at least 1");
+            }
+
+            if (perk.Cost < 0)
+            {
+                issues.Add($"{who} Cost {perk.Cost} must not be negative");
+            }
+
+            if (perk.Tier < 1 || perk.Tier > PerkRules.MaxTier)
+            {
+                issues.Add($"{who} Tier {perk.Tier} is outside 1..{PerkRules.MaxTier}");
+            }
+
+            if (perk.Column < 0 || perk.Column > PerkRules.MaxColumn)
+            {
+                issues.Add($"{who} Column {perk.Column} is outside 0..{PerkRules.MaxColumn}");
+            }
+
+            if (perk.BranchPointsRequired < 0)
+            {
+                issues.Add($"{who} BranchPointsRequired {perk.BranchPointsRequired} must not be negative");
+            }
+
+            if (!System.Enum.IsDefined(perk.Branch) || !System.Enum.IsDefined(perk.MinCorruptionTier))
+            {
+                issues.Add($"{who} has an undefined Branch or MinCorruptionTier");
+            }
+
+            var list = new List<string>();
+            foreach (string prerequisite in perk.PrerequisiteIds)
+            {
+                list.Add(prerequisite);
+                if (prerequisite == perk.Id)
+                {
+                    issues.Add($"{who} lists itself as a prerequisite");
+                }
+                else if (PerkDatabase.Get(prerequisite) == null)
+                {
+                    issues.Add($"{who} prerequisite '{prerequisite}' is not a perk");
+                }
+            }
+
+            prerequisites[perk.Id] = list;
+
+            bool doesSomething = perk.ValuePerRank != 0f;
+            foreach (PerkEffectResource effect in perk.EffectList())
+            {
+                doesSomething |= effect.ValuePerRank != 0f;
+                if (!System.Enum.IsDefined(effect.Kind))
+                {
+                    issues.Add($"{who} has an effect with undefined kind {(int)effect.Kind}");
+                }
+                else if (effect.Kind != PerkEffectKind.None && effect.ValuePerRank == 0f)
+                {
+                    issues.Add($"{who} effect {effect.Kind} has ValuePerRank 0");
+                }
+            }
+
+            if (!doesSomething)
+            {
+                issues.Add($"{who} does nothing: no stat ValuePerRank and no effect with a value");
+            }
+
+            if (keys != null)
+            {
+                foreach (string key in new[] { perk.NameKey, perk.DescKey })
+                {
+                    if (!keys.Contains(key))
+                    {
+                        issues.Add($"{who} is missing locale key '{key}'");
+                    }
+                }
+            }
+        }
+
+        if (PerkRules.FindCycle(prerequisites) is { } looped)
+        {
+            issues.Add($"perk '{looped}' has a prerequisite cycle");
+        }
+
+        foreach (string legacy in LegacyPerkIds)
+        {
+            if (PerkDatabase.Get(legacy) == null)
+            {
+                issues.Add($"legacy perk '{legacy}' is missing; its id is in saves and race files");
+            }
         }
     }
 

@@ -258,8 +258,19 @@ line in `StatBonuses()`. Bonuses apply through `EquipmentComponent`.
 
 ### A new perk
 
-`data/perks/Xxx.tres` (`PerkResource`): `Id`, name, description, `MaxRank`, `Cost`, `Stat`,
-`ModifierType`, `ValuePerRank`.
+`data/perks/Xxx.tres` (`PerkResource`): `Id` (`perk.<name>`), `MaxRank`, `Cost`, then the stat bonus (`Stat`,
+`ModifierType`, `ValuePerRank`; leave `ValuePerRank` at 0 for a perk that is only non-stat effects).
+Name and description are **locale keys** `<id>.name` / `<id>.desc` in `data/locale/strings.csv`
+(`DisplayName`/`Description` are only the fallback); `--validate` fails a perk without both rows.
+
+Tree fields, all defaulted: `Branch`, `Tier` (1-5), `Column` (0-4), `PrerequisiteIds` (each needs one rank),
+`BranchPointsRequired` (points already spent in the branch), `IsCapstone`. Extra effects go in `Effects`, each a
+`PerkEffectResource`: `Kind` None is one more stat modifier (`Stat`, `ModifierType`), any other `Kind` is a
+non-stat effect with an optional `Arg` (e.g. a spell school) that call sites read with `PerkQuery.Of(entity, kind, arg)`.
+⚠️ Values are summed over ranks and then **capped by `PerkEffectMath`**, so a perk cannot buy past the cap; read the
+unit of each kind on `PerkEffectMath.RangeOf`. ⚠️ A prerequisite and a branch-points gate are enforced by `Learn`, **not
+by `Load`**: a save is restored as it was, and `GrantFree` (race innate perks) skips both gates. Test it with the dev
+commands `sp <n>`, `perk <id> [rank]`, `learn <id>` and `respec`.
 
 ### A new XP-bearing enemy (or tuning the curve)
 
