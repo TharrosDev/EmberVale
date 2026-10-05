@@ -808,9 +808,9 @@ public partial class GameHud : CanvasLayer
             float cd = spells.CooldownOf(spell);
 
             // The cost the cast will actually charge: the region's Weave bends it (corrupted spells get
-            // cheaper as the Weave fades, ordinary ones dearer), so showing the sheet cost would lie.
-            float cost = spell.ManaCost
-                * Weave.CostMultiplier(spell.MinCorruptionTier > CorruptionTier.Untainted);
+            // cheaper as the Weave fades, ordinary ones dearer) and the caster's perks shave it, so
+            // showing the sheet cost would lie.
+            float cost = spells.EffectiveManaCost(spell);
 
             // ⚠️ Affordability is ASKED, not decided (§48). The HUD compares against the live mana
             // reading purely to colour the number; whether the cast is allowed remains

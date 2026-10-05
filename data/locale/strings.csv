@@ -4402,3 +4402,13 @@ perk.fortune.name,Fortune
 perk.fortune.desc,"Luck follows the bold. Slain foes drop better gear, raising loot quality by 0.05 per rank."
 shop.line.perk,"your perks {0}% — {1}g"
 # --- END progression:p4b ---
+# --- BEGIN progression:p4c ---
+perk.thrift.name,Thrift
+perk.thrift.desc,"Spend less to cast. Every spell costs 5% less mana per rank, down to 85%."
+perk.elementalist.name,Elementalist
+perk.elementalist.desc,"Mastery of the three loud schools. Fire, Frost and Lightning spells hit 4% harder per rank."
+perk.channeler.name,Channeler
+perk.channeler.desc,Steady hands shape the weave. Spells crit 3% more often per rank.
+perk.archmage.name,Archmage
+perk.archmage.desc,Every school bends to you. All spells hit 5% harder per rank.
+# --- END progression:p4c ---

@@ -231,8 +231,10 @@ caps the first two at 25%).
   attacks (swing, heavy, charge, plunge), parrying, bow draw, dodging and sprinting through `PerkQuery.Factor`, never below
   half. Eleven economy perks (Silver Tongue, Road Wise, Fair Dealer, Appraiser, Quick Study, Thrifty Hands, Salvager,
   Reclaimer, Master Artisan, Cutpurse, Fortune) change haggle chance, shop buy and sell prices, service prices, XP gained,
-  materials saved on a craft, salvage yield and loot quality, each capped by `PerkEffectMath`. *Partial:* no tree UI; the
-  dev commands `perk`, `respec`, `sp` drive it.
+  materials saved on a craft, salvage yield and loot quality, each capped by `PerkEffectMath`. Four Mage perks (Thrift,
+  Elementalist, Channeler, Archmage) cut spell mana cost (never below 60%), raise a school's spell power (Fire, Frost and
+  Lightning, or every school) and add to spell crit chance. *Partial:* no tree UI; the dev commands `perk`, `respec`, `sp`
+  drive it.
 - **Stats** — resources, primaries, derived stats and six resistances with flat/percent modifiers.
   `StatsComponent`, `Stat` (`src/Stats`).
 - **Races and character creation** — six playable races (Human, Valari, Sylthari, Grondar, Draekyn,

@@ -80,7 +80,11 @@ The game is complete from New Game to credits. The finish run's contract and id 
   kinds, wired in `VendorPanel`/`PriceBreakdown`/`AppraisalPanel`, `ServiceComponent.PriceOf`, `ProgressionComponent.AddXp`,
   `CraftingComponent` (saved `crafts` serial) and `LootComponent` (the killer from `EntityDiedEvent`). The shop-margin,
   contract, commission and wager validator rules are proved at the `PerkEffectMath.Best*` caps. `RepGainMult` and
-  `CraftXpMult` have no hook yet (no craft XP exists; no perk uses reputation gain). Dev commands `perk`, `respec`, `sp`.
+  `CraftXpMult` have no hook yet (no craft XP exists; no perk uses reputation gain). Four Mage perks (`thrift`, `elementalist`,
+  `channeler`, `archmage`) use `ManaCostMult` (read in `SpellcastingComponent.EffectiveManaCost`, also shown by the HUD and
+  spellbook), `SchoolPowerBonus` (Arg = the school's `DamageType` name, read in `Empower`) and `SpellCritBonus` (added to the
+  spell crit roll in `CombatMath.RollSpell`). The spell mana cost does not yet fold in the Int derivation (P2). Dev commands
+  `perk`, `respec`, `sp`.
 
 - **Guilds.** All five guilds reach rank three and a finale (Phase 42 closed 2026-09-28). Each arc is
   two quests off the leader's `member` branch (rank two, then a finale whose three-way verdict is

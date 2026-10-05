@@ -1,0 +1,37 @@
+[gd_resource type="Resource" script_class="PerkResource" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://src/Progression/PerkResource.cs" id="1_perk"]
+[ext_resource type="Script" path="res://src/Progression/PerkEffectResource.cs" id="2_effect"]
+
+[sub_resource type="Resource" id="Effect_1"]
+script = ExtResource("2_effect")
+Kind = 8
+Arg = "Fire"
+ValuePerRank = 0.04
+
+[sub_resource type="Resource" id="Effect_2"]
+script = ExtResource("2_effect")
+Kind = 8
+Arg = "Frost"
+ValuePerRank = 0.04
+
+[sub_resource type="Resource" id="Effect_3"]
+script = ExtResource("2_effect")
+Kind = 8
+Arg = "Lightning"
+ValuePerRank = 0.04
+
+[resource]
+script = ExtResource("1_perk")
+Id = "perk.elementalist"
+DisplayName = "Elementalist"
+Description = "Mastery of the three loud schools. Fire, Frost and Lightning spells hit 4% harder per rank."
+MaxRank = 3
+Cost = 1
+ValuePerRank = 0.0
+Branch = 3
+Tier = 2
+Column = 0
+PrerequisiteIds = Array[String](["perk.thrift"])
+BranchPointsRequired = 2
+Effects = [SubResource("Effect_1"), SubResource("Effect_2"), SubResource("Effect_3")]

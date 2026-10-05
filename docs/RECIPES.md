@@ -272,7 +272,9 @@ unit of each kind on `PerkEffectMath.RangeOf`. ⚠️ A prerequisite and a branc
 by `Load`**: a save is restored as it was, and `GrantFree` (race innate perks) skips both gates. Test it with the dev
 commands `sp <n>`, `perk <id> [rank]`, `learn <id>` and `respec`. A `*StaminaMult` effect is read at its call site with
 `PerkQuery.Factor(entity, kind, arg)` (1 for an entity with no perks); the dodge also passes `roll` or `backstep` as `Arg`.
-Economy kinds: `HaggleChanceBonus` (percentage points, via `PerkEffectMath.HaggleChance`), `BuyDiscount` and `SellBonus`
+Magic kinds: `ManaCostMult` (`SpellcastingComponent.EffectiveManaCost` via `SpellRules.ManaCost`), `SchoolPowerBonus` (`Arg` =
+the `DamageType` name, e.g. `Fire`; an effect with no `Arg` counts for every school) and `SpellCritBonus` (a flat crit chance
+added before the clamp). Economy kinds: `HaggleChanceBonus` (percentage points, via `PerkEffectMath.HaggleChance`), `BuyDiscount` and `SellBonus`
 (fractions, `PerkEffectMath.BuyFactor` / `SellFactor`, passed into `ShopPricing.MarkupFor` / `SellFractionFor` as `perkFactor`),
 `ServicePriceMult` (`ServicePrice`), `MaterialSaveChance`, `SalvageYieldBonus`, `LootQuality` (added to the killer's table
 quality) and `XpGainMult` (applied in `ProgressionComponent.AddXp`). ⚠️ Raising a price cap means re-proving the shop margin:

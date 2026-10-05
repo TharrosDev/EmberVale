@@ -729,7 +729,7 @@ public partial class SpellbookPanel : UiPanel
 
         // Cost and cooldown, then what the region's Weave and the reader's mastery do to them.
         bool corrupted = SpellLearnRules.IsCorrupted((int)spell.MinCorruptionTier);
-        float weaveCost = spell.ManaCost * Weave.CostMultiplier(corrupted);
+        float weaveCost = _spellcasting?.EffectiveManaCost(spell) ?? spell.ManaCost * Weave.CostMultiplier(corrupted);
         AddStat(col, Loc.T("spellbook.mana_label"),
             Mathf.Abs(weaveCost - spell.ManaCost) >= 0.5f
                 ? Loc.TF("magic.book.here_value", spell.ManaCost.ToString("0"), weaveCost.ToString("0"))

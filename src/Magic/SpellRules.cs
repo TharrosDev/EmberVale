@@ -59,6 +59,11 @@ public static class SpellRules
     /// <summary>A caster cannot begin a cast while silenced or stunned.</summary>
     public static bool CanBegin(bool silenced, bool stunned) => !silenced && !stunned;
 
+    /// <summary>What a cast charges: the sheet cost scaled by the region's Weave and by the caster's perk
+    /// factor (<c>PerkQuery.Factor</c> of <c>ManaCostMult</c>, already floored by <c>PerkEffectMath</c>).</summary>
+    public static float ManaCost(float baseCost, float weaveMultiplier, float perkFactor) =>
+        Math.Max(0f, baseCost) * weaveMultiplier * perkFactor;
+
     /// <summary>Mana returned for a cast interrupted in its wind-up.</summary>
     public static float InterruptRefund(float manaSpent) => Math.Max(0f, manaSpent) * InterruptRefundFraction;
 
