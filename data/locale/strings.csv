@@ -482,6 +482,7 @@ char.pp_mana_cost,spell mana cost
 char.level_badge,"Level {0}"
 char.xp_progress,"{0} / {1} XP"
 char.points_skill,"{0} skill"
+char.skill_points,Skill points: {0}
 char.points_spell,"{0} spell"
 char.perk_rank_short,"{0}/{1}"
 char.perks_none,No perks are known yet.
