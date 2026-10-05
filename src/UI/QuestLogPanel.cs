@@ -23,7 +23,7 @@ namespace Embervale.UI;
 public partial class QuestLogPanel : UiPanel
 {
     private QuestLogComponent? _log;
-    private PanelContainer _indexWell = null!;
+    private VBoxContainer _index = null!;
     private HFlowContainer _tabs = null!;
     private VBoxContainer _list = null!;
     private VBoxContainer _detail = null!;
@@ -54,34 +54,31 @@ public partial class QuestLogPanel : UiPanel
         body.AddThemeConstantOverride("separation", UiTheme.SpaceLg);
         root.AddChild(body);
 
-        _indexWell = UiTheme.Well();
-        _indexWell.CustomMinimumSize = new Vector2(340f, 0f);
-        body.AddChild(_indexWell);
-
-        var indexColumn = new VBoxContainer { SizeFlagsVertical = Control.SizeFlags.ExpandFill };
-        indexColumn.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
-        MarginContainer indexPad = UiTheme.Padding(UiTheme.SpaceSm);
-        indexPad.AddChild(indexColumn);
-        _indexWell.AddChild(indexPad);
+        // The index is bare ground, not a Well: its rows are Cards, and a recess around raised rows is two
+        // frames for one list.
+        _index = new VBoxContainer { SizeFlagsVertical = Control.SizeFlags.ExpandFill };
+        _index.CustomMinimumSize = new Vector2(340f, 0f);
+        _index.AddThemeConstantOverride("separation", UiTheme.SpaceMd);
+        body.AddChild(_index);
 
         _tabs = new HFlowContainer();
-        _tabs.AddThemeConstantOverride("h_separation", UiTheme.SpaceXs);
-        _tabs.AddThemeConstantOverride("v_separation", UiTheme.SpaceXs);
-        indexColumn.AddChild(_tabs);
+        _tabs.AddThemeConstantOverride("h_separation", UiTheme.SpaceSm);
+        _tabs.AddThemeConstantOverride("v_separation", UiTheme.SpaceSm);
+        _index.AddChild(_tabs);
 
         (ScrollContainer indexScroll, VBoxContainer indexList) = UiTheme.ScrollList();
         _list = indexList;
-        indexColumn.AddChild(indexScroll);
+        _index.AddChild(indexScroll);
 
+        // The Band is the detail's frame and already carries card padding, so the scroll goes straight in.
         PanelContainer detailBand = UiTheme.Band(UiTheme.QuestMain);
         detailBand.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
         detailBand.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
         body.AddChild(detailBand);
         (ScrollContainer detailScroll, VBoxContainer detailList) = UiTheme.ScrollList();
         _detail = detailList;
-        MarginContainer detailPad = UiTheme.Padding(UiTheme.SpaceLg);
-        detailPad.AddChild(detailScroll);
-        detailBand.AddChild(detailPad);
+        _detail.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
+        detailBand.AddChild(detailScroll);
 
         _footer = UiTheme.Caption(string.Empty, UiTheme.Dim);
         root.AddChild(_footer);
@@ -361,7 +358,7 @@ public partial class QuestLogPanel : UiPanel
     {
         // Called here as well as in BuildShell: the UI-scale setting can change mid-session.
         UiTheme.ApplyScreenInset(Shell);
-        _indexWell.CustomMinimumSize = new Vector2(Mathf.Clamp(UiTheme.UsableWidth(Shell) * 0.32f, 240f, 360f), 0f);
+        _index.CustomMinimumSize = new Vector2(Mathf.Clamp(UiTheme.UsableWidth(Shell) * 0.32f, 240f, 360f), 0f);
 
         UiTheme.ClearChildren(_tabs);
         UiTheme.ClearChildren(_list);
@@ -427,7 +424,7 @@ public partial class QuestLogPanel : UiPanel
             bool active = section == _section;
 
             Button tab = UiTheme.Action(Loc.TF("questui.tab", Loc.T(SectionKey(section)), count));
-            tab.CustomMinimumSize = new Vector2(0f, 30f);
+            tab.CustomMinimumSize = new Vector2(0f, UiTheme.ControlHeight);
             tab.AddThemeColorOverride("font_color", active ? UiTheme.Accent : UiTheme.Dim);
             var box = new StyleBoxFlat
             {
@@ -620,8 +617,7 @@ public partial class QuestLogPanel : UiPanel
     {
         Button header = UiTheme.Action(Loc.TF(open ? "questui.chapter_open" : "questui.chapter_closed", title, count));
         header.AddThemeColorOverride("font_color", UiTheme.Accent);
-        header.CustomMinimumSize = new Vector2(0f, 32f);
-        header.Pressed += onToggle;
+                header.Pressed += onToggle;
         return header;
     }
 
@@ -746,8 +742,8 @@ public partial class QuestLogPanel : UiPanel
     {
         QuestResource quest = progress.Quest;
         var chips = new HFlowContainer();
-        chips.AddThemeConstantOverride("h_separation", UiTheme.SpaceXs);
-        chips.AddThemeConstantOverride("v_separation", UiTheme.SpaceXs);
+        chips.AddThemeConstantOverride("h_separation", UiTheme.ChipGap);
+        chips.AddThemeConstantOverride("v_separation", UiTheme.ChipGap);
 
         chips.AddChild(UiTheme.Chip(
             Loc.T(quest.IsLedger ? "questui.chip.ledger" : quest.IsMainQuest ? "questui.chip.main" : "questui.chip.errand"),

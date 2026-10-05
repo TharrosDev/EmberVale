@@ -227,6 +227,17 @@ presses is at least `ControlHeight` tall. (5) Every screen still has to fit 1280
 past the panel scrolls (`ScrollList`), the frame never does. Radii: `RadiusSm` 1 (bars, wells, chips),
 `RadiusMd` 2 (buttons), `RadiusLg` 2 (panels).
 
+Panel pass 2 (journals, spellbook, map, dialogue, banner) turned those rules into patterns a list screen follows:
+
+- **One frame per list.** A list of `Card`s sits on bare ground (a plain `VBoxContainer` with its own minimum width), never in a `Well`; a detail pane is one `Band` or `Card` whose scroll goes straight inside, with no second `Padding`.
+- **`CardButton` pads once.** Its content margins are the card's own (`SpaceMd`, `SpaceLg` on the spine side), and hover and focus grow outward by those margins, so the focus ring sits on the card's edge instead of floating inside it as a second frame. It used to add a `Padding` as well: 26 px above and below one line of text, and a spellbook with six schools that ran off the page.
+- **Rhythm inside a card or block.** A title and its caption, or a caption and its value, sit `LineGap` apart; a second line that is a different kind of thing (the chips under a dialogue choice) sits `SpaceSm` below; the next block sits `SpaceSm` to `RowGap` below that. Chips wrap at `ChipGap` both ways. Stat lines that belong together (a school's rank, bar and perks) are one `VBoxContainer` at `SpaceXs`.
+- **Tabs and headers a player presses are `ControlHeight`**, not a literal 30 or 32.
+- **Scroll before overflow.** A column that can outgrow the page (the spellbook's school list, the map rail, a dialogue's choices) scrolls through `ScrollList`; its minimum is built from `ControlHeight` and `RowGap` rows (`RailListMin` is three rows), never a pixel count, and a list that holds fewer rows sizes to them so a lone waypoint is not followed by a hole.
+- **A footer row never pins its width.** Buttons, a readout and a hint share one `HBoxContainer`; the hint is the one `ExpandFill` child and wraps. A fixed label plus a spacer pushed the map's footer, and the whole panel with it, past the right edge at 1280 px.
+- **Custom-drawn labels pad like tooltips**: `SpaceSm` at the sides, `SpaceXs` above and below the glyph box (the map's hover label).
+- **The dialogue window is 60% of the viewport (320 to 560 px)** and its choices are one `RowGap` list; the chapter banner's band is 24% of the height with `SpaceSm` between its lines.
+
 Check spacing by looking, not by arithmetic: `godot --path . -- --uishots` (pause, spellbook, bestiary, character Progression, crafting, storage, contracts, appraisal, save slots), `--panelshots`, `--hudshots` and `--shellshots` capture every screen. `EMBERVALE_RES=1920x1080` re-shoots at another window size (a 16:9 size lays out identically to 1280x720, because the project stretches `canvas_items`, so use `1280x800` for the handheld aspect), `EMBERVALE_SLOT` picks the save and `EMBERVALE_USER_DIR` + `EMBERVALE_ARTIFACTS` keep a run's saves and PNGs out of the shared user folder.
 
 Radii stay tight on purpose: this world's surfaces are cut and bound, not moulded. A

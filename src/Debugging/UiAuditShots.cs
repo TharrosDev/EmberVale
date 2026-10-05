@@ -63,6 +63,9 @@ public sealed partial class UiAuditShots : ShotHarness
             Find<SpellbookPanel>()?.ShowSchool((int)Combat.DamageType.Fire);
         });
 
+        // The last school: the ring list is the tallest thing on the page, so this frame shows whether it fits.
+        Shot("03b-spellbook-necrotic", () => Find<SpellbookPanel>()?.ShowSchool((int)Combat.DamageType.Necrotic));
+
         Shot("04-bestiary", () =>
         {
             Find<SpellbookPanel>()?.SetOpen(false);

@@ -143,6 +143,16 @@ public sealed partial class PanelShots : ShotHarness
             Map?.SetZoom(MapProjection.DefaultZoom);
         });
 
+        // The rail's lower half (filters, legend) is below the fold of a 720 px screen, so it gets its own
+        // frame: the rail is the map's first scroll container, and this scrolls it to the end.
+        Shot("05b-map-rail-bottom", () =>
+        {
+            if (Map is not null && QuestShotFixtures.FindFirst<ScrollContainer>(Map) is { } rail)
+            {
+                rail.ScrollVertical = 100000;
+            }
+        });
+
         Shot("06-map-closed", () => Map?.SetOpen(false));
 
         // The journal, which grew a track control in 39.5B and has never been photographed either.

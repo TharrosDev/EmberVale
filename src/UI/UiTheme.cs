@@ -562,13 +562,15 @@ public static class UiTheme
     public static PanelContainer CardButton(Color? edge, out Button input, out VBoxContainer content)
     {
         var card = new PanelContainer();
-        card.AddThemeStyleboxOverride("panel", CardStyle(edge));
+        StyleBoxFlat style = CardStyle(edge);
+        card.AddThemeStyleboxOverride("panel", style);
 
-        MarginContainer pad = Padding(SpaceSm);
+        // The card's own content margins are the padding. A second Padding inside it doubled every edge
+        // (26 px above and below one line of text), and because a PanelContainer insets its children by
+        // those margins, the button's focus ring was drawn inside the card as a second frame.
         content = new VBoxContainer();
         content.AddThemeConstantOverride("separation", LineGap);
-        pad.AddChild(content);
-        card.AddChild(pad);
+        card.AddChild(content);
 
         input = new Button { Flat = true, FocusMode = Control.FocusModeEnum.All };
 
@@ -579,6 +581,16 @@ public static class UiTheme
         var focus = new StyleBoxFlat { BgColor = new Color(0f, 0f, 0f, 0f), BorderColor = Accent };
         focus.SetBorderWidthAll(1);
         focus.SetCornerRadiusAll(RadiusSm);
+
+        // The button fills the card's content box, so hover and focus grow outward by the card's margins
+        // to cover the whole card and sit on its edge instead of floating inside it.
+        foreach (StyleBoxFlat box in new[] { hover, focus })
+        {
+            box.ExpandMarginLeft = style.ContentMarginLeft;
+            box.ExpandMarginRight = style.ContentMarginRight;
+            box.ExpandMarginTop = style.ContentMarginTop;
+            box.ExpandMarginBottom = style.ContentMarginBottom;
+        }
 
         input.AddThemeStyleboxOverride("normal", clear);
         input.AddThemeStyleboxOverride("hover", hover);
