@@ -147,6 +147,13 @@ worth knowing because the `meshy` MCP server does not always connect:
 curl -s -H "Authorization: Bearer $MESHY_API_KEY" https://api.meshy.ai/openapi/v1/balance
 ```
 
+⚠️ **The key lives in two places, both outside this repo, and this repo is public — never commit it.**
+The user-level `MESHY_API_KEY` environment variable (REST calls above) and the `meshy` entry's `env`
+in the user-level Claude config (the MCP server). **Rotating it means updating both**, then restarting
+Claude Code, because MCP env is read at startup: `claude mcp remove meshy -s user`, then `claude mcp
+add meshy -s user -e MESHY_API_KEY=<new key> -- node <path to @meshy-ai/meshy-mcp-server/dist/index.js>`,
+and set the environment variable to match. Confirm with the balance call above (a bad key is a 401).
+
 ⚠️ **Finish-run lessons (2026-09-27).** The `meshy` MCP's `meshy_image_to_3d` fails for
 `smart-topology`; call the REST endpoint (`POST /openapi/v1/image-to-3d`) with `$MESHY_API_KEY`
 instead. A subagent asked to run Meshy may be denied the tools by permissions, so run generation from
