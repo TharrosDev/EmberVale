@@ -15,6 +15,8 @@ public sealed class CharacterProfile
     public string RaceId { get; set; } = "race.human";
     public string CharacterName { get; set; } = "Wanderer";
     public string[] AppearanceOptionIds { get; set; } = Array.Empty<string>();
+    /// <summary>A <c>background.*</c> id (see <c>BackgroundDatabase</c>), or empty for none. Old saves stored a
+    /// line of free text here; it is kept verbatim and resolves to no background.</summary>
     public string Background { get; set; } = string.Empty;
 
     /// <summary>The default new-character profile until the creator (26D) supplies a chosen one.</summary>

@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="AppearanceOptionResource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/Appearance/AppearanceOptionResource.cs" id="1_opt"]
+
+[resource]
+script = ExtResource("1_opt")
+Id = "appearance.ember.ember"
+NameKey = "appearance.ember.ember.name"
+Slot = 3
+Tint = Color(0.820, 0.340, 0.100, 1)
+BuildScale = 1.0
+IsDefault = true

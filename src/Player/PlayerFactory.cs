@@ -1,3 +1,4 @@
+using Embervale.Appearance;
 using Embervale.Combat.Actions;
 using Embervale.Combat;
 using Embervale.Core;
@@ -80,6 +81,9 @@ public static class PlayerFactory
         {
             bodyVisual.Name = "BodyMesh";
             bodyVisual.RotateY(Mathf.Pi);
+            // The chosen look (P8): region tints and build width, resolved against the race's allow-list.
+            // Before the child is added so the corruption controller collects the tinted surface.
+            PlayerAppearance.Apply(bodyVisual, PlayerAppearance.Resolve(profile));
             player.AddChild(bodyVisual);
         }
         else

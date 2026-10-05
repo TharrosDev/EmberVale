@@ -151,6 +151,16 @@ public partial class MainMenu : CanvasLayer
     /// <summary>Deterministic screenshot entry point; follows the same settings path as the menu button.</summary>
     public void OpenSettingsForCapture() => OpenSettings();
 
+    /// <summary>Screenshot entry point: the creator as a fresh New Game opens it, returned so a harness can drive its picks.</summary>
+    public CharacterCreator OpenCreatorForCapture()
+    {
+        Visible = false;
+        var creator = new CharacterCreator();
+        creator.Configure(_ => { }, () => Visible = true);
+        AddChild(creator);
+        return creator;
+    }
+
     private void ContinueMostRecent()
     {
         if (SaveManager.Instance is not { } manager)

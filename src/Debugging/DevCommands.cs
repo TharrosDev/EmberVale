@@ -2,6 +2,7 @@ using Embervale.Core.Diagnostics;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
+using Embervale.Appearance;
 using Embervale.Core;
 using Embervale.Core.Events;
 using Embervale.Core.Services;
@@ -54,6 +55,8 @@ public static class DevCommands
         console.Register(new ConsoleCommand("respec", "respec", "Respec every bought perk rank through the real gold-charged path.", RespecCmd));
         console.Register(new ConsoleCommand("sp", "sp <n>", "Add n skill points.", SkillPointsCmd));
         console.Register(new ConsoleCommand("race", "race [id]", "Show races, or live-apply one to the player (Phase 26C).", RaceCmd));
+        console.Register(new ConsoleCommand("look", "look [appearance ids...]", "Show the player's look, or live-apply appearance option ids the race offers (P8).", LookCmd));
+        console.Register(new ConsoleCommand("background", "background [id]", "Show backgrounds, or live-apply one (kit, perk, flags, standing) to the player (P7).", BackgroundCmd));
         console.Register(new ConsoleCommand("mastery", "mastery", "Show the player's per-school spell mastery (Phase 29.5C).", Mastery));
         console.Register(new ConsoleCommand("weave", "weave [<0..1>|set <0..1>|restore]", "Inspect or tune the region's magic potency — the fading Weave (Phase 29.5E).", WeaveCmd));
         console.Register(new ConsoleCommand("spells", "spells [all]", "List the spells the player knows (or every player spell with ids and lock state).", Spells));
@@ -1121,6 +1124,70 @@ public static class DevCommands
         }
 
         return raceComponent.SwapRaceForDebug(args[0]);
+    }
+
+    private static string LookCmd(DevConsole console, string[] args)
+    {
+        if (!TryPlayer(out PlayerCharacter player) || player.GetComponent<RaceComponent>() is not { } race ||
+            player.GetNodeOrNull<Node3D>("BodyMesh") is not { } body)
+        {
+            return "no race component or body";
+        }
+
+        RaceResource? raceResource = RaceDatabase.Get(race.Profile.RaceId);
+        var rejected = new List<string>();
+        foreach (string id in args)
+        {
+            if (AppearanceDatabase.Get(id) == null || raceResource == null || !raceResource.AppearanceOptionIds.Contains(id))
+            {
+                rejected.Add(id);
+            }
+        }
+
+        if (args.Length > 0)
+        {
+            var merged = new List<string>(race.Profile.AppearanceOptionIds);
+            merged.AddRange(args);
+            AppearanceOptionResource?[] picks = PlayerAppearance.Resolve(raceResource, merged);
+            race.Profile.AppearanceOptionIds = AppearanceRules.ToProfileIds(System.Array.ConvertAll(picks, o => o?.Id ?? string.Empty));
+            PlayerAppearance.Apply(body, picks);
+        }
+
+        string current = string.Join(", ", AppearanceOptionIdsOf(PlayerAppearance.Resolve(race.Profile)));
+        string note = rejected.Count > 0 ? $" (ignored, not offered to {race.Profile.RaceId}: {string.Join(", ", rejected)})" : string.Empty;
+        return $"look: {current}{note}";
+
+        static IEnumerable<string> AppearanceOptionIdsOf(AppearanceOptionResource?[] picks)
+        {
+            foreach (AppearanceOptionResource? pick in picks)
+            {
+                yield return pick?.Id ?? "-";
+            }
+        }
+    }
+
+    private static string BackgroundCmd(DevConsole console, string[] args)
+    {
+        if (args.Length < 1)
+        {
+            var ids = new List<string>();
+            foreach (Backgrounds.BackgroundResource background in Backgrounds.BackgroundDatabase.All)
+            {
+                ids.Add(background.Id);
+            }
+
+            string current = TryPlayer(out PlayerCharacter held) && held.GetComponent<RaceComponent>() is { } race
+                ? Backgrounds.BackgroundRules.ResolveId(race.Profile.Background)
+                : string.Empty;
+            return $"backgrounds: {string.Join(", ", ids)}; current: {(current.Length > 0 ? current : "none")}";
+        }
+
+        if (!TryPlayer(out PlayerCharacter player) || player.GetComponent<RaceComponent>() is not { } raceComponent)
+        {
+            return "no race component";
+        }
+
+        return raceComponent.SwapBackgroundForDebug(args[0]);
     }
 
     private static string Time(DevConsole console, string[] args)

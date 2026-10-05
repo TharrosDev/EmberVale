@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="BackgroundResource" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://src/Backgrounds/BackgroundResource.cs" id="1_bg"]
+[ext_resource type="Script" path="res://src/Races/RaceReputationTweak.cs" id="3_rep"]
+
+[sub_resource type="Resource" id="Rep_1"]
+script = ExtResource("3_rep")
+FactionId = "faction.villagers"
+Amount = 2
+
+[resource]
+script = ExtResource("1_bg")
+Id = "background.merchants_heir"
+NameKey = "background.merchants_heir.name"
+DescKey = "background.merchants_heir.desc"
+LeanBranch = "social"
+StartingItems = Array[String](["item.food.field_ration:2"])
+StartingGold = 60
+FlavorFlags = Array[String](["flag.background.merchants_heir"])
+ReputationTweaks = Array[Resource]([SubResource("Rep_1")])

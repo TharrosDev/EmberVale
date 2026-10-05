@@ -251,7 +251,17 @@ caps the first two at 25%).
   factor (-0.4%/pt, floor 0.8) exist as pure functions only.
 - **Races and character creation** — six playable races (Human, Valari, Sylthari, Grondar, Draekyn,
   Umbral) with stat deltas, innate perks and starting standing; name and race picked at New Game.
-  `RaceResource`, `CharacterCreator` (`data/races`). *Partial:* appearance options are data only.
+  `RaceResource`, `CharacterCreator` (`data/races`).
+- **Appearance** — the creator picks a skin tone, hair colour, eye colour, ember glow colour and build from
+  swatches filtered by race, beside a live preview of the same body model. Material-only: one body shader
+  recolours skin, hair and eyes through a region mask, and the build scales the body width (0.92 / 1.0 / 1.1).
+  Purely cosmetic. Corruption tiers still ash the body and light the skin and eyes in the chosen ember colour.
+  `AppearanceOptionResource`, `PlayerAppearance`, `AppearanceRules`, `player_body.gdshader` (`data/appearance`).
+- **Backgrounds** — eight soft nudges picked at New Game (Wayfarer is the no-op default): a free tier-1
+  perk rank, a small kit capped at 80 gold in value, a story flag read by a hub dialogue, a standing
+  tweak and at most +1 on a stat. Kit and perk are New Game only; stat deltas are re-derived from the
+  profile on load. The lean badge is cosmetic. `BackgroundResource`, `BackgroundApplier`,
+  `BackgroundRules` (`data/backgrounds`).
 
 ## Items, equipment and loot
 
@@ -445,7 +455,7 @@ caps the first two at 25%).
   `EnvironmentEmitters`.
 - **Quality tiers** — Low / Medium / High / Ultra (shadows, SSAO, SSIL, volumetric fog, SSR, particle
   scale, render scale). `RenderQualityResource` (`data/rendering`).
-- **Corruption appearance** — the player's body shifts with corruption tier (placeholder materials).
+- **Corruption appearance** — the player's body shifts with corruption tier (ash, skin wash, ember glow via the body shader).
   `CorruptionAppearanceController`.
 - **Magic colour** — one hue per school for every spell effect. `SpellSchools.Color`.
 

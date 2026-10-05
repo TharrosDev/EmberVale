@@ -7,3 +7,4 @@ script = ExtResource("1_race")
 Id = "race.human"
 DisplayName = "Human"
 Description = "Adaptable and ambitious, the most common folk of the realm. Humans carry no innate gifts and no weaknesses — a blank slate shaped entirely by the path the player chooses."
+AppearanceOptionIds = Array[String](["appearance.skin.fair", "appearance.skin.pale", "appearance.skin.tan", "appearance.skin.olive", "appearance.skin.brown", "appearance.skin.deep", "appearance.hair.brown", "appearance.hair.black", "appearance.hair.auburn", "appearance.hair.blonde", "appearance.hair.ginger", "appearance.hair.grey", "appearance.eyes.brown", "appearance.eyes.blue", "appearance.eyes.green", "appearance.eyes.amber", "appearance.eyes.grey", "appearance.ember.ember", "appearance.ember.gold", "appearance.ember.violet", "appearance.ember.azure", "appearance.ember.verdant", "appearance.ember.crimson", "appearance.ember.pale", "appearance.build.average", "appearance.build.slim", "appearance.build.broad"])

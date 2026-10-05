@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="BackgroundResource" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://src/Backgrounds/BackgroundResource.cs" id="1_bg"]
+[ext_resource type="Script" path="res://src/Races/RaceStatDelta.cs" id="2_delta"]
+[ext_resource type="Script" path="res://src/Races/RaceReputationTweak.cs" id="3_rep"]
+
+[sub_resource type="Resource" id="Delta_1"]
+script = ExtResource("2_delta")
+Stat = 4
+Amount = 1.0
+
+[sub_resource type="Resource" id="Rep_1"]
+script = ExtResource("3_rep")
+FactionId = "faction.ash_hunters"
+Amount = 3
+
+[resource]
+script = ExtResource("1_bg")
+Id = "background.hunter"
+NameKey = "background.hunter.name"
+DescKey = "background.hunter.desc"
+StartingPerkId = "perk.precision"
+LeanBranch = "archer"
+StatDeltas = Array[Resource]([SubResource("Delta_1")])
+StartingItems = Array[String](["item.weapon.iron_dagger", "item.ammo.arrows:10", "item.food.smoked_fish:2"])
+FlavorFlags = Array[String](["flag.background.hunter"])
+ReputationTweaks = Array[Resource]([SubResource("Rep_1")])
