@@ -2,9 +2,11 @@ using System.Collections.Generic;
 using Embervale.Core;
 using Embervale.Core.Diagnostics;
 using Embervale.Core.Events;
+using Embervale.Companions;
 using Embervale.Core.Services;
 using Embervale.Enemies;
 using Embervale.Entities;
+using Embervale.Items;
 using Embervale.Magic;
 using Embervale.Player;
 using Embervale.Quests;
@@ -120,6 +122,10 @@ public sealed partial class HudShots : ShotHarness
 
         Shot("05-statuses", ApplyStatuses);
 
+        // Spacing audit: a filled hotbar and a companion in the party card, so the bottom edge of the HUD is
+        // photographed in its busiest honest state rather than with an empty dock and no party strip.
+        Shot("05a-party-hotbar", StageHotbarAndParty);
+
         // ⚠️ The save this harness loads has no active quest, so without this the tracker — and the
         // distance/bearing readout that is one of 39.5B's headline changes — never appears in a single
         // image. A capture set that silently omits the feature under review is the failure mode this
@@ -170,6 +176,9 @@ public sealed partial class HudShots : ShotHarness
         // Finishing the current step opens the next one, which the feed folds into ONE toast.
         Shot("10-objective-toast", () => QuestShotFixtures.Log()?.DebugAdvance(QuestShotFixtures.AshWind, 1));
 
+        // Spacing audit: three toasts at once, the stack's worst case against the tracker and the minimap.
+        Shot("10b-toast-stack", StageToastStack);
+
         Shot("11-chapter-banner", () =>
         {
             QuestShotFixtures.HoldChapterBanners(false);
@@ -218,6 +227,46 @@ public sealed partial class HudShots : ShotHarness
                 return;
             }
         }
+    }
+
+    /// <summary>Puts a few real consumables on the hotbar (with counts) and recruits a companion.</summary>
+    private static void StageHotbarAndParty()
+    {
+        if (Player() is not { } player)
+        {
+            return;
+        }
+
+        if (player.GetComponent<InventoryComponent>() is { } pack && player.GetComponent<HotbarComponent>() is { } bar)
+        {
+            string[] ids = { "item.potion.health", "item.food.field_ration", "item.potion.stamina", "item.food.smoked_fish" };
+            for (int i = 0; i < ids.Length; i++)
+            {
+                if (ItemDatabase.Get(ids[i]) is { } item)
+                {
+                    pack.AddItem(item, 3 + i);
+                    bar.Assign(i, ids[i]);
+                }
+            }
+        }
+
+        if (ServiceLocator.Instance is { } locator && locator.TryGet(out CompanionRoster roster))
+        {
+            roster.Recruit("companion.kael");
+        }
+    }
+
+    /// <summary>Raises three notices in one frame through the events the feed already answers.</summary>
+    private void StageToastStack()
+    {
+        if (Player() is not { } player)
+        {
+            return;
+        }
+
+        EventBus.Instance?.Publish(new Progression.LeveledUpEvent(player, 7, 1));
+        EventBus.Instance?.Publish(new GameSavedEvent("shots", true));
+        QuestShotFixtures.FindFirst<Notifications>(GetTree().Root)?.PushBark("companion.kael", "shot.boss.intro");
     }
 
     /// <summary>Starts the first quest the player can actually take and tracks it, so the tracker,

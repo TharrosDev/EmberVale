@@ -37,12 +37,11 @@ public partial class Nameplate : PanelContainer
         CustomMinimumSize = new Vector2(200, 0);
         SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
 
-        _frame = UiTheme.CardStyle(UiTheme.Neutral);
+        _frame = UiTheme.Compact(UiTheme.CardStyle(UiTheme.Neutral));
         AddThemeStyleboxOverride("panel", _frame);
 
-        MarginContainer pad = UiTheme.Padding(UiTheme.SpaceSm);
         var col = new VBoxContainer();
-        col.AddThemeConstantOverride("separation", 3);
+        col.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
 
         _name = UiTheme.Body("");
         _name.HorizontalAlignment = HorizontalAlignment.Center;
@@ -63,8 +62,7 @@ public partial class Nameplate : PanelContainer
         _tag.Visible = false;
         col.AddChild(_tag);
 
-        pad.AddChild(col);
-        AddChild(pad);
+        AddChild(col);
     }
 
     /// <summary>

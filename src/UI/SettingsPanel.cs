@@ -77,18 +77,19 @@ public partial class SettingsPanel : CanvasLayer
         panel.AddChild(pad);
 
         var col = new VBoxContainer();
-        col.AddThemeConstantOverride("separation", 8);
+        col.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
         pad.AddChild(col);
 
         col.AddChild(UiTheme.Title(Loc.T("settings.title")));
         col.AddChild(UiTheme.Divider());
 
-        // The sections are tall, so scroll them. The height is viewport-relative (37.5H): a fixed
-        // 420 plus the title and the Back button overflowed a 533 px logical viewport, which is
-        // what a Steam Deck reports at UI scale 1.5.
+        // The sections are tall, so scroll them. The scroll takes whatever height the workspace frame
+        // leaves (37.5H made it viewport-relative; a fixed 420 overflowed a 533 px logical viewport).
+        // Its floor is deliberately small: a floor near the frame's height pushed the panel to within
+        // a few pixels of the window's bottom edge, because the frame grows to fit its content.
         var scroll = new ScrollContainer
         {
-            CustomMinimumSize = new Vector2(0f, Mathf.Clamp(UiTheme.UsableHeight(panel) - 110f, 220f, 560f)),
+            CustomMinimumSize = new Vector2(0f, ScrollMinHeight),
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
             SizeFlagsVertical = Control.SizeFlags.ExpandFill,
             HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled,
@@ -105,7 +106,7 @@ public partial class SettingsPanel : CanvasLayer
         scroll.AddChild(gutter);
 
         var body = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
-        body.AddThemeConstantOverride("separation", 6);
+        body.AddThemeConstantOverride("separation", UiTheme.RowGap);
         gutter.AddChild(body);
 
         var s = _settings.Current;
@@ -230,7 +231,6 @@ public partial class SettingsPanel : CanvasLayer
 
         col.AddChild(UiTheme.Divider());
         Button back = UiTheme.Action(Loc.T("common.back"));
-        back.CustomMinimumSize = new Vector2(0, 34);
         back.Pressed += Back;
         col.AddChild(back);
 
@@ -239,7 +239,10 @@ public partial class SettingsPanel : CanvasLayer
 
     /// <summary>Width of the right-hand control column. Wide enough for the longest dropdown value
     /// and the slider-plus-readout pair, so nothing has to squeeze its label.</summary>
-    private const float ControlColumn = 230f;
+    private const float ControlColumn = 250f;
+
+    /// <summary>Smallest height the settings list scrolls in; the workspace frame gives it the rest.</summary>
+    private const float ScrollMinHeight = 220f;
 
     // --- Row builders -------------------------------------------------------
 
@@ -263,7 +266,9 @@ public partial class SettingsPanel : CanvasLayer
         var wrap = new VBoxContainer();
         wrap.AddThemeConstantOverride("separation", 0);
 
-        var row = new HBoxContainer();
+        // Every row is a full control tall, so a slider, a toggle and a dropdown share one pitch and the
+        // rows stop touching: they were 18, 24 and 40 px high, which put the volume sliders 25 px apart.
+        var row = new HBoxContainer { CustomMinimumSize = new Vector2(0f, UiTheme.ControlHeight) };
         row.AddThemeConstantOverride("separation", UiTheme.SpaceMd);
 
         Label name = UiTheme.Body(label);
@@ -279,6 +284,11 @@ public partial class SettingsPanel : CanvasLayer
         var slot = new MarginContainer { CustomMinimumSize = new Vector2(ControlColumn, 0f) };
         control.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
         control.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        if (control is OptionButton)
+        {
+            control.CustomMinimumSize = new Vector2(0f, UiTheme.ControlHeight);
+        }
+
         slot.AddChild(control);
         row.AddChild(slot);
         wrap.AddChild(row);
@@ -317,10 +327,10 @@ public partial class SettingsPanel : CanvasLayer
     private Control VolumeRow(string label, float value, System.Action<float> assign)
     {
         var box = new HBoxContainer();
-        box.AddThemeConstantOverride("separation", 8);
+        box.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
         HSlider slider = UiTheme.Slider(0d, 1d, 0.05d, value, 180f);
         Label readout = UiTheme.Body($"{Mathf.RoundToInt(value * 100f)}%", UiTheme.Dim);
-        readout.CustomMinimumSize = new Vector2(40, 0);
+        readout.CustomMinimumSize = new Vector2(48, 0);
         readout.HorizontalAlignment = HorizontalAlignment.Right;
 
         slider.ValueChanged += v =>
@@ -338,10 +348,10 @@ public partial class SettingsPanel : CanvasLayer
     private Control SliderRow(string label, double min, double max, double step, float value, System.Action<double> assign, string? explanation = null)
     {
         var box = new HBoxContainer();
-        box.AddThemeConstantOverride("separation", 8);
+        box.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
         HSlider slider = UiTheme.Slider(min, max, step, value, 150f);
         Label readout = UiTheme.Body($"{value:0.00}", UiTheme.Dim);
-        readout.CustomMinimumSize = new Vector2(40, 0);
+        readout.CustomMinimumSize = new Vector2(48, 0);
         readout.HorizontalAlignment = HorizontalAlignment.Right;
 
         slider.ValueChanged += v =>

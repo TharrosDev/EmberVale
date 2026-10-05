@@ -19,6 +19,9 @@ public partial class Toast : MarginContainer
     /// <summary>Horizontal slide-in distance (px at reference scale).</summary>
     private const float SlideDistance = 24f;
 
+    /// <summary>Fraction of <see cref="Life"/> after which the toast fades out.</summary>
+    private const float FadeStart = 0.6f;
+
     private readonly PanelContainer _chip = new();
     private double _age;
 
@@ -36,7 +39,7 @@ public partial class Toast : MarginContainer
         // ShaderMaterial - a full framed screen's worth of chrome for one line of text that lives
         // four seconds. This is the third instance of the same pattern (status chips in 37.5B, save
         // rows in this same phase): a small widget that reused Panel() as a generic box.
-        StyleBoxFlat style = UiTheme.CardStyle(Accent);
+        StyleBoxFlat style = UiTheme.Compact(UiTheme.CardStyle(Accent));
         style.BgColor = UiTheme.PanelBg with { A = 0.98f };
         style.BorderWidthBottom = 1;
         style.BorderColor = Accent with { A = 0.58f };
@@ -47,6 +50,13 @@ public partial class Toast : MarginContainer
         AddChild(_chip);
         ApplySlide(UiTheme.Duration(UiTheme.DurationBase) > 0f ? SlideDistance : 0f);
     }
+
+    /// <summary>True once the toast has started its fade-out, so it no longer counts against the feed's room.</summary>
+    public bool Expiring => _age >= Life * FadeStart;
+
+    /// <summary>Jumps the toast to the last moments of its fade, so the feed gets its room back within a few frames
+    /// without the toast vanishing between two frames.</summary>
+    public void Expedite() => _age = Mathf.Max(_age, Life * 0.97);
 
     /// <summary>Parents <paramref name="content"/> into the visible chip.</summary>
     public void AddContent(Control content) => _chip.AddChild(content);
@@ -67,7 +77,7 @@ public partial class Toast : MarginContainer
         ApplySlide(SlideDistance * (1f - entrance));
 
         // Fade up with the entrance; hold; then fade out over the final 40% of the lifetime.
-        float alpha = t < 0.6f ? entrance : 1f - ((t - 0.6f) / 0.4f);
+        float alpha = t < FadeStart ? entrance : 1f - ((t - FadeStart) / (1f - FadeStart));
         Modulate = new Color(1f, 1f, 1f, Mathf.Clamp(alpha, 0f, 1f));
     }
 

@@ -84,22 +84,22 @@ public partial class DebugHud : CanvasLayer
 
     // --- Construction -------------------------------------------------------
 
+    /// <summary>Top of the vitals card: the HUD's clock/weather band ends about 72 px down, so this starts below it.</summary>
+    private const float ClockClearance = 96f;
+
     private void BuildVitalsPanel()
     {
         // Cards rather than Panels (37.5H): this is the F3 developer overlay, and two framed
         // screens each carrying a grain ShaderMaterial is chrome the dev overlay does not need.
         _vitalsPanel = Ignore(UiTheme.Card());
         // Below the GameHud's top-left clock/weather widget so the F3 overlay doesn't cover it.
-        _vitalsPanel.Position = new Vector2(16, 64);
+        _vitalsPanel.Position = new Vector2(UiTheme.SpaceLg, ClockClearance);
         _vitalsPanel.CustomMinimumSize = new Vector2(320, 0);
         AddChild(_vitalsPanel);
 
-        MarginContainer pad = UiTheme.Padding();
-        _vitalsPanel.AddChild(pad);
-
         var col = new VBoxContainer();
-        col.AddThemeConstantOverride("separation", 5);
-        pad.AddChild(col);
+        col.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
+        _vitalsPanel.AddChild(col);
 
         col.AddChild(UiTheme.Header("DEBUG  (F3)"));
         _diag = UiTheme.Body("", UiTheme.Dim);
@@ -117,7 +117,7 @@ public partial class DebugHud : CanvasLayer
         // Target/dummy stats live in the *same* panel (a collapsible section below the
         // player's) so the two readouts stack and can never overlap on screen.
         _targetSection = new VBoxContainer { Visible = false };
-        _targetSection.AddThemeConstantOverride("separation", 5);
+        _targetSection.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
         col.AddChild(_targetSection);
 
         _targetSection.AddChild(new HSeparator());
@@ -136,29 +136,28 @@ public partial class DebugHud : CanvasLayer
         _controlsPanel.AnchorRight = 1f;
         _controlsPanel.AnchorTop = 1f;
         _controlsPanel.AnchorBottom = 1f;
-        _controlsPanel.OffsetLeft = -16;
-        _controlsPanel.OffsetRight = -16;
-        _controlsPanel.OffsetTop = -16;
-        _controlsPanel.OffsetBottom = -16;
+        _controlsPanel.OffsetLeft = -UiTheme.SpaceLg;
+        _controlsPanel.OffsetRight = -UiTheme.SpaceLg;
+        _controlsPanel.OffsetTop = -UiTheme.SpaceLg;
+        _controlsPanel.OffsetBottom = -UiTheme.SpaceLg;
         _controlsPanel.GrowHorizontal = Control.GrowDirection.Begin;
         _controlsPanel.GrowVertical = Control.GrowDirection.Begin;
         AddChild(_controlsPanel);
 
-        MarginContainer pad = UiTheme.Padding(UiTheme.SpaceSm);
-        _controlsPanel.AddChild(pad);
+        UiTheme.Compact(_controlsPanel);
 
         Label hint = UiTheme.Body(
             "WASD move · Mouse look · LMB attack · RMB block · Q cast · F cycle spell\n" +
             "E interact · I character · J journal · [H] heal · [R] respawn · [X] +XP · [K] +rep\n" +
             "[F5/F9] save/load · [Esc] pause",
             UiTheme.Dim);
-        pad.AddChild(hint);
+        _controlsPanel.AddChild(hint);
     }
 
     private static (ProgressBar Bar, Label Value) AddVital(VBoxContainer col, string caption, Color fill)
     {
         var row = new HBoxContainer();
-        row.AddThemeConstantOverride("separation", 8);
+        row.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
 
         Label cap = UiTheme.Body(caption);
         cap.CustomMinimumSize = new Vector2(34, 0);

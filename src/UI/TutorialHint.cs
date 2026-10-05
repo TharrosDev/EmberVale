@@ -31,14 +31,12 @@ public partial class TutorialHint : VBoxContainer
         // ornamented.
         _frame = UiTheme.Card(UiTheme.Accent);
         _frame.MouseFilter = MouseFilterEnum.Ignore;
+        UiTheme.Compact(_frame);
         AddChild(_frame);
-
-        MarginContainer pad = UiTheme.Padding(UiTheme.SpaceSm);
-        _frame.AddChild(pad);
 
         _label = UiTheme.Body(string.Empty, UiTheme.Text);
         _label.HorizontalAlignment = HorizontalAlignment.Center;
-        pad.AddChild(_label);
+        _frame.AddChild(_label);
 
         EventBus bus = EventBus.Instance;
         bus?.Subscribe<TutorialStepChangedEvent>(OnStepChanged);
