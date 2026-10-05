@@ -226,8 +226,10 @@ caps the first two at 25%).
   recomputed from level. `ProgressionComponent`, `data/progression`.
 - **Perks** — 6 perks (`data/perks`) bought with skill points. A perk can sit in a tree (branch, tier, prerequisites, points
   needed in its branch) and carry non-stat effects (`PerkEffectKind`, read through `PerkQuery`, capped by `PerkEffectMath`);
-  `Respec` sells every bought rank back for gold (`RespecRules`). `PerksComponent`, `PerkResource`. *Partial:* no tree UI and
-  no perk uses a non-stat effect yet; the dev commands `perk`, `respec`, `sp` drive it.
+  `Respec` sells every bought rank back for gold (`RespecRules`). `PerksComponent`, `PerkResource`. Seven combat perks
+  (Iron Stance, Brawler, Riposte, Steady Aim, Evasion, Light Feet, Backstep Adept) cut the Stamina price of blocking,
+  attacks (swing, heavy, charge, plunge), parrying, bow draw, dodging and sprinting through `PerkQuery.Factor`, never below
+  half. *Partial:* no tree UI; the dev commands `perk`, `respec`, `sp` drive it.
 - **Stats** — resources, primaries, derived stats and six resistances with flat/percent modifiers.
   `StatsComponent`, `Stat` (`src/Stats`).
 - **Races and character creation** — six playable races (Human, Valari, Sylthari, Grondar, Draekyn,

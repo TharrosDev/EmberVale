@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="PerkResource" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/Progression/PerkResource.cs" id="1_perk"]
+[ext_resource type="Script" path="res://src/Progression/PerkEffectResource.cs" id="2_effect"]
+
+[sub_resource type="Resource" id="Effect_1"]
+script = ExtResource("2_effect")
+Kind = 4
+ValuePerRank = -0.05
+
+[resource]
+script = ExtResource("1_perk")
+Id = "perk.brawler"
+DisplayName = "Brawler"
+Description = "Swing like you mean to keep swinging. Attacks cost 5% less Stamina per rank."
+MaxRank = 3
+Cost = 1
+ValuePerRank = 0.0
+Branch = 1
+Tier = 1
+Column = 1
+PrerequisiteIds = Array[String]([])
+BranchPointsRequired = 0
+Effects = [SubResource("Effect_1")]

@@ -270,7 +270,8 @@ non-stat effect with an optional `Arg` (e.g. a spell school) that call sites rea
 ⚠️ Values are summed over ranks and then **capped by `PerkEffectMath`**, so a perk cannot buy past the cap; read the
 unit of each kind on `PerkEffectMath.RangeOf`. ⚠️ A prerequisite and a branch-points gate are enforced by `Learn`, **not
 by `Load`**: a save is restored as it was, and `GrantFree` (race innate perks) skips both gates. Test it with the dev
-commands `sp <n>`, `perk <id> [rank]`, `learn <id>` and `respec`.
+commands `sp <n>`, `perk <id> [rank]`, `learn <id>` and `respec`. A `*StaminaMult` effect is read at its call site with
+`PerkQuery.Factor(entity, kind, arg)` (1 for an entity with no perks); the dodge also passes `roll` or `backstep` as `Arg`.
 
 ### A new XP-bearing enemy (or tuning the curve)
 

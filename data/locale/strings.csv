@@ -4361,3 +4361,19 @@ perk.toughness.desc,Hardened against harm. +15 maximum Health per rank.
 perk.warding.name,Warding
 perk.warding.desc,"Thicker hide, sturdier guard. +3 Armor per rank."
 # --- END progression:perks ---
+# --- BEGIN progression:p4a ---
+perk.iron_stance.name,Iron Stance
+perk.iron_stance.desc,Plant your feet behind the shield. Blocking costs 8% less Stamina per rank.
+perk.brawler.name,Brawler
+perk.brawler.desc,Swing like you mean to keep swinging. Attacks cost 5% less Stamina per rank.
+perk.riposte.name,Riposte
+perk.riposte.desc,A clean parry costs little to give. Parrying costs 15% less Stamina per rank.
+perk.steady_aim.name,Steady Aim
+perk.steady_aim.desc,Hold the string without strain. Drawing a bow costs 8% less Stamina per rank.
+perk.evasion.name,Evasion
+perk.evasion.desc,Move before the blow lands. Dodging costs 6% less Stamina per rank.
+perk.light_feet.name,Light Feet
+perk.light_feet.desc,A runner's economy of effort. Sprinting costs 8% less Stamina per rank.
+perk.backstep_adept.name,Backstep Adept
+perk.backstep_adept.desc,Give ground without paying for it. Backsteps cost 10% less Stamina per rank.
+# --- END progression:p4a ---

@@ -4,6 +4,7 @@ using Embervale.Core.Diagnostics;
 using Embervale.Core.Events;
 using Embervale.Entities;
 using Embervale.Movement;
+using Embervale.Progression;
 using Embervale.Stats;
 using Godot;
 
@@ -307,7 +308,7 @@ public partial class CharacterActionComponent : EntityComponent
             return false;
         }
 
-        if (_stats != null && _stats.GetCurrent(StatType.Stamina) < heavy.StaminaCost)
+        if (_stats != null && _stats.GetCurrent(StatType.Stamina) < heavy.StaminaCost * AttackCostFactor())
         {
             return false;
         }
@@ -384,13 +385,13 @@ public partial class CharacterActionComponent : EntityComponent
         bool grounded = body.IsOnFloor();
         float height = grounded ? 0f : HeightAboveGround(body);
         if (!PlungeRules.CanStart(height, grounded, _mount is { IsMounted: true }) ||
-            (_stats != null && _stats.GetCurrent(StatType.Stamina) < plunge.StaminaCost))
+            (_stats != null && _stats.GetCurrent(StatType.Stamina) < plunge.StaminaCost * AttackCostFactor()))
         {
             return false;
         }
 
         CloseHitbox();
-        _stats?.ModifyCurrent(StatType.Stamina, -plunge.StaminaCost);
+        _stats?.ModifyCurrent(StatType.Stamina, -plunge.StaminaCost * AttackCostFactor());
 
         SetPhysicsProcess(true);
         Current = plunge;
@@ -545,6 +546,10 @@ public partial class CharacterActionComponent : EntityComponent
         return Begin(chain[next], next, swing);
     }
 
+    /// <summary>What perks do to an attack's stamina price (swing, heavy, held charge, plunge); 1 for an
+    /// actor without perks.</summary>
+    private float AttackCostFactor() => PerkQuery.Factor(Entity, PerkEffectKind.AttackStaminaMult);
+
     private bool Begin(ActionDefinitionResource definition, int comboIndex, SwingContext swing)
     {
         if (_combat is { IsStaggered: true })
@@ -552,7 +557,7 @@ public partial class CharacterActionComponent : EntityComponent
             return false;
         }
 
-        float cost = swing.Cost >= 0f ? swing.Cost : definition.StaminaCost;
+        float cost = (swing.Cost >= 0f ? swing.Cost : definition.StaminaCost) * AttackCostFactor();
         if (_stats != null && !swing.ForceCost && _stats.GetCurrent(StatType.Stamina) < cost)
         {
             return false;
@@ -752,7 +757,7 @@ public partial class CharacterActionComponent : EntityComponent
         _chargeSeconds += (float)delta;
         if (_stats != null && Weapon != null)
         {
-            _stats.ModifyCurrent(StatType.Stamina, -Weapon.ChargeStaminaPerSecond * (float)delta);
+            _stats.ModifyCurrent(StatType.Stamina, -Weapon.ChargeStaminaPerSecond * AttackCostFactor() * (float)delta);
 
             // Wound to the last drop: it swings now, at the charge it reached, rather than the
             // player holding a bar that cannot pay for anything.

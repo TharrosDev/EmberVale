@@ -2,6 +2,7 @@ using Embervale.Combat;
 using Embervale.Combat.Actions;
 using Embervale.Core.Events;
 using Embervale.Entities;
+using Embervale.Progression;
 using Embervale.Stats;
 using Godot;
 
@@ -70,7 +71,9 @@ public partial class BowDrawComponent : EntityComponent
         }
 
         float stamina = _stats?.GetCurrent(StatType.Stamina) ?? float.MaxValue;
-        _draw = RangedMath.Advance(_draw, (float)delta, attackHeld, stamina, out float spent);
+        _draw = RangedMath.Advance(
+            _draw, (float)delta, attackHeld, stamina, out float spent,
+            staminaPerSecond: RangedMath.DrawStaminaPerSecond * PerkQuery.Factor(Entity, PerkEffectKind.BowDrawStaminaMult));
         if (spent > 0f)
         {
             _stats?.ModifyCurrent(StatType.Stamina, -spent);

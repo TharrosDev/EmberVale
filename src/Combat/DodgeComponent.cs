@@ -2,6 +2,7 @@ using Embervale.Combat.Actions;
 using Embervale.Entities;
 using Embervale.Magic;
 using Embervale.Movement;
+using Embervale.Progression;
 using Embervale.Stats;
 using Godot;
 
@@ -203,6 +204,10 @@ public partial class DodgeComponent : EntityComponent
         int chain = Dodge.NextChain(_chain, _sinceLastEnd, ChainWindow);
         float cost = Dodge.ChainedCost(
             kind == DodgeKind.Roll ? StaminaCost : BackstepStaminaCost, chain, ChainSurcharge, MaxChainMultiplier);
+
+        // Perks shave the price of an evade; "backstep" narrows an effect to the backstep alone. Neutral for
+        // an entity without perks. The Dex derivation (StatDerivation.DodgeStaminaFactor) folds in here too.
+        cost *= PerkQuery.Factor(Entity, PerkEffectKind.DodgeStaminaMult, kind == DodgeKind.Roll ? "roll" : "backstep");
 
         bool grounded = _locomotion?.IsGrounded ?? false;
         float stamina = _stats?.GetCurrent(StatType.Stamina) ?? 0f;

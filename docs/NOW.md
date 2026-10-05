@@ -71,9 +71,11 @@ The game is complete from New Game to credits. The finish run's contract and id 
 
 - **Perks v2 core (progression upgrade, in progress).** `PerksComponent` has free ranks, points spent, a gold respec
   (`RespecRules`), prerequisite and branch-point gates with `WhyNot`, and non-stat effect totals read through `PerkQuery`
-  (caps in `PerkEffectMath`); `ContentValidator.ValidatePerks` checks the data. The six original perks are unchanged and no
-  perk uses a non-stat effect or a tree position yet: the catalogue, effect hooks and tree UI are the next phases. Dev
-  commands `perk`, `respec`, `sp`.
+  (caps in `PerkEffectMath`); `ContentValidator.ValidatePerks` checks the data. The six original perks are unchanged. Seven
+  combat perks (`iron_stance`, `brawler`, `riposte`, `steady_aim`, `evasion`, `light_feet`, `backstep_adept`) use the
+  stamina-cost kinds, wired at the dodge, block, parry, attack, plunge, bow-draw and sprint sites; their tree gates are
+  placeholders until the catalogue (P5). The dodge cost does not yet fold in the Dex derivation (P2). Dev commands
+  `perk`, `respec`, `sp`.
 
 - **Guilds.** All five guilds reach rank three and a finale (Phase 42 closed 2026-09-28). Each arc is
   two quests off the leader's `member` branch (rank two, then a finale whose three-way verdict is

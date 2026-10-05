@@ -14,4 +14,9 @@ public static class PerkQuery
             ? PerkEffectMath.Clamp(kind, perks.Effects.Get(kind, arg))
             : 0f;
     }
+
+    /// <summary>The multiplier a <c>*Mult</c> kind gives this entity: 1 for an entity without perks, else
+    /// <c>1 + the capped total</c>. Multiply a stamina cost by it.</summary>
+    public static float Factor(IEntity? entity, PerkEffectKind kind, string? arg = null) =>
+        1f + Of(entity, kind, arg);
 }

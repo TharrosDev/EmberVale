@@ -104,4 +104,21 @@ public class PerkEffectMathTests
         Assert.True(totals.IsEmpty);
         Assert.Equal(0f, totals.Get(PerkEffectKind.LootQuality));
     }
+
+    [Fact]
+    public void DodgeQualifiers_StackForABackstepAndStayCappedAtTheFloor()
+    {
+        var totals = new PerkEffectTotals();
+        totals.Add(new PerkEffectEntry(PerkEffectKind.DodgeStaminaMult, string.Empty, -0.06f), 3);
+        totals.Add(new PerkEffectEntry(PerkEffectKind.DodgeStaminaMult, "backstep", -0.10f), 2);
+
+        float roll = PerkEffectMath.Factor(PerkEffectKind.DodgeStaminaMult, totals.Get(PerkEffectKind.DodgeStaminaMult, "roll"));
+        float backstep = PerkEffectMath.Factor(PerkEffectKind.DodgeStaminaMult, totals.Get(PerkEffectKind.DodgeStaminaMult, "backstep"));
+        Assert.Equal(0.82f, roll, 5);
+        Assert.Equal(0.62f, backstep, 5);
+
+        totals.Add(new PerkEffectEntry(PerkEffectKind.DodgeStaminaMult, "backstep", -0.5f), 1);
+        Assert.Equal(PerkEffectMath.StaminaFactorFloor,
+            PerkEffectMath.Factor(PerkEffectKind.DodgeStaminaMult, totals.Get(PerkEffectKind.DodgeStaminaMult, "backstep")), 5);
+    }
 }
