@@ -81,7 +81,8 @@ The game is complete from New Game to credits. The finish run's contract and id 
   gates, capstones, branch totals (34-46 points each), reachability within `PerkCatalogue.SkillPointSupply` (54) and that
   every kind is used; `PerkCatalogueTests` re-checks them from the `.tres` text and proves the caps and the shop margins hold
   with the whole catalogue taken. The dodge cost does not yet fold in the Dex derivation, nor the spell mana cost the Int
-  derivation (P2). Not done: the perk tree UI (P6), milestone points (P9, so 49 points are earned today), playtest
+  derivation (P2). The Perks tab is a tree UI (`PerkTreePanel`; `--panelshots` frames 21-25 photograph it empty, mid-build, corruption-gated and at the respec
+  confirm). Not done: milestone points (P9, so 49 points are earned today), playtest
   tuning of the numbers.
 
 - **Guilds.** All five guilds reach rank three and a finale (Phase 42 closed 2026-09-28). Each arc is

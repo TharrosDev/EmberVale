@@ -4498,3 +4498,38 @@ shop.line.perk,"your perks {0}% — {1}g"
 # --- END progression:p4b ---
 # --- BEGIN progression:p4c ---
 # --- END progression:p4c ---
+# --- BEGIN progression:p6 ---
+perktree.branch.none,Other
+perktree.branch.warrior,Warrior
+perktree.branch.archer,Archer
+perktree.branch.mage,Mage
+perktree.branch.rogue,Rogue
+perktree.branch.crafter,Crafter
+perktree.branch.social,Social
+perktree.branch.ashbound,Ashbound
+perktree.branch_tab,"{0} ({1})"
+perktree.tier,Tier {0}
+perktree.tier_gate,{0} pts
+perktree.tier_open,Open
+perktree.node_maxed,Maxed
+perktree.node_locked,Locked
+perktree.node_points,{0} pts
+perktree.node_corrupt,Needs {0}
+perktree.capstone,Capstone
+perktree.detail_rank,Rank {0} of {1}
+perktree.detail_cost,Skill point cost per rank: {0}
+perktree.detail_requires,Requires: {0}
+perktree.why_learn,Ready to learn (cost {0}). Select it to buy the next rank.
+perktree.why_maxed,Fully learned.
+perktree.why_corruption,Out of reach until your corruption reaches {0}.
+perktree.why_prerequisite,Learn {0} first.
+perktree.why_branch,"Spend {0} points in {1} first (you have spent {2})."
+perktree.why_points,"Skill points needed: {0}. You have {1}."
+perktree.respec,Respec
+perktree.respec_cost,Respec ({0} gold)
+perktree.respec_tip,Sell back every bought rank and get the points back. Free ranks stay.
+perktree.respec_nothing,No perk points are spent yet.
+perktree.respec_cancel,Cancel
+perktree.respec_confirm,"Sell back every bought rank? It costs {1} gold (you hold {2}) and returns skill points: {0}. Ranks that came free with your race or background stay."
+perktree.respec_poor,"Not enough gold: a respec costs {0} and you hold {1}."
+# --- END progression:p6 ---

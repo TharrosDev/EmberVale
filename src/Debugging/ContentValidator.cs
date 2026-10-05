@@ -109,6 +109,7 @@ public static class ContentValidator
         ValidateRaces(issues);
         ValidatePerks(issues);
         ValidatePerkCatalogue(issues);
+        ValidatePerkTree(issues);
         ValidateShrines(issues);
         ValidateGuilds(issues);
         ValidateGuildHubs(issues);
@@ -3490,6 +3491,20 @@ public static class ContentValidator
             if (PerkDatabase.Get(legacy) == null)
             {
                 issues.Add($"legacy perk '{legacy}' is missing; its id is in saves and race files");
+            }
+        }
+    }
+
+    /// <summary>The perk tree UI (P6) names each branch a perk sits in with a <c>perktree.branch.*</c> locale row, so a new
+    /// <see cref="PerkBranch"/> without one fails here instead of showing a raw key as a tab.</summary>
+    private static void ValidatePerkTree(List<string> issues)
+    {
+        var seen = new HashSet<PerkBranch>();
+        foreach (PerkResource perk in PerkDatabase.All)
+        {
+            if (seen.Add(perk.Branch) && !Loc.Has(UI.PerkTreeRules.BranchKey(perk.Branch)))
+            {
+                issues.Add($"perk '{perk.Id}' is in branch {perk.Branch} but locale key '{UI.PerkTreeRules.BranchKey(perk.Branch)}' is missing");
             }
         }
     }

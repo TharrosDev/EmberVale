@@ -234,8 +234,11 @@ caps the first two at 25%).
   crit, arrow damage, loot quality, salvage yield, salvage XP, XP gained and standing gained, and change haggle chance,
   shop buy and sell prices, service prices and the chance a craft returns a material. The Ashbound branch is gated by
   corruption tier and nothing else is. `Respec` sells every bought rank back for gold (`RespecRules`). `PerksComponent`,
-  `PerkResource`, `PerkCatalogue`. *Partial:* no tree UI yet (the inventory panel lists them flat); the dev commands
-  `perk`, `respec`, `sp` drive it.
+  `PerkResource`, `PerkCatalogue`. The Perks tab of the character screen (`I`) is a tree: a branch strip, one branch at a
+  time as tier rows by column with prerequisite connectors, nodes showing rank pips and a state (learnable, locked, needs
+  points, corruption-gated, maxed), a detail pane with the reason a perk cannot be learned, the skill-point chip and a Respec
+  button with a gold-cost confirmation (`PerkTreePanel`, `PerkTreeCanvas`, `PerkTreeRules`). Pressing a node buys its next
+  rank. The dev commands `perk`, `respec`, `sp` drive the same components.
 - **Stats** — resources, primaries, derived stats and six resistances with flat/percent modifiers.
   `StatsComponent`, `Stat` (`src/Stats`).
 - **Races and character creation** — six playable races (Human, Valari, Sylthari, Grondar, Draekyn,

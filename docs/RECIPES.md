@@ -280,7 +280,9 @@ A new `PerkEffectKind` (append-only) needs three things before a perk may use it
 site reading `PerkQuery.Of`/`Factor` (ranged damage in `RangedAttack.Fire`, standing in `ReputationComponent.Add`, salvage XP in
 `CraftingComponent.Deconstruct`, and the others as listed in `docs/NOW.md`), and a perk: `--validate` fails a kind no perk uses.
 A prerequisite and a gate are enforced by `Learn`, **not by `Load`**: a save is restored as it was, and `GrantFree` skips both.
-Drive it with the dev commands `sp <n>`, `perk <id> [rank]`, `learn <id>` and `respec`.
+Drive it with the dev commands `sp <n>`, `perk <id> [rank]`, `learn <id>` and `respec`. The Perks tab lays a branch out from
+`tier` (row) and `column` (at most 5 wide, `PerkRules.MaxColumn`) and draws a connector for each same-branch `pre`, so a new perk
+needs no UI work; look at it with `--panelshots` (frames 21-25). Its branch names are the `perktree.branch.*` locale rows.
 
 ### A new XP-bearing enemy (or tuning the curve)
 
