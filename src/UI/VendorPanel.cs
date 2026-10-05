@@ -9,6 +9,7 @@ using Embervale.Entities;
 using Embervale.Factions;
 using Embervale.Items;
 using Embervale.Localization;
+using Embervale.Progression;
 using Embervale.World;
 using Godot;
 
@@ -625,7 +626,7 @@ public partial class VendorPanel : UiPanel
     /// says what the answer was (derived, never saved). An unasked merchant prices normally even on a day
     /// they would have said yes — the discount is something the player does, not something the day gives.
     /// </summary>
-    private static bool DealStruck(ShopResource shop)
+    private bool DealStruck(ShopResource shop)
     {
         if (shop.HaggleChance <= 0 || Haggles() is not { } ledger)
         {
@@ -635,8 +636,20 @@ public partial class VendorPanel : UiPanel
         int day = CurrentDay();
 
         return ledger.TriedToday(shop.Id, day) &&
-            HaggleRules.Succeeds(day, shop.Id, shop.HaggleChance);
+            HaggleRules.Succeeds(day, shop.Id, HaggleChanceFor(shop));
     }
+
+    /// <summary>The chance the window quotes and the roll uses: the shop's authored chance plus the player's
+    /// haggle perks. ⚠️ <c>PerkEffectMath.HaggleChance</c> leaves a merchant who never haggles at 0, so a perk
+    /// shapes how often a deal lands and never opens one that was not authored.</summary>
+    private int HaggleChanceFor(ShopResource shop) =>
+        PerkEffectMath.HaggleChance(shop.HaggleChance, PerkQuery.Of(_player, PerkEffectKind.HaggleChanceBonus));
+
+    /// <summary>The player's perk factor on what a shop asks (1 with no perks). Threaded into every quote.</summary>
+    private float BuyPerkFactor() => PerkEffectMath.BuyFactor(PerkQuery.Of(_player, PerkEffectKind.BuyDiscount));
+
+    /// <summary>The player's perk factor on what a shop pays (1 with no perks).</summary>
+    private float SellPerkFactor() => PerkEffectMath.SellFactor(PerkQuery.Of(_player, PerkEffectKind.SellBonus));
 
     /// <summary>Names the standing and what it is doing to the prices, coloured with the same
     /// <c>ReputationTiers.Color</c> ramp the character screen uses so the two cannot disagree.</summary>
@@ -808,7 +821,7 @@ public partial class VendorPanel : UiPanel
 
         _haggleLabel.Text = tried
             ? haggled ? Loc.T("shop.haggle_won") : Loc.T("shop.haggle_lost")
-            : Loc.TF("shop.haggle_offer", shop.HaggleChance);
+            : Loc.TF("shop.haggle_offer", HaggleChanceFor(shop));
         _haggleLabel.AddThemeColorOverride(
             "font_color", tried ? haggled ? UiTheme.Good : UiTheme.Bad : UiTheme.Dim);
 
@@ -835,7 +848,7 @@ public partial class VendorPanel : UiPanel
             return; // already tried today; the button is disabled and says so
         }
 
-        if (!HaggleRules.Succeeds(day, shop.Id, shop.HaggleChance) &&
+        if (!HaggleRules.Succeeds(day, shop.Id, HaggleChanceFor(shop)) &&
             _player?.GetComponent<ReputationComponent>() is { } reputation)
         {
             // The downside, charged once per day because the ledger allows one attempt. Same shape as
@@ -884,7 +897,7 @@ public partial class VendorPanel : UiPanel
                 shop.LocalQuote(offer.Instance.Value, offer.Instance.Template.TagList());
             PriceQuote quote = PriceBreakdown.Buy(
                 offer.Instance.Value, local, TagName(localTag), shocked,
-                shop.BuyMarkup, tier, specialty, haggled);
+                shop.BuyMarkup, tier, specialty, haggled, BuyPerkFactor());
             int price = quote.Total;
             bool affordable = ShopPricing.CanAfford(price, purse);
 
@@ -978,7 +991,8 @@ public partial class VendorPanel : UiPanel
                     shop.ConsignFraction, shop.ConsignCommission, stack.Quantity)
                 : PriceBreakdown.Sell(
                     instance.Value, localSell, TagName(localTag), shocked,
-                    shop.SellFraction, specialty, haggled, stack.Quantity, absorbed, shop.RestockDays);
+                    shop.SellFraction, specialty, haggled, stack.Quantity, absorbed, shop.RestockDays,
+                    SellPerkFactor());
 
             int unitPrice = quote.Unit;
             int payout = !sellable || !inTrade ? 0 : quote.Total;

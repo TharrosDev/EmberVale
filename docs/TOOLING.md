@@ -197,7 +197,10 @@ renderer cannot return pixels.
 The existing world harness still streams real regions, derives ground-aware authored viewpoints,
 sets day/dusk atmosphere, awaits the drawn-frame barrier and applies its existing structural
 signature thresholds. Its new metadata and run output directory preserve this work. The
-existing C# `ShotHarness` retains its settle/drive/hold/draw logic and uses the same run directory.
+existing C# `ShotHarness` retains its settle/drive/hold/draw logic and uses the same run directory. It captures at 1280x720;
+`EMBERVALE_SHOT_SIZE=1920x1080` sets another window size and `EMBERVALE_SHOT_UISCALE=0.75` the content-scale factor (the
+`UiScale` setting's own 0.75-1.5 range), which is what changes the logical layout size (unset, it is the saved `UiScale` of the machine, so pin it to compare runs): the project stretches `canvas_items`, so
+1920x1080 at scale 1 lays out as 1280x720 and 1920x1080 at 0.75 as 1707x960.
 Other asset capture harnesses retain their composition and honor the shared artifact destination.
 The merged combat overhaul retired the separate arm assets and `player_asset_shots.gd`;
 use `gameplay-capture.json` for the real camera modes. The canonical world gate registry

@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="PerkResource" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/Progression/PerkResource.cs" id="1_perk"]
+[ext_resource type="Script" path="res://src/Progression/PerkEffectResource.cs" id="2_effect"]
+
+[sub_resource type="Resource" id="Effect_1"]
+script = ExtResource("2_effect")
+Stat = 10
+ModifierType = 0
+ValuePerRank = 2.0
+
+[resource]
+script = ExtResource("1_perk")
+Id = "perk.arcane_focus"
+DisplayName = "Arcane Focus"
+Description = "Thought sharpened to a point. +2 Spell Power per rank."
+MaxRank = 5
+Cost = 1
+ValuePerRank = 0.0
+Branch = 3
+Tier = 1
+Column = 0
+PrerequisiteIds = Array[String]([])
+BranchPointsRequired = 0
+Effects = [SubResource("Effect_1")]

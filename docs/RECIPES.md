@@ -258,8 +258,31 @@ line in `StatBonuses()`. Bonuses apply through `EquipmentComponent`.
 
 ### A new perk
 
-`data/perks/Xxx.tres` (`PerkResource`): `Id`, name, description, `MaxRank`, `Cost`, `Stat`,
-`ModifierType`, `ValuePerRank`.
+**Do not hand-edit `data/perks/*.tres` or the `perk.*` rows in `strings.csv`: `tools/gen_perks.py` owns both and deletes
+a perk file it does not name.** Add a `perk(...)` line to the table in that file and run `python tools/gen_perks.py`
+(`--check` exits 1 if anything is out of date). A perk is `perk(id_tail, "Name", branch, tier, column, max_rank, "Description", fx=[...], pre=[...])`:
+
+- **Position.** `tier` 1-5 fixes the gate (0, 2, 5, 9, 14 branch points) and the cost (1 for tiers 1-2, 2 for tiers 3-4,
+  3 for the tier-5 capstone, which is the only one per branch). `column` is layout only and unique per tier and branch.
+  `pre` lists id tails that must each hold a rank; they must be an earlier tier of the same branch.
+- **Effects.** `E("Kind", value, arg="")` is a non-stat effect (`PerkEffectKind`), `S("Stat", value, "Flat"|"PercentAdd")` an extra
+  stat modifier; `value` is per rank. Use `{0}`, `{1}` in the description for each effect's value, in order: they are
+  filled in with the right unit, so a retune cannot leave a stale number in the text. The six pre-tree perks keep their stat
+  in `legacy=(stat, mod, value)` so their `.tres` shape and ids (in saves and `data/races`) never change.
+- **Caps.** Values are summed over ranks and then capped by `PerkEffectMath` (read each kind's unit on `RangeOf`). The whole
+  catalogue stays under every cap, so a cap is a backstop and not a tuning knob: before raising a total, check the
+  `PerkCatalogueTests` sum, and ⚠️ never raise a price cap without re-proving the shop margin (`ValidateShopTrade`, the
+  contract, commission and wager rules read `PerkEffectMath.Best*`).
+- **Budget.** A main branch must total 34-46 points (`PerkCatalogue.BranchTotalMin/Max`) so one branch fits the 54-point
+  supply and two do not. Only the Ashbound branch is corruption-gated (`corr=`); nothing else may be ("perks shape, never gate").
+
+A new `PerkEffectKind` (append-only) needs three things before a perk may use it: a range in `PerkEffectMath.RangeOf`, a call
+site reading `PerkQuery.Of`/`Factor` (ranged damage in `RangedAttack.Fire`, standing in `ReputationComponent.Add`, salvage XP in
+`CraftingComponent.Deconstruct`, and the others as listed in `docs/NOW.md`), and a perk: `--validate` fails a kind no perk uses.
+A prerequisite and a gate are enforced by `Learn`, **not by `Load`**: a save is restored as it was, and `GrantFree` skips both.
+Drive it with the dev commands `sp <n>`, `perk <id> [rank]`, `learn <id>` and `respec`. The Perks tab lays a branch out from
+`tier` (row) and `column` (at most 5 wide, `PerkRules.MaxColumn`) and draws a connector for each same-branch `pre`, so a new perk
+needs no UI work; look at it with `--panelshots` (frames 21-25). Its branch names are the `perktree.branch.*` locale rows.
 
 ### A new XP-bearing enemy (or tuning the curve)
 

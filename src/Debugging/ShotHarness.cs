@@ -48,6 +48,19 @@ public abstract partial class ShotHarness : Node
     private string CaptureDirectory => string.IsNullOrEmpty(OS.GetEnvironment("EMBERVALE_ARTIFACTS"))
         ? OutputDir : System.IO.Path.Combine(OS.GetEnvironment("EMBERVALE_ARTIFACTS"), Flag.TrimStart('-'));
 
+    /// <summary>Capture size in pixels: 1280x720 unless <c>EMBERVALE_SHOT_SIZE</c> says <c>WIDTHxHEIGHT</c>
+    /// (e.g. <c>1920x1080</c>), so a layout can be photographed at more than one resolution.</summary>
+    private static Vector2I ShotSize
+    {
+        get
+        {
+            string[] parts = OS.GetEnvironment("EMBERVALE_SHOT_SIZE").Split('x');
+            return parts.Length == 2 && int.TryParse(parts[0], out int w) && int.TryParse(parts[1], out int h) && w >= 640 && h >= 360
+                ? new Vector2I(w, h)
+                : new Vector2I(1280, 720);
+        }
+    }
+
     /// <summary>Registers the states to capture, in order, via <see cref="Shot"/>.</summary>
     protected abstract void BuildShotList();
 
@@ -71,7 +84,13 @@ public abstract partial class ShotHarness : Node
             GetTree().Quit(2);
             return;
         }
-        DisplayServer.WindowSetSize(new Vector2I(1280, 720));
+        DisplayServer.WindowSetSize(ShotSize);
+        if (float.TryParse(OS.GetEnvironment("EMBERVALE_SHOT_UISCALE"), System.Globalization.NumberStyles.Float,
+                System.Globalization.CultureInfo.InvariantCulture, out float uiScale))
+        {
+            GetTree().Root.ContentScaleFactor = Mathf.Clamp(uiScale, 0.75f, 1.5f); // the setting's own range
+        }
+
         if (DirAccess.MakeDirRecursiveAbsolute(CaptureDirectory) != Error.Ok)
         {
             Fail($"could not create output directory {ProjectSettings.GlobalizePath(CaptureDirectory)}");
@@ -153,9 +172,10 @@ public abstract partial class ShotHarness : Node
             return;
         }
 
-        if (image.IsEmpty() || image.GetWidth() != 1280 || image.GetHeight() != 720)
+        Vector2I size = ShotSize;
+        if (image.IsEmpty() || image.GetWidth() != size.X || image.GetHeight() != size.Y)
         {
-            Fail($"'{name}' returned {image.GetWidth()}x{image.GetHeight()}, expected 1280x720");
+            Fail($"'{name}' returned {image.GetWidth()}x{image.GetHeight()}, expected {size.X}x{size.Y}");
             return;
         }
         if (IsBlank(image))

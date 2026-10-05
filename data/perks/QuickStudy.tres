@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="PerkResource" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/Progression/PerkResource.cs" id="1_perk"]
+[ext_resource type="Script" path="res://src/Progression/PerkEffectResource.cs" id="2_effect"]
+
+[sub_resource type="Resource" id="Effect_1"]
+script = ExtResource("2_effect")
+Kind = 16
+ValuePerRank = 0.02
+
+[resource]
+script = ExtResource("1_perk")
+Id = "perk.quick_study"
+DisplayName = "Quick Study"
+Description = "Lessons stick. You earn 2% more experience per rank."
+MaxRank = 3
+Cost = 1
+ValuePerRank = 0.0
+Branch = 6
+Tier = 1
+Column = 2
+PrerequisiteIds = Array[String]([])
+BranchPointsRequired = 0
+Effects = [SubResource("Effect_1")]

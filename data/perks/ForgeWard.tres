@@ -1,0 +1,31 @@
+[gd_resource type="Resource" script_class="PerkResource" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://src/Progression/PerkResource.cs" id="1_perk"]
+[ext_resource type="Script" path="res://src/Progression/PerkEffectResource.cs" id="2_effect"]
+
+[sub_resource type="Resource" id="Effect_1"]
+script = ExtResource("2_effect")
+Stat = 15
+ModifierType = 0
+ValuePerRank = 8.0
+
+[sub_resource type="Resource" id="Effect_2"]
+script = ExtResource("2_effect")
+Stat = 8
+ModifierType = 0
+ValuePerRank = 3.0
+
+[resource]
+script = ExtResource("1_perk")
+Id = "perk.forge_ward"
+DisplayName = "Forge Ward"
+Description = "+8 Fire resistance and +3 Armor per rank."
+MaxRank = 2
+Cost = 2
+ValuePerRank = 0.0
+Branch = 5
+Tier = 3
+Column = 2
+PrerequisiteIds = Array[String](["perk.leather_apron"])
+BranchPointsRequired = 5
+Effects = [SubResource("Effect_1"), SubResource("Effect_2")]

@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="PerkResource" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://src/Progression/PerkResource.cs" id="1_perk"]
+[ext_resource type="Script" path="res://src/Progression/PerkEffectResource.cs" id="2_effect"]
+
+[sub_resource type="Resource" id="Effect_1"]
+script = ExtResource("2_effect")
+Stat = 13
+ModifierType = 0
+ValuePerRank = 0.02
+
+[sub_resource type="Resource" id="Effect_2"]
+script = ExtResource("2_effect")
+Kind = 4
+ValuePerRank = -0.04
+
+[resource]
+script = ExtResource("1_perk")
+Id = "perk.ruthless"
+DisplayName = "Ruthless"
+Description = "End it quickly. +2% Crit Chance and attacks cost 4% less Stamina per rank."
+MaxRank = 3
+Cost = 2
+ValuePerRank = 0.0
+Branch = 4
+Tier = 3
+Column = 2
+PrerequisiteIds = Array[String](["perk.keen_edge"])
+BranchPointsRequired = 5
+Effects = [SubResource("Effect_1"), SubResource("Effect_2")]

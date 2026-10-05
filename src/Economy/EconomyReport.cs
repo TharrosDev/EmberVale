@@ -307,9 +307,12 @@ public static class EconomyReport
     /// <param name="view">Which day to price for (38T). <c>ContentValidator</c> passes
     /// <see cref="PriceView.Peak"/> so the rules measured against "what the best buyer pays" are proved
     /// against the keenest buyer a supply shock can ever produce, not the one standing there today.</param>
+    /// <param name="sellPerkFactor">The player's <c>PerkEffectMath.SellFactor</c>: <c>1</c> (none) for the report
+    /// tables, the live factor for the appraiser, and <c>PerkEffectMath.BestSellFactor</c> for the validator, which
+    /// proves its rules against the keenest buyer perks can produce as well as the keenest day.</param>
     public static void BestBuyers(
         ItemResource item, List<string> tags, out Offer first, out Offer second,
-        PriceView view = PriceView.Today)
+        PriceView view = PriceView.Today, float sellPerkFactor = 1f)
     {
         first = default;
         second = default;
@@ -325,7 +328,7 @@ public static class EconomyReport
             bool specialty = TradeTags.IsSpecialty(tags, shop.SpecialtyList());
             int price = ShopPricing.SellPrice(
                 shop.LocalValue(item.Value, tags, view),
-                ShopPricing.SellFractionFor(shop.SellFraction, specialty));
+                ShopPricing.SellFractionFor(shop.SellFraction, specialty, perkFactor: sellPerkFactor));
 
             if (!first.Has || price > first.Price)
             {

@@ -137,6 +137,7 @@ public static class HeadlessLifecycle
         }
 
         CheckLandingReady(session, $"cycle {cycle} new-game");
+        PerksLifecycleProbe.Drive(session.Players.Player, Check);
 
         // Max level before the save, so the load half proves primaries re-derive from the restored level.
         session.Players.Player?.GetComponent<ProgressionComponent>()?.AddXp(1_000_000);
@@ -169,6 +170,7 @@ public static class HeadlessLifecycle
         }
         CheckLandingReady(lifecycle.Session!, $"cycle {cycle} load");
         CheckStatDerivation(lifecycle.Session!, $"cycle {cycle} load");
+        PerksLifecycleProbe.Verify(lifecycle.Session!.Players.Player, Check);
     }
 
     /// <summary>

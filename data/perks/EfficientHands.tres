@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="PerkResource" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/Progression/PerkResource.cs" id="1_perk"]
+[ext_resource type="Script" path="res://src/Progression/PerkEffectResource.cs" id="2_effect"]
+
+[sub_resource type="Resource" id="Effect_1"]
+script = ExtResource("2_effect")
+Kind = 13
+ValuePerRank = 0.03
+
+[resource]
+script = ExtResource("1_perk")
+Id = "perk.efficient_hands"
+DisplayName = "Efficient Hands"
+Description = "A practised cut. A craft has a further 3% chance per rank to give a material back."
+MaxRank = 2
+Cost = 2
+ValuePerRank = 0.0
+Branch = 5
+Tier = 3
+Column = 0
+PrerequisiteIds = Array[String](["perk.thrifty_hands"])
+BranchPointsRequired = 5
+Effects = [SubResource("Effect_1")]

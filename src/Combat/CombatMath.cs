@@ -42,18 +42,19 @@ public static class CombatMath
     /// of <see cref="RollAttack"/> for magic — spells scale off SpellPower (gear) the way melee scales
     /// off PhysicalPower, plus off Intelligence (the caster's magic attribute, Phase 29.5C).
     /// </summary>
-    public static (float Amount, bool IsCrit) RollSpell(float baseDamage, StatsComponent? caster)
+    public static (float Amount, bool IsCrit) RollSpell(float baseDamage, StatsComponent? caster, float critChanceBonus = 0f)
     {
         float amount = ScaleDamage(baseDamage, caster?.GetValue(StatType.SpellPower) ?? 0f, SpellScaling)
             + ((caster?.GetValue(StatType.Intelligence) ?? 0f) * IntelligenceScaling);
-        return RollCrit(amount, caster);
+        return RollCrit(amount, caster, critChanceBonus);
     }
 
-    /// <summary>Rolls a critical hit against the source's crit stats, scaling the amount.</summary>
-    private static (float Amount, bool IsCrit) RollCrit(float amount, StatsComponent? source)
+    /// <summary>Rolls a critical hit against the source's crit stats, scaling the amount. The bonus is a
+    /// flat chance added before the clamp (a perk's, which is not a stat).</summary>
+    private static (float Amount, bool IsCrit) RollCrit(float amount, StatsComponent? source, float critChanceBonus = 0f)
     {
         bool isCrit = false;
-        float critChance = ClampCritChance(source?.GetValue(StatType.CritChance) ?? 0f);
+        float critChance = ClampCritChance((source?.GetValue(StatType.CritChance) ?? 0f) + critChanceBonus);
         if (GD.Randf() < critChance)
         {
             isCrit = true;

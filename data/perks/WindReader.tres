@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="PerkResource" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/Progression/PerkResource.cs" id="1_perk"]
+[ext_resource type="Script" path="res://src/Progression/PerkEffectResource.cs" id="2_effect"]
+
+[sub_resource type="Resource" id="Effect_1"]
+script = ExtResource("2_effect")
+Stat = 14
+ModifierType = 0
+ValuePerRank = 0.08
+
+[resource]
+script = ExtResource("1_perk")
+Id = "perk.wind_reader"
+DisplayName = "Wind Reader"
+Description = "You read the weak point and the breeze. Critical hits deal 8% more damage per rank."
+MaxRank = 2
+Cost = 1
+ValuePerRank = 0.0
+Branch = 2
+Tier = 2
+Column = 2
+PrerequisiteIds = Array[String](["perk.precision"])
+BranchPointsRequired = 2
+Effects = [SubResource("Effect_1")]

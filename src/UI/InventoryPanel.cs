@@ -77,6 +77,10 @@ public partial class InventoryPanel : UiPanel
 
     private CharTab _activeTab = CharTab.Gear;
 
+    /// <summary>The perk tree's open branch, focused perk and pending respec, which the per-change rebuild would
+    /// otherwise forget.</summary>
+    private readonly PerkTreePanel.ViewState _perkView = new();
+
     private static readonly (CharTab Tab, string Key)[] TabDefs =
     {
         (CharTab.Gear, "char.tab_gear"),
@@ -121,6 +125,7 @@ public partial class InventoryPanel : UiPanel
         _tabs.TabChanged += index =>
         {
             _activeTab = TabDefs[index].Tab;
+            _perkView.ConfirmingRespec = false;
             MarkDirty();
         };
         column.AddChild(_tabs);
@@ -156,6 +161,28 @@ public partial class InventoryPanel : UiPanel
         }
     }
 
+    /// <summary>Selects the Perks tab through the real tab strip, optionally on one branch and with the respec confirmation
+    /// showing: the state a click on a branch tab and on Respec leaves, so `--panelshots` photographs what a player reaches.</summary>
+    public void ShowPerks(PerkBranch? branch = null, bool confirmRespec = false)
+    {
+        _perkView.Branch = branch ?? _perkView.Branch;
+        _perkView.FocusedId = null;
+        _perkView.ConfirmingRespec = confirmRespec;
+        MarkDirty();
+        for (int i = 0; i < TabDefs.Length; i++)
+        {
+            if (TabDefs[i].Tab == CharTab.Perks)
+            {
+                _tabs.Select(i);
+                _perkView.ConfirmingRespec = confirmRespec; // the tab handler clears a pending respec
+                return;
+            }
+        }
+    }
+
+    /// <summary>The perk tree's view state: open branch, focused perk, pending respec (read by `--panelshots`).</summary>
+    public PerkTreePanel.ViewState PerkTreeState => _perkView;
+
     /// <summary>Opens the authored equipment / backpack / inspection composition through the real tab strip.</summary>
     public void ShowGear()
     {
@@ -165,6 +192,12 @@ public partial class InventoryPanel : UiPanel
         }
 
         _tabs.Select(0);
+    }
+
+    protected override void OnOpenChanged(bool open)
+    {
+        // A respec confirmation is a moment, not a mode: reopening the screen must not land on a pending one.
+        _perkView.ConfirmingRespec = false;
     }
 
     protected override void OnReady()
@@ -564,7 +597,8 @@ public partial class InventoryPanel : UiPanel
         _list.AddChild(bar);
     }
 
-    /// <summary>The spellbook's school display order (the six magic schools; Physical/True are not schools).</summary>
+    /// <summary>The Perks tab: <see cref="PerkTreePanel"/> draws the tree and calls <see cref="PerksComponent"/>
+    /// itself; this tab only hosts it and keeps the view state across rebuilds.</summary>
     private void BuildPerks()
     {
         if (_perks == null || PerkDatabase.All.Count == 0)
@@ -573,82 +607,7 @@ public partial class InventoryPanel : UiPanel
             return;
         }
 
-        _list.AddChild(UiTheme.SectionRule(Loc.T("char.perks")));
-
-        foreach (PerkResource perk in PerkDatabase.All)
-        {
-            int rank = _perks.RankOf(perk.Id);
-            bool canLearn = _perks.CanLearn(perk);
-            bool maxed = rank >= perk.MaxRank;
-
-            // The spine says at a glance whether this perk is finished, available, or out of
-            // reach - three states the old flat list expressed only in a trailing word.
-            Color spine = maxed ? UiTheme.Accent : canLearn ? UiTheme.Good : UiTheme.Disabled;
-            PanelContainer card = UiTheme.Card(spine);
-
-            var col = new VBoxContainer();
-            col.AddThemeConstantOverride("separation", 2);
-
-            var head = new HBoxContainer();
-            head.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
-
-            Label title = UiTheme.Body(perk.DisplayName, rank > 0 ? UiTheme.Text : UiTheme.Dim);
-            title.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-            title.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
-            head.AddChild(title);
-
-            head.AddChild(Centred(RankPips(rank, perk.MaxRank)));
-            head.AddChild(Centred(UiTheme.Caption(Loc.TF("char.perk_rank_short", rank, perk.MaxRank))));
-
-            if (canLearn)
-            {
-                PerkResource captured = perk;
-                Button learn = UiTheme.Action(Loc.TF("char.perk_learn", perk.Cost));
-                learn.Pressed += () => _perks!.Learn(captured);
-                head.AddChild(Centred(learn));
-            }
-            else if (!maxed)
-            {
-                // Say which refusal it is - the same rule Phase 37's property prompts follow.
-                string reason = !_perks.MeetsCorruption(perk)
-                    ? Loc.TF("char.perk_needs", CorruptionTiers.DisplayName(perk.MinCorruptionTier))
-                    : Loc.TF("char.perk_learn", perk.Cost);
-                head.AddChild(Centred(UiTheme.Chip(reason, UiTheme.Disabled)));
-            }
-
-            col.AddChild(head);
-
-            if (!string.IsNullOrWhiteSpace(perk.Description))
-            {
-                col.AddChild(UiTheme.Flavour(perk.Description));
-            }
-
-            MarginContainer pad = UiTheme.Padding(UiTheme.SpaceXs);
-            pad.AddChild(col);
-            card.AddChild(pad);
-            _list.AddChild(card);
-        }
-    }
-
-    /// <summary>A perk's rank as filled pips. Paired with the "2/3" caption rather than replacing
-    /// it: pips are read at a glance, the numbers are read exactly, and a rankable perk is
-    /// something the player compares across a list.</summary>
-    private static Control RankPips(int rank, int maxRank)
-    {
-        var row = new HBoxContainer();
-        row.AddThemeConstantOverride("separation", 2);
-
-        for (int i = 0; i < Mathf.Max(1, maxRank); i++)
-        {
-            row.AddChild(new ColorRect
-            {
-                Color = i < rank ? UiTheme.Accent : UiTheme.Engrave,
-                CustomMinimumSize = new Vector2(10f, 6f),
-                MouseFilter = Control.MouseFilterEnum.Ignore,
-            });
-        }
-
-        return row;
+        _list.AddChild(new PerkTreePanel(_perks, _progression, _inventory, _perkView, MarkDirty, UiTheme.UsableWidth(Shell)));
     }
 
     // --- The Gear tab (37.5C): equipment column | backpack grid | detail pane ---

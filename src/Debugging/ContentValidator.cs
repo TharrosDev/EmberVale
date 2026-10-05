@@ -109,6 +109,9 @@ public static class ContentValidator
         ValidateRegions(issues);
         ValidateRaces(issues);
         ValidatePlayerGrowth(issues);
+        ValidatePerks(issues);
+        ValidatePerkCatalogue(issues);
+        ValidatePerkTree(issues);
         ValidateShrines(issues);
         ValidateGuilds(issues);
         ValidateGuildHubs(issues);
@@ -1483,7 +1486,8 @@ public static class ContentValidator
             // Thursday. This is 38G's carried warning — "the demand table is a floor under other
             // people's rules" — made mechanical, and it is the same rule asked a harder question rather
             // than a second rule about shocks that would drift from this one.
-            EconomyReport.BestBuyers(item, item.TagList(), out Offer best, out _, PriceView.Peak);
+            EconomyReport.BestBuyers(
+                item, item.TagList(), out Offer best, out _, PriceView.Peak, PerkEffectMath.BestSellFactor);
             long shelf = (long)best.Price * Mathf.Max(1, contract.Quantity);
             if (best.Has && contract.RewardGold <= shelf)
             {
@@ -2092,7 +2096,9 @@ public static class ContentValidator
         // PriceOf runs the stake through ShopPricing.ServicePrice, so an Allied player stakes 15% less
         // against a payout that does not move — a house authored as a sink at Neutral can be a printer
         // at the top of the ramp, and only the discounted stake shows it.
-        int cheapestStake = ShopPricing.ServicePrice(service.PriceGold, ReputationTier.Allied);
+        // The service perks cut it again, at their cap (PerkEffectMath.BestServiceFactor).
+        int cheapestStake = ShopPricing.ServicePrice(
+            service.PriceGold, ReputationTier.Allied, PerkEffectMath.BestServiceFactor);
         if (WagerRules.Exploitable(cheapestStake, service.WinPercent, service.PayoutGold))
         {
             issues.Add(
@@ -2176,7 +2182,11 @@ public static class ContentValidator
             int cost = EconomyReport.CommissionCost(
                 recipe, shop, ReputationTier.Allied, pack: null, service.PriceGold,
                 haggled: shop.HaggleChance > 0, view: PriceView.Trough);
-            EconomyReport.BestBuyers(output, output.TagList(), out Offer best, out _, PriceView.Peak);
+            // Priced at the keenest buyer perks allow too (SellBonus at its cap): a commission is not a counter
+            // purchase, so BuyDiscount never reaches its materials, but the sale of the result is a sale.
+            EconomyReport.BestBuyers(
+                output, output.TagList(), out Offer best, out _, PriceView.Peak,
+                PerkEffectMath.BestSellFactor);
 
             if (best.Has && CommissionRules.Exploitable(cost, best.Price, recipe.OutputQuantity))
             {
@@ -2506,10 +2516,16 @@ public static class ContentValidator
         // spread is the one round trip in the game that could reach zero.
         const float Margin = 1.25f;
         bool haggles = shop.HaggleChance > 0;
+        //
+        // ⚠️ The progression perks widen both ends again: BuyDiscount and SellBonus are folded in at their
+        // caps (PerkEffectMath.BestBuyFactor / BestSellFactor, the same constants the live prices clamp to),
+        // so the round trip stays open however many perks the player stacks. Haggle perks only change the
+        // chance of a deal, never a price, and cannot open a shop that does not haggle.
         float widestSell = ShopPricing.SellFractionFor(
-            shop.SellFraction, specialty: true, haggled: haggles);
+            shop.SellFraction, specialty: true, haggled: haggles, perkFactor: PerkEffectMath.BestSellFactor);
         float narrowestBuy = ShopPricing.MarkupFor(
-            shop.BuyMarkup, Factions.ReputationTier.Allied, specialty: true, haggled: haggles);
+            shop.BuyMarkup, Factions.ReputationTier.Allied, specialty: true, haggled: haggles,
+            perkFactor: PerkEffectMath.BestBuyFactor);
 
         if (widestSell * Margin > narrowestBuy)
         {
@@ -3398,6 +3414,251 @@ public static class ContentValidator
             if (!totals.ContainsKey(primary))
             {
                 issues.Add($"player progression: primary {primary} never grows with level");
+            }
+        }
+    }
+
+    /// <summary>The six perks that predate the trees. Their ids are in saves and race files, so they
+    /// may be re-tiered and re-branched but never removed or renamed.</summary>
+    private static readonly string[] LegacyPerkIds =
+    {
+        "perk.might", "perk.toughness", "perk.precision",
+        "perk.endurance_training", "perk.warding", "perk.ashborn_might",
+    };
+
+    /// <summary>
+    /// Perk v2 well-formedness: id prefix, rank/cost/tier/column ranges, prerequisites that exist and
+    /// do not loop, effects that do something, name and description keys in the locale, and the six
+    /// legacy ids still present. The catalogue-wide rules (tree gates, capstones, branch totals, every
+    /// effect kind used) are <see cref="ValidatePerkCatalogue"/>.
+    /// </summary>
+    private static void ValidatePerks(List<string> issues)
+    {
+        HashSet<string>? keys = LocaleKeys();
+        var prerequisites = new Dictionary<string, IReadOnlyList<string>>();
+
+        foreach (PerkResource perk in PerkDatabase.All)
+        {
+            string who = $"perk '{perk.Id}'";
+            if (!perk.Id.StartsWith("perk.", System.StringComparison.Ordinal))
+            {
+                issues.Add($"{who} id must start with 'perk.'");
+            }
+
+            if (perk.MaxRank < 1)
+            {
+                issues.Add($"{who} MaxRank {perk.MaxRank} must be at least 1");
+            }
+
+            if (perk.Cost < 0)
+            {
+                issues.Add($"{who} Cost {perk.Cost} must not be negative");
+            }
+
+            if (perk.Tier < 1 || perk.Tier > PerkRules.MaxTier)
+            {
+                issues.Add($"{who} Tier {perk.Tier} is outside 1..{PerkRules.MaxTier}");
+            }
+
+            if (perk.Column < 0 || perk.Column > PerkRules.MaxColumn)
+            {
+                issues.Add($"{who} Column {perk.Column} is outside 0..{PerkRules.MaxColumn}");
+            }
+
+            if (perk.BranchPointsRequired < 0)
+            {
+                issues.Add($"{who} BranchPointsRequired {perk.BranchPointsRequired} must not be negative");
+            }
+
+            if (!System.Enum.IsDefined(perk.Branch) || !System.Enum.IsDefined(perk.MinCorruptionTier))
+            {
+                issues.Add($"{who} has an undefined Branch or MinCorruptionTier");
+            }
+
+            var list = new List<string>();
+            foreach (string prerequisite in perk.PrerequisiteIds)
+            {
+                list.Add(prerequisite);
+                if (prerequisite == perk.Id)
+                {
+                    issues.Add($"{who} lists itself as a prerequisite");
+                }
+                else if (PerkDatabase.Get(prerequisite) == null)
+                {
+                    issues.Add($"{who} prerequisite '{prerequisite}' is not a perk");
+                }
+            }
+
+            prerequisites[perk.Id] = list;
+
+            bool doesSomething = perk.ValuePerRank != 0f;
+            foreach (PerkEffectResource effect in perk.EffectList())
+            {
+                doesSomething |= effect.ValuePerRank != 0f;
+                if (!System.Enum.IsDefined(effect.Kind))
+                {
+                    issues.Add($"{who} has an effect with undefined kind {(int)effect.Kind}");
+                }
+                else if (effect.Kind != PerkEffectKind.None && effect.ValuePerRank == 0f)
+                {
+                    issues.Add($"{who} effect {effect.Kind} has ValuePerRank 0");
+                }
+            }
+
+            if (!doesSomething)
+            {
+                issues.Add($"{who} does nothing: no stat ValuePerRank and no effect with a value");
+            }
+
+            if (keys != null)
+            {
+                foreach (string key in new[] { perk.NameKey, perk.DescKey })
+                {
+                    if (!keys.Contains(key))
+                    {
+                        issues.Add($"{who} is missing locale key '{key}'");
+                    }
+                }
+            }
+        }
+
+        if (PerkRules.FindCycle(prerequisites) is { } looped)
+        {
+            issues.Add($"perk '{looped}' has a prerequisite cycle");
+        }
+
+        foreach (string legacy in LegacyPerkIds)
+        {
+            if (PerkDatabase.Get(legacy) == null)
+            {
+                issues.Add($"legacy perk '{legacy}' is missing; its id is in saves and race files");
+            }
+        }
+    }
+
+    /// <summary>The perk tree UI (P6) names each branch a perk sits in with a <c>perktree.branch.*</c> locale row, so a new
+    /// <see cref="PerkBranch"/> without one fails here instead of showing a raw key as a tab.</summary>
+    private static void ValidatePerkTree(List<string> issues)
+    {
+        var seen = new HashSet<PerkBranch>();
+        foreach (PerkResource perk in PerkDatabase.All)
+        {
+            if (seen.Add(perk.Branch) && !Loc.Has(UI.PerkTreeRules.BranchKey(perk.Branch)))
+            {
+                issues.Add($"perk '{perk.Id}' is in branch {perk.Branch} but locale key '{UI.PerkTreeRules.BranchKey(perk.Branch)}' is missing");
+            }
+        }
+    }
+
+    /// <summary>
+    /// The perk catalogue as a whole (P5, <c>tools/gen_perks.py</c>): every perk sits in a branch with the
+    /// tier gate its tier owns, a capstone is exactly the tier-5 perk and has a prerequisite, prerequisites
+    /// are earlier tiers of the same branch, no two perks share a cell, only Ashbound perks are corruption
+    /// gated, every effect kind has a perk and no perk's full-rank value passes its cap, each main branch is
+    /// worth <see cref="PerkCatalogue.BranchTotalMin"/>..<see cref="PerkCatalogue.BranchTotalMax"/> points
+    /// with one capstone, and every perk (so every capstone) is reachable within
+    /// <see cref="PerkCatalogue.SkillPointSupply"/>.
+    /// </summary>
+    private static void ValidatePerkCatalogue(List<string> issues)
+    {
+        var nodes = new Dictionary<string, PerkNode>();
+        var used = new HashSet<PerkEffectKind>();
+        var cells = new HashSet<(PerkBranch, int, int)>();
+        var capstones = new Dictionary<PerkBranch, int>();
+
+        foreach (PerkResource perk in PerkDatabase.All)
+        {
+            string who = $"perk '{perk.Id}'";
+            nodes[perk.Id] = new PerkNode(perk.Id, perk.Branch, perk.Tier, perk.MaxRank, perk.Cost,
+                perk.BranchPointsRequired, new List<string>(perk.PrerequisiteIds), perk.IsCapstone);
+
+            if (perk.Branch == PerkBranch.None)
+            {
+                issues.Add($"{who} has no branch");
+            }
+
+            if (!cells.Add((perk.Branch, perk.Tier, perk.Column)))
+            {
+                issues.Add($"{who} shares branch {perk.Branch} tier {perk.Tier} column {perk.Column} with another perk");
+            }
+
+            if (perk.BranchPointsRequired != PerkCatalogue.TierGate(perk.Tier))
+            {
+                issues.Add($"{who} needs {perk.BranchPointsRequired} branch points but tier {perk.Tier} gates at " +
+                    $"{PerkCatalogue.TierGate(perk.Tier)}");
+            }
+
+            if (perk.IsCapstone != (perk.Tier == PerkRules.MaxTier))
+            {
+                issues.Add($"{who} IsCapstone {perk.IsCapstone} disagrees with Tier {perk.Tier} (the capstone is the tier-{PerkRules.MaxTier} perk)");
+            }
+
+            if (perk.IsCapstone)
+            {
+                capstones[perk.Branch] = capstones.GetValueOrDefault(perk.Branch) + 1;
+                if (perk.PrerequisiteIds.Count == 0)
+                {
+                    issues.Add($"{who} is a capstone with no prerequisite");
+                }
+            }
+
+            foreach (string prerequisite in perk.PrerequisiteIds)
+            {
+                if (PerkDatabase.Get(prerequisite) is { } before && (before.Branch != perk.Branch || before.Tier >= perk.Tier))
+                {
+                    issues.Add($"{who} prerequisite '{prerequisite}' must be an earlier tier of the same branch");
+                }
+            }
+
+            if ((perk.MinCorruptionTier != CorruptionTier.Untainted) != (perk.Branch == PerkBranch.Ashbound))
+            {
+                issues.Add($"{who} corruption gate and the Ashbound branch must go together (perks shape, never gate)");
+            }
+
+            foreach (PerkEffectEntry entry in perk.EffectEntries())
+            {
+                used.Add(entry.Kind);
+                float full = entry.ValuePerRank * perk.MaxRank;
+                if (System.MathF.Abs(PerkEffectMath.Clamp(entry.Kind, full) - full) > 0.0001f)
+                {
+                    issues.Add($"{who} {entry.Kind} reaches {full} at full rank, past its cap");
+                }
+            }
+        }
+
+        foreach (string id in nodes.Keys)
+        {
+            int cost = PerkCatalogue.PointsToReach(nodes, id);
+            if (cost < 0 || cost > PerkCatalogue.SkillPointSupply)
+            {
+                issues.Add($"perk '{id}' cannot be reached within the {PerkCatalogue.SkillPointSupply} skill points a character earns (plan costs {cost})");
+            }
+        }
+
+        foreach (PerkEffectKind kind in System.Enum.GetValues<PerkEffectKind>())
+        {
+            if (kind != PerkEffectKind.None && !used.Contains(kind))
+            {
+                issues.Add($"no perk uses effect kind {kind}");
+            }
+        }
+
+        foreach (PerkBranch branch in System.Enum.GetValues<PerkBranch>())
+        {
+            if (!PerkCatalogue.IsMainBranch(branch))
+            {
+                continue;
+            }
+
+            int total = PerkCatalogue.BranchTotal(nodes.Values, branch);
+            if (total < PerkCatalogue.BranchTotalMin || total > PerkCatalogue.BranchTotalMax)
+            {
+                issues.Add($"branch {branch} is worth {total} points; it should be {PerkCatalogue.BranchTotalMin}..{PerkCatalogue.BranchTotalMax}");
+            }
+
+            if (capstones.GetValueOrDefault(branch) != 1)
+            {
+                issues.Add($"branch {branch} has {capstones.GetValueOrDefault(branch)} capstones; it needs exactly one");
             }
         }
     }

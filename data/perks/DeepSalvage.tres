@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="PerkResource" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/Progression/PerkResource.cs" id="1_perk"]
+[ext_resource type="Script" path="res://src/Progression/PerkEffectResource.cs" id="2_effect"]
+
+[sub_resource type="Resource" id="Effect_1"]
+script = ExtResource("2_effect")
+Kind = 14
+ValuePerRank = 0.06
+
+[resource]
+script = ExtResource("1_perk")
+Id = "perk.deep_salvage"
+DisplayName = "Deep Salvage"
+Description = "Down to the last rivet. Salvaging recovers 6% more of the materials per rank."
+MaxRank = 2
+Cost = 2
+ValuePerRank = 0.0
+Branch = 5
+Tier = 3
+Column = 1
+PrerequisiteIds = Array[String](["perk.reclaimer"])
+BranchPointsRequired = 5
+Effects = [SubResource("Effect_1")]

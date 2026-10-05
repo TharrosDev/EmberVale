@@ -109,6 +109,10 @@ public partial class ProgressionComponent : EntityComponent, ISaveable
             return;
         }
 
+        // Perks scale every grant (a kill, a quest, a salvage) before it is resolved into levels, so the
+        // XpGained event and the level maths see the same number. Capped at +10% by PerkEffectMath.
+        amount = PerkEffectMath.ScaleXp(amount, PerkQuery.Of(Entity, PerkEffectKind.XpGainMult));
+
         (int newLevel, int newXp, int levelsGained) = ProgressionMath.Resolve(
             Level, CurrentXp, Curve.MaxLevel, amount, Curve.XpToReach);
         Level = newLevel;
@@ -138,6 +142,15 @@ public partial class ProgressionComponent : EntityComponent, ISaveable
 
         SkillPoints -= cost;
         return true;
+    }
+
+    /// <summary>Returns skill points to the pool: a respec refund, or the dev <c>sp</c> command's grant.</summary>
+    public void RefundSkillPoints(int amount)
+    {
+        if (amount > 0)
+        {
+            SkillPoints += amount;
+        }
     }
 
     /// <summary>Spends spell-book points (buying/upgrading spells). Returns false if too few are available.</summary>
