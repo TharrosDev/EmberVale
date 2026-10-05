@@ -258,6 +258,8 @@ public sealed partial class PanelShots : ShotHarness
             }
         });
 
+        Shot("15b-shop-scrolled", () => UiAuditShots.ScrollToEnd(Vendor));
+
         Shot("16-dialogue", () =>
         {
             Vendor?.SetOpen(false);
@@ -482,11 +484,24 @@ public sealed partial class PanelShots : ShotHarness
     private static PlayerCharacter? Player() =>
         ServiceLocator.Instance is { } locator && locator.TryGet(out PlayerCharacter player) ? player : null;
 
-    private static void StageInventory()
+    /// <summary>Fills the pack so list and grid screens are judged at density: a few rolled Rare and Epic
+    /// pieces first (they carry affix chips, the tallest rows), then plain stock up to 18 slots.
+    /// Shared with <see cref="UiAuditShots"/>.</summary>
+    internal static void StageInventory()
     {
         if (Player()?.GetComponent<InventoryComponent>() is not { } pack)
         {
             return;
+        }
+
+        int rolled = 0;
+        foreach (ItemResource item in ItemDatabase.All.Values)
+        {
+            if (item is EquippableItemResource gear && rolled < 6)
+            {
+                pack.AddInstance(Loot.LootGenerator.RollAffixed(gear, rolled % 2 == 0 ? ItemRarity.Rare : ItemRarity.Epic), 1);
+                rolled++;
+            }
         }
 
         foreach (ItemResource item in ItemDatabase.All.Values)

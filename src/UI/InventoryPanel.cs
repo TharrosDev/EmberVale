@@ -62,6 +62,9 @@ public partial class InventoryPanel : UiPanel
     /// <summary>Slot edge length. Below the 44 px touch/legibility floor a glyph stops reading.</summary>
     private const float SlotSize = 48f;
 
+    /// <summary>Width of one Progression section column (stats, corruption, standing).</summary>
+    private const float SectionColumn = 320f;
+
     private float _sideColumn = 230f;
     private float _detailColumn = 300f;
 
@@ -319,8 +322,6 @@ public partial class InventoryPanel : UiPanel
         {
             case CharTab.Progression:
                 BuildProgression();
-                BuildCorruption();
-                BuildFactions();
                 break;
             case CharTab.Perks:
                 BuildPerks();
@@ -334,14 +335,15 @@ public partial class InventoryPanel : UiPanel
         }
     }
 
-    private void BuildFactions()
+    private void BuildFactions(Container sections)
     {
         if (_reputation == null || FactionDatabase.All.Count == 0)
         {
             return;
         }
 
-        AddHeader(Loc.T("char.reputation"));
+        VBoxContainer section = Section(Loc.T("char.reputation"));
+        sections.AddChild(section);
 
         // Corruption inflicts a global "dread" penalty (Phase 23G): the world reacts to the
         // earned standing lowered by dread, so show the world's effective tier and call out
@@ -349,15 +351,16 @@ public partial class InventoryPanel : UiPanel
         int dread = _reputation.Dread;
         if (dread > 0)
         {
-            AddLine(Loc.TF("char.dread", dread), UiTheme.CorruptionText);
+            section.AddChild(UiTheme.Body(Loc.TF("char.dread", dread), UiTheme.CorruptionText));
         }
 
         foreach (FactionResource faction in FactionDatabase.All)
         {
             int value = _reputation.Get(faction.Id);
             ReputationTier tier = ReputationTiers.Of(_reputation.Effective(faction.Id));
-            AddLine(Loc.TF("char.rep_line", faction.DisplayName, ReputationTiers.DisplayName(tier), value.ToString("+0;-0;0")),
-                UiTheme.ReputationColor(tier));
+            section.AddChild(UiTheme.Body(
+                Loc.TF("char.rep_line", faction.DisplayName, ReputationTiers.DisplayName(tier), value.ToString("+0;-0;0")),
+                UiTheme.ReputationColor(tier)));
         }
     }
 
@@ -368,7 +371,7 @@ public partial class InventoryPanel : UiPanel
     /// </summary>
     private void BuildGuilds()
     {
-        _list.AddChild(UiTheme.SectionRule(Loc.T("guild.header")));
+        _list.AddChild(UiTheme.SectionRule(Loc.T("guild.header"), first: true));
 
         System.Predicate<string> has = _flags != null ? _flags.Has : _ => false;
         bool any = false;
@@ -425,9 +428,7 @@ public partial class InventoryPanel : UiPanel
             col.AddChild(UiTheme.Caption(Loc.TF("guild.contradiction", standing.Contradiction), UiTheme.CorruptionText));
         }
 
-        MarginContainer pad = UiTheme.Padding(UiTheme.SpaceSm);
-        pad.AddChild(col);
-        card.AddChild(pad);
+        card.AddChild(col); // the card's own margins are the padding; a second pad doubled the left edge
         return card;
     }
 
@@ -441,10 +442,30 @@ public partial class InventoryPanel : UiPanel
         _ => "guild.state.unknown",
     });
 
+    /// <summary>Level card on top, then the stat, corruption and standing sections as a wrapping row of
+    /// equal columns: three sections side by side fit the 1280x720 viewport without a scroll, and a
+    /// narrow handheld viewport folds them under each other.</summary>
     private void BuildProgression()
     {
         BuildLevelCard();
-        BuildStats();
+
+        HFlowContainer sections = UiTheme.FlowRow();
+        sections.AddThemeConstantOverride("h_separation", UiTheme.SpaceLg);
+        sections.AddThemeConstantOverride("v_separation", UiTheme.SpaceMd);
+        _list.AddChild(sections);
+
+        BuildStats(sections);
+        BuildCorruption(sections);
+        BuildFactions(sections);
+    }
+
+    /// <summary>One column of the Progression tab: a titled rule over its rows.</summary>
+    private static VBoxContainer Section(string title)
+    {
+        var section = new VBoxContainer { CustomMinimumSize = new Vector2(SectionColumn, 0f) };
+        section.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
+        section.AddChild(UiTheme.SectionRule(title, first: true));
+        return section;
     }
 
     /// <summary>The level card: a badge, the XP meter, and the unspent points as chips. Replaces
@@ -495,9 +516,7 @@ public partial class InventoryPanel : UiPanel
             col.AddChild(bar);
         }
 
-        MarginContainer pad = UiTheme.Padding(UiTheme.SpaceSm);
-        pad.AddChild(col);
-        card.AddChild(pad);
+        card.AddChild(col); // the card's own margins are the padding
         _list.AddChild(card);
     }
 
@@ -509,7 +528,7 @@ public partial class InventoryPanel : UiPanel
     /// hit, nor that doubling it is not double the benefit. The percentage comes from
     /// CombatMath.ArmorMultiplier itself, so the screen cannot disagree with combat.
     /// </summary>
-    private void BuildStats()
+    private void BuildStats(Container sections)
     {
         if (_stats == null)
         {
@@ -518,11 +537,12 @@ public partial class InventoryPanel : UiPanel
 
         foreach ((string headerKey, Embervale.Stats.StatType[] stats) in StatsPresentation.Sections)
         {
-            _list.AddChild(UiTheme.SectionRule(Loc.T(headerKey)));
+            VBoxContainer section = Section(Loc.T(headerKey));
+            sections.AddChild(section);
 
             var grid = new GridContainer { Columns = 2 };
             grid.AddThemeConstantOverride("h_separation", UiTheme.SpaceLg);
-            grid.AddThemeConstantOverride("v_separation", 1);
+            grid.AddThemeConstantOverride("v_separation", UiTheme.GridGap);
 
             foreach (Embervale.Stats.StatType stat in stats)
             {
@@ -557,7 +577,7 @@ public partial class InventoryPanel : UiPanel
                 }
             }
 
-            _list.AddChild(grid);
+            section.AddChild(grid);
         }
     }
 
@@ -581,20 +601,23 @@ public partial class InventoryPanel : UiPanel
         return control;
     }
 
-    private void BuildCorruption()
+    private void BuildCorruption(Container sections)
     {
         if (_corruption == null)
         {
             return;
         }
 
-        AddHeader(Loc.T("char.corruption"));
-        AddLine(Loc.TF("char.corruption_line", CorruptionTiers.DisplayName(_corruption.Tier), _corruption.Value, CorruptionTiers.Max), UiTheme.CorruptionText);
+        VBoxContainer section = Section(Loc.T("char.corruption"));
+        sections.AddChild(section);
+        section.AddChild(UiTheme.Body(
+            Loc.TF("char.corruption_line", CorruptionTiers.DisplayName(_corruption.Tier), _corruption.Value, CorruptionTiers.Max),
+            UiTheme.CorruptionText));
 
         ProgressBar bar = UiTheme.Bar(UiTheme.Corruption);
         bar.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
         bar.Value = _corruption.Value / (double)CorruptionTiers.Max;
-        _list.AddChild(bar);
+        section.AddChild(bar);
     }
 
     /// <summary>The Perks tab: <see cref="PerkTreePanel"/> draws the tree and calls <see cref="PerksComponent"/>
@@ -633,7 +656,7 @@ public partial class InventoryPanel : UiPanel
         _detailColumn = Mathf.Clamp(usable * 0.28f, 200f, 300f);
 
         float forGrid = usable - _sideColumn - _detailColumn - (UiTheme.SpaceLg * 2f);
-        float cell = SlotSize + UiTheme.SpaceXs;
+        float cell = SlotSize + UiTheme.GridGap;
         _gridColumns = Mathf.Clamp(Mathf.FloorToInt(forGrid / cell), 4, 10);
     }
 
@@ -659,7 +682,7 @@ public partial class InventoryPanel : UiPanel
     {
         var col = new VBoxContainer { CustomMinimumSize = new Vector2(_sideColumn, 0f) };
         col.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
-        col.AddChild(UiTheme.SectionRule(Loc.T("char.equipment")));
+        col.AddChild(UiTheme.SectionRule(Loc.T("char.equipment"), first: true));
 
         if (_equipment == null)
         {
@@ -673,7 +696,7 @@ public partial class InventoryPanel : UiPanel
             var line = new HBoxContainer();
             line.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
 
-            Button cell = ItemSlot.Build(item, 1, ReferenceEquals(item, _selected), 34f);
+            Button cell = ItemSlot.Build(item, 1, ReferenceEquals(item, _selected), ItemSlot.CompactSize);
             if (item is { } worn)
             {
                 cell.Pressed += () => Select(worn);
@@ -681,12 +704,22 @@ public partial class InventoryPanel : UiPanel
 
             line.AddChild(cell);
 
-            var text = new VBoxContainer { SizeFlagsVertical = Control.SizeFlags.ShrinkCenter };
+            var text = new VBoxContainer
+            {
+                SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+                SizeFlagsVertical = Control.SizeFlags.ShrinkCenter,
+            };
             text.AddThemeConstantOverride("separation", 0);
             text.AddChild(UiTheme.Caption(EquipmentSlots.Label(slot)));
-            text.AddChild(UiTheme.Body(
+
+            // A long affixed name is trimmed rather than allowed to widen the column; the detail pane
+            // and the tooltip carry the full text.
+            Label name = UiTheme.Body(
                 item?.DisplayName ?? Loc.T("item.empty_slot"),
-                item is null ? UiTheme.Disabled : UiTheme.RarityColor(item.Rarity)));
+                item is null ? UiTheme.Disabled : UiTheme.RarityColor(item.Rarity));
+            name.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
+            name.TooltipText = item?.DisplayName ?? string.Empty;
+            text.AddChild(name);
             line.AddChild(text);
 
             col.AddChild(line);
@@ -704,7 +737,7 @@ public partial class InventoryPanel : UiPanel
             SizeFlagsVertical = Control.SizeFlags.ExpandFill,
         };
         col.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
-        col.AddChild(UiTheme.SectionRule(BackpackHeader()));
+        col.AddChild(UiTheme.SectionRule(BackpackHeader(), first: true));
 
         if (_inventory == null)
         {
@@ -715,8 +748,8 @@ public partial class InventoryPanel : UiPanel
         col.AddChild(BuildFilterRow());
 
         var grid = new GridContainer { Columns = _gridColumns };
-        grid.AddThemeConstantOverride("h_separation", UiTheme.SpaceXs);
-        grid.AddThemeConstantOverride("v_separation", UiTheme.SpaceXs);
+        grid.AddThemeConstantOverride("h_separation", UiTheme.GridGap);
+        grid.AddThemeConstantOverride("v_separation", UiTheme.GridGap);
         col.AddChild(grid);
 
         var shown = new List<ItemStack>();
@@ -805,9 +838,8 @@ public partial class InventoryPanel : UiPanel
 
     private Control BuildSortRow()
     {
-        var row = new HBoxContainer();
-        row.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
-        row.AddChild(UiTheme.Caption(Loc.T("item.sort")));
+        HFlowContainer row = UiTheme.FlowRow();
+        row.AddChild(Centred(UiTheme.Caption(Loc.T("item.sort"))));
 
         foreach ((ItemPresentation.SortOrder order, string key) in new[]
                  {
@@ -839,8 +871,7 @@ public partial class InventoryPanel : UiPanel
 
     private Control BuildFilterRow()
     {
-        var row = new HBoxContainer();
-        row.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
+        HFlowContainer row = UiTheme.FlowRow();
 
         Button all = UiTheme.Action(Loc.T("item.filter_all"));
         if (_filter is null)
@@ -973,8 +1004,7 @@ public partial class InventoryPanel : UiPanel
     /// <summary>The 1-5 quick-use assign strip, shown for consumables.</summary>
     private Control BuildHotbarRow(string templateId)
     {
-        var row = new HBoxContainer();
-        row.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
+        HFlowContainer row = UiTheme.FlowRow();
 
         for (int n = 0; n < HotbarComponent.SlotCount; n++)
         {
@@ -1053,13 +1083,6 @@ public partial class InventoryPanel : UiPanel
             _inventory.TotalWeight.ToString("0.0"));
     }
 
-    private void AddHeader(string text)
-    {
-        var header = UiTheme.Header(text);
-        header.AddThemeConstantOverride("line_spacing", 2);
-        _list.AddChild(header);
-    }
-
     private void AddLine(string text, Color? color = null, string? tooltip = null)
     {
         Label label = UiTheme.Body(text, color);
@@ -1069,45 +1092,5 @@ public partial class InventoryPanel : UiPanel
         }
 
         _list.AddChild(label);
-    }
-
-    private void AddRow(string text, string action, System.Action onPressed, Color? color = null, string? tooltip = null, string? hotbarAssignId = null)
-    {
-        var row = new HBoxContainer();
-        row.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
-
-        Label label = UiTheme.Body(text, color);
-        label.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-        label.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
-        if (!string.IsNullOrEmpty(tooltip))
-        {
-            label.TooltipText = tooltip;
-        }
-
-        row.AddChild(label);
-
-        // Hotbar assign: tiny 1-5 buttons that bind this item to a quick-use slot.
-        if (hotbarAssignId != null && _hotbar != null)
-        {
-            for (int n = 0; n < HotbarComponent.SlotCount; n++)
-            {
-                int slot = n;
-                Button assign = UiTheme.Action((n + 1).ToString());
-                assign.TooltipText = Loc.TF("char.assign_hotbar", n + 1);
-                // Highlight the slot this item is currently keyed to.
-                if (_hotbar.Get(n) == hotbarAssignId)
-                {
-                    assign.Modulate = UiTheme.Accent;
-                }
-                assign.Pressed += () => _hotbar!.Assign(slot, hotbarAssignId);
-                row.AddChild(assign);
-            }
-        }
-
-        Button button = UiTheme.Action(action);
-        button.Pressed += () => onPressed();
-        row.AddChild(button);
-
-        _list.AddChild(row);
     }
 }

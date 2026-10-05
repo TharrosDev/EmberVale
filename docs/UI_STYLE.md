@@ -227,6 +227,16 @@ presses is at least `ControlHeight` tall. (5) Every screen still has to fit 1280
 past the panel scrolls (`ScrollList`), the frame never does. Radii: `RadiusSm` 1 (bars, wells, chips),
 `RadiusMd` 2 (buttons), `RadiusLg` 2 (panels).
 
+Rules from the items, trade and crafting pass (group 1):
+
+- **A row is a text stack beside its verb.** Item, recipe, contract and trade rows are one `HBoxContainer` inside a `Card`: slot (if any), a text stack that expands (`LineGap` between its lines), then the button, `ShrinkCenter` against the whole stack. A button in the title line made its 44 px the row's top band and left dead air beside the title, and every recipe or contract row at least 100 px tall.
+- **Chips and small button rows wrap.** Use `UiTheme.FlowRow()` (`ChipGap` across, `SpaceXs` down), never an `HBoxContainer` of chips: a plain row reports the sum of its chips as its minimum width, so one item with three affixes stretched the stash window past the viewport. A name in a row takes `TextOverrunBehavior.TrimEllipsis` plus a tooltip instead of widening its column.
+- **One frame per thing.** A `Card` does not go inside a `Band` (two frames, two left spines, 32 px of width lost): the item detail and each trade column sit bare on the panel, and a list names itself with a `Header` above it. `Padding()` is for a screen's outer margin only; a card's content margins are its padding.
+- **The first section of a container passes `first: true`** to `SectionRule`, so the gap above it is not added on top of the tab strip or the column above. Equipment and backpack headers do this, which is what lets the ten equipment rows fit 1280x720 without scrolling.
+- **A fixed height is a bug.** Lists use `ScrollList()` and the shell's own floor (`ApplyWorkspace` / `ApplyScreenInset`) sets the minimum; a literal `CustomMinimumSize` height on a list or column is how the shop once overflowed the viewport.
+- **Stat blocks are a row of columns.** The Progression sections (attributes, offence, defence, corruption, standing) are 320 px columns in a wrapping `FlowRow`, so three sit side by side at 1280 wide and fold under each other on a narrow handheld viewport. Stat grids use `GridGap` between rows.
+- **Slots draw their frame.** `ItemSlot.Build` is not a flat `Button` (a flat button never paints its `normal` stylebox, so the rarity frame and the empty well were skipped). `ItemSlot.RowSize` (40) goes beside card rows, `ItemSlot.CompactSize` (34) beside two stacked lines with no taller control, `DefaultSize` in grids.
+
 Check spacing by looking, not by arithmetic: `godot --path . -- --uishots` (pause, spellbook, bestiary, character Progression, crafting, storage, contracts, appraisal, save slots), `--panelshots`, `--hudshots` and `--shellshots` capture every screen. `EMBERVALE_RES=1920x1080` re-shoots at another window size (a 16:9 size lays out identically to 1280x720, because the project stretches `canvas_items`, so use `1280x800` for the handheld aspect), `EMBERVALE_SLOT` picks the save and `EMBERVALE_USER_DIR` + `EMBERVALE_ARTIFACTS` keep a run's saves and PNGs out of the shared user folder.
 
 Radii stay tight on purpose: this world's surfaces are cut and bound, not moulded. A
