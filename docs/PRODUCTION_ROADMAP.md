@@ -19,7 +19,8 @@ Embervale is a complete, personal (never published) open-world action RPG in God
   a corruption-decided throne choice (Dawnfire or Lord of Embers), an epilogue and free roam under a
   sky the ending chose.
 - **The full systems stack**: combat and magic, companions, housing, the economy, mounts, the map,
-  quests with branches, shrines, five guilds (each to rank three and a finale), corruption, save/load.
+  quests with branches, shrines, five guilds (each to rank three and a finale), corruption, save/load,
+  and a six-tier item catalogue with sets, unique effects, a crafting skill and reforging.
   [`MECHANICS.md`](MECHANICS.md) lists every mechanic; `ARCHITECTURE.md` is the reference.
 
 Deliberately absent: survival needs (Phase 40) and puzzles/traps (40.5), both struck by the
@@ -57,8 +58,8 @@ personal and never published.
 | 30 | Visual identity | ✅ | 49 | Act IV + endings | ✅ |
 | 30.5 | UI/HUD overhaul | ✅ | 50 | Side content pass | ◐ (guild finales) |
 | 31 | Audio foundations | ✅ | 50.5 | Lore codex | ⬜ |
-| 32 | Companions | ✅ | 51 | Itemization pass | ◐ (relics) |
-| 33 | Slice assembly | ✅ (G1 unsigned) | 51.5 | Enchanting | ⬜ |
+| 32 | Companions | ✅ | 51 | Itemization pass | ◐ built 2026-10-06 (catalogue, sets, loot tiers); unplayed |
+| 33 | Slice assembly | ✅ (G1 unsigned) | 51.5 | Enchanting | ◐ scoped to reforging; sockets ❌ struck |
 | 34 | Enemy roster | ✅ | 52 | Audio production | ⬜ |
 | 34.5 | Frostfang clans | ✅ | 53 | Art complete | ◐ (all Meshy bosses adopted; no final pass) |
 | 35 | Dragons | ✅ | 53.5 | Photo mode | ⬜ |
@@ -66,7 +67,7 @@ personal and never published.
 | 37 | Housing | ✅ | 55 | G3 acceptance | ◐ (`--story` + play-through) |
 | 37.5 | UI overhaul | ✅ | 56 | Balance | open |
 | 38 | Economy | ✅ | 57 | Performance cert | ⬜ |
-| 39 | Mounts | ✅ | 58 | Save hardening | ◐ (v3 migration) |
+| 39 | Mounts | ✅ | 58 | Save hardening | ◐ format 4, backup, blocks; gates in `NOW.md` |
 | 39.5 | Map intelligence | ✅ | 59 | QA and soak | ⬜ |
 | 40 | Survival and needs | ❌ | 60 | Localization completion | — |
 | 40.5 | Puzzles and traps | ❌ | 61–63 | Platform, RC, launch | — |
@@ -85,9 +86,12 @@ skies, and a Windows export that passes `--story` inside itself. What remains:
 3. **Balance tuning** of the six new boss fights and the two duels.
 4. **Re-baseline the world visual baseline** (it predates the 2026-09 rebuild and the new realms);
    add the new realms to the per-region GDScript probes (traversal, census, scene audit, shots).
+5. **The item, crafting and save upgrade (51, 51.5, 58) was written without the engine and has not
+   been played.** Gate results are in [`NOW.md`](NOW.md), with the list of what is unverified: the
+   catalogue's balance, the reforge prices, the new panels and the drop presentation.
 
-Not planned unless the maintainer asks: 42.5, 43, 50.5, 51.5, 52, 53.5, 57, 59.
-Never: 40, 40.5, 60–66.
+Not planned unless the maintainer asks: 42.5, 43, 50.5, 52, 53.5, 57, 59.
+Never: 40, 40.5, 60–66, and the socket half of 51.5.
 
 ## 5. Standing rules for any further work
 

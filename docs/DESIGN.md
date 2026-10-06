@@ -408,7 +408,7 @@ is meant to be able to earn by trading; what they must not be able to do is stan
 farm it.** The round trip at a single shop still costs, always, and by construction. Read the three
 routes that pay out of `--economy` and do not "fix" a positive margin in that table.
 
-**The sinks, as they actually exist** (last extended by 38P2; 38L added merchants, not new kinds of sink):
+**The sinks, as they actually exist** (last extended by the item and crafting upgrade's three reforge rows; 38L added merchants, not new kinds of sink):
 
 | Sink | Where | Since |
 | ---- | ----- | ----- |
@@ -426,6 +426,9 @@ routes that pay out of `--economy` and do not "fix" a positive margin in that ta
 | An impound fine | `ServiceKind.Redeem` — **12 gold a unit** against whatever the wardens took, through `ContrabandLaw.Fine`. The only price in the game not authored as the price it charges, because the bill depends on how much was seized | 38O |
 | A broker's commission | `ShopResource.ConsignCommission` — **18%** of every consignment, taken out of a payout that is already the best in the realm (~0.70 of value against the most generous counter's 0.62). The player is paid more than anywhere else and still hands a slice back, which is why it is a sink rather than a discount | 38P |
 | A master's commission | `ServiceKind.Commission` — **60 gold of labour** per piece at Bryn's order bench, plus every ingredient the player did not bring, priced through his own shop's markup. The one sink in the table that is *cheaper* than the alternative it competes with: commissioning undercuts buying the finished piece off his shelf in proportion to what the player already carries | 38Q |
+| Reforging: reroll an affix | `CraftingComponent.RerollAffix`, Forge only. `ReforgeRules.RerollGold`: a fifth of the item's value (15 gold at least), rising by half that for each earlier reroll of the same item up to five times the base, plus 1 to 5 of the tier's ingot. The value does not change, so the fee buys a different item, never a dearer one | ics |
+| Reforging: upgrade to +5 | `CraftingComponent.Upgrade`. `ReforgeRules.UpgradeGold`: 20 gold a target level plus a tenth of the value, plus **three times the sale value the level adds**, and as many ingots as the target level | ics |
+| Reforging: promote a rarity | `CraftingComponent.Promote`, Uncommon to Rare and Rare to Epic only. `ReforgeRules.PromoteGold`: 150 gold plus half the value, plus three times the value gained, and 5 or 7 ingots | ics |
 | A sword for hire | `ServiceKind.Mercenary` — **500 gold once**, and `CompanionRoster` is the only record of it. The dearest thing the Ember Crown sells, deliberately above the mount at 400: a mount is a convenience, a second fighter changes what the player can walk into | 38R |
 | A respec | `PerksComponent.Respec` — `RespecRules.Cost`: **30 gold + 12 per skill point spent**, each earlier respec adding a quarter of that (four at most). 270 for 20 points the first time, 540 from the fifth; all 54 points cost 678. A character-panel verb, not a counter, so there is no map location; it refunds the points and keeps free (race) ranks | perks v2 |
 | A throw of the bones | `ServiceKind.Wager` — **50 gold a throw, three a day** at Hollowreach, paying 150 one time in four. The only entry here that sometimes hands money *back*, and the only one whose sink-ness is enforced by `--validate` rather than by being a purchase | 38R2 |
@@ -506,6 +509,21 @@ warehouse is the second vault 38D already declined**, in `EmberCrownBank.tres`'s
 cannot reach from the next town is a chest, and nothing about a contract or the toll reads a vault, so
 "storage staged beside the caravan board" is a chest with a story. (The fourth, passage, was not a
 decision at all — 38M had already shipped it.)
+
+**Reforging is a sink by construction, not by tuning.** An upgrade or a promotion charges
+`ReforgeRules.GainMultiple` (3) times the value it adds, and the best sale anywhere returns at most
+`MaxSellFactor` (1.5) times that, so no reforge can be sold at a profit. `ItemValidator.Crafting`
+walks the whole table of values, rarities, workmanship and levels and fails `--validate` on any
+`ReforgeRules.Exploitable` row. Sockets and gem enchanting stay struck: reforging changes the
+affixes, level and rarity an item already has and adds no new slot system. Legendaries cannot be
+made or promoted to. The prices themselves are first-pass numbers and have not been played.
+
+**The material bag is not a second vault** (ics). The player's plain crafting materials sit in an
+uncapped bag beside the pack (`InventoryComponent.UseMaterialBag`) because a material was already
+weightless and only ever cost a slot; the bag removes that slot tax and nothing else. It travels
+with the player, holds nothing but affix-less `ItemType.Material` items, and is read together with
+the pack by every counter, bench, warden and appraiser, so it is not somewhere to keep goods out of
+reach. Storage is still the bank and property stashes, and the warehouse stays declined.
 
 **A companion can be bought, and the price is what makes it a service** (38R). `ServiceKind.Mercenary`
 puts a sword on the roster for 500 gold, and `--validate` refuses a free one — which is 38Q's ruling

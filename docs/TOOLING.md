@@ -253,6 +253,33 @@ missing scenes, assertion exit codes, screenshot baseline/diff and automatic fai
 Repeated diagnostics retain a `count` instead of duplicating hundreds of identical rows.
 `report state|economy|worldgen|lifecycle` exposes the existing C# report/probe entry points.
 
+## Content generators
+
+Committed scripts that write authored content. They are pure Python (no Godot), idempotent, and
+are run directly or through `python tools/embervale.py tool NAME`. Never hand-edit a file one of
+them owns; edit its table and run it. `--check` writes nothing and exits 1 on drift.
+
+| Generator | Source of truth | Writes | `--check` | World gate |
+| --- | --- | --- | --- | --- |
+| `gen_regions.py` | `region_spec_*.py` | `data/regions/*.tres` | yes | `generation` |
+| `gen_map_locations.py` | its own table | map locations and their placements | yes | |
+| `gen_campaign.py` | `tools/campaign/specs/` | the 30 main-story quests and their dialogue (`gen_main_story.py` only forwards to it) | yes | |
+| `gen_perks.py` | its own table | `data/perks`, the `progression:perks` locale block | yes | |
+| `gen_appearance.py` | its own table | `data/appearance` | no | |
+| `gen_items.py` | `tools/items/catalogue.py` + its own number and text tables | generated items, player weapons, item sets, unique effects, shop gear pools and stock rows, the `ics:content` locale block, the id lists in `ItemValidator.Content.cs` | yes | `item-generation` |
+| `gen_recipes.py` | `catalogue.PLANNED_RECIPES` | generated recipes, recipe names, the trainer's taught list; also checks `GameIds.Recipes.Starting` and the commission margin (`--report` prints it) | yes | `recipe-generation` |
+| `items/gen_loot.py` | `catalogue.py` + its own tables | generated affixes, tier pools, boss chest tables, `ChestLoot.tres`, the tier rows of the family tables, the Flamebearers' `LootTablePath` | yes | `loot-generation` |
+
+The three catalogue generators share `tools/items/catalogue.py`, which decides what exists and is
+safe to import (it reads and writes nothing); `python tools/items/catalogue.py` prints its census
+and self-check. After a catalogue edit run `gen_items.py`, `gen_recipes.py` and `items/gen_loot.py`,
+then each with `--check`. Their three gates run in the `fast`, `engine` and `full` world modes,
+before the build. (`world_bake.py` is not in this table: it needs the engine and has its own rules.)
+[`tools/items/README.md`](../tools/items/README.md) is the authoring guide and
+[`RECIPES.md`](RECIPES.md) has the per-kind recipes. Scaffolds that print rather than own a file:
+`gen_guild_dialogue.py`, `gen_merchant_dialogue.py`, `gen_cell_props.py`, `compose_building.py`,
+`compose_district.py`, `new_cell_scenes.py`.
+
 ## Story gate and Windows export
 
 Neither is an SDK command; run them through the console Godot directly, one at a time.

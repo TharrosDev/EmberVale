@@ -112,14 +112,23 @@ e.g. `item.currency.gold`, `item.potion.health`, `item.material.iron_ore`,
 > taught by `item.recipe_scroll.blacksteel_ingot`. Shields stay in `armor` (`item.armor.round_shield`),
 > as they always were.
 
-### The planned item catalogue (`tools/items/catalogue.py`)
+### The item catalogue (`tools/items/catalogue.py`)
 
-The ics upgrade plans about three hundred new item ids. They are decided once, in
-[`tools/items/catalogue.py`](../tools/items/catalogue.py), a pure-data module every lane imports, so
-an id can be referenced before the `.tres` that carries it is generated. **An id in that file is
-already a contract**: append to it, never rename or reuse one, and never reuse one of the 77 ids
-that predate it (`EXISTING_ITEM_IDS` there). `python tools/items/catalogue.py` prints the census
-and runs its self-check.
+296 of the 373 item ids, the 8 `set.*` ids, the 22 `unique.*` ids and 67 of the 82 `recipe.*` ids
+are decided once, in [`tools/items/catalogue.py`](../tools/items/catalogue.py), a pure-data module
+the three generators import (`gen_items.py`, `gen_recipes.py`, `items/gen_loot.py`). **An id in that
+file is already a contract**: append to it, never rename or reuse one, and never reuse one of the
+77 ids that predate it (`EXISTING_ITEM_IDS` there). `python tools/items/catalogue.py` prints the
+census and runs its self-check.
+
+Three id shapes are derived, never authored:
+
+- `recipe.<leaf>` is taught by the scroll `item.recipe_scroll.<leaf>`
+  (`ItemCatalogueIds.RecipeOfScroll`, and the recipe's own `ScrollItemId`).
+- `status.consumable.<item leaf>` is the runtime status a buff consumable applies
+  (`ConsumableEffectsComponent.BuffStatusId`). It is not in `StatusEffectDatabase` and has no `.tres`.
+- `chest.reward.<n>` is the `PersistentId` of a boss reward chest, numbered from the saved
+  `LootLedger.ChestsSpawned`.
 
 | Family | Pattern | Example |
 | ------ | ------- | ------- |

@@ -3,7 +3,8 @@
 Every mechanic and core system in the game, one or two lines each, with the class or data folder that
 owns it. It says **what exists**; [`ARCHITECTURE.md`](ARCHITECTURE.md) says how it works and
 [`RECIPES.md`](RECIPES.md) how to add to it. Counts are `.tres` files at 2026-09-28 (`--state` has the
-live census). *Partial* marks something that exists but is incomplete.
+live census); the item, crafting and save sections were recounted from the files on 2026-10-06.
+*Partial* marks something that exists but is incomplete.
 
 ## Movement and traversal
 
@@ -266,67 +267,117 @@ caps the first two at 25%).
 
 ## Items, equipment and loot
 
-- **Items** — 373 (`data/items`), 296 of them generated from `tools/items/catalogue.py` by
-  `tools/gen_items.py`: six tiers of gear (one per realm) across eight weapon classes, three armour
-  weights, rings, amulets and arrows, plus consumables, materials, recipe scrolls, quest items and
-  placeables. `ItemResource`, `ItemInstance`, `ItemBudget`.
-- **Inventory and equipment** — slot stacking with capacity; main hand, off hand, head, chest, hands,
-  legs, feet, ring, amulet, ammo; bonuses as stat modifiers; weapons and shields visible on sockets.
-  `InventoryComponent`, `EquipmentComponent`, `EquipmentPresentationComponent`.
+- **Items** — 373 (`data/items`): 220 equippables, 51 consumables, 7 placeables and 95 plain items
+  (materials, 40 recipe scrolls, quest items, relics, coin). 296 are generated from
+  `tools/items/catalogue.py` by `tools/gen_items.py`: six tiers of gear, one per realm, across eight
+  weapon classes plus shields, three armour weights, rings, amulets and arrows. `ItemResource`
+  (`ItemLevel`, `Tier`, `RequiredLevel`, `SetId`, `UniqueEffectId`), `EquippableItemResource`,
+  `ConsumableItemResource`, `ItemDatabase`.
+- **Item instances** — a rolled copy: rarity, frozen affixes, generated name, the item level it was
+  rolled at, workmanship, upgrade level, and the player's lock and junk marks. Only affix-less
+  copies of one workmanship and level stack. `ItemInstance`, `ItemStack`, `CraftQuality`,
+  `ItemUpgrades`.
+- **Stat budget** — an equippable spends points by item level, slot, hands and rarity; weapon
+  damage and gold value come from the same level. `--validate` allows a quarter either way.
+  `ItemBudget` (C#) mirrors `budget_points` / `weapon_damage` / `item_value` in `gen_items.py`.
+- **Inventory and equipment** — slot stacking with a capacity; main hand, off hand, head, chest,
+  hands, legs, feet, ring, amulet, ammo; bonuses as stat modifiers sourced to the instance (six
+  school resistances, mana, mana and stamina regeneration included); weapons and shields shown on
+  sockets, with a stand-in model per weapon class. `InventoryComponent`, `EquipmentComponent`,
+  `EquipmentPresentationComponent`.
 - **Material bag** — the player's plain materials live in an uncapped bag beside the pack (the
-  Materials tab) and take no slot; crafting, selling, storage, appraisal and impound all read pack
-  and bag together. `InventoryComponent.Materials` / `AllStacks`.
-- **Marks, split, drop** — lock an item (never sold, salvaged, junked or dropped), mark it junk (sold
-  or salvaged in one press), split a stack, drop it as a pickup. Search, slot filter and sorts in
-  the pack. `InventoryPanel`, `ItemTransfer`.
-- **Level, hands and room** — gear and the stronger consumables carry a required level; a two-handed
-  weapon empties the off hand and refuses an off-hand item; a swap with no room for what comes off
-  is refused, never lossy. `EquipmentComponent.CanEquip`, `InventoryRules`.
-- **Item sets and unique effects** — eight sets grant stat or effect bonuses at piece thresholds;
-  legendaries and set thresholds carry one of ten unique effect kinds (on-hit status, heal on kill,
+  Materials tab) and take no slot; counting, removing, crafting, selling, storage, appraisal and
+  impound read pack and bag together. Other inventories (chests, merchants) do not use one.
+  `InventoryComponent.UseMaterialBag` / `Materials` / `AllStacks`.
+- **Marks, split, drop** — lock an item (never sold, salvaged, junked or dropped), mark it junk
+  (sold or salvaged in one confirmed press), split a stack, move part of one, drop it as a pickup.
+  Search, slot filter and sort orders in the pack; search in the stash; sell-some, sell-all-junk and
+  a session-only buyback shelf at a counter. `InventoryPanel`, `StoragePanel`, `ItemTransfer`,
+  `QuantityPicker`, `ItemPresentation`.
+- **Level, hands and room** — gear and the stronger consumables carry a required level; a
+  two-handed weapon empties the off hand and refuses an off-hand item; a swap with no room for what
+  comes off is refused with a toast, never lossy. `EquipmentComponent.CanEquip`, `InventoryRules`,
+  `EquipRefusal`.
+- **Item sets** — eight (`data/item_sets`); wearing enough distinct pieces grants a stat bonus or a
+  unique effect at each threshold. Re-derived from what is worn after every change and every load,
+  never saved. `ItemSetResource`, `ItemSetBonusResource`, `SetRules`, `EquipmentComponent.SetPieces`.
+- **Unique effects** — 22 (`data/unique_effects`) over ten kinds: on-hit status, heal on kill,
   low-health power, block reflect, spell echo, dodge refund, gold find, thorns, crit execute, mana
-  shield). Re-derived from what is worn after every change and load. `SetRules`,
-  `UniqueEffectsComponent` (`data/item_sets`, `data/unique_effects`).
-- **Consumables** — heal, restore stamina or mana (instant or over time), timed buffs, cures; shared
-  cooldown groups (potion, elixir, food); a use that would be wasted is refused.
-  `ConsumableEffectsComponent`, `ConsumableRules`.
+  shield. Carried by the 17 named legendaries and by set thresholds; cooldowns are session-only.
+  `UniqueEffectResource`, `UniqueEffectKind`, `UniqueEffectsComponent`, `UniqueEffectRules`.
+- **Consumables** — heal, restore stamina or mana (instant or over time), a timed stat buff, a cure;
+  three shared cooldown groups (potion, elixir, food); a use that would be wasted (on cooldown,
+  already full, nothing to cure, level too low) is refused before anything is spent. Cooldowns and
+  running restores are cleared on load. `ConsumableEffectKind`, `ConsumableEffectsComponent`,
+  `ConsumableRules`, `InventoryComponent.Consume`.
 - **Ammunition** — the ammo slot holds the whole stack; the player's bow spends one arrow a shot,
-  refills from the pack, and will not draw on an empty quiver; arrow tier adds damage. `AmmoRules`.
+  refills from the pack when the slot runs dry, and will not draw on an empty quiver; arrow tier
+  adds 4 damage a tier above the first. `EquipmentComponent.ConsumeAmmo`, `AmmoRules`.
 - **Hotbar** — five consumable slots on `1`–`5`, or hold `LT` and press D-pad / Select on a pad; each
-  cell shows its cooldown. `HotbarComponent`, `HotbarPanel`.
-- **Loot and rarity** — Common to Legendary; rarity decides affix count. A drop is rolled for the
-  realm it happens in (tier pools under `data/loot/tiers`, generated by `tools/items/gen_loot.py`)
-  at an item level near the looter's; affix values scale with item level; a dry streak raises the
-  odds until a Rare is guaranteed. Rare and better drops stand a rarity beam and chime; gold and
-  plain materials are collected by walking over them. `LootGenerator`, `LootTiers`, `PityRules`,
-  `LootLedger`, `ItemPickupComponent`.
-- **Boss reward chests** — each Flamebearer leaves a persistent chest where it fell; the chest rolls
-  the boss's table when opened (the same roll on every reload) and holds its signature legendary
-  once per save. `LootComponent`, `ContainerLootComponent` (`data/loot/bosses`).
-- **Affixes** — 43 prefixes/suffixes frozen onto each instance, including regeneration and
-  Epic/Legendary-only signature affixes. `AffixDatabase` (`data/affixes`), `AffixRegenBinding`.
+  cell sweeps its cooldown. `HotbarComponent`, `HotbarPanel`.
+- **Loot tables** — 52 (`data/loot`): 21 family and shop tables, 24 tier pools (gear, materials,
+  supplies, scrolls for each of six tiers, `data/loot/tiers`) and 7 Flamebearer chest tables
+  (`data/loot/bosses`). Rows nest other tables (`{tier}` in a path resolves to the realm's tier),
+  pick one of a weighted group, gate on level and can be once per save. `LootTable`, `LootEntry`,
+  `LootGenerator`, `LootContext`; pools generated by `tools/items/gen_loot.py`.
+- **Rarity and item level** — Common to Legendary; rarity decides the affix count (0 to 4). A drop
+  is rolled for the realm it happens in, at an item level within two of the looter's, clamped to
+  the tier's band; a dry streak of non-Rare rolls raises quality after 6 and guarantees a Rare at
+  24. `LootRarity`, `LootTiers`, `PityRules`, `LootLedger` (saved as `loot_ledger`).
+- **Affixes** — 43 prefixes and suffixes (`data/affixes`, 32 generated) frozen onto each instance;
+  values grow with item level; a group allows one of its members per item; Epic and Legendary rolls
+  take a signature affix first; three kinds add health, stamina or mana regeneration.
+  `AffixDefinition`, `AffixDatabase`, `ItemAffix`, `AffixRegenBinding`.
+- **Boss reward chests** — each Flamebearer leaves a persistent chest where it fell (a yielding
+  duel leaves none); the chest rolls the boss's table when opened, seeded per save so every reload
+  gives the same roll, and holds its signature legendary once per save. Loot still on the ground
+  is kept by the chest across a save. `LootComponent`, `ContainerLootComponent`, `LootSeeds`.
+- **Drop presentation** — Uncommon and better pickups stand a rarity beam; Rare and better chime
+  on drop and on pickup; the loot feed merges a burst of pickups into one toast. `LootPresentation`,
+  `ItemPickupFactory`, `LootFeedMerger`.
+- **Pickups** — `E`, or hold `E` to sweep nearby loot; gold and plain materials are collected by
+  walking over them (never what the player dropped, never contraband). A full pack says so once
+  through `InventoryFullEvent`. `ItemPickupComponent`, `InteractionSensor`.
 - **Relics** — six Flamebearer hearts (`item.relic.*`) plus four guild-finale tokens.
-- **Pickups** — `E`, or hold `E` to sweep nearby loot. `ItemPickupComponent`, `InteractionSensor`.
-- No durability, repair or encumbrance (struck).
+- No durability, repair, encumbrance or sockets (struck).
 
 ## Crafting
 
-- **Recipes at stations** — 82 recipes (`data/recipes`, 67 generated by `tools/gen_recipes.py`) at
-  hand, forge, workbench or alchemy stations; affixed output; crafted singly or in bulk from pack
-  and material bag; learned from the trainer or by studying a recipe scroll (from the inventory or
-  the crafting window). `CraftingComponent`, `CraftingStationComponent`.
-- **Crafting skill and workmanship** — crafting earns skill XP and ranks 0–10; a recipe of tier N
-  needs rank N-1; each crafted piece of gear rolls a workmanship tier (Standard, Fine, Superior,
-  Masterwork) that scales its stats and value. `CraftingSkill`, `CraftQualities`.
-- **Reforging** — at a forge: reroll one affix, upgrade a piece up to +5, or promote Uncommon to
-  Rare and Rare to Epic, for gold and the tier's ingot; always priced above what it adds.
-  `ReforgeRules`.
-- **Salvage** — deconstruct for a fraction of materials plus XP; salvage perks raise the fraction to at most 75%.
-  A recipe is reversed only at its own station (scrap elsewhere); worn gear can be salvaged with a full pack;
-  junk-marked gear salvages in one confirmed press.
-  `Deconstruction`. A crafting perk can hand one unit of the largest ingredient back after a craft (a derived roll over a
-  saved craft count, never a free craft). `MaterialSaving`.
-- **Commission** — pay a smith to craft for you. `CommissionRules`.
+- **Recipes at stations** — 82 recipes (`data/recipes`, 67 generated by `tools/gen_recipes.py`): 8
+  by hand, 26 at a forge, 33 at a workbench, 15 at an alchemy bench. Crafted singly or in bulk (up
+  to 99) from pack and material bag; a craft with no room for its output is refused and the
+  ingredients returned. `CraftingRecipeResource`, `CraftingComponent`, `CraftingStationComponent`.
+- **Learning** — six of the generated recipes are known from the start, 21 are taught by the
+  trainer and 40 by the trainer or by studying their recipe scroll (from the inventory or the
+  crafting window). `GameIds.Recipes.Starting`, `ServiceKind.Trainer`,
+  `CraftingComponent.StudyScroll`.
+- **Crafting skill** — crafting earns skill XP (10 a recipe tier, a quarter once two ranks past
+  the recipe) and ranks 0–10; a recipe of tier N needs rank N-1 at the player's own bench.
+  `CraftingSkill`, saved as `skill_xp`.
+- **Workmanship** — each crafted piece of unstackable gear rolls Standard, Fine, Superior or
+  Masterwork from the rank above the recipe's requirement; it scales the template's stats (up to
+  +18%) and value (up to +35%), never the affixes. The roll is derived from the saved craft count,
+  so a quickload replays it. `CraftQuality`, `CraftQualities`, `CraftingSkill.Roll`.
+- **Affixed output** — a recipe with an output rarity above Common rolls affixes at the template's
+  item level, with a little luck from mastery. `LootGenerator.RollAffixed`.
+- **Reforging** — at a forge only, for gold and the item tier's ingot: reroll one affix (the price
+  climbs with each reroll of that item), upgrade a piece up to +5 (6% stats and 5% value a level),
+  or promote Uncommon to Rare and Rare to Epic with one new affix. Every fee is priced above what
+  it adds to the sale value, which `--validate` checks; outcomes are seeded from the item and a
+  saved serial. Worn gear is reforged in place. `ReforgeRules`, `ReforgeQuote`,
+  `CraftingComponent.RerollAffix` / `Upgrade` / `Promote`.
+- **Salvage** — deconstruct gear for a fraction of its recipe's materials plus XP; salvage perks
+  raise the fraction from 50% to at most 75%. A recipe is reversed only at its own station (scrap
+  elsewhere, and the window names the better station); worn gear salvages with a full pack;
+  junk-marked gear salvages in one confirmed press; locked and stackable gear never.
+  `Deconstruction`, `SalvagePlan`, `CraftingComponent.PlanSalvage`.
+- **Material saving** — a crafting perk can hand one unit of the largest ingredient back after a
+  craft (a derived roll over the saved craft count, never a free craft). `MaterialSaving`.
+- **Commission** — pay a smith to make a known recipe, buying the ingredients the player lacks;
+  the piece comes out Common and Standard, needs no crafting rank and earns no skill XP.
+  `CraftingComponent.Commission`, `CommissionRules`.
+- **Crafting window** — craft, salvage and reforge tabs; search, filters, a quantity picker and one
+  pinned recipe. `CraftingPanel`.
 
 ## Economy
 
@@ -548,19 +599,33 @@ caps the first two at 25%).
 
 ## Save and load
 
-- **Slots and quick save** — versioned JSON envelopes (format 4) with a content checksum, atomic
-  writes and one backup generation a load falls back to; migrations from v1. `F5` always writes the
-  quick slot; `F9` loads the newer of the quick slot and the session's own (twice to confirm over
-  unsaved progress). The pause menu has Save, Save to Slot and Load; three manual slots.
-  `SaveManager`, `SaveEnvelope`, `SaveMigrations`, `SaveSlotPolicy`, `SaveSlotPanel`.
-- **Save blocks** — a boss fight and a conversation refuse manual, quick and automatic saves, with
-  the reason as a toast. `SaveManager.PushSaveBlock`.
-- **Autosave** — on a cadence, after quests and level-ups, on arriving in a region, and when leaving
-  to the menu or desktop; deferred while saving is blocked, a menu is open, or the player is
-  fighting or airborne. `AutosaveService`, `AutosaveCadence`.
-- **Off-thread writes and thumbnails** — in windowed play the files are written by a queue and every
-  read flushes it first; a slot's thumbnail is the last frame of play, never the menu. Damaged and
-  newer-format slots are badged in the browser. `SaveWriteQueue`, `SaveThumbnailService`.
+- **Envelope** — versioned JSON (format 4) with a SHA-256 checksum over the saved objects, atomic
+  writes and one backup generation per slot that a load falls back to; migrations from v1; a save
+  from a newer build is refused, never bypassed. `SaveManager`, `SaveEnvelope`, `SaveChecksum`,
+  `SaveMigrations`, `SaveBackup`.
+- **Slots** — a quick slot, three manual slots the player can write, and a three-slot autosave
+  ring the player can load but never write. `SaveSlots`, `SaveKind`, `SaveSlotPolicy`.
+- **Quick save and load** — `F5` always writes the quick slot; `F9` loads the newer of the quick
+  slot (when it holds this character) and the session's own slot, asking for a second press when
+  more than a minute of play is unsaved. `SaveSlotPolicy.QuickLoadTarget`, `DeveloperToolsHost`.
+- **Pause menu** — Save writes the session's manual slot, or opens the browser to pick one when the
+  session has none (it never guesses); Save to Slot and Load open the slot browser, which badges
+  damaged, newer-format and backup-recovered slots. `PauseMenu`, `SaveSlotPanel`,
+  `SessionLifecycleCoordinator.TrySave`.
+- **Save blocks** — a boss fight (from the first blow, released after 20 quiet seconds) and a
+  conversation refuse manual, quick and automatic saves, with the reason as a toast.
+  `SaveManager.PushSaveBlock` / `CanSaveNow`.
+- **Autosave** — every five minutes of play, after a quest or a level-up, on arriving in a region,
+  and before leaving to the menu or desktop; at most one a minute; deferred while saving is
+  blocked, a menu is open, or the player is fighting or airborne (up to 90 seconds).
+  `AutosaveService`, `AutosaveCadence`.
+- **Off-thread writes** — in windowed play the files are written by a queue, every read and every
+  exit flushes it first, and a write that fails afterwards still raises the failure toast. Gates
+  and tooling write inline. `SaveWriteQueue`, `SaveWriteWorker`, `SaveFiles`, `SaveIndicator`.
+- **Thumbnails** — a slot's picture is the last frame of play, never the menu; when no clean frame
+  exists the old picture is removed. `SaveThumbnailService`.
+- **Tolerant loads** — a `Load` replaces live state; a malformed item, affix or stack entry is
+  skipped and content the build no longer has is dropped with a warning. `SaveRead`.
 - **World persistence** — cell snapshots, removed actors culled, spawned actors recreated.
   `CellPersistenceDirector`, `PersistentSpawnDirector`. Contract: [`SAVE_FORMAT.md`](SAVE_FORMAT.md).
 
@@ -574,7 +639,8 @@ caps the first two at 25%).
   `tools/world_shots.gd`.
 - **SDK** — `python tools/embervale.py` (doctor, build, validate, test, scenario, screenshot, perf,
   world gates, assets). [`TOOLING.md`](TOOLING.md).
-- **Generators** — regions, map locations, main story, guild dialogue, buildings, the world bake.
+- **Generators** — regions, map locations, the campaign, guild dialogue, perks, appearance, buildings,
+  the world bake, and the item catalogue (`gen_items.py`, `gen_recipes.py`, `items/gen_loot.py`).
 - **Analytics sink** — a dev-only event log, not state. `src/Analytics`.
 
 ## Deliberately absent
@@ -582,5 +648,7 @@ caps the first two at 25%).
 - Survival needs — hunger, thirst, temperature, durability, repair, encumbrance (Phase 40, struck).
 - Puzzles, traps and a dungeon framework (Phase 40.5, struck).
 - Swimming, climbing, crouch/sneak movement (stealth exists only as a quest objective rule).
-- Enchanting and sockets, a lore codex, photo mode, cinematics beyond narration cards.
+- Sockets and gem enchanting (struck; reforging at a forge is the only way to change a finished
+  item), a lore codex, photo mode, cinematics beyond narration cards.
+- A second vault or warehouse: storage is the bank, property stashes and the material bag.
 - Key remapping; extra locales; storefront, platform and live-ops features.

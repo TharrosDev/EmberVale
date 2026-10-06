@@ -45,6 +45,12 @@ uses: `quick` (F5/F9), the manual roster `slot1`..`slot6`, and the autosave ring
 (`AutosaveService.RingSlots` is the same array). `SaveSlots.KindOf` turns a slot id into a
 `SaveKind` (`Manual`, `Quick`, `Auto`); any other name is `Manual`.
 
+`SaveSlotPolicy` is what the player's saves may do with them. The slot browser offers the first
+three of the manual roster (`PlayerManualSlotCount`); the autosave ring can be loaded but never
+written by the player (`IsPlayerWritable`); `F5` always writes `quick`; the pause menu's Save writes
+the session's own manual slot and asks for one when the session has none (`ManualSaveTarget`); `F9`
+loads the newer of the session's slot and a `quick` save of the same character (`QuickLoadTarget`).
+
 ### 1.1 The backup generation
 
 Each slot keeps **exactly one** previous save. When a save replaces `save.json`, the file being
@@ -52,7 +58,8 @@ replaced is renamed to `save.json.bak` between staging the new file and committi
 
 - **Only a sound save is kept.** The outgoing `save.json` is validated first (`SaveBackup.ShouldRotate`)
   and a damaged one is overwritten in place. Rotating it would put a corrupt file on top of the good
-  generation, which is the one case the backup exists for.
+  generation, which is the one case the backup exists for. A `Newer` save counts as sound here: it
+  is rotated, not destroyed.
 - **A load falls back to it** when `save.json` is unreadable or gone and the backup is sound
   (`SaveBackup.Choose`). The player is told: `SaveManager.LastLoadUsedBackup` is set, a toast is
   raised (`save.recovered.title` / `save.recovered.detail`), and before the load
@@ -217,10 +224,17 @@ exist:
 | `crafting:<pid>` | `rerolls` | `[{fp, n}]`: rerolls so far per item fingerprint, newest 128 | none |
 | `crafting:<pid>` | `pinned` | the pinned recipe id | none pinned |
 | `loot_ledger` | `dry`, `claimed`, `salt`, `chests` | the dry-roll streak, once-per-save drops claimed, the per-save roll salt, reward chests stood | 0, none, a new salt, 0 |
-| a container | `table` | the loot table path a reward chest rolls on first open | the container holds only what was put in it |
+| `container_loot:<pid>` | `table` | the loot table path a reward chest rolls on first open. Written only when it differs from the authored one | the authored table |
+| `container_loot:<pid>` | `spilled` | `[{qty, instance}]`: loot this chest put on the ground that nobody has collected. Written only when non-empty | nothing owed; `Load` also removes the live floor pickups it was tracking |
 
 `perks` `Load` strips what it applied, replaces everything from the save and never re-checks
-prerequisites. A quickload replays a craft's outcome from `crafts` instead of rerolling it.
+prerequisites. A quickload replays a craft's outcome from `crafts` instead of rerolling it, and a
+reforge's from `reforges`.
+
+**`salt`** is drawn below 2^53 (`LootLedger.SaltLimit`). The engine's JSON parser returns every
+number as a float, so a larger one came back rounded and every unopened chest rerolled. A reward
+chest's roll is seeded from its `PersistentId` and this salt (`LootSeeds.For`), so it is the same on
+every reload of one save and different between saves.
 
 **`ms`** — levels 10, 20, 30, 40 and 50 each pay one skill point. A save from before milestones has
 no `ms`: the points for every milestone at or below the saved level are paid once on load and `ms`
@@ -257,6 +271,10 @@ Everything here resets on load, deliberately. **Check this list before assuming 
 | Save blocks (`PushSaveBlock`) | a block belongs to something live in the world; session teardown clears them |
 | A set piece's spawned enemies | transient; only `fired` and `cleared` are saved, and the cleared story flag is the durable truth |
 | `SaveSlotInfo.Health`, `PrimaryHealth`, `RecoveredFromBackup`, `HasBackup` | findings about the files, recomputed by `InspectSlot` |
+| Consumable cooldowns and over-time restores, unique-effect cooldowns | session state, cleared on `GameLoadingEvent` |
+| Set bonuses, gear and affix regeneration, active unique effects | re-derived from what is worn at the end of `EquipmentComponent.Load` |
+| The vendor buyback shelf | emptied on load; a sale is final once the session is left |
+| Floor pickups | transient, with one exception: what a chest spilled is saved by the chest (`spilled`, §4.1) |
 
 ## 6. Failure policy
 
@@ -350,6 +368,17 @@ never truncate a good file. The staged file is flushed and checked for write err
 not be committed is removed, and any `*.tmp` a crash left in the save folder is removed at startup;
 a staged file is never read, so nothing is lost with it.
 
+**In windowed play the disk work is queued.** `SaveGameCore` captures and serializes on the main
+thread, then hands the commit (`SaveFiles.Commit`: the same stage, rotate, rename, header mirror and
+legacy cleanup) to `SaveWriteQueue`, which runs one job at a time off the main thread. `SaveGame`
+returns true once the snapshot is accepted; `GameSavedEvent`, or `SaveFailedEvent` with
+`save.failed.write`, is published on the main thread when the write has landed or failed. Every
+read of a slot, a session teardown, a quit autosave and a window close call `SaveWriteQueue.Flush`
+first, so nothing reads a file that is still being written. Gates and tooling
+(`SaveWriteQueue.RunsInline`: a headless display, `EMBERVALE_USER_DIR`, or any user argument) write
+inline through `AtomicWrite`, which is the path whose log lines the save-audit probe pins. The
+thumbnail is resized, encoded and written on the same queue, behind its save.
+
 **A snapshot with any failed capture or empty/duplicate `SaveId` is refused before commit**, and so
 is one whose serialized form does not read back (§2.1). The previous authoritative file and header
 remain intact, and `GameSavedEvent` is not published. An exception while composing the header or
@@ -383,7 +412,9 @@ Events (`Embervale.Core.Events`), on every path through `SaveGame`:
 | refused because a save or load is running | `SaveFailedEvent(slot, "save.blocked.busy")`, no start |
 
 Every start is followed by exactly one `GameSavedEvent` or `SaveFailedEvent`. `kind` is `Auto` for
-an autosave, else the slot's kind.
+an autosave, else the slot's kind. With queued writes (§6.1) the second event arrives after
+`SaveGame` has returned true, so a caller that must know the save is on disk flushes the queue
+first (`SessionLifecycleCoordinator.AutosaveBeforeQuit` does).
 
 ### 6.3 Deleting
 
