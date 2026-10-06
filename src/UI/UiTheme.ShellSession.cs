@@ -62,6 +62,10 @@ public static partial class UiTheme
     /// <summary>The widest a narration card's text runs.</summary>
     public const float NarrationMeasure = 680f;
 
+    /// <summary>Gap between the entries of a sheet or a rail: none. Each is a full control tall and
+    /// carries its own margins, and the plate focus lifts behind one should meet its neighbours.</summary>
+    public const int SessionEntryGap = 0;
+
     /// <summary>How long the death sheet takes to darken the frame.</summary>
     public const float DurationDeath = 0.8f;
 

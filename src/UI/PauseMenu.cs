@@ -155,7 +155,7 @@ public partial class PauseMenu : CanvasLayer
 		// The entries scroll, and only when they must: on a short view, or at a large text size,
 		// the sheet has less room than seven controls. Their height is known without a layout pass.
 		(_menuScroll, _menu) = UiTheme.ScrollList();
-		_menu.AddThemeConstantOverride("separation", 0);
+		_menu.AddThemeConstantOverride("separation", UiTheme.SessionEntryGap);
 		_menuScroll.SizeFlagsVertical = Control.SizeFlags.ShrinkBegin;
 		col.AddChild(_menuScroll);
 

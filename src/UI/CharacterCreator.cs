@@ -161,7 +161,7 @@ public partial class CharacterCreator : CanvasLayer
         {
             CustomMinimumSize = new Vector2(narrow ? UiTheme.CreatorRailNarrowWidth : UiTheme.CreatorRailWidth, 0f),
         };
-        rail.AddThemeConstantOverride("separation", 0);
+        rail.AddThemeConstantOverride("separation", UiTheme.SessionEntryGap);
         for (int i = 0; i < _rail.Length; i++)
         {
             var step = (CreatorStep)i;

@@ -161,7 +161,7 @@ public partial class DeathScreen : CanvasLayer
         col.AddChild(line);
 
         _options = new VBoxContainer { Visible = false };
-        _options.AddThemeConstantOverride("separation", 0);
+        _options.AddThemeConstantOverride("separation", UiTheme.SessionEntryGap);
         col.AddChild(_options);
 
         _rise = UiTheme.SessionAction(Loc.T("death.rise"), UiCue.Confirm);
