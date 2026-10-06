@@ -183,10 +183,15 @@ public partial class JuicedBar : ProgressBar
         Vector2 size = Size;
         float fillEnd = (float)(Value * size.X);
 
-        if (LagChunk && !JuicedBarRules.Settled(_lag, Value))
+        // Against the target, as _Process settles it, and not against Value: the range snaps Value
+        // to its step, and the hundredth it can sit under the target would draw as a chunk at rest.
+        if (LagChunk && !JuicedBarRules.Settled(_lag, _target))
         {
             float chunkEnd = (float)(_lag * size.X);
-            DrawRect(new Rect2(fillEnd, 0f, chunkEnd - fillEnd, size.Y), UiTheme.HudChunk);
+            if (chunkEnd > fillEnd)
+            {
+                DrawRect(new Rect2(fillEnd, 0f, chunkEnd - fillEnd, size.Y), UiTheme.HudChunk);
+            }
         }
 
         if (Hatched && fillEnd > 1f)
