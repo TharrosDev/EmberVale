@@ -210,6 +210,14 @@ exist:
 | item instance | `ilvl` | the level the item was rolled at. Written only above 0 | 0: the template's own item level |
 | item instance | `locked` | the player's lock mark. Written only when true | false |
 | item instance | `junk` | the player's junk mark. Written only when true | false |
+| item affix | `fx` | `AffixEffect` ordinal (a regeneration affix). Written only off `Stat` | `Stat` |
+| `equipment:<pid>` | `ammo_qty` | arrows in the Ammo slot. Written only when the slot is filled and the count is not 1 | 1 |
+| `crafting:<pid>` | `skill_xp` | crafting skill XP. Written only above 0 | 0 |
+| `crafting:<pid>` | `reforges` | completed reforges (the serial a reroll's outcome derives from) | 0 |
+| `crafting:<pid>` | `rerolls` | `[{fp, n}]`: rerolls so far per item fingerprint, newest 128 | none |
+| `crafting:<pid>` | `pinned` | the pinned recipe id | none pinned |
+| `loot_ledger` | `dry`, `claimed`, `salt`, `chests` | the dry-roll streak, once-per-save drops claimed, the per-save roll salt, reward chests stood | 0, none, a new salt, 0 |
+| a container | `table` | the loot table path a reward chest rolls on first open | the container holds only what was put in it |
 
 `perks` `Load` strips what it applied, replaces everything from the save and never re-checks
 prerequisites. A quickload replays a craft's outcome from `crafts` instead of rerolling it.
@@ -217,6 +225,12 @@ prerequisites. A quickload replays a craft's outcome from `crafts` instead of re
 **`ms`** — levels 10, 20, 30, 40 and 50 each pay one skill point. A save from before milestones has
 no `ms`: the points for every milestone at or below the saved level are paid once on load and `ms`
 is set to that level, so the key is written from then on.
+
+Item, affix and inventory entries are read through `SaveRead`: an absent or mistyped key takes its
+default and a malformed entry (no id, an unknown enum member, not an object) is skipped with the rest
+of the load intact. Consumable cooldowns, over-time restores, unique-effect cooldowns, set bonuses
+and the vendor buyback shelf are deliberately not saved; the first four are re-derived or cleared on
+load and the shelf is emptied.
 
 **`materials`** — `InventoryComponent.Load` clears both stores and sends every entry of both lists
 back through `AddInstance`. So an old save's materials move into the bag when the component uses one
