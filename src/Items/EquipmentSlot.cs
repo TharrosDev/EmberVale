@@ -1,3 +1,5 @@
+using Embervale.Localization;
+
 namespace Embervale.Items;
 
 /// <summary>
@@ -68,14 +70,24 @@ public static class EquipmentSlots
         EquipmentSlot.Ammo,
     };
 
+    /// <summary>The player-visible name of a slot, through <see cref="Loc"/>. One literal key per
+    /// slot (rather than a key built from the enum name) so the locale-usage test pins each of them
+    /// to the catalogue.</summary>
     public static string Label(EquipmentSlot slot)
     {
         return slot switch
         {
-            EquipmentSlot.MainHand => "Main Hand",
-            EquipmentSlot.OffHand => "Off Hand",
-            EquipmentSlot.Ammo => "Ammo",
-            _ => slot.ToString(),
+            EquipmentSlot.MainHand => Loc.T("item.slot.main_hand"),
+            EquipmentSlot.OffHand => Loc.T("item.slot.off_hand"),
+            EquipmentSlot.Head => Loc.T("item.slot.head"),
+            EquipmentSlot.Chest => Loc.T("item.slot.chest"),
+            EquipmentSlot.Hands => Loc.T("item.slot.hands"),
+            EquipmentSlot.Legs => Loc.T("item.slot.legs"),
+            EquipmentSlot.Feet => Loc.T("item.slot.feet"),
+            EquipmentSlot.Ring => Loc.T("item.slot.ring"),
+            EquipmentSlot.Amulet => Loc.T("item.slot.amulet"),
+            EquipmentSlot.Ammo => Loc.T("item.slot.ammo"),
+            _ => Loc.T("item.slot.none"),
         };
     }
 }

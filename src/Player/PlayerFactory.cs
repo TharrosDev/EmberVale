@@ -251,6 +251,13 @@ public static class PlayerFactory
         // Hotbar: quick-use bar (1-5) the player assigns from the inventory; resolves bag + equipment.
         player.AddChild(new HotbarComponent { Name = "Hotbar" });
 
+        // Consumable cooldown groups and over-time restores, and the unique effects worn gear and
+        // item-set thresholds carry. Both sit after Stats, Combat, Inventory and Equipment, which
+        // they resolve; neither holds saved state (cooldowns drop on load, effects re-derive from
+        // the equipment restore).
+        player.AddChild(new ConsumableEffectsComponent { Name = "ConsumableEffects" });
+        player.AddChild(new UniqueEffectsComponent { Name = "UniqueEffects" });
+
         // Reputation: tracks standing with every faction and reacts to kills the player lands.
         player.AddChild(new ReputationComponent { Name = "Reputation" });
 
