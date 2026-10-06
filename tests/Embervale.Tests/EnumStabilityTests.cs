@@ -527,4 +527,99 @@ public class EnumStabilityTests
     }
 
     // --- end magic-content ---
+
+    // --- ics:foundation: the enums the ics base introduced (one owner per block) ---
+    [Fact]
+    public void WeaponClass_Ordinals()
+    {
+        Assert.Equal(0, (int)WeaponClass.None);
+        Assert.Equal(1, (int)WeaponClass.Sword);
+        Assert.Equal(2, (int)WeaponClass.Dagger);
+        Assert.Equal(3, (int)WeaponClass.Axe);
+        Assert.Equal(4, (int)WeaponClass.Mace);
+        Assert.Equal(5, (int)WeaponClass.Spear);
+        Assert.Equal(6, (int)WeaponClass.Staff);
+        Assert.Equal(7, (int)WeaponClass.Greatsword);
+        Assert.Equal(8, (int)WeaponClass.Bow);
+        Assert.Equal(9, (int)WeaponClass.Shield);
+    }
+
+    [Fact]
+    public void ArmorWeight_Ordinals()
+    {
+        Assert.Equal(0, (int)ArmorWeight.None);
+        Assert.Equal(1, (int)ArmorWeight.Light);
+        Assert.Equal(2, (int)ArmorWeight.Medium);
+        Assert.Equal(3, (int)ArmorWeight.Heavy);
+    }
+
+    [Fact]
+    public void CraftQuality_Ordinals()
+    {
+        Assert.Equal(0, (int)CraftQuality.Standard);
+        Assert.Equal(1, (int)CraftQuality.Fine);
+        Assert.Equal(2, (int)CraftQuality.Superior);
+        Assert.Equal(3, (int)CraftQuality.Masterwork);
+    }
+
+    [Fact]
+    public void ConsumableEffectKind_Ordinals()
+    {
+        Assert.Equal(0, (int)ConsumableEffectKind.Heal);
+        Assert.Equal(1, (int)ConsumableEffectKind.RestoreStamina);
+        Assert.Equal(2, (int)ConsumableEffectKind.RestoreMana);
+        Assert.Equal(3, (int)ConsumableEffectKind.Buff);
+        Assert.Equal(4, (int)ConsumableEffectKind.Cure);
+    }
+
+    [Fact]
+    public void UniqueEffectKind_Ordinals()
+    {
+        Assert.Equal(0, (int)UniqueEffectKind.OnHitStatus);
+        Assert.Equal(1, (int)UniqueEffectKind.OnKillHeal);
+        Assert.Equal(2, (int)UniqueEffectKind.LowHealthPower);
+        Assert.Equal(3, (int)UniqueEffectKind.BlockReflect);
+        Assert.Equal(4, (int)UniqueEffectKind.SpellEcho);
+        Assert.Equal(5, (int)UniqueEffectKind.DodgeRefund);
+        Assert.Equal(6, (int)UniqueEffectKind.GoldFind);
+        Assert.Equal(7, (int)UniqueEffectKind.ThornsFlat);
+        Assert.Equal(8, (int)UniqueEffectKind.CritExecute);
+        Assert.Equal(9, (int)UniqueEffectKind.ManaShield);
+    }
+
+    [Fact]
+    public void SaveKind_Ordinals()
+    {
+        Assert.Equal(0, (int)Embervale.Save.SaveKind.Manual);
+        Assert.Equal(1, (int)Embervale.Save.SaveKind.Quick);
+        Assert.Equal(2, (int)Embervale.Save.SaveKind.Auto);
+    }
+
+    [Fact]
+    public void CraftQuality_FromOrdinal_ClampsAStaleSave()
+    {
+        Assert.Equal(CraftQuality.Standard, CraftQualities.FromOrdinal(-3));
+        Assert.Equal(CraftQuality.Superior, CraftQualities.FromOrdinal(2));
+        Assert.Equal(CraftQuality.Masterwork, CraftQualities.FromOrdinal(99));
+    }
+
+    [Fact]
+    public void ItemUpgrades_Clamp_StaysInRange()
+    {
+        Assert.Equal(0, ItemUpgrades.Clamp(-1));
+        Assert.Equal(3, ItemUpgrades.Clamp(3));
+        Assert.Equal(ItemUpgrades.MaxLevel, ItemUpgrades.Clamp(ItemUpgrades.MaxLevel + 4));
+    }
+
+    // --- end ics:foundation ---
+    // --- ics:items: enum tests for this lane go between the markers (one owner per block) ---
+    // --- end ics:items ---
+    // --- ics:loot: enum tests for this lane go between the markers (one owner per block) ---
+    // --- end ics:loot ---
+    // --- ics:crafting: enum tests for this lane go between the markers (one owner per block) ---
+    // --- end ics:crafting ---
+    // --- ics:content: enum tests for this lane go between the markers (one owner per block) ---
+    // --- end ics:content ---
+    // --- ics:save-core: enum tests for this lane go between the markers (one owner per block) ---
+    // --- end ics:save-core ---
 }
