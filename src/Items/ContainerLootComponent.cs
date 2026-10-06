@@ -22,6 +22,12 @@ namespace Embervale.Items;
 /// chest does not reroll it. The looted flag and a non-default table persist via
 /// <see cref="ISaveable"/>, so a plundered chest stays open and empty across save/load and a
 /// boss's reward chest still knows which table it owes.
+///
+/// <b>The chest owns what it spilled until it is collected.</b> A floor pickup is transient and
+/// saves nothing, while <c>looted</c> and a once-per-save claim in the loot ledger both do. A save
+/// taken with the loot still on the ground used to load as an open, empty chest with the boss's
+/// legendary gone for good. So every pickup this chest spawned is tracked, whatever is still lying
+/// there is written under <c>spilled</c>, and a load hands it back on the next press.
 /// </summary>
 [GlobalClass]
 public partial class ContainerLootComponent : InteractableComponent, ISaveable
@@ -34,6 +40,7 @@ public partial class ContainerLootComponent : InteractableComponent, ISaveable
     private const string ClosedModelPath = ModelAssets.CacheChest;
     private const string LootedKey = "looted";
     private const string TableKey = "table";
+    private const string SpilledKey = "spilled";
 
     /// <summary>The loot table rolled on the first open. Empty rolls nothing (the chest then only
     /// holds what its inventory was given).</summary>
@@ -42,6 +49,12 @@ public partial class ContainerLootComponent : InteractableComponent, ISaveable
     private bool _looted;
     private string _authoredTablePath = DefaultTablePath;
     private string _authoredName = string.Empty;
+
+    /// <summary>The floor pickups this chest popped out that may still be lying there.</summary>
+    private readonly List<ItemPickupComponent> _spilled = new();
+
+    /// <summary>Spilled loot restored from a save, owed back on the next press.</summary>
+    private readonly List<(ItemInstance Instance, int Quantity)> _pending = new();
 
     public string SaveId => SaveKey("container_loot");
 
@@ -107,6 +120,14 @@ public partial class ContainerLootComponent : InteractableComponent, ISaveable
             }
         }
 
+        // Loot that was on the floor when the loaded save was written comes back out.
+        foreach ((ItemInstance owed, int quantity) in _pending)
+        {
+            SpawnPickup(parent, owed, quantity, origin, index++, ref best);
+        }
+
+        _pending.Clear();
+
         // First-ever open: the table's roll, and the lid comes off.
         if (!_looted)
         {
@@ -158,10 +179,16 @@ public partial class ContainerLootComponent : InteractableComponent, ISaveable
         }
     }
 
-    private static void SpawnPickup(Node parent, ItemInstance instance, int quantity, Vector3 origin, int index,
+    private void SpawnPickup(Node parent, ItemInstance instance, int quantity, Vector3 origin, int index,
         ref ItemRarity best)
     {
         Entity pickup = ItemPickupFactory.Create(instance, quantity, LootComponent.ScatterAround(origin, index));
+        if (pickup.GetNodeOrNull<ItemPickupComponent>("Pickup") is { } carried)
+        {
+            _spilled.RemoveAll(static p => !IsStillOnFloor(p));
+            _spilled.Add(carried);
+        }
+
         // Deferred: Interact runs from the player's physics tick; don't mutate the tree inline.
         parent.CallDeferred(Node.MethodName.AddChild, pickup);
         if (instance.Rarity > best)
@@ -169,6 +196,11 @@ public partial class ContainerLootComponent : InteractableComponent, ISaveable
             best = instance.Rarity;
         }
     }
+
+    /// <summary>True while a spilled pickup still holds something nobody has collected. A collected
+    /// pickup is at zero before its node is freed, and one freed with its cell is no longer valid.</summary>
+    private static bool IsStillOnFloor(ItemPickupComponent pickup) =>
+        GodotObject.IsInstanceValid(pickup) && pickup.Quantity > 0 && pickup.Instance != null;
 
     /// <summary>Names the chest for what it is. The name is derived from the table rather than
     /// saved, so it is right again after a load rebuilds the chest from its template.</summary>
@@ -216,11 +248,65 @@ public partial class ContainerLootComponent : InteractableComponent, ISaveable
             data[TableKey] = TablePath;
         }
 
+        // Additive, and written only while something is owed: loot still on the floor, plus loot a
+        // load restored that has not been popped again. Same entry shape as an inventory stack.
+        var spilled = new Godot.Collections.Array();
+        foreach (ItemPickupComponent pickup in _spilled)
+        {
+            if (IsStillOnFloor(pickup))
+            {
+                spilled.Add(SpilledEntry(pickup.Instance!, pickup.Quantity));
+            }
+        }
+
+        foreach ((ItemInstance owed, int quantity) in _pending)
+        {
+            spilled.Add(SpilledEntry(owed, quantity));
+        }
+
+        if (spilled.Count > 0)
+        {
+            data[SpilledKey] = spilled;
+        }
+
         return data;
     }
 
+    private static Godot.Collections.Dictionary SpilledEntry(ItemInstance instance, int quantity) => new()
+    {
+        ["instance"] = instance.Save(),
+        ["qty"] = quantity,
+    };
+
     public void Load(Godot.Collections.Dictionary data)
     {
+        // Replace, never merge: on a quickload the pickups from the abandoned timeline are still
+        // lying there, and leaving them would hand the same loot out twice. Absent key = nothing owed.
+        foreach (ItemPickupComponent pickup in _spilled)
+        {
+            if (GodotObject.IsInstanceValid(pickup) && pickup.GetParent() is { } floorItem)
+            {
+                pickup.Quantity = 0;
+                floorItem.QueueFree();
+            }
+        }
+
+        _spilled.Clear();
+        _pending.Clear();
+        foreach (Variant entry in SaveRead.List(data, SpilledKey))
+        {
+            if (SaveRead.AsSection(entry) is not { } dict)
+            {
+                continue;
+            }
+
+            int qty = SaveRead.Int(dict, "qty", 1);
+            if (qty > 0 && ItemInstance.FromSave(SaveRead.Section(dict, "instance")) is { } instance)
+            {
+                _pending.Add((instance, qty));
+            }
+        }
+
         bool wasLooted = _looted;
         _looted = data.TryGetValue(LootedKey, out Variant looted) && looted.AsBool();
 

@@ -86,7 +86,9 @@ public static class ItemTransfer
 
     /// <summary>
     /// Sets a whole stack down at the player's feet as an ordinary pickup, the same object a chest
-    /// or a corpse leaves, so a drop made by mistake is one key press from undone. Refuses a locked
+    /// or a corpse leaves, so a drop made by mistake is one key press from undone. It is marked as
+    /// the player's own drop, so the walk-over sweep leaves coin and materials where they were put.
+    /// Refuses a locked
     /// stack and a quest item, and does nothing when there is no player in the world to drop beside.
     /// </summary>
     public static bool Drop(InventoryComponent pack, ItemStack stack)
@@ -104,7 +106,7 @@ public static class ItemTransfer
         }
 
         Vector3 spot = LootComponent.ScatterAround(body.GlobalPosition, 0);
-        parent.CallDeferred(Node.MethodName.AddChild, ItemPickupFactory.Create(Unmarked(instance), quantity, spot));
+        parent.CallDeferred(Node.MethodName.AddChild, ItemPickupFactory.Create(Unmarked(instance), quantity, spot, playerDropped: true));
         return true;
     }
 

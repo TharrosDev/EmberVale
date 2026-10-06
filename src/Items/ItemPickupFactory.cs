@@ -18,7 +18,9 @@ public static class ItemPickupFactory
         return Create(ItemInstance.Plain(item), quantity, position);
     }
 
-    public static Entity Create(ItemInstance instance, int quantity, Vector3 position)
+    /// <param name="playerDropped">True when the player set this down on purpose
+    /// (<see cref="ItemPickupComponent.PlayerDropped"/>).</param>
+    public static Entity Create(ItemInstance instance, int quantity, Vector3 position, bool playerDropped = false)
     {
         var pickup = new Entity
         {
@@ -50,6 +52,7 @@ public static class ItemPickupFactory
             Item = instance.Template,
             Instance = instance,
             Quantity = quantity,
+            PlayerDropped = playerDropped,
         });
         // Lets the Phase 25F compass / quest markers find this as a Collect-objective target.
         pickup.AddToGroup(Embervale.Quests.ObjectiveLocator.PickupGroup);

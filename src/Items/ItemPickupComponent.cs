@@ -30,6 +30,11 @@ public partial class ItemPickupComponent : InteractableComponent
     /// directly; mundane pickups derive it from <see cref="Item"/>).</summary>
     public ItemInstance? Instance { get; set; }
 
+    /// <summary>Set on a pickup the player put down themselves (<c>ItemTransfer.Drop</c>). It is
+    /// never swept up by walking over it, or dropping coin or a material would be undone the moment
+    /// the inventory closed; an explicit press still collects it.</summary>
+    public bool PlayerDropped { get; set; }
+
     private ItemInstance? Resolved => Instance ??= Item != null ? ItemInstance.Plain(Item) : null;
 
     private ulong _lastFullNoticeMs;
@@ -43,7 +48,7 @@ public partial class ItemPickupComponent : InteractableComponent
     /// Everything else waits for the player to choose it, because a pack slot is a decision and a
     /// coin is not.
     /// </summary>
-    public bool IsAutoLoot => Resolved is { } instance && IsAutoLootItem(instance);
+    public bool IsAutoLoot => !PlayerDropped && Resolved is { } instance && IsAutoLootItem(instance);
 
     /// <summary>The walk-over rule, split out so it reads the same wherever it is asked.</summary>
     public static bool IsAutoLootItem(ItemInstance instance)
