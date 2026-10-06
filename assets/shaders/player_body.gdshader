@@ -19,6 +19,12 @@ render_mode cull_disabled;
 //
 // Metallic/roughness/specular come from the imported glTF material (PlayerAppearance copies them) so the
 // lit look does not change when this replaces it.
+//
+// First person (PlayerCameraRig) sets fp_head on the player's own mesh instance: a world-space sphere
+// round the animated head (xyz centre, w radius). Everything inside it is discarded in every pass but
+// the shadow pass, so the camera can sit in the head without seeing it and the head still casts its
+// shadow. It is a per-instance uniform, so the corruption controller's material copies carry it and
+// no other body sharing this mesh (the creator's preview) is touched. Radius 0, the default, is off.
 // ==================================================================================================
 
 uniform sampler2D albedo_tex : source_color, filter_linear_mipmap, repeat_enable;
@@ -45,6 +51,8 @@ uniform float glow_energy = 0.0;
 uniform vec3 ember_tint : source_color = vec3(0.82, 0.34, 0.1);
 uniform float ember_mix = 0.0;
 
+instance uniform vec4 fp_head = vec4(0.0, 0.0, 0.0, 0.0);
+
 const vec3 LUMA = vec3(0.2126, 0.7152, 0.0722);
 
 vec3 shift_region(float lum, vec3 tint, vec3 ref, float weight)
@@ -55,6 +63,16 @@ vec3 shift_region(float lum, vec3 tint, vec3 ref, float weight)
 
 void fragment()
 {
+	if (!IN_SHADOW_PASS && fp_head.w > 0.0)
+	{
+		// VERTEX is in view space here; the sphere is given in world space.
+		vec3 world_pos = (INV_VIEW_MATRIX * vec4(VERTEX, 1.0)).xyz;
+		if (distance(world_pos, fp_head.xyz) < fp_head.w)
+		{
+			discard;
+		}
+	}
+
 	vec3 base = texture(albedo_tex, UV).rgb;
 	// A texel half in a gutter beside another island reads 0.5, so the ramp starts above it.
 	vec3 m = smoothstep(vec3(0.55), vec3(0.9), texture(region_mask, UV).rgb);

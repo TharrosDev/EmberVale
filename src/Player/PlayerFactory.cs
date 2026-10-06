@@ -122,7 +122,9 @@ public static class PlayerFactory
             Name = "Camera",
             Current = true,
             Position = Vector3.Zero,
-            Near = 0.08f, // tight near plane so world geometry hugs the eye without clipping weirdness
+            // Tight near plane so world geometry hugs the eye without clipping weirdness. The head is
+            // not clipped by it: the body shader cuts the head out in first person (PlayerCameraRig).
+            Near = 0.08f,
         };
         cameraPivot.AddChild(camera);
         // Shake is a camera layer on the player, not a child of the camera: it returns a nudge and the
@@ -156,8 +158,9 @@ public static class PlayerFactory
             Hitbox = hitbox,
         });
         player.AddChild(new HitReactionComponent { Name = "HitReaction" });
-        // Smooths the camera and the body mesh between physics ticks. Before the animation component
-        // and foot IK, which read the rig it will offset. Inert for now: it only holds the two nodes.
+        // Smooths the camera and the body mesh between physics ticks, and trails the mesh's yaw
+        // behind a third-person camera turn. Before the animation component and foot IK, which read
+        // the rig it offsets.
         player.AddChild(new PlayerVisualSmoother
         {
             Name = "VisualSmoother",

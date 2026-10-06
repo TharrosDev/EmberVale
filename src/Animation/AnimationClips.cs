@@ -38,7 +38,8 @@ public static class AnimationClips
     /// </summary>
     public static readonly string[] SharedSlots =
     {
-        "idle", "walk", "run", "sprint", "walk_back", "combat_walk_fwd", "combat_walk_back",
+        "idle", "walk", "run", "sprint", "walk_back", "strafe_left", "strafe_right",
+        "combat_walk_fwd", "combat_walk_back",
         "turn_left", "turn_right", "jump", "fall",
         "attack1", "attack2", "attack3", "heavy", "heavy_overhead",
         "block", "parry", "dodge", "hit", "knockdown", "getup", "death",

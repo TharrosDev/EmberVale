@@ -6,6 +6,7 @@ using Embervale.Core.Events;
 using Embervale.Entities;
 using Embervale.Magic;
 using Embervale.Magic.Vfx;
+using Embervale.Movement;
 using Embervale.Stats;
 using Godot;
 using Embervale.Core;
@@ -66,6 +67,7 @@ public partial class CharacterAnimationComponent : EntityComponent
     private CombatComponent? _combat;
     private StatsComponent? _stats;
     private SpellcastingComponent? _spellcasting;
+    private LocomotionComponent? _locomotion;
     private Skeleton3D? _skeleton;
     private string _idle = "", _run = "", _block = "", _hit = "", _death = "";
     private string _cast = "", _channel = "", _ride = "";
@@ -126,6 +128,9 @@ public partial class CharacterAnimationComponent : EntityComponent
         }
 
         _spellcasting = Entity.GetComponent<SpellcastingComponent>();
+        // The run speed itself is read on the first tick (TickLod), not here: it asks the stats
+        // component, and a sibling's OnInitialize is not guaranteed to have run yet.
+        _locomotion = Entity.GetComponent<LocomotionComponent>();
 
         EventBus.Instance?.Subscribe<EntityDamagedEvent>(OnDamaged);
         EventBus.Instance?.Subscribe<SpellCastEvent>(OnSpellCast);
@@ -239,7 +244,17 @@ public partial class CharacterAnimationComponent : EntityComponent
 
         if (_actionClip.Length == 0)
         {
-            PlayOneShot(_cast);
+            if (_tree != null)
+            {
+                // Arms only: the thrust plays on the upper-body layer and the legs keep whatever
+                // locomotion had them doing. Played on the AnimationPlayer it would do nothing at
+                // all, because an active tree is what poses the body.
+                PlayUpperOneShot(_cast);
+            }
+            else
+            {
+                PlayOneShot(_cast);
+            }
         }
 
         if (SpellDatabase.Get(e.SpellId) is { } spell)
@@ -427,11 +442,13 @@ public partial class CharacterAnimationComponent : EntityComponent
 
         if (_tree != null && _playback != null)
         {
-            if (Riding)
+            if (Riding || IsUpperBodyClip(clip))
             {
                 // Upper body only: the arms swing, the seat holds. Nothing travels, so locomotion
-                // keeps the legs — which is the animation 39B had to give up entirely.
-                SetUpperBodyClip(clip);
+                // keeps the legs — which is the animation 39B had to give up entirely. The same
+                // door takes any clip out of the upper-body library: it has no leg tracks, so in
+                // the action state it would stand the legs in their rest pose for its whole length.
+                SetUpperBodyClip(clip, speed);
                 return actual;
             }
 
@@ -449,7 +466,7 @@ public partial class CharacterAnimationComponent : EntityComponent
         if (_tree?.TreeRoot is not AnimationNodeBlendTree root ||
             root.GetNode(LocomotionTree.StateMachineNode) is not AnimationNodeStateMachine machine ||
             machine.GetNode(LocomotionTree.ActionState) is not AnimationNodeBlendTree action ||
-            action.GetNode("Anim") is not AnimationNodeAnimation anim)
+            action.GetNode(LocomotionTree.ActionAnimNode) is not AnimationNodeAnimation anim)
         {
             return;
         }
@@ -458,16 +475,74 @@ public partial class CharacterAnimationComponent : EntityComponent
         _tree.Set(ActionScaleParamName, speed);
     }
 
-    private void SetUpperBodyClip(string clip)
+    /// <summary>Hands the upper-body layer to an action's clip for as long as the action runs
+    /// (<see cref="StopAction"/> lets it go), at the rate that spans the action's duration.</summary>
+    private void SetUpperBodyClip(string clip, float speed)
     {
-        if (_tree?.TreeRoot is AnimationNodeBlendTree root &&
-            root.GetNode("UpperBody") is AnimationNodeAnimation anim)
+        if (!ShowOnUpperBody(clip, speed))
         {
-            anim.Animation = clip;
-            _upperBlend = 1f;
-            _tree.Set(UpperBodyBlendParamName, 1f);
+            return;
+        }
+
+        _upperAction = true;
+        _upperHold = 0f;
+        _upperBlend = 1f;
+        _tree!.Set(UpperBodyBlendParamName, 1f);
+    }
+
+    /// <summary>Plays a clip once on the upper-body layer and lets the layer go when it has run.
+    /// The layer eases in over <see cref="UpperBodyOneShotSeconds"/> rather than snapping, and is
+    /// not taken from an action that already has it.</summary>
+    private void PlayUpperOneShot(string clip)
+    {
+        if (_player == null || clip.Length == 0 || _deathPlayed || _upperAction || !_player.HasAnimation(clip))
+        {
+            return;
+        }
+
+        float seconds = (float)_player.GetAnimation(clip).Length;
+        if (seconds > 0f && ShowOnUpperBody(clip, 1f))
+        {
+            // Let go a blend's length early, so the layer is easing out as the clip ends rather
+            // than holding its last frame while it does.
+            _upperHold = Mathf.Max(seconds - UpperBodyBlendSeconds, UpperBodyOneShotSeconds);
         }
     }
+
+    /// <summary>Puts a clip on the upper-body node from its first frame. False when there is no
+    /// tree to put it on.</summary>
+    private bool ShowOnUpperBody(string clip, float speed)
+    {
+        if (_tree == null || clip.Length == 0)
+        {
+            return false;
+        }
+
+        _upperAnim ??= _tree.TreeRoot is AnimationNodeBlendTree root
+            ? root.GetNode(LocomotionTree.UpperBodyNode) as AnimationNodeAnimation
+            : null;
+        if (_upperAnim == null)
+        {
+            return false;
+        }
+
+        if (_upperClip != clip)
+        {
+            _upperAnim.Animation = clip;
+            _upperClip = clip;
+        }
+
+        _tree.Set(UpperBodyScaleParamName, speed);
+        _tree.Set(UpperBodySeekParamName, 0f);
+        return true;
+    }
+
+    /// <summary>Whether a clip comes out of the upper-body library, which carries no leg tracks and
+    /// so can only ever be shown through the upper-body layer.</summary>
+    private static bool IsUpperBodyClip(string clip) =>
+        clip.StartsWith(UpperBodyLibraryPrefix, System.StringComparison.Ordinal);
+
+    private const string UpperBodyLibraryPrefix = "lib/";
 
     public float ActionProgress
     {
@@ -509,6 +584,8 @@ public partial class CharacterAnimationComponent : EntityComponent
     {
         ResumeAction();
         _actionClip = "";
+        // An action shown on the upper-body layer just lets the layer go; TickTree eases it out.
+        _upperAction = false;
         if (_tree != null && _playback?.GetCurrentNode() == ActionStateName)
         {
             TravelTo(LocomotionStateName);
@@ -525,7 +602,11 @@ public partial class CharacterAnimationComponent : EntityComponent
 
         _actionHeld = true;
         _heldPlayerSpeed = _player?.SpeedScale ?? 1f;
-        if (_tree != null && _playback?.GetCurrentNode() == ActionStateName)
+        if (_tree != null && _upperAction)
+        {
+            _tree.Set(UpperBodyScaleParamName, 0f);
+        }
+        else if (_tree != null && _playback?.GetCurrentNode() == ActionStateName)
         {
             _tree.Set(ActionScaleParamName, 0f);
         }
@@ -547,6 +628,10 @@ public partial class CharacterAnimationComponent : EntityComponent
         if (_tree != null)
         {
             _tree.Set(ActionScaleParamName, _actionSpeed);
+            if (_upperAction)
+            {
+                _tree.Set(UpperBodyScaleParamName, _actionSpeed);
+            }
         }
         if (_player != null)
         {
@@ -576,10 +661,22 @@ public partial class CharacterAnimationComponent : EntityComponent
             _slots[slot] = SharedClip(slot);
         }
 
+        // The strafes and the fall come from the full-body library BY NAME or not at all. The fuzzy
+        // resolver would answer "fall" with a body's own "Fall_Dead" and "strafe" with nothing, and
+        // a missing one is handled where the tree is built (a borrowed walk, no airborne state).
+        foreach (string slot in new[] { "strafe_left", "strafe_right", LocomotionTree.FallState })
+        {
+            string direct = $"{MeshyLibraryName}/{slot}";
+            _slots[slot] = _player.HasAnimation(direct) ? direct : string.Empty;
+        }
+
         if (LocomotionTree.Build(_slots, _skeleton) is not { } root)
         {
             return;
         }
+
+        _hasFall = LocomotionTree.HasFall(_slots);
+        _upperClip = _slots["block"].Length > 0 ? _slots["block"] : _slots["idle"];
 
         var tree = new AnimationTree
         {
@@ -602,21 +699,49 @@ public partial class CharacterAnimationComponent : EntityComponent
         _upperBlend = (float)tree.Get(UpperBodyBlendParamName);
     }
 
-    /// <summary>Signed forward speed in m/s — negative when backing up. The blend space's only
-    /// input, and the reason walking no longer pops into a run at a threshold.</summary>
-    private float ForwardSpeed()
+    /// <summary>
+    /// Where the body is in the locomotion blend space: sideways and forward speed, each over the
+    /// actor's own run speed (<see cref="LocomotionBlend.Gait"/>). The space's only input, and the
+    /// reason walking no longer pops into a run at a threshold.
+    ///
+    /// <para>A rider's legs are not what is moving it, so in the saddle this is the idle point: the
+    /// body's speed there is the horse's.</para>
+    /// </summary>
+    private Vector2 Gait()
     {
-        float speed = HorizontalSpeed();
-        if (Entity?.Body is not CharacterBody3D body || speed < 0.05f)
+        if (Riding)
         {
-            return speed;
+            return Vector2.Zero;
+        }
+
+        float speed = HorizontalSpeed();
+        if (Entity?.Body is not CharacterBody3D body)
+        {
+            // Walked along by position (a scheduled NPC): there is a speed and no heading to split
+            // it by, and such a body always walks the way it faces.
+            (float x, float y) = LocomotionBlend.Gait(speed, 0f, _runSpeed);
+            return new Vector2(x, y);
+        }
+
+        if (speed < LocomotionBlend.StillSpeed)
+        {
+            return Vector2.Zero;
         }
 
         Vector3 v = body.Velocity;
-        Vector3 facing = -body.GlobalBasis.Z;
-        float along = (v.X * facing.X) + (v.Z * facing.Z);
-        return along < 0f ? -speed : speed;
+        Basis basis = body.GlobalBasis;
+        Vector3 facing = -basis.Z;
+        Vector3 right = basis.X;
+        (float strafe, float forward) = LocomotionBlend.Gait(
+            (v.X * facing.X) + (v.Z * facing.Z), (v.X * right.X) + (v.Z * right.Z), _runSpeed);
+        return new Vector2(strafe, forward);
     }
+
+    /// <summary>The speed this actor's gaits are measured against. A body with no motor is walked by
+    /// its schedule, which is slower than any stat it carries would say.</summary>
+    private float ResolveRunSpeed() => _locomotion == null
+        ? LocomotionBlend.FallbackRunSpeed
+        : LocomotionBlend.RunSpeed(_stats?.GetValue(StatType.MoveSpeed) ?? 0f, _locomotion.BaseSpeed);
 
     public override void _Process(double delta)
     {
@@ -718,29 +843,22 @@ public partial class CharacterAnimationComponent : EntityComponent
             _playback.Start(LocomotionStateName);
             _settledTicks = 0;
             _deathPlayed = false;
+            _falling = false;
+            _airborne = 0f;
         }
 
         // Parameters are written only when they change. A tree parameter keeps its value, and a
-        // standing character's speed and guard blend are the same number frame after frame, so
+        // standing character's gait and guard blend are the same numbers frame after frame, so
         // re-sending them was two or three engine calls per character per frame for nothing.
-        float speed = ForwardSpeed();
-        if (speed != _sentSpeed)
+        Vector2 gait = Gait();
+        if (gait != _sentGait)
         {
-            _sentSpeed = speed;
-            _tree.Set(SpeedParamName, speed);
+            _sentGait = gait;
+            _tree.Set(SpeedParamName, gait);
         }
 
-        // The upper-body layer carries the guard and channel poses. Blending rather than switching
-        // is what lets a blocking character keep walking, and a mounted one keep its seat (39B).
-        bool upperBody = _combat is { IsBlocking: true } ||
-                         _spellcasting is { IsCharging: true } or { IsChanneling: true };
-        float target = upperBody ? 1f : 0f;
-        float blend = Mathf.MoveToward(_upperBlend, target, _lastDelta / UpperBodyBlendSeconds);
-        if (blend != _upperBlend)
-        {
-            _upperBlend = blend;
-            _tree.Set(UpperBodyBlendParamName, blend);
-        }
+        TickFall();
+        TickUpperBody();
 
         // The two checks below need the machine's current state, which costs an engine call and a
         // freshly allocated StringName every time it is asked. They only have something to do for a
@@ -769,12 +887,106 @@ public partial class CharacterAnimationComponent : EntityComponent
         }
     }
 
+    /// <summary>
+    /// The airborne pose. Off the ground and moving vertically for a moment, a body in locomotion
+    /// eases into the fall clip, and back out when it lands. An action, a flinch or a death that
+    /// takes the body in the air simply keeps it; the fall is asked for again once that is over.
+    /// </summary>
+    private void TickFall()
+    {
+        if (!_hasFall || _locomotion == null || _playback == null)
+        {
+            return;
+        }
+
+        bool grounded = _locomotion.IsGrounded;
+        float vertical = Entity?.Body is CharacterBody3D body ? body.Velocity.Y : 0f;
+        _airborne = LocomotionBlend.AirborneStep(_airborne, grounded, vertical, _lastDelta);
+
+        bool wanted = LocomotionBlend.Falling(_airborne) && _actionClip.Length == 0 && !Riding;
+        if (wanted == _falling)
+        {
+            return;
+        }
+
+        using StringName current = _playback.GetCurrentNode();
+        if (wanted)
+        {
+            // Only out of locomotion. While something else has the body this is asked again every
+            // frame, which is one state read a frame for the length of a flinch in mid-air.
+            if (current == LocomotionStateName)
+            {
+                TravelTo(FallStateName);
+            }
+
+            return;
+        }
+
+        if (current == FallStateName)
+        {
+            TravelTo(LocomotionStateName);
+        }
+
+        _falling = false;
+    }
+
+    /// <summary>
+    /// The upper-body layer: which clip it shows and how far it is blended in. It carries the guard,
+    /// the charge and channel pose, the cast thrust and a rider's swing. Blending rather than
+    /// switching is what lets a blocking or channelling character keep walking, and a mounted one
+    /// keep its seat (39B).
+    ///
+    /// <para>⚠️ The node holds ONE clip, and it used to hold the guard and nothing else: a caster
+    /// charging a spell raised the layer and stood there blocking. The clip now follows what the
+    /// layer is up for. An action or a one-shot keeps the node until it is done; otherwise a charge
+    /// or channel shows the channel pose, and only a guard shows the guard.</para>
+    /// </summary>
+    private void TickUpperBody()
+    {
+        if (_tree == null)
+        {
+            return;
+        }
+
+        if (_upperHold > 0f)
+        {
+            _upperHold = Mathf.Max(_upperHold - _lastDelta, 0f);
+        }
+
+        bool casting = _spellcasting is { IsCharging: true } or { IsChanneling: true };
+        bool guarding = _combat is { IsBlocking: true };
+        bool taken = _upperAction || _upperHold > 0f;
+
+        if (!taken)
+        {
+            string pose = casting && _channel.Length > 0 ? _channel
+                : guarding || casting ? _slots["block"]
+                : _upperClip;
+            if (pose.Length > 0 && pose != _upperClip)
+            {
+                ShowOnUpperBody(pose, 1f);
+            }
+        }
+
+        float target = taken || casting || guarding ? 1f : 0f;
+        float seconds = _upperHold > 0f ? UpperBodyOneShotSeconds : UpperBodyBlendSeconds;
+        float blend = Mathf.MoveToward(_upperBlend, target, _lastDelta / seconds);
+        if (blend != _upperBlend)
+        {
+            _upperBlend = blend;
+            _tree.Set(UpperBodyBlendParamName, blend);
+        }
+    }
+
     // Built once. The tree's parameter paths and state names were string constants, and every
     // call that took one converted it to a new StringName: an engine round trip and a finalizable
     // object apiece, seven or so per animated character per frame.
     private static readonly StringName SpeedParamName = LocomotionTree.SpeedParam;
     private static readonly StringName UpperBodyBlendParamName = LocomotionTree.UpperBodyBlendParam;
     private static readonly StringName ActionScaleParamName = LocomotionTree.ActionScaleParam;
+    private static readonly StringName UpperBodyScaleParamName = LocomotionTree.UpperBodyScaleParam;
+    private static readonly StringName UpperBodySeekParamName = LocomotionTree.UpperBodySeekParam;
+    private static readonly StringName FallStateName = LocomotionTree.FallState;
     private static readonly StringName LocomotionStateName = LocomotionTree.LocomotionState;
     private static readonly StringName ActionStateName = LocomotionTree.ActionState;
     private static readonly StringName HitStateName = LocomotionTree.HitState;
@@ -786,13 +998,31 @@ public partial class CharacterAnimationComponent : EntityComponent
     private const int SettledTicks = 12;
 
     private int _settledTicks;
-    private float _sentSpeed = float.NaN;
+    private Vector2 _sentGait = new(float.NaN, float.NaN);
     private float _upperBlend;
+
+    /// <summary>The speed this actor's gaits are measured against; re-read with the level-of-detail
+    /// check, since a slow or a haste moves the stat.</summary>
+    private float _runSpeed = LocomotionBlend.FallbackRunSpeed;
+
+    /// <summary>Whether the tree has an airborne state, how long the body has been falling, and
+    /// whether the machine was last sent there.</summary>
+    private bool _hasFall;
+    private float _airborne;
+    private bool _falling;
+
+    /// <summary>The upper-body node, the clip on it, whether an action has it (until
+    /// <see cref="StopAction"/>) and the seconds a one-shot still has it for.</summary>
+    private AnimationNodeAnimation? _upperAnim;
+    private string _upperClip = "";
+    private bool _upperAction;
+    private float _upperHold;
 
     private void TravelTo(StringName state)
     {
         _playback!.Travel(state);
         _settledTicks = 0;
+        _falling = state == FallStateName;
     }
 
     // --- distance level of detail -----------------------------------------------------------------
@@ -823,6 +1053,7 @@ public partial class CharacterAnimationComponent : EntityComponent
         {
             _lodTimer = LodCheckSeconds;
             _lodFar = IsFarOrHidden();
+            _runSpeed = ResolveRunSpeed();
         }
 
         // ⚠️ Never while an action clip is running: the clip IS that action's clock
@@ -899,6 +1130,10 @@ public partial class CharacterAnimationComponent : EntityComponent
     /// <summary>Seconds the guard pose takes to blend in or out. Long enough to read as raising a
     /// weapon rather than snapping to it.</summary>
     private const float UpperBodyBlendSeconds = 0.18f;
+
+    /// <summary>Seconds a one-shot (the cast thrust) takes to come up on the layer. Shorter than the
+    /// guard's, or the first frames of the thrust are spent blending in.</summary>
+    private const float UpperBodyOneShotSeconds = 0.08f;
 
     private float HorizontalSpeed()
     {

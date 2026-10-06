@@ -95,6 +95,49 @@ public static class PlayerAppearance
         return null;
     }
 
+    /// <summary>The shader's per-instance first-person head cut-out: xyz is the sphere's centre in world
+    /// space, w its radius, and a radius of zero draws the whole body.</summary>
+    public static readonly StringName HeadCutoutParameter = "fp_head";
+
+    /// <summary>Adds every mesh under <paramref name="node"/> that is drawn with the body shader to
+    /// <paramref name="into"/>. Pieces hung on the body (a sword, a pauldron) keep their own materials and
+    /// are not among them.</summary>
+    public static void CollectBodySurfaces(Node node, List<MeshInstance3D> into)
+    {
+        if (node is MeshInstance3D { Mesh: { } mesh } instance)
+        {
+            for (int i = 0; i < mesh.GetSurfaceCount(); i++)
+            {
+                if (instance.GetActiveMaterial(i) is ShaderMaterial { Shader.ResourcePath: ShaderPath })
+                {
+                    into.Add(instance);
+                    break;
+                }
+            }
+        }
+
+        foreach (Node child in node.GetChildren())
+        {
+            CollectBodySurfaces(child, into);
+        }
+    }
+
+    /// <summary>Sets the first-person head cut-out on the player's own body: the shader discards what is
+    /// inside the sphere in every pass but the shadow pass. Per instance, not per material, so it survives
+    /// the corruption controller's material copies and never reaches another body that shares the mesh (the
+    /// creator's preview). A <paramref name="radius"/> of zero turns it off.</summary>
+    public static void SetHeadCutout(IReadOnlyList<MeshInstance3D> surfaces, Vector3 centre, float radius)
+    {
+        var value = new Vector4(centre.X, centre.Y, centre.Z, radius);
+        for (int i = 0; i < surfaces.Count; i++)
+        {
+            if (GodotObject.IsInstanceValid(surfaces[i]))
+            {
+                surfaces[i].SetInstanceShaderParameter(HeadCutoutParameter, value);
+            }
+        }
+    }
+
     private static AppearanceOptionResource? Pick(IReadOnlyList<AppearanceOptionResource?> picks, AppearanceSlot slot) =>
         (int)slot < picks.Count ? picks[(int)slot] : null;
 
