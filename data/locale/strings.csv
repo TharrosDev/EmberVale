@@ -5116,3 +5116,8 @@ ui.hub.journal,Journal
 ui.hub.map,Map
 ui.hub.bestiary,Bestiary
 credits.title,Credits
+# ui-upgrade: lane 4 (HUD core)
+hud.prompt.hold_gather,Hold to gather nearby
+hud.quest.more,+{0} more
+hud.hotbar.count,×{0}
+hud.hotbar.chord,Hold for quick items
