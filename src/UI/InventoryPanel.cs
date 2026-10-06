@@ -188,6 +188,9 @@ public partial class InventoryPanel : UiPanel
 
     private Label _title = null!;
 
+    /// <summary>The least an "If equipped" stat name is given before it wraps.</summary>
+    private const float PreviewNameMin = 88f;
+
     /// <summary>The page width under which the title leaves the tab row: the four tabs and the
     /// search field need the whole of a handheld's row.</summary>
     private const float TitleMinWidth = 1000f;
@@ -1229,14 +1232,16 @@ public partial class InventoryPanel : UiPanel
             text.AddThemeConstantOverride("separation", 0);
             text.AddChild(UiTheme.Caption(EquipmentSlots.Label(slot)));
 
-            // A long affixed name is trimmed rather than allowed to widen the column; the detail pane
-            // and the tooltip carry the full text.
+            // A long affixed name takes a second line and is then trimmed, rather than allowed to
+            // widen the column; the detail pane and the tooltip carry the full text.
             int fits = item is null ? CountFitting(slot) : 0;
             Label name = item is not null
                 ? UiTheme.Body(item.DisplayName, UiTheme.RarityColor(item.Rarity))
                 : fits > 0
                     ? UiTheme.Body(Loc.TF("item.slot_empty_fits", fits), UiTheme.Dim)
                     : UiTheme.Body(Loc.T("item.empty_slot"), UiTheme.Disabled);
+            name.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+            name.MaxLinesVisible = 2;
             name.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
             name.TooltipText = item?.DisplayName ?? name.Text;
             text.AddChild(name);
@@ -1886,10 +1891,11 @@ public partial class InventoryPanel : UiPanel
         grid.AddThemeConstantOverride("v_separation", UiTheme.LineGap);
         foreach ((Embervale.Stats.StatType stat, float delta) in changes)
         {
+            // Wraps, like the card's own stat names: "Arcane Re..." beside a number says nothing.
             Label name = UiTheme.Body(Embervale.Stats.StatNames.Label(stat), UiTheme.Dim);
             name.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-            name.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
-            name.TooltipText = name.Text;
+            name.CustomMinimumSize = new Vector2(PreviewNameMin, 0f);
+            name.AutowrapMode = TextServer.AutowrapMode.WordSmart;
             grid.AddChild(name);
 
             // The value the sheet would read after the swap; left blank when there is no sheet to read.
