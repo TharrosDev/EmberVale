@@ -30,6 +30,13 @@ public partial class Nameplate : PanelContainer
     private JuicedBar _poise = null!;
     private Label _tag = null!;
 
+    // What the plate is showing, so a target held in view is not restated every frame: the name,
+    // the disposition colour (a stylebox write redraws the frame) and the state tag.
+    private string? _nameShown;
+    private Color _dispositionShown = new(-1f, -1f, -1f, -1f);
+    private string? _tagKeyShown;
+    private Color _tagTintShown = new(-1f, -1f, -1f, -1f);
+
     public Nameplate()
     {
         MouseFilter = MouseFilterEnum.Ignore;
@@ -65,6 +72,16 @@ public partial class Nameplate : PanelContainer
         AddChild(col);
     }
 
+    /// <summary>Forgets what the plate is showing (locale or colour-vision change), so the next
+    /// <see cref="Show"/> rewrites the name, the tag and both colours.</summary>
+    public void InvalidateShown()
+    {
+        _nameShown = null;
+        _tagKeyShown = null;
+        _dispositionShown = new Color(-1f, -1f, -1f, -1f);
+        _tagTintShown = new Color(-1f, -1f, -1f, -1f);
+    }
+
     /// <summary>
     /// Shows <paramref name="focus"/>, or hides the plate when there is nothing to show.
     ///
@@ -84,11 +101,20 @@ public partial class Nameplate : PanelContainer
             return;
         }
 
-        _name.Text = focus.DisplayName;
+        string name = focus.DisplayName;
+        if (name != _nameShown)
+        {
+            _nameShown = name;
+            _name.Text = name;
+        }
 
         Color disposition = Disposition(focus, player);
-        _name.AddThemeColorOverride("font_color", disposition);
-        _frame.BorderColor = disposition;
+        if (disposition != _dispositionShown)
+        {
+            _dispositionShown = disposition;
+            UiLive.FontColor(_name, disposition);
+            _frame.BorderColor = disposition;
+        }
 
         double health = stats.GetNormalized(StatType.Health);
         if (!ReferenceEquals(focus, _last))
@@ -155,10 +181,16 @@ public partial class Nameplate : PanelContainer
         }
 
         _tag.Visible = key != null;
-        if (key != null)
+        if (key != null && (!ReferenceEquals(key, _tagKeyShown) || tint != _tagTintShown))
         {
-            _tag.Text = Loc.T(key);
-            _tag.AddThemeColorOverride("font_color", tint);
+            if (key != _tagKeyShown)
+            {
+                _tag.Text = Loc.T(key);
+            }
+
+            _tagKeyShown = key;
+            _tagTintShown = tint;
+            UiLive.FontColor(_tag, tint);
         }
     }
 
