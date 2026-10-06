@@ -26,6 +26,10 @@ extends SceneTree
 const REGIONS := [
 	"res://data/regions/EmberCrown.tres",
 	"res://data/regions/FrostfangReach.tres",
+	"res://data/regions/AshenWilds.tres",
+	"res://data/regions/Sunspire.tres",
+	"res://data/regions/PaleConcord.tres",
+	"res://data/regions/CelestialRealm.tres",
 ]
 const WARMUP_FRAMES := 24
 const REGION_WARMUP_FRAMES := 180
