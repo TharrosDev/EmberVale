@@ -1,6 +1,9 @@
+using System.Collections.Generic;
 using Embervale.Animation;
 using Embervale.Combat;
+using Embervale.Core.Services;
 using Embervale.Entities;
+using Embervale.Player;
 using Godot;
 
 namespace Embervale.Magic.Vfx;
@@ -137,10 +140,61 @@ public readonly record struct SpellImpactInfo(
 ///
 /// <para>Presentation only: nothing here reads back into a rule, and a call may be dropped (over
 /// budget, too far away) without anything else changing.</para>
+///
+/// <para><b>HOW THIS IS LAID OUT (read before adding a spell's look).</b> One partial file per
+/// concern; every public signature is frozen, every body is the generic interpreter:</para>
+/// <list type="bullet">
+/// <item><c>SpellVfx.cs</c> (this file): binding, the per-call context (<see cref="VfxCast"/>), the
+/// tracking tables and <see cref="Clear"/>, <see cref="CastOrigin"/>, the plain <see cref="Flash"/>.</item>
+/// <item><c>SpellVfx.Cast.cs</c>: <c>Windup</c>, <c>WindupProgress</c>, <c>WindupEnd</c>,
+/// <c>Release</c>, <c>HandFlash</c>.</item>
+/// <item><c>SpellVfx.Projectile.cs</c>: <c>AttachProjectile</c>, <c>DetachProjectile</c>, <c>Beam</c>.</item>
+/// <item><c>SpellVfx.Impact.cs</c>: <c>Impact</c>, <c>Burst</c>, <c>Cone</c>, <c>Arc</c>, <c>Combo</c>,
+/// and <c>Blast</c>, the one routine that turns a <see cref="VfxPlan"/> into blocks at a point.</item>
+/// <item><c>SpellVfx.Ground.cs</c>: <c>GroundTelegraph</c>, <c>Meteor</c>, <c>GroundEnd</c>,
+/// <c>AttachZone</c>, <c>ZoneEnd</c>.</item>
+/// <item><c>SpellVfx.Structures.cs</c>: the barrier and totem calls.</item>
+/// <item><c>SpellVfx.Movement.cs</c>: <c>Dash</c>, <c>Blink</c>.</item>
+/// <item><c>SpellVfx.Status.cs</c>: <c>StatusProc</c>.</item>
+/// <item><c>SpellVfx.Special.cs</c>: the per-spell hook table (<see cref="SpellVfxSpecial"/>), filled
+/// by <c>SpellVfx.Special.Elemental.cs</c> and <c>SpellVfx.Special.Arcana.cs</c>.</item>
+/// </list>
+///
+/// <para><b>THE THREE EXTENSION POINTS, cheapest first.</b></para>
+/// <list type="number">
+/// <item><b>A recipe.</b> Register a <see cref="SpellVfxRecipe"/> for the spell id in
+/// <c>SpellVfxCatalog.Elemental.cs</c> or <c>SpellVfxCatalog.Arcana.cs</c>. Each
+/// <see cref="VfxStage"/> flag switches one block on in one beat; the interpreter here does the
+/// rest. An authored recipe is drawn exactly as written: only a spell with no recipe gets the
+/// automatic extras of <see cref="VfxRecipeRules.Enrich"/>.</item>
+/// <item><b>A special.</b> Register a <see cref="SpellVfxSpecial"/> for the spell id in one of the
+/// two <c>SpellVfx.Special.*.cs</c> files. Each hook runs at the top of one facade call with the
+/// same <see cref="VfxCast"/> the generic code gets, builds blocks through <c>cast.Fx</c>
+/// (<see cref="VfxSpawner"/>) and returns true to replace the generic effect or false to add to it.</item>
+/// <item><b>A new block or preset.</b> A new <see cref="VfxEffect"/> subclass with a pool in the
+/// director and a method on <see cref="VfxSpawner"/>. Only when a look cannot be built from the
+/// blocks there are.</item>
+/// </list>
 /// </summary>
-public static class SpellVfx
+public static partial class SpellVfx
 {
     private static SpellVfxDirector? _director;
+
+    // What the facade remembers about effects that outlive the call that made them. Keyed by the
+    // caster's runtime id or the placed node's instance id; holds handles only, never a node it
+    // would have to free. Clear() empties all of it.
+    private static readonly Dictionary<ulong, VfxRig> Auras = new();
+    private static readonly Dictionary<ulong, VfxRig> Beams = new();
+    private static readonly Dictionary<ulong, VfxRig> Projectiles = new();
+    private static readonly Dictionary<ulong, VfxRig> Grounds = new();
+    private static readonly Dictionary<ulong, VfxRig> Zones = new();
+    private static readonly Dictionary<ulong, VfxRig> BarrierTelegraphs = new();
+    private static readonly Dictionary<ulong, VfxRig> Barriers = new();
+    private static readonly Dictionary<ulong, VfxRig> Totems = new();
+    private static readonly (Vector3 Position, Color Tint, double At)[] RecentImpacts =
+        new (Vector3, Color, double)[8];
+
+    private static int _recentImpact;
 
     /// <summary>Whether effects are being drawn: a director is live and there is a display.</summary>
     public static bool Active =>
@@ -159,8 +213,12 @@ public static class SpellVfx
         }
     }
 
-    /// <summary>Forgets the director. Called between sessions.</summary>
-    public static void Reset() => _director = null;
+    /// <summary>Forgets the director and everything tracked under it. Called between sessions.</summary>
+    public static void Reset()
+    {
+        _director = null;
+        Clear();
+    }
 
     /// <summary>
     /// Drops everything the facade tracks about live effects (caster to aura, bolt to trail, node to
@@ -169,39 +227,17 @@ public static class SpellVfx
     /// </summary>
     internal static void Clear()
     {
+        Auras.Clear();
+        Beams.Clear();
+        Projectiles.Clear();
+        Grounds.Clear();
+        Zones.Clear();
+        BarrierTelegraphs.Clear();
+        Barriers.Clear();
+        Totems.Clear();
+        System.Array.Clear(RecentImpacts);
+        _recentImpact = 0;
     }
-
-    // --- the cast --------------------------------------------------------------------------------
-
-    /// <summary>
-    /// A caster began winding up, charging or sustaining <paramref name="spell"/>. One caster has one
-    /// such aura at a time: a new call replaces the last (a charge handing over to its cast wind-up, a
-    /// wind-up handing over to its channel). <paramref name="seconds"/> is how long the wind-up or
-    /// the full charge takes (0 for a channel); <paramref name="charge"/> is what a held cast reached.
-    /// </summary>
-    public static void Windup(IEntity caster, SpellResource spell, SpellWindupKind kind, float seconds, float charge = 0f)
-    {
-    }
-
-    /// <summary>How full the caster's held charge is now (0..1). Called every frame it is held.</summary>
-    public static void WindupProgress(IEntity caster, float progress)
-    {
-    }
-
-    /// <summary>The caster's wind-up, charge or channel is over. Safe to call with none running.</summary>
-    public static void WindupEnd(IEntity caster, SpellWindupEnd how)
-    {
-    }
-
-    /// <summary>The spell left the caster: the release frame, for every delivery and every channel
-    /// tick. <paramref name="origin"/> and <paramref name="direction"/> are the true aim.</summary>
-    public static void Release(IEntity caster, SpellResource spell, Vector3 origin, Vector3 direction, float charge)
-    {
-    }
-
-    /// <summary>The cast beat at the casting hand, when the cast animation starts.</summary>
-    public static void HandFlash(IEntity caster, SpellResource spell, Vector3 hand) =>
-        Flash(hand, 0.5f, SpellSchools.Color(spell.School));
 
     /// <summary>
     /// Where a caster's effects start from: the casting hand when the body has one, else
@@ -210,7 +246,7 @@ public static class SpellVfx
     /// </summary>
     public static Vector3 CastOrigin(IEntity? caster, Vector3 fallback)
     {
-        if (!Active || caster == null)
+        if (!Active || caster == null || VfxAnchor.BodyOf(caster) == null)
         {
             return fallback;
         }
@@ -222,226 +258,345 @@ public static class SpellVfx
             : fallback;
     }
 
-    // --- projectiles and beams -------------------------------------------------------------------
-
     /// <summary>
-    /// A bolt was launched. <paramref name="visualOrigin"/> is where its picture should start (the
-    /// casting hand) before it settles onto the bolt's true path. Returns true when the facade drew
-    /// the bolt, in which case the projectile hides its own plain sphere and light.
-    /// <paramref name="charge"/> is what a held cast reached (0..1).
+    /// The school colour of a spell that struck within reach of <paramref name="position"/> in the
+    /// last few frames. The melee spark (<c>ImpactEffect</c>) is told only a colour and a size by the
+    /// combat feedback layer, never a school, so this is how it finds out it is marking a spell hit.
     /// </summary>
-    public static bool AttachProjectile(
-        Node3D projectile, SpellResource spell, IEntity? caster, Vector3 visualOrigin, Vector3 direction,
-        float charge) => false;
-
-    /// <summary>The bolt resolved, was cancelled or left the tree. May be called more than once for
-    /// one flight, and for a bolt that was never attached.</summary>
-    public static void DetachProjectile(Node3D projectile)
+    internal static bool TryRecentImpactTint(Vector3 position, out Color tint)
     {
-    }
-
-    /// <summary>One tick of a channelled bolt spell, as the line it travels: from the casting hand to
-    /// the end of its range. A sustained beam is redrawn from these. <paramref name="to"/> is the full
-    /// range and is not clipped to what the bolt strikes; that arrives later as its <see cref="Impact"/>.</summary>
-    public static void Beam(IEntity caster, SpellResource spell, Vector3 from, Vector3 to)
-    {
-    }
-
-    // --- impacts ---------------------------------------------------------------------------------
-
-    /// <summary>A spell struck something: a target, a guard, a wall, a barrier, or nothing at the end
-    /// of its range.</summary>
-    public static void Impact(SpellResource spell, IEntity? caster, in SpellImpactInfo hit)
-    {
-    }
-
-    /// <summary>A spell burst over <paramref name="radius"/> at <paramref name="position"/>, which is
-    /// the centre of the damaged sphere and not a point on the floor. <paramref name="charge"/> is
-    /// what a held cast reached (0..1).</summary>
-    public static void Burst(
-        SpellResource spell, IEntity? caster, Vector3 position, float radius, SpellBurstSource source,
-        float charge = 0f) =>
-        Flash(position, radius, SpellSchools.Color(spell.School));
-
-    /// <summary>A wedge swept out from <paramref name="origin"/>: a breath, a word of power.</summary>
-    public static void Cone(
-        SpellResource spell, IEntity? caster, Vector3 origin, Vector3 direction, float range, float angleDegrees)
-    {
-        if (!Active || direction.LengthSquared() < 0.0001f || range <= 0f)
-        {
-            return;
-        }
-
-        // A line of widening flashes along the axis, each as wide as the cone is there, so the shape
-        // and reach of the damaged volume can be read.
-        const int Puffs = 4;
-        Vector3 axis = direction.Normalized();
-        float halfAngle = Mathf.DegToRad(angleDegrees * 0.5f);
-        Color color = SpellSchools.Color(spell.School);
-        for (int i = 1; i <= Puffs; i++)
-        {
-            float travelled = range * i / Puffs;
-            Flash(origin + (axis * travelled), travelled * Mathf.Tan(halfAngle), color);
-        }
-    }
-
-    /// <summary>A line of <paramref name="school"/> between two points: a chained bolt, a life tether,
-    /// a status jumping bearers. <paramref name="source"/> is whose effect it is, and
-    /// <paramref name="spell"/> the spell whose hit drew it (null for a status spreading by itself).</summary>
-    public static void Arc(
-        DamageType school, IEntity? source, Vector3 from, Vector3 to, SpellArcKind kind, SpellResource? spell = null)
-    {
-    }
-
-    /// <summary>A spell combo went off on <paramref name="target"/>: <paramref name="spell"/> struck a
-    /// bearer of the status the combo <paramref name="comboId"/> (<c>combo.*</c>) needs.
-    /// <paramref name="position"/> is the struck volume, read before the bonus damage landed.</summary>
-    public static void Combo(string comboId, SpellResource spell, IEntity? caster, IEntity target, Vector3 position)
-    {
-    }
-
-    // --- placed spells ---------------------------------------------------------------------------
-
-    /// <summary>
-    /// A ground spell began its delay. <paramref name="ground"/> is the node waiting at the landing
-    /// point; it is positioned just after this call, so read its transform on the next frame and
-    /// follow its validity. A spell whose recipe says so falls as a <see cref="Meteor"/> instead.
-    /// </summary>
-    public static void GroundTelegraph(Node3D ground, SpellResource spell, IEntity? caster, float radius, float delay)
-    {
+        tint = default;
         if (!Active)
         {
-            return;
+            return false;
         }
 
-        if (SpellVfxCatalog.For(spell).Ground == VfxGroundStyle.Meteor)
+        double now = _director!.Now;
+        float best = RecentImpactReach * RecentImpactReach;
+        bool found = false;
+        for (int i = 0; i < RecentImpacts.Length; i++)
         {
-            Meteor(ground, spell, caster, radius, delay);
-        }
-    }
+            (Vector3 at, Color colour, double when) = RecentImpacts[i];
+            if (colour.A <= 0f || now - when > RecentImpactSeconds || now < when)
+            {
+                continue;
+            }
 
-    /// <summary>Something falls onto <paramref name="ground"/> for <paramref name="delay"/> seconds and
-    /// lands as the delay ends. The landing itself arrives as a <see cref="Burst"/>.</summary>
-    public static void Meteor(Node3D ground, SpellResource spell, IEntity? caster, float radius, float delay)
-    {
-    }
-
-    /// <summary>The ground spell's delay is over: <paramref name="landed"/> when it came down (its
-    /// <see cref="Burst"/> or <see cref="AttachZone"/> follows at once), false when it was cancelled or
-    /// left the tree first. May be called more than once; the first call is the one that counts.</summary>
-    public static void GroundEnd(Node3D ground, bool landed)
-    {
-    }
-
-    /// <summary>A lingering zone began. Each of its pulses arrives as a <see cref="Burst"/>.
-    /// <paramref name="zone"/> is positioned just after this call, so read its transform on the next
-    /// frame and follow its validity.</summary>
-    public static void AttachZone(Node3D zone, SpellResource spell, IEntity? caster, float radius, float duration)
-    {
-    }
-
-    /// <summary>The zone ran out, was cancelled or left the tree. May be called more than once.</summary>
-    public static void ZoneEnd(Node3D zone)
-    {
-    }
-
-    /// <summary>A wall began its delay. <paramref name="barrier"/> is positioned and turned just after
-    /// this call, so read its transform on the next frame.</summary>
-    public static void BarrierTelegraph(Node3D barrier, SpellResource spell, IEntity? caster, float width, float delay)
-    {
-    }
-
-    /// <summary>A wall stands. Returns true when the facade drew it, in which case the barrier builds
-    /// no plain face or base of its own. A wall with no delay is positioned and turned just after
-    /// this call; one that had a telegraph already stands where it will.</summary>
-    public static bool AttachBarrier(
-        Node3D barrier, SpellResource spell, IEntity? caster, float width, float height, bool solid) => false;
-
-    /// <summary>A wall ended: <paramref name="broken"/> when its health ran out, false when it expired
-    /// or was cancelled. May be called for a wall that was never attached, and more than once (the
-    /// wall says it again as it leaves the tree, always unbroken); the first call is the one that counts.</summary>
-    public static void BarrierEnd(Node3D barrier, SpellResource spell, float width, bool broken)
-    {
-        if (broken && Active && GodotObject.IsInstanceValid(barrier) && barrier.IsInsideTree())
-        {
-            Flash(barrier.GlobalPosition + (Vector3.Up * 1.2f), width * 0.5f, SpellSchools.Color(spell.School));
-        }
-    }
-
-    /// <summary>A totem was raised. Returns true when the facade drew it, in which case the totem
-    /// builds no plain post of its own. <paramref name="totem"/> is positioned just after this call,
-    /// so read its transform on the next frame.</summary>
-    public static bool AttachTotem(Node3D totem, SpellResource? spell, IEntity? caster, Color tint) => false;
-
-    /// <summary>A totem healed <paramref name="target"/> (its owner's body) this tick.</summary>
-    public static void TotemPulse(Node3D totem, SpellResource? spell, Node3D? target)
-    {
-    }
-
-    /// <summary>A totem ended: destroyed, expired or cancelled. May be called more than once (again,
-    /// unbroken, as it leaves the tree); the first call is the one that counts.</summary>
-    public static void TotemEnd(Node3D totem, SpellResource? spell, bool broken)
-    {
-    }
-
-    // --- movement --------------------------------------------------------------------------------
-
-    /// <summary>The caster dashed along the ground from <paramref name="from"/> to <paramref name="to"/>
-    /// (both at the feet).</summary>
-    public static void Dash(SpellResource spell, IEntity? caster, Vector3 from, Vector3 to)
-    {
-        if (!Active)
-        {
-            return;
+            float distance = at.DistanceSquaredTo(position);
+            if (distance <= best)
+            {
+                best = distance;
+                tint = colour;
+                found = true;
+            }
         }
 
-        // A streak of flashes along the line the caster travelled.
-        int puffs = Mathf.Max(1, Mathf.CeilToInt(from.DistanceTo(to) / 2f));
-        Color color = SpellSchools.Color(spell.School);
-        for (int i = 0; i <= puffs; i++)
-        {
-            Flash(from.Lerp(to, (float)i / puffs) + Vector3.Up, 0.9f, color);
-        }
+        return found;
     }
 
-    /// <summary>The caster teleported from <paramref name="from"/> to <paramref name="to"/> (both at
-    /// the feet).</summary>
-    public static void Blink(SpellResource spell, IEntity? caster, Vector3 from, Vector3 to)
-    {
-        Color color = SpellSchools.Color(spell.School);
-        Flash(from + Vector3.Up, 0.9f, color);
-        Flash(to + Vector3.Up, 0.9f, color);
-    }
-
-    // --- statuses --------------------------------------------------------------------------------
-
-    /// <summary>A status or school effect went off on <paramref name="target"/> at
-    /// <paramref name="position"/> (its feet). <paramref name="radius"/> is how far it reached, 0 for
-    /// one that touches only its bearer. <paramref name="spell"/> is the spell whose hit set it off,
-    /// where there was one (a fed Kindle, a freeze, a dispel).</summary>
-    public static void StatusProc(
-        SpellProcKind kind, DamageType school, IEntity? target, Vector3 position, float radius,
-        SpellResource? spell = null)
-    {
-        if (kind != SpellProcKind.WardBreak || !Active)
-        {
-            return;
-        }
-
-        // Scaled by the player's flash setting, so Reduced Motion shrinks it rather than strobing.
-        float scale = Mathf.Max(0.3f, LiveComfort.Get().ScreenFlash);
-        Flash(position + Vector3.Up, 1.6f * scale, SpellSchools.Color(school));
-    }
+    private const float RecentImpactReach = 2f;
+    private const double RecentImpactSeconds = 0.12d;
 
     // --- the plain flash -------------------------------------------------------------------------
 
-    /// <summary>An expanding, fading sphere of <paramref name="color"/>. The shape every effect was
-    /// before it had one of its own, and what the forwards above still draw.</summary>
+    /// <summary>An expanding, fading flash of <paramref name="color"/>. The shape every effect was
+    /// before it had one of its own; <see cref="SpellFlash"/> now draws it as a flare.</summary>
     public static void Flash(Vector3 position, float radius, Color color)
     {
         if (Root is { } root)
         {
             SpellFlash.Spawn(root, position, radius, color);
+        }
+    }
+
+    /// <summary>The flare a plain <see cref="SpellFlash"/> is drawn as, in a colour with no school
+    /// behind it. False when nothing was drawn and the caller should draw its own sphere.</summary>
+    internal static bool FlareFlash(Vector3 position, float radius, Color color)
+    {
+        if (!Active)
+        {
+            return false;
+        }
+
+        VfxSpawner fx = _director!.Open(position, byPlayer: false);
+        if (fx.IsNone)
+        {
+            return true; // dropped by the budget or the distance, which is still "handled"
+        }
+
+        var colors = new VfxSchoolColors(
+            color.Lerp(Colors.White, 0.6f), color, color.Darkened(0.3f), 6f, 3.5f, 1.6f, 0.35f);
+        VfxFlareSpec flare = VfxFlareSpec.At(position, Mathf.Max(0.1f, radius * 0.55f), colors);
+        flare.Ring = radius >= 0.8f;
+        flare.RingRadius = radius;
+        flare.Light = radius >= 0.8f;
+        flare.LightRange = Mathf.Max(2f, radius * 2.5f);
+        fx.Flare(flare);
+        return true;
+    }
+
+    // --- the per-call context --------------------------------------------------------------------
+
+    /// <summary>
+    /// Opens an effect for <paramref name="spell"/> at <paramref name="at"/>. False when nothing is
+    /// drawn (no director, headless, too far), in which case the caller simply returns.
+    /// <paramref name="essential"/>, <paramref name="sustained"/> and <paramref name="measured"/>
+    /// are <see cref="SpellVfxDirector.Open"/>'s.
+    /// </summary>
+    private static bool Begin(
+        SpellResource? spell, IEntity? caster, Vector3 at, out VfxCast cast, bool essential = false,
+        bool sustained = false, bool measured = false)
+    {
+        cast = default;
+        if (!Active || spell == null)
+        {
+            return false;
+        }
+
+        bool byPlayer = IsPlayer(caster);
+        VfxSpawner fx = _director!.Open(at, byPlayer, essential, sustained, measured);
+        if (fx.IsNone)
+        {
+            return false;
+        }
+
+        cast = new VfxCast(
+            spell, caster, spell.School, byPlayer, VfxPalette.For(spell.School, byPlayer),
+            SpellVfxCatalog.For(spell), SpellVfxCatalog.Has(spell.Id), Mathf.Clamp(spell.ImpactWeight, 0f, 1f), fx);
+        return true;
+    }
+
+    /// <summary>Opens an effect that has a school but, perhaps, no spell (a status going off, a
+    /// status jumping bearers). It is drawn from the school's fallback recipe.</summary>
+    private static bool BeginSchool(
+        DamageType school, IEntity? source, Vector3 at, SpellResource? spell, out VfxCast cast)
+    {
+        if (spell != null)
+        {
+            return Begin(spell, source, at, out cast);
+        }
+
+        cast = default;
+        if (!Active)
+        {
+            return false;
+        }
+
+        bool byPlayer = IsPlayer(source);
+        VfxSpawner fx = _director!.Open(at, byPlayer);
+        if (fx.IsNone)
+        {
+            return false;
+        }
+
+        cast = new VfxCast(
+            null, source, school, byPlayer, VfxPalette.For(school, byPlayer),
+            SpellVfxCatalog.Fallback(school, SpellDelivery.Projectile), false, 0.5f, fx);
+        return true;
+    }
+
+    /// <summary>Whether <paramref name="entity"/> is the player. A freed entity is nobody.</summary>
+    private static bool IsPlayer(IEntity? entity) =>
+        entity != null && VfxAnchor.BodyOf(entity) != null && CombatPerspective.IsPlayer(entity);
+
+    /// <summary>Whether the player stands within <paramref name="radius"/> of a point.</summary>
+    private static bool PlayerWithin(Vector3 centre, float radius)
+    {
+        if (ServiceLocator.Instance is not { } locator || !locator.TryGet(out PlayerCharacter player) ||
+            VfxAnchor.BodyOf(player) is not { } body)
+        {
+            return false;
+        }
+
+        return (body.GlobalPosition + Vector3.Up).DistanceTo(centre) <= radius;
+    }
+
+    /// <summary>A node's key in the tracking tables.</summary>
+    private static ulong KeyOf(Node node) => node.GetInstanceId();
+
+    /// <summary>Stops and forgets whatever a table holds under <paramref name="key"/>.</summary>
+    private static bool StopRig(Dictionary<ulong, VfxRig> table, ulong key)
+    {
+        if (!table.Remove(key, out VfxRig? rig))
+        {
+            return false;
+        }
+
+        rig.Stop();
+        return true;
+    }
+
+    /// <summary>Drops table entries whose effects have all ended (recycled by the budget, or their
+    /// owner never said goodbye). Called when a table is added to, so none of them grows.</summary>
+    private static void Prune(Dictionary<ulong, VfxRig> table)
+    {
+        if (table.Count < 48)
+        {
+            return;
+        }
+
+        List<ulong>? dead = null;
+        foreach (KeyValuePair<ulong, VfxRig> pair in table)
+        {
+            if (!pair.Value.AnyLive)
+            {
+                (dead ??= new List<ulong>()).Add(pair.Key);
+            }
+        }
+
+        if (dead != null)
+        {
+            foreach (ulong key in dead)
+            {
+                table.Remove(key);
+            }
+        }
+    }
+}
+
+/// <summary>
+/// Everything one facade call knows, gathered once: the spell and who cast it, the school's colours
+/// at the right strength (an enemy's are dimmer), the recipe, and the <see cref="VfxSpawner"/> the
+/// blocks are built through. The generic interpreter and every <see cref="SpellVfxSpecial"/> hook
+/// are handed the same one.
+/// </summary>
+internal readonly struct VfxCast
+{
+    public VfxCast(
+        SpellResource? spell, IEntity? caster, DamageType school, bool byPlayer, VfxSchoolColors colors,
+        SpellVfxRecipe recipe, bool authored, float weight, VfxSpawner fx)
+    {
+        Spell = spell;
+        Caster = caster;
+        School = school;
+        ByPlayer = byPlayer;
+        Colors = colors;
+        Recipe = recipe;
+        Authored = authored;
+        Weight = weight;
+        Fx = fx;
+    }
+
+    /// <summary>The spell, or null for an effect that has only a school (a status going off).</summary>
+    public SpellResource? Spell { get; }
+
+    public IEntity? Caster { get; }
+
+    public DamageType School { get; }
+
+    public bool ByPlayer { get; }
+
+    /// <summary>The school's colours, already dimmed for a cast that is not the player's.</summary>
+    public VfxSchoolColors Colors { get; }
+
+    public SpellVfxRecipe Recipe { get; }
+
+    /// <summary>Whether <see cref="Recipe"/> is the spell's own (drawn exactly) or a fallback
+    /// (filled out by <see cref="VfxRecipeRules.Enrich"/>).</summary>
+    public bool Authored { get; }
+
+    /// <summary>The spell's <c>ImpactWeight</c>, 0..1.</summary>
+    public float Weight { get; }
+
+    /// <summary>Builds this effect's blocks.</summary>
+    public VfxSpawner Fx { get; }
+
+    /// <summary>The recipe's stage for a role, as written.</summary>
+    public VfxStage StageOf(VfxRole role) => role switch
+    {
+        VfxRole.Cast => Recipe.Cast,
+        VfxRole.Travel => Recipe.Travel,
+        VfxRole.Linger => Recipe.Linger,
+        _ => Recipe.Impact,
+    };
+
+    /// <summary>The blocks one beat is built from: the recipe's stage for <paramref name="role"/>,
+    /// filled out when it is a fallback, then cut to the tier, the distance and the comfort settings.</summary>
+    public VfxPlan Plan(VfxRole role, float radius = 0f, bool hitsPlayer = false)
+    {
+        var traits = new VfxTraits(
+            School, Spell?.Delivery ?? SpellDelivery.Projectile, Weight, radius, Authored);
+        return PlanOf(VfxRecipeRules.Enrich(StageOf(role), role, traits), radius, hitsPlayer);
+    }
+
+    /// <summary>The blocks for a stage exactly as given (never filled out), cut to the budget.</summary>
+    public VfxPlan PlanOf(VfxStage stage, float radius = 0f, bool hitsPlayer = false) =>
+        VfxRecipeRules.Plan(
+            stage, VfxQuality.Budget, Fx.Detail, VfxQuality.ReducedMotion, ByPlayer, hitsPlayer, radius, School);
+}
+
+/// <summary>
+/// The handles of one lasting effect (an aura, a bolt in flight, a zone, a wall), so the call that
+/// ends it can stop every block it was built from. A few are named, for the calls that keep
+/// adjusting one block while the effect lasts (a charge filling, a beam being re-aimed).
+/// </summary>
+internal sealed class VfxRig
+{
+    private readonly List<VfxHandle<VfxEffect>> _all = new();
+
+    /// <summary>The spell this effect belongs to.</summary>
+    public SpellResource? Spell { get; set; }
+
+    public VfxHandle<VfxFlare> Flare { get; set; }
+
+    public VfxHandle<VfxBurst> Stream { get; set; }
+
+    public VfxHandle<VfxBolt> Bolt { get; set; }
+
+    /// <summary>The density a stream was started at, for a charge that thickens it.</summary>
+    public float Density { get; set; }
+
+    /// <summary>Where a beam was last cut short by something it struck, and when.</summary>
+    public float ClipDistance { get; set; }
+
+    public double ClipAt { get; set; } = -10d;
+
+    /// <summary>Whether the facade drew the thing itself (as opposed to adding to a plain shape).</summary>
+    public bool Drew { get; set; }
+
+    public bool AnyLive
+    {
+        get
+        {
+            for (int i = 0; i < _all.Count; i++)
+            {
+                if (_all[i].IsLive)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+    }
+
+    /// <summary>Tracks a block. An empty handle (a block the budget did not draw) is ignored.</summary>
+    public VfxHandle<T> Add<T>(VfxHandle<T> handle)
+        where T : VfxEffect
+    {
+        if (handle.IsLive)
+        {
+            _all.Add(handle.Untyped());
+        }
+
+        return handle;
+    }
+
+    /// <summary>Ends every block gracefully: flares fade, emitters stop and let their particles die.</summary>
+    public void Stop()
+    {
+        for (int i = 0; i < _all.Count; i++)
+        {
+            _all[i].Stop();
+        }
+    }
+
+    /// <summary>Ends every block now.</summary>
+    public void Kill()
+    {
+        for (int i = 0; i < _all.Count; i++)
+        {
+            _all[i].Kill();
         }
     }
 }
