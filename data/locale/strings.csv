@@ -4650,6 +4650,27 @@ save.blocked.no_world,There is no game in progress to save.
 save.failed.write,The save could not be written. Your previous save is untouched.
 # --- END ics:foundation ---
 # --- BEGIN ics:items ---
+# Equipment slot names (EquipmentSlots.Label). One key per slot so each is pinned by LocKeyUsageTests.
+item.slot.none,None
+item.slot.main_hand,Main Hand
+item.slot.off_hand,Off Hand
+item.slot.head,Head
+item.slot.chest,Chest
+item.slot.hands,Hands
+item.slot.legs,Legs
+item.slot.feet,Feet
+item.slot.ring,Ring
+item.slot.amulet,Amulet
+item.slot.ammo,Ammo
+# Why an item could not be used or equipped (ConsumableRules / InventoryRules / AmmoRules reason keys).
+# Shown as a warning toast, and available to a panel that wants to say it beside a greyed button.
+item.use.refused.cooldown,You cannot use that again yet.
+item.use.refused.full,You have no need of that right now.
+item.use.refused.nothing_to_cure,There is nothing for that to cure.
+item.equip.refused.level,You are not yet experienced enough to use that.
+item.equip.refused.two_handed,Both hands are full. Put the two-handed weapon away first.
+item.equip.refused.pack_full,Your pack has no room for what that would take off.
+item.ammo.refused.none,You have no arrows.
 # --- END ics:items ---
 # --- BEGIN ics:loot ---
 # --- END ics:loot ---
