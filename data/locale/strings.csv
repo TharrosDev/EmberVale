@@ -5080,3 +5080,31 @@ notify.autosave_failed,Autosave failed
 # --- END ics:save-ui ---
 # --- BEGIN ics:save-perf ---
 # --- END ics:save-perf ---
+# --- BEGIN perf:rendering ---
+settings.render_quality.performance,Performance
+settings.render_quality.custom,Custom
+settings.section.graphics_advanced,ADVANCED GRAPHICS
+settings.render_scale,Render scale
+settings.render_scale.note,Resolution of the 3D world. The interface stays sharp. Lower is faster.
+settings.scaling_mode,Upscaling
+settings.scaling_mode.bilinear,Bilinear
+settings.scaling_mode.fsr1,FSR 1.0
+settings.scaling_mode.fsr2,FSR 2.2
+settings.scaling_mode.note,Only matters below 100% render scale. FSR 1.0 sharpens cheaply. FSR 2.2 looks best and costs the most. Avoid it on integrated graphics.
+settings.anti_aliasing,Anti-aliasing
+settings.anti_aliasing.off,Off
+settings.anti_aliasing.fxaa,FXAA
+settings.anti_aliasing.msaa2,MSAA 2x
+settings.anti_aliasing.msaa4,MSAA 4x
+settings.anti_aliasing.taa,TAA
+settings.shadow_quality,Shadows
+settings.shadow_quality.off,Off
+settings.shadow_quality.lowest,Lowest
+settings.shadow_quality.low,Low
+settings.shadow_quality.medium,Medium
+settings.shadow_quality.high,High
+settings.shadow_quality.ultra,Ultra
+settings.ambient_occlusion,Ambient occlusion
+settings.volumetric_fog,Volumetric fog
+settings.glow,Glow
+# --- END perf:rendering ---

@@ -22,8 +22,50 @@ public partial class Settings : Resource
     /// <summary>Frame cap; 0 = uncapped. Applied via <c>Engine.MaxFps</c>.</summary>
     [Export] public int MaxFps { get; set; } = 0;
 
-    /// <summary>0 Low, 1 Medium, 2 High, 3 Ultra. Palette is identical on every tier.</summary>
-    [Export(PropertyHint.Range, "0,3,1")] public int RenderQuality { get; set; } = 1;
+    /// <summary>0 Low, 1 Medium, 2 High, 3 Ultra, 4 Performance (the lowest; appended so the saved
+    /// ints keep their meaning — see <see cref="GraphicsMath"/>). Palette is identical on every tier.</summary>
+    [Export(PropertyHint.Range, "0,4,1")] public int RenderQuality { get; set; } = 1;
+
+    // --- Graphics: per-control departures from the preset -------------------
+    // ⚠️ Each default is the "follow the preset" sentinel. ResourceSaver omits a property that equals
+    // its default, so a file saved before these existed loads as a pure preset, and these defaults
+    // can never be changed without silently changing what every such file means.
+
+    /// <summary>3D resolution scale, 0.5..1; 0 = the preset's.</summary>
+    [Export(PropertyHint.Range, "0,1,0.05")] public float RenderScale { get; set; } = 0f;
+
+    /// <summary>-1 preset, 0 bilinear, 1 FSR 1.0, 2 FSR 2.2.</summary>
+    [Export] public int ScalingMode { get; set; } = -1;
+
+    /// <summary>-1 preset, 0 off, 1 FXAA, 2 MSAA 2x, 3 MSAA 4x, 4 TAA.</summary>
+    [Export] public int AntiAliasing { get; set; } = -1;
+
+    /// <summary>-1 preset, 0 off, 1..5 the shadow bundle of that preset (cheapest first).</summary>
+    [Export] public int ShadowQuality { get; set; } = -1;
+
+    /// <summary>-1 preset, 0 off, 1 on.</summary>
+    [Export] public int AmbientOcclusion { get; set; } = -1;
+
+    /// <summary>-1 preset, 0 off, 1 on.</summary>
+    [Export] public int VolumetricFog { get; set; } = -1;
+
+    /// <summary>-1 preset, 0 off, 1 on.</summary>
+    [Export] public int Glow { get; set; } = -1;
+
+    public GraphicsOverrides Overrides() =>
+        new(RenderScale, ScalingMode, AntiAliasing, ShadowQuality, AmbientOcclusion, VolumetricFog, Glow);
+
+    /// <summary>Back to the pure preset: what choosing a preset in the options menu means.</summary>
+    public void ClearGraphicsOverrides()
+    {
+        RenderScale = 0f;
+        ScalingMode = -1;
+        AntiAliasing = -1;
+        ShadowQuality = -1;
+        AmbientOcclusion = -1;
+        VolumetricFog = -1;
+        Glow = -1;
+    }
 
     // --- Audio (linear 0..1 per bus; ready for the Phase 31 mixer to consume) ----
 
