@@ -82,6 +82,8 @@ Pattern column shows the canonical shape; examples are real ids from `data/**`.
 | `shop.*` | `shop.<region>.<trade>` | `shop.ember_crown.goods` | ✅ `ShopDatabase` — Phase 38A. Region-scoped like `property.*`, because a merchant stands somewhere. Referenced two ways since 38E: a `DialogueEffect.OpenShop` arg in a `.tres`, which **is** validated, and a `VendorComponent.ShopId` in a `.tscn`, which is not — `ContentValidator` does not scan scenes, so a typo there gives no prompt at all rather than an error. Prefer the effect for anyone the player can talk to. ⚠️ **38L scopes by *settlement district*, not by region id**: the Embermarket's twelve are `shop.embermarket.*`, not `shop.ember_crown.*`, because sixteen shops in one region all reading `ember_crown` tells a reader nothing about where the merchant is. A district is the useful unit once a region has more than one |
 | `service.*` | `service.<region>.<kind>` | `service.ember_crown.inn` | ✅ `ServiceDatabase` — Phase 38D (trainer/bank/inn/stable). Region-scoped like `shop.*`. Same `.tscn` blind spot: the `ServiceId` on a `ServiceComponent` is unvalidated, so a typo gives no prompt rather than an error |
 | `location.*` | `location.<district>.<name>` | `location.embermarket.ironmonger` | ✅ `MapLocationDatabase` — Phase 39.5A. District-scoped like `shop.*`, for the same reason. ⚠️ **It carries no coordinates**: a location's position is the transform of the `MapLocationComponent` parented to the thing it names in the cell scene, so the id is referenced from a `.tscn` as well as a `.tres`. **Unlike `shop.*` and `service.*`, that scene reference IS validated** — `ValidateMapMarkersArePlaced` scans cell scenes in both directions, so a typo fails the gate instead of silently producing a marker that never appears. Author with `tools/gen_map_locations.py` rather than by hand |
+| `set.*` | `set.<name>` | `set.emberguard` | ✅ `ItemSetDatabase` (`data/item_sets`) — ics. An item joins a set through `ItemResource.SetId`, and the set lists it back in `PieceIds`; `--validate` (`ItemValidator`) fails when the two disagree. Locale key `<id>.name` |
+| `unique.*` | `unique.<name>` | `unique.crownbreaker` | ✅ `UniqueEffectDatabase` (`data/unique_effects`) — ics. A named special property: a `UniqueEffectKind` plus numbers. Referenced from `ItemResource.UniqueEffectId` and from a set bonus's `EffectId`, both validated. Locale keys `<id>.name` / `<id>.desc` |
 | `relic.*` | — | — | not a domain: relics are the `item.relic.*` subcategory (one `item.relic.<x>_heart` per Flamebearer, `docs/playbook/finish.md`) |
 
 > **No `bestiary.*` family.** Bestiary entries (Phase 34G) are keyed by the `enemy.*` id they
@@ -91,8 +93,8 @@ Pattern column shows the canonical shape; examples are real ids from `data/**`.
 
 ### `item.*` subcategories (in use)
 
-`currency` · `potion` · `material` · `gem` · `armor` · `weapon` · `ring` · `kit` · `decor` ·
-`relic` · `food` · `tome`
+`currency` · `potion` · `material` · `gem` · `armor` · `weapon` · `ring` · `amulet` · `ammo` ·
+`kit` · `decor` · `relic` · `food` · `tome` · `recipe_scroll`
 
 e.g. `item.currency.gold`, `item.potion.health`, `item.material.iron_ore`,
 `item.gem.ruby`, `item.armor.leather_vest`, `item.weapon.steel_sword`,
@@ -103,6 +105,37 @@ e.g. `item.currency.gold`, `item.potion.health`, `item.material.iron_ore`,
 > `food` and `tome` arrived with 38L's Embermarket catalogue. Recorded together in 38L. Both new
 > ones are genuinely new families — a thing that is eaten and a thing that is read — rather than
 > shades of `material`, which is the bar this convention sets.
+
+> `amulet` (`item.amulet.huntmasters_tally`) and `ammo` (`item.ammo.arrows`) were in use and missing
+> from this list until the ics base recorded them. `recipe_scroll` is new with it: a scroll that
+> teaches a recipe when used is `item.recipe_scroll.<recipe leaf>`, so `recipe.blacksteel_ingot` is
+> taught by `item.recipe_scroll.blacksteel_ingot`. Shields stay in `armor` (`item.armor.round_shield`),
+> as they always were.
+
+### The planned item catalogue (`tools/items/catalogue.py`)
+
+The ics upgrade plans about three hundred new item ids. They are decided once, in
+[`tools/items/catalogue.py`](../tools/items/catalogue.py), a pure-data module every lane imports, so
+an id can be referenced before the `.tres` that carries it is generated. **An id in that file is
+already a contract**: append to it, never rename or reuse one, and never reuse one of the 77 ids
+that predate it (`EXISTING_ITEM_IDS` there). `python tools/items/catalogue.py` prints the census
+and runs its self-check.
+
+| Family | Pattern | Example |
+| ------ | ------- | ------- |
+| Tier gear, weapons | `item.weapon.<material>_<class>` | `item.weapon.blacksteel_axe`, `item.weapon.frostpine_bow` |
+| Tier gear, armour and shields | `item.armor.<material>_<piece>` | `item.armor.sunsilk_robe`, `item.armor.steel_shield` |
+| Rings, amulets, arrows | `item.ring.<material>` · `item.amulet.<material>_<form>` · `item.ammo.<material>_arrows` | `item.ring.gold`, `item.amulet.silver_pendant`, `item.ammo.steel_arrows` |
+| Set pieces | `item.<subcat>.<set>_<piece>` | `item.armor.emberguard_helm` in `set.emberguard` |
+| Named legendaries | `item.<subcat>.<name>` with a `unique.*` | `item.weapon.crownbreaker` carries `unique.crownbreaker` |
+| Potions and elixirs | `item.potion.<effect>_<strength>`, strength `lesser` / `greater` / `superior` | `item.potion.mana_greater`, `item.potion.resist_fire_lesser` |
+| Cooked food | `item.food.<name>` | `item.food.hearth_stew` |
+| New materials | `item.material.<name>` | `item.material.blacksteel_ingot` |
+| Recipe scrolls | `item.recipe_scroll.<recipe leaf>` | `item.recipe_scroll.sunsteel_ingot` |
+
+The six tiers follow the realms (`TIER_LEVELS`, `TIER_REGION`). ⚠️ Tier-5 gear uses a realm-neutral
+vocabulary (Gloam, Dusk, Moonsilver) because the fifth realm's name must not reach player-visible
+text before its reveal; the catalogue's self-check refuses a display name that carries it.
 
 **Convention:** add a new subcategory only for a genuinely new item
 *family*; accessories currently use a slot-specific category (`ring`) — widen to
