@@ -47,11 +47,45 @@ public abstract partial class UiPanel : CanvasLayer
     /// panel shares: cancel closes it. An override usually adds its own entries in front of
     /// <c>base.Legend</c>.
     /// </summary>
-    protected virtual IReadOnlyList<LegendEntry> Legend => CloseOnCancel
-        ? new[] { new LegendEntry("ui_cancel", Loc.T("ui.legend.close")) }
-        : Array.Empty<LegendEntry>();
+    protected virtual IReadOnlyList<LegendEntry> Legend
+    {
+        get
+        {
+            if (!CloseOnCancel)
+            {
+                return Array.Empty<LegendEntry>();
+            }
+
+            var close = new LegendEntry("ui_cancel", Loc.T("ui.legend.close"));
+            return Hub == null
+                ? new[] { close }
+                : new[]
+                {
+                    new LegendEntry(GameInput.MenuTabPrev, Loc.T("ui.legend.switch_screen"), GameInput.MenuTabNext),
+                    close,
+                };
+        }
+    }
 
     private UiLegend _legend = null!;
+
+    /// <summary>
+    /// This panel's place in the in-game hub, or null (the default) for a panel that is not one of
+    /// its screens. A hub screen draws the <see cref="HubStrip"/> in its top gutter and steps to
+    /// its neighbours on <c>menu_tab_prev</c>/<c>menu_tab_next</c>; its own toggle key and
+    /// <see cref="SetOpen"/> are unchanged.
+    /// </summary>
+    protected virtual HubTab? Hub => null;
+
+    /// <summary>Whether the shell leaves room above itself for the hub strip (<c>UiTheme.ApplyScreenInset</c>).</summary>
+    internal bool ReservesHub => Hub != null;
+
+    private HubStrip? _hubStrip;
+
+    // The process frame a hub step last happened on. The screen stepped to is opened inside the
+    // stepping panel's tick and may tick later in the same frame, where the shoulder button is
+    // still "just pressed": without this one press would walk the whole strip.
+    private static ulong _lastHubStepFrame = ulong.MaxValue;
 
     /// <summary>The process frame a panel last closed on cancel — the pause menu skips its Esc
     /// on this frame so one press never both closes a panel and opens the pause menu.</summary>
@@ -116,6 +150,12 @@ public abstract partial class UiPanel : CanvasLayer
         // take part in the frame's layout or its open fade.
         _legend = new UiLegend { Visible = false };
         AddChild(_legend);
+
+        if (Hub is { } tab)
+        {
+            _hubStrip = new HubStrip(tab, GoToHub) { Visible = false };
+            AddChild(_hubStrip);
+        }
         OnReady();
 
         if (ToggleAction is { } action)
@@ -145,6 +185,13 @@ public abstract partial class UiPanel : CanvasLayer
     {
     }
 
+    /// <summary>The player stepped this screen's sub-tabs or sections: <paramref name="delta"/> is
+    /// -1 for <c>menu_sub_prev</c> (Z / LT), +1 for <c>menu_sub_next</c> (C / RT). Only while open,
+    /// and never while a text field has focus.</summary>
+    protected virtual void OnSubTab(int delta)
+    {
+    }
+
     public void MarkDirty() => _dirty = true;
 
     public void Toggle() => SetOpen(!IsOpen);
@@ -161,9 +208,14 @@ public abstract partial class UiPanel : CanvasLayer
         if (open)
         {
             _legend.Set(Legend);
+            _hubStrip?.Refresh();
         }
 
         _legend.Visible = open;
+        if (_hubStrip != null)
+        {
+            _hubStrip.Visible = open;
+        }
         SetProcess(open || TicksWhileClosed);
         EventBus.Instance?.Publish(new UiPanelToggledEvent(this, open));
         if (Modal)
@@ -205,6 +257,77 @@ public abstract partial class UiPanel : CanvasLayer
         OnOpenChanged(open);
     }
 
+    /// <summary>The hub and sub-tab steps. True when this panel just handed over to another.</summary>
+    private bool PollMenuSteps()
+    {
+        // The keyboard halves are parked while a text field has focus (GameInput.SetTextEntry); the
+        // pad halves are not, and a search box is no place for either.
+        if (GetViewport()?.GuiGetFocusOwner() is LineEdit)
+        {
+            return false;
+        }
+
+        if (_hubStrip != null && Engine.GetProcessFrames() != _lastHubStepFrame)
+        {
+            int step = Step(UiLive.MenuTabPrev, UiLive.MenuTabNext);
+            if (step != 0 && StepHub(step))
+            {
+                return true;
+            }
+        }
+
+        int sub = Step(UiLive.MenuSubPrev, UiLive.MenuSubNext);
+        if (sub != 0)
+        {
+            OnSubTab(sub);
+        }
+
+        return false;
+    }
+
+    private static int Step(StringName prev, StringName next) =>
+        (Godot.Input.IsActionJustPressed(next) ? 1 : 0) - (Godot.Input.IsActionJustPressed(prev) ? 1 : 0);
+
+    /// <summary>Hands over to the nearest hub screen in the direction of <paramref name="delta"/>
+    /// that this session built, wrapping at the ends.</summary>
+    private bool StepHub(int delta)
+    {
+        if (Hub is not { } tab || GetParent() is not IHubHost host)
+        {
+            return false;
+        }
+
+        for (int i = 1; i < UiChromeRules.HubTabCount; i++)
+        {
+            tab = UiChromeRules.HubStep(tab, delta);
+            if (host.HubPanel(tab) is { } target && target != this)
+            {
+                SwitchTo(target);
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private void GoToHub(HubTab tab)
+    {
+        if (_open && GetParent() is IHubHost host && host.HubPanel(tab) is { } target && target != this)
+        {
+            SwitchTo(target);
+        }
+    }
+
+    /// <summary>The neighbour opens before this one closes, so there is no instant with no menu
+    /// open: the world stays paused and the mouse stays free across the step.</summary>
+    private void SwitchTo(UiPanel target)
+    {
+        _lastHubStepFrame = Engine.GetProcessFrames();
+        UiAudio.Play(UiCue.Tab);
+        target.SetOpen(true);
+        SetOpen(false);
+    }
+
     public override void _Process(double delta)
     {
         if (_toggleName is { } action && Godot.Input.IsActionJustPressed(action))
@@ -222,6 +345,11 @@ public abstract partial class UiPanel : CanvasLayer
             LastCancelCloseFrame = Engine.GetProcessFrames();
             UiAudio.Play(UiCue.Back);
             SetOpen(false);
+            return;
+        }
+
+        if (PollMenuSteps())
+        {
             return;
         }
 

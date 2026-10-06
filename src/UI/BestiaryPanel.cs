@@ -39,6 +39,8 @@ public partial class BestiaryPanel : UiPanel
     // Modal by default: the tab buttons need the mouse (the reason MapScreen gives).
     protected override string? ToggleAction => GameInput.Bestiary;
 
+    protected override HubTab? Hub => HubTab.Bestiary;
+
     /// <summary>Injected by the bootstrap, the way <see cref="MapScreen"/> takes its services.</summary>
     public void SetBestiary(BestiaryService service)
     {

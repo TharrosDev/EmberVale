@@ -62,6 +62,21 @@ public static class GameInput
     /// mode does not pause the world and the player can still be fighting.</summary>
     public const string Place = "place";
 
+    /// <summary>
+    /// Steps between the hub's screens (character, spellbook, journal, map, bestiary) while one is
+    /// open: Q / E, LB / RB. Polled by <c>UiPanel</c> and by nothing else, so the keys and buttons
+    /// they share with play (cast, interact, the spell wheel) mean those only in the world and
+    /// these only in a menu. ⚠️ Not named <c>ui_*</c> on purpose: <see cref="Park"/> leaves the
+    /// engine's <c>ui_*</c> actions bound while a text field has focus, and these must be parked
+    /// with the rest or typing "queen" into a search box would walk the hub.
+    /// </summary>
+    public const string MenuTabPrev = "menu_tab_prev";
+    public const string MenuTabNext = "menu_tab_next";
+
+    /// <summary>Steps between the sub-tabs or sections of the open screen: Z / C, LT / RT.</summary>
+    public const string MenuSubPrev = "menu_sub_prev";
+    public const string MenuSubNext = "menu_sub_next";
+
     /// <summary>Right-stick look (Phase 54). Mouse-look stays event-driven in
     /// <c>PlayerLookInput._Input</c>; a stick is a held axis, so it is polled per frame instead.</summary>
     public const string LookLeft = "look_left";
@@ -406,6 +421,10 @@ public static class GameInput
         Bind(LockOn, new InputEventMouseButton { ButtonIndex = MouseButton.Middle });
         Bind(LockCycleNext, new InputEventMouseButton { ButtonIndex = MouseButton.WheelDown });
         Bind(LockCyclePrev, new InputEventMouseButton { ButtonIndex = MouseButton.WheelUp });
+        Bind(MenuTabPrev, new InputEventKey { PhysicalKeycode = Key.Q });
+        Bind(MenuTabNext, new InputEventKey { PhysicalKeycode = Key.E });
+        Bind(MenuSubPrev, new InputEventKey { PhysicalKeycode = Key.Z });
+        Bind(MenuSubNext, new InputEventKey { PhysicalKeycode = Key.C });
 
         Key[] digits = { Key.Key1, Key.Key2, Key.Key3, Key.Key4, Key.Key5 };
         for (int i = 0; i < Hotbar.Length; i++)
@@ -468,6 +487,15 @@ public static class GameInput
         // feathered must not lend the d-pad away.
         Bind(HotbarChord, new InputEventJoypadMotion { Axis = JoyAxis.TriggerLeft, AxisValue = 1f });
         InputMap.ActionSetDeadzone(HotbarChord, 0.5f);
+
+        // Menus: shoulders walk the hub's screens, triggers walk the open screen's sub-tabs. A
+        // trigger counts once it is half down, like the hotbar chord, so a resting finger does not.
+        Bind(MenuTabPrev, new InputEventJoypadButton { ButtonIndex = JoyButton.LeftShoulder });
+        Bind(MenuTabNext, new InputEventJoypadButton { ButtonIndex = JoyButton.RightShoulder });
+        Bind(MenuSubPrev, new InputEventJoypadMotion { Axis = JoyAxis.TriggerLeft, AxisValue = 1f });
+        Bind(MenuSubNext, new InputEventJoypadMotion { Axis = JoyAxis.TriggerRight, AxisValue = 1f });
+        InputMap.ActionSetDeadzone(MenuSubPrev, 0.5f);
+        InputMap.ActionSetDeadzone(MenuSubNext, 0.5f);
 
         Bind("ui_up", new InputEventJoypadMotion { Axis = JoyAxis.LeftY, AxisValue = -1f });
         Bind("ui_down", new InputEventJoypadMotion { Axis = JoyAxis.LeftY, AxisValue = 1f });

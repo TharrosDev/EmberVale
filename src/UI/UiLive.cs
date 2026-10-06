@@ -27,6 +27,10 @@ public static class UiLive
     public static readonly StringName LookRight = Core.GameInput.LookRight;
     public static readonly StringName LookUp = Core.GameInput.LookUp;
     public static readonly StringName LookDown = Core.GameInput.LookDown;
+    public static readonly StringName MenuTabPrev = Core.GameInput.MenuTabPrev;
+    public static readonly StringName MenuTabNext = Core.GameInput.MenuTabNext;
+    public static readonly StringName MenuSubPrev = Core.GameInput.MenuSubPrev;
+    public static readonly StringName MenuSubNext = Core.GameInput.MenuSubNext;
 
     /// <summary>Sets the control's <c>font_color</c> override unless it already is <paramref name="color"/>.</summary>
     public static void FontColor(Control control, Color color)

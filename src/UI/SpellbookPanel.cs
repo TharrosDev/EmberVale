@@ -52,6 +52,8 @@ public partial class SpellbookPanel : UiPanel
 
     protected override string? ToggleAction => GameInput.Spellbook;
 
+    protected override HubTab? Hub => HubTab.Spellbook;
+
     protected override void BuildShell(PanelContainer shell)
     {
         UiTheme.ApplyScreenInset(shell);

@@ -37,6 +37,8 @@ public partial class QuestLogPanel : UiPanel
 
     protected override string? ToggleAction => GameInput.Journal;
 
+    protected override HubTab? Hub => HubTab.Journal;
+
     protected override void BuildShell(PanelContainer shell)
     {
         UiTheme.ApplyScreenInset(shell);
@@ -189,16 +191,8 @@ public partial class QuestLogPanel : UiPanel
             return;
         }
 
-        int step = SectionStep(@event);
-        if (step != 0)
-        {
-            StepSection(step);
-            GetViewport().SetInputAsHandled();
-            return;
-        }
-
-        // The pad's track toggle rides the Interact button. On a keyboard Interact is E, which is already the
-        // next-section key, so the keyboard reaches the button by mouse or Enter.
+        // The pad's track toggle rides the Interact button. On a keyboard Interact is E, which steps the hub to
+        // the next screen, so the keyboard reaches the button by mouse or Enter.
         if (@event is InputEventJoypadButton { Pressed: true } pad && pad.IsAction(GameInput.Interact))
         {
             ToggleTrackSelected();
@@ -206,24 +200,9 @@ public partial class QuestLogPanel : UiPanel
         }
     }
 
-    /// <summary>-1 for Q / LB, +1 for E / RB, else 0.</summary>
-    private static int SectionStep(InputEvent @event) => @event switch
-    {
-        InputEventKey { Pressed: true, Echo: false } key =>
-            (key.PhysicalKeycode != Key.None ? key.PhysicalKeycode : key.Keycode) switch
-            {
-                Key.Q => -1,
-                Key.E => 1,
-                _ => 0,
-            },
-        InputEventJoypadButton { Pressed: true } pad => pad.ButtonIndex switch
-        {
-            JoyButton.LeftShoulder => -1,
-            JoyButton.RightShoulder => 1,
-            _ => 0,
-        },
-        _ => 0,
-    };
+    /// <summary>Sections step on the sub-tab actions (Z / C, LT / RT). Q / E and LB / RB, which
+    /// stepped them before the hub existed, now walk the hub's screens.</summary>
+    protected override void OnSubTab(int delta) => StepSection(delta);
 
     private void StepSection(int delta)
     {
@@ -409,9 +388,8 @@ public partial class QuestLogPanel : UiPanel
 
     private string FooterText()
     {
-        string sections = InputDevice.GamepadActive
-            ? $"{GameInput.ButtonLabel(JoyButton.LeftShoulder)} / {GameInput.ButtonLabel(JoyButton.RightShoulder)}"
-            : "Q / E";
+        string sections =
+            $"{GameInput.PromptLabel(GameInput.MenuSubPrev)} / {GameInput.PromptLabel(GameInput.MenuSubNext)}";
         return Loc.TF("questui.footer", sections, GameInput.PromptLabel(GameInput.Journal));
     }
 

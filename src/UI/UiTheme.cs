@@ -666,11 +666,14 @@ public static partial class UiTheme
         // A UiPanel draws its footer legend in the bottom gutter, beside this shell. The gutter is
         // already tall enough on a desktop viewport; on a narrow one the shell gives up the few
         // pixels the legend's row needs so the two never overlap.
-        bool legend = shell.GetParent() is UiPanel;
+        // A hub screen draws the hub strip in the top gutter on the same terms.
+        UiPanel? panel = shell.GetParent() as UiPanel;
+        bool legend = panel != null;
+        bool hub = panel is { ReservesHub: true };
 
         shell.SetAnchorsPreset(Control.LayoutPreset.FullRect);
         shell.OffsetLeft = gutter;
-        shell.OffsetTop = gutter;
+        shell.OffsetTop = UiChromeRules.TopInset(gutter, hub, view.Y);
         shell.OffsetRight = -gutter;
         shell.OffsetBottom = -UiChromeRules.BottomInset(gutter, legend);
     }

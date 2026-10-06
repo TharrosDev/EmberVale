@@ -121,6 +121,8 @@ public partial class InventoryPanel : UiPanel
 
     protected override string? ToggleAction => GameInput.Inventory;
 
+    protected override HubTab? Hub => HubTab.Character;
+
     protected override void BuildShell(PanelContainer shell)
     {
         UiTheme.ApplyScreenInset(shell);

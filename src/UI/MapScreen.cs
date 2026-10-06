@@ -66,6 +66,8 @@ public partial class MapScreen : UiPanel
 
     protected override string? ToggleAction => GameInput.Map;
 
+    protected override HubTab? Hub => HubTab.Map;
+
     /// <summary>Floor for each scrolling rail section: three full-height rows and the gaps between them, so
     /// a list never collapses to a sliver when the rail is squeezed.</summary>
     private const int RailListMin = (UiTheme.ControlHeight * 3) + (UiTheme.RowGap * 2);

@@ -5109,3 +5109,9 @@ settings.volumetric_fog,Volumetric fog
 settings.glow,Glow
 # --- END perf:rendering ---
 ui.legend.close,Close
+ui.legend.switch_screen,Switch screen
+ui.hub.character,Character
+ui.hub.spellbook,Spellbook
+ui.hub.journal,Journal
+ui.hub.map,Map
+ui.hub.bestiary,Bestiary
