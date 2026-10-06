@@ -87,12 +87,12 @@ public partial class CorruptionComponent : EntityComponent, ISaveable
 
     public void Load(Godot.Collections.Dictionary data)
     {
-        if (!data.TryGetValue("value", out Variant valueVar))
-        {
-            return;
-        }
-
-        int loaded = Mathf.Clamp(valueVar.AsInt32(), CorruptionTiers.Min, CorruptionTiers.Max);
+        // Replaced, never merged: a save with no value (one that predates the system, or the empty
+        // document a quickload resets with) is an untouched soul, not "keep the corruption of the
+        // timeline being abandoned". The announcements below then tear the old tier's consequences down.
+        int loaded = data.TryGetValue("value", out Variant valueVar)
+            ? Mathf.Clamp(valueVar.AsInt32(), CorruptionTiers.Min, CorruptionTiers.Max)
+            : Mathf.Clamp(0, CorruptionTiers.Min, CorruptionTiers.Max);
 
         // Re-sync consequence systems from the component's ACTUAL current tier — not an assumed
         // Untainted baseline — so an in-session quickload that *lowers* corruption (or shifts between

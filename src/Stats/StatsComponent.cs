@@ -330,19 +330,22 @@ public partial class StatsComponent : EntityComponent, ISaveable
         IsWinded = false;
         _staminaIdle = 0d;
 
-        if (!data.TryGetValue("resources", out Variant resourcesVariant))
-        {
-            return;
-        }
-
         // Defer the restore to the end of the frame: component loads run before equipment/
         // race/perk modifiers re-apply, so restoring immediately clamps the saved value
         // against the unmodified max (e.g. 367 HP clamped to a base 100).
+        //
+        // Replaced, never merged: a resource the save does not carry (no "resources" key at all, or
+        // a pool added after the save was written) goes back to full, which is what a fresh actor
+        // has, instead of keeping the wounds and the spent mana of the timeline being abandoned.
         var restored = new Dictionary<StatType, float>();
-        var resources = resourcesVariant.AsGodotDictionary();
-        foreach (Variant key in resources.Keys)
+        if (data.TryGetValue("resources", out Variant resourcesVariant) &&
+            resourcesVariant.VariantType == Variant.Type.Dictionary)
         {
-            restored[(StatType)key.AsInt32()] = resources[key].AsSingle();
+            var resources = resourcesVariant.AsGodotDictionary();
+            foreach (Variant key in resources.Keys)
+            {
+                restored[(StatType)key.AsInt32()] = resources[key].AsSingle();
+            }
         }
 
         Callable.From(() =>
@@ -361,9 +364,9 @@ public partial class StatsComponent : EntityComponent, ISaveable
                 return;
             }
 
-            foreach (KeyValuePair<StatType, float> pair in restored)
+            foreach (StatType type in new List<StatType>(_current.Keys))
             {
-                SetCurrent(pair.Key, pair.Value);
+                SetCurrent(type, restored.TryGetValue(type, out float saved) ? saved : GetMax(type));
             }
         }).CallDeferred();
     }

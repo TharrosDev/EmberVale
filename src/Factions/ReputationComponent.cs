@@ -165,26 +165,28 @@ public partial class ReputationComponent : EntityComponent, ISaveable
 
     public void Load(Godot.Collections.Dictionary data)
     {
-        if (!data.TryGetValue("reputation", out Variant valuesVar))
-        {
-            return;
-        }
-
         // Re-seed every faction's default first, exactly as OnInitialize does. A save only carries
         // the factions that existed when it was written, so applying it over the live values let a
         // faction the save has never heard of keep whatever this session did to it — anger the
         // Frostfang Clans, load a save from before they were added, and they stay hostile in a world
         // that predates them. Any faction added after this point inherits the same fix for free.
+        //
+        // Cleared first and applied even when the save has no "reputation" key at all: an absent
+        // key is every faction at its default, not the standings of the timeline being abandoned.
+        _reputation.Clear();
         foreach (FactionResource faction in FactionDatabase.All)
         {
             _reputation[faction.Id] = faction.DefaultReputation;
         }
 
-        var values = valuesVar.AsGodotDictionary();
-        foreach (Variant key in values.Keys)
+        if (data.TryGetValue("reputation", out Variant valuesVar) && valuesVar.VariantType == Variant.Type.Dictionary)
         {
-            string factionId = key.AsString();
-            _reputation[factionId] = Mathf.Clamp(values[key].AsInt32(), ReputationTiers.Min, ReputationTiers.Max);
+            var values = valuesVar.AsGodotDictionary();
+            foreach (Variant key in values.Keys)
+            {
+                string factionId = key.AsString();
+                _reputation[factionId] = Mathf.Clamp(values[key].AsInt32(), ReputationTiers.Min, ReputationTiers.Max);
+            }
         }
 
         // Announce every faction, not just the saved ones: a faction reset to its default by the

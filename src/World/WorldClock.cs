@@ -119,10 +119,8 @@ public partial class WorldClock : Node, ISaveable
 
     public void Load(Godot.Collections.Dictionary data)
     {
-        if (data.TryGetValue("time", out Variant t))
-        {
-            TimeOfDay = Mathf.PosMod(t.AsSingle(), 24f);
-        }
+        // Replaced, never merged: no saved hour is the hour a new game starts at.
+        TimeOfDay = Mathf.PosMod(data.TryGetValue("time", out Variant t) ? t.AsSingle() : StartHour, 24f);
 
         // Replaced, never merged (§7): a save predating Phase 38B carries no day, and inheriting the
         // abandoned timeline's count would read as days having passed and restock every shop on load.
