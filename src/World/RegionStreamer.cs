@@ -35,7 +35,18 @@ namespace Embervale.World;
 /// </summary>
 public sealed partial class RegionStreamer : Node3D
 {
-    private sealed record ReadyCell(RegionCellResource Cell, PackedScene Scene);
+    private readonly record struct ReadyCell(RegionCellResource Cell, PackedScene Scene);
+
+    /// <summary>An in-flight threaded load and the path it was requested under. The path is kept
+    /// because polling asks the loader about it every frame, and building it is a string format.</summary>
+    private readonly record struct LoadRequest(RegionCellResource Cell, string ScenePath);
+
+    /// <summary>The dummy renderer cannot take concurrent background loads; see
+    /// <see cref="StartThreadedRequests"/>. Read once, on first use rather than in a type
+    /// initializer: the display server does not change, and the name is a string per call.</summary>
+    private static bool? _headless;
+
+    private static bool Headless => _headless ??= DisplayServer.GetName() == "headless";
 
     private readonly List<RegionCellResource> _cells = new();
     private readonly Dictionary<string, Node3D> _loaded = new();
@@ -46,12 +57,20 @@ public sealed partial class RegionStreamer : Node3D
     private readonly HashSet<string> _gameplayActive = new();
     private readonly List<RegionCellResource> _pending = new();
     private readonly HashSet<string> _pendingIds = new();
-    private readonly Dictionary<string, RegionCellResource> _requests = new();
+    private readonly Dictionary<string, LoadRequest> _requests = new();
     private readonly List<ReadyCell> _ready = new();
     private readonly List<string> _requestPollIds = new();
     private readonly Comparison<RegionCellResource> _comparePending;
     private bool _pendingSortDirty;
     private Vector3 _priorityFocus;
+
+    /// <summary>Set whenever a desired tier, a load stage or a retry may have left a cell out of
+    /// step with its target; <see cref="_Process"/> reconciles and clears it. Every decision tick
+    /// sets it too, so a missed trigger costs a quarter of a second rather than a cell.</summary>
+    private bool _reconcileDirty;
+
+    /// <summary>A cell was instantiated on the previous frame, so this one belongs to activation.</summary>
+    private bool _instantiatedLastFrame;
 
     /// <summary>Cells whose scene could not be requested, loaded or found, and that have used up
     /// <see cref="MaxAttempts"/>. ⚠️ WITHOUT THIS THE STREAMER NEVER STOPS RETRYING ONE. A failed
@@ -97,6 +116,13 @@ public sealed partial class RegionStreamer : Node3D
     {
         _comparePending = ComparePending;
     }
+
+    public override void _EnterTree() => WorldQualityScale.Changed += OnQualityChanged;
+
+    public override void _ExitTree() => WorldQualityScale.Changed -= OnQualityChanged;
+
+    /// <summary>The Far radius follows the draw distance; decide again now rather than next tick.</summary>
+    private void OnQualityChanged() => _decisionTimer = 0f;
 
     /// <summary>The region currently being streamed, or empty before the first <see cref="Configure"/>.
     /// The streamer is re-configured at both places the active region changes (world build and each
@@ -328,17 +354,61 @@ public sealed partial class RegionStreamer : Node3D
         {
             RefreshDesiredTiers(force: false);
             _decisionTimer = _streamingBudget?.VisibilityUpdateInterval ?? 0.25f;
+            _reconcileDirty = true;
         }
 
+        // The sweep over every cell used to run every frame: three dictionary lookups per cell to
+        // rediscover that nothing had changed since the last tier decision. It now runs when a
+        // decision, a failed load or a cleared load stage says something may have.
+        if (_reconcileDirty)
+        {
+            _reconcileDirty = false;
+            ReconcileCells();
+        }
+
+        if (_pending.Count > 0)
+        {
+            SortPendingByPriority();
+            StartThreadedRequests();
+        }
+        if (_requests.Count > 0)
+        {
+            PollThreadedRequests();
+        }
+
+        // ⚠️ INSTANTIATION AND ACTIVATION TAKE TURNS WHILE THE PLAYER IS PLAYING. Instantiating a
+        // prepared cell is the one unbounded main-thread cost here, and the activation budget used
+        // to be spent on top of it in the same frame. Behind a loading screen (the landing cell is
+        // pinned) or under a tool focus nobody is watching frames, so both run, as before.
+        bool unthrottled = _requiredCellId != null || _toolFocus != null;
+        bool instantiated = false;
+        if (_ready.Count > 0 &&
+            (unthrottled || _activationQueue.Count == 0 || !_instantiatedLastFrame))
+        {
+            InstantiateReadyCells();
+            instantiated = true;
+        }
+        if (_activationQueue.Count > 0 && (unthrottled || !instantiated))
+        {
+            AdvanceActivations();
+        }
+        _instantiatedLastFrame = instantiated;
+    }
+
+    private void ReconcileCells()
+    {
         foreach (RegionCellResource cell in _cells)
         {
             WorldStreamingTier target = _desired.GetValueOrDefault(cell.Id);
-            if (target != WorldStreamingTier.Unloaded && !_loaded.ContainsKey(cell.Id) &&
-                !_failed.Contains(cell.Id))
+            bool loaded = _loaded.ContainsKey(cell.Id);
+            if (target != WorldStreamingTier.Unloaded && !loaded)
             {
-                Enqueue(cell);
+                if (!_failed.Contains(cell.Id))
+                {
+                    Enqueue(cell);
+                }
             }
-            else if (target == WorldStreamingTier.Unloaded && _loaded.ContainsKey(cell.Id))
+            else if (target == WorldStreamingTier.Unloaded && loaded)
             {
                 Unload(cell.Id);
             }
@@ -348,12 +418,6 @@ public sealed partial class RegionStreamer : Node3D
                 ScheduleTier(cell.Id, target);
             }
         }
-
-        SortPendingByPriority();
-        StartThreadedRequests();
-        PollThreadedRequests();
-        InstantiateReadyCells();
-        AdvanceActivations();
     }
 
     private static WorldWaterResource? FirstAuthoredWater(RegionResource? region)
@@ -414,11 +478,19 @@ public sealed partial class RegionStreamer : Node3D
             }
 
             string scenePath = ScenePathFor(cell);
+            // ⚠️ CacheMode.Ignore IS LOAD-BEARING, NOT A LEFTOVER. A prepared cell scene embeds its
+            // generated terrain mesh, collision shape and MultiMeshes, and the cell's own nodes
+            // dispose those in _ExitTree. Under Reuse, a cell that streams out and back in while the
+            // old PackedScene is still alive would be handed that same scene from the cache and
+            // instantiate it around disposed resources: an empty terrain shell. The price of Ignore
+            // is a disk read per stream-in, and it is paid only on a region change, because the
+            // Backdrop radius keeps every cell of the active realm resident.
+            //
             // The dummy renderer allocates resource RIDs during both loading and instantiation.
             // Concurrent background loads race those allocations in native headless probes.
             // Load the same full scene on the main thread, at most one per frame, in that backend;
             // rendered gameplay keeps the normal asynchronous streaming path and its budgets.
-            if (DisplayServer.GetName() == "headless")
+            if (Headless)
             {
                 if (ResourceLoader.Load<PackedScene>(scenePath, cacheMode: ResourceLoader.CacheMode.Ignore) is { } headlessScene)
                     _ready.Add(new ReadyCell(cell, headlessScene));
@@ -433,7 +505,7 @@ public sealed partial class RegionStreamer : Node3D
                 Fail(cell.Id, $"threaded request failed to start ({error})");
                 continue;
             }
-            _requests[cell.Id] = cell;
+            _requests[cell.Id] = new LoadRequest(cell, scenePath);
         }
     }
 
@@ -443,8 +515,7 @@ public sealed partial class RegionStreamer : Node3D
         _requestPollIds.AddRange(_requests.Keys);
         foreach (string cellId in _requestPollIds)
         {
-            RegionCellResource cell = _requests[cellId];
-            string scenePath = ScenePathFor(cell);
+            (RegionCellResource cell, string scenePath) = _requests[cellId];
             ResourceLoader.ThreadLoadStatus status = ResourceLoader.LoadThreadedGetStatus(scenePath);
             if (status == ResourceLoader.ThreadLoadStatus.InProgress)
             {
@@ -476,6 +547,11 @@ public sealed partial class RegionStreamer : Node3D
             {
                 Instantiate(ready.Cell, ready.Scene);
             }
+            // Loaded with CacheMode.Ignore, so this was the only reference. Released here rather
+            // than whenever the collector reaches the wrapper: the scene state holds a second
+            // reference to every embedded resource, including the scatter meshes ShareSources just
+            // dropped, and those stay on the GPU for as long as it lives.
+            ready.Scene.Dispose();
         }
     }
 
@@ -497,9 +573,12 @@ public sealed partial class RegionStreamer : Node3D
             solid.CollisionLayer |= CombatLayers.CameraBlocker;
         }
 
-        foreach (Node child in node.GetChildren())
+        // By index: GetChildren builds a new array per node, and this visits every node of a cell
+        // inside the frame that instantiates it.
+        int children = node.GetChildCount();
+        for (int i = 0; i < children; i++)
         {
-            MarkCameraBlockers(child);
+            MarkCameraBlockers(node.GetChild(i));
         }
     }
 
@@ -539,6 +618,7 @@ public sealed partial class RegionStreamer : Node3D
         else
         {
             scatter = root.GetNodeOrNull<WorldBiomeScatter>("BiomeScatter");
+            scatter?.ShareSources(cell.BiomeScatter);
         }
         // Audit authored collision before staged activation intentionally clears its layers.
         foreach (string issue in WorldPhysicsContract.Validate(root))
@@ -570,6 +650,7 @@ public sealed partial class RegionStreamer : Node3D
         if (spent < MaxAttempts)
         {
             // Left out of _failed, so the sweep in _Process re-queues it on the next frame.
+            _reconcileDirty = true;
             Log.Warn($"RegionStreamer: cell '{cellId}' {reason}; retrying ({spent}/{MaxAttempts}).");
             return;
         }
@@ -585,8 +666,14 @@ public sealed partial class RegionStreamer : Node3D
         _pendingIds.Clear();
         _requests.Clear();
         _requestPollIds.Clear();
+        foreach (ReadyCell ready in _ready)
+        {
+            ready.Scene.Dispose();
+        }
         _ready.Clear();
         _pendingSortDirty = false;
+        _reconcileDirty = true;
+        _instantiatedLastFrame = false;
         _failed.Clear();
         _attempts.Clear();
     }
@@ -627,8 +714,10 @@ public sealed partial class RegionStreamer : Node3D
             velocity = player.Velocity;
         }
 
-        WorldStreamingLimits limits = _streamingBudget?.StreamingLimits() ?? new WorldStreamingLimits(
-            85f, 170f, 300f, 460f, 30f, 2f, 0.65f);
+        WorldStreamingLimits limits = WorldStreamingPolicy.ScaleForQuality(
+            _streamingBudget?.StreamingLimits() ?? new WorldStreamingLimits(
+                85f, 170f, 300f, 460f, 30f, 2f, 0.65f),
+            WorldQualityScale.DrawDistance);
         _priorityFocus = position;
         _pendingSortDirty = true;
         foreach (RegionCellResource cell in _cells)
@@ -645,6 +734,7 @@ public sealed partial class RegionStreamer : Node3D
             if (force || _desired.GetValueOrDefault(cell.Id) != target)
             {
                 _desired[cell.Id] = target;
+                _reconcileDirty = true;
                 if (runtime != null)
                 {
                     ScheduleTier(cell.Id, target);
@@ -724,8 +814,7 @@ public sealed partial class RegionStreamer : Node3D
             EventBus.Instance?.Publish(new RegionCellUnloadedEvent(cellId));
             runtime.RetireTransientActors();
         }
-        runtime.TargetTier = target;
-        runtime.Stage = 0;
+        runtime.Retarget(target);
         if (_activationQueued.Add(cellId))
         {
             _activationQueue.Enqueue(cellId);
@@ -734,9 +823,11 @@ public sealed partial class RegionStreamer : Node3D
 
     private void AdvanceActivations()
     {
-        ulong started = Time.GetTicksUsec();
-        double budgetUsec = (_streamingBudget?.ActivationBudgetMilliseconds ?? 2f) * 1000d;
-        while (_activationQueue.Count > 0 && Time.GetTicksUsec() - started < budgetUsec)
+        // The deadline goes into the cell: one cell's presentation pass is hundreds of nodes, and
+        // checking the clock only between cells let a single pass run several budgets long.
+        ulong deadline = Time.GetTicksUsec() +
+                         (ulong)((_streamingBudget?.ActivationBudgetMilliseconds ?? 2f) * 1000f);
+        while (_activationQueue.Count > 0 && Time.GetTicksUsec() < deadline)
         {
             string cellId = _activationQueue.Dequeue();
             _activationQueued.Remove(cellId);
@@ -744,7 +835,7 @@ public sealed partial class RegionStreamer : Node3D
             {
                 continue;
             }
-            bool complete = runtime.Advance();
+            bool complete = runtime.Advance(deadline);
             if (!complete)
             {
                 _activationQueued.Add(cellId);
