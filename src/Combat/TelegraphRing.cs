@@ -65,7 +65,7 @@ public partial class TelegraphRing : Node3D
         _mesh = new MeshInstance3D
         {
             // A torus reads as a ring rather than a puddle, and leaves the creature visible inside it.
-            Mesh = new TorusMesh { InnerRadius = 0.78f, OuterRadius = 1f, RingSegments = 32 },
+            Mesh = Torus(unblockable: false),
             MaterialOverride = _material,
             Position = new Vector3(0f, Lift, 0f),
             Visible = false,
@@ -166,6 +166,36 @@ public partial class TelegraphRing : Node3D
         AddChild(_timing);
         AddChild(_fill);
         AddChild(_fan);
+
+        // Every actor that can telegraph carries one of these for its whole life and it is idle
+        // between wind-ups, so it is only called while armed. The ring can be armed before it
+        // reaches the tree (see the constructor), hence _active rather than a flat false.
+        SetProcess(_active);
+    }
+
+    // The two ring profiles, built once and shared by every ring. Arm used to allocate a new
+    // TorusMesh, and so generate and upload its geometry, on every telegraphed wind-up.
+    private static TorusMesh? _standardTorus;
+    private static TorusMesh? _unblockableTorus;
+
+    private static TorusMesh Torus(bool unblockable)
+    {
+        if (unblockable)
+        {
+            if (_unblockableTorus == null || !IsInstanceValid(_unblockableTorus))
+            {
+                _unblockableTorus = new TorusMesh { InnerRadius = 0.55f, OuterRadius = 1f, RingSegments = 32 };
+            }
+
+            return _unblockableTorus;
+        }
+
+        if (_standardTorus == null || !IsInstanceValid(_standardTorus))
+        {
+            _standardTorus = new TorusMesh { InnerRadius = 0.78f, OuterRadius = 1f, RingSegments = 32 };
+        }
+
+        return _standardTorus;
     }
 
     /// <summary>
@@ -201,9 +231,7 @@ public partial class TelegraphRing : Node3D
 
         bool fan = cls == TelegraphClass.Sweep;
         _mesh.Visible = !fan;
-        _mesh.Mesh = cls == TelegraphClass.Unblockable
-            ? new TorusMesh { InnerRadius = 0.55f, OuterRadius = 1f, RingSegments = 32 }
-            : new TorusMesh { InnerRadius = 0.78f, OuterRadius = 1f, RingSegments = 32 };
+        _mesh.Mesh = Torus(cls == TelegraphClass.Unblockable);
         _timing.Visible = cls == TelegraphClass.Parryable;
         _fill.Visible = cls == TelegraphClass.Unblockable;
         _fan.Visible = fan;
@@ -213,6 +241,7 @@ public partial class TelegraphRing : Node3D
         }
 
         Apply(0f);
+        SetProcess(true);
     }
 
     /// <summary>Ends the warning now — the window closed, or the wind-up was interrupted. Hiding it
@@ -220,6 +249,7 @@ public partial class TelegraphRing : Node3D
     public void Clear()
     {
         _active = false;
+        SetProcess(false);
         CueLit = false;
         _mesh.Visible = false;
         _timing.Visible = false;

@@ -56,6 +56,30 @@ public partial class ScheduleComponent : EntityComponent
     private bool _talking;
     private double _sleepTimer;
 
+    /// <summary>True once the last movement step found the body at its target. A townsperson
+    /// spends most of the day standing where its routine put it, and a standing body has no
+    /// movement to integrate — so it drops to the same coarse cadence a distant one uses instead of
+    /// reading its position across the engine boundary every frame to learn it has not moved.
+    /// Cleared the moment a new target is set, so leaving is as immediate as it ever was.</summary>
+    private bool _arrived;
+
+    /// <summary>Seconds between "is the player near" checks; the answer only picks a cadence.</summary>
+    private const double FarCheckInterval = 0.25d;
+
+    private double _farCheckTimer;
+    private bool _far;
+
+    /// <summary>Sets where the routine is walking to and wakes the movement step for it.</summary>
+    private void SetTarget(Vector3 target)
+    {
+        _target = target;
+        if (_arrived)
+        {
+            _arrived = false;
+            _sleepTimer = 0d; // do not hand the first step the time spent standing
+        }
+    }
+
     /// <summary>How far the body's origin sits above the ground, captured where it was authored.
     /// Almost every NPC is 0 (origin at the feet); a body placed on a plinth keeps its plinth.</summary>
     private float _groundClearance;
@@ -99,7 +123,17 @@ public partial class ScheduleComponent : EntityComponent
         // LOD: far from the player, integrate on a coarse cadence with the accumulated time, so a
         // crowd of distant villagers doesn't tick movement every frame. Reactions (panic/dialogue)
         // are event-driven and stay instant; only this per-frame movement step is throttled.
-        if (IsFarFromPlayer())
+        _farCheckTimer -= delta;
+        if (_farCheckTimer <= 0d)
+        {
+            _farCheckTimer = FarCheckInterval;
+            _far = IsFarFromPlayer();
+        }
+
+        // Standing at the target (or held in conversation) with no panic running is the same
+        // "nothing to integrate" case as being far away, and takes the same cadence.
+        bool resting = (_arrived || _talking) && !Panicking;
+        if (_far || resting)
         {
             _sleepTimer += delta;
             if (_sleepTimer < SleepInterval)
@@ -141,7 +175,7 @@ public partial class ScheduleComponent : EntityComponent
         // Through ScheduleResource.DestinationOf, never entry.Destination directly: a cell-local
         // routine is only a place once its cell is added, and one caller that forgets walks a
         // merchant out of the market and into the town square.
-        _target = ScheduleResource.DestinationOf(entry, _cellOrigin);
+        SetTarget(ScheduleResource.DestinationOf(entry, _cellOrigin));
         SetActivity(entry.Activity);
     }
 
@@ -191,7 +225,7 @@ public partial class ScheduleComponent : EntityComponent
             away = Vector3.Forward;
         }
 
-        _target = here + (away.Normalized() * PanicRadius);
+        SetTarget(here + (away.Normalized() * PanicRadius));
     }
 
     private void OnDialogueStarted(DialogueStartedEvent e)
@@ -228,7 +262,8 @@ public partial class ScheduleComponent : EntityComponent
         to.Y = 0f;
 
         float dist = to.Length();
-        if (dist <= ArriveDistance)
+        _arrived = dist <= ArriveDistance;
+        if (_arrived)
         {
             return;
         }

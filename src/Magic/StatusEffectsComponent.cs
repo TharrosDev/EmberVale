@@ -46,6 +46,24 @@ public partial class StatusEffectsComponent : EntityComponent
     private StatsComponent? _stats;
     private CombatComponent? _combat;
 
+    /// <summary>The tick's snapshot of the active set, reused every frame. Only <see cref="_Process"/>
+    /// touches it and a node's tick never re-enters itself, so one buffer is enough; the damage
+    /// path keeps its own per-call snapshot because that one can re-enter.</summary>
+    private readonly List<StatusEffect> _tickSnapshot = new();
+
+    /// <summary>True while <see cref="_Process"/> is switched off: no status and no control
+    /// immunity is running, so there is nothing to count down. Adding either one wakes it.</summary>
+    private bool _tickAsleep;
+
+    private void WakeTick()
+    {
+        if (_tickAsleep)
+        {
+            _tickAsleep = false;
+            SetProcess(true);
+        }
+    }
+
     /// <summary>The effects currently active on this entity (read-only, for UI).</summary>
     public IReadOnlyCollection<StatusEffect> ActiveEffects => _active.Values;
 
@@ -119,6 +137,7 @@ public partial class StatusEffectsComponent : EntityComponent
         }
 
         _active[definition.Id] = effect;
+        WakeTick();
         ApplyModifier(effect);
         EventBus.Instance?.Publish(new StatusEffectAppliedEvent(Entity, definition.Id, source));
 
@@ -332,6 +351,14 @@ public partial class StatusEffectsComponent : EntityComponent
 
         if (_active.Count == 0)
         {
+            // Nothing afflicts this actor and nothing is counting down: the resting state of nearly
+            // every body in the world. Stop being called until a status or an immunity lands.
+            if (_immunities.Count == 0)
+            {
+                _tickAsleep = true;
+                SetProcess(false);
+            }
+
             return;
         }
 
@@ -343,8 +370,13 @@ public partial class StatusEffectsComponent : EntityComponent
         }
 
         // Snapshot: a tick can break a ward, detonate or spread, all of which edit the live set.
-        foreach (StatusEffect effect in new List<StatusEffect>(_active.Values))
+        // Copied into a reused buffer rather than a fresh list, which used to be one allocation per
+        // afflicted actor per frame for as long as anything was active on it.
+        _tickSnapshot.Clear();
+        _tickSnapshot.AddRange(_active.Values);
+        for (int i = 0; i < _tickSnapshot.Count; i++)
         {
+            StatusEffect effect = _tickSnapshot[i];
             if (!_active.TryGetValue(effect.Definition.Id, out StatusEffect? live) || !ReferenceEquals(live, effect))
             {
                 continue;
@@ -356,6 +388,8 @@ public partial class StatusEffectsComponent : EntityComponent
                 Remove(effect.Definition.Id, Ending.Expired, null);
             }
         }
+
+        _tickSnapshot.Clear();
     }
 
     private void Tick(StatusEffect effect, double delta)
@@ -468,9 +502,7 @@ public partial class StatusEffectsComponent : EntityComponent
         }
 
         float scale = Mathf.Max(0.3f, LiveComfort.Get().ScreenFlash);
-        var flash = new SpellFlash { Radius = 1.6f * scale, FlashColor = tint };
-        scene.AddChild(flash);
-        flash.GlobalPosition = body.GlobalPosition + new Vector3(0f, 1f, 0f);
+        SpellFlash.Spawn(scene, body.GlobalPosition + new Vector3(0f, 1f, 0f), 1.6f * scale, tint);
     }
 
     // --- detonation and death ---
@@ -638,6 +670,7 @@ public partial class StatusEffectsComponent : EntityComponent
         if (hard != StatusControl.None && def.ControlImmunitySeconds > 0f)
         {
             _immunities.Add((hard, def.ControlImmunitySeconds));
+            WakeTick();
         }
 
         if (ending == Ending.Expired && def.ExpiryManaReturn > 0f && effect.AbsorbCapacity > 0f)
