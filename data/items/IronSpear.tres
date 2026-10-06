@@ -15,6 +15,7 @@ Rarity = 0
 MaxStack = 1
 Weight = 3.0
 Value = 36
+WorldModelPath = "res://assets/models/weapons/wpn_spear_iron.glb"
 TradeTags = Array[String](["weapon", "metal"])
 ItemLevel = 5
 Tier = 1

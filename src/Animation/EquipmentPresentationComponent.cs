@@ -76,6 +76,11 @@ public partial class EquipmentPresentationComponent : EntityComponent
     private const string SwordModel = "res://assets/models/weapons/wpn_sword_iron.glb";
     private const string DaggerModel = "res://assets/models/weapons/wpn_dagger_iron.glb";
     private const string BowModel = "res://assets/models/weapons/wpn_bow_hunting.glb";
+    private const string GreatswordModel = "res://assets/models/weapons/wpn_greatsword_iron.glb";
+    private const string AxeModel = "res://assets/models/weapons/wpn_axe_iron.glb";
+    private const string MaceModel = "res://assets/models/weapons/wpn_mace_iron.glb";
+    private const string SpearModel = "res://assets/models/weapons/wpn_spear_iron.glb";
+    private const string StaffModel = "res://assets/models/weapons/wpn_staff_oak.glb";
     private const string ShieldModel = "res://assets/models/equipment/eqp_shield_round.glb";
 
     /// <summary>
@@ -101,7 +106,11 @@ public partial class EquipmentPresentationComponent : EntityComponent
             WeaponClass.Bow => new WeaponModel(BowModel, 1f),
             WeaponClass.Dagger => new WeaponModel(DaggerModel, 1f),
             WeaponClass.Shield => new WeaponModel(ShieldModel, 1f),
-            WeaponClass.Greatsword => new WeaponModel(SwordModel, 1.3f),
+            WeaponClass.Greatsword => new WeaponModel(GreatswordModel, 1f),
+            WeaponClass.Axe => new WeaponModel(AxeModel, 1f),
+            WeaponClass.Mace => new WeaponModel(MaceModel, 1f),
+            WeaponClass.Spear => new WeaponModel(SpearModel, 1f),
+            WeaponClass.Staff => new WeaponModel(StaffModel, 1f),
             WeaponClass.None => new WeaponModel(string.Empty, 1f),
             _ => new WeaponModel(SwordModel, 1f),
         };

@@ -142,8 +142,11 @@ tested behaviour.
   the bow with real arrows, a reforge, a commission, or a save and reload through the new browser.
 - **Nothing was rendered.** The crafting window, the Materials tab, the vendor and storage panels,
   the slot browser and its badges, the save indicator, the hotbar cooldown sweep, loot toasts, the
-  rarity beam, and the weapon-class stand-in models (greatswords reuse the sword model at a larger
-  scale) have never been on a screen. Panel-shot baselines will differ.
+  rarity beam, and the five generated weapon models (`wpn_axe_iron`, `wpn_mace_iron`,
+  `wpn_spear_iron`, `wpn_staff_oak`, `wpn_greatsword_iron`: checked against the coordinate contract
+  and in Blender renders only, never in a hand in the engine) have never been on a screen.
+  Panel-shot baselines will differ. ⚠️ The world bake manifest is stale since those models landed
+  (model imports are shared bake inputs): run `python tools/world_bake.py --bake` once.
 - **Input.** The pad hotbar chord shares `LT` with block; search fields swap input bindings while
   focused. Neither has been held in a hand.
 - **Old saves.** The v3 to v4 step, the material bag migration and the widened trainer lesson are

@@ -472,7 +472,11 @@ SCROLL_VALUE = {2: 45, 3: 120, 4: 200, 5: 300, 6: 420}
 POTION_MODEL = "res://assets/models/props/prp_item_potion.glb"
 MODEL = {
     "Sword": "res://assets/models/weapons/wpn_sword_iron.glb",
-    "Greatsword": "res://assets/models/weapons/wpn_sword_iron.glb",
+    "Greatsword": "res://assets/models/weapons/wpn_greatsword_iron.glb",
+    "Axe": "res://assets/models/weapons/wpn_axe_iron.glb",
+    "Mace": "res://assets/models/weapons/wpn_mace_iron.glb",
+    "Spear": "res://assets/models/weapons/wpn_spear_iron.glb",
+    "Staff": "res://assets/models/weapons/wpn_staff_oak.glb",
     "Dagger": "res://assets/models/weapons/wpn_dagger_iron.glb",
     "Bow": "res://assets/models/weapons/wpn_bow_hunting.glb",
     "Shield": "res://assets/models/equipment/eqp_shield_round.glb",
