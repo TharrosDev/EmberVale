@@ -9,8 +9,9 @@ using Godot;
 namespace Embervale.UI;
 
 /// <summary>
-/// The cues that make a lock read: a ring that snaps in on a newly locked target, and — when a lock
-/// ends — a mark that says <em>why</em>. A kill is a gold burst where the target fell; a target that
+/// The cues that make a lock read: a thin ring that closes onto the lock dot
+/// (<see cref="UiTheme.DrawLockDot"/>) on a newly locked target, and — when a lock ends — a mark
+/// that says <em>why</em>. A kill is a gold burst where the target fell; a target that
 /// ran out of range or was lost behind cover is a red cross with a word ("Too far", "Lost sight"),
 /// because a silently dropped lock is indistinguishable from a bug. Toggling the lock off yourself
 /// draws nothing.
@@ -24,6 +25,10 @@ public sealed partial class LockOnCueLayer : Control
     private const float AcquireSeconds = 0.25f;
     private const float KillSeconds = 0.55f;
     private const float LostSeconds = 1.0f;
+
+    /// <summary>Where the acquire ring starts, and how far outside the dot it comes to rest.</summary>
+    private const float AcquireStartRadius = 44f;
+    private const float AcquireRestGap = 5f;
 
     private enum Kind
     {
@@ -171,9 +176,12 @@ public sealed partial class LockOnCueLayer : Control
             {
                 case Kind.Acquire:
                 {
-                    // Snaps in from wide to the reticle's size: "that one".
-                    float radius = motion ? Mathf.Lerp(74f, 30f, 1f - ((1f - t) * (1f - t))) : 30f;
-                    DrawArc(at, radius, 0f, Mathf.Tau, 32, new Color(UiTheme.Accent, fade * 0.9f), 3f);
+                    // Closes from wide onto the dot: "that one". The dot is what stays.
+                    float rest = UiTheme.LockDotRadius + AcquireRestGap;
+                    float radius = motion ? Mathf.Lerp(AcquireStartRadius, rest, UiMotion.EaseOut(t)) : rest;
+                    DrawArc(at, radius, 0f, Mathf.Tau, 32, UiTheme.Keyline with { A = UiTheme.Keyline.A * fade }, 3f);
+                    DrawArc(at, radius, 0f, Mathf.Tau, 32, new Color(UiTheme.AccentHot, fade), 1.5f);
+                    UiTheme.DrawLockDot(this, at, 1f - fade);
                     break;
                 }
 
@@ -203,9 +211,12 @@ public sealed partial class LockOnCueLayer : Control
                     if (cue.Word.Length > 0)
                     {
                         Font font = (Font?)UiTheme.DisplayFont ?? ThemeDB.FallbackFont;
-                        Vector2 measure = font.GetStringSize(cue.Word, HorizontalAlignment.Left, -1f, 18);
-                        DrawString(font, at + new Vector2(-measure.X * 0.5f, size + 26f), cue.Word,
-                            HorizontalAlignment.Left, -1f, 18, red);
+                        int fontSize = UiTheme.FontSize(UiTheme.HeaderFontSize);
+                        Vector2 measure = font.GetStringSize(cue.Word, HorizontalAlignment.Left, -1f, fontSize);
+                        Vector2 baseline = at + new Vector2(-measure.X * 0.5f, size + UiTheme.SpaceSm + fontSize);
+                        DrawStringOutline(font, baseline, cue.Word, HorizontalAlignment.Left, -1f, fontSize,
+                            UiTheme.HudInkSize * 2, UiTheme.Keyline with { A = UiTheme.Keyline.A * fade });
+                        DrawString(font, baseline, cue.Word, HorizontalAlignment.Left, -1f, fontSize, red);
                     }
 
                     break;

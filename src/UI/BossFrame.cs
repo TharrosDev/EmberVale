@@ -14,13 +14,24 @@ namespace Embervale.UI;
 ///
 /// It owns its own event subscriptions and its own <c>_Process</c>, which is the point of the
 /// split: <c>GameHud</c> no longer carries three boss subscriptions and an <c>UpdateBoss</c> it
-/// only forwards to. It is also the one HUD element that earns ornament — corner brass and the
-/// display face — because the ornament budget (see <see cref="UiOrnament"/>) spends on the rarity
-/// of the moment, and a boss is the rarest moment the HUD has.
+/// only forwards to. It sits bare on the world like the vitals do: the name carved above one
+/// keylined bar as wide as <see cref="HudMetrics.BossBarWidth"/> allows, with the length a blow
+/// just removed held behind the fill for a beat. The display face is all the ornament it takes.
+///
+/// A boss's authored intro line is something it says, so with subtitles on it is captioned by
+/// <see cref="SubtitleLayer"/> under the boss's name; the frame's own line carries it otherwise.
 /// </summary>
 public partial class BossFrame : PanelContainer
 {
     private const ulong FadeMs = 1400;
+
+    /// <summary>Taller than a vitals bar: it is read from across a fight.</summary>
+    private const float BarHeight = HudCoreMetrics.BarHeight + UiTheme.Space2xs;
+
+    /// <summary>How long an authored intro line stays, as the frame's line or as a caption.</summary>
+    private const float IntroSeconds = 4.5f;
+
+    private static readonly Vector2 PipSize = new(18f, 4f);
 
     private Label _name = null!;
     private Label _epithet = null!;
@@ -33,67 +44,71 @@ public partial class BossFrame : PanelContainer
     /// under this panel — handed over by <see cref="AttachFade"/>.</summary>
     private ColorRect _fade = null!;
 
+    private HudLayout? _layout;
     private IEntity? _boss;
     private int _totalPhases = 1;
     private ulong _messageUntil;
     private ulong _fadeUntil;
+
+    /// <summary>The bar's width, for a harness to hold against <see cref="HudMetrics.BossBarWidth"/>.</summary>
+    public float BarWidthForCapture => _bar.CustomMinimumSize.X;
 
     public BossFrame()
     {
         MouseFilter = MouseFilterEnum.Ignore;
         Visible = false;
         SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
-        StyleBoxFlat frame = UiTheme.PanelStyle();
-        frame.BgColor = UiTheme.PanelBg with { A = 0.97f };
-        frame.BorderColor = UiTheme.AccentHot with { A = 0.48f };
-        AddThemeStyleboxOverride("panel", frame);
+        AddThemeStyleboxOverride("panel", new StyleBoxEmpty());
 
-        MarginContainer pad = UiTheme.Padding(UiTheme.SpaceMd);
-        var col = new VBoxContainer();
-        col.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
+        PanelContainer ground = UiTheme.HudBare(); // an opaque plate under high contrast only
+        var col = new VBoxContainer { MouseFilter = MouseFilterEnum.Ignore };
+        col.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
 
-        _name = UiTheme.Display(Loc.T("boss.name"), UiTheme.Text);
+        _name = UiTheme.HudInk(UiTheme.Display(Loc.T("boss.name"), UiTheme.Text));
         _name.HorizontalAlignment = HorizontalAlignment.Center;
         col.AddChild(_name);
 
         // The boss's epithet card ("The Black-Iron King"), set in the book italic under the name. Hidden for
         // a boss that authors none, so the frame is unchanged for them.
-        _epithet = UiTheme.Flavour(string.Empty, UiTheme.Dim);
+        _epithet = UiTheme.HudInk(UiTheme.Flavour(string.Empty, UiTheme.Dim));
         UiTheme.ApplyType(_epithet, UiTheme.FontRole.SerifItalic, UiTheme.BodyFontSize);
         _epithet.HorizontalAlignment = HorizontalAlignment.Center;
         _epithet.Visible = false;
         col.AddChild(_epithet);
 
-        _bar = JuicedBar.Create(UiTheme.Health, 520f);
-        _bar.CustomMinimumSize = new Vector2(520f, 16f);
+        float width = HudMetrics.BossBarWidth(HudMetrics.ReferenceWidth);
+        _bar = JuicedBar.Create(UiTheme.Health, width);
+        _bar.CustomMinimumSize = new Vector2(width, BarHeight);
+        _bar.Keylined = true;
+        _bar.LagChunk = true;
+        _bar.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
         col.AddChild(_bar);
 
-        // Pips carry the phase at a glance; the line below keeps it in words. Redundant on
+        // Pips carry the phase at a glance; the line beside them keeps it in words. Redundant on
         // purpose — a row of shapes is fast to read and impossible to read *precisely*, and
         // "phase 2 of 4" is the kind of thing a player checks when they are losing.
-        _pips = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };
+        var phase = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center, MouseFilter = MouseFilterEnum.Ignore };
+        phase.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
+        _pips = new HBoxContainer
+        {
+            Alignment = BoxContainer.AlignmentMode.Center,
+            SizeFlagsVertical = SizeFlags.ShrinkCenter,
+            MouseFilter = MouseFilterEnum.Ignore,
+        };
         _pips.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
-        col.AddChild(_pips);
+        phase.AddChild(_pips);
 
-        _phaseText = UiTheme.Caption("");
-        _phaseText.HorizontalAlignment = HorizontalAlignment.Center;
-        col.AddChild(_phaseText);
+        _phaseText = UiTheme.HudInk(UiTheme.Caption(""));
+        phase.AddChild(_phaseText);
+        col.AddChild(phase);
 
-        _message = UiTheme.Body("", UiTheme.AccentHot);
+        _message = UiTheme.HudInk(UiTheme.Body("", UiTheme.AccentHot));
         _message.HorizontalAlignment = HorizontalAlignment.Center;
         _message.Visible = false;
         col.AddChild(_message);
 
-        pad.AddChild(col);
-        AddChild(pad);
-
-        var emberRule = new ColorRect
-        {
-            Color = UiTheme.AccentHot with { A = 0.72f },
-            CustomMinimumSize = new Vector2(0f, 2f),
-            MouseFilter = MouseFilterEnum.Ignore,
-        };
-        col.AddChild(emberRule);
+        ground.AddChild(col);
+        AddChild(ground);
     }
 
     /// <summary>Builds the defeat fade into the HUD's full-screen overlay slot. Separate from the
@@ -103,7 +118,7 @@ public partial class BossFrame : PanelContainer
     {
         _fade = new ColorRect
         {
-            Color = new Color(0f, 0f, 0f),
+            Color = UiTheme.ScrimBg,
             SelfModulate = new Color(1f, 1f, 1f, 0f),
             MouseFilter = MouseFilterEnum.Ignore,
             Visible = false,
@@ -119,9 +134,36 @@ public partial class BossFrame : PanelContainer
         EventBus.Instance?.Subscribe<EntityDiedEvent>(OnDied);
         EventBus.Instance?.Subscribe<BossWithdrewEvent>(OnWithdrew);
 
+        // The bar is a share of the width the scaled HUD lays out in, so it follows that rect.
+        for (Node? node = GetParent(); node != null && _layout == null; node = node.GetParent())
+        {
+            _layout = node as HudLayout;
+        }
+
+        if (_layout != null)
+        {
+            _layout.Scaled.Resized += ApplyWidth;
+            ApplyWidth();
+        }
+
         // Asleep between fights: Present and ShowMessage wake it, and the tick puts it back to
         // sleep on the frame it hides itself.
         SetProcess(Visible);
+    }
+
+    private void ApplyWidth()
+    {
+        float layoutWidth = _layout?.Scaled.Size.X ?? 0f;
+        if (layoutWidth <= 0f)
+        {
+            return; // not laid out yet; Resized calls back when it is
+        }
+
+        float width = HudMetrics.BossBarWidth(layoutWidth);
+        if (_bar.CustomMinimumSize.X != width)
+        {
+            _bar.CustomMinimumSize = new Vector2(width, BarHeight);
+        }
     }
 
     public override void _ExitTree()
@@ -130,6 +172,10 @@ public partial class BossFrame : PanelContainer
         EventBus.Instance?.Unsubscribe<BossPhaseChangedEvent>(OnPhase);
         EventBus.Instance?.Unsubscribe<EntityDiedEvent>(OnDied);
         EventBus.Instance?.Unsubscribe<BossWithdrewEvent>(OnWithdrew);
+        if (_layout != null && IsInstanceValid(_layout))
+        {
+            _layout.Scaled.Resized -= ApplyWidth;
+        }
     }
 
     private void OnStarted(BossEncounterStartedEvent e)
@@ -161,11 +207,20 @@ public partial class BossFrame : PanelContainer
         _bar.Visible = true;
         _pips.Visible = true;
         _phaseText.Visible = true;
-        Visible = true;
+        _message.Visible = false;
+        UiFx.Rise(this, seconds: UiTheme.DurationSlow);
 
+        // An authored line is the boss speaking: captioned under its name when subtitles are on,
+        // and carried by the frame when they are not. The generic line is the game's, not the boss's.
         string introKey = BossIntroText.IntroKey(introLineKey, Loc.Has, out bool usesName);
-        bool authored = !usesName;
-        ShowMessage(usesName ? Loc.TF(introKey, displayName) : Loc.T(introKey), authored ? 4500UL : 2500UL);
+        if (usesName)
+        {
+            ShowMessage(Loc.TF(introKey, displayName), 2500UL);
+        }
+        else if (!SubtitleLayer.TryShow(displayName, Loc.T(introKey), IntroSeconds))
+        {
+            ShowMessage(Loc.T(introKey), (ulong)(IntroSeconds * 1000f));
+        }
     }
 
     private void OnPhase(BossPhaseChangedEvent e) => SetPhase(e.Phase);
@@ -218,8 +273,8 @@ public partial class BossFrame : PanelContainer
         {
             _pips.AddChild(new ColorRect
             {
-                Color = UiTheme.Engrave,
-                CustomMinimumSize = new Vector2(18f, 4f),
+                Color = UiTheme.Keyline,
+                CustomMinimumSize = PipSize,
                 MouseFilter = MouseFilterEnum.Ignore,
             });
         }
@@ -241,7 +296,7 @@ public partial class BossFrame : PanelContainer
 
             pip.Color = i + 1 == phase ? UiTheme.AccentHot
                 : i + 1 < phase ? UiTheme.Brass
-                : UiTheme.Engrave;
+                : UiTheme.Keyline;
         }
     }
 
@@ -290,7 +345,8 @@ public partial class BossFrame : PanelContainer
 
         if (_boss == null && !_message.Visible && _fade is not { Visible: true })
         {
-            Visible = false;
+            // Leaves on its own, so it may fade; Present takes over a fade in flight.
+            UiFx.FadeOut(this, seconds: UiTheme.DurationBase);
             SetProcess(false); // nothing left to drive until the next fight
         }
     }
