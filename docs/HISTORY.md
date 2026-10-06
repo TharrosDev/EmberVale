@@ -113,7 +113,7 @@ Status: **done**, **partial**, **not built** (never started; not needed for the 
 | # | Phase | Outcome |
 | --- | --- | --- |
 | 56 | Balance and difficulty | open: the new bosses need tuning |
-| 57 | Performance cert | not run; the 16.67 ms budget stays a soft target |
+| 57 | Performance cert | optimization pass built 2026-10-06, unmeasured (below); the formal certification is still not run and the 16.67 ms budget stays a soft target |
 | 58 | Save hardening | built 2026-10-06 (gate results in `NOW.md`): format 4 (checksum, one backup generation, stable set-piece keys), save blocks, queued writes, a slot browser that reads slot health |
 | 59 | QA and soak | not run |
 | 60 | Localization completion | out of scope (English only) |
@@ -134,6 +134,39 @@ combat/animation/camera overhaul (one action timeline, true first person, ranged
 world-production overhaul (offline bake, residency tiers, safe placement), the 3D asset gap pass,
 the 2026-09 world rebuild (52- and 36-cell realms in atlas bands, save v3), and the lifecycle
 finalizer fix (`ResidentResources`).
+
+### Performance pass (2026-10-06)
+
+Six lanes against one measured baseline, merged on `claude/perf-integration`, then review fixes.
+The baseline was taken once, centrally, and it changed the plan: the static world already drew
+inside 16.67 ms almost everywhere at Medium on the Iris Xe laptop, so the heaviness felt in play
+was not the scene. The lanes went after the other suspects.
+
+- **Load.** Debug builds compile optimized (the editor binary always loads the Debug assembly,
+  and it was unoptimized, never-tiered code); the boot validator runs on headless boots only;
+  `Loc.T` caches hits; the perf probe covers six realms and reports texture and buffer memory.
+- **Rendering.** A Performance tier below Low, Low rebalanced, preset overrides, first-run adapter
+  detection, a menu frame cap, and `SkyController` and `EnvironmentEmitters` writing on change.
+- **Streaming.** Reconcile on change, an activation deadline checked inside the cell, no
+  instantiate and activate in one play frame, one scatter mesh copy per realm, and the tier's
+  draw distance and ground-cover density.
+- **Assets.** A texture budget by asset class and `assets.py audit-weight`; 52 `.import` files
+  capped and compressed, estimated 266 MB to 56 MB.
+- **CPU.** Idle components stop ticking, `EventBus` publishes without a copy or an allocation,
+  animation, AI senses, foot IK and input stop making engine calls and `StringName`s per frame,
+  spell flashes are pooled.
+- **HUD.** Labels written on change, idle panels and bars not processed, compass and minimap
+  repainted on movement, the monitor a fixed ring, the F4 overlay at 4 Hz with memory and GC.
+
+Fixes after the merge: switching an animation tree's callback mode for level of detail restarted
+its state machine, so a corpse crossing 40 m stood back up (the mixer is now manual for life and
+stepped by the component); the enemy shadow cut looked for a `MeshInstance3D` where a glTF root
+is a plain `Node3D` and did nothing for any modelled enemy; the budget monitor had been stopped
+with the overlay closed, which silenced its log warning; the realm-settle wait could turn a slow
+load into an abort; auto-detect ran over installs that had saves but no settings file; and Low
+had lost its pixel-cost cut. Written under a no-engine rule like the upgrade before it: it
+compiles, and the measurement, the import, the bake and every gate were left to one central run
+recorded in [`NOW.md`](NOW.md). No number is claimed.
 
 ### Item, crafting and save upgrade (2026-10-05/06)
 

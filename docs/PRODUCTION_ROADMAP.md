@@ -66,7 +66,7 @@ personal and never published.
 | 36 | Boss framework | ✅ | 54 | Accessibility | ◐ |
 | 37 | Housing | ✅ | 55 | G3 acceptance | ◐ (`--story` + play-through) |
 | 37.5 | UI overhaul | ✅ | 56 | Balance | open |
-| 38 | Economy | ✅ | 57 | Performance cert | ⬜ |
+| 38 | Economy | ✅ | 57 | Performance cert | ◐ optimization pass built, unmeasured; cert not run |
 | 39 | Mounts | ✅ | 58 | Save hardening | ◐ format 4, backup, blocks; gates in `NOW.md` |
 | 39.5 | Map intelligence | ✅ | 59 | QA and soak | ⬜ |
 | 40 | Survival and needs | ❌ | 60 | Localization completion | — |
@@ -90,7 +90,14 @@ skies, and a Windows export that passes `--story` inside itself. What remains:
    been played.** Gate results are in [`NOW.md`](NOW.md), with the list of what is unverified: the
    catalogue's balance, the reforge prices, the new panels and the drop presentation.
 
-Not planned unless the maintainer asks: 42.5, 43, 50.5, 52, 53.5, 57, 59.
+6. **The performance pass (57) is built and unmeasured.** A Performance tier, first-run detection,
+   texture budgets and a sweep of per-frame CPU, HUD and streaming work are on
+   `claude/perf-integration`. What it needs: a Godot import, one full master bake, the gates, the
+   after-measurement against the recorded baseline, and every tier looked at on a screen.
+   [`NOW.md`](NOW.md) has the baseline table and the unverified list.
+
+Not planned unless the maintainer asks: 42.5, 43, 50.5, 52, 53.5, 59, and the formal certification
+half of 57 (a target-hardware matrix and a signed 16.67 ms budget; the pass above is not that).
 Never: 40, 40.5, 60–66, and the socket half of 51.5.
 
 ## 5. Standing rules for any further work

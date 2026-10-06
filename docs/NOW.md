@@ -5,16 +5,93 @@
 Developer SDK: [`TOOLING.md`](TOOLING.md) (`python tools/embervale.py`). Every mechanic in the game,
 one line each: [`MECHANICS.md`](MECHANICS.md).
 
-## Where we are (2026-10-06, item, crafting and save upgrade)
+## Where we are (2026-10-06, performance pass)
 
 The game is complete from New Game to credits. The finish run's contract and id registry are
 [`playbook/finish.md`](playbook/finish.md).
 
-The newest work is the item, crafting and save upgrade on `claude/ics-integration` (nine lanes on
+### The performance pass (`claude/perf-integration`)
+
+The newest work is an optimization pass: six lanes (load, rendering, streaming, assets, CPU, HUD)
+merged, then review fixes. It changes no gameplay rule and no save format; the only new features
+are graphics settings. ⚠️ **It was written without launching the engine, and nothing in it has
+been measured.** It compiles. No frame time, memory figure or load time below is claimed to have
+improved: the numbers are **pending the single measurement run that follows this branch**, and
+the before-numbers are in the Verification section.
+
+The baseline said where the cost is not: the static world already rendered inside 16.67 ms almost
+everywhere at Medium. So the pass went after video memory, per-frame CPU work, streaming hitches
+and the missing low end, in that order of suspicion.
+
+- **Graphics settings.** A **Performance** preset below Low (saved as `4`; the saved ints are
+  append-only), Low rebalanced between it and Medium, and Medium, High and Ultra authoring none
+  of the new fields. An Advanced Graphics section (render scale, upscaling, anti-aliasing, shadow
+  quality, ambient occlusion, volumetric fog, glow) stores per-control overrides whose defaults
+  mean "follow the preset". A fresh install picks its preset from the adapter, memory and thread
+  count; a 40 FPS cap exists; an unpaced menu holds 60. [`RENDERING.md`](RENDERING.md) has the
+  tier tables and what scales.
+- **The tier reaches the world.** `WorldQualityScale` carries draw distance (the Far radius,
+  scatter ranges and biome cull only), ground-cover density and the enemy shadow distance.
+  Nothing reads it while it is 1 / 1 / uncut.
+- **Video memory.** 52 model texture `.import` files were capped and compressed to a budget by
+  asset class (`assets.py audit-weight`); the estimate went from 266 MB to 56 MB and is an
+  estimate. Each realm now holds one copy of each scatter source mesh instead of one per cell,
+  and a cell's `PackedScene` is released once instantiated.
+- **Streaming.** The reconcile sweep runs on change, activation checks its deadline inside a
+  cell, play frames either instantiate or activate, and the loading gate waits up to 10 s for the
+  realm to settle behind the loading screen.
+- **Per-frame CPU.** Idle components stop ticking (stats, statuses, combat, hit reaction, trail,
+  telegraph, schedule), the animation mixer is stepped by its component with a 40 m level of
+  detail, `EventBus.Publish` no longer copies or allocates, `Loc.T` caches hits, spell flashes are
+  pooled, and input and animation paths stopped building a `StringName` per call.
+- **HUD.** Labels are written when their value changes, closed panels and settled bars do not
+  process, the compass and minimap repaint when what they show has moved, and the F4 overlay
+  refreshes at 4 Hz with video memory, managed heap, allocation rate and collection counts.
+- **Boot and build.** The boot-time content validator runs on headless boots only, and the Debug
+  configuration (the one the editor binary always loads) now compiles optimized.
+
+**Unverified (performance pass).** Everything, in the sense that matters for a performance pass.
+
+- **No measurement.** Not one frame, hitch, megabyte or second was sampled after the baseline.
+  Every "no longer", "stops" and "instead of" above is a statement about code read, not about
+  time saved, and some of it may not show up in a frame time at all.
+- **No engine gate, import or bake.** `--validate`, `--lifecycle`, `--story`, the probes, the
+  full unit suite, the Godot import and the master bake were all left to the central run. Until
+  the import and a **full** bake happen, the texture caps, the shadowless ground cover, the
+  distant-tier LOD bias and the shared scatter meshes are not in the game, and
+  `world_bake.py --check` reports the world stale (this pass edited `src/World/` and model
+  `.import` files, which are shared bake inputs).
+- **Nothing was rendered.** The Performance tier, the rebalanced Low, the Advanced Graphics
+  controls, FSR, MSAA and TAA switched at runtime, and the capped textures at eye level have
+  never been on a screen. Low was 55 m shadows and 0.25 particles and is now 60 m, two cascades
+  and 0.35, so its captures will differ. Three changes also reach Medium, High and Ultra: capped
+  and compressed textures, ground cover without shadows, and the distant scatter LOD bias.
+  Reference captures predate all of it.
+- **Auto-detect never met a real adapter.** `GraphicsAutoDetect` is unit-tested against adapter
+  strings; what this laptop's driver actually reports is unobserved.
+- **Tick sleeping was reviewed by reading.** A missed wake would look like a bar that stops
+  regenerating, a status that never expires, a schedule that never leaves, or a telegraph that
+  never draws, after a load in particular. Nobody has looked.
+- **The manual animation mixer.** Every animated body is now stepped from
+  `CharacterAnimationComponent._Process`. Hit windows, root motion, a paused tree, the 40 m
+  switch and the action-clip gate are unobserved.
+- **HUD on-change writes.** The failure mode is a stale label after a load, a locale change or a
+  settings change (invariant 10). Unobserved, and panel-shot baselines may differ.
+- **Loading.** The settle wait can add up to 10 s of loading screen and was never timed; whether
+  alternating instantiate and activate frames lengthens a stream-in during play is unknown.
+- **`EventBus`.** Reentrant subscribe and unsubscribe during a dispatch were reasoned through,
+  not exercised; `--lifecycle` subscriber counts are the first real test.
+- **Phase 57 certification was not run.** This pass is not it.
+
+### The item, crafting and save upgrade
+
+Before it came the item, crafting and save upgrade on `claude/ics-integration` (nine lanes on
 one foundation, merged, then two review-fix passes). ⚠️ **It was written without launching the
-engine.** It compiles and its generators are clean; every engine gate, every render and all play
-are still to come. The first five bullets describe what the code does; "Unverified" below the
-bullets says what nobody has seen happen.
+engine.** It compiles and its generators are clean; the first five bullets describe what the code
+does and "Unverified" below them says what nobody has seen happen. The performance baseline
+(`artifacts/perf-baseline/README.md`) records the build, 4,695 unit tests, `--validate`,
+`--lifecycle` and `--story` passing on `main` at `cc9735de` with this upgrade in it; play,
+renders and balance remain as listed.
 
 - **Items and equipment.** 373 items (`data/items`), 296 of them generated from
   `tools/items/catalogue.py` by `tools/gen_items.py`: six tiers of gear, one per realm, on one stat
@@ -187,8 +264,9 @@ The state of everything else, unchanged by that work:
 - **Struck, and staying struck:** Phase 40 (survival/needs) and 40.5 (puzzles/traps). **Out of scope**
   (personal build, never published): storefront, platform compliance, launch, live ops, extra locales.
 
-**Open:** the gates run and first play of the item, crafting and save upgrade (the Unverified
-list above); the maintainer play-through (G1/G3) of the exported build, New Game to credits and both
+**Open:** the measurement run, import, full bake and gates for the performance pass, then a look
+at every tier on a screen (its Unverified list above); first play of the item, crafting and save
+upgrade (its Unverified list); the maintainer play-through (G1/G3) of the exported build, New Game to credits and both
 endings; eye-level visual review of the new realms, bosses, duel braziers and ending skies; a reviewed
 world visual re-baseline (the baseline predates the 2026-09 rebuild); the new realms are not yet in
 the per-region traversal, mesh census and screenshot probes (scene audit now covers all six);
@@ -198,6 +276,10 @@ bosses and the duels.
 **Operating lessons (this 14 GB machine):** never run world bakes in parallel — merge first, then
 one master `world_bake.py --bake`; run heavy gates (validate, story, lifecycle, bake, export) one at
 a time. Asset lessons (Meshy, `adopt`) are in [`3D_ASSETS.md`](3D_ASSETS.md#adopting-a-model).
+Measure before optimizing and once after, centrally: the baseline showed the static scene was
+already inside budget, which redirected the whole pass, and six lanes each running a probe would
+have measured each other. On this iGPU video memory is system memory, so texture and mesh
+residency is a frame-time concern, not only a capacity one.
 
 **Known warnings, diagnosed and not fixed (2026-09-25):** navigation edge-sync warnings and
 ObjectDB-leak warnings on a rendered exit. Neither fails a gate. The world visual gate is advisory:
@@ -318,6 +400,25 @@ Numbers are stable references (other docs cite them); gaps are retired invariant
 44. ⚠️ **A `Load` READS THROUGH `SaveRead` AND SKIPS WHAT IT CANNOT USE.** One throwing `Load` fails
     the whole slot; content the build no longer has is dropped with a warning, never thrown on.
     `SaveManager`'s method names and refusal strings are pinned by `world_quality_check.py`.
+45. ⚠️ **A COMPONENT THAT DISABLES ITS TICK OWNS THE RE-ENABLE, ON EVERY PATH, `Load` INCLUDED.**
+    `SetProcess(false)` is a promise that nothing can make a tick matter without calling the one
+    wake method. A load replaces state without going through the setters, so `Load` wakes
+    explicitly. The same holds for a `UiPanel` closed from code and for any HUD value keyed on
+    what it shows: the key is dropped on a player, locale, settings or load change (invariant 10).
+46. ⚠️ **A SAVED SETTING'S NUMBERS AND DEFAULTS ARE FROZEN.** `Settings.RenderQuality` is
+    append-only (Performance is the lowest tier and is `4`); the menu orders tiers through
+    `GraphicsMath.UiOrder`. An override's default is its "follow the preset" sentinel, and
+    `ResourceSaver` omits a value equal to its default, so changing a default silently changes
+    what every existing settings file means.
+47. ⚠️ **AT 1 / 1 / UNCUT THE QUALITY SCALE DOES NOTHING, AND IT NEVER MOVES GAMEPLAY.** A
+    `WorldQualityScale` consumer neither reads nor writes while the scale is at its default, and a
+    new `RenderQualityResource` field defaults to what the game did before it existed, so Medium
+    and up stay as authored. Draw distance scales the Far radius and visibility ranges only; Near,
+    Mid and Backdrop decide collision, navigation and residency and are not a quality setting.
+48. ⚠️ **AN ANIMATION MIXER'S CALLBACK MODE IS SET ONCE.** Trees and fallback players are manual
+    for life and `CharacterAnimationComponent` steps them. Changing the mode on an active tree
+    restarts its state machine (a corpse stands up), and an action clip is never stepped coarsely
+    because it is that action's clock.
 
 ## Commands
 
@@ -350,6 +451,8 @@ godot --path . -- --guild-shots | --panelshots | --hudshots
 godot --path . --script res://tools/world_shots.gd   # add -- --update-world-baseline AFTER inspecting
 python tools/world_quality_check.py --mode fast | engine | visual | full
 python tools/assets.py status | validate | adopt <src> <dest> | audit
+python tools/assets.py audit-weight [--check | --fix | -v]   # texture video memory by class budget
+godot --path . --script res://tools/world_perf_probe.gd [-- --json]   # per-cell render cost, all six realms
 python tools/compose_building.py <name> <w> <d> <storeys> [--hollow | --open | --ruined]
 python tools/gen_map_locations.py [--check]
 python tools/gen_guild_dialogue.py <key> <dialogue.id> <faction.id> "<Speaker>"
@@ -366,6 +469,38 @@ Python is Codex's bundled interpreter
 Export templates are in `%APPDATA%\Godot\export_templates\4.7.1.stable.mono`.
 
 ## Verification
+
+### Performance pass (`claude/perf-integration`)
+
+**Before**, captured once on `main` at `cc9735de` on 2026-10-06 (`artifacts/perf-baseline/`,
+local): Intel Iris Xe, 14 GB, 1280x720, Forward+, Medium, `world_perf_probe.gd` with a static
+camera at eye height in every cell. Render cost only: no AI, combat or HUD load.
+
+| Region | Cells | Mean ms | Worst ms (cell) | Mean draws | Mean prims | Video mem MB | Configure ms |
+| --- | ---: | ---: | --- | ---: | ---: | ---: | ---: |
+| ember_crown | 52 | 11.7 | 18.5 (crossway_post) | 687 | 1,096k | 633 | 4117 |
+| frostfang_reach | 36 | 7.9 | 9.4 (hold_pass) | 298 | 494k | 535 | 2182 |
+| ashen_wilds | 16 | 8.2 | 11.5 (scorched_hollow) | 271 | 416k | 487 | 825 |
+| sunspire | 20 | 8.4 | 16.1 (belt_east) | 197 | 401k | 589 | 1447 |
+| pale_concord | 12 | 8.2 | 13.0 (west_mere) | 241 | 294k | 516 | 818 |
+| celestial | 9 | 6.3 | 11.8 (shattered_rim) | 187 | 161k | 395 | 724 |
+
+**After: pending.** The measurement run that follows this branch fills these in. The probe cannot
+see most of what the pass changed (per-actor ticks, HUD work, allocations, streaming hitches in
+motion), so an unchanged probe table would not mean the pass did nothing, and an improved one
+would not prove play feels better. That needs F4 in a real session.
+
+| Check | Evidence |
+| --- | --- |
+| Build (`dotnet build Embervale.sln`) | PASS at `c8ab7872` plus this documentation pass, 2026-10-06: 0 warnings, 0 errors (11.7 s) |
+| Six-realm probe, after | pending |
+| Texture estimate (`audit-weight`) | 266.0 MB to 55.6 MB as reported by the assets lane; an estimate from `.import` text, not a measurement |
+| Godot import and full master bake | pending; required before any after-number means anything |
+| Full unit suite | pending |
+| `--validate`, `--lifecycle`, `--story` | pending |
+| World quality (`fast` / `engine` / `performance`) | pending |
+| Every tier rendered; a played session with F4 open | not run |
+| Phase 57 certification | not run |
 
 ### Item, crafting and save upgrade (`claude/ics-integration`)
 
