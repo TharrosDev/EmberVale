@@ -5,6 +5,7 @@ using Embervale.Enemies;
 using Embervale.Core.Events;
 using Embervale.Entities;
 using Embervale.Magic;
+using Embervale.Magic.Vfx;
 using Embervale.Stats;
 using Godot;
 using Embervale.Core;
@@ -243,21 +244,31 @@ public partial class CharacterAnimationComponent : EntityComponent
 
         if (SpellDatabase.Get(e.SpellId) is { } spell)
         {
-            SpellFlash.Spawn(
-                Entity!.Body.GetTree().CurrentScene, CastingHandPosition(), 0.5f, SpellSchools.Color(spell.School));
+            SpellVfx.HandFlash(Entity!, spell, CastingHandPosition());
         }
     }
 
     /// <summary>World position of the left (casting) hand bone, falling back to chest height.</summary>
-    private Vector3 CastingHandPosition()
+    private Vector3 CastingHandPosition() =>
+        TryGetCastingHand(out Vector3 hand) ? hand : Entity!.Body.GlobalPosition + (Vector3.Up * 1.3f);
+
+    /// <summary>World position of the left (casting) hand bone, for effects that start at the hand.
+    /// False when the body has no skeleton or nothing on it reads as a hand (a quadruped, a turret).</summary>
+    public bool TryGetCastingHand(out Vector3 position)
     {
-        if (_skeleton != null && HumanoidBones.FindHand(_skeleton, right: false) is { Length: > 0 } hand)
+        if (_skeleton != null && IsInstanceValid(_skeleton) && _skeleton.IsInsideTree() &&
+            HumanoidBones.FindHand(_skeleton, right: false) is { Length: > 0 } hand)
         {
-            return (_skeleton.GlobalTransform * _skeleton.GetBoneGlobalPose(_skeleton.FindBone(hand))).Origin;
+            position = (_skeleton.GlobalTransform * _skeleton.GetBoneGlobalPose(_skeleton.FindBone(hand))).Origin;
+            return true;
         }
 
-        return Entity!.Body.GlobalPosition + (Vector3.Up * 1.3f);
+        position = default;
+        return false;
     }
+
+    /// <summary>The body's skeleton, for effects that anchor to a bone; null when it has none.</summary>
+    public Skeleton3D? Skeleton => _skeleton != null && IsInstanceValid(_skeleton) ? _skeleton : null;
 
     private static AnimationPlayer? FindAnimationPlayer(Node node)
     {

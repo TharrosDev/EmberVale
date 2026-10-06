@@ -39,7 +39,7 @@ public static class SettingsTabRules
             nameof(Settings.WindowMode), nameof(Settings.VSync), nameof(Settings.MaxFps), nameof(Settings.RenderQuality),
             nameof(Settings.RenderScale), nameof(Settings.ScalingMode), nameof(Settings.AntiAliasing),
             nameof(Settings.ShadowQuality), nameof(Settings.AmbientOcclusion), nameof(Settings.VolumetricFog),
-            nameof(Settings.Glow), nameof(Settings.FieldOfView),
+            nameof(Settings.Glow), nameof(Settings.FieldOfView), nameof(Settings.SpellEffects),
         },
 
         // Audio

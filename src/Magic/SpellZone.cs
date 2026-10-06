@@ -1,5 +1,6 @@
 using Embervale.Combat;
 using Embervale.Entities;
+using Embervale.Magic.Vfx;
 using Godot;
 
 namespace Embervale.Magic;
@@ -38,6 +39,7 @@ public partial class SpellZone : Node3D
         if (_lifetime.Check())
         {
             SetPhysicsProcess(PullStrength > 0f);
+            SpellVfx.AttachZone(this, Spell, Caster, Radius, Duration);
         }
     }
 
@@ -74,6 +76,7 @@ public partial class SpellZone : Node3D
 
     public override void _ExitTree()
     {
+        SpellVfx.ZoneEnd(this);
         _lifetime?.Dispose();
         _cancelled = true;
         Caster = null;
@@ -87,6 +90,7 @@ public partial class SpellZone : Node3D
         Packet = default;
         SetProcess(false);
         SetPhysicsProcess(false);
+        SpellVfx.ZoneEnd(this);
         Hide();
         QueueFree();
     }

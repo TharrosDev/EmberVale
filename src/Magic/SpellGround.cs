@@ -1,5 +1,6 @@
 using Embervale.Combat;
 using Embervale.Entities;
+using Embervale.Magic.Vfx;
 using Godot;
 
 namespace Embervale.Magic;
@@ -49,6 +50,7 @@ public partial class SpellGround : Node3D
         Ring.Position = new Vector3(0f, 0.06f, 0f);
         TelegraphClass cls = Spell.Blockable ? TelegraphClass.Standard : TelegraphClass.Unblockable;
         Ring.Arm(Delay, Radius, SpellSchools.Color(Spell.School), cls);
+        SpellVfx.GroundTelegraph(this, Spell, Caster, Radius, Delay);
     }
 
     public override void _Process(double delta)

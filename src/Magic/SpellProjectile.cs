@@ -1,6 +1,7 @@
 using System;
 using Embervale.Combat;
 using Embervale.Entities;
+using Embervale.Magic.Vfx;
 using Godot;
 
 namespace Embervale.Magic;
@@ -59,6 +60,17 @@ public partial class SpellProjectile : Area3D
     private StandardMaterial3D _material = null!;
     private OmniLight3D _light = null!;
 
+    /// <summary>The plain sphere and light a bolt is drawn as when <see cref="SpellVfx"/> draws
+    /// nothing for it. One node, so the whole fallback shows or hides together.</summary>
+    private Node3D _plain = null!;
+
+    /// <summary>
+    /// Where the bolt's picture should start, when that is not where the bolt itself starts: the
+    /// casting hand. Set before <see cref="Launch"/>, which reads it once and clears it; unset, the
+    /// picture starts on the bolt. Drawing only: the bolt's path and collision never move.
+    /// </summary>
+    public Vector3? VisualOrigin { get; set; }
+
     /// <summary>Reclaim callback (the pool's <c>Return</c>). When null, the projectile frees itself.</summary>
     public Action<SpellProjectile>? Released { get; set; }
 
@@ -74,7 +86,9 @@ public partial class SpellProjectile : Area3D
             ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
             EmissionEnabled = true,
         };
-        AddChild(new MeshInstance3D
+        _plain = new Node3D { Name = "Plain" };
+        AddChild(_plain);
+        _plain.AddChild(new MeshInstance3D
         {
             Mesh = new SphereMesh { Radius = 0.18f, Height = 0.36f },
             MaterialOverride = _material,
@@ -83,7 +97,7 @@ public partial class SpellProjectile : Area3D
         AddChild(new CollisionShape3D { Shape = new SphereShape3D { Radius = 0.25f } });
 
         _light = new OmniLight3D { OmniRange = 4f, LightEnergy = 1.2f };
-        AddChild(_light);
+        _plain.AddChild(_light);
     }
 
     protected override void Dispose(bool disposing)
@@ -120,6 +134,11 @@ public partial class SpellProjectile : Area3D
         _material.AlbedoColor = color;
         _material.Emission = color;
         _light.LightColor = color;
+
+        // The plain sphere stands in whenever the effect layer draws nothing for this bolt.
+        Vector3 visualOrigin = VisualOrigin ?? GlobalPosition;
+        VisualOrigin = null;
+        _plain.Visible = !SpellVfx.AttachProjectile(this, spell, caster, visualOrigin, _direction);
 
         _resolved = false;
         CollisionLayer = CombatLayers.Hitbox;
@@ -172,7 +191,7 @@ public partial class SpellProjectile : Area3D
                     before, GlobalPosition, _casterTeam, _packet.Amount, _caster, _spell.Id, out Vector3 stoppedAt, Radius))
             {
                 GlobalPosition = stoppedAt;
-                Resolve(null);
+                Resolve(null, SpellImpactKind.Barrier);
                 return;
             }
 
@@ -198,13 +217,13 @@ public partial class SpellProjectile : Area3D
                 continue;
             }
 
-            Resolve(struck);
+            Resolve(struck, SpellImpactKind.World);
             return;
         }
 
         if (_life <= 0d)
         {
-            Resolve(null);
+            Resolve(null, SpellImpactKind.Expired);
         }
     }
 
@@ -312,7 +331,9 @@ public partial class SpellProjectile : Area3D
         return best;
     }
 
-    private void Resolve(Hurtbox? primary)
+    /// <summary>Ends the flight. <paramref name="surface"/> says what stopped a bolt that struck no
+    /// foe (a wall, a barrier, the end of its range), for the effect it leaves there.</summary>
+    private void Resolve(Hurtbox? primary, SpellImpactKind surface)
     {
         if (_resolved || _cancelled || _lifetime?.Check() != true)
         {
@@ -331,6 +352,13 @@ public partial class SpellProjectile : Area3D
         {
             SpellResolver.HitOne(this, primary, _packet, _spell, _caster, _casterTeam, lifetime: _lifetime);
         }
+        else
+        {
+            SpellVfx.Impact(_spell, _caster, new SpellImpactInfo(
+                GlobalPosition, -_direction, null, surface, _packet.Charge));
+        }
+
+        SpellVfx.DetachProjectile(this);
 
         // Defer the detach/free: we're inside this node's own physics step, and _resolved keeps
         // it inert until then. (The pool reclaims it; without a pool it frees itself.)
@@ -371,6 +399,8 @@ public partial class SpellProjectile : Area3D
 
     public override void _ExitTree()
     {
+        SpellVfx.DetachProjectile(this);
+        VisualOrigin = null;
         _lifetime?.Dispose();
         _resolved = true;
         _cancelled = true;
@@ -395,6 +425,7 @@ public partial class SpellProjectile : Area3D
         _packet = default;
         _struck.Clear();
         Released = null; // a cancelled shot is freed, never returned to a possibly torn-down pool
+        SpellVfx.DetachProjectile(this);
         CollisionLayer = 0u;
         CollisionMask = 0u;
         Monitoring = false;

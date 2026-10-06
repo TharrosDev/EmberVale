@@ -1,6 +1,7 @@
 using Embervale.Combat;
 using Embervale.Core.Events;
 using Embervale.Entities;
+using Embervale.Magic.Vfx;
 using Embervale.Stats;
 using Godot;
 
@@ -70,18 +71,22 @@ public partial class SpellTotem : Entity
         AddChild(hurtbox);
         _hurtbox = hurtbox;
 
-        AddChild(new MeshInstance3D
+        // The plain post stands in whenever the effect layer draws nothing for this totem.
+        if (!SpellVfx.AttachTotem(this, Spell, Tint))
         {
-            Mesh = new CylinderMesh { TopRadius = 0.06f, BottomRadius = 0.12f, Height = 0.9f },
-            Position = new Vector3(0f, 0.45f, 0f),
-            MaterialOverride = new StandardMaterial3D
+            AddChild(new MeshInstance3D
             {
-                AlbedoColor = Tint,
-                EmissionEnabled = true,
-                Emission = Tint,
-                EmissionEnergyMultiplier = 0.7f,
-            },
-        });
+                Mesh = new CylinderMesh { TopRadius = 0.06f, BottomRadius = 0.12f, Height = 0.9f },
+                Position = new Vector3(0f, 0.45f, 0f),
+                MaterialOverride = new StandardMaterial3D
+                {
+                    AlbedoColor = Tint,
+                    EmissionEnabled = true,
+                    Emission = Tint,
+                    EmissionEnergyMultiplier = 0.7f,
+                },
+            });
+        }
     }
 
     public override void _Process(double delta)
@@ -105,6 +110,7 @@ public partial class SpellTotem : Entity
             if (Target is { } stats && IsInstanceValid(stats) && stats.IsAlive)
             {
                 stats.Heal(HealPerTick);
+                SpellVfx.TotemPulse(this, Spell, stats.Entity?.Body);
             }
         }
 
@@ -127,6 +133,7 @@ public partial class SpellTotem : Entity
         Ended = true;
         StopCollision();
         _lifetime?.Dispose();
+        SpellVfx.TotemEnd(this, Spell, broken);
         if (Spell != null)
         {
             EventBus.Instance?.Publish(new BarrierEndedEvent(Caster, Spell.Id, broken));
@@ -154,6 +161,7 @@ public partial class SpellTotem : Entity
         StopCollision();
         SetProcess(false);
         SetPhysicsProcess(false);
+        SpellVfx.TotemEnd(this, Spell, broken: false);
         Hide();
         QueueFree();
     }

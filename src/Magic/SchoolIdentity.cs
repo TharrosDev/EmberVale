@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Embervale.Combat;
 using Embervale.Entities;
+using Embervale.Magic.Vfx;
 using Embervale.Stats;
 using Godot;
 
@@ -88,7 +89,8 @@ public static class SchoolIdentity
         bool targetKilled = false,
         float targetHealthFraction = -1f,
         Vector3? hitPosition = null,
-        SpellLifetime? lifetime = null)
+        SpellLifetime? lifetime = null,
+        Vector3? impactPoint = null)
     {
         switch (spell.School)
         {
@@ -102,7 +104,7 @@ public static class SchoolIdentity
                 // A brand is a mark, not a bolt: it must not arc to (and re-brand) another foe.
                 if (spell.StatusEffectId != StatusIds.Stormbrand)
                 {
-                    ChainToNearby(context, spell, packet, caster, casterTeam, primary, hitPosition, lifetime);
+                    ChainToNearby(context, spell, packet, caster, casterTeam, primary, hitPosition, lifetime, impactPoint);
                 }
 
                 break;
@@ -126,7 +128,9 @@ public static class SchoolIdentity
         StatusEffectsComponent? status = primary.OwnerEntity?.GetComponent<StatusEffectsComponent>();
         if (status != null && status.Has(StatusIds.Kindled))
         {
+            Vector3 at = primary.GlobalPosition;
             status.Apply(StatusEffectDatabase.Get(StatusIds.Burning), caster);
+            SpellVfx.StatusProc(SpellProcKind.KindleFed, DamageType.Fire, primary.OwnerEntity, at, 0f);
         }
     }
 
@@ -137,10 +141,11 @@ public static class SchoolIdentity
         StatusEffectsComponent? status = primary.OwnerEntity?.GetComponent<StatusEffectsComponent>();
         if (status != null && status.Has(StatusIds.Chill))
         {
+            Vector3 at = primary.GlobalPosition;
             status.Consume(StatusIds.Chill);
-            if (lifetime?.Check() != false)
+            if (lifetime?.Check() != false && status.Apply(StatusEffectDatabase.Get(StatusIds.Frozen), caster))
             {
-                status.Apply(StatusEffectDatabase.Get(StatusIds.Frozen), caster);
+                SpellVfx.StatusProc(SpellProcKind.Freeze, DamageType.Frost, primary.OwnerEntity, at, 0f);
             }
         }
     }
@@ -151,7 +156,14 @@ public static class SchoolIdentity
         float fraction = targetHealthFraction >= 0f ? targetHealthFraction
             : primary.OwnerEntity?.GetComponent<StatsComponent>()?.GetNormalized(StatType.Health) ?? 1f;
         bool marked = targetWasMarked || primary.OwnerEntity?.GetComponent<StatusEffectsComponent>()?.Has(StatusIds.GraveMark) == true;
-        caster?.GetComponent<StatsComponent>()?.Heal(LifestealAmount(damage, fraction, marked));
+        float healed = LifestealAmount(damage, fraction, marked);
+        caster?.GetComponent<StatsComponent>()?.Heal(healed);
+        if (healed > 0f && caster?.Body is { } body && GodotObject.IsInstanceValid(body) && body.IsInsideTree() &&
+            GodotObject.IsInstanceValid(primary) && primary.IsInsideTree())
+        {
+            SpellVfx.Arc(DamageType.Necrotic, caster, SpellResolver.VolumeCentre(primary),
+                body.GlobalPosition + Vector3.Up, SpellArcKind.Tether);
+        }
     }
 
     /// <summary>An Arcane bolt tears one buff off the target — the longest-lasting dispellable one
@@ -165,7 +177,11 @@ public static class SchoolIdentity
     // hard counter to every buff at once rather than a trade. Widen only if it plays weak.</summary>
     private static void Dispel(Hurtbox primary, IEntity? caster)
     {
-        primary.OwnerEntity?.GetComponent<StatusEffectsComponent>()?.Dispel(caster);
+        Vector3 at = primary.GlobalPosition;
+        if (primary.OwnerEntity?.GetComponent<StatusEffectsComponent>()?.Dispel(caster) != null)
+        {
+            SpellVfx.StatusProc(SpellProcKind.Dispel, DamageType.Arcane, primary.OwnerEntity, at, 0f);
+        }
     }
 
     /// <summary>Arcs the bolt to a Stormbranded foe within <see cref="BrandRange"/> if there is one,
@@ -187,7 +203,8 @@ public static class SchoolIdentity
         int casterTeam,
         Hurtbox primary,
         Vector3? hitPosition = null,
-        SpellLifetime? lifetime = null)
+        SpellLifetime? lifetime = null,
+        Vector3? impactPoint = null)
     {
         Vector3 center = hitPosition ?? primary.GlobalPosition;
         PhysicsDirectSpaceState3D space = context.GetWorld3D().DirectSpaceState;
@@ -240,6 +257,9 @@ public static class SchoolIdentity
 
         Hurtbox best = hurtboxes[pick];
         bool toBrand = candidates[pick].Branded;
+        // Drawn from where the bolt struck the body; the search above keeps its own centre.
+        SpellVfx.Arc(spell.School, caster, impactPoint ?? center, SpellResolver.VolumeCentre(best),
+            toBrand ? SpellArcKind.Brand : SpellArcKind.Chain);
         var arc = packet with { Amount = ChainDamage(packet.Amount, toBrand) };
         if (!best.Receive(arc).Killed && lifetime?.Check() != false)
         {

@@ -411,6 +411,8 @@ public sealed partial class SessionLifecycleCoordinator : Node
         PersistentActorRegistry.Clear();
         UiState.ClearAll();
         Magic.SpellActions.Clear();
+        Magic.Vfx.SpellVfx.Reset();
+        Magic.Vfx.VfxQuality.Reset();
         Invariant.Reset();
 
         // The buyback shelf. Not a static class, so SessionResetTests' reflection cannot see it.

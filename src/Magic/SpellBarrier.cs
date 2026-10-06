@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Embervale.Combat;
 using Embervale.Core.Events;
 using Embervale.Entities;
+using Embervale.Magic.Vfx;
 using Godot;
 
 namespace Embervale.Magic;
@@ -94,6 +95,7 @@ public partial class SpellBarrier : Node3D
 
         Ring.Position = new Vector3(0f, 0.06f, 0f);
         Ring.Arm(Delay, Width * 0.5f, SpellSchools.Color(Spell.School));
+        SpellVfx.BarrierTelegraph(this, Spell, Width, Delay);
     }
 
     /// <summary>The telegraph is over: the wall stands, solid where its spell says so.</summary>
@@ -103,6 +105,29 @@ public partial class SpellBarrier : Node3D
         _age = 0d;
         Ring.Clear();
         ActiveBarriers.Add(this);
+
+        // The plain wall stands in whenever the effect layer draws nothing for this barrier.
+        if (!SpellVfx.AttachBarrier(this, Spell, Width, WallHeight, Solid))
+        {
+            BuildPlainWall();
+        }
+
+        if (Solid)
+        {
+            var body = new StaticBody3D { Name = "Solid", CollisionLayer = CombatLayers.WorldStatic, CollisionMask = 0u };
+            body.AddChild(new CollisionShape3D
+            {
+                Shape = new BoxShape3D { Size = new Vector3(Width, WallHeight, Thickness) },
+                Position = new Vector3(0f, WallHeight * 0.5f, 0f),
+            });
+            AddChild(body);
+            _solidBody = body;
+        }
+    }
+
+    /// <summary>The translucent box and base strip a wall is drawn as with no effect of its own.</summary>
+    private void BuildPlainWall()
+    {
         Color tint = SpellSchools.Color(Spell.School);
         _material = new StandardMaterial3D
         {
@@ -135,18 +160,6 @@ public partial class SpellBarrier : Node3D
                 ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
             },
         });
-
-        if (Solid)
-        {
-            var body = new StaticBody3D { Name = "Solid", CollisionLayer = CombatLayers.WorldStatic, CollisionMask = 0u };
-            body.AddChild(new CollisionShape3D
-            {
-                Shape = new BoxShape3D { Size = new Vector3(Width, WallHeight, Thickness) },
-                Position = new Vector3(0f, WallHeight * 0.5f, 0f),
-            });
-            AddChild(body);
-            _solidBody = body;
-        }
     }
 
     /// <summary>Faces a wall along <paramref name="forward"/>: its face normal is the caster's line
@@ -228,10 +241,7 @@ public partial class SpellBarrier : Node3D
         StopCollision();
         _lifetime?.Dispose();
         EventBus.Instance?.Publish(new BarrierEndedEvent(Caster, Spell.Id, broken));
-        if (broken)
-        {
-            SpellResolver.SpawnFlashAt(this, GlobalPosition + (Vector3.Up * 1.2f), Width * 0.5f, SpellSchools.Color(Spell.School));
-        }
+        SpellVfx.BarrierEnd(this, Spell, Width, broken);
 
         ActiveBarriers.Remove(this);
         Caster = null;
@@ -391,6 +401,7 @@ public partial class SpellBarrier : Node3D
         SetProcess(false);
         SetPhysicsProcess(false);
         Ring.Clear();
+        SpellVfx.BarrierEnd(this, Spell, Width, broken: false);
         Hide();
         QueueFree();
     }

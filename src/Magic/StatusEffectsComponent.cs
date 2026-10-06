@@ -3,6 +3,7 @@ using Embervale.Combat;
 using Embervale.Core.Diagnostics;
 using Embervale.Core.Events;
 using Embervale.Entities;
+using Embervale.Magic.Vfx;
 using Embervale.Stats;
 using Godot;
 
@@ -484,25 +485,15 @@ public partial class StatusEffectsComponent : EntityComponent
             return;
         }
 
-        Color tint = SpellSchools.Color(ward.Definition.School);
+        DamageType school = ward.Definition.School;
         Remove(ward.Definition.Id, Ending.Broken, null);
         EventBus.Instance?.Publish(new WardBrokenEvent(Entity, ward.Definition.Id));
-        SpawnFlash(tint);
-    }
 
-    /// <summary>The flash a breaking ward makes. Scaled by the player's flash setting, so Reduced Motion
-    /// shrinks it rather than strobing.</summary>
-    private void SpawnFlash(Color tint)
-    {
-        Node3D? body = Entity?.Body;
-        Node? scene = body?.GetTree()?.CurrentScene;
-        if (body == null || scene == null || !body.IsInsideTree())
+        // The flash a breaking ward makes.
+        if (Entity?.Body is { } body && IsInstanceValid(body) && body.IsInsideTree())
         {
-            return;
+            SpellVfx.StatusProc(SpellProcKind.WardBreak, school, Entity, body.GlobalPosition, 0f);
         }
-
-        float scale = Mathf.Max(0.3f, LiveComfort.Get().ScreenFlash);
-        SpellFlash.Spawn(scene, body.GlobalPosition + new Vector3(0f, 1f, 0f), 1.6f * scale, tint);
     }
 
     // --- detonation and death ---
@@ -554,6 +545,7 @@ public partial class StatusEffectsComponent : EntityComponent
         }
 
         EventBus.Instance?.Publish(new StatusDetonatedEvent(Entity, def.Id, damage, source));
+        SpellVfx.StatusProc(SpellProcKind.Detonation, def.School, Entity, centre, def.DetonateRadius);
     }
 
     private void OnEntityDied(EntityDiedEvent e)
@@ -603,6 +595,12 @@ public partial class StatusEffectsComponent : EntityComponent
             int pick = StatusMath.PickSpreadTarget(candidates);
             if (pick >= 0)
             {
+                if (owners[pick].Entity?.Body is { } next && IsInstanceValid(next) && next.IsInsideTree())
+                {
+                    SpellVfx.Arc(def.School, source, centre + Vector3.Up, next.GlobalPosition + Vector3.Up,
+                        SpellArcKind.Spread);
+                }
+
                 owners[pick].ApplyWithSpread(def, source, effect.SpreadGeneration + 1, effect.DurationMultiplier);
             }
         }

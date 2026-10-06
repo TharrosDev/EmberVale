@@ -5592,3 +5592,7 @@ craft.reforge.line.rerolls.label,Reworked {0} times before
 craft.reforge.line.gain.label,The value it adds
 # Panel polish (2026-10): the cue under a dialogue line that runs past the window's foot.
 kn.dialogue.more,More below
+# Spell effects (2026-10): the graphics option for how rich spell effects are drawn.
+settings.spell_effects,Spell effects
+settings.spell_effects.follow,Follow preset
+settings.spell_effects.desc,"How rich spell effects are: particles, lights and marks left on the ground. Follow preset uses the graphics quality above."
