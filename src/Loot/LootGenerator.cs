@@ -28,12 +28,28 @@ public static class LootGenerator
         return rng;
     }
 
-    public static List<LootDrop> Generate(LootTable? table, float extraQuality = 0f)
+    /// <summary>Rolls a table on the shared generator; see the overload taking one.</summary>
+    public static List<LootDrop> Generate(LootTable? table, float extraQuality = 0f, int itemLevel = 0, float luck = 0f)
     {
-        return Generate(table, SharedRng, extraQuality);
+        return Generate(table, SharedRng, extraQuality, itemLevel, luck);
     }
 
-    public static List<LootDrop> Generate(LootTable? table, RandomNumberGenerator rng, float extraQuality = 0f)
+    /// <summary>
+    /// Rolls a table into drops.
+    /// </summary>
+    /// <param name="table">The table to roll; null yields no drops.</param>
+    /// <param name="rng">The generator to roll on (a seeded one makes the result reproducible).</param>
+    /// <param name="extraQuality">Added to the table's own <c>QualityBonus</c>; shifts the rarity
+    /// roll and nudges affix values.</param>
+    /// <param name="itemLevel">The level rolled gear is generated at: it is stamped on each rolled
+    /// <see cref="ItemInstance.ItemLevel"/> and gates the affix pool
+    /// (<see cref="AffixDefinition.MinItemLevel"/>). 0, the default, is the level-less roll every
+    /// pre-ics caller made: nothing stamped, ungated affixes only.</param>
+    /// <param name="luck">The finder's luck (perks, a unique effect). It is simply added to the
+    /// quality here; it is a separate argument so a caller never has to fold a character's luck into
+    /// a place's quality itself.</param>
+    public static List<LootDrop> Generate(LootTable? table, RandomNumberGenerator rng, float extraQuality = 0f,
+        int itemLevel = 0, float luck = 0f)
     {
         var drops = new List<LootDrop>();
         if (table == null)
@@ -41,7 +57,7 @@ public static class LootGenerator
             return drops;
         }
 
-        float quality = table.QualityBonus + extraQuality;
+        float quality = table.QualityBonus + extraQuality + luck;
 
         foreach (Variant element in table.Entries)
         {
@@ -71,7 +87,7 @@ public static class LootGenerator
             }
 
             ItemInstance instance = entry.RollAffixes && template is EquippableItemResource equippable
-                ? RollEquippable(equippable, rng, quality)
+                ? RollEquippable(equippable, rng, quality, itemLevel)
                 : ItemInstance.Plain(template);
 
             // Rolled gear is unique — emit one drop per unit so each keeps its roll.
@@ -86,7 +102,7 @@ public static class LootGenerator
                 for (int i = 1; i < quantity; i++)
                 {
                     ItemInstance extra = rerollEach
-                        ? RollEquippable((EquippableItemResource)template, rng, quality)
+                        ? RollEquippable((EquippableItemResource)template, rng, quality, itemLevel)
                         : ItemInstance.Plain(template);
                     drops.Add(new LootDrop(extra, 1));
                 }
@@ -98,38 +114,56 @@ public static class LootGenerator
     }
 
     /// <summary>
-    /// Rolls a specific equippable at a forced rarity (handy for seeding demo loot
-    /// or guaranteed rewards). Affix values still vary within their ranges.
+    /// Rolls a specific equippable at a forced rarity (crafting, guaranteed rewards, chest
+    /// legendaries). Affix values still vary within their ranges.
     /// </summary>
-    public static ItemInstance RollAffixed(EquippableItemResource template, ItemRarity rarity, float valueQuality = 0.5f)
+    /// <param name="template">The equippable to roll a copy of.</param>
+    /// <param name="rarity">The forced rarity; it decides the affix count.</param>
+    /// <param name="valueQuality">0..1 bias of each affix value toward its maximum.</param>
+    /// <param name="itemLevel">The level the copy is generated at: stamped on
+    /// <see cref="ItemInstance.ItemLevel"/> and gating the affix pool. 0, the default, is a
+    /// level-less roll (nothing stamped, ungated affixes only).</param>
+    /// <param name="quality">The workmanship stamped on <see cref="ItemInstance.Quality"/>. Only
+    /// the crafting bench passes anything but <see cref="CraftQuality.Standard"/>.</param>
+    /// <param name="luck">Added to <paramref name="valueQuality"/> (the sum is clamped to 0..1 by
+    /// the value blend).</param>
+    public static ItemInstance RollAffixed(EquippableItemResource template, ItemRarity rarity, float valueQuality = 0.5f,
+        int itemLevel = 0, CraftQuality quality = CraftQuality.Standard, float luck = 0f)
     {
-        int count = LootRarity.AffixCount(rarity);
-        if (count <= 0)
-        {
-            return new ItemInstance(template, rarity);
-        }
-
-        List<AffixDefinition> pool = AffixDatabase.ApplicableTo(template, rarity);
-        List<ItemAffix> affixes = RollAffixes(pool, count, SharedRng, valueQuality);
-        return new ItemInstance(template, rarity, affixes);
+        return Stamp(Roll(template, rarity, SharedRng, valueQuality + luck, itemLevel), itemLevel, quality);
     }
 
-    private static ItemInstance RollEquippable(EquippableItemResource template, RandomNumberGenerator rng, float quality)
+    private static ItemInstance RollEquippable(EquippableItemResource template, RandomNumberGenerator rng, float quality,
+        int itemLevel)
     {
         ItemRarity rarity = LootRarity.Roll(rng, quality);
+        return Stamp(Roll(template, rarity, rng, RarityQuality(rarity, quality), itemLevel), itemLevel, CraftQuality.Standard);
+    }
+
+    private static ItemInstance Roll(EquippableItemResource template, ItemRarity rarity, RandomNumberGenerator rng,
+        float valueQuality, int itemLevel)
+    {
         int count = LootRarity.AffixCount(rarity);
         if (count <= 0)
         {
             return new ItemInstance(template, rarity);
         }
 
-        List<AffixDefinition> pool = AffixDatabase.ApplicableTo(template, rarity);
-        List<ItemAffix> affixes = RollAffixes(pool, count, rng, RarityQuality(rarity, quality));
+        List<AffixDefinition> pool = AffixDatabase.ApplicableTo(template, rarity, itemLevel);
+        List<ItemAffix> affixes = RollAffixes(pool, count, rng, valueQuality);
         return new ItemInstance(template, rarity, affixes);
     }
 
-    /// <summary>Picks up to <paramref name="count"/> distinct affixes (no repeated
-    /// stat) from the pool by weight, then rolls each one's value.</summary>
+    private static ItemInstance Stamp(ItemInstance instance, int itemLevel, CraftQuality quality)
+    {
+        instance.ItemLevel = System.Math.Max(0, itemLevel);
+        instance.Quality = quality;
+        return instance;
+    }
+
+    /// <summary>Picks up to <paramref name="count"/> distinct affixes (no repeated stat, no two
+    /// from one non-empty <see cref="AffixDefinition.Group"/>) from the pool by weight, then rolls
+    /// each one's value.</summary>
     private static List<ItemAffix> RollAffixes(List<AffixDefinition> pool, int count,
         RandomNumberGenerator rng, float valueQuality)
     {
@@ -141,6 +175,7 @@ public static class LootGenerator
 
         var candidates = new List<AffixDefinition>(pool);
         var usedStats = new HashSet<Stats.StatType>();
+        var usedGroups = new HashSet<string>();
 
         while (rolled.Count < count && candidates.Count > 0)
         {
@@ -151,9 +186,19 @@ public static class LootGenerator
             }
 
             candidates.Remove(pick);
+            if (!string.IsNullOrEmpty(pick.Group) && usedGroups.Contains(pick.Group))
+            {
+                continue;
+            }
+
             if (!usedStats.Add(pick.Stat))
             {
                 continue;
+            }
+
+            if (!string.IsNullOrEmpty(pick.Group))
+            {
+                usedGroups.Add(pick.Group);
             }
 
             rolled.Add(pick.Roll(rng, valueQuality));

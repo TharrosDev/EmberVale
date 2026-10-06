@@ -31,13 +31,14 @@ public static class AffixDatabase
     }
 
     /// <summary>All affix definitions that may roll on <paramref name="item"/> at
-    /// the given <paramref name="rarity"/>.</summary>
-    public static List<AffixDefinition> ApplicableTo(EquippableItemResource item, ItemRarity rarity)
+    /// the given <paramref name="rarity"/> and <paramref name="itemLevel"/> (0 = a level-less roll,
+    /// which sees only affixes with no <see cref="AffixDefinition.MinItemLevel"/>).</summary>
+    public static List<AffixDefinition> ApplicableTo(EquippableItemResource item, ItemRarity rarity, int itemLevel = 0)
     {
         var pool = new List<AffixDefinition>();
         foreach (AffixDefinition def in AllList)
         {
-            if (def.AppliesTo(item, rarity))
+            if (def.AppliesTo(item, rarity, itemLevel))
             {
                 pool.Add(def);
             }

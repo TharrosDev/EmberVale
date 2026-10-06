@@ -36,15 +36,30 @@ public partial class AffixDefinition : Resource
     /// <summary>Relative weight when selecting affixes from the eligible pool.</summary>
     [Export] public float Weight { get; set; } = 1f;
 
+    /// <summary>Lowest item level this affix can roll at. 0 (the absent-default) rolls at any
+    /// level, including the level-less roll every pre-ics caller makes; a gated affix needs a roll
+    /// made at <c>itemLevel &gt;= MinItemLevel</c>.</summary>
+    [Export] public int MinItemLevel { get; set; }
+
+    /// <summary>Presentation hint: the rolled value reads as a percentage ("+5%") rather than a
+    /// flat amount. It does not change how the modifier applies; that is <see cref="ModifierType"/>.</summary>
+    [Export] public bool IsPercent { get; set; }
+
+    /// <summary>Exclusivity group: one item never rolls two affixes sharing a non-empty group
+    /// (e.g. tiers of one affix all in "power"). Empty (the absent-default) excludes nothing.</summary>
+    [Export] public string Group { get; set; } = string.Empty;
+
     [ExportGroup("Applicable Gear Families")]
     [Export] public bool ForWeapons { get; set; } = true;
     [Export] public bool ForArmor { get; set; } = true;
     [Export] public bool ForAccessories { get; set; } = true;
 
-    /// <summary>True if this affix may roll on the given equippable at the given rarity.</summary>
-    public bool AppliesTo(EquippableItemResource item, ItemRarity rarity)
+    /// <summary>True if this affix may roll on the given equippable at the given rarity and item
+    /// level. <paramref name="itemLevel"/> 0 is a level-less roll, which only ungated affixes
+    /// (<see cref="MinItemLevel"/> 0) pass.</summary>
+    public bool AppliesTo(EquippableItemResource item, ItemRarity rarity, int itemLevel = 0)
     {
-        if (rarity < MinRarity)
+        if (rarity < MinRarity || itemLevel < MinItemLevel)
         {
             return false;
         }

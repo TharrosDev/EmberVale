@@ -33,6 +33,8 @@ public static class ContentDatabases
     {
         ItemDatabase.Initialize();
         AffixDatabase.Initialize();
+        UniqueEffectDatabase.Initialize();     // before the sets: a set bonus may name a unique effect
+        ItemSetDatabase.Initialize();
         PerkDatabase.Initialize();
         ShrineDatabase.Initialize();
         QuestDatabase.Initialize();
