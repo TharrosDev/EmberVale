@@ -521,4 +521,182 @@ public static class GameInput
             InputMap.ActionAddEvent(action, trigger);
         }
     }
+
+    // --- ui-upgrade: remapping ---------------------------------------------------------------------
+
+    /// <summary>What <see cref="EnsureActions"/> bound each remappable action to, read back from
+    /// the input map the first time it is asked for, so the defaults are written in one place.</summary>
+    private static Dictionary<string, (InputBinding Key, InputBinding Pad)>? _defaultBindings;
+
+    /// <summary>The binding <paramref name="action"/> has before any remap, on one device.
+    /// Unbound for an action that has none there, and for one that is not remappable.</summary>
+    public static InputBinding DefaultBinding(string action, BindingDevice device)
+    {
+        SnapshotDefaults();
+        return _defaultBindings!.TryGetValue(action, out (InputBinding Key, InputBinding Pad) pair)
+            ? device == BindingDevice.Keyboard ? pair.Key : pair.Pad
+            : InputBinding.Unbound;
+    }
+
+    /// <summary>
+    /// Makes the input map agree with the player's saved bindings: every remappable action gets
+    /// its saved binding on each device, or its default where nothing usable is saved
+    /// (<see cref="InputBindingRules.Resolve"/>). Run after <see cref="EnsureActions"/> at boot and
+    /// after any change to the saved lists. Only what differs is touched, so with nothing remapped
+    /// it changes nothing, and it publishes <see cref="Events.InputBindingsChangedEvent"/> when it
+    /// did change something so every prompt redraws.
+    ///
+    /// ⚠️ Returns false and does nothing while bindings are parked for a text field or lent to the
+    /// hotbar chord. <see cref="Restore"/> puts back the exact events it took out, so a remap
+    /// applied in between would be undone, or doubled, the moment the field lost focus. The caller
+    /// keeps the saved lists and asks again.
+    /// </summary>
+    public static bool ApplyBindings(Settings.Settings settings)
+    {
+        if (TextEntryActive || HotbarChordHeld)
+        {
+            return false;
+        }
+
+        SnapshotDefaults();
+        bool changed = false;
+        foreach (RemapAction entry in InputBindingRules.Actions)
+        {
+            if (!InputMap.HasAction(entry.Action))
+            {
+                continue;
+            }
+
+            (InputBinding key, InputBinding pad) = _defaultBindings![entry.Action];
+            if (entry.Keyboard)
+            {
+                changed |= Rebind(entry.Action, BindingDevice.Keyboard,
+                    InputBindingRules.Resolve(settings.KeyBindings, entry.Action, BindingDevice.Keyboard, key));
+            }
+
+            if (entry.Gamepad)
+            {
+                changed |= Rebind(entry.Action, BindingDevice.Gamepad,
+                    InputBindingRules.Resolve(settings.PadBindings, entry.Action, BindingDevice.Gamepad, pad));
+            }
+        }
+
+        if (changed)
+        {
+            Events.EventBus.Instance?.Publish(new Events.InputBindingsChangedEvent());
+
+            // The HUD's keycaps, the hotbar numbers and the dialogue and journal hints were written
+            // before bindings could change and redraw only when the device does. Telling them the
+            // device is what it already was is the one thing that reaches all of them.
+            Events.EventBus.Instance?.Publish(new Events.InputDeviceChangedEvent(InputDevice.GamepadActive));
+        }
+
+        return true;
+    }
+
+    /// <summary>The label a keycap shows for a keyboard or mouse binding, as <see cref="KeyLabel"/>
+    /// would give it once bound.</summary>
+    public static string BindingLabel(InputBinding binding) => binding.Kind switch
+    {
+        BindingKind.Key => OS.GetKeycodeString((Key)binding.Code),
+        BindingKind.Mouse => MouseLabel((MouseButton)binding.Code),
+        BindingKind.JoyButton => ButtonLabel((JoyButton)binding.Code),
+        BindingKind.JoyAxis => AxisLabel((JoyAxis)binding.Code),
+        _ => "?",
+    };
+
+    /// <summary>The binding an input event is, or unbound for an event that is not one.</summary>
+    public static InputBinding BindingOf(InputEvent? bound) => bound switch
+    {
+        InputEventKey key => InputBinding.OfKey(key.PhysicalKeycode != Key.None ? key.PhysicalKeycode : key.Keycode),
+        InputEventMouseButton mouse => InputBinding.OfMouse(mouse.ButtonIndex),
+        InputEventJoypadButton pad => InputBinding.OfJoy(pad.ButtonIndex),
+        InputEventJoypadMotion motion => InputBinding.OfAxis(motion.Axis, motion.AxisValue < 0f ? -1 : 1),
+        _ => InputBinding.Unbound,
+    };
+
+    private static InputEvent? EventFor(InputBinding binding) => binding.Kind switch
+    {
+        BindingKind.Key => new InputEventKey { PhysicalKeycode = (Key)binding.Code },
+        BindingKind.Mouse => new InputEventMouseButton { ButtonIndex = (MouseButton)binding.Code },
+        BindingKind.JoyButton => new InputEventJoypadButton { ButtonIndex = (JoyButton)binding.Code },
+        BindingKind.JoyAxis => new InputEventJoypadMotion { Axis = (JoyAxis)binding.Code, AxisValue = binding.Sign < 0 ? -1f : 1f },
+        _ => null,
+    };
+
+    private static bool OnDevice(InputEvent bound, BindingDevice device) => device == BindingDevice.Keyboard
+        ? bound is InputEventKey or InputEventMouseButton
+        : bound is InputEventJoypadButton or InputEventJoypadMotion;
+
+    private static void SnapshotDefaults()
+    {
+        if (_defaultBindings != null)
+        {
+            return;
+        }
+
+        _defaultBindings = new Dictionary<string, (InputBinding Key, InputBinding Pad)>();
+        foreach (RemapAction entry in InputBindingRules.Actions)
+        {
+            InputBinding key = InputBinding.Unbound;
+            InputBinding pad = InputBinding.Unbound;
+            if (InputMap.HasAction(entry.Action))
+            {
+                foreach (InputEvent bound in InputMap.ActionGetEvents(entry.Action))
+                {
+                    if (key.IsUnbound && OnDevice(bound, BindingDevice.Keyboard))
+                    {
+                        key = BindingOf(bound);
+                    }
+                    else if (pad.IsUnbound && OnDevice(bound, BindingDevice.Gamepad))
+                    {
+                        pad = BindingOf(bound);
+                    }
+                }
+            }
+
+            _defaultBindings[entry.Action] = (key, pad);
+        }
+    }
+
+    /// <summary>Gives <paramref name="action"/> exactly <paramref name="wanted"/> on one device and
+    /// leaves its other device alone. False when it already had it.</summary>
+    private static bool Rebind(string action, BindingDevice device, InputBinding wanted)
+    {
+        InputEvent? current = null;
+        int count = 0;
+        foreach (InputEvent bound in InputMap.ActionGetEvents(action))
+        {
+            if (OnDevice(bound, device))
+            {
+                current ??= bound;
+                count++;
+            }
+        }
+
+        if (count <= 1 && BindingOf(current) == wanted)
+        {
+            return false;
+        }
+
+        foreach (InputEvent bound in InputMap.ActionGetEvents(action))
+        {
+            if (OnDevice(bound, device))
+            {
+                InputMap.ActionEraseEvent(action, bound);
+            }
+        }
+
+        if (count > 0)
+        {
+            ReleaseIfPressed(action);
+        }
+
+        if (EventFor(wanted) is { } replacement)
+        {
+            InputMap.ActionAddEvent(action, replacement);
+        }
+
+        return true;
+    }
 }

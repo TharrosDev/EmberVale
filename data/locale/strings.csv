@@ -5116,3 +5116,206 @@ ui.hub.journal,Journal
 ui.hub.map,Map
 ui.hub.bestiary,Bestiary
 credits.title,Credits
+# ui-upgrade: settings and input (lane 3)
+settings.tab.graphics,Graphics
+settings.tab.audio,Audio
+settings.tab.controls,Controls
+settings.tab.gameplay,Gameplay
+settings.tab.interface,Interface
+settings.tab.accessibility,Accessibility
+settings.section.display,Display
+settings.section.advanced,Advanced
+settings.section.volume,Volume
+settings.section.look,Look
+settings.section.bindings,Bindings
+settings.section.challenge,Challenge
+settings.section.camera,Camera
+settings.section.combat,Combat
+settings.section.guidance,Guidance
+settings.section.hud,HUD
+settings.section.hud_elements,HUD elements
+settings.section.notices,Notices
+settings.section.menus,Menus
+settings.section.vision,Vision
+settings.section.motion_input,Motion and input
+settings.section.subtitles,Subtitles
+settings.pane.hint,Select an option to see what it does.
+settings.revert,Restore default
+settings.legend.tab,Switch tab
+settings.legend.select,Select
+settings.hold_hint,Hold to confirm
+settings.hold_desc,{0} Hold to confirm.
+settings.reset_tab,Reset tab
+settings.reset_tab.desc,Puts every option on this tab back to its default. Other tabs are not touched.
+settings.reset_tab.desc_controls,"Puts every option on this tab back to its default, including all key and gamepad bindings."
+settings.reset_all,Reset all settings
+settings.reset_all.desc,"Puts graphics, audio, controls, gameplay and interface options back to their defaults. Your bindings and accessibility options are kept."
+settings.window_mode.desc,"Windowed, fullscreen, or a borderless window that fills the screen and switches to other programs quickly."
+settings.render_quality.desc,One preset for everything under Advanced. Change any of those and this reads Custom. Pick a preset to clear them.
+settings.vsync.desc,Matches the frame rate to your display to stop tearing. Turning it off can lower input delay.
+settings.fov.desc,"How wide the camera sees, in degrees. Wider shows more and stretches the edges."
+settings.max_fps.desc,Caps the frame rate. A lower cap runs cooler and quieter.
+settings.anti_aliasing.desc,"Smooths jagged edges. FXAA is cheapest, MSAA is sharper and costs more, TAA is smoothest and can blur in motion."
+settings.shadow_quality.desc,Shadow detail and distance. One of the most expensive settings here.
+settings.ambient_occlusion.desc,Soft shading where surfaces meet. Adds depth at a moderate cost.
+settings.volumetric_fog.desc,Fog that catches light in shafts. Expensive on integrated graphics.
+settings.glow.desc,"A soft bloom around fire, embers and magic."
+settings.master_volume.desc,Overall volume of everything.
+settings.music_volume.desc,Volume of the music.
+settings.sfx_volume.desc,"Combat, footsteps and the sounds of the world."
+settings.ambience_volume.desc,"Wind, weather and the background sound of a place."
+settings.ui_volume.desc,Menu clicks and notification sounds.
+settings.voice_volume.desc,"Spoken lines, where a line has a voice."
+settings.mouse_sensitivity.desc,How far the camera turns for a given mouse movement. The gamepad stick follows it too.
+settings.invert_y.desc,"Pushing up looks down, on the mouse and on the stick."
+settings.pad_sensitivity_x,Stick sensitivity X
+settings.pad_sensitivity_x.desc,How fast the right stick turns the camera left and right. Multiplies mouse sensitivity.
+settings.pad_sensitivity_y,Stick sensitivity Y
+settings.pad_sensitivity_y.desc,How fast the right stick tilts the camera up and down. Multiplies mouse sensitivity.
+settings.bind.column.keyboard,Keyboard and mouse
+settings.bind.column.gamepad,Gamepad
+settings.bind.group.movement,Movement
+settings.bind.group.combat,Combat
+settings.bind.group.world,World
+settings.bind.group.screens,Screens
+settings.bind.group.hotbar,Hotbar
+settings.bind.desc,"Select a binding, then press the key or button you want. Restore default puts both bindings back."
+settings.bind.unbound,Unbound
+settings.bind.fixed,This binding cannot be changed
+settings.bind.clear,Clear binding
+settings.bind.listen_key,Press a key or a mouse button.
+settings.bind.listen_pad,Press a button or a trigger on the gamepad.
+settings.bind.listen_cancel,Cancel
+settings.bind.reserved,That input is kept for menus. Press another.
+settings.bind.conflict,{0} is already bound to {1}.
+settings.bind.swap,Swap
+settings.bind.unbind_other,Unbind other
+settings.bind.reset,Reset bindings
+settings.bind.reset.desc,Puts every key and gamepad binding back to the default layout.
+settings.bind.action.move_forward,Move forward
+settings.bind.action.move_back,Move back
+settings.bind.action.move_left,Move left
+settings.bind.action.move_right,Move right
+settings.bind.action.jump,Jump
+settings.bind.action.sprint,Sprint
+settings.bind.action.walk_toggle,Walk
+settings.bind.action.dodge,Dodge
+settings.bind.action.attack,Attack
+settings.bind.action.block,Block
+settings.bind.action.cast,Cast spell
+settings.bind.action.cycle_spell,Next spell
+settings.bind.action.lock_on,Lock on
+settings.bind.action.lock_cycle_next,Next target
+settings.bind.action.lock_cycle_prev,Previous target
+settings.bind.action.interact,Interact
+settings.bind.action.mount,Mount
+settings.bind.action.companion_command,Party order
+settings.bind.action.toggle_camera,Swap camera
+settings.bind.action.place,Place prop
+settings.bind.action.inventory,Inventory
+settings.bind.action.spellbook,Spellbook
+settings.bind.action.journal,Journal
+settings.bind.action.map,Map
+settings.bind.action.bestiary,Bestiary
+settings.bind.action.hud_recall,HUD recall
+settings.bind.action.hotbar_1,Hotbar slot 1
+settings.bind.action.hotbar_2,Hotbar slot 2
+settings.bind.action.hotbar_3,Hotbar slot 3
+settings.bind.action.hotbar_4,Hotbar slot 4
+settings.bind.action.hotbar_5,Hotbar slot 5
+settings.bind.desc.walk_toggle,Switches walking on and off. A stick already walks when it is pushed part way.
+settings.bind.desc.interact,Tap to interact. Hold to sweep up loot.
+settings.bind.desc.cycle_spell,Steps through your prepared spells.
+settings.bind.desc.companion_command,"Cycles the party's standing order: follow, hold, engage."
+settings.bind.desc.toggle_camera,Swaps between first and third person.
+settings.bind.desc.mount,"Whistles your mount up, or steps off it."
+settings.bind.desc.place,"Sets down, or picks back up, the prop you are placing."
+settings.bind.desc.hud_recall,Hold to show every HUD element you have set to Dynamic.
+settings.difficulty.desc,"Scales the damage enemies deal to you: Story 60%, Normal 100%, Hard 135%. Nothing else changes."
+settings.third_person.desc,Play over the shoulder instead of at the eye. The camera key swaps it at any time.
+settings.tp_distance.desc,How far behind you the third-person camera sits. Walls still pull it in.
+settings.tp_shoulder.desc,Which shoulder the third-person camera looks over.
+settings.cam_auto_shoulder.desc,"In third person, swings to the other shoulder when the chosen one is against a wall."
+settings.cam_lock_framing.desc,Lock-on and aim turn the camera toward the target instead of leaving it behind you.
+settings.cam_obstruction_fade.desc,Props between the camera and you thin out instead of blocking the view.
+settings.cam_shake.desc,"How hard hits, landings and blasts shake the camera."
+settings.cam_bob.desc,First-person bob and sway while you move.
+settings.cam_fov_kick.desc,"How far sprinting, dodging and landing punch the field of view."
+settings.combat_hit_stop.desc,How long a landed blow freezes the frame.
+settings.combat_flash.desc,"Strength of the full-screen flash on crits, blocks, staggers and parries."
+settings.combat_lock_assist.desc,"Lock-on picks and cycles targets for you, and holds through brief cover."
+settings.combat_aim_assist.desc,How far a bow's aim is pulled toward a target near the crosshair.
+settings.show_tutorials.desc,Shows a hint the first time you need a control. Turn it off if you already know them.
+settings.hud_preset,HUD preset
+settings.hud_preset.desc,Full shows everything. Dynamic hides steady readouts until they matter. Minimal keeps only what you need to play. Holding HUD recall shows every Dynamic element.
+settings.hud_preset.full,Full
+settings.hud_preset.dynamic,Dynamic
+settings.hud_preset.minimal,Minimal
+settings.hud_preset.custom,Custom
+settings.hud_scale,HUD scale
+settings.hud_scale.desc,"Size of the HUD alone, on top of UI scale."
+settings.hud_opacity,HUD opacity
+settings.hud_opacity.desc,How solid the HUD is drawn over the world.
+settings.hud_safe_zone,HUD safe zone
+settings.hud_safe_zone.desc,"Moves the HUD in from the screen edges, for a television that crops the picture."
+settings.hud_mode.always,Always
+settings.hud_mode.dynamic,Dynamic
+settings.hud_mode.hidden,Hidden
+settings.hud_element.vitals,"Health, stamina and mana"
+settings.hud_element.hotbar,Hotbar
+settings.hud_element.compass,Compass
+settings.hud_element.minimap,Minimap
+settings.hud_element.clock,Time and weather
+settings.hud_element.tracker,Quest tracker
+settings.hud_element.party,Party
+settings.hud_element.target,Target plate
+settings.hud_element.enemy_plates,Enemy health bars
+settings.hud_element.damage_numbers,Damage numbers
+settings.hud_element.prompts,Interaction prompts
+settings.hud_element.crosshair,Crosshair
+settings.hud_element.toasts,Notifications
+settings.hud_element.subtitles,Subtitles
+settings.hud_dynamic.vitals,"Dynamic shows it in combat, while anything is below full, and in menus. Hidden removes it."
+settings.hud_dynamic.hotbar,"Dynamic shows it in combat, when a slot changes, and in menus. Hidden removes it."
+settings.hud_dynamic.party,"Dynamic shows it in combat, while someone is hurt, and when it changes. Hidden removes it."
+settings.hud_dynamic.combat,Dynamic shows it in combat. Hidden removes it.
+settings.hud_dynamic.steady,Dynamic shows it for a few seconds when it changes. Hidden removes it.
+settings.hud_dynamic.transient,"This only appears when something happens, so Always and Dynamic look the same. Hidden removes it."
+settings.toast_duration,Notification time
+settings.toast_duration.desc,"How long a notification stays, as a multiple of its normal time."
+settings.damage_numbers,Damage numbers
+settings.damage_numbers.desc,"Which hits show a floating number: all of them, only your own blows, or only crits and kills."
+settings.damage_numbers.off,Off
+settings.damage_numbers.all,All hits
+settings.damage_numbers.own,Your blows only
+settings.damage_numbers.crits,Crits and kills only
+settings.static_menu,Still menu background
+settings.static_menu.desc,Holds the title screen's painting still: no drift and no embers.
+settings.ui_scale.desc,"Size of the whole interface: panels, spacing and text together. Applies when you let go of the slider."
+settings.readable_font,Readable font
+settings.readable_font.desc,Sets every title and line of prose in the plain interface typeface. Sizes and layout stay the same.
+settings.reduced_motion.desc,"Stops panels sliding and magical motifs turning, and calms the camera and combat: no head bob or FOV kick, a light shake, a short hit stop and a faint flash."
+settings.holds_to_presses,Press instead of hold
+settings.holds_to_presses.desc,Actions that ask you to hold a button take one press instead. The resets on this screen then ask before they act.
+settings.subtitles.desc,Shows spoken lines as text.
+settings.subtitle_size,Subtitle size
+settings.subtitle_size.desc,How large subtitle text is drawn.
+settings.subtitle_size.small,Small
+settings.subtitle_size.medium,Medium
+settings.subtitle_size.large,Large
+settings.subtitle_background,Subtitle background
+settings.subtitle_background.desc,How dark the plate behind a subtitle is. At 0% the text has only its outline.
+settings.subtitle_speaker,Speaker names
+settings.subtitle_speaker.desc,Starts each subtitle with the name of whoever is speaking.
+settings.preview.text,The fire remembers what was given to it.
+settings.preview.caption,Captions and small labels look like this.
+settings.preview.subtitle,The embers are still warm.
+settings.preview.subtitle_named,Kael: The embers are still warm.
+settings.preview.subtitle_off,Subtitles are off.
+settings.preview.rarity.common,Common
+settings.preview.rarity.uncommon,Uncommon
+settings.preview.rarity.rare,Rare
+settings.preview.rarity.epic,Epic
+settings.preview.rarity.legendary,Legendary
+settings.preview.good,Gain
+settings.preview.bad,Loss

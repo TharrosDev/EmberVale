@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Reflection;
 using Embervale.Core;
 using Embervale.Core.Diagnostics;
 using Embervale.Core.Events;
@@ -32,6 +34,11 @@ public sealed class SettingsService
     {
         bool firstRun = !FileAccess.FileExists(SettingsPath);
         Current = Load();
+
+        // The saved bindings go into the input map before any screen can draw a prompt. The actions
+        // themselves were registered a moment ago (GameInput.EnsureActions); with nothing remapped
+        // this changes nothing.
+        ApplyBindings();
         if (firstRun && AutoDetectAllowed())
         {
             if (HasExistingSaves())
@@ -120,7 +127,37 @@ public sealed class SettingsService
     {
         ApplyGraphics();
         ApplyAudio();
+
+        // Only when a saved list was replaced (or an earlier attempt was refused): settings are
+        // applied on every tick of a dragged slider, and the input map has no reason to hear that.
+        if (!BindingsApplied || !ReferenceEquals(_appliedKeys, Current.KeyBindings)
+                             || !ReferenceEquals(_appliedPads, Current.PadBindings))
+        {
+            ApplyBindings();
+        }
+
         EventBus.Instance?.Publish(new SettingsAppliedEvent(Current));
+    }
+
+    private string[]? _appliedKeys;
+    private string[]? _appliedPads;
+
+    /// <summary>False while the saved bindings have not reached the input map, because it was
+    /// lent out when they were applied (see <see cref="GameInput.ApplyBindings"/>).</summary>
+    public bool BindingsApplied { get; private set; }
+
+    /// <summary>Pushes the saved bindings into the input map. Returns whether they went in; a
+    /// caller that got false asks again once the keyboard or d-pad is handed back.</summary>
+    public bool ApplyBindings()
+    {
+        BindingsApplied = GameInput.ApplyBindings(Current);
+        if (BindingsApplied)
+        {
+            _appliedKeys = Current.KeyBindings;
+            _appliedPads = Current.PadBindings;
+        }
+
+        return BindingsApplied;
     }
 
     private void ApplyGraphics()
@@ -175,4 +212,59 @@ public sealed class SettingsService
 
     /// <summary>Resets to defaults in memory (callers then <see cref="Save"/>/<see cref="Apply"/>).</summary>
     public void ResetToDefaults() => Current = new Settings();
+
+    // --- Scoped resets (the settings screen) ------------------------------------------------------
+
+    private static Settings? _defaults;
+
+    /// <summary>A settings object nobody has touched: what every field is before the player
+    /// changes it. Read-only by convention.</summary>
+    public static Settings Defaults => _defaults ??= new Settings();
+
+    /// <summary>Whether any of the named <see cref="Settings"/> fields differs from its default.</summary>
+    public bool Differs(IEnumerable<string> fields)
+    {
+        foreach (string field in fields)
+        {
+            if (Field(field) is { } property &&
+                !SettingsTabRules.SameValue(property.GetValue(Current), property.GetValue(Defaults)))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>Puts the named fields back to their defaults in memory, and leaves every other
+    /// field alone (callers then <see cref="Save"/>/<see cref="Apply"/>).</summary>
+    public void ResetFields(IEnumerable<string> fields)
+    {
+        foreach (string field in fields)
+        {
+            Field(field)?.SetValue(Current, Field(field)!.GetValue(Defaults));
+        }
+    }
+
+    /// <summary>Puts one tab of the settings screen back to its defaults. Only the Controls tab
+    /// holds the bindings, so only its reset takes them.</summary>
+    public void ResetTab(SettingsTab tab) => ResetFields(SettingsTabRules.Fields(tab));
+
+    /// <summary>Puts everything back but the bindings and the accessibility options
+    /// (<see cref="SettingsTabRules.ResetAllFields"/> says why).</summary>
+    public void ResetAllButBindingsAndAccessibility() => ResetFields(SettingsTabRules.ResetAllFields());
+
+    private static PropertyInfo? Field(string name) =>
+        typeof(Settings).GetProperty(name, BindingFlags.Public | BindingFlags.Instance);
+
+    /// <summary>
+    /// The multiplier the difficulty setting puts on a blow landing on <paramref name="defender"/>:
+    /// <see cref="DifficultyRules"/> for the player, exactly 1 for everyone else and before
+    /// settings exist. For the one place incoming damage is resolved.
+    /// </summary>
+    public static float IncomingDamageScale(Embervale.Entities.IEntity? defender) =>
+        defender is Embervale.Player.PlayerCharacter &&
+        Embervale.Core.Services.ServiceLocator.Instance is { } locator && locator.TryGet(out SettingsService settings)
+            ? DifficultyRules.IncomingPlayerDamage(settings.Current.Difficulty)
+            : 1f;
 }

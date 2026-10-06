@@ -54,6 +54,31 @@ public sealed partial class ShellShots : ShotHarness
         });
         Shot("05-settings-middle", () => ScrollSettings(0.5f));
         Shot("06-settings-end", () => ScrollSettings(1f));
+
+        // --- ui-upgrade: settings (one block; ValidateSettingsShot checks each state occurred) ---
+        Shot("06a-settings-audio", () => SettingsUi()?.ShowTabForCapture(1));
+        Shot("06b-settings-controls", () => SettingsUi()?.ShowTabForCapture(2));
+        Shot("06c-settings-bindings", () => ScrollSettings(0.45f));
+        Shot("06d-settings-gameplay", () => SettingsUi()?.ShowTabForCapture(3));
+        Shot("06e-settings-interface", () => SettingsUi()?.ShowTabForCapture(4));
+        Shot("06f-settings-accessibility", () => SettingsUi()?.ShowTabForCapture(5));
+        Shot("06g-settings-remap-listening", () =>
+        {
+            SettingsUi()?.ShowTabForCapture(2);
+            SettingsUi()?.ListenForCapture(GameInput.Jump, gamepad: false);
+        });
+        Shot("06h-settings-remap-conflict", () => SettingsUi()?.ShowConflictForCapture(GameInput.Jump, GameInput.Interact));
+        Shot("06i-settings-narrow", () =>
+        {
+            SettingsUi()?.ShowTabForCapture(5);
+            SettingsUi()?.SetNarrowForCapture(true);
+        });
+        Shot("06j-settings-wide-again", () =>
+        {
+            SettingsUi()?.SetNarrowForCapture(false);
+            SettingsUi()?.ShowTabForCapture(0);
+        });
+        // --- end ui-upgrade: settings ---
         Shot("07-settings-closed", CloseSettings);
         Shot("08-save-slots-load", () => OpenSlots(SaveSlotPanel.Intent.Load));
         Shot("09-save-slots-closed", CloseSlots);
@@ -62,6 +87,65 @@ public sealed partial class ShellShots : ShotHarness
         Shot("12-loading", ShowLoading);
         Shot("13-loading-closed", HideLoading);
     }
+
+    // --- ui-upgrade: settings ---
+
+    private SettingsPanel? SettingsUi() => QuestShotFixtures.FindFirst<SettingsPanel>(GetTree().Root);
+
+    protected override string? ValidateShotState(string name) =>
+        name.Contains("-settings-", System.StringComparison.Ordinal) ? ValidateSettingsShot(name) : null;
+
+    /// <summary>The tab, prompt and layout each settings shot claims to show.</summary>
+    private string? ValidateSettingsShot(string name)
+    {
+        if (name.EndsWith("-closed", System.StringComparison.Ordinal))
+        {
+            return null;
+        }
+
+        if (SettingsUi() is not { } settings)
+        {
+            return "the settings panel is not open";
+        }
+
+        (int tab, bool listening, bool prompt, bool narrow) = name switch
+        {
+            "06a-settings-audio" => (1, false, false, false),
+            "06b-settings-controls" or "06c-settings-bindings" => (2, false, false, false),
+            "06d-settings-gameplay" => (3, false, false, false),
+            "06e-settings-interface" => (4, false, false, false),
+            "06f-settings-accessibility" => (5, false, false, false),
+            "06g-settings-remap-listening" => (2, true, true, false),
+            "06h-settings-remap-conflict" => (2, false, true, false),
+            "06i-settings-narrow" => (5, false, false, true),
+            _ => (0, false, false, false),
+        };
+
+        if (settings.TabForCapture != tab)
+        {
+            return $"settings tab is {settings.TabForCapture}, expected {tab}";
+        }
+
+        if (settings.ListeningForCapture != listening)
+        {
+            return listening ? "the panel is not listening for a binding" : "the panel is still listening for a binding";
+        }
+
+        if (settings.PromptOpenForCapture != prompt)
+        {
+            return prompt ? "no prompt is open" : "a prompt is still open";
+        }
+
+        // Only asked of the shot that forces it: on a handheld-sized run every shot is one column.
+        if (narrow && !settings.NarrowForCapture)
+        {
+            return "the sheet is not in its one-column layout";
+        }
+
+        return QuestShotFixtures.FindFirst<ScrollContainer>(settings) is null ? "the option list is missing" : null;
+    }
+
+    // --- end ui-upgrade: settings ---
 
     private void ScrollSettings(float fraction)
     {
