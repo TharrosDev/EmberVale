@@ -184,9 +184,9 @@ public sealed partial class HudShots : ShotHarness
         // whole tool exists to prevent.
         Shot("05b-quest-tracked", StartAndTrackAQuest);
 
-        // The campaign tracker: a chapter label above the title, the spine in the main-quest colour, a done
-        // step, the current step and an optional step carrying its "Optional" tag. Built in memory because no
-        // authored quest carries the new fields yet.
+        // The campaign tracker: a chapter label above the title, the spine in the main-quest colour, the
+        // current step, an optional step carrying its "Optional" tag and the next locked step, with the
+        // rest folded into a count. Built in memory because no authored quest carries the new fields yet.
         Shot("05b2-tracker-campaign", () =>
         {
             if (QuestShotFixtures.Log() is { } log)
@@ -386,7 +386,7 @@ public sealed partial class HudShots : ShotHarness
                     gated = consumable;
                 }
             }
-            else if (consumable.CooldownSeconds > (timed?.CooldownSeconds ?? 0f) &&
+            else if (BetterCooldown(consumable.CooldownSeconds, timed?.CooldownSeconds ?? 0f) &&
                      ConsumableEffectsComponent.Check(player, consumable) == ConsumeRefusal.None)
             {
                 timed = consumable;
@@ -405,6 +405,20 @@ public sealed partial class HudShots : ShotHarness
             pack.AddItem(gated, 2);
             bar.Assign(LockedSlot, gated.Id);
         }
+    }
+
+    /// <summary>Whether a cooldown makes the better picture: one short enough to print its seconds
+    /// (and long enough to outlast the hold before the capture) beats one that only shows the wipe,
+    /// and within either kind the longer wins.</summary>
+    private static bool BetterCooldown(float candidate, float best)
+    {
+        static bool Numbered(float seconds) => seconds >= 3f && seconds <= HotbarRules.NumeralSeconds;
+        if (candidate <= 0f)
+        {
+            return false;
+        }
+
+        return Numbered(candidate) != Numbered(best) ? Numbered(candidate) : candidate > best;
     }
 
     /// <summary>

@@ -121,17 +121,7 @@ public partial class PartyWidget : VBoxContainer
             Rebuild(roster);
         }
 
-        // As wide as the vitals at this layout width, whether or not the vitals are showing.
         _hud ??= GameHud.Of(this);
-        if (_hud is { LayoutWidth: > 0f } hud)
-        {
-            float width = HudMetrics.VitalsWidth(hud.LayoutWidth);
-            if (_frame.CustomMinimumSize.X != width)
-            {
-                _frame.CustomMinimumSize = new Vector2(width, 0f);
-            }
-        }
-
         Visible = _allowed && _rows.Count > 0;
         foreach (Row row in _rows)
         {
@@ -267,6 +257,17 @@ public partial class PartyWidget : VBoxContainer
         }
 
         return _roster;
+    }
+
+    /// <summary>Makes the strip as wide as the vitals are at this layout width, whether or not the
+    /// vitals are showing. <see cref="GameHud"/> calls it whenever that width changes.</summary>
+    public void FitToLayout(float layoutWidth)
+    {
+        float width = HudMetrics.VitalsWidth(layoutWidth);
+        if (_frame != null && _frame.CustomMinimumSize.X != width)
+        {
+            _frame.CustomMinimumSize = new Vector2(width, 0f);
+        }
     }
 
     /// <summary>Rebuilds the rows on the next tick (locale or colour-vision change): they hold

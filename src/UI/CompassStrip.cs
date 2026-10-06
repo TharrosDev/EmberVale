@@ -186,18 +186,12 @@ public sealed partial class CompassStrip : Control
         _fixed?.QueueRedraw();
     }
 
-    /// <summary>The strip's width for the layout it sits in (<see cref="HudMetrics.CompassWidth"/>):
-    /// its old 460 at 1280 wide and below, wider on a wide screen. Asked on the objective cadence,
-    /// since the layout changes with the window and the HUD options and never per frame.</summary>
-    private void FitToLayout()
+    /// <summary>Sizes the strip for the width the HUD lays out in (<see cref="HudMetrics.CompassWidth"/>):
+    /// its old 460 at 1280 wide and below, wider on a wide screen. <see cref="GameHud"/> calls it
+    /// whenever that width changes.</summary>
+    public void FitToLayout(float layoutWidth)
     {
-        _hud ??= GameHud.Of(this);
-        if (_hud is not { LayoutWidth: > 0f } hud)
-        {
-            return;
-        }
-
-        float width = HudMetrics.CompassWidth(hud.LayoutWidth);
+        float width = HudMetrics.CompassWidth(layoutWidth);
         if (CustomMinimumSize.X != width)
         {
             CustomMinimumSize = new Vector2(width, Height);
@@ -210,7 +204,7 @@ public sealed partial class CompassStrip : Control
         if (_resolveTimer <= 0f)
         {
             _resolveTimer = ObjectiveResolveInterval;
-            FitToLayout();
+            _hud ??= GameHud.Of(this);
 
             Vector3? before = _objectiveTarget;
             CompassMarkKind kindBefore = _markKind;

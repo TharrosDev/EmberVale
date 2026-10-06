@@ -361,6 +361,29 @@ public partial class GameHud
         UiTheme.HudInk(_levelUp);
         _levelUp.SetAnchorsPreset(Control.LayoutPreset.FullRect);
         _layout.Overlay.AddChild(_levelUp);
+
+        // The last widget built, so everything FitWidgetsToLayout reaches exists by now.
+        _layout.Scaled.Resized += FitWidgetsToLayout;
+        FitWidgetsToLayout();
+    }
+
+    /// <summary>
+    /// Hands the layout width to the widgets that size themselves from it: the compass strip, the
+    /// minimap and the party strip. The vitals and the tracker are sized by <c>ApplyMetrics</c>; these
+    /// three are their own nodes, and are told on the same signal, so a window resize, a HUD scale or a
+    /// safe zone moves all five on one frame and none of them polls for it.
+    /// </summary>
+    private void FitWidgetsToLayout()
+    {
+        float width = LayoutWidth;
+        if (width <= 0f)
+        {
+            return; // not laid out yet; Resized calls back when it is
+        }
+
+        _compass?.FitToLayout(width);
+        _minimap?.FitToLayout(width);
+        _party?.FitToLayout(width);
     }
 
     private void OnXpGained(XpGainedEvent e)

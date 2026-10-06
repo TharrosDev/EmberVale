@@ -150,7 +150,7 @@ public sealed partial class MinimapHud : PanelContainer
         if (_rebuildTimer <= 0f)
         {
             _rebuildTimer = RebuildInterval;
-            FitToLayout();
+            _hud ??= GameHud.Of(this);
 
             // The tracked objective's place is resolved on this cadence too: asking for it rebuilds
             // the quest's objective list, and the pin it rings is only re-selected here anyway.
@@ -208,18 +208,13 @@ public sealed partial class MinimapHud : PanelContainer
         _view.QueueRedraw();
     }
 
-    /// <summary>Sizes the plot for the width the HUD lays out in, on the rebuild cadence: the layout
-    /// changes with the window, the HUD scale and the safe zone, none of them per frame.</summary>
-    private void FitToLayout()
+    /// <summary>Sizes the plot for the width the HUD lays out in (<see cref="HudCoreMetrics.MinimapSide"/>).
+    /// <see cref="GameHud"/> calls it whenever that width changes; the plot's own size check in
+    /// <see cref="_Process"/> repaints it.</summary>
+    public void FitToLayout(float layoutWidth)
     {
-        _hud ??= GameHud.Of(this);
-        if (_hud is not { LayoutWidth: > 0f } hud)
-        {
-            return;
-        }
-
-        float side = HudCoreMetrics.MinimapSide(hud.LayoutWidth);
-        if (_view.CustomMinimumSize.X != side)
+        float side = HudCoreMetrics.MinimapSide(layoutWidth);
+        if (_view != null && _view.CustomMinimumSize.X != side)
         {
             _view.CustomMinimumSize = new Vector2(side, side);
         }
