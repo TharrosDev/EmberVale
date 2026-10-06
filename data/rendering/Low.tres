@@ -5,13 +5,23 @@
 [resource]
 script = ExtResource("1")
 Id = "low"
-ShadowDistance = 55
+ShadowDistance = 60
 AmbientOcclusion = false
 IndirectLighting = false
 VolumetricFog = false
 Reflections = false
-ParticleScale = 0.25
+ParticleScale = 0.35
 LocalShadowLights = 0
-LocalLightDistance = 30
-RenderScale = 0.75
+LocalLightDistance = 32
+RenderScale = 0.8
 MeshLodThreshold = 3.0
+DrawDistanceScale = 0.8
+ScatterDensityScale = 0.7
+ActorShadowDistance = 25
+ShadowSplits = 2
+ShadowBlendSplits = true
+ShadowFilterQuality = 1
+PositionalShadowAtlasSize = 2048
+GlowBicubicUpscale = false
+AntiAliasing = 1
+SkyRadianceSize = 128

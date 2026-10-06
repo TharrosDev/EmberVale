@@ -45,6 +45,24 @@ public partial class SkyController : Node3D
     private double _sampleClock;
     private Vector3 _windTarget = new(1.5f, 0f, 0.5f);
     private bool _initialized;
+    private (int Tier, GraphicsOverrides Overrides)? _applied;
+    private bool _volumetricFog, _weatherCollisionActive;
+    private int _localShadowLights;
+    private ProceduralSkyMaterial? _skyMaterial;
+    private ParticleProcessMaterial _rainProcess = null!, _snowProcess = null!;
+    // Seconds since each precipitation system last emitted; past its particles' lifetime it is idle.
+    private float _rainIdle = PrecipitationTail, _snowIdle = PrecipitationTail;
+    private float _sentWetness = float.NaN, _sentSnow = float.NaN, _sentRain = float.NaN;
+    private const float PrecipitationTail = 5f;
+    // Built once: a string literal at the call site allocates a fresh StringName per call, per frame.
+    private static readonly StringName WetnessGlobal = "world_wetness", SnowGlobal = "world_snow",
+        RainGlobal = "world_rain", WindGlobal = "world_wind", VisualTimeGlobal = "world_visual_time";
+
+    /// <summary>The active preset's world-scale inputs, for the streamer. Set only by <see cref="ApplyQuality"/>.</summary>
+    public float DrawDistanceScale { get; private set; } = 1f;
+    public float ScatterDensityScale { get; private set; } = 1f;
+    /// <summary>Metres beyond which characters cast no shadow; 0 when shadows are switched off.</summary>
+    public float ActorShadowDistance { get; private set; } = 10000f;
 
     public override void _Ready()
     {
@@ -56,6 +74,8 @@ public partial class SkyController : Node3D
         AddChild(_moon);
         _rain = BuildPrecipitation(false);
         _snow = BuildPrecipitation(true);
+        _rainProcess = (ParticleProcessMaterial)_rain.ProcessMaterial;
+        _snowProcess = (ParticleProcessMaterial)_snow.ProcessMaterial;
         AddChild(_rain);
         AddChild(_snow);
         _weatherCollision = new GpuParticlesCollisionHeightField3D { Size = new Vector3(32, 32, 32), Visible = false };
@@ -90,15 +110,58 @@ public partial class SkyController : Node3D
 
     private void OnSettings(SettingsAppliedEvent e) => ApplyQuality(e.Current.RenderQuality);
 
+    /// <summary>
+    /// The one place a quality preset, and the player's departures from it, reach the renderer.
+    /// <paramref name="tier"/> is a saved <c>Settings.RenderQuality</c> value (see <see cref="GraphicsMath"/>).
+    /// </summary>
     public void ApplyQuality(int tier)
     {
-        string name = new[] { "Low", "Medium", "High", "Ultra" }[Math.Clamp(tier, 0, 3)];
-        _quality = ResidentResources.Load<RenderQualityResource>($"res://data/rendering/{name}.tres");
+        tier = GraphicsMath.ClampTier(tier);
+        GraphicsOverrides overrides = ServiceLocator.Instance is { } locator && locator.TryGet(out SettingsService settings)
+            ? settings.Current.Overrides()
+            : GraphicsOverrides.None;
+
+        // Every settings apply lands here, each tick of a volume or FOV drag included. The tier and
+        // the overrides are everything below reads, so an unchanged pair has nothing to push.
+        if (_applied is { } done && done.Tier == tier && done.Overrides == overrides) return;
+
+        _quality = RenderQualityResource.ForTier(tier);
         if (_quality == null || Environment == null) return;
-        RenderingServer.DirectionalShadowAtlasSetSize(_quality.ShadowAtlasSize, true);
-        GetViewport().Scaling3DScale = _quality.RenderScale;
-        GetViewport().MeshLodThreshold = _quality.MeshLodThreshold;
-        Environment.SsaoEnabled = _quality.AmbientOcclusion;
+        bool shadows = GraphicsMath.ShadowsEnabled(overrides.ShadowQuality);
+        RenderQualityResource shadow =
+            RenderQualityResource.ForTier(GraphicsMath.ShadowSourceTier(overrides.ShadowQuality, tier)) ?? _quality;
+        _localShadowLights = shadows ? shadow.LocalShadowLights : 0;
+
+        Viewport viewport = GetViewport();
+        int scaling = GraphicsMath.Resolve(overrides.ScalingMode, _quality.ScalingMode);
+        viewport.Scaling3DMode = scaling switch
+        {
+            1 => Viewport.Scaling3DModeEnum.Fsr,
+            2 => Viewport.Scaling3DModeEnum.Fsr2,
+            _ => Viewport.Scaling3DModeEnum.Bilinear,
+        };
+        viewport.Scaling3DScale = GraphicsMath.ResolveScale(overrides.RenderScale, _quality.RenderScale);
+        viewport.MeshLodThreshold = _quality.MeshLodThreshold;
+        int antiAliasing = GraphicsMath.Resolve(overrides.AntiAliasing, _quality.AntiAliasing);
+        viewport.Msaa3D = antiAliasing switch
+        {
+            2 => Viewport.Msaa.Msaa2X,
+            3 => Viewport.Msaa.Msaa4X,
+            _ => Viewport.Msaa.Disabled,
+        };
+        viewport.ScreenSpaceAA = antiAliasing == 1 ? Viewport.ScreenSpaceAAEnum.Fxaa : Viewport.ScreenSpaceAAEnum.Disabled;
+        // FSR 2.2 is itself temporal; it replaces TAA rather than stacking on it.
+        viewport.UseTaa = antiAliasing == 4 && scaling != 2;
+
+        RenderingServer.DirectionalShadowAtlasSetSize(shadow.ShadowAtlasSize, true);
+        int filter = shadow.ShadowFilterQuality;
+        RenderingServer.DirectionalSoftShadowFilterSetQuality((RenderingServer.ShadowQuality)(filter >= 0
+            ? filter : ProjectInt("rendering/lights_and_shadows/directional_shadow/soft_shadow_filter_quality", 2)));
+        RenderingServer.PositionalSoftShadowFilterSetQuality((RenderingServer.ShadowQuality)(filter >= 0
+            ? filter : ProjectInt("rendering/lights_and_shadows/positional_shadow/soft_shadow_filter_quality", 2)));
+        ApplyPositionalAtlas(viewport, shadow.PositionalShadowAtlasSize);
+
+        Environment.SsaoEnabled = GraphicsMath.Resolve(overrides.AmbientOcclusion, _quality.AmbientOcclusion);
         Environment.SsaoRadius = 0.65f;
         Environment.SsaoIntensity = 1.1f;
         Environment.SsaoPower = 1.2f;
@@ -107,20 +170,96 @@ public partial class SkyController : Node3D
         Environment.SsrEnabled = _quality.Reflections;
         // Streaming terrain never rebuilds voxel GI. Sky radiance is the outdoor indirect source.
         Environment.SdfgiEnabled = false;
-        Environment.VolumetricFogEnabled = _quality.VolumetricFog;
+        _volumetricFog = GraphicsMath.Resolve(overrides.VolumetricFog, _quality.VolumetricFog);
+        Environment.VolumetricFogEnabled = _volumetricFog;
         Environment.VolumetricFogLength = 96f;
+        Environment.GlowEnabled = GraphicsMath.Resolve(overrides.Glow, _quality.Glow);
+        RenderingServer.EnvironmentGlowSetUseBicubicUpscale(_quality.GlowBicubicUpscale &&
+            ProjectInt("rendering/environment/glow/upscale_mode", 1) > 0);
+        if (Environment.Sky is { } sky)
+        {
+            Sky.RadianceSizeEnum radiance = _quality.SkyRadianceSize switch
+            {
+                <= 32 => Sky.RadianceSizeEnum.Size32,
+                <= 64 => Sky.RadianceSizeEnum.Size64,
+                <= 128 => Sky.RadianceSizeEnum.Size128,
+                _ => Sky.RadianceSizeEnum.Size256,
+            };
+            // Assigning it reallocates the cubemap, so only on a real change.
+            if (sky.RadianceSize != radiance) sky.RadianceSize = radiance;
+        }
         if (Sun != null)
         {
-            Sun.DirectionalShadowMode = DirectionalLight3D.ShadowMode.Parallel4Splits;
-            Sun.DirectionalShadowMaxDistance = _quality.ShadowDistance;
-            Sun.DirectionalShadowSplit1 = 0.10f;
-            Sun.DirectionalShadowSplit2 = 0.25f;
-            Sun.DirectionalShadowSplit3 = 0.55f;
-            Sun.DirectionalShadowBlendSplits = true;
+            Sun.ShadowEnabled = shadows;
+            Sun.DirectionalShadowMaxDistance = shadow.ShadowDistance;
+            if (shadow.ShadowSplits >= 4)
+            {
+                Sun.DirectionalShadowMode = DirectionalLight3D.ShadowMode.Parallel4Splits;
+                Sun.DirectionalShadowSplit1 = 0.10f;
+                Sun.DirectionalShadowSplit2 = 0.25f;
+                Sun.DirectionalShadowSplit3 = 0.55f;
+            }
+            else if (shadow.ShadowSplits >= 2)
+            {
+                // Two cascades draw the casters twice instead of four times. The near one keeps the
+                // first quarter of the range, where the player and the ground at their feet are.
+                Sun.DirectionalShadowMode = DirectionalLight3D.ShadowMode.Parallel2Splits;
+                Sun.DirectionalShadowSplit1 = 0.25f;
+            }
+            else
+            {
+                Sun.DirectionalShadowMode = DirectionalLight3D.ShadowMode.Orthogonal;
+            }
+            Sun.DirectionalShadowBlendSplits = shadow.ShadowBlendSplits;
             Sun.ShadowBias = 0.025f;
             Sun.ShadowNormalBias = 0.7f;
         }
+
+        // ── WORLD SCALE SEAM ─────────────────────────────────────────────────────────────────────
+        // These three are the streamer's inputs. Publish them to the streaming lane's static here,
+        // and nowhere else, so they change exactly when a preset or a shadow override does:
+        //     WorldQualityScale.DrawDistance = DrawDistanceScale;
+        //     WorldQualityScale.ScatterDensity = ScatterDensityScale;
+        //     WorldQualityScale.ActorShadowDistance = ActorShadowDistance;
+        DrawDistanceScale = _quality.DrawDistanceScale;
+        ScatterDensityScale = _quality.ScatterDensityScale;
+        ActorShadowDistance = shadows ? shadow.ActorShadowDistance : 0f;
+
+        _applied = (tier, overrides);
     }
+
+    /// <summary>
+    /// Sizes the omni/spot shadow atlas. 0 restores the project's own size and quadrant layout, which
+    /// is what every tier from Medium up uses. A smaller atlas is split into fewer, larger slots, so
+    /// the few lights that still cast keep their resolution while the texture itself shrinks.
+    /// </summary>
+    private static void ApplyPositionalAtlas(Viewport viewport, int size)
+    {
+        const string root = "rendering/lights_and_shadows/positional_shadow/";
+        Span<int> quadrants = stackalloc int[4];
+        if (size <= 0)
+        {
+            size = ProjectInt(root + "atlas_size", 4096);
+            quadrants[0] = ProjectInt(root + "atlas_quadrant_0_subdiv", 2);
+            quadrants[1] = ProjectInt(root + "atlas_quadrant_1_subdiv", 2);
+            quadrants[2] = ProjectInt(root + "atlas_quadrant_2_subdiv", 3);
+            quadrants[3] = ProjectInt(root + "atlas_quadrant_3_subdiv", 4);
+        }
+        else
+        {
+            bool small = size <= 1024;
+            quadrants[0] = (int)Viewport.PositionalShadowAtlasQuadrantSubdiv.Subdiv1;
+            quadrants[1] = (int)(small ? Viewport.PositionalShadowAtlasQuadrantSubdiv.Subdiv1 : Viewport.PositionalShadowAtlasQuadrantSubdiv.Subdiv4);
+            quadrants[2] = (int)Viewport.PositionalShadowAtlasQuadrantSubdiv.Subdiv4;
+            quadrants[3] = (int)(small ? Viewport.PositionalShadowAtlasQuadrantSubdiv.Subdiv4 : Viewport.PositionalShadowAtlasQuadrantSubdiv.Subdiv16);
+        }
+        viewport.PositionalShadowAtlasSize = size;
+        for (int i = 0; i < 4; i++)
+            viewport.SetPositionalShadowAtlasQuadrantSubdiv(i, (Viewport.PositionalShadowAtlasQuadrantSubdiv)quadrants[i]);
+    }
+
+    private static int ProjectInt(string setting, int fallback) =>
+        ProjectSettings.HasSetting(setting) ? ProjectSettings.GetSetting(setting).AsInt32() : fallback;
 
     public override void _Process(double delta)
     {
@@ -164,6 +303,7 @@ public partial class SkyController : Node3D
         _fogScale = Mathf.Lerp(_fogScale, Mathf.Lerp(1f, _space?.FogScale ?? 1f, _spaceWeight), blend);
         _spaceFog = _spaceFog.Lerp(Colors.White.Lerp(_space?.FogTint ?? Colors.White, _spaceWeight), blend);
         float outside = _fogScale;
+        if (!_initialized) ApplyConstants();
         if (Sun != null)
         {
             float elevation = Mathf.Sin((hour - 6f) / 12f * Mathf.Pi);
@@ -173,52 +313,76 @@ public partial class SkyController : Node3D
             Sun.Visible = Sun.LightEnergy > .001f;
         }
         _moon.RotationDegrees = new Vector3(-38f, hour * 15f + 80f, 0f);
-        _moon.LightColor = Cycle.MoonColor;
         _moon.LightEnergy = L(a.MoonEnergy, b.MoonEnergy) * _sky;
         _moon.Visible = _moon.LightEnergy > .001f;
         Environment.BackgroundEnergyMultiplier = L(a.SkyEnergy, b.SkyEnergy) * _sky;
-        Environment.AmbientLightSource = Godot.Environment.AmbientSource.Color;
         Environment.AmbientLightColor = a.HorizonColor.Lerp(b.HorizonColor, t) * _weatherTint;
         Environment.AmbientLightEnergy = L(a.AmbientEnergy, b.AmbientEnergy) * Mathf.Lerp(.72f, 1f, _sky) * _ambientScale;
-        Environment.AmbientLightSkyContribution = .65f;
-        Environment.FogEnabled = true;
         Environment.FogDensity = (Cycle.ClearFogDensity + _fog * .65f) * _regionHaze * (1f + _humidity * .25f) * outside;
         Environment.FogLightColor = a.HorizonColor.Lerp(b.HorizonColor, t).Lerp(_haze, .18f).Lerp(_weatherFog, _precipitation * .2f) * _spaceFog * _weatherTint;
         Environment.FogLightEnergy = L(a.FogEnergy, b.FogEnergy);
-        Environment.FogSkyAffect = .22f;
-        Environment.VolumetricFogDensity = _quality?.VolumetricFog == true ? Mathf.Min(.008f, _fog * .18f) * outside : 0f;
-        Environment.VolumetricFogAlbedo = Environment.FogLightColor;
+        if (_volumetricFog)
+        {
+            // Inert while the effect is off, and each setter re-sends the whole fog-volume block.
+            Environment.VolumetricFogDensity = Mathf.Min(.008f, _fog * .18f) * outside;
+            Environment.VolumetricFogAlbedo = Environment.FogLightColor;
+        }
         Environment.TonemapExposure = L(a.Exposure, b.Exposure) * _exposureScale;
+        if (_skyMaterial is { } sky)
+        {
+            Color top = a.SkyColor.Lerp(b.SkyColor, t).Lerp(_weatherFog, _precipitation * .35f) * _weatherTint;
+            Color horizon = a.HorizonColor.Lerp(b.HorizonColor, t) * _weatherTint;
+            sky.SkyTopColor = top;
+            sky.SkyHorizonColor = horizon;
+            sky.GroundHorizonColor = horizon * .55f;
+            sky.GroundBottomColor = top * .30f;
+        }
+        bool raining = UpdatePrecipitation(_rain, _rainProcess, rain, -12f, ref _rainIdle, dt);
+        bool snowing = UpdatePrecipitation(_snow, _snowProcess, snow, -.3f, ref _snowIdle, dt);
+        if ((raining || snowing) != _weatherCollisionActive)
+        {
+            _weatherCollisionActive = raining || snowing;
+            _weatherCollision.Visible = _weatherCollisionActive;
+        }
+        if (_weatherCollisionActive && GetViewport().GetCamera3D() is { } focus)
+        {
+            Vector3 p = focus.GlobalPosition;
+            _weatherCollision.GlobalPosition = new Vector3(Mathf.Round(p.X / 4f) * 4f, Mathf.Round(p.Y / 2f) * 2f - 2f, Mathf.Round(p.Z / 4f) * 4f);
+        }
+        // In clear weather these three sit at one value for minutes; send a change, not a frame.
+        if (Wetness != _sentWetness) RenderingServer.GlobalShaderParameterSet(WetnessGlobal, _sentWetness = Wetness);
+        if (SnowCover != _sentSnow) RenderingServer.GlobalShaderParameterSet(SnowGlobal, _sentSnow = SnowCover);
+        if (rain != _sentRain) RenderingServer.GlobalShaderParameterSet(RainGlobal, _sentRain = rain);
+        RenderingServer.GlobalShaderParameterSet(WindGlobal, Wind);
+        // Use the saved world clock, not shader TIME, so regression captures can freeze all motion.
+        RenderingServer.GlobalShaderParameterSet(VisualTimeGlobal, (((_clock?.Day ?? 0) * 24f) + (_clock?.TimeOfDay ?? 12f)) * (_clock?.DayLengthSeconds ?? 180f) / 24f);
+        _initialized = true;
+    }
+
+    /// <summary>
+    /// The values that never change over a world's life. They were re-sent every frame beside the
+    /// ones that do, and each Environment setter re-sends its whole parameter block to the renderer.
+    /// </summary>
+    private void ApplyConstants()
+    {
+        if (Cycle == null || Environment == null) return;
+        _moon.LightColor = Cycle.MoonColor;
+        Environment.AmbientLightSource = Godot.Environment.AmbientSource.Color;
+        Environment.AmbientLightSkyContribution = .65f;
+        Environment.FogEnabled = true;
+        Environment.FogSkyAffect = .22f;
         Environment.AdjustmentEnabled = true;
         Environment.AdjustmentContrast = Cycle.Contrast;
         Environment.AdjustmentSaturation = Cycle.Saturation;
         Environment.GlowIntensity = Cycle.GlowIntensity;
         Environment.GlowBloom = 0f;
         Environment.GlowHdrThreshold = 1.2f;
-        if (Environment.Sky?.SkyMaterial is ProceduralSkyMaterial sky)
+        _skyMaterial = Environment.Sky?.SkyMaterial as ProceduralSkyMaterial;
+        if (_skyMaterial != null)
         {
-            sky.SkyTopColor = a.SkyColor.Lerp(b.SkyColor, t).Lerp(_weatherFog, _precipitation * .35f) * _weatherTint;
-            sky.SkyHorizonColor = a.HorizonColor.Lerp(b.HorizonColor, t) * _weatherTint;
-            sky.GroundHorizonColor = sky.SkyHorizonColor * .55f;
-            sky.GroundBottomColor = sky.SkyTopColor * .30f;
-            sky.SkyEnergyMultiplier = 1f;
-            sky.SunAngleMax = 2f;
+            _skyMaterial.SkyEnergyMultiplier = 1f;
+            _skyMaterial.SunAngleMax = 2f;
         }
-        UpdatePrecipitation(_rain, rain);
-        UpdatePrecipitation(_snow, snow);
-        _weatherCollision.Visible = _rain.Emitting || _snow.Emitting;
-        if (_weatherCollision.Visible && GetViewport().GetCamera3D() is { } focus)
-        {
-            Vector3 p = focus.GlobalPosition;
-            _weatherCollision.GlobalPosition = new Vector3(Mathf.Round(p.X / 4f) * 4f, Mathf.Round(p.Y / 2f) * 2f - 2f, Mathf.Round(p.Z / 4f) * 4f);
-        }
-        RenderingServer.GlobalShaderParameterSet("world_wetness", Wetness);
-        RenderingServer.GlobalShaderParameterSet("world_snow", SnowCover);
-        RenderingServer.GlobalShaderParameterSet("world_wind", Wind);
-        RenderingServer.GlobalShaderParameterSet("world_rain", rain);
-        // Use the saved world clock, not shader TIME, so regression captures can freeze all motion.
-        RenderingServer.GlobalShaderParameterSet("world_visual_time", (((_clock?.Day ?? 0) * 24f) + (_clock?.TimeOfDay ?? 12f)) * (_clock?.DayLengthSeconds ?? 180f) / 24f);
-        _initialized = true;
     }
 
     private void SampleContext()
@@ -249,20 +413,30 @@ public partial class SkyController : Node3D
             { _space = _underwater; _spaceWeight = Mathf.Clamp((body.SurfaceY - p.Y) * 3f, 0f, 1f); _shelterTarget = 1f; break; }
         }
         if (_quality != null)
-            _emitters.Update(p, Wind, Mathf.Clamp(Mathf.Sin(((_clock?.TimeOfDay ?? 12f) - 6f) / 12f * Mathf.Pi), 0f, 1f), _quality);
+            _emitters.Update(p, Wind, Mathf.Clamp(Mathf.Sin(((_clock?.TimeOfDay ?? 12f) - 6f) / 12f * Mathf.Pi), 0f, 1f),
+                _quality.ParticleScale, _localShadowLights, _quality.LocalLightDistance);
         EventBus.Instance?.Publish(new EnvironmentVisualStateEvent(_clock?.TimeOfDay ?? 12f,
             _precipitation * (1f - _cold), _precipitation * _cold, Wetness, Wind, Shelter));
     }
 
-    private void UpdatePrecipitation(GpuParticles3D particles, float intensity)
+    /// <summary>
+    /// Drives one precipitation system and reports whether it is emitting. Once it has been off for
+    /// longer than any of its particles can live there is nothing left to steer, so the follow, the
+    /// wind and the amount are not sent again until it next falls. That is every clear-weather frame.
+    /// </summary>
+    private bool UpdatePrecipitation(GpuParticles3D particles, ParticleProcessMaterial process, float intensity,
+        float fall, ref float idle, float dt)
     {
         float amount = intensity * (1f - Shelter) * (_quality?.ParticleScale ?? .5f);
-        particles.Emitting = amount > .015f;
+        bool emit = amount > .015f;
+        idle = emit ? 0f : idle + dt;
+        if (idle >= PrecipitationTail) return false;
+        particles.Emitting = emit;
         particles.AmountRatio = Mathf.Clamp(amount, 0f, 1f);
         if (GetViewport().GetCamera3D() is { } camera)
             particles.GlobalPosition = camera.GlobalPosition + Vector3.Up * 10f;
-        if (particles.ProcessMaterial is ParticleProcessMaterial process)
-            process.Gravity = new Vector3(Wind.X, particles == _snow ? -.3f : -12f, Wind.Z);
+        process.Gravity = new Vector3(Wind.X, fall, Wind.Z);
+        return emit;
     }
 
     private static GpuParticles3D BuildPrecipitation(bool snow)

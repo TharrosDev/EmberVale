@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="RenderQualityResource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/World/RenderQualityResource.cs" id="1"]
+
+[resource]
+script = ExtResource("1")
+Id = "performance"
+RenderScale = 0.6
+MeshLodThreshold = 4.0
+ShadowAtlasSize = 1024
+ShadowDistance = 30
+AmbientOcclusion = false
+IndirectLighting = false
+VolumetricFog = false
+Reflections = false
+ParticleScale = 0.15
+LocalShadowLights = 0
+LocalLightDistance = 22
+DrawDistanceScale = 0.6
+ScatterDensityScale = 0.4
+ActorShadowDistance = 12
+ShadowSplits = 2
+ShadowBlendSplits = false
+ShadowFilterQuality = 0
+PositionalShadowAtlasSize = 1024
+Glow = false
+GlowBicubicUpscale = false
+AntiAliasing = 0
+ScalingMode = 0
+SkyRadianceSize = 64
