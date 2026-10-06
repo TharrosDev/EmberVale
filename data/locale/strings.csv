@@ -5166,3 +5166,6 @@ kn.dialogue.mark_plot,Moves the story on
 kn.dialogue.mark_special,Has a consequence
 kn.dialogue.mark_exhausted,Already asked
 kn.dialogue.mark_leave,Ends the conversation
+kn.legend.scroll,Scroll
+kn.legend.waypoint_click,Click to mark
+kn.legend.show_on_map_click,Click for map

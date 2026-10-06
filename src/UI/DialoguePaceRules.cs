@@ -37,6 +37,15 @@ public static class DialoguePaceRules
     /// <summary>How long a line of <paramref name="characters"/> takes to write out.</summary>
     public static float Seconds(int characters) => Math.Max(0, characters) / CharsPerSecond;
 
+    /// <summary>How long after a line finishes by itself a choosing press is ignored. A real pause, not
+    /// motion: it does not shorten under reduced motion.</summary>
+    public const ulong GraceMs = 300;
+
+    /// <summary>Whether a press at <paramref name="nowMs"/> lands too soon after the line finished on
+    /// its own at <paramref name="finishedMs"/> (0 = it did not) to have been meant for an option.</summary>
+    public static bool InGrace(ulong nowMs, ulong finishedMs) =>
+        finishedMs != 0 && nowMs >= finishedMs && nowMs - finishedMs < GraceMs;
+
     /// <summary>Rows the option list is sized for.</summary>
     public static int OptionRows(int options) => Math.Clamp(options, 1, VisibleOptions);
 

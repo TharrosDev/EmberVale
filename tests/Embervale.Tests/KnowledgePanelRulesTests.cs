@@ -142,6 +142,19 @@ public class KnowledgePanelRulesTests
 
     // --- Dialogue ------------------------------------------------------------------------
 
+    [Theory]
+    [InlineData(1000UL, 1000UL, true)]
+    [InlineData(1299UL, 1000UL, true)]
+    [InlineData(1300UL, 1000UL, false)]
+    [InlineData(5000UL, 1000UL, false)]
+    [InlineData(1000UL, 0UL, false)]
+    [InlineData(100UL, 0UL, false)]
+    [InlineData(900UL, 1000UL, false)]
+    public void InGrace_OnlyJustAfterALineFinishedByItself(ulong now, ulong finished, bool expected)
+    {
+        Assert.Equal(expected, DialoguePaceRules.InGrace(now, finished));
+    }
+
     [Fact]
     public void Seconds_ScaleWithTheLineAndNeverGoNegative()
     {

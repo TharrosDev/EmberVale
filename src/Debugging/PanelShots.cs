@@ -490,7 +490,8 @@ public sealed partial class PanelShots : ShotHarness
         });
 
         // A line writing itself out, with no options yet. The typewriter is off in a capture run, so it is
-        // turned on for these two frames: this one is taken part-way through the longest authored line.
+        // turned on for these two frames; the hook holds the line part-written rather than running the
+        // clock, so the frame does not depend on how fast the harness renders.
         Shot("16c-dialogue-typing", () =>
         {
             Dialogue?.EndConversation();

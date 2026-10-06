@@ -44,9 +44,13 @@ public partial class DialoguePanel : UiPanel
 
     private static readonly StringName UiAccept = "ui_accept";
     private static readonly StringName HistoryAction = GameInput.MenuTabNext;
+    private const string UiPageUp = "ui_page_up";
+    private const string UiPageDown = "ui_page_down";
 
     private VBoxContainer _page = null!;
     private VBoxContainer _options = null!;
+    private ScrollContainer _pageScroll = null!;
+    private VScrollBar _pageBar = null!;
     private ScrollContainer _optionScroll = null!;
     private ColorRect _scrim = null!;
 
@@ -61,6 +65,18 @@ public partial class DialoguePanel : UiPanel
     // Set when a line finishes, so the options that arrive with the next rebuild take focus.
     private bool _focusOptions;
     private Button? _firstOption;
+
+    // When the line last finished with nobody asking (DialoguePaceRules.InGrace); 0 when it has not.
+    private ulong _finishedOnOwnMs;
+
+    // Whether the left column is taller than the window, as last measured. Measured a few frames after
+    // a rebuild, once the wrapped line has its height; the legend names the scroll only while it is true.
+    private bool _lineOverflows;
+    private int _measureIn;
+    private bool _measureRebuilt;
+    private bool _rebuiltForMeasure;
+    private const int MeasureSettleFrames = 3;
+    private const float StickScrollSpeed = 600f;
 
     private DialogueSession? _session;
     private IEntity? _player;
@@ -101,6 +117,13 @@ public partial class DialoguePanel : UiPanel
             }
 
             var entries = new List<LegendEntry> { new("ui_accept", Loc.T("kn.legend.choose")) };
+            if (_lineOverflows)
+            {
+                entries.Add(InputDevice.GamepadActive
+                    ? new LegendEntry(GameInput.LookDown, Loc.T("kn.legend.scroll"))
+                    : new LegendEntry(UiPageUp, Loc.T("kn.legend.scroll"), UiPageDown));
+            }
+
             if (_historyOpen || _backlog.Recent().Count > 0)
             {
                 entries.Add(new LegendEntry(GameInput.MenuTabNext,
@@ -135,8 +158,11 @@ public partial class DialoguePanel : UiPanel
         row.AddThemeConstantOverride("separation", UiTheme.SpaceMd);
         margin.AddChild(row);
 
-        // Left: who is speaking and what they say. It scrolls, for the rare line longer than the window.
+        // Left: who is speaking and what they say. It scrolls for a line longer than the window: by
+        // the wheel, the right stick or the page keys (nothing in it takes focus, so focus cannot).
         (ScrollContainer pageScroll, VBoxContainer page) = UiTheme.ScrollList();
+        _pageScroll = pageScroll;
+        _pageBar = pageScroll.GetVScrollBar();
         _page = page;
         _page.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
         row.AddChild(pageScroll);
@@ -221,6 +247,8 @@ public partial class DialoguePanel : UiPanel
         _historyOpen = false;
         _typedNode = null;
         _typing = false;
+        _finishedOnOwnMs = 0;
+        _lineOverflows = false;
 
         // A conversation with no reachable start node closes immediately.
         if (_session.IsEnded)
@@ -284,6 +312,29 @@ public partial class DialoguePanel : UiPanel
             return;
         }
 
+        bool accept = @event.IsActionPressed(UiAccept);
+        bool click = @event is InputEventMouseButton { Pressed: true, ButtonIndex: MouseButton.Left };
+
+        // A line that finished by itself a moment ago: the press was aimed at the line, not at the
+        // option that has just appeared under it, so it is spent on nothing.
+        if ((number >= 0 || accept || click) &&
+            DialoguePaceRules.InGrace(Time.GetTicksMsec(), _finishedOnOwnMs))
+        {
+            GetViewport().SetInputAsHandled();
+            return;
+        }
+
+        if (_lineOverflows)
+        {
+            int page = (@event.IsActionPressed(UiPageDown, true) ? 1 : 0) - (@event.IsActionPressed(UiPageUp, true) ? 1 : 0);
+            if (page != 0)
+            {
+                _pageScroll.ScrollVertical += (int)(page * _pageScroll.Size.Y * 0.8f);
+                GetViewport().SetInputAsHandled();
+                return;
+            }
+        }
+
         if (number >= 0 && number < _choiceActions.Count)
         {
             GetViewport().SetInputAsHandled();
@@ -296,6 +347,58 @@ public partial class DialoguePanel : UiPanel
         {
             ToggleHistory();
             GetViewport().SetInputAsHandled();
+        }
+    }
+
+    /// <summary>
+    /// Scrolls the line's column from the right stick, keeps the words being written in view, and
+    /// measures whether the column overflows at all. Runs only while a conversation is open.
+    /// </summary>
+    public override void _Process(double delta)
+    {
+        base._Process(delta);
+        if (!IsOpen || _session == null)
+        {
+            return;
+        }
+
+        float span = (float)(_pageBar.MaxValue - _pageBar.Page);
+        if (_measureIn > 0 && --_measureIn == 0)
+        {
+            bool overflows = span > 1f;
+            if (overflows != _lineOverflows)
+            {
+                _lineOverflows = overflows;
+
+                // The legend is read after a rebuild. One rebuild per measurement, never one in answer
+                // to the rebuild it caused; a line still writing gets its legend when it finishes.
+                if (!_typing && !_rebuiltForMeasure)
+                {
+                    _measureRebuilt = true;
+                    MarkDirty();
+                }
+            }
+        }
+
+        if (span <= 1f)
+        {
+            return;
+        }
+
+        if (_typing && _line != null && IsInstanceValid(_line))
+        {
+            float written = _line.Position.Y + (_line.Size.Y * _line.VisibleRatio) + UiTheme.SpaceLg;
+            int follow = (int)(written - _pageScroll.Size.Y);
+            if (follow > _pageScroll.ScrollVertical)
+            {
+                _pageScroll.ScrollVertical = follow;
+            }
+        }
+
+        float stick = Godot.Input.GetActionStrength(UiLive.LookDown) - Godot.Input.GetActionStrength(UiLive.LookUp);
+        if (Mathf.Abs(stick) > 0.2f)
+        {
+            _pageScroll.ScrollVertical += Mathf.RoundToInt(stick * StickScrollSpeed * (float)delta);
         }
     }
 
@@ -332,6 +435,14 @@ public partial class DialoguePanel : UiPanel
     private void StartTyping(Label line)
     {
         _typeTween?.Kill();
+        if (_typewriterForced)
+        {
+            // A capture frame is taken a fixed number of frames after it is asked for, not a fixed
+            // time: the line is held part-written until FinishLineForCapture, with no clock to race.
+            line.VisibleRatio = CaptureRatio;
+            return;
+        }
+
         line.VisibleRatio = 0f;
 
         // Runs while the tree is paused (a conversation pauses the world) and ignores hit-stop.
@@ -339,7 +450,20 @@ public partial class DialoguePanel : UiPanel
         _typeTween.SetPauseMode(Tween.TweenPauseMode.Process);
         _typeTween.SetIgnoreTimeScale(true);
         _typeTween.TweenProperty(line, "visible_ratio", 1f, DialoguePaceRules.Seconds(line.Text.Length));
-        _typeTween.TweenCallback(Callable.From(FinishLine));
+        _typeTween.TweenCallback(Callable.From(FinishOnOwn));
+    }
+
+    private const float CaptureRatio = 0.4f;
+
+    /// <summary>The line reached its end with nobody asking. A press in the next moment was meant for
+    /// the line (<see cref="DialoguePaceRules.InGrace"/>).</summary>
+    private void FinishOnOwn()
+    {
+        if (_typing)
+        {
+            _finishedOnOwnMs = Time.GetTicksMsec();
+            FinishLine();
+        }
     }
 
     /// <summary>Shows the whole line and brings the options in. Called when the line finishes on its
@@ -369,8 +493,8 @@ public partial class DialoguePanel : UiPanel
     /// <summary>How many options are on screen, as of the last rebuild.</summary>
     public int OptionCount => _choiceActions.Count;
 
-    /// <summary>Turns the typewriter on for a capture harness, where it is otherwise off, so the next
-    /// line opened can be photographed mid-write.</summary>
+    /// <summary>Turns the typewriter on for a capture harness, where it is otherwise off. The next
+    /// line opened is held part-written, and stays so until <see cref="FinishLineForCapture"/>.</summary>
     public void TypewriterForCapture(bool on) => _typewriterForced = on;
 
     /// <summary>Finishes the line as an accept press does.</summary>
@@ -432,6 +556,9 @@ public partial class DialoguePanel : UiPanel
         _choiceActions.Clear();
         _line = null;
         _firstOption = null;
+        _measureIn = MeasureSettleFrames;
+        _rebuiltForMeasure = _measureRebuilt;
+        _measureRebuilt = false;
 
         if (_session?.CurrentNode is not { } node)
         {
@@ -447,6 +574,8 @@ public partial class DialoguePanel : UiPanel
         {
             _typedNode = node;
             _typing = TypewriterOn && text.Length > 0;
+            _finishedOnOwnMs = 0;
+            _pageScroll.ScrollVertical = 0;
         }
         else if (_typing)
         {
@@ -458,7 +587,12 @@ public partial class DialoguePanel : UiPanel
         // and the choices are cards rather than a stack of buttons. Dialogue is the only screen in
         // the game the player *reads* rather than scans, so it is the one that most rewards the
         // typography split.
-        _page.AddChild(UiTheme.Title(Loc.T(_session.CurrentSpeaker())));
+        // A long name wraps: unwrapped it would set the column's minimum width and push the window
+        // past the edges of a handheld.
+        Label speaker = UiTheme.Title(Loc.T(_session.CurrentSpeaker()));
+        speaker.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+        speaker.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        _page.AddChild(speaker);
 
         if (QuestContextLine() is { } context)
         {
