@@ -122,6 +122,7 @@ Tint = Color(0.62, 0.56, 0.48, 1)
 TintVariation = 0.14
 VisibilityRangeEnd = 55.0
 VisibilityFadeMargin = 10.0
+CastShadows = false
 
 [sub_resource type="Resource" id="Layer_ash_stone"]
 script = ExtResource("10_layer")
@@ -176,6 +177,7 @@ Tint = Color(0.50, 0.46, 0.43, 1)
 TintVariation = 0.16
 VisibilityRangeEnd = 55.0
 VisibilityFadeMargin = 12.0
+CastShadows = false
 
 [sub_resource type="Resource" id="Layer_dead_trunk"]
 script = ExtResource("10_layer")
@@ -240,6 +242,7 @@ Tint = Color(0.62, 0.44, 0.58, 1)
 TintVariation = 0.2
 VisibilityRangeEnd = 50.0
 VisibilityFadeMargin = 10.0
+CastShadows = false
 
 ; The Beast Lord's floor stays bare: nothing on the plateau top that reads as cover.
 [sub_resource type="Resource" id="Exclusion_lair"]

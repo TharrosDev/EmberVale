@@ -69,7 +69,7 @@ public partial class CompanionRoster : Node, ISaveable
         // The quick command (32B): one key cycles the whole band's standing order. Guarded on menus
         // so cycling orders never fires from under an open panel.
         if (!UiState.MenuOpen && GameManager.Instance is { IsPlaying: true } &&
-            Godot.Input.IsActionJustPressed(GameInput.CompanionCommand) && _active.Count > 0)
+            Godot.Input.IsActionJustPressed(InputActions.CompanionCommand) && _active.Count > 0)
         {
             CycleOrder();
         }

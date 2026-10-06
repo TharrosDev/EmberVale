@@ -20,6 +20,8 @@ public partial class TutorialHint : VBoxContainer
     private PanelContainer _frame = null!;
     private Label _label = null!;
     private TutorialStep _step = TutorialStep.None;
+    private const float RefreshSeconds = 0.25f;
+    private float _refresh;
 
     public override void _Ready()
     {
@@ -59,8 +61,18 @@ public partial class TutorialHint : VBoxContainer
     {
         // Re-resolve the glyph each frame the hint is up: the player may switch to a gamepad
         // mid-hint, and a hint naming the wrong input is worse than none.
-        if (Visible && _step != TutorialStep.None)
+        // Still re-resolved while the hint is up (a device switch or a rebind must not leave it
+        // naming the wrong input), but four times a second: each resolve walks the input map and
+        // translates and formats the line, and none of that changes between two frames.
+        if (_step == TutorialStep.None || !Visible)
         {
+            return;
+        }
+
+        _refresh -= (float)delta;
+        if (_refresh <= 0f)
+        {
+            _refresh = RefreshSeconds;
             _label.Text = HintText(_step);
         }
     }

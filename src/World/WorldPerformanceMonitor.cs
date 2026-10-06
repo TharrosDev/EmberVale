@@ -7,6 +7,11 @@ namespace Embervale.World;
 /// <summary>
 /// Samples the active region against its authored budgets. Transient spikes must persist across
 /// several one-second samples before they warn, keeping cell-load compilation noise out of reports.
+///
+/// <para>It samples in every session, overlay open or not: the sustained-overrun warning in the
+/// log is the diagnostic, and the worst frame it reports can land on any frame. The cost of that is
+/// one compare and one array store per frame; the frame window is a fixed ring and the once-a-second
+/// sort uses preallocated scratch, so a steady-state sample allocates nothing.</para>
 /// </summary>
 public sealed partial class WorldPerformanceMonitor : Node
 {
@@ -14,7 +19,16 @@ public sealed partial class WorldPerformanceMonitor : Node
     private WorldPerformanceBudgetResource? _budget;
     private string _regionId = string.Empty;
     private double _timer;
-    private readonly List<double> _frameWindow = new(256);
+
+    /// <summary>Frames kept per one-second window. A second holds more than this only above
+    /// 512 fps, where the oldest frames of the window are overwritten.</summary>
+    private const int WindowCapacity = 512;
+
+    // The window as a ring, and the scratch it is sorted in: both allocated once.
+    private readonly double[] _frameWindow = new double[WindowCapacity];
+    private readonly double[] _sorted = new double[WindowCapacity];
+    private int _frameCount;
+    private int _frameNext;
 
     /// <summary>Longest frame seen since the last sample. See <see cref="_Process"/>.</summary>
     private double _worstFrameMs;
@@ -33,7 +47,7 @@ public sealed partial class WorldPerformanceMonitor : Node
         _cells.Clear();
         _timer = 0d;
         _worstFrameMs = 0d;
-        _frameWindow.Clear();
+        ClearWindow();
         _consecutiveFailures = 0;
         _consecutiveSuccesses = 0;
         _lastWarningSignature = string.Empty;
@@ -53,7 +67,7 @@ public sealed partial class WorldPerformanceMonitor : Node
         {
             // Probes deliberately disable sampling while doing synchronous work. Retaining every
             // frame during that interval turned the monitor itself into an unbounded soak leak.
-            _frameWindow.Clear();
+            ClearWindow();
             _worstFrameMs = 0d;
             _timer = 0d;
             return;
@@ -69,7 +83,12 @@ public sealed partial class WorldPerformanceMonitor : Node
         {
             _worstFrameMs = frameMs;
         }
-        _frameWindow.Add(frameMs);
+        _frameWindow[_frameNext] = frameMs;
+        _frameNext = (_frameNext + 1) % WindowCapacity;
+        if (_frameCount < WindowCapacity)
+        {
+            _frameCount++;
+        }
 
         _timer += delta;
         if (_timer < 1d)
@@ -79,8 +98,8 @@ public sealed partial class WorldPerformanceMonitor : Node
         _timer = 0d;
         double worstFrameMs = _worstFrameMs;
         _worstFrameMs = 0d;
-        WorldFrameDistribution distribution = WorldPerformanceRules.Distribution(_frameWindow);
-        _frameWindow.Clear();
+        WorldFrameDistribution distribution = WindowDistribution();
+        ClearWindow();
 
         int authoredNodes = 0;
         int scatterInstances = 0;
@@ -133,6 +152,44 @@ public sealed partial class WorldPerformanceMonitor : Node
             Log.Warn($"World performance budget exceeded in '{_regionId}': {warning}.");
         }
     }
+
+    private void ClearWindow()
+    {
+        _frameCount = 0;
+        _frameNext = 0;
+    }
+
+    /// <summary>
+    /// The window's distribution, sorted in the preallocated scratch. The same arithmetic as
+    /// <see cref="WorldPerformanceRules.Distribution"/> (nearest-rank percentiles), which stays the
+    /// tested statement of the rule; this is that rule without the array it allocates per call.
+    /// </summary>
+    private WorldFrameDistribution WindowDistribution()
+    {
+        int count = _frameCount;
+        if (count == 0)
+        {
+            return default;
+        }
+
+        double sum = 0d;
+        for (int i = 0; i < count; i++)
+        {
+            _sorted[i] = _frameWindow[i];
+            sum += _frameWindow[i];
+        }
+
+        System.Array.Sort(_sorted, 0, count);
+        return new WorldFrameDistribution(
+            sum / count,
+            _sorted[Rank(0.50d, count)],
+            _sorted[Rank(0.95d, count)],
+            _sorted[Rank(0.99d, count)],
+            _sorted[count - 1]);
+    }
+
+    private static int Rank(double percentile, int count) =>
+        System.Math.Clamp((int)System.Math.Ceiling(percentile * count) - 1, 0, count - 1);
 
     private static int CountNodes(Node root)
     {

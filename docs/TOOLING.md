@@ -220,6 +220,31 @@ the measurement plan. Budgets are opt-in and should use comparable hardware/scen
 there is no invented universal frame-time baseline. The existing per-cell performance probe
 remains available through `world --mode performance`.
 
+**The per-cell probe covers all six realms.** `tools/world_perf_probe.gd` parks a camera at eye
+height in every cell of the Ember Crown, Frostfang Reach, the Ashen Wilds, Sunspire, the Pale
+Concord and the Celestial Realm (145 cells) and reports draw calls, primitives and frame time per
+cell, plus resident video memory per region split into `texture_memory_mb` and
+`buffer_memory_mb` (the remainder is the renderer's own targets). It measures the static scene
+only: no AI, combat or HUD load. It runs at the automation default tier (Medium), because
+first-run detection is skipped under `EMBERVALE_USER_DIR`. The before-numbers of the 2026-10
+performance pass are in `artifacts/perf-baseline/README.md` (local, not committed).
+
+### World bake
+
+```powershell
+python tools/world_bake.py --bake                       # only the regions whose inputs changed
+python tools/world_bake.py --bake --full                # every region
+python tools/world_bake.py --bake --region ember_crown  # also force the named region; repeatable
+python tools/world_bake.py --check                      # name every stale, missing or unexpected output
+```
+
+`--bake` is incremental. A region's signature covers the shared inputs (the world code in
+`src/World/*.cs`, biomes, models, shaders) plus its own region resource and cell scenes, and a
+region is rebaked when that signature changed or one of its outputs is missing or edited. Editing
+one realm's spec rebakes one realm. ⚠️ A change to a shared input still rebakes all six, because
+nothing can prove which cell uses which model; a pass that touches `src/World/` or a model
+`.import` is a full bake whatever flag is passed. Never run two bakes at once on this machine.
+
 ## Architecture and maintenance
 
 * `embervale.py` + `embervale_sdk/`: interface, plans, results, changed-file selection.

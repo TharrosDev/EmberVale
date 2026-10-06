@@ -163,6 +163,7 @@
     "status": "Targets; verify on each supported device. Component costs require GPU profiler attribution."
   },
   "quality_profiles": [
+    "Performance",
     "Low",
     "Medium",
     "High",

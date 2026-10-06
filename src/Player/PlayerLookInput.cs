@@ -61,7 +61,7 @@ public partial class PlayerLookInput : EntityComponent
     public void TickStickLook(double delta)
     {
         Vector2 look = Godot.Input.GetVector(
-            GameInput.LookLeft, GameInput.LookRight, GameInput.LookUp, GameInput.LookDown);
+            InputActions.LookLeft, InputActions.LookRight, InputActions.LookUp, InputActions.LookDown);
         if (look == Vector2.Zero)
         {
             return;

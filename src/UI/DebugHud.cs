@@ -63,6 +63,7 @@ public partial class DebugHud : CanvasLayer
     private void SetShown(bool shown)
     {
         _shown = shown;
+        SetProcess(shown); // hidden (the default): no tick at all
         _vitalsPanel.Visible = shown;
         _controlsPanel.Visible = shown;
     }

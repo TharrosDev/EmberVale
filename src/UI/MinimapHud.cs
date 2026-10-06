@@ -51,7 +51,7 @@ public sealed partial class MinimapHud : PanelContainer
     private readonly List<MapPin> _near = new();
     private List<QuestPin> _questPins = new();
     private readonly HashSet<string> _questIds = new();
-    private List<MapLandTile> _land = new();
+    private readonly List<MapLandTile> _land = new();
 
     // ⚠️ Cached against MapService.Revision, not re-enumerated per frame — the same rule
     // CompassStrip.RefreshPlaces follows. DiscoveredLocations() walks every discovered id through a
@@ -60,6 +60,25 @@ public sealed partial class MinimapHud : PanelContainer
     private int _builtRevision = -1;
     private int _builtTravelRevision = -1;
     private float _rebuildTimer;
+
+    // --- Redraw-on-change (performance pass) -----------------------------------
+    //
+    // The plot is a full MapView paint: relief texture, every road segment, the pins and the player
+    // arrow. It used to repaint every frame whether or not anything had moved. It now repaints when
+    // the player has moved a quarter of a pixel on the plot, turned half a degree, or the things it
+    // draws changed (waypoint, tracked objective, the half-second pin refresh, the plot's size).
+    private const float MovePixels = 0.25f;
+    private const float TurnStep = Mathf.Pi / 360f; // 0.5 degree
+
+    private PlayerCharacter? _player;
+    private bool _painted;
+    private Vector2 _paintedCentre;
+    private float _paintedYaw;
+    private Vector2 _paintedSize;
+    private Vector3? _paintedWaypoint;
+    private string? _paintedObjective;
+    private bool _contentChanged = true;
+    private string? _trackedId;
 
     public override void _Ready()
     {
@@ -110,26 +129,57 @@ public sealed partial class MinimapHud : PanelContainer
             ? resolvedTravel
             : null;
 
-        if (ResolvePlayerXz() is not { } centre)
+        if (ResolvePlayer() is not { } player)
         {
             return;
         }
+
+        Vector3 position = player.GlobalPosition;
+        var centre = new Vector2(position.X, position.Z);
 
         _rebuildTimer -= (float)delta;
         if (_rebuildTimer <= 0f)
         {
             _rebuildTimer = RebuildInterval;
+            // The tracked objective's place is resolved on this cadence too: asking for it rebuilds
+            // the quest's objective list, and the pin it rings is only re-selected here anyway.
+            _trackedId = TrackedLocationId();
             RefreshDiscovered();
             RefreshQuestPins();
             RefreshNear(centre);
+            _contentChanged = true; // the pin set is re-selected by distance: repaint at this 2 Hz
         }
+
+        // No visibility check: while the HUD is hidden the projection is still kept current (a queued
+        // redraw on a hidden item draws nothing), so the frame it reappears on is already centred.
+        Vector2 size = _view.Size;
+        float zoom = ZoomFor(size);
+        float yaw = player.GlobalRotation.Y;
+        Vector3? waypoint = _map?.Waypoint;
+        string? objective = _trackedId;
+
+        float movedPixels = (centre - _paintedCentre).Length() * zoom;
+        if (_painted && !_contentChanged && movedPixels < MovePixels &&
+            Mathf.Abs(Mathf.AngleDifference(_paintedYaw, yaw)) < TurnStep &&
+            size == _paintedSize && waypoint == _paintedWaypoint && objective == _paintedObjective)
+        {
+            return;
+        }
+
+        _painted = true;
+        _contentChanged = false;
+        _paintedCentre = centre;
+        _paintedYaw = yaw;
+        _paintedSize = size;
+        _paintedWaypoint = waypoint;
+        _paintedObjective = objective;
 
         // Zoom is derived from the radius so the two can never disagree; MapView reconciles the
         // viewport itself (its `Fitted`), which is why this does not have to call Resized — the
         // 39.5A value-type-carrying-layout-state trap is already handled one level down.
-        _view.Projection = new MapProjection(centre, ZoomFor(_view.Size), _view.Size);
-        _view.Waypoint = _map?.Waypoint;
-        _view.ObjectiveId = TrackedLocationId();
+        _view.Projection = new MapProjection(centre, zoom, size);
+        _view.Waypoint = waypoint;
+        _view.ObjectiveId = objective;
         _view.QueueRedraw();
     }
 
@@ -160,13 +210,12 @@ public sealed partial class MinimapHud : PanelContainer
         _builtTravelRevision = travelRevision;
         MapPins.Rebuild(_all, _map, _travel);
 
-        var land = new List<MapLandTile>();
+        _land.Clear();
         foreach ((string cellId, Rect2 rect) in _map.KnownFootprints())
         {
-            land.Add(new MapLandTile(cellId, rect));
+            _land.Add(new MapLandTile(cellId, rect));
         }
 
-        _land = land;
         _view.Land = _land;
         string regionId = ServiceLocator.Instance is { } streamers && streamers.TryGet(out RegionStreamer streamer)
             ? streamer.ActiveRegionId : string.Empty;
@@ -178,7 +227,7 @@ public sealed partial class MinimapHud : PanelContainer
     /// <see cref="MinimapFilter"/>.</summary>
     private void RefreshNear(Vector2 centre)
     {
-        MinimapFilter.Select(_all, centre, RadiusMetres, MaxPins, _near, TrackedLocationId(), _questIds);
+        MinimapFilter.Select(_all, centre, RadiusMetres, MaxPins, _near, _trackedId, _questIds);
         _view.Pins = _near;
     }
 
@@ -204,8 +253,14 @@ public sealed partial class MinimapHud : PanelContainer
                 ? player.GetComponent<QuestLogComponent>()?.Tracked
                 : null);
 
-    private static Vector2? ResolvePlayerXz() =>
-        ServiceLocator.Instance is { } locator && locator.TryGet(out PlayerCharacter player)
-            ? new Vector2(player.GlobalPosition.X, player.GlobalPosition.Z)
+    /// <summary>The player, re-resolved through the locator every tick (a load or a region swap
+    /// replaces it) but read once per tick instead of once per property.</summary>
+    private PlayerCharacter? ResolvePlayer()
+    {
+        _player = ServiceLocator.Instance is { } locator && locator.TryGet(out PlayerCharacter player) &&
+                  IsInstanceValid(player)
+            ? player
             : null;
+        return _player;
+    }
 }

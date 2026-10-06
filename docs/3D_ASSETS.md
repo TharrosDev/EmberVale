@@ -28,6 +28,7 @@ they run in; you should not have to know which is which.
 | `validate` | The hard gates. Run before every commit that touches a model. |
 | `adopt SRC DEST` | A source model becomes a validated production asset. One command. |
 | `audit` | Full Blender + Godot inspection and the report set. Slow; run it for a broad pass. |
+| `audit-weight` | Estimated texture video memory by class, and anything off its budget. Pure python, one second. |
 | `build TARGET` | A Blender rebuild plus the follow-up steps it must not skip. |
 
 ---
@@ -210,7 +211,8 @@ hitboxes are related but separate contracts.
 ⚠️ **Adopt, import, then commit — in that order.** Godot's `detect_3d` pass rewrites a texture's
 `.import` after its first 3D use, flipping `compress/mode` 0 → 2. Commit before importing and you
 commit a file the engine is about to change. The shipped convention is `compress/mode=2` with
-`detect_3d/compress_to=0`.
+`detect_3d/compress_to=0`, and `adopt` writes it together with the class size cap rather than
+waiting for an editor session to do it (Materials → *Texture weight*).
 
 ⚠️ **`adopt` can classify a fresh Meshy rig as QUADRUPED on its first run.** Re-run `adopt` for that
 one file alone; it classifies as HUMANOID the second time. Check the family in `manifest.json` (and
@@ -539,6 +541,58 @@ case — it rewrites the embedded PNG, correcting only pixels that are *already*
 in the wrong direction, never touching value. It repacks the buffer and verifies every `bufferView`
 survived, because the image is not the last region and a naive resize would move the geometry out
 from under every accessor.
+
+### Texture weight
+
+Every texture a model uses is a `.png` beside it, and what it costs in video memory is decided by
+that png's `.import`, not by the model. A Meshy body's atlas is extracted to
+`<model>_texture_0.png` (`gltf/embedded_image_handling=1`), so its cap goes on that file.
+
+```powershell
+python tools/assets.py audit-weight           # MB per class, and everything off its budget
+python tools/assets.py audit-weight --check   # the same, exit 1 when anything is off budget
+python tools/assets.py audit-weight --fix     # write the budget, then run a Godot import pass
+python tools/assets.py audit-weight -v        # every texture, heaviest first
+```
+
+`--check` and the plain report read `.import` text and never start the engine; `--fix` edits
+the `.import` files and the import pass that follows is what makes the caps real. A changed model
+texture is also a shared world-bake input, so a `--fix` is followed by the master bake.
+
+The budget is `data/rendering/VisualContract.json`'s three caps by class and map role, written as
+`process/size_limit` (longest edge). The table lives in `tools/audit_3d.py` (`TEXTURE_BUDGET`):
+
+| Class | Which textures | BaseColor | Normal | ORM / Roughness |
+| --- | --- | ---: | ---: | ---: |
+| `player_boss` | `chr_player*`, `boss_*` | 2048 | 2048 | 1024 |
+| `character` | every other body in `characters/` and `creatures/` | 1024 | 1024 | 512 |
+| `architecture_trim` | the BaseColor/Normal/ORM sets in `architecture/` | 1024 | 1024 | 512 |
+| `prop_trim` | `T_Trim_*` | 1024 | 512 | 512 |
+| `nature_hero` | leaves, bark and rock faces | 1024 | 512 | 512 |
+| `prop` | everything else | 512 | 512 | 512 |
+
+A trim sheet tiles across a whole building and is read at arm's length, so it is a hero surface
+and not a prop. Every budgeted texture is also `compress/mode=2`, `mipmaps/generate=true` and
+`detect_3d/compress_to=0`, and a `*_Normal` map carries `compress/normal_map=1` (RGTC). Nothing
+needs setting for the other two choices: the importer drops an all-opaque alpha channel by itself
+(BC1 rather than BC3), and whether a map is read as sRGB is the material's decision, not the file's.
+
+⚠️ **A texture nobody opened in the editor stays lossless, and lossless is eight times the size.**
+The flip to VRAM compression happens on first 3D use in an editor with a real renderer; a headless
+import never triggers it. Six bosses, a whole brick set and every nature texture shipped as
+uncompressed RGBA8 for that reason, and the texture set estimated at 266 MB came to 56 MB once the
+budget was written. `adopt` now writes it after the first import and imports again.
+
+⚠️ **Three data textures are lossless and unmipped on purpose**: `T_Prop_Colormap`,
+`T_Nature_Grass` and `chr_player_base_mask`. A palette is swatches and gradient strips sampled at
+a point, so block compression bands it and a mip level averages a swatch with its neighbour; the
+mask is read with `filter_linear` in `player_body.gdshader`, which never samples a mip, and a
+blurred mask smears hair over clothing. They are pinned with
+`detect_3d/compress_to=0` so the editor cannot flip them.
+
+The figure is an estimate of what the importer produces (BC1 half a byte per pixel, BC3 and RGTC
+one, uncompressed four, plus a third for mips), not a measurement, and a lower cap is not visual
+validation: look at the surface at eye level after the reimport.
 
 Normal maps use the Godot/glTF tangent convention. Inspect both lit sides after import; **never fix
 inverted normals with a double-sided material.**

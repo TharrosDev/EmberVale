@@ -85,7 +85,14 @@ public partial class EnemyAIComponent : EntityComponent
     private SpellcastingComponent? _casting;
     private CombatComponent? _combat;
     private PlayerCharacter? _player;
-    private MeshInstance3D? _mesh;
+    /// <summary>The visual root every factory names "Mesh": a glTF scene root (a plain Node3D)
+    /// for a modelled enemy, or the capsule itself for a fallback.</summary>
+    private Node3D? _visual;
+
+    /// <summary>The geometry whose shadow the far cut turned off, with what each cast before, so
+    /// the restore gives back exactly that and never switches on a mesh authored without one.</summary>
+    private readonly System.Collections.Generic.List<(GeometryInstance3D Node, GeometryInstance3D.ShadowCastingSetting Was)>
+        _shadowCut = new();
     private string _factionId = string.Empty;
 
     private EnemyState _state = EnemyState.Idle;
@@ -114,6 +121,15 @@ public partial class EnemyAIComponent : EntityComponent
 
 
     private bool _shadowOn = true;
+
+    /// <summary>Seconds between "is the player near enough to matter" checks. The answer drives
+    /// level of detail only, and it used to be asked — two position reads across the engine
+    /// boundary and a player lookup — by every enemy on every physics frame, including the ones
+    /// whose whole point was that they were asleep.</summary>
+    private const double FarCheckInterval = 0.25d;
+
+    private double _farCheckTimer;
+    private bool _far;
 
     /// <summary>Navmesh steering, arrival and facing — shared with the companion brain, which used
     /// to carry its own drifted copy of the same three-answer rule.</summary>
@@ -161,7 +177,7 @@ public partial class EnemyAIComponent : EntityComponent
         _casting = Entity.GetComponent<SpellcastingComponent>();
         _combat = Entity.GetComponent<CombatComponent>();
         _flight = Entity.GetComponent<FlightComponent>();
-        _mesh = _body.GetNodeOrNull<MeshInstance3D>("Mesh");
+        _visual = _body.GetNodeOrNull<Node3D>("Mesh");
         _nav = new AiNavigator(Entity, _body, _body.GetNodeOrNull<NavigationAgent3D>("NavAgent"));
         _tactics = new EnemyCasterTactics(Entity, _body, _nav, GetTree());
         _senses = new EnemySenses(Entity, _body);
@@ -229,8 +245,18 @@ public partial class EnemyAIComponent : EntityComponent
 
         // Level of detail: a live enemy far from the player ticks rarely and stops casting a
         // shadow. The dead state always runs so corpses still despawn on schedule.
-        bool far = IsFarFromPlayer();
-        SetShadow(!far);
+        _farCheckTimer -= delta;
+        if (_farCheckTimer <= 0d)
+        {
+            _farCheckTimer = FarCheckInterval;
+            _far = IsFarFromPlayer(out float playerDistanceSquared);
+            // The quality tier may cut actor shadows closer than the AI's own active distance; from
+            // Medium up its distance is effectively unlimited, so only the far test decides.
+            float shadowReach = Embervale.World.WorldQualityScale.ActorShadowDistance;
+            SetShadow(!_far && playerDistanceSquared <= shadowReach * shadowReach);
+        }
+
+        bool far = _far;
         if (far && _state != EnemyState.Dead && _lod.ShouldSleep(delta, _profile.SleepInterval))
         {
             return;
@@ -713,28 +739,59 @@ public partial class EnemyAIComponent : EntityComponent
     }
 
     /// <summary>True when no player exists or the player is beyond <see cref="ActiveDistance"/>.</summary>
-    private bool IsFarFromPlayer()
+    private bool IsFarFromPlayer(out float distanceSquared)
     {
+        distanceSquared = float.MaxValue;
         PlayerCharacter? player = _senses.AnyPlayer();
         if (player == null)
         {
             return true;
         }
 
-        return _body.GlobalPosition.DistanceSquaredTo(player.GlobalPosition) > _profile.ActiveDistance * _profile.ActiveDistance;
+        distanceSquared = _body.GlobalPosition.DistanceSquaredTo(player.GlobalPosition);
+        return distanceSquared > _profile.ActiveDistance * _profile.ActiveDistance;
     }
 
     private void SetShadow(bool on)
     {
-        if (_mesh == null || on == _shadowOn)
+        if (_visual == null || on == _shadowOn || !IsInstanceValid(_visual))
         {
             return;
         }
 
         _shadowOn = on;
-        _mesh.CastShadow = on
-            ? GeometryInstance3D.ShadowCastingSetting.On
-            : GeometryInstance3D.ShadowCastingSetting.Off;
+        if (on)
+        {
+            foreach ((GeometryInstance3D node, GeometryInstance3D.ShadowCastingSetting was) in _shadowCut)
+            {
+                if (IsInstanceValid(node))
+                {
+                    node.CastShadow = was;
+                }
+            }
+
+            _shadowCut.Clear();
+            return;
+        }
+
+        // Walked at the moment of the cut, not cached at init: equipment and the identity kit attach
+        // their meshes under the body later, and runtime-added nodes have no owner.
+        _shadowCut.Clear();
+        CutShadow(_visual);
+        foreach (Node node in _visual.FindChildren("*", nameof(GeometryInstance3D), recursive: true, owned: false))
+        {
+            CutShadow(node);
+        }
+    }
+
+    private void CutShadow(Node node)
+    {
+        if (node is GeometryInstance3D geometry &&
+            geometry.CastShadow != GeometryInstance3D.ShadowCastingSetting.Off)
+        {
+            _shadowCut.Add((geometry, geometry.CastShadow));
+            geometry.CastShadow = GeometryInstance3D.ShadowCastingSetting.Off;
+        }
     }
 
     private static float HorizontalDistance(Vector3 a, Vector3 b)

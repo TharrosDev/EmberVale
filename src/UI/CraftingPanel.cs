@@ -288,7 +288,7 @@ public partial class CraftingPanel : UiPanel
             {
                 _justOpened = false;
             }
-            else if (Godot.Input.IsActionJustPressed(GameInput.Interact) &&
+            else if (Godot.Input.IsActionJustPressed(UiLive.Interact) &&
                      GetViewport().GuiGetFocusOwner() is not LineEdit)
             {
                 // A modal needs an easy out; the interact key both opens and closes it. Not while the

@@ -97,7 +97,7 @@ public partial class PlacementDirector : Node
 
         UpdateAim();
 
-        if (Godot.Input.IsActionJustPressed(GameInput.Place))
+        if (Godot.Input.IsActionJustPressed(InputActions.Place))
         {
             if (RemovalTarget != null)
             {

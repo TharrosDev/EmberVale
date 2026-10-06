@@ -100,10 +100,14 @@ public sealed class NodePool<T>
     /// what Godot counts as orphan nodes while the subtree is detached.</summary>
     private static int SubtreeCount(Node node)
     {
+        // Indexed rather than GetChildren(): that call builds an engine array and a managed wrapper
+        // for every node of the subtree, and this runs on every return of every pooled arrow, bolt,
+        // spark and sound — the very churn the pool exists to remove.
         int count = 1;
-        foreach (Node child in node.GetChildren())
+        int children = node.GetChildCount();
+        for (int i = 0; i < children; i++)
         {
-            count += SubtreeCount(child);
+            count += SubtreeCount(node.GetChild(i));
         }
 
         return count;

@@ -91,6 +91,7 @@ Tint = Color(0.86, 0.84, 0.70, 1)
 TintVariation = 0.08
 VisibilityRangeEnd = 62.0
 VisibilityFadeMargin = 12.0
+CastShadows = false
 
 [sub_resource type="Resource" id="Layer_wheat"]
 script = ExtResource("10_layer")
@@ -107,6 +108,7 @@ Tint = Color(0.92, 0.86, 0.62, 1)
 TintVariation = 0.05
 VisibilityRangeEnd = 58.0
 VisibilityFadeMargin = 10.0
+CastShadows = false
 
 [sub_resource type="Resource" id="Layer_pale_tree"]
 script = ExtResource("10_layer")

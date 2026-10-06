@@ -179,7 +179,7 @@ public partial class SaveSlotPanel : CanvasLayer
     {
         // Esc / gamepad B backs out (30.5J), matching the settings panel. A row waiting for its
         // second click takes the press first, so cancel always undoes the nearest thing.
-        if (!Godot.Input.IsActionJustPressed("ui_cancel"))
+        if (!Godot.Input.IsActionJustPressed(UiLive.UiCancel))
         {
             return;
         }

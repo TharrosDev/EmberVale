@@ -110,9 +110,23 @@ public sealed partial class LockOnCueLayer : Control
         QueueRedraw();
     }
 
+    // Whether the layer is currently shown for play (-1 = not yet decided), so its visibility is
+    // written when the game state changes instead of restated to the engine every frame.
+    private int _shownForPlay = -1;
+
+    private void ShowForPlay()
+    {
+        int playing = GameManager.Instance is { IsPlaying: true } ? 1 : 0;
+        if (playing != _shownForPlay)
+        {
+            _shownForPlay = playing;
+            Visible = playing == 1;
+        }
+    }
+
     public override void _Process(double delta)
     {
-        Visible = GameManager.Instance is { IsPlaying: true };
+        ShowForPlay();
         if (_cues.Count == 0)
         {
             return;

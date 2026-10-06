@@ -30,9 +30,44 @@ public partial class StatsComponent : EntityComponent, ISaveable
     public AttributeSet? Attributes { get; set; }
 
     [ExportGroup("Passive Regen (per second)")]
-    [Export] public float HealthRegen { get; set; } = 0f;
-    [Export] public float StaminaRegen { get; set; } = 15f;
-    [Export] public float ManaRegen { get; set; } = 4f;
+    [Export] public float HealthRegen
+    {
+        get => _healthRegen;
+        set
+        {
+            _healthRegen = value;
+            WakeTick();
+        }
+    }
+
+    [Export] public float StaminaRegen
+    {
+        get => _staminaRegen;
+        set
+        {
+            _staminaRegen = value;
+            WakeTick();
+        }
+    }
+
+    [Export] public float ManaRegen
+    {
+        get => _manaRegen;
+        set
+        {
+            _manaRegen = value;
+            WakeTick();
+        }
+    }
+
+    private float _healthRegen;
+    private float _staminaRegen = 15f;
+    private float _manaRegen = 4f;
+
+    /// <summary>True while <see cref="_Process"/> is switched off because a tick could change
+    /// nothing. See <see cref="NothingToTick"/>; every path that makes a tick matter again goes
+    /// through <see cref="WakeTick"/>.</summary>
+    private bool _tickAsleep;
 
     /// <summary>Seconds stamina regen is paused after any spend (Phase 29I anti-mash lever, DESIGN §1.4):
     /// mashing keeps resetting this, so a flurry drains to empty while spaced reads sustain.</summary>
@@ -128,6 +163,50 @@ public partial class StatsComponent : EntityComponent, ISaveable
         IsWinded = StaminaPacing.UpdateWinded(IsWinded, GetNormalized(StatType.Stamina), WindedRecoverFraction);
 
         Regenerate(StatType.Mana, ManaRegen, delta);
+
+        if (NothingToTick())
+        {
+            _tickAsleep = true;
+            SetProcess(false);
+        }
+    }
+
+    /// <summary>
+    /// True when another tick would be a no-op, so the callback can be switched off: every pool is
+    /// full (or has no regen, or belongs to a corpse) and both idle clocks have run past the point
+    /// where they stop mattering. That is the resting state of nearly every actor in the world
+    /// nearly all of the time, and each of them used to pay for a frame callback to confirm it.
+    ///
+    /// The clocks are part of the test because they only accumulate while ticking: sleeping with
+    /// one still inside its delay would stretch that delay by however long the sleep lasted.
+    /// Past saturation their exact value changes nothing, so stopping them is not observable.
+    /// </summary>
+    private bool NothingToTick()
+    {
+        if (!StaminaPacing.CanRegen(_healthIdle, HealthRegenDelay) ||
+            _staminaIdle < (double)StaminaRegenDelay + Mathf.Max(0f, StaminaRampSeconds))
+        {
+            return false;
+        }
+
+        return RegenIsIdle(StatType.Health, HealthRegen) &&
+               RegenIsIdle(StatType.Stamina, StaminaRegen) &&
+               RegenIsIdle(StatType.Mana, ManaRegen);
+    }
+
+    /// <summary>The same three exits <see cref="Regenerate"/> takes before it writes anything.</summary>
+    private bool RegenIsIdle(StatType type, float rate) =>
+        rate <= 0f || (type == StatType.Health && !IsAlive) || GetCurrent(type) >= GetMax(type);
+
+    /// <summary>Turns the tick back on. Called from everything that can make a tick matter: a pool
+    /// changing, a max changing, a regen rate changing, either idle clock being reset, and a load.</summary>
+    private void WakeTick()
+    {
+        if (_tickAsleep)
+        {
+            _tickAsleep = false;
+            SetProcess(true);
+        }
     }
 
     private void Regenerate(StatType type, float rate, double delta)
@@ -228,6 +307,7 @@ public partial class StatsComponent : EntityComponent, ISaveable
         }
 
         _current[type] = clamped;
+        WakeTick();
         if (Entity != null)
         {
             EventBus.Instance?.Publish(new ResourceChangedEvent(Entity, type, clamped, max));
@@ -240,6 +320,7 @@ public partial class StatsComponent : EntityComponent, ISaveable
         if (type == StatType.Stamina && delta < 0f)
         {
             _staminaIdle = 0d;
+            WakeTick();
         }
 
         SetCurrent(type, GetCurrent(type) + delta);
@@ -276,6 +357,7 @@ public partial class StatsComponent : EntityComponent, ISaveable
         }
 
         _healthIdle = 0d; // taking damage pauses health regen for HealthRegenDelay
+        WakeTick();
         SetCurrent(StatType.Health, before - amount);
         float after = GetCurrent(StatType.Health);
 
@@ -300,6 +382,9 @@ public partial class StatsComponent : EntityComponent, ISaveable
 
     private void OnResourceMaxChanged(Stat stat)
     {
+        // A raised max leaves the pool below it, which regen then has to fill.
+        WakeTick();
+
         // Re-clamp current to the (possibly new) max without inflating it.
         if (_current.TryGetValue(stat.Type, out float current))
         {
@@ -329,6 +414,7 @@ public partial class StatsComponent : EntityComponent, ISaveable
         // stamina on the next tick.
         IsWinded = false;
         _staminaIdle = 0d;
+        WakeTick();
 
         // Defer the restore to the end of the frame: component loads run before equipment/
         // race/perk modifiers re-apply, so restoring immediately clamps the saved value

@@ -16,6 +16,11 @@ public enum LoadingWait
     /// <summary>Collision is there but no capsule-clear spot near the landing passed
     /// <c>SafePlacementService</c> yet.</summary>
     Placement,
+
+    /// <summary>The landing is standable; the gate is giving the rest of the realm a bounded
+    /// moment to stream in. Reported only, never a stage <see cref="LoadingGateRules.Pending"/>
+    /// returns: it cannot fail and nothing waits on it past its deadline.</summary>
+    Realm,
 }
 
 /// <summary>

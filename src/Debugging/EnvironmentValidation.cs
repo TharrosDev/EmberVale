@@ -32,7 +32,7 @@ public static class EnvironmentValidation
         Range(issues, "contrast", cycle.Contrast, .8f, 1.2f);
         Range(issues, "saturation", cycle.Saturation, .7f, 1.1f);
         Range(issues, "glow", cycle.GlowIntensity, 0, .5f);
-        foreach (string name in new[] { "Low", "Medium", "High", "Ultra" })
+        foreach (string name in new[] { "Performance", "Low", "Medium", "High", "Ultra" })
         {
             var q = ResidentResources.Load<RenderQualityResource>($"res://data/rendering/{name}.tres");
             if (q == null) { issues.Add($"missing render quality {name}"); continue; }

@@ -300,7 +300,7 @@ public partial class VendorPanel : UiPanel
             {
                 _justOpened = false;
             }
-            else if (Godot.Input.IsActionJustPressed(GameInput.Interact))
+            else if (Godot.Input.IsActionJustPressed(UiLive.Interact))
             {
                 // A modal needs an easy out; the interact key both opens and closes it.
                 Close();

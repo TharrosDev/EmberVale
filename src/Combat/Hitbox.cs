@@ -98,9 +98,22 @@ public partial class Hitbox : Area3D
                 continue;
             }
 
-            int same = hurtbox.OwnerEntity == null
-                ? -1
-                : _candidates.FindIndex(c => ReferenceEquals(c.OwnerEntity, hurtbox.OwnerEntity));
+            // A plain scan rather than FindIndex with a lambda: the lambda captured this loop's
+            // hurtbox, which is a closure and a delegate allocated per overlapping zone on every
+            // physics frame of every active swing.
+            int same = -1;
+            if (hurtbox.OwnerEntity != null)
+            {
+                for (int i = 0; i < _candidates.Count; i++)
+                {
+                    if (ReferenceEquals(_candidates[i].OwnerEntity, hurtbox.OwnerEntity))
+                    {
+                        same = i;
+                        break;
+                    }
+                }
+            }
+
             if (same < 0)
             {
                 _candidates.Add(hurtbox);

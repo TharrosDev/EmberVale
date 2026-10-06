@@ -60,6 +60,10 @@ public partial class WeaponTrailComponent : EntityComponent
         // direct AddChild fails ("parent busy setting up children") and would orphan the trail.
         Entity!.Body.CallDeferred(Node.MethodName.AddChild, _pivot);
 
+        // Only a live streak needs fading; between swings there is nothing to tick. OnReleased is
+        // the one place a streak starts and it turns the tick back on.
+        SetProcess(false);
+
         EventBus.Instance?.Subscribe<AttackPerformedEvent>(OnAttack);
         EventBus.Instance?.Subscribe<ActionReleasedEvent>(OnReleased);
         EventBus.Instance?.Subscribe<AttackInterruptedEvent>(OnInterrupted);
@@ -113,6 +117,7 @@ public partial class WeaponTrailComponent : EntityComponent
         _life = _windup > 0f ? _style.FadeSeconds : FadeSeconds;
         _age = 0f;
         _live = true;
+        SetProcess(true);
 
         int streak = (int)_style.StreakDegrees;
         _streak.Mesh = Streak(streak);
@@ -195,6 +200,7 @@ public partial class WeaponTrailComponent : EntityComponent
     {
         if (!_live)
         {
+            SetProcess(false); // interrupted, or never started: idle until the next release
             return;
         }
 
@@ -204,6 +210,7 @@ public partial class WeaponTrailComponent : EntityComponent
         {
             _live = false;
             _pivot.Visible = false;
+            SetProcess(false);
             return;
         }
 

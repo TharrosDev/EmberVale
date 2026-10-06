@@ -118,6 +118,11 @@ public partial class CharacterAnimationComponent : EntityComponent
         }
 
         BuildTree();
+        if (_tree == null && _player != null)
+        {
+            // No tree: the player is the mixer, and this component steps it (see AdvanceMixer).
+            _player.CallbackModeProcess = AnimationMixer.AnimationCallbackModeProcess.Manual;
+        }
 
         _spellcasting = Entity.GetComponent<SpellcastingComponent>();
 
@@ -238,13 +243,8 @@ public partial class CharacterAnimationComponent : EntityComponent
 
         if (SpellDatabase.Get(e.SpellId) is { } spell)
         {
-            var flash = new SpellFlash
-            {
-                Radius = 0.5f,
-                FlashColor = SpellSchools.Color(spell.School),
-            };
-            Entity!.Body.GetTree().CurrentScene.AddChild(flash);
-            flash.GlobalPosition = CastingHandPosition();
+            SpellFlash.Spawn(
+                Entity!.Body.GetTree().CurrentScene, CastingHandPosition(), 0.5f, SpellSchools.Color(spell.School));
         }
     }
 
@@ -331,7 +331,7 @@ public partial class CharacterAnimationComponent : EntityComponent
             // moved on to a flinch. Poise decides whether a hit interrupts, not the presentation.
             if (_actionClip.Length == 0)
             {
-                _playback.Travel(LocomotionTree.HitState);
+                TravelTo(HitStateName);
             }
 
             return;
@@ -407,6 +407,13 @@ public partial class CharacterAnimationComponent : EntityComponent
         _actionSpeed = speed;
         _actionClip = clip;
 
+        // The clip is about to become this action's clock, so it runs at full rate from its very
+        // first frame rather than from the next tick's level-of-detail pass.
+        if (_lodCoarse)
+        {
+            SetCoarse(false);
+        }
+
         if (_tree != null && _playback != null)
         {
             if (Riding)
@@ -418,7 +425,7 @@ public partial class CharacterAnimationComponent : EntityComponent
             }
 
             SetActionClip(clip, speed);
-            _playback.Travel(LocomotionTree.ActionState);
+            TravelTo(ActionStateName);
             return actual;
         }
 
@@ -437,7 +444,7 @@ public partial class CharacterAnimationComponent : EntityComponent
         }
 
         anim.Animation = clip;
-        _tree.Set(LocomotionTree.ActionScaleParam, speed);
+        _tree.Set(ActionScaleParamName, speed);
     }
 
     private void SetUpperBodyClip(string clip)
@@ -446,7 +453,8 @@ public partial class CharacterAnimationComponent : EntityComponent
             root.GetNode("UpperBody") is AnimationNodeAnimation anim)
         {
             anim.Animation = clip;
-            _tree.Set(LocomotionTree.UpperBodyBlendParam, 1f);
+            _upperBlend = 1f;
+            _tree.Set(UpperBodyBlendParamName, 1f);
         }
     }
 
@@ -466,7 +474,7 @@ public partial class CharacterAnimationComponent : EntityComponent
                 // CurrentAnimationPosition stop tracking what is on screen — reading them here
                 // would hand the action a clock that has quietly stopped, which is the exact class
                 // of defect this whole rebuild exists to end.
-                if (_playback.GetCurrentNode() != LocomotionTree.ActionState)
+                if (_playback.GetCurrentNode() != ActionStateName)
                 {
                     return -1f;
                 }
@@ -490,9 +498,9 @@ public partial class CharacterAnimationComponent : EntityComponent
     {
         ResumeAction();
         _actionClip = "";
-        if (_tree != null && _playback?.GetCurrentNode() == LocomotionTree.ActionState)
+        if (_tree != null && _playback?.GetCurrentNode() == ActionStateName)
         {
-            _playback.Travel(LocomotionTree.LocomotionState);
+            TravelTo(LocomotionStateName);
         }
     }
 
@@ -506,9 +514,9 @@ public partial class CharacterAnimationComponent : EntityComponent
 
         _actionHeld = true;
         _heldPlayerSpeed = _player?.SpeedScale ?? 1f;
-        if (_tree != null && _playback?.GetCurrentNode() == LocomotionTree.ActionState)
+        if (_tree != null && _playback?.GetCurrentNode() == ActionStateName)
         {
-            _tree.Set(LocomotionTree.ActionScaleParam, 0f);
+            _tree.Set(ActionScaleParamName, 0f);
         }
         else if (_player != null)
         {
@@ -527,7 +535,7 @@ public partial class CharacterAnimationComponent : EntityComponent
         _actionHeld = false;
         if (_tree != null)
         {
-            _tree.Set(LocomotionTree.ActionScaleParam, _actionSpeed);
+            _tree.Set(ActionScaleParamName, _actionSpeed);
         }
         if (_player != null)
         {
@@ -569,14 +577,18 @@ public partial class CharacterAnimationComponent : EntityComponent
             AnimPlayer = _player.GetPath(),
             // The clips are authored at 30 fps and blended per frame, so the tree ticks with the
             // frame rather than with physics; a physics-stepped tree visibly stutters at high
-            // refresh rates.
-            CallbackModeProcess = AnimationMixer.AnimationCallbackModeProcess.Idle,
+            // refresh rates. This component steps it from _Process (AdvanceMixer).
+            // ⚠️ Set once, before the tree is active, and never written again: changing the mode
+            // on an active tree deactivates and reactivates it, which restarts the state machine
+            // from its entry. A corpse stands back up.
+            CallbackModeProcess = AnimationMixer.AnimationCallbackModeProcess.Manual,
         };
         AddChild(tree);
         tree.Active = true;
 
         _tree = tree;
         _playback = tree.Get(LocomotionTree.PlaybackParam).As<AnimationNodeStateMachinePlayback>();
+        _upperBlend = (float)tree.Get(UpperBodyBlendParamName);
     }
 
     /// <summary>Signed forward speed in m/s — negative when backing up. The blend space's only
@@ -599,6 +611,23 @@ public partial class CharacterAnimationComponent : EntityComponent
     {
         _lastDelta = (float)delta;
 
+        if (_player == null)
+        {
+            // No rig to drive, and nothing can give this body one later: the player is resolved
+            // once in OnInitialize. The event handlers need no tick, so stop being called.
+            SetProcess(false);
+            return;
+        }
+
+        TickLod();
+        TickState();
+        // After the state tick, so this frame's parameters and travel requests are the ones posed,
+        // which is the order the engine gave when the mixer was a child stepping itself.
+        AdvanceMixer(delta);
+    }
+
+    private void TickState()
+    {
         if (_player == null)
         {
             return;
@@ -664,7 +693,7 @@ public partial class CharacterAnimationComponent : EntityComponent
         {
             if (!_deathPlayed)
             {
-                _playback.Travel(LocomotionTree.DeathState);
+                TravelTo(DeathStateName);
                 _deathPlayed = true;
             }
 
@@ -675,33 +704,185 @@ public partial class CharacterAnimationComponent : EntityComponent
         {
             // Respawned. Travelling back is not enough — the death state is deliberately terminal —
             // so the machine is restarted from its entry.
-            _playback.Start(LocomotionTree.LocomotionState);
+            _playback.Start(LocomotionStateName);
+            _settledTicks = 0;
             _deathPlayed = false;
         }
 
-        _tree.Set(LocomotionTree.SpeedParam, ForwardSpeed());
+        // Parameters are written only when they change. A tree parameter keeps its value, and a
+        // standing character's speed and guard blend are the same number frame after frame, so
+        // re-sending them was two or three engine calls per character per frame for nothing.
+        float speed = ForwardSpeed();
+        if (speed != _sentSpeed)
+        {
+            _sentSpeed = speed;
+            _tree.Set(SpeedParamName, speed);
+        }
 
         // The upper-body layer carries the guard and channel poses. Blending rather than switching
         // is what lets a blocking character keep walking, and a mounted one keep its seat (39B).
         bool upperBody = _combat is { IsBlocking: true } ||
                          _spellcasting is { IsCharging: true } or { IsChanneling: true };
         float target = upperBody ? 1f : 0f;
-        float current = (float)_tree.Get(LocomotionTree.UpperBodyBlendParam);
-        _tree.Set(LocomotionTree.UpperBodyBlendParam,
-            Mathf.MoveToward(current, target, _lastDelta / UpperBodyBlendSeconds));
-
-        if (_actionClip.Length == 0 && _playback.GetCurrentNode() == LocomotionTree.ActionState)
+        float blend = Mathf.MoveToward(_upperBlend, target, _lastDelta / UpperBodyBlendSeconds);
+        if (blend != _upperBlend)
         {
-            _playback.Travel(LocomotionTree.LocomotionState);
+            _upperBlend = blend;
+            _tree.Set(UpperBodyBlendParamName, blend);
+        }
+
+        // The two checks below need the machine's current state, which costs an engine call and a
+        // freshly allocated StringName every time it is asked. They only have something to do for a
+        // short while after this component asks the machine to go somewhere, so the state is read
+        // until it has been seen resting in locomotion for SettledTicks ticks running and then left
+        // alone until the next request (every Travel/Start here resets the count).
+        if (_settledTicks >= SettledTicks)
+        {
+            return;
+        }
+
+        using StringName current = _playback.GetCurrentNode();
+        _settledTicks = current == LocomotionStateName ? _settledTicks + 1 : 0;
+
+        if (_actionClip.Length == 0 && current == ActionStateName)
+        {
+            TravelTo(LocomotionStateName);
         }
 
         // The flinch is a one-shot state with no exit condition of its own; locomotion reclaims the
         // body once the clip has run. Without this the actor stays bent over its wound forever.
-        if (_playback.GetCurrentNode() == LocomotionTree.HitState &&
+        if (current == HitStateName &&
             _playback.GetCurrentPlayPosition() >= _playback.GetCurrentLength() - 0.05d)
         {
-            _playback.Travel(LocomotionTree.LocomotionState);
+            TravelTo(LocomotionStateName);
         }
+    }
+
+    // Built once. The tree's parameter paths and state names were string constants, and every
+    // call that took one converted it to a new StringName: an engine round trip and a finalizable
+    // object apiece, seven or so per animated character per frame.
+    private static readonly StringName SpeedParamName = LocomotionTree.SpeedParam;
+    private static readonly StringName UpperBodyBlendParamName = LocomotionTree.UpperBodyBlendParam;
+    private static readonly StringName ActionScaleParamName = LocomotionTree.ActionScaleParam;
+    private static readonly StringName LocomotionStateName = LocomotionTree.LocomotionState;
+    private static readonly StringName ActionStateName = LocomotionTree.ActionState;
+    private static readonly StringName HitStateName = LocomotionTree.HitState;
+    private static readonly StringName DeathStateName = LocomotionTree.DeathState;
+
+    /// <summary>Consecutive locomotion ticks after which the state machine is taken to be at rest.
+    /// A travel request is picked up on the machine's next step, so a handful of frames is ample
+    /// and the cost of being generous is a few extra reads.</summary>
+    private const int SettledTicks = 12;
+
+    private int _settledTicks;
+    private float _sentSpeed = float.NaN;
+    private float _upperBlend;
+
+    private void TravelTo(StringName state)
+    {
+        _playback!.Travel(state);
+        _settledTicks = 0;
+    }
+
+    // --- distance level of detail -----------------------------------------------------------------
+
+    /// <summary>Beyond this many metres from the player a body's animation is stepped on every
+    /// <see cref="LodStride"/>th frame instead of every frame. At that range a person is a couple
+    /// of dozen pixels tall, and posing and skinning a skeleton nobody can read at full rate was
+    /// the largest per-actor cost a crowd had.</summary>
+    private const float LodDistance = 40f;
+    private const int LodStride = 3;
+    private const double LodCheckSeconds = 0.5d;
+
+    private double _lodTimer;
+    private bool _lodFar;
+    private bool _lodCoarse;
+    private double _lodBanked;
+    private int _lodFrame;
+
+    /// <summary>Whichever mixer is actually advancing the pose: the tree when there is one (it
+    /// drives the player), otherwise the player itself. Both are in manual callback mode for their
+    /// whole life, so <see cref="AdvanceMixer"/> is the only thing that moves a pose.</summary>
+    private AnimationMixer? Mixer => _tree != null ? _tree : _player;
+
+    private void TickLod()
+    {
+        _lodTimer -= _lastDelta;
+        if (_lodTimer <= 0d)
+        {
+            _lodTimer = LodCheckSeconds;
+            _lodFar = IsFarOrHidden();
+        }
+
+        // ⚠️ Never while an action clip is running: the clip IS that action's clock
+        // (ActionProgress), and a clock that moves every third frame would move its hit window.
+        bool coarse = _lodFar && _actionClip.Length == 0;
+        if (coarse != _lodCoarse)
+        {
+            SetCoarse(coarse);
+        }
+    }
+
+    /// <summary>Steps the pose: every frame at full rate, every <see cref="LodStride"/>th frame
+    /// when coarse, and then by the whole of the skipped time so clips keep their real speed.</summary>
+    private void AdvanceMixer(double delta)
+    {
+        _lodBanked += delta;
+        if (_lodCoarse && ++_lodFrame < LodStride)
+        {
+            return;
+        }
+
+        Flush();
+    }
+
+    private void Flush()
+    {
+        double step = _lodBanked;
+        _lodBanked = 0d;
+        _lodFrame = 0;
+        if (step > 0d && Mixer is { } mixer && GodotObject.IsInstanceValid(mixer))
+        {
+            mixer.Advance(step);
+        }
+    }
+
+    /// <summary>Only a flag: the mixer's mode never changes, so nothing restarts. Leaving coarse
+    /// hands the pose whatever time was banked, so what follows starts from the present.</summary>
+    private void SetCoarse(bool coarse)
+    {
+        if (!coarse)
+        {
+            Flush();
+        }
+
+        _lodFrame = 0;
+        _lodCoarse = coarse;
+    }
+
+    /// <summary>Far from the player, or not drawn at all (an unrecruited companion, a flag-gated
+    /// actor). With no player there is nothing to be far from — a menu scene or a render harness —
+    /// and the body animates at full rate.</summary>
+    private bool IsFarOrHidden()
+    {
+        if (Entity?.Body is not { } body || !GodotObject.IsInstanceValid(body))
+        {
+            return false;
+        }
+
+        if (!body.IsVisibleInTree())
+        {
+            return true;
+        }
+
+        if (Core.Services.ServiceLocator.Instance is not { } locator ||
+            !locator.TryGet(out Player.PlayerCharacter player) || !GodotObject.IsInstanceValid(player) ||
+            ReferenceEquals(player, Entity))
+        {
+            return false;
+        }
+
+        return body.GlobalPosition.DistanceSquaredTo(player.GlobalPosition) > LodDistance * LodDistance;
     }
 
     /// <summary>Seconds the guard pose takes to blend in or out. Long enough to read as raising a

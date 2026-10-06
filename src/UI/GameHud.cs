@@ -1,4 +1,3 @@
-using System.Text;
 using Embervale.Core;
 using Embervale.Core.Events;
 using Embervale.Corruption;
@@ -76,12 +75,10 @@ public partial class GameHud : CanvasLayer
     // Control and Weave chips (magic upgrade): silenced / rooted / stunned state and the region's fading
     // Weave, in a wrapping row above the status chips. Rebuilt only when the signature changes.
     private HFlowContainer _controlRow = null!;
-    private string _controlSignature = string.Empty;
 
     /// <summary>Statuses shown in the strip before the rest fold into a "+N" chip.</summary>
     private const int MaxStatusChips = 6;
-    private readonly System.Collections.Generic.List<(StatusEffect Effect, Label Time)> _statusChips = new();
-    private string _statusSignature = string.Empty;
+    private readonly System.Collections.Generic.List<StatusChip> _statusChips = new();
 
     private Label _context = null!;
     private TextureRect _phaseGlyph = null!;
@@ -94,7 +91,6 @@ public partial class GameHud : CanvasLayer
     private Label _questClock = null!;
     private Label _questHeader = null!;
     private Label? _questHint;
-    private string _questSignature = string.Empty;
     private int _questCurrentObjective = -1;
     private string _questObjectiveKey = string.Empty;
     private readonly ObjectiveDwell _questDwell = new();
@@ -136,11 +132,150 @@ public partial class GameHud : CanvasLayer
     // Boss fight UI (Phase 28C): owns its own events and update loop since 37.5B — see BossFrame.
     private BossFrame _bossFrame = null!;
 
+    // --- Shown-value caches (performance pass) ---------------------------------
+    //
+    // Every label below is written only when the value it shows has changed. Assigning Label.Text
+    // each frame formats and marshals a string even though the engine then discards it as identical,
+    // and AddThemeColorOverride re-shapes the label whether or not the colour moved. Each cache is
+    // keyed on the value the text is derived from; InvalidateShown drops them all when something a
+    // key cannot see changes - the player, the locale, the accessibility settings.
+    private struct VitalShown
+    {
+        public float Current;
+        public float Max;
+    }
+
+    private sealed class StatusChip
+    {
+        public StatusEffect Effect = null!;
+        public Label Time = null!;
+        public int Stacks = int.MinValue;
+        public float Tenths = float.NaN;
+    }
+
+    private static readonly VitalShown NothingShown = new() { Current = float.NaN, Max = float.NaN };
+
+    private VitalShown _hpShown = NothingShown;
+    private VitalShown _staShown = NothingShown;
+    private VitalShown _mpShown = NothingShown;
+    private int _windedShown = -1;
+    private int _healthStateShown = -1;
+    private bool _hpPulsed;
+    private int _levelShown = int.MinValue;
+
+    private SpellResource? _spellShown;
+    private float _spellCostShown = float.NaN;
+    private float _spellHealthCostShown = float.NaN;
+    private int _spellAffordShown = -1;
+    private int _spellStateShown = -1;
+    private float _spellStateValueShown = float.NaN;
+    private int _spellStateColorShown = -1;
+
+    private int _controlKey = int.MinValue;
+    private bool _statusStale;
+    private readonly System.Collections.Generic.List<string> _statusIds = new();
+
+    // -1 = nothing shown yet, -2 = the "no clock" empty state, otherwise the DayPhase.
+    private int _phaseShown = -1;
+    private int _hourShown = -1;
+    private bool _weatherKnown;
+    private WeatherResource? _weatherShown;
+
+    private bool _questShapeKnown;
+    private string _questShapeId = string.Empty;
+    private int _questShapeCount;
+    private int[] _questShapeCounts = System.Array.Empty<int>();
+    private byte[] _questShapeFlags = System.Array.Empty<byte>();
+    private float _questFlagTimer;
+
+    /// <summary>How often the tracker re-asks each objective whether it is in the player's branch and
+    /// active. Those two answers move on a story flag, which raises no event the tracker can hear, so
+    /// they are polled; each ask rebuilds the quest's objective list, so they are polled four times
+    /// a second rather than sixty. The counts beside them are compared every frame.</summary>
+    private const float QuestFlagInterval = 0.25f;
+    private int _questHeaderShown = -1;
+    private int _questWhereMode = -1; // 0 hidden, 1 distance readout, 2 place name
+    private float _questWhereDistance = float.NaN;
+    private string? _questWhereCardinal;
+    private string? _questWhereRealm;
+    private bool _questPlaceKnown;
+    private string? _questPlace;
+    private int _questClockShown = int.MinValue;
+    private int _questClockHot = -1;
+
+    private WorldEvent? _bannerShown;
+    private int _bannerProgress = int.MinValue;
+    private int _bannerRequired = int.MinValue;
+    private float _bannerSecondsShown = float.NaN;
+    private int _bannerHot = -1;
+
+    private string? _promptShown;
+    private PartyWidget? _party;
+
+    /// <summary>Forgets what every cached label is showing, so the next tick rewrites them all.</summary>
+    private void InvalidateShown()
+    {
+        _hpShown = _staShown = _mpShown = NothingShown;
+        _windedShown = -1;
+        _healthStateShown = -1;
+        _hpPulsed = true;
+        _levelShown = int.MinValue;
+        _spellShown = null;
+        _controlKey = int.MinValue;
+        _statusStale = true;
+        _phaseShown = -1;
+        _hourShown = -1;
+        _weatherKnown = false;
+        _questShapeKnown = false;
+        _questHeaderShown = -1;
+        _questWhereMode = -1;
+        _questPlaceKnown = false;
+        _questClockShown = int.MinValue;
+        _questClockHot = -1;
+        _bannerShown = null;
+        _bannerSecondsShown = float.NaN;
+        _bannerHot = -1;
+        _promptShown = null;
+        _nameplate?.InvalidateShown();
+        _compass?.InvalidateText();
+        _party?.MarkStale();
+    }
+
+    private void InvalidateSpellShown()
+    {
+        _spellCostShown = float.NaN;
+        _spellHealthCostShown = float.NaN;
+        _spellAffordShown = -1;
+        _spellStateShown = -1;
+        _spellStateValueShown = float.NaN;
+        _spellStateColorShown = -1;
+    }
+
     public void SetPlayer(IEntity? player)
     {
         _player = player;
         _compass?.SetPlayer(player);
+        InvalidateShown();
     }
+
+    /// <summary>A locale switch re-resolves every cached string (the caches hold translated text).</summary>
+    public override void _Notification(int what)
+    {
+        if (what == NotificationTranslationChanged)
+        {
+            InvalidateShown();
+        }
+    }
+
+    // Colour-vision and contrast settings change what the semantic colour tokens resolve to.
+    private void OnSettingsApplied(Settings.SettingsAppliedEvent e) => InvalidateShown();
+
+    // A story flag is what moves a quest between branches: re-ask the objectives on the next tick
+    // instead of waiting out the poll. The poll stays, for a flag that changes with no event.
+    private void OnStoryFlagChanged(Embervale.Dialogue.StoryFlagChangedEvent e) => _questFlagTimer = 0f;
+
+    // A load can replace anything a cache was keyed on while leaving the objects in place.
+    private void OnGameLoaded(GameLoadedEvent e) => InvalidateShown();
 
     /// <summary>Whether the current objective's hint is showing under it. Read by the screenshot harness.</summary>
     public bool TrackerHintVisible => _questHint is { Visible: true };
@@ -200,6 +335,9 @@ public partial class GameHud : CanvasLayer
         EventBus.Instance?.Subscribe<InputDeviceChangedEvent>(OnInputDeviceChanged);
         EventBus.Instance?.Subscribe<CorruptionTierChangedEvent>(OnCorruptionTierChanged);
         EventBus.Instance?.Subscribe<EntityDiedEvent>(OnEntityDied);
+        EventBus.Instance?.Subscribe<Settings.SettingsAppliedEvent>(OnSettingsApplied);
+        EventBus.Instance?.Subscribe<Embervale.Dialogue.StoryFlagChangedEvent>(OnStoryFlagChanged);
+        EventBus.Instance?.Subscribe<GameLoadedEvent>(OnGameLoaded);
     }
 
     public override void _ExitTree()
@@ -209,6 +347,9 @@ public partial class GameHud : CanvasLayer
         EventBus.Instance?.Unsubscribe<InputDeviceChangedEvent>(OnInputDeviceChanged);
         EventBus.Instance?.Unsubscribe<CorruptionTierChangedEvent>(OnCorruptionTierChanged);
         EventBus.Instance?.Unsubscribe<EntityDiedEvent>(OnEntityDied);
+        EventBus.Instance?.Unsubscribe<Settings.SettingsAppliedEvent>(OnSettingsApplied);
+        EventBus.Instance?.Unsubscribe<Embervale.Dialogue.StoryFlagChangedEvent>(OnStoryFlagChanged);
+        EventBus.Instance?.Unsubscribe<GameLoadedEvent>(OnGameLoaded);
     }
 
     /// <summary>
@@ -330,7 +471,8 @@ public partial class GameHud : CanvasLayer
     /// Self-hiding while the party is empty, so a solo run's HUD is untouched.</summary>
     private void BuildParty()
     {
-        _layout.BottomLeft.AddChild(new PartyWidget { Name = "Party" });
+        _party = new PartyWidget { Name = "Party" };
+        _layout.BottomLeft.AddChild(_party);
     }
 
     /// <summary>
@@ -740,20 +882,29 @@ public partial class GameHud : CanvasLayer
             return;
         }
 
-        SetVital(_hpBar, _hpText, stats, StatType.Health);
-        SetVital(_staBar, _staText, stats, StatType.Stamina);
+        SetVital(_hpBar, _hpText, stats, StatType.Health, ref _hpShown);
+        SetVital(_staBar, _staText, stats, StatType.Stamina, ref _staShown);
 
         // Winded (stamina hit zero; dodge and sprint locked until it refills — StatsComponent.IsWinded): the
         // bar dims and the reading turns Bad, two channels as with low health, no motion needed.
-        _staBar.SelfModulate = stats.IsWinded ? new Color(1f, 1f, 1f, 0.45f) : Colors.White;
-        _staText.AddThemeColorOverride("font_color", stats.IsWinded ? UiTheme.Bad : UiTheme.Text);
+        int winded = stats.IsWinded ? 1 : 0;
+        if (winded != _windedShown)
+        {
+            _windedShown = winded;
+            _staBar.SelfModulate = winded == 1 ? new Color(1f, 1f, 1f, 0.45f) : Colors.White;
+            UiLive.FontColor(_staText, winded == 1 ? UiTheme.Bad : UiTheme.Text);
+        }
 
-        SetVital(_mpBar, _mpText, stats, StatType.Mana);
+        SetVital(_mpBar, _mpText, stats, StatType.Mana, ref _mpShown);
         UpdateCriticalHealth(stats, delta);
 
-        _footer.Text = _player.TryGetComponent(out ProgressionComponent prog)
-            ? Loc.TF("hud.level", prog.Level)
-            : string.Empty;
+        const int NoLevel = int.MinValue + 1;
+        int level = _player.TryGetComponent(out ProgressionComponent prog) ? prog.Level : NoLevel;
+        if (level != _levelShown)
+        {
+            _levelShown = level;
+            _footer.Text = level != NoLevel ? Loc.TF("hud.level", level) : string.Empty;
+        }
 
         UpdateSpellWidget();
         UpdateStatusChips();
@@ -782,29 +933,38 @@ public partial class GameHud : CanvasLayer
     private void UpdateCriticalHealth(StatsComponent stats, double delta)
     {
         float fraction = stats.GetNormalized(StatType.Health);
-        if (fraction > LowHealth)
+        int state = fraction > LowHealth ? 0 : fraction <= CriticalHealth ? 2 : 1;
+        if (state != _healthStateShown)
         {
-            _criticalPhase = 0f;
-            _hpBar.SelfModulate = Colors.White;
-            _hpText.AddThemeColorOverride("font_color", UiTheme.Text);
-            return;
+            _healthStateShown = state;
+            UiLive.FontColor(_hpText, state == 0 ? UiTheme.Text : state == 2 ? UiTheme.AccentHot : UiTheme.Accent);
         }
 
-        bool critical = fraction <= CriticalHealth;
-        _hpText.AddThemeColorOverride("font_color", critical ? UiTheme.AccentHot : UiTheme.Accent);
-
-        if (!UiTheme.MotionEnabled)
+        if (state == 0 || !UiTheme.MotionEnabled)
         {
-            _hpBar.SelfModulate = Colors.White;
+            if (state == 0)
+            {
+                _criticalPhase = 0f;
+            }
+
+            // Back to plain once, not every frame: the modulate only moves while the bar breathes.
+            if (_hpPulsed)
+            {
+                _hpPulsed = false;
+                _hpBar.SelfModulate = Colors.White;
+            }
+
             return;
         }
 
         // Faster and deeper the worse it gets, so "bad" and "very bad" are distinguishable without
         // reading anything.
+        bool critical = state == 2;
         _criticalPhase += (float)delta * (critical ? 6.4f : 3.4f);
         float swing = critical ? 0.32f : 0.16f;
         float pulse = 1f - (swing * 0.5f * (1f - Mathf.Cos(_criticalPhase)));
         _hpBar.SelfModulate = new Color(1f, pulse, pulse);
+        _hpPulsed = true;
     }
 
     /// <summary>The prepared-spell widget (30.5C): school-tinted name, state readout, and the
@@ -815,8 +975,13 @@ public partial class GameHud : CanvasLayer
         if (_player!.TryGetComponent(out SpellcastingComponent spells) && spells.Selected is { } spell)
         {
             Color tint = SpellSchools.Color(spell.School);
-            _spellName.Text = spell.DisplayName;
-            _spellName.Modulate = tint;
+            if (!ReferenceEquals(spell, _spellShown))
+            {
+                _spellShown = spell;
+                _spellName.Text = spell.DisplayName;
+                _spellName.Modulate = tint;
+                InvalidateSpellShown();
+            }
 
             float cd = spells.CooldownOf(spell);
 
@@ -834,23 +999,63 @@ public partial class GameHud : CanvasLayer
             bool affordable = mana >= cost;
             bool silenced = _player.GetComponent<StatusEffectsComponent>() is { IsSilenced: true };
             _spellCost.Visible = cost > 0f || spell.HealthCost > 0f;
-            _spellCost.Text = spell.HealthCost > 0f
-                ? $"{cost:0} + {Loc.TF("magic.book.hud_health_cost", spell.HealthCost.ToString("0"))}"
-                : $"{cost:0}";
-            _spellCost.AddThemeColorOverride(
-                "font_color", affordable ? UiTheme.Mana : UiTheme.Bad);
 
-            _spellState.Text = silenced ? Loc.T("magic.book.hud_silenced")
-                : spells.PendingSpell != null ? Loc.T("hud.casting")
-                : spells.IsCharging ? Loc.T("hud.charging")
-                : spells.IsChanneling ? Loc.T("hud.channeling")
-                : cd > 0f ? $"{cd:0.0}s"
-                : !affordable ? Loc.TF("magic.book.hud_mana_short", Mathf.Ceil(cost - mana).ToString("0"))
-                : Loc.T("hud.ready");
+            // The reading is whole mana, so it is reformatted when the whole number moves.
+            float costShown = System.MathF.Round(cost, System.MidpointRounding.AwayFromZero);
+            if (costShown != _spellCostShown || spell.HealthCost != _spellHealthCostShown)
+            {
+                _spellCostShown = costShown;
+                _spellHealthCostShown = spell.HealthCost;
+                _spellCost.Text = spell.HealthCost > 0f
+                    ? $"{cost:0} + {Loc.TF("magic.book.hud_health_cost", spell.HealthCost.ToString("0"))}"
+                    : $"{cost:0}";
+            }
+
+            int afford = affordable ? 1 : 0;
+            if (afford != _spellAffordShown)
+            {
+                _spellAffordShown = afford;
+                UiLive.FontColor(_spellCost, affordable ? UiTheme.Mana : UiTheme.Bad);
+            }
+
+            // Which line the state readout is on, and the one number two of them carry. The text is
+            // rebuilt only when either moves: a tenth of a second of cooldown, a whole point of mana.
+            int state = silenced ? 0
+                : spells.PendingSpell != null ? 1
+                : spells.IsCharging ? 2
+                : spells.IsChanneling ? 3
+                : cd > 0f ? 4
+                : !affordable ? 5
+                : 6;
+            float stateValue = state == 4 ? System.MathF.Round(cd * 10f, System.MidpointRounding.AwayFromZero)
+                : state == 5 ? Mathf.Ceil(cost - mana)
+                : 0f;
+            if (state != _spellStateShown || stateValue != _spellStateValueShown)
+            {
+                _spellStateShown = state;
+                _spellStateValueShown = stateValue;
+                _spellState.Text = state switch
+                {
+                    0 => Loc.T("magic.book.hud_silenced"),
+                    1 => Loc.T("hud.casting"),
+                    2 => Loc.T("hud.charging"),
+                    3 => Loc.T("hud.channeling"),
+                    4 => $"{cd:0.0}s",
+                    5 => Loc.TF("magic.book.hud_mana_short", Mathf.Ceil(cost - mana).ToString("0")),
+                    _ => Loc.T("hud.ready"),
+                };
+            }
+
             // Font colour, not Modulate — modulating multiplies the caption's own Dim down
             // below readable contrast (30.5K audit).
-            _spellState.AddThemeColorOverride(
-                "font_color", silenced || !affordable ? UiTheme.Bad : cd > 0f ? UiTheme.Dim : UiTheme.Accent);
+            int stateColor = silenced || !affordable ? 0 : cd > 0f ? 1 : 2;
+            if (stateColor != _spellStateColorShown)
+            {
+                _spellStateColorShown = stateColor;
+                UiLive.FontColor(
+                    _spellState, stateColor == 0 ? UiTheme.Bad : stateColor == 1 ? UiTheme.Dim : UiTheme.Accent);
+            }
+
             _spellRow.Visible = true;
 
             // The recovery bar runs off the cooldown the cast actually set, which mastery shortens.
@@ -874,6 +1079,7 @@ public partial class GameHud : CanvasLayer
         }
         else
         {
+            _spellShown = null;
             _spellRow.Visible = false;
             _cooldownBar.Visible = false;
         }
@@ -882,32 +1088,64 @@ public partial class GameHud : CanvasLayer
     }
 
     /// <summary>The status-effect chip row (30.5C): rebuilt only when the active set changes;
-    /// per-chip countdowns update in place each frame.</summary>
+    /// per-chip countdowns update in place as their shown tenth of a second moves.</summary>
     private void UpdateStatusChips()
     {
         StatusEffectsComponent? effects = _player!.GetComponent<StatusEffectsComponent>();
+        int count = effects?.ActiveEffects.Count ?? 0;
 
-        var signature = new StringBuilder();
-        if (effects != null)
+        // The common frame has no effect at all: nothing to compare, nothing to walk.
+        if (count == 0 && _statusIds.Count == 0 && !_statusStale)
         {
-            foreach (StatusEffect effect in effects.ActiveEffects)
+            return;
+        }
+
+        // The active set, compared id by id against the one the chips were built from. This is the
+        // same question the old joined-id signature asked, without building a string to ask it.
+        bool changed = _statusStale || count != _statusIds.Count;
+        if (!changed)
+        {
+            int index = 0;
+            foreach (StatusEffect effect in effects!.ActiveEffects)
             {
-                signature.Append(effect.Definition.Id).Append('|');
+                if (_statusIds[index++] != effect.Definition.Id)
+                {
+                    changed = true;
+                    break;
+                }
             }
         }
 
-        string current = signature.ToString();
-        if (current != _statusSignature)
+        if (changed)
         {
-            _statusSignature = current;
+            _statusStale = false;
+            _statusIds.Clear();
+            if (effects != null)
+            {
+                foreach (StatusEffect effect in effects.ActiveEffects)
+                {
+                    _statusIds.Add(effect.Definition.Id);
+                }
+            }
+
             RebuildStatusChips(effects);
         }
 
-        foreach ((StatusEffect effect, Label time) in _statusChips)
+        foreach (StatusChip chip in _statusChips)
         {
-            time.Text = effect.Stacks > 1
-                ? $"x{effect.Stacks} {effect.Remaining:0.0}s"
-                : $"{effect.Remaining:0.0}s";
+            // One decimal is shown, so the text moves ten times a second, not sixty.
+            int stacks = chip.Effect.Stacks;
+            float tenths = (float)System.Math.Round(chip.Effect.Remaining * 10d, System.MidpointRounding.AwayFromZero);
+            if (stacks == chip.Stacks && tenths == chip.Tenths)
+            {
+                continue;
+            }
+
+            chip.Stacks = stacks;
+            chip.Tenths = tenths;
+            chip.Time.Text = stacks > 1
+                ? $"x{stacks} {chip.Effect.Remaining:0.0}s"
+                : $"{chip.Effect.Remaining:0.0}s";
         }
     }
 
@@ -945,7 +1183,7 @@ public partial class GameHud : CanvasLayer
             time.Visible = true;
             chip.TooltipText = SpellText.Description(effect.Definition);
             chip.MouseFilter = Control.MouseFilterEnum.Pass;
-            _statusChips.Add((effect, time));
+            _statusChips.Add(new StatusChip { Effect = effect, Time = time });
             _statusRow.AddChild(chip);
         }
     }
@@ -960,13 +1198,16 @@ public partial class GameHud : CanvasLayer
         bool stunned = effects is { IsStunned: true };
         bool weave = WeaveMath.ShowsIndicator(Weave.Potency);
 
-        string signature = $"{silenced}|{rooted}|{stunned}|{(weave ? (int)Mathf.Round(Weave.Potency * 100f) : -1)}";
-        if (signature == _controlSignature)
+        // The three flags and the Weave's whole percentage, packed: the same key the old
+        // interpolated signature held, without allocating a string per frame to compare it.
+        int key = (silenced ? 1 : 0) | (rooted ? 2 : 0) | (stunned ? 4 : 0) |
+                  ((weave ? (int)Mathf.Round(Weave.Potency * 100f) : -1) << 3);
+        if (key == _controlKey)
         {
             return;
         }
 
-        _controlSignature = signature;
+        _controlKey = key;
         UiTheme.ClearChildren(_controlRow);
 
         if (weave)
@@ -996,26 +1237,49 @@ public partial class GameHud : CanvasLayer
         {
             // Graceful empty state (§53): the widget goes away rather than showing an empty frame or
             // a placeholder time the player might believe.
-            _phaseGlyph.Visible = false;
-            _context.Text = string.Empty;
-            _phaseText.Text = string.Empty;
-            _weatherText.Text = string.Empty;
+            if (_phaseShown != -2)
+            {
+                _phaseShown = -2;
+                _hourShown = -1;
+                _weatherKnown = false;
+                _phaseGlyph.Visible = false;
+                _context.Text = string.Empty;
+                _phaseText.Text = string.Empty;
+                _weatherText.Text = string.Empty;
+            }
+
             return;
         }
 
-        (UiIcon.Kind icon, Color tint) = PhaseMark(clock.Phase);
-        _phaseGlyph.Visible = true;
-        _phaseGlyph.Texture = UiIcon.Texture(icon);
-        _phaseGlyph.Modulate = UiTheme.Adapt(tint);
-
-        _context.Text = clock.Clock();
-        _phaseText.Text = Loc.T(DayPhases.NameKey(clock.Phase));
-
-        bool hasWeather = _weather is { } weather && IsInstanceValid(weather) && weather.Current is not null;
-        _weatherText.Visible = hasWeather;
-        if (hasWeather)
+        // The phase changes four times a day and the hour twenty-four: neither is restated per frame.
+        DayPhase phase = clock.Phase;
+        if ((int)phase != _phaseShown)
         {
-            _weatherText.Text = $"· {_weather!.Current!.DisplayName}";
+            _phaseShown = (int)phase;
+            (UiIcon.Kind icon, Color tint) = PhaseMark(phase);
+            _phaseGlyph.Visible = true;
+            _phaseGlyph.Texture = UiIcon.Texture(icon);
+            _phaseGlyph.Modulate = UiTheme.Adapt(tint);
+            _phaseText.Text = Loc.T(DayPhases.NameKey(phase));
+        }
+
+        int hour = clock.Hour;
+        if (hour != _hourShown)
+        {
+            _hourShown = hour;
+            _context.Text = clock.Clock();
+        }
+
+        WeatherResource? current = _weather is { } weather && IsInstanceValid(weather) ? weather.Current : null;
+        if (!_weatherKnown || !ReferenceEquals(current, _weatherShown))
+        {
+            _weatherKnown = true;
+            _weatherShown = current;
+            _weatherText.Visible = current != null;
+            if (current != null)
+            {
+                _weatherText.Text = $"· {current.DisplayName}";
+            }
         }
     }
 
@@ -1030,7 +1294,7 @@ public partial class GameHud : CanvasLayer
         if (active == null || active.Quest.IsLedger)
         {
             _questPanel.Visible = false;
-            _questSignature = string.Empty;
+            _questShapeKnown = false;
             _questFlash.Observe(null, delta);
             _questDwell.Tick(null, delta);
             return;
@@ -1044,27 +1308,24 @@ public partial class GameHud : CanvasLayer
         // whole quest is about, and the tracker would keep listing the path they turned down. The
         // journal's version of this is a missing event subscription; this one is a missing term in a
         // cache key, and neither is visible to a build, a test or a validator.
-        var signature = new StringBuilder(active.Quest.Id);
-        for (int i = 0; i < active.Counts.Length; i++)
+        if (QuestShapeChanged(active, delta))
         {
-            signature.Append(':').Append(active.Counts[i])
-                     .Append(active.IsObjectiveInBranch(i) ? 'b' : '-')
-                     .Append(active.IsObjectiveActive(i) ? 'a' : '-');
-        }
-
-        string current = signature.ToString();
-        if (current != _questSignature)
-        {
-            _questSignature = current;
             _questCurrentObjective = ObjectiveFocusRules.Current(QuestProgressViews.States(active));
             _questObjectiveKey = _questCurrentObjective >= 0 ? $"{active.Quest.Id}:{_questCurrentObjective}" : string.Empty;
+            _questPlaceKnown = false; // the current objective, and so its place, may have moved
             RebuildQuestRows(active);
         }
 
         // "Now tracking" holds the header for a few seconds after the tracked quest changes, and the
         // current objective's hint appears once the player has sat on the same step for a while.
         _questFlash.Observe(active.Quest.Id, delta);
-        _questHeader.Text = Loc.T(_questFlash.Active ? "questui.now_tracking" : "hud.quest");
+        int header = _questFlash.Active ? 1 : 0;
+        if (header != _questHeaderShown)
+        {
+            _questHeaderShown = header;
+            _questHeader.Text = Loc.T(header == 1 ? "questui.now_tracking" : "hud.quest");
+        }
+
         _questDwell.Tick(_questObjectiveKey, delta);
         if (_questHint != null)
         {
@@ -1074,6 +1335,57 @@ public partial class GameHud : CanvasLayer
         UpdateQuestDestination();
         UpdateQuestClock(active);
         _questPanel.Visible = true;
+    }
+
+    /// <summary>
+    /// Whether the tracked quest's shape differs from the one the rows were built from, recording the
+    /// new shape when it does. The shape is the quest, and per objective its count, whether it is in
+    /// the player's branch and whether it is active - term for term what the old string signature
+    /// joined, compared in place so an unchanged tracker costs no allocation. The quest and the counts
+    /// are compared every frame; the branch and active flags on <see cref="QuestFlagInterval"/>, and
+    /// at once whenever the quest or a count has moved.
+    /// </summary>
+    private bool QuestShapeChanged(QuestProgress active, float delta)
+    {
+        int[] counts = active.Counts;
+        int n = counts.Length;
+        bool changed = !_questShapeKnown || n != _questShapeCount || active.Quest.Id != _questShapeId;
+
+        if (_questShapeCounts.Length < n)
+        {
+            _questShapeCounts = new int[n];
+            _questShapeFlags = new byte[n];
+            changed = true;
+        }
+
+        for (int i = 0; i < n; i++)
+        {
+            if (counts[i] != _questShapeCounts[i])
+            {
+                changed = true;
+                _questShapeCounts[i] = counts[i];
+            }
+        }
+
+        _questFlagTimer -= delta;
+        if (changed || _questFlagTimer <= 0f)
+        {
+            _questFlagTimer = QuestFlagInterval;
+            for (int i = 0; i < n; i++)
+            {
+                byte flags = (byte)((active.IsObjectiveInBranch(i) ? 1 : 0) | (active.IsObjectiveActive(i) ? 2 : 0));
+                if (flags != _questShapeFlags[i])
+                {
+                    changed = true;
+                    _questShapeFlags[i] = flags;
+                }
+            }
+        }
+
+        _questShapeKnown = true;
+        _questShapeCount = n;
+        _questShapeId = active.Quest.Id;
+        return changed;
     }
 
     /// <summary>
@@ -1091,15 +1403,34 @@ public partial class GameHud : CanvasLayer
             _player?.Body is { } body && IsInstanceValid(body))
         {
             Vector3 offset = target - body.GlobalPosition;
-            (string value, string unitKey) = CompassMath.Distance(new Vector2(offset.X, offset.Z).Length());
-            string cardinal = Loc.T(CompassMath.CardinalKey(CompassMath.BearingTo(offset.X, offset.Z)));
+            float metres = new Vector2(offset.X, offset.Z).Length();
+            string cardinalKey = CompassMath.CardinalKey(CompassMath.BearingTo(offset.X, offset.Z));
+            string? realm = _compass.PortalRegionName;
 
-            // A destination in another realm points at this realm's door toward it, and says so.
-            _questWhere.Text = _compass.PortalRegionName is { } realm
-                ? Loc.TF("questui.destination_portal", realm, value, Loc.T(unitKey), cardinal)
-                : Loc.TF("hud.quest.destination", value, Loc.T(unitKey), cardinal);
-            _questWhere.AddThemeColorOverride("font_color", UiTheme.Accent);
-            _questWhere.Visible = true;
+            // The readout shows whole metres (or a tenth of a kilometre) and one of eight compass
+            // points, so it is rebuilt when one of those moves and not on every step in between.
+            float shown = metres < 1000f
+                ? System.MathF.Round(metres)
+                : 100000f + System.MathF.Round(metres / 100f, System.MidpointRounding.AwayFromZero);
+            if (_questWhereMode != 1 || shown != _questWhereDistance ||
+                !ReferenceEquals(cardinalKey, _questWhereCardinal) || realm != _questWhereRealm)
+            {
+                _questWhereMode = 1;
+                _questWhereDistance = shown;
+                _questWhereCardinal = cardinalKey;
+                _questWhereRealm = realm;
+
+                (string value, string unitKey) = CompassMath.Distance(metres);
+                string cardinal = Loc.T(cardinalKey);
+
+                // A destination in another realm points at this realm's door toward it, and says so.
+                _questWhere.Text = realm != null
+                    ? Loc.TF("questui.destination_portal", realm, value, Loc.T(unitKey), cardinal)
+                    : Loc.TF("hud.quest.destination", value, Loc.T(unitKey), cardinal);
+                UiLive.FontColor(_questWhere, UiTheme.Accent);
+                _questWhere.Visible = true;
+            }
+
             return;
         }
 
@@ -1112,12 +1443,26 @@ public partial class GameHud : CanvasLayer
         // difference between the tracker looking incomplete and looking broken. 39.5B shipped this
         // row and it had never once rendered, because until `LocationId` existed there was nothing
         // for it to fall back to.
-        string? place = TrackedDestinationName();
-        _questWhere.Visible = place != null;
-        if (place != null)
+        //
+        // The name belongs to the current objective, so it is resolved when the quest's shape
+        // changes (UpdateQuest clears _questPlaceKnown) rather than looked up every frame.
+        if (!_questPlaceKnown)
         {
-            _questWhere.Text = place;
-            _questWhere.AddThemeColorOverride("font_color", UiTheme.Dim);
+            _questPlaceKnown = true;
+            _questPlace = TrackedDestinationName();
+            _questWhereMode = -1;
+        }
+
+        int mode = _questPlace != null ? 2 : 0;
+        if (mode != _questWhereMode)
+        {
+            _questWhereMode = mode;
+            _questWhere.Visible = _questPlace != null;
+            if (_questPlace != null)
+            {
+                _questWhere.Text = _questPlace;
+                UiLive.FontColor(_questWhere, UiTheme.Dim);
+            }
         }
     }
 
@@ -1125,7 +1470,7 @@ public partial class GameHud : CanvasLayer
     /// The countdown on a timed quest (41C) — "0:47" under the destination, turning hot in the last
     /// ten seconds like the world-event banner's timer it is modelled on.
     ///
-    /// ⚠️ <b>Outside the signature-driven rebuild, deliberately.</b> <c>_questSignature</c> is built
+    /// ⚠️ <b>Outside the signature-driven rebuild, deliberately.</b> the quest shape (<c>QuestShapeChanged</c>) is built
     /// from the objective counts precisely so the rows are rebuilt only when they change; a value
     /// that changes every frame folded into it would recreate the tracker's nodes every frame, which
     /// is what §50 forbids and what the destination readout above already avoids.
@@ -1139,9 +1484,19 @@ public partial class GameHud : CanvasLayer
         }
 
         int seconds = Mathf.Max(0, Mathf.CeilToInt(active.SecondsLeft));
-        _questClock.Text = Loc.TF("hud.quest.time_left", seconds / 60, (seconds % 60).ToString("00"));
-        _questClock.AddThemeColorOverride(
-            "font_color", seconds <= 10 ? UiTheme.AccentHot : UiTheme.Dim);
+        if (seconds != _questClockShown)
+        {
+            _questClockShown = seconds;
+            _questClock.Text = Loc.TF("hud.quest.time_left", seconds / 60, (seconds % 60).ToString("00"));
+        }
+
+        int hot = seconds <= 10 ? 1 : 0;
+        if (hot != _questClockHot)
+        {
+            _questClockHot = hot;
+            UiLive.FontColor(_questClock, hot == 1 ? UiTheme.AccentHot : UiTheme.Dim);
+        }
+
         _questClock.Visible = true;
     }
 
@@ -1298,21 +1653,42 @@ public partial class GameHud : CanvasLayer
     {
         if (_worldEvents is { } director && IsInstanceValid(director) && director.Active is { } worldEvent)
         {
-            _bannerText.Text = $"{worldEvent.Name} — {worldEvent.ObjectiveLabel()}";
+            // The line is the event's name and its progress count; it is rebuilt when either moves.
+            if (!ReferenceEquals(worldEvent, _bannerShown) || worldEvent.Progress != _bannerProgress ||
+                worldEvent.Required != _bannerRequired)
+            {
+                _bannerShown = worldEvent;
+                _bannerProgress = worldEvent.Progress;
+                _bannerRequired = worldEvent.Required;
+                _bannerSecondsShown = float.NaN;
+                _bannerHot = -1;
+                _bannerText.Text = $"{worldEvent.Name} — {worldEvent.ObjectiveLabel()}";
+            }
 
             // Separate countdown that heats to ember orange in the final seconds (urgency read).
             _bannerTimer.Visible = worldEvent.IsTimed;
             if (worldEvent.IsTimed)
             {
-                _bannerTimer.Text = $"{worldEvent.TimeLeft:0}s";
-                _bannerTimer.AddThemeColorOverride("font_color",
-                    worldEvent.TimeLeft <= 10f ? UiTheme.AccentHot : UiTheme.Dim);
+                float seconds = (float)System.Math.Round(worldEvent.TimeLeft, System.MidpointRounding.AwayFromZero);
+                if (seconds != _bannerSecondsShown)
+                {
+                    _bannerSecondsShown = seconds;
+                    _bannerTimer.Text = $"{worldEvent.TimeLeft:0}s";
+                }
+
+                int hot = worldEvent.TimeLeft <= 10f ? 1 : 0;
+                if (hot != _bannerHot)
+                {
+                    _bannerHot = hot;
+                    UiLive.FontColor(_bannerTimer, hot == 1 ? UiTheme.AccentHot : UiTheme.Dim);
+                }
             }
 
             _bannerPanel.Visible = true;
         }
         else
         {
+            _bannerShown = null;
             _bannerPanel.Visible = false;
         }
     }
@@ -1335,7 +1711,12 @@ public partial class GameHud : CanvasLayer
         string? prompt = focusSensor?.FocusPrompt;
         if (!string.IsNullOrEmpty(prompt))
         {
-            _promptText.Text = prompt;
+            if (prompt != _promptShown)
+            {
+                _promptShown = prompt;
+                _promptText.Text = prompt;
+            }
+
             _promptPanel.Visible = true;
         }
         else
@@ -1421,10 +1802,25 @@ public partial class GameHud : CanvasLayer
         return (bar, value);
     }
 
-    private static void SetVital(JuicedBar bar, Label value, StatsComponent stats, StatType type)
+    private static void SetVital(
+        JuicedBar bar, Label value, StatsComponent stats, StatType type, ref VitalShown shown)
     {
         bar.SetTarget(stats.GetNormalized(type));
-        value.Text = $"{stats.GetCurrent(type):0}/{stats.GetMax(type):0}";
+
+        // The reading is two whole numbers. Regeneration moves the stat every frame and the text
+        // perhaps once a second, so the string is built only when a whole number changes.
+        float current = stats.GetCurrent(type);
+        float max = stats.GetMax(type);
+        float currentShown = System.MathF.Round(current, System.MidpointRounding.AwayFromZero);
+        float maxShown = System.MathF.Round(max, System.MidpointRounding.AwayFromZero);
+        if (currentShown == shown.Current && maxShown == shown.Max)
+        {
+            return;
+        }
+
+        shown.Current = currentShown;
+        shown.Max = maxShown;
+        value.Text = $"{current:0}/{max:0}";
     }
 
     // --- Boss fight UI (Phase 28C) ------------------------------------------

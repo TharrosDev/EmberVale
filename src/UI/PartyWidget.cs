@@ -31,6 +31,14 @@ public partial class PartyWidget : VBoxContainer
         public required Label Order { get; init; }
 
         public required Label Loyalty { get; init; }
+
+        // What the row last showed. The order and loyalty labels were re-translated and their
+        // colours restated every frame; they move a handful of times in a session.
+        public int OrderShown { get; set; } = -1;
+
+        public int LoyaltyShown { get; set; } = -1;
+
+        public int DownedShown { get; set; } = -1;
     }
 
     private readonly List<Row> _rows = new();
@@ -109,12 +117,29 @@ public partial class PartyWidget : VBoxContainer
             // A downed companion reads as downed rather than as whatever order it was under — that
             // is the state the player has to act on.
             bool downed = companion.GetComponent<CompanionAIComponent>()?.State == CompanionState.Downed;
-            row.Order.Text = Loc.T(downed
-                ? "companion.order.downed"
-                : CompanionOrders.NameKey(roster.StanceOf(row.CompanionId)));
-            row.Order.AddThemeColorOverride("font_color", downed ? UiTheme.Bad : UiTheme.Dim);
-            row.Loyalty.Text = Loc.T(CompanionLoyalty.NameKey(roster.TierOf(row.CompanionId)));
-            row.Name.AddThemeColorOverride("font_color", downed ? UiTheme.Bad : UiTheme.Text);
+            int order = downed ? -2 : (int)roster.StanceOf(row.CompanionId);
+            if (order != row.OrderShown)
+            {
+                row.OrderShown = order;
+                row.Order.Text = Loc.T(downed
+                    ? "companion.order.downed"
+                    : CompanionOrders.NameKey(roster.StanceOf(row.CompanionId)));
+            }
+
+            int downedKey = downed ? 1 : 0;
+            if (downedKey != row.DownedShown)
+            {
+                row.DownedShown = downedKey;
+                UiLive.FontColor(row.Order, downed ? UiTheme.Bad : UiTheme.Dim);
+                UiLive.FontColor(row.Name, downed ? UiTheme.Bad : UiTheme.Text);
+            }
+
+            int loyalty = (int)roster.TierOf(row.CompanionId);
+            if (loyalty != row.LoyaltyShown)
+            {
+                row.LoyaltyShown = loyalty;
+                row.Loyalty.Text = Loc.T(CompanionLoyalty.NameKey(roster.TierOf(row.CompanionId)));
+            }
         }
     }
 
@@ -195,6 +220,10 @@ public partial class PartyWidget : VBoxContainer
 
         return _roster;
     }
+
+    /// <summary>Rebuilds the rows on the next tick (locale or colour-vision change): they hold
+    /// translated text and adapted colours.</summary>
+    public void MarkStale() => _dirty = true;
 
     private void OnPartyChanged(CompanionRecruitedEvent e) => _dirty = true;
 

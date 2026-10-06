@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Permanent Embervale 3D inventory, audit, and report generator.
 
-This tool never modifies a production asset. It combines byte-level glTF inspection,
+This tool never modifies a production asset (it also owns the texture budget rules that
+`assets.py audit-weight` reports against and `assets.py adopt` writes). It combines byte-level glTF inspection,
 repository usage/import analysis, optional Blender inspection, and optional Godot imported-scene
 measurements. Reports are deterministic apart from the recorded run metadata.
 
@@ -215,6 +216,175 @@ def parse_import(path: Path) -> dict[str, Any]:
     result["skeleton_name"] = skeleton.group(1) if skeleton else None
     result["subresource_count"] = len(re.findall(r"(?m)^\w.+?=\{", text))
     return result
+
+
+# --------------------------------------------------------------------------- texture weight
+#
+# Every texture a model uses is a .png beside it (gltf/embedded_image_handling=1 extracts an
+# embedded image to <model>_texture_N.png), so its video-memory cost is decided entirely by that
+# png's .import. The budget below is data/rendering/VisualContract.json's three caps (prop 512,
+# hero 1024, player/boss 2048) applied by class and by map role; docs/3D_ASSETS.md "Texture weight"
+# is the prose. `python tools/assets.py audit-weight` reports against it and `adopt` writes it.
+#
+# The numbers are longest-edge caps written as process/size_limit. A trim sheet tiles across a whole
+# building and is read at arm's length, so it is a hero surface (1024), not a prop.
+TEXTURE_BUDGET: dict[str, dict[str, int]] = {
+    "player_boss":       {"base": 2048, "normal": 2048, "orm": 1024},
+    "character":         {"base": 1024, "normal": 1024, "orm": 512},
+    "architecture_trim": {"base": 1024, "normal": 1024, "orm": 512},
+    "prop_trim":         {"base": 1024, "normal": 512, "orm": 512},
+    "nature_hero":       {"base": 1024, "normal": 512, "orm": 512},
+    "prop":              {"base": 512, "normal": 512, "orm": 512},
+}
+# Trees and rock faces the player walks up to; every other nature texture is a small prop.
+NATURE_HERO = ("T_Nature_Leaves", "T_Nature_LeafBroadleaf", "T_Nature_BarkBroadleaf",
+               "T_Nature_BarkDead", "T_Nature_Rocks")
+# ⚠️ DATA TEXTURES STAY LOSSLESS AND UNMIPPED, ON PURPOSE. A palette is flat swatches and gradient
+# strips sampled at a point: block compression bands the gradient, and a mip level averages a
+# swatch with its neighbour (the grass strip goes orange at distance). The player region mask is
+# read with filter_linear by player_body.gdshader, and a blurred mask smears hair over clothing.
+LOSSLESS = ("T_Prop_Colormap", "T_Nature_Grass")
+VRAM_COMPRESSED = "2"
+
+
+def texture_role(stem: str) -> str:
+    lowered = stem.lower()
+    if lowered.endswith("_normal"):
+        return "normal"
+    if lowered.endswith(("_orm", "_roughness", "_metallic", "_ao")):
+        return "orm"
+    return "base"
+
+
+def texture_group(path: Path) -> str:
+    """The budget class of one texture, from its folder and name alone (never authored)."""
+    stem, folder = path.stem, path.parent.name
+    if stem in LOSSLESS or stem.endswith("_mask") or "colormap" in stem.lower():
+        return "lossless"
+    if folder in ("characters", "creatures"):
+        return "player_boss" if stem.startswith(("chr_player", "boss_")) else "character"
+    if stem.startswith(NATURE_HERO):
+        return "nature_hero"
+    if stem.startswith("T_Trim_"):
+        return "prop_trim"
+    # A BaseColor/Normal/ORM set in the architecture folder is a building trim sheet; a lone
+    # texture there (the vine leaf card) is a prop.
+    if folder == "architecture" and (texture_role(stem) != "base" or stem.endswith("_BaseColor")):
+        return "architecture_trim"
+    return "prop"
+
+
+def import_params(import_path: Path) -> dict[str, str]:
+    """The raw `key=value` lines of a .import's [params] section."""
+    params: dict[str, str] = {}
+    section = ""
+    for line in import_path.read_text(encoding="utf-8").splitlines():
+        if line.startswith("["):
+            section = line
+        elif section == "[params]" and "=" in line:
+            key, value = line.split("=", 1)
+            params[key] = value
+    return params
+
+
+def png_uses_alpha(path: Path, header: bytes) -> bool:
+    """Whether the importer will keep an alpha channel (BC3) or drop it (BC1).
+
+    Godot decides from the pixels, not the file's colour type: an RGBA png whose alpha is 255
+    everywhere compresses as BC1. Reading pixels needs Pillow; without it an alpha channel is
+    counted as used, which over-estimates and never under-reports.
+    """
+    if len(header) < 26 or header[25] not in (4, 6):
+        return False
+    try:
+        from PIL import Image
+    except ImportError:
+        return True
+    with Image.open(path) as image:
+        return image.getchannel("A").getextrema()[0] < 255
+
+
+def texture_vram_bytes(width: int, height: int, params: dict[str, str], uses_alpha: bool) -> int:
+    """Estimated video memory of one imported texture.
+
+    BC1 is 0.5 byte per pixel, BC3 (alpha) and RGTC (normal maps) 1, and anything not VRAM
+    compressed is 4: the renderer uploads RGB8 as RGBA8. A mip chain adds a third.
+    """
+    limit, longest = int(params.get("process/size_limit", "0")), max(width, height)
+    if 0 < limit < longest:
+        width, height = max(1, width * limit // longest), max(1, height * limit // longest)
+    if params.get("compress/mode") == VRAM_COMPRESSED:
+        per_pixel = 1.0 if uses_alpha or params.get("compress/normal_map") == "1" else 0.5
+    else:
+        per_pixel = 4.0
+    mips = 4 / 3 if params.get("mipmaps/generate") == "true" else 1.0
+    return int(width * height * per_pixel * mips)
+
+
+def texture_targets(path: Path, width: int, height: int) -> dict[str, str]:
+    """The [params] values this texture's class requires. A key not listed is left alone."""
+    group, role = texture_group(path), texture_role(path.stem)
+    if group == "lossless":
+        # detect_3d/compress_to=1 would let the editor flip these to VRAM + mips on first 3D use.
+        return {"mipmaps/generate": "false", "detect_3d/compress_to": "0"}
+    targets = {"compress/mode": VRAM_COMPRESSED, "mipmaps/generate": "true", "detect_3d/compress_to": "0"}
+    if role == "normal":
+        # What the editor's own normal-map detection writes: RGTC, and no roughness limiter.
+        targets.update({"compress/normal_map": "1", "roughness/mode": "1",
+                        "roughness/src_normal": f'"res://{rel(path)}"'})
+    cap = TEXTURE_BUDGET[group][role]
+    if max(width, height) > cap:
+        targets["process/size_limit"] = str(cap)
+    return targets
+
+
+def texture_weight() -> list[dict[str, Any]]:
+    """One record per texture under assets/models: its class, its cost and what is off budget."""
+    records = []
+    for import_path in sorted((ROOT / "assets" / "models").rglob("*.png.import")):
+        path = import_path.with_suffix("")
+        with path.open("rb") as stream:
+            header = stream.read(32)
+        size = png_jpeg_size(header)
+        if size is None:
+            continue
+        params = import_params(import_path)
+        targets = texture_targets(path, size[0], size[1])
+        records.append({
+            "path": rel(path), "group": texture_group(path), "role": texture_role(path.stem),
+            "size": size, "params": params,
+            "bytes": texture_vram_bytes(size[0], size[1], params, png_uses_alpha(path, header)),
+            "problems": [f"{key}={params.get(key)} (want {value})"
+                         for key, value in targets.items() if params.get(key) != value],
+            "targets": targets,
+        })
+    return records
+
+
+def patch_texture_import(text: str, targets: dict[str, str]) -> str:
+    """Return a png's .import text with `targets` applied. Pure: the caller writes the file.
+
+    ⚠️ Only the VALUE of an existing `key=value` line is replaced. Godot answers an .import it
+    cannot parse by reimporting with defaults and says nothing, so a missing key is an error here
+    rather than a line appended in a guessed syntax.
+    """
+    for key, value in targets.items():
+        pattern = re.compile(rf"(?m)^{re.escape(key)}=.*$")
+        if not pattern.search(text):
+            raise ValueError(f"{key} is not in the [params] section")
+        text = pattern.sub(lambda _match, line=f"{key}={value}": line, text, count=1)
+    # A texture leaving lossless names one .ctex in [remap]; a VRAM one names an s3tc and an etc2
+    # file (project.godot imports both families). Writing the form Godot itself writes points
+    # [remap] at files that do not exist yet, which forces the reimport, and leaves the committed
+    # file byte-identical to the one the engine saves afterwards.
+    single = re.search(r'(?m)^path="(res://\.godot/imported/[^"]+)\.ctex"$', text)
+    if single and targets.get("compress/mode") == VRAM_COMPRESSED:
+        s3tc, etc2 = f"{single.group(1)}.s3tc.ctex", f"{single.group(1)}.etc2.ctex"
+        text = text.replace(single.group(0), f'path.s3tc="{s3tc}"\npath.etc2="{etc2}"')
+        text = text.replace('metadata={\n"vram_texture": false\n}',
+                            'metadata={\n"imported_formats": ["s3tc_bptc", "etc2_astc"],\n"vram_texture": true\n}')
+        text = re.sub(r"(?m)^dest_files=\[.*\]$", lambda _match: f'dest_files=["{s3tc}", "{etc2}"]', text, count=1)
+    return text
 
 
 def load_manifest() -> list[dict[str, Any]]:
@@ -488,6 +658,23 @@ def main() -> int:
     args = parser.parse_args()
     if args.self_test:
         assert png_jpeg_size(b"\x89PNG\r\n\x1a\n" + b"\0"*8 + struct.pack(">II", 7, 11)) == [7,11]
+        models = ROOT / "assets" / "models"
+        assert texture_group(models / "creatures" / "boss_x_texture_0.png") == "player_boss"
+        assert texture_group(models / "creatures" / "enm_x_texture_0.png") == "character"
+        assert texture_group(models / "characters" / "chr_player_base_mask.png") == "lossless"
+        assert texture_group(models / "architecture" / "T_Brick_Roughness.png") == "architecture_trim"
+        assert texture_group(models / "architecture" / "T_VineLeaf_png.png") == "prop"
+        assert texture_group(models / "props" / "T_Trim_Metal_ORM.png") == "prop_trim"
+        assert texture_group(models / "props" / "T_Nature_BarkDead_Normal.png") == "nature_hero"
+        assert texture_group(models / "props" / "T_Nature_Mushrooms.png") == "prop"
+        compressed = {"compress/mode": "2", "mipmaps/generate": "true", "process/size_limit": "1024", "compress/normal_map": "0"}
+        assert texture_vram_bytes(2048, 2048, compressed, False) == 1024 * 1024 * 2 // 3
+        assert texture_vram_bytes(1024, 512, {"compress/mode": "0", "mipmaps/generate": "false"}, False) == 1024 * 512 * 4
+        sample = '[remap]\n\npath="res://.godot/imported/a.png-0f.ctex"\nmetadata={\n"vram_texture": false\n}\n\n[deps]\n\ndest_files=["res://.godot/imported/a.png-0f.ctex"]\n\n[params]\n\ncompress/mode=0\nprocess/size_limit=0\n'
+        patched = patch_texture_import(sample, {"compress/mode": "2", "process/size_limit": "512"})
+        assert 'path.s3tc="res://.godot/imported/a.png-0f.s3tc.ctex"\npath.etc2="res://.godot/imported/a.png-0f.etc2.ctex"\n' in patched
+        assert "compress/mode=2\nprocess/size_limit=512\n" in patched and '"vram_texture": true' in patched
+        assert patch_texture_import(patched, {"compress/mode": "2", "process/size_limit": "512"}) == patched
         print("audit_3d self-test: PASS"); return 0
     output = args.output.resolve(); output.mkdir(parents=True, exist_ok=True)
     models = sorted(path for path in (ROOT / "assets" / "models").rglob("*") if path.suffix.lower() in MODEL_EXTENSIONS)

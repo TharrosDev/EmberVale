@@ -12,6 +12,47 @@
 
   <!--
     ============================================================================
+    RUNTIME AND CODE GENERATION (2026-10 performance pass)
+    ============================================================================
+    THE DEBUG CONFIGURATION IS THE ONE THE GAME IS PLAYED IN. The editor binary (F5, the MCP
+    run, every probe and headless gate launched on the project path) always loads
+    .godot/mono/temp/bin/Debug/Embervale.dll, and Godot.NET.Sdk's Sdk.props sets
+    Optimize=false for Debug. An assembly compiled that way carries
+    DebuggableAttribute(DisableOptimizations), which makes the JIT emit unoptimized code for
+    every method in it and never tier it up: no inlining, no enregistration, for all of
+    gameplay. Only the exported ExportRelease build was optimized.
+
+    EmbervaleOptimizeDebug = true (default) compiles Debug with optimizations, the same code
+    generation the shipping build gets. Symbols, DEBUG/TOOLS defines and every #if are
+    unchanged. Stepping through locals under a debugger is the one thing it costs; build with
+    `-p:EmbervaleOptimizeDebug=false` for a session that needs it.
+  -->
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug' And '$(EmbervaleOptimizeDebug)' != 'false'">
+    <Optimize>true</Optimize>
+  </PropertyGroup>
+
+  <!--
+    These two are written into Embervale.runtimeconfig.json (configProperties). They are
+    HONOURED ONLY BY AN EXPORTED GAME, which starts the runtime from that file; the editor
+    binary starts it from the engine's own GodotSharp/Api/*/GodotPlugins.runtimeconfig.json
+    and ignores the project's. Both equal the .NET 8 defaults, so this pins the configuration
+    the game is tuned for rather than changing it: background gen-2 collections and dynamic
+    PGO. The GC stays the workstation one by leaving ServerGarbageCollector unset (server GC
+    takes a heap and a thread per core, wrong for a laptop sharing RAM with its GPU; the SDK
+    writes nothing for an explicit false). ApplicationRoot logs what the runtime actually
+    reports at boot.
+
+    Deliberately absent: InvariantGlobalization (player-facing numbers and save-slot dates are
+    formatted with the machine culture, and Windows ships no ICU payload to drop) and
+    PublishReadyToRun (needs the crossgen2 pack at export and an export run to verify).
+  -->
+  <PropertyGroup>
+    <ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>
+    <TieredPGO>true</TieredPGO>
+  </PropertyGroup>
+
+  <!--
+    ============================================================================
     THE TOOLING GATE (2026-09-03 infrastructure overhaul)
     ============================================================================
     Godot compiles EVERY *.cs under the project directory into ONE assembly, so

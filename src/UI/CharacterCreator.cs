@@ -62,7 +62,7 @@ public partial class CharacterCreator : CanvasLayer
     {
         // Esc / gamepad B backs out (30.5J) — unless a text field has focus, where Esc means
         // "stop typing", not "leave the creator".
-        if (Godot.Input.IsActionJustPressed("ui_cancel") &&
+        if (Godot.Input.IsActionJustPressed(UiLive.UiCancel) &&
             GetViewport().GuiGetFocusOwner() is not LineEdit)
         {
             _onBack?.Invoke();

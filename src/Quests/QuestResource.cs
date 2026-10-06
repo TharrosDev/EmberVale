@@ -157,11 +157,29 @@ public partial class QuestResource : Resource
     /// still listed in the journal.</summary>
     [Export] public bool IsLedger { get; set; }
 
-    /// <summary>The objectives read back as their concrete type, skipping bad entries.</summary>
+    private System.Collections.Generic.List<ObjectiveResource>? _objectiveList;
+    private Godot.Collections.Array? _objectiveListSource;
+    private int _objectiveListCount = -1;
+
+    /// <summary>
+    /// The objectives read back as their concrete type, skipping bad entries.
+    ///
+    /// ⚠️ The returned list is SHARED and must be treated as read-only. It is rebuilt only when
+    /// <see cref="Objectives"/> is a different array or has a different length: every element used to
+    /// be marshalled through a Variant on each call, and the tracker, the compass and the minimap
+    /// all ask while a quest is tracked.
+    /// </summary>
     public System.Collections.Generic.List<ObjectiveResource> ObjectiveList()
     {
-        var list = new System.Collections.Generic.List<ObjectiveResource>();
-        foreach (Variant element in Objectives)
+        Godot.Collections.Array source = Objectives;
+        int count = source.Count;
+        if (_objectiveList != null && ReferenceEquals(source, _objectiveListSource) && count == _objectiveListCount)
+        {
+            return _objectiveList;
+        }
+
+        var list = new System.Collections.Generic.List<ObjectiveResource>(count);
+        foreach (Variant element in source)
         {
             if (element.As<ObjectiveResource>() is { } objective)
             {
@@ -169,6 +187,9 @@ public partial class QuestResource : Resource
             }
         }
 
+        _objectiveList = list;
+        _objectiveListSource = source;
+        _objectiveListCount = count;
         return list;
     }
 }

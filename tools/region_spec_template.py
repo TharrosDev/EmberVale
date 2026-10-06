@@ -187,6 +187,7 @@ Tint = Color(0.82, 0.84, 0.66, 1)
 TintVariation = 0.22
 VisibilityRangeEnd = 62.0
 VisibilityFadeMargin = 12.0
+CastShadows = false
 
 ; A tree layer is an HLOD layer or it is a draw-call storm at distance. The proxy tier is the SAME
 ; mesh at a fraction of the density, faded in as the detailed tier fades out.

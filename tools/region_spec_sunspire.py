@@ -163,6 +163,7 @@ Tint = Color(0.95, 0.82, 0.64, 1)
 TintVariation = 0.14
 VisibilityRangeEnd = 60.0
 VisibilityFadeMargin = 12.0
+CastShadows = false
 
 [sub_resource type="Resource" id="Layer_dry_grass"]
 script = ExtResource("10_layer")
@@ -179,6 +180,7 @@ Tint = Color(0.98, 0.84, 0.58, 1)
 TintVariation = 0.16
 VisibilityRangeEnd = 55.0
 VisibilityFadeMargin = 10.0
+CastShadows = false
 
 ; Wind-killed trunks in the open basins: few, far apart and bleached.
 [sub_resource type="Resource" id="Layer_dead_tree"]
@@ -234,6 +236,7 @@ Tint = Color(0.8, 0.95, 0.62, 1)
 TintVariation = 0.2
 VisibilityRangeEnd = 60.0
 VisibilityFadeMargin = 12.0
+CastShadows = false
 
 [sub_resource type="Resource" id="Layer_jungle_grass"]
 script = ExtResource("10_layer")
@@ -249,6 +252,7 @@ Tint = Color(0.82, 0.92, 0.6, 1)
 TintVariation = 0.2
 VisibilityRangeEnd = 60.0
 VisibilityFadeMargin = 12.0
+CastShadows = false
 
 [sub_resource type="Resource" id="Layer_bush"]
 script = ExtResource("10_layer")
