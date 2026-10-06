@@ -143,7 +143,7 @@ public static class SpellResolver
 
         SpellVfx.Impact(spell, caster, new SpellImpactInfo(
             impactPoint, ImpactNormal(context, impactPoint), target, SpellImpactKind.Target, packet.Charge,
-            resolvedDamage, result.IsCrit || packet.IsCrit, result.Killed));
+            resolvedDamage, result.IsCrit || packet.IsCrit, result.Killed, consumed));
         return SpellHitResult.Landed;
     }
 
@@ -182,7 +182,10 @@ public static class SpellResolver
             return;
         }
 
-        SpellVfx.Burst(spell, caster, center, radius, BurstSourceOf(context));
+        SpellBurstSource source = BurstSourceOf(context);
+        EventBus.Instance?.Publish(new SpellBurstEvent(
+            caster, spell.Id, center, radius, source, spell.ImpactWeight, packet.Charge));
+        SpellVfx.Burst(spell, caster, center, radius, source, packet.Charge);
         Resolve(context, spell, packet, caster, casterTeam, center, radius, coneDirection: null, lifetime);
         if (lifetime.Check())
         {

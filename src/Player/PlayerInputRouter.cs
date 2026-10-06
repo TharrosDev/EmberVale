@@ -6,6 +6,7 @@ using Embervale.Entities;
 using Embervale.Magic;
 using Embervale.Movement;
 using Embervale.Settings;
+using Embervale.Stats;
 using Godot;
 
 namespace Embervale.Player;
@@ -38,6 +39,7 @@ public partial class PlayerInputRouter : EntityComponent
     private LockOnComponent? _lockOn;
     private MountComponent? _mount;
     private SpellcastingComponent? _spellcasting;
+    private StatsComponent? _stats;
     private BowDrawComponent? _bowDraw;
     private AttackInputState _attackInput;
     private SpellWheelHold _wheelHold;
@@ -58,6 +60,7 @@ public partial class PlayerInputRouter : EntityComponent
         _lockOn = owner.GetComponent<LockOnComponent>();
         _mount = owner.GetComponent<MountComponent>();
         _spellcasting = owner.GetComponent<SpellcastingComponent>();
+        _stats = owner.GetComponent<StatsComponent>();
         _bowDraw = owner.GetComponent<BowDrawComponent>();
         _settings = ServiceLocator.Instance is { } locator && locator.TryGet(out SettingsService settings)
             ? settings
@@ -365,12 +368,25 @@ public partial class PlayerInputRouter : EntityComponent
         }
 
         bool held = Godot.Input.IsActionPressed(InputActions.CycleSpell);
+        bool pressed = Godot.Input.IsActionJustPressed(InputActions.CycleSpell);
+        bool released = Godot.Input.IsActionJustReleased(InputActions.CycleSpell);
 
-        // The gate was cleared from outside (a menu opened over the wheel, or it closed itself).
-        if (_wheelHold.IsOpen && !SpellWheelInput.IsOpen)
+        // The gate was cleared from outside (a menu opened over the wheel, play was left, or it closed
+        // itself), or the player can no longer choose: a stagger, a stun and death all close it
+        // without selecting.
+        if (_wheelHold.IsOpen &&
+            (!SpellWheelInput.IsOpen || _combat is { IsStaggered: true } || _stats is { IsAlive: false }))
         {
             SpellWheelInput.Cancel();
             _wheelHold.Closed(held);
+        }
+
+        // The button is up and this tick saw no edge: it was let go while this node was not ticking
+        // (the pause menu). That release is not a tap, a fallback or a confirm; the hold is forgotten.
+        if (!held && !pressed && !released && !_wheelHold.IsToggled)
+        {
+            SpellWheelInput.Cancel();
+            _wheelHold.Reset();
         }
 
         bool wasOpen = _wheelHold.IsOpen;
@@ -378,9 +394,9 @@ public partial class PlayerInputRouter : EntityComponent
         // Cursor travel is zero here: until the wheel is open the mouse and the stick are the
         // camera's, so only time decides between a tap and a hold.
         SpellWheelIntent intent = _wheelHold.Step(
-            Godot.Input.IsActionJustPressed(InputActions.CycleSpell),
+            pressed,
             held,
-            Godot.Input.IsActionJustReleased(InputActions.CycleSpell),
+            released,
             (float)delta,
             cursorTravel: 0f,
             toggle: _settings?.Current.HoldsToPresses ?? false,

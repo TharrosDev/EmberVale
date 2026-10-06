@@ -69,6 +69,12 @@ public partial class SpellBarrier : Node3D
 
     public override void _ExitTree()
     {
+        // Freed without ending (its host went away): the effect layer is still told, once more at worst.
+        if (Spell != null)
+        {
+            SpellVfx.BarrierEnd(this, Spell, Width, broken: false);
+        }
+
         _lifetime?.Dispose();
         ActiveBarriers.Remove(this);
         Ended = true;
@@ -95,7 +101,7 @@ public partial class SpellBarrier : Node3D
 
         Ring.Position = new Vector3(0f, 0.06f, 0f);
         Ring.Arm(Delay, Width * 0.5f, SpellSchools.Color(Spell.School));
-        SpellVfx.BarrierTelegraph(this, Spell, Width, Delay);
+        SpellVfx.BarrierTelegraph(this, Spell, Caster, Width, Delay);
     }
 
     /// <summary>The telegraph is over: the wall stands, solid where its spell says so.</summary>
@@ -107,7 +113,7 @@ public partial class SpellBarrier : Node3D
         ActiveBarriers.Add(this);
 
         // The plain wall stands in whenever the effect layer draws nothing for this barrier.
-        if (!SpellVfx.AttachBarrier(this, Spell, Width, WallHeight, Solid))
+        if (!SpellVfx.AttachBarrier(this, Spell, Caster, Width, WallHeight, Solid))
         {
             BuildPlainWall();
         }

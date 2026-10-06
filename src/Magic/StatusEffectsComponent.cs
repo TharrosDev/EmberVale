@@ -336,10 +336,17 @@ public partial class StatusEffectsComponent : EntityComponent
                 continue;
             }
 
+            float before = ward.AbsorbRemaining;
             (result, ward.AbsorbRemaining) = StatusMath.Absorb(result, -def.DamageTakenModifier, ward.AbsorbRemaining);
             if (ward.AbsorbRemaining <= 0f)
             {
                 BreakWard(ward);
+            }
+            else if (ward.AbsorbRemaining < before && Entity?.Body is { } body && IsInstanceValid(body) &&
+                     body.IsInsideTree())
+            {
+                // The ward took some of it and holds.
+                SpellVfx.StatusProc(SpellProcKind.WardHit, def.School, Entity, body.GlobalPosition, 0f);
             }
         }
 

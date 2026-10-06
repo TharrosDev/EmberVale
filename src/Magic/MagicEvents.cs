@@ -1,5 +1,7 @@
 using Embervale.Core.Events;
 using Embervale.Entities;
+using Embervale.Magic.Vfx;
+using Godot;
 
 namespace Embervale.Magic;
 
@@ -66,6 +68,16 @@ public readonly record struct SchoolRankedUpEvent(IEntity Caster, Embervale.Comb
 /// feedback director and never feed back into a rule.</summary>
 public readonly record struct SpellImpactEvent(
     IEntity Caster, IEntity Target, string SpellId, float Weight, float Charge) : IGameEvent;
+
+/// <summary>A spell burst over <paramref name="Radius"/> at <paramref name="Position"/> (the centre of
+/// the damaged sphere), whether or not it caught anyone: a nova, a bolt with an impact radius, a
+/// ground spell landing, and every pulse of a lingering zone (<paramref name="Source"/> says which).
+/// Raised by the resolver on every display, headless included; presentation only. The blast sound
+/// keys off it, with <paramref name="Weight"/> and <paramref name="Charge"/> as
+/// <see cref="SpellImpactEvent"/> carries them.</summary>
+public readonly record struct SpellBurstEvent(
+    IEntity? Caster, string SpellId, Vector3 Position, float Radius, SpellBurstSource Source, float Weight,
+    float Charge) : IGameEvent;
 
 // --- end magic-core events ---
 // --- magic-status events: append inside this block only ---

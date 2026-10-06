@@ -138,7 +138,7 @@ public partial class SpellProjectile : Area3D
         // The plain sphere stands in whenever the effect layer draws nothing for this bolt.
         Vector3 visualOrigin = VisualOrigin ?? GlobalPosition;
         VisualOrigin = null;
-        _plain.Visible = !SpellVfx.AttachProjectile(this, spell, caster, visualOrigin, _direction);
+        _plain.Visible = !SpellVfx.AttachProjectile(this, spell, caster, visualOrigin, _direction, packet.Charge);
 
         _resolved = false;
         CollisionLayer = CombatLayers.Hitbox;

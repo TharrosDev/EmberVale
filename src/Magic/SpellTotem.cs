@@ -72,7 +72,7 @@ public partial class SpellTotem : Entity
         _hurtbox = hurtbox;
 
         // The plain post stands in whenever the effect layer draws nothing for this totem.
-        if (!SpellVfx.AttachTotem(this, Spell, Tint))
+        if (!SpellVfx.AttachTotem(this, Spell, Caster, Tint))
         {
             AddChild(new MeshInstance3D
             {
@@ -146,6 +146,8 @@ public partial class SpellTotem : Entity
 
     public override void _ExitTree()
     {
+        // Freed without ending (its host went away): the effect layer is still told, once more at worst.
+        SpellVfx.TotemEnd(this, Spell, broken: false);
         _lifetime?.Dispose();
         Ended = true;
         Target = null;

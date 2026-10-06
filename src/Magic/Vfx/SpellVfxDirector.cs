@@ -33,6 +33,9 @@ public partial class SpellVfxDirector : Node
     public override void _Ready()
     {
         Enabled = DisplayServer.GetName() != "headless";
+
+        // The plain flashes are drawn under VfxRoot and nowhere else, so their pool is this node's.
+        SpellFlash.OpenPool();
         SpellVfx.Bind(this);
 
         if (ServiceLocator.Instance is { } locator && locator.TryGet(out SettingsService settings))
@@ -50,7 +53,9 @@ public partial class SpellVfxDirector : Node
         EventBus? bus = EventBus.Instance;
         bus?.Unsubscribe<SettingsAppliedEvent>(OnSettingsApplied);
         bus?.Unsubscribe<GameLoadingEvent>(OnGameLoading);
+        SpellVfx.Clear();
         SpellVfx.Unbind(this);
+        SpellFlash.ClosePool();
     }
 
     /// <summary>Frees every live effect. An effect belongs to the timeline that made it, and a load
@@ -61,6 +66,8 @@ public partial class SpellVfxDirector : Node
         {
             VfxRoot.GetChild(i).QueueFree();
         }
+
+        SpellVfx.Clear();
     }
 
     private void OnSettingsApplied(SettingsAppliedEvent e) => ApplySettings(e.Current);

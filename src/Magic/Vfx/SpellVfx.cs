@@ -99,6 +99,9 @@ public enum SpellProcKind
 
     /// <summary>An arcane hit tore a buff off.</summary>
     Dispel,
+
+    /// <summary>A ward soaked part of a blow and still stands.</summary>
+    WardHit,
 }
 
 /// <summary>One spell impact, as the code that resolved it knows it.</summary>
@@ -110,6 +113,7 @@ public enum SpellProcKind
 /// <param name="Damage">Health actually taken, after mitigation.</param>
 /// <param name="Crit">Whether it was a critical hit.</param>
 /// <param name="Killed">Whether it killed the target.</param>
+/// <param name="Consumed">Stacks of the spell's <c>ConsumesStatusId</c> it ate off the target.</param>
 public readonly record struct SpellImpactInfo(
     Vector3 Position,
     Vector3 Normal,
@@ -118,7 +122,8 @@ public readonly record struct SpellImpactInfo(
     float Charge = 0f,
     float Damage = 0f,
     bool Crit = false,
-    bool Killed = false);
+    bool Killed = false,
+    int Consumed = 0);
 
 /// <summary>
 /// The one door every spell effect goes through. Gameplay code says what happened (a wind-up began,
@@ -156,6 +161,15 @@ public static class SpellVfx
 
     /// <summary>Forgets the director. Called between sessions.</summary>
     public static void Reset() => _director = null;
+
+    /// <summary>
+    /// Drops everything the facade tracks about live effects (caster to aura, bolt to trail, node to
+    /// zone). <see cref="SpellVfxDirector.KillAll"/> calls it after freeing the effect nodes, on a
+    /// load and as the director leaves the tree, so nothing here may touch a node again.
+    /// </summary>
+    internal static void Clear()
+    {
+    }
 
     // --- the cast --------------------------------------------------------------------------------
 
@@ -214,9 +228,11 @@ public static class SpellVfx
     /// A bolt was launched. <paramref name="visualOrigin"/> is where its picture should start (the
     /// casting hand) before it settles onto the bolt's true path. Returns true when the facade drew
     /// the bolt, in which case the projectile hides its own plain sphere and light.
+    /// <paramref name="charge"/> is what a held cast reached (0..1).
     /// </summary>
     public static bool AttachProjectile(
-        Node3D projectile, SpellResource spell, IEntity? caster, Vector3 visualOrigin, Vector3 direction) => false;
+        Node3D projectile, SpellResource spell, IEntity? caster, Vector3 visualOrigin, Vector3 direction,
+        float charge) => false;
 
     /// <summary>The bolt resolved, was cancelled or left the tree. May be called more than once for
     /// one flight, and for a bolt that was never attached.</summary>
@@ -225,7 +241,8 @@ public static class SpellVfx
     }
 
     /// <summary>One tick of a channelled bolt spell, as the line it travels: from the casting hand to
-    /// the end of its range. A sustained beam is redrawn from these.</summary>
+    /// the end of its range. A sustained beam is redrawn from these. <paramref name="to"/> is the full
+    /// range and is not clipped to what the bolt strikes; that arrives later as its <see cref="Impact"/>.</summary>
     public static void Beam(IEntity caster, SpellResource spell, Vector3 from, Vector3 to)
     {
     }
@@ -238,9 +255,12 @@ public static class SpellVfx
     {
     }
 
-    /// <summary>A spell burst over <paramref name="radius"/> at <paramref name="position"/>.</summary>
+    /// <summary>A spell burst over <paramref name="radius"/> at <paramref name="position"/>, which is
+    /// the centre of the damaged sphere and not a point on the floor. <paramref name="charge"/> is
+    /// what a held cast reached (0..1).</summary>
     public static void Burst(
-        SpellResource spell, IEntity? caster, Vector3 position, float radius, SpellBurstSource source) =>
+        SpellResource spell, IEntity? caster, Vector3 position, float radius, SpellBurstSource source,
+        float charge = 0f) =>
         Flash(position, radius, SpellSchools.Color(spell.School));
 
     /// <summary>A wedge swept out from <paramref name="origin"/>: a breath, a word of power.</summary>
@@ -266,8 +286,17 @@ public static class SpellVfx
     }
 
     /// <summary>A line of <paramref name="school"/> between two points: a chained bolt, a life tether,
-    /// a status jumping bearers. <paramref name="source"/> is whose effect it is.</summary>
-    public static void Arc(DamageType school, IEntity? source, Vector3 from, Vector3 to, SpellArcKind kind)
+    /// a status jumping bearers. <paramref name="source"/> is whose effect it is, and
+    /// <paramref name="spell"/> the spell whose hit drew it (null for a status spreading by itself).</summary>
+    public static void Arc(
+        DamageType school, IEntity? source, Vector3 from, Vector3 to, SpellArcKind kind, SpellResource? spell = null)
+    {
+    }
+
+    /// <summary>A spell combo went off on <paramref name="target"/>: <paramref name="spell"/> struck a
+    /// bearer of the status the combo <paramref name="comboId"/> (<c>combo.*</c>) needs.
+    /// <paramref name="position"/> is the struck volume, read before the bonus damage landed.</summary>
+    public static void Combo(string comboId, SpellResource spell, IEntity? caster, IEntity target, Vector3 position)
     {
     }
 
@@ -297,7 +326,16 @@ public static class SpellVfx
     {
     }
 
-    /// <summary>A lingering zone began. Each of its pulses arrives as a <see cref="Burst"/>.</summary>
+    /// <summary>The ground spell's delay is over: <paramref name="landed"/> when it came down (its
+    /// <see cref="Burst"/> or <see cref="AttachZone"/> follows at once), false when it was cancelled or
+    /// left the tree first. May be called more than once; the first call is the one that counts.</summary>
+    public static void GroundEnd(Node3D ground, bool landed)
+    {
+    }
+
+    /// <summary>A lingering zone began. Each of its pulses arrives as a <see cref="Burst"/>.
+    /// <paramref name="zone"/> is positioned just after this call, so read its transform on the next
+    /// frame and follow its validity.</summary>
     public static void AttachZone(Node3D zone, SpellResource spell, IEntity? caster, float radius, float duration)
     {
     }
@@ -309,16 +347,19 @@ public static class SpellVfx
 
     /// <summary>A wall began its delay. <paramref name="barrier"/> is positioned and turned just after
     /// this call, so read its transform on the next frame.</summary>
-    public static void BarrierTelegraph(Node3D barrier, SpellResource spell, float width, float delay)
+    public static void BarrierTelegraph(Node3D barrier, SpellResource spell, IEntity? caster, float width, float delay)
     {
     }
 
     /// <summary>A wall stands. Returns true when the facade drew it, in which case the barrier builds
-    /// no plain face or base of its own.</summary>
-    public static bool AttachBarrier(Node3D barrier, SpellResource spell, float width, float height, bool solid) => false;
+    /// no plain face or base of its own. A wall with no delay is positioned and turned just after
+    /// this call; one that had a telegraph already stands where it will.</summary>
+    public static bool AttachBarrier(
+        Node3D barrier, SpellResource spell, IEntity? caster, float width, float height, bool solid) => false;
 
     /// <summary>A wall ended: <paramref name="broken"/> when its health ran out, false when it expired
-    /// or was cancelled. May be called for a wall that was never attached.</summary>
+    /// or was cancelled. May be called for a wall that was never attached, and more than once (the
+    /// wall says it again as it leaves the tree, always unbroken); the first call is the one that counts.</summary>
     public static void BarrierEnd(Node3D barrier, SpellResource spell, float width, bool broken)
     {
         if (broken && Active && GodotObject.IsInstanceValid(barrier) && barrier.IsInsideTree())
@@ -328,15 +369,17 @@ public static class SpellVfx
     }
 
     /// <summary>A totem was raised. Returns true when the facade drew it, in which case the totem
-    /// builds no plain post of its own.</summary>
-    public static bool AttachTotem(Node3D totem, SpellResource? spell, Color tint) => false;
+    /// builds no plain post of its own. <paramref name="totem"/> is positioned just after this call,
+    /// so read its transform on the next frame.</summary>
+    public static bool AttachTotem(Node3D totem, SpellResource? spell, IEntity? caster, Color tint) => false;
 
     /// <summary>A totem healed <paramref name="target"/> (its owner's body) this tick.</summary>
     public static void TotemPulse(Node3D totem, SpellResource? spell, Node3D? target)
     {
     }
 
-    /// <summary>A totem ended: destroyed, expired or cancelled. May be called more than once.</summary>
+    /// <summary>A totem ended: destroyed, expired or cancelled. May be called more than once (again,
+    /// unbroken, as it leaves the tree); the first call is the one that counts.</summary>
     public static void TotemEnd(Node3D totem, SpellResource? spell, bool broken)
     {
     }
@@ -374,8 +417,11 @@ public static class SpellVfx
 
     /// <summary>A status or school effect went off on <paramref name="target"/> at
     /// <paramref name="position"/> (its feet). <paramref name="radius"/> is how far it reached, 0 for
-    /// one that touches only its bearer.</summary>
-    public static void StatusProc(SpellProcKind kind, DamageType school, IEntity? target, Vector3 position, float radius)
+    /// one that touches only its bearer. <paramref name="spell"/> is the spell whose hit set it off,
+    /// where there was one (a fed Kindle, a freeze, a dispel).</summary>
+    public static void StatusProc(
+        SpellProcKind kind, DamageType school, IEntity? target, Vector3 position, float radius,
+        SpellResource? spell = null)
     {
         if (kind != SpellProcKind.WardBreak || !Active)
         {

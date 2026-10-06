@@ -86,6 +86,7 @@ public partial class SpellGround : Node3D
     {
         Landed = true;
         Ring.Clear();
+        SpellVfx.GroundEnd(this, landed: true);
         Vector3 centre = GlobalPosition + (Vector3.Up * 0.3f);
 
         if (Spell.ZoneDuration > 0f)
@@ -125,6 +126,7 @@ public partial class SpellGround : Node3D
 
     public override void _ExitTree()
     {
+        SpellVfx.GroundEnd(this, landed: false);
         _lifetime?.Dispose();
         _cancelled = true;
         Caster = null;
@@ -140,6 +142,7 @@ public partial class SpellGround : Node3D
         SetProcess(false);
         SetPhysicsProcess(false);
         Ring.Clear();
+        SpellVfx.GroundEnd(this, landed: false);
         Hide();
         QueueFree();
     }

@@ -9,7 +9,7 @@ namespace Embervale.Core;
 /// instead of the camera, lock-on flicks are ignored, and attack, block, cast and the lock toggle are
 /// held back. Move, jump, dodge and sprint are untouched and the mouse stays captured. Its one writer
 /// is <c>SpellWheelInput</c>; a menu opening and a session teardown both clear it through
-/// <see cref="UiState"/>.</para>
+/// <see cref="UiState"/>, and <see cref="GameManager.ChangeState"/> clears it on leaving play.</para>
 /// </summary>
 public static class PlayGate
 {

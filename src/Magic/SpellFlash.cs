@@ -13,7 +13,7 @@ namespace Embervale.Magic;
 /// breath. Each used to be two nodes, a material and a freshly generated sphere mesh, built and
 /// freed. Spawn through <see cref="Spawn"/>; the node goes back to the pool when it fades, and the
 /// sphere is one shared mesh. The pool belongs to the session (<see cref="OpenPool"/> /
-/// <see cref="ClosePool"/>, called by <c>CombatFeedbackDirector</c>); with no pool open a flash is
+/// <see cref="ClosePool"/>, called by <c>SpellVfxDirector</c>); with no pool open a flash is
 /// simply built and freed as before, so a probe or a bare scene needs no setup.</para>
 /// </summary>
 public partial class SpellFlash : Node3D

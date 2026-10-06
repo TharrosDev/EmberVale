@@ -194,6 +194,9 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
         EventBus.Instance?.Unsubscribe<DamageDealtEvent>(OnDamageDealt);
         EventBus.Instance?.Unsubscribe<EntityDiedEvent>(OnEntityDied);
         EventBus.Instance?.Unsubscribe<GameLoadingEvent>(OnGameLoading);
+
+        // A caster freed mid wind-up, charge or channel (despawned, streamed out) still ends its aura.
+        EndWindupVfx(SpellWindupEnd.Stopped);
         DropChannelSlow();
         _worldRay?.Dispose();
         _worldRay = null;
@@ -1439,11 +1442,12 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
 
     /// <summary>Applies a Self-delivery spell's heal and/or beneficial status to <paramref name="target"/>
     /// (the caster for a normal Self cast; an ally for an enemy support caster, Phase 29.5F).</summary>
-    private void ApplySupport(IEntity? target, SpellResource spell, float power)
+    /// <returns>The stacks of the spell's <c>ConsumesStatusId</c> it ate off the target.</returns>
+    private int ApplySupport(IEntity? target, SpellResource spell, float power)
     {
         if (target == null)
         {
-            return;
+            return 0;
         }
 
         StatusEffectsComponent? statuses = target.GetComponent<StatusEffectsComponent>();
@@ -1464,6 +1468,8 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
             target.GetComponent<StatusEffectsComponent>()?
                 .Apply(StatusEffectDatabase.Get(spell.StatusEffectId), Entity);
         }
+
+        return consumed;
     }
 
     /// <summary>Selects a known spell by id and casts it. The lever enemy AI uses to choose a spell (the
@@ -1517,9 +1523,26 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
 
         _stats!.ModifyCurrent(StatType.Mana, -EffectiveManaCost(spell));
         _cooldowns[spell.Id] = CooldownFor(spell);
-        ApplySupport(ally, spell, 1f);
+
+        // The spell leaves this caster and lands on the ally: the one cast whose target is not its caster.
+        Vector3? landing = ally.Body is { } allyBody && IsInstanceValid(allyBody) && allyBody.IsInsideTree()
+            ? allyBody.GlobalPosition + Vector3.Up
+            : null;
         if (Entity != null)
         {
+            (Vector3 from, Vector3 along) = Aim();
+            SpellVfx.Release(Entity, spell, from, along, 0f);
+        }
+
+        int consumed = ApplySupport(ally, spell, 1f);
+        if (Entity != null)
+        {
+            if (landing is { } at)
+            {
+                SpellVfx.Impact(spell, Entity, new SpellImpactInfo(
+                    at, Vector3.Up, ally, SpellImpactKind.Target, Consumed: consumed));
+            }
+
             EventBus.Instance?.Publish(new SpellCastEvent(Entity, spell.Id));
         }
 

@@ -53,9 +53,6 @@ public partial class CombatFeedbackDirector : Node
     {
         _pool = new NodePool<ImpactEffect>(() => new ImpactEffect { Released = Reclaim }, prewarm: 6);
 
-        // The spell flashes share this director's lifetime: it is the session's one owner of
-        // short-lived combat effects, so their pool opens and closes with it.
-        Magic.SpellFlash.OpenPool();
         EventBus? bus = EventBus.Instance;
         bus?.Subscribe<DamageDealtEvent>(OnDamage);
         bus?.Subscribe<EntityStaggeredEvent>(OnStaggered);
@@ -80,7 +77,6 @@ public partial class CombatFeedbackDirector : Node
         bus?.Unsubscribe<Magic.SpellImpactEvent>(OnSpellHit);
         _pending.Clear();
         _pool?.Clear();
-        Magic.SpellFlash.ClosePool();
     }
 
     private void Reclaim(ImpactEffect effect) => _pool.Return(effect);

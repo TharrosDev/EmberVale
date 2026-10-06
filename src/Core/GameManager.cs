@@ -82,6 +82,13 @@ public sealed partial class GameManager : Node
         GameState previous = State;
         State = next;
 
+        // Leaving play (the pause menu, a load, game over) takes the look inputs back from the spell
+        // wheel. The pause menu never goes through UiState.Open, so this is the gate's other clear.
+        if (next != GameState.Playing)
+        {
+            PlayGate.WheelOpen = false;
+        }
+
         // Halt the scene tree's simulation while paused; only nodes with
         // ProcessMode == Always (menus, this manager) keep running.
         RefreshPause();

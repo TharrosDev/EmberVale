@@ -95,10 +95,10 @@ public static class SchoolIdentity
         switch (spell.School)
         {
             case DamageType.Fire when !targetKilled:
-                FeedKindle(primary, caster);
+                FeedKindle(spell, primary, caster);
                 break;
             case DamageType.Frost when !targetKilled:
-                EscalateFreeze(primary, caster, lifetime);
+                EscalateFreeze(spell, primary, caster, lifetime);
                 break;
             case DamageType.Lightning:
                 // A brand is a mark, not a bolt: it must not arc to (and re-brand) another foe.
@@ -109,13 +109,13 @@ public static class SchoolIdentity
 
                 break;
             case DamageType.Necrotic:
-                Lifesteal(caster, resolvedDamage >= 0f ? resolvedDamage : packet.Amount, primary, targetWasMarked, targetHealthFraction);
+                Lifesteal(spell, caster, resolvedDamage >= 0f ? resolvedDamage : packet.Amount, primary, targetWasMarked, targetHealthFraction);
                 break;
             case DamageType.Arcane when !targetKilled:
                 // A bolt tears a buff off; a ground or barrier pulse does not.
                 if (spell.Delivery == SpellDelivery.Projectile)
                 {
-                    Dispel(primary, caster);
+                    Dispel(spell, primary, caster);
                 }
 
                 break;
@@ -123,20 +123,20 @@ public static class SchoolIdentity
     }
 
     /// <summary>A Fire hit on a Kindled foe feeds the fire: one more Burning stack.</summary>
-    private static void FeedKindle(Hurtbox primary, IEntity? caster)
+    private static void FeedKindle(SpellResource spell, Hurtbox primary, IEntity? caster)
     {
         StatusEffectsComponent? status = primary.OwnerEntity?.GetComponent<StatusEffectsComponent>();
         if (status != null && status.Has(StatusIds.Kindled))
         {
             Vector3 at = primary.GlobalPosition;
             status.Apply(StatusEffectDatabase.Get(StatusIds.Burning), caster);
-            SpellVfx.StatusProc(SpellProcKind.KindleFed, DamageType.Fire, primary.OwnerEntity, at, 0f);
+            SpellVfx.StatusProc(SpellProcKind.KindleFed, DamageType.Fire, primary.OwnerEntity, at, 0f, spell);
         }
     }
 
     /// <summary>A Frost hit on an already-chilled target freezes it: a short Stun and Root, then it is
     /// immune to being frozen again (the status's <c>ControlImmunitySeconds</c>). The chill is spent.</summary>
-    private static void EscalateFreeze(Hurtbox primary, IEntity? caster, SpellLifetime? lifetime)
+    private static void EscalateFreeze(SpellResource spell, Hurtbox primary, IEntity? caster, SpellLifetime? lifetime)
     {
         StatusEffectsComponent? status = primary.OwnerEntity?.GetComponent<StatusEffectsComponent>();
         if (status != null && status.Has(StatusIds.Chill))
@@ -145,13 +145,14 @@ public static class SchoolIdentity
             status.Consume(StatusIds.Chill);
             if (lifetime?.Check() != false && status.Apply(StatusEffectDatabase.Get(StatusIds.Frozen), caster))
             {
-                SpellVfx.StatusProc(SpellProcKind.Freeze, DamageType.Frost, primary.OwnerEntity, at, 0f);
+                SpellVfx.StatusProc(SpellProcKind.Freeze, DamageType.Frost, primary.OwnerEntity, at, 0f, spell);
             }
         }
     }
 
     /// <summary>The caster heals for a share of the Necrotic damage it just dealt.</summary>
-    private static void Lifesteal(IEntity? caster, float damage, Hurtbox primary, bool targetWasMarked, float targetHealthFraction)
+    private static void Lifesteal(
+        SpellResource spell, IEntity? caster, float damage, Hurtbox primary, bool targetWasMarked, float targetHealthFraction)
     {
         float fraction = targetHealthFraction >= 0f ? targetHealthFraction
             : primary.OwnerEntity?.GetComponent<StatsComponent>()?.GetNormalized(StatType.Health) ?? 1f;
@@ -162,7 +163,7 @@ public static class SchoolIdentity
             GodotObject.IsInstanceValid(primary) && primary.IsInsideTree())
         {
             SpellVfx.Arc(DamageType.Necrotic, caster, SpellResolver.VolumeCentre(primary),
-                body.GlobalPosition + Vector3.Up, SpellArcKind.Tether);
+                body.GlobalPosition + Vector3.Up, SpellArcKind.Tether, spell);
         }
     }
 
@@ -175,12 +176,12 @@ public static class SchoolIdentity
     /// casting <c>spell.arcane_shield</c> never dispels the ward it just applied.
     // ponytail: one buff per hit, like Lightning's single jump — a full cleanse would make Arcane a
     // hard counter to every buff at once rather than a trade. Widen only if it plays weak.</summary>
-    private static void Dispel(Hurtbox primary, IEntity? caster)
+    private static void Dispel(SpellResource spell, Hurtbox primary, IEntity? caster)
     {
         Vector3 at = primary.GlobalPosition;
         if (primary.OwnerEntity?.GetComponent<StatusEffectsComponent>()?.Dispel(caster) != null)
         {
-            SpellVfx.StatusProc(SpellProcKind.Dispel, DamageType.Arcane, primary.OwnerEntity, at, 0f);
+            SpellVfx.StatusProc(SpellProcKind.Dispel, DamageType.Arcane, primary.OwnerEntity, at, 0f, spell);
         }
     }
 
@@ -259,7 +260,7 @@ public static class SchoolIdentity
         bool toBrand = candidates[pick].Branded;
         // Drawn from where the bolt struck the body; the search above keeps its own centre.
         SpellVfx.Arc(spell.School, caster, impactPoint ?? center, SpellResolver.VolumeCentre(best),
-            toBrand ? SpellArcKind.Brand : SpellArcKind.Chain);
+            toBrand ? SpellArcKind.Brand : SpellArcKind.Chain, spell);
         var arc = packet with { Amount = ChainDamage(packet.Amount, toBrand) };
         if (!best.Receive(arc).Killed && lifetime?.Check() != false)
         {

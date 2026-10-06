@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Embervale.Combat;
 using Embervale.Magic;
 using Embervale.Magic.Vfx;
@@ -94,6 +95,36 @@ public class SpellVfxCatalogTests
         }
     }
 
+    /// <summary>
+    /// The fallback keeps a forgotten spell visible, which is also what would hide it from the test
+    /// above. Each recipe file is all or nothing: while it is still the empty seam nothing is asked of
+    /// it, and from its first recipe on every spell it owns must have one.
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ARecipeFileThatHasStartedCoversEverySpellItOwns(bool arcana)
+    {
+        var owned = new List<string>();
+        foreach (Spell spell in LoadSpells())
+        {
+            bool elementalSchool = spell.School is DamageType.Fire or DamageType.Frost or DamageType.Lightning;
+            bool inArcana = !elementalSchool || SpellVfxCatalog.ArcanaIdsOfElementalSchools.Contains(spell.Id);
+            if (inArcana == arcana)
+            {
+                owned.Add(spell.Id);
+            }
+        }
+
+        Assert.NotEmpty(owned);
+        if (!owned.Exists(SpellVfxCatalog.Has))
+        {
+            return; // the seam: this file has no recipes yet
+        }
+
+        Assert.All(owned, id => Assert.True(SpellVfxCatalog.Has(id), $"{id} has no recipe of its own."));
+    }
+
     [Fact]
     public void AnAuthoredRecipeNamesASpellThatExists()
     {
@@ -155,5 +186,10 @@ public class SpellVfxCatalogTests
         Assert.Equal(1f, VfxStage.None.Scale);
         Assert.False(new VfxStage { Flare = true }.IsEmpty);
         Assert.False(new VfxStage { Particles = VfxParticles.Smoke }.IsEmpty);
+        Assert.False(new VfxStage { Secondary = VfxParticles.Smoke }.IsEmpty);
+        Assert.False(new VfxStage { Inward = true }.IsEmpty);
+        Assert.False(new VfxStage { Shell = true }.IsEmpty);
+        Assert.False(new VfxStage { Sigil = true }.IsEmpty);
+        Assert.False(new VfxStage { Tether = true }.IsEmpty);
     }
 }

@@ -51,6 +51,22 @@ public sealed record VfxStage
 
     public VfxParticles Particles { get; init; } = VfxParticles.None;
 
+    /// <summary>A second particle layer under the first (smoke under embers), where the tier allows
+    /// secondary debris.</summary>
+    public VfxParticles Secondary { get; init; } = VfxParticles.None;
+
+    /// <summary>The ring and the particles converge on the centre instead of leaving it.</summary>
+    public bool Inward { get; init; }
+
+    /// <summary>A fresnel shell around the bearer or along the wall (wards, ice, a frozen target).</summary>
+    public bool Shell { get; init; }
+
+    /// <summary>A flat sigil: at the hand, stamped on a target, or hanging over it.</summary>
+    public bool Sigil { get; init; }
+
+    /// <summary>Something returns from the target to the caster (a life tether, a mana wisp).</summary>
+    public bool Tether { get; init; }
+
     /// <summary>A lightning ribbon (also beams, chains and tethers).</summary>
     public bool Bolt { get; init; }
 
@@ -86,7 +102,8 @@ public sealed record SpellVfxRecipe(
 ///
 /// <para>The authored recipes live in two partial files, <c>SpellVfxCatalog.Elemental.cs</c> (fire,
 /// frost, lightning) and <c>SpellVfxCatalog.Arcana.cs</c> (arcane, nature, necrotic and the enemy
-/// spells), each filling the table through its own hook.</para>
+/// spells), each filling the table through its own hook. The enemy-only spells belong to the second
+/// file whatever their school (<see cref="ArcanaIdsOfElementalSchools"/>).</para>
 /// </summary>
 public static partial class SpellVfxCatalog
 {
@@ -98,6 +115,11 @@ public static partial class SpellVfxCatalog
         RegisterElemental(BySpell);
         RegisterArcana(BySpell);
     }
+
+    /// <summary>The fire and frost spells whose recipes live in the arcana file with the other
+    /// enemy-only spells, not in the elemental one.</summary>
+    public static readonly IReadOnlyCollection<string> ArcanaIdsOfElementalSchools =
+        new[] { "spell.dragon_breath", "spell.drake_breath" };
 
     /// <summary>The spell ids with a recipe of their own.</summary>
     public static IReadOnlyCollection<string> AuthoredIds => BySpell.Keys;
