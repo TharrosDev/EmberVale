@@ -104,7 +104,9 @@ public static class PlayerFactory
         player.AddChild(new LocomotionComponent { Name = "Locomotion", SprintCostsStamina = true, TakesFallDamage = true });
         player.AddChild(new FootstepComponent { Name = "Footsteps" });
         player.AddChild(new CombatComponent { Name = "Combat", Team = PlayerTeam });
-        player.AddChild(new InventoryComponent { Name = "Inventory" });
+        // The player keeps crafting materials in the uncapped material bag (the character screen's
+        // Materials tab); every other inventory in the game leaves the flag off.
+        player.AddChild(new InventoryComponent { Name = "Inventory", UseMaterialBag = true });
         player.AddChild(BuildHurtbox());
 
         // Pitch pivot at eye height; the first-person camera rides the pivot directly

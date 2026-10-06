@@ -38,10 +38,36 @@ public partial class InventoryPanel : UiPanel
     // The Gear tab is a grid + detail pane rather than a text list, so it needs a selection and a
     // sort/filter. The other three tabs are still lists and still rebuild into _list.
     private ItemInstance? _selected;
-    private ItemPresentation.SortOrder _sort = ItemPresentation.SortOrder.Rarity;
+
+    /// <summary>The sort order. Static so it outlives the panel: the UI root is rebuilt with each
+    /// session, and a player who sorts by value expects it to still be by value after a load. It is
+    /// a preference of this run of the game and is deliberately not saved.</summary>
+    private static ItemPresentation.SortOrder _sort = ItemPresentation.SortOrder.Rarity;
 
     /// <summary>Category filter; null shows everything.</summary>
     private ItemType? _filter;
+
+    /// <summary>Gear-slot filter (head, chest, ring...); null shows every slot.</summary>
+    private EquipmentSlot? _slotFilter;
+
+    /// <summary>False shows the pack's slots, true the material bag.</summary>
+    private bool _bagView;
+
+    /// <summary>The typed search. Lives here rather than in the field, so a rebuild reads it without
+    /// touching the control.</summary>
+    private string _query = string.Empty;
+
+    /// <summary>The search row. Built once in the shell, not per rebuild: a text field that is freed
+    /// and recreated on every keystroke loses its caret and its focus each time.</summary>
+    private HBoxContainer _toolRow = null!;
+    private LineEdit _search = null!;
+
+    /// <summary>What the detail pane is asking about the selected stack, if anything. A question,
+    /// not a mode: selecting something else or closing the screen drops it.</summary>
+    private enum Pending { None, Split, Drop }
+
+    private Pending _pending;
+    private int _splitQuantity = 1;
 
     /// <summary>
     /// Columns in the backpack grid, derived from the viewport each rebuild (37.5G).
@@ -131,11 +157,69 @@ public partial class InventoryPanel : UiPanel
             _perkView.ConfirmingRespec = false;
             MarkDirty();
         };
-        column.AddChild(_tabs);
+        // The tabs and the search share one row. ⚠️ The field comes after the tabs, and beside them
+        // rather than under them, for two reasons. The panel focuses its first focusable control
+        // when it opens, and a text field holding focus takes the gameplay keys out of the map -
+        // including the one that closes this screen. And a d-pad going down from the tabs to the
+        // grid must not pass through a text field on the way: on a handheld that raises the
+        // on-screen keyboard every time the player walks past it.
+        var tabRow = new HBoxContainer();
+        tabRow.AddThemeConstantOverride("separation", UiTheme.SpaceMd);
+        _tabs.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        tabRow.AddChild(_tabs);
+        column.AddChild(tabRow);
+
+        _toolRow = new HBoxContainer();
+        _toolRow.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
+        _toolRow.AddChild(Centred(UiTheme.Caption(Loc.T("item.search"))));
+        _search = new LineEdit
+        {
+            PlaceholderText = Loc.T("item.search_placeholder"),
+            ClearButtonEnabled = true,
+            CustomMinimumSize = new Vector2(180f, UiTheme.ControlHeight),
+        };
+        UiTheme.ApplyType(_search, UiTheme.FontRole.Interface, UiTheme.BodyFontSize);
+        _search.TextChanged += text =>
+        {
+            _query = text;
+            MarkDirty();
+        };
+
+        // While the field has focus the gameplay keys are out of the map (GameInput.SetTextEntry),
+        // or typing "bow" would open the bestiary. Enter hands focus back to the grid.
+        _search.FocusEntered += () => GameInput.SetTextEntry(true);
+        _search.FocusExited += () => GameInput.SetTextEntry(false);
+        _search.TextSubmitted += _ =>
+        {
+            if (_gridCells.Count > 0 && IsInstanceValid(_gridCells[0]) && _gridCells[0].IsInsideTree())
+            {
+                _gridCells[0].GrabFocus();
+            }
+            else
+            {
+                _search.ReleaseFocus();
+            }
+        };
+        _toolRow.AddChild(_search);
+        tabRow.AddChild(_toolRow);
 
         (ScrollContainer scroll, _list) = UiTheme.ScrollList();
         column.AddChild(scroll);
     }
+
+    /// <summary>Opens the Gear tab on the material bag, through the same switch a click on its tab
+    /// throws (for `--panelshots`).</summary>
+    public void ShowMaterials()
+    {
+        _bagView = true;
+        _pending = Pending.None;
+        _selected = _inventory?.Materials.Count > 0 ? _inventory.Materials[0].Instance : null;
+        _tabs.Select(0);
+        MarkDirty();
+    }
+
+    /// <summary>Whether the Gear tab is showing the material bag (read by `--panelshots`).</summary>
+    public bool ShowingMaterials => _activeTab == CharTab.Gear && _bagView;
 
     /// <summary>Selects the Guilds tab through the real tab strip (42A), so `--panelshots` drives
     /// the same path a click does rather than reaching past it into <c>_activeTab</c>.</summary>
@@ -189,18 +273,28 @@ public partial class InventoryPanel : UiPanel
     /// <summary>Opens the authored equipment / backpack / inspection composition through the real tab strip.</summary>
     public void ShowGear()
     {
+        _bagView = false;
         if (_selected == null && _inventory?.Stacks.Count > 0)
         {
             _selected = _inventory.Stacks[0].Instance;
         }
 
         _tabs.Select(0);
+        MarkDirty();
     }
 
     protected override void OnOpenChanged(bool open)
     {
         // A respec confirmation is a moment, not a mode: reopening the screen must not land on a pending one.
         _perkView.ConfirmingRespec = false;
+        _pending = Pending.None;
+
+        if (!open)
+        {
+            // A hidden field gives up focus on its own, but the keyboard coming back must not depend
+            // on that signal arriving.
+            GameInput.SetTextEntry(false);
+        }
     }
 
     protected override void OnReady()
@@ -231,6 +325,7 @@ public partial class InventoryPanel : UiPanel
         EventBus.Instance?.Unsubscribe<CorruptionChangedEvent>(OnCorruptionChanged);
         EventBus.Instance?.Unsubscribe<Dialogue.StoryFlagChangedEvent>(OnStoryFlagChanged);
         EventBus.Instance?.Unsubscribe<GameLoadedEvent>(OnGameLoaded);
+        GameInput.SetTextEntry(false);
     }
 
     public void SetInventory(InventoryComponent? inventory)
@@ -317,6 +412,8 @@ public partial class InventoryPanel : UiPanel
         // Re-derived per rebuild so a mid-session UI-scale change lands without a restart.
         UiTheme.ApplyScreenInset(Shell);
         MeasureColumns();
+        _toolRow.Visible = _activeTab == CharTab.Gear;
+        _gridCells.Clear(); // the cells of the last rebuild were freed with it
 
         switch (_activeTab)
         {
@@ -728,7 +825,9 @@ public partial class InventoryPanel : UiPanel
         return col;
     }
 
-    /// <summary>The backpack: a sort/filter row over a fixed-column grid of slots.</summary>
+    /// <summary>The backpack: a pack / materials switch and a sort and filter block over a grid of
+    /// slots. The pack is a container of known size, so its free slots are drawn; the material bag
+    /// has no size, so its grid is exactly as long as what is in it.</summary>
     private Control BuildBackpackColumn()
     {
         var col = new VBoxContainer
@@ -744,24 +843,32 @@ public partial class InventoryPanel : UiPanel
             return col;
         }
 
+        col.AddChild(BuildViewRow());
         col.AddChild(BuildSortRow());
-        col.AddChild(BuildFilterRow());
+        if (!_bagView)
+        {
+            col.AddChild(BuildFilterRow());
+            if (BuildSlotFilterRow() is { } slots)
+            {
+                col.AddChild(slots);
+            }
+        }
 
         var grid = new GridContainer { Columns = _gridColumns };
         grid.AddThemeConstantOverride("h_separation", UiTheme.GridGap);
         grid.AddThemeConstantOverride("v_separation", UiTheme.GridGap);
         col.AddChild(grid);
 
+        IReadOnlyList<ItemStack> source = _bagView ? _inventory.Materials : _inventory.Stacks;
         var shown = new List<ItemStack>();
-        foreach (ItemStack stack in _inventory.Stacks)
+        foreach (ItemStack stack in source)
         {
-            if (_filter is null || stack.Instance.Type == _filter)
+            if (Shows(stack))
             {
                 shown.Add(stack);
             }
         }
 
-        _gridCells.Clear();
         foreach (ItemStack stack in ItemPresentation.Sort(shown, _sort, st => ItemPresentation.KeyOf(st.Instance)))
         {
             ItemInstance instance = stack.Instance;
@@ -771,22 +878,73 @@ public partial class InventoryPanel : UiPanel
             _gridCells.Add(cell);
         }
 
-        // Fill the remaining capacity with empty wells so the pack reads as a container of known
-        // size rather than an arbitrarily long list. This is also what makes "nearly full" legible
-        // before the weight number is.
-        for (int i = shown.Count; i < _inventory.Capacity; i++)
+        // The pack's free slots, as empty wells, so it reads as a container of known size rather
+        // than an arbitrarily long list. They count what is really free, not what the filter hid,
+        // so narrowing the view never makes the pack look emptier than it is.
+        if (!_bagView)
         {
-            Button empty = ItemSlot.Build(null, 1, false, SlotSize);
-            empty.FocusMode = Control.FocusModeEnum.None; // nothing to inspect, so skip it in nav
-            grid.AddChild(empty);
+            for (int i = source.Count; i < _inventory.Capacity; i++)
+            {
+                Button empty = ItemSlot.Build(null, 1, false, SlotSize);
+                empty.FocusMode = Control.FocusModeEnum.None; // nothing to inspect, so skip it in nav
+                grid.AddChild(empty);
+            }
         }
 
         if (shown.Count == 0)
         {
-            col.AddChild(UiTheme.Body(Loc.T("char.empty"), UiTheme.Dim));
+            string key = source.Count > 0 ? "item.no_match" : _bagView ? "item.materials_empty" : "char.empty";
+            col.AddChild(UiTheme.Body(Loc.T(key), UiTheme.Dim));
         }
 
         return col;
+    }
+
+    /// <summary>Whether a stack survives the filters and the typed search. The search reads the
+    /// name, the category and the affix lines, so "armor" finds a ring that grants it.</summary>
+    private bool Shows(ItemStack stack)
+    {
+        ItemInstance instance = stack.Instance;
+        EquipmentSlot slot = instance.Equippable?.Slot ?? EquipmentSlot.None;
+        if (!_bagView && !ItemPresentation.PassesFilter(instance.Type, slot, _filter, _slotFilter))
+        {
+            return false;
+        }
+
+        if (_query.Length == 0)
+        {
+            return true;
+        }
+
+        var affixes = new List<string>();
+        foreach (ItemAffix affix in instance.Affixes)
+        {
+            affixes.Add(affix.DisplayValue);
+        }
+
+        return ItemPresentation.Matches(
+            _query, instance.DisplayName, Loc.T(ItemSlot.TypeKey(instance.Type)), string.Join(" ", affixes));
+    }
+
+    /// <summary>The pack / materials switch, on the shared tab strip so the active one carries the
+    /// ember underline as well as the colour.</summary>
+    private Control BuildViewRow()
+    {
+        var views = new UiTabs();
+        views.Add(Loc.TF("item.view_pack", _inventory!.UsedSlots, _inventory.Capacity));
+        views.Add(Loc.TF("item.view_materials", _inventory.Materials.Count));
+        if (_bagView)
+        {
+            views.Select(1); // before the handler is attached: this is restoring, not switching
+        }
+
+        views.TabChanged += index =>
+        {
+            _bagView = index == 1;
+            _pending = Pending.None;
+            MarkDirty();
+        };
+        return views;
     }
 
     /// <summary>
@@ -802,6 +960,9 @@ public partial class InventoryPanel : UiPanel
     /// scene tree. The first pass wired neighbours inside the grid builder, whose result is only
     /// added to its parent *after* it returns — so every cell errored, every frame the screen was
     /// open, and the grid still worked under a mouse.
+    ///
+    /// The pack and the material bag share this pass: both fill <see cref="_gridCells"/> in display
+    /// order, and only one of them is on screen at a time.
     /// </summary>
     private void LinkGridFocus()
     {
@@ -845,6 +1006,8 @@ public partial class InventoryPanel : UiPanel
                  {
                      (ItemPresentation.SortOrder.Name, "item.sort_name"),
                      (ItemPresentation.SortOrder.Rarity, "item.sort_rarity"),
+                     (ItemPresentation.SortOrder.Type, "item.sort_type"),
+                     (ItemPresentation.SortOrder.Level, "item.sort_level"),
                      (ItemPresentation.SortOrder.Weight, "item.sort_weight"),
                      (ItemPresentation.SortOrder.Value, "item.sort_value"),
                  })
@@ -921,6 +1084,65 @@ public partial class InventoryPanel : UiPanel
         return row;
     }
 
+    /// <summary>The gear-slot filter: one button per slot the pack actually holds gear for. Absent
+    /// until there are two slots to choose between, and a filter left pointing at a slot the pack no
+    /// longer has gear for is dropped rather than left hiding everything behind a button that is gone.</summary>
+    private Control? BuildSlotFilterRow()
+    {
+        var present = new List<EquipmentSlot>();
+        foreach (ItemStack stack in _inventory!.Stacks)
+        {
+            if (stack.Instance.Equippable is { } gear && gear.Slot != EquipmentSlot.None && !present.Contains(gear.Slot))
+            {
+                present.Add(gear.Slot);
+            }
+        }
+
+        if (_slotFilter is { } active && !present.Contains(active))
+        {
+            _slotFilter = null;
+        }
+
+        if (present.Count < 2)
+        {
+            return null;
+        }
+
+        HFlowContainer row = UiTheme.FlowRow();
+        Button any = UiTheme.Action(Loc.T("item.filter_any_slot"));
+        if (_slotFilter is null)
+        {
+            any.AddThemeColorOverride("font_color", UiTheme.Accent);
+        }
+
+        any.Pressed += () =>
+        {
+            _slotFilter = null;
+            MarkDirty();
+        };
+        row.AddChild(any);
+
+        present.Sort();
+        foreach (EquipmentSlot slot in present)
+        {
+            EquipmentSlot captured = slot;
+            Button button = UiTheme.Action(EquipmentSlots.Label(slot));
+            if (_slotFilter == slot)
+            {
+                button.AddThemeColorOverride("font_color", UiTheme.Accent);
+            }
+
+            button.Pressed += () =>
+            {
+                _slotFilter = captured;
+                MarkDirty();
+            };
+            row.AddChild(button);
+        }
+
+        return row;
+    }
+
     /// <summary>The detail pane: what the selected item is, how it compares, and what can be done
     /// with it.</summary>
     private Control BuildDetailColumn()
@@ -935,19 +1157,39 @@ public partial class InventoryPanel : UiPanel
             // rebuild is what stops the pane offering Use on a potion that is already gone; the
             // panel does not get an event for "the thing you had selected left your pack".
             _selected = null;
+            _pending = Pending.None;
             col.AddChild(UiTheme.Body(Loc.T("item.select_hint"), UiTheme.Dim));
             return col;
         }
 
-        // Compare against whatever occupies the slot this item would go into. Gear already worn
-        // compares against nothing - it *is* the baseline, and "vs itself" is always zero.
+        // The card works the comparison out itself from what is worn: one slot for most gear, every
+        // ring slot for a ring, and nothing for gear already on the body - it *is* the baseline.
         bool worn = _equipment != null && _equipment.IsInstanceEquipped(instance);
-        ItemInstance? rival = !worn && instance.Equippable is { } gear ? _equipment?.GetEquipped(gear.Slot) : null;
-        col.AddChild(ItemSlot.Detail(instance, rival, compare: instance.IsEquippable && !worn));
+        col.AddChild(ItemSlot.Detail(
+            instance, new ItemSlot.DetailContext(_equipment, _progression?.Level ?? 0, Compare: true)));
 
+        ItemStack? held = worn ? null : StackOf(instance);
+        if (held != null && _pending == Pending.Split && CanSplit(held))
+        {
+            BuildSplit(col, held);
+            return col;
+        }
+
+        if (held != null && _pending == Pending.Drop && ItemTransfer.CanDrop(instance))
+        {
+            BuildDropConfirm(col, held);
+            return col;
+        }
+
+        _pending = Pending.None;
         foreach (Control action in DetailActions(instance, worn))
         {
             col.AddChild(action);
+        }
+
+        if (held != null)
+        {
+            col.AddChild(BuildStackActions(held));
         }
 
         return col;
@@ -963,7 +1205,13 @@ public partial class InventoryPanel : UiPanel
             Button unequip = UiTheme.Action(Loc.T("char.unequip"));
             unequip.Pressed += () =>
             {
-                _equipment!.UnequipInstance(instance);
+                // Unequip refuses when the pack has no slot for the item. That used to be a button
+                // that did nothing; now the feed says why.
+                if (!_equipment!.UnequipInstance(instance))
+                {
+                    ItemTransfer.AnnouncePackFull(instance, 1);
+                }
+
                 Select(null);
             };
             yield return unequip;
@@ -972,19 +1220,38 @@ public partial class InventoryPanel : UiPanel
 
         if (instance.IsEquippable && _equipment != null)
         {
+            // The requirement is refused here as well as shown on the card: a button that looks
+            // live and does nothing is the one refusal that explains itself to nobody.
+            int required = instance.Template.RequiredLevel;
+            bool meets = _progression == null || ItemPresentation.MeetsLevel(required, _progression.Level);
+
             Button equip = UiTheme.Action(Loc.T("char.equip"));
+            equip.Disabled = !meets;
+            equip.TooltipText = meets ? string.Empty : Loc.TF("item.requires_level", required);
             equip.Pressed += () => _equipment!.Equip(instance);
             yield return equip;
         }
-        else if (instance.Template is ConsumableItemResource && _inventory != null)
+        else if (instance.Template is ConsumableItemResource consumable && _inventory != null)
         {
             Button use = UiTheme.Action(Loc.T("char.use"));
             use.Pressed += () =>
             {
-                _inventory!.Consume(instance);
+                // The hotbar's sweep cannot see a use made in here (it only watches the world), so
+                // this screen reports its own.
+                if (_inventory!.Consume(instance))
+                {
+                    CooldownClock.Consumables.Start(consumable.CooldownKey, consumable.CooldownSeconds);
+                }
+
                 Select(null);
             };
             yield return use;
+
+            double wait = CooldownClock.Consumables.Remaining(consumable.CooldownKey);
+            if (wait > 0d)
+            {
+                yield return UiTheme.Caption(Loc.TF("item.cooling_down", ItemPresentation.Seconds((float)wait)));
+            }
 
             if (_hotbar != null)
             {
@@ -999,6 +1266,116 @@ public partial class InventoryPanel : UiPanel
             place.Pressed += () => BeginPlacement(placeable);
             yield return place;
         }
+    }
+
+    /// <summary>
+    /// What can be done to a held stack as a stack: split it, lock it, mark it junk, drop it. Every
+    /// refusal keeps its button, greyed, with the reason in the tooltip - the same rule the shop's
+    /// rows follow, because a verb that vanishes reads as a verb that never existed.
+    /// </summary>
+    private Control BuildStackActions(ItemStack held)
+    {
+        ItemInstance instance = held.Instance;
+        HFlowContainer row = UiTheme.FlowRow();
+
+        if (held.Quantity > 1 && InPack(held))
+        {
+            bool room = _inventory!.UsedSlots < _inventory.Capacity;
+            Button split = UiTheme.Action(Loc.T("item.split"));
+            split.Disabled = !room;
+            split.TooltipText = room ? string.Empty : Loc.T("item.split_no_room");
+            split.Pressed += () =>
+            {
+                _splitQuantity = ItemPresentation.ClampQuantity(held.Quantity / 2, held.Quantity, keepOne: true);
+                _pending = Pending.Split;
+                MarkDirty();
+            };
+            row.AddChild(split);
+        }
+
+        Button lockButton = UiTheme.Action(Loc.T(instance.Locked ? "item.unlock" : "item.lock"));
+        lockButton.TooltipText = Loc.T("item.lock_hint");
+        lockButton.Pressed += () => _inventory!.SetLocked(instance, !instance.Locked);
+        row.AddChild(lockButton);
+
+        Button junk = UiTheme.Action(Loc.T(instance.Junk ? "item.unjunk" : "item.mark_junk"));
+        junk.Disabled = instance.Locked;
+        junk.TooltipText = Loc.T(instance.Locked ? "item.junk_locked" : "item.junk_hint");
+        junk.Pressed += () => _inventory!.SetJunk(instance, !instance.Junk);
+        row.AddChild(junk);
+
+        bool droppable = ItemTransfer.CanDrop(instance);
+        Button drop = UiTheme.Action(Loc.T("item.drop"));
+        drop.Disabled = !droppable;
+        drop.TooltipText = droppable ? string.Empty
+            : Loc.T(instance.Locked ? "item.drop_locked" : "item.drop_quest");
+        drop.Pressed += () =>
+        {
+            _pending = Pending.Drop;
+            MarkDirty();
+        };
+        row.AddChild(drop);
+
+        return row;
+    }
+
+    /// <summary>The split question: how many to move into a new stack, then yes or no. The picker
+    /// keeps its own reading, so moving the slider does not rebuild the pane out from under it.</summary>
+    private void BuildSplit(VBoxContainer col, ItemStack held)
+    {
+        _splitQuantity = ItemPresentation.ClampQuantity(_splitQuantity, held.Quantity, keepOne: true);
+        col.AddChild(UiTheme.Caption(Loc.T("item.split_prompt")));
+        col.AddChild(QuantityPicker.Build(1, held.Quantity - 1, _splitQuantity, value => _splitQuantity = value));
+
+        HFlowContainer row = UiTheme.FlowRow();
+        Button confirm = UiTheme.Action(Loc.T("item.split_confirm"));
+        confirm.Pressed += () =>
+        {
+            _inventory?.SplitStack(held, _splitQuantity);
+            _pending = Pending.None;
+            MarkDirty();
+        };
+        row.AddChild(confirm);
+        row.AddChild(CancelButton());
+        col.AddChild(row);
+    }
+
+    /// <summary>The drop question. It names the item and the count, because the thing being
+    /// confirmed is the whole stack and "Drop?" alone does not say so.</summary>
+    private void BuildDropConfirm(VBoxContainer col, ItemStack held)
+    {
+        Label ask = UiTheme.Body(Loc.TF("item.drop_confirm", held.Instance.DisplayName, held.Quantity), UiTheme.Bad);
+        ask.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+        col.AddChild(ask);
+
+        HFlowContainer row = UiTheme.FlowRow();
+        Button confirm = UiTheme.Action(Loc.T("item.drop"));
+        confirm.Pressed += () =>
+        {
+            if (_inventory != null)
+            {
+                ItemTransfer.Drop(_inventory, held);
+            }
+
+            Select(null);
+        };
+
+        // Cancel comes first: a focus restored into this row lands on its first button, and the
+        // safe answer to "discard this?" should be the one under the thumb.
+        row.AddChild(CancelButton());
+        row.AddChild(confirm);
+        col.AddChild(row);
+    }
+
+    private Button CancelButton()
+    {
+        Button cancel = UiTheme.Action(Loc.T("item.cancel"));
+        cancel.Pressed += () =>
+        {
+            _pending = Pending.None;
+            MarkDirty();
+        };
+        return cancel;
     }
 
     /// <summary>The 1-5 quick-use assign strip, shown for consumables.</summary>
@@ -1027,9 +1404,9 @@ public partial class InventoryPanel : UiPanel
         return row;
     }
 
-    /// <summary>Whether the player still has this exact instance, in the pack or on the body.
-    /// Matched by reference: two rolled items can share a template and a name while carrying
-    /// different affixes, so an id comparison would happily keep the wrong one selected.</summary>
+    /// <summary>Whether the player still has this exact instance, in the pack, in the material bag
+    /// or on the body. Matched by reference: two rolled items can share a template and a name while
+    /// carrying different affixes, so an id comparison would happily keep the wrong one selected.</summary>
     private bool StillHeld(ItemInstance instance)
     {
         if (_equipment != null && _equipment.IsInstanceEquipped(instance))
@@ -1037,14 +1414,33 @@ public partial class InventoryPanel : UiPanel
             return true;
         }
 
+        return StackOf(instance) != null;
+    }
+
+    /// <summary>The held stack carrying this exact instance (pack, then material bag), or null.</summary>
+    private ItemStack? StackOf(ItemInstance instance)
+    {
         if (_inventory == null)
         {
-            return false;
+            return null;
         }
 
-        foreach (ItemStack stack in _inventory.Stacks)
+        foreach (ItemStack stack in _inventory.AllStacks)
         {
             if (ReferenceEquals(stack.Instance, instance))
+            {
+                return stack;
+            }
+        }
+
+        return null;
+    }
+
+    private bool InPack(ItemStack stack)
+    {
+        foreach (ItemStack held in _inventory!.Stacks)
+        {
+            if (ReferenceEquals(held, stack))
             {
                 return true;
             }
@@ -1053,11 +1449,17 @@ public partial class InventoryPanel : UiPanel
         return false;
     }
 
+    /// <summary>A split needs a pack stack of two or more and a free slot to put the half in. The
+    /// material bag holds one stack per material by definition and never splits.</summary>
+    private bool CanSplit(ItemStack stack) =>
+        stack.Quantity > 1 && InPack(stack) && _inventory!.UsedSlots < _inventory.Capacity;
+
     /// <summary>Selects an item for the detail pane. Marks dirty rather than rebuilding, because
     /// this runs inside a button signal (CLAUDE.md section 8).</summary>
     private void Select(ItemInstance? instance)
     {
         _selected = instance;
+        _pending = Pending.None;
         MarkDirty();
     }
 
