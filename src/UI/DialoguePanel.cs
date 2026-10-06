@@ -189,7 +189,9 @@ public partial class DialoguePanel : UiPanel
     private void LayoutShell()
     {
         Vector2 viewport = GetViewport().GetVisibleRect().Size;
-        float width = Mathf.Min(Mathf.Clamp(viewport.X * 0.74f, 560f, 1040f), viewport.X - (UiTheme.SpaceLg * 2f));
+        // Three quarters of the view, but never so narrow that the line's column cannot hold a sentence:
+        // a handheld gives the window nearly its whole width.
+        float width = Mathf.Min(Mathf.Clamp(viewport.X * 0.74f, 720f, 1040f), viewport.X - (UiTheme.SpaceLg * 2f));
 
         int rows = DialoguePaceRules.VisibleOptions;
         float fiveRows = (UiTheme.ControlHeight * rows) + (UiTheme.RowGap * (rows - 1)) + (UiTheme.PanelPad * 2f) + UiTheme.Space2xs;
