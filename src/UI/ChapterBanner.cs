@@ -24,6 +24,9 @@ namespace Embervale.UI;
 /// </summary>
 public partial class ChapterBanner : CanvasLayer
 {
+    /// <summary>Wrap width of the title and the line under it: inside the narrowest viewport.</summary>
+    private const float TextWidth = 560f;
+
     private readonly BannerQueue _queue = new();
 
     private Control _root = null!;
@@ -73,19 +76,19 @@ public partial class ChapterBanner : CanvasLayer
         _act.HorizontalAlignment = HorizontalAlignment.Center;
         stack.AddChild(_act);
 
-        stack.AddChild(Rule());
+        stack.AddChild(Rule(UiTheme.RuleLit));
 
         _title = UiTheme.Display(string.Empty, UiTheme.Text);
         _title.HorizontalAlignment = HorizontalAlignment.Center;
         _title.AutowrapMode = TextServer.AutowrapMode.WordSmart;
-        _title.CustomMinimumSize = new Vector2(560f, 0f);
+        _title.CustomMinimumSize = new Vector2(TextWidth, 0f);
         stack.AddChild(_title);
 
-        stack.AddChild(Rule());
+        stack.AddChild(Rule(UiTheme.Rule));
 
         _subtitle = UiTheme.Flavour(string.Empty, UiTheme.Dim);
         _subtitle.HorizontalAlignment = HorizontalAlignment.Center;
-        _subtitle.CustomMinimumSize = new Vector2(560f, 0f);
+        _subtitle.CustomMinimumSize = new Vector2(TextWidth, 0f);
         stack.AddChild(_subtitle);
 
         EventBus.Instance?.Subscribe<ChapterStartedEvent>(OnChapterStarted);
@@ -100,11 +103,13 @@ public partial class ChapterBanner : CanvasLayer
         EventBus.Instance?.Unsubscribe<Narrative.StoryBannerRequestedEvent>(OnBannerRequested);
     }
 
-    private static Control Rule()
+    /// <summary>The title sits between two hairlines: the lit one above it, a cold one below, so the
+    /// band has one lit edge like every other surface.</summary>
+    private static Control Rule(Color color)
     {
         var rule = new ColorRect
         {
-            Color = UiTheme.BrassLit with { A = 0.55f },
+            Color = color,
             CustomMinimumSize = new Vector2(0f, 1f),
             MouseFilter = Control.MouseFilterEnum.Ignore,
         };

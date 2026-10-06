@@ -5412,3 +5412,6 @@ kn.dialogue.mark_leave,Ends the conversation
 kn.legend.scroll,Scroll
 kn.legend.waypoint_click,Click to mark
 kn.legend.show_on_map_click,Click for map
+# ui-upgrade: lane 5 (HUD combat and notices)
+hudc.toast.count,×{0}
+hudc.toast.journal,Journal

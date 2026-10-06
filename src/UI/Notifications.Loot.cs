@@ -16,7 +16,8 @@ namespace Embervale.UI;
 /// <c>CraftingComponent</c> itself.)
 ///
 /// Pickups are not toasted one event at a time. <see cref="LootFeedMerger"/> holds each item's line
-/// for a moment and adds to it, so sweeping a pile reads "Iron Ore ×7" once instead of seven times.
+/// for a moment and adds to it, so sweeping a pile reads "Iron Ore ×7" once instead of seven times;
+/// and a line for an item whose toast is still on screen adds to that toast's count.
 /// The feed has no per-frame hook of its own in this file; a short timer flushes the merger, and
 /// re-arms itself while anything is still being held.
 /// </summary>
@@ -77,19 +78,28 @@ public partial class Notifications
             return;
         }
 
-        foreach (LootFeedLine line in _loot.Flush(Now()))
-        {
-            // The rarity is the toast's colour; the count is in the words, so the line still says
-            // everything with the colours remapped.
-            Push(
-                line.Quantity > 1 ? Loc.TF("loot.picked_up_many", line.Name, line.Quantity) : Loc.TF("loot.picked_up", line.Name),
-                UiTheme.RarityColor((ItemRarity)line.Rarity),
-                line.Rarity >= (int)ItemRarity.Rare ? NoticeCategory.Reward : NoticeCategory.Minor);
-        }
-
+        ReleaseLoot(Now());
         if (_loot.HasPending)
         {
             ArmLootTimer();
+        }
+    }
+
+    /// <summary>Releases every pickup line being held, without waiting out the merge window, so a
+    /// harness can stage a pickup and photograph its toast on a known frame.</summary>
+    public void FlushLootForCapture() => ReleaseLoot(double.PositiveInfinity);
+
+    private void ReleaseLoot(double now)
+    {
+        foreach (LootFeedLine line in _loot.Flush(now))
+        {
+            // The rarity is the toast's colour; the quantity is the toast's count, so the line still
+            // says everything with the colours remapped, and the next pickup of it adds to the count.
+            Push(
+                Loc.TF("loot.picked_up", line.Name),
+                UiTheme.RarityColor((ItemRarity)line.Rarity),
+                line.Rarity >= (int)ItemRarity.Rare ? NoticeCategory.Reward : NoticeCategory.Minor,
+                collapseKey: "loot:" + line.ItemId, quantity: line.Quantity);
         }
     }
 
