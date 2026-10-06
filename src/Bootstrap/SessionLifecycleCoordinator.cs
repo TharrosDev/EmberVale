@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Embervale.Core;
 using Embervale.Core.Diagnostics;
 using Embervale.Core.Events;
+using Embervale.Core.Services;
 using Embervale.Races;
 using Embervale.Save;
 using Embervale.World;
@@ -154,11 +155,23 @@ public sealed partial class SessionLifecycleCoordinator : Node
             return false;
         }
 
-        string slot = AutosaveService.NextAutosaveSlot(saves.ListSlots());
+        // The session's own ring position when it has one, so this save and the service agree on
+        // which slot is oldest.
+        string slot = ServiceLocator.Instance is { } locator && locator.TryGet(out AutosaveService autosave)
+            ? autosave.NextSlot
+            : AutosaveService.NextAutosaveSlot(saves.ListSlots());
+
+        // The player is about to leave on the strength of this save, so it has to be on disk before
+        // the answer is given: the queue is drained here, and a save that landed has reset the
+        // unsaved clock through GameSavedEvent by the time Flush returns.
         if (saves.SaveGame(slot, isAutosave: true))
         {
-            Log.Info($"Autosaved to '{slot}' before leaving the session.");
-            return true;
+            SaveWriteQueue.Flush();
+            if (SecondsSinceLastSave < QuitAutosaveFloorSeconds)
+            {
+                Log.Info($"Autosaved to '{slot}' before leaving the session.");
+                return true;
+            }
         }
 
         failureKey = SaveManager.ReasonWriteFailed;
@@ -244,9 +257,15 @@ public sealed partial class SessionLifecycleCoordinator : Node
     /// <see cref="ConsumeTitleNotice"/> has the message.</para></summary>
     public bool StartLoadedGame(string slot)
     {
+        // ⚠️ The header comes from the inspection, not from ReadHeader: ReadHeader prefers the
+        // header.json mirror, which describes the newest save, and when that save is damaged the
+        // load reads the backup generation. Race, name and region must come from the same
+        // generation the load is about to apply.
+        SaveSlotInfo? header = null;
         if (SaveManager.Instance is { } inspector)
         {
-            SaveHealth health = inspector.InspectSlot(slot)?.Health ?? SaveHealth.Missing;
+            header = inspector.InspectSlot(slot);
+            SaveHealth health = header?.Health ?? SaveHealth.Missing;
             if (health != SaveHealth.Ok)
             {
                 Log.Error($"Save slot '{slot}' cannot be loaded ({health}); any running session is left untouched.");
@@ -261,7 +280,7 @@ public sealed partial class SessionLifecycleCoordinator : Node
         // Restore the saved character before building: the race must be known at spawn (the player
         // factory reads it) so its stat deltas apply. The innate grants come back via the LoadGame
         // overlay below, so they are not re-granted here.
-        if (SaveManager.Instance?.ReadHeader(slot) is { } header)
+        if (header != null)
         {
             profile = CharacterProfile.FromHeaderFields(new Dictionary<string, string>
             {

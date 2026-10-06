@@ -48,6 +48,7 @@ public static class SaveWriteQueue
     /// <summary>
     /// Writes one save's files: <c>save.json</c>, then the header mirror, then the legacy flat
     /// file's removal (<see cref="SaveFiles.Commit"/>). Paths may be <c>user://</c> paths.
+    /// <paramref name="keepPrevious"/> keeps the save being replaced as the slot's backup generation.
     ///
     /// Returns the outcome when the write ran inline (true = saved), or <b>null when it was
     /// queued</b>. Only a queued write calls <paramref name="onQueuedDone"/>, later and on the main
@@ -61,6 +62,7 @@ public static class SaveWriteQueue
         string headerPath,
         string headerJson,
         string legacyPath,
+        bool keepPrevious,
         Action<bool> onQueuedDone)
     {
         var commit = new SaveCommit(
@@ -68,7 +70,8 @@ public static class SaveWriteQueue
             saveJson,
             ProjectSettings.GlobalizePath(headerPath),
             headerJson,
-            ProjectSettings.GlobalizePath(legacyPath));
+            ProjectSettings.GlobalizePath(legacyPath),
+            keepPrevious);
 
         SaveWriteWorker worker = Worker;
         bool inline = worker.Inline;

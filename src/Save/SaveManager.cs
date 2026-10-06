@@ -106,6 +106,8 @@ public sealed partial class SaveManager : Node
 
     public override void _ExitTree()
     {
+        // A write still queued when the process ends is a save the player was told had been taken.
+        SaveWriteQueue.Flush();
         if (Instance == this)
         {
             _saveables.Clear();
@@ -191,9 +193,12 @@ public sealed partial class SaveManager : Node
     /// <summary>Whether a slot has a save in either the new or the legacy layout, or a backup
     /// generation with nothing in front of it (a save interrupted between moving the old file aside
     /// and committing the new one), which a load reads as the slot.</summary>
-    public bool SaveExists(string slot) =>
-        FileAccess.FileExists(SlotSavePath(slot)) || FileAccess.FileExists(LegacySlotPath(slot)) ||
-        FileAccess.FileExists(SlotBackupPath(slot));
+    public bool SaveExists(string slot)
+    {
+        SaveWriteQueue.Flush();
+        return FileAccess.FileExists(SlotSavePath(slot)) || FileAccess.FileExists(LegacySlotPath(slot)) ||
+               FileAccess.FileExists(SlotBackupPath(slot));
+    }
 
     // --- Save ---------------------------------------------------------------
 
@@ -208,7 +213,12 @@ public sealed partial class SaveManager : Node
     /// says "a save taken now would be a bad place to come back to" (mid boss fight, mid
     /// conversation), and that is exactly as true of a save the game takes as of one the player
     /// asks for. The refusal publishes <see cref="SaveFailedEvent"/> with the block's own reason and
-    /// no <see cref="SaveStartedEvent"/>, like the busy refusal below.</summary>
+    /// no <see cref="SaveStartedEvent"/>, like the busy refusal below.
+    ///
+    /// ⚠️ <b>In windowed play a true return means "captured and queued".</b> The files are written
+    /// by <see cref="SaveWriteQueue"/> off the main thread and the <see cref="GameSavedEvent"/> (or a
+    /// <see cref="SaveFailedEvent"/>) follows when the disk answers. Headless and tooling runs write
+    /// before returning, as they always did. Every read of a slot flushes the queue first.</summary>
     public bool SaveGame(string slot, bool isAutosave)
     {
         if (_saveBlocks.Count > 0)
@@ -323,7 +333,21 @@ public sealed partial class SaveManager : Node
 
         // One previous generation is kept, and only a sound one: moving a damaged save.json over
         // the backup would destroy the good copy the backup exists to be.
+        SaveWriteQueue.Flush();
         bool keepPrevious = SaveBackup.ShouldRotate(SaveEnvelope.Read(ReadText(SlotSavePath(slot))).Health);
+
+        // Windowed play hands the disk work to the write queue so a save never stalls a frame; the
+        // outcome arrives through FinishSave. Gates and tooling take the synchronous path below,
+        // which is the one whose log lines the save-audit probe pins.
+        if (!SaveWriteQueue.RunsInline)
+        {
+            int objectCount = objects.Count;
+            SaveWriteQueue.CommitSave(slot, SlotSavePath(slot), document, SlotHeaderPath(slot), headerDocument,
+                LegacySlotPath(slot), keepPrevious, landed => FinishSave(slot, isAutosave, objectCount, landed));
+            CaptureScreenshot(slot);
+            return true;
+        }
+
         if (!AtomicWrite(SlotSavePath(slot), document, keepPrevious))
         {
             return false;
@@ -370,9 +394,24 @@ public sealed partial class SaveManager : Node
             DirAccess.RemoveAbsolute(legacy);
         }
 
-        Log.Info($"Saved {objects.Count} object(s) to slot '{slot}'.");
-        EventBus.Instance?.Publish(new GameSavedEvent(slot, isAutosave));
+        FinishSave(slot, isAutosave, objects.Count, landed: true);
         return true;
+    }
+
+    /// <summary>Announces how a save ended. Called on the main thread: straight away for a
+    /// synchronous write, and from the write queue's completion for a queued one, which keeps
+    /// "every start is followed by exactly one GameSavedEvent or SaveFailedEvent" true.</summary>
+    private void FinishSave(string slot, bool isAutosave, int objectCount, bool landed)
+    {
+        if (!landed)
+        {
+            Log.Error($"Save slot '{slot}' could not be written; previous save preserved.");
+            EventBus.Instance?.Publish(new SaveFailedEvent(slot, ReasonWriteFailed));
+            return;
+        }
+
+        Log.Info($"Saved {objectCount} object(s) to slot '{slot}'.");
+        EventBus.Instance?.Publish(new GameSavedEvent(slot, isAutosave));
     }
 
     /// <summary>Atomic write: stage to a temp file, then rename over the target so a crash
@@ -438,47 +477,11 @@ public sealed partial class SaveManager : Node
         return true;
     }
 
-    /// <summary>Grabs a small thumbnail of the current frame for the slot browser (Phase 24C).
-    /// Best-effort: any failure is logged and ignored — a missing thumbnail never breaks a save.</summary>
-    private void CaptureScreenshot(string slot)
-    {
-        // The dummy renderer has no texture. A headless save is valid without a thumbnail;
-        // calling GetImage there emits a native error even though the save itself succeeds.
-        if (DisplayServer.GetName() == "headless")
-        {
-            return;
-        }
-        try
-        {
-            Image? image = GetViewport()?.GetTexture()?.GetImage();
-            if (image == null)
-            {
-                return;
-            }
-
-            image.Resize(320, 180, Image.Interpolation.Bilinear);
-
-            // Staged and renamed like every other file in the slot: a crash mid-encode leaves the
-            // previous thumbnail, not half a PNG the browser then fails to decode.
-            string path = ScreenshotPath(slot);
-            string temp = path + SaveBackup.TempSuffix;
-            Error error = image.SavePng(temp);
-            if (error == Error.Ok)
-            {
-                error = DirAccess.RenameAbsolute(temp, path);
-            }
-
-            if (error != Error.Ok)
-            {
-                RemoveOrphan(temp);
-                Log.Warn($"Could not write screenshot for slot '{slot}': {error}.");
-            }
-        }
-        catch (Exception ex)
-        {
-            Log.Warn($"Screenshot capture failed for slot '{slot}'; continuing without one: {ex.Message}");
-        }
-    }
+    /// <summary>The slot browser's thumbnail (Phase 24C). <see cref="SaveThumbnailService"/> picks
+    /// the frame (the live one in play, the one cached on the way into a menu otherwise) and encodes
+    /// and writes it behind the save on the write queue. Best effort: it never breaks a save.</summary>
+    private void CaptureScreenshot(string slot) =>
+        SaveThumbnailService.Write(ScreenshotPath(slot), GetViewport());
 
     private SaveSlotInfo BuildHeader(string slot)
     {
@@ -522,6 +525,7 @@ public sealed partial class SaveManager : Node
     /// generation a load will really read. A caller about to load a slot wants that one.</summary>
     public SaveSlotInfo? ReadHeader(string slot)
     {
+        SaveWriteQueue.Flush();
         if (ReadJsonObject(SlotHeaderPath(slot)) is { } headerDoc)
         {
             SaveSlotInfo info = SaveSlotInfo.FromDictionary(headerDoc);
@@ -552,6 +556,7 @@ public sealed partial class SaveManager : Node
     /// <summary>Every save slot's header, for the load/continue browser.</summary>
     public IReadOnlyList<SaveSlotInfo> ListSlots()
     {
+        SaveWriteQueue.Flush();
         var slots = new List<SaveSlotInfo>();
         using DirAccess? dir = DirAccess.Open(SaveDirectory);
         if (dir == null)
@@ -591,6 +596,7 @@ public sealed partial class SaveManager : Node
     /// </summary>
     public bool DeleteSlot(string slot, out IReadOnlyList<string> failures)
     {
+        SaveWriteQueue.Flush();
         var failed = new List<string>();
         failures = failed;
         bool existed = false;
@@ -694,6 +700,8 @@ public sealed partial class SaveManager : Node
     /// </summary>
     public bool LoadGame(string slot)
     {
+        // A load must never read a slot whose write is still queued.
+        SaveWriteQueue.Flush();
         if (_operationInProgress)
         {
             Log.Warn($"Cannot load slot '{slot}' while another save/load is in progress.");

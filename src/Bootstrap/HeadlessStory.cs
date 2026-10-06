@@ -95,6 +95,12 @@ public static class HeadlessStory
     public static async void Run(ApplicationRoot root, SessionLifecycleCoordinator lifecycle)
     {
         Log.Info("=== story probe ===");
+
+        // The probe saves and reads back on consecutive lines and builds sessions of its own: no
+        // autosave may land between a session being built and the playthrough taking it over, and
+        // every write has to be on disk when SaveGame returns.
+        AutosaveService.Suppressed = true;
+        SaveWriteQueue.ForceInline = true;
         Failures.Clear();
         Report.Clear();
         ulong started = Time.GetTicksMsec();

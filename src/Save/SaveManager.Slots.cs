@@ -72,6 +72,7 @@ public sealed partial class SaveManager
             return null;
         }
 
+        SaveWriteQueue.Flush();
         try
         {
             return InspectSlotCore(slot);

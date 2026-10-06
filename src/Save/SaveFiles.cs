@@ -12,7 +12,8 @@ public readonly record struct SaveCommit(
     string SaveJson,
     string HeaderPath,
     string HeaderJson,
-    string? LegacyPath = null);
+    string? LegacyPath = null,
+    bool KeepPrevious = false);
 
 /// <summary>The outcome of one <see cref="SaveFiles.Commit"/>, with the lines to log about it.
 /// Logging is left to the caller because the commit may have run on a worker thread.</summary>
@@ -37,16 +38,29 @@ public static class SaveFiles
 
     /// <summary>Atomic write: stage to <c>&lt;path&gt;.tmp</c>, flush it to the device, then rename
     /// over the target, so a crash mid-write can never truncate a previously good file. On failure
-    /// the previous file is untouched and <paramref name="error"/> says why.</summary>
-    public static bool WriteAtomic(string path, byte[] bytes, out string error)
+    /// the previous file is untouched and <paramref name="error"/> says why.
+    ///
+    /// With <paramref name="keepPrevious"/> the file being replaced is moved to
+    /// <c>&lt;path&gt;.bak</c> between the stage and the rename, so the slot keeps the generation
+    /// before this one (<see cref="SaveBackup"/> decides when that is wanted). If the rename then
+    /// fails the previous file is moved back.</summary>
+    public static bool WriteAtomic(string path, byte[] bytes, out string error, bool keepPrevious = false)
     {
-        string temp = path + ".tmp";
+        string temp = path + SaveBackup.TempSuffix;
+        string previous = path + SaveBackup.Suffix;
+        bool keptPrevious = false;
         try
         {
             using (var stream = new FileStream(temp, FileMode.Create, FileAccess.Write, FileShare.None))
             {
                 stream.Write(bytes, 0, bytes.Length);
                 stream.Flush(true);
+            }
+
+            if (keepPrevious && File.Exists(path))
+            {
+                File.Move(path, previous, true);
+                keptPrevious = true;
             }
 
             File.Move(temp, path, true);
@@ -56,13 +70,26 @@ public static class SaveFiles
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or NotSupportedException
                                        or ArgumentException or System.Security.SecurityException)
         {
+            if (keptPrevious && !File.Exists(path))
+            {
+                try
+                {
+                    File.Move(previous, path);
+                }
+                catch (Exception restore) when (restore is IOException or UnauthorizedAccessException)
+                {
+                    // The previous generation stays under its .bak name, where a load still finds it.
+                }
+            }
+
+            TryDelete(temp);
             error = $"Could not commit '{path}' ({ex.GetType().Name}: {ex.Message}); previous file preserved.";
             return false;
         }
     }
 
-    public static bool WriteAtomic(string path, string text, out string error) =>
-        WriteAtomic(path, Utf8NoBom.GetBytes(text), out error);
+    public static bool WriteAtomic(string path, string text, out string error, bool keepPrevious = false) =>
+        WriteAtomic(path, Utf8NoBom.GetBytes(text), out error, keepPrevious);
 
     /// <summary>
     /// Commits one save: <c>save.json</c> first (a failure there fails the save and touches nothing
@@ -92,7 +119,7 @@ public static class SaveFiles
             return new SaveCommitResult { Saved = false, Errors = errors };
         }
 
-        if (!WriteAtomic(commit.SavePath, commit.SaveJson, out string saveError))
+        if (!WriteAtomic(commit.SavePath, commit.SaveJson, out string saveError, commit.KeepPrevious))
         {
             errors.Add(saveError);
             return new SaveCommitResult { Saved = false, Errors = errors };
