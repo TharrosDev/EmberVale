@@ -200,6 +200,7 @@ public partial class InventoryPanel : UiPanel
         {
             _activeTab = TabDefs[index].Tab;
             _perkView.ConfirmingRespec = false;
+            _perkView.DeniedId = null;
             MarkDirty();
         };
         // The tabs and the search share one row. ⚠️ The field comes after the tabs, and beside them
@@ -388,6 +389,7 @@ public partial class InventoryPanel : UiPanel
     {
         // A respec confirmation is a moment, not a mode: reopening the screen must not land on a pending one.
         _perkView.ConfirmingRespec = false;
+        _perkView.DeniedId = null;
         _pending = Pending.None;
 
         if (open)
