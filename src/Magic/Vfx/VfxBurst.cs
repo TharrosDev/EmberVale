@@ -232,6 +232,12 @@ public partial class VfxBurst : VfxEffect
         _draw.SetShaderParameter(VfxMaterials.Energy, energy);
         _draw.SetShaderParameter(VfxMaterials.Opacity, 1f);
 
+        // Smoke puffs are metres across and sit on the floor: without the depth fade each one is cut
+        // by the ground in a hard line. Light particles are small and added, and do without it.
+        _draw.SetShaderParameter(
+            VfxMaterials.SoftDepth,
+            _preset.Occlude && VfxQuality.Tier != VfxTier.Performance ? Mathf.Clamp(0.4f * sizeScale, 0.2f, 1f) : 0f);
+
         // The engine culls an emitter by this box, not by where its particles are.
         float half = reach + (_preset.SizeMax * sizeScale) + 1f;
         _particles.VisibilityAabb = new Aabb(new Vector3(-half, -half, -half), new Vector3(half, half, half) * 2f);
@@ -267,7 +273,7 @@ public partial class VfxBurst : VfxEffect
             return !Stopping || StopAge < _life;
         }
 
-        return Age < _life + 0.2d;
+        return Age < VfxBurstPresets.BurstSeconds(_life, _preset.Explosiveness) + 0.1d;
     }
 
     protected override void OnStop()

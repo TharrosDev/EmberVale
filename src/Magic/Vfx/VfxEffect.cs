@@ -145,6 +145,11 @@ public abstract partial class VfxEffect : Node3D
         _orientLike = null;
         _deferred = false;
         _glides = false;
+
+        // A pooled node keeps the transform of its last life. One that was turned to match a wall
+        // (OrientLike) would otherwise carry that turn into its next use, and an emitter's throw
+        // direction is turned with its node: the next cone sprayed from it would point the wall's way.
+        Transform = Transform3D.Identity;
         Visible = true;
     }
 

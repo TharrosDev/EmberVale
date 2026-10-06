@@ -75,6 +75,15 @@ public static class VfxBurstPresets
         _ => default,
     };
 
+    /// <summary>
+    /// Seconds from firing a one-shot burst until its last particle has died. An emitter spreads its
+    /// births over <c>(1 - explosiveness)</c> of a lifetime, so the last particle is born that late
+    /// and lives a full <paramref name="life"/> after it. An emitter returned to its pool sooner
+    /// than this cuts its youngest particles off mid-fade.
+    /// </summary>
+    public static float BurstSeconds(float life, float explosiveness) =>
+        MathF.Max(0f, life) * (2f - Math.Clamp(explosiveness, 0f, 1f));
+
     /// <summary>The emitter's allocated amount for a preset.</summary>
     public static int Allocated(in VfxBurstPreset preset) => Math.Max(1, (int)MathF.Ceiling(preset.Amount * Headroom));
 

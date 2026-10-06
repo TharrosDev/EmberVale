@@ -68,6 +68,36 @@ public static class VfxScreenRules
         static float Mix(float from, float to) => Math.Clamp(from + ((to - from) * WarmWhiteMix), 0f, 1f);
     }
 
+    /// <summary>The smallest shell (largest half extent, metres) the engulf rule applies to. A bolt's
+    /// body in the casting hand is smaller than this and is always drawn.</summary>
+    public const float EngulfMinHalfExtent = 0.9f;
+
+    /// <summary>Metres outside a shell's surface the camera still counts as inside it (the near
+    /// plane and the shader's own near fade live in this band).</summary>
+    public const float EngulfMargin = 0.3f;
+
+    /// <summary>
+    /// Whether the camera sits inside a body-sized or larger ellipsoid shell (a blast's ball of fire,
+    /// a ward or ice shell on the first-person player, a breath's body in the face).
+    /// <paramref name="localOffset"/> is the camera's position from the shell's centre in the shell's
+    /// own axes, <paramref name="halfExtents"/> its radii. Seen from inside, such a shell is its
+    /// colour across the whole screen, which is a screen flash none of the caps above would cover,
+    /// so it is left undrawn; the flare, ring and debris of the same effect still are.
+    /// </summary>
+    public static bool Engulfs(Vector3 localOffset, Vector3 halfExtents)
+    {
+        float largest = Math.Max(halfExtents.X, Math.Max(halfExtents.Y, halfExtents.Z));
+        if (largest < EngulfMinHalfExtent)
+        {
+            return false;
+        }
+
+        float x = localOffset.X / (Math.Max(0.01f, halfExtents.X) + EngulfMargin);
+        float y = localOffset.Y / (Math.Max(0.01f, halfExtents.Y) + EngulfMargin);
+        float z = localOffset.Z / (Math.Max(0.01f, halfExtents.Z) + EngulfMargin);
+        return (x * x) + (y * y) + (z * z) < 1f;
+    }
+
     /// <summary>The flash's alpha <paramref name="age"/> seconds in: a fast rise and a slower fall.</summary>
     public static float Envelope(double age, float peak)
     {

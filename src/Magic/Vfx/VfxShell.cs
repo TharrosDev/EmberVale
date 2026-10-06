@@ -216,6 +216,13 @@ public partial class VfxShell : VfxEffect
             erode = _spec.BurnsAway ? Mathf.SmoothStep(0.15f, 1f, t) * 0.85f : 0f;
         }
 
+        // Seen from inside, a sphere is its colour over the whole screen: a flash no cap covers. Judged
+        // on its full size, so a ball that will swell past the eye is never shown at all.
+        bool engulfs = _spec.Shape == VfxShellShape.Sphere && Director is { HasCamera: true } director &&
+                       VfxScreenRules.Engulfs((director.CameraPosition - GlobalPosition) * GlobalBasis, _spec.Size * 0.5f);
+        _outer.Visible = !engulfs;
+        _inner.Visible = !engulfs && _spec.Layered && _spec.Shape != VfxShellShape.Post;
+
         size = new Vector3(Mathf.Max(0.01f, size.X), Mathf.Max(0.01f, size.Y), Mathf.Max(0.01f, size.Z));
         _outer.Scale = size;
         _inner.Scale = _spec.Shape == VfxShellShape.Sheet ? size : size * 0.62f;

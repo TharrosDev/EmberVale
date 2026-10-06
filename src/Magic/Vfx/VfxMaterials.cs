@@ -92,6 +92,14 @@ internal static class VfxMaterials
                 Log.Warn($"Spell effects: shader {ShaderNames[i]} did not load; spell effects are off.");
                 all = false;
             }
+            else if (Shaders[i]!.GetShaderUniformList().Count == 0)
+            {
+                // Every one of the six declares uniforms, and a shader that failed to compile exposes
+                // none. Drawing with it would hide the plain shapes behind effects that draw nothing
+                // (an unseen bolt), so the whole layer steps aside and says why.
+                Log.Warn($"Spell effects: shader {ShaderNames[i]} did not compile; spell effects are off.");
+                all = false;
+            }
         }
 
         return all;

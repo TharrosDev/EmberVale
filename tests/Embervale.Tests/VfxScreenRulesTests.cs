@@ -98,4 +98,47 @@ public class VfxScreenRulesTests
             Assert.InRange(VfxScreenRules.Envelope(age, Peak), 0f, Peak + 0.0001f);
         }
     }
+
+    [Fact]
+    public void AShellTheCameraIsInsideIsNotDrawn()
+    {
+        var blast = new Vector3(2.5f, 2.5f, 2.5f);
+
+        Assert.True(VfxScreenRules.Engulfs(Vector3.Zero, blast));
+        Assert.True(VfxScreenRules.Engulfs(new Vector3(0f, 2.4f, 0f), blast));
+        Assert.True(VfxScreenRules.Engulfs(new Vector3(0f, 0f, 2.5f + (VfxScreenRules.EngulfMargin * 0.5f)), blast));
+        Assert.False(VfxScreenRules.Engulfs(new Vector3(0f, 0f, 2.5f + VfxScreenRules.EngulfMargin + 0.01f), blast));
+        Assert.False(VfxScreenRules.Engulfs(new Vector3(6f, 0f, 0f), blast));
+    }
+
+    [Fact]
+    public void AWardOnTheFirstPersonPlayerEngulfsTheEyeButOneOnAFoeDoesNot()
+    {
+        // A ward shell is about a metre in radius around the chest; the eye is 0.65 m above it.
+        var ward = new Vector3(1f, 1f, 1f);
+
+        Assert.True(VfxScreenRules.Engulfs(new Vector3(0f, 0.65f, 0f), ward));
+        Assert.False(VfxScreenRules.Engulfs(new Vector3(0f, 0.6f, 2.5f), ward));
+    }
+
+    [Fact]
+    public void ABoltsBodyInTheCastingHandIsAlwaysDrawn()
+    {
+        // Smaller than a body: the eye may be within its margin and it is still no screen flash.
+        var body = new Vector3(0.45f, 0.45f, 0.45f);
+
+        Assert.True(body.X < VfxScreenRules.EngulfMinHalfExtent);
+        Assert.False(VfxScreenRules.Engulfs(Vector3.Zero, body));
+        Assert.False(VfxScreenRules.Engulfs(new Vector3(0f, 0f, 0.5f), body));
+    }
+
+    [Fact]
+    public void ABreathsBodyIsJudgedAlongItsOwnAxes()
+    {
+        // Long down its aim (Z), narrow across: beside it is outside, down its length is inside.
+        var gout = new Vector3(1.2f, 1.2f, 4f);
+
+        Assert.True(VfxScreenRules.Engulfs(new Vector3(0f, 0f, 3.5f), gout));
+        Assert.False(VfxScreenRules.Engulfs(new Vector3(3.5f, 0f, 0f), gout));
+    }
 }

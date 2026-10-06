@@ -98,4 +98,26 @@ public class VfxBurstPresetsTests
         Assert.Equal(1f, VfxBurstPresets.AmountRatio(50f));
         Assert.True(VfxBurstPresets.AmountRatio(0f) > 0f); // never an emitter that draws nothing at all
     }
+
+    [Theory]
+    [MemberData(nameof(Kinds))]
+    public void ABurstLastsUntilItsLastParticleHasDied(VfxParticles kind)
+    {
+        VfxBurstPreset preset = VfxBurstPresets.For(kind);
+        float seconds = VfxBurstPresets.BurstSeconds(preset.Life, preset.Explosiveness);
+
+        // The last particle is born (1 - explosiveness) of a lifetime in, and lives a lifetime.
+        Assert.Equal(preset.Life + (preset.Life * (1f - preset.Explosiveness)), seconds, 4);
+        Assert.True(seconds >= preset.Life);
+        Assert.True(seconds <= preset.Life * 2f);
+    }
+
+    [Fact]
+    public void BurstSecondsToleratesBadInput()
+    {
+        Assert.Equal(1f, VfxBurstPresets.BurstSeconds(1f, 1f), 4);
+        Assert.Equal(1f, VfxBurstPresets.BurstSeconds(1f, 7f), 4);
+        Assert.Equal(2f, VfxBurstPresets.BurstSeconds(1f, -3f), 4);
+        Assert.Equal(0f, VfxBurstPresets.BurstSeconds(-1f, 0.5f));
+    }
 }

@@ -23,6 +23,10 @@ public partial class VfxScreen : CanvasLayer
     {
         Name = "VfxScreen";
         Layer = 0; // over the world, under the HUD and every menu
+
+        // A menu opened mid-flash pauses the tree. The flash must still finish fading: frozen, it
+        // would hold a bright tint over the world for as long as the menu stayed open.
+        ProcessMode = ProcessModeEnum.Always;
         _rect = new ColorRect
         {
             Name = "Flash",
