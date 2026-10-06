@@ -14,8 +14,10 @@ using Godot;
 
 namespace Embervale.UI;
 
-/// <summary>The vitals card of <see cref="GameHud"/>: health, stamina and mana bars, the level line with
-/// its XP pop and level-up flourish, the prepared spell, and the status and control chips.</summary>
+/// <summary>The vitals group of <see cref="GameHud"/>: health, stamina and mana bars, the corruption
+/// gauge, the level line with its XP pop and level-up flourish, the prepared spell, and the status and
+/// control chips. It has no plate: the bars are keylined and the text inked, and they sit on the world
+/// with the bars on the bottom edge, level with the hotbar and the minimap.</summary>
 public partial class GameHud
 {
     private JuicedBar _hpBar = null!;
@@ -24,6 +26,52 @@ public partial class GameHud
     private Label _hpText = null!;
     private Label _staText = null!;
     private Label _mpText = null!;
+    private TextureRect _hpIcon = null!;
+    private TextureRect _staIcon = null!;
+
+    // The corruption gauge: hidden until the player carries any. Violet is its colour everywhere, so
+    // here it also gets a hatched fill, a mark of its own and the tier as a word.
+    private HBoxContainer _corruptionRow = null!;
+    private JuicedBar _corruptionBar = null!;
+    private Label _corruptionText = null!;
+    private int _corruptionShown = int.MinValue;
+    private int _corruptionTierShown = -1;
+
+    private Control _spellGlyph = null!;
+    private VBoxContainer _spellGroup = null!;
+    private float _staTickShown = float.NaN;
+    private float _mpTickShown = float.NaN;
+
+    // Set by an invalidation and cleared by the tick that answers it: that tick rewrites every cache,
+    // and none of those rewrites is news for a Dynamic element (GameHud.MarkChanged).
+    private bool _vitalsQuiet = true;
+    private bool _vitalsSnap = true;
+
+    /// <summary>Forgets when anything last changed and when the last blow landed, so the screenshot
+    /// harness can photograph a Dynamic HUD at rest without waiting out
+    /// <see cref="HudDynamicRules.ChangeLingerSeconds"/> and <see cref="HudDynamicRules.CombatLingerSeconds"/>.
+    /// The rules and the signals are the real ones; this only ages the clocks they read.</summary>
+    public void SettleDynamicForCapture()
+    {
+        System.Array.Fill(_elementChangedAt, double.NegativeInfinity);
+        _combatAt = double.NegativeInfinity;
+    }
+
+    /// <summary>The HUD a widget sits in, found by walking up from it. For the widgets that are
+    /// their own nodes (compass, minimap, party strip, hotbar) and need <see cref="MarkChanged"/> or
+    /// <see cref="LayoutWidth"/>; null outside a HUD (a tool, a test scene).</summary>
+    internal static GameHud? Of(Node? node)
+    {
+        for (Node? at = node; at != null; at = at.GetParent())
+        {
+            if (at is GameHud hud)
+            {
+                return hud;
+            }
+        }
+
+        return null;
+    }
     private Label _footer = null!;
     private ProgressBar _castBar = null!;
 
@@ -48,7 +96,6 @@ public partial class GameHud
     private Label _spellName = null!;
     private Label _spellState = null!;
     private Label _spellCost = null!;
-    private Label _spellCap = null!;
     private ProgressBar _cooldownBar = null!;
 
     // Status-effect chips (30.5C): one tinted chip per active effect. The row is rebuilt only
@@ -114,6 +161,12 @@ public partial class GameHud
         _spellShown = null;
         _controlKey = int.MinValue;
         _statusStale = true;
+        _corruptionShown = int.MinValue;
+        _corruptionTierShown = -1;
+        _staTickShown = float.NaN;
+        _mpTickShown = float.NaN;
+        _vitalsQuiet = true;
+        _vitalsSnap = true;
     }
 
     private void InvalidateSpellShown()
@@ -128,88 +181,169 @@ public partial class GameHud
 
     private void BuildVitals()
     {
-        // Cards, not Panels, for every HUD widget (37.5H).
-        //
-        // 37.5B named this trap and fixed the status chips, then left the five widgets around them
-        // on `Panel()` — so the HUD carried five brass frames, five engraved shadows and **five
-        // grain ShaderMaterials** simultaneously, which is more framing than the character screen
-        // uses. The ornament budget says a HUD widget earns none of it; the boss frame is the sole
-        // exception and it has its own class.
-        PanelContainer panel = Ignore(UiTheme.Band());
+        // No ground at all. The vitals were a Band, and before that a Panel: a box round three bars
+        // and a number, on the corner of the screen the player looks at most. The bars carry their own
+        // keyline and the text its own ink (UiTheme.HudInk), which is all either needs to read over a
+        // bright sky or a dark cave, and it leaves the world visible between them.
+        PanelContainer panel = Ignore(UiTheme.HudBare());
         panel.CustomMinimumSize = new Vector2(HudMetrics.VitalsMin, 0);
         _layout.BottomLeft.AddChild(panel);
         _vitalsPanel = panel;
 
-        // Groups (the three bars, the level line, the spell, the status chips) sit SpaceSm apart; the
-        // bars within their group sit SpaceXs apart, so the card reads as clusters and not as one stack.
+        // Bottom-up: the bars are the last rows, so they sit on the HUD's bottom edge and never move.
+        // What comes and goes (status chips, the spell, an XP pop) stacks above them and grows upward.
+        // Groups sit SpaceSm apart and the bars within their group SpaceXs apart.
         var col = new VBoxContainer();
         col.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
-        WrapPadded(panel, col);
+        panel.AddChild(col);
 
-        var bars = new VBoxContainer();
-        bars.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
-        col.AddChild(bars);
-        (_hpBar, _hpText) = AddVital(bars, UiIcon.Kind.Health, Loc.T("hud.hp"), UiTheme.Health, primary: true);
-        (_staBar, _staText) = AddVital(bars, UiIcon.Kind.Stamina, Loc.T("hud.sta"), UiTheme.Stamina, primary: false);
-        (_mpBar, _mpText) = AddVital(bars, UiIcon.Kind.Mana, Loc.T("hud.mp"), UiTheme.Mana, primary: false);
+        // A flow row, not a box: six status chips in a box are wider than the whole group and stretch it.
+        // Hidden while empty, so an empty row does not hold a gap open above the bars.
+        _statusRow = new HFlowContainer { Visible = false };
+        _statusRow.AddThemeConstantOverride("h_separation", UiTheme.ChipGap);
+        _statusRow.AddThemeConstantOverride("v_separation", UiTheme.SpaceXs);
+        col.AddChild(_statusRow);
 
-        _footer = UiTheme.Body("", UiTheme.Dim);
-        col.AddChild(_footer);
-
-        _xpPop = UiTheme.Caption("", UiTheme.Accent);
-        _xpPop.Visible = false;
-        col.AddChild(_xpPop);
-
-        // Prepared spell: name in the school's colour, state readout, and a thin recovery bar
-        // that fills while the spell cools down (hidden when ready).
-        // ⚠️ The prepared spell was a bare name and the word "ready", with NO indication of which key
-        // casts it and NO cost — so §11's "resource cost where useful" and §12's "insufficient mana"
-        // state had nothing to render with, and a player could not tell whether the spell they were
-        // looking at was affordable. The keycap resolves from the InputMap like the interaction
-        // prompt's does, so a rebind or a pad flip keeps it honest (§44, §45).
-        _spellRow = new HBoxContainer { Visible = false };
-        _spellRow.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
-
-        PanelContainer castCap = UiTheme.KeyCap(GameInput.PromptLabel(GameInput.Cast), out _spellCap);
-        castCap.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
-        _spellRow.AddChild(castCap);
-
-        _spellName = UiTheme.Body("");
-        _spellName.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-        _spellName.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
-        _spellRow.AddChild(_spellName);
-
-        _spellCost = UiTheme.Caption("", UiTheme.Mana);
-        _spellCost.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
-        _spellRow.AddChild(_spellCost);
-
-        _spellState = UiTheme.Caption("");
-        _spellState.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
-        _spellRow.AddChild(_spellState);
-        col.AddChild(_spellRow);
-
-        _cooldownBar = UiTheme.Bar(UiTheme.Dim);
-        _cooldownBar.CustomMinimumSize = new Vector2(168f, 5f);
-        _cooldownBar.Visible = false;
-        col.AddChild(_cooldownBar);
-
-        // Charge/channel meter (29.5G): fills while a charged cast is held, pinned full while
-        // channeling, hidden otherwise. Modulated to the active spell's school colour.
-        _castBar = UiTheme.Bar(UiTheme.ArcaneSilver);
-        _castBar.Visible = false;
-        col.AddChild(_castBar);
-
-        _controlRow = new HFlowContainer { CustomMinimumSize = new Vector2(168f, 0f) };
+        _controlRow = new HFlowContainer { Visible = false };
         _controlRow.AddThemeConstantOverride("h_separation", UiTheme.ChipGap);
         _controlRow.AddThemeConstantOverride("v_separation", UiTheme.SpaceXs);
         col.AddChild(_controlRow);
 
-        // A flow row, not a box: six status chips in a box are wider than the whole card and stretch it.
-        _statusRow = new HFlowContainer { CustomMinimumSize = new Vector2(168f, 0f) };
-        _statusRow.AddThemeConstantOverride("h_separation", UiTheme.ChipGap);
-        _statusRow.AddThemeConstantOverride("v_separation", UiTheme.SpaceXs);
-        col.AddChild(_statusRow);
+        // Prepared spell: its key, its name in the school's colour, what it costs, the state readout,
+        // and a thin recovery bar that fills while the spell cools down (hidden when ready).
+        // The glyph resolves from the InputMap like the interaction prompt's does, so a rebind or a
+        // pad flip keeps it honest (§44, §45), and affordability has a number to be shown with (§12).
+        // Hidden with nothing prepared, so an empty group does not hold a gap open in the column.
+        VBoxContainer spell = _spellGroup = new VBoxContainer { Visible = false };
+        spell.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
+        col.AddChild(spell);
+
+        _spellRow = new HBoxContainer { Visible = false };
+        _spellRow.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
+
+        _spellGlyph = new CenterContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
+        _spellRow.AddChild(_spellGlyph);
+
+        _spellName = UiTheme.HudInk(UiTheme.Body(""));
+        _spellName.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        _spellName.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
+        _spellName.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
+        _spellRow.AddChild(_spellName);
+
+        _spellCost = UiTheme.HudInk(UiTheme.Caption("", UiTheme.Mana));
+        _spellCost.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
+        _spellRow.AddChild(_spellCost);
+
+        _spellState = UiTheme.HudInk(UiTheme.Caption(""));
+        _spellState.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
+        _spellRow.AddChild(_spellState);
+        spell.AddChild(_spellRow);
+
+        _cooldownBar = UiTheme.Bar(UiTheme.Dim, 0f);
+        _cooldownBar.CustomMinimumSize = new Vector2(0f, HudCoreMetrics.BarThinHeight);
+        _cooldownBar.Visible = false;
+        spell.AddChild(_cooldownBar);
+
+        // Charge/channel meter (29.5G): fills while a charged cast is held, pinned full while
+        // channeling, hidden otherwise. Modulated to the active spell's school colour.
+        _castBar = UiTheme.Bar(UiTheme.ArcaneSilver, 0f);
+        _castBar.CustomMinimumSize = new Vector2(0f, HudCoreMetrics.BarThinHeight);
+        _castBar.Visible = false;
+        spell.AddChild(_castBar);
+
+        // The level and the XP it just gained, on one line.
+        var level = new HBoxContainer();
+        level.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
+        _footer = UiTheme.HudInk(UiTheme.Body("", UiTheme.Dim));
+        level.AddChild(_footer);
+        _xpPop = UiTheme.HudInk(UiTheme.Caption("", UiTheme.Accent));
+        _xpPop.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
+        _xpPop.Visible = false;
+        level.AddChild(_xpPop);
+        col.AddChild(level);
+
+        var bars = new VBoxContainer();
+        bars.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
+        col.AddChild(bars);
+        BuildCorruptionRow(bars);
+        (_hpBar, _hpText, _hpIcon) = AddVital(bars, UiIcon.Kind.Health, UiTheme.Health, primary: true);
+        (_staBar, _staText, _staIcon) = AddVital(bars, UiIcon.Kind.Stamina, UiTheme.Stamina, primary: false);
+        (_mpBar, _mpText, _) = AddVital(bars, UiIcon.Kind.Mana, UiTheme.Mana, primary: false);
+
+        // Where "low" and "critical" begin, marked on the bar itself: the player can see the line
+        // coming instead of learning where it was from the colour change.
+        _hpBar.SetTicks(VitalsRules.CriticalHealth, VitalsRules.LowHealth);
     }
+
+    /// <summary>
+    /// The corruption gauge, above the three vitals and absent until the player carries any.
+    ///
+    /// Violet means corruption everywhere in this UI, which is exactly why it cannot be the only thing
+    /// saying so here: the fill is hatched, the row is led by a mark no other row has, the tier is a
+    /// word, and the notches are the tier boundaries, read from <see cref="CorruptionTiers"/> so the
+    /// bar cannot disagree with the rule.
+    /// </summary>
+    private void BuildCorruptionRow(VBoxContainer bars)
+    {
+        _corruptionRow = new HBoxContainer { Visible = false };
+        _corruptionRow.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
+
+        var mark = new Control
+        {
+            CustomMinimumSize = new Vector2(HudCoreMetrics.IconSize, HudCoreMetrics.IconMinor),
+            SizeFlagsVertical = Control.SizeFlags.ShrinkCenter,
+            MouseFilter = Control.MouseFilterEnum.Ignore,
+        };
+        mark.Draw += () => DrawCorruptionMark(mark);
+        _corruptionRow.AddChild(mark);
+
+        _corruptionBar = JuicedBar.Create(UiTheme.Corruption, 0f);
+        _corruptionBar.Keylined = true;
+        _corruptionBar.Hatched = true;
+        _corruptionBar.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        _corruptionBar.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
+        _corruptionBar.CustomMinimumSize = new Vector2(0f, HudCoreMetrics.BarMinorHeight);
+        _corruptionBar.Snap(0d);
+
+        var boundaries = new System.Collections.Generic.List<float>();
+        for (int value = CorruptionTiers.Min + 1; value <= CorruptionTiers.Max; value++)
+        {
+            if (CorruptionTiers.Of(value) != CorruptionTiers.Of(value - 1))
+            {
+                boundaries.Add(value / (float)CorruptionTiers.Max);
+            }
+        }
+
+        _corruptionBar.SetTicks(boundaries.ToArray());
+        _corruptionRow.AddChild(_corruptionBar);
+
+        _corruptionText = UiTheme.HudInk(UiTheme.Caption("", UiTheme.CorruptionText));
+        _corruptionText.CustomMinimumSize = new Vector2(ReadingWidth(), 0f);
+        _corruptionText.HorizontalAlignment = HorizontalAlignment.Right;
+        _corruptionText.VerticalAlignment = VerticalAlignment.Center;
+        _corruptionText.ClipText = true;
+        _corruptionRow.AddChild(_corruptionText);
+
+        bars.AddChild(_corruptionRow);
+    }
+
+    /// <summary>A hollow diamond with a struck centre: the corruption row's own mark.</summary>
+    private static void DrawCorruptionMark(Control mark)
+    {
+        Vector2 centre = mark.Size / 2f;
+        float r = (Mathf.Min(mark.Size.X, mark.Size.Y) / 2f) - 1f;
+        var points = new[]
+        {
+            centre + new Vector2(0f, -r), centre + new Vector2(r, 0f),
+            centre + new Vector2(0f, r), centre + new Vector2(-r, 0f), centre + new Vector2(0f, -r),
+        };
+        mark.DrawPolyline(points, UiTheme.Keyline, 4f);
+        mark.DrawPolyline(points, UiTheme.CorruptionText, 2f);
+        mark.DrawLine(centre + new Vector2(-r / 2f, r / 2f), centre + new Vector2(r / 2f, -r / 2f), UiTheme.CorruptionText, 2f);
+    }
+
+    /// <summary>The width every reading on the right of the vitals takes, so the bars all end on one line.</summary>
+    private static float ReadingWidth() => HudCoreMetrics.ReadingWidth(UiTheme.FontSize(UiTheme.BodyFontSize));
 
     /// <summary>The level-up flourish label: full-rect, text centred, lifted above the
     /// crosshair; only its modulate alpha and vertical offset animate.</summary>
@@ -224,6 +358,7 @@ public partial class GameHud
         };
         UiTheme.ApplyType(_levelUp, UiTheme.FontRole.Display, UiTheme.DisplayFontSize);
         _levelUp.AddThemeColorOverride("font_color", UiTheme.Accent);
+        UiTheme.HudInk(_levelUp);
         _levelUp.SetAnchorsPreset(Control.LayoutPreset.FullRect);
         _layout.Overlay.AddChild(_levelUp);
     }
@@ -240,6 +375,7 @@ public partial class GameHud
         _xpPopAge = 0d;
         _xpPop.Text = Loc.TF("hud.xp_gain", _xpPopAmount);
         _xpPop.Visible = true;
+        MarkChanged(HudElement.Vitals);
     }
 
     private void OnLeveledUp(LeveledUpEvent e)
@@ -311,21 +447,42 @@ public partial class GameHud
             return;
         }
 
+        // A new player, a load or a settings change: the bars take the new value at once. A chunk
+        // sliding off a bar because the save had less health than the last one did is not a hit.
+        if (_vitalsSnap)
+        {
+            _vitalsSnap = false;
+            _hpBar.Snap(stats.GetNormalized(StatType.Health));
+            _staBar.Snap(stats.GetNormalized(StatType.Stamina));
+            _mpBar.Snap(stats.GetNormalized(StatType.Mana));
+        }
+
         SetVital(_hpBar, _hpText, stats, StatType.Health, ref _hpShown);
         SetVital(_staBar, _staText, stats, StatType.Stamina, ref _staShown);
 
-        // Winded (stamina hit zero; dodge and sprint locked until it refills — StatsComponent.IsWinded): the
-        // bar dims and the reading turns Bad, two channels as with low health, no motion needed.
+        // The notch on the stamina bar is where being winded ends.
+        float recover = stats.WindedRecoverFraction;
+        if (recover != _staTickShown)
+        {
+            _staTickShown = recover;
+            _staBar.SetTicks(recover);
+        }
+
+        // Winded (stamina hit zero; dodge and sprint locked until it refills - StatsComponent.IsWinded): the
+        // bar dims, the reading turns Bad and the row's mark becomes a padlock, so the state is a shape as
+        // well as a colour and needs no motion.
         int winded = stats.IsWinded ? 1 : 0;
         if (winded != _windedShown)
         {
             _windedShown = winded;
             _staBar.SelfModulate = winded == 1 ? new Color(1f, 1f, 1f, 0.45f) : Colors.White;
+            _staIcon.Texture = UiIcon.Texture(winded == 1 ? UiIcon.Kind.Lock : UiIcon.Kind.Stamina);
             UiLive.FontColor(_staText, winded == 1 ? UiTheme.Bad : UiTheme.Text);
         }
 
         SetVital(_mpBar, _mpText, stats, StatType.Mana, ref _mpShown);
         UpdateCriticalHealth(stats, delta);
+        UpdateCorruption();
 
         const int NoLevel = int.MinValue + 1;
         int level = _player.TryGetComponent(out ProgressionComponent prog) ? prog.Level : NoLevel;
@@ -333,39 +490,75 @@ public partial class GameHud
         {
             _levelShown = level;
             _footer.Text = level != NoLevel ? Loc.TF("hud.level", level) : string.Empty;
+            NoteVitalsChanged();
         }
 
-        UpdateSpellWidget();
+        UpdateSpellWidget(stats);
         UpdateStatusChips();
         UpdateControlChips();
+        _vitalsQuiet = false;
     }
 
-    /// <summary>Health fraction at or below which the bar starts asking for attention.</summary>
-    private const float LowHealth = 0.30f;
+    /// <summary>Brings a Dynamic vitals group up for something other than a bar moving (the bars are
+    /// covered by the below-max signal): a level, a status, the prepared spell, corruption.</summary>
+    private void NoteVitalsChanged()
+    {
+        if (!_vitalsQuiet)
+        {
+            MarkChanged(HudElement.Vitals);
+        }
+    }
 
-    /// <summary>…and below which it insists.</summary>
-    private const float CriticalHealth = 0.15f;
+    private void UpdateCorruption()
+    {
+        int value = _player!.GetComponent<CorruptionComponent>()?.Value ?? 0;
+        if (value == _corruptionShown)
+        {
+            return;
+        }
+
+        bool first = _corruptionShown == int.MinValue;
+        _corruptionShown = value;
+        _corruptionRow.Visible = value > CorruptionTiers.Min;
+        double fraction = value / (double)CorruptionTiers.Max;
+        if (first)
+        {
+            _corruptionBar.Snap(fraction);
+        }
+        else
+        {
+            _corruptionBar.SetTarget(fraction);
+        }
+
+        int tier = (int)CorruptionTiers.Of(value);
+        if (tier != _corruptionTierShown)
+        {
+            _corruptionTierShown = tier;
+            _corruptionText.Text = CorruptionTiers.DisplayName((CorruptionTier)tier);
+        }
+
+        NoteVitalsChanged();
+    }
 
     /// <summary>
     /// The low- and critical-health treatment (§5).
     ///
     /// ⚠️ <b>There was none.</b> A health bar at 5% looked exactly like a health bar at 95%, only
-    /// shorter — the single most important state in the game had no presentation at all, which is the
+    /// shorter - the single most important state in the game had no presentation at all, which is the
     /// clearest example of the brief's "already built" not meaning "finished".
     ///
     /// Restrained on purpose, per §5's "do NOT permanently flash the entire screen": the bar breathes
-    /// and the reading heats toward ember orange. **The number changing colour is the second channel**
-    /// (§40) — a player who cannot separate the red bar from its warm surround still sees the digits
-    /// change. Reduced motion drops the breath and keeps the colour, because the colour is the
-    /// information and the motion is the emphasis.
+    /// and the reading heats toward ember orange. **The colour is never alone** (§40): the row's heart
+    /// becomes a warning mark, and the two notches on the bar show where low and critical begin.
+    /// Reduced motion drops the breath and keeps the rest, because the motion is only the emphasis.
     /// </summary>
     private void UpdateCriticalHealth(StatsComponent stats, double delta)
     {
-        float fraction = stats.GetNormalized(StatType.Health);
-        int state = fraction > LowHealth ? 0 : fraction <= CriticalHealth ? 2 : 1;
+        int state = VitalsRules.HealthBand(stats.GetNormalized(StatType.Health));
         if (state != _healthStateShown)
         {
             _healthStateShown = state;
+            _hpIcon.Texture = UiIcon.Texture(state == 0 ? UiIcon.Kind.Health : UiIcon.Kind.Warning);
             UiLive.FontColor(_hpText, state == 0 ? UiTheme.Text : state == 2 ? UiTheme.AccentHot : UiTheme.Accent);
         }
 
@@ -398,9 +591,10 @@ public partial class GameHud
 
     /// <summary>The prepared-spell widget (30.5C): school-tinted name, state readout, and the
     /// cooldown recovery bar (visible only while cooling down).</summary>
-    private void UpdateSpellWidget()
+    private void UpdateSpellWidget(StatsComponent stats)
     {
         bool casting = false;
+        float costTick = -1f;
         if (_player!.TryGetComponent(out SpellcastingComponent spells) && spells.Selected is { } spell)
         {
             Color tint = SpellSchools.Color(spell.School);
@@ -408,8 +602,17 @@ public partial class GameHud
             {
                 _spellShown = spell;
                 _spellName.Text = spell.DisplayName;
-                _spellName.Modulate = tint;
+
+                // Font colour, not Modulate: modulate would tint the ink round the letters as well.
+                UiLive.FontColor(_spellName, UiTheme.SchoolColor(spell.School));
                 InvalidateSpellShown();
+                NoteVitalsChanged();
+            }
+
+            if (_spellGlyphStale || _spellGlyph.GetChildCount() == 0)
+            {
+                _spellGlyphStale = false;
+                SetGlyph(_spellGlyph, GameInput.Cast);
             }
 
             float cd = spells.CooldownOf(spell);
@@ -422,10 +625,14 @@ public partial class GameHud
             // ⚠️ Affordability is ASKED, not decided (§48). The HUD compares against the live mana
             // reading purely to colour the number; whether the cast is allowed remains
             // SpellcastingComponent's call, and this never gates anything.
-            float mana = _player.GetComponent<StatsComponent>() is { } casterStats
-                ? casterStats.GetCurrent(StatType.Mana)
-                : float.MaxValue;
+            float mana = stats.GetCurrent(StatType.Mana);
             bool affordable = mana >= cost;
+
+            // The notch on the mana bar is what this spell costs: below it, the cast is refused.
+            float maxMana = stats.GetMax(StatType.Mana);
+            costTick = maxMana > 0f && cost > 0f && cost < maxMana
+                ? Mathf.Round(cost / maxMana * 200f) / 200f
+                : -1f;
             bool silenced = _player.GetComponent<StatusEffectsComponent>() is { IsSilenced: true };
             _spellCost.Visible = cost > 0f || spell.HealthCost > 0f;
 
@@ -508,12 +715,31 @@ public partial class GameHud
         }
         else
         {
+            if (_spellRow.Visible)
+            {
+                NoteVitalsChanged();
+            }
+
             _spellShown = null;
             _spellRow.Visible = false;
             _cooldownBar.Visible = false;
         }
 
         _castBar.Visible = casting;
+        _spellGroup.Visible = _spellRow.Visible;
+
+        if (costTick != _mpTickShown)
+        {
+            _mpTickShown = costTick;
+            if (costTick > 0f)
+            {
+                _mpBar.SetTicks(costTick);
+            }
+            else
+            {
+                _mpBar.SetTicks();
+            }
+        }
     }
 
     /// <summary>The status-effect chip row (30.5C): rebuilt only when the active set changes;
@@ -558,6 +784,8 @@ public partial class GameHud
             }
 
             RebuildStatusChips(effects);
+            _statusRow.Visible = count > 0;
+            NoteVitalsChanged();
         }
 
         foreach (StatusChip chip in _statusChips)
@@ -638,6 +866,8 @@ public partial class GameHud
 
         _controlKey = key;
         UiTheme.ClearChildren(_controlRow);
+        _controlRow.Visible = weave || silenced || rooted || stunned;
+        NoteVitalsChanged();
 
         if (weave)
         {
@@ -660,54 +890,51 @@ public partial class GameHud
         }
     }
 
-    /// <summary>Bar heights, in the hierarchy §3 asks for: health is the one the player checks under
-    /// pressure, so it is read first by being physically the largest thing in the group.</summary>
-    private const float HealthBarHeight = 17f;
-    private const float MinorBarHeight = 10f;
-
     /// <summary>
-    /// One resource row.
+    /// One resource row: its mark, its bar, its reading.
     ///
     /// ⚠️ <b>The three used to be pixel-identical, and that was the §3 failure.</b> Health, mana and
-    /// endurance sat in three 13 px bars with the same label width and the same type, so the group
-    /// read as a table of numbers rather than as a hierarchy — the player had to *read* the row
-    /// labels to find their health, at exactly the moment they have no attention to spare. Now health
-    /// is visibly the largest and brightest thing in the group and the other two are subordinate,
-    /// which is the whole of the "critical vs important" split.
+    /// endurance sat in three bars with the same label and the same type, so the group read as a table
+    /// of numbers and the player had to *read* the row labels to find their health, at exactly the
+    /// moment they have no attention to spare. Health is the tallest bar and the largest number; the
+    /// other two are subordinate. The "HP / STA / MP" captions are gone: the mark already names the
+    /// row by shape, and the width they took is bar now.
     ///
     /// Shape, position and size carry the distinction as well as colour, so the group survives
-    /// <see cref="ColorVision"/> (§40).
+    /// <see cref="ColorVision"/> (§40). Every row has the same mark column and the same reading
+    /// column, so the three bars start and end on the same two lines.
     /// </summary>
-    private static (JuicedBar Bar, Label Value) AddVital(
-        VBoxContainer col, UiIcon.Kind icon, string caption, Color fill, bool primary)
+    private static (JuicedBar Bar, Label Value, TextureRect Icon) AddVital(
+        VBoxContainer col, UiIcon.Kind icon, Color fill, bool primary)
     {
         var row = new HBoxContainer();
         row.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
 
-        row.AddChild(UiIcon.Create(icon, primary ? 20f : 17f, fill));
+        float markSize = primary ? HudCoreMetrics.IconSize : HudCoreMetrics.IconMinor;
+        TextureRect mark = UiIcon.Create(icon, markSize, fill);
+        mark.CustomMinimumSize = new Vector2(HudCoreMetrics.IconSize, markSize);
+        mark.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
+        row.AddChild(mark);
 
-        Label cap = UiTheme.Caption(caption, primary ? UiTheme.Text : UiTheme.Dim);
-        cap.CustomMinimumSize = new Vector2(34, 0);
-        cap.VerticalAlignment = VerticalAlignment.Center;
-        row.AddChild(cap);
-
-        JuicedBar bar = JuicedBar.Create(fill);
+        JuicedBar bar = JuicedBar.Create(fill, 0f);
+        bar.Keylined = true;
+        bar.LagChunk = true;
         bar.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
         bar.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
-        bar.CustomMinimumSize = new Vector2(168f, primary ? HealthBarHeight : MinorBarHeight);
+        bar.CustomMinimumSize = new Vector2(
+            0f, primary ? HudCoreMetrics.BarHeight : HudCoreMetrics.BarMinorHeight);
         row.AddChild(bar);
 
-        // The reading, in the same weight as the bar it belongs to. Tabular-ish fixed width so the
-        // numbers do not shuffle left and right as they change — a value that moves while you watch
-        // it is one you have to re-find every time.
-        Label value = primary ? UiTheme.Body("", UiTheme.Text) : UiTheme.Caption("", UiTheme.Dim);
-        value.CustomMinimumSize = new Vector2(74, 0);
+        // The reading, in Inter, in a column of fixed width and right-aligned: a value that moves
+        // while you watch it is one you have to re-find every time.
+        Label value = UiTheme.HudInk(primary ? UiTheme.Body("", UiTheme.Text) : UiTheme.Caption("", UiTheme.Text));
+        value.CustomMinimumSize = new Vector2(ReadingWidth(), 0);
         value.HorizontalAlignment = HorizontalAlignment.Right;
         value.VerticalAlignment = VerticalAlignment.Center;
         row.AddChild(value);
 
         col.AddChild(row);
-        return (bar, value);
+        return (bar, value, mark);
     }
 
     private static void SetVital(
