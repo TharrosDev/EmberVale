@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="AffixDefinition" load_steps=2 format=3 uid="uid://cvdevheljpuv8"]
+
+[ext_resource type="Script" path="res://src/Items/AffixDefinition.cs" id="1_affix"]
+
+[resource]
+script = ExtResource("1_affix")
+Id = "affix.prefix.quick"
+Label = "Quick"
+Kind = 0
+Stat = 12
+ModifierType = 0
+MinValue = 0.03
+MaxValue = 0.08
+MinRarity = 2
+Weight = 0.6
+IsPercent = true
+Group = "haste"
+ForWeapons = true
+ForArmor = false
+ForAccessories = true

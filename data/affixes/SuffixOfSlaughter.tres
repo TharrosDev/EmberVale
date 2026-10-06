@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="AffixDefinition" load_steps=2 format=3 uid="uid://c8tgcoomytbhb"]
+
+[ext_resource type="Script" path="res://src/Items/AffixDefinition.cs" id="1_affix"]
+
+[resource]
+script = ExtResource("1_affix")
+Id = "affix.suffix.slaughter"
+Label = "of Slaughter"
+Kind = 1
+Stat = 14
+ModifierType = 0
+MinValue = 0.3
+MaxValue = 0.6
+MinRarity = 3
+Weight = 1.0
+IsPercent = true
+ForWeapons = true
+ForArmor = false
+ForAccessories = true

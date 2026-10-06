@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="AffixDefinition" load_steps=2 format=3 uid="uid://co73dh8sl7ve2"]
+
+[ext_resource type="Script" path="res://src/Items/AffixDefinition.cs" id="1_affix"]
+
+[resource]
+script = ExtResource("1_affix")
+Id = "affix.suffix.scholar"
+Label = "of the Scholar"
+Kind = 1
+Stat = 5
+ModifierType = 0
+MinValue = 1.0
+MaxValue = 3.0
+MinRarity = 1
+Weight = 0.5
+Group = "attribute"
+ForWeapons = true
+ForArmor = true
+ForAccessories = true

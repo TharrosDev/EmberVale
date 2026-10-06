@@ -13,6 +13,7 @@ MinValue = 0.3
 MaxValue = 1.0
 MinRarity = 1
 Weight = 0.7
+ScalesWithLevel = false
 ForWeapons = true
 ForArmor = true
 ForAccessories = true

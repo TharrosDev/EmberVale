@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="AffixDefinition" load_steps=2 format=3 uid="uid://ccc7kuton6fch"]
+
+[ext_resource type="Script" path="res://src/Items/AffixDefinition.cs" id="1_affix"]
+
+[resource]
+script = ExtResource("1_affix")
+Id = "affix.suffix.phoenix"
+Label = "of the Phoenix"
+Kind = 1
+Stat = 0
+ModifierType = 0
+MinValue = 1.0
+MaxValue = 2.5
+MinRarity = 4
+Weight = 1.0
+Effect = 1
+ForWeapons = false
+ForArmor = true
+ForAccessories = true

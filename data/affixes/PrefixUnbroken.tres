@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="AffixDefinition" load_steps=2 format=3 uid="uid://c3xn0l82spopg"]
+
+[ext_resource type="Script" path="res://src/Items/AffixDefinition.cs" id="1_affix"]
+
+[resource]
+script = ExtResource("1_affix")
+Id = "affix.prefix.unbroken"
+Label = "Unbroken"
+Kind = 0
+Stat = 8
+ModifierType = 1
+MinValue = 0.1
+MaxValue = 0.18
+MinRarity = 3
+Weight = 1.0
+IsPercent = true
+ForWeapons = false
+ForArmor = true
+ForAccessories = false

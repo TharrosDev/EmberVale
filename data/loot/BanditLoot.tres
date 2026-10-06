@@ -19,14 +19,6 @@ MinQuantity = 1
 MaxQuantity = 1
 RollAffixes = false
 
-[sub_resource type="Resource" id="Entry_cap"]
-script = ExtResource("2_entry")
-ItemId = "item.armor.leather_cap"
-DropChance = 0.18
-MinQuantity = 1
-MaxQuantity = 1
-RollAffixes = true
-
 ; Phase 38O - where contraband comes from. It has to drop off somebody or the fence has nothing to
 ; buy, and an outlaw carrying untaxed goods needs no explanation at all. The loop it closes is the
 ; grim one: the standing a fenced sale pays out is standing with the faction you took the goods from.
@@ -47,9 +39,47 @@ MinQuantity = 1
 MaxQuantity = 1
 RollAffixes = false
 
+; ics: tier pools, added by tools/items/gen_loot.py. {tier} is the realm tier of the roll.
+
+[sub_resource type="Resource" id="Entry_tier_gear"]
+script = ExtResource("2_entry")
+ItemId = ""
+DropChance = 0.22
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = false
+TablePath = "res://data/loot/tiers/Tier{tier}Gear.tres"
+
+[sub_resource type="Resource" id="Entry_tier_materials"]
+script = ExtResource("2_entry")
+ItemId = ""
+DropChance = 0.35
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = false
+TablePath = "res://data/loot/tiers/Tier{tier}Materials.tres"
+
+[sub_resource type="Resource" id="Entry_tier_supplies"]
+script = ExtResource("2_entry")
+ItemId = ""
+DropChance = 0.25
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = false
+TablePath = "res://data/loot/tiers/Tier{tier}Supplies.tres"
+
+[sub_resource type="Resource" id="Entry_tier_scrolls"]
+script = ExtResource("2_entry")
+ItemId = ""
+DropChance = 0.04
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = false
+TablePath = "res://data/loot/tiers/Tier{tier}Scrolls.tres"
+
 [resource]
 script = ExtResource("1_table")
-Entries = Array[Resource]([SubResource("Entry_scrap"), SubResource("Entry_potion"), SubResource("Entry_cap"), SubResource("Entry_dreamsmoke"), SubResource("Entry_fur")])
+Entries = Array[Resource]([SubResource("Entry_scrap"), SubResource("Entry_potion"), SubResource("Entry_dreamsmoke"), SubResource("Entry_fur"), SubResource("Entry_tier_gear"), SubResource("Entry_tier_materials"), SubResource("Entry_tier_supplies"), SubResource("Entry_tier_scrolls")])
 GoldItemId = "item.currency.gold"
 GoldChance = 0.8
 GoldMin = 6
