@@ -407,6 +407,10 @@ public partial class CharacterAnimationComponent : EntityComponent
     public float StartAction(string slot, float desiredSeconds)
     {
         ResumeAction();
+        // A combo link starts the next action without stopping the last, so the layer is let go
+        // here: left held, a swing off the upper-body library would sit over the arms of the
+        // full-body one that follows it. The route below takes it again if this clip wants it.
+        _upperAction = false;
         // A rider gets no full-body one-shot for the reason PlayOneShot documents at length: the
         // standing clip lifts the hips half a metre out of the saddle. ⚠️ This refusal is now
         // FALLBACK-ONLY — a tree-driven body plays the swing on its upper-body layer instead, with
@@ -449,6 +453,13 @@ public partial class CharacterAnimationComponent : EntityComponent
                 // door takes any clip out of the upper-body library: it has no leg tracks, so in
                 // the action state it would stand the legs in their rest pose for its whole length.
                 SetUpperBodyClip(clip, speed);
+                // Chained straight out of a full-body action, the machine is still parked on that
+                // clip's last frame; hand the legs back to locomotion.
+                if (_playback.GetCurrentNode() == ActionStateName)
+                {
+                    TravelTo(LocomotionStateName);
+                }
+
                 return actual;
             }
 
@@ -833,6 +844,9 @@ public partial class CharacterAnimationComponent : EntityComponent
                 _deathPlayed = true;
             }
 
+            // The layer comes off a corpse. A body killed mid-swing or mid-guard otherwise lies
+            // there with its arms and chest still held in that pose over the death clip.
+            ReleaseUpperBody();
             return;
         }
 
@@ -976,6 +990,20 @@ public partial class CharacterAnimationComponent : EntityComponent
             _upperBlend = blend;
             _tree.Set(UpperBodyBlendParamName, blend);
         }
+    }
+
+    /// <summary>Lets the upper-body layer go whatever had it and eases it out.</summary>
+    private void ReleaseUpperBody()
+    {
+        _upperAction = false;
+        _upperHold = 0f;
+        if (_tree == null || _upperBlend <= 0f)
+        {
+            return;
+        }
+
+        _upperBlend = Mathf.MoveToward(_upperBlend, 0f, _lastDelta / UpperBodyBlendSeconds);
+        _tree.Set(UpperBodyBlendParamName, _upperBlend);
     }
 
     // Built once. The tree's parameter paths and state names were string constants, and every

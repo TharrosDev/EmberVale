@@ -84,7 +84,8 @@ public static class LocomotionBlend
     /// <summary>
     /// The blend position for a velocity in the body's own frame: <paramref name="forward"/> and
     /// <paramref name="right"/> in m/s (negative is backwards, and left), over
-    /// <paramref name="runSpeed"/>. Clamped to the space; standing still is exactly the idle point.
+    /// <paramref name="runSpeed"/>. Clamped to the space; standing still is exactly the idle point,
+    /// and a diagonal is a mix of the strafe and the gait for its speed.
     /// </summary>
     public static (float X, float Y) Gait(float forward, float right, float runSpeed)
     {
@@ -99,9 +100,26 @@ public static class LocomotionBlend
         }
 
         float run = float.IsFinite(runSpeed) && runSpeed > 0.1f ? runSpeed : FallbackRunSpeed;
+        float along = forward / run;
+        float across = right / run;
+        if (along == 0f || across == 0f)
+        {
+            return (
+                Math.Clamp(across, MinStrafe, MaxStrafe),
+                Math.Clamp(along, MinForward, MaxForward));
+        }
+
+        // A diagonal. The strafes sit at (+-1, 0) and the gaits run up the forward axis, so the raw
+        // (across, along) of a diagonal run lies outside the space, beyond the edge from a strafe
+        // to the SPRINT, and the engine's nearest point on that edge is three parts strafe to two
+        // parts sprint: a body running at an angle sprinted with its arms. Placed instead on the
+        // line from the strafe to the gait its whole speed is for, by how much of the movement is
+        // sideways: a diagonal run is half the run and half the strafe.
+        float speed = MathF.Sqrt((along * along) + (across * across));
+        float share = Math.Abs(across) / (Math.Abs(along) + Math.Abs(across));
         return (
-            Math.Clamp(right / run, MinStrafe, MaxStrafe),
-            Math.Clamp(forward / run, MinForward, MaxForward));
+            Math.Clamp(MathF.Sign(across) * share * Math.Min(speed, StrafeGait), MinStrafe, MaxStrafe),
+            Math.Clamp(MathF.Sign(along) * (1f - share) * speed, MinForward, MaxForward));
     }
 
     /// <summary>

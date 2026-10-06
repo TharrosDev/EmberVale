@@ -96,8 +96,37 @@ public class LocomotionBlendTests
     {
         (float x, float y) = LocomotionBlend.Gait(40f, -40f, PlayerRun);
 
-        Assert.Equal(LocomotionBlend.MinStrafe, x);
+        Assert.InRange(x, LocomotionBlend.MinStrafe, 0f);
         Assert.Equal(LocomotionBlend.MaxForward, y);
+        Assert.Equal(LocomotionBlend.MinStrafe, LocomotionBlend.Gait(0f, -40f, PlayerRun).X);
+    }
+
+    [Theory]
+    [InlineData(1f, LocomotionBlend.RunGait)]
+    [InlineData(1.6f, LocomotionBlend.SprintGait)]
+    public void ADiagonal_IsHalfTheStrafeAndHalfTheGaitForItsSpeed(float speedOverRun, float gait)
+    {
+        // Equal parts forward and right at this speed. The point has to sit on the line from the
+        // strafe (1, 0) to that gait (0, gait), halfway along: not out past the strafe-to-sprint
+        // edge, where the engine would blend the sprint into a plain diagonal run.
+        float component = speedOverRun * PlayerRun / System.MathF.Sqrt(2f);
+        (float x, float y) = LocomotionBlend.Gait(component, component, PlayerRun);
+
+        Assert.Equal(0.5f, x, 3);
+        Assert.Equal(0.5f * gait, y, 3);
+
+        (float left, float back) = LocomotionBlend.Gait(-component, -component, PlayerRun);
+        Assert.Equal(-0.5f, left, 3);
+        Assert.True(back < 0f);
+    }
+
+    [Fact]
+    public void ASlightDrift_BarelyLeavesTheForwardAxis()
+    {
+        (float x, float y) = LocomotionBlend.Gait(PlayerRun, 0.05f * PlayerRun, PlayerRun);
+
+        Assert.InRange(x, 0f, 0.06f);
+        Assert.InRange(y, 0.93f, 1.01f);
     }
 
     [Theory]
