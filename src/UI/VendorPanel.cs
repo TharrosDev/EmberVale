@@ -1898,15 +1898,9 @@ public partial class VendorPanel : UiPanel
     /// </summary>
     private void AddPriceLines(PriceQuote quote, ShopResource shop)
     {
-        var block = new VBoxContainer();
-        block.AddThemeConstantOverride("separation", UiTheme.LineGap);
-        block.AddChild(UiTheme.Caption(Loc.T("trade.price_reasons"), UiTheme.Accent));
-        foreach (string line in PriceTooltip.Lines(quote))
-        {
-            block.AddChild(Wrapped(UiTheme.Caption(line, UiTheme.Text)));
-        }
+        VBoxContainer block = UiTheme.PriceLedger(quote);
 
-        // A broker has no spread: she lists at a fraction and takes a cut, and both are lines above.
+        // A broker has no spread: she lists at a fraction and takes a cut, and both are rows above.
         if (!shop.IsConsignment)
         {
             (int asks, int pays) = TradeRules.Spread(shop.BuyMarkup, shop.SellFraction);

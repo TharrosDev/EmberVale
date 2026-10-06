@@ -81,15 +81,21 @@ public partial class SpellbookPanel : UiPanel
 
         // The cold ground. Overrides UiPanel's default parchment frame rather than extending it —
         // this screen is deliberately not made of the same material as the rest of the UI.
+        //
+        // The material is its own; the cut is the hub's (UiTheme.ApplyHubPlate): one lit edge along
+        // the top, here in tarnished silver, no box round it, and the same soft shadow. A full
+        // two-pixel silver frame made this the one boxed window of the five.
         var box = new StyleBoxFlat
         {
             BgColor = UiTheme.ArcaneGround,
-            BorderColor = UiTheme.ArcaneSilver with { A = 0.75f },
+            BorderColor = UiTheme.HighContrast ? UiTheme.ArcaneSilver : UiTheme.ArcaneSilver with { A = 0.80f },
         };
-        box.SetBorderWidthAll(2);
-        box.SetCornerRadiusAll(UiTheme.RadiusLg);
+        box.SetBorderWidthAll(0);
+        box.BorderWidthTop = UiTheme.HighContrast ? 3 : 1;
+        box.SetCornerRadiusAll(UiTheme.RadiusSm);
         box.ShadowColor = UiTheme.Engrave;
-        box.ShadowSize = 1;
+        box.ShadowSize = UiTheme.HighContrast ? UiTheme.SpaceXs : UiTheme.SpaceSm;
+        box.ShadowOffset = new Vector2(0f, UiTheme.Space2xs);
         shell.AddThemeStyleboxOverride("panel", box);
 
         // Vellum rather than parchment: much finer grain, tinted toward the glyph light so the
@@ -107,7 +113,7 @@ public partial class SpellbookPanel : UiPanel
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
             SizeFlagsVertical = Control.SizeFlags.ExpandFill,
         };
-        _body.AddThemeConstantOverride("separation", UiTheme.SpaceMd);
+        _body.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
         margin.AddChild(_body);
     }
 
@@ -201,6 +207,9 @@ public partial class SpellbookPanel : UiPanel
 
         _body.AddChild(BuildPrepared());
 
+        // The hairline every hub page has under its title and tabs.
+        _body.AddChild(UiTheme.RowRule());
+
         var row = new HBoxContainer { SizeFlagsVertical = Control.SizeFlags.ExpandFill };
         row.AddThemeConstantOverride("separation", UiTheme.SpaceLg);
         _body.AddChild(row);
@@ -216,7 +225,10 @@ public partial class SpellbookPanel : UiPanel
     {
         var stack = new Control { CustomMinimumSize = new Vector2(0f, 34f) };
 
-        Label title = UiTheme.Display(Loc.T("spellbook.title"), UiTheme.ArcaneSilver);
+        // The size and face of every hub title; the silver and the shimmer are this screen's own.
+        Label title = UiTheme.Title(Loc.T("spellbook.title"));
+        title.AddThemeColorOverride("font_color", UiTheme.ArcaneSilver);
+        title.VerticalAlignment = VerticalAlignment.Center;
         title.SetAnchorsPreset(Control.LayoutPreset.FullRect);
         stack.AddChild(title);
         stack.AddChild(UiOrnament.InkShimmer(UiTheme.GlyphLight, period: 9f, intensity: 0.35f));
@@ -277,12 +289,25 @@ public partial class SpellbookPanel : UiPanel
         }
 
         float p = Weave.Potency;
-        yield return UiTheme.Caption(Loc.TF(
+        yield return Wrapped(UiTheme.Caption(Loc.TF(
             "magic.book.weave_line",
             Signed(WeaveMath.PowerPercent(p, false)),
             Signed((int)Mathf.Round((WeaveMath.CostMultiplier(p, false) - 1f) * 100f)),
             Signed(WeaveMath.PowerPercent(p, true)),
-            Signed((int)Mathf.Round((WeaveMath.CostMultiplier(p, true) - 1f) * 100f))));
+            Signed((int)Mathf.Round((WeaveMath.CostMultiplier(p, true) - 1f) * 100f)))));
+    }
+
+    /// <summary>
+    /// Lets a line of text wrap. ⚠️ Every sentence on this page goes through it. A label that does
+    /// not wrap reports its whole length as its minimum width, the spell list reports the widest of
+    /// them, and the three columns then asked for more than the frame had: the page ran 28 px past
+    /// its right edge at 1280 and a whole column off a handheld.
+    /// </summary>
+    private static Label Wrapped(Label label)
+    {
+        label.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+        label.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        return label;
     }
 
     /// <summary>
@@ -475,11 +500,11 @@ public partial class SpellbookPanel : UiPanel
         string school = Loc.T(SchoolKey(_school));
 
         (int into, int needed) = SchoolMasteryMath.ProgressToNext(_mastery.PointsIn(_school));
-        yield return UiTheme.Caption(
+        yield return Wrapped(UiTheme.Caption(
             rank >= SchoolMasteryMath.MaxRank
                 ? Loc.TF("magic.book.rank_maxed", rank, SchoolMasteryMath.MaxRank)
                 : Loc.TF("magic.book.rank_progress", rank, SchoolMasteryMath.MaxRank, into, needed),
-            UiTheme.Text);
+            UiTheme.Text));
 
         if (rank < SchoolMasteryMath.MaxRank)
         {
@@ -490,17 +515,17 @@ public partial class SpellbookPanel : UiPanel
             yield return bar;
         }
 
-        yield return UiTheme.Caption(
+        yield return Wrapped(UiTheme.Caption(
             Loc.TF("magic.book.perk_power", (int)Mathf.Round(SchoolMasteryMath.PowerPerRank * 100f)),
-            rank >= 1 ? tint : UiTheme.Dim);
-        yield return UiTheme.Caption(
+            rank >= 1 ? tint : UiTheme.Dim));
+        yield return Wrapped(UiTheme.Caption(
             Loc.TF("magic.book.perk_cooldown", SchoolMasteryMath.FirstCooldownRank,
                 (int)Mathf.Round(SchoolMasteryMath.CooldownTrimPerStep * 100f), SchoolMasteryMath.SecondCooldownRank),
-            rank >= SchoolMasteryMath.FirstCooldownRank ? tint : UiTheme.Dim);
-        yield return UiTheme.Caption(
+            rank >= SchoolMasteryMath.FirstCooldownRank ? tint : UiTheme.Dim));
+        yield return Wrapped(UiTheme.Caption(
             Loc.TF("magic.book.perk_attune", SchoolMasteryMath.AttunementRank,
                 (int)SchoolMasteryMath.AttunementResist, school),
-            rank >= SchoolMasteryMath.AttunementRank ? tint : UiTheme.Dim);
+            rank >= SchoolMasteryMath.AttunementRank ? tint : UiTheme.Dim));
     }
 
     private Control BuildSpellCard(SpellResource spell, Color tint)
@@ -526,6 +551,7 @@ public partial class SpellbookPanel : UiPanel
         UiTheme.ApplyType(pick, UiTheme.FontRole.Display, UiTheme.BodyFontSize);
         pick.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
         pick.Alignment = HorizontalAlignment.Left;
+        pick.AutowrapMode = TextServer.AutowrapMode.WordSmart; // a long name wraps; it never sets the card's width
         SpellResource captured = spell;
         pick.Pressed += () =>
         {
@@ -578,18 +604,18 @@ public partial class SpellbookPanel : UiPanel
 
         if (locked)
         {
-            col.AddChild(UiTheme.Caption(LockReason(spell, tierNow), UiTheme.CorruptionText));
+            col.AddChild(Wrapped(UiTheme.Caption(LockReason(spell, tierNow), UiTheme.CorruptionText)));
         }
 
         List<SpellRuleLine> rules = SpellBookRules.Rules(SpellBookRules.FactsOf(spell));
         if (rules.Count > 0)
         {
-            col.AddChild(UiTheme.Caption(Loc.TF(rules[0].Key, rules[0].Value.ToString("0.#")), UiTheme.Text));
+            col.AddChild(Wrapped(UiTheme.Caption(Loc.TF(rules[0].Key, rules[0].Value.ToString("0.#")), UiTheme.Text)));
         }
 
         if (ReferenceEquals(_armed, spell))
         {
-            col.AddChild(UiTheme.Caption(Loc.T("magic.book.embrace_warning"), UiTheme.CorruptionText));
+            col.AddChild(Wrapped(UiTheme.Caption(Loc.T("magic.book.embrace_warning"), UiTheme.CorruptionText)));
         }
 
         if (selected && !string.IsNullOrWhiteSpace(SpellText.Description(spell)))
@@ -707,10 +733,10 @@ public partial class SpellbookPanel : UiPanel
             PanelContainer card = UiTheme.Card(tint);
             var col = new VBoxContainer();
             col.AddThemeConstantOverride("separation", UiTheme.LineGap);
-            col.AddChild(UiTheme.Body(rule.Name, tint));
-            col.AddChild(UiTheme.Caption(Loc.TF(
+            col.AddChild(Wrapped(UiTheme.Body(rule.Name, tint)));
+            col.AddChild(Wrapped(UiTheme.Caption(Loc.TF(
                 "spellbook.synergy_line",
-                Loc.T(SchoolKey(_school)), statusName, rule.BonusDamage.ToString("0"))));
+                Loc.T(SchoolKey(_school)), statusName, rule.BonusDamage.ToString("0")))));
 
             card.AddChild(col);
             yield return card;
@@ -727,7 +753,7 @@ public partial class SpellbookPanel : UiPanel
 
         if (_selected is not { } spell)
         {
-            col.AddChild(UiTheme.Body(Loc.T("spellbook.select_hint"), UiTheme.Dim));
+            col.AddChild(Wrapped(UiTheme.Body(Loc.T("spellbook.select_hint"), UiTheme.Dim)));
             return scroll;
         }
 
@@ -737,9 +763,9 @@ public partial class SpellbookPanel : UiPanel
         name.AutowrapMode = TextServer.AutowrapMode.WordSmart;
         col.AddChild(name);
 
-        col.AddChild(UiTheme.Caption(Loc.TF(
+        col.AddChild(Wrapped(UiTheme.Caption(Loc.TF(
             "spellbook.delivery",
-            Loc.T(SchoolKey(spell.School)), Loc.T(DeliveryKey(spell.Delivery)))));
+            Loc.T(SchoolKey(spell.School)), Loc.T(DeliveryKey(spell.Delivery))))));
 
         bool known = _spellcasting!.IsKnown(spell);
         int tierNow = (int)SpellLearning.TierOf(_spellcasting.Entity!);
@@ -797,12 +823,12 @@ public partial class SpellbookPanel : UiPanel
 
         if (Weave.Band != WeaveBand.Strong)
         {
-            col.AddChild(UiTheme.Caption(
+            col.AddChild(Wrapped(UiTheme.Caption(
                 Loc.TF(
                     "magic.book.weave_spell",
                     Signed(WeaveMath.PowerPercent(Weave.Potency, corrupted)),
                     Signed((int)Mathf.Round((WeaveMath.CostMultiplier(Weave.Potency, corrupted) - 1f) * 100f))),
-                WeaveTint(Weave.Band)));
+                WeaveTint(Weave.Band))));
         }
 
         // What it applies, then the special rules in plain words.
@@ -812,8 +838,8 @@ public partial class SpellbookPanel : UiPanel
             col.AddChild(UiTheme.Chip(
                 Loc.TF("magic.book.applies_chip", SpellText.Name(status)),
                 status.IsBeneficial ? UiTheme.Good : SpellSchools.Color(status.School)));
-            col.AddChild(UiTheme.Caption(Loc.TF(
-                "magic.book.status_line", status.Duration.ToString("0.#"), Mathf.Max(1, status.MaxStacks))));
+            col.AddChild(Wrapped(UiTheme.Caption(Loc.TF(
+                "magic.book.status_line", status.Duration.ToString("0.#"), Mathf.Max(1, status.MaxStacks)))));
             if (SpellText.Description(status) is { Length: > 0 } statusText)
             {
                 col.AddChild(UiTheme.Prose(statusText));

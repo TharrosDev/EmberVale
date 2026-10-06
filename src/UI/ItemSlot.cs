@@ -571,21 +571,33 @@ public static class ItemSlot
         return grid;
     }
 
+    /// <summary>The least a stat's name is given before it wraps: "Resistance" on one line at body size.</summary>
+    private const float StatNameMin = 88f;
+
+    /// <summary>The least a compared item's name is given before it wraps.</summary>
+    private const float ComparedNameMin = 72f;
+
+    /// <summary>A stat's name in the card's grid. It wraps onto a second line when the column is
+    /// narrow ("Arcane / Resistance"): a trimmed "Arcane Re..." beside a number says nothing, and a
+    /// pad has no pointer to hover for the tooltip.</summary>
     private static Label StatName(StatType stat)
     {
         Label label = UiTheme.Body(StatNames.Label(stat), UiTheme.Dim);
         label.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-        label.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
-        label.TooltipText = label.Text;
+        label.CustomMinimumSize = new Vector2(StatNameMin, 0f);
+        label.AutowrapMode = TextServer.AutowrapMode.WordSmart;
         return label;
     }
 
+    /// <summary>An item's name over its column of the side-by-side view, whole: it wraps under
+    /// itself instead of trimming, since two rolled names that differ only at the end ("...of the
+    /// Thaw", "...of Warding") trim to the same word.</summary>
     private static Label ComparedName(ItemInstance item)
     {
         Label label = UiTheme.Caption(item.DisplayName, UiTheme.RarityColor(item.Rarity));
-        label.CustomMinimumSize = new Vector2(64f, 0f);
+        label.CustomMinimumSize = new Vector2(ComparedNameMin, 0f);
         label.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-        label.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
+        label.AutowrapMode = TextServer.AutowrapMode.WordSmart;
         label.TooltipText = $"{item.DisplayName} ({Loc.T(RarityKey(item.Rarity))})";
         return label;
     }

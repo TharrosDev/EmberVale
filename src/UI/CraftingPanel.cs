@@ -215,32 +215,35 @@ public partial class CraftingPanel : UiPanel
     }
 
     private const float SkillBarWidth = 120f;
+    private const float QuietMarkSize = 9f;
     private const float OrderNoteMin = 96f;
 
     /// <summary>
-    /// The Craft page: what can be made on the left, what the chosen recipe takes in the middle,
-    /// what it makes on the right, and under all three the order bar with how many and the verbs.
+    /// The Craft page: what can be made on the left, running the full height of the page, and beside
+    /// it the chosen recipe: what it takes, what it makes, and under those two the order bar with why
+    /// it can or cannot be made, how many, and the verbs. The bar sits with the recipe it acts on,
+    /// which also gives the list the row the bar used to take from under it.
     /// </summary>
     private Control BuildCraftPage()
     {
-        var page = new VBoxContainer
+        var page = new HBoxContainer
         {
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
             SizeFlagsVertical = Control.SizeFlags.ExpandFill,
         };
-        page.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
+        page.AddThemeConstantOverride("separation", UiTheme.SpaceMd);
 
-        var columns = new HBoxContainer
-        {
-            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-            SizeFlagsVertical = Control.SizeFlags.ExpandFill,
-        };
-        columns.AddThemeConstantOverride("separation", UiTheme.SpaceMd);
-        page.AddChild(columns);
-
-        columns.AddChild(UiTheme.TradeColumn(0f, out _recipeHeader, out _recipeNote, out _recipeList));
+        page.AddChild(UiTheme.TradeColumn(0f, out _recipeHeader, out _recipeNote, out _recipeList));
         _recipeHeader.Text = Loc.T("craft.col.recipes");
-        columns.AddChild(UiTheme.ColumnRule());
+        page.AddChild(UiTheme.ColumnRule());
+
+        var chosen = new VBoxContainer { SizeFlagsVertical = Control.SizeFlags.ExpandFill };
+        chosen.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
+        page.AddChild(chosen);
+
+        var columns = new HBoxContainer { SizeFlagsVertical = Control.SizeFlags.ExpandFill };
+        columns.AddThemeConstantOverride("separation", UiTheme.SpaceMd);
+        chosen.AddChild(columns);
 
         _ingredientColumn = UiTheme.TradeColumn(1f, out Label needs, out _ingredientNote, out _ingredients);
         needs.Text = Loc.T("craft.col.ingredients");
@@ -253,10 +256,12 @@ public partial class CraftingPanel : UiPanel
         _result.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
         columns.AddChild(_resultScroll);
 
+        chosen.AddChild(UiTheme.RowRule());
+
         // Wraps rather than widen the page when a handheld cannot hold the picker and three verbs.
         _order = UiTheme.FlowRow();
         _order.CustomMinimumSize = new Vector2(0f, UiTheme.ControlHeight);
-        page.AddChild(_order);
+        chosen.AddChild(_order);
 
         _craftPage = page;
         return page;
@@ -704,9 +709,11 @@ public partial class CraftingPanel : UiPanel
     /// <summary>
     /// One recipe in the list: the output's picture, the recipe's name, a quiet line (pinned, the
     /// station it needs, how many could be made) and at the end a mark - a tick when it can be made
-    /// now, a cross when it cannot, a plus when a master will supply what is missing. The mark is
-    /// the shape that says it; the dimmed name only agrees. Taking focus selects the row; pressing it
-    /// steps into the order bar.
+    /// now, a small grey cross when it cannot, a plus when a master will supply what is missing. The
+    /// mark is the shape that says it; the dimmed name only agrees. The cross is quiet on purpose: a
+    /// new smith can make almost nothing, and a red cross on every row made the list an alarm. What
+    /// is missing is said once, in colour, on the chosen recipe's ingredients and in its order bar.
+    /// Taking focus selects the row; pressing it steps into the order bar.
     /// </summary>
     private void AddRecipeRow(CraftingRecipeResource recipe, bool pinned, bool known)
     {
@@ -769,10 +776,11 @@ public partial class CraftingPanel : UiPanel
         row.AddChild(text);
         if (known)
         {
-            row.AddChild(new TradeMark(
-                can && IsCommission && !_crafting!.HasIngredients(recipe) ? TradeRules.IngredientState.Supplied
-                : can ? TradeRules.IngredientState.Enough
-                : TradeRules.IngredientState.Short));
+            row.AddChild(can
+                ? new TradeMark(IsCommission && !_crafting!.HasIngredients(recipe)
+                    ? TradeRules.IngredientState.Supplied
+                    : TradeRules.IngredientState.Enough)
+                : new TradeMark(TradeRules.IngredientState.Short, QuietMarkSize, quiet: true));
         }
         else
         {
@@ -980,15 +988,7 @@ public partial class CraftingPanel : UiPanel
         // rather than hidden behind a hover, because a pad has no pointer to hover with.
         if (IsCommission)
         {
-            var bill = new VBoxContainer();
-            bill.AddThemeConstantOverride("separation", UiTheme.LineGap);
-            bill.AddChild(UiTheme.Caption(Loc.T("trade.price_reasons"), UiTheme.Accent));
-            foreach (string line in PriceTooltip.Lines(quote))
-            {
-                bill.AddChild(Wrapped(UiTheme.Caption(line, UiTheme.Text)));
-            }
-
-            _result.AddChild(bill);
+            _result.AddChild(UiTheme.PriceLedger(quote));
         }
 
         if (preview is not { IsEquippable: true } || preview.Template.IsStackable)

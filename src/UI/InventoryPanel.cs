@@ -186,9 +186,20 @@ public partial class InventoryPanel : UiPanel
 
     protected override HubTab? Hub => HubTab.Character;
 
+    private Label _title = null!;
+
+    /// <summary>The page width under which the title leaves the tab row: the four tabs and the
+    /// search field need the whole of a handheld's row.</summary>
+    private const float TitleMinWidth = 1000f;
+
     protected override void BuildShell(PanelContainer shell)
     {
         UiTheme.ApplyScreenInset(shell);
+
+        // The same cut plate as the journal, the map and the bestiary: one lit edge along the top
+        // and no box. This screen kept the full iron frame, and beside its four neighbours in the
+        // hub it read as a window from another game.
+        UiTheme.ApplyHubPlate(shell);
 
         MarginContainer margin = UiTheme.Padding(UiTheme.PanelPad);
         shell.AddChild(margin);
@@ -201,7 +212,11 @@ public partial class InventoryPanel : UiPanel
         column.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
         margin.AddChild(column);
 
-        // No title row: this is a hub screen, and the hub strip above the frame already names it.
+        // No title ROW: the screen has two rows of its own controls already and no height to spare.
+        // The title the other hub screens carry sits at the head of the tab row instead, and gives
+        // way on a narrow viewport (Rebuild), where the hub strip above the frame is name enough.
+        _title = UiTheme.Title(Loc.T("ui.hub.character"));
+        _title.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
 
         // Tab row (Gear · Spells · Progression · Perks) — built once; only _list rebuilds per tab.
         _tabs = new UiTabs();
@@ -226,6 +241,7 @@ public partial class InventoryPanel : UiPanel
         var tabRow = new HBoxContainer();
         tabRow.AddThemeConstantOverride("separation", UiTheme.SpaceMd);
         _tabs.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        tabRow.AddChild(_title);
         tabRow.AddChild(_tabs);
         column.AddChild(tabRow);
 
@@ -671,6 +687,12 @@ public partial class InventoryPanel : UiPanel
 
         // Re-derived per rebuild so a mid-session UI-scale change lands without a restart.
         UiTheme.ApplyScreenInset(Shell);
+        bool roomForTitle = UiTheme.UsableWidth(Shell) >= TitleMinWidth;
+        if (_title.Visible != roomForTitle)
+        {
+            _title.Visible = roomForTitle;
+        }
+
         MeasureColumns();
         bool gear = _activeTab == CharTab.Gear;
         _toolRow.Visible = gear;
