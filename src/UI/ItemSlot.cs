@@ -346,9 +346,9 @@ public static class ItemSlot
             return;
         }
 
-        int worn = equipment is null
-            ? 0
-            : ItemPresentation.WornPieces(set.PieceIds, equipment.EquippedInstances.Select(i => i.TemplateId));
+        // The count the equipment itself applies the bonuses by, so a line here is lit exactly
+        // when its modifier is on the wearer.
+        int worn = equipment?.SetPiecesWorn(set.Id) ?? 0;
 
         col.AddChild(UiTheme.Divider());
         string setName = Loc.Has(set.DisplayNameKey) ? Loc.T(set.DisplayNameKey) : set.Id;

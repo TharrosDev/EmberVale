@@ -110,7 +110,7 @@ public partial class ItemPickupComponent : InteractableComponent
             return false;
         }
 
-        EventBus.Instance?.Publish(new ItemPickedUpEvent(instigator, instance.Template, added));
+        EventBus.Instance?.Publish(new ItemPickedUpEvent(instigator, instance.Template, added, instance));
         if (LootPresentation.IsAnnounced(instance.Rarity))
         {
             // A second, higher note over the ordinary pickup sound: rare loot is heard as well as seen.

@@ -1,6 +1,5 @@
 using Embervale.Core.Events;
 using Embervale.Core.Services;
-using Embervale.Crafting;
 using Embervale.Entities;
 using Embervale.Items;
 using Embervale.Localization;
@@ -11,10 +10,10 @@ using Godot;
 namespace Embervale.UI;
 
 /// <summary>
-/// The loot feed: what the player just picked up, that the pack refused something, and that a recipe
-/// was learned. Pure presentation over <see cref="ItemPickedUpEvent"/>, <see cref="InventoryFullEvent"/>
-/// and <see cref="RecipeLearnedEvent"/>. None of the three is raised by a load, so a reload narrates
-/// nothing.
+/// The loot feed: what the player just picked up, and that the pack refused something. Pure
+/// presentation over <see cref="ItemPickedUpEvent"/> and <see cref="InventoryFullEvent"/>. Neither is
+/// raised by a load, so a reload narrates nothing. (A learned recipe is announced once, batched, by
+/// <c>CraftingComponent</c> itself.)
 ///
 /// Pickups are not toasted one event at a time. <see cref="LootFeedMerger"/> holds each item's line
 /// for a moment and adds to it, so sweeping a pile reads "Iron Ore ×7" once instead of seven times.
@@ -30,14 +29,12 @@ public partial class Notifications
     {
         bus?.Subscribe<ItemPickedUpEvent>(OnItemPickedUp);
         bus?.Subscribe<InventoryFullEvent>(OnPackFull);
-        bus?.Subscribe<RecipeLearnedEvent>(OnRecipeLearned);
     }
 
     private void UnsubscribeLoot(EventBus bus)
     {
         bus.Unsubscribe<ItemPickedUpEvent>(OnItemPickedUp);
         bus.Unsubscribe<InventoryFullEvent>(OnPackFull);
-        bus.Unsubscribe<RecipeLearnedEvent>(OnRecipeLearned);
     }
 
     private void OnItemPickedUp(ItemPickedUpEvent e)
@@ -47,7 +44,12 @@ public partial class Notifications
             return;
         }
 
-        _loot.Add(e.Item.Id, e.Item.DisplayName, (int)e.Item.Rarity, e.Quantity, Now());
+        // Rolled gear is announced as what dropped (its rolled rarity and affixed name), and never
+        // merged into a line for a different roll of the same template.
+        string name = e.Instance?.DisplayName ?? e.Item.DisplayName;
+        ItemRarity rarity = e.Instance?.Rarity ?? e.Item.Rarity;
+        string key = e.Instance is { IsStackable: false } ? $"{e.Item.Id}#{name}#{(int)rarity}" : e.Item.Id;
+        _loot.Add(key, name, (int)rarity, e.Quantity, Now());
         ArmLootTimer();
     }
 
@@ -96,14 +98,6 @@ public partial class Notifications
         if (IsPlayer(e.Owner) && e.Item != null)
         {
             Push(Loc.TF("loot.pack_full", e.Item.DisplayName), UiTheme.Bad, NoticeCategory.Warning);
-        }
-    }
-
-    private void OnRecipeLearned(RecipeLearnedEvent e)
-    {
-        if (IsPlayer(e.Crafter) && RecipeDatabase.Get(e.RecipeId) is { } recipe)
-        {
-            Push(Loc.TF("loot.recipe_learned", recipe.DisplayName), UiTheme.Accent, NoticeCategory.Reward);
         }
     }
 

@@ -4,6 +4,7 @@ using Embervale.Core;
 using Embervale.Core.Events;
 using Embervale.Core.Services;
 using Embervale.Corruption;
+using Embervale.Crafting;
 using Embervale.Factions;
 using Embervale.Items;
 using Embervale.Localization;
@@ -793,7 +794,9 @@ public partial class InventoryPanel : UiPanel
             var line = new HBoxContainer();
             line.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
 
-            Button cell = ItemSlot.Build(item, 1, ReferenceEquals(item, _selected), ItemSlot.CompactSize);
+            // The quiver holds a whole stack, so its cell counts the arrows left.
+            int held = slot == EquipmentSlot.Ammo ? Mathf.Max(1, _equipment.AmmoCount) : 1;
+            Button cell = ItemSlot.Build(item, held, ReferenceEquals(item, _selected), ItemSlot.CompactSize);
             if (item is { } worn)
             {
                 cell.Pressed += () => Select(worn);
@@ -1220,37 +1223,71 @@ public partial class InventoryPanel : UiPanel
 
         if (instance.IsEquippable && _equipment != null)
         {
-            // The requirement is refused here as well as shown on the card: a button that looks
-            // live and does nothing is the one refusal that explains itself to nobody.
-            int required = instance.Template.RequiredLevel;
-            bool meets = _progression == null || ItemPresentation.MeetsLevel(required, _progression.Level);
+            // Every refusal the equipment itself would make (level, a two-handed weapon in the way,
+            // no room for what comes off) is asked for here and written under the button: a toast
+            // raised inside a menu is held until it closes, and a button that looks live and does
+            // nothing explains itself to nobody.
+            EquipRefusal refusal = _equipment.CanEquip(instance);
+            string reason = refusal == EquipRefusal.LevelTooLow
+                ? Loc.TF("item.requires_level", instance.Template.RequiredLevel)
+                : InventoryRules.ReasonKey(refusal) is { Length: > 0 } key ? Loc.T(key) : string.Empty;
 
             Button equip = UiTheme.Action(Loc.T("char.equip"));
-            equip.Disabled = !meets;
-            equip.TooltipText = meets ? string.Empty : Loc.TF("item.requires_level", required);
+            equip.Disabled = refusal != EquipRefusal.None;
+            equip.TooltipText = reason;
             equip.Pressed += () => _equipment!.Equip(instance);
             yield return equip;
+
+            if (reason.Length > 0)
+            {
+                Label why = UiTheme.Caption(reason, UiTheme.Bad);
+                why.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+                yield return why;
+            }
+        }
+        else if (CraftingComponent.ScrollRecipe(instance.TemplateId) is { } taught &&
+                 _inventory?.Entity?.GetComponent<CraftingComponent>() is { } crafting)
+        {
+            // A recipe scroll is read where it is carried. One the player already knows is kept
+            // (it still sells), and says so instead of offering a press that would do nothing.
+            bool fresh = crafting.CanStudy(instance);
+            Button study = UiTheme.Action(Loc.T("craft.locked.study"));
+            study.Disabled = !fresh;
+            study.Pressed += () =>
+            {
+                crafting.StudyScroll(instance);
+                Select(null);
+            };
+            yield return study;
+
+            Label teaches = UiTheme.Caption(
+                Loc.TF(fresh ? "item.scroll.teaches" : "item.scroll.known", taught.LocalizedName),
+                fresh ? UiTheme.Dim : UiTheme.Disabled);
+            teaches.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+            yield return teaches;
         }
         else if (instance.Template is ConsumableItemResource consumable && _inventory != null)
         {
+            // Asked of the rule itself (cooldown, a full resource, nothing to cure): a refusal's
+            // toast is held until the menu closes, so the reason has to be readable right here.
+            ConsumeRefusal refusal = _inventory.CanConsume(instance);
             Button use = UiTheme.Action(Loc.T("char.use"));
+            use.Disabled = refusal != ConsumeRefusal.None;
             use.Pressed += () =>
             {
-                // The hotbar's sweep cannot see a use made in here (it only watches the world), so
-                // this screen reports its own.
-                if (_inventory!.Consume(instance))
-                {
-                    CooldownClock.Consumables.Start(consumable.CooldownKey, consumable.CooldownSeconds);
-                }
-
+                _inventory!.Consume(instance);
                 Select(null);
             };
             yield return use;
 
-            double wait = CooldownClock.Consumables.Remaining(consumable.CooldownKey);
-            if (wait > 0d)
+            float wait = _inventory.Entity?.GetComponent<ConsumableEffectsComponent>()?.CooldownRemaining(consumable) ?? 0f;
+            if (wait > 0f)
             {
-                yield return UiTheme.Caption(Loc.TF("item.cooling_down", ItemPresentation.Seconds((float)wait)));
+                yield return UiTheme.Caption(Loc.TF("item.cooling_down", ItemPresentation.Seconds(wait)));
+            }
+            else if (refusal != ConsumeRefusal.None)
+            {
+                yield return UiTheme.Caption(Loc.T(ConsumableRules.ReasonKey(refusal)), UiTheme.Bad);
             }
 
             if (_hotbar != null)

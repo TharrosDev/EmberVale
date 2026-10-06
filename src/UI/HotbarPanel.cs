@@ -15,8 +15,9 @@ namespace Embervale.UI;
 ///
 /// Three things here are not just drawing:
 /// <list type="bullet">
-/// <item>the <b>cooldown sweep</b>: a use is noticed by the slot's count dropping while no menu is
-/// open, and the wait is drawn over the cell from <see cref="CooldownClock.Consumables"/>;</item>
+/// <item>the <b>cooldown sweep</b>: the wait is drawn over the cell from the real cooldown the
+/// player's <see cref="HotbarComponent.CooldownFraction"/> reports, the same one that refuses the
+/// use, so the bar cannot disagree with the rule;</item>
 /// <item>the <b>gamepad chord</b>: while the left trigger is held, the d-pad and Select are lent to
 /// the five slots (<see cref="GameInput.SetHotbarChord"/>), so the component's own polling fires
 /// with no second input path;</item>
@@ -34,13 +35,10 @@ public partial class HotbarPanel : CanvasLayer
     private Label _caption = null!;
     private bool _dirty = true;
 
-    // Per slot: the cooldown key the cell is showing (empty for none), the overlay that draws its
-    // sweep and the seconds reading on it, and the count last seen for the slot's item.
-    private readonly string[] _cooldownKeys = new string[HotbarComponent.SlotCount];
+    // Per slot: the overlay that draws its cooldown sweep and the seconds reading on it (null for
+    // a slot whose item has no cooldown).
     private readonly Control?[] _sweeps = new Control?[HotbarComponent.SlotCount];
     private readonly Label?[] _waits = new Label?[HotbarComponent.SlotCount];
-    private readonly string[] _countedIds = new string[HotbarComponent.SlotCount];
-    private readonly int[] _counts = new int[HotbarComponent.SlotCount];
     private bool _sweeping;
 
     /// <summary>Cell size: wide enough for a two-line item name, tall enough for the number line and both.</summary>
@@ -56,27 +54,19 @@ public partial class HotbarPanel : CanvasLayer
     {
         _hotbar = hotbar;
         _dirty = true;
-        Rebaseline();
     }
 
     public void SetInventory(InventoryComponent? inventory)
     {
         _inventory = inventory;
         _dirty = true;
-        Rebaseline();
     }
 
     public override void _Ready()
     {
         // Through a pause: the chord has to be let go and the keyboard handed back whether or not the
-        // world is running. The cooldown clock is advanced only while it is (see _Process).
+        // world is running. The cooldowns themselves tick on the player and stop with the tree.
         ProcessMode = ProcessModeEnum.Always;
-
-        for (int i = 0; i < HotbarComponent.SlotCount; i++)
-        {
-            _cooldownKeys[i] = string.Empty;
-            _countedIds[i] = string.Empty;
-        }
 
         // A Well, not a Panel (37.5H). The hotbar is a strip of slots docked to the bottom bar;
         // as a full framed panel it carried a 2 px brass rule and its own grain ShaderMaterial,
@@ -131,63 +121,13 @@ public partial class HotbarPanel : CanvasLayer
         GameInput.SetTextEntry(false);
     }
 
-    private void OnHotbarChanged(HotbarChangedEvent e)
-    {
-        _dirty = true;
-        Rebaseline(); // a reassigned slot is a different item, not a use of the old one
-    }
+    private void OnHotbarChanged(HotbarChangedEvent e) => _dirty = true;
 
-    private void OnInventoryChanged(InventoryChangedEvent e)
-    {
-        _dirty = true;
-        NoticeUses();
-    }
+    private void OnInventoryChanged(InventoryChangedEvent e) => _dirty = true;
 
     private void OnDeviceChanged(InputDeviceChangedEvent e) => _dirty = true;
 
-    /// <summary>A load is another timeline: its potions were not drunk in this one. The restore
-    /// also changes every count on the way, which <see cref="NoticeUses"/> would read as uses.</summary>
-    private void OnGameLoaded(GameLoadedEvent e)
-    {
-        CooldownClock.Consumables.Clear();
-        Rebaseline();
-        _dirty = true;
-    }
-
-    /// <summary>
-    /// Starts a slot's cooldown when its item's count has just dropped while the player is in the
-    /// world. Out there the only thing that takes a consumable from the pack is using it; in a menu
-    /// it is also sold, stored and handed in, which is why a drop seen behind a menu is recorded
-    /// and not counted (the inventory screen reports its own Use button to the same clock).
-    /// </summary>
-    private void NoticeUses()
-    {
-        bool inWorld = GameManager.Instance is { IsPlaying: true } && !UiState.MenuOpen;
-        for (int i = 0; i < HotbarComponent.SlotCount; i++)
-        {
-            string id = _hotbar?.Get(i) ?? string.Empty;
-            int now = id.Length > 0 ? _inventory?.CountOf(id) ?? 0 : 0;
-
-            if (inWorld && id.Length > 0 && id == _countedIds[i] && now < _counts[i] &&
-                ItemDatabase.Get(id) is ConsumableItemResource consumable)
-            {
-                CooldownClock.Consumables.Start(consumable.CooldownKey, consumable.CooldownSeconds);
-            }
-
-            _countedIds[i] = id;
-            _counts[i] = now;
-        }
-    }
-
-    private void Rebaseline()
-    {
-        for (int i = 0; i < HotbarComponent.SlotCount; i++)
-        {
-            string id = _hotbar?.Get(i) ?? string.Empty;
-            _countedIds[i] = id;
-            _counts[i] = id.Length > 0 ? _inventory?.CountOf(id) ?? 0 : 0;
-        }
-    }
+    private void OnGameLoaded(GameLoadedEvent e) => _dirty = true;
 
     public override void _Process(double delta)
     {
@@ -208,11 +148,6 @@ public partial class HotbarPanel : CanvasLayer
             return;
         }
 
-        if (!GetTree().Paused)
-        {
-            CooldownClock.Consumables.Advance(delta);
-        }
-
         if (_dirty)
         {
             _dirty = false;
@@ -226,7 +161,12 @@ public partial class HotbarPanel : CanvasLayer
     /// so the final sliver is wiped rather than left frozen on the cell.</summary>
     private void UpdateSweeps()
     {
-        bool running = CooldownClock.Consumables.AnyRunning;
+        bool running = false;
+        for (int i = 0; i < HotbarComponent.SlotCount && !running; i++)
+        {
+            running = _sweeps[i] != null && _hotbar != null && _hotbar.CooldownRemaining(i) > 0f;
+        }
+
         if (!running && !_sweeping)
         {
             return;
@@ -240,7 +180,7 @@ public partial class HotbarPanel : CanvasLayer
                 continue;
             }
 
-            double left = _cooldownKeys[i].Length > 0 ? CooldownClock.Consumables.Remaining(_cooldownKeys[i]) : 0d;
+            double left = _hotbar?.CooldownRemaining(i) ?? 0d;
             sweep.QueueRedraw();
             if (_waits[i] is { } wait && IsInstanceValid(wait))
             {
@@ -303,7 +243,6 @@ public partial class HotbarPanel : CanvasLayer
             head.AddChild(number);
             stack.AddChild(head);
 
-            _cooldownKeys[i] = string.Empty;
             _sweeps[i] = null;
             _waits[i] = null;
 
@@ -338,7 +277,6 @@ public partial class HotbarPanel : CanvasLayer
 
             if (consumable is { CooldownSeconds: > 0f })
             {
-                _cooldownKeys[i] = consumable.CooldownKey;
                 AddSweep(cell, i);
             }
 
@@ -364,11 +302,10 @@ public partial class HotbarPanel : CanvasLayer
         var sweep = new Control { MouseFilter = Control.MouseFilterEnum.Ignore, ClipContents = true };
         sweep.SetAnchorsPreset(Control.LayoutPreset.FullRect);
 
-        string key = _cooldownKeys[slot];
         Color shade = UiTheme.ScrimBg with { A = 0.66f };
         sweep.Draw += () =>
         {
-            float fraction = (float)CooldownClock.Consumables.Fraction(key);
+            float fraction = _hotbar?.CooldownFraction(slot) ?? 0f;
             if (fraction < 0.01f)
             {
                 return;
