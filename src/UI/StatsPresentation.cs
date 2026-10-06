@@ -125,6 +125,94 @@ public static class StatsPresentation
     private static string Signed(float value) =>
         (value > 0f ? "+" : string.Empty) + value.ToString("0.##", CultureInfo.InvariantCulture);
 
+    /// <summary>A change to a stat as the player reads it, always signed: "+6", "-2.5", and a percentage for a
+    /// fraction or a multiplier ("+2%" Crit Chance, "+5%" Attack Speed), which are stored against 1.</summary>
+    public static string FormatDelta(StatType stat, float delta) =>
+        IsFraction(stat) || IsMultiplier(stat) ? Signed(delta * 100f) + "%" : Signed(delta);
+
+    /// <summary>
+    /// What a change of gear does to the whole sheet. Takes the raw stat differences between two items
+    /// (what <see cref="ItemPresentation"/>'s comparison returns) and adds what the
+    /// primaries among them buy through <see cref="StatDerivation"/>: +2 Strength is also +1.6 Physical
+    /// Power, and a comparison that stops at "+2 Strength" hides the half the player cares about.
+    ///
+    /// Ordered as the sheet is (<see cref="Displayed"/>), then anything the sheet does not list, such as
+    /// the three resources, in stat order. Stats that come out unchanged are dropped.
+    /// </summary>
+    public static IReadOnlyList<(StatType Stat, float Delta)> DerivedDelta(IEnumerable<(StatType Stat, float Delta)> itemDeltas)
+    {
+        var totals = new Dictionary<StatType, float>();
+        foreach ((StatType stat, float delta) in itemDeltas)
+        {
+            totals[stat] = totals.GetValueOrDefault(stat) + delta;
+            foreach (StatDerivation.Effect bonus in StatDerivation.Bonuses(stat, delta))
+            {
+                totals[bonus.Stat] = totals.GetValueOrDefault(bonus.Stat) + bonus.PerPoint;
+            }
+        }
+
+        var result = new List<(StatType, float)>();
+        var listed = new HashSet<StatType>();
+        foreach (StatType stat in Displayed())
+        {
+            listed.Add(stat);
+            if (totals.TryGetValue(stat, out float delta) && System.Math.Abs(delta) > 0.0001f)
+            {
+                result.Add((stat, delta));
+            }
+        }
+
+        var rest = new List<StatType>(totals.Keys);
+        rest.Sort();
+        foreach (StatType stat in rest)
+        {
+            if (!listed.Contains(stat) && System.Math.Abs(totals[stat]) > 0.0001f)
+            {
+                result.Add((stat, totals[stat]));
+            }
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// The stats that may lead each of <see cref="Sections"/>, in the same order: any primary for the
+    /// attributes, physical or spell power for offence, armour for defence.
+    /// </summary>
+    private static readonly StatType[][] HeroCandidates =
+    {
+        new[] { StatType.Strength, StatType.Dexterity, StatType.Intelligence, StatType.Vitality, StatType.Endurance },
+        new[] { StatType.PhysicalPower, StatType.SpellPower },
+        new[] { StatType.Armor },
+    };
+
+    /// <summary>
+    /// The one stat a section leads with: the highest of its candidates, the first listed on a tie. So
+    /// a mage's offence leads with Spell Power and a fighter's with Physical Power, without the sheet
+    /// asking what the character is. Null for a section index outside <see cref="Sections"/>.
+    /// </summary>
+    public static StatType? SectionHero(int section, System.Func<StatType, float> valueOf)
+    {
+        if (section < 0 || section >= HeroCandidates.Length)
+        {
+            return null;
+        }
+
+        StatType best = HeroCandidates[section][0];
+        float bestValue = valueOf(best);
+        foreach (StatType stat in HeroCandidates[section])
+        {
+            float value = valueOf(stat);
+            if (value > bestValue)
+            {
+                best = stat;
+                bestValue = value;
+            }
+        }
+
+        return best;
+    }
+
     /// <summary>Every stat the sections display, for tests and for validation.</summary>
     public static IEnumerable<StatType> Displayed()
     {
