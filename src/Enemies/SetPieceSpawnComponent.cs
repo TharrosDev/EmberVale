@@ -33,7 +33,8 @@ namespace Embervale.Enemies;
 /// <see cref="DespawnFlagId"/> removes whatever is alive and stops the piece without clearing it.</para>
 ///
 /// <para><b>Persistence.</b> It is an <see cref="ISaveable"/> keyed by <see cref="SaveId"/>, built from the
-/// owning cell scene's path and this node's path inside it (stable across sessions). It saves two facts,
+/// owning cell's region/cell slug and this node's path inside it (<see cref="SetPieceSaveIds"/>: stable across
+/// sessions and across a move of the scene file). It saves two facts,
 /// <c>fired</c> and <c>cleared</c>; the enemies it spawned are transient and are not saved. A save where it
 /// fired and did not clear restarts the piece when its trigger still holds. ⚠️ A scene-node saveable is
 /// only written while its cell is resident, so <see cref="ClearedFlagId"/> (a story flag, saved with the
@@ -96,7 +97,7 @@ public partial class SetPieceSpawnComponent : Node3D, ISaveable
             Node? scope = Owner ?? GetParent();
             string cell = Owner?.SceneFilePath ?? string.Empty;
             string path = scope != null && scope.IsAncestorOf(this) ? scope.GetPathTo(this).ToString() : Name.ToString();
-            return $"setpiece:{cell}#{path}";
+            return SetPieceSaveIds.Build(cell, path);
         }
     }
 

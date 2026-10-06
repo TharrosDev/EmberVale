@@ -4660,6 +4660,8 @@ save.failed.write,The save could not be written. Your previous save is untouched
 # --- BEGIN ics:content ---
 # --- END ics:content ---
 # --- BEGIN ics:save-core ---
+save.recovered.title,Loaded from the backup save
+save.recovered.detail,The newest save in this slot could not be read. This is the one before it.
 # --- END ics:save-core ---
 # --- BEGIN ics:save-ui ---
 # --- END ics:save-ui ---
