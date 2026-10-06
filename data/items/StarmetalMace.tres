@@ -15,6 +15,7 @@ Rarity = 2
 MaxStack = 1
 Weight = 4.5
 Value = 540
+WorldModelPath = "res://assets/models/weapons/wpn_mace_iron.glb"
 TradeTags = Array[String](["weapon", "metal"])
 ItemLevel = 47
 Tier = 6

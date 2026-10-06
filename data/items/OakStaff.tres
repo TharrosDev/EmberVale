@@ -15,6 +15,7 @@ Rarity = 0
 MaxStack = 1
 Weight = 2.5
 Value = 36
+WorldModelPath = "res://assets/models/weapons/wpn_staff_oak.glb"
 TradeTags = Array[String](["weapon", "arcane"])
 ItemLevel = 5
 Tier = 1
