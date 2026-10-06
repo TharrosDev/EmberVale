@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using Embervale.Core;
 using Embervale.Items;
 using Embervale.Localization;
 using Embervale.Magic;
@@ -33,22 +34,61 @@ public static class ItemSlot
     /// the gear worn (comparison, and how many pieces of a set are on), and the level (whether a
     /// requirement is met). A screen with no player in hand passes none of it and gets the plain card.
     /// </summary>
-    public sealed record DetailContext(EquipmentComponent? Equipment = null, int PlayerLevel = 0, bool Compare = false);
+    public sealed record DetailContext(EquipmentComponent? Equipment = null, int PlayerLevel = 0, bool Compare = false)
+    {
+        /// <summary>What the buttons do to this item on the screen showing it, as glyph and verb pairs
+        /// for the card's footer (Equip, Sell, Store). The card adds its own Compare entry when there
+        /// is something worn to set it beside. Null or empty shows none.</summary>
+        public IReadOnlyList<LegendEntry>? Actions { get; init; }
+    }
 
     /// <summary>
-    /// One inventory cell: rarity frame, category glyph (or the item's <c>Icon</c> if one is ever
-    /// authored), and a stack count in the corner.
+    /// The input that flips a detail card between its one-item view and the side-by-side comparison
+    /// with what is worn, wherever a card is on screen. Shift on a keyboard and a click of the left
+    /// stick on a pad: the one existing action that is bound on both, is free in every menu and does
+    /// not collide with accept, cancel, the hub's Q/E or the sub-tab Z/C. A dedicated menu action
+    /// would replace it here and nowhere else.
+    /// </summary>
+    public const string CompareAction = GameInput.Sprint;
+
+    /// <summary>Whether detail cards show the side-by-side comparison. A preference of this run of the
+    /// game, like the pack's sort order: it outlives the panel that set it and is not saved.</summary>
+    public static bool CompareOpen { get; set; }
+
+    /// <summary>What a slot says about its item beyond the item's own facts. The screen knows these;
+    /// the item does not.</summary>
+    [System.Flags]
+    public enum Marks
+    {
+        None = 0,
+
+        /// <summary>Came into the pack since it was last opened: a diamond pip in the top-left corner.</summary>
+        New = 1,
+
+        /// <summary>Worn right now: a lit left edge.</summary>
+        Equipped = 2,
+    }
+
+    /// <summary>
+    /// One inventory cell: rarity frame, the item's picture (or its category glyph where the atlas has
+    /// none), and a stack count on a dark badge in the corner.
     ///
     /// <paramref name="selected"/> draws the ember selection rule. It is a separate signal from
-    /// focus on purpose: a controller player moves *focus* across the grid to browse, and the
-    /// selected item is the one the detail pane is describing. Collapsing the two would mean the
-    /// pane changed every time the stick twitched.
+    /// focus on purpose: focus is where the cursor is and wears the brighter focus ring, selection is
+    /// the item the detail pane is describing, and the two part company the moment the player moves
+    /// to the pane's buttons.
     ///
-    /// A locked item carries a padlock in its top-left corner and a junk item a coin; an upgraded
-    /// one shows its level top-right. They are icons and a number, not tints, so the marks read
-    /// under every colour-vision mode.
+    /// A locked item carries a padlock in its top-left corner and a junk item a coin and a strike
+    /// across the cell; an upgraded one shows its level top-right; rarity is counted out as ticks
+    /// along the bottom edge. They are icons, shapes and a number, not tints, so the marks read under
+    /// every colour-vision mode.
     /// </summary>
-    public static Button Build(ItemInstance? instance, int quantity = 1, bool selected = false, float size = DefaultSize)
+    public static Button Build(ItemInstance? instance, int quantity = 1, bool selected = false, float size = DefaultSize) =>
+        Build(instance, quantity, selected, size, Marks.None);
+
+    /// <summary>As the four-argument <c>Build</c>, with the marks only the screen
+    /// knows about: new since the pack was last opened, and worn.</summary>
+    public static Button Build(ItemInstance? instance, int quantity, bool selected, float size, Marks marks)
     {
         var slot = new Button
         {
@@ -60,36 +100,20 @@ public static class ItemSlot
             ClipText = true,
         };
 
-        ItemRarity rarity = instance?.Rarity ?? ItemRarity.Common;
-        StyleBoxFlat normal = instance is null ? UiTheme.WellStyle() : UiTheme.RarityFrame(rarity);
-
-        StyleBoxFlat hover = (StyleBoxFlat)normal.Duplicate();
-        hover.BgColor = UiTheme.CardBg;
-
-        StyleBoxFlat focus = (StyleBoxFlat)normal.Duplicate();
-        focus.BorderColor = UiTheme.Accent;
-        focus.SetBorderWidthAll(2);
-
-        if (selected)
-        {
-            normal = (StyleBoxFlat)focus.Duplicate();
-        }
-
-        slot.AddThemeStyleboxOverride("normal", normal);
-        slot.AddThemeStyleboxOverride("hover", hover);
-        slot.AddThemeStyleboxOverride("pressed", hover);
-        slot.AddThemeStyleboxOverride("focus", focus);
-
+        ApplyFrame(slot, instance, selected);
         if (instance is null)
         {
             return slot;
         }
 
-        slot.TooltipText = Tooltip(instance, quantity);
+        ItemRarity rarity = instance.Rarity;
+        slot.TooltipText = Tooltip(instance, quantity, marks);
 
         // Authored item art wins, then the item's archetype on the painted atlas (ItemIcons). Data
         // with neither still uses the shared Embervale vector family rather than platform-dependent
-        // Unicode symbols.
+        // Unicode symbols. The picture stops short of the frame at every size, so the rarity rule
+        // stays a rule around it and is never painted over.
+        float inset = IconInset(size);
         if (ItemIcons.For(instance.Template) is { } icon)
         {
             var art = new TextureRect
@@ -100,6 +124,10 @@ public static class ItemSlot
                 MouseFilter = Control.MouseFilterEnum.Ignore,
             };
             art.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+            art.OffsetLeft = inset;
+            art.OffsetTop = inset;
+            art.OffsetRight = -inset;
+            art.OffsetBottom = -inset;
             slot.AddChild(art);
         }
         else
@@ -113,24 +141,30 @@ public static class ItemSlot
             slot.AddChild(glyph);
         }
 
-        if (quantity > 1)
-        {
-            Label count = UiTheme.Caption(quantity.ToString(), UiTheme.Text);
-            count.HorizontalAlignment = HorizontalAlignment.Right;
-            count.VerticalAlignment = VerticalAlignment.Bottom;
-            count.MouseFilter = Control.MouseFilterEnum.Ignore;
-            count.SetAnchorsPreset(Control.LayoutPreset.FullRect);
-            count.OffsetRight = -UiTheme.Space2xs;
-            count.OffsetBottom = -UiTheme.Space2xs;
-            slot.AddChild(count);
-        }
+        bool badged = instance.Locked || instance.Junk;
+        float badge = Mathf.Max(12f, size * 0.3f);
 
-        if (instance.Locked || instance.Junk)
+        // Over the picture and under the badges: ticks, pip, worn edge and junk strike in one node.
+        slot.AddChild(new ItemSlotOverlay(
+            rarity,
+            (marks & Marks.New) != 0,
+            (marks & Marks.Equipped) != 0,
+            instance.Junk,
+            badged ? badge + 3f : inset - 1f));
+
+        if (badged)
         {
-            float badge = Mathf.Max(12f, size * 0.3f);
+            var ground = new ColorRect { Color = UiTheme.Keyline, MouseFilter = Control.MouseFilterEnum.Ignore };
+            ground.SetAnchorsPreset(Control.LayoutPreset.TopLeft);
+            ground.OffsetLeft = 1f;
+            ground.OffsetTop = 1f;
+            ground.OffsetRight = 3f + badge;
+            ground.OffsetBottom = 3f + badge;
+            slot.AddChild(ground);
+
             TextureRect mark = instance.Locked
                 ? UiIcon.Create(UiIcon.Kind.Lock, badge, UiTheme.Accent)
-                : UiIcon.Create(UiIcon.Kind.Currency, badge, UiTheme.Dim);
+                : UiIcon.Create(UiIcon.Kind.Currency, badge, UiTheme.Text);
             mark.SetAnchorsPreset(Control.LayoutPreset.TopLeft);
             mark.OffsetLeft = 2f;
             mark.OffsetTop = 2f;
@@ -139,25 +173,118 @@ public static class ItemSlot
             slot.AddChild(mark);
         }
 
+        if (quantity > 1)
+        {
+            slot.AddChild(Badge(quantity.ToString(), UiTheme.Text, Control.LayoutPreset.BottomRight));
+        }
+
         if (instance.UpgradeLevel > 0)
         {
-            Label plus = UiTheme.Caption($"+{instance.UpgradeLevel}", UiTheme.Good);
-            plus.HorizontalAlignment = HorizontalAlignment.Right;
-            plus.MouseFilter = Control.MouseFilterEnum.Ignore;
-            plus.SetAnchorsPreset(Control.LayoutPreset.FullRect);
-            plus.OffsetRight = -UiTheme.Space2xs;
-            slot.AddChild(plus);
+            slot.AddChild(Badge($"+{instance.UpgradeLevel}", UiTheme.Good, Control.LayoutPreset.TopRight));
         }
 
         return slot;
     }
 
     /// <summary>
-    /// The detail card for the selected item: name in its rarity colour, a category/weight/value
-    /// line, affixes as chips, and the flavour text in the book italic.
+    /// An empty equipment slot as something to press: the well with the ghost of what goes in it (a
+    /// weapon, a piece of armour, a trinket), named in its tooltip. A bare well reads as decoration;
+    /// the silhouette says a thing belongs here.
+    /// </summary>
+    public static Button BuildEmpty(EquipmentSlot slot, float size = CompactSize, bool selected = false)
+    {
+        Button cell = Build(null, 1, selected, size, Marks.None);
+        UiIcon.Kind kind = EquipmentSlots.FamilyOf(slot) switch
+        {
+            GearFamily.Weapon => UiIcon.Kind.Weapon,
+            GearFamily.Armor => UiIcon.Kind.Armor,
+            _ => UiIcon.Kind.Misc,
+        };
+
+        TextureRect ghost = UiIcon.Create(kind, size * 0.5f, UiTheme.Disabled);
+        ghost.SetAnchorsPreset(Control.LayoutPreset.Center);
+        ghost.OffsetLeft = -size * 0.25f;
+        ghost.OffsetTop = -size * 0.25f;
+        ghost.OffsetRight = size * 0.25f;
+        ghost.OffsetBottom = size * 0.25f;
+        cell.AddChild(ghost);
+        cell.TooltipText = Loc.TF("item.slot_empty_tip", EquipmentSlots.Label(slot));
+        return cell;
+    }
+
+    /// <summary>Redraws a built slot's frame as selected or not, in place. A screen whose selection
+    /// follows focus moves the ember rule this way instead of rebuilding its grid on every step.</summary>
+    public static void SetSelected(Button slot, ItemInstance? instance, bool selected) => ApplyFrame(slot, instance, selected);
+
+    /// <summary>Takes the new pip off a built slot, once the player has looked at the item.</summary>
+    public static void ClearNew(Button slot)
+    {
+        foreach (Node child in slot.GetChildren())
+        {
+            if (child is ItemSlotOverlay overlay)
+            {
+                overlay.ClearNew();
+            }
+        }
+    }
+
+    /// <summary>How far a slot's picture stops short of its edge, so the frame shows at every size.</summary>
+    public static float IconInset(float size) => Mathf.Max(3f, Mathf.Round(size * 0.08f));
+
+    private static void ApplyFrame(Button slot, ItemInstance? instance, bool selected)
+    {
+        ItemRarity rarity = instance?.Rarity ?? ItemRarity.Common;
+        StyleBoxFlat normal = instance is null ? UiTheme.WellStyle() : UiTheme.RarityFrame(rarity);
+
+        StyleBoxFlat hover = (StyleBoxFlat)normal.Duplicate();
+        hover.BgColor = UiTheme.CardBg;
+
+        StyleBoxFlat focus = (StyleBoxFlat)normal.Duplicate();
+        focus.BorderColor = UiTheme.FocusRing;
+        focus.SetBorderWidthAll(2);
+
+        if (selected)
+        {
+            normal = (StyleBoxFlat)normal.Duplicate();
+            normal.BorderColor = UiTheme.Accent;
+            normal.SetBorderWidthAll(2);
+        }
+
+        slot.AddThemeStyleboxOverride("normal", normal);
+        slot.AddThemeStyleboxOverride("hover", hover);
+        slot.AddThemeStyleboxOverride("pressed", hover);
+        slot.AddThemeStyleboxOverride("focus", focus);
+    }
+
+    /// <summary>A caption on a dark badge, pinned in one corner of a slot and grown inward from it.</summary>
+    private static PanelContainer Badge(string text, Color color, Control.LayoutPreset corner)
+    {
+        var plate = new PanelContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
+        plate.AddThemeStyleboxOverride("panel", UiTheme.BadgeStyle());
+
+        Label label = UiTheme.Caption(text, color);
+        label.MouseFilter = Control.MouseFilterEnum.Ignore;
+        plate.AddChild(label);
+
+        bool top = corner == Control.LayoutPreset.TopRight;
+        plate.SetAnchorsPreset(corner);
+        plate.GrowHorizontal = Control.GrowDirection.Begin;
+        plate.GrowVertical = top ? Control.GrowDirection.End : Control.GrowDirection.Begin;
+        plate.OffsetLeft = -2f;
+        plate.OffsetRight = -2f;
+        plate.OffsetTop = top ? 2f : -2f;
+        plate.OffsetBottom = top ? 2f : -2f;
+        return plate;
+    }
+
+    /// <summary>
+    /// The detail card for the selected item: a plate with one lit edge in the rarity colour, the name
+    /// and type on its band, one hero number, the stat rows, affixes as chips, the flavour text in the
+    /// book italic and a footer with what it weighs and costs.
     ///
-    /// <paramref name="equipped"/>, when given, adds the comparison block — the thing the old text
-    /// list could not express at all. Pass the item currently worn in the candidate's slot.
+    /// <paramref name="equipped"/>, when given, adds the comparison: the deltas on the hero number and
+    /// on every stat row, and the side-by-side view on <see cref="CompareAction"/>. Pass the item
+    /// currently worn in the candidate's slot.
     /// </summary>
     public static Control Detail(ItemInstance instance, ItemInstance? equipped = null, bool compare = false)
     {
@@ -167,7 +294,7 @@ public static class ItemSlot
             rivals.Add((gear.Slot, equipped));
         }
 
-        return BuildDetail(instance, rivals, null, 0);
+        return BuildDetail(instance, rivals, null, 0, null);
     }
 
     /// <summary>
@@ -187,32 +314,63 @@ public static class ItemSlot
             }
         }
 
-        return BuildDetail(instance, rivals, context.Equipment, context.PlayerLevel);
+        return BuildDetail(instance, rivals, context.Equipment, context.PlayerLevel, context.Actions);
     }
 
     private static Control BuildDetail(
         ItemInstance instance,
         IReadOnlyList<(EquipmentSlot Slot, ItemInstance? Item)> rivals,
         EquipmentComponent? equipment,
-        int playerLevel)
+        int playerLevel,
+        IReadOnlyList<LegendEntry>? actions)
     {
-        PanelContainer card = UiTheme.Card(UiTheme.RarityColor(instance.Rarity));
+        Color rarityColor = UiTheme.RarityColor(instance.Rarity);
+        var card = new ItemDetailCard(rarityColor, UiTheme.RarityEdgeWidth(instance.Rarity));
+        var stack = new VBoxContainer();
+        stack.AddThemeConstantOverride("separation", 0);
+
+        // The band: the name in its rarity colour, and the rarity again as a word in the type line.
+        PanelContainer band = UiTheme.PlateBand(rarityColor);
+        var head = new VBoxContainer();
+        head.AddThemeConstantOverride("separation", UiTheme.LineGap);
+        Label name = UiTheme.Body(instance.DisplayName, rarityColor);
+        UiTheme.ApplyType(
+            name,
+            ItemPresentation.UsesDisplayFace(instance.DisplayName) ? UiTheme.FontRole.Display : UiTheme.FontRole.Interface,
+            UiTheme.HeaderFontSize);
+        name.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+        head.AddChild(name);
+        Label type = UiTheme.Caption(TypeLine(instance));
+        type.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+        head.AddChild(type);
+        band.AddChild(head);
+        stack.AddChild(band);
+
+        MarginContainer pad = UiTheme.PlateBody();
         var col = new VBoxContainer();
         col.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
 
-        Label name = UiTheme.Body(instance.DisplayName, UiTheme.RarityColor(instance.Rarity));
-        UiTheme.ApplyType(name, UiTheme.FontRole.Display, UiTheme.HeaderFontSize);
-        name.AutowrapMode = TextServer.AutowrapMode.WordSmart;
-        col.AddChild(name);
+        // The first rival is the one the numbers are measured against; a second (another ring slot)
+        // keeps the short delta block further down.
+        bool comparing = rivals.Count > 0;
+        ItemInstance? rival = comparing ? rivals[0].Item : null;
 
-        col.AddChild(UiTheme.Caption(Loc.TF(
-            "item.meta",
-            Loc.T(TypeKey(instance.Type)),
-            instance.Weight.ToString("0.0"),
-            instance.Value)));
+        Control single = BuildNumbers(instance, rival, comparing);
+        if (single.GetChildCount() > 0 || rival != null)
+        {
+            col.AddChild(single);
+        }
+        else
+        {
+            single.Free(); // a pelt has no numbers; an empty box would still take a gap
+        }
 
-        AddFacts(col, instance);
-        AddRequirement(col, instance, playerLevel);
+        if (rival != null)
+        {
+            Control pair = BuildSideBySide(instance, rival, rivals[0].Slot);
+            col.AddChild(pair);
+            card.SetCompareViews(single, pair);
+        }
 
         if (instance.HasAffixes)
         {
@@ -231,12 +389,14 @@ public static class ItemSlot
                 ItemPresentation.EffectIcon(consumable.Effect), effect, CooldownText(consumable), EffectColor(consumable.Effect)));
         }
 
+        AddFacts(col, instance);
+        AddRequirement(col, instance, playerLevel);
         AddSet(col, instance, equipment);
         AddUnique(col, instance.Template.UniqueEffectId);
 
-        foreach ((EquipmentSlot slot, ItemInstance? rival) in rivals)
+        for (int i = 1; i < rivals.Count; i++)
         {
-            Control? delta = Comparison(instance, rival, slot, rivals.Count > 1);
+            Control? delta = Comparison(instance, rivals[i].Item, rivals[i].Slot, nameSlot: true);
             if (delta is not null)
             {
                 col.AddChild(UiTheme.Divider());
@@ -249,13 +409,245 @@ public static class ItemSlot
             col.AddChild(UiTheme.Flavour(instance.Template.Description));
         }
 
-        card.AddChild(col); // the card's own margins are the padding; a second pad doubled the left edge
+        // An item with no numbers, no facts and no flavour has an empty body; the band and footer
+        // then sit together without a padded gap between them.
+        if (col.GetChildCount() > 0)
+        {
+            pad.AddChild(col);
+            stack.AddChild(pad);
+        }
+        else
+        {
+            col.Free();
+            pad.Free();
+        }
+
+        PanelContainer footer = UiTheme.PlateFooter();
+        HFlowContainer footerRow = UiTheme.FlowRow();
+        footer.AddChild(footerRow);
+        stack.AddChild(footer);
+        card.SetFooter(
+            footerRow,
+            Loc.TF("item.detail.carry", instance.Weight.ToString("0.0"), instance.Value),
+            actions);
+
+        card.AddChild(stack);
         return card;
     }
 
+    /// <summary>"Rare  ·  Weapon  ·  Sword  ·  Two-handed": the rarity as a word, the category, and
+    /// what kind of gear it is.</summary>
+    private static string TypeLine(ItemInstance instance)
+    {
+        var parts = new List<string> { Loc.T(RarityKey(instance.Rarity)), Loc.T(TypeKey(instance.Type)) };
+        if (instance.Equippable is { } gear)
+        {
+            if (gear.WeaponClass != WeaponClass.None)
+            {
+                parts.Add(Loc.T("item.weapon_class." + gear.WeaponClass.ToString().ToLowerInvariant()));
+            }
+
+            if (gear.ArmorWeight != ArmorWeight.None)
+            {
+                parts.Add(Loc.T("item.armor_weight." + gear.ArmorWeight.ToString().ToLowerInvariant()));
+            }
+
+            if (gear.TwoHanded)
+            {
+                parts.Add(Loc.T("item.two_handed"));
+            }
+        }
+
+        return string.Join("   ·   ", parts);
+    }
+
+    /// <summary>
+    /// The one-item view of the numbers: the hero number with its change against what is worn, then
+    /// a row per stat with an arrow and a signed delta. The hero's own stat is not repeated as a row.
+    /// </summary>
+    private static VBoxContainer BuildNumbers(ItemInstance instance, ItemInstance? rival, bool comparing)
+    {
+        var box = new VBoxContainer();
+        box.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
+
+        ItemPresentation.HeroNumber hero = ItemPresentation.HeroOf(instance);
+        if (hero.Kind != ItemPresentation.HeroKind.None)
+        {
+            var row = new HBoxContainer();
+            row.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
+            row.AddChild(UiTheme.Display(Number(hero.Value), UiTheme.Text));
+
+            var side = new VBoxContainer
+            {
+                SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+                SizeFlagsVertical = Control.SizeFlags.ShrinkCenter,
+            };
+            side.AddThemeConstantOverride("separation", 0);
+            side.AddChild(UiTheme.Caption(Loc.T(HeroKey(hero.Kind))));
+            ItemPresentation.HeroNumber? wornHero = rival is null ? null : ItemPresentation.HeroOf(rival);
+            if (comparing && ItemPresentation.HeroDelta(hero, wornHero) is { } change)
+            {
+                side.AddChild(DeltaLine(
+                    change,
+                    Loc.T(rival is null ? "item.vs_empty" : "item.vs_equipped")));
+            }
+
+            row.AddChild(side);
+            box.AddChild(row);
+        }
+
+        var grid = new GridContainer { Columns = comparing ? 3 : 2 };
+        grid.AddThemeConstantOverride("h_separation", UiTheme.SpaceSm);
+        grid.AddThemeConstantOverride("v_separation", UiTheme.LineGap);
+        foreach (ItemPresentation.StatRow row in ItemPresentation.StatRows(instance, rival, comparing))
+        {
+            if (hero.Kind == ItemPresentation.HeroKind.Armor && row.Stat == StatType.Armor)
+            {
+                continue;
+            }
+
+            grid.AddChild(StatName(row.Stat));
+            Label value = UiTheme.Body(StatsPresentation.FormatDelta(row.Stat, row.Value));
+            value.HorizontalAlignment = HorizontalAlignment.Right;
+            grid.AddChild(value);
+            if (comparing)
+            {
+                grid.AddChild(row.Delta == 0f ? new Control() : DeltaLine(row.Delta, null, row.Stat));
+            }
+        }
+
+        if (grid.GetChildCount() > 0)
+        {
+            box.AddChild(grid);
+        }
+        else
+        {
+            grid.Free();
+        }
+
+        return box;
+    }
+
+    /// <summary>
+    /// The side-by-side view: what is worn in one column and this item in the next, row for row, with
+    /// the arrow on this item's side wherever the two differ. It fits the same width the one-item
+    /// view does, so flipping to it never reflows the screen around the card.
+    /// </summary>
+    private static GridContainer BuildSideBySide(ItemInstance instance, ItemInstance rival, EquipmentSlot slot)
+    {
+        var grid = new GridContainer { Columns = 3, Visible = false };
+        grid.AddThemeConstantOverride("h_separation", UiTheme.SpaceSm);
+        grid.AddThemeConstantOverride("v_separation", UiTheme.LineGap);
+
+        grid.AddChild(UiTheme.Caption(EquipmentSlots.Label(slot)));
+        grid.AddChild(UiTheme.Caption(Loc.T("item.detail.worn"), UiTheme.Accent));
+        grid.AddChild(UiTheme.Caption(Loc.T("item.detail.this"), UiTheme.Accent));
+
+        grid.AddChild(new Control());
+        grid.AddChild(ComparedName(rival));
+        grid.AddChild(ComparedName(instance));
+
+        ItemPresentation.HeroNumber hero = ItemPresentation.HeroOf(instance);
+        ItemPresentation.HeroNumber wornHero = ItemPresentation.HeroOf(rival);
+        if (hero.Kind != ItemPresentation.HeroKind.None && ItemPresentation.HeroDelta(hero, wornHero) is { } change)
+        {
+            grid.AddChild(UiTheme.Caption(Loc.T(HeroKey(hero.Kind))));
+            grid.AddChild(UiTheme.Body(Number(wornHero.Value)));
+            grid.AddChild(ComparedValue(Number(hero.Value), change));
+        }
+
+        foreach (ItemPresentation.StatRow row in ItemPresentation.StatRows(instance, rival, comparing: true))
+        {
+            if (hero.Kind == ItemPresentation.HeroKind.Armor && row.Stat == StatType.Armor)
+            {
+                continue;
+            }
+
+            grid.AddChild(StatName(row.Stat));
+            grid.AddChild(UiTheme.Body(StatsPresentation.FormatDelta(row.Stat, row.Worn)));
+            grid.AddChild(ComparedValue(StatsPresentation.FormatDelta(row.Stat, row.Value), row.Delta));
+        }
+
+        return grid;
+    }
+
+    private static Label StatName(StatType stat)
+    {
+        Label label = UiTheme.Body(StatNames.Label(stat), UiTheme.Dim);
+        label.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        label.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
+        label.TooltipText = label.Text;
+        return label;
+    }
+
+    private static Label ComparedName(ItemInstance item)
+    {
+        Label label = UiTheme.Caption(item.DisplayName, UiTheme.RarityColor(item.Rarity));
+        label.CustomMinimumSize = new Vector2(64f, 0f);
+        label.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        label.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
+        label.TooltipText = $"{item.DisplayName} ({Loc.T(RarityKey(item.Rarity))})";
+        return label;
+    }
+
+    private static HBoxContainer ComparedValue(string text, float delta)
+    {
+        var cell = new HBoxContainer();
+        cell.AddThemeConstantOverride("separation", UiTheme.Space2xs);
+        cell.AddChild(UiTheme.Body(text));
+        if (delta != 0f)
+        {
+            cell.AddChild(UiTheme.DeltaArrow(delta));
+        }
+
+        return cell;
+    }
+
+    /// <summary>An arrow, a signed number in the gain or loss colour, and an optional quiet note after
+    /// it. The sign and the arrow both say the direction; the colour only agrees with them.</summary>
+    private static HBoxContainer DeltaLine(float delta, string? note, StatType? stat = null)
+    {
+        var line = new HBoxContainer();
+        line.AddThemeConstantOverride("separation", UiTheme.Space2xs);
+        if (Mathf.Abs(delta) < 0.0001f)
+        {
+            line.AddChild(UiTheme.Caption(Loc.T("item.detail.same")));
+            return line;
+        }
+
+        line.AddChild(UiTheme.DeltaArrow(delta));
+        string text = stat is { } named ? StatsPresentation.FormatDelta(named, delta) : Signed(delta);
+        line.AddChild(UiTheme.Caption(text, delta > 0f ? UiTheme.Good : UiTheme.Bad));
+        if (!string.IsNullOrEmpty(note))
+        {
+            // Trimmed rather than allowed to set the card's width: at a large text size the note is
+            // the first thing to give, and the arrow and the number have already said it.
+            Label quiet = UiTheme.Caption(note);
+            quiet.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+            quiet.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
+            quiet.TooltipText = note;
+            line.AddChild(quiet);
+        }
+
+        return line;
+    }
+
+    private static string Number(float value) => value.ToString("0.#");
+
+    private static string Signed(float value) => (value > 0f ? "+" : string.Empty) + value.ToString("0.#");
+
+    private static string HeroKey(ItemPresentation.HeroKind kind) => kind switch
+    {
+        ItemPresentation.HeroKind.Damage => "item.hero.damage",
+        ItemPresentation.HeroKind.Armor => "item.hero.armor",
+        ItemPresentation.HeroKind.Stamina => "item.hero.stamina",
+        ItemPresentation.HeroKind.Mana => "item.hero.mana",
+        _ => "item.hero.health",
+    };
+
     /// <summary>The per-copy facts as one row of chips: item level, workmanship, upgrade level and
-    /// the player's own marks, then what kind of gear it is. Nothing is shown for a fact at its
-    /// default, so a plain potion's card does not grow a row of zeroes.</summary>
+    /// the player's own marks. Nothing is shown for a fact at its default, so a plain potion's card
+    /// does not grow a row of zeroes. What kind of gear it is lives in the type line on the band.</summary>
     private static void AddFacts(VBoxContainer col, ItemInstance instance)
     {
         HFlowContainer chips = UiTheme.FlowRow();
@@ -292,32 +684,6 @@ public static class ItemSlot
         else
         {
             chips.Free();
-        }
-
-        if (instance.Equippable is not { } gear)
-        {
-            return;
-        }
-
-        var parts = new List<string>();
-        if (gear.TwoHanded)
-        {
-            parts.Add(Loc.T("item.two_handed"));
-        }
-
-        if (gear.WeaponClass != WeaponClass.None)
-        {
-            parts.Add(Loc.T("item.weapon_class." + gear.WeaponClass.ToString().ToLowerInvariant()));
-        }
-
-        if (gear.ArmorWeight != ArmorWeight.None)
-        {
-            parts.Add(Loc.T("item.armor_weight." + gear.ArmorWeight.ToString().ToLowerInvariant()));
-        }
-
-        if (parts.Count > 0)
-        {
-            col.AddChild(UiTheme.Caption(string.Join("   ·   ", parts)));
         }
     }
 
@@ -549,14 +915,27 @@ public static class ItemSlot
         return col;
     }
 
-    private static string Tooltip(ItemInstance instance, int quantity)
+    private static string Tooltip(ItemInstance instance, int quantity, Marks marks)
     {
         string count = quantity > 1 ? $" ×{quantity}" : string.Empty;
         string mark = instance.Locked ? $"  ({Loc.T("item.locked")})"
             : instance.Junk ? $"  ({Loc.T("item.junk")})"
             : string.Empty;
-        return $"{instance.DisplayName}{count}{mark}";
+        string worn = (marks & Marks.Equipped) != 0 ? $"  ({Loc.T("item.equipped")})" : string.Empty;
+        string fresh = (marks & Marks.New) != 0 ? $"  ({Loc.T("item.new")})" : string.Empty;
+        return $"{instance.DisplayName}{count}  ({Loc.T(RarityKey(instance.Rarity))}){mark}{worn}{fresh}";
     }
+
+    /// <summary>The <c>Loc</c> key for a rarity's name. Rarity is always available as a word (the type
+    /// line of the detail card, a slot's tooltip), which is the channel no colour setting can take away.</summary>
+    public static string RarityKey(ItemRarity rarity) => rarity switch
+    {
+        ItemRarity.Uncommon => "item.rarity.uncommon",
+        ItemRarity.Rare => "item.rarity.rare",
+        ItemRarity.Epic => "item.rarity.epic",
+        ItemRarity.Legendary => "item.rarity.legendary",
+        _ => "item.rarity.common",
+    };
 
     /// <summary>The <c>Loc</c> key for an item category. Categories are shown in the detail card
     /// and in the backpack's filter row, so they need real localised names rather than the enum's

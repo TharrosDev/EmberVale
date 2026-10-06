@@ -324,6 +324,143 @@ public static class ItemPresentation
         return quantity <= 0 ? 0 : (int)Math.Ceiling(price * (double)quantity / total);
     }
 
+    // --- The slot's marks and the detail card's anatomy (2026-10 UI upgrade) ----
+
+    /// <summary>
+    /// The **non-colour** rarity channel on a slot: how many ticks sit in its corner. None for Common,
+    /// one more per tier above it, so a rarity reads by counting when the frame colours cannot be told
+    /// apart. <see cref="UiTheme.RarityBorderWidth"/> is the other half (the frame thickens at Epic).
+    /// </summary>
+    public static int RarityTicks(ItemRarity rarity) => Math.Clamp((int)rarity, 0, 4);
+
+    /// <summary>
+    /// Whether a name may be set in the carved display face. UI_STYLE keeps Cinzel to labels of three
+    /// words or fewer: it has no lower case, and "Reinforced Steel Greatsword of the Bear" in capitals
+    /// is a wall. A longer name takes the interface face at the same size.
+    /// </summary>
+    public static bool UsesDisplayFace(string? name) =>
+        !string.IsNullOrWhiteSpace(name) &&
+        name.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries).Length <= 3;
+
+    /// <summary>What an item's one big number measures.</summary>
+    public enum HeroKind
+    {
+        None,
+        Damage,
+        Armor,
+        Health,
+        Stamina,
+        Mana,
+    }
+
+    /// <summary>The one number a detail card leads with, or <see cref="HeroKind.None"/> when the item has
+    /// no single number worth leading with (a ring, a buff potion, a pelt).</summary>
+    public readonly record struct HeroNumber(HeroKind Kind, float Value)
+    {
+        public static readonly HeroNumber None = new(HeroKind.None, 0f);
+    }
+
+    /// <summary>
+    /// Picks the hero number from plain facts: a weapon leads with its damage, other gear with the
+    /// armour it grants, a restoring consumable with the amount it restores. Everything else has none:
+    /// a ring's bonuses are not comparable to each other, so promoting one of them would be a guess.
+    /// </summary>
+    public static HeroNumber Hero(float? weaponDamage, float armor, ConsumableEffectKind? effect, float amount)
+    {
+        if (weaponDamage is { } damage && damage > 0f)
+        {
+            return new HeroNumber(HeroKind.Damage, damage);
+        }
+
+        if (armor > 0f)
+        {
+            return new HeroNumber(HeroKind.Armor, armor);
+        }
+
+        if (amount <= 0f)
+        {
+            return HeroNumber.None;
+        }
+
+        return effect switch
+        {
+            ConsumableEffectKind.Heal => new HeroNumber(HeroKind.Health, amount),
+            ConsumableEffectKind.RestoreStamina => new HeroNumber(HeroKind.Stamina, amount),
+            ConsumableEffectKind.RestoreMana => new HeroNumber(HeroKind.Mana, amount),
+            _ => HeroNumber.None,
+        };
+    }
+
+    /// <summary>
+    /// The hero number's change against what is worn: positive is an improvement. Null when the two are
+    /// not the same measure (a shield against an off-hand dagger), because a damage number minus an
+    /// armour number is not a fact. An empty slot counts as zero of the candidate's own measure.
+    /// </summary>
+    public static float? HeroDelta(HeroNumber candidate, HeroNumber? worn)
+    {
+        if (candidate.Kind == HeroKind.None)
+        {
+            return null;
+        }
+
+        if (worn is not { } rival)
+        {
+            return candidate.Value;
+        }
+
+        return rival.Kind == candidate.Kind ? candidate.Value - rival.Value : null;
+    }
+
+    /// <summary>One stat line of a detail card: what the item grants and, when it is being compared, how
+    /// that differs from what is worn. <paramref name="Worn"/> is the worn item's own total.</summary>
+    public readonly record struct StatRow(StatType Stat, float Value, float Worn, float Delta);
+
+    /// <summary>
+    /// The card's stat rows, in stat order. Not comparing: one row per stat the item grants. Comparing
+    /// (<paramref name="worn"/> may still be null, which is an empty slot): the union of both sides, so
+    /// a stat the swap would lose shows as a row of its own with a negative delta.
+    /// </summary>
+    public static IReadOnlyList<StatRow> StatRows(
+        IEnumerable<(StatType Stat, float Value, ModifierType Type)> candidate,
+        IEnumerable<(StatType Stat, float Value, ModifierType Type)>? worn,
+        bool comparing)
+    {
+        Dictionary<StatType, float> mine = Totals(candidate);
+        Dictionary<StatType, float> theirs = comparing && worn != null
+            ? Totals(worn)
+            : new Dictionary<StatType, float>();
+
+        var rows = new List<StatRow>();
+        foreach (StatType stat in mine.Keys.Union(theirs.Keys))
+        {
+            float value = mine.GetValueOrDefault(stat);
+            float other = theirs.GetValueOrDefault(stat);
+            if (value != 0f || other != 0f)
+            {
+                rows.Add(new StatRow(stat, value, other, comparing ? value - other : 0f));
+            }
+        }
+
+        rows.Sort((a, b) => a.Stat.CompareTo(b.Stat));
+        return rows;
+    }
+
+    /// <summary>The members of <paramref name="held"/> that were not in <paramref name="known"/>: what
+    /// came into the pack since it was last looked at. Order is the order held.</summary>
+    public static List<T> NewSince<T>(IEnumerable<T> held, ICollection<T> known)
+    {
+        var fresh = new List<T>();
+        foreach (T item in held)
+        {
+            if (!known.Contains(item))
+            {
+                fresh.Add(item);
+            }
+        }
+
+        return fresh;
+    }
+
     // --- ItemInstance adapters ------------------------------------------------
 
     public static SortKey KeyOf(ItemInstance instance) =>
@@ -332,4 +469,25 @@ public static class ItemPresentation
 
     public static IReadOnlyList<(StatType Stat, float Delta)> Compare(ItemInstance candidate, ItemInstance? equipped) =>
         Compare(candidate.StatBonuses(), equipped?.StatBonuses());
+
+    /// <summary>The hero number of a real item (<see cref="Hero"/>).</summary>
+    public static HeroNumber HeroOf(ItemInstance instance)
+    {
+        float armor = 0f;
+        foreach ((StatType stat, float value, ModifierType _) in instance.StatBonuses())
+        {
+            if (stat == StatType.Armor)
+            {
+                armor += value;
+            }
+        }
+
+        var consumable = instance.Template as ConsumableItemResource;
+        float amount = consumable == null ? 0f
+            : consumable.Effect == ConsumableEffectKind.Heal ? consumable.EffectiveHeal : consumable.Magnitude;
+        return Hero(instance.Equippable?.Weapon?.BaseDamage, armor, consumable?.Effect, amount);
+    }
+
+    public static IReadOnlyList<StatRow> StatRows(ItemInstance candidate, ItemInstance? worn, bool comparing) =>
+        StatRows(candidate.StatBonuses(), worn?.StatBonuses(), comparing);
 }
