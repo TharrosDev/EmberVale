@@ -54,6 +54,27 @@ public partial class SpellbookPanel : UiPanel
 
     protected override HubTab? Hub => HubTab.Spellbook;
 
+    protected override IReadOnlyList<LegendEntry> Legend
+    {
+        get
+        {
+            var entries = new List<LegendEntry>
+            {
+                new(GameInput.MenuSubPrev, Loc.T("kn.legend.school"), GameInput.MenuSubNext),
+            };
+            entries.AddRange(base.Legend);
+            return entries;
+        }
+    }
+
+    /// <summary>Schools step on the sub-tab actions (Z / C, LT / RT), in the ring's order, wrapping.</summary>
+    protected override void OnSubTab(int delta)
+    {
+        int at = System.Array.IndexOf(Schools, _school);
+        UiAudio.Play(UiCue.Tab);
+        ShowSchool((int)Schools[(((at + delta) % Schools.Length) + Schools.Length) % Schools.Length]);
+    }
+
     protected override void BuildShell(PanelContainer shell)
     {
         UiTheme.ApplyScreenInset(shell);
