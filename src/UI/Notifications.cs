@@ -101,6 +101,28 @@ public partial class Notifications : CanvasLayer
     /// <summary>Ends the feed's combat reading at once, so a harness need not wait the fight out.</summary>
     public void EndCombatForCapture() => EndCombat();
 
+    /// <summary>How many toasts are on screen and not yet leaving. For harness validation.</summary>
+    public int LiveToastsForCapture => LiveToasts();
+
+    /// <summary>
+    /// Takes every toast off the screen at once, so a harness can stage the next notice into an
+    /// empty feed without waiting out the dwell of whatever an earlier shot raised. On a short
+    /// screen one two-line toast is all that fits between the tracker and the minimap, and the
+    /// notice being photographed would otherwise still be waiting behind it at the capture.
+    /// What is queued is left alone: it is shown as the room comes back, the way it always is.
+    /// </summary>
+    public void ClearShownForCapture()
+    {
+        for (int i = _stack.GetChildCount() - 1; i >= 0; i--)
+        {
+            if (_stack.GetChild(i) is Toast toast)
+            {
+                _stack.RemoveChild(toast); // its TreeExited gives the feed its room back
+                toast.QueueFree();
+            }
+        }
+    }
+
     // One player action publishes several quest events in one frame; they are collected here and turned into
     // the toasts worth showing once per frame (QuestNoticeCoalescer).
     private readonly QuestNoticeCoalescer _questNotices = new();
