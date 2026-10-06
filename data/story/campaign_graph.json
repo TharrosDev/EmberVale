@@ -12247,7 +12247,7 @@
    "nodes": [
     {
      "id": "root",
-     "choices": 18,
+     "choices": 21,
      "gotos": [
       "ending_dawnfire",
       "ending_embers",
@@ -12264,7 +12264,10 @@
       "dread",
       "cq_dray_spared",
       "cq_dray_pressed",
-      "cq_arcs_done"
+      "cq_arcs_done",
+      "bg_soldier",
+      "bg_pilgrim",
+      "bg_hedge_scholar"
      ]
     },
     {
@@ -12426,6 +12429,27 @@
      "gotos": [
       "cq_ik_after"
      ]
+    },
+    {
+     "id": "bg_soldier",
+     "choices": 1,
+     "gotos": [
+      "root"
+     ]
+    },
+    {
+     "id": "bg_pilgrim",
+     "choices": 1,
+     "gotos": [
+      "root"
+     ]
+    },
+    {
+     "id": "bg_hedge_scholar",
+     "choices": 1,
+     "gotos": [
+      "root"
+     ]
     }
    ],
    "flagsSet": [
@@ -12433,6 +12457,9 @@
    ],
    "flagsCleared": [],
    "flagsRead": [
+    "flag.background.hedge_scholar",
+    "flag.background.pilgrim",
+    "flag.background.soldier",
     "flag.beat.arcs_complete",
     "flag.beat.square_held",
     "flag.elder_thanked",
@@ -12494,6 +12521,24 @@
      "at": "choice[16]"
     },
     {
+     "flag": "flag.background.soldier",
+     "kind": "read",
+     "node": "root",
+     "at": "choice[17]"
+    },
+    {
+     "flag": "flag.background.pilgrim",
+     "kind": "read",
+     "node": "root",
+     "at": "choice[18]"
+    },
+    {
+     "flag": "flag.background.hedge_scholar",
+     "kind": "read",
+     "node": "root",
+     "at": "choice[19]"
+    },
+    {
      "flag": "flag.elder_thanked",
      "kind": "set",
      "node": "thanks",
@@ -12526,6 +12571,13 @@
    ],
    "locKeys": [
     "dlg.elder.accepted",
+    "dlg.elder.bg.c_back",
+    "dlg.elder.bg.hedge_scholar",
+    "dlg.elder.bg.hedge_scholar.c",
+    "dlg.elder.bg.pilgrim",
+    "dlg.elder.bg.pilgrim.c",
+    "dlg.elder.bg.soldier",
+    "dlg.elder.bg.soldier.c",
     "dlg.elder.c_accept",
     "dlg.elder.c_accepted_bye",
     "dlg.elder.c_active",
@@ -14918,12 +14970,14 @@
    "nodes": [
     {
      "id": "root",
-     "choices": 6,
+     "choices": 8,
      "gotos": [
       "word_thanks",
       "word_offer",
       "word_inprogress",
-      "talk"
+      "talk",
+      "bg_hunter",
+      "bg_cutpurse"
      ]
     },
     {
@@ -14954,16 +15008,51 @@
      "id": "word_thanks",
      "choices": 1,
      "gotos": []
+    },
+    {
+     "id": "bg_hunter",
+     "choices": 1,
+     "gotos": [
+      "root"
+     ]
+    },
+    {
+     "id": "bg_cutpurse",
+     "choices": 1,
+     "gotos": [
+      "root"
+     ]
     }
    ],
    "flagsSet": [],
    "flagsCleared": [],
-   "flagsRead": [],
+   "flagsRead": [
+    "flag.background.cutpurse",
+    "flag.background.hunter"
+   ],
    "questsStarted": [
     "quest.hollowreach.word"
    ],
-   "sites": [],
+   "sites": [
+    {
+     "flag": "flag.background.hunter",
+     "kind": "read",
+     "node": "root",
+     "at": "choice[5]"
+    },
+    {
+     "flag": "flag.background.cutpurse",
+     "kind": "read",
+     "node": "root",
+     "at": "choice[6]"
+    }
+   ],
    "locKeys": [
+    "dlg.innkeeper.bg.c_back",
+    "dlg.innkeeper.bg.cutpurse",
+    "dlg.innkeeper.bg.cutpurse.c",
+    "dlg.innkeeper.bg.hunter",
+    "dlg.innkeeper.bg.hunter.c",
     "dlg.innkeeper.c_bye",
     "dlg.innkeeper.c_talk",
     "dlg.innkeeper.c_talk_back",
@@ -17272,13 +17361,15 @@
    "nodes": [
     {
      "id": "root",
-     "choices": 7,
+     "choices": 9,
      "gotos": [
       "offer",
       "inprogress",
       "thanks",
       "closed",
-      "commission"
+      "commission",
+      "bg_smiths_hand",
+      "bg_merchants_heir"
      ]
     },
     {
@@ -17325,17 +17416,45 @@
      "id": "cq_forge_thanks",
      "choices": 1,
      "gotos": []
+    },
+    {
+     "id": "bg_smiths_hand",
+     "choices": 1,
+     "gotos": [
+      "root"
+     ]
+    },
+    {
+     "id": "bg_merchants_heir",
+     "choices": 1,
+     "gotos": [
+      "root"
+     ]
     }
    ],
    "flagsSet": [],
    "flagsCleared": [],
    "flagsRead": [
+    "flag.background.merchants_heir",
+    "flag.background.smiths_hand",
     "flag.main.forge_done"
    ],
    "questsStarted": [
     "quest.warband.forge"
    ],
    "sites": [
+    {
+     "flag": "flag.background.smiths_hand",
+     "kind": "read",
+     "node": "root",
+     "at": "choice[6]"
+    },
+    {
+     "flag": "flag.background.merchants_heir",
+     "kind": "read",
+     "node": "root",
+     "at": "choice[7]"
+    },
     {
      "flag": "flag.main.forge_done",
      "kind": "read",
@@ -17345,6 +17464,11 @@
    ],
    "locKeys": [
     "dlg.smith.accepted",
+    "dlg.smith.bg.c_back",
+    "dlg.smith.bg.merchants_heir",
+    "dlg.smith.bg.merchants_heir.c",
+    "dlg.smith.bg.smiths_hand",
+    "dlg.smith.bg.smiths_hand.c",
     "dlg.smith.c_accept",
     "dlg.smith.c_accepted_bye",
     "dlg.smith.c_active",
@@ -20930,7 +21054,9 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "data/shops/EmbermarketTannery.tres"
+   ]
   },
   "flag.ash_hunters.verdict_judge": {
    "writers": [
@@ -21006,6 +21132,105 @@
     "src/UI/EndingSequence.cs"
    ]
   },
+  "flag.background.cutpurse": {
+   "writers": [],
+   "readers": [
+    {
+     "kind": "dialogue",
+     "id": "dialogue.innkeeper",
+     "via": "root/choice[6]"
+    }
+   ],
+   "code": false,
+   "externalRefs": [
+    "data/backgrounds/Cutpurse.tres"
+   ]
+  },
+  "flag.background.hedge_scholar": {
+   "writers": [],
+   "readers": [
+    {
+     "kind": "dialogue",
+     "id": "dialogue.elder",
+     "via": "root/choice[19]"
+    }
+   ],
+   "code": false,
+   "externalRefs": [
+    "data/backgrounds/HedgeScholar.tres"
+   ]
+  },
+  "flag.background.hunter": {
+   "writers": [],
+   "readers": [
+    {
+     "kind": "dialogue",
+     "id": "dialogue.innkeeper",
+     "via": "root/choice[5]"
+    }
+   ],
+   "code": false,
+   "externalRefs": [
+    "data/backgrounds/Hunter.tres"
+   ]
+  },
+  "flag.background.merchants_heir": {
+   "writers": [],
+   "readers": [
+    {
+     "kind": "dialogue",
+     "id": "dialogue.smith",
+     "via": "root/choice[7]"
+    }
+   ],
+   "code": false,
+   "externalRefs": [
+    "data/backgrounds/MerchantsHeir.tres"
+   ]
+  },
+  "flag.background.pilgrim": {
+   "writers": [],
+   "readers": [
+    {
+     "kind": "dialogue",
+     "id": "dialogue.elder",
+     "via": "root/choice[18]"
+    }
+   ],
+   "code": false,
+   "externalRefs": [
+    "data/backgrounds/Pilgrim.tres"
+   ]
+  },
+  "flag.background.smiths_hand": {
+   "writers": [],
+   "readers": [
+    {
+     "kind": "dialogue",
+     "id": "dialogue.smith",
+     "via": "root/choice[6]"
+    }
+   ],
+   "code": false,
+   "externalRefs": [
+    "data/backgrounds/SmithsHand.tres"
+   ]
+  },
+  "flag.background.soldier": {
+   "writers": [],
+   "readers": [
+    {
+     "kind": "dialogue",
+     "id": "dialogue.elder",
+     "via": "root/choice[17]"
+    }
+   ],
+   "code": false,
+   "externalRefs": [
+    "data/backgrounds/Soldier.tres",
+    "src/Bootstrap/HeadlessLifecycle.cs"
+   ]
+  },
   "flag.beast_lord_absorbed": {
    "writers": [
     {
@@ -21048,6 +21273,16 @@
    "code": true,
    "externalRefs": [
     "data/bosses/BeastLord.tres",
+    "data/shops/EmberCrownSmith.tres",
+    "data/shops/EmberCrownTraveller.tres",
+    "data/shops/EmbermarketCurios.tres",
+    "data/shops/EmbermarketIronmonger.tres",
+    "data/shops/EmbermarketJeweller.tres",
+    "data/shops/EmbermarketJoiner.tres",
+    "data/shops/EmbermarketScriptorium.tres",
+    "data/shops/EmbermarketTannery.tres",
+    "data/shops/EmbermarketWeaver.tres",
+    "data/shops/LastHearthScavenger.tres",
     "data/story/rules/spec1.json",
     "scenes/regions/ashen_wilds/beast_lair.tscn",
     "src/Bootstrap/LegacyFixtures.cs",
@@ -23505,6 +23740,16 @@
    "code": true,
    "externalRefs": [
     "data/bosses/CrimsonProphet.tres",
+    "data/shops/EmberCrownApothecary.tres",
+    "data/shops/EmberCrownSmith.tres",
+    "data/shops/EmbermarketCurios.tres",
+    "data/shops/EmbermarketHerbalist.tres",
+    "data/shops/EmbermarketIronmonger.tres",
+    "data/shops/EmbermarketJoiner.tres",
+    "data/shops/EmbermarketScriptorium.tres",
+    "data/shops/EmbermarketTannery.tres",
+    "data/shops/EmbermarketWeaver.tres",
+    "data/shops/HollowreachHull.tres",
     "data/story/rules/spec1.json",
     "scenes/regions/sunspire/temple.tscn",
     "src/Bootstrap/LegacyFixtures.cs",
@@ -23548,7 +23793,9 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "data/shops/EmbermarketIronmonger.tres"
+   ]
   },
   "flag.dawnwardens.finale_service": {
    "writers": [
@@ -23586,7 +23833,9 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "data/shops/EmberCrownSmith.tres"
+   ]
   },
   "flag.dawnwardens.probation_expedient": {
    "writers": [
@@ -23793,7 +24042,9 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "data/shops/EmbermarketCurios.tres"
+   ]
   },
   "flag.emberdeep.tally_delivered": {
    "writers": [
@@ -24513,6 +24764,14 @@
    "code": true,
    "externalRefs": [
     "data/bosses/HollowQueen.tres",
+    "data/shops/EmberCrownSmith.tres",
+    "data/shops/EmbermarketCurios.tres",
+    "data/shops/EmbermarketIronmonger.tres",
+    "data/shops/EmbermarketJoiner.tres",
+    "data/shops/EmbermarketScriptorium.tres",
+    "data/shops/EmbermarketTannery.tres",
+    "data/shops/EmbermarketWeaver.tres",
+    "data/shops/HollowreachHull.tres",
     "scenes/regions/pale_concord/palace.tscn",
     "src/Bootstrap/HeadlessStory.cs",
     "src/Bootstrap/LegacyFixtures.cs",
@@ -24704,6 +24963,14 @@
     "data/regions/AshenWilds.tres",
     "data/regions/Sunspire.tres",
     "data/shops/EmberCrownApothecary.tres",
+    "data/shops/EmberCrownSmith.tres",
+    "data/shops/EmberCrownTraveller.tres",
+    "data/shops/EmbermarketIronmonger.tres",
+    "data/shops/EmbermarketJeweller.tres",
+    "data/shops/EmbermarketJoiner.tres",
+    "data/shops/EmbermarketProvisions.tres",
+    "data/shops/EmbermarketTannery.tres",
+    "data/shops/EmbermarketWeaver.tres",
     "scenes/regions/ember_crown/arena.tscn",
     "src/Bootstrap/LegacyFixtures.cs",
     "src/Enemies/BossEncounterDirector.cs",
@@ -24790,7 +25057,9 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "data/shops/HollowreachHull.tres"
+   ]
   },
   "flag.kael.brother_repaid": {
    "writers": [
@@ -26078,7 +26347,9 @@
     }
    ],
    "code": false,
-   "externalRefs": []
+   "externalRefs": [
+    "data/shops/EmbermarketScriptorium.tres"
+   ]
   },
   "guild.ash_hunters.finale": {
    "writers": [

@@ -28,6 +28,32 @@ public static partial class HeadlessWorldBake
         return string.Empty;
     }
 
+    /// <summary>The regions to prepare and the signature to stamp on each, from
+    /// <c>--world-bake-regions=id=signature,id=signature</c>. Absent means every region, stamped
+    /// with the run's signature.</summary>
+    private static System.Collections.Generic.Dictionary<string, string>? RequestedRegions()
+    {
+        const string prefix = "--world-bake-regions=";
+        foreach (string argument in OS.GetCmdlineUserArgs())
+        {
+            if (!argument.StartsWith(prefix, StringComparison.Ordinal))
+            {
+                continue;
+            }
+            var regions = new System.Collections.Generic.Dictionary<string, string>(StringComparer.Ordinal);
+            foreach (string entry in argument[prefix.Length..].Split(',', StringSplitOptions.RemoveEmptyEntries))
+            {
+                int split = entry.IndexOf('=');
+                if (split > 0)
+                {
+                    regions[entry[..split]] = entry[(split + 1)..];
+                }
+            }
+            return regions;
+        }
+        return null;
+    }
+
     public static void Run(SceneTree tree)
     {
         ContentDatabases.InitializeAll();
@@ -63,12 +89,25 @@ public static partial class HeadlessWorldBake
             try
             {
                 EnsureDirectories();
+                System.Collections.Generic.Dictionary<string, string>? requested = RequestedRegions();
                 foreach (RegionResource region in RegionDatabase.All)
                 {
+                    string regionSignature = sourceSignature;
+                    if (requested != null && !requested.TryGetValue(region.Id, out regionSignature!))
+                    {
+                        Log.Info($"World bake: '{region.Id}' is current; skipped.");
+                        continue;
+                    }
+                    if (regionSignature.Length != 64)
+                    {
+                        failures++;
+                        Log.Error($"World bake: invalid signature for region '{region.Id}'.");
+                        continue;
+                    }
                     ulong started = Time.GetTicksMsec();
                     WorldHeightfield sourceField = WorldTerrainMeshBuilder.HeightfieldFor(region);
                     WorldPreparedRegionResource prepared = BakeRegion(
-                        region, sourceField, sourceSignature);
+                        region, sourceField, regionSignature);
                     // This sampled field is the production authority from here onward. Terrain
                     // visuals, collision, navigation, backdrop and runtime safety queries all read
                     // these exact values rather than independently approximating the generator.
