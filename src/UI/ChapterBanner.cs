@@ -24,6 +24,9 @@ namespace Embervale.UI;
 /// </summary>
 public partial class ChapterBanner : CanvasLayer
 {
+    /// <summary>Wrap width of the title and the line under it: inside the narrowest viewport.</summary>
+    private const float TextWidth = 560f;
+
     private readonly BannerQueue _queue = new();
 
     private Control _root = null!;
@@ -37,6 +40,22 @@ public partial class ChapterBanner : CanvasLayer
 
     /// <summary>The chapter key currently on screen, or null. For harness validation.</summary>
     public string? Showing => _showing;
+
+    /// <summary>Whether a chapter card holds the lower third. The tutorial hint sits inside that
+    /// band and stands down while it does (<see cref="PresentingChanged"/>).</summary>
+    public static bool Presenting { get; private set; }
+
+    /// <summary>Raised when <see cref="Presenting"/> changes.</summary>
+    public static event System.Action? PresentingChanged;
+
+    private static void SetPresenting(bool presenting)
+    {
+        if (presenting != Presenting)
+        {
+            Presenting = presenting;
+            PresentingChanged?.Invoke();
+        }
+    }
 
     public override void _Ready()
     {
@@ -73,19 +92,19 @@ public partial class ChapterBanner : CanvasLayer
         _act.HorizontalAlignment = HorizontalAlignment.Center;
         stack.AddChild(_act);
 
-        stack.AddChild(Rule());
+        stack.AddChild(Rule(UiTheme.RuleLit));
 
         _title = UiTheme.Display(string.Empty, UiTheme.Text);
         _title.HorizontalAlignment = HorizontalAlignment.Center;
         _title.AutowrapMode = TextServer.AutowrapMode.WordSmart;
-        _title.CustomMinimumSize = new Vector2(560f, 0f);
+        _title.CustomMinimumSize = new Vector2(TextWidth, 0f);
         stack.AddChild(_title);
 
-        stack.AddChild(Rule());
+        stack.AddChild(Rule(UiTheme.Rule));
 
         _subtitle = UiTheme.Flavour(string.Empty, UiTheme.Dim);
         _subtitle.HorizontalAlignment = HorizontalAlignment.Center;
-        _subtitle.CustomMinimumSize = new Vector2(560f, 0f);
+        _subtitle.CustomMinimumSize = new Vector2(TextWidth, 0f);
         stack.AddChild(_subtitle);
 
         EventBus.Instance?.Subscribe<ChapterStartedEvent>(OnChapterStarted);
@@ -98,13 +117,19 @@ public partial class ChapterBanner : CanvasLayer
     {
         EventBus.Instance?.Unsubscribe<ChapterStartedEvent>(OnChapterStarted);
         EventBus.Instance?.Unsubscribe<Narrative.StoryBannerRequestedEvent>(OnBannerRequested);
+        if (_showing != null)
+        {
+            SetPresenting(false);
+        }
     }
 
-    private static Control Rule()
+    /// <summary>The title sits between two hairlines: the lit one above it, a cold one below, so the
+    /// band has one lit edge like every other surface.</summary>
+    private static Control Rule(Color color)
     {
         var rule = new ColorRect
         {
-            Color = UiTheme.BrassLit with { A = 0.55f },
+            Color = color,
             CustomMinimumSize = new Vector2(0f, 1f),
             MouseFilter = Control.MouseFilterEnum.Ignore,
         };
@@ -175,6 +200,7 @@ public partial class ChapterBanner : CanvasLayer
     {
         _showing = key;
         _elapsed = 0f;
+        SetPresenting(true);
 
         int? act = ChapterBannerRules.ActNumber(key);
         _act.Text = act is { } n ? Loc.TF("questui.act_line", ChapterBannerRules.Roman(n)) : string.Empty;
@@ -200,6 +226,7 @@ public partial class ChapterBanner : CanvasLayer
     {
         string key = _showing!;
         _showing = null;
+        SetPresenting(false);
         _root.Visible = false;
         _queue.Done(key);
 

@@ -18,8 +18,8 @@ namespace Embervale.UI;
 /// <para>A <see cref="FlashGate"/> keeps the flash under three a second so a run of blocks or crits
 /// cannot strobe; a stronger state always gets through. The word is never suppressed by the flash
 /// setting — turning the flash off leaves the information. It also hosts the floating
-/// <see cref="DamageNumberLayer"/> and the <see cref="LockOnCueLayer"/>, so the three share one
-/// canvas layer and one visibility rule.</para>
+/// <see cref="DamageNumberLayer"/>, the <see cref="LockOnCueLayer"/> and the
+/// <see cref="EnemyPlateLayer"/>, so they share one canvas layer and one visibility rule.</para>
 /// </summary>
 public partial class CombatFeedbackOverlay : CanvasLayer
 {
@@ -44,6 +44,7 @@ public partial class CombatFeedbackOverlay : CanvasLayer
 
         AddChild(new DamageNumberLayer { Name = "DamageNumbers" });
         AddChild(new LockOnCueLayer { Name = "LockCues" });
+        AddChild(new EnemyPlateLayer { Name = "EnemyPlates" });
 
         _word = new Label
         {

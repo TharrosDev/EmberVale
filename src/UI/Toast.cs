@@ -1,111 +1,168 @@
+using Embervale.Localization;
 using Godot;
 
 namespace Embervale.UI;
 
 /// <summary>
-/// A single transient notification chip. It slides in from the right while fading up (30.5I,
-/// motion-gated), lives for <see cref="Life"/> seconds holding full opacity, then fades out
-/// and frees itself. Built and stacked by <see cref="Notifications"/>; styled through
-/// <see cref="UiTheme"/>.
+/// A single transient notification. It rises into place while fading up (motion-gated), holds full
+/// opacity for <see cref="Dwell"/> seconds, then fades out and frees itself. Built and stacked by
+/// <see cref="Notifications"/>; a HUD plate (<see cref="UiTheme.HudPlateStyle"/>) whose one lit
+/// edge is the colour of the thing announced.
 ///
-/// Structurally a margin wrapper around the visible panel chip: the stack container owns this
-/// node's position, so the slide animates the inner margins (+s left / −s right shifts the
-/// chip right by s without changing the wrapper's layout size) instead of fighting the layout.
+/// Structurally a margin wrapper around the visible plate: the stack container owns this node's
+/// position, so the rise animates the inner margins (+s top / −s bottom shifts the plate down by s
+/// without changing the wrapper's layout size) instead of fighting the layout.
+///
+/// A second notice that says the same thing does not stack a second toast: <see cref="Bump"/> adds
+/// to this one's count and starts its dwell again.
 /// </summary>
 public partial class Toast : MarginContainer
 {
-    public double Life { get; set; } = 4.0;
-
-    /// <summary>Horizontal slide-in distance (px at reference scale).</summary>
-    private const float SlideDistance = 24f;
-
-    /// <summary>Fraction of <see cref="Life"/> after which the toast fades out.</summary>
-    private const float FadeStart = 0.6f;
-
-    /// <summary>How long a shed toast takes to fade out, in seconds.</summary>
-    private const double ExpediteSeconds = 0.25;
+    /// <summary>Seconds held at full opacity, between the entrance and the fade
+    /// (<see cref="ToastRules.Dwell(string, string?, float)"/>).</summary>
+    public double Dwell { get; set; } = ToastRules.MinDwellSeconds;
 
     private readonly PanelContainer _chip = new();
     private double _age;
-    private double _expediteAge = -1d; // < 0: not being shed
+    private double _leaving = -1d; // < 0: not fading out yet
+    private double _exitSeconds;
+
+    // What was last written, so a toast holding still writes nothing.
+    private float _alphaShown = -1f;
+    private int _riseShown = int.MinValue;
 
     /// <summary>The semantic colour of the thing being announced (a level-up, a failed event, an
-    /// autosave). Painted as the chip's left spine. Set before the toast enters the tree.</summary>
+    /// autosave). Painted as the plate's left edge. Set before the toast enters the tree.</summary>
     public Color Accent { get; set; } = UiTheme.Accent;
+
+    /// <summary>The "×3" label <see cref="Bump"/> writes, hidden while the count is one.</summary>
+    public Label? CountLabel { get; set; }
+
+    /// <summary>How many of the thing this toast stands for.</summary>
+    public int Count { get; private set; } = 1;
+
+    /// <summary>Where the key hint's glyph sits, and the action it shows, for a toast that has one.</summary>
+    public Control? GlyphSlot { get; set; }
+
+    public string? GlyphAction { get; set; }
 
     public override void _Ready()
     {
         MouseFilter = MouseFilterEnum.Ignore;
         _chip.MouseFilter = MouseFilterEnum.Ignore;
 
-        // A Card, not a Panel (37.5F). Toasts had been built from PanelStyle(), so after 37.5A each
-        // transient chip carried a 2 px brass rule, an engraved shadow and its own grain
-        // ShaderMaterial - a full framed screen's worth of chrome for one line of text that lives
-        // four seconds. This is the third instance of the same pattern (status chips in 37.5B, save
-        // rows in this same phase): a small widget that reused Panel() as a generic box.
-        StyleBoxFlat style = UiTheme.Compact(UiTheme.CardStyle(Accent));
-        style.BgColor = UiTheme.PanelBg with { A = 0.98f };
-        style.BorderWidthBottom = 1;
-        style.BorderColor = Accent with { A = 0.58f };
-        style.ShadowColor = new Color(0f, 0f, 0f, 0.5f);
-        style.ShadowSize = 8;
-        style.ShadowOffset = new Vector2(0f, 3f);
-        _chip.AddThemeStyleboxOverride("panel", style);
+        // A plate, not a Panel (37.5F): a transient line of text takes the HUD's light ground and one
+        // lit edge, never a framed screen's brass and grain.
+        _chip.AddThemeStyleboxOverride("panel", UiTheme.HudPlateStyle(Accent));
         AddChild(_chip);
-        ApplySlide(UiTheme.Duration(UiTheme.DurationBase) > 0f ? SlideDistance : 0f);
+        RefreshGlyph();
+        Apply();
     }
 
     /// <summary>True once the toast has started its fade-out, so it no longer counts against the feed's room.</summary>
-    public bool Expiring => _expediteAge >= 0d || _age >= Life * FadeStart;
+    public bool Expiring => _leaving >= 0d;
 
-    /// <summary>Starts a short fade-out (<see cref="ExpediteSeconds"/>) so the feed gets its room back soon, without the
-    /// toast the player is reading disappearing between two frames. A toast already fading is left alone.</summary>
-    public void Expedite()
+    /// <summary>Starts a short fade-out so the feed gets its room back soon, without the toast the
+    /// player is reading disappearing between two frames. A toast already fading is left alone.</summary>
+    public void Expedite() => Leave(UiTheme.DurationBase);
+
+    /// <summary>Parents <paramref name="content"/> into the visible plate.</summary>
+    public void AddContent(Control content) => _chip.AddChild(content);
+
+    /// <summary>Sets the count to <paramref name="count"/> and starts the dwell again. False when the
+    /// toast is already leaving: the caller shows a new one instead.</summary>
+    public bool Bump(int count)
     {
-        if (_expediteAge < 0d && _age < Life * FadeStart)
+        if (Expiring)
         {
-            _expediteAge = 0d;
+            return false;
+        }
+
+        SetCount(count);
+        _age = System.Math.Min(_age, UiTheme.Duration(UiTheme.DurationBase));
+        return true;
+    }
+
+    /// <summary>Writes the count label. One shows no label: "×1" is noise.</summary>
+    public void SetCount(int count)
+    {
+        Count = System.Math.Max(1, count);
+        if (CountLabel != null)
+        {
+            CountLabel.Text = Loc.TF("hudc.toast.count", Count);
+            CountLabel.Visible = Count > 1;
         }
     }
 
-    /// <summary>Parents <paramref name="content"/> into the visible chip.</summary>
-    public void AddContent(Control content) => _chip.AddChild(content);
+    /// <summary>Redraws the key hint for the device and bindings in use now. A glyph is a snapshot.</summary>
+    public void RefreshGlyph()
+    {
+        if (GlyphSlot == null || string.IsNullOrEmpty(GlyphAction))
+        {
+            return;
+        }
+
+        UiTheme.ClearChildren(GlyphSlot);
+        GlyphSlot.AddChild(UiGlyph.For(GlyphAction));
+    }
 
     public override void _Process(double delta)
     {
         _age += delta;
-        float t = (float)(_age / Life);
-        if (t >= 1f)
+        float enter = UiTheme.Duration(UiTheme.DurationBase);
+        if (_leaving >= 0d)
         {
-            QueueFree();
-            return;
-        }
-
-        // Entrance: slide in from the right with an ease-out over DurationBase (collapses to
-        // no slide under reduced motion), fading up alongside.
-        float entrance = UiMotion.EaseOut(UiMotion.Progress((float)_age, UiTheme.Duration(UiTheme.DurationBase)));
-        ApplySlide(SlideDistance * (1f - entrance));
-
-        // Fade up with the entrance; hold; then fade out over the final 40% of the lifetime.
-        float alpha = t < FadeStart ? entrance : 1f - ((t - FadeStart) / (1f - FadeStart));
-        if (_expediteAge >= 0d)
-        {
-            _expediteAge += delta;
-            if (_expediteAge >= ExpediteSeconds)
+            _leaving += delta;
+            if (_leaving >= _exitSeconds)
             {
                 QueueFree();
                 return;
             }
-
-            alpha = Mathf.Min(alpha, 1f - (float)(_expediteAge / ExpediteSeconds));
+        }
+        else if (_age >= enter + Dwell)
+        {
+            Leave(UiTheme.DurationSlow);
+            if (_exitSeconds <= 0d)
+            {
+                QueueFree();
+                return;
+            }
         }
 
-        Modulate = new Color(1f, 1f, 1f, Mathf.Clamp(alpha, 0f, 1f));
+        Apply();
     }
 
-    private void ApplySlide(float amount)
+    private void Leave(float seconds)
     {
-        AddThemeConstantOverride("margin_left", (int)amount);
-        AddThemeConstantOverride("margin_right", -(int)amount);
+        if (_leaving < 0d)
+        {
+            _leaving = 0d;
+            _exitSeconds = UiTheme.Duration(seconds);
+        }
+    }
+
+    /// <summary>Entrance: a short climb with an ease-out over DurationBase (no climb under reduced
+    /// motion), fading up alongside. Exit: an ease-in fade.</summary>
+    private void Apply()
+    {
+        float entrance = UiMotion.EaseOut(UiMotion.Progress((float)_age, UiTheme.Duration(UiTheme.DurationBase)));
+        float alpha = _leaving >= 0d && _exitSeconds > 0d
+            ? Mathf.Min(entrance, 1f - UiMotion.EaseIn(UiMotion.Progress((float)_leaving, (float)_exitSeconds)))
+            : entrance;
+
+        int rise = Mathf.RoundToInt(UiFx.RiseDistance * (1f - entrance));
+        if (rise != _riseShown)
+        {
+            _riseShown = rise;
+            AddThemeConstantOverride("margin_top", rise);
+            AddThemeConstantOverride("margin_bottom", -rise);
+        }
+
+        alpha = Mathf.Clamp(alpha, 0f, 1f);
+        if (alpha != _alphaShown)
+        {
+            _alphaShown = alpha;
+            Modulate = new Color(1f, 1f, 1f, alpha);
+        }
     }
 }

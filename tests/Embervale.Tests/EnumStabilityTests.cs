@@ -632,4 +632,33 @@ public class EnumStabilityTests
     // --- end ics:content ---
     // --- ics:save-core: enum tests for this lane go between the markers (one owner per block) ---
     // --- end ics:save-core ---
+
+    [Fact]
+    public void HudElement_Ordinals()
+    {
+        // The index into the saved Settings.HudElementModes list.
+        Assert.Equal(0, (int)Embervale.UI.HudElement.Vitals);
+        Assert.Equal(1, (int)Embervale.UI.HudElement.Hotbar);
+        Assert.Equal(2, (int)Embervale.UI.HudElement.Compass);
+        Assert.Equal(3, (int)Embervale.UI.HudElement.Minimap);
+        Assert.Equal(4, (int)Embervale.UI.HudElement.Clock);
+        Assert.Equal(5, (int)Embervale.UI.HudElement.QuestTracker);
+        Assert.Equal(6, (int)Embervale.UI.HudElement.Party);
+        Assert.Equal(7, (int)Embervale.UI.HudElement.TargetPlate);
+        Assert.Equal(8, (int)Embervale.UI.HudElement.EnemyPlates);
+        Assert.Equal(9, (int)Embervale.UI.HudElement.DamageNumbers);
+        Assert.Equal(10, (int)Embervale.UI.HudElement.Prompts);
+        Assert.Equal(11, (int)Embervale.UI.HudElement.Crosshair);
+        Assert.Equal(12, (int)Embervale.UI.HudElement.Toasts);
+        Assert.Equal(13, (int)Embervale.UI.HudElement.Subtitles);
+    }
+
+    [Fact]
+    public void HudElementMode_Ordinals()
+    {
+        // The values saved in Settings.HudElementModes; 0 is what a missing entry reads as.
+        Assert.Equal(0, (int)Embervale.UI.HudElementMode.Always);
+        Assert.Equal(1, (int)Embervale.UI.HudElementMode.Dynamic);
+        Assert.Equal(2, (int)Embervale.UI.HudElementMode.Hidden);
+    }
 }

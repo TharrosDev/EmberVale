@@ -5,14 +5,126 @@
 Developer SDK: [`TOOLING.md`](TOOLING.md) (`python tools/embervale.py`). Every mechanic in the game,
 one line each: [`MECHANICS.md`](MECHANICS.md).
 
-## Where we are (2026-10-06, performance pass)
+## Where we are (2026-10-06, UI upgrade)
 
 The game is complete from New Game to credits. The finish run's contract and id registry are
 [`playbook/finish.md`](playbook/finish.md).
 
+### The UI, HUD and meta-shell upgrade (`claude/ui-upgrade`)
+
+The newest work is a visual and mechanical upgrade of every screen and of the HUD ("banked
+embers"): one foundation, eight lanes in two waves (settings and input, HUD core, items,
+knowledge panels; then shell front, shell session, HUD combat, trade), each with a review-fix
+pass, then three polish lanes driven by reading screenshots. It changes no save format. It adds
+settings fields (append-only, each defaulting to the old behaviour), five input actions and one
+gameplay rule: the difficulty setting now scales damage. ⚠️ **The lanes wrote it without launching
+the engine. The orchestrator then ran the gates and rendered every screen through seven shot
+harnesses, and nobody has played it.** A harness frame proves a screen draws in the state it
+names; it proves nothing about input, feel, sound or balance. The map of the code is
+[`UI_STYLE.md`](UI_STYLE.md) §13; one line per mechanic is in [`MECHANICS.md`](MECHANICS.md).
+
+- **Foundation.** `UiFx` (fades, rise, stagger, pulse, the hold ring), `UiAudio` (nine cues, a
+  title music bed, a low-pass while a menu pauses the world), `UiGlyph` (keycaps and drawn pad
+  buttons in three families), a footer legend on every `UiPanel`, a hub strip over Character,
+  Spellbook, Journal, Map and Bestiary, `UiSkin` for the engine-drawn controls, `UiTheme.Sheet`,
+  the plate tokens, a bent text-scale curve, HUD options (`HudOptions`, `HudMetrics`) and item
+  icons (`ItemIcons`, `tools/pack_ui_atlas.gd`). `UiTheme` is a partial class and each lane owns
+  one `UiTheme.<Lane>.cs`.
+- **Shell.** A boot splash, first-run accessibility setup, a title on a painting that follows the
+  newest save's act, Continue naming its save, a quit confirm, a scrolling credits screen, a
+  loading screen with the realm's painting, a progress line (`LoadingProgressEvent`) and a tip or
+  lore card, richer save rows with hold to delete and overwrite, a pause sheet with the tracked
+  objective, a three-column creator with a turntable preview, a death screen, and ending cards
+  over paintings with hold to skip.
+- **Settings and input.** Six tabs with a description pane and previews, per-row restore, hold to
+  reset, key and gamepad remapping for 31 actions (`InputBindingRules`,
+  `GameInput.ApplyBindings`), pad look sensitivity per axis, HUD presets and per-element modes,
+  HUD scale, opacity and safe zone, subtitle options, a readable-font switch and presses in place
+  of holds.
+- **Difficulty is real now.** Story, Normal and Hard scale the damage of a blow landing on the
+  player by 0.6, 1 and 1.35 at the one place a blow is resolved (`CombatComponent.ReceiveDamage`
+  through `SettingsService.IncomingDamageScale`). Damage over time, falls and reflected damage
+  bypass that point and are not scaled; nothing else moves. Normal multiplies by exactly 1, so
+  every gate and balance number measured there is unchanged.
+- **HUD.** No boxes: bars and text sit keylined on the world, readers take a translucent plate
+  with one lit edge. Vitals with notches, a damage chunk and a corruption row; a hotbar with item
+  pictures, cooldown seconds and locked, unusable and run-out states; a three-line tracker; glyph
+  prompts; widths from the layout width with a narrow layout down to 853; Dynamic and Minimal
+  presets and a hold-to-recall key (`N`).
+- **Combat HUD and notices.** A bare boss bar with a damage chunk, a target plate, up to eight
+  pooled enemy plates, four damage-number modes, toasts that dwell by word count, collapse
+  repeats and wait out a fight, and a subtitle layer for companion barks and boss intro lines.
+- **Items and character.** Painted icons (79 archetypes on one atlas, chosen from the item id),
+  new, worn, locked and junk marks, a detail card with one hero number and signed deltas, a
+  side-by-side compare, an equipment column that filters the pack, and a perk tree with four node
+  states, a lit route and d-pad movement along prerequisite lines.
+- **Trade.** Vendor, crafting, storage, appraisal and the contract board on one page family:
+  shared rows, an order bar, a price ledger, both purses, sell all junk behind a confirm, craft
+  max, and compare everywhere.
+- **Knowledge panels.** Journal tabs, drawn objective marks and Show on map; a darker map with a
+  scale bar, a legend that filters pins, a pad cursor that snaps to pins and a fast-travel
+  confirm; bestiary pages by how much is known; a lower-third dialogue window with a typewriter
+  and option marks.
+- **Art.** Thirteen paintings (four title, six loading, two endings, credits), the seal, the item
+  atlas, nineteen pad glyph shapes and sixteen control icons. Provenance is
+  `assets/ui/PROVENANCE.md`.
+
+**Unverified (UI upgrade).** The gates and the shot harnesses ran; see Verification. Everything
+below is what they cannot show.
+
+- **No human has played it.** Not one screen has been opened by a person in a session, and no
+  flow has been walked end to end: title to creator to world, death to Rise, a shop visit, a
+  remap, a full conversation.
+- **No gamepad was physically driven.** Every focus route was reasoned from code: hub and sub-tab
+  stepping, the two-press accept into the inventory's detail pane, Left round to a trade order
+  bar, wrapped action rows, the map cursor and its snap, right-stick scrolling in dialogue, the
+  creator and trade details, hold rings releasing on focus loss. The pad glyph shapes for each
+  family were never seen beside a real controller.
+- **Remapping never met a real device.** Listening, trigger capture, the quiet window after a
+  capture, the conflict prompt's focus trap and the retry while bindings are parked are unit-
+  tested as rules and unobserved as input. Known hole: text entry does not park the hotbar
+  actions, so a hotbar slot rebound to a letter fires while typing in a search field.
+- **No audio cue has been heard.** All nine cues and the title bed are procedural. Coalescing,
+  the focus tick rate, the hold tick's rising pitch and the menu low-pass are rules under test,
+  not sound anyone listened to.
+- **High contrast and reduced motion were not captured.** Both are implemented on every new
+  surface and neither was rendered. High contrast turns bare HUD groups into padded plates, so
+  the vitals, clock and party shift when it is toggled mid-session, and the minimap frame's inner
+  edge is styled once and does not follow the toggle.
+- **No HUD performance measurement.** The plan's before and after (a perf scenario and a HUD
+  draw-call count) was not run. New per-frame or per-change costs nobody timed: enemy plates
+  unprojected each frame while any is up, keylined text with a halo, icon keylines drawn as eight
+  stamps, the creator preview rendering every frame while its idle loops.
+- **Steam Deck hardware is untested.** 1280x800 at UI scale 1.5 is a window on a laptop, not the
+  device. Known limits at that size: a HUD scale above 1 lays out narrower than 853 and the
+  bottom bar can overflow, and a text scale above 1 widens the hotbar cells again. 3440x1440 was
+  in the plan's matrix and was not shot.
+- **Feel that only play can judge.** HUD ink weight (3 px keyline, 6 px halo) and plate opacity
+  (0.82) over a bright sky; whether a 20 degree turn raises the Dynamic compass too often; the
+  typewriter's 48 characters a second and its 300 ms grace; toast deferral in a long fight; the
+  death screen's 1.5 s before its options; the small shift when a sub-screen opens over the
+  drifting title painting; the Story and Hard multipliers, which were chosen and never balanced.
+- **Left as they are, on purpose or for want of a frozen file.** Track, Show on map and compare
+  borrow play actions (F / X, V / R3, Shift / L3) instead of dedicated menu actions. A
+  keyboard-only player with no mouse cannot scroll the creator's race and background prose. Any
+  launch with an argument after `--`, `--play` included, counts as unattended: no death screen
+  and a tap skips narration; an isolated user folder also turns the dialogue typewriter off. The
+  title reads its act from chapter flags, so a save that predates them shows act 1, and a save
+  row names the region, not the chapter. First-run setup is skipped for good if the first boot is
+  quit before it. Unseen bestiary entries show a padlock, not silhouette art. Enemy plates treat
+  Always and Dynamic alike. The vitals and hotbar stay up behind the dialogue window. Two price
+  lines and one map description keep an em dash because a negative test and a generator match
+  their text.
+- **Harness notes.** `PanelShots` waits for the window to reach the requested size before it
+  shoots; why the window once opened oversized at 1280x800 was never root-caused. A polish lane
+  read "1 event handler(s) survived application teardown" at the end of two harness logs and did
+  not trace it.
+- **Not part of the run recorded here.** The master world bake check, the export build with
+  `check_shipping_assembly.py` on the merged branch, the negative battery and world quality.
+
 ### The performance pass (`claude/perf-integration`)
 
-The newest work is an optimization pass: six lanes (load, rendering, streaming, assets, CPU, HUD)
+Before it came an optimization pass: six lanes (load, rendering, streaming, assets, CPU, HUD)
 merged, then review fixes. It changes no gameplay rule and no save format; the only new features
 are graphics settings. ⚠️ **It was written without launching the engine, and nothing in it has
 been measured.** It compiles. No frame time, memory figure or load time below is claimed to have
@@ -267,7 +379,9 @@ The state of everything else, unchanged by that work:
 - **Struck, and staying struck:** Phase 40 (survival/needs) and 40.5 (puzzles/traps). **Out of scope**
   (personal build, never published): storefront, platform compliance, launch, live ops, extra locales.
 
-**Open:** the measurement run, import, full bake and gates for the performance pass, then a look
+**Open:** a played session of the UI upgrade with a keyboard and a real gamepad, then its
+high-contrast, reduced-motion and HUD-cost checks (its Unverified list above);
+the measurement run, import, full bake and gates for the performance pass, then a look
 at every tier on a screen (its Unverified list above); first play of the item, crafting and save
 upgrade (its Unverified list); the maintainer play-through (G1/G3) of the exported build, New Game to credits and both
 endings; eye-level visual review of the new realms, bosses, duel braziers and ending skies; a reviewed
@@ -422,6 +536,24 @@ Numbers are stable references (other docs cite them); gaps are retired invariant
     for life and `CharacterAnimationComponent` steps them. Changing the mode on an active tree
     restarts its state machine (a corpse stands up), and an action clip is never stepped coarsely
     because it is that action's clock.
+49. ⚠️ **A SCREEN THAT WAITS FOR A BUTTON IS NEVER SHOWN TO AN UNATTENDED RUN.** The splash,
+    first-run setup, the death screen and the narration hold are gated on
+    `ShellFrontRules.Attended` / `ShellSessionRules.Unattended` (headless, `EMBERVALE_USER_DIR`, or
+    any argument after `--`). A narration timeline still finishes with no input, and a new such
+    screen takes the same gate or it stalls `--story`, `--lifecycle` and every harness.
+50. ⚠️ **A HUD ELEMENT HAS TWO GATES AND ONE OWNER PER FLAG.** `HudVisibility` says what the HUD
+    mode allows and `HudDynamicRules` what the player asked for. A widget that writes its own
+    `Visible` reads `GameHud.Shows(element)` at that write, calls `GameHud.MarkChanged` when its
+    content changes, and lives in a `HudLayout` slot or it will not scale. `HudElement` and
+    `HudElementMode` numbers are saved and append-only, like every new settings field (46).
+51. ⚠️ **A PROMPT IS A SNAPSHOT OF A BINDING THE PLAYER CAN CHANGE.** Draw a key hint with
+    `UiGlyph.For(action)`, never a literal key, and redraw it on `InputDeviceChangedEvent` and
+    `InputBindingsChangedEvent`. A new action that should be rebindable is added to
+    `InputBindingRules.Actions`; one that must stay fixed is left out on purpose.
+52. ⚠️ **DIFFICULTY SCALES ONE NUMBER AT ONE PLACE, AND NORMAL IS EXACTLY 1.** Blows on the player,
+    in `CombatComponent.ReceiveDamage`. Scaling anywhere else (inside `ApplyDamage`, per attacker)
+    desyncs the kill and damage result computed before it, and a Normal that is not bit-for-bit 1
+    moves every measured balance number.
 
 ## Commands
 
@@ -450,7 +582,14 @@ dotnet build Embervale.csproj -c ExportRelease && python tools/check_shipping_as
 python -c "from pathlib import Path; Path('build/windows').mkdir(parents=True, exist_ok=True)"
 godot --headless --recovery-mode --path . --export-release "Windows Desktop" build/windows/Embervale.exe
 build/windows/Embervale.exe --headless -- --story   # smoke the export
-godot --path . -- --guild-shots | --panelshots | --hudshots
+godot --path . -- --shellshots | --metashots | --hudshots | --combat-shots | --panelshots | --uishots | --tradeshots
+                                           # one at a time; each checks the state of every shot. EMBERVALE_RES=1280x800
+                                           # EMBERVALE_SHOT_UISCALE=1.5 is the handheld view; EMBERVALE_USER_DIR,
+                                           # EMBERVALE_SLOT and EMBERVALE_ARTIFACTS pin the save and the output
+godot --path . -- --guild-shots | --shrine-shots | --enemy-shots | --look-shots
+godot --headless --path . --script res://tools/magic_learning_probe.gd    # also builds the spellbook and HUD chips
+godot --headless --path . --script res://tools/combat_feedback_probe.gd   # hit stop, feedback, lock-on, telegraphs
+godot --headless --path . --script res://tools/pack_ui_atlas.gd   # item icon atlas from assets/ui/icons/items/src
 godot --path . --script res://tools/world_shots.gd   # add -- --update-world-baseline AFTER inspecting
 python tools/world_quality_check.py --mode fast | engine | visual | full
 python tools/assets.py status | validate | adopt <src> <dest> | audit
@@ -472,6 +611,26 @@ Python is Codex's bundled interpreter
 Export templates are in `%APPDATA%\Godot\export_templates\4.7.1.stable.mono`.
 
 ## Verification
+
+### UI, HUD and meta-shell upgrade (`claude/ui-upgrade`)
+
+Run by the orchestrator on the merged branch, one Godot at a time, on 2026-10-06. This table
+records what was run, not its numbers: **see the PR for the final numbers.**
+
+| Check | Evidence |
+| --- | --- |
+| Build (`dotnet build Embervale.sln`) | warning-free |
+| Unit suite (`dotnet test tests/Embervale.Tests`) | 5507 passing |
+| `--validate` | run; see the PR |
+| `--lifecycle` | run; see the PR |
+| `--story` | run; see the PR |
+| `magic_learning_probe`, `combat_feedback_probe` | run; see the PR |
+| Shot harnesses at 1280x720 | `--shellshots`, `--metashots`, `--hudshots`, `--combat-shots`, `--panelshots`, `--uishots`, `--tradeshots`; see the PR |
+| Shot harnesses at 1280x800 with UI scale 1.5 (853x533 logical) | the same seven; see the PR |
+| 3440x1440, high contrast, reduced motion | not captured |
+| Perf scenario and HUD draw-call count, before and after | not run |
+| World bake check, export build with the shipping check, negative battery, world quality | not part of this run |
+| A human play-through, a physical gamepad, the remapping flow on real devices, the audio cues, Steam Deck hardware | not run; see Unverified above |
 
 ### Performance pass (`claude/perf-integration`)
 

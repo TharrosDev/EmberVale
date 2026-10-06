@@ -27,6 +27,14 @@ namespace Embervale.UI;
 /// enums by <see cref="DialogueConsequenceTags"/>), a line under the speaker says when this person is the
 /// objective of the tracked quest, the number keys 1-9 pick a choice, and a history toggle replays the last
 /// few lines of the conversation.
+///
+/// The 2026-10 pass made it a lower third: the speaker and the line on the left, the options on the
+/// right, the world still visible above. A line writes itself out (<see cref="DialoguePaceRules"/>) and
+/// its options arrive when it is finished; accept finishes a line that is still being written before it
+/// can choose anything. None of that touches the conversation itself, which is a
+/// <see cref="DialogueSession"/> the panel only draws: a run that drives sessions without the panel sees
+/// no difference, and an unattended run (headless, a capture harness, a pinned user folder) gets the
+/// whole line at once.
 /// </summary>
 public partial class DialoguePanel : UiPanel
 {
@@ -34,9 +42,45 @@ public partial class DialoguePanel : UiPanel
     // B/Esc would strand the session and skip the DialogueEndedEvent (30.5J).
     protected override bool CloseOnCancel => false;
 
-    private VBoxContainer _list = null!;
-    private VBoxContainer _choices = null!;
+    private static readonly StringName UiAccept = "ui_accept";
+    private static readonly StringName HistoryAction = GameInput.MenuTabNext;
+    private const string UiPageUp = "ui_page_up";
+    private const string UiPageDown = "ui_page_down";
+
+    private VBoxContainer _page = null!;
+    private VBoxContainer _options = null!;
+    private ScrollContainer _pageScroll = null!;
+    private VScrollBar _pageBar = null!;
+    private ScrollContainer _optionScroll = null!;
     private ColorRect _scrim = null!;
+
+    // The line on screen, and whether it is still being written out.
+    private Label? _line;
+    private DialogueNode? _typedNode;
+    private bool _typing;
+    private Tween? _typeTween;
+    private bool _typewriterForced;
+    private static bool? _unattended;
+
+    // Set when a line finishes, so the options that arrive with the next rebuild take focus.
+    private bool _focusOptions;
+    private Button? _firstOption;
+
+    // When the line last finished with nobody asking (DialoguePaceRules.InGrace); 0 when it has not.
+    private ulong _finishedOnOwnMs;
+
+    // Whether the left column is taller than the window, as last measured. Measured a few frames after
+    // a rebuild, once the wrapped line has its height; the legend names the scroll only while it is true.
+    private bool _lineOverflows;
+
+    // "More below": under the line's column while there is text past its foot.
+    private Control _more = null!;
+    private bool _moreShown;
+    private int _measureIn;
+    private bool _measureRebuilt;
+    private bool _rebuiltForMeasure;
+    private const int MeasureSettleFrames = 3;
+    private const float StickScrollSpeed = 600f;
 
     private DialogueSession? _session;
     private IEntity? _player;
@@ -60,6 +104,40 @@ public partial class DialoguePanel : UiPanel
         _saveBlock = null;
     }
 
+    /// <summary>Accept skips a line that is still writing itself and chooses once it has; the history
+    /// toggle is named while there is something to replay.</summary>
+    protected override IReadOnlyList<LegendEntry> Legend
+    {
+        get
+        {
+            if (_session == null)
+            {
+                return System.Array.Empty<LegendEntry>();
+            }
+
+            if (_typing)
+            {
+                return new[] { new LegendEntry("ui_accept", Loc.T("kn.legend.skip")) };
+            }
+
+            var entries = new List<LegendEntry> { new("ui_accept", Loc.T("kn.legend.choose")) };
+            if (_lineOverflows)
+            {
+                entries.Add(InputDevice.GamepadActive
+                    ? new LegendEntry(GameInput.LookDown, Loc.T("kn.legend.scroll"))
+                    : new LegendEntry(UiPageUp, Loc.T("kn.legend.scroll"), UiPageDown));
+            }
+
+            if (_historyOpen || _backlog.Recent().Count > 0)
+            {
+                entries.Add(new LegendEntry(GameInput.MenuTabNext,
+                    Loc.T(_historyOpen ? "questui.dialogue.history_hide" : "questui.dialogue.history")));
+            }
+
+            return entries;
+        }
+    }
+
     protected override void BuildShell(PanelContainer shell)
     {
         _scrim = UiTheme.Scrim(0.40f);
@@ -68,23 +146,61 @@ public partial class DialoguePanel : UiPanel
         AddChild(_scrim);
         MoveChild(_scrim, 0);
 
+        // The same plate as the hub's screens: one lit edge along the top, no box.
+        UiTheme.ApplyHubPlate(shell);
         shell.AnchorLeft = 0.5f;
         shell.AnchorRight = 0.5f;
         shell.AnchorTop = 1f;
         shell.AnchorBottom = 1f;
         shell.GrowHorizontal = Control.GrowDirection.Both;
         shell.GrowVertical = Control.GrowDirection.Begin;
-        LayoutShell();
 
-        MarginContainer margin = UiTheme.Padding(UiTheme.SpaceLg);
+        MarginContainer margin = UiTheme.Padding(UiTheme.PanelPad);
         shell.AddChild(margin);
 
-        // ScrollList keeps the scrollbar's gutter, so a choice card never sits flush against it.
-        (ScrollContainer scroll, VBoxContainer list) = UiTheme.ScrollList();
-        margin.AddChild(scroll);
+        var row = new HBoxContainer();
+        row.AddThemeConstantOverride("separation", UiTheme.SpaceMd);
+        margin.AddChild(row);
 
-        _list = list;
-        _list.AddThemeConstantOverride("separation", UiTheme.SpaceMd);
+        // Left: who is speaking and what they say. It scrolls for a line longer than the window: by
+        // the wheel, the right stick or the page keys (nothing in it takes focus, so focus cannot).
+        (ScrollContainer pageScroll, VBoxContainer page) = UiTheme.ScrollList();
+        _pageScroll = pageScroll;
+        _pageBar = pageScroll.GetVScrollBar();
+        _page = page;
+        _page.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
+
+        // A line cut off by the window's foot has to say so: the scrollbar is a hairline at the
+        // column's far edge, and a sentence that stops mid-clause reads as the whole of it. The cue
+        // sits under the column, an arrow and two words, only while there is more to scroll to.
+        var column = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+        column.AddThemeConstantOverride("separation", UiTheme.Space2xs);
+        column.AddChild(pageScroll);
+
+        var more = new HBoxContainer { Visible = false, MouseFilter = Control.MouseFilterEnum.Ignore };
+        more.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
+        more.AddChild(new UiDeltaArrow(false, UiTheme.Accent));
+        more.AddChild(UiTheme.Caption(Loc.T("kn.dialogue.more"), UiTheme.Dim));
+        column.AddChild(more);
+        _more = more;
+        row.AddChild(column);
+
+        row.AddChild(new ColorRect
+        {
+            Color = UiTheme.Rule,
+            CustomMinimumSize = new Vector2(1f, 0f),
+            MouseFilter = Control.MouseFilterEnum.Ignore,
+        });
+
+        // Right: the options, one RowGap list. The window is sized for five of them
+        // (DialoguePaceRules.VisibleOptions); a sixth scrolls, and the focused one is kept in view.
+        (ScrollContainer optionScroll, VBoxContainer options) = UiTheme.ScrollList();
+        optionScroll.SizeFlagsHorizontal = Control.SizeFlags.Fill;
+        _optionScroll = optionScroll;
+        _options = options;
+        row.AddChild(optionScroll);
+
+        LayoutShell();
     }
 
     protected override void OnReady()
@@ -109,22 +225,29 @@ public partial class DialoguePanel : UiPanel
 
     private void OnDeviceChanged(InputDeviceChangedEvent e) => MarkDirty();
 
+    /// <summary>
+    /// The lower third. Height is what five option rows need and no more than 40% of the view, so the
+    /// speaker's face stays on screen; a short viewport shows fewer rows and scrolls the rest. The
+    /// window stops above the footer legend's row.
+    /// </summary>
     private void LayoutShell()
     {
         Vector2 viewport = GetViewport().GetVisibleRect().Size;
-        float width = Mathf.Clamp(viewport.X * 0.68f, 560f, 920f);
+        // Three quarters of the view, but never so narrow that the line's column cannot hold a sentence:
+        // a handheld gives the window nearly its whole width.
+        float width = Mathf.Min(Mathf.Clamp(viewport.X * 0.74f, 720f, 1040f), viewport.X - (UiTheme.SpaceLg * 2f));
 
-        // Taller than the original 42%: a choice now carries consequence chips and the speaker a quest
-        // line, and a window that scrolls on the first conversation reads as clipped. The 2026-10 spacing
-        // pass gave every card and chip row its breathing room, so it grew again (52% to 60%).
-        float height = Mathf.Clamp(viewport.Y * 0.60f, 320f, 560f);
-        ShellOrFallback().OffsetLeft = -width * 0.5f;
-        ShellOrFallback().OffsetRight = width * 0.5f;
-        ShellOrFallback().OffsetTop = -height - UiTheme.SpaceLg;
-        ShellOrFallback().OffsetBottom = -UiTheme.SpaceLg;
+        int rows = DialoguePaceRules.VisibleOptions;
+        float fiveRows = (UiTheme.ControlHeight * rows) + (UiTheme.RowGap * (rows - 1)) + (UiTheme.PanelPad * 2f) + UiTheme.Space2xs;
+        float height = Mathf.Clamp(viewport.Y * 0.40f, 230f, fiveRows);
+
+        float foot = UiChromeRules.LegendHeight + (UiChromeRules.ChromeMargin * 2f);
+        Shell.OffsetLeft = -width * 0.5f;
+        Shell.OffsetRight = width * 0.5f;
+        Shell.OffsetTop = -height - foot;
+        Shell.OffsetBottom = -foot;
+        _optionScroll.CustomMinimumSize = new Vector2(Mathf.Clamp(width * 0.40f, 260f, 400f), 0f);
     }
-
-    private PanelContainer ShellOrFallback() => Shell;
 
     private void OnDialogueStarted(DialogueStartedEvent e)
     {
@@ -140,6 +263,10 @@ public partial class DialoguePanel : UiPanel
         _saveBlock ??= Embervale.Save.SaveManager.Instance?.PushSaveBlock(SaveBlockReason);
         _backlog.Clear();
         _historyOpen = false;
+        _typedNode = null;
+        _typing = false;
+        _finishedOnOwnMs = 0;
+        _lineOverflows = false;
 
         // A conversation with no reachable start node closes immediately.
         if (_session.IsEnded)
@@ -159,6 +286,7 @@ public partial class DialoguePanel : UiPanel
         }
 
         _backlog.AddChoice(Loc.T(choice.Text));
+        _backlog.MarkChosen(ChoiceKey(choice));
         if (_session.Choose(choice))
         {
             Close();
@@ -178,31 +306,226 @@ public partial class DialoguePanel : UiPanel
             return;
         }
 
+        int number = -1;
+        Key code = Key.None;
         if (@event is InputEventKey { Pressed: true, Echo: false } key)
         {
-            Key code = key.PhysicalKeycode != Key.None ? key.PhysicalKeycode : key.Keycode;
-            int number = code is >= Key.Key1 and <= Key.Key9 ? (int)(code - Key.Key1)
+            code = key.PhysicalKeycode != Key.None ? key.PhysicalKeycode : key.Keycode;
+            number = code is >= Key.Key1 and <= Key.Key9 ? (int)(code - Key.Key1)
                 : code is >= Key.Kp1 and <= Key.Kp9 ? (int)(code - Key.Kp1)
                 : -1;
-            if (number >= 0 && number < _choiceActions.Count)
+        }
+
+        // A line still being written: the press that would have chosen finishes the line instead, and
+        // chooses nothing. The options are not on screen yet, so there is nothing it could have meant.
+        if (_typing)
+        {
+            if (number >= 0 || @event.IsActionPressed(UiAccept) ||
+                @event is InputEventMouseButton { Pressed: true, ButtonIndex: MouseButton.Left })
             {
+                FinishLine();
                 GetViewport().SetInputAsHandled();
-                _choiceActions[number]();
-                return;
             }
 
-            if (code == Key.H)
+            return;
+        }
+
+        bool accept = @event.IsActionPressed(UiAccept);
+        bool click = @event is InputEventMouseButton { Pressed: true, ButtonIndex: MouseButton.Left };
+
+        // A line that finished by itself a moment ago: the press was aimed at the line, not at the
+        // option that has just appeared under it, so it is spent on nothing.
+        if ((number >= 0 || accept || click) &&
+            DialoguePaceRules.InGrace(Time.GetTicksMsec(), _finishedOnOwnMs))
+        {
+            GetViewport().SetInputAsHandled();
+            return;
+        }
+
+        if (_lineOverflows)
+        {
+            int page = (@event.IsActionPressed(UiPageDown, true) ? 1 : 0) - (@event.IsActionPressed(UiPageUp, true) ? 1 : 0);
+            if (page != 0)
             {
-                ToggleHistory();
+                _pageScroll.ScrollVertical += (int)(page * _pageScroll.Size.Y * 0.8f);
                 GetViewport().SetInputAsHandled();
+                return;
             }
         }
-        else if (@event is InputEventJoypadButton { Pressed: true } pad && pad.ButtonIndex == JoyButton.RightShoulder)
+
+        if (number >= 0 && number < _choiceActions.Count)
+        {
+            GetViewport().SetInputAsHandled();
+            _choiceActions[number]();
+            return;
+        }
+
+        // H as it has always been, and the action the legend shows (E, or RB on a pad).
+        if (code == Key.H || @event.IsActionPressed(HistoryAction))
         {
             ToggleHistory();
             GetViewport().SetInputAsHandled();
         }
     }
+
+    /// <summary>
+    /// Scrolls the line's column from the right stick, keeps the words being written in view, and
+    /// measures whether the column overflows at all. Runs only while a conversation is open.
+    /// </summary>
+    public override void _Process(double delta)
+    {
+        base._Process(delta);
+        if (!IsOpen || _session == null)
+        {
+            return;
+        }
+
+        float span = (float)(_pageBar.MaxValue - _pageBar.Page);
+        if (_measureIn > 0 && --_measureIn == 0)
+        {
+            bool overflows = span > 1f;
+            if (overflows != _lineOverflows)
+            {
+                _lineOverflows = overflows;
+
+                // The legend is read after a rebuild. One rebuild per measurement, never one in answer
+                // to the rebuild it caused; a line still writing gets its legend when it finishes.
+                if (!_typing && !_rebuiltForMeasure)
+                {
+                    _measureRebuilt = true;
+                    MarkDirty();
+                }
+            }
+        }
+
+        // Written only when the answer changes. Not while the line is still writing: the column is
+        // following the words then, and there is nothing to be told.
+        bool more = !_typing && span > 1f && _pageScroll.ScrollVertical < span - 1f;
+        if (more != _moreShown)
+        {
+            _moreShown = more;
+            _more.Visible = more;
+        }
+
+        if (span <= 1f)
+        {
+            return;
+        }
+
+        if (_typing && _line != null && IsInstanceValid(_line))
+        {
+            float written = _line.Position.Y + (_line.Size.Y * _line.VisibleRatio) + UiTheme.SpaceLg;
+            int follow = (int)(written - _pageScroll.Size.Y);
+            if (follow > _pageScroll.ScrollVertical)
+            {
+                _pageScroll.ScrollVertical = follow;
+            }
+        }
+
+        float stick = Godot.Input.GetActionStrength(UiLive.LookDown) - Godot.Input.GetActionStrength(UiLive.LookUp);
+        if (Mathf.Abs(stick) > 0.2f)
+        {
+            _pageScroll.ScrollVertical += Mathf.RoundToInt(stick * StickScrollSpeed * (float)delta);
+        }
+    }
+
+    // --- Typewriter ----------------------------------------------------------------------
+
+    /// <summary>
+    /// Whether lines write themselves out. Never under reduced motion. Never in an unattended run
+    /// either (headless, a capture harness, a pinned user folder): a harness that photographs a
+    /// conversation half a second after opening it must get the conversation, and nothing that drives
+    /// the game without a player should have to wait for prose. The capture hook turns it back on for
+    /// the frames that photograph it.
+    /// </summary>
+    private bool TypewriterOn => UiTheme.MotionEnabled && (_typewriterForced || !Unattended());
+
+    private static bool Unattended()
+    {
+        if (_unattended is { } known)
+        {
+            return known;
+        }
+
+        bool unattended = DisplayServer.GetName() == "headless" || OS.GetEnvironment("EMBERVALE_USER_DIR").Length > 0;
+        foreach (string arg in OS.GetCmdlineUserArgs())
+        {
+            unattended |= arg.EndsWith("shots", System.StringComparison.Ordinal);
+        }
+
+        _unattended = unattended;
+        return unattended;
+    }
+
+    /// <summary>Starts the line writing out. The label holds the whole text from the start (so it wraps
+    /// and takes its height once) and only the count of visible characters moves.</summary>
+    private void StartTyping(Label line)
+    {
+        _typeTween?.Kill();
+        if (_typewriterForced)
+        {
+            // A capture frame is taken a fixed number of frames after it is asked for, not a fixed
+            // time: the line is held part-written until FinishLineForCapture, with no clock to race.
+            line.VisibleRatio = CaptureRatio;
+            return;
+        }
+
+        line.VisibleRatio = 0f;
+
+        // Runs while the tree is paused (a conversation pauses the world) and ignores hit-stop.
+        _typeTween = line.CreateTween();
+        _typeTween.SetPauseMode(Tween.TweenPauseMode.Process);
+        _typeTween.SetIgnoreTimeScale(true);
+        _typeTween.TweenProperty(line, "visible_ratio", 1f, DialoguePaceRules.Seconds(line.Text.Length));
+        _typeTween.TweenCallback(Callable.From(FinishOnOwn));
+    }
+
+    private const float CaptureRatio = 0.4f;
+
+    /// <summary>The line reached its end with nobody asking. A press in the next moment was meant for
+    /// the line (<see cref="DialoguePaceRules.InGrace"/>).</summary>
+    private void FinishOnOwn()
+    {
+        if (_typing)
+        {
+            _finishedOnOwnMs = Time.GetTicksMsec();
+            FinishLine();
+        }
+    }
+
+    /// <summary>Shows the whole line and brings the options in. Called when the line finishes on its
+    /// own and when the player asks for it.</summary>
+    private void FinishLine()
+    {
+        if (!_typing)
+        {
+            return;
+        }
+
+        _typing = false;
+        _typeTween?.Kill();
+        _typeTween = null;
+        if (_line != null && IsInstanceValid(_line))
+        {
+            _line.VisibleRatio = 1f;
+        }
+
+        _focusOptions = true;
+        MarkDirty();
+    }
+
+    /// <summary>Whether the line on screen is still writing itself out. Read by the screenshot harness.</summary>
+    public bool IsTyping => _typing;
+
+    /// <summary>How many options are on screen, as of the last rebuild.</summary>
+    public int OptionCount => _choiceActions.Count;
+
+    /// <summary>Turns the typewriter on for a capture harness, where it is otherwise off. The next
+    /// line opened is held part-written, and stays so until <see cref="FinishLineForCapture"/>.</summary>
+    public void TypewriterForCapture(bool on) => _typewriterForced = on;
+
+    /// <summary>Finishes the line as an accept press does.</summary>
+    public void FinishLineForCapture() => FinishLine();
 
     private void ToggleHistory()
     {
@@ -215,10 +538,6 @@ public partial class DialoguePanel : UiPanel
         _historyOpen = !_historyOpen;
         MarkDirty();
     }
-
-    /// <summary>The key or button that toggles the history view, as the player's current device would name it.</summary>
-    private static string HistoryPrompt() =>
-        InputDevice.GamepadActive ? GameInput.ButtonLabel(JoyButton.RightShoulder) : "H";
 
     /// <summary>
     /// Ends the open conversation exactly as picking a terminal choice does — the session is
@@ -241,6 +560,10 @@ public partial class DialoguePanel : UiPanel
         _session = null;
         _dialogue = null;
         _player = null;
+        _typedNode = null;
+        _typing = false;
+        _typeTween?.Kill();
+        _typeTween = null;
         _choiceActions.Clear();
         ReleaseSaveBlock();
         SetOpen(false);
@@ -255,8 +578,14 @@ public partial class DialoguePanel : UiPanel
 
     protected override void Rebuild()
     {
-        UiTheme.ClearChildren(_list);
+        UiTheme.ClearChildren(_page);
+        UiTheme.ClearChildren(_options);
         _choiceActions.Clear();
+        _line = null;
+        _firstOption = null;
+        _measureIn = MeasureSettleFrames;
+        _rebuiltForMeasure = _measureRebuilt;
+        _measureRebuilt = false;
 
         if (_session?.CurrentNode is not { } node)
         {
@@ -266,78 +595,99 @@ public partial class DialoguePanel : UiPanel
         string text = Loc.T(node.Text);
         _backlog.AddLine(text);
 
+        // A node the panel has not shown yet starts writing; a rebuild of the one it is already
+        // showing (history, a device change) settles it, because a line cannot resume part-written.
+        if (!ReferenceEquals(node, _typedNode))
+        {
+            _typedNode = node;
+            _typing = TypewriterOn && text.Length > 0;
+            _finishedOnOwnMs = 0;
+            _pageScroll.ScrollVertical = 0;
+        }
+        else if (_typing)
+        {
+            _typing = false;
+            _focusOptions = true;
+        }
+
         // The illuminated page (37.5E): the speaker is carved, the words are set in the book serif,
         // and the choices are cards rather than a stack of buttons. Dialogue is the only screen in
         // the game the player *reads* rather than scans, so it is the one that most rewards the
-        // typography split -- and the one where a row of identical grey buttons most obviously
-        // reads as a form.
-        _list.AddChild(SpeakerRow(Loc.T(_session.CurrentSpeaker())));
-        _list.AddChild(UiTheme.Divider());
+        // typography split.
+        // A long name wraps: unwrapped it would set the column's minimum width and push the window
+        // past the edges of a handheld.
+        Label speaker = UiTheme.Title(Loc.T(_session.CurrentSpeaker()));
+        speaker.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+        speaker.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        _page.AddChild(speaker);
 
         if (QuestContextLine() is { } context)
         {
-            _list.AddChild(context);
+            _page.AddChild(context);
         }
 
         if (_historyOpen)
         {
-            _list.AddChild(HistoryBlock());
+            _page.AddChild(HistoryBlock());
         }
 
-        _list.AddChild(UiTheme.Prose(text));
+        // The line is a size up from body text: it is the thing being read, and the column it sits in
+        // holds it well inside the reading measure.
+        Label line = UiTheme.Prose(text);
+        UiTheme.ApplyType(line, UiTheme.FontRole.Serif, UiTheme.HeaderFontSize);
+        line.VisibleCharactersBehavior = TextServer.VisibleCharactersBehavior.CharsAfterShaping;
+        _page.AddChild(line);
+        _line = line;
 
-        _list.AddChild(UiTheme.Divider());
+        if (_typing)
+        {
+            // The options arrive with the end of the line.
+            StartTyping(line);
+            return;
+        }
 
-        // The choices are one group, a row gap apart, so they read as a list under the line and not as more
-        // sections of the page.
-        _choices = new VBoxContainer();
-        _choices.AddThemeConstantOverride("separation", UiTheme.RowGap);
-        _list.AddChild(_choices);
+        BuildOptions();
 
-        List<DialogueChoice> choices = _session.VisibleChoices();
+        if (_focusOptions)
+        {
+            // After the base's own focus restore, which has nothing to restore to here.
+            _focusOptions = false;
+            _firstOption?.CallDeferred(Control.MethodName.GrabFocus);
+        }
+    }
+
+    private void BuildOptions()
+    {
+        List<DialogueChoice> choices = _session!.VisibleChoices();
         if (choices.Count == 0)
         {
             // Dead-end node: offer a single way out so the player is never stuck.
-            AddChoiceCard(0, Loc.T("dialogue.leave"), UiTheme.Dim, null, Close);
+            AddOption(0, Loc.T("dialogue.leave"), UiTheme.Dim, OptionMark.Leave, null, Close);
             return;
         }
 
         for (int i = 0; i < choices.Count; i++)
         {
             DialogueChoice captured = choices[i];
+            List<ConsequenceTag> tags = TagsFor(captured);
+            bool ends = string.IsNullOrEmpty(captured.Goto);
+            OptionMark mark = DialoguePaceRules.MarkOf(tags, _backlog.WasChosen(ChoiceKey(captured)), ends);
 
-            // A choice that starts a quest or ends the conversation is worth marking apart from
-            // ordinary talk -- the spine is the cheapest way to say so without adding a legend.
-            Color spine = captured.Effect == DialogueEffect.StartQuest ? UiTheme.QuestMain
-                : string.IsNullOrEmpty(captured.Goto) ? UiTheme.Dim
-                : UiTheme.Accent;
+            // The spine agrees with the glyph: the story's own colour for a choice that moves it, quiet
+            // for one already asked or one that only leaves.
+            Color spine = mark switch
+            {
+                OptionMark.Plot => UiTheme.QuestMain,
+                OptionMark.Exhausted or OptionMark.Leave => UiTheme.Dim,
+                _ => UiTheme.Accent,
+            };
 
-            AddChoiceCard(i, Loc.T(captured.Text), spine, TagsFor(captured), () => Choose(captured));
+            AddOption(i, Loc.T(captured.Text), spine, mark, tags, () => Choose(captured));
         }
-
-        _list.Modulate = UiTheme.MotionEnabled ? new Color(1f, 1f, 1f, 0.28f) : Colors.White;
-        UiTheme.AnimateModulate(_list, Colors.White, UiTheme.DurationBase);
     }
 
-    /// <summary>The speaker's name, with the history prompt on the right when there is something to replay.</summary>
-    private Control SpeakerRow(string speaker)
-    {
-        var row = new HBoxContainer();
-        row.AddThemeConstantOverride("separation", UiTheme.SpaceMd);
-
-        Label name = UiTheme.Title(speaker);
-        name.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-        row.AddChild(name);
-
-        if (_historyOpen || _backlog.Recent().Count > 0)
-        {
-            row.AddChild(UiTheme.KeyCap(HistoryPrompt()));
-            row.AddChild(UiTheme.Caption(
-                Loc.T(_historyOpen ? "questui.dialogue.history_hide" : "questui.dialogue.history"), UiTheme.Dim));
-        }
-
-        return row;
-    }
+    /// <summary>What identifies a choice within one conversation: its words and where it leads.</summary>
+    private static string ChoiceKey(DialogueChoice choice) => $"{choice.Text}>{choice.Goto}";
 
     /// <summary>The last few lines of this conversation and the choices taken between them, quietly.</summary>
     private Control HistoryBlock()
@@ -474,20 +824,32 @@ public partial class DialoguePanel : UiPanel
     private static string CompanionName(string companionId) =>
         CompanionDatabase.Get(companionId) is { } companion ? Loc.T(companion.NameKey) : companionId;
 
-    /// <summary>One dialogue choice as an engraved card, numbered for the number keys, with its consequence
-    /// chips beneath the words. The whole card is the button, so the target is the full row rather than the
-    /// text's own width, which also means the focus rule a gamepad follows matches what a mouse can click.</summary>
-    private void AddChoiceCard(int index, string text, Color spine, List<ConsequenceTag>? tags, System.Action onPressed)
+    /// <summary>One dialogue option as an engraved card: the glyph for what it is, its number for the
+    /// number keys, its words, and its consequence chips beneath. The whole card is the button, so the
+    /// target is the full row rather than the text's own width, which also means the focus rule a gamepad
+    /// follows matches what a mouse can click.</summary>
+    private void AddOption(
+        int index, string text, Color spine, OptionMark mark, List<ConsequenceTag>? tags, System.Action onPressed)
     {
-        PanelContainer card = UiTheme.CardButton(spine, out Button input, out VBoxContainer content);
+        PanelContainer card = UiTheme.CardButton(
+            spine, out Button input, out VBoxContainer content, UiTheme.Compact(UiTheme.CardStyle(spine)));
+        card.CustomMinimumSize = new Vector2(0f, UiTheme.ControlHeight);
+        content.Alignment = BoxContainer.AlignmentMode.Center;
 
         // The chips are a second line of the card, not part of the sentence: a full gap between them.
         content.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
 
+        var line = new HBoxContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
+        line.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
+        line.AddChild(MarkOf(mark));
+
         Label words = UiTheme.Prose(
-            index < 9 ? Loc.TF("questui.dialogue.choice_number", index + 1, text) : text, UiTheme.Text);
+            index < 9 ? Loc.TF("questui.dialogue.choice_number", index + 1, text) : text,
+            mark == OptionMark.Exhausted ? UiTheme.Dim : UiTheme.Text);
         words.MouseFilter = Control.MouseFilterEnum.Ignore;
-        content.AddChild(words);
+        words.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        line.AddChild(words);
+        content.AddChild(line);
 
         if (tags is { Count: > 0 })
         {
@@ -503,8 +865,30 @@ public partial class DialoguePanel : UiPanel
             content.AddChild(chips);
         }
 
+        // The glyph in words, for a pointer that rests on the option.
+        input.TooltipText = mark switch
+        {
+            OptionMark.Plot => Loc.T("kn.dialogue.mark_plot"),
+            OptionMark.Special => Loc.T("kn.dialogue.mark_special"),
+            OptionMark.Exhausted => Loc.T("kn.dialogue.mark_exhausted"),
+            OptionMark.Leave => Loc.T("kn.dialogue.mark_leave"),
+            _ => string.Empty,
+        };
+
         input.Pressed += () => onPressed();
         _choiceActions.Add(onPressed);
-        _choices.AddChild(card);
+        _firstOption ??= input;
+        _options.AddChild(card);
     }
+
+    /// <summary>The glyph before an option. An unmarked option keeps the glyph's width, so every
+    /// option's words start on one edge.</summary>
+    private static Control MarkOf(OptionMark mark) => mark switch
+    {
+        OptionMark.Plot => new MarkGlyph(MarkKind.Diamond, UiTheme.Adapt(UiTheme.QuestMain)),
+        OptionMark.Special => new MarkGlyph(MarkKind.DiamondHollow, UiTheme.Text),
+        OptionMark.Exhausted => new MarkGlyph(MarkKind.Tick, UiTheme.Dim),
+        OptionMark.Leave => new MarkGlyph(MarkKind.Dash, UiTheme.Dim),
+        _ => new Control { CustomMinimumSize = new Vector2(16f, 16f), MouseFilter = Control.MouseFilterEnum.Ignore },
+    };
 }

@@ -14,9 +14,11 @@ namespace Embervale.Tests;
 /// </summary>
 public class UiContrastTests
 {
-    // The button-face surfaces from UiTheme.ApplyInteractiveStyle/ButtonStyle.
-    private static readonly Color ButtonNormal = new(0.16f, 0.15f, 0.13f, 0.95f);
-    private static readonly Color ButtonHover = new(0.23f, 0.21f, 0.18f, 0.98f);
+    // The button faces UiTheme.ApplyInteractiveStyle draws, read from the theme. This file used to
+    // carry its own copies (0.16 and 0.23 greys) and they had drifted lighter than the real faces,
+    // so the audit was passing against surfaces nothing on screen used.
+    private static readonly Color ButtonNormal = UiTheme.ButtonFace;
+    private static readonly Color ButtonHover = UiTheme.ButtonFaceHover;
 
     public static readonly TheoryData<string, Color, Color> TextPairs = new()
     {
@@ -32,6 +34,8 @@ public class UiContrastTests
         { "Text on buttons", UiTheme.Text, ButtonNormal },
         { "Dim on buttons (inactive tabs)", UiTheme.Dim, ButtonNormal },
         { "Accent on hovered buttons", UiTheme.Accent, ButtonHover },
+        { "Accent on focused buttons", UiTheme.Accent, UiTheme.ButtonFaceFocus },
+        { "Text on pressed buttons", UiTheme.Text, UiTheme.ButtonFacePressed },
 
         // --- Phase 37.5A: the two new depths -----------------------------------
         // CardBg is the lightest surface in the UI and therefore the hardest ground for every
@@ -114,6 +118,37 @@ public class UiContrastTests
         // graphic (its tier/value always renders as CorruptionText beside it), and the art
         // bible's violet is not to be brightened (UI_STYLE §2). Corruption *text* is audited.
     };
+
+    /// <summary>Every ground a focused control can sit on. The focus ring is a non-text indicator,
+    /// so WCAG 2.2 asks 3:1 of it against each one, not the 4.5:1 text floor.</summary>
+    public static readonly TheoryData<string, Color> FocusSurfaces = new()
+    {
+        { "WellBg", UiTheme.WellBg },
+        { "PanelBg", UiTheme.PanelBg },
+        { "CardBg", UiTheme.CardBg },
+        { "ArcaneGround", UiTheme.ArcaneGround },
+        { "ScrimBg", UiTheme.ScrimBg },
+        { "ScrimHub", UiTheme.ScrimHub },
+        { "ButtonFace", UiTheme.ButtonFace },
+        { "ButtonFaceHover", UiTheme.ButtonFaceHover },
+        { "ButtonFacePressed", UiTheme.ButtonFacePressed },
+        { "ButtonFaceFocus", UiTheme.ButtonFaceFocus },
+    };
+
+    [Theory]
+    [MemberData(nameof(FocusSurfaces))]
+    public void FocusRing_HoldsNonTextFloorOnEverySurface(string surface, Color bg)
+    {
+        double ratio = UiContrast.Ratio(UiTheme.FocusRing, bg);
+        Assert.True(ratio >= 3.0, $"FocusRing on {surface} = {ratio:0.00}:1, below the 3:1 non-text floor");
+    }
+
+    /// <summary>Focus has to be findable among hovered and selected things, which are ember gold.</summary>
+    [Fact]
+    public void FocusRing_OutburnsTheEmberAccent()
+    {
+        Assert.True(UiContrast.Luminance(UiTheme.FocusRing) > UiContrast.Luminance(UiTheme.Accent));
+    }
 
     [Theory]
     [MemberData(nameof(TextPairs))]

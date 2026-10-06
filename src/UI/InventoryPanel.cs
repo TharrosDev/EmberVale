@@ -34,6 +34,19 @@ public partial class InventoryPanel : UiPanel
     private Embervale.Stats.StatsComponent? _stats;
     private UiTabs _tabs = null!;
     private VBoxContainer _list = null!;
+    private ScrollContainer _scroll = null!;
+
+    // --- Gear tab shell (2026-10) ----------------------------------------------
+    // Built once. The strip and the three columns keep their place between rebuilds, and each
+    // column scrolls on its own, so the detail pane stays put while the pack scrolls under it.
+    private Control _gear = null!;
+    private HFlowContainer _strip = null!;
+    private VBoxContainer _equipColumn = null!;
+    private VBoxContainer _equipList = null!;
+    private VBoxContainer _packHead = null!;
+    private VBoxContainer _packList = null!;
+    private VBoxContainer _detailColumn = null!;
+    private VBoxContainer _detailList = null!;
 
     // --- Gear tab state (37.5C) ------------------------------------------------
     // The Gear tab is a grid + detail pane rather than a text list, so it needs a selection and a
@@ -48,8 +61,48 @@ public partial class InventoryPanel : UiPanel
     /// <summary>Category filter; null shows everything.</summary>
     private ItemType? _filter;
 
-    /// <summary>Gear-slot filter (head, chest, ring...); null shows every slot.</summary>
-    private EquipmentSlot? _slotFilter;
+    /// <summary>The equipment slot the player is choosing for; null shows the whole pack. Focusing a
+    /// slot in the equipment column sets it, and the pack then lists only what fits that slot.</summary>
+    private EquipmentSlot? _equipFocus;
+
+    // Focus moves selection in place, without a rebuild: these say which parts of the Gear tab are
+    // out of date and are served on the next frame (never inside the focus signal that set them).
+    private bool _packStale;
+    private bool _detailStale;
+
+    // The frame the selection last moved on, and whether the press in flight is the click that
+    // moved it. A mouse click focuses a cell and then presses it; that press is the selection and
+    // must not also count as "press the selected item again to equip it".
+    private ulong _selectedFrame = ulong.MaxValue;
+    private bool _pressSelected;
+
+    // Whether the press in flight came from the mouse. A second click on a piece of gear puts it on;
+    // accept on a pad or the keys steps into the detail pane, which nothing else leads to.
+    private bool _pressByMouse;
+
+    // Set by a full rebuild and cleared once the base has put focus back. Focus arriving on a control
+    // because the rebuild restored it there is not the player walking onto it, and must not narrow
+    // the pack, leave the material bag or end the choosing for a slot.
+    private bool _restoring;
+
+    // Whether focus was in the detail pane when the rebuild began. An action there can empty the pane
+    // (unequip, use, drop), and focus then goes back to the cell it came from, not to the screen's first tab.
+    private bool _paneHadFocus;
+
+    /// <summary>The pack's cells by the instance each shows, and the equipment column's rows in
+    /// order, for restyling a selection and wiring focus without rebuilding either. A row's cell is
+    /// the pressable laid over the whole row; its well is the framed slot drawn inside it.</summary>
+    private readonly Dictionary<ItemInstance, Button> _cellOf = new(ReferenceEqualityComparer.Instance);
+    private readonly List<(EquipmentSlot Slot, ItemInstance? Item, Button Cell, Button Well)> _equipCells = new();
+
+    /// <summary>The strip's focusable controls of the current fill, for the same focus wiring.</summary>
+    private readonly List<Control> _stripControls = new();
+
+    /// <summary>What was held when the pack was last closed, and what has arrived since. By reference:
+    /// two rolled swords share a template and are different things. Session-local and never saved;
+    /// a load makes everything known again.</summary>
+    private readonly HashSet<ItemInstance> _seen = new(ReferenceEqualityComparer.Instance);
+    private readonly HashSet<ItemInstance> _fresh = new(ReferenceEqualityComparer.Instance);
 
     /// <summary>False shows the pack's slots, true the material bag.</summary>
     private bool _bagView;
@@ -82,7 +135,7 @@ public partial class InventoryPanel : UiPanel
     private int _gridColumns = 8;
 
     /// <summary>The focusable backpack cells of the current rebuild, held between building the grid
-    /// and wiring its focus neighbours — see <see cref="LinkGridFocus"/> for why those cannot be
+    /// and wiring its focus neighbours — see <see cref="LinkFocus"/> for why those cannot be
     /// the same step.</summary>
     private readonly List<Button> _gridCells = new();
 
@@ -92,8 +145,18 @@ public partial class InventoryPanel : UiPanel
     /// <summary>Width of one Progression section column (stats, corruption, standing).</summary>
     private const float SectionColumn = 320f;
 
-    private float _sideColumn = 230f;
-    private float _detailColumn = 300f;
+    private float _sideWidth = 230f;
+    private float _detailWidth = 300f;
+
+    private static readonly (ItemPresentation.SortOrder Order, string Key)[] SortDefs =
+    {
+        (ItemPresentation.SortOrder.Name, "item.sort_name"),
+        (ItemPresentation.SortOrder.Rarity, "item.sort_rarity"),
+        (ItemPresentation.SortOrder.Type, "item.sort_type"),
+        (ItemPresentation.SortOrder.Level, "item.sort_level"),
+        (ItemPresentation.SortOrder.Weight, "item.sort_weight"),
+        (ItemPresentation.SortOrder.Value, "item.sort_value"),
+    };
 
     /// <summary>The character screen's tabs (Phase 29.5 spell tab + split progression/perks) —
     /// indices match the <see cref="UiTabs"/> order built in <see cref="BuildShell"/>.</summary>
@@ -121,9 +184,22 @@ public partial class InventoryPanel : UiPanel
 
     protected override string? ToggleAction => GameInput.Inventory;
 
+    protected override HubTab? Hub => HubTab.Character;
+
+    private Label _title = null!;
+
+    /// <summary>The page width under which the title leaves the tab row: the four tabs and the
+    /// search field need the whole of a handheld's row.</summary>
+    private const float TitleMinWidth = 1000f;
+
     protected override void BuildShell(PanelContainer shell)
     {
         UiTheme.ApplyScreenInset(shell);
+
+        // The same cut plate as the journal, the map and the bestiary: one lit edge along the top
+        // and no box. This screen kept the full iron frame, and beside its four neighbours in the
+        // hub it read as a window from another game.
+        UiTheme.ApplyHubPlate(shell);
 
         MarginContainer margin = UiTheme.Padding(UiTheme.PanelPad);
         shell.AddChild(margin);
@@ -136,14 +212,11 @@ public partial class InventoryPanel : UiPanel
         column.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
         margin.AddChild(column);
 
-        var identity = new HBoxContainer();
-        identity.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
-        identity.AddChild(UiIcon.Create(UiIcon.Kind.Inventory, 28f, UiTheme.Accent));
-        Label screenTitle = UiTheme.Title(Loc.T("char.title"));
-        screenTitle.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-        identity.AddChild(screenTitle);
-        column.AddChild(identity);
-        column.AddChild(UiTheme.Divider());
+        // No title ROW: the screen has two rows of its own controls already and no height to spare.
+        // The title the other hub screens carry sits at the head of the tab row instead, and gives
+        // way on a narrow viewport (Rebuild), where the hub strip above the frame is name enough.
+        _title = UiTheme.Title(Loc.T("ui.hub.character"));
+        _title.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
 
         // Tab row (Gear · Spells · Progression · Perks) — built once; only _list rebuilds per tab.
         _tabs = new UiTabs();
@@ -156,6 +229,7 @@ public partial class InventoryPanel : UiPanel
         {
             _activeTab = TabDefs[index].Tab;
             _perkView.ConfirmingRespec = false;
+            _perkView.DeniedId = null;
             MarkDirty();
         };
         // The tabs and the search share one row. ⚠️ The field comes after the tabs, and beside them
@@ -167,6 +241,7 @@ public partial class InventoryPanel : UiPanel
         var tabRow = new HBoxContainer();
         tabRow.AddThemeConstantOverride("separation", UiTheme.SpaceMd);
         _tabs.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        tabRow.AddChild(_title);
         tabRow.AddChild(_tabs);
         column.AddChild(tabRow);
 
@@ -204,8 +279,62 @@ public partial class InventoryPanel : UiPanel
         _toolRow.AddChild(_search);
         tabRow.AddChild(_toolRow);
 
-        (ScrollContainer scroll, _list) = UiTheme.ScrollList();
+        UiSkin.Apply(_search);
+
+        _gear = BuildGearShell();
+        column.AddChild(_gear);
+
+        (_scroll, _list) = UiTheme.ScrollList();
+        column.AddChild(_scroll);
+    }
+
+    /// <summary>The Gear tab's fixed frame: one strip of view, sort and filter controls over three
+    /// columns that each scroll on their own. Only what is inside them is rebuilt.</summary>
+    private Control BuildGearShell()
+    {
+        var gear = new VBoxContainer
+        {
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            SizeFlagsVertical = Control.SizeFlags.ExpandFill,
+        };
+        gear.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
+
+        _strip = UiTheme.FlowRow();
+        gear.AddChild(_strip);
+
+        var columns = new HBoxContainer { SizeFlagsVertical = Control.SizeFlags.ExpandFill };
+        columns.AddThemeConstantOverride("separation", UiTheme.SpaceLg);
+        gear.AddChild(columns);
+
+        (_equipColumn, VBoxContainer equipHead, _equipList) = GearColumn(expand: false);
+        equipHead.AddChild(UiTheme.SectionRule(Loc.T("char.equipment"), first: true));
+        columns.AddChild(_equipColumn);
+
+        (VBoxContainer pack, _packHead, _packList) = GearColumn(expand: true);
+        columns.AddChild(pack);
+
+        (_detailColumn, VBoxContainer detailHead, _detailList) = GearColumn(expand: false);
+        detailHead.AddChild(UiTheme.SectionRule(Loc.T("char.details"), first: true));
+        columns.AddChild(_detailColumn);
+        return gear;
+    }
+
+    /// <summary>One column of the Gear tab: a heading that stays, over a list that scrolls.</summary>
+    private static (VBoxContainer Column, VBoxContainer Head, VBoxContainer List) GearColumn(bool expand)
+    {
+        var column = new VBoxContainer { SizeFlagsVertical = Control.SizeFlags.ExpandFill };
+        if (expand)
+        {
+            column.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        }
+
+        column.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
+        var head = new VBoxContainer();
+        column.AddChild(head);
+
+        (ScrollContainer scroll, VBoxContainer list) = UiTheme.ScrollList();
         column.AddChild(scroll);
+        return (column, head, list);
     }
 
     /// <summary>Opens the Gear tab on the material bag, through the same switch a click on its tab
@@ -213,6 +342,7 @@ public partial class InventoryPanel : UiPanel
     public void ShowMaterials()
     {
         _bagView = true;
+        _equipFocus = null;
         _pending = Pending.None;
         _selected = _inventory?.Materials.Count > 0 ? _inventory.Materials[0].Instance : null;
         _tabs.Select(0);
@@ -275,6 +405,7 @@ public partial class InventoryPanel : UiPanel
     public void ShowGear()
     {
         _bagView = false;
+        _equipFocus = null;
         if (_selected == null && _inventory?.Stacks.Count > 0)
         {
             _selected = _inventory.Stacks[0].Instance;
@@ -288,14 +419,150 @@ public partial class InventoryPanel : UiPanel
     {
         // A respec confirmation is a moment, not a mode: reopening the screen must not land on a pending one.
         _perkView.ConfirmingRespec = false;
+        _perkView.DeniedId = null;
         _pending = Pending.None;
 
-        if (!open)
+        if (open)
         {
+            // What arrived while the pack was shut wears the new pip for as long as this visit lasts,
+            // or until it is looked at.
+            _fresh.Clear();
+            foreach (ItemInstance arrived in ItemPresentation.NewSince(HeldInstances(), _seen))
+            {
+                _fresh.Add(arrived);
+            }
+        }
+        else
+        {
+            MarkAllSeen();
+            _equipFocus = null;
+
             // A hidden field gives up focus on its own, but the keyboard coming back must not depend
             // on that signal arriving.
             GameInput.SetTextEntry(false);
         }
+    }
+
+    /// <summary>Everything in the pack, the material bag and on the body, as instances.</summary>
+    private IEnumerable<ItemInstance> HeldInstances()
+    {
+        if (_inventory != null)
+        {
+            foreach (ItemStack stack in _inventory.AllStacks)
+            {
+                yield return stack.Instance;
+            }
+        }
+
+        if (_equipment != null)
+        {
+            foreach (ItemInstance worn in _equipment.EquippedInstances)
+            {
+                yield return worn;
+            }
+        }
+    }
+
+    /// <summary>Makes everything held known, so nothing wears the new pip: on closing the pack, and
+    /// after a load, which rebuilds every instance and would otherwise mark the whole pack new.</summary>
+    private void MarkAllSeen()
+    {
+        _seen.Clear();
+        _fresh.Clear();
+        foreach (ItemInstance held in HeldInstances())
+        {
+            _seen.Add(held);
+        }
+    }
+
+    /// <summary>The footer legend: what accept does on this tab, the comparison toggle on the Gear tab,
+    /// the sub-tab step, then the hub's own entries.</summary>
+    protected override IReadOnlyList<LegendEntry> Legend
+    {
+        get
+        {
+            var entries = new List<LegendEntry>();
+            if (_activeTab == CharTab.Gear)
+            {
+                entries.Add(new LegendEntry("ui_accept", Loc.T("char.legend.actions")));
+                entries.Add(new LegendEntry(ItemSlot.CompareAction, Loc.T("item.detail.compare")));
+            }
+            else if (_activeTab == CharTab.Perks)
+            {
+                entries.Add(new LegendEntry("ui_accept", Loc.T("char.legend.learn")));
+            }
+
+            entries.Add(new LegendEntry(GameInput.MenuSubPrev, Loc.T("char.legend.tabs"), GameInput.MenuSubNext));
+            entries.AddRange(base.Legend);
+            return entries;
+        }
+    }
+
+    /// <summary>Z/C or LT/RT walk this screen's tabs as one run: Pack, Materials, Progression, Perks,
+    /// Guilds, wrapping at the ends (<see cref="InventoryTabRules"/>).</summary>
+    protected override void OnSubTab(int delta)
+    {
+        int stop = InventoryTabRules.StopOf(_tabs.Current, _bagView);
+        (int tab, bool bag) = InventoryTabRules.FromStop(InventoryTabRules.Step(stop, delta, TabDefs.Length));
+
+        UiAudio.Play(UiCue.Tab);
+
+        // Focus left in the equipment column would be put back there by the rebuild, on a column that
+        // belongs to the pack view. It moves to the view's own tab, and down from there is the grid.
+        int view = bag ? 1 : 0;
+        if (tab == 0 && _activeTab == CharTab.Gear && FocusIsIn(_equipList) && view < _stripControls.Count
+            && IsInstanceValid(_stripControls[view]) && _stripControls[view].IsInsideTree())
+        {
+            _stripControls[view].GrabFocus();
+        }
+
+        _bagView = bag;
+        _equipFocus = null;
+        _pending = Pending.None;
+        if (tab != _tabs.Current)
+        {
+            _tabs.Select(tab); // its handler marks the panel dirty
+        }
+        else
+        {
+            MarkDirty();
+        }
+    }
+
+    /// <summary>Serves the in-place refreshes focus asked for (<see cref="_packStale"/>,
+    /// <see cref="_detailStale"/>) after the base has run any full rebuild.</summary>
+    public override void _Process(double delta)
+    {
+        base._Process(delta);
+        bool paneHadFocus = _restoring && _paneHadFocus;
+        _restoring = false;
+        _paneHadFocus = false;
+        if (!IsOpen || _activeTab != CharTab.Gear)
+        {
+            return;
+        }
+
+        if (paneHadFocus && !FocusIsIn(_detailList))
+        {
+            Control? back = SelectionCell() ?? (_gridCells.Count > 0 && _gridCells[0].IsInsideTree() ? _gridCells[0] : null);
+            back?.GrabFocus();
+        }
+
+        if (!_packStale && !_detailStale)
+        {
+            return;
+        }
+
+        if (_packStale)
+        {
+            FillStrip();
+            FillPack();
+        }
+
+        FillDetail();
+        LinkFocus();
+        _packStale = false;
+        _detailStale = false;
     }
 
     protected override void OnReady()
@@ -332,12 +599,14 @@ public partial class InventoryPanel : UiPanel
     public void SetInventory(InventoryComponent? inventory)
     {
         _inventory = inventory;
+        MarkAllSeen();
         MarkDirty();
     }
 
     public void SetEquipment(EquipmentComponent? equipment)
     {
         _equipment = equipment;
+        MarkAllSeen();
         MarkDirty();
     }
 
@@ -404,17 +673,33 @@ public partial class InventoryPanel : UiPanel
 
     private void OnStoryFlagChanged(Dialogue.StoryFlagChangedEvent e) => MarkDirty();
 
-    private void OnGameLoaded(GameLoadedEvent e) => MarkDirty();
+    private void OnGameLoaded(GameLoadedEvent e)
+    {
+        MarkAllSeen();
+        MarkDirty();
+    }
 
     protected override void Rebuild()
     {
+        _restoring = true;
+        _paneHadFocus = FocusIsIn(_detailList);
         UiTheme.ClearChildren(_list);
 
         // Re-derived per rebuild so a mid-session UI-scale change lands without a restart.
         UiTheme.ApplyScreenInset(Shell);
+        bool roomForTitle = UiTheme.UsableWidth(Shell) >= TitleMinWidth;
+        if (_title.Visible != roomForTitle)
+        {
+            _title.Visible = roomForTitle;
+        }
+
         MeasureColumns();
-        _toolRow.Visible = _activeTab == CharTab.Gear;
-        _gridCells.Clear(); // the cells of the last rebuild were freed with it
+        bool gear = _activeTab == CharTab.Gear;
+        _toolRow.Visible = gear;
+        _gear.Visible = gear;
+        _scroll.Visible = !gear;
+        _packStale = false;
+        _detailStale = false;
 
         switch (_activeTab)
         {
@@ -633,10 +918,19 @@ public partial class InventoryPanel : UiPanel
             return;
         }
 
-        foreach ((string headerKey, Embervale.Stats.StatType[] stats) in StatsPresentation.Sections)
+        for (int index = 0; index < StatsPresentation.Sections.Length; index++)
         {
+            (string headerKey, Embervale.Stats.StatType[] stats) = StatsPresentation.Sections[index];
             VBoxContainer section = Section(Loc.T(headerKey));
             sections.AddChild(section);
+
+            // One stat leads each group at display size; the rest follow as rows. Which one leads is
+            // the character's own doing (the higher of physical and spell power, the highest primary).
+            Embervale.Stats.StatType? hero = StatsPresentation.SectionHero(index, _stats.GetValue);
+            if (hero is { } lead)
+            {
+                section.AddChild(BuildHeroStat(lead));
+            }
 
             var grid = new GridContainer { Columns = 2 };
             grid.AddThemeConstantOverride("h_separation", UiTheme.SpaceLg);
@@ -644,6 +938,11 @@ public partial class InventoryPanel : UiPanel
 
             foreach (Embervale.Stats.StatType stat in stats)
             {
+                if (stat == hero)
+                {
+                    continue;
+                }
+
                 float value = _stats.GetValue(stat);
                 grid.AddChild(UiTheme.Body(Embervale.Stats.StatNames.Label(stat), UiTheme.Dim));
 
@@ -677,6 +976,42 @@ public partial class InventoryPanel : UiPanel
 
             section.AddChild(grid);
         }
+    }
+
+    /// <summary>A group's leading stat: the number at display size, its name beside it, and under the
+    /// name what the number means (the damage it removes, or what a point of it buys).</summary>
+    private Control BuildHeroStat(Embervale.Stats.StatType stat)
+    {
+        float value = _stats!.GetValue(stat);
+
+        var row = new HBoxContainer();
+        row.AddThemeConstantOverride("separation", UiTheme.SpaceMd);
+        row.AddChild(UiTheme.Display(StatsPresentation.Format(stat, value), UiTheme.Text));
+
+        var side = new VBoxContainer
+        {
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            SizeFlagsVertical = Control.SizeFlags.ShrinkCenter,
+        };
+        side.AddThemeConstantOverride("separation", 0);
+        side.AddChild(UiTheme.Body(Embervale.Stats.StatNames.Label(stat), UiTheme.Accent));
+
+        if (StatsPresentation.IsMitigation(stat))
+        {
+            float pct = StatsPresentation.MitigationFraction(value) * 100f;
+            side.AddChild(UiTheme.Caption(
+                Loc.TF("char.stat_reduced", pct.ToString("0.#")),
+                value > 0f ? UiTheme.Good : UiTheme.Disabled));
+        }
+        else if (Embervale.Stats.StatDerivation.IsPrimary(stat))
+        {
+            Label perPoint = UiTheme.Caption(PerPointText(stat));
+            perPoint.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+            side.AddChild(perPoint);
+        }
+
+        row.AddChild(side);
+        return row;
     }
 
     /// <summary>"Per point: +0.8 Physical Power" for a primary, built from <see cref="StatsPresentation.PerPoint"/>.</summary>
@@ -731,78 +1066,160 @@ public partial class InventoryPanel : UiPanel
         _list.AddChild(new PerkTreePanel(_perks, _progression, _inventory, _perkView, MarkDirty, UiTheme.UsableWidth(Shell)));
     }
 
-    // --- The Gear tab (37.5C): equipment column | backpack grid | detail pane ---
+    // --- The Gear tab: one strip over equipment | pack | detail -----------------
 
-    /// <summary>
-    /// Lays the Gear tab out as three columns instead of one scrolling text list. The old list
-    /// could not express the two things the screen most needed to say - what an item *is* at a
-    /// glance, and whether picking it up is an upgrade - because both were words in a row of
-    /// other words.
-    /// </summary>
     /// <summary>
     /// Sizes the Gear tab's three columns against the viewport actually available.
     ///
     /// The side columns shrink first and the grid takes what is left, because the grid is the only
     /// one of the three whose content genuinely reflows — narrowing the detail pane costs a line
-    /// wrap, narrowing the grid costs a column.
+    /// wrap, narrowing the grid costs a column. Each column gives its scrollbar a gutter, which is
+    /// taken off the grid's share here.
     /// </summary>
     private void MeasureColumns()
     {
         float usable = UiTheme.UsableWidth(Shell);
 
-        _sideColumn = Mathf.Clamp(usable * 0.22f, 150f, 230f);
-        _detailColumn = Mathf.Clamp(usable * 0.28f, 200f, 300f);
+        _sideWidth = Mathf.Clamp(usable * 0.22f, 150f, 230f);
+        _detailWidth = Mathf.Clamp(usable * 0.30f, 220f, 320f);
 
-        float forGrid = usable - _sideColumn - _detailColumn - (UiTheme.SpaceLg * 2f);
+        float forGrid = usable - _sideWidth - _detailWidth - (UiTheme.SpaceLg * 2f) - UiTheme.ScrollGutter;
         float cell = SlotSize + UiTheme.GridGap;
         _gridColumns = Mathf.Clamp(Mathf.FloorToInt(forGrid / cell), 4, 10);
     }
 
+    /// <summary>
+    /// Fills the Gear tab's fixed frame. The old screen was one scrolling row of three columns under
+    /// four wrapped rows of sort and filter buttons; this is one strip, and three lists that scroll
+    /// separately, so what is selected stays in view while the pack moves.
+    /// </summary>
     private void BuildGear()
     {
-        var row = new HBoxContainer { SizeFlagsVertical = Control.SizeFlags.ExpandFill };
-        row.AddThemeConstantOverride("separation", UiTheme.SpaceLg);
-        _list.AddChild(row);
+        _equipColumn.CustomMinimumSize = new Vector2(_sideWidth, 0f);
+        _detailColumn.CustomMinimumSize = new Vector2(_detailWidth, 0f);
 
-        row.AddChild(BuildEquipmentColumn());
-        row.AddChild(BuildBackpackColumn());
-        row.AddChild(BuildDetailColumn());
+        FillStrip();
+        FillEquipment();
+        FillPack();
+        FillDetail();
 
-        // Only now is every cell actually in the tree. NodePaths do not exist before that, so this
-        // cannot be folded back into BuildBackpackColumn — see LinkGridFocus.
-        LinkGridFocus();
+        // Only now is every cell actually in the tree. NodePaths do not exist before that.
+        LinkFocus();
     }
 
-    /// <summary>The worn-gear column: one well per slot, in the canonical display order, so an
-    /// empty slot is as visible as a filled one. Selecting a filled slot describes it in the
-    /// detail pane, where the Unequip verb lives.</summary>
-    private Control BuildEquipmentColumn()
+    /// <summary>The one strip: pack or materials, the sort, the kind filter, and, while the player is
+    /// choosing for an equipment slot, what the pack is narrowed to and the way back out. The sort and
+    /// the kind are single buttons that step to the next choice, so neither opens a list that the
+    /// cancel button would have to close before it could close the screen.</summary>
+    private void FillStrip()
     {
-        var col = new VBoxContainer { CustomMinimumSize = new Vector2(_sideColumn, 0f) };
-        col.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
-        col.AddChild(UiTheme.SectionRule(Loc.T("char.equipment"), first: true));
+        UiTheme.ClearChildren(_strip);
+        _stripControls.Clear();
+        if (_inventory == null)
+        {
+            return;
+        }
 
+        UiTabs views = BuildViewRow();
+        _strip.AddChild(views);
+        foreach (Node tab in views.GetChildren())
+        {
+            if (tab is Control control)
+            {
+                TrackStrip(control);
+            }
+        }
+
+        _strip.AddChild(TrackStrip(BuildSortStep()));
+        if (_bagView)
+        {
+            return;
+        }
+
+        if (_equipFocus != null)
+        {
+            Button all = UiTheme.Action(Loc.T("item.strip.show_all"));
+            all.TooltipText = Loc.T("item.strip.show_all_tip");
+            all.AddThemeColorOverride("font_color", UiTheme.Accent);
+            all.Pressed += () =>
+            {
+                _equipFocus = null;
+                MarkDirty();
+            };
+            _strip.AddChild(TrackStrip(all));
+        }
+        else
+        {
+            _strip.AddChild(TrackStrip(BuildKindStep()));
+        }
+    }
+
+    private Control TrackStrip(Control control)
+    {
+        _stripControls.Add(control);
+        control.FocusEntered += OnStripFocus;
+        return control;
+    }
+
+    /// <summary>
+    /// Walking back up to the strip with a pad or the keys ends the choosing for an equipment slot, and
+    /// the pack is whole again: the way into the narrowed view is the equipment column, so the way out
+    /// is leaving the columns. A mouse click on a strip button is not a walk. It keeps the view it
+    /// clicked in (a rebuild here would free the button under the cursor before its press landed) and
+    /// uses the "show whole pack" button instead. Nor is focus put back on a strip button by the
+    /// rebuild its own press caused.
+    /// </summary>
+    private void OnStripFocus()
+    {
+        if (_equipFocus != null && !_restoring && !Godot.Input.IsMouseButtonPressed(MouseButton.Left))
+        {
+            _equipFocus = null;
+            MarkDirty();
+        }
+    }
+
+    /// <summary>The worn-gear column: one row per slot, in the canonical display order, so an empty
+    /// slot is as visible as a filled one. The whole row is the pressable, at the control height: the
+    /// 34 px well inside it is too small a target to be the only way into choosing for a slot.
+    /// Focusing a row narrows the pack to what fits that slot; pressing a worn one steps into the
+    /// detail pane, pressing an empty one into the candidates. An empty slot shows the ghost of what
+    /// belongs in it and says how many pieces in the pack would fit.</summary>
+    private void FillEquipment()
+    {
+        UiTheme.ClearChildren(_equipList);
+        _equipCells.Clear();
         if (_equipment == null)
         {
-            return col;
+            return;
         }
 
         foreach (EquipmentSlot slot in EquipmentSlots.DisplayOrder)
         {
             ItemInstance? item = _equipment.GetEquipped(slot);
+            EquipmentSlot captured = slot;
 
             var line = new HBoxContainer();
             line.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
 
             // The quiver holds a whole stack, so its cell counts the arrows left.
             int held = slot == EquipmentSlot.Ammo ? Mathf.Max(1, _equipment.AmmoCount) : 1;
-            Button cell = ItemSlot.Build(item, held, ReferenceEquals(item, _selected), ItemSlot.CompactSize);
-            if (item is { } worn)
-            {
-                cell.Pressed += () => Select(worn);
-            }
+            Button well = item is null
+                ? ItemSlot.BuildEmpty(slot, ItemSlot.CompactSize)
+                : ItemSlot.Build(item, held, ReferenceEquals(item, _selected), ItemSlot.CompactSize, ItemSlot.Marks.Equipped);
+            well.FocusMode = Control.FocusModeEnum.None;
+            well.MouseFilter = Control.MouseFilterEnum.Ignore;
+            line.AddChild(well);
 
-            line.AddChild(cell);
+            // A frame that draws nothing and pads nothing: the row is a target, not a card.
+            var bare = new StyleBoxFlat { DrawCenter = false };
+            bare.SetContentMarginAll(0f);
+            PanelContainer row = UiTheme.CardButton(null, out Button cell, out VBoxContainer content, bare);
+            row.CustomMinimumSize = new Vector2(0f, UiTheme.ControlHeight);
+            content.Alignment = BoxContainer.AlignmentMode.Center;
+            cell.TooltipText = well.TooltipText;
+            cell.FocusEntered += () => BrowseSlot(captured);
+            cell.ButtonDown += NotePress;
+            cell.Pressed += () => ChooseFor(captured);
 
             var text = new VBoxContainer
             {
@@ -812,55 +1229,68 @@ public partial class InventoryPanel : UiPanel
             text.AddThemeConstantOverride("separation", 0);
             text.AddChild(UiTheme.Caption(EquipmentSlots.Label(slot)));
 
-            // A long affixed name is trimmed rather than allowed to widen the column; the detail pane
-            // and the tooltip carry the full text.
-            Label name = UiTheme.Body(
-                item?.DisplayName ?? Loc.T("item.empty_slot"),
-                item is null ? UiTheme.Disabled : UiTheme.RarityColor(item.Rarity));
+            // A long affixed name takes a second line and is then trimmed, rather than allowed to
+            // widen the column; the detail pane and the tooltip carry the full text.
+            int fits = item is null ? CountFitting(slot) : 0;
+            Label name = item is not null
+                ? UiTheme.Body(item.DisplayName, UiTheme.RarityColor(item.Rarity))
+                : fits > 0
+                    ? UiTheme.Body(Loc.TF("item.slot_empty_fits", fits), UiTheme.Dim)
+                    : UiTheme.Body(Loc.T("item.empty_slot"), UiTheme.Disabled);
+            name.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+            name.MaxLinesVisible = 2;
             name.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
-            name.TooltipText = item?.DisplayName ?? string.Empty;
+            name.TooltipText = item?.DisplayName ?? name.Text;
             text.AddChild(name);
             line.AddChild(text);
 
-            col.AddChild(line);
+            content.AddChild(line);
+            _equipList.AddChild(row);
+            _equipCells.Add((slot, item, cell, well));
         }
-
-        return col;
     }
 
-    /// <summary>The backpack: a pack / materials switch and a sort and filter block over a grid of
-    /// slots. The pack is a container of known size, so its free slots are drawn; the material bag
-    /// has no size, so its grid is exactly as long as what is in it.</summary>
-    private Control BuildBackpackColumn()
+    /// <summary>How many stacks in the pack would go in <paramref name="slot"/>.</summary>
+    private int CountFitting(EquipmentSlot slot)
     {
-        var col = new VBoxContainer
+        int count = 0;
+        if (_inventory != null)
         {
-            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-            SizeFlagsVertical = Control.SizeFlags.ExpandFill,
-        };
-        col.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
-        col.AddChild(UiTheme.SectionRule(BackpackHeader(), first: true));
-
-        if (_inventory == null)
-        {
-            return col;
+            foreach (ItemStack stack in _inventory.Stacks)
+            {
+                if (stack.Instance.Equippable?.Slot == slot)
+                {
+                    count++;
+                }
+            }
         }
 
-        col.AddChild(BuildViewRow());
-        col.AddChild(BuildSortRow());
-        if (!_bagView)
+        return count;
+    }
+
+    /// <summary>The pack column: its heading (slots used, weight carried) and a grid of slots. The
+    /// pack is a container of known size, so its free slots are drawn; the material bag has no size,
+    /// so its grid is exactly as long as what is in it.</summary>
+    private void FillPack()
+    {
+        UiTheme.ClearChildren(_packHead);
+        UiTheme.ClearChildren(_packList);
+        _gridCells.Clear();
+        _cellOf.Clear();
+
+        // Narrowed to an equipment slot, the heading says so: the pack has not shrunk, the view has.
+        _packHead.AddChild(UiTheme.SectionRule(
+            _equipFocus is { } fitting && !_bagView ? Loc.TF("item.pack_fits", EquipmentSlots.Label(fitting)) : BackpackHeader(),
+            first: true));
+        if (_inventory == null)
         {
-            col.AddChild(BuildFilterRow());
-            if (BuildSlotFilterRow() is { } slots)
-            {
-                col.AddChild(slots);
-            }
+            return;
         }
 
         var grid = new GridContainer { Columns = _gridColumns };
         grid.AddThemeConstantOverride("h_separation", UiTheme.GridGap);
         grid.AddThemeConstantOverride("v_separation", UiTheme.GridGap);
-        col.AddChild(grid);
+        _packList.AddChild(grid);
 
         IReadOnlyList<ItemStack> source = _bagView ? _inventory.Materials : _inventory.Stacks;
         var shown = new List<ItemStack>();
@@ -875,16 +1305,22 @@ public partial class InventoryPanel : UiPanel
         foreach (ItemStack stack in ItemPresentation.Sort(shown, _sort, st => ItemPresentation.KeyOf(st.Instance)))
         {
             ItemInstance instance = stack.Instance;
-            Button cell = ItemSlot.Build(instance, stack.Quantity, ReferenceEquals(instance, _selected), SlotSize);
-            cell.Pressed += () => Select(instance);
+            Button cell = ItemSlot.Build(
+                instance, stack.Quantity, ReferenceEquals(instance, _selected), SlotSize,
+                _fresh.Contains(instance) ? ItemSlot.Marks.New : ItemSlot.Marks.None);
+            cell.FocusEntered += () => Browse(instance);
+            cell.ButtonDown += NotePress;
+            cell.Pressed += () => Activate(instance);
             grid.AddChild(cell);
             _gridCells.Add(cell);
+            _cellOf[instance] = cell;
         }
 
         // The pack's free slots, as empty wells, so it reads as a container of known size rather
         // than an arbitrarily long list. They count what is really free, not what the filter hid,
-        // so narrowing the view never makes the pack look emptier than it is.
-        if (!_bagView)
+        // so narrowing the view never makes the pack look emptier than it is. While the pack is
+        // narrowed to one equipment slot they are left out: that view is a short list of candidates.
+        if (!_bagView && _equipFocus == null)
         {
             for (int i = source.Count; i < _inventory.Capacity; i++)
             {
@@ -896,20 +1332,24 @@ public partial class InventoryPanel : UiPanel
 
         if (shown.Count == 0)
         {
-            string key = source.Count > 0 ? "item.no_match" : _bagView ? "item.materials_empty" : "char.empty";
-            col.AddChild(UiTheme.Body(Loc.T(key), UiTheme.Dim));
+            string key = _equipFocus != null && !_bagView ? "item.slot_empty_none"
+                : source.Count > 0 ? "item.no_match"
+                : _bagView ? "item.materials_empty" : "char.empty";
+            Label none = UiTheme.Body(Loc.T(key), UiTheme.Dim);
+            none.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+            _packList.AddChild(none);
         }
-
-        return col;
     }
 
     /// <summary>Whether a stack survives the filters and the typed search. The search reads the
-    /// name, the category and the affix lines, so "armor" finds a ring that grants it.</summary>
+    /// name, the category and the affix lines, so "armor" finds a ring that grants it. While the
+    /// player is choosing for an equipment slot, that slot is the filter and the kind is not asked.</summary>
     private bool Shows(ItemStack stack)
     {
         ItemInstance instance = stack.Instance;
         EquipmentSlot slot = instance.Equippable?.Slot ?? EquipmentSlot.None;
-        if (!_bagView && !ItemPresentation.PassesFilter(instance.Type, slot, _filter, _slotFilter))
+        if (!_bagView && !ItemPresentation.PassesFilter(
+                instance.Type, slot, _equipFocus is null ? _filter : null, _equipFocus))
         {
             return false;
         }
@@ -931,7 +1371,7 @@ public partial class InventoryPanel : UiPanel
 
     /// <summary>The pack / materials switch, on the shared tab strip so the active one carries the
     /// ember underline as well as the colour.</summary>
-    private Control BuildViewRow()
+    private UiTabs BuildViewRow()
     {
         var views = new UiTabs();
         views.Add(Loc.TF("item.view_pack", _inventory!.UsedSlots, _inventory.Capacity));
@@ -944,31 +1384,106 @@ public partial class InventoryPanel : UiPanel
         views.TabChanged += index =>
         {
             _bagView = index == 1;
+            _equipFocus = null;
             _pending = Pending.None;
             MarkDirty();
         };
         return views;
     }
 
+    /// <summary>The sort, as one button that names the order in force and steps to the next.</summary>
+    private Control BuildSortStep()
+    {
+        int current = 0;
+        for (int i = 0; i < SortDefs.Length; i++)
+        {
+            if (SortDefs[i].Order == _sort)
+            {
+                current = i;
+            }
+        }
+
+        Button step = UiTheme.Action(Loc.TF("item.strip.sort", Loc.T(SortDefs[current].Key)));
+        step.TooltipText = Loc.T("item.strip.step_tip");
+
+        // Never rebuild inside a button signal (CLAUDE.md section 8) - flip the flag, mark
+        // dirty, and let _Process rebuild on the next frame.
+        step.Pressed += () =>
+        {
+            _sort = SortDefs[(current + 1) % SortDefs.Length].Order;
+            MarkDirty();
+        };
+        return step;
+    }
+
+    /// <summary>The kind filter, as one button that steps through All and then each category the pack
+    /// actually holds: a filter for a category you are carrying none of is a control that does
+    /// nothing. A filter left on a kind the pack no longer has is dropped.</summary>
+    private Control BuildKindStep()
+    {
+        var present = new List<ItemType>();
+        foreach (ItemStack stack in _inventory!.Stacks)
+        {
+            if (!present.Contains(stack.Instance.Type))
+            {
+                present.Add(stack.Instance.Type);
+            }
+        }
+
+        present.Sort();
+        if (_filter is { } active && !present.Contains(active))
+        {
+            _filter = null;
+        }
+
+        string name = _filter is { } kind ? Loc.T(ItemSlot.TypeKey(kind)) : Loc.T("item.filter_all");
+        Button step = UiTheme.Action(Loc.TF("item.strip.kind", name));
+        step.TooltipText = Loc.T("item.strip.step_tip");
+        if (_filter != null)
+        {
+            step.AddThemeColorOverride("font_color", UiTheme.Accent);
+        }
+
+        step.Pressed += () =>
+        {
+            int next = _filter is { } now ? present.IndexOf(now) + 1 : 0;
+            _filter = next < present.Count ? present[next] : null;
+            MarkDirty();
+        };
+        return step;
+    }
+
     /// <summary>
-    /// Wires explicit focus neighbours across the grid.
+    /// Wires explicit focus neighbours across the Gear tab.
     ///
     /// Without this a d-pad walks the **tab order**, which in a GridContainer is left to right
     /// through every cell - so "down" moves one square right. Godot cannot infer the grid shape.
     /// UI_STYLE section 6 calls this out because it is invisible with a mouse and immediately
     /// broken on a controller, which is exactly the combination that ships.
     ///
-    /// ⚠️ **Must run after the whole tab is parented, not while the grid is being built.**
+    /// ⚠️ **Must run after the cells are parented, not while they are being built.**
     /// `FocusNeighbor*` takes a NodePath, and `GetPath()` throws on a node that is not yet in the
-    /// scene tree. The first pass wired neighbours inside the grid builder, whose result is only
-    /// added to its parent *after* it returns — so every cell errored, every frame the screen was
-    /// open, and the grid still worked under a mouse.
+    /// scene tree. It also has to run again whenever the pack is refilled on its own: a neighbour
+    /// path that points at a freed cell is an error the moment the d-pad goes that way.
     ///
-    /// The pack and the material bag share this pass: both fill <see cref="_gridCells"/> in display
-    /// order, and only one of them is on screen at a time.
+    /// The grid's cells link to each other; its left edge leads to the equipment column, and every
+    /// equipment cell leads right into the first cell of the grid. Down from anywhere on the strip
+    /// lands in the pack, not on the equipment column the engine's own search would pick from the
+    /// left-hand buttons: stepping onto an equipment cell narrows the pack, and that should be
+    /// something the player went left to do. The pack and the material bag share this pass: both
+    /// fill <see cref="_gridCells"/> in display order.
     /// </summary>
-    private void LinkGridFocus()
+    private void LinkFocus()
     {
+        Button? home = null;
+        foreach ((EquipmentSlot slot, ItemInstance? _, Button cell, Button _) in _equipCells)
+        {
+            if (cell.IsInsideTree() && (home == null || slot == _equipFocus))
+            {
+                home = cell;
+            }
+        }
+
         for (int i = 0; i < _gridCells.Count; i++)
         {
             if (!_gridCells[i].IsInsideTree())
@@ -981,6 +1496,10 @@ public partial class InventoryPanel : UiPanel
             if (column > 0)
             {
                 _gridCells[i].FocusNeighborLeft = _gridCells[i - 1].GetPath();
+            }
+            else if (home != null)
+            {
+                _gridCells[i].FocusNeighborLeft = home.GetPath();
             }
 
             if (column < _gridColumns - 1 && i + 1 < _gridCells.Count)
@@ -998,160 +1517,274 @@ public partial class InventoryPanel : UiPanel
                 _gridCells[i].FocusNeighborBottom = _gridCells[i + _gridColumns].GetPath();
             }
         }
-    }
 
-    private Control BuildSortRow()
-    {
-        HFlowContainer row = UiTheme.FlowRow();
-        row.AddChild(Centred(UiTheme.Caption(Loc.T("item.sort"))));
-
-        foreach ((ItemPresentation.SortOrder order, string key) in new[]
-                 {
-                     (ItemPresentation.SortOrder.Name, "item.sort_name"),
-                     (ItemPresentation.SortOrder.Rarity, "item.sort_rarity"),
-                     (ItemPresentation.SortOrder.Type, "item.sort_type"),
-                     (ItemPresentation.SortOrder.Level, "item.sort_level"),
-                     (ItemPresentation.SortOrder.Weight, "item.sort_weight"),
-                     (ItemPresentation.SortOrder.Value, "item.sort_value"),
-                 })
+        bool anyCell = _gridCells.Count > 0 && _gridCells[0].IsInsideTree();
+        for (int i = 0; i < _equipCells.Count; i++)
         {
-            ItemPresentation.SortOrder captured = order;
-            Button button = UiTheme.Action(Loc.T(key));
-            if (_sort == order)
+            Button cell = _equipCells[i].Cell;
+            if (!cell.IsInsideTree())
             {
-                button.AddThemeColorOverride("font_color", UiTheme.Accent);
+                continue;
             }
 
-            // Never rebuild inside a button signal (CLAUDE.md section 8) - flip the flag, mark
-            // dirty, and let _Process rebuild on the next frame.
-            button.Pressed += () =>
+            if (i > 0)
             {
-                _sort = captured;
-                MarkDirty();
-            };
-            row.AddChild(button);
+                cell.FocusNeighborTop = _equipCells[i - 1].Cell.GetPath();
+            }
+
+            if (i + 1 < _equipCells.Count)
+            {
+                cell.FocusNeighborBottom = _equipCells[i + 1].Cell.GetPath();
+            }
+
+            // With no cell to go to, the neighbour is cleared and the engine's own search takes over.
+            cell.FocusNeighborRight = anyCell ? _gridCells[0].GetPath() : new NodePath();
         }
 
-        return row;
+        foreach (Control control in _stripControls)
+        {
+            if (control.IsInsideTree())
+            {
+                control.FocusNeighborBottom = anyCell ? _gridCells[0].GetPath() : new NodePath();
+            }
+        }
+
+        // Left out of the detail pane goes back to the cell the pane is describing. The engine's own
+        // search would pick whichever pack cell is nearest, and arriving there reselects.
+        if (SelectionCell() is { } back)
+        {
+            LinkPane(_detailList, back.GetPath(), leads: true);
+        }
     }
 
-    private Control BuildFilterRow()
+    /// <summary>Points the pane's controls left at <paramref name="back"/>: every one that has no
+    /// other control before it in its own row. Returns whether it found any control at all.</summary>
+    private static bool LinkPane(Node node, NodePath back, bool leads)
     {
-        HFlowContainer row = UiTheme.FlowRow();
-
-        Button all = UiTheme.Action(Loc.T("item.filter_all"));
-        if (_filter is null)
+        bool row = node is HBoxContainer or HFlowContainer;
+        bool any = false;
+        foreach (Node child in node.GetChildren())
         {
-            all.AddThemeColorOverride("font_color", UiTheme.Accent);
-        }
-
-        all.Pressed += () =>
-        {
-            _filter = null;
-            MarkDirty();
-        };
-        row.AddChild(all);
-
-        // Only categories actually present in the pack get a button - a filter for a category you
-        // are carrying none of is a control that does nothing.
-        var present = new List<ItemType>();
-        if (_inventory != null)
-        {
-            foreach (ItemStack stack in _inventory.Stacks)
+            bool found;
+            if (child is Control { FocusMode: Control.FocusModeEnum.All } control)
             {
-                if (!present.Contains(stack.Instance.Type))
+                if (leads)
                 {
-                    present.Add(stack.Instance.Type);
+                    control.FocusNeighborLeft = back;
                 }
+
+                found = true;
+            }
+            else
+            {
+                found = LinkPane(child, back, leads);
+            }
+
+            any |= found;
+            if (row && found)
+            {
+                leads = false;
             }
         }
 
-        present.Sort();
-        foreach (ItemType type in present)
-        {
-            ItemType captured = type;
-            Button button = UiTheme.Action(Loc.T(ItemSlot.TypeKey(type)));
-            if (_filter == type)
-            {
-                button.AddThemeColorOverride("font_color", UiTheme.Accent);
-            }
-
-            button.Pressed += () =>
-            {
-                _filter = captured;
-                MarkDirty();
-            };
-            row.AddChild(button);
-        }
-
-        return row;
+        return any;
     }
 
-    /// <summary>The gear-slot filter: one button per slot the pack actually holds gear for. Absent
-    /// until there are two slots to choose between, and a filter left pointing at a slot the pack no
-    /// longer has gear for is dropped rather than left hiding everything behind a button that is gone.</summary>
-    private Control? BuildSlotFilterRow()
+    /// <summary>The cell showing what the detail pane describes: the selected item's pack cell or
+    /// equipment row, or, with nothing selected, the row of the slot being chosen for.</summary>
+    private Control? SelectionCell()
     {
-        var present = new List<EquipmentSlot>();
-        foreach (ItemStack stack in _inventory!.Stacks)
+        if (_selected != null && _cellOf.TryGetValue(_selected, out Button? packed) && IsInstanceValid(packed) && packed.IsInsideTree())
         {
-            if (stack.Instance.Equippable is { } gear && gear.Slot != EquipmentSlot.None && !present.Contains(gear.Slot))
+            return packed;
+        }
+
+        foreach ((EquipmentSlot slot, ItemInstance? item, Button cell, Button _) in _equipCells)
+        {
+            if (cell.IsInsideTree() && (_selected != null ? ReferenceEquals(item, _selected) : slot == _equipFocus))
             {
-                present.Add(gear.Slot);
+                return cell;
             }
         }
 
-        if (_slotFilter is { } active && !present.Contains(active))
-        {
-            _slotFilter = null;
-        }
-
-        if (present.Count < 2)
-        {
-            return null;
-        }
-
-        HFlowContainer row = UiTheme.FlowRow();
-        Button any = UiTheme.Action(Loc.T("item.filter_any_slot"));
-        if (_slotFilter is null)
-        {
-            any.AddThemeColorOverride("font_color", UiTheme.Accent);
-        }
-
-        any.Pressed += () =>
-        {
-            _slotFilter = null;
-            MarkDirty();
-        };
-        row.AddChild(any);
-
-        present.Sort();
-        foreach (EquipmentSlot slot in present)
-        {
-            EquipmentSlot captured = slot;
-            Button button = UiTheme.Action(EquipmentSlots.Label(slot));
-            if (_slotFilter == slot)
-            {
-                button.AddThemeColorOverride("font_color", UiTheme.Accent);
-            }
-
-            button.Pressed += () =>
-            {
-                _slotFilter = captured;
-                MarkDirty();
-            };
-            row.AddChild(button);
-        }
-
-        return row;
+        return null;
     }
 
-    /// <summary>The detail pane: what the selected item is, how it compares, and what can be done
-    /// with it.</summary>
-    private Control BuildDetailColumn()
+    private bool FocusIsIn(Control root) =>
+        GetViewport()?.GuiGetFocusOwner() is { } focus && root.IsAncestorOf(focus);
+
+    /// <summary>Steps from a cell into the detail pane's first live button. This is the pad's and the
+    /// keys' only way to the pane that does not cross another cell, and crossing a cell reselects.</summary>
+    private void EnterPane()
     {
-        var col = new VBoxContainer { CustomMinimumSize = new Vector2(_detailColumn, 0f) };
-        col.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
+        if (_packStale || _detailStale)
+        {
+            return; // the pane is about to be refilled
+        }
+
+        if (!UiFocus.GrabFirst(_detailList))
+        {
+            UiAudio.Play(UiCue.Denied);
+        }
+    }
+
+    // --- Selection follows focus ---------------------------------------------------------------
+
+    /// <summary>Focus arrived on a pack cell: the detail pane follows it.</summary>
+    private void Browse(ItemInstance instance)
+    {
+        if (!ReferenceEquals(_selected, instance))
+        {
+            SetSelection(instance);
+        }
+    }
+
+    /// <summary>Focus arrived on an equipment cell: the pane shows what is worn there (or that the
+    /// slot is empty) and the pack narrows to what would fit it.</summary>
+    private void BrowseSlot(EquipmentSlot slot)
+    {
+        if (_restoring)
+        {
+            return;
+        }
+
+        ItemInstance? worn = _equipment?.GetEquipped(slot);
+        if (_equipFocus == slot && !_bagView && ReferenceEquals(_selected, worn))
+        {
+            return;
+        }
+
+        if (_equipFocus != slot || _bagView)
+        {
+            _equipFocus = slot;
+            _bagView = false;
+            _packStale = true;
+        }
+
+        SetSelection(worn);
+    }
+
+    /// <summary>Moves the selection without a rebuild: the ember rule leaves one cell and lands on
+    /// another, a new pip is taken off once its item has been looked at, and the detail pane is
+    /// refilled on the next frame. Rebuilding the grid here would free the very cell whose focus
+    /// signal is running.</summary>
+    private void SetSelection(ItemInstance? instance)
+    {
+        ItemInstance? previous = _selected;
+        _selected = instance;
+        _pending = Pending.None;
+        _selectedFrame = Engine.GetProcessFrames();
+        _detailStale = true;
+
+        if (!ReferenceEquals(previous, instance))
+        {
+            Restyle(previous, false);
+            Restyle(instance, true);
+        }
+
+        if (instance != null && _fresh.Remove(instance) && _cellOf.TryGetValue(instance, out Button? seen) && IsInstanceValid(seen))
+        {
+            ItemSlot.ClearNew(seen);
+        }
+    }
+
+    private void Restyle(ItemInstance? instance, bool selected)
+    {
+        if (instance == null)
+        {
+            return;
+        }
+
+        if (_cellOf.TryGetValue(instance, out Button? cell) && IsInstanceValid(cell))
+        {
+            ItemSlot.SetSelected(cell, instance, selected);
+        }
+
+        foreach ((EquipmentSlot _, ItemInstance? item, Button _, Button worn) in _equipCells)
+        {
+            if (ReferenceEquals(item, instance) && IsInstanceValid(worn))
+            {
+                ItemSlot.SetSelected(worn, instance, selected);
+            }
+        }
+    }
+
+    /// <summary>A press began. If the selection moved on this same frame, the press is the click that
+    /// moved it (a click focuses a cell before it presses it) and is spent on selecting.</summary>
+    private void NotePress()
+    {
+        _pressSelected = _selectedFrame == Engine.GetProcessFrames();
+        _pressByMouse = Godot.Input.IsMouseButtonPressed(MouseButton.Left);
+    }
+
+    /// <summary>A pack cell was pressed. The first press selects. Accept on the selected cell steps
+    /// into the detail pane, onto the first thing that can be done with the item (Equip, for gear).
+    /// A second mouse click on a piece of gear puts it on, since the mouse reaches the pane unaided.
+    /// Only gear: putting on the wrong helmet is undone in one press, drinking the wrong potion is not.</summary>
+    private void Activate(ItemInstance instance)
+    {
+        if (_pressSelected || !ReferenceEquals(_selected, instance))
+        {
+            Browse(instance);
+            return;
+        }
+
+        if (!_pressByMouse || !instance.IsEquippable || _equipment == null)
+        {
+            EnterPane();
+            return;
+        }
+
+        if (_equipment.CanEquip(instance) == EquipRefusal.None)
+        {
+            UiAudio.Play(UiCue.Confirm);
+            _equipment.Equip(instance);
+        }
+        else
+        {
+            // The reason is already written under the Equip button in the pane.
+            UiAudio.Play(UiCue.Denied);
+        }
+    }
+
+    /// <summary>An equipment row was pressed. Worn gear steps into the detail pane, where Unequip is;
+    /// an empty slot steps into the pack's candidates for it (right from any row does the same).</summary>
+    private void ChooseFor(EquipmentSlot slot)
+    {
+        if (_pressSelected || _packStale)
+        {
+            return;
+        }
+
+        if (_equipFocus != slot || _bagView)
+        {
+            BrowseSlot(slot); // focus was put back here by a rebuild: the press is the choosing
+            return;
+        }
+
+        if (_equipment?.GetEquipped(slot) != null)
+        {
+            EnterPane();
+            return;
+        }
+
+        if (_gridCells.Count > 0 && IsInstanceValid(_gridCells[0]) && _gridCells[0].IsInsideTree())
+        {
+            _gridCells[0].GrabFocus();
+        }
+        else
+        {
+            UiAudio.Play(UiCue.Denied); // nothing in the pack fits; the pack column says so
+        }
+    }
+
+    /// <summary>The detail pane: what the selected item is, how it compares, what wearing it would do
+    /// to the sheet, and what can be done with it. It is always there; with nothing selected it says
+    /// what to do, and on an empty equipment slot it says what the slot is waiting for.</summary>
+    private void FillDetail()
+    {
+        VBoxContainer col = _detailList;
+        UiTheme.ClearChildren(col);
 
         if (_selected is not { } instance || !StillHeld(instance))
         {
@@ -1161,27 +1794,35 @@ public partial class InventoryPanel : UiPanel
             // panel does not get an event for "the thing you had selected left your pack".
             _selected = null;
             _pending = Pending.None;
-            col.AddChild(UiTheme.Body(Loc.T("item.select_hint"), UiTheme.Dim));
-            return col;
+            BuildEmptyDetail(col);
+            return;
         }
 
         // The card works the comparison out itself from what is worn: one slot for most gear, every
         // ring slot for a ring, and nothing for gear already on the body - it *is* the baseline.
         bool worn = _equipment != null && _equipment.IsInstanceEquipped(instance);
-        col.AddChild(ItemSlot.Detail(
-            instance, new ItemSlot.DetailContext(_equipment, _progression?.Level ?? 0, Compare: true)));
+        var context = new ItemSlot.DetailContext(_equipment, _progression?.Level ?? 0, Compare: true)
+        {
+            Actions = new[] { new LegendEntry("ui_accept", Loc.T("char.legend.actions")) },
+        };
+        col.AddChild(ItemSlot.Detail(instance, context));
+
+        if (!worn && BuildSheetPreview(instance) is { } preview)
+        {
+            col.AddChild(preview);
+        }
 
         ItemStack? held = worn ? null : StackOf(instance);
         if (held != null && _pending == Pending.Split && CanSplit(held))
         {
             BuildSplit(col, held);
-            return col;
+            return;
         }
 
         if (held != null && _pending == Pending.Drop && ItemTransfer.CanDrop(instance))
         {
             BuildDropConfirm(col, held);
-            return col;
+            return;
         }
 
         _pending = Pending.None;
@@ -1194,8 +1835,148 @@ public partial class InventoryPanel : UiPanel
         {
             col.AddChild(BuildStackActions(held));
         }
+    }
 
-        return col;
+    /// <summary>The pane with no item in it: the standing hint, or, on an empty equipment slot, the
+    /// slot's name, whether anything in the pack fits it and how to get to those pieces.</summary>
+    private void BuildEmptyDetail(VBoxContainer col)
+    {
+        if (_equipFocus is not { } slot || _equipment?.GetEquipped(slot) != null)
+        {
+            Label hint = UiTheme.Body(Loc.T("item.select_hint"), UiTheme.Dim);
+            hint.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+            col.AddChild(hint);
+            return;
+        }
+
+        col.AddChild(UiTheme.Body(Loc.TF("item.slot_empty_title", EquipmentSlots.Label(slot))));
+
+        int fits = CountFitting(slot);
+        Label say = UiTheme.Body(
+            fits > 0 ? Loc.TF("item.slot_empty_pick", fits) : Loc.T("item.slot_empty_none"), UiTheme.Dim);
+        say.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+        col.AddChild(say);
+    }
+
+    /// <summary>
+    /// What putting this piece on would do to the whole sheet, or null when it would change nothing.
+    /// The card above compares the two items; this follows the change through: the primaries a piece
+    /// grants also move the stats they buy (<see cref="StatsPresentation.DerivedDelta"/>), so +2
+    /// Strength reads here as Physical Power as well. Each row is the value after the swap, an arrow
+    /// and the signed change. Measured against what is worn in the piece's own slot.
+    /// </summary>
+    private Control? BuildSheetPreview(ItemInstance instance)
+    {
+        if (instance.Equippable is not { } gear || _equipment == null)
+        {
+            return null;
+        }
+
+        IReadOnlyList<(Embervale.Stats.StatType Stat, float Delta)> changes = StatsPresentation.DerivedDelta(
+            ItemPresentation.Compare(instance, _equipment.GetEquipped(gear.Slot)));
+        if (changes.Count == 0)
+        {
+            return null;
+        }
+
+        var box = new VBoxContainer();
+        box.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
+        box.AddChild(UiTheme.SectionRule(Loc.T("item.preview.title"), first: true));
+
+        var grid = new GridContainer { Columns = 3 };
+        grid.AddThemeConstantOverride("h_separation", UiTheme.SpaceSm);
+        grid.AddThemeConstantOverride("v_separation", UiTheme.LineGap);
+        foreach ((Embervale.Stats.StatType stat, float delta) in changes)
+        {
+            // Wraps, like the card's own stat names: "Arcane Re..." beside a number says nothing.
+            Label name = UiTheme.Body(Embervale.Stats.StatNames.Label(stat), UiTheme.Dim);
+            name.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+            name.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+            grid.AddChild(name);
+
+            // The value the sheet would read after the swap; left blank when there is no sheet to read.
+            Label after = UiTheme.Body(
+                _stats != null ? StatsPresentation.Format(stat, _stats.GetValue(stat) + delta) : string.Empty);
+            after.HorizontalAlignment = HorizontalAlignment.Right;
+            grid.AddChild(after);
+
+            var change = new HBoxContainer();
+            change.AddThemeConstantOverride("separation", UiTheme.Space2xs);
+            change.AddChild(UiTheme.DeltaArrow(delta));
+            change.AddChild(UiTheme.Caption(
+                StatsPresentation.FormatDelta(stat, delta), delta > 0f ? UiTheme.Good : UiTheme.Bad));
+            grid.AddChild(change);
+        }
+
+        box.AddChild(grid);
+        return box;
+    }
+
+    // --- Capture hooks (the screenshot harnesses) ------------------------------------------------
+
+    /// <summary>Puts the Gear tab in the state focusing an equipment cell leaves: the pack narrowed to
+    /// what fits <paramref name="slot"/> and the pane on what is worn there.</summary>
+    public void FocusEquipmentSlotForCapture(EquipmentSlot slot)
+    {
+        _bagView = false;
+        _equipFocus = slot;
+        _selected = _equipment?.GetEquipped(slot);
+        _pending = Pending.None;
+        _tabs.Select(0);
+        MarkDirty();
+    }
+
+    /// <summary>Selects the first piece of gear in the pack that has something worn to be compared
+    /// with, and opens or closes the side-by-side view. False when the pack holds no such piece.</summary>
+    public bool CompareForCapture(bool sideBySide)
+    {
+        ItemSlot.CompareOpen = sideBySide;
+        if (_inventory == null || _equipment == null)
+        {
+            return false;
+        }
+
+        foreach (ItemStack stack in _inventory.Stacks)
+        {
+            if (stack.Instance.Equippable is { } gear && _equipment.GetEquipped(gear.Slot) != null)
+            {
+                _bagView = false;
+                _equipFocus = null;
+                _selected = stack.Instance;
+                _pending = Pending.None;
+                _tabs.Select(0);
+                MarkDirty();
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>The equipment slot the pack is narrowed to, if any (read by `--uishots`).</summary>
+    public EquipmentSlot? EquipmentFocus => _activeTab == CharTab.Gear ? _equipFocus : null;
+
+    /// <summary>How many pack cells the last fill drew (read by `--uishots`).</summary>
+    public int ShownCellCount => _gridCells.Count;
+
+    /// <summary>How many held items wear the new pip (read by `--uishots`).</summary>
+    public int NewItemCount => _fresh.Count;
+
+    /// <summary>Whether the detail pane's card is showing its side-by-side view (read by `--uishots`).</summary>
+    public bool ShowingSideBySide
+    {
+        get
+        {
+            foreach (Node child in _detailList.GetChildren())
+            {
+                if (child is ItemDetailCard card)
+                {
+                    return card.ShowingSideBySide;
+                }
+            }
+
+            return false;
+        }
     }
 
     /// <summary>The verbs available for the selected item. Built from the item rather than from

@@ -8,8 +8,8 @@ using Godot;
 namespace Embervale.UI;
 
 /// <summary>
-/// The aimed-at target's nameplate (Phase 18; lifted out of <c>GameHud</c> in 37.5B). Name,
-/// health, and — new in 37.5B — a **disposition spine**: a coloured left edge saying whether the
+/// The aimed-at target's nameplate (Phase 18; lifted out of <c>GameHud</c> in 37.5B). A HUD plate
+/// with keylined bars: name, health, and — new in 37.5B — a **disposition spine**: a coloured left edge saying whether the
 /// thing you are looking at wants to kill you. The Frostfang clans and the Ancient dragon are
 /// neutral-until-provoked, so "is this hostile?" stopped being answerable from the model alone
 /// the moment Phase 34.5 landed, and the HUD never said.
@@ -19,6 +19,8 @@ namespace Embervale.UI;
 /// </summary>
 public partial class Nameplate : PanelContainer
 {
+    private const float BarWidth = 180f;
+
     private Label _name = null!;
     private JuicedBar _bar = null!;
     private StyleBoxFlat _frame = null!;
@@ -37,39 +39,66 @@ public partial class Nameplate : PanelContainer
     private string? _tagKeyShown;
     private Color _tagTintShown = new(-1f, -1f, -1f, -1f);
 
+    private static Nameplate? _current;
+
+    /// <summary>Who the plate is naming on screen right now, or null: nothing aimed at, or the plate
+    /// hidden by the HUD (the boss frame or an event banner owns the top centre, the element is off).
+    /// What the enemy plates ask so they neither double up on a target nor leave it with no bar.</summary>
+    public static IEntity? Naming =>
+        _current is { } plate && IsInstanceValid(plate) && plate.IsVisibleInTree() ? plate._last : null;
+
+    public override void _EnterTree() => _current = this;
+
+    public override void _ExitTree()
+    {
+        if (ReferenceEquals(_current, this))
+        {
+            _current = null;
+        }
+    }
+
     public Nameplate()
     {
         MouseFilter = MouseFilterEnum.Ignore;
         Visible = false;
-        CustomMinimumSize = new Vector2(200, 0);
         SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
 
-        _frame = UiTheme.Compact(UiTheme.CardStyle(UiTheme.Neutral));
-        AddThemeStyleboxOverride("panel", _frame);
+        AddThemeStyleboxOverride("panel", new StyleBoxEmpty());
 
-        var col = new VBoxContainer();
+        // The plate is the HUD's own (a translucent cut with one lit edge), and that one edge is
+        // the disposition spine.
+        PanelContainer plate = UiTheme.HudPlate(UiTheme.Neutral);
+        _frame = UiTheme.HudPlateStyle(UiTheme.Neutral);
+        plate.AddThemeStyleboxOverride("panel", _frame);
+
+        var col = new VBoxContainer { MouseFilter = MouseFilterEnum.Ignore };
         col.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
 
-        _name = UiTheme.Body("");
+        _name = UiTheme.HudInk(UiTheme.Body(""));
         _name.HorizontalAlignment = HorizontalAlignment.Center;
         col.AddChild(_name);
 
-        _bar = JuicedBar.Create(UiTheme.Health, 180f);
+        _bar = JuicedBar.Create(UiTheme.Health, BarWidth);
+        _bar.CustomMinimumSize = new Vector2(BarWidth, HudCoreMetrics.BarHeight);
+        _bar.Keylined = true;
+        _bar.LagChunk = true;
         col.AddChild(_bar);
 
         // Combat additions: a thin poise bar under the health bar (how close the target is to
         // breaking) and a state tag (staggered, guarding, or what its wind-up asks of you).
-        _poise = JuicedBar.Create(new Color(0.62f, 0.66f, 0.72f), 180f);
-        _poise.CustomMinimumSize = new Vector2(180f, 5f);
+        _poise = JuicedBar.Create(UiTheme.Poise, BarWidth);
+        _poise.CustomMinimumSize = new Vector2(BarWidth, HudCoreMetrics.BarThinHeight);
+        _poise.Keylined = true;
         _poise.Visible = false;
         col.AddChild(_poise);
 
-        _tag = UiTheme.Caption("");
+        _tag = UiTheme.HudInk(UiTheme.Caption(""));
         _tag.HorizontalAlignment = HorizontalAlignment.Center;
         _tag.Visible = false;
         col.AddChild(_tag);
 
-        AddChild(col);
+        plate.AddChild(col);
+        AddChild(plate);
     }
 
     /// <summary>Forgets what the plate is showing (locale or colour-vision change), so the next

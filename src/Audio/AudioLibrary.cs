@@ -117,6 +117,28 @@ public sealed class AudioLibrary
             ["ui.back"] = Load("res://assets/audio/ui/back.wav",
                 () => ProceduralAudio.Sine(660f, 0.05f, gain: 0.3f, releaseSeconds: 0.04f)),
 
+            // The interface's own cues (2D, UI bus), played by UiAudio. Procedural until recordings
+            // land at the named paths, and told apart by contour like the quest chimes below: a dry
+            // tick for a focus step, a rising pair for a tab, a fifth opening up and closing down
+            // for a screen, a low beating pair for a refusal.
+            ["ui.focus"] = Load("res://assets/audio/ui/focus.wav", () => ProceduralAudio.Mix(
+                ProceduralAudio.NoiseBurst(0.02f, lowpass: 0.5f, gain: 0.08f, seed: 61, releaseSeconds: 0.015f),
+                ProceduralAudio.Sine(880f, 0.03f, gain: 0.07f, releaseSeconds: 0.02f)), shipped: false),
+            ["ui.tab"] = Load("res://assets/audio/ui/tab.wav", () => ProceduralAudio.Mix(
+                ProceduralAudio.Sine(740f, 0.05f, gain: 0.18f, releaseSeconds: 0.035f),
+                ProceduralAudio.Sine(1110f, 0.07f, gain: 0.12f, attackSeconds: 0.02f, releaseSeconds: 0.04f)), shipped: false),
+            ["ui.open"] = Load("res://assets/audio/ui/open.wav", () => ProceduralAudio.Mix(
+                ProceduralAudio.Sine(392.0f, 0.12f, gain: 0.15f, attackSeconds: 0.008f, releaseSeconds: 0.09f),
+                ProceduralAudio.Sine(587.3f, 0.11f, gain: 0.10f, attackSeconds: 0.035f, releaseSeconds: 0.07f)), shipped: false),
+            ["ui.close"] = Load("res://assets/audio/ui/close.wav", () => ProceduralAudio.Mix(
+                ProceduralAudio.Sine(587.3f, 0.08f, gain: 0.11f, releaseSeconds: 0.06f),
+                ProceduralAudio.Sine(392.0f, 0.12f, gain: 0.13f, attackSeconds: 0.03f, releaseSeconds: 0.08f)), shipped: false),
+            ["ui.denied"] = Load("res://assets/audio/ui/denied.wav", () => ProceduralAudio.Mix(
+                ProceduralAudio.Sine(196.0f, 0.14f, gain: 0.24f, releaseSeconds: 0.09f),
+                ProceduralAudio.Sine(207.7f, 0.14f, gain: 0.20f, releaseSeconds: 0.09f)), shipped: false),
+            ["ui.hold_tick"] = Load("res://assets/audio/ui/hold_tick.wav",
+                () => ProceduralAudio.Sine(520f, 0.035f, gain: 0.15f, releaseSeconds: 0.028f), shipped: false),
+
             // Quest feedback (2D, UI bus), published by the toast feed and the chapter banner. No recordings
             // are vendored yet, so each is a procedural chime until a CC0 one lands at the named path; they are
             // told apart by contour (a rising triad, a two-note tick, a full chord, a low pad, a bright blip)
@@ -150,6 +172,11 @@ public sealed class AudioLibrary
                 () => ProceduralAudio.Pad(new[] { 146.8f, 220f, 233.1f, 293.7f }, 3f, gain: 0.22f, tremoloHz: 0.6f, tremoloDepth: 0.40f), loop: true, shipped: false),
             ["music.boss"] = Load("res://assets/audio/music/boss.ogg",
                 () => ProceduralAudio.Pad(new[] { 98.0f, 130.8f, 138.6f, 196.0f }, 3f, gain: 0.26f, tremoloHz: 0.4f, tremoloDepth: 0.45f), loop: true, shipped: false),
+
+            // The title screen's bed, held by UiAudio while no session exists: banked embers, a low
+            // open minor chord that barely breathes.
+            ["music.title"] = Load("res://assets/audio/music/title.ogg",
+                () => ProceduralAudio.Pad(new[] { 110f, 130.8f, 164.8f, 220f }, 5f, gain: 0.13f, tremoloHz: 0.2f, tremoloDepth: 0.35f), loop: true, shipped: false),
 
             // Ambience beds (2D, looping) — Phase 31D. Real CC0 field recordings swap in per bed; the
             // procedural fallbacks are filtered-noise washes (soft wind, night hush, rain, town murmur).

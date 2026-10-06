@@ -265,14 +265,14 @@ public sealed partial class DamageDirectionOverlay : Control
             float to = mark.Bearing + half - (Mathf.Pi * 0.5f);
             Color colour = mark.Outcome switch
             {
-                HitOutcome.Blocked => UiTheme.Adapt(new Color(0.60f, 0.66f, 0.72f)),
+                HitOutcome.Blocked => UiTheme.Adapt(UiTheme.Poise),
                 HitOutcome.Resisted => UiTheme.Adapt(new Color(0.55f, 0.57f, 0.66f)),
                 HitOutcome.Critical or HitOutcome.GuardBroken => UiTheme.Bad,
                 _ => tint,
             };
             float width = 3.5f + (4f * mark.Weight);
 
-            DrawArc(centre, radius, from, to, 20, new Color(UiTheme.Engrave, alpha * 0.6f), width + 3.5f);
+            DrawArc(centre, radius, from, to, 20, new Color(UiTheme.Keyline, alpha * 0.6f), width + 3.5f);
             DrawArc(centre, radius, from, to, 20, new Color(colour, alpha * 0.85f), width);
         }
 
@@ -299,7 +299,7 @@ public sealed partial class DamageDirectionOverlay : Control
                 _ => UiTheme.Adapt(new Color(0.85f, 0.88f, 0.92f)),
             };
 
-            DrawArc(centre, warnRadius, from, to, 16, new Color(UiTheme.Engrave, alpha * 0.6f), 9f);
+            DrawArc(centre, warnRadius, from, to, 16, new Color(UiTheme.Keyline, alpha * 0.6f), 9f);
             DrawArc(centre, warnRadius, from, to, 16, new Color(colour, alpha), 5f);
             if (warning.Class == TelegraphClass.Unblockable)
             {

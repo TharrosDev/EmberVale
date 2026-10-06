@@ -96,7 +96,7 @@ region.travel_prompt_permit,"Travel to {0} — your permit is in order"
 region.travel_prompt_pass,"Travel to {0} — your pass is taken at the gate"
 region.travel_prompt_short,"The road to {0} is barred — the wardens want {1} gold, and you carry {2}"
 map.title,WORLD MAP
-map.empty,Nothing discovered yet — explore to fill the map.
+map.empty,Nothing discovered yet. Explore to fill the map.
 hud.compass.n,N
 hud.compass.ne,NE
 hud.compass.e,E
@@ -146,7 +146,7 @@ shop.consign,List
 shop.consign_price,"{0}g in {1}d"
 shop.consign_shelf,On her shelf: {0}
 shop.consign_listed,She already has one of these on her shelf. Come back when it sells.
-appraisal.title,APPRAISAL — {0}
+appraisal.title,APPRAISAL: {0}
 appraisal.subtitle,"Per unit, at your standing. A merchant pays less as you fill her up."
 appraisal.buyer,"{0} pays {1}g"
 appraisal.no_buyer,No honest counter will take this
@@ -215,14 +215,14 @@ shop.invest_full,You already own all the stake they will sell.
 # says what the merchant does — two different reasons a number moved, and the player meets them in
 # that order. A settlement that authors neither says nothing at all: "prices are normal here" is noise.
 shop.local_trade,"This place is awash in {0} and short of {1}."
-shop.local_surplus,"This place is awash in {0} — it fetches little here."
-shop.local_demand,"This place is short of {0} — it fetches more here."
+shop.local_surplus,This place is awash in {0}. It fetches little here.
+shop.local_demand,This place is short of {0}. It fetches more here.
 # Supply shocks (Phase 38T). The line above says what this place is normally like; these say what has
 # happened to it this week, and both are on screen at once because a shocked cell still has a standing
 # trade underneath. The shortage line carries the haul counter because selling into it is the only
 # thing a player can do about a shock and nothing else in the game would mention it.
 shop.shock_shortage,"Word from the road: no {0} is getting through. Prices are up for {1} more day(s)."
-shop.shock_glut,"A caravan got through — {0} is going cheap here for {1} more day(s)."
+shop.shock_glut,A caravan got through. {0} is going cheap here for {1} more day(s).
 shop.shock_fair,"The fair is on. The stalls are overflowing for {0} more day(s)."
 shop.shock_relief,"({0}/{1} hauled in)"
 # Haggling (Phase 38S). The offer names the odds because the downside is real and unnamed odds are a
@@ -230,7 +230,7 @@ shop.shock_relief,"({0}/{1} hauled in)"
 # without a line of text reads as the shop being mispriced.
 shop.haggle,Haggle
 shop.haggle_offer,"They might be talked down today ({0} in 100). A refusal will be remembered."
-shop.haggle_won,"You talked them round — better prices from them today."
+shop.haggle_won,You talked them round. Better prices from them today.
 shop.haggle_lost,"They did not care for the attempt, and they will remember it today."
 # Price breakdown (Phase 38U). One row per step of a price, hovered on the number itself. {0} is the
 # line's own argument — a trade, a percentage, a quantity — and {1} is the gold AFTER that step, so a
@@ -239,24 +239,24 @@ shop.haggle_lost,"They did not care for the attempt, and they will remember it t
 # and a broker's cut are all unreachable at the town square: walking the authored shops would pass
 # while three tooltips showed a raw key.
 shop.line.base,"worth {1}g anywhere"
-shop.line.local_surplus,"{0} is common here — {1}g"
-shop.line.local_demand,"{0} is scarce here — {1}g"
-shop.line.shock_surplus,"a caravan brought {0} in — {1}g"
-shop.line.shock_demand,"no {0} is getting through — {1}g"
-shop.line.markup,"their margin {0}% — {1}g"
-shop.line.fraction,"they pay {0}% of that — {1}g"
-shop.line.standing,"how they take to you {0}% — {1}g"
-shop.line.specialty,"their own trade {0}% — {1}g"
-shop.line.haggle,"today's bargain {0}% — {1}g"
-shop.line.stack,"{0} of them — {1}g"
+shop.line.local_surplus,{0} is common here: {1}g
+shop.line.local_demand,{0} is scarce here: {1}g
+shop.line.shock_surplus,a caravan brought {0} in: {1}g
+shop.line.shock_demand,no {0} is getting through: {1}g
+shop.line.markup,their margin {0}%: {1}g
+shop.line.fraction,they pay {0}% of that: {1}g
+shop.line.standing,how they take to you {0}%: {1}g
+shop.line.specialty,their own trade {0}%: {1}g
+shop.line.haggle,today's bargain {0}%: {1}g
+shop.line.stack,{0} of them: {1}g
 shop.line.glut,"{0} of them, their appetite falling — {1}g"
-shop.line.shelf,"her shelf, at {0}% of value — {1}g"
-shop.line.house_cut,"less the house's {0}% — {1}g"
-shop.line.labour,"the work itself — {1}g"
-shop.line.material,"materials he must supply: {0} — {1}g"
-shop.line.travel_local,"a jump inside this realm — {1}g"
-shop.line.travel_cross,"across the realm boundary — {1}g"
-shop.line.travel_owned,"a holding of your own — no charge"
+shop.line.shelf,"her shelf, at {0}% of value: {1}g"
+shop.line.house_cut,less the house's {0}%: {1}g
+shop.line.labour,the work itself: {1}g
+shop.line.material,materials he must supply ({0}): {1}g
+shop.line.travel_local,a jump inside this realm: {1}g
+shop.line.travel_cross,across the realm boundary: {1}g
+shop.line.travel_owned,"a holding of your own, no charge"
 shop.line.travel_mounted,"you ride it yourself — no charge"
 shop.haggle_spent,You have already tried your luck with them today.
 # Trading hours and the travelling trader (Phase 38J). A closed shop names the hour it opens: "closed"
@@ -393,7 +393,7 @@ guild.state.refused,Declined
 guild.state.member,Member
 guild.state.left,Departed
 guild.state.finale,Sworn
-guild.rank_line,{0} — rank {1} of {2}
+guild.rank_line,"{0}, rank {1} of {2}"
 guild.rank_none,No rank earned
 guild.standing_line,Standing: {0} ({1})
 guild.contradiction,Inconsistent membership record ({0})
@@ -735,9 +735,9 @@ contracts.rotation,"The postings change in {0} day(s)."
 # The notices above the postings (38T) — the feature's only unprompted voice. Without them a supply
 # shock could only be found by walking to the counter it moved.
 contracts.notices,WORD FROM THE ROADS
-contracts.notice_shortage,"{0} is short of {1} — {2} day(s) yet."
-contracts.notice_glut,"{0} is awash in {1} — {2} day(s) yet."
-contracts.notice_fair,"A fair is on at {0} — {1} day(s) yet."
+contracts.notice_shortage,{0} is short of {1} for {2} more day(s).
+contracts.notice_glut,{0} is awash in {1} for {2} more day(s).
+contracts.notice_fair,A fair is on at {0} for {1} more day(s).
 # Settlement names, for the notices. Authored per cell that can be shocked; --validate holds every
 # cell with shock candidates to having one, because the notice reads "cell.ember_crown.x is short of"
 # without it and a raw key on a board is a bug report waiting to happen.
@@ -1084,9 +1084,9 @@ bestiary.tab_constructs,Constructs
 bestiary.tab_elementals,Elementals
 bestiary.tab_ashen,Ashen
 bestiary.tab_bosses,Flamebearers
-bestiary.progress,Field Journal — {0} of {1} catalogued
+bestiary.progress,Field Journal: {0} of {1} catalogued
 bestiary.kills,slain {0}
-bestiary.unknown,??? — unrecorded
+bestiary.unknown,??? (unrecorded)
 bestiary.sighted,"Seen, not yet understood. {0} more to fill the page."
 bestiary.corrupted,{0} of them ashen
 bestiary.empty,Nothing catalogued here yet.
@@ -4497,7 +4497,7 @@ perk.ember_heart.desc,Something burns where the pulse was. +15 maximum Health an
 # --- BEGIN progression:p4a ---
 # --- END progression:p4a ---
 # --- BEGIN progression:p4b ---
-shop.line.perk,"your perks {0}% — {1}g"
+shop.line.perk,your perks {0}%: {1}g
 # --- END progression:p4b ---
 # --- BEGIN progression:p4c ---
 # --- END progression:p4c ---
@@ -4768,9 +4768,9 @@ craft.reforge.block.rarity,Only Uncommon and Rare gear can be promoted.
 craft.reforge.block.no_affix,It has no affix to reroll.
 craft.reforge.block.no_pool,No other affix fits this piece.
 craft.reforge.block.not_held,You no longer carry this.
-craft.reforge.line.work,"the smith's work — {1}g"
-craft.reforge.line.rerolls,"reworked {0} times before — {1}g"
-craft.reforge.line.gain,"the value it adds — {1}g"
+craft.reforge.line.work,the smith's work: {1}g
+craft.reforge.line.rerolls,reworked {0} times before: {1}g
+craft.reforge.line.gain,the value it adds: {1}g
 craft.salvage.junk,Salvage all junk ({0})
 craft.salvage.junk_confirm,Salvage {0} junk items? Press again
 craft.salvage.confirm,Press again to salvage
@@ -5108,3 +5108,487 @@ settings.ambient_occlusion,Ambient occlusion
 settings.volumetric_fog,Volumetric fog
 settings.glow,Glow
 # --- END perf:rendering ---
+ui.legend.close,Close
+ui.legend.switch_screen,Switch screen
+ui.hub.character,Character
+ui.hub.spellbook,Spellbook
+ui.hub.journal,Journal
+ui.hub.map,Map
+ui.hub.bestiary,Bestiary
+credits.title,Credits
+# ui-upgrade: settings and input (lane 3)
+settings.tab.graphics,Graphics
+settings.tab.audio,Audio
+settings.tab.controls,Controls
+settings.tab.gameplay,Gameplay
+settings.tab.interface,Interface
+settings.tab.accessibility,Accessibility
+settings.section.display,Display
+settings.section.advanced,Advanced
+settings.section.volume,Volume
+settings.section.look,Look
+settings.section.bindings,Bindings
+settings.section.challenge,Challenge
+settings.section.camera,Camera
+settings.section.combat,Combat
+settings.section.guidance,Guidance
+settings.section.hud,HUD
+settings.section.hud_elements,HUD elements
+settings.section.notices,Notices
+settings.section.menus,Menus
+settings.section.vision,Vision
+settings.section.motion_input,Motion and input
+settings.section.subtitles,Subtitles
+settings.pane.hint,Select an option to see what it does.
+settings.revert,Restore default
+settings.legend.tab,Switch tab
+settings.legend.select,Select
+settings.hold_hint,Hold to confirm
+settings.hold_desc,{0} Hold to confirm.
+settings.reset_tab,Reset tab
+settings.reset_tab.desc,Puts every option on this tab back to its default. Other tabs are not touched.
+settings.reset_tab.desc_controls,"Puts every option on this tab back to its default, including all key and gamepad bindings."
+settings.reset_all,Reset all settings
+settings.reset_all.desc,"Puts graphics, audio, controls, gameplay and interface options back to their defaults. Your bindings and accessibility options are kept."
+settings.window_mode.desc,"Windowed, fullscreen, or a borderless window that fills the screen and switches to other programs quickly."
+settings.render_quality.desc,One preset for everything under Advanced. Change any of those and this reads Custom. Pick a preset to clear them.
+settings.vsync.desc,Matches the frame rate to your display to stop tearing. Turning it off can lower input delay.
+settings.fov.desc,"How wide the camera sees, in degrees. Wider shows more and stretches the edges."
+settings.max_fps.desc,Caps the frame rate. A lower cap runs cooler and quieter.
+settings.anti_aliasing.desc,"Smooths jagged edges. FXAA is cheapest, MSAA is sharper and costs more, TAA is smoothest and can blur in motion."
+settings.shadow_quality.desc,Shadow detail and distance. One of the most expensive settings here.
+settings.ambient_occlusion.desc,Soft shading where surfaces meet. Adds depth at a moderate cost.
+settings.volumetric_fog.desc,Fog that catches light in shafts. Expensive on integrated graphics.
+settings.glow.desc,"A soft bloom around fire, embers and magic."
+settings.master_volume.desc,Overall volume of everything.
+settings.music_volume.desc,Volume of the music.
+settings.sfx_volume.desc,"Combat, footsteps and the sounds of the world."
+settings.ambience_volume.desc,"Wind, weather and the background sound of a place."
+settings.ui_volume.desc,Menu clicks and notification sounds.
+settings.voice_volume.desc,"Spoken lines, where a line has a voice."
+settings.mouse_sensitivity.desc,How far the camera turns for a given mouse movement. The gamepad stick follows it too.
+settings.invert_y.desc,"Pushing up looks down, on the mouse and on the stick."
+settings.pad_sensitivity_x,Stick sensitivity X
+settings.pad_sensitivity_x.desc,How fast the right stick turns the camera left and right. Multiplies mouse sensitivity.
+settings.pad_sensitivity_y,Stick sensitivity Y
+settings.pad_sensitivity_y.desc,How fast the right stick tilts the camera up and down. Multiplies mouse sensitivity.
+settings.bind.column.keyboard,Keyboard and mouse
+settings.bind.column.gamepad,Gamepad
+settings.bind.group.movement,Movement
+settings.bind.group.combat,Combat
+settings.bind.group.world,World
+settings.bind.group.screens,Screens
+settings.bind.group.hotbar,Hotbar
+settings.bind.desc,"Select a binding, then press the key or button you want. Restore default puts both bindings back."
+settings.bind.unbound,Unbound
+settings.bind.fixed,This binding cannot be changed
+settings.bind.clear,Clear binding
+settings.bind.listen_key,Press a key or a mouse button.
+settings.bind.listen_pad,Press a button or a trigger on the gamepad.
+settings.bind.listen_cancel,Cancel
+settings.bind.reserved,That input is kept for menus. Press another.
+settings.bind.conflict,{0} is already bound to {1}.
+settings.bind.swap,Swap
+settings.bind.unbind_other,Unbind other
+settings.bind.reset,Reset bindings
+settings.bind.reset.desc,Puts every key and gamepad binding back to the default layout.
+settings.bind.action.move_forward,Move forward
+settings.bind.action.move_back,Move back
+settings.bind.action.move_left,Move left
+settings.bind.action.move_right,Move right
+settings.bind.action.jump,Jump
+settings.bind.action.sprint,Sprint
+settings.bind.action.walk_toggle,Walk
+settings.bind.action.dodge,Dodge
+settings.bind.action.attack,Attack
+settings.bind.action.block,Block
+settings.bind.action.cast,Cast spell
+settings.bind.action.cycle_spell,Next spell
+settings.bind.action.lock_on,Lock on
+settings.bind.action.lock_cycle_next,Next target
+settings.bind.action.lock_cycle_prev,Previous target
+settings.bind.action.interact,Interact
+settings.bind.action.mount,Mount
+settings.bind.action.companion_command,Party order
+settings.bind.action.toggle_camera,Swap camera
+settings.bind.action.place,Place prop
+settings.bind.action.inventory,Inventory
+settings.bind.action.spellbook,Spellbook
+settings.bind.action.journal,Journal
+settings.bind.action.map,Map
+settings.bind.action.bestiary,Bestiary
+settings.bind.action.hud_recall,HUD recall
+settings.bind.action.hotbar_1,Hotbar slot 1
+settings.bind.action.hotbar_2,Hotbar slot 2
+settings.bind.action.hotbar_3,Hotbar slot 3
+settings.bind.action.hotbar_4,Hotbar slot 4
+settings.bind.action.hotbar_5,Hotbar slot 5
+settings.bind.desc.walk_toggle,Switches walking on and off. A stick already walks when it is pushed part way.
+settings.bind.desc.interact,Tap to interact. Hold to sweep up loot.
+settings.bind.desc.cycle_spell,Steps through your prepared spells.
+settings.bind.desc.companion_command,"Cycles the party's standing order: follow, hold, engage."
+settings.bind.desc.toggle_camera,Swaps between first and third person.
+settings.bind.desc.mount,"Whistles your mount up, or steps off it."
+settings.bind.desc.place,"Sets down, or picks back up, the prop you are placing."
+settings.bind.desc.hud_recall,Hold to show every HUD element you have set to Dynamic.
+settings.difficulty.desc,"Scales the damage enemies deal to you: Story 60%, Normal 100%, Hard 135%. Nothing else changes."
+settings.third_person.desc,Play over the shoulder instead of at the eye. The camera key swaps it at any time.
+settings.tp_distance.desc,How far behind you the third-person camera sits. Walls still pull it in.
+settings.tp_shoulder.desc,Which shoulder the third-person camera looks over.
+settings.cam_auto_shoulder.desc,"In third person, swings to the other shoulder when the chosen one is against a wall."
+settings.cam_lock_framing.desc,Lock-on and aim turn the camera toward the target instead of leaving it behind you.
+settings.cam_obstruction_fade.desc,Props between the camera and you thin out instead of blocking the view.
+settings.cam_shake.desc,"How hard hits, landings and blasts shake the camera."
+settings.cam_bob.desc,First-person bob and sway while you move.
+settings.cam_fov_kick.desc,"How far sprinting, dodging and landing punch the field of view."
+settings.combat_hit_stop.desc,How long a landed blow freezes the frame.
+settings.combat_flash.desc,"Strength of the full-screen flash on crits, blocks, staggers and parries."
+settings.combat_lock_assist.desc,"Lock-on picks and cycles targets for you, and holds through brief cover."
+settings.combat_aim_assist.desc,How far a bow's aim is pulled toward a target near the crosshair.
+settings.show_tutorials.desc,Shows a hint the first time you need a control. Turn it off if you already know them.
+settings.hud_preset,HUD preset
+settings.hud_preset.desc,Full shows everything. Dynamic hides steady readouts until they matter. Minimal keeps only what you need to play. Holding HUD recall shows every Dynamic element.
+settings.hud_preset.full,Full
+settings.hud_preset.dynamic,Dynamic
+settings.hud_preset.minimal,Minimal
+settings.hud_preset.custom,Custom
+settings.hud_scale,HUD scale
+settings.hud_scale.desc,"Size of the HUD alone, on top of UI scale."
+settings.hud_opacity,HUD opacity
+settings.hud_opacity.desc,How solid the HUD is drawn over the world.
+settings.hud_safe_zone,HUD safe zone
+settings.hud_safe_zone.desc,"Moves the HUD in from the screen edges, for a television that crops the picture."
+settings.hud_mode.always,Always
+settings.hud_mode.dynamic,Dynamic
+settings.hud_mode.hidden,Hidden
+settings.hud_element.vitals,"Health, stamina and mana"
+settings.hud_element.hotbar,Hotbar
+settings.hud_element.compass,Compass
+settings.hud_element.minimap,Minimap
+settings.hud_element.clock,Time and weather
+settings.hud_element.tracker,Quest tracker
+settings.hud_element.party,Party
+settings.hud_element.target,Target plate
+settings.hud_element.enemy_plates,Enemy health bars
+settings.hud_element.damage_numbers,Damage numbers
+settings.hud_element.prompts,Interaction prompts
+settings.hud_element.crosshair,Crosshair
+settings.hud_element.toasts,Notifications
+settings.hud_element.subtitles,Subtitles
+settings.hud_dynamic.vitals,"Dynamic shows it in combat, while anything is below full, and in menus. Hidden removes it."
+settings.hud_dynamic.hotbar,"Dynamic shows it in combat, when a slot changes, and in menus. Hidden removes it."
+settings.hud_dynamic.party,"Dynamic shows it in combat, while someone is hurt, and when it changes. Hidden removes it."
+settings.hud_dynamic.combat,Dynamic shows it in combat. Hidden removes it.
+settings.hud_dynamic.steady,Dynamic shows it for a few seconds when it changes. Hidden removes it.
+settings.hud_dynamic.transient,"This only appears when something happens, so Always and Dynamic look the same. Hidden removes it."
+settings.toast_duration,Notification time
+settings.toast_duration.desc,"How long a notification stays, as a multiple of its normal time."
+settings.damage_numbers,Damage numbers
+settings.damage_numbers.desc,"Which hits show a floating number: all of them, only your own blows, or only crits and kills."
+settings.damage_numbers.off,Off
+settings.damage_numbers.all,All hits
+settings.damage_numbers.own,Your blows only
+settings.damage_numbers.crits,Crits and kills only
+settings.static_menu,Still menu background
+settings.static_menu.desc,Holds the title screen's painting still: no drift and no embers.
+settings.ui_scale.desc,"Size of the whole interface: panels, spacing and text together. Applies when you let go of the slider."
+settings.readable_font,Readable font
+settings.readable_font.desc,Sets every title and line of prose in the plain interface typeface. Sizes and layout stay the same.
+settings.reduced_motion.desc,"Stops panels sliding and magical motifs turning, and calms the camera and combat: no head bob or FOV kick, a light shake, a short hit stop and a faint flash."
+settings.holds_to_presses,Press instead of hold
+settings.holds_to_presses.desc,Actions that ask you to hold a button take one press instead. The resets on this screen then ask before they act.
+settings.subtitles.desc,Shows spoken lines as text.
+settings.subtitle_size,Subtitle size
+settings.subtitle_size.desc,How large subtitle text is drawn.
+settings.subtitle_size.small,Small
+settings.subtitle_size.medium,Medium
+settings.subtitle_size.large,Large
+settings.subtitle_background,Subtitle background
+settings.subtitle_background.desc,How dark the plate behind a subtitle is. At 0% the text has only its outline.
+settings.subtitle_speaker,Speaker names
+settings.subtitle_speaker.desc,Starts each subtitle with the name of whoever is speaking.
+settings.preview.text,The fire remembers what was given to it.
+settings.preview.caption,Captions and small labels look like this.
+settings.preview.subtitle,The embers are still warm.
+settings.preview.subtitle_named,Kael: The embers are still warm.
+settings.preview.subtitle_off,Subtitles are off.
+settings.preview.rarity.common,Common
+settings.preview.rarity.uncommon,Uncommon
+settings.preview.rarity.rare,Rare
+settings.preview.rarity.epic,Epic
+settings.preview.rarity.legendary,Legendary
+settings.preview.good,Gain
+settings.preview.bad,Loss
+# ui-upgrade: lane 4 (HUD core)
+hud.prompt.hold_gather,Hold to gather nearby
+hud.quest.more,+{0} more
+hud.hotbar.count,×{0}
+hud.hotbar.chord,Hold for quick items
+# ui-upgrade: items and character (lane 6a)
+item.rarity.common,Common
+item.rarity.uncommon,Uncommon
+item.rarity.rare,Rare
+item.rarity.epic,Epic
+item.rarity.legendary,Legendary
+item.new,New
+item.equipped,Equipped
+item.slot_empty_tip,{0}: empty
+item.slot_empty_fits,"Empty, {0} in pack"
+item.slot_empty_title,{0} is empty
+item.slot_empty_pick,"Pieces in your pack that fit: {0}. Press the slot to step into them."
+item.slot_empty_none,Nothing in your pack fits this slot.
+item.pack_fits,Fits {0}
+item.hero.damage,Damage
+item.hero.armor,Armor
+item.hero.health,Health restored
+item.hero.stamina,Stamina restored
+item.hero.mana,Mana restored
+item.detail.carry,"{0} wt   ·   {1}g"
+item.detail.compare,Compare
+item.detail.worn,Worn
+item.detail.this,This item
+item.detail.same,Same as worn
+item.preview.title,If equipped
+item.strip.sort,Sort: {0}
+item.strip.kind,Kind: {0}
+item.strip.show_all,Show whole pack
+item.strip.show_all_tip,The pack is showing only what fits the equipment slot you chose. Press to show everything again.
+item.strip.step_tip,Press to step to the next choice.
+char.details,DETAILS
+char.legend.actions,Actions
+char.legend.learn,Learn rank
+char.legend.tabs,Switch tab
+perktree.respec_hold,Hold to respec ({0} gold)
+# ui-upgrade: lane 7 (knowledge panels)
+kn.title.journal,Journal
+kn.title.map,World map
+kn.title.bestiary,Field journal
+kn.legend.section,Section
+kn.legend.category,Category
+kn.legend.school,School
+kn.legend.track,Track
+kn.legend.untrack,Untrack
+kn.legend.show_on_map,Show on map
+kn.legend.confirm,Confirm
+kn.legend.back,Back
+kn.legend.pan,Pan
+kn.legend.pan_select,Drag to pan and click to select
+kn.legend.zoom,Zoom
+kn.legend.select,Select
+kn.legend.waypoint,Waypoint
+kn.legend.skip,Skip
+kn.legend.choose,Choose
+kn.journal.tracking,Tracking: {0}
+kn.journal.show_on_map,Show on map
+kn.journal.show_on_map_tip,Open the map on this step's place
+kn.map.tab_place,Place
+kn.map.tab_legend,Legend
+kn.map.selected_header,Selected
+kn.map.waypoint_header,Waypoint
+kn.map.travel_header,Fast travel
+kn.map.travel_confirm,Travel to
+kn.map.travel_fee,Passage costs {0} gold.
+kn.map.travel_no_fee,Passage is free.
+kn.map.travel_go,Travel
+kn.map.travel_cancel,Stay here
+kn.map.legend_expand,Show categories
+kn.map.legend_collapse,Hide categories
+kn.map.legend_marks,Other marks
+kn.map.scale,{0} m
+kn.bestiary.progress,{0} of {1} catalogued
+kn.bestiary.unknown,Unrecorded
+kn.bestiary.unknown_hint,"Nothing is written here yet. Bring one down, and the Ash Hunters will have a name to put to it."
+kn.bestiary.row_sighted,"Sighted, slain {0} of {1}"
+kn.bestiary.stage_sighted,Sighted
+kn.bestiary.stage_known,Known
+kn.bestiary.slain,slain
+kn.bestiary.resists,Resists
+kn.bestiary.open_to,Open to
+kn.bestiary.lore,Field notes
+kn.dialogue.mark_plot,Moves the story on
+kn.dialogue.mark_special,Has a consequence
+kn.dialogue.mark_exhausted,Already asked
+kn.dialogue.mark_leave,Ends the conversation
+kn.legend.scroll,Scroll
+kn.legend.waypoint_click,Click to mark
+kn.legend.show_on_map_click,Click for map
+# ui-upgrade: lane 1 (shell front)
+splash.press_any,Press any button
+title.subtitle,"Save creation, or become its next Ash King."
+title.accessibility,Accessibility
+title.credits,Credits
+title.continue_meta,"{0}  ·  Level {1}  ·  {2}  ·  {3}h {4}m"
+title.version,Version {0}
+title.legend.select,Select
+title.quit.heading,Quit to desktop?
+title.quit.body,Embervale will close.
+title.quit.confirm,Quit
+firstrun.title,Before you begin
+firstrun.intro,"Set these to suit you. Each one can be changed later in Settings, under Accessibility."
+firstrun.sample,Preview
+firstrun.motion_on,Menus ease into place and embers drift.
+firstrun.motion_off,Menus appear at once and nothing drifts.
+firstrun.continue,Continue
+loading.card.tip,Tip
+loading.card.lore,Lore
+loading.tip.1,"A stagger breaks a wind-up, never a blow that is already falling. Strike early or get clear."
+loading.tip.2,A guard raised just before a blow lands is a parry. A perfect one costs nothing and staggers the attacker.
+loading.tip.3,An enemy whose poise breaks is open for a moment. The first blow on an open body is a critical.
+loading.tip.4,"Hold the attack for a heavy swing. Hold it longer and it charges, hitting harder the longer it is held."
+loading.tip.5,A tired guard takes more poise damage. Lower it and recover before the next exchange.
+loading.tip.6,"Bosses can be staggered, but they are never knocked down."
+loading.tip.7,"Each shrine grants its blessing once, and refuses those too corrupted for its god."
+loading.tip.8,Ordinary magic weakens where the Weave has thinned. Corrupted magic grows stronger there.
+loading.tip.9,"Corruption is counted in five tiers. Shrines, factions and some spells all answer to it."
+loading.tip.10,"A companion who falls in battle is downed, never lost."
+loading.tip.11,Plain materials take no room in your pack. Gather freely.
+loading.tip.12,"A locked item is never sold, salvaged, junked or dropped. Lock what you mean to keep."
+loading.lore.ember_crown.1,"The Ember Crown is the heartland of humanity: rolling plains, old castles and the knightly orders that still hold them."
+loading.lore.ember_crown.2,For a thousand years the world has been dying. In the Ember Crown people still plant in spring.
+loading.lore.ember_crown.3,Seven Flamebearers were chosen to restore the balance. Six failed.
+loading.lore.frostfang.1,"Frostfang Reach is frozen ocean and towering mountain, home to warrior clans and the beast races."
+loading.lore.frostfang.2,Dragons once nested in the peaks of Frostfang Reach. The nests are still there.
+loading.lore.frostfang.3,Dragons have vanished from the skies of Embervale. The Reach is where people still look up.
+loading.lore.ashen_wilds.1,"The Ashen Wilds are the scar the Cataclysm left: ruins, corrupted forest and ground where magic misbehaves."
+loading.lore.ashen_wilds.2,Civilizations stood in the Ashen Wilds before the Cataclysm. Their ruins are all that answers now.
+loading.lore.ashen_wilds.3,Decay takes the living as readily as the land here. What it takes rises Ashen.
+loading.lore.sunspire.1,"The Sunspire Dominion is the oldest civilization still standing, a land of ancient desert, lost jungle and buried temples."
+loading.lore.sunspire.2,The last great libraries are kept in the Sunspire Dominion.
+loading.lore.sunspire.3,The oldest law in the Dominion is that water is free.
+loading.lore.celestial.1,"The Sundering was the war of the gods. It broke the Celestial Realm, and the Cataclysm is what fell on the world below."
+loading.lore.celestial.2,Seven gods once kept the balance from the Celestial Realm. Six of them died in the war that ruined it.
+credits.made.heading,Made with
+credits.made.godot,"Godot Engine 4, scripted in C# on .NET 8."
+credits.world.heading,The world
+credits.world.kits,"Buildings, interiors, nature and animation from Quaternius's CC0 kits."
+credits.world.cast,Characters and creatures generated with Meshy.
+credits.art.heading,Paintings and icons
+credits.art.paintings,"Paintings, the seal and item icons generated with OpenAI and Meshy image tools."
+credits.art.glyphs,Interface icons and button glyphs drawn by hand.
+credits.type.heading,Typefaces
+credits.type.faces,"Cinzel, Inter and EB Garamond by their project authors, under the SIL Open Font License."
+credits.legend.faster,Faster
+credits.legend.scroll,Scroll
+# ui-upgrade: shell session (lane 2)
+session.legend.select,Select
+session.legend.hold,Hold to confirm
+session.legend.back,Back
+slots.title.new,Choose a slot
+slots.title.load,Load game
+slots.title.save,Save game
+slots.row.empty,Empty slot
+slots.row.played,Played {0}
+slots.row.saved,Saved {0}
+slots.hold_hint,Hold to confirm
+slots.ask.load_title,Load this save?
+slots.ask.overwrite_title,Overwrite this save?
+slots.ask.overwrite_text,{0} will be replaced.
+slots.ask.delete_title,Delete this save?
+slots.ask.delete_text,{0} will be gone for good.
+session.pause.tracking,Tracking
+session.pause.played,Played {0}
+session.pause.objective_count,{0} ({1}/{2})
+session.pause.save_as,Save to slot
+session.pause.main_menu,Main menu
+session.pause.quit,Quit to desktop
+death.line,The ember gutters
+death.rise,Rise
+death.load,Load last save
+death.no_save,Nothing has been saved yet.
+narration.paused,Paused
+narration.resume,Resume
+narration.skip,Skip
+narration.skip_hold,Hold to skip
+narration.pause,Pause
+create.step.background,Background
+create.rig,Light: {0}
+create.rig.hearth,Hearth
+create.rig.overcast,Overcast
+create.rig.dusk,Ember dusk
+create.turn_hint,Drag to turn
+create.randomise,Randomise look
+create.randomise_hint,A random look from what this race offers. Race and background stay as they are.
+create.name_blank,Leave it empty to go by {0}.
+create.legend.step,Step
+create.legend.turn,Turn
+create.legend.scroll,Scroll
+# ui-upgrade: lane 5 (HUD combat and notices)
+hudc.toast.count,×{0}
+hudc.toast.journal,Journal
+# ui-upgrade: trade panels (lane 6b)
+trade.purse.yours,Your purse
+trade.purse.theirs,Their purse
+trade.purse.shelf,Her shelf
+trade.purse.listed,{0} listed
+trade.purse.deep,No limit
+trade.counter,This counter
+trade.legend.details,Scroll details
+trade.legend.browse,Browse
+trade.legend.choose,Choose
+trade.legend.mode,Switch mode
+trade.sell_stack,Sell stack
+trade.need_more,You need {0}g more.
+trade.sold_out,sold out
+trade.junk_confirm,Sell {0} junk stack(s) for {1}g?
+trade.junk_confirm_verb,Sell for {0}g
+trade.price_reasons,Why this price
+trade.order.buy_hint,One press on a ware buys one of it.
+trade.order.sell_hint,One press on a stack sells all of it.
+trade.buy_many,Buy {0}
+trade.buy_max,Buy max ({0})
+trade.sell_many,Sell {0}
+trade.sell_all,Sell all ({0})
+shop.line.spread,"This counter asks {0}% of what a thing is worth here, and pays {1}% for it."
+storage.sort_by,Sort: {0}
+storage.order_hint,One press on a stack moves all of it.
+storage.move_many,{0} {1}
+storage.move_all,{0} all ({1})
+appraisal.heading,Appraisal
+appraisal.by,Valued by {0}
+appraisal.best_at,Best price: {0}
+appraisal.each,gold each
+contracts.carried,{0}/{1} carried
+contracts.risk.short,Short by {0}
+contracts.risk.closing,Board turns within a day
+contracts.risk.contraband,Contraband cargo
+contracts.reward_unit,gold
+contracts.refused_short,You are {0} short of what this posting wants.
+craft.col.recipes,Recipes
+craft.col.ingredients,Ingredients
+craft.col.count,{0} known
+craft.can_make,Can make {0}
+craft.have_of_need,{0}/{1}
+craft.makes,Each craft makes {0}.
+craft.order.none,No recipe is selected.
+craft.order.hint,Everything it needs is in your pack.
+craft.order.hint_commission,He supplies whatever you are short of.
+craft.order.missing,You are missing materials.
+# Panel polish (2026-10): the price ledger. A step of a price as a label, with the gold after it in
+# its own column: <line key>.label is that line without the gold. {0} is the line's own argument.
+shop.line.base.label,Worth anywhere
+shop.line.free,no charge
+shop.line.local_surplus.label,{0} is common here
+shop.line.local_demand.label,{0} is scarce here
+shop.line.shock_surplus.label,A caravan brought {0} in
+shop.line.shock_demand.label,No {0} is getting through
+shop.line.markup.label,Their margin {0}%
+shop.line.fraction.label,They pay {0}% of that
+shop.line.standing.label,How they take to you {0}%
+shop.line.specialty.label,Their own trade {0}%
+shop.line.haggle.label,Today's bargain {0}%
+shop.line.stack.label,{0} of them
+shop.line.glut.label,"{0} of them, their appetite falling"
+shop.line.shelf.label,"Her shelf, at {0}% of value"
+shop.line.house_cut.label,Less the house's {0}%
+shop.line.labour.label,The work itself
+shop.line.material.label,Materials he must supply: {0}
+shop.line.travel_local.label,A jump inside this realm
+shop.line.travel_cross.label,Across the realm boundary
+shop.line.travel_owned.label,A holding of your own
+shop.line.travel_mounted.label,You ride it yourself
+shop.line.perk.label,Your perks {0}%
+craft.reforge.line.work.label,The smith's work
+craft.reforge.line.rerolls.label,Reworked {0} times before
+craft.reforge.line.gain.label,The value it adds
+# Panel polish (2026-10): the cue under a dialogue line that runs past the window's foot.
+kn.dialogue.more,More below

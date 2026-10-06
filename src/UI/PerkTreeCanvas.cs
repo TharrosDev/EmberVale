@@ -14,6 +14,9 @@ public sealed partial class PerkTreeCanvas : Container
     public const float GutterWidth = 64f;
     public const float CompactGutterWidth = 46f;
     public const float NodeHeight = 54f;
+
+    /// <summary>A compact node's height: its name is set a size down and may take two lines.</summary>
+    public const float CompactNodeHeight = 62f;
     public const float RowGap = 14f;
     public const float ColumnGap = 10f;
     public const float MinNodeWidth = 100f;
@@ -22,16 +25,19 @@ public sealed partial class PerkTreeCanvas : Container
     private readonly int _columns;
     private readonly int _rows;
     private readonly float _gutter;
+    private readonly float _nodeHeight;
     private readonly Dictionary<string, (Control Node, int Tier, int Column)> _nodes = new();
     private readonly Dictionary<string, Rect2> _rects = new();
     private readonly List<(Control Label, int Tier)> _gates = new();
     private readonly List<(string From, string To, bool Lit)> _edges = new();
+    private readonly HashSet<(string From, string To)> _path = new();
 
-    public PerkTreeCanvas(int columns, int rows, float gutter = GutterWidth)
+    public PerkTreeCanvas(int columns, int rows, float gutter = GutterWidth, float nodeHeight = NodeHeight)
     {
         _columns = columns;
         _rows = rows;
         _gutter = gutter;
+        _nodeHeight = nodeHeight;
         SizeFlagsHorizontal = SizeFlags.ExpandFill;
     }
 
@@ -52,9 +58,23 @@ public sealed partial class PerkTreeCanvas : Container
     /// <summary>Joins a prerequisite to the perk it opens; <paramref name="lit"/> when the prerequisite is learned.</summary>
     public void AddEdge(string from, string to, bool lit) => _edges.Add((from, to, lit));
 
+    /// <summary>The lines to draw hot: the route from owned perks to the focused one
+    /// (<see cref="PerkTreeRules.PathTo"/>). Redraws only when the route changed.</summary>
+    public void SetPath(IReadOnlyCollection<(string From, string To)> path)
+    {
+        if (_path.Count == path.Count && _path.IsSupersetOf(path))
+        {
+            return;
+        }
+
+        _path.Clear();
+        _path.UnionWith(path);
+        QueueRedraw();
+    }
+
     public override Vector2 _GetMinimumSize() => new(
         _gutter + (_columns * (MinNodeWidth + ColumnGap)),
-        (_rows * NodeHeight) + (System.Math.Max(0, _rows - 1) * RowGap));
+        (_rows * _nodeHeight) + (System.Math.Max(0, _rows - 1) * RowGap));
 
     public override void _Notification(int what)
     {
@@ -70,14 +90,14 @@ public sealed partial class PerkTreeCanvas : Container
         foreach ((string id, (Control node, int tier, int column)) in _nodes)
         {
             var rect = new Rect2(
-                _gutter + (column * pitch), RowTop(tier), width, NodeHeight);
+                _gutter + (column * pitch), RowTop(tier), width, _nodeHeight);
             FitChildInRect(node, rect);
             _rects[id] = rect;
         }
 
         foreach ((Control label, int tier) in _gates)
         {
-            FitChildInRect(label, new Rect2(0f, RowTop(tier), _gutter - ColumnGap, NodeHeight));
+            FitChildInRect(label, new Rect2(0f, RowTop(tier), _gutter - ColumnGap, _nodeHeight));
         }
 
         QueueRedraw();
@@ -92,15 +112,25 @@ public sealed partial class PerkTreeCanvas : Container
             {
                 if (edgeLit == lit && _rects.TryGetValue(from, out Rect2 top) && _rects.TryGetValue(to, out Rect2 bottom))
                 {
-                    DrawConnector(top, bottom, lit);
+                    DrawConnector(top, bottom, lit ? UiTheme.BrassLit : UiTheme.Iron, lit ? 2f : 1.5f);
                 }
+            }
+        }
+
+        // The focused perk's route last and widest, with the heat under it: it is the one line the eye
+        // should be able to follow from the top of the tree.
+        foreach ((string from, string to, bool _) in _edges)
+        {
+            if (_path.Contains((from, to)) && _rects.TryGetValue(from, out Rect2 top) && _rects.TryGetValue(to, out Rect2 bottom))
+            {
+                DrawConnector(top, bottom, UiTheme.EmberGlow, 6f);
+                DrawConnector(top, bottom, UiTheme.Accent, 3f);
             }
         }
     }
 
-    private void DrawConnector(Rect2 from, Rect2 to, bool lit)
+    private void DrawConnector(Rect2 from, Rect2 to, Color color, float width)
     {
-        Color color = lit ? UiTheme.BrassLit : UiTheme.Iron;
         Vector2 start = new(from.GetCenter().X, from.End.Y);
         Vector2 end = new(to.GetCenter().X, to.Position.Y);
         if (end.Y <= start.Y)
@@ -123,8 +153,8 @@ public sealed partial class PerkTreeCanvas : Container
             points = new[] { start, new Vector2(start.X, bend), new Vector2(end.X, bend), end };
         }
 
-        DrawPolyline(points, color, lit ? 2f : 1.5f);
+        DrawPolyline(points, color, width);
     }
 
-    private static float RowTop(int tier) => (Mathf.Max(1, tier) - 1) * (NodeHeight + RowGap);
+    private float RowTop(int tier) => (Mathf.Max(1, tier) - 1) * (_nodeHeight + RowGap);
 }

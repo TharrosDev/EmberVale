@@ -7,3 +7,22 @@
 - `emblems/embervale_seal.png` — generated with OpenAI ImageGen on 2026-08-30 after rejecting an over-ornamented first pass. Transparent forged-iron broken-circle and ember motif, used as the title/loading identity mark.
 
 Both assets were generated specifically for Embervale. Player-facing text remains rendered by Godot.
+
+## Hand-authored vector assets
+
+- `icons/controls/*.svg` - drawn by hand for `UiSkin` (2026-10): slider grabber, switch, check and radio marks, dropdown arrow. Same 24 px grid and 1.8 px stroke as `icons/*.svg`; colours are baked in (ember `#d9a340`, bone `#d8cfbf`) because a theme icon cannot be tinted.
+- `glyphs/*.svg` - drawn by hand for `UiGlyph` (2026-10): gamepad shapes only (face button, positional face buttons, the four PlayStation symbols, bumper, trigger, d-pad and its four directions, stick, menu and view buttons). A 24-unit grid rasterised at 2x; the button letter is live text set on top by the game, never part of the art.
+- `icons/items/atlas.png` + `atlas.json` - packed by `tools/pack_ui_atlas.gd` from `icons/items/src/<key>.png` (one painted archetype per `ItemIconRules.Keys` entry; the `src` folder is `.gdignore`d). Not present until the icon art lands; `ItemIcons` falls back to the category glyph without it.
+
+## Title, loading and ending paintings (2026-10-06)
+
+- `backgrounds/title_act2.png`, `title_act3.png`, `title_act4.png`, `loading_ember_crown.png`, `loading_frostfang.png`,
+  `loading_ashen_wilds.png`, `loading_sunspire.png`, `loading_pale.png`, `loading_celestial.png`, `ending_dawnfire.png`,
+  `ending_embers.png`, `credits.png` — generated with Meshy text-to-image (nano-banana-pro, 16:9) on 2026-10-06 to match
+  `menu_ashen_causeway.png`: text-free low-poly flat-shaded matte paintings with calm dark space for Godot-rendered text.
+
+## Item icons (2026-10-06)
+
+- `icons/items/src/<key>.png` (79 archetypes, 256 px, painted on flat black) — generated with Meshy text-to-image
+  (nano-banana) on 2026-10-06, one per `ItemIconRules` archetype key. `tools/pack_ui_atlas.gd` keys the black to alpha and
+  packs them into `icons/items/atlas.png` + `atlas.json`; the sources are `.gdignore`d and never ship.

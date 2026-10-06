@@ -2,6 +2,7 @@ using Embervale.Core;
 using Embervale.Core.Services;
 using Embervale.Housing;
 using Embervale.Localization;
+using Embervale.Settings;
 using Godot;
 
 namespace Embervale.UI;
@@ -97,12 +98,34 @@ public partial class PlacementHud : UiPanel
         }
     }
 
+    /// <summary>Keeps the strip clear of the hotbar, which the player's HUD scale and safe zone move.</summary>
+    private void FitAboveHotbar()
+    {
+        float scale = 1f;
+        float safeZone = 0f;
+        if (ServiceLocator.Instance is { } locator && locator.TryGet(out SettingsService settings))
+        {
+            scale = SettingsMath.ClampHudScale(settings.Current.HudScale);
+            safeZone = SettingsMath.ClampHudSafeZone(settings.Current.HudSafeZone);
+        }
+
+        float lift = -HudMetrics.ScreenClearance(
+            HudLayout.BottomClearance, Shell.GetViewportRect().Size.Y, scale, safeZone);
+        if (Shell.OffsetTop != lift)
+        {
+            Shell.OffsetTop = lift;
+            Shell.OffsetBottom = lift;
+        }
+    }
+
     protected override void Rebuild()
     {
         if (Placement() is not { Kit: { } kit } placement)
         {
             return;
         }
+
+        FitAboveHotbar();
 
         _title.Text = Loc.TF("place.holding", kit.DisplayName, placement.Remaining);
         _keys.Text = placement.RemovalTarget != null

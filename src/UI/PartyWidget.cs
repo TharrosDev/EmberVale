@@ -17,6 +17,9 @@ namespace Embervale.UI;
 ///
 /// It hides itself entirely while the party is empty, so a solo player's HUD is unchanged. Rows are
 /// rebuilt from a dirty flag on roster events (never inside a signal); the bars tick every frame.
+///
+/// Like the vitals under it, it has no plate: inked text and keylined bars on the world, as wide as
+/// the vitals (<see cref="HudMetrics.VitalsWidth"/>) so the two read as one column.
 /// </summary>
 public partial class PartyWidget : VBoxContainer
 {
@@ -26,7 +29,7 @@ public partial class PartyWidget : VBoxContainer
 
         public required Label Name { get; init; }
 
-        public required ProgressBar Health { get; init; }
+        public required JuicedBar Health { get; init; }
 
         public required Label Order { get; init; }
 
@@ -42,28 +45,39 @@ public partial class PartyWidget : VBoxContainer
     }
 
     private readonly List<Row> _rows = new();
+    private PanelContainer _frame = null!;
     private VBoxContainer _list = null!;
+    private GameHud? _hud;
     private CompanionRoster? _roster;
     private bool _dirty = true;
+    private bool _allowed = true;
+
+    /// <summary>Whether the player's HUD options let the strip show (<c>GameHud</c> sets it). The
+    /// strip still hides itself while the party is empty.</summary>
+    public bool Allowed
+    {
+        get => _allowed;
+        set
+        {
+            _allowed = value;
+            Visible = value && _rows.Count > 0;
+        }
+    }
 
     public override void _Ready()
     {
         MouseFilter = MouseFilterEnum.Ignore;
         Visible = false;
 
-        // The shared frame, so the strip reads as part of the same HUD as the vitals panel below it.
-        // A Card, not a Panel (37.5H) - a small self-hiding HUD strip does not earn a framed
-        // screen's chrome, and it sits directly above the vitals panel where two brass rules
-        // stacked read as a seam rather than as two widgets.
-        PanelContainer frame = UiTheme.Card(UiTheme.Friendly);
-        frame.MouseFilter = MouseFilterEnum.Ignore;
-        frame.CustomMinimumSize = new Vector2(250, 0);
-        UiTheme.Compact(frame);
-        AddChild(frame);
+        // No ground, like the vitals it sits on: it was a Card, and before that a Panel, and a box
+        // directly above another box read as a seam rather than as two widgets.
+        _frame = UiTheme.HudBare();
+        _frame.CustomMinimumSize = new Vector2(HudMetrics.VitalsMin, 0);
+        AddChild(_frame);
 
         _list = new VBoxContainer();
-        _list.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
-        frame.AddChild(_list);
+        _list.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
+        _frame.AddChild(_list);
 
         EventBus bus = EventBus.Instance;
         bus?.Subscribe<CompanionRecruitedEvent>(OnPartyChanged);
@@ -71,6 +85,8 @@ public partial class PartyWidget : VBoxContainer
         bus?.Subscribe<CompanionStanceChangedEvent>(OnStanceChanged);
         bus?.Subscribe<CompanionLoyaltyTierChangedEvent>(OnLoyaltyTierChanged);
         bus?.Subscribe<GameLoadedEvent>(OnGameLoaded);
+        bus?.Subscribe<InputDeviceChangedEvent>(OnDeviceChanged);
+        bus?.Subscribe<InputBindingsChangedEvent>(OnBindingsChanged);
     }
 
     public override void _ExitTree()
@@ -86,6 +102,8 @@ public partial class PartyWidget : VBoxContainer
         bus.Unsubscribe<CompanionStanceChangedEvent>(OnStanceChanged);
         bus.Unsubscribe<CompanionLoyaltyTierChangedEvent>(OnLoyaltyTierChanged);
         bus.Unsubscribe<GameLoadedEvent>(OnGameLoaded);
+        bus.Unsubscribe<InputDeviceChangedEvent>(OnDeviceChanged);
+        bus.Unsubscribe<InputBindingsChangedEvent>(OnBindingsChanged);
     }
 
     public override void _Process(double delta)
@@ -103,7 +121,8 @@ public partial class PartyWidget : VBoxContainer
             Rebuild(roster);
         }
 
-        Visible = _rows.Count > 0;
+        _hud ??= GameHud.Of(this);
+        Visible = _allowed && _rows.Count > 0;
         foreach (Row row in _rows)
         {
             if (!roster.TryGet(row.CompanionId, out CompanionEntity companion))
@@ -112,7 +131,7 @@ public partial class PartyWidget : VBoxContainer
             }
 
             StatsComponent? stats = companion.GetComponent<StatsComponent>();
-            row.Health.Value = stats?.GetNormalized(StatType.Health) ?? 0d;
+            row.Health.SetTarget(stats?.GetNormalized(StatType.Health) ?? 0d);
 
             // A downed companion reads as downed rather than as whatever order it was under — that
             // is the state the player has to act on.
@@ -129,8 +148,15 @@ public partial class PartyWidget : VBoxContainer
             int downedKey = downed ? 1 : 0;
             if (downedKey != row.DownedShown)
             {
+                // Going down or getting up is the news a Dynamic strip exists for; the first
+                // reading of a freshly built row is not.
+                if (row.DownedShown >= 0)
+                {
+                    _hud?.MarkChanged(HudElement.Party);
+                }
+
                 row.DownedShown = downedKey;
-                UiLive.FontColor(row.Order, downed ? UiTheme.Bad : UiTheme.Dim);
+                UiLive.FontColor(row.Order, downed ? UiTheme.Bad : UiTheme.Text);
                 UiLive.FontColor(row.Name, downed ? UiTheme.Bad : UiTheme.Text);
             }
 
@@ -147,6 +173,7 @@ public partial class PartyWidget : VBoxContainer
     {
         foreach (Node child in _list.GetChildren())
         {
+            _list.RemoveChild(child);
             child.QueueFree();
         }
 
@@ -159,25 +186,38 @@ public partial class PartyWidget : VBoxContainer
                 continue;
             }
 
-            var line = new HBoxContainer();
-            line.AddThemeConstantOverride("separation", UiTheme.SpaceMd);
+            // One block per companion: the name line hugs its bar, and companions stand apart.
+            var block = new VBoxContainer();
+            block.AddThemeConstantOverride("separation", UiTheme.Space2xs);
+            _list.AddChild(block);
 
-            Label name = UiTheme.Body(Loc.T(companion.NameKey));
+            var line = new HBoxContainer();
+            line.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
+
+            Label name = UiTheme.HudInk(UiTheme.Body(Loc.T(companion.NameKey)));
             name.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+            name.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
             line.AddChild(name);
 
-            Label loyalty = UiTheme.Caption(string.Empty, UiTheme.Accent);
+            Label loyalty = UiTheme.HudInk(UiTheme.Caption(string.Empty, UiTheme.Accent));
             loyalty.SizeFlagsVertical = SizeFlags.ShrinkCenter;
             line.AddChild(loyalty);
 
-            Label order = UiTheme.Caption(string.Empty, UiTheme.Dim);
+            // Text, not Dim: this strip has no ground, and at a handheld's scale a dim caption over
+            // the world is the line the player cannot read. Its size already makes it secondary.
+            Label order = UiTheme.HudInk(UiTheme.Caption(string.Empty, UiTheme.Text));
             order.SizeFlagsVertical = SizeFlags.ShrinkCenter;
             line.AddChild(order);
-            _list.AddChild(line);
+            block.AddChild(line);
 
-            ProgressBar health = UiTheme.Bar(UiTheme.Health);
-            health.CustomMinimumSize = new Vector2(168f, 6f);
-            _list.AddChild(health);
+            // The same keylined bar as the player's stamina and mana, snapped to where the
+            // companion's health is now so a rebuilt row does not replay a hit.
+            JuicedBar health = JuicedBar.Create(UiTheme.Health, 0f);
+            health.Keylined = true;
+            health.LagChunk = true;
+            health.CustomMinimumSize = new Vector2(0f, HudCoreMetrics.BarMinorHeight);
+            health.Snap(companion.GetComponent<StatsComponent>()?.GetNormalized(StatType.Health) ?? 0d);
+            block.AddChild(health);
 
             _rows.Add(new Row { CompanionId = id, Name = name, Health = health, Order = order, Loyalty = loyalty });
         }
@@ -193,11 +233,11 @@ public partial class PartyWidget : VBoxContainer
             var hint = new HBoxContainer { MouseFilter = MouseFilterEnum.Ignore };
             hint.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
 
-            PanelContainer cap = UiTheme.KeyCap(GameInput.PromptLabel(GameInput.CompanionCommand));
+            Control cap = UiGlyph.For(GameInput.CompanionCommand);
             cap.SizeFlagsVertical = SizeFlags.ShrinkCenter;
             hint.AddChild(cap);
 
-            Label label = UiTheme.Caption(Loc.T("hud.party_hint"), UiTheme.Dim);
+            Label label = UiTheme.HudInk(UiTheme.Caption(Loc.T("hud.party_hint"), UiTheme.Text));
             label.SizeFlagsVertical = SizeFlags.ShrinkCenter;
             hint.AddChild(label);
 
@@ -221,17 +261,42 @@ public partial class PartyWidget : VBoxContainer
         return _roster;
     }
 
+    /// <summary>Makes the strip as wide as the vitals are at this layout width, whether or not the
+    /// vitals are showing. <see cref="GameHud"/> calls it whenever that width changes.</summary>
+    public void FitToLayout(float layoutWidth)
+    {
+        float width = HudMetrics.VitalsWidth(layoutWidth);
+        if (_frame != null && _frame.CustomMinimumSize.X != width)
+        {
+            _frame.CustomMinimumSize = new Vector2(width, 0f);
+        }
+    }
+
     /// <summary>Rebuilds the rows on the next tick (locale or colour-vision change): they hold
     /// translated text and adapted colours.</summary>
     public void MarkStale() => _dirty = true;
 
-    private void OnPartyChanged(CompanionRecruitedEvent e) => _dirty = true;
+    private void OnPartyChanged(CompanionRecruitedEvent e) => NoteChanged();
 
-    private void OnPartyChanged(CompanionDismissedEvent e) => _dirty = true;
+    private void OnPartyChanged(CompanionDismissedEvent e) => NoteChanged();
 
-    private void OnStanceChanged(CompanionStanceChangedEvent e) => _dirty = true;
+    private void OnStanceChanged(CompanionStanceChangedEvent e) => NoteChanged();
 
-    private void OnLoyaltyTierChanged(CompanionLoyaltyTierChangedEvent e) => _dirty = true;
+    private void OnLoyaltyTierChanged(CompanionLoyaltyTierChangedEvent e) => NoteChanged();
 
+    // A load restores a party; it does not announce one (CLAUDE.md §7), so it rebuilds without
+    // bringing a Dynamic strip up. The same goes for a glyph following the device.
     private void OnGameLoaded(GameLoadedEvent e) => _dirty = true;
+
+    private void OnDeviceChanged(InputDeviceChangedEvent e) => _dirty = true;
+
+    private void OnBindingsChanged(InputBindingsChangedEvent e) => _dirty = true;
+
+    /// <summary>The party itself changed: rebuild, and bring a Dynamic strip up to show it.</summary>
+    private void NoteChanged()
+    {
+        _dirty = true;
+        _hud ??= GameHud.Of(this);
+        _hud?.MarkChanged(HudElement.Party);
+    }
 }

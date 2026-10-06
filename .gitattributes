@@ -35,3 +35,7 @@
 *.ogg  binary
 *.wav  binary
 *.blend binary
+
+# Every UI lane appends its own block of rows to the string catalogue. A union merge keeps both
+# sides of an append-append conflict; duplicate keys are scanned for after the merge.
+data/locale/strings.csv merge=union

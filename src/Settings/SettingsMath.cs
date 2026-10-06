@@ -32,6 +32,77 @@ public static class SettingsMath
     /// <summary>Clamps a linear volume into the valid 0..1 fader range.</summary>
     public static float ClampVolume(float linear) => Math.Clamp(linear, 0f, 1f);
 
+    // --- UI upgrade: the valid range of each appended Settings field ----------------------------
+    // A settings file is hand-editable and outlives the build that wrote it, so a reader takes the
+    // value through its clamp rather than trusting it. A value that is not a number is the default.
+
+    public const float HudScaleMin = 0.75f;
+    public const float HudScaleMax = 1.5f;
+    public const float HudOpacityMin = 0.3f;
+    public const float HudSafeZoneMax = 0.1f;
+    public const float PadSensitivityMin = 0.25f;
+    public const float PadSensitivityMax = 3f;
+    public const float ToastDurationMin = 0.5f;
+    public const float ToastDurationMax = 3f;
+    public const int SubtitleSizeMax = 2;
+    public const int DamageNumberModeMax = 3;
+
+    public static float ClampHudScale(float scale) => ClampOr(scale, HudScaleMin, HudScaleMax, 1f);
+
+    /// <summary>Floored well above zero: a HUD the player cannot see is the Hidden mode's job, and
+    /// a slider that can reach it is how a health bar gets lost.</summary>
+    public static float ClampHudOpacity(float opacity) => ClampOr(opacity, HudOpacityMin, 1f, 1f);
+
+    public static float ClampHudSafeZone(float fraction) => ClampOr(fraction, 0f, HudSafeZoneMax, 0f);
+
+    public static float ClampPadSensitivity(float multiplier) =>
+        ClampOr(multiplier, PadSensitivityMin, PadSensitivityMax, 1f);
+
+    public static float ClampToastDuration(float multiplier) =>
+        ClampOr(multiplier, ToastDurationMin, ToastDurationMax, 1f);
+
+    public static int ClampSubtitleSize(int size) => Math.Clamp(size, 0, SubtitleSizeMax);
+
+    /// <summary>The damage-number mode in force: the saved mode, or what the older on/off toggle
+    /// means (1 all, 0 none) while the mode is still -1 or is out of range.</summary>
+    public static int DamageNumberMode(int mode, bool legacyEnabled) =>
+        mode >= 0 && mode <= DamageNumberModeMax ? mode : legacyEnabled ? 1 : 0;
+
+    /// <summary>The saved mode of HUD element <paramref name="element"/>: 0 (always) when the list
+    /// is short or holds a number that is not a mode.</summary>
+    public static int HudElementMode(int[]? modes, int element, int modeCount = 3) =>
+        modes != null && element >= 0 && element < modes.Length && modes[element] >= 0 && modes[element] < modeCount
+            ? modes[element]
+            : 0;
+
+    /// <summary>One saved binding line, <c>action=binding</c>.</summary>
+    public static string BindingEntry(string action, string binding) => $"{action}={binding}";
+
+    /// <summary>The saved binding for <paramref name="action"/>, or null when it was never remapped
+    /// (or its line is malformed). The last line for an action wins.</summary>
+    public static string? BindingFor(string[]? entries, string action)
+    {
+        if (entries == null)
+        {
+            return null;
+        }
+
+        for (int i = entries.Length - 1; i >= 0; i--)
+        {
+            string entry = entries[i] ?? string.Empty;
+            if (action.Length > 0 && entry.Length > action.Length + 1 && entry[action.Length] == '='
+                && entry.StartsWith(action, StringComparison.Ordinal))
+            {
+                return entry.Substring(action.Length + 1);
+            }
+        }
+
+        return null;
+    }
+
+    private static float ClampOr(float value, float min, float max, float fallback) =>
+        float.IsFinite(value) ? Math.Clamp(value, min, max) : fallback;
+
     /// <summary>Per-frame look step from a raw mouse delta: the controller's base sensitivity scaled by
     /// the player's sensitivity multiplier setting (Phase 25.5D wires the 24F slider into the
     /// controller, which previously ignored it).</summary>

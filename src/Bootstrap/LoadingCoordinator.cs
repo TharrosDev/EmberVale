@@ -3,6 +3,7 @@ using Embervale.Combat;
 using Embervale.Companions;
 using Embervale.Core;
 using Embervale.Core.Diagnostics;
+using Embervale.Core.Events;
 using Embervale.Core.Services;
 using Embervale.Player;
 using Embervale.World;
@@ -62,6 +63,8 @@ public sealed partial class LoadingCoordinator : Node
     private double _groundReadyAt = -1d;
     private int _placementAttempts;
     private bool _settling;
+    private bool _realmSettled;
+    private int _publishedStep = -1;
     private Action? _onSettled;
 
     public GameSession Session { get; init; } = null!;
@@ -97,6 +100,9 @@ public sealed partial class LoadingCoordinator : Node
         _groundReadyAt = -1d;
         _placementAttempts = 0;
         _settling = false;
+        _realmSettled = false;
+        _publishedStep = -1;
+        PublishProgress(placed: false);
         if (Session.Players.Player is { } player)
         {
             Session.WorldDirector.Streamer?.RequirePosition(player.GlobalPosition);
@@ -150,6 +156,7 @@ public sealed partial class LoadingCoordinator : Node
             return;
         }
         MarkCleared(ref _streamerReadyAt);
+        PublishProgress(placed: false);
 
         if (!HasGroundUnderPlayer())
         {
@@ -157,6 +164,7 @@ public sealed partial class LoadingCoordinator : Node
             return;
         }
         MarkCleared(ref _groundReadyAt);
+        PublishProgress(placed: false);
 
         // The landing is real; give the rest of the realm a bounded moment to arrive behind the
         // loading screen, where the streamer runs its instantiate and activation stages together.
@@ -171,6 +179,8 @@ public sealed partial class LoadingCoordinator : Node
             ReportProgress(LoadingWait.Realm);
             return;
         }
+        _realmSettled = true;
+        PublishProgress(placed: false);
 
         // Everything the world put down is on the ground now, so anything the load moved can be
         // re-seated against real collision rather than the heightfield alone.
@@ -181,6 +191,7 @@ public sealed partial class LoadingCoordinator : Node
         }
 
         _elapsed = -1d;
+        PublishProgress(placed: true);
         RegroupParty();
         streamer?.ReleaseRequiredPosition();
 
@@ -195,6 +206,20 @@ public sealed partial class LoadingCoordinator : Node
         _elapsed = -1d;
         _onSettled = null;
         Session.Lifecycle.AbortToTitle(reason);
+    }
+
+    /// <summary>Tells the loading screen which stage the gate is on, once per stage: the wait
+    /// stages are polled every physics frame and the screen only needs the moment one clears.</summary>
+    private void PublishProgress(bool placed)
+    {
+        int step = LoadingProgressEvent.StepFor(_streamerReadyAt >= 0d, _groundReadyAt >= 0d, _realmSettled, placed);
+        if (step == _publishedStep)
+        {
+            return;
+        }
+
+        _publishedStep = step;
+        EventBus.Instance?.Publish(new LoadingProgressEvent(Session.CurrentRegionId, step));
     }
 
     private void MarkCleared(ref double stageClearedAt)

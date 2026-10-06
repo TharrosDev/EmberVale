@@ -1,3 +1,4 @@
+using Embervale.Settings;
 using Godot;
 
 namespace Embervale.UI;
@@ -12,6 +13,11 @@ namespace Embervale.UI;
 /// scale factor (see <c>SettingsService.ApplyGraphics</c>), so slots need no per-widget
 /// scaling.
 ///
+/// The slots sit in one child, <see cref="Scaled"/>, which carries the player's HUD scale, HUD
+/// opacity and safe zone (<see cref="ApplyScale"/>, <see cref="ApplyOpacity"/>,
+/// <see cref="ApplySafeZone"/>). <see cref="Overlay"/> stays outside it: the reticles there are
+/// placed in screen coordinates and the full-screen fades have to reach the edges.
+///
 /// Slots are anchored directly on this root (zero-size rects at their pivot that grow toward
 /// screen centre as content demands — the same mechanics the pre-30.5B widgets used, minus
 /// the duplication). OS safe-area insets (TV overscan, notches) are zero on the desktop/
@@ -23,10 +29,13 @@ public partial class HudLayout : Control
     /// <summary>Inset between the screen edge and every slot.</summary>
     public int SafeMargin { get; set; } = UiTheme.SpaceLg;
 
-    /// <summary>Clear height from the screen's bottom edge to the top of the hotbar block plus a
+    /// <summary>Clear height from the screen's bottom edge to the top of the hotbar block (the safe
+    /// margin, a square cell, and the chord line a pad puts over the cells) plus a
     /// <see cref="UiTheme.HudGap"/>: anything centred above the hotbar (prompt, tutorial hint, the
-    /// placement strip) sits at or above this line so it never touches the slots.</summary>
-    public const int BottomClearance = 160;
+    /// placement strip) sits at or above this line so it never touches the slots. In the scaled
+    /// HUD's own units: anything outside <see cref="Scaled"/> converts with
+    /// <see cref="HudMetrics.ScreenClearance"/>.</summary>
+    public const int BottomClearance = 140;
 
     /// <summary>How far above the bottom edge the bottom-centre slot floats (prompt near the
     /// player's natural gaze): <see cref="BottomClearance"/> less the safe margin the slot adds itself.</summary>
@@ -41,24 +50,34 @@ public partial class HudLayout : Control
     /// <summary>Top-right stack (quest tracker).</summary>
     public VBoxContainer TopRight { get; private set; } = null!;
 
-    /// <summary>Bottom-left stack (vitals) — first cell of the bottom flow bar.</summary>
+    /// <summary>Bottom-left stack (vitals), in the left cell of the bottom flow bar.</summary>
     public VBoxContainer BottomLeft { get; private set; } = null!;
 
-    /// <summary>Dock for the quick-use hotbar, centred in the bottom bar's free space. A flow
-    /// sibling of <see cref="BottomLeft"/>, so the hotbar and vitals can never overlap at any
-    /// UI scale or resolution.</summary>
+    /// <summary>Dock for the quick-use hotbar, on the screen's centre line wherever the bottom bar
+    /// has room for it there. A flow sibling of the cells that hold <see cref="BottomLeft"/> and
+    /// <see cref="BottomRight"/>, so the hotbar, vitals and minimap can never overlap at any UI
+    /// scale or resolution.</summary>
     public VBoxContainer BottomDock { get; private set; } = null!;
 
     /// <summary>Bottom-centre stack (interaction prompt), floated above the screen edge.</summary>
     public VBoxContainer BottomCenter { get; private set; } = null!;
 
-    /// <summary>Bottom-right stack (minimap, 39.5B) — the last cell of the bottom flow bar, so it can
-    /// no more overlap the hotbar than the hotbar can overlap the vitals.</summary>
+    /// <summary>Bottom-right stack (minimap, 39.5B), in the right cell of the bottom flow bar, so it
+    /// can no more overlap the hotbar than the hotbar can overlap the vitals.</summary>
     public VBoxContainer BottomRight { get; private set; } = null!;
 
     /// <summary>Free layer for screen-space widgets that position themselves (lock reticle) and
-    /// full-screen overlays (vignette, fades). Not inset by the safe margin.</summary>
+    /// full-screen overlays (vignette, fades). Not inset by the safe margin, and not scaled.</summary>
     public Control Overlay { get; private set; } = null!;
+
+    /// <summary>Parent of every slot. Full-rect until a HUD scale or safe zone says otherwise.</summary>
+    public Control Scaled { get; private set; } = null!;
+
+    /// <summary>The HUD scale in force (1 = unscaled).</summary>
+    public float HudScale { get; private set; } = 1f;
+
+    /// <summary>The safe zone in force, as a fraction of the screen kept clear on every side.</summary>
+    public float SafeZone { get; private set; }
 
     // Built in the constructor ("build detached, then add", CLAUDE.md §6) so the root's and every
     // slot's anchors are configured BEFORE tree entry — anchors applied to an already-entered
@@ -73,14 +92,27 @@ public partial class HudLayout : Control
         Overlay.SetAnchorsPreset(LayoutPreset.FullRect);
         AddChild(Overlay);
 
+        Scaled = new Control { Name = "Scaled", MouseFilter = MouseFilterEnum.Ignore };
+        Scaled.SetAnchorsPreset(LayoutPreset.FullRect);
+        AddChild(Scaled);
+
         TopLeft = Slot("TopLeft", horizontal: 0f, vertical: 0f);
         TopCenter = Slot("TopCenter", horizontal: 0.5f, vertical: 0f);
         TopRight = Slot("TopRight", horizontal: 1f, vertical: 0f);
         BottomCenter = Slot("BottomCenter", horizontal: 0.5f, vertical: 1f, extraLift: BottomCenterLift);
 
-        // The bottom edge is a full-width flow bar: vitals left, the hotbar dock centred in the
-        // remaining space by twin spacers. Flow layout means these can never overlap, no matter
-        // how small the effective viewport gets (high UI scale, low resolution, Steam Deck).
+        // The bottom edge is a full-width flow bar of three cells: vitals in the left one, the hotbar
+        // dock between, the minimap in the right one. Flow layout means these can never overlap, no
+        // matter how small the effective viewport gets (high UI scale, low resolution, Steam Deck).
+        //
+        // The two side cells expand equally, and a box shares its width among expanding children by
+        // their whole size, not by what is left over after their minimums. So the cells are the same
+        // width wherever both fit, and the hotbar sits on the screen's centre line under the
+        // crosshair and the prompt. It used to sit between twin spacers, centred in what the vitals
+        // and the minimap left: 48 px right of centre because the vitals are the wider of the two,
+        // and it jumped another 100 px when a menu took the minimap away. The cells stay when what
+        // is in them hides, so nothing moves the hotbar now. Where both do not fit, the wider side
+        // keeps its width and the hotbar gives way toward the other, as before.
         var bar = new HBoxContainer { Name = "BottomBar", MouseFilter = MouseFilterEnum.Ignore };
         bar.AddThemeConstantOverride("separation", UiTheme.SpaceMd);
         bar.AnchorLeft = 0f;
@@ -92,7 +124,7 @@ public partial class HudLayout : Control
         bar.OffsetTop = -SafeMargin;
         bar.OffsetBottom = -SafeMargin;
         bar.GrowVertical = GrowDirection.Begin;
-        AddChild(bar);
+        Scaled.AddChild(bar);
 
         BottomLeft = new VBoxContainer
         {
@@ -101,9 +133,7 @@ public partial class HudLayout : Control
             SizeFlagsVertical = SizeFlags.ShrinkEnd,
         };
         BottomLeft.AddThemeConstantOverride("separation", UiTheme.HudGap);
-        bar.AddChild(BottomLeft);
-
-        bar.AddChild(new Control { MouseFilter = MouseFilterEnum.Ignore, SizeFlagsHorizontal = SizeFlags.ExpandFill });
+        bar.AddChild(Cell("BottomLeftCell", BoxContainer.AlignmentMode.Begin, BottomLeft));
 
         BottomDock = new VBoxContainer
         {
@@ -113,8 +143,6 @@ public partial class HudLayout : Control
         };
         bar.AddChild(BottomDock);
 
-        bar.AddChild(new Control { MouseFilter = MouseFilterEnum.Ignore, SizeFlagsHorizontal = SizeFlags.ExpandFill });
-
         BottomRight = new VBoxContainer
         {
             Name = "BottomRight",
@@ -122,7 +150,23 @@ public partial class HudLayout : Control
             SizeFlagsVertical = SizeFlags.ShrinkEnd,
         };
         BottomRight.AddThemeConstantOverride("separation", UiTheme.HudGap);
-        bar.AddChild(BottomRight);
+        bar.AddChild(Cell("BottomRightCell", BoxContainer.AlignmentMode.End, BottomRight));
+    }
+
+    /// <summary>One side cell of the bottom bar: it takes an equal share of the bar's width and holds
+    /// <paramref name="slot"/> against its outer edge. It has no size of its own, so a narrow bar
+    /// squeezes it down to the slot and no further.</summary>
+    private static HBoxContainer Cell(string name, BoxContainer.AlignmentMode alignment, Control slot)
+    {
+        var cell = new HBoxContainer
+        {
+            Name = name,
+            Alignment = alignment,
+            MouseFilter = MouseFilterEnum.Ignore,
+            SizeFlagsHorizontal = SizeFlags.ExpandFill,
+        };
+        cell.AddChild(slot);
+        return cell;
     }
 
     /// <summary>A stacked slot pinned to a corner/edge. <paramref name="horizontal"/> and
@@ -155,7 +199,59 @@ public partial class HudLayout : Control
         };
         slot.GrowVertical = vertical == 1f ? GrowDirection.Begin : GrowDirection.End;
 
-        AddChild(slot);
+        Scaled.AddChild(slot);
         return slot;
+    }
+
+    /// <summary>Scales every slot about the screen's top-left corner. The slots lay out in a rect
+    /// that many times smaller, so corner widgets stay in their corners at any scale.</summary>
+    public void ApplyScale(float scale)
+    {
+        scale = SettingsMath.ClampHudScale(scale);
+        if (scale != HudScale)
+        {
+            HudScale = scale;
+            Refit();
+        }
+    }
+
+    /// <summary>Keeps <paramref name="fraction"/> of the screen clear on every side (a TV that
+    /// overscans), on top of the <see cref="SafeMargin"/> every slot already has.</summary>
+    public void ApplySafeZone(float fraction)
+    {
+        fraction = SettingsMath.ClampHudSafeZone(fraction);
+        if (fraction != SafeZone)
+        {
+            SafeZone = fraction;
+            Refit();
+        }
+    }
+
+    /// <summary>Fades the slots as one. The overlay is left alone: a crosshair or a damage arc the
+    /// player has turned down with the rest of the HUD is one they can no longer read.</summary>
+    public void ApplyOpacity(float opacity)
+    {
+        opacity = SettingsMath.ClampHudOpacity(opacity);
+        if (opacity != Scaled.Modulate.A)
+        {
+            Scaled.Modulate = new Color(1f, 1f, 1f, opacity);
+        }
+    }
+
+    // Anchors rather than a size written on resize: the scaled rect is a fraction of this one, so
+    // the engine keeps it fitted through every window change with nothing here listening. An anchor
+    // past 1 is how a HUD scaled below 1 gets a layout rect larger than the screen.
+    private void Refit()
+    {
+        (float left, float top, float right, float bottom) = HudMetrics.ScaledAnchors(HudScale, SafeZone);
+        Scaled.SetAnchor(Side.Left, left, keepOffset: false, pushOppositeAnchor: false);
+        Scaled.SetAnchor(Side.Top, top, keepOffset: false, pushOppositeAnchor: false);
+        Scaled.SetAnchor(Side.Right, right, keepOffset: false, pushOppositeAnchor: false);
+        Scaled.SetAnchor(Side.Bottom, bottom, keepOffset: false, pushOppositeAnchor: false);
+        Scaled.OffsetLeft = 0f;
+        Scaled.OffsetTop = 0f;
+        Scaled.OffsetRight = 0f;
+        Scaled.OffsetBottom = 0f;
+        Scaled.Scale = new Vector2(HudScale, HudScale);
     }
 }

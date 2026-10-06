@@ -36,6 +36,7 @@ public partial class CraftingPanel : UiPanel
     private const int TabCraft = 0;
     private const int TabReforge = 1;
     private const int TabSalvage = 2;
+    private const int TabCount = 3;
 
     /// <summary>The filter row's categories, in dropdown order.</summary>
     public static readonly IReadOnlyList<string> CategoryKeys = new[]
@@ -57,20 +58,39 @@ public partial class CraftingPanel : UiPanel
         "craft.status.crafted", "craft.status.crafted_some", "craft.status.salvaged", "craft.status.salvaged_some",
         "craft.locked.trainer", "craft.locked.trainer_or_scroll", "craft.locked.scroll", "craft.locked.unknown",
         "craft.toast.recipe_learned", "craft.toast.recipes_learned", "craft.toast.recipes_learned_detail",
-        "craft.toast.rank_up",
+        "craft.toast.rank_up", "craft.order.hint", "craft.order.hint_commission",
     };
 
     /// <summary>The confirm token for "salvage all junk" (an item is its own token).</summary>
     private static readonly object JunkConfirm = new();
 
     private Label _title = null!;
+    private Control _wipe = null!;
     private UiTabs _modeTabs = null!;
     private Label _skill = null!;
     private ProgressBar _skillBar = null!;
     private Control _craftBar = null!;
     private LineEdit _search = null!;
     private Label _status = null!;
+
+    // The Craft page: recipes | ingredients | result, and the order bar under them.
+    private Control _craftPage = null!;
+    private Label _recipeHeader = null!;
+    private Label _recipeNote = null!;
+    private VBoxContainer _recipeList = null!;
+    private Control _ingredientColumn = null!;
+    private ScrollContainer _ingredientScroll = null!;
+    private Label _ingredientNote = null!;
+    private VBoxContainer _ingredients = null!;
+    private ScrollContainer _resultScroll = null!;
+    private VBoxContainer _result = null!;
+    private HFlowContainer _order = null!;
+
+    // The Reforge and Salvage pages: one list.
+    private ScrollContainer _listScroll = null!;
     private VBoxContainer _list = null!;
+
+    private readonly List<Button> _recipeRows = new();
 
     private IEntity? _player;
     private CraftingComponent? _crafting;
@@ -91,6 +111,23 @@ public partial class CraftingPanel : UiPanel
     private bool _craftableOnly;
     private readonly Dictionary<string, int> _quantities = new();
 
+    /// <summary>The recipe the ingredient and result columns describe.</summary>
+    private string _selectedRecipe = string.Empty;
+    private Button? _selectedRow;
+    private Button? _selectedSlot;
+    private ItemInstance? _selectedSlotItem;
+
+    /// <summary>The order bar's first verb (Craft, Commission or Study), for stepping into it.</summary>
+    private Button? _primaryVerb;
+
+    private bool _detailDirty;
+
+    /// <summary>Focus goes to the selected recipe after the next rebuild (on opening).</summary>
+    private bool _focusSelection;
+
+    /// <summary>Focus goes to the order bar's verb once it is built (a recipe row was pressed).</summary>
+    private bool _focusVerb;
+
     /// <summary>The piece whose reforge options are open.</summary>
     private ItemInstance? _reforgeTarget;
 
@@ -101,21 +138,41 @@ public partial class CraftingPanel : UiPanel
     private string _statusText = string.Empty;
     private bool _statusBad;
 
+    protected override bool Dims => true;
+
+    protected override IReadOnlyList<LegendEntry> Legend
+    {
+        get
+        {
+            var entries = new List<LegendEntry>();
+            if (_tab == TabCraft && _recipeRows.Count > 0)
+            {
+                entries.Add(new LegendEntry("ui_accept", Loc.T("trade.legend.choose")));
+                entries.Add(new LegendEntry(ItemSlot.CompareAction, Loc.T("item.detail.compare")));
+                if (InputDevice.GamepadActive)
+                {
+                    entries.Add(new LegendEntry(GameInput.LookDown, Loc.T("trade.legend.details")));
+                }
+            }
+
+            entries.Add(new LegendEntry(GameInput.MenuSubPrev, Loc.T("trade.legend.mode"), GameInput.MenuSubNext));
+            entries.AddRange(base.Legend);
+            return entries;
+        }
+    }
+
+    /// <summary>Z/C and LT/RT step Craft, Reforge and Salvage, wrapping at the ends.</summary>
+    protected override void OnSubTab(int delta)
+    {
+        UiAudio.Play(UiCue.Tab);
+        _modeTabs.Select(TradeRules.StepTab(_tab, delta, TabCount));
+    }
+
     protected override void BuildShell(PanelContainer shell)
     {
-        UiTheme.ApplyWorkspace(shell, 0.66f);
+        UiTheme.ApplyScreenInset(shell);
 
-        MarginContainer margin = UiTheme.Padding(UiTheme.PanelPad);
-        shell.AddChild(margin);
-
-        var column = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
-        column.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
-        margin.AddChild(column);
-
-        _title = UiTheme.Header(string.Empty);
-        column.AddChild(_title);
-
-        // Craft / Reforge / Salvage - static layout; the pages rebuild inside the list below.
+        // Craft / Reforge / Salvage - static layout; the pages rebuild below.
         _modeTabs = new UiTabs();
         _modeTabs.Add(Loc.T("craft.mode_craft"));
         _modeTabs.Add(Loc.T("craft.mode_reforge"));
@@ -127,19 +184,18 @@ public partial class CraftingPanel : UiPanel
             SetStatus(string.Empty);
             MarkDirty();
         };
-        column.AddChild(_modeTabs);
 
-        // The crafting skill, always in view: it gates recipes and sets the workmanship odds, so it
-        // is the first thing a "why can I not make this" question needs.
-        var skillRow = new HBoxContainer();
-        skillRow.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
+        VBoxContainer column = UiTheme.TradePage(
+            shell, UiIcon.Kind.Material, out _title, out HBoxContainer aside, out _wipe, _modeTabs);
+
+        // The crafting skill, always in view beside the station's name: it gates recipes and sets the
+        // workmanship odds, so it is the first thing a "why can I not make this" question needs.
         _skill = UiTheme.Caption(string.Empty, UiTheme.Dim);
         _skill.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
-        skillRow.AddChild(_skill);
-        _skillBar = UiTheme.Bar(UiTheme.Accent, 140f);
+        aside.AddChild(_skill);
+        _skillBar = UiTheme.Bar(UiTheme.Accent, SkillBarWidth);
         _skillBar.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
-        skillRow.AddChild(_skillBar);
-        column.AddChild(skillRow);
+        aside.AddChild(_skillBar);
 
         column.AddChild(BuildCraftBar());
 
@@ -147,13 +203,68 @@ public partial class CraftingPanel : UiPanel
         _status.AutowrapMode = TextServer.AutowrapMode.WordSmart;
         _status.Visible = false;
         column.AddChild(_status);
-        column.AddChild(UiTheme.Divider());
 
-        // The shared list: row gap, and a gutter so the scrollbar stays off the row borders. No fixed
-        // height (a literal overflowed the Steam Deck's 533 px viewport once already); the workspace
-        // shell sets the floor.
-        (ScrollContainer scroll, _list) = UiTheme.ScrollList();
-        column.AddChild(scroll);
+        column.AddChild(BuildCraftPage());
+
+        // The shared list of the other two pages: row gap, and a gutter so the scrollbar stays off the
+        // row borders. No fixed height (a literal overflowed the Steam Deck's 533 px viewport once
+        // already); the shell sets the floor.
+        (_listScroll, _list) = UiTheme.ScrollList();
+        _listScroll.Visible = false;
+        column.AddChild(_listScroll);
+    }
+
+    private const float SkillBarWidth = 120f;
+    private const float QuietMarkSize = 9f;
+    private const float OrderNoteMin = 96f;
+
+    /// <summary>
+    /// The Craft page: what can be made on the left, running the full height of the page, and beside
+    /// it the chosen recipe: what it takes, what it makes, and under those two the order bar with why
+    /// it can or cannot be made, how many, and the verbs. The bar sits with the recipe it acts on,
+    /// which also gives the list the row the bar used to take from under it.
+    /// </summary>
+    private Control BuildCraftPage()
+    {
+        var page = new HBoxContainer
+        {
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            SizeFlagsVertical = Control.SizeFlags.ExpandFill,
+        };
+        page.AddThemeConstantOverride("separation", UiTheme.SpaceMd);
+
+        page.AddChild(UiTheme.TradeColumn(0f, out _recipeHeader, out _recipeNote, out _recipeList));
+        _recipeHeader.Text = Loc.T("craft.col.recipes");
+        page.AddChild(UiTheme.ColumnRule());
+
+        var chosen = new VBoxContainer { SizeFlagsVertical = Control.SizeFlags.ExpandFill };
+        chosen.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
+        page.AddChild(chosen);
+
+        var columns = new HBoxContainer { SizeFlagsVertical = Control.SizeFlags.ExpandFill };
+        columns.AddThemeConstantOverride("separation", UiTheme.SpaceMd);
+        chosen.AddChild(columns);
+
+        _ingredientColumn = UiTheme.TradeColumn(1f, out Label needs, out _ingredientNote, out _ingredients);
+        needs.Text = Loc.T("craft.col.ingredients");
+        _ingredientScroll = (ScrollContainer)_ingredients.GetParent().GetParent();
+        columns.AddChild(_ingredientColumn);
+        columns.AddChild(UiTheme.ColumnRule());
+
+        (_resultScroll, _result) = UiTheme.ScrollList();
+        _resultScroll.SizeFlagsHorizontal = Control.SizeFlags.Fill;
+        _result.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
+        columns.AddChild(_resultScroll);
+
+        chosen.AddChild(UiTheme.RowRule());
+
+        // Wraps rather than widen the page when a handheld cannot hold the picker and three verbs.
+        _order = UiTheme.FlowRow();
+        _order.CustomMinimumSize = new Vector2(0f, UiTheme.ControlHeight);
+        chosen.AddChild(_order);
+
+        _craftPage = page;
+        return page;
     }
 
     /// <summary>Search, category and the craftable-only switch. Static controls, so a rebuild of the
@@ -168,7 +279,9 @@ public partial class CraftingPanel : UiPanel
             PlaceholderText = Loc.T("craft.search_placeholder"),
             ClearButtonEnabled = true,
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            CustomMinimumSize = new Vector2(0f, UiTheme.ControlHeight),
         };
+        UiSkin.Apply(_search);
         UiTheme.ApplyType(_search, UiTheme.FontRole.Interface, UiTheme.BodyFontSize);
         _search.TextChanged += text =>
         {
@@ -180,6 +293,7 @@ public partial class CraftingPanel : UiPanel
         // panels toggle on a polled action, so "iron" would otherwise open the inventory over this.
         _search.FocusEntered += () => GameInput.SetTextEntry(true);
         _search.FocusExited += () => GameInput.SetTextEntry(false);
+        _search.TextSubmitted += _ => _focusSelection = true; // back to the recipes, not to no focus at all
         bar.AddChild(_search);
 
         var names = new string[CategoryKeys.Count];
@@ -189,6 +303,7 @@ public partial class CraftingPanel : UiPanel
         }
 
         OptionButton filter = UiTheme.Dropdown(names, 0);
+        filter.CustomMinimumSize = new Vector2(0f, UiTheme.ControlHeight);
         filter.ItemSelected += index =>
         {
             _category = (int)index;
@@ -212,6 +327,7 @@ public partial class CraftingPanel : UiPanel
     protected override void OnReady()
     {
         EventBus.Instance?.Subscribe<CraftingStationOpenedEvent>(OnStationOpened);
+        EventBus.Instance?.Subscribe<InputDeviceChangedEvent>(OnDeviceChanged);
         EventBus.Instance?.Subscribe<InventoryChangedEvent>(OnInventoryChanged);
         EventBus.Instance?.Subscribe<ItemCraftedEvent>(OnItemCrafted);
         EventBus.Instance?.Subscribe<ItemDeconstructedEvent>(OnItemDeconstructed);
@@ -221,6 +337,7 @@ public partial class CraftingPanel : UiPanel
     public override void _ExitTree()
     {
         EventBus.Instance?.Unsubscribe<CraftingStationOpenedEvent>(OnStationOpened);
+        EventBus.Instance?.Unsubscribe<InputDeviceChangedEvent>(OnDeviceChanged);
         EventBus.Instance?.Unsubscribe<InventoryChangedEvent>(OnInventoryChanged);
         EventBus.Instance?.Unsubscribe<ItemCraftedEvent>(OnItemCrafted);
         EventBus.Instance?.Unsubscribe<ItemDeconstructedEvent>(OnItemDeconstructed);
@@ -251,10 +368,13 @@ public partial class CraftingPanel : UiPanel
         _tab = TabCraft;
         _confirm = null;
         _reforgeTarget = null;
+        _selectedRecipe = string.Empty;
         _quantities.Clear();
         SetStatus(string.Empty);
         _modeTabs.Select(TabCraft);
         SetOpen(true);
+        _focusSelection = true;
+        _focusVerb = false;
 
         // The same interact press that opened the station is still "just pressed" this
         // frame; swallow it so the close-on-interact below doesn't fire immediately.
@@ -263,7 +383,12 @@ public partial class CraftingPanel : UiPanel
 
     protected override void OnOpenChanged(bool open)
     {
-        if (!open)
+        if (open)
+        {
+            UiOrnament.PlayEmberWipe(_wipe);
+            ResetDetailScroll();
+        }
+        else
         {
             // Esc closes through the base SetOpen, not Close(), and the keyboard coming back must
             // not depend on the hidden field's focus signal arriving.
@@ -272,6 +397,9 @@ public partial class CraftingPanel : UiPanel
     }
 
     private void OnInventoryChanged(InventoryChangedEvent e) => MarkDirty();
+
+    /// <summary>The legend carries an entry only a pad has (scroll details).</summary>
+    private void OnDeviceChanged(InputDeviceChangedEvent e) => MarkDirty();
 
     private void OnItemCrafted(ItemCraftedEvent e) => MarkDirty();
 
@@ -300,6 +428,42 @@ public partial class CraftingPanel : UiPanel
         }
 
         base._Process(delta);
+        if (!IsOpen || _tab != TabCraft)
+        {
+            return;
+        }
+
+        // The panel focuses its first control when it opens (a tab); a station starts on a recipe.
+        if (_focusSelection)
+        {
+            _focusSelection = false;
+            if (_selectedRow != null && IsInstanceValid(_selectedRow))
+            {
+                _selectedRow.GrabFocus();
+            }
+            else if (GetViewport().GuiGetFocusOwner() is LineEdit)
+            {
+                UiFocus.GrabFirst(Shell); // a search that matched nothing
+            }
+        }
+
+        // A selection that moved within the list: the two columns beside it follow, the list stays.
+        if (_detailDirty)
+        {
+            RebuildCraftDetail();
+        }
+
+        if (_focusVerb)
+        {
+            _focusVerb = false;
+            if (_primaryVerb != null && IsInstanceValid(_primaryVerb))
+            {
+                _primaryVerb.GrabFocus();
+            }
+        }
+
+        TradeRow.StickScroll(_resultScroll, delta);
+        TradeRow.StickScroll(_ingredientScroll, delta);
     }
 
     /// <summary>Whether this window is a master's order desk rather than a free public station (38Q).
@@ -308,7 +472,7 @@ public partial class CraftingPanel : UiPanel
     private bool IsCommission => _materialsShop != null;
 
     /// <summary>The master's quote and the reasons for it (38U). ⚠️ The price charged is
-    /// <c>Total</c> — the same number the tooltip's last line shows, because they are one
+    /// <c>Total</c> — the same number the breakdown's last line shows, because they are one
     /// value rather than two computations of one.</summary>
     private PriceQuote CommissionQuote(CraftingRecipeResource recipe) =>
         EconomyReport.CommissionQuote(recipe, _materialsShop!, _inventory, _labourGold);
@@ -337,10 +501,24 @@ public partial class CraftingPanel : UiPanel
 
     protected override void Rebuild()
     {
-        UiTheme.ClearChildren(_list);
+        // Re-read on every rebuild: the UI scale can change mid-session.
+        UiTheme.ApplyScreenInset(Shell);
+        float usable = UiTheme.UsableWidth(Shell);
+        _ingredientColumn.CustomMinimumSize = new Vector2(TradeRules.IngredientWidth(usable), 0f);
+        _resultScroll.CustomMinimumSize = new Vector2(TradeRules.DetailWidth(usable), 0f);
 
-        _title.Text = Loc.TF("craft.title", _stationName);
-        _craftBar.Visible = _tab == TabCraft;
+        UiTheme.ClearChildren(_list);
+        UiTheme.ClearChildren(_recipeList);
+        _recipeRows.Clear();
+        _selectedRow = null;
+        _selectedSlot = null;
+        _selectedSlotItem = null;
+
+        UiTheme.SetTradeTitle(_title, _stationName);
+        bool craft = _tab == TabCraft;
+        _craftBar.Visible = craft;
+        _craftPage.Visible = craft;
+        _listScroll.Visible = !craft;
         _status.Visible = _statusText.Length > 0;
         _status.Text = _statusText;
         _status.AddThemeColorOverride("font_color", _statusBad ? UiTheme.Bad : UiTheme.Good);
@@ -374,22 +552,28 @@ public partial class CraftingPanel : UiPanel
 
     // --- Craft --------------------------------------------------------------
 
+    /// <summary>
+    /// The recipe column: the pinned recipe, then what can be made now, then the rest
+    /// (<see cref="TradeRules.OrderRecipes{T}"/>), and under a rule the recipes still to be learned.
+    /// </summary>
     private void RebuildCraft()
     {
-        CraftingRecipeResource? pinned = RecipeDatabase.Get(_crafting!.PinnedRecipeId);
-        if (pinned != null && _crafting.Knows(pinned.Id))
-        {
-            // The pinned recipe leads whatever the filters say, and whatever station this is: the
-            // point of a pin is to see what is still missing from wherever the player happens to be.
-            AddRecipe(pinned, pinned: true);
-        }
-        else
+        CraftingComponent crafting = _crafting!;
+        CraftingRecipeResource? pinned = RecipeDatabase.Get(crafting.PinnedRecipeId);
+        if (pinned != null && !crafting.Knows(pinned.Id))
         {
             pinned = null;
         }
 
+        var known = new List<CraftingRecipeResource>();
         var locked = new List<CraftingRecipeResource>();
-        bool any = pinned != null;
+        if (pinned != null)
+        {
+            // The pinned recipe leads whatever the filters say, and whatever station this is: the
+            // point of a pin is to see what is still missing from wherever the player happens to be.
+            known.Add(pinned);
+        }
+
         foreach (CraftingRecipeResource recipe in RecipeDatabase.All)
         {
             if (ReferenceEquals(recipe, pinned) || !StationShows(recipe.Station) || !MatchesFilter(recipe))
@@ -397,36 +581,65 @@ public partial class CraftingPanel : UiPanel
                 continue;
             }
 
-            if (!_crafting.Knows(recipe.Id))
+            if (!crafting.Knows(recipe.Id))
             {
                 locked.Add(recipe);
-                continue;
             }
-
-            if (_craftableOnly && !CanOrder(recipe))
+            else if (!_craftableOnly || CanOrder(recipe))
             {
-                continue;
+                known.Add(recipe);
             }
-
-            any = true;
-            AddRecipe(recipe, pinned: false);
-        }
-
-        if (!any)
-        {
-            _list.AddChild(UiTheme.Body(Loc.T("craft.recipes_none"), UiTheme.Dim));
         }
 
         // What is still to be learned, so a recipe the player has never seen is a goal and not a gap.
         // Hidden by the craftable-only switch: none of these can be made.
-        if (locked.Count > 0 && !_craftableOnly)
+        if (_craftableOnly)
         {
-            _list.AddChild(UiTheme.SectionRule(Loc.T("craft.locked.header")));
+            locked.Clear();
+        }
+
+        List<CraftingRecipeResource> ordered = TradeRules.OrderRecipes(
+            known, r => new TradeRules.RecipeKey(ReferenceEquals(r, pinned), CanOrder(r), r.LocalizedName));
+        locked.Sort((a, b) => string.Compare(a.LocalizedName, b.LocalizedName, System.StringComparison.OrdinalIgnoreCase));
+
+        // Keep the selection on a recipe that is still listed; otherwise the first one.
+        bool listed = false;
+        foreach (CraftingRecipeResource recipe in ordered)
+        {
+            listed |= recipe.Id == _selectedRecipe;
+        }
+
+        foreach (CraftingRecipeResource recipe in locked)
+        {
+            listed |= recipe.Id == _selectedRecipe;
+        }
+
+        if (!listed)
+        {
+            _selectedRecipe = ordered.Count > 0 ? ordered[0].Id : locked.Count > 0 ? locked[0].Id : string.Empty;
+        }
+
+        _recipeNote.Text = Loc.TF("craft.col.count", ordered.Count);
+        foreach (CraftingRecipeResource recipe in ordered)
+        {
+            AddRecipeRow(recipe, ReferenceEquals(recipe, pinned), known: true);
+        }
+
+        if (ordered.Count == 0)
+        {
+            _recipeList.AddChild(UiTheme.Body(Loc.T("craft.recipes_none"), UiTheme.Dim));
+        }
+
+        if (locked.Count > 0)
+        {
+            _recipeList.AddChild(UiTheme.SectionRule(Loc.T("craft.locked.header")));
             foreach (CraftingRecipeResource recipe in locked)
             {
-                AddLocked(recipe);
+                AddRecipeRow(recipe, pinned: false, known: false);
             }
         }
+
+        RebuildCraftDetail();
     }
 
     private bool StationShows(CraftingStationType required) => CraftingComponent.StationAccepts(required, _station);
@@ -486,207 +699,438 @@ public partial class CraftingPanel : UiPanel
             : _crafting.CanCraft(recipe, _station);
     }
 
-    private void AddRecipe(CraftingRecipeResource recipe, bool pinned)
+    /// <summary>The piece a recipe turns out, for its picture and its card. A master's piece is always
+    /// the plain one; a recipe whose output is not in the catalogue has none.</summary>
+    private ItemInstance? Preview(CraftingRecipeResource recipe) =>
+        ItemDatabase.Get(recipe.OutputItemId) is { } output
+            ? new ItemInstance(output, IsCommission ? output.Rarity : recipe.OutputRarity)
+            : null;
+
+    /// <summary>
+    /// One recipe in the list: the output's picture, the recipe's name, a quiet line (pinned, the
+    /// station it needs, how many could be made) and at the end a mark - a tick when it can be made
+    /// now, a small grey cross when it cannot, a plus when a master will supply what is missing. The
+    /// mark is the shape that says it; the dimmed name only agrees. The cross is quiet on purpose: a
+    /// new smith can make almost nothing, and a red cross on every row made the list an alarm. What
+    /// is missing is said once, in colour, on the chosen recipe's ingredients and in its order bar.
+    /// Taking focus selects the row; pressing it steps into the order bar.
+    /// </summary>
+    private void AddRecipeRow(CraftingRecipeResource recipe, bool pinned, bool known)
     {
-        PriceQuote quote = IsCommission ? CommissionQuote(recipe) : default;
-        bool canCraft = CanOrder(recipe);
-        int most = IsCommission ? 1 : Mathf.Max(1, _crafting!.MaxCraftable(recipe, _station));
-        int quantity = Mathf.Clamp(_quantities.GetValueOrDefault(recipe.Id, 1), 1, most);
+        bool can = known && CanOrder(recipe);
+        ItemInstance? preview = Preview(recipe);
+        Color edge = !can ? UiTheme.Disabled : UiTheme.RarityColor(preview?.Rarity ?? ItemRarity.Common);
+        PanelContainer card = UiTheme.CardButton(
+            edge, out Button input, out VBoxContainer content, UiTheme.TradeRowStyle(edge));
 
-        // The card's spine carries the *output's* rarity, so a recipe that produces something good
-        // announces it before the player reads a word. A master's piece is always the plain one. A
-        // recipe that cannot be made is dimmed as a whole rather than only in its title.
-        ItemRarity rarity = IsCommission ? ItemRarity.Common : recipe.OutputRarity;
-        PanelContainer card = UiTheme.Card(canCraft ? UiTheme.RarityColor(rarity) : UiTheme.Disabled);
-        var row = new HBoxContainer();
-        row.AddThemeConstantOverride("separation", UiTheme.SpaceMd);
+        var row = new HBoxContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
+        row.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
 
-        // Text stack on the left, the verbs on the right and centred against the whole stack: with the
-        // button in the title line, its 44 px set the row's top band and left dead air beside the title.
-        var col = new VBoxContainer
+        bool selected = recipe.Id == _selectedRecipe;
+        Button slot = ItemSlot.Build(preview, recipe.OutputQuantity, selected, ItemSlot.CompactSize);
+        slot.FocusMode = Control.FocusModeEnum.None;
+        slot.MouseFilter = Control.MouseFilterEnum.Ignore;
+        slot.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
+        row.AddChild(slot);
+
+        var text = new VBoxContainer
         {
+            MouseFilter = Control.MouseFilterEnum.Ignore,
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
             SizeFlagsVertical = Control.SizeFlags.ShrinkCenter,
         };
-        col.AddThemeConstantOverride("separation", UiTheme.LineGap);
+        text.AddThemeConstantOverride("separation", 0);
 
-        var titleRow = new HBoxContainer();
-        titleRow.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
-        Label title = UiTheme.Body(recipe.LocalizedName, canCraft ? UiTheme.Text : UiTheme.Disabled);
-        title.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        Label title = UiTheme.Body(recipe.LocalizedName, can ? UiTheme.Text : UiTheme.Disabled);
+        title.MouseFilter = Control.MouseFilterEnum.Ignore;
         title.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
-        titleRow.AddChild(title);
+        text.AddChild(title);
+
+        var notes = new List<string>();
         if (pinned)
         {
-            titleRow.AddChild(UiTheme.Chip(Loc.T("craft.pinned"), UiTheme.Accent));
+            notes.Add(Loc.T("craft.pinned"));
         }
 
-        if (!StationShows(recipe.Station))
+        if (!known)
         {
-            titleRow.AddChild(UiTheme.Chip(
-                Loc.TF("craft.needs_station", CraftingStations.Label(recipe.Station)), UiTheme.Bad));
+            notes.Add(Loc.T("craft.locked.chip"));
+        }
+        else if (!StationShows(recipe.Station))
+        {
+            notes.Add(Loc.TF("craft.needs_station", CraftingStations.Label(recipe.Station)));
+        }
+        else if (can && !IsCommission)
+        {
+            notes.Add(Loc.TF("craft.can_make", Mathf.Max(1, _crafting!.MaxCraftable(recipe, _station))));
         }
 
-        col.AddChild(titleRow);
+        if (notes.Count > 0)
+        {
+            Label note = UiTheme.Caption(string.Join("   ·   ", notes));
+            note.MouseFilter = Control.MouseFilterEnum.Ignore;
+            note.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
+            text.AddChild(note);
+        }
 
-        ItemResource? output = ItemDatabase.Get(recipe.OutputItemId);
-        string outName = output?.DisplayName ?? recipe.OutputItemId;
-        col.AddChild(UiTheme.Caption(
-            Loc.TF("craft.output", recipe.OutputQuantity * quantity, outName), UiTheme.RarityColor(rarity)));
+        row.AddChild(text);
+        if (known)
+        {
+            row.AddChild(can
+                ? new TradeMark(IsCommission && !_crafting!.HasIngredients(recipe)
+                    ? TradeRules.IngredientState.Supplied
+                    : TradeRules.IngredientState.Enough)
+                : new TradeMark(TradeRules.IngredientState.Short, QuietMarkSize, quiet: true));
+        }
+        else
+        {
+            TextureRect padlock = UiIcon.Create(UiIcon.Kind.Lock, UiTheme.CaptionFontSize + 2f, UiTheme.Disabled);
+            padlock.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
+            row.AddChild(padlock);
+        }
 
-        // Ingredients as chips: green when you have enough, red when you do not. The old indented
-        // "(have 2)" lines made the player do the subtraction that decides whether they can craft.
-        HFlowContainer costs = UiTheme.FlowRow();
+        content.AddChild(row);
+        input.TooltipText = recipe.LocalizedName;
+
+        string id = recipe.Id;
+        input.FocusEntered += () => SelectRecipe(id, slot, preview);
+        input.Pressed += () =>
+        {
+            SelectRecipe(id, slot, preview);
+            _focusVerb = true;
+        };
+
+        if (selected)
+        {
+            _selectedRow = input;
+            _selectedSlot = slot;
+            _selectedSlotItem = preview;
+        }
+
+        _recipeList.AddChild(card);
+        _recipeRows.Add(input);
+    }
+
+    private void SelectRecipe(string id, Button slot, ItemInstance? preview)
+    {
+        if (_focusSelection || id == _selectedRecipe)
+        {
+            return; // a rebuild restoring focus must not undo the selection it opened on
+        }
+
+        if (_selectedSlot != null && IsInstanceValid(_selectedSlot))
+        {
+            ItemSlot.SetSelected(_selectedSlot, _selectedSlotItem, false);
+        }
+
+        _selectedRecipe = id;
+        _selectedSlot = slot;
+        _selectedSlotItem = preview;
+        ItemSlot.SetSelected(slot, preview, true);
+        _confirm = null;
+        ResetDetailScroll();
+        _detailDirty = true;
+    }
+
+    /// <summary>Another recipe's ingredients and card open at their head, not where the last were left.</summary>
+    private void ResetDetailScroll()
+    {
+        _ingredientScroll.ScrollVertical = 0;
+        _resultScroll.ScrollVertical = 0;
+    }
+
+    /// <summary>The ingredient column, the result column and the order bar for the selected recipe.</summary>
+    private void RebuildCraftDetail()
+    {
+        _detailDirty = false;
+        _primaryVerb = null;
+        UiTheme.ClearChildren(_ingredients);
+        UiTheme.ClearChildren(_result);
+        UiTheme.ClearChildren(_order);
+        _ingredientNote.Text = string.Empty;
+
+        if (_crafting is not { } crafting || RecipeDatabase.Get(_selectedRecipe) is not { } recipe)
+        {
+            OrderNote(Loc.T("craft.order.none"), bad: false);
+            WireFocus();
+            return;
+        }
+
+        bool known = crafting.Knows(recipe.Id);
+        bool pinned = recipe.Id == crafting.PinnedRecipeId;
+        PriceQuote quote = known && IsCommission ? CommissionQuote(recipe) : default;
+        bool canCraft = known && CanOrder(recipe);
+        int most = !known || IsCommission ? 1 : Mathf.Max(1, crafting.MaxCraftable(recipe, _station));
+        int quantity = Mathf.Clamp(_quantities.GetValueOrDefault(recipe.Id, 1), 1, most);
+
+        BuildIngredients(recipe, quantity, known, pinned);
+        BuildResult(recipe, quote, known);
+
+        if (!known)
+        {
+            BuildStudyOrder(recipe);
+        }
+        else
+        {
+            BuildCraftOrder(recipe, quote, canCraft, quantity, most, pinned);
+        }
+
+        WireFocus();
+    }
+
+    /// <summary>
+    /// What the recipe takes, one line per ingredient: a mark, the ingredient's picture and name, and
+    /// held over needed. The mark is a tick, a cross or a plus (<see cref="TradeMark"/>), so the line
+    /// reads without its colour. ⚠️ A shortfall at a master's desk is not a refusal, it is a line on
+    /// the bill - so it carries the plus rather than the cross. Same numbers, opposite meaning.
+    /// </summary>
+    private void BuildIngredients(CraftingRecipeResource recipe, int quantity, bool known, bool pinned)
+    {
+        _ingredientNote.Text = quantity > 1 ? Loc.TF("craft.qty", quantity) : string.Empty;
+
         var missing = new List<string>();
         foreach (RecipeIngredient ingredient in recipe.IngredientList())
         {
             int need = ingredient.Quantity * quantity;
             int have = _inventory?.CountOf(ingredient.ItemId) ?? 0;
-            string itemName = ItemDatabase.Get(ingredient.ItemId)?.DisplayName ?? ingredient.ItemId;
-            bool enough = have >= need;
-            if (!enough)
+            ItemResource? item = ItemDatabase.Get(ingredient.ItemId);
+            string itemName = item?.DisplayName ?? ingredient.ItemId;
+            TradeRules.IngredientState state = TradeRules.IngredientOf(have, need, IsCommission);
+            if (state != TradeRules.IngredientState.Enough)
             {
                 missing.Add(Loc.TF("craft.amount", need - have, itemName));
             }
 
-            // A shortfall at a master's desk is not a refusal, it is a line on the bill - so it reads
-            // as him supplying it rather than as red missing materials. Same numbers, opposite
-            // meaning, and showing it red would tell the player the button is broken.
-            Color colour = enough ? UiTheme.Good : IsCommission ? UiTheme.Accent : UiTheme.Bad;
-            costs.AddChild(UiTheme.Chip(Loc.TF("craft.have_need", itemName, have, need), colour));
+            _ingredients.AddChild(IngredientLine(item, itemName, have, need, state));
         }
 
-        col.AddChild(costs);
-
-        if (pinned && missing.Count > 0)
+        if (known && pinned && missing.Count > 0 && !IsCommission)
         {
             Label shortfall = UiTheme.Caption(Loc.TF("craft.pinned_missing", string.Join(", ", missing)), UiTheme.Bad);
             shortfall.AutowrapMode = TextServer.AutowrapMode.WordSmart;
-            col.AddChild(shortfall);
+            _ingredients.AddChild(shortfall);
         }
 
-        AddOutputPreview(col, recipe, output);
-        row.AddChild(col);
-        row.AddChild(BuildRecipeVerbs(recipe, quote, canCraft, quantity, most, pinned));
+        if (known && !StationShows(recipe.Station))
+        {
+            _ingredients.AddChild(Wrapped(UiTheme.Caption(
+                Loc.TF("craft.needs_station", CraftingStations.Label(recipe.Station)), UiTheme.Bad)));
+        }
 
-        card.AddChild(row);
-        _list.AddChild(card);
+        if (known && !IsCommission && !_crafting!.HasSkillFor(recipe))
+        {
+            _ingredients.AddChild(Wrapped(UiTheme.Caption(
+                Loc.TF("craft.needs_rank", Loc.T(CraftingSkill.RankNameKey(CraftingSkill.RequiredRank(recipe.Tier)))),
+                UiTheme.Bad)));
+        }
     }
 
-    /// <summary>What the piece will be: its base stats, and the odds of fine workmanship at the
-    /// player's rank. Gear only — a potion or an ingot is the same whoever makes it.</summary>
-    private void AddOutputPreview(VBoxContainer col, CraftingRecipeResource recipe, ItemResource? output)
+    private static Control IngredientLine(ItemResource? item, string itemName, int have, int need, TradeRules.IngredientState state)
     {
-        if (!IsCommission && !_crafting!.HasSkillFor(recipe))
+        var line = new HBoxContainer();
+        line.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
+        line.AddChild(new TradeMark(state));
+
+        if (item != null)
         {
-            col.AddChild(UiTheme.Caption(
-                Loc.TF("craft.needs_rank", Loc.T(CraftingSkill.RankNameKey(CraftingSkill.RequiredRank(recipe.Tier)))),
-                UiTheme.Bad));
+            line.AddChild(StaticSlot(ItemInstance.Plain(item), 1, ItemSlot.CompactSize));
         }
 
-        if (output is not EquippableItemResource equippable || output.IsStackable)
+        Label name = UiTheme.Body(itemName);
+        name.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        name.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
+        name.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
+        name.TooltipText = itemName;
+        line.AddChild(name);
+
+        Label count = UiTheme.Body(Loc.TF("craft.have_of_need", have, need), TradeMark.ColorOf(state));
+        count.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
+        line.AddChild(count);
+        return line;
+    }
+
+    private static Label Wrapped(Label label)
+    {
+        label.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+        return label;
+    }
+
+    /// <summary>
+    /// What the piece will be: the shared item card for the output, compared against what is worn,
+    /// then how many a craft makes and the odds of fine workmanship at the player's rank (gear only —
+    /// a potion or an ingot is the same whoever makes it). A recipe not yet learned shows its card
+    /// too, with where to learn it: a goal should be something the player can look at.
+    /// </summary>
+    private void BuildResult(CraftingRecipeResource recipe, PriceQuote quote, bool known)
+    {
+        ItemInstance? preview = Preview(recipe);
+        if (preview != null)
+        {
+            _result.AddChild(ItemSlot.Detail(preview, new ItemSlot.DetailContext(
+                _player?.GetComponent<EquipmentComponent>(),
+                _player?.GetComponent<Progression.ProgressionComponent>()?.Level ?? 0,
+                Compare: true)));
+        }
+
+        if (!known)
+        {
+            _result.AddChild(Wrapped(UiTheme.Caption(SourceHint(recipe))));
+            return;
+        }
+
+        if (recipe.OutputQuantity > 1)
+        {
+            _result.AddChild(UiTheme.Caption(Loc.TF("craft.makes", recipe.OutputQuantity)));
+        }
+
+        // 38U: the fee splits into the work and each material the player failed to bring. Without it a
+        // player who walked in carrying half the recipe could not tell they had saved anything. Printed
+        // rather than hidden behind a hover, because a pad has no pointer to hover with.
+        if (IsCommission)
+        {
+            _result.AddChild(UiTheme.PriceLedger(quote));
+        }
+
+        if (preview is not { IsEquippable: true } || preview.Template.IsStackable)
         {
             return;
         }
 
-        HFlowContainer stats = UiTheme.FlowRow();
-        foreach ((StatType stat, float value) in equippable.StatBonuses())
-        {
-            if (value != 0f)
-            {
-                stats.AddChild(UiTheme.Chip(
-                    Loc.TF("craft.stat", StatNames.Label(stat), StatsPresentation.Format(stat, value)), UiTheme.Dim));
-            }
-        }
-
-        if (stats.GetChildCount() > 0)
-        {
-            col.AddChild(stats);
-        }
-        else
-        {
-            stats.QueueFree();
-        }
-
         if (IsCommission)
         {
-            col.AddChild(UiTheme.Caption(Loc.T("craft.commission_plain"), UiTheme.Dim));
+            _result.AddChild(Wrapped(UiTheme.Caption(Loc.T("craft.commission_plain"))));
             return;
         }
 
         (int fine, int superior, int masterwork) = CraftingSkill.Odds(_crafting!.SkillRank, recipe.Tier);
-        col.AddChild(UiTheme.Caption(Loc.TF("craft.odds", fine, superior, masterwork), UiTheme.Dim));
+        _result.AddChild(Wrapped(UiTheme.Caption(Loc.TF("craft.odds", fine, superior, masterwork))));
     }
 
-    private Control BuildRecipeVerbs(
+    private Label OrderNote(string text, bool bad)
+    {
+        Label note = Wrapped(UiTheme.Caption(text, bad ? UiTheme.Bad : UiTheme.Dim));
+        note.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        note.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
+        note.CustomMinimumSize = new Vector2(OrderNoteMin, 0f);
+        _order.AddChild(note);
+        return note;
+    }
+
+    private Button OrderVerb(string text)
+    {
+        Button button = UiTheme.Action(text);
+        button.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
+        _order.AddChild(button);
+        return button;
+    }
+
+    /// <summary>
+    /// The order bar for a known recipe: how many (only where more than one could be made, and never
+    /// at a master's desk - he quotes one piece at a time, and each quote depends on what the last one
+    /// used up), Craft, Craft max in one press, and the pin. A recipe that cannot be made keeps its
+    /// Craft, greyed, with the reason beside it, and pressing it plays the refusal.
+    /// </summary>
+    private void BuildCraftOrder(
         CraftingRecipeResource recipe, PriceQuote quote, bool canCraft, int quantity, int most, bool pinned)
     {
-        var verbs = new VBoxContainer { SizeFlagsVertical = Control.SizeFlags.ShrinkCenter };
-        verbs.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
         CraftingRecipeResource captured = recipe;
+        string reason = canCraft ? string.Empty : RefusalOf(recipe, quote);
+        OrderNote(reason.Length > 0 ? reason : Loc.T(IsCommission ? "craft.order.hint_commission" : "craft.order.hint"), bad: reason.Length > 0);
 
-        // The quantity picker: only where more than one could be made, and never at a master's desk
-        // (he quotes one piece at a time, and each quote depends on what the last one used up).
-        if (!IsCommission && most > 1)
+        Button craft = UiTheme.Action(string.Empty);
+        craft.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
+        if (!canCraft)
         {
-            var picker = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };
-            picker.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
-
-            Button fewer = UiTheme.Action(Loc.T("craft.qty_less"));
-            fewer.Disabled = quantity <= 1;
-            fewer.Pressed += () => SetQuantity(captured, quantity - 1);
-            picker.AddChild(fewer);
-
-            Label count = UiTheme.Body(Loc.TF("craft.qty", quantity));
-            count.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
-            picker.AddChild(count);
-
-            Button more = UiTheme.Action(Loc.T("craft.qty_more"));
-            more.Disabled = quantity >= most;
-            more.Pressed += () => SetQuantity(captured, quantity + 1);
-            picker.AddChild(more);
-
-            Button max = UiTheme.Action(Loc.TF("craft.qty_max", most));
-            max.Disabled = quantity >= most;
-            max.Pressed += () => SetQuantity(captured, most);
-            picker.AddChild(max);
-
-            verbs.AddChild(picker);
+            craft.AddThemeColorOverride("font_color", UiTheme.Disabled);
         }
 
-        Button craft = UiTheme.Action(
-            IsCommission ? Loc.TF("craft.commission", quote.Total)
-            : quantity > 1 ? Loc.TF("craft.craft_many", quantity)
-            : Loc.T("craft.craft"));
-        craft.Disabled = !canCraft;
-
-        // 38U: the fee splits into the work and each material the player failed to bring. Without it a
-        // player who walked in carrying half the recipe could not tell they had saved anything - the
-        // window quoted one figure either way. A Button is hoverable even when disabled, so the
-        // breakdown is readable exactly when the player is deciding whether to go and fetch the rest.
-        if (IsCommission)
+        // The picker reports and the bar keeps the number. The ingredient column is redrawn for the
+        // new amount; the bar is not, because a rebuild of it would free the slider mid-drag.
+        int shown = quantity;
+        void Requote(int count)
         {
-            craft.TooltipText = PriceTooltip.Render(quote);
+            _quantities[captured.Id] = count;
+            craft.Text = IsCommission ? Loc.TF("craft.commission", quote.Total)
+                : count > 1 ? Loc.TF("craft.craft_many", count)
+                : Loc.T("craft.craft");
+            if (count != shown)
+            {
+                shown = count;
+                UiTheme.ClearChildren(_ingredients);
+                BuildIngredients(captured, count, known: true, pinned);
+            }
         }
 
-        craft.Pressed += () => Craft(captured, quantity);
-        verbs.AddChild(craft);
+        if (canCraft && most > 1)
+        {
+            _order.AddChild(QuantityPicker.Build(1, most, quantity, Requote));
+        }
 
-        Button pin = UiTheme.Action(Loc.T(pinned ? "craft.unpin" : "craft.pin"));
-        pin.Pressed += () =>
+        craft.Pressed += () => Craft(captured, Mathf.Clamp(_quantities.GetValueOrDefault(captured.Id, 1), 1, most));
+        _order.AddChild(craft);
+        _primaryVerb = craft;
+
+        if (canCraft && most > 1)
+        {
+            OrderVerb(Loc.TF("craft.qty_max", most)).Pressed += () => Craft(captured, most);
+        }
+
+        OrderVerb(Loc.T(pinned ? "craft.unpin" : "craft.pin")).Pressed += () =>
         {
             _crafting?.SetPinned(pinned ? string.Empty : captured.Id);
             MarkDirty();
         };
-        verbs.AddChild(pin);
-        return verbs;
+
+        Requote(quantity);
     }
 
-    private void SetQuantity(CraftingRecipeResource recipe, int quantity)
+    /// <summary>The order bar for a recipe not yet learned: Study, when the scroll for it is in the pack.</summary>
+    private void BuildStudyOrder(CraftingRecipeResource recipe)
     {
-        _quantities[recipe.Id] = Mathf.Max(1, quantity);
-        _confirm = null;
-        MarkDirty();
+        OrderNote(SourceHint(recipe), bad: false);
+
+        ItemInstance? scroll = recipe.ScrollItemId.Length > 0 ? _inventory?.FirstInstanceOf(recipe.ScrollItemId) : null;
+        if (scroll == null || !_crafting!.CanStudy(scroll))
+        {
+            return;
+        }
+
+        Button study = OrderVerb(Loc.T("craft.locked.study"));
+        study.Pressed += () =>
+        {
+            _confirm = null;
+            bool learned = _crafting?.StudyScroll(scroll) ?? false;
+            UiAudio.Play(learned ? UiCue.Confirm : UiCue.Denied);
+            MarkDirty();
+        };
+        _primaryVerb = study;
+    }
+
+    /// <summary>Why a known recipe cannot be ordered right now, in the order the player can fix it.</summary>
+    private string RefusalOf(CraftingRecipeResource recipe, PriceQuote quote)
+    {
+        if (!StationShows(recipe.Station))
+        {
+            return Loc.TF("craft.needs_station", CraftingStations.Label(recipe.Station));
+        }
+
+        if (IsCommission)
+        {
+            int gold = _inventory?.CountOf(GameIds.Currency.Gold) ?? 0;
+            return Loc.TF("trade.need_more", TradeRules.Shortfall(quote.Total, gold));
+        }
+
+        return !_crafting!.HasSkillFor(recipe)
+            ? Loc.TF("craft.needs_rank", Loc.T(CraftingSkill.RankNameKey(CraftingSkill.RequiredRank(recipe.Tier))))
+            : Loc.T("craft.order.missing");
+    }
+
+    /// <summary>Up and down the recipe list, and right from it into the order bar. Run once the rows
+    /// and the bar are in the tree.</summary>
+    private void WireFocus()
+    {
+        Control? verb = _primaryVerb != null && IsInstanceValid(_primaryVerb) ? _primaryVerb : null;
+        TradeRow.WireColumn(_recipeRows, null, verb);
     }
 
     private void Craft(CraftingRecipeResource recipe, int quantity)
@@ -694,6 +1138,13 @@ public partial class CraftingPanel : UiPanel
         _confirm = null;
         if (_crafting == null)
         {
+            return;
+        }
+
+        if (!CanOrder(recipe))
+        {
+            // Nothing is attempted: the order bar already says why, and the press answers with the refusal.
+            UiAudio.Play(UiCue.Denied);
             return;
         }
 
@@ -705,20 +1156,32 @@ public partial class CraftingPanel : UiPanel
         if (made <= 0)
         {
             SetStatus(Loc.T("craft.status.no_room"), bad: true);
-        }
-        else if (!IsCommission && _crafting.LastCrafted is { IsEquippable: true, Quality: not CraftQuality.Standard } piece)
-        {
-            SetStatus(Loc.TF(
-                "craft.status.crafted_quality", made * recipe.OutputQuantity, name, Loc.T(QualityKey(piece.Quality))));
+            UiAudio.Play(UiCue.Denied);
         }
         else
         {
-            SetStatus(
-                Loc.TF(made < quantity ? "craft.status.crafted_some" : "craft.status.crafted", made * recipe.OutputQuantity, name),
-                bad: made < quantity);
+            // The one flourish a finished piece gets: the rule under the station's name is drawn
+            // again by its line of heat, with the confirm cue. Under reduced motion it is the cue alone.
+            UiOrnament.PlayEmberWipe(_wipe);
+            UiAudio.Play(UiCue.Confirm);
+
+            if (!IsCommission && _crafting.LastCrafted is { IsEquippable: true, Quality: not CraftQuality.Standard } piece)
+            {
+                SetStatus(Loc.TF(
+                    "craft.status.crafted_quality", made * recipe.OutputQuantity, name, Loc.T(QualityKey(piece.Quality))));
+            }
+            else
+            {
+                SetStatus(
+                    Loc.TF(made < quantity ? "craft.status.crafted_some" : "craft.status.crafted", made * recipe.OutputQuantity, name),
+                    bad: made < quantity);
+            }
         }
 
+        // The bar is rebuilt around a new amount (the picker may be gone, the verb greyed); focus
+        // goes back to its first verb rather than to whichever button now sits where Craft was.
         _quantities.Remove(recipe.Id);
+        _focusVerb = true;
         MarkDirty(); // rebuild next frame (events also flag it)
     }
 
@@ -730,53 +1193,6 @@ public partial class CraftingPanel : UiPanel
         CraftQuality.Masterwork => "craft.quality.masterwork",
         _ => "craft.quality.standard",
     };
-
-    /// <summary>A recipe the player has not learned: what it makes and where to learn it, with a
-    /// Study button when the scroll for it is in the pack.</summary>
-    private void AddLocked(CraftingRecipeResource recipe)
-    {
-        PanelContainer card = UiTheme.Card(UiTheme.Disabled);
-        var row = new HBoxContainer();
-        row.AddThemeConstantOverride("separation", UiTheme.SpaceMd);
-
-        var col = new VBoxContainer
-        {
-            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-            SizeFlagsVertical = Control.SizeFlags.ShrinkCenter,
-        };
-        col.AddThemeConstantOverride("separation", UiTheme.LineGap);
-
-        var titleRow = new HBoxContainer();
-        titleRow.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
-        Label title = UiTheme.Body(recipe.LocalizedName, UiTheme.Disabled);
-        title.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-        title.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
-        titleRow.AddChild(title);
-        titleRow.AddChild(UiTheme.Chip(Loc.T("craft.locked.chip"), UiTheme.Dim));
-        col.AddChild(titleRow);
-
-        Label source = UiTheme.Caption(SourceHint(recipe), UiTheme.Dim);
-        source.AutowrapMode = TextServer.AutowrapMode.WordSmart;
-        col.AddChild(source);
-        row.AddChild(col);
-
-        ItemInstance? scroll = recipe.ScrollItemId.Length > 0 ? _inventory?.FirstInstanceOf(recipe.ScrollItemId) : null;
-        if (scroll != null && _crafting!.CanStudy(scroll))
-        {
-            Button study = UiTheme.Action(Loc.T("craft.locked.study"));
-            study.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
-            study.Pressed += () =>
-            {
-                _confirm = null;
-                _crafting?.StudyScroll(scroll);
-                MarkDirty();
-            };
-            row.AddChild(study);
-        }
-
-        card.AddChild(row);
-        _list.AddChild(card);
-    }
 
     /// <summary>Where a recipe is learned: the trainer whose lesson lists it, a recipe scroll, or
     /// both.</summary>
@@ -800,6 +1216,21 @@ public partial class CraftingPanel : UiPanel
 
         return Loc.T(scroll ? "craft.locked.scroll" : "craft.locked.unknown");
     }
+
+    // --- Capture hooks (src/Debugging/TradeShots.cs) ------------------------
+
+    /// <summary>Recipe rows drawn in the Craft page's list on the last rebuild.</summary>
+    public int ShownRecipeCount => _recipeRows.Count;
+
+    /// <summary>Whether the Craft page is showing a recipe's ingredients and its result card.</summary>
+    public bool ShowingThreeColumns =>
+        _tab == TabCraft && _craftPage.Visible && _ingredients.GetChildCount() > 0 && _result.GetChildCount() > 0;
+
+    /// <summary>The open page: 0 Craft, 1 Reforge, 2 Salvage.</summary>
+    public int Mode => _tab;
+
+    /// <summary>Opens a page by index, as the tab strip or Z/C would.</summary>
+    public void ShowModeForCapture(int mode) => _modeTabs.Select(Mathf.Clamp(mode, 0, TabCount - 1));
 
     // --- Reforge ------------------------------------------------------------
 
@@ -997,6 +1428,7 @@ public partial class CraftingPanel : UiPanel
     private void Report(ItemInstance? reforged)
     {
         _confirm = null;
+        UiAudio.Play(reforged == null ? UiCue.Denied : UiCue.Confirm);
         if (reforged == null)
         {
             SetStatus(Loc.T("craft.status.reforge_failed"), bad: true);
@@ -1040,6 +1472,7 @@ public partial class CraftingPanel : UiPanel
 
                 _confirm = null;
                 int done = _crafting?.SalvageAllJunk(_station) ?? 0;
+                UiAudio.Play(done > 0 ? UiCue.Confirm : UiCue.Denied);
                 SetStatus(
                     Loc.TF(done < pieces ? "craft.status.salvaged_some" : "craft.status.salvaged", done),
                     bad: done < pieces);
@@ -1084,9 +1517,9 @@ public partial class CraftingPanel : UiPanel
     /// a sheaf is neither salvaged nor reforged, so it is left out of both lists.</summary>
     private static bool IsGear(ItemInstance instance) => instance.IsEquippable && !instance.Template.IsStackable;
 
-    private static Button StaticSlot(ItemInstance instance, int quantity)
+    private static Button StaticSlot(ItemInstance instance, int quantity, float size = ItemSlot.RowSize)
     {
-        Button slot = ItemSlot.Build(instance, quantity, selected: false, size: ItemSlot.RowSize);
+        Button slot = ItemSlot.Build(instance, quantity, selected: false, size: size);
         slot.FocusMode = Control.FocusModeEnum.None;
         slot.MouseFilter = Control.MouseFilterEnum.Ignore;
         slot.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
@@ -1179,6 +1612,7 @@ public partial class CraftingPanel : UiPanel
 
             _confirm = null;
             bool done = _crafting?.Deconstruct(captured, _station) ?? false;
+            UiAudio.Play(done ? UiCue.Confirm : UiCue.Denied);
             SetStatus(
                 done ? Loc.TF("craft.status.salvaged", 1) : Loc.T("craft.status.no_room"), bad: !done);
             MarkDirty(); // rebuild next frame (events also flag it)

@@ -157,6 +157,15 @@ public sealed partial class PlayerHost : Node3D
     {
         if (ReferenceEquals(e.Entity, Player))
         {
+            // The death screen only asks to be shown: it draws at the end of the frame, and not at
+            // all when nobody is at the controls. The respawn below is still done here, in the
+            // call that reports the death, because the combat code that raised it reads the
+            // player's state as soon as this returns.
+            if (Session.Ui?.Death is { } death && IsInstanceValid(death))
+            {
+                death.Begin();
+            }
+
             Respawn();
         }
     }

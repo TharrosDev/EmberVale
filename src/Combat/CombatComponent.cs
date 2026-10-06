@@ -424,7 +424,8 @@ public partial class CombatComponent : EntityComponent
         {
             blow = blow with { CrushesGuard = crush };
         }
-        float amount = Mathf.Max(0f, packet.Amount) * blow.DamageMultiplier;
+        float amount = Mathf.Max(0f, packet.Amount) * blow.DamageMultiplier
+            * Embervale.Settings.SettingsService.IncomingDamageScale(Entity);
         float incomingPoise = Mathf.Max(0f, packet.PoiseDamage) * blow.PoiseMultiplier;
         bool blocked = false;
         bool guardBroken = false;

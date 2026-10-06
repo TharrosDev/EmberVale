@@ -91,8 +91,11 @@ public partial class ApplicationRoot : Node3D, IServiceScopeHost
         AddChild(Shell);
     }
 
+    private static void OnSettingsApplied(SettingsAppliedEvent e) => Embervale.UI.UiSkin.Install();
+
     public override void _ExitTree()
     {
+        EventBus.Instance?.Unsubscribe<SettingsAppliedEvent>(OnSettingsApplied);
         _scope?.Dispose();
         _scope = null;
 
@@ -172,6 +175,15 @@ public partial class ApplicationRoot : Node3D, IServiceScopeHost
         var settings = new SettingsService();
         settings.LoadAndApply();
         Scope.Register(settings);
+
+        // The interface's sound, for the title screen as much as for a session. After the buses
+        // and their volumes exist; before any screen that could make one.
+        AddChild(new Embervale.UI.UiAudio { Name = "UiAudio" });
+
+        // After the settings exist (the skin reads high contrast and text scale) and before any
+        // screen is built. Re-run on every apply; it rebuilds only when one of those two moved.
+        Embervale.UI.UiSkin.Install();
+        EventBus.Instance?.Subscribe<SettingsAppliedEvent>(OnSettingsApplied);
 
         // What the hosted runtime is actually running with. The project's runtimeconfig is honoured
         // only by an exported game (the editor binary starts .NET from the engine's own), so the

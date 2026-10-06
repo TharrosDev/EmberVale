@@ -110,6 +110,86 @@ public static class UiOrnament
         return overlay;
     }
 
+    private const string EmberWipeTweenMeta = "ui_ember_wipe_tween";
+    private const string EmberWipeLitName = "Lit";
+
+    /// <summary>
+    /// A rule that is drawn by a line of heat: the lit edge runs out from the left, ember orange at
+    /// first, and cools to <see cref="UiTheme.RuleLit"/> as it settles. The opening gesture of a
+    /// sheet or a hub tab, under its heading; one per screen, like every other ornament here.
+    ///
+    /// Built from two <see cref="ColorRect"/>s and a tween, not a shader, so it retints with the
+    /// palette and has nothing to fail to load. It plays once when it enters the tree;
+    /// <see cref="PlayEmberWipe"/> runs it again (a tab switch). Under reduced motion it is simply
+    /// the finished rule.
+    /// </summary>
+    public static Control EmberWipe(float thickness = 2f, float seconds = UiTheme.DurationSlow)
+    {
+        var wipe = new Control
+        {
+            CustomMinimumSize = new Vector2(0f, thickness),
+            MouseFilter = Control.MouseFilterEnum.Ignore,
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+        };
+
+        var groove = new ColorRect { Color = UiTheme.Engrave, MouseFilter = Control.MouseFilterEnum.Ignore };
+        groove.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+        wipe.AddChild(groove);
+
+        // Scaled from its left edge (the default pivot), so the rule grows without a layout pass.
+        var lit = new ColorRect
+        {
+            Name = EmberWipeLitName,
+            Color = UiTheme.RuleLit,
+            MouseFilter = Control.MouseFilterEnum.Ignore,
+        };
+        lit.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+        wipe.AddChild(lit);
+
+        wipe.Ready += () => PlayEmberWipe(wipe, seconds);
+        return wipe;
+    }
+
+    /// <summary>Runs an <see cref="EmberWipe"/> again from the start, replacing a run in flight.</summary>
+    public static void PlayEmberWipe(Control wipe, float seconds = UiTheme.DurationSlow)
+    {
+        if (wipe.GetNodeOrNull<ColorRect>(EmberWipeLitName) is not { } lit)
+        {
+            return;
+        }
+
+        if (wipe.HasMeta(EmberWipeTweenMeta) &&
+            wipe.GetMeta(EmberWipeTweenMeta).As<Tween>() is { } previous && previous.IsValid())
+        {
+            previous.Kill();
+        }
+
+        float duration = UiTheme.Duration(seconds);
+        if (duration <= 0f || !wipe.IsInsideTree())
+        {
+            lit.Scale = Vector2.One;
+            lit.Color = UiTheme.RuleLit;
+            return;
+        }
+
+        lit.Scale = new Vector2(0f, 1f);
+        lit.Color = UiTheme.AccentHot;
+
+        Tween tween = wipe.CreateTween();
+        tween.SetPauseMode(Tween.TweenPauseMode.Process);
+        tween.SetIgnoreTimeScale(true);
+        tween.SetParallel(true);
+        tween.TweenProperty(lit, "scale", Vector2.One, duration)
+            .SetTrans(Tween.TransitionType.Cubic)
+            .SetEase(Tween.EaseType.Out);
+
+        // The heat outlasts the stroke: the line is fully drawn while it is still cooling.
+        tween.TweenProperty(lit, "color", UiTheme.RuleLit, duration * 1.6f)
+            .SetTrans(Tween.TransitionType.Sine)
+            .SetEase(Tween.EaseType.In);
+        wipe.SetMeta(EmberWipeTweenMeta, tween);
+    }
+
     /// <summary>One bracket arm, anchored to the corner named by <paramref name="ax"/>/
     /// <paramref name="ay"/> (0 = left/top edge, 1 = right/bottom). Offsets are written directly
     /// rather than going through <c>Position</c>, whose meaning depends on the anchors that were

@@ -5,6 +5,7 @@ using Embervale.Factions;
 using Embervale.Items;
 using Embervale.Localization;
 using Embervale.Quests;
+using Embervale.World;
 using Godot;
 
 namespace Embervale.UI;
@@ -14,7 +15,7 @@ namespace Embervale.UI;
 /// while open so track/untrack is equally reachable by mouse, keyboard and controller.
 ///
 /// The index is a set of section tabs (Main Thread, Errands, Completed, Failed - each present only with
-/// state in it) stepped with Q/E or LB/RB. The Main tab groups quests under collapsible chapter headings.
+/// state in it) stepped with the sub-tab actions. The Main tab groups quests under collapsible chapter headings.
 /// The detail pane reads like a journal: who gave it, what has been done (the stage log, each line ticked),
 /// what to do now with its hint and where to go, optional steps as chips, and the full rewards. All the
 /// ordering and selection decisions live in Godot-free rules (<see cref="JournalIndexRules"/>,
@@ -24,10 +25,13 @@ public partial class QuestLogPanel : UiPanel
 {
     private QuestLogComponent? _log;
     private VBoxContainer _index = null!;
-    private HFlowContainer _tabs = null!;
+    private HBoxContainer _tabHolder = null!;
     private VBoxContainer _list = null!;
     private VBoxContainer _detail = null!;
-    private Label _footer = null!;
+    private Label _tracking = null!;
+
+    // Sections that hold quests, as of the last rebuild: the legend names the step only when there is one.
+    private int _sectionCount;
 
     private string? _selectedId;
     private JournalSection _section = JournalSection.Main;
@@ -37,34 +41,63 @@ public partial class QuestLogPanel : UiPanel
 
     protected override string? ToggleAction => GameInput.Journal;
 
+    protected override HubTab? Hub => HubTab.Journal;
+
+    /// <summary>What the buttons do here: step sections, follow or drop the open quest, and jump to its
+    /// place on the map. Each entry shows only while it would do something.</summary>
+    protected override IReadOnlyList<LegendEntry> Legend
+    {
+        get
+        {
+            var entries = new List<LegendEntry>();
+            if (_sectionCount > 1)
+            {
+                entries.Add(new LegendEntry(GameInput.MenuSubPrev, Loc.T("kn.legend.section"), GameInput.MenuSubNext));
+            }
+
+            if (Trackable() is { } progress)
+            {
+                entries.Add(new LegendEntry(KnowledgeInput.Primary,
+                    Loc.T(ReferenceEquals(_log?.Tracked, progress) ? "kn.legend.untrack" : "kn.legend.track")));
+            }
+
+            if (SelectedLocationId() != null)
+            {
+                // On a pad this is the stick's click, drawn with the stick's glyph: the words say so.
+                entries.Add(new LegendEntry(KnowledgeInput.Secondary,
+                    Loc.T(InputDevice.GamepadActive ? "kn.legend.show_on_map_click" : "kn.legend.show_on_map")));
+            }
+
+            entries.AddRange(base.Legend);
+            return entries;
+        }
+    }
+
     protected override void BuildShell(PanelContainer shell)
     {
         UiTheme.ApplyScreenInset(shell);
 
-        MarginContainer margin = UiTheme.Padding(UiTheme.SpaceLg);
-        shell.AddChild(margin);
+        // The section tabs are rebuilt with the index (a section exists only while it holds quests), so
+        // the page keeps a holder for them and each rebuild fills it with a fresh UiTabs.
+        _tabHolder = new HBoxContainer();
+        VBoxContainer root = UiTheme.HubPage(shell, Loc.T("kn.title.journal"), out HBoxContainer aside, _tabHolder);
 
-        var root = new VBoxContainer();
-        root.AddThemeConstantOverride("separation", UiTheme.SpaceMd);
-        root.AddChild(UiTheme.Title(Loc.T("questui.journal_title")));
-        root.AddChild(UiTheme.Divider());
-        margin.AddChild(root);
+        _tracking = UiTheme.Caption(string.Empty, UiTheme.Dim);
+        _tracking.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
+        _tracking.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        _tracking.HorizontalAlignment = HorizontalAlignment.Right;
+        _tracking.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
+        aside.AddChild(_tracking);
 
         var body = new HBoxContainer { SizeFlagsVertical = Control.SizeFlags.ExpandFill };
-        body.AddThemeConstantOverride("separation", UiTheme.SpaceLg);
+        body.AddThemeConstantOverride("separation", UiTheme.SpaceMd);
         root.AddChild(body);
 
         // The index is bare ground, not a Well: its rows are Cards, and a recess around raised rows is two
         // frames for one list.
         _index = new VBoxContainer { SizeFlagsVertical = Control.SizeFlags.ExpandFill };
-        _index.CustomMinimumSize = new Vector2(340f, 0f);
-        _index.AddThemeConstantOverride("separation", UiTheme.SpaceMd);
+        _index.CustomMinimumSize = new Vector2(JournalLayoutRules.IndexWidth(UiTheme.UsableWidth(shell)), 0f);
         body.AddChild(_index);
-
-        _tabs = new HFlowContainer();
-        _tabs.AddThemeConstantOverride("h_separation", UiTheme.SpaceSm);
-        _tabs.AddThemeConstantOverride("v_separation", UiTheme.SpaceSm);
-        _index.AddChild(_tabs);
 
         (ScrollContainer indexScroll, VBoxContainer indexList) = UiTheme.ScrollList();
         _list = indexList;
@@ -79,9 +112,6 @@ public partial class QuestLogPanel : UiPanel
         _detail = detailList;
         _detail.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
         detailBand.AddChild(detailScroll);
-
-        _footer = UiTheme.Caption(string.Empty, UiTheme.Dim);
-        root.AddChild(_footer);
     }
 
     protected override void OnReady()
@@ -189,41 +219,22 @@ public partial class QuestLogPanel : UiPanel
             return;
         }
 
-        int step = SectionStep(@event);
-        if (step != 0)
-        {
-            StepSection(step);
-            GetViewport().SetInputAsHandled();
-            return;
-        }
-
-        // The pad's track toggle rides the Interact button. On a keyboard Interact is E, which is already the
-        // next-section key, so the keyboard reaches the button by mouse or Enter.
-        if (@event is InputEventJoypadButton { Pressed: true } pad && pad.IsAction(GameInput.Interact))
+        // The two legend verbs (KnowledgeInput): follow or drop the open quest, and show its place on the map.
+        if (KnowledgeInput.IsPrimary(@event))
         {
             ToggleTrackSelected();
             GetViewport().SetInputAsHandled();
         }
+        else if (KnowledgeInput.IsSecondary(@event))
+        {
+            ShowSelectedOnMap();
+            GetViewport().SetInputAsHandled();
+        }
     }
 
-    /// <summary>-1 for Q / LB, +1 for E / RB, else 0.</summary>
-    private static int SectionStep(InputEvent @event) => @event switch
-    {
-        InputEventKey { Pressed: true, Echo: false } key =>
-            (key.PhysicalKeycode != Key.None ? key.PhysicalKeycode : key.Keycode) switch
-            {
-                Key.Q => -1,
-                Key.E => 1,
-                _ => 0,
-            },
-        InputEventJoypadButton { Pressed: true } pad => pad.ButtonIndex switch
-        {
-            JoyButton.LeftShoulder => -1,
-            JoyButton.RightShoulder => 1,
-            _ => 0,
-        },
-        _ => 0,
-    };
+    /// <summary>Sections step on the sub-tab actions (Z / C, LT / RT). Q / E and LB / RB, which
+    /// stepped them before the hub existed, now walk the hub's screens.</summary>
+    protected override void OnSubTab(int delta) => StepSection(delta);
 
     private void StepSection(int delta)
     {
@@ -249,18 +260,56 @@ public partial class QuestLogPanel : UiPanel
         MarkDirty();
     }
 
+    /// <summary>The open quest, when it is one the tracker can follow: live, and not a ledger record.</summary>
+    private QuestProgress? Trackable() =>
+        _log != null && _selectedId != null && _log.IsActive(_selectedId) &&
+        Find(_selectedId) is { } progress && !progress.Quest.IsLedger
+            ? progress
+            : null;
+
     private void ToggleTrackSelected()
     {
-        if (_log == null || _selectedId == null || !_log.IsActive(_selectedId) ||
-            Find(_selectedId) is not { } progress || progress.Quest.IsLedger)
+        if (Trackable() is not { } progress)
         {
             return;
         }
 
-        bool tracked = ReferenceEquals(_log.Tracked, progress);
+        bool tracked = ReferenceEquals(_log!.Tracked, progress);
         _log.Track(tracked ? null : progress.Quest.Id);
+        UiAudio.Play(UiCue.Confirm);
         MarkDirty();
     }
+
+    private MapScreen? MapPanel() => (GetParent() as IHubHost)?.HubPanel(HubTab.Map) as MapScreen;
+
+    /// <summary>The map location the open quest's live objective points at, when there is a map to show
+    /// it on. The same rule the compass and the map's own quest pins read.</summary>
+    private string? SelectedLocationId() =>
+        _selectedId != null && Find(_selectedId) is { Status: QuestStatus.Active } progress &&
+        QuestProgressViews.CurrentLocationId(progress) is { Length: > 0 } id &&
+        MapLocationDatabase.Get(id) != null && MapPanel() != null
+            ? id
+            : null;
+
+    /// <summary>Hands over to the map with the open quest's place centred and selected. The map opens
+    /// before the journal closes, as a hub step does, so the world never unpauses in between.</summary>
+    private void ShowSelectedOnMap()
+    {
+        if (SelectedLocationId() is not { } id || MapPanel() is not { } map)
+        {
+            return;
+        }
+
+        UiAudio.Play(UiCue.Tab);
+        map.ShowLocation(id);
+        SetOpen(false);
+    }
+
+    /// <summary>Whether the open card offers "Show on map". Read by the screenshot harness.</summary>
+    public bool CanShowSelectedOnMap => SelectedLocationId() != null;
+
+    /// <summary>Takes the "Show on map" action for the screenshot harness, which cannot press it.</summary>
+    public void ShowSelectedOnMapForCapture() => ShowSelectedOnMap();
 
     // --- Model ---------------------------------------------------------------------------
 
@@ -358,12 +407,15 @@ public partial class QuestLogPanel : UiPanel
     {
         // Called here as well as in BuildShell: the UI-scale setting can change mid-session.
         UiTheme.ApplyScreenInset(Shell);
-        _index.CustomMinimumSize = new Vector2(Mathf.Clamp(UiTheme.UsableWidth(Shell) * 0.32f, 240f, 360f), 0f);
+        _index.CustomMinimumSize = new Vector2(JournalLayoutRules.IndexWidth(UiTheme.UsableWidth(Shell)), 0f);
 
-        UiTheme.ClearChildren(_tabs);
+        UiTheme.ClearChildren(_tabHolder);
         UiTheme.ClearChildren(_list);
         UiTheme.ClearChildren(_detail);
-        _footer.Text = FooterText();
+        _sectionCount = 0;
+        _tracking.Text = _log?.Tracked is { } followed
+            ? Loc.TF("kn.journal.tracking", Loc.T(followed.Quest.Title))
+            : string.Empty;
 
         if (_log == null || _log.Quests.Count == 0)
         {
@@ -398,6 +450,7 @@ public partial class QuestLogPanel : UiPanel
         }
 
         List<JournalSection> sections = JournalIndexRules.Sections(entries);
+        _sectionCount = sections.Count;
         BuildTabs(sections, entries);
         BuildIndex(_section, entries, byId, trackedId);
 
@@ -407,53 +460,32 @@ public partial class QuestLogPanel : UiPanel
         }
     }
 
-    private string FooterText()
-    {
-        string sections = InputDevice.GamepadActive
-            ? $"{GameInput.ButtonLabel(JoyButton.LeftShoulder)} / {GameInput.ButtonLabel(JoyButton.RightShoulder)}"
-            : "Q / E";
-        return Loc.TF("questui.footer", sections, GameInput.PromptLabel(GameInput.Journal));
-    }
-
     private void BuildTabs(List<JournalSection> sections, List<JournalEntry> entries)
     {
+        var tabs = new UiTabs();
         foreach (JournalSection section in sections)
         {
-            JournalSection captured = section;
-            int count = CountIn(section, entries);
-            bool active = section == _section;
-
-            Button tab = UiTheme.Action(Loc.TF("questui.tab", Loc.T(SectionKey(section)), count));
-            tab.CustomMinimumSize = new Vector2(0f, UiTheme.ControlHeight);
-            tab.AddThemeColorOverride("font_color", active ? UiTheme.Accent : UiTheme.Dim);
-            var box = new StyleBoxFlat
-            {
-                BgColor = active ? UiTheme.CardBg : new Color(0f, 0f, 0f, 0f),
-                BorderColor = UiTheme.Accent,
-            };
-            box.SetBorderWidthAll(0);
-            box.BorderWidthBottom = active ? 2 : 0;
-            box.SetContentMarginAll(UiTheme.SpaceXs);
-            box.ContentMarginLeft = UiTheme.SpaceMd;
-            box.ContentMarginRight = UiTheme.SpaceMd;
-            box.SetCornerRadiusAll(UiTheme.RadiusSm);
-            tab.AddThemeStyleboxOverride("normal", box);
+            string label = Loc.TF("questui.tab", Loc.T(SectionKey(section)), CountIn(section, entries));
 
             // A text marker on a tab holding unread news, so the state is never carried by colour alone.
             if (section != _section && AnyUpdated(section, entries))
             {
-                tab.Text += " *";
+                label += " *";
             }
 
-            tab.Pressed += () =>
-            {
-                if (captured != _section)
-                {
-                    SwitchSection(captured, entries);
-                }
-            };
-            _tabs.AddChild(tab);
+            tabs.Add(label);
         }
+
+        // Selected before the handler is attached: lighting the open section's tab is not a press.
+        tabs.Select(sections.IndexOf(_section));
+        tabs.TabChanged += index =>
+        {
+            if (sections[index] != _section)
+            {
+                SwitchSection(sections[index], entries);
+            }
+        };
+        _tabHolder.AddChild(tabs);
     }
 
     private static string SectionKey(JournalSection section) => section switch
@@ -709,20 +741,27 @@ public partial class QuestLogPanel : UiPanel
         // Long prose when authored, the one-line summary otherwise, and nothing when neither resolves.
         string? prose = JournalIndexRules.FirstResolving(
             new[] { quest.DetailKey, quest.Summary }, key => key.Length > 0 && Loc.Has(key));
-        if (prose != null)
+        if (prose != null || quest.Summary.Length > 0)
         {
-            Label text = UiTheme.Prose(Loc.T(prose), UiTheme.Text);
-            text.AutowrapMode = TextServer.AutowrapMode.WordSmart;
-            _detail.AddChild(text);
-        }
-        else if (quest.Summary.Length > 0)
-        {
-            _detail.AddChild(UiTheme.Prose(Loc.T(quest.Summary), UiTheme.Text));
+            // Set in the book serif and held to the reading measure, so a wide page does not run a
+            // paragraph from edge to edge.
+            _detail.AddChild(UiTheme.Measure(UiTheme.Prose(Loc.T(prose ?? quest.Summary), UiTheme.Text), DetailWidth()));
         }
 
         if (progress.Status == QuestStatus.Active && !quest.IsLedger)
         {
-            _detail.AddChild(TrackButton(progress));
+            HFlowContainer actions = UiTheme.FlowRow();
+            actions.MouseFilter = Control.MouseFilterEnum.Pass;
+            actions.AddChild(TrackButton(progress));
+            if (SelectedLocationId() != null)
+            {
+                Button show = UiTheme.Action(Loc.T("kn.journal.show_on_map"), UiCue.Tab);
+                show.TooltipText = Loc.T("kn.journal.show_on_map_tip");
+                show.Pressed += ShowSelectedOnMap;
+                actions.AddChild(show);
+            }
+
+            _detail.AddChild(actions);
         }
 
         if (progress.IsTimed && progress.Status == QuestStatus.Active)
@@ -737,6 +776,12 @@ public partial class QuestLogPanel : UiPanel
         BuildStageLog(progress, tint);
         BuildRewards(quest);
     }
+
+    /// <summary>The width the detail pane's text has: the page less the index, the gap between the panes,
+    /// the band's own margins and the scroll gutter.</summary>
+    private float DetailWidth() =>
+        UiTheme.UsableWidth(Shell) - _index.CustomMinimumSize.X - UiTheme.SpaceMd -
+        (UiTheme.SpaceLg + UiTheme.SpaceMd) - UiTheme.ScrollGutter;
 
     private Control DetailChips(QuestProgress progress)
     {
@@ -813,28 +858,28 @@ public partial class QuestLogPanel : UiPanel
 
         var row = new HBoxContainer();
         row.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
-        if (done)
+
+        // The state is a shape before it is a colour: a tick for done, a cross for a step that can no
+        // longer be done, a filled diamond for the step to do now, a hollow one for an optional step, a
+        // padlock for one not open yet.
+        ObjectiveMark mark = JournalLayoutRules.MarkOf(line.Kind);
+        Color ink = mark switch
         {
-            // A text tick, so a finished step is told apart from a pending one without colour.
-            Label tick = UiTheme.Body(Loc.TF("questui.tick_line", text), UiTheme.QuestComplete);
-            tick.AutowrapMode = TextServer.AutowrapMode.WordSmart;
-            tick.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-            row.AddChild(tick);
-        }
-        else
+            ObjectiveMark.Done => UiTheme.QuestComplete,
+            ObjectiveMark.Failed => UiTheme.QuestFailed,
+            _ => live ? tint : UiTheme.Dim,
+        };
+        row.AddChild(mark == ObjectiveMark.Locked
+            ? UiIcon.Create(UiIcon.Kind.Lock, 16f, UiTheme.Dim)
+            : MarkGlyph.For(mark, ink));
+
+        Label label = UiTheme.Body(text, live ? UiTheme.Text : UiTheme.Dim);
+        label.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+        label.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        row.AddChild(label);
+        if (!done && objective.RequiredCount > 1)
         {
-            row.AddChild(UiIcon.Create(
-                line.Kind is StageKind.Locked or StageKind.Missed ? UiIcon.Kind.Lock : UiIcon.Kind.Waypoint,
-                20f,
-                live ? UiTheme.Text : UiTheme.Dim));
-            Label label = UiTheme.Body(text, live ? UiTheme.Text : UiTheme.Dim);
-            label.AutowrapMode = TextServer.AutowrapMode.WordSmart;
-            label.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-            row.AddChild(label);
-            if (objective.RequiredCount > 1)
-            {
-                row.AddChild(UiTheme.Caption($"{have}/{objective.RequiredCount}", UiTheme.Dim));
-            }
+            row.AddChild(UiTheme.Caption($"{have}/{objective.RequiredCount}", UiTheme.Dim));
         }
 
         if (objective.IsOptional)
@@ -949,20 +994,14 @@ public partial class QuestLogPanel : UiPanel
     /// tracker and the compass marker together (they read one authority since 39.5B).
     ///
     /// The state is carried by the label as well as the colour - "TRACKED" versus "TRACK" - because
-    /// colour is never the only channel (UI_STYLE §2, brief §40). On a pad the label also names the
+    /// colour is never the only channel (UI_STYLE §2, brief §40). The legend names the key or
     /// button that toggles it.
     /// </summary>
     private Button TrackButton(QuestProgress progress)
     {
         bool tracked = ReferenceEquals(_log?.Tracked, progress);
 
-        string label = Loc.T(tracked ? "questlog.untrack" : "questlog.track");
-        if (InputDevice.GamepadActive)
-        {
-            label = Loc.TF("questui.with_prompt", label, GameInput.PromptLabel(GameInput.Interact));
-        }
-
-        Button button = UiTheme.Action(label);
+        Button button = UiTheme.Action(Loc.T(tracked ? "questlog.untrack" : "questlog.track"), UiCue.Confirm);
         button.TooltipText = Loc.T("questlog.track_tip");
         button.AddThemeColorOverride("font_color", tracked ? UiTheme.Accent : UiTheme.Text);
 

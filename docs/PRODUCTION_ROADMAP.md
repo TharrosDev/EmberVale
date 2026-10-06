@@ -63,7 +63,7 @@ personal and never published.
 | 34 | Enemy roster | ✅ | 52 | Audio production | ⬜ |
 | 34.5 | Frostfang clans | ✅ | 53 | Art complete | ◐ (all Meshy bosses adopted; no final pass) |
 | 35 | Dragons | ✅ | 53.5 | Photo mode | ⬜ |
-| 36 | Boss framework | ✅ | 54 | Accessibility | ◐ |
+| 36 | Boss framework | ✅ | 54 | Accessibility | ◐ remapping, captions and a real difficulty setting built 2026-10-06; unplayed, no audit |
 | 37 | Housing | ✅ | 55 | G3 acceptance | ◐ (`--story` + play-through) |
 | 37.5 | UI overhaul | ✅ | 56 | Balance | open |
 | 38 | Economy | ✅ | 57 | Performance cert | ◐ optimization pass built, unmeasured; cert not run |
@@ -95,6 +95,14 @@ skies, and a Windows export that passes `--story` inside itself. What remains:
    `claude/perf-integration`. What it needs: a Godot import, one full master bake, the gates, the
    after-measurement against the recorded baseline, and every tier looked at on a screen.
    [`NOW.md`](NOW.md) has the baseline table and the unverified list.
+
+7. **The UI, HUD and meta-shell upgrade is built, gated and rendered, and has not been played.**
+   Every screen and the HUD were rebuilt on `claude/ui-upgrade`, with key and gamepad remapping,
+   HUD options, subtitles, a death screen, a credits screen and a difficulty setting that scales
+   damage taken. What it needs: a played session with a keyboard and a real gamepad, the
+   high-contrast and reduced-motion renders, a HUD cost measurement, and a look on Steam Deck
+   hardware. [`NOW.md`](NOW.md) has the verification record and the unverified list;
+   [`UI_STYLE.md`](UI_STYLE.md) §13 maps the code.
 
 Not planned unless the maintainer asks: 42.5, 43, 50.5, 52, 53.5, 59, and the formal certification
 half of 57 (a target-hardware matrix and a signed 16.67 ms budget; the pass above is not that).

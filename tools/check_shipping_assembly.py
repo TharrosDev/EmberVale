@@ -18,7 +18,7 @@ DLL = pathlib.Path(".godot/mono/temp/bin/ExportRelease/Embervale.dll")
 # Type names that must not exist in a shipping build.
 FORBIDDEN = [
     "ShellShots", "HudShots", "PanelShots", "UiAuditShots", "ShrineShots", "GuildShots",
-    "EnemyShots", "CombatShots", "ShotHarness", "ReproHarness",
+    "EnemyShots", "CombatShots", "MetaShots", "TradeShots", "ShotHarness", "ReproHarness",
     "MagicCoreProbeDriver", "MagicStatusProbeSeam", "MagicLearningProbeDriver",
     "MagicContentProbeDriver",
     "MagicLifetimeProbeDriver",

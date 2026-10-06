@@ -8,17 +8,26 @@ using Embervale.Localization;
 using Embervale.Movement;
 using Embervale.Progression;
 using Embervale.Quests;
+using Embervale.Settings;
 using Embervale.Shrines;
+using Embervale.Stats;
 using Embervale.World;
 using Godot;
 
 namespace Embervale.UI;
 
 /// <summary>
-/// The toast/notification feed: a top-centre stack of transient <see cref="Toast"/> chips
+/// The toast/notification feed: a top-right stack of transient <see cref="Toast"/> plates
 /// announcing discrete, meaningful moments — level-ups, quest start/completion, and world
 /// events beginning/ending. Event-driven, so any system that raises one of these is surfaced
 /// to the player without coupling. Built through <see cref="UiTheme"/>.
+///
+/// Four rules shape the feed, the arithmetic of each in <see cref="ToastRules"/>. A toast holds for
+/// as long as its words take to read, times the player's toast-duration setting. A notice that
+/// repeats one already waiting or already on screen adds to its count ("×3") instead of stacking.
+/// While the player is fighting only warnings are shown; the rest wait and leave in order once the
+/// fight is over. And with the Toasts HUD element hidden, only warnings are shown: a save that
+/// failed or a full pack has no other way to reach the player.
 /// </summary>
 public partial class Notifications : CanvasLayer
 {
@@ -47,14 +56,72 @@ public partial class Notifications : CanvasLayer
         /// <summary>The audio cue played when the toast is shown (not when it is queued).</summary>
         public string? Cue { get; init; }
 
+        /// <summary>What makes two notices the same notice: one adds to the other's count.</summary>
+        public required string Key { get; init; }
+
+        /// <summary>Whether the toast names the journal's key: it is about a quest.</summary>
+        public bool Journal { get; init; }
+
         public int Count { get; set; } = 1;
     }
 
     private VBoxContainer _stack = null!;
     private GameHud? _hud;
-    private readonly Queue<Notice> _queue = new();
+    private readonly ToastQueue<Notice> _queue = new();
     private readonly Dictionary<string, Notice> _coalesced = new();
+    private readonly Dictionary<string, Toast> _shown = new();
     private int _visible;
+
+    // The last blow traded with something, and everyone blows were traded with since the fight
+    // began: what "in a fight" means to the feed.
+    private double _blowAt = double.NegativeInfinity;
+    private readonly HashSet<StatsComponent> _opponents = new();
+    private static readonly System.Predicate<StatsComponent> Fallen =
+        static stats => !IsInstanceValid(stats) || !stats.IsAlive;
+
+    /// <summary>Notices waiting to be shown. For harness validation.</summary>
+    public int QueuedForCapture => _queue.Count;
+
+    /// <summary>The largest count on a toast on screen (1 with none collapsed, 0 with no toast).
+    /// For harness validation.</summary>
+    public int ToastCountForCapture
+    {
+        get
+        {
+            int most = 0;
+            foreach (Toast toast in _shown.Values)
+            {
+                most = Mathf.Max(most, IsInstanceValid(toast) ? toast.Count : 0);
+            }
+
+            return most;
+        }
+    }
+
+    /// <summary>Ends the feed's combat reading at once, so a harness need not wait the fight out.</summary>
+    public void EndCombatForCapture() => EndCombat();
+
+    /// <summary>How many toasts are on screen and not yet leaving. For harness validation.</summary>
+    public int LiveToastsForCapture => LiveToasts();
+
+    /// <summary>
+    /// Takes every toast off the screen at once, so a harness can stage the next notice into an
+    /// empty feed without waiting out the dwell of whatever an earlier shot raised. On a short
+    /// screen one two-line toast is all that fits between the tracker and the minimap, and the
+    /// notice being photographed would otherwise still be waiting behind it at the capture.
+    /// What is queued is left alone: it is shown as the room comes back, the way it always is.
+    /// </summary>
+    public void ClearShownForCapture()
+    {
+        for (int i = _stack.GetChildCount() - 1; i >= 0; i--)
+        {
+            if (_stack.GetChild(i) is Toast toast)
+            {
+                _stack.RemoveChild(toast); // its TreeExited gives the feed its room back
+                toast.QueueFree();
+            }
+        }
+    }
 
     // One player action publishes several quest events in one frame; they are collected here and turned into
     // the toasts worth showing once per frame (QuestNoticeCoalescer).
@@ -109,6 +176,60 @@ public partial class Notifications : CanvasLayer
 
         bus?.Subscribe<CompanionBarkEvent>(OnCompanionBark);
         bus?.Subscribe<Narrative.StoryToastRequestedEvent>(OnStoryToast);
+        bus?.Subscribe<Combat.HitConfirmedEvent>(OnBlow);
+        bus?.Subscribe<InputDeviceChangedEvent>(OnDeviceChanged);
+        bus?.Subscribe<InputBindingsChangedEvent>(OnBindingsChanged);
+    }
+
+    /// <summary>A blow traded with something that fights back, or is being fought. A blow with no
+    /// one behind it (a fall, a hazard) is not a fight.</summary>
+    private void OnBlow(Combat.HitConfirmedEvent e)
+    {
+        Entities.IEntity? other = e.OnPlayer ? e.Source : e.ByPlayer ? e.Target : null;
+        if (other != null && !Combat.CombatPerspective.IsPlayer(other) && other.GetComponent<StatsComponent>() is { } stats)
+        {
+            _opponents.Add(stats);
+            _blowAt = Now();
+        }
+    }
+
+    /// <summary>Whether the player is in a fight as far as the feed is concerned: a blow was traded a
+    /// moment ago and one of those it was traded with is still standing. A fight ends at once with
+    /// the last of them, not with the first.</summary>
+    private bool InCombat()
+    {
+        if (HudDynamicRules.Lingering(Now(), _blowAt, HudDynamicRules.CombatLingerSeconds))
+        {
+            _opponents.RemoveWhere(Fallen);
+            if (_opponents.Count > 0)
+            {
+                return true;
+            }
+        }
+
+        EndCombat();
+        return false;
+    }
+
+    private void EndCombat()
+    {
+        _opponents.Clear();
+        _blowAt = double.NegativeInfinity;
+    }
+
+    private void OnDeviceChanged(InputDeviceChangedEvent e) => RefreshGlyphs();
+
+    private void OnBindingsChanged(InputBindingsChangedEvent e) => RefreshGlyphs();
+
+    private void RefreshGlyphs()
+    {
+        foreach (Toast toast in _shown.Values)
+        {
+            if (IsInstanceValid(toast))
+            {
+                toast.RefreshGlyph();
+            }
+        }
     }
 
     public override void _Process(double delta)
@@ -183,6 +304,9 @@ public partial class Notifications : CanvasLayer
         UnsubscribeMagic(bus);
         bus.Unsubscribe<CompanionBarkEvent>(OnCompanionBark);
         bus.Unsubscribe<Narrative.StoryToastRequestedEvent>(OnStoryToast);
+        bus.Unsubscribe<Combat.HitConfirmedEvent>(OnBlow);
+        bus.Unsubscribe<InputDeviceChangedEvent>(OnDeviceChanged);
+        bus.Unsubscribe<InputBindingsChangedEvent>(OnBindingsChanged);
     }
 
     private void OnLeveledUp(LeveledUpEvent e)
@@ -250,37 +374,37 @@ public partial class Notifications : CanvasLayer
             switch (intent.Kind)
             {
                 case QuestNoticeKind.Completed:
-                    Push(Loc.TF("notify.quest_complete", title), UiTheme.Good, NoticeCategory.Major, cue: cue);
+                    Push(Loc.TF("notify.quest_complete", title), UiTheme.Good, NoticeCategory.Major, cue: cue, journal: true);
                     break;
 
                 case QuestNoticeKind.Failed:
-                    Push(Loc.TF("notify.quest_failed", title), UiTheme.Bad, NoticeCategory.Warning);
+                    Push(Loc.TF("notify.quest_failed", title), UiTheme.Bad, NoticeCategory.Warning, journal: true);
                     break;
 
                 case QuestNoticeKind.Started:
                     Push(
                         Loc.TF("notify.quest_started", title), UiTheme.Text, NoticeCategory.Quest,
                         secondary: Describe(intent.ObjectiveIndex) is { } first ? Loc.TF("questui.new_objective", first) : null,
-                        cue: cue);
+                        cue: cue, journal: true);
                     break;
 
                 case QuestNoticeKind.NewObjective:
                     Push(
                         Loc.TF("questui.new_objective", Describe(intent.ObjectiveIndex) ?? title), tint,
-                        NoticeCategory.Quest, secondary: title, cue: cue);
+                        NoticeCategory.Quest, secondary: title, cue: cue, journal: true);
                     break;
 
                 case QuestNoticeKind.Updated:
                     Push(
                         Loc.TF("questui.updated_toast", title), UiTheme.QuestComplete, NoticeCategory.Quest,
                         secondary: Describe(intent.CompletedIndex) is { } met ? Loc.TF("hud.quest.objective_done", met) : null,
-                        cue: cue);
+                        cue: cue, journal: true);
                     break;
 
                 case QuestNoticeKind.OptionalDone:
                     Push(
                         Loc.TF("questui.optional_done", Describe(intent.ObjectiveIndex) ?? title),
-                        UiTheme.QuestComplete, NoticeCategory.Quest, secondary: title, cue: cue);
+                        UiTheme.QuestComplete, NoticeCategory.Quest, secondary: title, cue: cue, journal: true);
                     break;
             }
         }
@@ -333,7 +457,11 @@ public partial class Notifications : CanvasLayer
             secondary: e.DetailKey.Length > 0 && Loc.Has(e.DetailKey) ? Loc.T(e.DetailKey) : null);
     }
 
-    /// <summary>A companion's reaction line as a portrait-less toast: the line, and who said it beneath.
+    /// <summary>A companion's reaction line. It is something said, so with subtitles on it is
+    /// captioned under the speaker's name (<see cref="SubtitleLayer"/>); otherwise it is a
+    /// portrait-less toast: the line, and who said it beneath. A line raised under a menu or in a
+    /// conversation is a toast too, because the feed holds it until the player is back in the world
+    /// and a reaction line is said once per save.
     /// Public so a harness can drive it through the feed's own path.</summary>
     public void PushBark(string companionId, string textKey)
     {
@@ -343,6 +471,12 @@ public partial class Notifications : CanvasLayer
         }
 
         string name = CompanionDatabase.Get(companionId) is { } companion ? Loc.T(companion.NameKey) : string.Empty;
+        bool attending = !UiState.MenuOpen && GameManager.Instance?.State == GameState.Playing;
+        if (attending && SubtitleLayer.TryShow(name.Length > 0 ? name : null, Loc.T(textKey), 0f))
+        {
+            return;
+        }
+
         Push(
             Loc.T(textKey), UiTheme.Accent, NoticeCategory.Bark,
             secondary: name.Length > 0 ? Loc.TF("questui.bark_by", name) : null);
@@ -490,14 +624,29 @@ public partial class Notifications : CanvasLayer
     // the whole point of authoring a key per shrine rather than one shared line.
     private void OnShrineRefused(ShrineRefusedEvent e) => Push(Loc.T(e.Shrine.RefusalKey), UiTheme.Bad);
 
+    /// <summary>Queues a notice. <paramref name="collapseKey"/> names what it is about when the words
+    /// alone do not (two pickups of one item are the same notice whatever the quantities), and
+    /// <paramref name="quantity"/> is how much it adds to the count of a notice it repeats.</summary>
     private void Push(
         string text, Color color, NoticeCategory category = NoticeCategory.Minor, string? secondary = null,
-        string? cue = null)
+        string? cue = null, string? collapseKey = null, int quantity = 1, bool journal = false)
     {
-        string key = secondary == null ? text : $"{text}\n{secondary}";
+        // Hidden toasts still let a warning through: it is the only place a failed save is said.
+        if (category != NoticeCategory.Warning && GameHud.ElementMode(HudElement.Toasts) == HudElementMode.Hidden)
+        {
+            return;
+        }
+
+        string key = collapseKey ?? (secondary == null ? text : $"{text}\n{secondary}");
         if (_coalesced.TryGetValue(key, out Notice? existing))
         {
-            existing.Count++;
+            existing.Count += quantity;
+            return;
+        }
+
+        // Already on screen: the toast the player is reading takes the count and starts its dwell again.
+        if (_shown.TryGetValue(key, out Toast? live) && IsInstanceValid(live) && live.Bump(live.Count + quantity))
+        {
             return;
         }
 
@@ -507,8 +656,12 @@ public partial class Notifications : CanvasLayer
             return;
         }
 
-        var notice = new Notice { Text = text, Accent = color, Category = category, Secondary = secondary, Cue = cue };
-        _queue.Enqueue(notice);
+        var notice = new Notice
+        {
+            Text = text, Accent = color, Category = category, Secondary = secondary, Cue = cue, Key = key,
+            Journal = journal, Count = Mathf.Max(1, quantity),
+        };
+        _queue.Enqueue(notice, critical: category == NoticeCategory.Warning);
         _coalesced[key] = notice;
         PresentQueued();
     }
@@ -527,11 +680,12 @@ public partial class Notifications : CanvasLayer
             return;
         }
 
+        // A fight holds back everything but warnings; they are released, in order, when it ends.
+        bool inCombat = _queue.Count > 0 && InCombat();
         PlaceStack();
-        while (_queue.Count > 0 && LiveToasts() < MaxVisible && Fits())
+        while (LiveToasts() < MaxVisible && Fits() && _queue.TryTake(inCombat, out Notice notice))
         {
-            Notice notice = _queue.Dequeue();
-            _coalesced.Remove(notice.Secondary == null ? notice.Text : $"{notice.Text}\n{notice.Secondary}");
+            _coalesced.Remove(notice.Key);
             Present(notice);
         }
     }
@@ -542,14 +696,7 @@ public partial class Notifications : CanvasLayer
         {
             SizeFlagsHorizontal = Control.SizeFlags.ShrinkCenter,
             Accent = notice.Accent,
-            Life = notice.Category switch
-            {
-                NoticeCategory.Minor => 3.2,
-                NoticeCategory.Warning => 5.5,
-                NoticeCategory.Major => 6.0,
-                NoticeCategory.Bark => 5.0,
-                _ => 4.5,
-            },
+            Dwell = ToastRules.Dwell(notice.Text, notice.Secondary, ToastDuration()),
         };
 
         var row = new HBoxContainer();
@@ -561,25 +708,43 @@ public partial class Notifications : CanvasLayer
 
         var copy = new VBoxContainer();
         copy.AddThemeConstantOverride("separation", UiTheme.LineGap);
-        Label label = notice.Category is NoticeCategory.Major or NoticeCategory.Quest
+        Label label = UiTheme.HudInk(notice.Category is NoticeCategory.Major or NoticeCategory.Quest
             ? UiTheme.Header(notice.Text)
-            : UiTheme.Body(notice.Text);
+            : UiTheme.Body(notice.Text));
         label.AutowrapMode = TextServer.AutowrapMode.WordSmart;
         label.CustomMinimumSize = new Vector2(ToastTextWidth, 0f);
         copy.AddChild(label);
         if (notice.Secondary != null)
         {
-            Label second = UiTheme.Caption(notice.Secondary, UiTheme.Dim);
+            Label second = UiTheme.HudInk(UiTheme.Caption(notice.Secondary, UiTheme.Dim));
             second.AutowrapMode = TextServer.AutowrapMode.WordSmart;
             second.CustomMinimumSize = new Vector2(ToastTextWidth, 0f);
             copy.AddChild(second);
         }
 
-        if (notice.Count > 1)
+        // A quest notice names the key that opens the journal: where the rest of it is.
+        if (notice.Journal)
         {
-            copy.AddChild(UiTheme.Caption($"×{notice.Count}", UiTheme.Dim));
+            var hint = new HBoxContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
+            hint.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
+            var glyph = new HBoxContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
+            hint.AddChild(glyph);
+            hint.AddChild(UiTheme.HudInk(UiTheme.Caption(Loc.T("hudc.toast.journal"), UiTheme.Dim)));
+            copy.AddChild(hint);
+            toast.GlyphSlot = glyph;
+            toast.GlyphAction = GameInput.Journal;
         }
+
         row.AddChild(copy);
+
+        // The count sits beside the words it multiplies, in the text colour: it is information, not
+        // decoration, and it is a number as well as a place in a stack.
+        Label count = UiTheme.HudInk(UiTheme.Body(string.Empty, UiTheme.Text));
+        count.SizeFlagsVertical = Control.SizeFlags.ShrinkBegin;
+        count.Visible = false;
+        row.AddChild(count);
+        toast.CountLabel = count;
+        toast.SetCount(notice.Count);
         toast.AddContent(row);
 
         if (notice.Cue != null)
@@ -588,9 +753,15 @@ public partial class Notifications : CanvasLayer
         }
 
         _visible++;
+        _shown[notice.Key] = toast;
         toast.TreeExited += () =>
         {
             _visible = Mathf.Max(0, _visible - 1);
+            if (_shown.TryGetValue(notice.Key, out Toast? held) && ReferenceEquals(held, toast))
+            {
+                _shown.Remove(notice.Key);
+            }
+
             // Deferred: a toast also leaves the tree when the whole HUD is torn down, and presenting
             // the next one from inside that exit adds a child to a parent that is mid-teardown.
             Callable.From(PresentQueued).CallDeferred();
@@ -675,6 +846,11 @@ public partial class Notifications : CanvasLayer
             }
         }
     }
+
+    private static float ToastDuration() =>
+        Core.Services.ServiceLocator.Instance is { } locator && locator.TryGet(out SettingsService settings)
+            ? settings.Current.ToastDuration
+            : 1f;
 
     private GameHud? Hud()
     {
