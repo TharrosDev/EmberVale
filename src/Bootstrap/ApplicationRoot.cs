@@ -173,10 +173,28 @@ public partial class ApplicationRoot : Node3D, IServiceScopeHost
         settings.LoadAndApply();
         Scope.Register(settings);
 
+        // What the hosted runtime is actually running with. The project's runtimeconfig is honoured
+        // only by an exported game (the editor binary starts .NET from the engine's own), so the
+        // csproj cannot be trusted to say; this line can.
+        Log.Info($"Runtime: .NET {System.Environment.Version}, " +
+                 $"{(System.Runtime.GCSettings.IsServerGC ? "server" : "workstation")} GC, " +
+                 $"latency {System.Runtime.GCSettings.LatencyMode}, " +
+                 $"{System.Environment.ProcessorCount} logical core(s).");
+
         // Broken authored references surface here at boot rather than mid-playthrough. A release
         // export skips it: several arms read .tscn source text, which an export ships as binary, so
         // they would report every scene-authored reference as missing. --validate is the real gate.
-        if (OS.IsDebugBuild())
+        //
+        // ⚠️ HEADLESS BOOTS ONLY (2026-10 performance pass). The pass is not a cross-reference
+        // check any more: ValidateRegions loads every cell scene of every region AND loads and
+        // instantiates its prepared twin out of data/world_bake, and pins all six prepared region
+        // packages in ResidentResources for the life of the process. Run before the title screen
+        // on every windowed debug boot, that was the whole baked world read off disk and built
+        // once so a player could look at a menu, and the packages of realms never visited held in
+        // memory afterwards. The headless session gates (--lifecycle, --story) still run it here
+        // because they read Invariant.Violations; a windowed session gets it from the `validate`
+        // console command, and `--validate` remains the gate.
+        if (OS.IsDebugBuild() && DisplayServer.GetName() == "headless")
         {
             Log.Info(ContentValidator.Run());
         }

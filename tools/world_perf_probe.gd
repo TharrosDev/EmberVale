@@ -120,6 +120,13 @@ func _run() -> void:
 				worst = sample
 
 		var memory := Performance.get_monitor(Performance.RENDER_VIDEO_MEM_USED) / 1048576.0
+		# The split of that total, read once per region beside it (three counter reads, no frame
+		# is sampled around them): textures are what an asset change moves, buffers are meshes,
+		# multimeshes and skeletons. The remainder of the total is the renderer's own targets.
+		var texture_memory := RenderingServer.get_rendering_info(
+			RenderingServer.RENDERING_INFO_TEXTURE_MEM_USED) / 1048576.0
+		var buffer_memory := RenderingServer.get_rendering_info(
+			RenderingServer.RENDERING_INFO_BUFFER_MEM_USED) / 1048576.0
 		_summaries.append({
 			"region": _region_id,
 			"cells": int(totals.cells),
@@ -130,6 +137,8 @@ func _run() -> void:
 			"worst_cell": worst.cell,
 			"worst_ms": worst.ms,
 			"video_memory_mb": memory,
+			"texture_memory_mb": texture_memory,
+			"buffer_memory_mb": buffer_memory,
 		})
 		if not _json:
 			print("")
@@ -143,7 +152,8 @@ func _run() -> void:
 				"MEAN", totals.draws / totals.cells, totals.prims / totals.cells,
 				totals.ms / totals.cells])
 			print("  worst cell: %s at %.2f ms/frame" % [worst.cell, worst.ms])
-			print("  resident video memory: %.0f MB" % memory)
+			print("  resident video memory: %.0f MB (textures %.0f, buffers %.0f)" % [
+				memory, texture_memory, buffer_memory])
 			_check_budget(region, totals, memory)
 
 		_streamer.call("UnloadAll")
