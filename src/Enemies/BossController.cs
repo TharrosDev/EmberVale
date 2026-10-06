@@ -89,6 +89,28 @@ public partial class BossController : EntityComponent
 
     private bool _encounterBegun;
 
+    // --- ics:save-ui: no manual or quick save mid-fight ---
+    // Held from the first blow traded until the boss dies or withdraws, the player dies, the fight
+    // goes quiet for SaveBlockQuietSeconds (the player fled and the boss leashed home), or this
+    // component is torn down. Without the last three a fight the player walked away from, or died
+    // in, would refuse every save for as long as the boss's cell stayed loaded.
+    private const string SaveBlockReason = "save.blocked.boss";
+    private const double SaveBlockQuietSeconds = 20d;
+    private System.IDisposable? _saveBlock;
+    private double _saveBlockQuiet;
+
+    private void HoldSaveBlock()
+    {
+        _saveBlockQuiet = 0d;
+        _saveBlock ??= Embervale.Save.SaveManager.Instance?.PushSaveBlock(SaveBlockReason);
+    }
+
+    private void ReleaseSaveBlock()
+    {
+        _saveBlock?.Dispose();
+        _saveBlock = null;
+    }
+
     /// <summary>
     /// Announces the fight — once. The brazier calls it right after summoning so the Iron King keeps
     /// his entrance, and <see cref="OnDamage"/> calls it on the first blow traded so a lair boss,
@@ -156,6 +178,7 @@ public partial class BossController : EntityComponent
         EventBus.Instance?.Unsubscribe<AttackPerformedEvent>(OnAttack);
         EventBus.Instance?.Unsubscribe<AttackInterruptedEvent>(OnInterrupted);
         EventBus.Instance?.Unsubscribe<EntityDiedEvent>(OnDied);
+        ReleaseSaveBlock();
     }
 
     /// <summary>An inline <see cref="Boss"/> wins; otherwise the id is looked up. A miss warns and
@@ -233,6 +256,11 @@ public partial class BossController : EntityComponent
             return;
         }
 
+        if (_saveBlock != null && (_saveBlockQuiet += delta) >= SaveBlockQuietSeconds)
+        {
+            ReleaseSaveBlock();
+        }
+
         TickEnrage(delta);
         TickAddWaves(delta);
 
@@ -283,6 +311,7 @@ public partial class BossController : EntityComponent
         {
             _engaged = true;
             BeginEncounter();
+            HoldSaveBlock();
         }
 
         if (!ReferenceEquals(e.Target, Entity) || _stats == null)
@@ -315,6 +344,7 @@ public partial class BossController : EntityComponent
     private void Withdraw()
     {
         _withdrawn = true;
+        ReleaseSaveBlock();
         ClearAdds();
         EventBus.Instance?.Publish(new BossWithdrewEvent(Entity!));
         Log.Info($"{Entity!.DisplayName} lowers the blade and withdraws.");
@@ -410,6 +440,11 @@ public partial class BossController : EntityComponent
         if (ReferenceEquals(e.Entity, Entity))
         {
             ClearAdds();
+            ReleaseSaveBlock();
+        }
+        else if (e.Entity is Embervale.Player.PlayerCharacter)
+        {
+            ReleaseSaveBlock(); // the fight is over for the player too; the next blow re-arms it
         }
     }
 
