@@ -77,10 +77,13 @@ public partial class BootSplash : CanvasLayer
         centre.SetAnchorsPreset(Control.LayoutPreset.FullRect);
         _root.AddChild(centre);
 
+        // As large as the screen lets it be and still clear the prompt under it.
+        float seal = Mathf.Min(
+            UiTheme.SplashSealSize, GetViewport().GetVisibleRect().Size.Y * UiTheme.SplashSealShare);
         _seal = new TextureRect
         {
             Texture = GD.Load<Texture2D>("res://assets/ui/emblems/embervale_seal.png"),
-            CustomMinimumSize = new Vector2(UiTheme.SplashSealSize, UiTheme.SplashSealSize),
+            CustomMinimumSize = new Vector2(seal, seal),
             ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
             StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
             MouseFilter = Control.MouseFilterEnum.Ignore,

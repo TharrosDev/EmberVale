@@ -30,6 +30,7 @@ public partial class SettingsPanel : CanvasLayer
 {
     private SettingsService _settings = null!;
     private System.Action? _onBack;
+    private Texture2D? _backdrop;
 
     private SettingsTab _tab;
     private Control? _root;
@@ -53,8 +54,12 @@ public partial class SettingsPanel : CanvasLayer
     private bool _popupOpen;
 
     /// <summary>Opens the panel as a child of <paramref name="parent"/>, invoking
-    /// <paramref name="onBack"/> when the player backs out. No-op if no settings service exists.</summary>
-    public static void Open(Node parent, System.Action? onBack = null)
+    /// <paramref name="onBack"/> when the player backs out. No-op if no settings service exists.
+    /// It opens on <paramref name="initialTab"/>, set before the panel enters the tree so the
+    /// first build is already that tab. <paramref name="backdrop"/> is a painting to keep behind
+    /// the sheet (the title's, when the title opened it).</summary>
+    public static void Open(
+        Node parent, System.Action? onBack = null, SettingsTab initialTab = SettingsTab.Graphics, Texture2D? backdrop = null)
     {
         if (ServiceLocator.Instance is not { } locator || !locator.TryGet(out SettingsService settings))
         {
@@ -63,7 +68,13 @@ public partial class SettingsPanel : CanvasLayer
             return;
         }
 
-        var panel = new SettingsPanel { _settings = settings, _onBack = onBack };
+        var panel = new SettingsPanel
+        {
+            _settings = settings,
+            _onBack = onBack,
+            _tab = initialTab,
+            _backdrop = backdrop,
+        };
         parent.AddChild(panel);
     }
 
@@ -184,6 +195,7 @@ public partial class SettingsPanel : CanvasLayer
         // the height it is given (a sheet centres its column by default) so the list can scroll.
         (Control root, VBoxContainer col) = UiTheme.Sheet(width, 0.92f, centred: true);
         col.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
+        UiTheme.SheetOverPainting(root, _backdrop);
         _root = root;
         AddChild(root);
         MoveChild(root, 0); // under any open prompt and the legend
@@ -449,9 +461,11 @@ public partial class SettingsPanel : CanvasLayer
         var slot = new MarginContainer { CustomMinimumSize = new Vector2(UiTheme.SettingsControlColumn, 0f) };
         control.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
         control.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-        if (control is OptionButton)
+        // A dropdown and a toggle are pressed anywhere in the row's height, not only on their glyph.
+        // A slider is given the same height where it is built (SliderRow).
+        if (control is BaseButton)
         {
-            control.CustomMinimumSize = new Vector2(0f, UiTheme.ControlHeight);
+            control.CustomMinimumSize = new Vector2(control.CustomMinimumSize.X, UiTheme.ControlHeight);
         }
 
         slot.AddChild(control);
@@ -651,9 +665,11 @@ public partial class SettingsPanel : CanvasLayer
         box.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
         HSlider slider = UiTheme.Slider(min, max, step, value,
             UiTheme.SettingsControlColumn - UiTheme.SettingsReadout - UiTheme.SpaceSm);
+        slider.CustomMinimumSize = new Vector2(slider.CustomMinimumSize.X, UiTheme.ControlHeight); // a full control to grab
         slider.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
         slider.Scrollable = false; // the wheel scrolls the list; it must not move a setting it passes over
         Label readout = UiTheme.Body(format(value), UiTheme.Dim);
+        readout.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
         readout.CustomMinimumSize = new Vector2(UiTheme.SettingsReadout, 0f);
         readout.HorizontalAlignment = HorizontalAlignment.Right;
 

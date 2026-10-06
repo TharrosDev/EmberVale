@@ -122,4 +122,50 @@ public static class ShellSessionRules
     /// between two margins.</summary>
     public static float NarrationWidth(float viewWidth, float measure, float margin) =>
         Math.Max(0f, Math.Min(measure, viewWidth - (margin * 2f)));
+
+    /// <summary>The longest line of a wrapped tooltip, in characters.</summary>
+    public const int TooltipLineLength = 56;
+
+    /// <summary>
+    /// Breaks <paramref name="text"/> into lines of at most <paramref name="lineLength"/> characters
+    /// at its spaces. The engine draws a tooltip as one line however long it is, and a paragraph of
+    /// description ran off both sides of the screen. A word longer than a line keeps its own line;
+    /// line breaks already in the text are kept.
+    /// </summary>
+    public static string WrapTooltip(string? text, int lineLength = TooltipLineLength)
+    {
+        if (string.IsNullOrEmpty(text) || lineLength <= 0 || text.Length <= lineLength)
+        {
+            return text ?? string.Empty;
+        }
+
+        var wrapped = new System.Text.StringBuilder(text.Length + 8);
+        foreach (string paragraph in text.Split('\n'))
+        {
+            if (wrapped.Length > 0)
+            {
+                wrapped.Append('\n');
+            }
+
+            int line = 0;
+            foreach (string word in paragraph.Split(' ', StringSplitOptions.RemoveEmptyEntries))
+            {
+                if (line > 0 && line + 1 + word.Length > lineLength)
+                {
+                    wrapped.Append('\n');
+                    line = 0;
+                }
+                else if (line > 0)
+                {
+                    wrapped.Append(' ');
+                    line++;
+                }
+
+                wrapped.Append(word);
+                line += word.Length;
+            }
+        }
+
+        return wrapped.ToString();
+    }
 }

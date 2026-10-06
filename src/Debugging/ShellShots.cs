@@ -19,6 +19,7 @@ public sealed partial class ShellShots : ShotHarness
     public MainMenu? Menu { get; set; }
 
     private CharacterCreator? _creator;
+    private SaveSlotPanel? _slots;
     private BootSplash? _splash;
     private FirstRunSetup? _firstRun;
     private CreditsScreen? _credits;
@@ -229,14 +230,22 @@ public sealed partial class ShellShots : ShotHarness
         }
     }
 
-    private void OpenSlots(SaveSlotPanel.Intent intent)
-    {
-        var slots = new SaveSlotPanel { Name = "AuditSaveSlots" };
-        slots.Configure(intent, _ => { }, () => { });
-        GetTree().Root.AddChild(slots);
-    }
+    // Opened the way the title opens it: the menu hidden, its painting kept behind the sheet.
+    private void OpenSlots(SaveSlotPanel.Intent intent) => _slots = Menu?.OpenSlotsForCapture(intent);
 
-    private void CloseSlots() => GetTree().Root.GetNodeOrNull("AuditSaveSlots")?.QueueFree();
+    private void CloseSlots()
+    {
+        if (_slots is { } slots && IsInstanceValid(slots))
+        {
+            slots.QueueFree();
+        }
+
+        _slots = null;
+        if (Menu is not null)
+        {
+            Menu.Visible = true;
+        }
+    }
 
     private void ShowLoading()
     {

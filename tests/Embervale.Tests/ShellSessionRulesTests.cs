@@ -178,4 +178,32 @@ public class ShellSessionRulesTests
         Assert.True(OpeningTimeline.At(OpeningTimeline.Duration(cards.Length), cards.Length).Finished);
         Assert.False(OpeningTimeline.At(OpeningTimeline.Duration(cards.Length) - 0.01f, cards.Length).Finished);
     }
+
+    [Fact]
+    public void ALongTooltipIsBrokenIntoLinesThatFit()
+    {
+        // The engine draws a tooltip as one line: a race's description ran off both sides of the screen.
+        const string text = "An ancient titan-blooded race of massive strength and unmatched endurance. " +
+                            "Grondar move slower than most, but little can move them.";
+        string wrapped = ShellSessionRules.WrapTooltip(text);
+        string[] lines = wrapped.Split('\n');
+
+        Assert.True(lines.Length > 1);
+        Assert.All(lines, line => Assert.InRange(line.Length, 1, ShellSessionRules.TooltipLineLength));
+        Assert.Equal(text, wrapped.Replace('\n', ' ')); // nothing lost, nothing added but the breaks
+    }
+
+    [Theory]
+    [InlineData(null, "")]
+    [InlineData("", "")]
+    [InlineData("Short enough.", "Short enough.")]
+    public void AShortTooltipIsLeftAlone(string? text, string expected) =>
+        Assert.Equal(expected, ShellSessionRules.WrapTooltip(text));
+
+    [Fact]
+    public void AWrappedTooltipKeepsItsOwnBreaksAndNeverSplitsAWord()
+    {
+        Assert.Equal("one two\nthree\nfour", ShellSessionRules.WrapTooltip("one two three\nfour", 8));
+        Assert.Equal("a\nsupercalifragilistic\nb", ShellSessionRules.WrapTooltip("a supercalifragilistic b", 6));
+    }
 }
