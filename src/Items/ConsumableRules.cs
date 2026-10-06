@@ -15,6 +15,9 @@ public enum ConsumeRefusal
 
     /// <summary>A cure with no harmful status it can remove.</summary>
     NothingToCure,
+
+    /// <summary>The user is below the item's <see cref="ItemResource.RequiredLevel"/>.</summary>
+    LevelTooLow,
 }
 
 /// <summary>
@@ -89,6 +92,7 @@ public static class ConsumableRules
             ConsumeRefusal.OnCooldown => CooldownReasonKey,
             ConsumeRefusal.AlreadyFull => FullReasonKey,
             ConsumeRefusal.NothingToCure => NothingToCureReasonKey,
+            ConsumeRefusal.LevelTooLow => InventoryRules.LevelReasonKey,
             _ => string.Empty,
         };
     }

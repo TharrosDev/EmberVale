@@ -153,6 +153,13 @@ public partial class ConsumableEffectsComponent : EntityComponent
     /// <summary>Whether <paramref name="owner"/> may use <paramref name="item"/> right now.</summary>
     public static ConsumeRefusal Check(IEntity owner, ConsumableItemResource item)
     {
+        // The same gate gear has: the card shows "Requires level N" on a greater draught, so the
+        // draught has to mean it. An actor with no progression has no level to fall short of.
+        if (item.RequiredLevel > (owner.GetComponent<Embervale.Progression.ProgressionComponent>()?.Level ?? int.MaxValue))
+        {
+            return ConsumeRefusal.LevelTooLow;
+        }
+
         StatsComponent? stats = owner.GetComponent<StatsComponent>();
         StatType resource = ResourceOf(item.Effect);
         float cooldown = owner.GetComponent<ConsumableEffectsComponent>()?.CooldownRemaining(item) ?? 0f;
