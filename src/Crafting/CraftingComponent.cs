@@ -718,15 +718,11 @@ public partial class CraftingComponent : EntityComponent, ISaveable
 
         SalvagePlan plan = PlanSalvage(instance, station);
 
-        // Salvaging equipped gear takes it off first (back into the inventory) so the consume below
-        // is uniform — and its stat bonuses are cleanly removed by the unequip.
+        // Worn gear is taken straight off the body (TakeEquipped strips its bonuses and needs no
+        // free pack slot), so salvaging what you are wearing works with a full pack. Loose gear
+        // leaves the pack by reference.
         bool worn = _equipment != null && _equipment.IsInstanceEquipped(instance);
-        if (worn && !_equipment!.UnequipInstance(instance))
-        {
-            return false;
-        }
-
-        if (_inventory.RemoveOneInstance(instance) == null)
+        if (worn ? _equipment!.TakeEquipped(instance) == null : _inventory.RemoveOneInstance(instance) == null)
         {
             return false;
         }
@@ -750,7 +746,9 @@ public partial class CraftingComponent : EntityComponent, ISaveable
                     _inventory.RemoveItem(back.Id, backQuantity);
                 }
 
-                _inventory.AddInstance(instance, 1);
+                // Put back exactly where it came from. A worn piece goes through the pack on its way
+                // back on, over capacity if it must: the equip takes it straight out again.
+                _inventory.AddOrOverflow(instance, 1);
                 if (worn)
                 {
                     _equipment!.Equip(instance);
@@ -998,15 +996,18 @@ public partial class CraftingComponent : EntityComponent, ISaveable
             return false;
         }
 
+        // A worn piece comes straight off the body and goes back on through the pack, so the work
+        // needs no free slot (a full pack used to refuse it).
         bool worn = _equipment != null && _equipment.IsInstanceEquipped(instance);
-        if (worn && !_equipment!.UnequipInstance(instance))
+        if (worn && _equipment!.TakeEquipped(instance) == null)
         {
-            return false; // no room to take it off; nothing was charged
+            return false; // nothing was charged
         }
 
         instance.UpgradeLevel++;
         if (worn)
         {
+            _inventory!.AddOrOverflow(instance, 1);
             _equipment!.Equip(instance);
         }
 
@@ -1145,9 +1146,17 @@ public partial class CraftingComponent : EntityComponent, ISaveable
         }
 
         bool worn = _equipment != null && _equipment.IsInstanceEquipped(old);
-        if (worn && !_equipment!.UnequipInstance(old))
+        if (worn)
         {
-            return false;
+            // Straight off the body and straight back on: no free pack slot is needed.
+            if (_equipment!.TakeEquipped(old) == null)
+            {
+                return false;
+            }
+
+            _inventory.AddOrOverflow(replacement, 1);
+            _equipment.Equip(replacement);
+            return true;
         }
 
         if (_inventory.RemoveOneInstance(old) == null)
@@ -1159,18 +1168,8 @@ public partial class CraftingComponent : EntityComponent, ISaveable
         // guard is here so that if it ever does, the player gets the original back.
         if (_inventory.AddInstance(replacement, 1) < 1)
         {
-            _inventory.AddInstance(old, 1);
-            if (worn)
-            {
-                _equipment!.Equip(old);
-            }
-
+            _inventory.AddOrOverflow(old, 1);
             return false;
-        }
-
-        if (worn)
-        {
-            _equipment!.Equip(replacement);
         }
 
         return true;
