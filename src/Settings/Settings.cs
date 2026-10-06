@@ -184,6 +184,16 @@ public partial class Settings : Resource
     /// glare, low-quality panels, and anyone who finds the parchment material noisy.</summary>
     [Export] public bool HighContrast { get; set; } = false;
 
+    // --- UI upgrade (appended; every default is the behaviour before the field existed) ----
+
+    /// <summary>Sets every title, header and prose line in the interface face instead of the carved
+    /// capitals and the book serif (<c>UiTheme.ResolveRole</c>). Sizes and layout are unchanged.</summary>
+    [Export] public bool ReadableFont { get; set; } = false;
+
+    /// <summary>Hold-to-confirm prompts (delete a save, reset settings, respec) fire on a single
+    /// press instead (<c>UiFx.HoldRing</c>), for a player who cannot hold a button down.</summary>
+    [Export] public bool HoldsToPresses { get; set; } = false;
+
     /// <summary>Pairs each audio setting with its mixer bus name (Phase 31 creates these buses; the
     /// default <c>Master</c> bus always exists, so master volume applies immediately).</summary>
     public (string Bus, float Linear)[] BusVolumes() => new[]

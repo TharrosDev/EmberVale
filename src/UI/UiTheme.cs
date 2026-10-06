@@ -110,6 +110,42 @@ public static partial class UiTheme
     /// values is the entire engraving trick — a single border of any colour reads as a box.</summary>
     public static readonly Color Engrave = new(0.045f, 0.042f, 0.038f, 0.90f);
 
+    // --- Plate tokens (banked embers) -------------------------------------------
+    // A surface is a cut iron plate with ONE lit edge, not a box with four. Rule is the cold seam
+    // between two things on the same plate; RuleLit is the single edge the fire catches, and a
+    // surface gets at most one of it. Keyline is the dark outline that holds a bar or a glyph
+    // together over the live world, where there is no plate behind it at all.
+
+    /// <summary>The cold hairline between rows, columns and tabs on one surface.</summary>
+    public static readonly Color Rule = new(0.30f, 0.31f, 0.29f, 0.60f);
+
+    /// <summary>The one lit edge of a plate or sheet: iron with the fire on it. Warmer than
+    /// <see cref="IronLit"/>, duller than <see cref="Accent"/>, so it reads as light and not as meaning.</summary>
+    public static readonly Color RuleLit = new(0.66f, 0.56f, 0.40f, 0.90f);
+
+    /// <summary>The dark 1 px outline around HUD bars, icons and glyphs drawn straight on the world.</summary>
+    public static readonly Color Keyline = new(0.020f, 0.019f, 0.017f, 0.88f);
+
+    /// <summary>
+    /// The focus indicator, and nothing else. Brighter than <see cref="Accent"/> on purpose: hover,
+    /// selection and headers are all ember gold, so a focus ring in the same gold is the one state a
+    /// controller player cannot find. Held at 3:1 or better against every surface and button face a
+    /// focused control can sit on (WCAG 2.2 non-text contrast; pinned by <c>UiContrastTests</c>).
+    /// </summary>
+    public static readonly Color FocusRing = new(0.98f, 0.80f, 0.42f);
+
+    /// <summary>The breath of heat under a lit edge, an ember wipe or a held ring. Always drawn
+    /// translucent and never as text: it is ember orange with most of the fire let out.</summary>
+    public static readonly Color EmberGlow = new(0.95f, 0.50f, 0.16f, 0.35f);
+
+    // The faces UiTheme.Action / Dropdown draw (ApplyInteractiveStyle). Public so the contrast audit
+    // reads the real values: it used to carry its own copies, and they had drifted to a lighter grey
+    // than anything on screen.
+    public static readonly Color ButtonFace = new(0.10f, 0.095f, 0.085f, 0.82f);
+    public static readonly Color ButtonFaceHover = new(0.18f, 0.155f, 0.115f, 0.96f);
+    public static readonly Color ButtonFacePressed = new(0.07f, 0.065f, 0.06f, 0.98f);
+    public static readonly Color ButtonFaceFocus = new(0.15f, 0.13f, 0.10f, 0.98f);
+
     // --- Arcane identity (37.5A; the spellbook is the one screen that runs cold) ---
     public static readonly Color ArcaneGround = new(0.072f, 0.070f, 0.095f, 0.94f);
     public static readonly Color ArcaneSilver = new(0.62f, 0.66f, 0.74f);
@@ -163,6 +199,9 @@ public static partial class UiTheme
     /// <summary>Whether high-contrast mode is on.</summary>
     public static bool HighContrast => Current?.HighContrast ?? false;
 
+    /// <summary>Whether the player asked for the plain interface face everywhere (see <see cref="ResolveRole"/>).</summary>
+    public static bool ReadableFont => Current?.ReadableFont ?? false;
+
     /// <summary>
     /// Adapts a **semantic** colour for the player's colour-vision setting.
     ///
@@ -191,20 +230,56 @@ public static partial class UiTheme
     public const int ShoutFontSize = 40;
 
     /// <summary>
-    /// The seam every builder sizes text through. It returns the token unchanged today; Phase
-    /// 37.5G multiplies by the player's text-scale setting **here**, so that setting lands as one
-    /// edit rather than a sweep through every builder. Callers should never read the consts
-    /// directly when building a control.
+    /// The seam every builder sizes text through: the token under the player's text-scale setting
+    /// (see <see cref="ScaledFontSize"/>). Callers should never read the consts directly when
+    /// building a control.
     /// </summary>
-    public static int FontSize(int token)
+    public static int FontSize(int token) => ScaledFontSize(token, Current?.TextScale ?? 1f);
+
+    /// <summary>
+    /// <see cref="FontSize"/> for an explicit text scale. Pure, so the curve is unit-tested.
+    ///
+    /// The scale is not applied evenly. Body and caption text take all of it, because they are what
+    /// the setting is for; a header takes 85% of the change, a title 70% and display type half. A
+    /// 32 px boss name is already readable, and at a flat 1.5x it became 48 px and pushed the
+    /// layouts built around it off a handheld screen while buying the player nothing.
+    /// </summary>
+    public static int ScaledFontSize(int token, float textScale)
     {
-        float scale = Current?.TextScale ?? 1f;
+        float delta = Mathf.Clamp(textScale, 0.85f, 1.5f) - 1f;
 
         // Never below the 12 px legibility floor (UI_STYLE §3), even if the setting goes low: the
         // floor exists because of a real min-spec/Steam Deck readability audit, and a *text size*
         // control that can make text unreadable is not an accessibility feature.
-        int scaled = Mathf.RoundToInt(token * Mathf.Clamp(scale, 0.85f, 1.5f));
+        int scaled = Mathf.RoundToInt(token * (1f + (delta * TextScaleShare(token))));
         return Mathf.Max(CaptionFontSize, scaled);
+    }
+
+    /// <summary>How much of the text-scale change a size takes: all of it up to body, 85% at header,
+    /// 70% at title, half from display up, and a straight line between those for an off-scale size.</summary>
+    private static float TextScaleShare(int token)
+    {
+        if (token <= BodyFontSize)
+        {
+            return 1f;
+        }
+
+        if (token <= HeaderFontSize)
+        {
+            return Mathf.Lerp(1f, 0.85f, (token - BodyFontSize) / (float)(HeaderFontSize - BodyFontSize));
+        }
+
+        if (token <= TitleFontSize)
+        {
+            return Mathf.Lerp(0.85f, 0.70f, (token - HeaderFontSize) / (float)(TitleFontSize - HeaderFontSize));
+        }
+
+        if (token < DisplayFontSize)
+        {
+            return Mathf.Lerp(0.70f, 0.50f, (token - TitleFontSize) / (float)(DisplayFontSize - TitleFontSize));
+        }
+
+        return 0.50f;
     }
 
     // --- Spacing scale (px at reference scale) ---------------------------------
@@ -274,6 +349,10 @@ public static partial class UiTheme
     public const float DurationFast = 0.12f;
     public const float DurationBase = 0.20f;
     public const float DurationSlow = 0.35f;
+
+    /// <summary>A tab or hub-screen switch: quicker than a panel opening, because the player is
+    /// already inside the screen and asked for the next page of it.</summary>
+    public const float DurationTab = 0.16f;
 
     /// <summary>False while the player has reduced motion enabled in settings.</summary>
     public static bool MotionEnabled =>
@@ -359,7 +438,15 @@ public static partial class UiTheme
         SerifItalic,
     }
 
-    private static FontFile? FontFor(FontRole role) => role switch
+    /// <summary>
+    /// The role a piece of text is actually set in. With the readable-font setting on, the carved
+    /// capitals and both book serifs give way to the interface face: Cinzel has no lower case and
+    /// a Garamond is thin at small sizes, and both are what a dyslexic or low-vision player asks to
+    /// be rid of. Sizes, colours and layout are untouched. Pure, so the rule is unit-tested.
+    /// </summary>
+    public static FontRole ResolveRole(FontRole role, bool readable) => readable ? FontRole.Interface : role;
+
+    private static FontFile? FontFor(FontRole role) => ResolveRole(role, ReadableFont) switch
     {
         FontRole.Display => DisplayFont,
         FontRole.Serif => SerifFont,
@@ -487,6 +574,11 @@ public static partial class UiTheme
     /// </summary>
     public static readonly Color ScrimBg = new(0.035f, 0.032f, 0.028f);
 
+    /// <summary>The scrim behind the in-game hub (character, spellbook, journal, map, bestiary):
+    /// <see cref="ScrimBg"/> at the one opacity all five share, so switching tabs never changes how
+    /// much of the paused world shows through. Flat on purpose; there is no blur.</summary>
+    public static readonly Color ScrimHub = new(0.035f, 0.032f, 0.028f, 0.80f);
+
     /// <summary>A full-screen dimming layer. <paramref name="opacity"/> is the only knob a screen
     /// gets: 1.0 for a screen that replaces the world (menu, loading), ~0.9 for one that covers it
     /// (settings, save slots), ~0.55 for one the world should still read through (pause).</summary>
@@ -495,6 +587,62 @@ public static partial class UiTheme
         var rect = new ColorRect { Color = ScrimBg with { A = opacity } };
         rect.SetAnchorsPreset(Control.LayoutPreset.FullRect);
         return rect;
+    }
+
+    /// <summary>
+    /// A frameless sheet: a column of content laid straight on a scrim, with one lit rule down its
+    /// leading edge. The shell's ground (title, pause, death) in place of a boxed panel on a picture.
+    ///
+    /// <c>Root</c> is full-rect and goes under the screen's layer; <c>Column</c> takes the content.
+    /// The column is <paramref name="width"/> wide and vertically centred, 8% in from the left edge
+    /// (so it tracks the viewport rather than hugging an ultrawide's border) or centred when
+    /// <paramref name="centred"/> is set. The scrim stops the mouse; pass an opacity of 0 for a
+    /// sheet over a painted backdrop that needs no dimming.
+    /// </summary>
+    public static (Control Root, VBoxContainer Column) Sheet(float width = 420f, float scrimOpacity = 0.72f, bool centred = false)
+    {
+        var root = new Control { MouseFilter = Control.MouseFilterEnum.Ignore };
+        root.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+
+        ColorRect scrim = Scrim(scrimOpacity);
+        scrim.MouseFilter = Control.MouseFilterEnum.Stop;
+        root.AddChild(scrim);
+
+        float anchor = centred ? 0.5f : 0.08f;
+        var frame = new MarginContainer
+        {
+            AnchorLeft = anchor,
+            AnchorRight = anchor,
+            AnchorTop = 0f,
+            AnchorBottom = 1f,
+            OffsetLeft = centred ? -width * 0.5f : 0f,
+            OffsetRight = centred ? width * 0.5f : width,
+            MouseFilter = Control.MouseFilterEnum.Ignore,
+        };
+        frame.AddThemeConstantOverride("margin_top", SpaceXl);
+        frame.AddThemeConstantOverride("margin_bottom", SpaceXl);
+        root.AddChild(frame);
+
+        var row = new HBoxContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
+        row.AddThemeConstantOverride("separation", SpaceLg);
+        frame.AddChild(row);
+
+        row.AddChild(new ColorRect
+        {
+            Color = HighContrast ? RuleLit with { A = 1f } : RuleLit,
+            CustomMinimumSize = new Vector2(HighContrast ? 3f : 1f, 0f),
+            MouseFilter = Control.MouseFilterEnum.Ignore,
+            SizeFlagsVertical = Control.SizeFlags.Fill,
+        });
+
+        var column = new VBoxContainer
+        {
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            SizeFlagsVertical = Control.SizeFlags.ShrinkCenter,
+        };
+        column.AddThemeConstantOverride("separation", SpaceSm);
+        row.AddChild(column);
+        return (root, column);
     }
 
     /// <summary>
@@ -748,8 +896,8 @@ public static partial class UiTheme
     {
         var wrap = new VBoxContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
         wrap.AddThemeConstantOverride("separation", 0);
-        wrap.AddChild(Rule(Engrave with { A = 0.75f }, 1f));
-        wrap.AddChild(Rule(BrassLit with { A = 0.28f }, 1f));
+        wrap.AddChild(RuleRect(Engrave with { A = 0.75f }, 1f));
+        wrap.AddChild(RuleRect(BrassLit with { A = 0.28f }, 1f));
         return wrap;
     }
 
@@ -785,7 +933,7 @@ public static partial class UiTheme
         return row;
     }
 
-    private static ColorRect Rule(Color color, float height)
+    private static ColorRect RuleRect(Color color, float height)
     {
         return new ColorRect
         {
@@ -1095,11 +1243,11 @@ public static partial class UiTheme
         button.AddThemeColorOverride("font_hover_color", Accent);
         button.AddThemeColorOverride("font_focus_color", Accent);
         button.AddThemeColorOverride("font_disabled_color", Disabled);
-        button.AddThemeStyleboxOverride("normal", ButtonStyle(new Color(0.10f, 0.095f, 0.085f, 0.82f)));
-        button.AddThemeStyleboxOverride("hover", ButtonStyle(new Color(0.18f, 0.155f, 0.115f, 0.96f), Accent));
-        button.AddThemeStyleboxOverride("pressed", ButtonStyle(new Color(0.07f, 0.065f, 0.06f, 0.98f), AccentHot));
+        button.AddThemeStyleboxOverride("normal", ButtonStyle(ButtonFace));
+        button.AddThemeStyleboxOverride("hover", ButtonStyle(ButtonFaceHover, Accent));
+        button.AddThemeStyleboxOverride("pressed", ButtonStyle(ButtonFacePressed, AccentHot));
 
-        StyleBoxFlat focus = ButtonStyle(new Color(0.15f, 0.13f, 0.10f, 0.98f), Accent);
+        StyleBoxFlat focus = ButtonStyle(ButtonFaceFocus, Accent);
         focus.BorderColor = Accent;
         focus.BorderWidthLeft = 3;
         focus.BorderWidthBottom = 1;
