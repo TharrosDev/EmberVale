@@ -16,7 +16,8 @@ namespace Embervale.Combat;
 /// target, and at the end of the frame — once every event of that resolution has arrived, in whatever
 /// order — publishes a single <see cref="HitConfirmedEvent"/> that hit-stop, the screen flash, floating
 /// numbers, the mesh lurch and the damage-direction arcs all read. It then spawns the spark and
-/// publishes the positional sound for that outcome (<see cref="CombatFx"/>).
+/// publishes the positional sound for that outcome (<see cref="CombatFx"/>), except for a spell
+/// that landed, whose sound is the audio director's.
 ///
 /// <para>Presentation only: nothing here feeds back into a rule. Owns the effect pool for its
 /// lifetime.</para>
@@ -245,6 +246,13 @@ public partial class CombatFeedbackDirector : Node
         (GetTree().CurrentScene ?? (Node)GetTree().Root).AddChild(effect);
         effect.GlobalPosition = point;
         effect.Launch(new Color(spark.R, spark.G, spark.B), spark.Scale, spark.Ring);
+
+        // A landed spell already has its school's impact cue (the audio director plays it off
+        // SpellImpactEvent); the melee hit on top of it would be two sounds for one blow.
+        if (!CombatFx.PlaysHitCue(outcome, kind))
+        {
+            return;
+        }
 
         CuePlan cue = CombatFx.Plan(outcome, kind);
         EventBus.Instance?.Publish(new SoundCueRequestedEvent(cue.CueId, point, cue.VolumeDb, cue.PitchScale));

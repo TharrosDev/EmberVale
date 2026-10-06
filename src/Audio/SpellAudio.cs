@@ -77,6 +77,37 @@ public static class SpellAudio
     /// <summary>Two plays of one cue closer together than this are one sound.</summary>
     public const double CoalesceSeconds = 0.04;
 
+    /// <summary>How long the wind-up riser recording runs. It ends on its peak, so the director
+    /// pitches it to finish as the cast leaves.</summary>
+    public const float WindupCueSeconds = 0.6f;
+
+    /// <summary>A wind-up shorter than this has no riser: the cast is on it before it could rise.</summary>
+    public const float MinWindupSeconds = 0.3f;
+
+    public const float MinWindupPitch = 0.75f;
+    public const float MaxWindupPitch = 1.6f;
+
+    /// <summary>A lingering zone's pulse against a burst of its own: it repeats, so it sits back.</summary>
+    public const float ZoneDb = -7f;
+
+    /// <summary>One caster's zone sounds its blast no more often than this, however fast it pulses.</summary>
+    public const double ZoneGapSeconds = 1.9;
+
+    /// <summary>A channelled spell casts on every tick; its cast cue is the beam's pulse, and quieter.</summary>
+    public const float ChannelDb = -4f;
+
+    /// <summary>One caster's channel sounds its cast cue no more often than this.</summary>
+    public const double ChannelGapSeconds = 0.55;
+
+    /// <summary>The weight a lightning spell needs before thunder follows it.</summary>
+    public const float ThunderWeight = 0.55f;
+
+    /// <summary>How much of that weight a full charge supplies.</summary>
+    public const float ThunderChargeWeight = 0.25f;
+
+    /// <summary>Thunder does not roll over itself.</summary>
+    public const double ThunderGapSeconds = 0.9;
+
     /// <summary>The schools that have cues, in the order the cue list is built.</summary>
     public static readonly IReadOnlyList<DamageType> Schools = new[]
     {
@@ -187,6 +218,62 @@ public static class SpellAudio
         float db = (cueId == Windup ? WindupDb : CastDb) + (byPlayer ? 0f : EnemyDb);
         return new SpellCue(cueId, Pitch(roll01), db);
     }
+
+    /// <summary>
+    /// The sound of a spell leaving its caster. A blink and a pure heal have cues of their own
+    /// whatever their school; a channelled spell's cue repeats, so it is <see cref="ChannelDb"/> down.
+    /// </summary>
+    public static SpellCue Cast(
+        DamageType school, bool blinks, bool heals, bool channelled, float impactWeight, bool byPlayer, float roll01)
+    {
+        SpellCue cue = blinks ? OneShot(Blink, byPlayer, roll01)
+            : heals ? OneShot(Heal, byPlayer, roll01)
+            : Resolve(school, SpellAudioEvent.Cast, impactWeight, 0f, byPlayer, roll01);
+        return channelled ? cue with { VolumeDb = Math.Max(MinDb, cue.VolumeDb + ChannelDb) } : cue;
+    }
+
+    /// <summary>A burst's sound: the school's blast, <see cref="ZoneDb"/> down when it is one pulse
+    /// of a lingering zone.</summary>
+    public static SpellCue Burst(
+        DamageType school, bool zonePulse, float impactWeight, float charge, bool byPlayer, float roll01) =>
+        Zone(Resolve(school, SpellAudioEvent.Blast, impactWeight, charge, byPlayer, roll01), zonePulse);
+
+    /// <summary>An impact's sound: the school's impact, <see cref="ZoneDb"/> down when a zone's
+    /// pulse landed it.</summary>
+    public static SpellCue Impact(
+        DamageType school, bool zonePulse, float impactWeight, float charge, bool byPlayer, float roll01) =>
+        Zone(Resolve(school, SpellAudioEvent.Impact, impactWeight, charge, byPlayer, roll01), zonePulse);
+
+    /// <summary>The shortest time between two blasts from one emitter.</summary>
+    public static double BurstGap(bool zonePulse) => zonePulse ? ZoneGapSeconds : CoalesceSeconds;
+
+    /// <summary>The shortest time between two cast cues from one caster.</summary>
+    public static double CastGap(bool channelled) => channelled ? ChannelGapSeconds : CoalesceSeconds;
+
+    /// <summary>Whether a wind-up of <paramref name="windupSeconds"/> is long enough for the riser.</summary>
+    public static bool PlaysWindup(float windupSeconds) => windupSeconds >= MinWindupSeconds;
+
+    /// <summary>The pitch that makes the riser end as a wind-up of <paramref name="windupSeconds"/>
+    /// does, within what still sounds like one sound.</summary>
+    public static float WindupPitch(float windupSeconds) => windupSeconds <= 0f
+        ? MaxWindupPitch
+        : Math.Clamp(WindupCueSeconds / windupSeconds, MinWindupPitch, MaxWindupPitch);
+
+    /// <summary>The wind-up riser for a cast that takes <paramref name="windupSeconds"/>.</summary>
+    public static SpellCue WindupRiser(float windupSeconds, bool byPlayer) =>
+        OneShot(Windup, byPlayer, 0.5f) with { PitchScale = WindupPitch(windupSeconds) };
+
+    /// <summary>Whether thunder follows a hit: only lightning, and only the heavy spells of it.</summary>
+    public static bool Thunders(DamageType school, float impactWeight, float charge) =>
+        school == DamageType.Lightning &&
+        Math.Clamp(impactWeight, 0f, 1f) + (Math.Clamp(charge, 0f, 1f) * ThunderChargeWeight) >= ThunderWeight;
+
+    /// <summary>Whether <paramref name="now"/> is still inside <paramref name="gap"/> seconds of
+    /// <paramref name="last"/>, on one clock.</summary>
+    public static bool TooSoon(double now, double last, double gap) => now >= last && now - last < gap;
+
+    private static SpellCue Zone(SpellCue cue, bool zonePulse) =>
+        zonePulse ? cue with { VolumeDb = Math.Max(MinDb, cue.VolumeDb + ZoneDb) } : cue;
 
     /// <summary>Whether a play of <paramref name="cueId"/> at <paramref name="now"/> folds into the
     /// last play of <paramref name="lastCueId"/> at <paramref name="lastTime"/> (seconds on one
