@@ -154,6 +154,7 @@ Tint = Color(0.42, 0.38, 0.38, 1)
 TintVariation = 0.1
 VisibilityRangeEnd = 48.0
 VisibilityFadeMargin = 10.0
+CastShadows = false
 
 [sub_resource type="Resource" id="Exclusion_landing"]
 script = ExtResource("11_exclusion")

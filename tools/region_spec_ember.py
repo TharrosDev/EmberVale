@@ -184,6 +184,7 @@ Tint = Color(0.82, 0.84, 0.66, 1)
 TintVariation = 0.22
 VisibilityRangeEnd = 62.0
 VisibilityFadeMargin = 12.0
+CastShadows = false
 
 [sub_resource type="Resource" id="Layer_grass_short"]
 script = ExtResource("10_layer")
@@ -197,6 +198,7 @@ Tint = Color(0.78, 0.80, 0.62, 1)
 TintVariation = 0.20
 VisibilityRangeEnd = 48.0
 VisibilityFadeMargin = 10.0
+CastShadows = false
 
 [sub_resource type="Resource" id="Layer_clover"]
 script = ExtResource("10_layer")
@@ -212,6 +214,7 @@ Tint = Color(0.70, 0.78, 0.58, 1)
 TintVariation = 0.18
 VisibilityRangeEnd = 40.0
 VisibilityFadeMargin = 8.0
+CastShadows = false
 
 ; ⚠️ FLOWERS ARE THE ONE LAYER THAT MUST STAY SPARSE. `prp_flowers_a` and `prp_flowers_b` were
 ; adopted and never scattered, and the reflex on finding that is to give them a clover-sized count —
@@ -233,6 +236,7 @@ Tint = Color(0.80, 0.78, 0.66, 1)
 TintVariation = 0.22
 VisibilityRangeEnd = 38.0
 VisibilityFadeMargin = 8.0
+CastShadows = false
 
 [sub_resource type="Resource" id="Layer_flowers_b"]
 script = ExtResource("10_layer")
@@ -248,6 +252,7 @@ Tint = Color(0.78, 0.76, 0.64, 1)
 TintVariation = 0.24
 VisibilityRangeEnd = 38.0
 VisibilityFadeMargin = 8.0
+CastShadows = false
 
 ; Forest floor, and the most heavily clumped layer in the realm on purpose: mushrooms grow in rings
 ; and drifts against deadfall, never evenly. Wilds only — a mushroom in a pasture or on a shore is
@@ -267,6 +272,7 @@ Tint = Color(0.72, 0.68, 0.60, 1)
 TintVariation = 0.20
 VisibilityRangeEnd = 34.0
 VisibilityFadeMargin = 8.0
+CastShadows = false
 
 ; The thin, dry grass of a shore and a waste, where the short turf has no business growing. It
 ; splits `Layer_grass_short` (520 -> 430) rather than thickening the ground: those two profiles are
@@ -286,6 +292,7 @@ Tint = Color(0.76, 0.75, 0.62, 1)
 TintVariation = 0.22
 VisibilityRangeEnd = 46.0
 VisibilityFadeMargin = 10.0
+CastShadows = false
 
 [sub_resource type="Resource" id="Layer_bracken"]
 script = ExtResource("10_layer")
@@ -301,6 +308,7 @@ Tint = Color(0.62, 0.70, 0.52, 1)
 TintVariation = 0.20
 VisibilityRangeEnd = 70.0
 VisibilityFadeMargin = 14.0
+CastShadows = false
 
 ; ⚠️ THE REALM'S ENTIRE STONE COVER WAS ONE PEBBLE. `Layer_stone` scattered `prp_pebble_a` at 210
 ; instances per 100 x 100 m across FIVE of the six biome profiles, and a MultiMesh varies only yaw,
@@ -327,6 +335,7 @@ Tint = Color(0.68, 0.65, 0.60, 1)
 TintVariation = 0.16
 VisibilityRangeEnd = 55.0
 VisibilityFadeMargin = 12.0
+CastShadows = false
 
 [sub_resource type="Resource" id="Layer_stone_b"]
 script = ExtResource("10_layer")
@@ -342,6 +351,7 @@ Tint = Color(0.66, 0.64, 0.61, 1)
 TintVariation = 0.18
 VisibilityRangeEnd = 55.0
 VisibilityFadeMargin = 12.0
+CastShadows = false
 
 ; ⚠️ THE THIRD PEBBLE SPECIES, AND IT SPLITS THE DENSITY RATHER THAN ADDING TO IT — the same rule
 ; the two-species fix above was made under. `prp_pebble_b` was adopted with the rest of the nature
@@ -362,6 +372,7 @@ Tint = Color(0.67, 0.65, 0.61, 1)
 TintVariation = 0.17
 VisibilityRangeEnd = 55.0
 VisibilityFadeMargin = 12.0
+CastShadows = false
 
 ; The knee-to-waist tier the realm had nothing in: `prp_pebble_a` tops out around 0.9 m even at
 ; MaximumScale, and the next thing up was an authored boulder placed by hand. Sparse and widely

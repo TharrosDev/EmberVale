@@ -18,10 +18,175 @@ public sealed partial class WorldBiomeScatter : Node3D
     {
         MeshCache.Clear();
         RecolouredCache.Clear();
+        SharedMeshes.Clear();
+    }
+
+    /// <summary>A layer whose detail range is at or under this is ground cover (grass, flowers,
+    /// pebbles, ferns): the layers <see cref="WorldQualityScale.ScatterDensity"/> may thin. Trees,
+    /// rocks and scrub draw further than this and are the landscape's silhouette, so they keep every
+    /// instance.</summary>
+    private const float GroundCoverRange = 80f;
+
+    /// <summary>One MultiMesh tile's authored values, read the first time a quality scale other
+    /// than 1 is applied. Nothing is captured, and nothing is written, while the scale stays at 1.</summary>
+    private readonly record struct TileQuality(
+        MultiMeshInstance3D Node, MultiMesh? Batch, float RangeBegin, float RangeEnd, int Instances,
+        bool GroundCover);
+
+    private readonly List<TileQuality> _tiles = new();
+    private bool _tilesCaptured;
+    private float _appliedDrawDistance = 1f;
+    private float _appliedDensity = 1f;
+    private bool _shown = true;
+
+    /// <summary>Coarse cull from <see cref="WorldVisibilityManager"/>. Writes the node only when the
+    /// answer changes; it used to be written for every resident cell on every visibility tick.</summary>
+    public void SetShown(bool shown)
+    {
+        if (shown == _shown)
+        {
+            return;
+        }
+        _shown = shown;
+        Visible = shown;
+    }
+
+    /// <summary>
+    /// Brings this cell's tiles to the current <see cref="WorldQualityScale"/>: every visibility
+    /// range (detail end, HLOD begin and end) times the draw distance, and ground cover drawn at the
+    /// density fraction through <see cref="MultiMesh.VisibleInstanceCount"/>.
+    ///
+    /// Thinning by truncating the buffer is uniform over the tile because a tile's instances are in
+    /// the planner's accept order, which is a rejection sampler's: any prefix of it is itself a
+    /// uniform sample of the tile. No buffer is rewritten and no instance is removed.
+    /// </summary>
+    public void ApplyQuality()
+    {
+        float drawDistance = WorldQualityScale.DrawDistance;
+        float density = WorldQualityScale.ScatterDensity;
+        bool rangesChanged = !Mathf.IsEqualApprox(drawDistance, _appliedDrawDistance);
+        bool densityChanged = !Mathf.IsEqualApprox(density, _appliedDensity);
+        if (!rangesChanged && !densityChanged)
+        {
+            return;
+        }
+
+        if (!_tilesCaptured)
+        {
+            _tilesCaptured = true;
+            int children = GetChildCount();
+            for (int i = 0; i < children; i++)
+            {
+                if (GetChild(i) is not MultiMeshInstance3D tile)
+                {
+                    continue;
+                }
+                MultiMesh? batch = tile.Multimesh;
+                float begin = tile.VisibilityRangeBegin;
+                float end = tile.VisibilityRangeEnd;
+                _tiles.Add(new TileQuality(
+                    tile, batch, begin, end, batch?.InstanceCount ?? 0,
+                    begin <= 0f && end > 0f && end <= GroundCoverRange));
+            }
+        }
+
+        _appliedDrawDistance = drawDistance;
+        _appliedDensity = density;
+        foreach (TileQuality tile in _tiles)
+        {
+            if (!IsInstanceValid(tile.Node))
+            {
+                continue;
+            }
+            if (rangesChanged)
+            {
+                if (tile.RangeBegin > 0f)
+                {
+                    tile.Node.VisibilityRangeBegin = tile.RangeBegin * drawDistance;
+                }
+                if (tile.RangeEnd > 0f)
+                {
+                    tile.Node.VisibilityRangeEnd = tile.RangeEnd * drawDistance;
+                }
+            }
+            if (densityChanged && tile.GroundCover && tile.Batch != null)
+            {
+                tile.Batch.VisibleInstanceCount = density >= 0.999f
+                    ? -1
+                    : Mathf.RoundToInt(tile.Instances * density);
+            }
+        }
+    }
+
+    /// <summary>One mesh per scatter source for the whole realm, keyed by the layer's scene path.</summary>
+    private static readonly Dictionary<string, Mesh> SharedMeshes = new();
+
+    /// <summary>
+    /// Points this prepared cell's tiles at the realm's one copy of each source mesh.
+    ///
+    /// A prepared cell scene embeds its own copy of every scatter mesh it uses, because the bake
+    /// duplicates the source to adapt its materials and packs the duplicate into each cell. With
+    /// every cell of a realm resident that was one tree, one bush and a dozen ground-cover meshes
+    /// (vertex, index, LOD and shadow buffers) per cell on the GPU: fifty-two copies in the Ember
+    /// Crown. The copies are identical by construction (same source path, same adapter), so the
+    /// first cell to load a path keeps its copy and every later cell drops its own for that one.
+    /// Layers are matched by the index baked into the tile's name.
+    /// </summary>
+    public void ShareSources(WorldBiomeScatterResource? profile)
+    {
+        if (profile == null)
+        {
+            return;
+        }
+
+        int children = GetChildCount();
+        for (int i = 0; i < children; i++)
+        {
+            if (GetChild(i) is not MultiMeshInstance3D tile || tile.Multimesh is not { } batch ||
+                batch.Mesh is not { } mesh)
+            {
+                continue;
+            }
+            int layer = LayerIndexOf(tile.Name.ToString());
+            if (layer < 0 || layer >= profile.Layers.Count ||
+                profile.Layers[layer]?.ScenePath is not { Length: > 0 } path)
+            {
+                continue;
+            }
+            if (!SharedMeshes.TryGetValue(path, out Mesh? shared))
+            {
+                SharedMeshes[path] = mesh;
+            }
+            else if (shared != mesh)
+            {
+                batch.Mesh = shared;
+            }
+        }
+    }
+
+    /// <summary>The zero-based layer index in a tile name: <c>Layer3_0_-1</c> and
+    /// <c>HlodLayer3_0_-1</c> are both layer 2. Negative when the name is not a tile's.</summary>
+    private static int LayerIndexOf(string name)
+    {
+        const string marker = "Layer";
+        int start = name.StartsWith("Hlod", StringComparison.Ordinal) ? 4 : 0;
+        if (string.CompareOrdinal(name, start, marker, 0, marker.Length) != 0)
+        {
+            return -1;
+        }
+        int number = 0;
+        int digits = 0;
+        for (int i = start + marker.Length; i < name.Length && char.IsAsciiDigit(name[i]); i++)
+        {
+            number = (number * 10) + (name[i] - '0');
+            digits++;
+        }
+        return digits == 0 ? -1 : number - 1;
     }
 
     public override void _ExitTree()
     {
+        _tiles.Clear();
         foreach (Node child in GetChildren())
         {
             if (child is not MultiMeshInstance3D instance || instance.Multimesh is not { } multiMesh)
@@ -300,6 +465,11 @@ public sealed partial class WorldBiomeScatter : Node3D
             VisibilityRangeEndMargin = layer.VisibilityFadeMargin,
             VisibilityRangeFadeMode = GeometryInstance3D.VisibilityRangeFadeModeEnum.Self,
             CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
+            // The distant tier draws nothing nearer than HlodRangeBegin (92 m at the least), where
+            // it is a silhouette. Left at 1 it picked the same mesh LOD the detail tier would, and
+            // a 4,000-triangle broadleaf at a third of the density over a 130-320 m ring is where
+            // most of a wilderness cell's primitives come from.
+            LodBias = HlodLodBias,
         });
         return count;
     }
@@ -309,6 +479,9 @@ public sealed partial class WorldBiomeScatter : Node3D
     // triangles in one wilderness cell after the 2026-09 world rebuild made cells that large. Each
     // layer is filed into square tiles, each its own node at its own centre, so the range culls by area.
     private const float TileSize = 48f;
+
+    /// <summary>Mesh LOD bias of the distant tier: half the screen-space detail of the near tier.</summary>
+    private const float HlodLodBias = 0.5f;
 
     private static void AddTiled(
         Node3D scatter, string name, Mesh mesh, Transform3D[] transforms, Color[] colors,

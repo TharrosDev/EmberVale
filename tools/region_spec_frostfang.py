@@ -193,6 +193,7 @@ Tint = Color(0.80, 0.86, 0.92, 1)
 TintVariation = 0.14
 VisibilityRangeEnd = 52.0
 VisibilityFadeMargin = 10.0
+CastShadows = false
 
 [sub_resource type="Resource" id="Layer_frost_rock_b"]
 script = ExtResource("10_layer")
@@ -228,6 +229,7 @@ Tint = Color(0.88, 0.93, 0.98, 1)
 TintVariation = 0.09
 VisibilityRangeEnd = 78.0
 VisibilityFadeMargin = 14.0
+CastShadows = false
 
 ; ⚠️ THE SHARD STANDS 2.5 m AND IT IS THE ONE THAT NEEDS A SLOPE GATE. Ice that has been shoved
 ; upright belongs on the flat of a snowfield, not canted out of a 40-degree corrie wall — which is
