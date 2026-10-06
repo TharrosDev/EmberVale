@@ -58,14 +58,6 @@ public partial class ProfilerOverlay : CanvasLayer
         SetShown(false);
     }
 
-    public override void _ExitTree()
-    {
-        if (_shown)
-        {
-            WorldPerformanceMonitor.RemoveObserver();
-        }
-    }
-
     /// <summary>Shows/hides the overlay (bound to F4 by the bootstrap).</summary>
     public void Toggle() => SetShown(!_shown);
 
@@ -204,19 +196,6 @@ public partial class ProfilerOverlay : CanvasLayer
 
     private void SetShown(bool shown)
     {
-        if (shown != _shown)
-        {
-            // The world monitor measures only while this overlay is reading it.
-            if (shown)
-            {
-                WorldPerformanceMonitor.AddObserver();
-            }
-            else
-            {
-                WorldPerformanceMonitor.RemoveObserver();
-            }
-        }
-
         _shown = shown;
         _panel.Visible = shown;
         SetProcess(shown);

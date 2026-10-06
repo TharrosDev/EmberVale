@@ -8,11 +8,10 @@ namespace Embervale.World;
 /// Samples the active region against its authored budgets. Transient spikes must persist across
 /// several one-second samples before they warn, keeping cell-load compilation noise out of reports.
 ///
-/// <para>⚠️ <b>It measures only while something is reading it.</b> The snapshot has one reader, the F4
-/// profiler overlay, which registers itself with <see cref="AddObserver"/> while it is shown. With
-/// no observer the node does not process at all, so a normal play session pays nothing for a
-/// measurement nobody is looking at. The frame window is a fixed ring: a steady-state sample
-/// allocates nothing.</para>
+/// <para>It samples in every session, overlay open or not: the sustained-overrun warning in the
+/// log is the diagnostic, and the worst frame it reports can land on any frame. The cost of that is
+/// one compare and one array store per frame; the frame window is a fixed ring and the once-a-second
+/// sort uses preallocated scratch, so a steady-state sample allocates nothing.</para>
 /// </summary>
 public sealed partial class WorldPerformanceMonitor : Node
 {
@@ -31,9 +30,6 @@ public sealed partial class WorldPerformanceMonitor : Node
     private int _frameCount;
     private int _frameNext;
 
-    private static int _observers;
-    private static WorldPerformanceMonitor? _live;
-
     /// <summary>Longest frame seen since the last sample. See <see cref="_Process"/>.</summary>
     private double _worstFrameMs;
     private int _consecutiveFailures;
@@ -43,58 +39,6 @@ public sealed partial class WorldPerformanceMonitor : Node
     public WorldPerformanceSnapshot LastSnapshot { get; private set; }
     public bool WithinBudget { get; private set; } = true;
     public bool SamplingEnabled { get; set; } = true;
-
-    /// <summary>Registers a reader of <see cref="LastSnapshot"/> (the profiler overlay while it is
-    /// shown). The monitor processes only while at least one is registered.</summary>
-    public static void AddObserver()
-    {
-        _observers++;
-        Refresh();
-    }
-
-    /// <summary>Releases a registration made with <see cref="AddObserver"/>.</summary>
-    public static void RemoveObserver()
-    {
-        _observers = System.Math.Max(0, _observers - 1);
-        Refresh();
-    }
-
-    private static void Refresh()
-    {
-        if (_live == null || !IsInstanceValid(_live))
-        {
-            return;
-        }
-
-        bool observed = _observers > 0;
-        if (observed && !_live.IsProcessing())
-        {
-            // Waking up: whatever the window held is from before the gap, not from this second.
-            _live.ClearWindow();
-            _live._worstFrameMs = 0d;
-            _live._timer = 0d;
-        }
-
-        _live.SetProcess(observed);
-    }
-
-    public override void _EnterTree()
-    {
-        _live = this;
-    }
-
-    public override void _Ready()
-    {
-        SetProcess(_observers > 0);
-    }
-
-    public override void _ExitTree()
-    {
-        if (ReferenceEquals(_live, this))
-        {
-            _live = null;
-        }
-    }
 
     public void Configure(string regionId, WorldPerformanceBudgetResource? budget)
     {

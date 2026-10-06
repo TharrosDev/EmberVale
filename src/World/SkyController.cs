@@ -370,6 +370,10 @@ public partial class SkyController : Node3D
         Environment.AmbientLightSkyContribution = .65f;
         Environment.FogEnabled = true;
         Environment.FogSkyAffect = .22f;
+        // Zero until the per-frame write below computes the real value. That write only runs while
+        // the effect is on, and the engine default is a dense white fog that would otherwise show
+        // if the effect were switched on from a paused menu.
+        Environment.VolumetricFogDensity = 0f;
         Environment.AdjustmentEnabled = true;
         Environment.AdjustmentContrast = Cycle.Contrast;
         Environment.AdjustmentSaturation = Cycle.Saturation;

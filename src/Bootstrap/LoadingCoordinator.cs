@@ -48,7 +48,8 @@ public sealed partial class LoadingCoordinator : Node
     /// the realm to finish streaming in. Releasing at the landing cell alone left every other cell of
     /// the realm to instantiate one per frame through the first seconds of play, which is the hitch
     /// felt right after a load. A soft bound, never a failure: when it runs out play starts and the
-    /// remainder streams in as it always did.
+    /// remainder streams in as it always did, and it ends early enough that the placement stage
+    /// still has its retries before <see cref="MaxSeconds"/>.
     /// </summary>
     [Export(PropertyHint.Range, "0,30,0.5")] public double RealmSettleSeconds { get; set; } = 10.0d;
 
@@ -60,6 +61,7 @@ public sealed partial class LoadingCoordinator : Node
     private double _streamerReadyAt = -1d;
     private double _groundReadyAt = -1d;
     private int _placementAttempts;
+    private bool _settling;
     private Action? _onSettled;
 
     public GameSession Session { get; init; } = null!;
@@ -94,6 +96,7 @@ public sealed partial class LoadingCoordinator : Node
         _streamerReadyAt = -1d;
         _groundReadyAt = -1d;
         _placementAttempts = 0;
+        _settling = false;
         if (Session.Players.Player is { } player)
         {
             Session.WorldDirector.Streamer?.RequirePosition(player.GlobalPosition);
@@ -157,8 +160,15 @@ public sealed partial class LoadingCoordinator : Node
 
         // The landing is real; give the rest of the realm a bounded moment to arrive behind the
         // loading screen, where the streamer runs its instantiate and activation stages together.
-        if (streamer != null && _elapsed - _groundReadyAt < RealmSettleSeconds && !streamer.IsSettled())
+        // ⚠️ The deadline is clamped under the hard cap, less the time the placement retries need:
+        // a landing that became standable late skips or shortens this wait instead of being
+        // aborted by it.
+        double placementReserve = (PlacementRetryFrames + 1) / (double)Engine.PhysicsTicksPerSecond;
+        double settleDeadline = Math.Min(_groundReadyAt + RealmSettleSeconds, MaxSeconds - placementReserve);
+        _settling = streamer != null && _elapsed < settleDeadline && !streamer.IsSettled();
+        if (_settling)
         {
+            ReportProgress(LoadingWait.Realm);
             return;
         }
 
@@ -196,8 +206,9 @@ public sealed partial class LoadingCoordinator : Node
     }
 
     /// <summary>The stage the gate is holding on, from what it has recorded so far.</summary>
-    private LoadingWait CurrentWait() =>
-        LoadingGateRules.Pending(_streamerReadyAt >= 0d, _groundReadyAt >= 0d, placed: false);
+    private LoadingWait CurrentWait() => _settling
+        ? LoadingWait.Realm
+        : LoadingGateRules.Pending(_streamerReadyAt >= 0d, _groundReadyAt >= 0d, placed: false);
 
     private void ReportProgress(LoadingWait waiting)
     {
@@ -212,6 +223,7 @@ public sealed partial class LoadingCoordinator : Node
             LoadingWait.Collision => "collision under the player",
             LoadingWait.Placement =>
                 $"a capsule-clear landing ({_placementAttempts}/{PlacementRetryFrames} placement attempts)",
+            LoadingWait.Realm => "the rest of the realm to stream in",
             _ => "nothing",
         };
         Log.Info($"LoadingCoordinator: still waiting on {detail} after {_elapsed:0.0} s " +
