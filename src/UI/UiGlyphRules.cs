@@ -74,9 +74,9 @@ public static class UiGlyphRules
             case JoyButton.RightShoulder:
                 return Lettered("bumper", sony ? "R1" : name);
             case JoyButton.LeftStick:
-                return Lettered("stick", sony ? "L3" : "L", sony ? "L3" : name);
+                return Lettered("stick", "L3", sony ? "L3" : name);
             case JoyButton.RightStick:
-                return Lettered("stick", sony ? "R3" : "R", sony ? "R3" : name);
+                return Lettered("stick", "R3", sony ? "R3" : name);
             case JoyButton.Back:
                 return new PadGlyph("view", string.Empty, sony ? "Create" : name);
             case JoyButton.Start:

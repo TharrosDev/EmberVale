@@ -17,7 +17,7 @@ public partial class SettingsPanel
     /// (<c>CombatComponent.ReceiveDamage</c>); until that call exists the row is not shown, because
     /// a difficulty dial that changes nothing is a lie the player finds out about slowly.
     /// </summary>
-    public static readonly bool DifficultyWired = false;
+    public static readonly bool DifficultyWired = true;
 
     /// <summary>Runs a reset without it reaching an option this screen does not show: a reset
     /// must not change what the player cannot see.</summary>

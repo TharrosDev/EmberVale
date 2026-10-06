@@ -73,14 +73,16 @@ public partial class PlayerLookInput : EntityComponent
 
         if (_lockOn?.Target == null)
         {
-            float yawStep = SettingsMath.StickLookStep(look.X, StickDeadzone, StickLookRate, dt, multiplier);
+            float yawStep = SettingsMath.StickLookStep(look.X, StickDeadzone, StickLookRate, dt,
+                multiplier * SettingsMath.ClampPadSensitivity(_settings?.Current.PadSensitivityX ?? 1f));
             if (yawStep != 0f)
             {
                 _yaw.RotateY(-yawStep);
             }
         }
 
-        float pitchStep = SettingsMath.StickLookStep(look.Y, StickDeadzone, StickLookRate, dt, multiplier);
+        float pitchStep = SettingsMath.StickLookStep(look.Y, StickDeadzone, StickLookRate, dt,
+            multiplier * SettingsMath.ClampPadSensitivity(_settings?.Current.PadSensitivityY ?? 1f));
         if (pitchStep != 0f)
         {
             _rig?.ApplyPitchStep(pitchStep, invertY);
