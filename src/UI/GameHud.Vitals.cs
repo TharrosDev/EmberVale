@@ -167,6 +167,22 @@ public partial class GameHud
         _mpTickShown = float.NaN;
         _vitalsQuiet = true;
         _vitalsSnap = true;
+        RefreshContrast();
+    }
+
+    // The high-contrast setting the HUD's grounds and ink were last made for.
+    private bool _contrastShown;
+
+    /// <summary>High contrast is not a colour a cache holds: it decides whether the bare groups have
+    /// a ground at all. Every settings change comes through the invalidation above, so this is where
+    /// a change of it mid-session is caught and the built HUD restyled (<see cref="UiTheme.RefreshHud"/>).</summary>
+    private void RefreshContrast()
+    {
+        if (UiTheme.HighContrast != _contrastShown)
+        {
+            _contrastShown = UiTheme.HighContrast;
+            UiTheme.RefreshHud(_layout);
+        }
     }
 
     private void InvalidateSpellShown()
@@ -185,6 +201,7 @@ public partial class GameHud
         // and a number, on the corner of the screen the player looks at most. The bars carry their own
         // keyline and the text its own ink (UiTheme.HudInk), which is all either needs to read over a
         // bright sky or a dark cave, and it leaves the world visible between them.
+        _contrastShown = UiTheme.HighContrast;
         PanelContainer panel = Ignore(UiTheme.HudBare());
         panel.CustomMinimumSize = new Vector2(HudMetrics.VitalsMin, 0);
         _layout.BottomLeft.AddChild(panel);
@@ -384,7 +401,13 @@ public partial class GameHud
         _compass?.FitToLayout(width);
         _minimap?.FitToLayout(width);
         _party?.FitToLayout(width);
+        LayoutFitted?.Invoke();
     }
+
+    /// <summary>Raised when the layout width has changed and the widgets above have been refitted,
+    /// for a widget docked into the HUD from outside it (the hotbar), which sizes its cells from
+    /// <see cref="LayoutWidth"/> too.</summary>
+    public event System.Action? LayoutFitted;
 
     private void OnXpGained(XpGainedEvent e)
     {

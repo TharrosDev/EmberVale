@@ -58,6 +58,7 @@ public partial class HotbarPanel : CanvasLayer
     private readonly int[] _wipeStepsShown = new int[HotbarComponent.SlotCount];
     private readonly Vector2[] _wedge = new Vector2[3];
     private bool _sweeping;
+    private float _cellWidthBuilt = HudCoreMetrics.HotbarCell;
     private int _panelShown = -1;
     private float _stateTimer;
 
@@ -142,6 +143,14 @@ public partial class HotbarPanel : CanvasLayer
 
         System.Array.Fill(_statesShown, -1);
 
+        // The cells narrow with the layout so the bottom bar still fits a small screen.
+        _hud = GameHud.Of(_panel);
+        if (_hud != null)
+        {
+            _hud.LayoutFitted += OnLayoutFitted;
+        }
+
+        EventBus.Instance?.Subscribe<Settings.SettingsAppliedEvent>(OnSettingsApplied);
         EventBus.Instance?.Subscribe<HotbarChangedEvent>(OnHotbarChanged);
         EventBus.Instance?.Subscribe<InventoryChangedEvent>(OnInventoryChanged);
         EventBus.Instance?.Subscribe<InputDeviceChangedEvent>(OnDeviceChanged);
@@ -151,6 +160,12 @@ public partial class HotbarPanel : CanvasLayer
 
     public override void _ExitTree()
     {
+        if (_hud != null && IsInstanceValid(_hud))
+        {
+            _hud.LayoutFitted -= OnLayoutFitted;
+        }
+
+        EventBus.Instance?.Unsubscribe<Settings.SettingsAppliedEvent>(OnSettingsApplied);
         EventBus.Instance?.Unsubscribe<HotbarChangedEvent>(OnHotbarChanged);
         EventBus.Instance?.Unsubscribe<InventoryChangedEvent>(OnInventoryChanged);
         EventBus.Instance?.Unsubscribe<InputDeviceChangedEvent>(OnDeviceChanged);
@@ -175,6 +190,17 @@ public partial class HotbarPanel : CanvasLayer
     private void OnBindingsChanged(InputBindingsChangedEvent e) => _dirty = true;
 
     private void OnGameLoaded(GameLoadedEvent e) => _dirty = true;
+
+    // The cells are made of the text scale and the contrast setting, and neither says when it moves.
+    private void OnSettingsApplied(Settings.SettingsAppliedEvent e) => _dirty = true;
+
+    private void OnLayoutFitted()
+    {
+        if (CellWidth() != _cellWidthBuilt)
+        {
+            _dirty = true;
+        }
+    }
 
     /// <summary>Brings a Dynamic hotbar up: an assignment, a count, a cooldown starting or ending.</summary>
     private void NoteChanged()
@@ -322,10 +348,16 @@ public partial class HotbarPanel : CanvasLayer
         }
     }
 
-    /// <summary>The cell's side. It grows with the text scale, because a Button does not grow to fit
-    /// what is laid inside it and the key and the count are text.</summary>
-    private static float CellSide() =>
-        HudCoreMetrics.HotbarCell + (2f * (UiTheme.FontSize(UiTheme.CaptionFontSize) - UiTheme.CaptionFontSize));
+    /// <summary>The cell's width for the layout the HUD has (<see cref="HudCoreMetrics.HotbarCellWidth"/>).</summary>
+    private float CellWidth() => HudCoreMetrics.HotbarCellWidth(_hud?.LayoutWidth ?? 0f);
+
+    /// <summary>The cell's size. It grows with the text scale, because a Button does not grow to fit
+    /// what is laid inside it: the key and the count are a line of text and the name is two more.</summary>
+    private static Vector2 CellSize(float width)
+    {
+        float grown = UiTheme.FontSize(UiTheme.CaptionFontSize) - UiTheme.CaptionFontSize;
+        return new Vector2(width + (2f * grown), HudCoreMetrics.HotbarCellHeight + (4f * grown));
+    }
 
     private void Rebuild()
     {
@@ -338,7 +370,8 @@ public partial class HotbarPanel : CanvasLayer
         bool pad = InputDevice.GamepadActive;
         RebuildChord(pad);
 
-        float side = CellSide();
+        _cellWidthBuilt = CellWidth();
+        Vector2 cellSize = CellSize(_cellWidthBuilt);
         for (int i = 0; i < HotbarComponent.SlotCount; i++)
         {
             string id = _hotbar?.Get(i) ?? string.Empty;
@@ -366,7 +399,7 @@ public partial class HotbarPanel : CanvasLayer
             _countLabels[i] = null;
 
             Button cell = UiTheme.Action(string.Empty);
-            cell.CustomMinimumSize = new Vector2(side, side);
+            cell.CustomMinimumSize = cellSize;
             cell.TooltipText = Tooltip(i, filled, consumable, pad);
             cell.Disabled = !filled;
             StyleCell(cell);
@@ -413,16 +446,13 @@ public partial class HotbarPanel : CanvasLayer
                     _countLabels[i] = badge;
                 }
 
-                var body = new CenterContainer
-                {
-                    MouseFilter = Control.MouseFilterEnum.Ignore,
-                    SizeFlagsVertical = Control.SizeFlags.ExpandFill,
-                };
+                var body = new CenterContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
                 stack.AddChild(body);
 
                 // The item's own picture when it has one. Until then, what the slot does as a shape
-                // (a heart, a bolt, a drop, a shield, a sun), with the name under it, because two
-                // potions that share an effect share that shape.
+                // (a heart, a bolt, a drop, a shield, a sun). The name goes under either, because two
+                // potions that share an effect share that shape and every tier of one potion shares
+                // its picture.
                 Texture2D? picture = ItemIcons.For(template);
                 TextureRect icon;
                 if (picture != null)
@@ -454,15 +484,17 @@ public partial class HotbarPanel : CanvasLayer
                 body.AddChild(padlock);
                 _locks[i] = padlock;
 
-                if (picture == null)
-                {
-                    Label name = UiTheme.HudInk(UiTheme.Caption(template?.DisplayName ?? id, UiTheme.Text));
-                    name.MouseFilter = Control.MouseFilterEnum.Ignore;
-                    name.HorizontalAlignment = HorizontalAlignment.Center;
-                    name.ClipText = true;
-                    name.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
-                    stack.AddChild(name);
-                }
+                // Wrapped over the room the icon leaves: two lines under a shape, one under a picture.
+                // A wrapping label asks for no height of its own, so it takes what is left of the cell.
+                Label name = UiTheme.HudInk(UiTheme.Caption(template?.DisplayName ?? id, UiTheme.Text));
+                name.MouseFilter = Control.MouseFilterEnum.Ignore;
+                name.HorizontalAlignment = HorizontalAlignment.Center;
+                name.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+                name.MaxLinesVisible = picture != null ? 1 : 2;
+                name.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
+                name.ClipText = true;
+                name.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
+                stack.AddChild(name);
             }
 
             cell.AddChild(inset);

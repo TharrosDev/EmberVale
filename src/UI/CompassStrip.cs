@@ -186,12 +186,12 @@ public sealed partial class CompassStrip : Control
         _fixed?.QueueRedraw();
     }
 
-    /// <summary>Sizes the strip for the width the HUD lays out in (<see cref="HudMetrics.CompassWidth"/>):
-    /// its old 460 at 1280 wide and below, wider on a wide screen. <see cref="GameHud"/> calls it
-    /// whenever that width changes.</summary>
+    /// <summary>Sizes the strip for the width the HUD lays out in (<see cref="HudCoreMetrics.CompassWidth"/>):
+    /// its old 460 at 1280 wide, wider on a wide screen, and narrower where it would otherwise run
+    /// under the quest tracker. <see cref="GameHud"/> calls it whenever that width changes.</summary>
     public void FitToLayout(float layoutWidth)
     {
-        float width = HudMetrics.CompassWidth(layoutWidth);
+        float width = HudCoreMetrics.CompassWidth(layoutWidth);
         if (CustomMinimumSize.X != width)
         {
             CustomMinimumSize = new Vector2(width, Height);

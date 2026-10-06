@@ -96,7 +96,7 @@ public sealed partial class MinimapHud : PanelContainer
         // is a screen's chrome on a corner widget.
         var frame = new StyleBoxFlat { BgColor = UiTheme.HudInnerEdge, BorderColor = UiTheme.Keyline };
         frame.SetBorderWidthAll(1);
-        frame.SetContentMarginAll(2);
+        frame.SetContentMarginAll(HudCoreMetrics.MinimapFrame);
         AddThemeStyleboxOverride("panel", frame);
 
         // MouseFilter.Ignore is the whole of "no interaction": MapView's drag, wheel-zoom, pick and

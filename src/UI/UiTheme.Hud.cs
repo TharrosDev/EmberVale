@@ -15,6 +15,12 @@ public static partial class UiTheme
     /// crossing a bright sky is not there.</summary>
     public const int HudInkSize = 2;
 
+    // What RefreshHud finds the HUD's pieces by. Plain strings: a static StringName here would be
+    // built by the type initialiser, which the pure tests run without an engine.
+    private const string HudInkMeta = "hud_ink";
+    private const string HudBareMeta = "hud_bare";
+    private const string HudPlateMeta = "hud_plate";
+
     /// <summary>The ground of a HUD plate: the panel ash, thin enough to see the world through.</summary>
     public static Color HudPlateBg => PanelBg with { A = HighContrast ? 1f : 0.66f };
 
@@ -37,6 +43,7 @@ public static partial class UiTheme
     {
         text.AddThemeConstantOverride("outline_size", HighContrast ? HudInkSize + 1 : HudInkSize);
         text.AddThemeColorOverride("font_outline_color", Keyline);
+        text.SetMeta(HudInkMeta, true);
         return text;
     }
 
@@ -45,7 +52,8 @@ public static partial class UiTheme
     public static PanelContainer HudBare()
     {
         var group = new PanelContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
-        group.AddThemeStyleboxOverride("panel", HighContrast ? HudPlateStyle(null) : new StyleBoxEmpty());
+        group.AddThemeStyleboxOverride("panel", HudBareStyle());
+        group.SetMeta(HudBareMeta, true);
         return group;
     }
 
@@ -56,14 +64,54 @@ public static partial class UiTheme
     {
         var plate = new PanelContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
         plate.AddThemeStyleboxOverride("panel", HudPlateStyle(edge));
+        plate.SetMeta(HudPlateMeta, true);
         return plate;
+    }
+
+    private static StyleBox HudBareStyle() => HighContrast ? HudPlateStyle(null) : new StyleBoxEmpty();
+
+    private static int HudPlateEdge => HighContrast ? 4 : 2;
+
+    /// <summary>
+    /// Re-applies the high-contrast half of everything here to a HUD that is already built: bare
+    /// groups gain or lose their ground, plates their opacity and edge, text its heavier ink, and
+    /// whatever draws a keyline repaints. The HUD is built once a session and the setting can change
+    /// in the middle of one, and with no grounds under the vitals any more this is the only thing
+    /// that makes the setting take. A plate keeps its stylebox, and so the edge colour its owner set.
+    /// </summary>
+    public static void RefreshHud(Node root)
+    {
+        if (root is Control control)
+        {
+            if (control.HasMeta(HudInkMeta))
+            {
+                control.AddThemeConstantOverride("outline_size", HighContrast ? HudInkSize + 1 : HudInkSize);
+            }
+
+            if (control.HasMeta(HudBareMeta))
+            {
+                control.AddThemeStyleboxOverride("panel", HudBareStyle());
+            }
+            else if (control.HasMeta(HudPlateMeta) && control.GetThemeStylebox("panel") is StyleBoxFlat plate)
+            {
+                plate.BgColor = HudPlateBg;
+                plate.BorderWidthLeft = HudPlateEdge;
+            }
+
+            control.QueueRedraw();
+        }
+
+        foreach (Node child in root.GetChildren())
+        {
+            RefreshHud(child);
+        }
     }
 
     public static StyleBoxFlat HudPlateStyle(Color? edge)
     {
         var box = new StyleBoxFlat { BgColor = HudPlateBg, BorderColor = edge ?? RuleLit };
         box.SetBorderWidthAll(0);
-        box.BorderWidthLeft = HighContrast ? 4 : 2;
+        box.BorderWidthLeft = HudPlateEdge;
         box.SetCornerRadiusAll(RadiusSm);
         box.ContentMarginTop = CompactPadY;
         box.ContentMarginBottom = CompactPadY;

@@ -244,13 +244,61 @@ public class HudCoreRulesTests
 
     [Theory]
     [InlineData(1280f, 186f)]
-    [InlineData(853f, 186f)]
+    [InlineData(980f, 186f)]
+    [InlineData(853f, 140f)]
+    [InlineData(640f, 140f)]
     [InlineData(0f, 186f)]
     [InlineData(float.NaN, 186f)]
     [InlineData(1505f, 219f)]
     [InlineData(3440f, 232f)]
-    public void TheMinimap_IsItsOldSizeAtTheReferenceAndGrowsToACap(float layoutWidth, float side) =>
+    public void TheMinimap_IsItsOldSizeAtTheReferenceGrowsToACap_AndGivesWayWhenNarrow(float layoutWidth, float side) =>
         Assert.Equal(side, HudCoreMetrics.MinimapSide(layoutWidth));
+
+    [Fact]
+    public void TheBottomBar_FitsEveryLayoutWidthDownToTheSteamDeck()
+    {
+        // The vitals, five cells and the framed minimap, with their gaps and margins, inside the width.
+        for (float width = HudCoreMetrics.NarrowWidth; width <= 2000f; width += 1f)
+        {
+            Assert.True(
+                HudCoreMetrics.BottomBarMinimum(width) <= width,
+                $"the bottom bar needs {HudCoreMetrics.BottomBarMinimum(width)} at a layout width of {width}");
+        }
+    }
+
+    [Theory]
+    [InlineData(1280f, 72f)]
+    [InlineData(980f, 72f)]
+    [InlineData(853f, 56f)]
+    [InlineData(600f, 56f)]
+    [InlineData(0f, 72f)]
+    [InlineData(float.NaN, 72f)]
+    public void TheHotbarCell_NarrowsOnlyWhereTheBarIsShort_AndStaysPressable(float layoutWidth, float cell)
+    {
+        Assert.Equal(cell, HudCoreMetrics.HotbarCellWidth(layoutWidth));
+        Assert.True(HudCoreMetrics.HotbarCellWidth(layoutWidth) >= UiTheme.ControlHeight);
+    }
+
+    [Theory]
+    [InlineData(1280f, 460f)]
+    [InlineData(1600f, 575f)]
+    [InlineData(1024f, 384f)]
+    [InlineData(853f, 213f)]
+    [InlineData(400f, 200f)]
+    [InlineData(0f, 460f)]
+    public void TheCompass_IsItsMetricWidth_LessWhatWouldRunUnderTheTracker(float layoutWidth, float width) =>
+        Assert.Equal(width, HudCoreMetrics.CompassWidth(layoutWidth));
+
+    [Fact]
+    public void TheCompass_NeverReachesTheTracker()
+    {
+        for (float width = HudCoreMetrics.NarrowWidth; width <= 3440f; width += 7f)
+        {
+            float compassRight = (width / 2f) + (HudCoreMetrics.CompassWidth(width) / 2f);
+            float trackerLeft = width - UiTheme.SpaceLg - HudMetrics.TrackerWidth(width);
+            Assert.True(compassRight <= trackerLeft, $"the compass meets the tracker at a layout width of {width}");
+        }
+    }
 
     [Fact]
     public void TheHotbarCell_IsPressable_AndTheBarsKeepTheirHierarchy()
@@ -258,7 +306,9 @@ public class HudCoreRulesTests
         Assert.True(HudCoreMetrics.HotbarCell >= UiTheme.ControlHeight);
         Assert.True(HudCoreMetrics.BarHeight > HudCoreMetrics.BarMinorHeight);
         Assert.True(HudCoreMetrics.BarMinorHeight > HudCoreMetrics.BarThinHeight);
-        Assert.True(HudCoreMetrics.HotbarIcon < HudCoreMetrics.HotbarCell);
+        Assert.True(HudCoreMetrics.HotbarIcon < HudCoreMetrics.HotbarCellNarrow);
+        Assert.True(HudCoreMetrics.HotbarCellNarrow >= UiTheme.ControlHeight);
+        Assert.True(HudCoreMetrics.HotbarCellHeight > HudCoreMetrics.HotbarCell);
     }
 
     [Fact]
