@@ -65,7 +65,7 @@ public partial class StatusEffectsComponent : EntityComponent
     }
 
     /// <summary>The effects currently active on this entity (read-only, for UI).</summary>
-    public IReadOnlyCollection<StatusEffect> ActiveEffects => _active.Values;
+    public Dictionary<string, StatusEffect>.ValueCollection ActiveEffects => _active.Values;
 
     protected override void OnInitialize()
     {

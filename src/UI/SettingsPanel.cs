@@ -56,8 +56,8 @@ public partial class SettingsPanel : CanvasLayer
     {
         // Esc or gamepad B backs out (matches the pause menu's feel); the PauseMenu suppresses its
         // own Esc while UiState.MenuOpen is set, so this can't also resume the game on the same press.
-        if (Godot.Input.IsActionJustPressed(GameInput.Pause) ||
-            Godot.Input.IsActionJustPressed("ui_cancel"))
+        if (Godot.Input.IsActionJustPressed(UiLive.Pause) ||
+            Godot.Input.IsActionJustPressed(UiLive.UiCancel))
         {
             Back();
         }

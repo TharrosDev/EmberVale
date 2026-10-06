@@ -43,6 +43,15 @@ public sealed partial class LoadingCoordinator : Node
     /// <summary>Physics frames the placement stage retries before aborting an unsafe landing.</summary>
     [Export(PropertyHint.Range, "1,240,1")] public int PlacementRetryFrames { get; set; } = 20;
 
+    /// <summary>
+    /// Seconds the gate keeps the loading screen up, after the landing is standable, for the rest of
+    /// the realm to finish streaming in. Releasing at the landing cell alone left every other cell of
+    /// the realm to instantiate one per frame through the first seconds of play, which is the hitch
+    /// felt right after a load. A soft bound, never a failure: when it runs out play starts and the
+    /// remainder streams in as it always did.
+    /// </summary>
+    [Export(PropertyHint.Range, "0,30,0.5")] public double RealmSettleSeconds { get; set; } = 10.0d;
+
     private const float GroundProbeUp = 1.0f;
     private const float GroundProbeDown = 3.0f;
 
@@ -145,6 +154,13 @@ public sealed partial class LoadingCoordinator : Node
             return;
         }
         MarkCleared(ref _groundReadyAt);
+
+        // The landing is real; give the rest of the realm a bounded moment to arrive behind the
+        // loading screen, where the streamer runs its instantiate and activation stages together.
+        if (streamer != null && _elapsed - _groundReadyAt < RealmSettleSeconds && !streamer.IsSettled())
+        {
+            return;
+        }
 
         // Everything the world put down is on the ground now, so anything the load moved can be
         // re-seated against real collision rather than the heightfield alone.
