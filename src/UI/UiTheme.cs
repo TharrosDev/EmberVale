@@ -577,7 +577,7 @@ public static partial class UiTheme
     /// <summary>The scrim behind the in-game hub (character, spellbook, journal, map, bestiary):
     /// <see cref="ScrimBg"/> at the one opacity all five share, so switching tabs never changes how
     /// much of the paused world shows through. Flat on purpose; there is no blur.</summary>
-    public static readonly Color ScrimHub = new(0.035f, 0.032f, 0.028f, 0.80f);
+    public static readonly Color ScrimHub = new(0.035f, 0.032f, 0.028f, 0.90f);
 
     /// <summary>A full-screen dimming layer. <paramref name="opacity"/> is the only knob a screen
     /// gets: 1.0 for a screen that replaces the world (menu, loading), ~0.9 for one that covers it
