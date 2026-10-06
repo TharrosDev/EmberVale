@@ -477,7 +477,11 @@ public static class ItemSlot
             row.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
             row.AddChild(UiTheme.Display(Number(hero.Value), UiTheme.Text));
 
-            var side = new VBoxContainer { SizeFlagsVertical = Control.SizeFlags.ShrinkCenter };
+            var side = new VBoxContainer
+            {
+                SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+                SizeFlagsVertical = Control.SizeFlags.ShrinkCenter,
+            };
             side.AddThemeConstantOverride("separation", 0);
             side.AddChild(UiTheme.Caption(Loc.T(HeroKey(hero.Kind))));
             ItemPresentation.HeroNumber? wornHero = rival is null ? null : ItemPresentation.HeroOf(rival);
@@ -616,7 +620,13 @@ public static class ItemSlot
         line.AddChild(UiTheme.Caption(text, delta > 0f ? UiTheme.Good : UiTheme.Bad));
         if (!string.IsNullOrEmpty(note))
         {
-            line.AddChild(UiTheme.Caption(note));
+            // Trimmed rather than allowed to set the card's width: at a large text size the note is
+            // the first thing to give, and the arrow and the number have already said it.
+            Label quiet = UiTheme.Caption(note);
+            quiet.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+            quiet.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
+            quiet.TooltipText = note;
+            line.AddChild(quiet);
         }
 
         return line;

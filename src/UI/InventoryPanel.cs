@@ -81,6 +81,9 @@ public partial class InventoryPanel : UiPanel
     private readonly Dictionary<ItemInstance, Button> _cellOf = new(ReferenceEqualityComparer.Instance);
     private readonly List<(EquipmentSlot Slot, ItemInstance? Item, Button Cell)> _equipCells = new();
 
+    /// <summary>The strip's focusable controls of the current fill, for the same focus wiring.</summary>
+    private readonly List<Control> _stripControls = new();
+
     /// <summary>What was held when the pack was last closed, and what has arrived since. By reference:
     /// two rolled swords share a template and are different things. Session-local and never saved;
     /// a load makes everything known again.</summary>
@@ -1047,13 +1050,23 @@ public partial class InventoryPanel : UiPanel
     private void FillStrip()
     {
         UiTheme.ClearChildren(_strip);
+        _stripControls.Clear();
         if (_inventory == null)
         {
             return;
         }
 
-        _strip.AddChild(BuildViewRow());
-        _strip.AddChild(BuildSortStep());
+        UiTabs views = BuildViewRow();
+        _strip.AddChild(views);
+        foreach (Node tab in views.GetChildren())
+        {
+            if (tab is Control control)
+            {
+                TrackStrip(control);
+            }
+        }
+
+        _strip.AddChild(TrackStrip(BuildSortStep()));
         if (_bagView)
         {
             return;
@@ -1069,11 +1082,34 @@ public partial class InventoryPanel : UiPanel
                 _equipFocus = null;
                 MarkDirty();
             };
-            _strip.AddChild(all);
+            _strip.AddChild(TrackStrip(all));
         }
         else
         {
-            _strip.AddChild(BuildKindStep());
+            _strip.AddChild(TrackStrip(BuildKindStep()));
+        }
+    }
+
+    private Control TrackStrip(Control control)
+    {
+        _stripControls.Add(control);
+        control.FocusEntered += OnStripFocus;
+        return control;
+    }
+
+    /// <summary>
+    /// Walking back up to the strip with a pad or the keys ends the choosing for an equipment slot, and
+    /// the pack is whole again: the way into the narrowed view is the equipment column, so the way out
+    /// is leaving the columns. A mouse click on a strip button is not a walk. It keeps the view it
+    /// clicked in (a rebuild here would free the button under the cursor before its press landed) and
+    /// uses the "show whole pack" button instead.
+    /// </summary>
+    private void OnStripFocus()
+    {
+        if (_equipFocus != null && !Godot.Input.IsMouseButtonPressed(MouseButton.Left))
+        {
+            _equipFocus = null;
+            MarkDirty();
         }
     }
 
@@ -1102,7 +1138,7 @@ public partial class InventoryPanel : UiPanel
             int held = slot == EquipmentSlot.Ammo ? Mathf.Max(1, _equipment.AmmoCount) : 1;
             Button cell = item is null
                 ? ItemSlot.BuildEmpty(slot, ItemSlot.CompactSize)
-                : ItemSlot.Build(item, held, ReferenceEquals(item, _selected), ItemSlot.CompactSize);
+                : ItemSlot.Build(item, held, ReferenceEquals(item, _selected), ItemSlot.CompactSize, ItemSlot.Marks.Equipped);
             cell.FocusEntered += () => BrowseSlot(captured);
             cell.ButtonDown += NotePress;
             cell.Pressed += () => ChooseFor(captured);
@@ -1255,7 +1291,7 @@ public partial class InventoryPanel : UiPanel
 
     /// <summary>The pack / materials switch, on the shared tab strip so the active one carries the
     /// ember underline as well as the colour.</summary>
-    private Control BuildViewRow()
+    private UiTabs BuildViewRow()
     {
         var views = new UiTabs();
         views.Add(Loc.TF("item.view_pack", _inventory!.UsedSlots, _inventory.Capacity));
@@ -1351,8 +1387,11 @@ public partial class InventoryPanel : UiPanel
     /// path that points at a freed cell is an error the moment the d-pad goes that way.
     ///
     /// The grid's cells link to each other; its left edge leads to the equipment column, and every
-    /// equipment cell leads right into the first cell of the grid. The pack and the material bag
-    /// share this pass: both fill <see cref="_gridCells"/> in display order.
+    /// equipment cell leads right into the first cell of the grid. Down from anywhere on the strip
+    /// lands in the pack, not on the equipment column the engine's own search would pick from the
+    /// left-hand buttons: stepping onto an equipment cell narrows the pack, and that should be
+    /// something the player went left to do. The pack and the material bag share this pass: both
+    /// fill <see cref="_gridCells"/> in display order.
     /// </summary>
     private void LinkFocus()
     {
@@ -1420,6 +1459,14 @@ public partial class InventoryPanel : UiPanel
 
             // With no cell to go to, the neighbour is cleared and the engine's own search takes over.
             cell.FocusNeighborRight = anyCell ? _gridCells[0].GetPath() : new NodePath();
+        }
+
+        foreach (Control control in _stripControls)
+        {
+            if (control.IsInsideTree())
+            {
+                control.FocusNeighborBottom = anyCell ? _gridCells[0].GetPath() : new NodePath();
+            }
         }
     }
 
