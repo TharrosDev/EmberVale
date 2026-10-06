@@ -164,8 +164,10 @@ public sealed partial class WorldSessionDirector : Node
 
     /// <summary>
     /// The shared hard load. Shows the loading screen, swaps the streamer to the destination region
-    /// (only when it actually changes), teleports the player, autosaves the boundary, then settles
-    /// for a few frames so the new cells stream in before play resumes.
+    /// (only when it actually changes), teleports the player, books the boundary autosave, then
+    /// settles for a few frames so the new cells stream in before play resumes. The autosave is
+    /// written by <see cref="AutosaveService"/> a moment after play resumes, not here: by then the
+    /// destination has streamed in and the screen shows it instead of the loading screen.
     /// </summary>
     /// <param name="autosave">False when the move is itself a restore: autosaving the state just
     /// read back is churn, and on the autosave ring it would overwrite an older save with a copy of
@@ -208,6 +210,7 @@ public sealed partial class WorldSessionDirector : Node
             party.RegroupNow();
         }
 
+        // Booked now, written about a second into play on the far side (see the service).
         if (autosave && ServiceLocator.Instance is { } saveLocator &&
             saveLocator.TryGet(out AutosaveService autosaveService))
         {
