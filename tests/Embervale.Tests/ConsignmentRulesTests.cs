@@ -34,6 +34,20 @@ public class ConsignmentRulesTests
     }
 
     [Fact]
+    public void TheShelfTakesOneLotOfAKindAtATime()
+    {
+        // The broker's only cap: with no purse and no glut, a second bow of the same pattern waits
+        // until the first has sold. Another kind, another broker, or a lot that has sold do not block.
+        const string shop = "shop.a", bow = "item.weapon.hunting_bow";
+
+        Assert.True(ConsignmentRules.BlocksListing(shop, bow, dayListed: 4, days: 3, shop, bow, currentDay: 4));
+        Assert.True(ConsignmentRules.BlocksListing(shop, bow, dayListed: 4, days: 3, shop, bow, currentDay: 6));
+        Assert.False(ConsignmentRules.BlocksListing(shop, bow, dayListed: 4, days: 3, shop, bow, currentDay: 7));
+        Assert.False(ConsignmentRules.BlocksListing(shop, bow, dayListed: 4, days: 3, shop, "item.gem.ruby", currentDay: 4));
+        Assert.False(ConsignmentRules.BlocksListing(shop, bow, dayListed: 4, days: 3, "shop.b", bow, currentDay: 4));
+    }
+
+    [Fact]
     public void TheCommissionRoundsAgainstThePlayer()
     {
         // The cut rounds up, so the house is never accidentally working for free. 15% of 85 is 12.75,

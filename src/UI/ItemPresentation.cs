@@ -284,6 +284,33 @@ public static class ItemPresentation
         }
     }
 
+    /// <summary>
+    /// Spends up to <paramref name="quantity"/> of the credit held under <paramref name="key"/> and
+    /// returns how many units were NOT covered by it. A vendor's buyback uses it to tell goods that
+    /// are new to the counter from goods it has already been sold once.
+    /// </summary>
+    public static int SpendCredit<TKey>(Dictionary<TKey, int> credits, TKey key, int quantity)
+        where TKey : notnull
+    {
+        if (quantity <= 0)
+        {
+            return 0;
+        }
+
+        int held = credits.GetValueOrDefault(key);
+        int spent = Math.Min(held, quantity);
+        if (spent >= held)
+        {
+            credits.Remove(key);
+        }
+        else
+        {
+            credits[key] = held - spent;
+        }
+
+        return quantity - spent;
+    }
+
     /// <summary>The share of a stack's price that <paramref name="quantity"/> of its
     /// <paramref name="total"/> units carries, rounded up so buying a stack back in pieces never
     /// costs less than buying it whole.</summary>

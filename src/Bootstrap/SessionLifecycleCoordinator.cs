@@ -404,6 +404,9 @@ public sealed partial class SessionLifecycleCoordinator : Node
         UiState.ClearAll();
         Magic.SpellActions.Clear();
         Invariant.Reset();
+
+        // The buyback shelf. Not a static class, so SessionResetTests' reflection cannot see it.
+        UI.VendorPanel.ResetSession();
     }
 
     private GameSession BeginSession(string slot, CharacterProfile profile, bool applyStartingGrants, string regionId)

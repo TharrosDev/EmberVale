@@ -455,6 +455,13 @@ the cheapest standing on the ramp, and refuses the data outright. **A future rec
 a new specialty can each open the loop**, which is why the fee is authored well clear of the printed
 floor rather than on it.
 
+⚠️ **The player's own bench has no labour fee, so the broker's shelf is what bounds it.** A crafted
+piece is worth several times its materials (a hunting bow: about 50 gold of planks and strips, 210 as
+a rolled Uncommon), and most staple materials are on unlimited stock. At a counter the purse (38C)
+and the glut (38H) bound buy-materials → craft → sell; the broker has neither, so she lists **one
+unsold lot of a kind at a time** (`ConsignmentRules.BlocksListing`). That is a cap, not a proof: no
+`--validate` arm prices own-bench crafting, and a circuit of different patterns still pays.
+
 **Supply contracts are the first deliberate gold SOURCE, and they are not in the table above on
 purpose** (38Q2). Everything listed there takes money out; the Crossway caravan board puts it in, by
 paying above what any merchant pays for goods brought to the yard. That does not contradict the

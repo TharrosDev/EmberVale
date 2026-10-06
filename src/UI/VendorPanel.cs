@@ -76,6 +76,25 @@ public partial class VendorPanel : UiPanel
     /// </summary>
     private static readonly List<BuybackEntry> Buybacks = new();
 
+    /// <summary>
+    /// Units bought back per (shop, template) that have not been sold again yet. A sale of those
+    /// units is the same goods crossing the counter a second time, so it earns none of a sale's
+    /// side effects (shortage relief, fence standing, the merchant's glut): without this, one item
+    /// sold and bought back twelve times broke a shortage. Session state like the shelf, and cleared
+    /// with it - but NOT when an entry falls off the shelf or the window closes.
+    /// </summary>
+    private static readonly Dictionary<(string ShopId, string TemplateId), int> BoughtBack = new();
+
+    /// <summary>Empties the shelf and its credits. A new session is another playthrough: nothing sold
+    /// in the last one may be bought by this one's character. Called from
+    /// <c>SessionLifecycleCoordinator.ResetSessionStatics</c>, because New Game publishes no
+    /// <see cref="GameLoadedEvent"/>.</summary>
+    internal static void ResetSession()
+    {
+        Buybacks.Clear();
+        BoughtBack.Clear();
+    }
+
     protected override void BuildShell(PanelContainer shell)
     {
         UiTheme.ApplyScreenInset(shell);
@@ -240,7 +259,7 @@ public partial class VendorPanel : UiPanel
     /// <summary>A load is another timeline: nothing sold in the abandoned one can be bought back.</summary>
     private void OnGameLoaded(GameLoadedEvent e)
     {
-        Buybacks.Clear();
+        ResetSession();
         MarkDirty();
     }
 
@@ -492,18 +511,29 @@ public partial class VendorPanel : UiPanel
         // Recorded last, and only here (38H): the merchant now has the goods, so their appetite for the
         // next one has genuinely fallen. Every early return above leaves the player holding the item, and
         // none of them may mark a merchant as glutted for a sale that did not happen.
-        stock?.Absorb(shop, instance.TemplateId, quantity);
+        //
+        // ⚠️ Only for units that are new to this counter. Whatever was bought back and is now being
+        // sold again already moved the glut, the shortage and the faction once, and the buyback
+        // undid none of them - so counting it again is the same cart paid for twice.
+        int fresh = ItemPresentation.SpendCredit(BoughtBack, (shop.Id, instance.TemplateId), quantity);
+        if (fresh > 0)
+        {
+            stock?.Absorb(shop, instance.TemplateId, fresh);
+        }
 
         // The goods have reached the settlement (38T), so a shortage of their kind is that much nearer
         // broken. ⚠️ Here beside Absorb for exactly its reason: every early return above leaves the
         // player holding the item, and none of them may credit a haul that did not arrive. A sale to a
         // broker deliberately does NOT count — she is holding it for the player, not selling it here.
-        if (shop.CellId.Length > 0)
+        if (fresh > 0 && shop.CellId.Length > 0)
         {
-            Shocks()?.Deliver(shop.CellId, instance.Template.TagList(), quantity);
+            Shocks()?.Deliver(shop.CellId, instance.Template.TagList(), fresh);
         }
 
-        FenceStanding(shop, instance);
+        if (fresh > 0)
+        {
+            FenceStanding(shop, instance);
+        }
 
         // On the shelf at what it fetched, unmarked: a junk mark on something the player went back
         // for would put it straight into the next "sell all junk".
@@ -551,6 +581,9 @@ public partial class VendorPanel : UiPanel
         }
 
         Stock()?.RefundPurse(shop, charge);
+
+        (string, string) credit = (shop.Id, entry.Instance.TemplateId);
+        BoughtBack[credit] = BoughtBack.GetValueOrDefault(credit) + moved;
 
         if (moved >= entry.Quantity)
         {
@@ -679,7 +712,10 @@ public partial class VendorPanel : UiPanel
     ///
     /// What replaces the purse check is the ledger entry: nothing is paid here at all. The gold exists
     /// only as a promise until the clerk's counter is pressed some days later, which is what a
-    /// consignment <em>is</em> — and it is why the whole-stack payout above needs no cap.
+    /// consignment <em>is</em> — and it is why the whole-stack payout above needs no purse.
+    ///
+    /// ⚠️ Her one cap is the shelf itself: one unsold lot of a kind at a time
+    /// (<see cref="ConsignmentRules.BlocksListing"/>). Checked here before the goods move.
     /// </summary>
     private void Consign(ShopResource shop, ItemStack stack, int netPerUnit)
     {
@@ -692,12 +728,16 @@ public partial class VendorPanel : UiPanel
         if (!ShopPricing.Sellable(instance.Type, IsCurrency(instance)) ||
             !InTrade(shop, instance) ||
             instance.Locked ||
-            netPerUnit <= 0)
+            netPerUnit <= 0 ||
+            ledger.Holds(shop.Id, instance.TemplateId, CurrentDay()))
         {
             return; // the button is already disabled and says why; re-checked on the press
         }
 
-        bool removed = ItemTransfer.Take(pack, stack, stack.Quantity);
+        // Read before the removal: Take decrements this very stack object, so afterwards it says 0
+        // and a listing of nothing is no listing - the goods would simply be gone.
+        int quantity = stack.Quantity;
+        bool removed = ItemTransfer.Take(pack, stack, quantity);
 
         if (!removed)
         {
@@ -709,7 +749,7 @@ public partial class VendorPanel : UiPanel
         // early return above leaves the player still holding the item, and none of them may put an
         // entry on a shelf that never received it.
         ledger.Add(
-            shop.Id, instance.TemplateId, stack.Quantity, netPerUnit, CurrentDay(), shop.ConsignDays);
+            shop.Id, instance.TemplateId, quantity, netPerUnit, CurrentDay(), shop.ConsignDays);
         MarkDirty();
     }
 
@@ -1213,11 +1253,16 @@ public partial class VendorPanel : UiPanel
             // is the one that has somewhere to send them, so it names the trade. The lock comes after
             // the merchant's own reasons: unlocking something she would not buy anyway is a wasted trip
             // to the pack.
+            // A seventh, the broker's own: she already shows a lot of this kind, and takes the next
+            // when that one has sold (ConsignmentRules.BlocksListing).
             bool afforded = purse < 0 || payout <= purse;
+            bool shelved = shop.IsConsignment &&
+                (Ledger()?.Holds(shop.Id, instance.TemplateId, CurrentDay()) ?? false);
             string refusal = !sellable ? Loc.T("shop.unsellable")
                 : !inTrade ? TradeRefusal(shop, instance)
                 : payout <= 0 ? Loc.T("shop.worthless")
                 : kept ? Loc.T("shop.locked_item")
+                : shelved ? Loc.T("shop.consign_listed")
                 : Loc.T("shop.vendor_broke");
 
             // The broker's price line names the wait as well as the money: an offer that is better
@@ -1234,7 +1279,7 @@ public partial class VendorPanel : UiPanel
                 stack.Quantity,
                 priceText: priceText,
                 action: Loc.T(shop.IsConsignment ? "shop.consign" : "shop.sell"),
-                enabled: sellable && inTrade && payout > 0 && afforded && !kept,
+                enabled: sellable && inTrade && payout > 0 && afforded && !kept && !shelved,
                 refusal: refusal,
                 onPressed: shop.IsConsignment
                     ? () => Consign(shop, captured, unitPrice)

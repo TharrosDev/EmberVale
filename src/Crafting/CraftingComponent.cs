@@ -397,7 +397,7 @@ public partial class CraftingComponent : EntityComponent, ISaveable
                 ItemInstance made = rarity != ItemRarity.Common
                     ? LootGenerator.RollAffixed(
                         equippable, rarity, itemLevel: template.ItemLevel, quality: quality, luck: luck)
-                    : new ItemInstance(template) { Quality = quality };
+                    : new ItemInstance(template, commissioned ? ItemRarity.Common : null) { Quality = quality };
                 if (_inventory.AddInstance(made, 1) < 1)
                 {
                     break;
@@ -969,7 +969,7 @@ public partial class CraftingComponent : EntityComponent, ISaveable
         }
 
         var affixes = new List<ItemAffix>(instance.Affixes);
-        affixes[affixIndex] = pick.Roll(rng, 0.5f);
+        affixes[affixIndex] = pick.Roll(rng, 0.5f, instance.EffectiveItemLevel);
         ItemInstance reforged = Reforged(instance, instance.Rarity, affixes);
 
         int prior = RerollsOn(instance);
@@ -1034,7 +1034,7 @@ public partial class CraftingComponent : EntityComponent, ISaveable
             return null;
         }
 
-        var affixes = new List<ItemAffix>(instance.Affixes) { pick.Roll(rng, 0.5f) };
+        var affixes = new List<ItemAffix>(instance.Affixes) { pick.Roll(rng, 0.5f, instance.EffectiveItemLevel) };
         ItemInstance reforged = Reforged(instance, rarity, affixes);
 
         int prior = RerollsOn(instance);

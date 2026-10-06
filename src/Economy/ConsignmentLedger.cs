@@ -87,6 +87,24 @@ public partial class ConsignmentLedger : Node, ISaveable
             $"selling on day {currentDay + days}.");
     }
 
+    /// <summary>Whether this broker still has an unsold lot of this kind on her shelf, in which case
+    /// she takes no second one (<see cref="ConsignmentRules.BlocksListing"/>). Asked by the vendor
+    /// row and re-checked on the press, BEFORE the goods leave the pack.</summary>
+    public bool Holds(string shopId, string templateId, int currentDay)
+    {
+        foreach (Listing listing in _listings)
+        {
+            if (ConsignmentRules.BlocksListing(
+                    listing.ShopId, listing.TemplateId, listing.DayListed, listing.Days,
+                    shopId, templateId, currentDay))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     /// <summary>Gold the player could walk away with right now — matured listings plus anything still
     /// owed from a payout that would not fit. Read by the clerk's prompt, so what it says and what the
     /// press pays cannot drift.</summary>

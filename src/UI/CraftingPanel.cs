@@ -175,6 +175,11 @@ public partial class CraftingPanel : UiPanel
             _query = text.Trim();
             MarkDirty();
         };
+
+        // While the field has focus the gameplay keys are out of the map (GameInput.SetTextEntry):
+        // panels toggle on a polled action, so "iron" would otherwise open the inventory over this.
+        _search.FocusEntered += () => GameInput.SetTextEntry(true);
+        _search.FocusExited += () => GameInput.SetTextEntry(false);
         bar.AddChild(_search);
 
         var names = new string[CategoryKeys.Count];
@@ -254,6 +259,16 @@ public partial class CraftingPanel : UiPanel
         // The same interact press that opened the station is still "just pressed" this
         // frame; swallow it so the close-on-interact below doesn't fire immediately.
         _justOpened = true;
+    }
+
+    protected override void OnOpenChanged(bool open)
+    {
+        if (!open)
+        {
+            // Esc closes through the base SetOpen, not Close(), and the keyboard coming back must
+            // not depend on the hidden field's focus signal arriving.
+            GameInput.SetTextEntry(false);
+        }
     }
 
     private void OnInventoryChanged(InventoryChangedEvent e) => MarkDirty();

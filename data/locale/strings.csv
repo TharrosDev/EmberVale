@@ -145,6 +145,7 @@ shop.sell,Sell
 shop.consign,List
 shop.consign_price,"{0}g in {1}d"
 shop.consign_shelf,On her shelf: {0}
+shop.consign_listed,She already has one of these on her shelf. Come back when it sells.
 appraisal.title,APPRAISAL — {0}
 appraisal.subtitle,"Per unit, at your standing. A merchant pays less as you fill her up."
 appraisal.buyer,"{0} pays {1}g"

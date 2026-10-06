@@ -204,16 +204,24 @@ public static class GameInput
                 continue;
             }
 
+            bool erased = false;
             foreach (InputEvent bound in InputMap.ActionGetEvents(action))
             {
                 if (match(bound))
                 {
                     InputMap.ActionEraseEvent(action, bound);
                     parked.Add((action, bound));
+                    erased = true;
                 }
             }
 
-            ReleaseIfPressed(action);
+            // Only an action that just lost a binding. Releasing everything held dropped Block, the
+            // movement axes and the chord's own trigger the moment the chord was pulled, and a
+            // bottomed-out trigger sends no further event to press them again.
+            if (erased)
+            {
+                ReleaseIfPressed(action);
+            }
         }
     }
 

@@ -15,6 +15,32 @@ namespace Embervale.Tests;
 /// </summary>
 public class ItemPresentationIcsTests
 {
+    [Fact]
+    public void SpendCreditCountsOnlyUnitsNotAlreadyBoughtBack()
+    {
+        // Sell one, buy it back, sell it again: the second sale is the same unit and is not fresh.
+        var credits = new Dictionary<string, int>();
+        Assert.Equal(1, ItemPresentation.SpendCredit(credits, "hide", 1));
+
+        credits["hide"] = 1; // the buyback
+        Assert.Equal(0, ItemPresentation.SpendCredit(credits, "hide", 1));
+        Assert.False(credits.ContainsKey("hide"));
+
+        // A stack larger than the credit is fresh only for the difference, and the rest carries over.
+        credits["hide"] = 3;
+        Assert.Equal(2, ItemPresentation.SpendCredit(credits, "hide", 5));
+        Assert.Empty(credits);
+
+        credits["hide"] = 5;
+        Assert.Equal(0, ItemPresentation.SpendCredit(credits, "hide", 2));
+        Assert.Equal(3, credits["hide"]);
+
+        // Another kind's credit is not this kind's, and a non-sale spends nothing.
+        Assert.Equal(4, ItemPresentation.SpendCredit(credits, "ruby", 4));
+        Assert.Equal(0, ItemPresentation.SpendCredit(credits, "hide", 0));
+        Assert.Equal(3, credits["hide"]);
+    }
+
     // --- Sorting ------------------------------------------------------------
 
     [Fact]
