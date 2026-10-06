@@ -191,12 +191,16 @@ public sealed partial class SaveManager : Node
         if (_operationInProgress)
         {
             Log.Warn($"Cannot save slot '{slot}' while another save/load is in progress.");
+            EventBus.Instance?.Publish(new SaveFailedEvent(slot, ReasonBusy));
             return false;
         }
         _operationInProgress = true;
+        bool saved = false;
         try
         {
-            return SaveGameCore(slot, isAutosave);
+            EventBus.Instance?.Publish(new SaveStartedEvent(slot, isAutosave ? SaveKind.Auto : KindOfSlot(slot)));
+            saved = SaveGameCore(slot, isAutosave);
+            return saved;
         }
         catch (Exception ex)
         {
@@ -206,6 +210,10 @@ public sealed partial class SaveManager : Node
         finally
         {
             _operationInProgress = false;
+            if (!saved)
+            {
+                EventBus.Instance?.Publish(new SaveFailedEvent(slot, ReasonWriteFailed));
+            }
         }
     }
 
@@ -382,6 +390,8 @@ public sealed partial class SaveManager : Node
             Slot = slot,
             TimestampUnix = Time.GetUnixTimeFromSystem(),
             PlaytimeSeconds = _playtimeSeconds,
+            Kind = KindOfSlot(slot),
+            FormatVersion = SaveFormatVersion,
         };
 
         if (HeaderProvider?.Invoke() is { } fields)

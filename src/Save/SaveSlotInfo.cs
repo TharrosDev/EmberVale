@@ -52,6 +52,31 @@ public sealed class SaveSlotInfo
     public string Appearance { get; set; } = string.Empty;
     public string Background { get; set; } = string.Empty;
 
+    // --- Slot browser fields (ics-base). All absent-default: a header written before them reads as
+    // "kind by slot name, format unknown, no label, healthy". ---
+
+    private SaveKind? _kind;
+
+    /// <summary>How the save was made. A header that does not record it (every pre-ics save)
+    /// answers by its slot name, via <see cref="SaveSlots.KindOf"/>.</summary>
+    public SaveKind Kind
+    {
+        get => _kind ?? SaveSlots.KindOf(Slot);
+        set => _kind = value;
+    }
+
+    /// <summary>The save format version the file was written in; 0 = the header does not say
+    /// (<see cref="SaveManager.InspectSlot"/> fills it from the envelope).</summary>
+    public int FormatVersion { get; set; }
+
+    /// <summary>The player's own label for the save; empty = none, show the slot's default name.</summary>
+    public string DisplayName { get; set; } = string.Empty;
+
+    /// <summary>Whether the slot can be loaded. <b>Never written to disk</b>: it is a finding about
+    /// the file, made by <see cref="SaveManager.InspectSlot"/>, and anything else leaves it
+    /// <see cref="SaveHealth.Ok"/>.</summary>
+    public SaveHealth Health { get; set; } = SaveHealth.Ok;
+
     public Godot.Collections.Dictionary ToDictionary()
     {
         var data = new Godot.Collections.Dictionary
@@ -67,7 +92,18 @@ public sealed class SaveSlotInfo
             ["char_name"] = CharacterName,
             ["appearance"] = Appearance,
             ["background"] = Background,
+            ["kind"] = (int)Kind,
         };
+        if (FormatVersion > 0)
+        {
+            data["format"] = FormatVersion;
+        }
+
+        if (DisplayName.Length > 0)
+        {
+            data["display_name"] = DisplayName;
+        }
+
         // Absence is meaningful for older saves and for a save with no live player. Emitting
         // default zero coordinates turns that absence into a teleport to the world origin.
         if (HasLocation)
@@ -98,6 +134,13 @@ public sealed class SaveSlotInfo
         if (data.TryGetValue("char_name", out Variant name)) { info.CharacterName = name.AsString(); }
         if (data.TryGetValue("appearance", out Variant appearance)) { info.Appearance = appearance.AsString(); }
         if (data.TryGetValue("background", out Variant background)) { info.Background = background.AsString(); }
+        if (data.TryGetValue("kind", out Variant kind))
+        {
+            info.Kind = (SaveKind)System.Math.Clamp(kind.AsInt32(), (int)SaveKind.Manual, (int)SaveKind.Auto);
+        }
+
+        if (data.TryGetValue("format", out Variant format)) { info.FormatVersion = System.Math.Max(0, format.AsInt32()); }
+        if (data.TryGetValue("display_name", out Variant displayName)) { info.DisplayName = displayName.AsString(); }
         return info;
     }
 }

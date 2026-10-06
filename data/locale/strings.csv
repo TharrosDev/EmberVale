@@ -4642,3 +4642,26 @@ appearance.build.slim.name,Slim
 appearance.build.average.name,Average
 appearance.build.broad.name,Broad
 # --- END progression:appearance ---
+# --- BEGIN ics:foundation ---
+# Save gate reasons (SaveManager.CanSaveNow / SaveFailedEvent). A refusal names why, because "cannot save"
+# alone reads as a broken key. Lanes that push their own save block author its reason in their own block.
+save.blocked.busy,Another save or load is still running.
+save.blocked.no_world,There is no game in progress to save.
+save.failed.write,The save could not be written. Your previous save is untouched.
+# --- END ics:foundation ---
+# --- BEGIN ics:items ---
+# --- END ics:items ---
+# --- BEGIN ics:loot ---
+# --- END ics:loot ---
+# --- BEGIN ics:crafting ---
+# --- END ics:crafting ---
+# --- BEGIN ics:inv-ui ---
+# --- END ics:inv-ui ---
+# --- BEGIN ics:content ---
+# --- END ics:content ---
+# --- BEGIN ics:save-core ---
+# --- END ics:save-core ---
+# --- BEGIN ics:save-ui ---
+# --- END ics:save-ui ---
+# --- BEGIN ics:save-perf ---
+# --- END ics:save-perf ---

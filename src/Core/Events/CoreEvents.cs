@@ -43,6 +43,16 @@ public readonly record struct ResourceChangedEvent(IEntity Entity, StatType Stat
 /// toast) without firing on every manual quicksave.</summary>
 public readonly record struct GameSavedEvent(string Slot, bool IsAutosave = false) : IGameEvent;
 
+/// <summary>Raised as a save begins, before anything is captured or written: the cue for a "saving"
+/// indicator. Every start is followed by exactly one <see cref="GameSavedEvent"/> or
+/// <see cref="SaveFailedEvent"/> for the same slot.</summary>
+public readonly record struct SaveStartedEvent(string Slot, Embervale.Save.SaveKind Kind) : IGameEvent;
+
+/// <summary>Raised when a save did not land. <paramref name="ReasonKey"/> is a locale key the UI can
+/// show as-is (<c>save.failed.write</c>, or a <c>save.blocked.*</c> reason from
+/// <c>SaveManager.CanSaveNow</c>); the log carries the technical detail.</summary>
+public readonly record struct SaveFailedEvent(string Slot, string ReasonKey) : IGameEvent;
+
 /// <summary>Raised after a save has been validated, before live saveables restore. Transient session
 /// effects clear here so their modifiers cannot leak into the restored timeline.</summary>
 public readonly record struct GameLoadingEvent(string Slot) : IGameEvent;

@@ -29,7 +29,7 @@ namespace Embervale.Save;
 public sealed partial class AutosaveService : Node
 {
     /// <summary>The rotating autosave slot ids, oldest-overwritten. Shared with the load browser.</summary>
-    public static readonly string[] RingSlots = { "auto1", "auto2", "auto3" };
+    public static readonly string[] RingSlots = SaveSlots.AutoRing;
 
     /// <summary>Whether a slot id belongs to the autosave ring (used by the slot browser).</summary>
     public static bool IsAutosaveSlot(string slot) => System.Array.IndexOf(RingSlots, slot) >= 0;
