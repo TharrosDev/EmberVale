@@ -29,12 +29,13 @@ public partial class HudLayout : Control
     /// <summary>Inset between the screen edge and every slot.</summary>
     public int SafeMargin { get; set; } = UiTheme.SpaceLg;
 
-    /// <summary>Clear height from the screen's bottom edge to the top of the hotbar block plus a
+    /// <summary>Clear height from the screen's bottom edge to the top of the hotbar block (the safe
+    /// margin, a square cell, and the chord line a pad puts over the cells) plus a
     /// <see cref="UiTheme.HudGap"/>: anything centred above the hotbar (prompt, tutorial hint, the
     /// placement strip) sits at or above this line so it never touches the slots. In the scaled
     /// HUD's own units: anything outside <see cref="Scaled"/> converts with
     /// <see cref="HudMetrics.ScreenClearance"/>.</summary>
-    public const int BottomClearance = 160;
+    public const int BottomClearance = 140;
 
     /// <summary>How far above the bottom edge the bottom-centre slot floats (prompt near the
     /// player's natural gaze): <see cref="BottomClearance"/> less the safe margin the slot adds itself.</summary>

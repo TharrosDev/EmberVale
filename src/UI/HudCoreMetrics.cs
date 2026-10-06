@@ -35,16 +35,23 @@ public static class HudCoreMetrics
     /// <summary>...and at <see cref="NarrowWidth"/>, still above <c>UiTheme.ControlHeight</c>.</summary>
     public const float HotbarCellNarrow = 56f;
 
-    /// <summary>Height of a hotbar cell: the key, the icon and two lines of the item's name. Taller
-    /// than it is wide because the name is what tells two potions of one shape apart, and a name
-    /// cut to one short line does not.</summary>
-    public const float HotbarCellHeight = 88f;
+    /// <summary>The least height of a hotbar cell: the line that holds the key and the count, and
+    /// under it the smallest icon. A cell is square wherever its width allows that, so it is only
+    /// taller than it is wide on the narrowest layouts.</summary>
+    public const float HotbarCellHeightMin = 64f;
 
-    /// <summary>A painted item icon in a hotbar cell.</summary>
+    /// <summary>The line at the top of a hotbar cell: the key's cap on the left, the count on the right.</summary>
+    public const float HotbarHead = 24f;
+
+    /// <summary>A painted item icon in a full-size hotbar cell.</summary>
     public const float HotbarIcon = 40f;
 
-    /// <summary>The effect glyph a cell falls back to when its item has no painted icon.</summary>
+    /// <summary>The effect glyph a cell falls back to when its item has no painted icon. Smaller than
+    /// the painting, because that cell also carries the item's name.</summary>
     public const float HotbarGlyph = 24f;
+
+    /// <summary>...and in a cell too short to hold that glyph over a line of text.</summary>
+    public const float HotbarGlyphNarrow = 16f;
 
     /// <summary>The lock-on reticle.</summary>
     public const float ReticleSize = 28f;
@@ -97,6 +104,22 @@ public static class HudCoreMetrics
         layoutWidth > 0f && layoutWidth < RoomyWidth
             ? Narrowed(layoutWidth, HotbarCellNarrow, HotbarCell)
             : HotbarCell;
+
+    /// <summary>Height of a hotbar cell that is <paramref name="cellWidth"/> wide: square, down to
+    /// <see cref="HotbarCellHeightMin"/>. A painted icon is its own label (the tooltip has the name),
+    /// so the two lines of name that made the cell a tall dark box are gone.</summary>
+    public static float HotbarCellHeight(float cellWidth) =>
+        float.IsFinite(cellWidth) ? MathF.Max(cellWidth, HotbarCellHeightMin) : HotbarCell;
+
+    /// <summary>Side of the painted icon in a cell <paramref name="cellHeight"/> tall: what the head
+    /// line and the cell's inset leave, and never more than <see cref="HotbarIcon"/>.</summary>
+    public static float HotbarIconSide(float cellHeight) =>
+        Math.Clamp(cellHeight - HotbarHead - (2f * UiTheme.Space2xs), HotbarGlyphNarrow, HotbarIcon);
+
+    /// <summary>Side of the fallback glyph in a cell <paramref name="cellHeight"/> tall, leaving a
+    /// line for the name under it.</summary>
+    public static float HotbarGlyphSide(float cellHeight) =>
+        cellHeight >= HotbarCell ? HotbarGlyph : HotbarGlyphNarrow;
 
     /// <summary>
     /// The least width the bottom bar needs at a layout width: the vitals, the hotbar and the framed
