@@ -13,6 +13,8 @@ namespace Embervale.UI;
 /// Built with the session's shell (<c>UICompositionRoot.Subtitles</c>). A line is cut into pages
 /// of at most two short lines (<see cref="SubtitleRules"/>), set bottom-centre above the hotbar
 /// and above whatever the HUD's bottom-centre slot is showing, with the speaker's name over it.
+/// The tutorial hint in that slot stands down while a line is up (<see cref="Captioning"/>), so
+/// the two are never stacked over the player.
 /// Size, the plate's opacity and the name follow the player's subtitle settings; nothing is drawn
 /// with subtitles off or the element hidden, and <see cref="TryShow"/> then answers false so the
 /// caller can say the line some other way (a toast, the boss frame's own line). The same answer
@@ -49,6 +51,24 @@ public partial class SubtitleLayer : CanvasLayer
     private double _lineSeconds;
     private double _pageLeft;
     private float _bottomShown = float.NaN;
+
+    /// <summary>Whether a line is being captioned. The tutorial hint shares the bottom centre of the
+    /// screen with the caption and stands down while one is up (<see cref="CaptioningChanged"/>).</summary>
+    public static bool Captioning { get; private set; }
+
+    /// <summary>Raised when <see cref="Captioning"/> changes, so what yields to a caption needs no
+    /// frame callback to learn of one.</summary>
+    public static event System.Action? CaptioningChanged;
+
+    private void SetShowing(bool showing)
+    {
+        _showing = showing;
+        if (showing != Captioning)
+        {
+            Captioning = showing;
+            CaptioningChanged?.Invoke();
+        }
+    }
 
     /// <summary>The page on screen, or null. For harness validation.</summary>
     public string? ShowingForCapture => _showing ? _text.Text : null;
@@ -108,6 +128,7 @@ public partial class SubtitleLayer : CanvasLayer
         if (ReferenceEquals(_current, this))
         {
             _current = null;
+            SetShowing(false);
         }
 
         EventBus.Instance?.Unsubscribe<SettingsAppliedEvent>(OnSettingsApplied);
@@ -157,7 +178,7 @@ public partial class SubtitleLayer : CanvasLayer
     public void Dismiss()
     {
         _queue.Clear();
-        _showing = false;
+        SetShowing(false);
         SetHeld(false);
         SetProcess(false);
         UiFx.FadeOut(_plate, seconds: 0f);
@@ -176,7 +197,7 @@ public partial class SubtitleLayer : CanvasLayer
         _speaker.Text = line.Speaker ?? string.Empty;
         _speaker.Visible = _speakerNames && !string.IsNullOrEmpty(line.Speaker);
         _page = -1;
-        _showing = true;
+        SetShowing(true);
         SetProcess(true);
         NextPage();
         Place();
@@ -202,7 +223,7 @@ public partial class SubtitleLayer : CanvasLayer
             return;
         }
 
-        _showing = false;
+        SetShowing(false);
         SetProcess(false);
         UiFx.FadeOut(_plate);
     }

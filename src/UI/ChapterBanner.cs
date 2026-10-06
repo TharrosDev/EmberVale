@@ -41,6 +41,22 @@ public partial class ChapterBanner : CanvasLayer
     /// <summary>The chapter key currently on screen, or null. For harness validation.</summary>
     public string? Showing => _showing;
 
+    /// <summary>Whether a chapter card holds the lower third. The tutorial hint sits inside that
+    /// band and stands down while it does (<see cref="PresentingChanged"/>).</summary>
+    public static bool Presenting { get; private set; }
+
+    /// <summary>Raised when <see cref="Presenting"/> changes.</summary>
+    public static event System.Action? PresentingChanged;
+
+    private static void SetPresenting(bool presenting)
+    {
+        if (presenting != Presenting)
+        {
+            Presenting = presenting;
+            PresentingChanged?.Invoke();
+        }
+    }
+
     public override void _Ready()
     {
         // Under the narration sequences (30) and the loading screen (20), over the HUD.
@@ -101,6 +117,10 @@ public partial class ChapterBanner : CanvasLayer
     {
         EventBus.Instance?.Unsubscribe<ChapterStartedEvent>(OnChapterStarted);
         EventBus.Instance?.Unsubscribe<Narrative.StoryBannerRequestedEvent>(OnBannerRequested);
+        if (_showing != null)
+        {
+            SetPresenting(false);
+        }
     }
 
     /// <summary>The title sits between two hairlines: the lit one above it, a cold one below, so the
@@ -180,6 +200,7 @@ public partial class ChapterBanner : CanvasLayer
     {
         _showing = key;
         _elapsed = 0f;
+        SetPresenting(true);
 
         int? act = ChapterBannerRules.ActNumber(key);
         _act.Text = act is { } n ? Loc.TF("questui.act_line", ChapterBannerRules.Roman(n)) : string.Empty;
@@ -205,6 +226,7 @@ public partial class ChapterBanner : CanvasLayer
     {
         string key = _showing!;
         _showing = null;
+        SetPresenting(false);
         _root.Visible = false;
         _queue.Done(key);
 
