@@ -1,3 +1,5 @@
+using Embervale.Economy;
+using Embervale.Localization;
 using Godot;
 
 namespace Embervale.UI;
@@ -135,6 +137,10 @@ public static partial class UiTheme
         return side;
     }
 
+    /// <summary>The cold hairline between two rows of one column: over a ledger's total, over an
+    /// order bar.</summary>
+    public static ColorRect RowRule() => RuleRect(HighContrast ? Rule with { A = 1f } : Rule, 1f);
+
     /// <summary>The cold hairline between two columns of one page.</summary>
     public static ColorRect ColumnRule() => new()
     {
@@ -147,6 +153,48 @@ public static partial class UiTheme
     /// <summary>The frame of a list row on a trade page: a card with the compact margins, so a
     /// handheld's short list still shows five rows.</summary>
     public static StyleBoxFlat TradeRowStyle(Color? edge) => Compact(CardStyle(edge));
+
+    /// <summary>
+    /// "Why this price" as a small ledger under an item's card: the heading, then one row per step
+    /// with what the step is on the left and the gold after it in a right-hand column, a hairline,
+    /// and the price itself in ember as the last row. The words wrap; the gold never does.
+    /// </summary>
+    public static VBoxContainer PriceLedger(PriceQuote quote)
+    {
+        var block = new VBoxContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
+        block.AddThemeConstantOverride("separation", SpaceXs);
+        block.AddChild(Caption(Loc.T("trade.price_reasons"), Accent));
+
+        var rows = new System.Collections.Generic.List<(string Label, string Value)>(PriceTooltip.Rows(quote));
+        for (int i = 0; i < rows.Count; i++)
+        {
+            bool last = i == rows.Count - 1;
+            if (last && rows.Count > 1)
+            {
+                block.AddChild(RowRule());
+            }
+
+            var row = new HBoxContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
+            row.AddThemeConstantOverride("separation", SpaceMd);
+
+            Label what = Caption(rows[i].Label, last ? Text : Dim);
+            what.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+            what.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+            row.AddChild(what);
+
+            if (rows[i].Value.Length > 0)
+            {
+                Label gold = Caption(rows[i].Value, last ? Accent : Text);
+                gold.HorizontalAlignment = HorizontalAlignment.Right;
+                gold.SizeFlagsVertical = Control.SizeFlags.ShrinkBegin;
+                row.AddChild(gold);
+            }
+
+            block.AddChild(row);
+        }
+
+        return block;
+    }
 
     /// <summary>A card's one hero fact: a big number over a quiet word saying what it counts.</summary>
     public static VBoxContainer HeroFact(string value, string unit, Color color)

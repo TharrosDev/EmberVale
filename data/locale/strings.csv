@@ -96,7 +96,7 @@ region.travel_prompt_permit,"Travel to {0} — your permit is in order"
 region.travel_prompt_pass,"Travel to {0} — your pass is taken at the gate"
 region.travel_prompt_short,"The road to {0} is barred — the wardens want {1} gold, and you carry {2}"
 map.title,WORLD MAP
-map.empty,Nothing discovered yet — explore to fill the map.
+map.empty,Nothing discovered yet. Explore to fill the map.
 hud.compass.n,N
 hud.compass.ne,NE
 hud.compass.e,E
@@ -146,7 +146,7 @@ shop.consign,List
 shop.consign_price,"{0}g in {1}d"
 shop.consign_shelf,On her shelf: {0}
 shop.consign_listed,She already has one of these on her shelf. Come back when it sells.
-appraisal.title,APPRAISAL — {0}
+appraisal.title,APPRAISAL: {0}
 appraisal.subtitle,"Per unit, at your standing. A merchant pays less as you fill her up."
 appraisal.buyer,"{0} pays {1}g"
 appraisal.no_buyer,No honest counter will take this
@@ -215,14 +215,14 @@ shop.invest_full,You already own all the stake they will sell.
 # says what the merchant does — two different reasons a number moved, and the player meets them in
 # that order. A settlement that authors neither says nothing at all: "prices are normal here" is noise.
 shop.local_trade,"This place is awash in {0} and short of {1}."
-shop.local_surplus,"This place is awash in {0} — it fetches little here."
-shop.local_demand,"This place is short of {0} — it fetches more here."
+shop.local_surplus,This place is awash in {0}. It fetches little here.
+shop.local_demand,This place is short of {0}. It fetches more here.
 # Supply shocks (Phase 38T). The line above says what this place is normally like; these say what has
 # happened to it this week, and both are on screen at once because a shocked cell still has a standing
 # trade underneath. The shortage line carries the haul counter because selling into it is the only
 # thing a player can do about a shock and nothing else in the game would mention it.
 shop.shock_shortage,"Word from the road: no {0} is getting through. Prices are up for {1} more day(s)."
-shop.shock_glut,"A caravan got through — {0} is going cheap here for {1} more day(s)."
+shop.shock_glut,A caravan got through. {0} is going cheap here for {1} more day(s).
 shop.shock_fair,"The fair is on. The stalls are overflowing for {0} more day(s)."
 shop.shock_relief,"({0}/{1} hauled in)"
 # Haggling (Phase 38S). The offer names the odds because the downside is real and unnamed odds are a
@@ -230,7 +230,7 @@ shop.shock_relief,"({0}/{1} hauled in)"
 # without a line of text reads as the shop being mispriced.
 shop.haggle,Haggle
 shop.haggle_offer,"They might be talked down today ({0} in 100). A refusal will be remembered."
-shop.haggle_won,"You talked them round — better prices from them today."
+shop.haggle_won,You talked them round. Better prices from them today.
 shop.haggle_lost,"They did not care for the attempt, and they will remember it today."
 # Price breakdown (Phase 38U). One row per step of a price, hovered on the number itself. {0} is the
 # line's own argument — a trade, a percentage, a quantity — and {1} is the gold AFTER that step, so a
@@ -239,24 +239,24 @@ shop.haggle_lost,"They did not care for the attempt, and they will remember it t
 # and a broker's cut are all unreachable at the town square: walking the authored shops would pass
 # while three tooltips showed a raw key.
 shop.line.base,"worth {1}g anywhere"
-shop.line.local_surplus,"{0} is common here — {1}g"
-shop.line.local_demand,"{0} is scarce here — {1}g"
-shop.line.shock_surplus,"a caravan brought {0} in — {1}g"
-shop.line.shock_demand,"no {0} is getting through — {1}g"
-shop.line.markup,"their margin {0}% — {1}g"
-shop.line.fraction,"they pay {0}% of that — {1}g"
-shop.line.standing,"how they take to you {0}% — {1}g"
-shop.line.specialty,"their own trade {0}% — {1}g"
-shop.line.haggle,"today's bargain {0}% — {1}g"
-shop.line.stack,"{0} of them — {1}g"
+shop.line.local_surplus,{0} is common here: {1}g
+shop.line.local_demand,{0} is scarce here: {1}g
+shop.line.shock_surplus,a caravan brought {0} in: {1}g
+shop.line.shock_demand,no {0} is getting through: {1}g
+shop.line.markup,their margin {0}%: {1}g
+shop.line.fraction,they pay {0}% of that: {1}g
+shop.line.standing,how they take to you {0}%: {1}g
+shop.line.specialty,their own trade {0}%: {1}g
+shop.line.haggle,today's bargain {0}%: {1}g
+shop.line.stack,{0} of them: {1}g
 shop.line.glut,"{0} of them, their appetite falling — {1}g"
-shop.line.shelf,"her shelf, at {0}% of value — {1}g"
-shop.line.house_cut,"less the house's {0}% — {1}g"
-shop.line.labour,"the work itself — {1}g"
-shop.line.material,"materials he must supply: {0} — {1}g"
-shop.line.travel_local,"a jump inside this realm — {1}g"
-shop.line.travel_cross,"across the realm boundary — {1}g"
-shop.line.travel_owned,"a holding of your own — no charge"
+shop.line.shelf,"her shelf, at {0}% of value: {1}g"
+shop.line.house_cut,less the house's {0}%: {1}g
+shop.line.labour,the work itself: {1}g
+shop.line.material,materials he must supply ({0}): {1}g
+shop.line.travel_local,a jump inside this realm: {1}g
+shop.line.travel_cross,across the realm boundary: {1}g
+shop.line.travel_owned,"a holding of your own, no charge"
 shop.line.travel_mounted,"you ride it yourself — no charge"
 shop.haggle_spent,You have already tried your luck with them today.
 # Trading hours and the travelling trader (Phase 38J). A closed shop names the hour it opens: "closed"
@@ -393,7 +393,7 @@ guild.state.refused,Declined
 guild.state.member,Member
 guild.state.left,Departed
 guild.state.finale,Sworn
-guild.rank_line,{0} — rank {1} of {2}
+guild.rank_line,"{0}, rank {1} of {2}"
 guild.rank_none,No rank earned
 guild.standing_line,Standing: {0} ({1})
 guild.contradiction,Inconsistent membership record ({0})
@@ -735,9 +735,9 @@ contracts.rotation,"The postings change in {0} day(s)."
 # The notices above the postings (38T) — the feature's only unprompted voice. Without them a supply
 # shock could only be found by walking to the counter it moved.
 contracts.notices,WORD FROM THE ROADS
-contracts.notice_shortage,"{0} is short of {1} — {2} day(s) yet."
-contracts.notice_glut,"{0} is awash in {1} — {2} day(s) yet."
-contracts.notice_fair,"A fair is on at {0} — {1} day(s) yet."
+contracts.notice_shortage,{0} is short of {1} for {2} more day(s).
+contracts.notice_glut,{0} is awash in {1} for {2} more day(s).
+contracts.notice_fair,A fair is on at {0} for {1} more day(s).
 # Settlement names, for the notices. Authored per cell that can be shocked; --validate holds every
 # cell with shock candidates to having one, because the notice reads "cell.ember_crown.x is short of"
 # without it and a raw key on a board is a bug report waiting to happen.
@@ -1084,9 +1084,9 @@ bestiary.tab_constructs,Constructs
 bestiary.tab_elementals,Elementals
 bestiary.tab_ashen,Ashen
 bestiary.tab_bosses,Flamebearers
-bestiary.progress,Field Journal — {0} of {1} catalogued
+bestiary.progress,Field Journal: {0} of {1} catalogued
 bestiary.kills,slain {0}
-bestiary.unknown,??? — unrecorded
+bestiary.unknown,??? (unrecorded)
 bestiary.sighted,"Seen, not yet understood. {0} more to fill the page."
 bestiary.corrupted,{0} of them ashen
 bestiary.empty,Nothing catalogued here yet.
@@ -4497,7 +4497,7 @@ perk.ember_heart.desc,Something burns where the pulse was. +15 maximum Health an
 # --- BEGIN progression:p4a ---
 # --- END progression:p4a ---
 # --- BEGIN progression:p4b ---
-shop.line.perk,"your perks {0}% — {1}g"
+shop.line.perk,your perks {0}%: {1}g
 # --- END progression:p4b ---
 # --- BEGIN progression:p4c ---
 # --- END progression:p4c ---
@@ -4768,9 +4768,9 @@ craft.reforge.block.rarity,Only Uncommon and Rare gear can be promoted.
 craft.reforge.block.no_affix,It has no affix to reroll.
 craft.reforge.block.no_pool,No other affix fits this piece.
 craft.reforge.block.not_held,You no longer carry this.
-craft.reforge.line.work,"the smith's work — {1}g"
-craft.reforge.line.rerolls,"reworked {0} times before — {1}g"
-craft.reforge.line.gain,"the value it adds — {1}g"
+craft.reforge.line.work,the smith's work: {1}g
+craft.reforge.line.rerolls,reworked {0} times before: {1}g
+craft.reforge.line.gain,the value it adds: {1}g
 craft.salvage.junk,Salvage all junk ({0})
 craft.salvage.junk_confirm,Salvage {0} junk items? Press again
 craft.salvage.confirm,Press again to salvage
@@ -5563,3 +5563,32 @@ craft.order.none,No recipe is selected.
 craft.order.hint,Everything it needs is in your pack.
 craft.order.hint_commission,He supplies whatever you are short of.
 craft.order.missing,You are missing materials.
+# Panel polish (2026-10): the price ledger. A step of a price as a label, with the gold after it in
+# its own column: <line key>.label is that line without the gold. {0} is the line's own argument.
+shop.line.base.label,Worth anywhere
+shop.line.free,no charge
+shop.line.local_surplus.label,{0} is common here
+shop.line.local_demand.label,{0} is scarce here
+shop.line.shock_surplus.label,A caravan brought {0} in
+shop.line.shock_demand.label,No {0} is getting through
+shop.line.markup.label,Their margin {0}%
+shop.line.fraction.label,They pay {0}% of that
+shop.line.standing.label,How they take to you {0}%
+shop.line.specialty.label,Their own trade {0}%
+shop.line.haggle.label,Today's bargain {0}%
+shop.line.stack.label,{0} of them
+shop.line.glut.label,"{0} of them, their appetite falling"
+shop.line.shelf.label,"Her shelf, at {0}% of value"
+shop.line.house_cut.label,Less the house's {0}%
+shop.line.labour.label,The work itself
+shop.line.material.label,Materials he must supply: {0}
+shop.line.travel_local.label,A jump inside this realm
+shop.line.travel_cross.label,Across the realm boundary
+shop.line.travel_owned.label,A holding of your own
+shop.line.travel_mounted.label,You ride it yourself
+shop.line.perk.label,Your perks {0}%
+craft.reforge.line.work.label,The smith's work
+craft.reforge.line.rerolls.label,Reworked {0} times before
+craft.reforge.line.gain.label,The value it adds
+# Panel polish (2026-10): the cue under a dialogue line that runs past the window's foot.
+kn.dialogue.more,More below

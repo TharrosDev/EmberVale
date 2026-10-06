@@ -530,30 +530,32 @@ public static class ItemSlot
 
     /// <summary>
     /// The side-by-side view: what is worn in one column and this item in the next, row for row, with
-    /// the arrow on this item's side wherever the two differ. It fits the same width the one-item
-    /// view does, so flipping to it never reflows the screen around the card.
+    /// the arrow on this item's side wherever the two differ.
+    ///
+    /// Two equal columns, and each stat's name on its own quiet line over its pair of values. It was
+    /// a three-column grid (name, worn, this), and three columns do not fit a card: at 1280 the names
+    /// trimmed to "Arcane Re..." and "Arrows of th...", and on a handheld the name column was 26 px.
+    /// Stacked, every name is whole at any width the card is given, the two item names wrap under
+    /// their headings, and the values still line up down the card. It takes no more width than the
+    /// one-item view, so flipping to it never reflows the screen around the card.
     /// </summary>
-    private static GridContainer BuildSideBySide(ItemInstance instance, ItemInstance rival, EquipmentSlot slot)
+    private static VBoxContainer BuildSideBySide(ItemInstance instance, ItemInstance rival, EquipmentSlot slot)
     {
-        var grid = new GridContainer { Columns = 3, Visible = false };
-        grid.AddThemeConstantOverride("h_separation", UiTheme.SpaceSm);
-        grid.AddThemeConstantOverride("v_separation", UiTheme.LineGap);
+        var table = new VBoxContainer { Visible = false };
+        table.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
 
-        grid.AddChild(UiTheme.Caption(EquipmentSlots.Label(slot)));
-        grid.AddChild(UiTheme.Caption(Loc.T("item.detail.worn"), UiTheme.Accent));
-        grid.AddChild(UiTheme.Caption(Loc.T("item.detail.this"), UiTheme.Accent));
-
-        grid.AddChild(new Control());
-        grid.AddChild(ComparedName(rival));
-        grid.AddChild(ComparedName(instance));
+        table.AddChild(UiTheme.Caption(EquipmentSlots.Label(slot)));
+        table.AddChild(ComparedPair(
+            ComparedHeading(Loc.T("item.detail.worn"), rival),
+            ComparedHeading(Loc.T("item.detail.this"), instance)));
+        table.AddChild(UiTheme.RowRule());
 
         ItemPresentation.HeroNumber hero = ItemPresentation.HeroOf(instance);
         ItemPresentation.HeroNumber wornHero = ItemPresentation.HeroOf(rival);
         if (hero.Kind != ItemPresentation.HeroKind.None && ItemPresentation.HeroDelta(hero, wornHero) is { } change)
         {
-            grid.AddChild(UiTheme.Caption(Loc.T(HeroKey(hero.Kind))));
-            grid.AddChild(UiTheme.Body(Number(wornHero.Value)));
-            grid.AddChild(ComparedValue(Number(hero.Value), change));
+            table.AddChild(ComparedRow(
+                Loc.T(HeroKey(hero.Kind)), UiTheme.Body(Number(wornHero.Value)), ComparedValue(Number(hero.Value), change)));
         }
 
         foreach (ItemPresentation.StatRow row in ItemPresentation.StatRows(instance, rival, comparing: true))
@@ -563,29 +565,69 @@ public static class ItemSlot
                 continue;
             }
 
-            grid.AddChild(StatName(row.Stat));
-            grid.AddChild(UiTheme.Body(StatsPresentation.FormatDelta(row.Stat, row.Worn)));
-            grid.AddChild(ComparedValue(StatsPresentation.FormatDelta(row.Stat, row.Value), row.Delta));
+            table.AddChild(ComparedRow(
+                StatNames.Label(row.Stat),
+                UiTheme.Body(StatsPresentation.FormatDelta(row.Stat, row.Worn)),
+                ComparedValue(StatsPresentation.FormatDelta(row.Stat, row.Value), row.Delta)));
         }
 
-        return grid;
+        return table;
     }
 
+    /// <summary>Two cells of equal width: the worn column and this item's.</summary>
+    private static HBoxContainer ComparedPair(Control worn, Control candidate)
+    {
+        var pair = new HBoxContainer();
+        pair.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
+        worn.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        candidate.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        pair.AddChild(worn);
+        pair.AddChild(candidate);
+        return pair;
+    }
+
+    /// <summary>A column's heading: which side it is, and the item's whole name under that.</summary>
+    private static VBoxContainer ComparedHeading(string side, ItemInstance item)
+    {
+        var heading = new VBoxContainer();
+        heading.AddThemeConstantOverride("separation", 0);
+        heading.AddChild(UiTheme.Caption(side, UiTheme.Accent));
+        heading.AddChild(ComparedName(item));
+        return heading;
+    }
+
+    /// <summary>One compared stat: its name on a quiet line, then the two values under the columns.</summary>
+    private static VBoxContainer ComparedRow(string name, Control worn, Control candidate)
+    {
+        var row = new VBoxContainer();
+        row.AddThemeConstantOverride("separation", 0);
+        Label label = UiTheme.Caption(name);
+        label.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+        row.AddChild(label);
+        row.AddChild(ComparedPair(worn, candidate));
+        return row;
+    }
+
+    /// <summary>A stat's name in the one-item view's grid. It wraps onto a second line when the
+    /// column is narrow ("Arcane / Resistance"): a trimmed "Arcane Re..." beside a number says
+    /// nothing, and a pad has no pointer to hover for the tooltip. No minimum width of its own, so a
+    /// narrow card is never pushed wider by it.</summary>
     private static Label StatName(StatType stat)
     {
         Label label = UiTheme.Body(StatNames.Label(stat), UiTheme.Dim);
         label.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-        label.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
-        label.TooltipText = label.Text;
+        label.AutowrapMode = TextServer.AutowrapMode.WordSmart;
         return label;
     }
 
+    /// <summary>An item's name over its column of the side-by-side view, whole: it wraps under
+    /// itself instead of trimming, since two rolled names that differ only at the end ("...of the
+    /// Thaw", "...of Warding") trim to the same word.</summary>
     private static Label ComparedName(ItemInstance item)
     {
         Label label = UiTheme.Caption(item.DisplayName, UiTheme.RarityColor(item.Rarity));
-        label.CustomMinimumSize = new Vector2(64f, 0f);
         label.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-        label.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
+        label.AutowrapMode = TextServer.AutowrapMode.WordSmart;
         label.TooltipText = $"{item.DisplayName} ({Loc.T(RarityKey(item.Rarity))})";
         return label;
     }

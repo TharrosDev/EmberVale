@@ -8,6 +8,38 @@ namespace Embervale.UI;
 /// </summary>
 public static partial class UiTheme
 {
+    // --- The map plot -----------------------------------------------------------------------
+    // A chart drawn on smoked vellum: darker than a card and lighter than the panel it is cut
+    // into, so the plot belongs to the page instead of sitting on it as a pale slab. The land runs
+    // from MapLandLow in the valleys to MapLandHigh on the ridges; roads, pins and lettering are
+    // the light things on it. Opaque, so a road or a label reads the same over every part of it.
+
+    /// <summary>Ground nobody has charted: the colour under the whole plot.</summary>
+    public static readonly Color MapDeep = new(0.030f, 0.030f, 0.027f);
+
+    /// <summary>The tint the vellum texture is drawn through.</summary>
+    public static readonly Color MapVellum = new(0.30f, 0.275f, 0.235f, 0.62f);
+
+    /// <summary>Charted land at its lowest and at its highest. The relief shades between them.</summary>
+    public static readonly Color MapLandLow = new(0.150f, 0.138f, 0.116f);
+    public static readonly Color MapLandHigh = new(0.262f, 0.238f, 0.196f);
+
+    /// <summary>A cell's footprint where a region has no baked relief to draw.</summary>
+    public static readonly Color MapLand = new(0.19f, 0.172f, 0.144f, 0.86f);
+
+    /// <summary>Standing water: cold, and a step darker than the shore beside it.</summary>
+    public static readonly Color MapWater = new(0.095f, 0.150f, 0.185f);
+
+    /// <summary>A road's worn core, drawn over an <see cref="Engrave"/> shoulder.</summary>
+    public static readonly Color MapRoad = new(0.62f, 0.575f, 0.49f);
+
+    /// <summary>A track or lane: the same line, quieter.</summary>
+    public static readonly Color MapTrack = new(0.47f, 0.44f, 0.38f);
+
+    /// <summary>The face a territory's name is lettered in: carved capitals, or the interface face
+    /// when the readable-font setting is on.</summary>
+    public static Font? MapLetteringFont => FontFor(FontRole.Display) ?? UiFont;
+
     /// <summary>
     /// Restyles a panel's shell as a cut plate: the panel ground with one lit edge along the top
     /// and no box round it. The grain <see cref="Panel"/> applied stays.

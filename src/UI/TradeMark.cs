@@ -11,10 +11,15 @@ namespace Embervale.UI;
 public sealed partial class TradeMark : Control
 {
     private readonly TradeRules.IngredientState _state;
+    private readonly bool _quiet;
 
-    public TradeMark(TradeRules.IngredientState state, float size = 12f)
+    /// <param name="quiet">Draws the mark in the disabled grey with a thinner stroke. For a list
+    /// where most rows carry the same mark (a recipe book the player cannot make much of yet): the
+    /// shape still says it, and a column of red crosses does not shout over the one row that matters.</param>
+    public TradeMark(TradeRules.IngredientState state, float size = 12f, bool quiet = false)
     {
         _state = state;
+        _quiet = quiet;
         CustomMinimumSize = new Vector2(size, size);
         SizeFlagsVertical = SizeFlags.ShrinkCenter;
         MouseFilter = MouseFilterEnum.Ignore;
@@ -32,8 +37,8 @@ public sealed partial class TradeMark : Control
     {
         float w = Size.X;
         float h = Size.Y;
-        float stroke = UiTheme.HighContrast ? 3f : 2f;
-        Color color = ColorOf(_state);
+        float stroke = UiTheme.HighContrast ? 3f : _quiet ? 1.5f : 2f;
+        Color color = _quiet ? UiTheme.Disabled : ColorOf(_state);
 
         switch (_state)
         {

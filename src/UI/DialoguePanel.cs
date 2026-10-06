@@ -72,6 +72,10 @@ public partial class DialoguePanel : UiPanel
     // Whether the left column is taller than the window, as last measured. Measured a few frames after
     // a rebuild, once the wrapped line has its height; the legend names the scroll only while it is true.
     private bool _lineOverflows;
+
+    // "More below": under the line's column while there is text past its foot.
+    private Control _more = null!;
+    private bool _moreShown;
     private int _measureIn;
     private bool _measureRebuilt;
     private bool _rebuiltForMeasure;
@@ -165,7 +169,21 @@ public partial class DialoguePanel : UiPanel
         _pageBar = pageScroll.GetVScrollBar();
         _page = page;
         _page.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
-        row.AddChild(pageScroll);
+
+        // A line cut off by the window's foot has to say so: the scrollbar is a hairline at the
+        // column's far edge, and a sentence that stops mid-clause reads as the whole of it. The cue
+        // sits under the column, an arrow and two words, only while there is more to scroll to.
+        var column = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+        column.AddThemeConstantOverride("separation", UiTheme.Space2xs);
+        column.AddChild(pageScroll);
+
+        var more = new HBoxContainer { Visible = false, MouseFilter = Control.MouseFilterEnum.Ignore };
+        more.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
+        more.AddChild(new UiDeltaArrow(false, UiTheme.Accent));
+        more.AddChild(UiTheme.Caption(Loc.T("kn.dialogue.more"), UiTheme.Dim));
+        column.AddChild(more);
+        _more = more;
+        row.AddChild(column);
 
         row.AddChild(new ColorRect
         {
@@ -378,6 +396,15 @@ public partial class DialoguePanel : UiPanel
                     MarkDirty();
                 }
             }
+        }
+
+        // Written only when the answer changes. Not while the line is still writing: the column is
+        // following the words then, and there is nothing to be told.
+        bool more = !_typing && span > 1f && _pageScroll.ScrollVertical < span - 1f;
+        if (more != _moreShown)
+        {
+            _moreShown = more;
+            _more.Visible = more;
         }
 
         if (span <= 1f)

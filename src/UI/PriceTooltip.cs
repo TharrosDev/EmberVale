@@ -52,6 +52,31 @@ public static class PriceTooltip
     }
 
     /// <summary>
+    /// The breakdown as a ledger: what each step is, and the gold after it, as two columns. A step's
+    /// words come from its <c>.label</c> key (the line's key with the gold left off); a step with
+    /// no such key keeps its whole sentence and an empty second column. Only the two free jumps
+    /// read "no charge": a sale that pays nothing, or a thing worth nothing, is still 0g.
+    /// </summary>
+    public static IEnumerable<(string Label, string Value)> Rows(PriceQuote quote)
+    {
+        foreach (PriceLine line in quote.Lines)
+        {
+            string labelKey = line.Key + ".label";
+            if (!Loc.Has(labelKey))
+            {
+                yield return (Loc.TF(line.Key, line.Arg, line.Running), string.Empty);
+                continue;
+            }
+
+            yield return (
+                Loc.TF(labelKey, line.Arg),
+                line.Key is PriceBreakdown.KeyTravelOwned or PriceBreakdown.KeyTravelMounted
+                    ? Loc.T("shop.line.free")
+                    : Loc.TF("shop.price", line.Running));
+        }
+    }
+
+    /// <summary>
     /// The buy/sell spread in one sentence: what a counter asks for a thing and what it pays for the
     /// same thing, as percentages of its worth here. It answers the question every first sale raises,
     /// and it is why the two halves of a shop window never quote one number.

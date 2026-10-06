@@ -54,8 +54,13 @@ public static class TradeRow
         };
         text.AddThemeConstantOverride("separation", 0);
 
+        // The name takes a second line before it is trimmed: on a handheld the column is narrow
+        // enough that "Elemental M..." and "Dragon S..." were most of the shelf. A third line is
+        // trimmed, and the card and the tooltip carry the whole name.
         Label name = UiTheme.Body(instance.DisplayName, live ? rarity : UiTheme.Disabled);
         name.MouseFilter = Control.MouseFilterEnum.Ignore;
+        name.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+        name.MaxLinesVisible = 2;
         name.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
         text.AddChild(name);
 

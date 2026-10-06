@@ -985,6 +985,26 @@ public sealed partial class PanelShots : ShotHarness
         {
             map.DiscoverRegion(region.Id);
         }
+
+        // ⚠️ DiscoverRegion reveals only the places that arrive with their region (RevealWithCell). A
+        // stall or a bench is found by walking up to it, so the detail shots drew an empty market and
+        // the pin-snap shot had no pin to snap to. The rest are added the way a save that has walked
+        // everywhere carries them: through the service's own Save and Load, which is its public
+        // contract. Flag-gated places stay hidden, as they would be in that save.
+        Godot.Collections.Dictionary data = map.Save();
+        Godot.Collections.Array known = data.TryGetValue("locations", out Variant saved) && saved.VariantType == Variant.Type.Array
+            ? saved.AsGodotArray()
+            : new Godot.Collections.Array();
+        foreach (MapLocationResource location in MapLocationDatabase.All)
+        {
+            if (location.RequiredFlagId.Length == 0 && location.RevealFlagId.Length == 0 && !map.IsDiscovered(location.Id))
+            {
+                known.Add(new Godot.Collections.Dictionary { ["id"] = location.Id });
+            }
+        }
+
+        data["locations"] = known;
+        map.Load(data);
     }
 
     /// <summary>

@@ -288,7 +288,10 @@ public sealed partial class PerkTreePanel : VBoxContainer
         // status text all shrink a step (a Steam Deck at UI scale 1.5 lays out at 853 px).
         float room = _usableWidth - DetailWidth - UiTheme.SpaceLg - PerkTreeCanvas.GutterWidth;
         _compact = (room / columns) - PerkTreeCanvas.ColumnGap < PerkTreeRules.CompactNodeWidth;
-        var canvas = new PerkTreeCanvas(columns, rows, _compact ? PerkTreeCanvas.CompactGutterWidth : PerkTreeCanvas.GutterWidth)
+        var canvas = new PerkTreeCanvas(
+            columns, rows,
+            _compact ? PerkTreeCanvas.CompactGutterWidth : PerkTreeCanvas.GutterWidth,
+            _compact ? PerkTreeCanvas.CompactNodeHeight : PerkTreeCanvas.NodeHeight)
         {
             SizeFlagsVertical = SizeFlags.ShrinkBegin,
         };
@@ -354,9 +357,18 @@ public sealed partial class PerkTreePanel : VBoxContainer
         var head = new HBoxContainer { MouseFilter = MouseFilterEnum.Ignore };
         head.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
         head.AddChild(Centred(new PerkNodeMark(visual, perk.IsCapstone, MarkColor(visual, state), _compact ? 12f : 14f)));
-        Label name = UiTheme.Body(perk.LocalizedName, nameColor);
+        // A handheld's node is about 105 px wide, which at body size trimmed "Toughness" to
+        // "Toughne...". There the name is set a size down and may take a second line, and the node is
+        // taller to hold it (PerkTreeCanvas.CompactNodeHeight); only a third line is trimmed.
+        Label name = _compact ? UiTheme.Caption(perk.LocalizedName, nameColor) : UiTheme.Body(perk.LocalizedName, nameColor);
         name.SizeFlagsHorizontal = SizeFlags.ExpandFill;
         name.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
+        if (_compact)
+        {
+            name.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+            name.MaxLinesVisible = 2;
+        }
+
         head.AddChild(name);
         content.AddChild(head);
 
@@ -609,6 +621,10 @@ public sealed partial class PerkTreePanel : VBoxContainer
 
     /// <summary>A perk's rank as filled pips. Paired with the "2 of 5" text rather than replacing it: pips are
     /// read at a glance, the numbers exactly.</summary>
+    /// <summary>Five of these and their gaps leave a compact node room for "Learn (1)" or "Maxed"
+    /// beside them; at 8 px the word was cut to "Maxe".</summary>
+    private const float CompactPipWidth = 5f;
+
     private static Control RankPips(int rank, int maxRank, bool compact)
     {
         var row = new HBoxContainer { MouseFilter = MouseFilterEnum.Ignore };
@@ -619,7 +635,7 @@ public sealed partial class PerkTreePanel : VBoxContainer
             row.AddChild(new ColorRect
             {
                 Color = i < rank ? UiTheme.Accent : UiTheme.Iron,
-                CustomMinimumSize = new Vector2(compact ? 8f : 11f, 8f),
+                CustomMinimumSize = new Vector2(compact ? CompactPipWidth : 11f, 8f),
                 MouseFilter = MouseFilterEnum.Ignore,
             });
         }
