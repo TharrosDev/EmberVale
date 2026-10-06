@@ -184,6 +184,8 @@ public partial class SettingsPanel
 
         if (!remappable)
         {
+            // Bare: no face, so it reads as a fact about the action and not as a dead button.
+            cell.AddThemeStyleboxOverride("disabled", new StyleBoxEmpty());
             cell.FocusMode = Control.FocusModeEnum.None;
             cell.TooltipText = Loc.T("settings.bind.fixed");
             return cell;

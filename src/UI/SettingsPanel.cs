@@ -198,24 +198,10 @@ public partial class SettingsPanel : CanvasLayer
             _tabs.Add(Loc.T(key));
         }
 
-        // The six tabs share the strip by the length of their names and clip rather than push the
-        // sheet wider: at the largest text size on a handheld they do not all fit in full.
-        foreach (Node child in _tabs.GetChildren())
-        {
-            if (child is Button tab)
-            {
-                tab.ClipText = true;
-                tab.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
-                tab.Alignment = HorizontalAlignment.Center;
-                tab.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-                tab.SizeFlagsStretchRatio = tab.Text.Length + 4;
-                tab.TooltipText = tab.Text;
-            }
-        }
-
         _tabs.Select((int)_tab);
         _tabs.TabChanged += OnTabChosen;
         col.AddChild(_tabs);
+        FitTabs(width - UiTheme.SpaceLg - 1f); // the column is the sheet less its rule and the gap beside it
 
         BoxContainer split = _narrow ? new VBoxContainer() : new HBoxContainer();
         split.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
@@ -255,6 +241,32 @@ public partial class SettingsPanel : CanvasLayer
         WireBindingGrid(); // focus neighbours are node paths, so only once the rows are in the tree
         ShowDescription(null);
         UpdateLegend();
+    }
+
+    /// <summary>
+    /// Keeps the tab strip inside the sheet. The six names fit as they are at every size but the
+    /// largest text on a handheld; there each tab gives up width in proportion to its own name and
+    /// clips with an ellipsis (its tooltip keeps the whole name), instead of the strip pushing the
+    /// sheet wider than the screen. Measured, so only once the strip is in the tree.
+    /// </summary>
+    private void FitTabs(float room)
+    {
+        if (_tabs.GetCombinedMinimumSize().X <= room)
+        {
+            return;
+        }
+
+        foreach (Node child in _tabs.GetChildren())
+        {
+            if (child is Button tab)
+            {
+                tab.SizeFlagsStretchRatio = Mathf.Max(1f, tab.GetCombinedMinimumSize().X);
+                tab.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+                tab.TooltipText = tab.Text;
+                tab.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
+                tab.ClipText = true;
+            }
+        }
     }
 
     private Control BuildFooter()
@@ -313,6 +325,13 @@ public partial class SettingsPanel : CanvasLayer
         int scrolled = _scroll.ScrollVertical;
         bool tabChanged = _tabChanged;
         _tabChanged = false;
+
+        // A new tab's list starts at its top, so focus that was somewhere down the old list goes
+        // to the new one's first row rather than to whatever now sits at the same position.
+        if (tabChanged && GetViewport()?.GuiGetFocusOwner() is { } owner && _scroll.IsAncestorOf(owner))
+        {
+            focus = null;
+        }
 
         if (_root != null)
         {

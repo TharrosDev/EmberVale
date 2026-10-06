@@ -584,6 +584,11 @@ public static class GameInput
         if (changed)
         {
             Events.EventBus.Instance?.Publish(new Events.InputBindingsChangedEvent());
+
+            // The HUD's keycaps, the hotbar numbers and the dialogue and journal hints were written
+            // before bindings could change and redraw only when the device does. Telling them the
+            // device is what it already was is the one thing that reaches all of them.
+            Events.EventBus.Instance?.Publish(new Events.InputDeviceChangedEvent(InputDevice.GamepadActive));
         }
 
         return true;
