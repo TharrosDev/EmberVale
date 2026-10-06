@@ -51,9 +51,10 @@ public partial class MainMenu : CanvasLayer
     private bool _canContinue;
 
     // The newest save's act, kept against that save so its file is read once and not per visit.
-    private string _actSlot = string.Empty;
-    private double _actStamp;
-    private int _act = 1;
+    // Static: every return to the title is a new menu, and the save is the same one.
+    private static string _actSlot = string.Empty;
+    private static double _actStamp;
+    private static int _act = 1;
     private bool _actPinned;
 
     public override void _Ready()
@@ -278,11 +279,11 @@ public partial class MainMenu : CanvasLayer
             text = Loc.TF("title.continue_meta", latest.CharacterName, latest.Level, latest.Region, hours, minutes);
         }
 
-        // One line: a long name gives way with an ellipsis rather than pushing the entries down.
+        // Two lines at most: a long name or a large text size wraps before anything is cut.
         Label meta = UiTheme.Caption(text, latest != null ? UiTheme.Dim : UiTheme.Disabled);
+        meta.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+        meta.MaxLinesVisible = 2;
         meta.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
-        meta.ClipText = true;
-        meta.TooltipText = text;
         meta.MouseFilter = Control.MouseFilterEnum.Ignore;
 
         var inset = new MarginContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
@@ -378,11 +379,12 @@ public partial class MainMenu : CanvasLayer
     /// <summary>
     /// The act the newest save has reached, which picks the painting. A header does not carry the
     /// chapter, so the save's own text is scanned for its chapter flags
-    /// (<see cref="ShellFrontRules.ActFromSaveText"/>): once per save, not once per visit.
+    /// (<see cref="ShellFrontRules.ActFromSaveText"/>): once per save, not once per visit, and
+    /// never by a headless run, which draws no painting.
     /// </summary>
-    private int ActOf(SaveSlotInfo? latest)
+    private static int ActOf(SaveSlotInfo? latest)
     {
-        if (latest == null || SaveManager.Instance is not { } manager)
+        if (latest == null || SaveManager.Instance is not { } manager || DisplayServer.GetName() == "headless")
         {
             return 1;
         }

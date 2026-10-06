@@ -29,6 +29,7 @@ public partial class BootSplash : CanvasLayer
     private Control _root = null!;
     private Control _seal = null!;
     private Control _prompt = null!;
+    private ColorRect _black = null!;
     private ulong _openedMsec;
     private bool _leaving;
 
@@ -68,9 +69,9 @@ public partial class BootSplash : CanvasLayer
         _root.SetAnchorsPreset(Control.LayoutPreset.FullRect);
         AddChild(_root);
 
-        ColorRect black = UiTheme.Scrim(1f);
-        black.MouseFilter = Control.MouseFilterEnum.Stop;
-        _root.AddChild(black);
+        _black = UiTheme.Scrim(1f);
+        _black.MouseFilter = Control.MouseFilterEnum.Stop;
+        _root.AddChild(_black);
 
         var centre = new CenterContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
         centre.SetAnchorsPreset(Control.LayoutPreset.FullRect);
@@ -127,6 +128,11 @@ public partial class BootSplash : CanvasLayer
     private void Leave()
     {
         _leaving = true;
+
+        // What the press brought up is live from here: the fading black takes no more presses
+        // and lets the pointer through.
+        SetProcessInput(false);
+        _black.MouseFilter = Control.MouseFilterEnum.Ignore;
         UiAudio.Play(UiCue.Confirm);
         System.Action? onDone = _onDone;
         _onDone = null;

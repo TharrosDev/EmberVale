@@ -27,6 +27,12 @@ public partial class FirstRunSetup : CanvasLayer
     private Control? _root;
     private UiLegend? _legend;
     private ScrollContainer _scroll = null!;
+    private ScrollContainer _samples = null!;
+    private Control _subtitleSample = null!;
+    private Control _textWell = null!;
+    private Control _visionSample = null!;
+    private Control _motionSample = null!;
+    private Control? _sampleWanted;
     private Viewport? _viewport;
     private bool _dirty;
 
@@ -110,6 +116,18 @@ public partial class FirstRunSetup : CanvasLayer
 
     public override void _Process(double delta)
     {
+        // The sample for the question in focus, brought into view: a pad has no wheel to do it.
+        // A tick after the focus moved, so a sheet rebuilt this frame has been laid out.
+        if (_sampleWanted != null && !_dirty)
+        {
+            if (IsInstanceValid(_sampleWanted) && _samples.IsAncestorOf(_sampleWanted))
+            {
+                _samples.EnsureControlVisible(_sampleWanted);
+            }
+
+            _sampleWanted = null;
+        }
+
         if (!_dirty)
         {
             return;
@@ -170,6 +188,11 @@ public partial class FirstRunSetup : CanvasLayer
         split.AddThemeConstantOverride("separation", wide ? UiTheme.SpaceLg : UiTheme.SpaceSm);
         col.AddChild(split);
 
+        // Beside the questions where there is room, under them where there is not. It scrolls
+        // rather than push the Continue button off a short screen at a large text size. Built
+        // first: each question brings its own sample into view.
+        Control samples = BuildSamples();
+
         (ScrollContainer scroll, VBoxContainer rows) = UiTheme.ScrollList();
         scroll.CustomMinimumSize = new Vector2(0f, UiTheme.ControlHeight * 2f);
         scroll.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
@@ -177,9 +200,6 @@ public partial class FirstRunSetup : CanvasLayer
         split.AddChild(scroll);
         BuildRows(rows);
 
-        // Beside the questions where there is room, under them where there is not. It scrolls
-        // rather than push the Continue button off a short screen at a large text size.
-        Control samples = BuildSamples();
         if (wide)
         {
             samples.SizeFlagsHorizontal = Control.SizeFlags.ShrinkEnd;
@@ -207,9 +227,9 @@ public partial class FirstRunSetup : CanvasLayer
             s.SubtitlesEnabled = v;
             Persist();
             _subtitleLive?.Invoke();
-        })));
+        }), _subtitleSample));
 
-        rows.AddChild(Row(Loc.T("settings.text_scale"), TextScaleSlider()));
+        rows.AddChild(Row(Loc.T("settings.text_scale"), TextScaleSlider(), _textWell));
 
         // These two change how every surface here is drawn, so the sheet is rebuilt.
         rows.AddChild(Row(Loc.T("settings.high_contrast"), Toggle(s.HighContrast, v =>
@@ -217,14 +237,14 @@ public partial class FirstRunSetup : CanvasLayer
             s.HighContrast = v;
             Persist();
             MarkDirty();
-        })));
+        }), _visionSample));
 
         rows.AddChild(Row(Loc.T("settings.reduced_motion"), Toggle(s.ReducedMotion, v =>
         {
             s.ReducedMotion = v;
             Persist();
             MarkDirty();
-        })));
+        }), _motionSample));
 
         OptionButton vision = UiTheme.Dropdown(
             new[]
@@ -240,12 +260,13 @@ public partial class FirstRunSetup : CanvasLayer
             Persist();
             MarkDirty();
         };
-        rows.AddChild(Row(Loc.T("settings.color_vision"), vision));
+        rows.AddChild(Row(Loc.T("settings.color_vision"), vision, _visionSample));
     }
 
     private static CheckButton Toggle(bool value, System.Action<bool> onChanged)
     {
         CheckButton toggle = UiTheme.Toggle(value);
+        toggle.CustomMinimumSize = new Vector2(0f, UiTheme.ControlHeight); // the whole row height presses it
         toggle.Toggled += pressed => onChanged(pressed);
         return toggle;
     }
@@ -263,8 +284,8 @@ public partial class FirstRunSetup : CanvasLayer
 
         HSlider slider = UiTheme.Slider(0.85, 1.5, 0.05, s.TextScale,
             UiTheme.FirstRunControlColumn - UiTheme.SettingsReadout - UiTheme.SpaceSm);
+        slider.CustomMinimumSize = new Vector2(slider.CustomMinimumSize.X, UiTheme.ControlHeight);
         slider.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-        slider.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
         slider.Scrollable = false; // the wheel scrolls the list
         Label readout = UiTheme.Body(Percent(s.TextScale), UiTheme.Dim);
         readout.CustomMinimumSize = new Vector2(UiTheme.SettingsReadout, 0f);
@@ -301,8 +322,9 @@ public partial class FirstRunSetup : CanvasLayer
     private static string Percent(float value) => $"{Mathf.RoundToInt(value * 100f)}%";
 
     /// <summary>One question: its name, and its control in a shared right-hand column. The row
-    /// lifts to a card with the lit edge while its control holds focus, as a settings row does.</summary>
-    private static Control Row(string title, Control control)
+    /// lifts to a card with the lit edge while its control holds focus, as a settings row does,
+    /// and <paramref name="sample"/> is scrolled into view beside it.</summary>
+    private Control Row(string title, Control control, Control sample)
     {
         var frame = new PanelContainer { MouseFilter = Control.MouseFilterEnum.Pass };
         frame.AddThemeStyleboxOverride("panel", UiTheme.SettingsRowStyle(false));
@@ -325,7 +347,11 @@ public partial class FirstRunSetup : CanvasLayer
 
         foreach (Control focusable in Focusables(control))
         {
-            focusable.FocusEntered += () => frame.AddThemeStyleboxOverride("panel", UiTheme.SettingsRowStyle(true));
+            focusable.FocusEntered += () =>
+            {
+                frame.AddThemeStyleboxOverride("panel", UiTheme.SettingsRowStyle(true));
+                _sampleWanted = sample;
+            };
             focusable.FocusExited += () => frame.AddThemeStyleboxOverride("panel", UiTheme.SettingsRowStyle(false));
         }
 
@@ -358,13 +384,14 @@ public partial class FirstRunSetup : CanvasLayer
     private Control BuildSamples()
     {
         (ScrollContainer scroll, VBoxContainer col) = UiTheme.ScrollList();
-        scroll.FollowFocus = false; // nothing in it takes focus
+        scroll.FollowFocus = false; // nothing in it takes focus; the rows bring their samples up
+        _samples = scroll;
         col.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
         col.AddChild(UiTheme.Caption(Loc.T("firstrun.sample")));
-        col.AddChild(SubtitleSample());
-        col.AddChild(TextSample());
-        col.AddChild(VisionSample());
-        col.AddChild(MotionSample());
+        col.AddChild(_subtitleSample = SubtitleSample());
+        col.AddChild(_textWell = TextSample());
+        col.AddChild(_visionSample = VisionSample());
+        col.AddChild(_motionSample = MotionSample());
         return scroll;
     }
 

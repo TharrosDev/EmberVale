@@ -50,6 +50,10 @@ public partial class LoadingScreen : CanvasLayer
     private float _sweep;
     private int _loads;
 
+    // What the cover was built under: its sizes, shade and line are baked at Build.
+    private bool _builtContrast;
+    private int _builtBodySize;
+
     // Dismissal fade (30.5I): elapsed fade-out time; <0 while idle.
     private float _fadeAge = -1f;
 
@@ -71,6 +75,9 @@ public partial class LoadingScreen : CanvasLayer
 
     private void Build()
     {
+        _builtContrast = UiTheme.HighContrast;
+        _builtBodySize = UiTheme.FontSize(UiTheme.BodyFontSize);
+
         // One root, so the dismissal fades the painting and the words as one thing, and the
         // pointer never reaches what is being loaded underneath.
         _root = new Control { MouseFilter = Control.MouseFilterEnum.Stop, Visible = false };
@@ -142,6 +149,11 @@ public partial class LoadingScreen : CanvasLayer
         }
 
         bool wasUp = _root.Visible && _fadeAge < 0f;
+        if (visible && !wasUp)
+        {
+            RebuildIfRestyled();
+        }
+
         _fadeAge = -1f;
         _root.Modulate = Colors.White;
         _root.Visible = visible;
@@ -152,6 +164,25 @@ public partial class LoadingScreen : CanvasLayer
 
         // Asleep whenever it is down: the line only moves, and the fade only runs, while it is up.
         SetProcess(visible);
+    }
+
+    /// <summary>
+    /// Builds the cover again when text size or contrast has moved since it was built: it lives
+    /// for the whole session and the settings screen is one pause away. Done as the cover goes
+    /// up, when nothing of it is on screen; the painting is carried over, not read again.
+    /// </summary>
+    private void RebuildIfRestyled()
+    {
+        if (_builtContrast == UiTheme.HighContrast && _builtBodySize == UiTheme.FontSize(UiTheme.BodyFontSize))
+        {
+            return;
+        }
+
+        Texture2D? painting = _art.Texture;
+        RemoveChild(_root);
+        _root.QueueFree();
+        Build();
+        _art.Texture = painting;
     }
 
     /// <summary>The cover has just gone up: nothing is known yet about where the load is going.</summary>

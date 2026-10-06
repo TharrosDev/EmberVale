@@ -10,7 +10,7 @@ namespace Embervale.UI;
 /// <see cref="SettingsPanel"/>: the screen that opened it hides behind it and comes back on Back.
 ///
 /// Back (Esc, B, or the button for a pointer) leaves at once. Holding accept hurries the roll, and
-/// up and down move it by hand. Under reduced motion it does not climb by itself: the player
+/// up and down, or the wheel, move it by hand. Under reduced motion it does not climb by itself: the player
 /// reads it at their own pace and leaves with Back. The pace and its limits are
 /// <see cref="ShellFrontRules.CreditsAdvance"/>.
 /// </summary>
@@ -36,6 +36,7 @@ public partial class CreditsScreen : CanvasLayer
     private Control _root = null!;
     private VBoxContainer _roll = null!;
     private float _offset;
+    private float _wheel;
     private bool _started;
     private bool _acceptArmed;
     private bool _heldForCapture;
@@ -69,6 +70,7 @@ public partial class CreditsScreen : CanvasLayer
     {
         _root = new Control { MouseFilter = Control.MouseFilterEnum.Stop, ClipContents = true };
         _root.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+        _root.GuiInput += OnRootInput;
         AddChild(_root);
 
         ColorRect ground = UiTheme.Scrim(1f);
@@ -125,7 +127,11 @@ public partial class CreditsScreen : CanvasLayer
 
         foreach ((string? heading, string[] lines) in Sections)
         {
-            _roll.AddChild(new Control { CustomMinimumSize = new Vector2(0f, UiTheme.SpaceXl) });
+            _roll.AddChild(new Control
+            {
+                CustomMinimumSize = new Vector2(0f, UiTheme.SpaceXl),
+                MouseFilter = Control.MouseFilterEnum.Ignore, // the wheel over a gap still reaches the roll
+            });
             if (heading != null)
             {
                 _roll.AddChild(Centred(UiTheme.Header(Loc.T(heading))));
@@ -134,6 +140,23 @@ public partial class CreditsScreen : CanvasLayer
             foreach (string line in lines)
             {
                 _roll.AddChild(Centred(heading != null ? UiTheme.Body(Loc.T(line)) : UiTheme.Prose(Loc.T(line))));
+            }
+        }
+    }
+
+    /// <summary>The wheel moves the roll a row a notch: under reduced motion nothing else a
+    /// pointer has would.</summary>
+    private void OnRootInput(InputEvent @event)
+    {
+        if (@event is InputEventMouseButton { Pressed: true } button)
+        {
+            if (button.ButtonIndex == MouseButton.WheelDown)
+            {
+                _wheel += UiTheme.ControlHeight;
+            }
+            else if (button.ButtonIndex == MouseButton.WheelUp)
+            {
+                _wheel -= UiTheme.ControlHeight;
             }
         }
     }
@@ -179,9 +202,10 @@ public partial class CreditsScreen : CanvasLayer
         if (!_heldForCapture)
         {
             _offset = ShellFrontRules.CreditsAdvance(
-                _offset, (float)delta, auto, accept && _acceptArmed, Godot.Input.GetAxis(Up, Down), start, end);
+                _offset + _wheel, (float)delta, auto, accept && _acceptArmed, Godot.Input.GetAxis(Up, Down), start, end);
         }
 
+        _wheel = 0f;
         var place = new Vector2(Mathf.Round((view.X - width) * 0.5f), Mathf.Round(view.Y - _offset));
         if (_roll.Position != place || _roll.Size.X != width)
         {
