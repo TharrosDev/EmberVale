@@ -15,6 +15,9 @@ namespace Embervale.Magic;
 /// sphere is one shared mesh. The pool belongs to the session (<see cref="OpenPool"/> /
 /// <see cref="ClosePool"/>, called by <c>SpellVfxDirector</c>); with no pool open a flash is
 /// simply built and freed as before, so a probe or a bare scene needs no setup.</para>
+///
+/// <para><b>Forwarded.</b> While <c>SpellVfx</c> is drawing, <see cref="Spawn"/> hands the flash to
+/// it and a <c>VfxFlare</c> is drawn instead; this node is then only the fallback shape.</para>
 /// </summary>
 public partial class SpellFlash : Node3D
 {
@@ -75,6 +78,14 @@ public partial class SpellFlash : Node3D
     /// world under <paramref name="parent"/> at <paramref name="globalPosition"/>.</summary>
     public static void Spawn(Node parent, Vector3 globalPosition, float radius, Color color)
     {
+        // Where the effect layer is drawing, a flash is one of its flares (core, halo, ring and
+        // light, pooled and budgeted with everything else). The plain sphere below is what is left
+        // for a scene with no effect director.
+        if (Vfx.SpellVfx.FlareFlash(globalPosition, radius, color))
+        {
+            return;
+        }
+
         SpellFlash flash = _pool?.Get() ?? new SpellFlash();
         flash.Radius = radius;
         flash.FlashColor = color;

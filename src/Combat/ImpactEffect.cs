@@ -16,6 +16,9 @@ public partial class ImpactEffect : Node3D
     private const float GrowRadius = 0.55f;
     private const double LifeSeconds = 0.22d;
 
+    /// <summary>How far a spell hit's spark is pulled from its outcome colour toward its school's.</summary>
+    private const float SchoolTint = 0.7f;
+
     private MeshInstance3D _mesh = null!;
     private StandardMaterial3D _material = null!;
     private MeshInstance3D _ring = null!;
@@ -68,6 +71,14 @@ public partial class ImpactEffect : Node3D
     /// to the tree and set GlobalPosition first.</summary>
     public void Launch(Color color, float scale = 1f, bool ring = false)
     {
+        // A spell hit is marked in its school's colour. The feedback layer hands this spark a colour
+        // by outcome only (it is not told a school), so the spark asks the effect layer whether a
+        // spell has just struck where it stands. A melee blow finds nothing and keeps its colour.
+        if (IsInsideTree() && Magic.Vfx.SpellVfx.TryRecentImpactTint(GlobalPosition, out Color school))
+        {
+            color = color.Lerp(school, SchoolTint);
+        }
+
         _color = color;
         _scale = Mathf.Clamp(scale, 0.3f, 3f);
         _showRing = ring;
