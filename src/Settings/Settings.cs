@@ -194,6 +194,57 @@ public partial class Settings : Resource
     /// press instead (<c>UiFx.HoldRing</c>), for a player who cannot hold a button down.</summary>
     [Export] public bool HoldsToPresses { get; set; } = false;
 
+    /// <summary>One <c>HudElementMode</c> per <c>HudElement</c>, indexed by the element's number
+    /// (0 always, 1 dynamic, 2 hidden). Empty, or shorter than the enum, means "always" for the
+    /// missing entries, which is every element as it was drawn before the option existed.</summary>
+    [Export] public int[] HudElementModes { get; set; } = System.Array.Empty<int>();
+
+    /// <summary>Size of the HUD alone, on top of <see cref="UiScale"/>. Read through
+    /// <see cref="SettingsMath.ClampHudScale"/>.</summary>
+    [Export(PropertyHint.Range, "0.75,1.5")] public float HudScale { get; set; } = 1f;
+
+    /// <summary>Opacity of the whole HUD. Read through <see cref="SettingsMath.ClampHudOpacity"/>,
+    /// which keeps it readable.</summary>
+    [Export(PropertyHint.Range, "0.3,1")] public float HudOpacity { get; set; } = 1f;
+
+    /// <summary>Extra inset of the HUD from every screen edge, as a fraction of the viewport's
+    /// shorter side, for a television that crops the picture. 0 = the margins as designed.</summary>
+    [Export(PropertyHint.Range, "0,0.1")] public float HudSafeZone { get; set; } = 0f;
+
+    /// <summary>Right-stick look speed per axis, multiplied onto <see cref="MouseSensitivity"/>
+    /// (which the stick already follows), so 1 leaves the stick as it was.</summary>
+    [Export(PropertyHint.Range, "0.25,3")] public float PadSensitivityX { get; set; } = 1f;
+    [Export(PropertyHint.Range, "0.25,3")] public float PadSensitivityY { get; set; } = 1f;
+
+    /// <summary>Remapped keyboard and mouse bindings, one <c>action=binding</c> entry per remapped
+    /// action (<see cref="SettingsMath.BindingEntry"/>). An action with no entry keeps the binding
+    /// <c>GameInput.EnsureActions</c> gives it; empty = the default layout.</summary>
+    [Export] public string[] KeyBindings { get; set; } = System.Array.Empty<string>();
+
+    /// <summary>The same for the gamepad.</summary>
+    [Export] public string[] PadBindings { get; set; } = System.Array.Empty<string>();
+
+    /// <summary>0 small, 1 medium, 2 large. Nothing drew subtitles before this field existed.</summary>
+    [Export(PropertyHint.Range, "0,2,1")] public int SubtitleSize { get; set; } = 1;
+
+    /// <summary>Opacity of the plate behind a subtitle line. 0 = bare text with its outline.</summary>
+    [Export(PropertyHint.Range, "0,1")] public float SubtitleBackground { get; set; } = 0.5f;
+
+    /// <summary>Whether a subtitle line names who is speaking.</summary>
+    [Export] public bool SubtitleSpeakerNames { get; set; } = true;
+
+    /// <summary>Holds the title screen's painting still: no drift, no parallax, no embers.</summary>
+    [Export] public bool StaticMenuBackground { get; set; } = false;
+
+    /// <summary>How long a toast stays, as a multiple of its authored time. Read through
+    /// <see cref="SettingsMath.ClampToastDuration"/>.</summary>
+    [Export(PropertyHint.Range, "0.5,3")] public float ToastDuration { get; set; } = 1f;
+
+    /// <summary>How damage numbers are drawn. -1 follows <see cref="DamageNumbers"/> (the toggle
+    /// that predates this field): on = 1, off = 0. 0 none, 1 all, 2 the player's own blows only,
+    /// 3 crits and kills only. Read through <see cref="SettingsMath.DamageNumberMode"/>.</summary>
+    [Export(PropertyHint.Range, "-1,3,1")] public int DamageNumberMode { get; set; } = -1;
+
     /// <summary>Pairs each audio setting with its mixer bus name (Phase 31 creates these buses; the
     /// default <c>Master</c> bus always exists, so master volume applies immediately).</summary>
     public (string Bus, float Linear)[] BusVolumes() => new[]

@@ -85,4 +85,80 @@ public class SettingsMathTests
         Assert.Equal(1.45f, SettingsMath.ApplyPitch(1.4f, -1f, invertY: false, 1.45f), 5);  // looking far up
         Assert.Equal(-1.45f, SettingsMath.ApplyPitch(-1.4f, 1f, invertY: false, 1.45f), 5); // far down
     }
+
+    // The appended UI-upgrade fields. Settings itself is a Godot Resource and cannot be built here,
+    // so what is pinned is that each field's default passes through its clamp unchanged.
+
+    [Fact]
+    public void NewFieldDefaults_AreInsideTheirOwnRanges()
+    {
+        Assert.Equal(1f, SettingsMath.ClampHudScale(1f));
+        Assert.Equal(1f, SettingsMath.ClampHudOpacity(1f));
+        Assert.Equal(0f, SettingsMath.ClampHudSafeZone(0f));
+        Assert.Equal(1f, SettingsMath.ClampPadSensitivity(1f));
+        Assert.Equal(1f, SettingsMath.ClampToastDuration(1f));
+        Assert.Equal(1, SettingsMath.ClampSubtitleSize(1));
+    }
+
+    [Fact]
+    public void NewFieldClamps_HoldTheirEnds()
+    {
+        Assert.Equal(SettingsMath.HudScaleMin, SettingsMath.ClampHudScale(0f));
+        Assert.Equal(SettingsMath.HudScaleMax, SettingsMath.ClampHudScale(9f));
+        Assert.Equal(SettingsMath.HudOpacityMin, SettingsMath.ClampHudOpacity(0f));
+        Assert.Equal(SettingsMath.HudSafeZoneMax, SettingsMath.ClampHudSafeZone(1f));
+        Assert.Equal(SettingsMath.PadSensitivityMin, SettingsMath.ClampPadSensitivity(-1f));
+        Assert.Equal(SettingsMath.ToastDurationMax, SettingsMath.ClampToastDuration(60f));
+        Assert.Equal(0, SettingsMath.ClampSubtitleSize(-4));
+        Assert.Equal(SettingsMath.SubtitleSizeMax, SettingsMath.ClampSubtitleSize(7));
+    }
+
+    [Fact]
+    public void NewFieldClamps_TreatNotANumberAsTheDefault()
+    {
+        Assert.Equal(1f, SettingsMath.ClampHudScale(float.NaN));
+        Assert.Equal(1f, SettingsMath.ClampHudOpacity(float.PositiveInfinity));
+        Assert.Equal(0f, SettingsMath.ClampHudSafeZone(float.NaN));
+    }
+
+    [Theory]
+    [InlineData(-1, true, 1)]
+    [InlineData(-1, false, 0)]
+    [InlineData(0, true, 0)]
+    [InlineData(2, false, 2)]
+    [InlineData(3, true, 3)]
+    [InlineData(99, true, 1)]
+    public void DamageNumberMode_FollowsTheOldToggleUntilItIsSet(int mode, bool legacy, int expected)
+    {
+        Assert.Equal(expected, SettingsMath.DamageNumberMode(mode, legacy));
+    }
+
+    [Fact]
+    public void HudElementMode_IsAlwaysForAnythingTheListDoesNotHold()
+    {
+        Assert.Equal(0, SettingsMath.HudElementMode(null, 3));
+        Assert.Equal(0, SettingsMath.HudElementMode(System.Array.Empty<int>(), 0));
+        Assert.Equal(2, SettingsMath.HudElementMode(new[] { 0, 2 }, 1));
+        Assert.Equal(0, SettingsMath.HudElementMode(new[] { 0, 2 }, 2));
+        Assert.Equal(0, SettingsMath.HudElementMode(new[] { 7 }, 0));
+        Assert.Equal(0, SettingsMath.HudElementMode(new[] { 1 }, -1));
+    }
+
+    [Fact]
+    public void BindingFor_ReadsTheLastLineForAnActionAndIgnoresTheRest()
+    {
+        string[] saved =
+        {
+            SettingsMath.BindingEntry("jump", "key:32"),
+            "broken", "=", "jump=",
+            SettingsMath.BindingEntry("jump_high", "key:70"),
+            SettingsMath.BindingEntry("jump", "key:74"),
+        };
+
+        Assert.Equal("key:74", SettingsMath.BindingFor(saved, "jump"));
+        Assert.Equal("key:70", SettingsMath.BindingFor(saved, "jump_high"));
+        Assert.Null(SettingsMath.BindingFor(saved, "dodge"));
+        Assert.Null(SettingsMath.BindingFor(null, "jump"));
+        Assert.Null(SettingsMath.BindingFor(saved, ""));
+    }
 }
