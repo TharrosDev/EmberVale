@@ -5412,3 +5412,60 @@ kn.dialogue.mark_leave,Ends the conversation
 kn.legend.scroll,Scroll
 kn.legend.waypoint_click,Click to mark
 kn.legend.show_on_map_click,Click for map
+# ui-upgrade: lane 1 (shell front)
+splash.press_any,Press any button
+title.subtitle,"Save creation, or become its next Ash King."
+title.accessibility,Accessibility
+title.credits,Credits
+title.continue_meta,"{0}  ·  Level {1}  ·  {2}  ·  {3}h {4}m"
+title.version,Version {0}
+title.legend.select,Select
+title.quit.heading,Quit to desktop?
+title.quit.body,Embervale will close.
+title.quit.confirm,Quit
+firstrun.title,Before you begin
+firstrun.intro,"Set these to suit you. Each one can be changed later in Settings, under Accessibility."
+firstrun.sample,Preview
+firstrun.motion_on,Menus ease into place and embers drift.
+firstrun.motion_off,Menus appear at once and nothing drifts.
+firstrun.continue,Continue
+loading.card.tip,Tip
+loading.card.lore,Lore
+loading.tip.1,"A stagger breaks a wind-up, never a blow that is already falling. Strike early or get clear."
+loading.tip.2,A guard raised just before a blow lands is a parry. A perfect one costs nothing and staggers the attacker.
+loading.tip.3,An enemy whose poise breaks is open for a moment. The first blow on an open body is a critical.
+loading.tip.4,"Hold the attack for a heavy swing. Hold it longer and it charges, hitting harder the longer it is held."
+loading.tip.5,A tired guard takes more poise damage. Lower it and recover before the next exchange.
+loading.tip.6,"Bosses can be staggered, but they are never knocked down."
+loading.tip.7,"Each shrine grants its blessing once, and refuses those too corrupted for its god."
+loading.tip.8,Ordinary magic weakens where the Weave has thinned. Corrupted magic grows stronger there.
+loading.tip.9,"Corruption is counted in five tiers. Shrines, factions and some spells all answer to it."
+loading.tip.10,"A companion who falls in battle is downed, never lost."
+loading.tip.11,Plain materials take no room in your pack. Gather freely.
+loading.tip.12,"A locked item is never sold, salvaged, junked or dropped. Lock what you mean to keep."
+loading.lore.ember_crown.1,"The Ember Crown is the heartland of humanity: rolling plains, old castles and the knightly orders that still hold them."
+loading.lore.ember_crown.2,For a thousand years the world has been dying. In the Ember Crown people still plant in spring.
+loading.lore.ember_crown.3,Seven Flamebearers were chosen to restore the balance. Six failed.
+loading.lore.frostfang.1,"Frostfang Reach is frozen ocean and towering mountain, home to warrior clans and the beast races."
+loading.lore.frostfang.2,Dragons once nested in the peaks of Frostfang Reach. The nests are still there.
+loading.lore.frostfang.3,Dragons have vanished from the skies of Embervale. The Reach is where people still look up.
+loading.lore.ashen_wilds.1,"The Ashen Wilds are the scar the Cataclysm left: ruins, corrupted forest and ground where magic misbehaves."
+loading.lore.ashen_wilds.2,Civilizations stood in the Ashen Wilds before the Cataclysm. Their ruins are all that answers now.
+loading.lore.ashen_wilds.3,Decay takes the living as readily as the land here. What it takes rises Ashen.
+loading.lore.sunspire.1,"The Sunspire Dominion is the oldest civilization still standing, a land of ancient desert, lost jungle and buried temples."
+loading.lore.sunspire.2,The last great libraries are kept in the Sunspire Dominion.
+loading.lore.sunspire.3,The oldest law in the Dominion is that water is free.
+loading.lore.celestial.1,"The Sundering was the war of the gods. It broke the Celestial Realm, and the Cataclysm is what fell on the world below."
+loading.lore.celestial.2,Seven gods once kept the balance from the Celestial Realm. Six of them died in the war that ruined it.
+credits.made.heading,Made with
+credits.made.godot,"Godot Engine 4, scripted in C# on .NET 8."
+credits.world.heading,The world
+credits.world.kits,"Buildings, interiors, nature and animation from Quaternius's CC0 kits."
+credits.world.cast,Characters and creatures generated with Meshy.
+credits.art.heading,Paintings and icons
+credits.art.paintings,"Paintings, the seal and item icons generated with OpenAI and Meshy image tools."
+credits.art.glyphs,Interface icons and button glyphs drawn by hand.
+credits.type.heading,Typefaces
+credits.type.faces,"Cinzel, Inter and EB Garamond by their project authors, under the SIL Open Font License."
+credits.legend.faster,Faster
+credits.legend.scroll,Scroll
