@@ -4,6 +4,7 @@ using Embervale.Crafting;
 using Embervale.Entities;
 using Embervale.Items;
 using Embervale.Localization;
+using Embervale.Loot;
 using Embervale.Player;
 using Godot;
 
@@ -11,7 +12,7 @@ namespace Embervale.UI;
 
 /// <summary>
 /// The loot feed: what the player just picked up, that the pack refused something, and that a recipe
-/// was learned. Pure presentation over <see cref="ItemPickedUpEvent"/>, <see cref="PackFullEvent"/>
+/// was learned. Pure presentation over <see cref="ItemPickedUpEvent"/>, <see cref="InventoryFullEvent"/>
 /// and <see cref="RecipeLearnedEvent"/>. None of the three is raised by a load, so a reload narrates
 /// nothing.
 ///
@@ -28,14 +29,14 @@ public partial class Notifications
     private void SubscribeLoot(EventBus? bus)
     {
         bus?.Subscribe<ItemPickedUpEvent>(OnItemPickedUp);
-        bus?.Subscribe<PackFullEvent>(OnPackFull);
+        bus?.Subscribe<InventoryFullEvent>(OnPackFull);
         bus?.Subscribe<RecipeLearnedEvent>(OnRecipeLearned);
     }
 
     private void UnsubscribeLoot(EventBus bus)
     {
         bus.Unsubscribe<ItemPickedUpEvent>(OnItemPickedUp);
-        bus.Unsubscribe<PackFullEvent>(OnPackFull);
+        bus.Unsubscribe<InventoryFullEvent>(OnPackFull);
         bus.Unsubscribe<RecipeLearnedEvent>(OnRecipeLearned);
     }
 
@@ -90,7 +91,7 @@ public partial class Notifications
 
     /// <summary>The pack turned something away. A warning, and coalesced by <see cref="Push"/>:
     /// pressing the key five times at one sword says it once with a count.</summary>
-    private void OnPackFull(PackFullEvent e)
+    private void OnPackFull(InventoryFullEvent e)
     {
         if (IsPlayer(e.Owner) && e.Item != null)
         {

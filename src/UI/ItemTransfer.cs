@@ -112,12 +112,12 @@ public static class ItemTransfer
     /// walked away from, and the quest that wants it has no way to ask for it back.</summary>
     public static bool CanDrop(ItemInstance instance) => !instance.Locked && instance.Type != ItemType.Quest;
 
-    /// <summary>Tells the feed the player's pack refused something (see <see cref="PackFullEvent"/>).</summary>
+    /// <summary>Tells the feed the player's pack refused something (see <see cref="InventoryFullEvent"/>).</summary>
     public static void AnnouncePackFull(ItemInstance instance, int quantity)
     {
         if (Player() is { } player && quantity > 0)
         {
-            EventBus.Instance?.Publish(new PackFullEvent(player, instance.Template, quantity));
+            EventBus.Instance?.Publish(new InventoryFullEvent(player, instance.Template, quantity));
         }
     }
 

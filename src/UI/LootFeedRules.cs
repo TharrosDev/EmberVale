@@ -5,13 +5,6 @@ using Embervale.Items;
 
 namespace Embervale.UI;
 
-/// <summary>
-/// Raised when an item could not be taken because the pack had no room for it. Nothing announced
-/// this before: a refused pickup wrote one line to the log and the player was left pressing the key
-/// at an item that would not move. The feed turns it into a toast.
-/// </summary>
-public readonly record struct PackFullEvent(IEntity Owner, ItemResource Item, int Quantity) : IGameEvent;
-
 /// <summary>One line of the pickup feed: an item, how many, and the rarity that colours it.</summary>
 public readonly record struct LootFeedLine(string ItemId, string Name, int Rarity, int Quantity);
 
