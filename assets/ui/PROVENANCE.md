@@ -20,3 +20,9 @@ Both assets were generated specifically for Embervale. Player-facing text remain
   `loading_ashen_wilds.png`, `loading_sunspire.png`, `loading_pale.png`, `loading_celestial.png`, `ending_dawnfire.png`,
   `ending_embers.png`, `credits.png` — generated with Meshy text-to-image (nano-banana-pro, 16:9) on 2026-10-06 to match
   `menu_ashen_causeway.png`: text-free low-poly flat-shaded matte paintings with calm dark space for Godot-rendered text.
+
+## Item icons (2026-10-06)
+
+- `icons/items/src/<key>.png` (79 archetypes, 256 px, painted on flat black) — generated with Meshy text-to-image
+  (nano-banana) on 2026-10-06, one per `ItemIconRules` archetype key. `tools/pack_ui_atlas.gd` keys the black to alpha and
+  packs them into `icons/items/atlas.png` + `atlas.json`; the sources are `.gdignore`d and never ship.

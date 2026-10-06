@@ -1,0 +1,322 @@
+{
+  "cell": 128,
+  "columns": 10,
+  "keys": {
+    "amulet": [
+      0,
+      0
+    ],
+    "amulet_charm": [
+      1,
+      0
+    ],
+    "arrows": [
+      2,
+      0
+    ],
+    "axe": [
+      3,
+      0
+    ],
+    "bow": [
+      4,
+      0
+    ],
+    "circlet": [
+      5,
+      0
+    ],
+    "cloth": [
+      6,
+      0
+    ],
+    "cloth_hood": [
+      7,
+      0
+    ],
+    "cloth_robe": [
+      8,
+      0
+    ],
+    "cloth_shoes": [
+      9,
+      0
+    ],
+    "cloth_trousers": [
+      0,
+      1
+    ],
+    "cloth_wraps": [
+      1,
+      1
+    ],
+    "coal": [
+      2,
+      1
+    ],
+    "coin": [
+      3,
+      1
+    ],
+    "dagger": [
+      4,
+      1
+    ],
+    "decor_banner": [
+      5,
+      1
+    ],
+    "decor_brazier": [
+      6,
+      1
+    ],
+    "decor_crate": [
+      7,
+      1
+    ],
+    "decor_stand": [
+      8,
+      1
+    ],
+    "dust": [
+      9,
+      1
+    ],
+    "food_bread": [
+      0,
+      2
+    ],
+    "food_fish": [
+      1,
+      2
+    ],
+    "food_pie": [
+      2,
+      2
+    ],
+    "food_roast": [
+      3,
+      2
+    ],
+    "food_stew": [
+      4,
+      2
+    ],
+    "food_tea": [
+      5,
+      2
+    ],
+    "gem_moonstone": [
+      6,
+      2
+    ],
+    "gem_ruby": [
+      7,
+      2
+    ],
+    "gem_sapphire": [
+      8,
+      2
+    ],
+    "greatsword": [
+      9,
+      2
+    ],
+    "herb": [
+      0,
+      3
+    ],
+    "hide": [
+      1,
+      3
+    ],
+    "ingot": [
+      2,
+      3
+    ],
+    "jar": [
+      3,
+      3
+    ],
+    "kit_alchemy": [
+      4,
+      3
+    ],
+    "kit_forge": [
+      5,
+      3
+    ],
+    "kit_workbench": [
+      6,
+      3
+    ],
+    "leather_boots": [
+      7,
+      3
+    ],
+    "leather_breeches": [
+      8,
+      3
+    ],
+    "leather_chest": [
+      9,
+      3
+    ],
+    "leather_coif": [
+      0,
+      4
+    ],
+    "leather_gloves": [
+      1,
+      4
+    ],
+    "mace": [
+      2,
+      4
+    ],
+    "mote": [
+      3,
+      4
+    ],
+    "ore": [
+      4,
+      4
+    ],
+    "plank": [
+      5,
+      4
+    ],
+    "plate_chest": [
+      6,
+      4
+    ],
+    "plate_gauntlets": [
+      7,
+      4
+    ],
+    "plate_greaves": [
+      8,
+      4
+    ],
+    "plate_helm": [
+      9,
+      4
+    ],
+    "plate_sabatons": [
+      0,
+      5
+    ],
+    "potion_cure": [
+      1,
+      5
+    ],
+    "potion_health": [
+      2,
+      5
+    ],
+    "potion_insight": [
+      3,
+      5
+    ],
+    "potion_mana": [
+      4,
+      5
+    ],
+    "potion_might": [
+      5,
+      5
+    ],
+    "potion_resist_arcane": [
+      6,
+      5
+    ],
+    "potion_resist_fire": [
+      7,
+      5
+    ],
+    "potion_resist_frost": [
+      8,
+      5
+    ],
+    "potion_resist_lightning": [
+      9,
+      5
+    ],
+    "potion_resist_nature": [
+      0,
+      6
+    ],
+    "potion_resist_necrotic": [
+      1,
+      6
+    ],
+    "potion_stamina": [
+      2,
+      6
+    ],
+    "potion_stoneskin": [
+      3,
+      6
+    ],
+    "relic_heart": [
+      4,
+      6
+    ],
+    "ring": [
+      5,
+      6
+    ],
+    "ring_signet": [
+      6,
+      6
+    ],
+    "sack": [
+      7,
+      6
+    ],
+    "scale": [
+      8,
+      6
+    ],
+    "scrap": [
+      9,
+      6
+    ],
+    "scroll": [
+      0,
+      7
+    ],
+    "shard": [
+      1,
+      7
+    ],
+    "shield": [
+      2,
+      7
+    ],
+    "spear": [
+      3,
+      7
+    ],
+    "staff": [
+      4,
+      7
+    ],
+    "sword": [
+      5,
+      7
+    ],
+    "tackle": [
+      6,
+      7
+    ],
+    "tome": [
+      7,
+      7
+    ],
+    "writ": [
+      8,
+      7
+    ]
+  }
+}
