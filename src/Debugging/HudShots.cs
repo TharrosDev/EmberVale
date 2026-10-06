@@ -633,6 +633,23 @@ public sealed partial class HudShots : ShotHarness
             return;
         }
 
+        // Under an ordinary tracker. The five-objective campaign fixture the shots before this one
+        // track is the tallest tracker the game can draw, and under it two toasts are all that fit
+        // above the minimap at 1280x720: the feed holds the third back, which is the rule working
+        // and not the stack this shot is for.
+        if (QuestShotFixtures.Log() is { } log)
+        {
+            foreach (QuestProgress progress in log.Quests)
+            {
+                if (progress.Status == QuestStatus.Active && !progress.Quest.IsLedger &&
+                    progress.Quest.Id != QuestShotFixtures.AshWind)
+                {
+                    log.Track(progress.Quest.Id);
+                    break;
+                }
+            }
+        }
+
         feed.EndCombatForCapture();
         feed.ClearShownForCapture();
         EventBus.Instance?.Publish(new Progression.LeveledUpEvent(player, 7, 1));
