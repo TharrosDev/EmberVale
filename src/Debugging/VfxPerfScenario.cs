@@ -100,6 +100,7 @@ public sealed partial class VfxPerfScenario : Node
     private double _seconds = 20.0;
     private double _clock;
     private ulong _lastTick;
+    private ulong _samplingUsec;
     private double _baselineFrom;
     private double _baselineUntil;
     private double _castStart;
@@ -347,8 +348,14 @@ public sealed partial class VfxPerfScenario : Node
     public override void _Process(double delta)
     {
         ulong tick = Time.GetTicksUsec();
-        double ms = _lastTick == 0 ? 0.0 : (tick - _lastTick) / 1000.0;
+
+        // The scenario's own counting (a walk of everything under VfxRoot, every few frames) is taken
+        // back out of the frame it ran in: at one frame in six it would otherwise sit in the 95th
+        // percentile it is here to measure.
+        ulong span = tick - _lastTick;
+        double ms = _lastTick == 0 ? 0.0 : (span - Math.Min(_samplingUsec, span)) / 1000.0;
         _lastTick = tick;
+        _samplingUsec = 0;
         _clock += delta;
 
         switch (_phase)
@@ -378,10 +385,12 @@ public sealed partial class VfxPerfScenario : Node
                 _frames.Add((_clock - _castStart, ms));
                 if (++_frameIndex % CensusEveryFrames == 0)
                 {
+                    ulong began = Time.GetTicksUsec();
                     Node3D? root = ShotStage.VfxRoot(GetTree());
                     _peak = _peak.Max(ShotStage.Census(root));
                     _peakParticles = Math.Max(_peakParticles, root != null ? Particles(root) : 0);
                     _peakDrawCalls = Math.Max(_peakDrawCalls, Performance.GetMonitor(Performance.Monitor.RenderTotalDrawCallsInFrame));
+                    _samplingUsec = Time.GetTicksUsec() - began;
                 }
 
                 if (_clock - _castStart >= _seconds)

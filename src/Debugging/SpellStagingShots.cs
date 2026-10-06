@@ -139,21 +139,76 @@ internal static class ShotStage
         }
     }
 
-    /// <summary>Frees every zone, wall, totem and ground telegraph a spell left standing, so the next
-    /// shot starts from an empty field. Each ends its own effects as it leaves the tree.</summary>
-    public static int ClearSpellNodes(SceneTree tree)
+    /// <summary>True when something under <paramref name="root"/> is drawing now that was not in
+    /// <paramref name="before"/> (see <see cref="Drawing"/>). Unlike a count against a baseline, this
+    /// cannot be cancelled out by the last spell's effects fading on the same frames.</summary>
+    public static bool AnyNewDrawing(Node? root, HashSet<ulong> before)
     {
-        int freed = 0;
+        if (root == null || !GodotObject.IsInstanceValid(root))
+        {
+            return false;
+        }
+
+        int count = root.GetChildCount();
+        for (int i = 0; i < count; i++)
+        {
+            Node child = root.GetChild(i);
+            if ((Draws(child) && !before.Contains(child.GetInstanceId())) || AnyNewDrawing(child, before))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>Collects the nodes under <paramref name="root"/> that are drawing: visible, and for a
+    /// particle system also emitting (a pooled one may sit visible and idle).</summary>
+    public static void Drawing(Node? root, HashSet<ulong> into)
+    {
+        if (root == null || !GodotObject.IsInstanceValid(root))
+        {
+            return;
+        }
+
+        int count = root.GetChildCount();
+        for (int i = 0; i < count; i++)
+        {
+            Node child = root.GetChild(i);
+            if (Draws(child))
+            {
+                into.Add(child.GetInstanceId());
+            }
+
+            Drawing(child, into);
+        }
+    }
+
+    private static bool Draws(Node node) => node switch
+    {
+        GpuParticles3D gpu => gpu.Emitting && gpu.IsVisibleInTree(),
+        CpuParticles3D cpu => cpu.Emitting && cpu.IsVisibleInTree(),
+        Node3D spatial => spatial.IsVisibleInTree(),
+        _ => false,
+    };
+
+    /// <summary>Frees every zone, wall, totem and ground telegraph a spell left standing, so the next
+    /// shot starts from an empty field. Each ends its own effects as it leaves the tree. The nodes are
+    /// only queued: <paramref name="freed"/> receives them so a caller can wait until they are gone.</summary>
+    public static int ClearSpellNodes(SceneTree tree, List<Node>? freed = null)
+    {
+        int count = 0;
         foreach (Node node in tree.Root.FindChildren("*Spell*", "Node3D", recursive: true, owned: false))
         {
             if (node is SpellZone or SpellBarrier or SpellTotem or SpellGround && !node.IsQueuedForDeletion())
             {
                 node.QueueFree();
-                freed++;
+                freed?.Add(node);
+                count++;
             }
         }
 
-        return freed;
+        return count;
     }
 
     // --- settings for the run, never saved ---------------------------------------------------------

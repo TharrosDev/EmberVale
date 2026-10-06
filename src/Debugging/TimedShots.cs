@@ -28,12 +28,13 @@ public abstract partial class TimedShots : ShotHarness
 
     private readonly Dictionary<string, Action> _inspections = new();
     private readonly List<string> _problems = new();
-    private readonly List<(Func<bool> When, Action Do, double Deadline)> _steps = new();
+    private readonly List<(Func<bool> When, Action Do)> _steps = new();
     private readonly List<(string Name, Image Image)> _burst = new();
     private readonly List<Action> _nextFrame = new();
 
     private Func<bool>? _until;
     private double _deadline;
+    private double _stepDeadline = -1;
     private int _minFrames;
     private int _burstFrames;
     private int _frames;
@@ -120,10 +121,10 @@ public abstract partial class TimedShots : ShotHarness
     }
 
     /// <summary>Queues work for a physics tick: <paramref name="action"/> runs on the first tick
-    /// <paramref name="when"/> holds, after everything queued before it. A condition that never holds
-    /// is given up on after a few seconds and the action runs anyway, so one stuck step cannot strand
-    /// the rest of the run.</summary>
-    protected void Then(Func<bool> when, Action action) => _steps.Add((when, action, Clock + StepTimeout));
+    /// <paramref name="when"/> holds, after everything queued before it. A condition that has not held
+    /// a few seconds after its turn came is given up on and the action runs anyway, so one stuck step
+    /// cannot strand the rest of the run.</summary>
+    protected void Then(Func<bool> when, Action action) => _steps.Add((when, action));
 
     /// <summary>Queues work for the next physics tick.</summary>
     protected void Then(Action action) => Then(() => true, action);
@@ -165,12 +166,20 @@ public abstract partial class TimedShots : ShotHarness
         PhysicsTicks++;
         if (_steps.Count > 0)
         {
-            (Func<bool> when, Action action, double deadline) = _steps[0];
+            // The wait is counted from the step's own turn, not from when it was queued: a step
+            // behind a slow one must not inherit a deadline that has already passed.
+            if (_stepDeadline < 0)
+            {
+                _stepDeadline = Clock + StepTimeout;
+            }
+
+            (Func<bool> when, Action action) = _steps[0];
             bool due = false;
             Guard(() => due = when(), "a queued step's condition");
-            if (due || Clock >= deadline)
+            if (due || Clock >= _stepDeadline)
             {
                 _steps.RemoveAt(0);
+                _stepDeadline = -1;
                 if (!due)
                 {
                     Log.Warn($"{Flag}: a step of '{CurrentShot}' ran without its condition being met.");

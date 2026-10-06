@@ -143,9 +143,16 @@ public sealed partial class SpellShots : TimedShots
         public float Windup;
         public VfxCensus Baseline;
         public VfxCensus Peak;
+
+        /// <summary>What was already drawing under <c>VfxRoot</c> when the cast began.</summary>
+        public HashSet<ulong> Before { get; } = new();
+
+        /// <summary>Something that was not drawing before the cast drew during it.</summary>
+        public bool DrewNew;
     }
 
     private readonly List<Node> _props = new();
+    private readonly List<Node> _stale = new();
     private Run? _run;
     private ShotLane _lane;
     private bool _prepared;
@@ -273,12 +280,34 @@ public sealed partial class SpellShots : TimedShots
         _run = null;
         _stageFailure = null;
         ShotStage.ReleaseInputs();
-        Then(() => Stage(plan));
+
+        // The last cast's actors are queued for deletion and still solid until the queue runs: their
+        // colliders share the world layer the ground rays read, so staging on the same tick would
+        // stand the next targets on the old ones' heads. Staging waits until they are gone.
+        Then(() => ShotStage.Player() != null, ClearField);
+        Then(() => _stale.TrueForAll(node => !IsInstanceValid(node)), () => Stage(plan));
         Then(() => _run == null || (Clock >= _stagedAt + SettleSeconds && (ShotStage.Player()?.IsOnFloor() ?? true)), StartCast);
+    }
+
+    private void ClearField()
+    {
+        _stale.Clear();
+        foreach (Node prop in _props)
+        {
+            if (IsInstanceValid(prop))
+            {
+                ShotStage.Free(prop);
+                _stale.Add(prop);
+            }
+        }
+
+        _props.Clear();
+        ShotStage.ClearSpellNodes(GetTree(), _stale);
     }
 
     private void Stage(Plan plan)
     {
+        _stale.Clear();
         if (ShotStage.Player() is not { } player ||
             player.GetComponent<SpellcastingComponent>() is not { } casting ||
             GetTree().CurrentScene is not { } scene)
@@ -292,13 +321,6 @@ public sealed partial class SpellShots : TimedShots
             Prepare(player);
         }
 
-        foreach (Node prop in _props)
-        {
-            ShotStage.Free(prop);
-        }
-
-        _props.Clear();
-        ShotStage.ClearSpellNodes(GetTree());
         ShotStage.ResetCaster(player);
         ShotStage.SetHour(plan.Day ? DayHour : DuskHourOrOverride);
         ShotStage.ClearWeather();
@@ -433,8 +455,10 @@ public sealed partial class SpellShots : TimedShots
             return;
         }
 
-        run.Baseline = ShotStage.Census(ShotStage.VfxRoot(GetTree()));
+        Node3D? root = ShotStage.VfxRoot(GetTree());
+        run.Baseline = ShotStage.Census(root);
         run.Peak = run.Baseline;
+        ShotStage.Drawing(root, run.Before);
         run.Pressed = Clock;
         run.PressTick = PhysicsTicks;
         if (run.Plan.Enemy)
@@ -702,10 +726,12 @@ public sealed partial class SpellShots : TimedShots
 
     protected override void PreDraw()
     {
-        _census = ShotStage.Census(ShotStage.VfxRoot(GetTree()));
+        Node3D? root = ShotStage.VfxRoot(GetTree());
+        _census = ShotStage.Census(root);
         if (_run is { Pressed: >= 0 } run)
         {
             run.Peak = run.Peak.Max(_census);
+            run.DrewNew = run.DrewNew || ShotStage.AnyNewDrawing(root, run.Before);
         }
     }
 
@@ -735,7 +761,10 @@ public sealed partial class SpellShots : TimedShots
 
         SpellVfxRecipe recipe = SpellVfxCatalog.For(plan.Spell);
         bool shouldDraw = !(recipe.Cast.IsEmpty && recipe.Travel.IsEmpty && recipe.Impact.IsEmpty && recipe.Linger.IsEmpty);
-        bool drew = run.Peak.Exceeds(run.Baseline);
+
+        // Either a count rose above where it stood at the cast, or a node drew that was not drawing
+        // then. The second cannot be hidden by the previous spell's effects fading meanwhile.
+        bool drew = run.DrewNew || run.Peak.Exceeds(run.Baseline);
         Log.Info($"{Flag}: cast {label} spell={plan.Spell.Id} drew={drew} shouldDraw={shouldDraw} " +
                  $"baseline [{run.Baseline}] peak [{run.Peak}] windup={run.Windup:0.00}s " +
                  $"began={(run.Began >= 0)} released={(run.Released >= 0)} impactEvent={(run.Impact >= 0)}");

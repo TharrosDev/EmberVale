@@ -38,6 +38,9 @@ public sealed partial class CamShots : TimedShots
     private const double SettleSeconds = 0.9;
     private const float SideDistance = 6f;
 
+    /// <summary>Seconds the cast button is given to start a cast before the cast is begun directly.</summary>
+    private const double InputGrace = 0.4;
+
     private enum Gait
     {
         Idle, Walk, Jog, Sprint, StrafeLeft, StrafeRight, Backpedal, Charge, Channel, LookDown, LookUp,
@@ -56,6 +59,9 @@ public sealed partial class CamShots : TimedShots
     private double _stagedAt;
     private double _started = -1;
     private bool _sideView;
+    private bool _castBegunDirectly;
+    private Gait _gait;
+    private StringName[] _held = Array.Empty<StringName>();
     private Sample _sample;
     private Sample _previous;
 
@@ -135,8 +141,11 @@ public sealed partial class CamShots : TimedShots
     {
         _started = -1;
         _failure = null;
+        _held = Array.Empty<StringName>();
+        _castBegunDirectly = false;
+        _gait = gait;
         ShotStage.ReleaseInputs();
-        Then(() => Stage(firstPerson, gait, side));
+        Then(() => ShotStage.Player() != null, () => Stage(firstPerson, gait, side));
 
         // The gait starts between ticks, so the router sees the cast button's edge (TimedShots.NextFrame).
         Then(
@@ -317,20 +326,19 @@ public sealed partial class CamShots : TimedShots
         {
             case Gait.Walk:
             case Gait.Jog:
-                Godot.Input.ActionPress(InputActions.MoveForward);
+                _held = new[] { InputActions.MoveForward };
                 break;
             case Gait.Sprint:
-                Godot.Input.ActionPress(InputActions.MoveForward);
-                Godot.Input.ActionPress(InputActions.Sprint);
+                _held = new[] { InputActions.MoveForward, InputActions.Sprint };
                 break;
             case Gait.StrafeLeft:
-                Godot.Input.ActionPress(InputActions.MoveLeft);
+                _held = new[] { InputActions.MoveLeft };
                 break;
             case Gait.StrafeRight:
-                Godot.Input.ActionPress(InputActions.MoveRight);
+                _held = new[] { InputActions.MoveRight };
                 break;
             case Gait.Backpedal:
-                Godot.Input.ActionPress(InputActions.MoveBack);
+                _held = new[] { InputActions.MoveBack };
                 break;
             case Gait.Charge:
             case Gait.Channel:
@@ -344,7 +352,52 @@ public sealed partial class CamShots : TimedShots
                 break;
         }
 
+        foreach (StringName action in _held)
+        {
+            Godot.Input.ActionPress(action);
+        }
+
         _started = Clock;
+    }
+
+    /// <summary>Keeps the gait's movement actions down. The engine lets go of every pressed action
+    /// when the window loses focus, and a run that someone clicks away from would otherwise stand
+    /// still for the rest of its shots. The cast button is left alone: pressing it again is a new cast.</summary>
+    protected override void Frame(double delta)
+    {
+        if (_started < 0)
+        {
+            return;
+        }
+
+        foreach (StringName action in _held)
+        {
+            if (!Godot.Input.IsActionPressed(action))
+            {
+                Godot.Input.ActionPress(action);
+            }
+        }
+    }
+
+    /// <summary>The cast button did not start the charge or the channel (its edge never reached the
+    /// router): the cast is begun on the spellbook itself. The button is still down, so the router
+    /// goes on updating it as it does a cast it began.</summary>
+    protected override void PhysicsTick(double delta)
+    {
+        if (_castBegunDirectly || _started < 0 || _gait is not (Gait.Charge or Gait.Channel) ||
+            Clock < _started + InputGrace || Casting() is not { SelectionLocked: false } casting)
+        {
+            return;
+        }
+
+        _castBegunDirectly = true;
+        Log.Warn($"{Flag}: '{CurrentShot}': the cast button did not start a cast ({ShotStage.ControlState()}); beginning it directly.");
+        if (!Godot.Input.IsActionPressed(InputActions.Cast))
+        {
+            NextFrame(() => Godot.Input.ActionPress(InputActions.Cast));
+        }
+
+        casting.BeginCast();
     }
 
     // --- what each frame showed --------------------------------------------------------------------
