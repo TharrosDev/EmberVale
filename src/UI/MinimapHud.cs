@@ -24,9 +24,10 @@ namespace Embervale.UI;
 /// </summary>
 public sealed partial class MinimapHud : PanelContainer
 {
-    /// <summary>Side of the plot in pixels. Small enough to stay out of the way, large enough that
-    /// two markers a few metres apart do not merge into one blob.</summary>
-    private const float PlotSize = 186f;
+    /// <summary>Side of the plot before the layout is known. Small enough to stay out of the way,
+    /// large enough that two markers a few metres apart do not merge into one blob; it follows the
+    /// layout width from there (<see cref="HudCoreMetrics.MinimapSide"/>).</summary>
+    private const float PlotSize = HudCoreMetrics.MinimapMin;
 
     /// <summary>How far the minimap sees, in world metres. The plot is scaled so this radius reaches
     /// the edge — so changing one number moves both the zoom and the cull together and they cannot
@@ -44,6 +45,7 @@ public sealed partial class MinimapHud : PanelContainer
     private const float RebuildInterval = 0.5f;
 
     private MapView _view = null!;
+    private GameHud? _hud;
     private MapService? _map;
     private FastTravelService? _travel;
 
@@ -80,13 +82,21 @@ public sealed partial class MinimapHud : PanelContainer
     private bool _contentChanged = true;
     private string? _trackedId;
 
+    // What the minimap last told the HUD about (GameHud.MarkChanged), kept apart from the paint cache.
+    private bool _noted;
+    private string? _notedObjective;
+    private Vector3? _notedWaypoint;
+
     public override void _Ready()
     {
         MouseFilter = MouseFilterEnum.Ignore;
-        StyleBoxFlat frame = UiTheme.PanelStyle();
-        frame.BgColor = UiTheme.Engrave with { A = 0.84f };
-        frame.BorderColor = UiTheme.IronLit with { A = 0.74f };
-        frame.BorderWidthTop = 2;
+
+        // The HUD keyline as a frame: one dark pixel outside, one lighter pixel inside it, and the
+        // plot to the edge. It was a framed panel with a hanging shadow and a heavier top rule, which
+        // is a screen's chrome on a corner widget.
+        var frame = new StyleBoxFlat { BgColor = UiTheme.HudInnerEdge, BorderColor = UiTheme.Keyline };
+        frame.SetBorderWidthAll(1);
+        frame.SetContentMarginAll(2);
         AddThemeStyleboxOverride("panel", frame);
 
         // MouseFilter.Ignore is the whole of "no interaction": MapView's drag, wheel-zoom, pick and
@@ -100,9 +110,7 @@ public sealed partial class MinimapHud : PanelContainer
             TierZoom = MapTiers.DetailZoom,
             CustomMinimumSize = new Vector2(PlotSize, PlotSize),
         };
-        MarginContainer inset = UiTheme.Padding(UiTheme.SpaceXs);
-        inset.AddChild(_view);
-        AddChild(inset);
+        AddChild(_view);
 
         // The one thing north-up owes the player: which way north is. Parented INTO the plot so it
         // draws over MapView's opaque background rather than under it.
@@ -114,9 +122,10 @@ public sealed partial class MinimapHud : PanelContainer
         };
         UiTheme.ApplyType(north, UiTheme.FontRole.Interface, UiTheme.CaptionFontSize);
         north.AddThemeColorOverride("font_color", UiTheme.Accent);
+        UiTheme.HudInk(north);
         north.SetAnchorsPreset(LayoutPreset.CenterTop);
         north.GrowHorizontal = GrowDirection.Both;
-        north.OffsetTop = 2f;
+        north.OffsetTop = UiTheme.Space2xs;
         _view.AddChild(north);
     }
 
@@ -141,9 +150,25 @@ public sealed partial class MinimapHud : PanelContainer
         if (_rebuildTimer <= 0f)
         {
             _rebuildTimer = RebuildInterval;
+            FitToLayout();
+
             // The tracked objective's place is resolved on this cadence too: asking for it rebuilds
             // the quest's objective list, and the pin it rings is only re-selected here anyway.
             _trackedId = TrackedLocationId();
+
+            // A place found, a waypoint set or moved, a different objective: the map has something
+            // new on it, which is when a Dynamic minimap comes up. Walking across it is not news.
+            // The first pass builds everything from nothing and announces nothing.
+            Vector3? mark = _map?.Waypoint;
+            if (_noted && (_trackedId != _notedObjective || mark != _notedWaypoint ||
+                (_map != null && _map.Revision != _builtRevision)))
+            {
+                _hud?.MarkChanged(HudElement.Minimap);
+            }
+
+            _noted = true;
+            _notedObjective = _trackedId;
+            _notedWaypoint = mark;
             RefreshDiscovered();
             RefreshQuestPins();
             RefreshNear(centre);
@@ -181,6 +206,23 @@ public sealed partial class MinimapHud : PanelContainer
         _view.Waypoint = waypoint;
         _view.ObjectiveId = objective;
         _view.QueueRedraw();
+    }
+
+    /// <summary>Sizes the plot for the width the HUD lays out in, on the rebuild cadence: the layout
+    /// changes with the window, the HUD scale and the safe zone, none of them per frame.</summary>
+    private void FitToLayout()
+    {
+        _hud ??= GameHud.Of(this);
+        if (_hud is not { LayoutWidth: > 0f } hud)
+        {
+            return;
+        }
+
+        float side = HudCoreMetrics.MinimapSide(hud.LayoutWidth);
+        if (_view.CustomMinimumSize.X != side)
+        {
+            _view.CustomMinimumSize = new Vector2(side, side);
+        }
     }
 
     /// <summary>Pixels per metre that puts <see cref="RadiusMetres"/> at the edge of the plot.

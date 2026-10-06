@@ -46,8 +46,6 @@ public sealed partial class CompassStrip : Control
     /// <summary>±90° visible either side of straight ahead.</summary>
     private const float Fov = Mathf.Pi / 2f;
 
-    private const float Width = 460f;
-
     // The four bands, top to bottom. Everything drawn here lands in exactly one of them, which is
     // the whole rule that keeps the widget legible.
     private const float MarkTop = 0f;        // centre mark + destination chevrons: y 0..9
@@ -55,7 +53,7 @@ public sealed partial class CompassStrip : Control
     private const float RuleY = 32f;          // the horizon
     private const float DistanceBaseline = 45f; // destination distance, hanging below
 
-    private const float Height = 50f;
+    private const float Height = HudCoreMetrics.CompassHeight;
 
     private const float ObjectiveResolveInterval = 0.4f;
 
@@ -72,6 +70,14 @@ public sealed partial class CompassStrip : Control
     };
 
     private IEntity? _player;
+    private GameHud? _hud;
+
+    // What the strip last brought a Dynamic compass up for (GameHud.MarkChanged): the heading it was
+    // facing and the waypoint it had. Kept apart from the redraw cache below, which moves on a tenth
+    // of a degree; this moves on a turn worth noticing (HudChangeRules).
+    private bool _noted;
+    private float _notedHeading;
+    private Vector3? _notedWaypoint;
 
     // ponytail: the objective target is re-resolved on a timer and cached, not searched every frame.
     private Vector3? _objectiveTarget;
@@ -160,8 +166,11 @@ public sealed partial class CompassStrip : Control
     public override void _Ready()
     {
         MouseFilter = MouseFilterEnum.Ignore;
-        CustomMinimumSize = new Vector2(Width, Height);
+        CustomMinimumSize = new Vector2(HudMetrics.CompassMin, Height);
         Size = CustomMinimumSize;
+
+        // Everything here is drawn from Size, so a new width only has to ask for a repaint.
+        Resized += OnResized;
 
         // The rule and the centre wedge. Behind the parent, so the letters and destination marks
         // still draw over them exactly as they did when all of it was one pass.
@@ -171,12 +180,38 @@ public sealed partial class CompassStrip : Control
         AddChild(_fixed);
     }
 
+    private void OnResized()
+    {
+        _stale = true;
+        _fixed?.QueueRedraw();
+    }
+
+    /// <summary>The strip's width for the layout it sits in (<see cref="HudMetrics.CompassWidth"/>):
+    /// its old 460 at 1280 wide and below, wider on a wide screen. Asked on the objective cadence,
+    /// since the layout changes with the window and the HUD options and never per frame.</summary>
+    private void FitToLayout()
+    {
+        _hud ??= GameHud.Of(this);
+        if (_hud is not { LayoutWidth: > 0f } hud)
+        {
+            return;
+        }
+
+        float width = HudMetrics.CompassWidth(hud.LayoutWidth);
+        if (CustomMinimumSize.X != width)
+        {
+            CustomMinimumSize = new Vector2(width, Height);
+        }
+    }
+
     public override void _Process(double delta)
     {
         _resolveTimer -= (float)delta;
         if (_resolveTimer <= 0f)
         {
             _resolveTimer = ObjectiveResolveInterval;
+            FitToLayout();
+
             Vector3? before = _objectiveTarget;
             CompassMarkKind kindBefore = _markKind;
             CompassMarkState stateBefore = _markState;
@@ -186,6 +221,36 @@ public sealed partial class CompassStrip : Control
                 realmBefore != _portalRegionName)
             {
                 _stale = true;
+            }
+
+            // A destination that appeared, went or jumped, and a waypoint set, moved or cleared,
+            // bring a Dynamic compass up. A target the player is merely walking toward does not.
+            Vector3 was = before ?? Vector3.Zero;
+            Vector3 now = _objectiveTarget ?? Vector3.Zero;
+            Vector3? waypoint = CurrentWaypoint();
+            if (_noted && (waypoint != _notedWaypoint || realmBefore != _portalRegionName ||
+                HudChangeRules.TargetMoved(before != null, was.X, was.Z, _objectiveTarget != null, now.X, now.Z)))
+            {
+                _hud?.MarkChanged(HudElement.Compass);
+            }
+
+            _notedWaypoint = waypoint;
+        }
+
+        // So does turning round: the strip is hidden under that mode, so this cannot wait for a
+        // repaint to notice. One basis read a frame, and nothing written unless the turn is real.
+        if (_player?.Body is { } facing && IsInstanceValid(facing))
+        {
+            float heading = HeadingOf(facing);
+            if (!_noted)
+            {
+                _noted = true;
+                _notedHeading = heading;
+            }
+            else if (HudChangeRules.HeadingMoved(_notedHeading, heading))
+            {
+                _notedHeading = heading;
+                _hud?.MarkChanged(HudElement.Compass);
             }
         }
 
@@ -301,6 +366,9 @@ public sealed partial class CompassStrip : Control
         {
             float x = i * step;
             float alpha = EdgeFade(x + (step * 0.5f), halfWidth);
+
+            // The keyline first, one pixel under the rule: the hairline alone is lost on a pale sky.
+            _fixed.DrawRect(new Rect2(x, RuleY + 1f, step + 1f, 1f), new Color(UiTheme.Keyline, UiTheme.Keyline.A * alpha));
             _fixed.DrawRect(new Rect2(x, RuleY, step + 1f, 1f), new Color(UiTheme.Brass, 0.55f * alpha));
         }
     }
@@ -313,7 +381,19 @@ public sealed partial class CompassStrip : Control
         _three[0] = new Vector2(centreX - 5f, RuleY + 6f);
         _three[1] = new Vector2(centreX + 5f, RuleY + 6f);
         _three[2] = new Vector2(centreX, RuleY - 1f);
+        Outline(_fixed, _three);
         _fixed.DrawColoredPolygon(_three, mark);
+    }
+
+    /// <summary>The HUD keyline round a filled mark: the closed outline, stroked dark and wide enough
+    /// that a pixel of it shows outside the fill drawn over it next.</summary>
+    private void Outline(CanvasItem on, Vector2[] triangle, float alpha = 1f)
+    {
+        _four[0] = triangle[0];
+        _four[1] = triangle[1];
+        _four[2] = triangle[2];
+        _four[3] = triangle[0];
+        on.DrawPolyline(_four, new Color(UiTheme.Keyline, UiTheme.Keyline.A * alpha), 3f);
     }
 
     /// <summary>The eight headings. N is ember and the true cardinals are bone at body size; the
@@ -389,6 +469,7 @@ public sealed partial class CompassStrip : Control
                 _three[0] = top;
                 _three[1] = tip;
                 _three[2] = bottom;
+                DrawPolyline(_three, UiTheme.Keyline, 4f);
                 DrawPolyline(_three, new Color(mark, hollow ? 0.6f : 0.9f), 2f);
             }
             else
@@ -396,6 +477,7 @@ public sealed partial class CompassStrip : Control
                 _three[0] = tip;
                 _three[1] = top;
                 _three[2] = bottom;
+                Outline(this, _three);
                 DrawColoredPolygon(_three, new Color(mark, 0.85f));
             }
             return;
@@ -411,6 +493,7 @@ public sealed partial class CompassStrip : Control
             _five[2] = new Vector2(x, MarkTop + 10f);
             _five[3] = new Vector2(x - 6f, MarkTop + 5f);
             _five[4] = new Vector2(x, MarkTop);
+            DrawPolyline(_five, new Color(UiTheme.Keyline, UiTheme.Keyline.A * fade), 4f);
             DrawPolyline(_five, new Color(mark, fade), 2f);
         }
         else if (hollow)
@@ -420,6 +503,7 @@ public sealed partial class CompassStrip : Control
             _four[1] = new Vector2(x + 6f, MarkTop);
             _four[2] = new Vector2(x, MarkTop + 9f);
             _four[3] = new Vector2(x - 6f, MarkTop);
+            DrawPolyline(_four, new Color(UiTheme.Keyline, UiTheme.Keyline.A * fade), 4f);
             DrawPolyline(_four, new Color(mark, fade * 0.7f), 2f);
         }
         else
@@ -427,6 +511,7 @@ public sealed partial class CompassStrip : Control
             _three[0] = new Vector2(x - 6f, MarkTop);
             _three[1] = new Vector2(x + 6f, MarkTop);
             _three[2] = new Vector2(x, MarkTop + 9f);
+            Outline(this, _three, fade);
             DrawColoredPolygon(_three, new Color(mark, fade));
         }
 
@@ -468,16 +553,16 @@ public sealed partial class CompassStrip : Control
             : Mathf.Clamp((1f - distance) / fadeZone, 0f, 1f);
     }
 
-    /// <summary>A centred, shadowed label on a given baseline, from text measured once by the caller.
-    /// The shadow is not decoration: the strip has no panel behind it now, so a letter crossing a
-    /// bright sky is otherwise invisible.</summary>
+    /// <summary>A centred, inked label on a given baseline, from text measured once by the caller.
+    /// The ink is not decoration: the strip has no panel behind it, so a letter crossing a bright sky
+    /// is otherwise invisible. It is the same keyline the rest of the HUD's text carries.</summary>
     private void DrawMeasuredLabel(
         Font font, string text, float width, float x, Color colour, int size, float baselineY)
     {
         var pos = new Vector2(x - (width / 2f), baselineY);
 
-        DrawString(font, pos + Vector2.One, text, HorizontalAlignment.Left, -1f, size,
-            new Color(UiTheme.Engrave, colour.A));
+        DrawStringOutline(font, pos, text, HorizontalAlignment.Left, -1f, size, UiTheme.HudInkSize,
+            new Color(UiTheme.Keyline, UiTheme.Keyline.A * colour.A));
         DrawString(font, pos, text, HorizontalAlignment.Left, -1f, size, colour);
     }
 
