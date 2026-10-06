@@ -31,6 +31,7 @@ public static class UiLive
     public static readonly StringName MenuTabNext = Core.GameInput.MenuTabNext;
     public static readonly StringName MenuSubPrev = Core.GameInput.MenuSubPrev;
     public static readonly StringName MenuSubNext = Core.GameInput.MenuSubNext;
+    public static readonly StringName HudRecall = Core.GameInput.HudRecall;
 
     /// <summary>Sets the control's <c>font_color</c> override unless it already is <paramref name="color"/>.</summary>
     public static void FontColor(Control control, Color color)

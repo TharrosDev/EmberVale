@@ -99,4 +99,21 @@ public class HudMetricsTests
         Assert.Equal(1f - safeZone, left + (right - left) * scale, 4);
         Assert.Equal(1f - safeZone, top + (bottom - top) * scale, 4);
     }
+
+    [Theory]
+    [InlineData(1f, 0f, 160f)]
+    [InlineData(1.5f, 0f, 240f)]
+    [InlineData(0.75f, 0f, 120f)]
+    [InlineData(1f, 0.1f, 232f)]
+    [InlineData(1.5f, 0.05f, 276f)]
+    public void AClearanceInHudUnits_LandsOnTheScreenWhereTheScaledHudDrawsIt(float scale, float safeZone, float expected)
+    {
+        const float Height = 720f;
+        Assert.Equal(expected, HudMetrics.ScreenClearance(160f, Height, scale, safeZone), 3);
+
+        // The same line through the scaled rect: its bottom edge on screen, less the scaled clearance.
+        (_, float top, _, float bottom) = HudMetrics.ScaledAnchors(scale, safeZone);
+        float bottomOnScreen = (top + (bottom - top) * scale) * Height;
+        Assert.Equal(Height - bottomOnScreen + 160f * scale, HudMetrics.ScreenClearance(160f, Height, scale, safeZone), 2);
+    }
 }

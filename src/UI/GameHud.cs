@@ -104,11 +104,28 @@ public partial class GameHud : CanvasLayer
     // Both edges are global rects, which carry the HUD scale and the safe-zone offset of the
     // layout's scaled parent, so they stay screen coordinates whatever the HUD options are.
 
+    // A hidden slot keeps its rect, so an element the player's options have taken off the screen
+    // answers with the edge it grows from: the toasts are not laid out around something invisible.
+
     /// <summary>Bottom edge of the top-right stack (the tracker), so the toast feed can start below it.</summary>
-    public float TopRightBottom => _layout.TopRight.GetGlobalRect().End.Y;
+    public float TopRightBottom
+    {
+        get
+        {
+            Rect2 rect = _layout.TopRight.GetGlobalRect();
+            return Shows(HudElement.QuestTracker) ? rect.End.Y : rect.Position.Y;
+        }
+    }
 
     /// <summary>Top edge of the bottom-right stack (the minimap), so the toast feed can stop above it.</summary>
-    public float BottomRightTop => _layout.BottomRight.GetGlobalRect().Position.Y;
+    public float BottomRightTop
+    {
+        get
+        {
+            Rect2 rect = _layout.BottomRight.GetGlobalRect();
+            return Shows(HudElement.Minimap) ? rect.Position.Y : rect.End.Y;
+        }
+    }
 
     public void SetClock(WorldClock? clock) => _clock = clock;
 

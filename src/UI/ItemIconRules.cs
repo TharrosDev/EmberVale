@@ -199,7 +199,7 @@ public static class ItemIconRules
             JsonElement root = document.RootElement;
             if (root.ValueKind != JsonValueKind.Object ||
                 !root.TryGetProperty("cell", out JsonElement cellElement) ||
-                !cellElement.TryGetDouble(out double cell) || cell < 1 ||
+                !TryNumber(cellElement, out double cell) || cell < 1 ||
                 !root.TryGetProperty("keys", out JsonElement keys) || keys.ValueKind != JsonValueKind.Object)
             {
                 return (0, cells);
@@ -209,7 +209,7 @@ public static class ItemIconRules
             {
                 JsonElement at = entry.Value;
                 if (at.ValueKind == JsonValueKind.Array && at.GetArrayLength() == 2 &&
-                    at[0].TryGetDouble(out double column) && at[1].TryGetDouble(out double row) &&
+                    TryNumber(at[0], out double column) && TryNumber(at[1], out double row) &&
                     column >= 0 && row >= 0)
                 {
                     cells[entry.Name] = ((int)column, (int)row);
@@ -223,6 +223,13 @@ public static class ItemIconRules
             cells.Clear();
             return (0, cells);
         }
+    }
+
+    // TryGetDouble throws on anything that is not a JSON number, so the kind is checked first.
+    private static bool TryNumber(JsonElement element, out double value)
+    {
+        value = 0;
+        return element.ValueKind == JsonValueKind.Number && element.TryGetDouble(out value);
     }
 
     private static bool EndsOnBoundary(string name, string suffix)

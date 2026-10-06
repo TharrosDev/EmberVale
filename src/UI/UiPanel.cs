@@ -45,13 +45,14 @@ public abstract partial class UiPanel : CanvasLayer
     /// bottom gutter beside the shell (<see cref="UiLegend"/>). Read after every rebuild, so a
     /// panel may answer differently per tab or selection. The default is the one thing every modal
     /// panel shares: cancel closes it. An override usually adds its own entries in front of
-    /// <c>base.Legend</c>.
+    /// <c>base.Legend</c>. A non-modal panel has none by default: it is up over live play, where
+    /// the bottom gutter belongs to the HUD.
     /// </summary>
     protected virtual IReadOnlyList<LegendEntry> Legend
     {
         get
         {
-            if (!CloseOnCancel)
+            if (!Modal || !CloseOnCancel)
             {
                 return Array.Empty<LegendEntry>();
             }
@@ -348,7 +349,8 @@ public abstract partial class UiPanel : CanvasLayer
             return;
         }
 
-        if (PollMenuSteps())
+        // Hub and sub-tab steps belong to blocking screens; a non-modal panel is up during play.
+        if (Modal && PollMenuSteps())
         {
             return;
         }

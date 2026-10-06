@@ -124,14 +124,14 @@ public class ItemIconRulesTests
     public void TheAtlasIndex_ReadsItsCellsAndSurvivesAnythingElse()
     {
         (int cell, Dictionary<string, (int Column, int Row)> cells) = ItemIconRules.ParseAtlas(
-            "{\"cell\": 128, \"columns\": 10, \"keys\": {\"sword\": [0, 0], \"ingot\": [3, 2], \"bad\": [1], \"worse\": \"x\"}}");
+            "{\"cell\": 128, \"columns\": 10, \"keys\": {\"sword\": [0, 0], \"ingot\": [3, 2], \"bad\": [1], \"worse\": \"x\", \"text\": [\"3\", 2], \"null\": [1, null]}}");
 
         Assert.Equal(128, cell);
         Assert.Equal(2, cells.Count);
         Assert.Equal((0, 0), cells["sword"]);
         Assert.Equal((3, 2), cells["ingot"]);
 
-        foreach (string broken in new[] { "", "   ", "not json", "[]", "{}", "{\"cell\": 0, \"keys\": {}}", "{\"cell\": 128}" })
+        foreach (string broken in new[] { "", "   ", "not json", "[]", "{}", "{\"cell\": 0, \"keys\": {}}", "{\"cell\": 128}", "{\"cell\": \"128\", \"keys\": {\"sword\": [0, 0]}}" })
         {
             (int none, Dictionary<string, (int Column, int Row)> empty) = ItemIconRules.ParseAtlas(broken);
             Assert.Equal(0, none);

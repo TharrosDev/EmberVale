@@ -24,7 +24,9 @@ public sealed partial class CombatShots : ShotHarness
 
     private EnemyEntity? _subject;
 
-    protected override string Flag => "--combat-shots";
+    // Answers to both spellings; the artifact folder and the log lines follow the one that was typed.
+    protected override string Flag =>
+        System.Array.IndexOf(OS.GetCmdlineUserArgs(), "--combatshots") >= 0 ? "--combatshots" : "--combat-shots";
 
     protected override string OutputDir => "user://combat_shots";
 
@@ -151,6 +153,6 @@ public sealed partial class CombatShots : ShotHarness
         }
 
         lockOn.ToggleNearest();
-        Core.Diagnostics.Log.Info($"--combat-shots: lock after toggle: target={lockOn.TargetNode?.Name ?? "none"}");
+        Core.Diagnostics.Log.Info($"{Flag}: lock after toggle: target={lockOn.TargetNode?.Name ?? "none"}");
     }
 }

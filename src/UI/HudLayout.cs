@@ -31,7 +31,9 @@ public partial class HudLayout : Control
 
     /// <summary>Clear height from the screen's bottom edge to the top of the hotbar block plus a
     /// <see cref="UiTheme.HudGap"/>: anything centred above the hotbar (prompt, tutorial hint, the
-    /// placement strip) sits at or above this line so it never touches the slots.</summary>
+    /// placement strip) sits at or above this line so it never touches the slots. In the scaled
+    /// HUD's own units: anything outside <see cref="Scaled"/> converts with
+    /// <see cref="HudMetrics.ScreenClearance"/>.</summary>
     public const int BottomClearance = 160;
 
     /// <summary>How far above the bottom edge the bottom-centre slot floats (prompt near the

@@ -153,7 +153,7 @@ public sealed partial class GameShellController : Node
             : shrineShots ? "--shrine-shots"
             : guildShots ? "--guild-shots"
             : enemyShots ? "--enemy-shots"
-            : combatShots ? "--combat-shots"
+            : combatShots ? (HasFlag("--combatshots") ? "--combatshots" : "--combat-shots")
             : lookShots ? "--look-shots"
             : uiShots ? "--uishots"
             : metaShots ? "--metashots"

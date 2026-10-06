@@ -52,6 +52,14 @@ public static class HudMetrics
         return (safeZone, safeZone, far, far);
     }
 
+    /// <summary>
+    /// How far above the screen's bottom edge a line sits that the scaled HUD draws
+    /// <paramref name="clearance"/> of its own units above its bottom edge. Something outside the
+    /// scaled HUD that has to clear the hotbar (the placement strip) anchors here.
+    /// </summary>
+    public static float ScreenClearance(float clearance, float viewportHeight, float hudScale, float safeZone) =>
+        clearance * (hudScale > 0f ? hudScale : 1f) + safeZone * viewportHeight;
+
     private static float Scaled(float layoutWidth, float atReference, float max) =>
         Clamp(atReference * layoutWidth / ReferenceWidth, atReference, max);
 

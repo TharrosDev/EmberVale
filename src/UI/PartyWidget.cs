@@ -45,6 +45,19 @@ public partial class PartyWidget : VBoxContainer
     private VBoxContainer _list = null!;
     private CompanionRoster? _roster;
     private bool _dirty = true;
+    private bool _allowed = true;
+
+    /// <summary>Whether the player's HUD options let the strip show (<c>GameHud</c> sets it). The
+    /// strip still hides itself while the party is empty.</summary>
+    public bool Allowed
+    {
+        get => _allowed;
+        set
+        {
+            _allowed = value;
+            Visible = value && _rows.Count > 0;
+        }
+    }
 
     public override void _Ready()
     {
@@ -103,7 +116,7 @@ public partial class PartyWidget : VBoxContainer
             Rebuild(roster);
         }
 
-        Visible = _rows.Count > 0;
+        Visible = _allowed && _rows.Count > 0;
         foreach (Row row in _rows)
         {
             if (!roster.TryGet(row.CompanionId, out CompanionEntity companion))

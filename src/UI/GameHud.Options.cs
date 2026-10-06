@@ -146,7 +146,7 @@ public partial class GameHud
             || _bossFrame.Visible
             || (_player is Node node && IsInstanceValid(node)
                 && _player.GetComponent<LockOnComponent>() is { Target: not null });
-        bool recall = InputMap.HasAction(GameInput.HudRecall) && Input.IsActionPressed(GameInput.HudRecall);
+        bool recall = Input.IsActionPressed(UiLive.HudRecall);
         bool menuOpen = _mode == HudMode.Menu;
         bool belowMax = VitalsBelowMax();
 
@@ -195,7 +195,8 @@ public partial class GameHud
     ///
     /// A slot that holds one element takes that element's answer directly. The compass, the target
     /// plate and the prompt share a slot with other widgets and write their own <c>Visible</c>, so
-    /// they read <see cref="Shows"/> where they do it.
+    /// they read <see cref="Shows"/> where they do it. The party strip shares the vitals' slot and
+    /// also hides itself, so it is handed the answer (<see cref="PartyWidget.Allowed"/>).
     /// </summary>
     private void ApplyElementVisibility()
     {
@@ -206,6 +207,11 @@ public partial class GameHud
         // vitals, spell, status, party
         _layout.BottomLeft.Visible = vitals && (Shows(HudElement.Vitals) || Shows(HudElement.Party));
         _vitalsPanel.Visible = Shows(HudElement.Vitals);
+        if (_party != null)
+        {
+            _party.Allowed = Shows(HudElement.Party);
+        }
+
         // The hotbar rides with the vitals rather than the rest: assigning a quick-use slot is done
         // from inside the inventory (its own 1–5 buttons), and doing that with the bar you are
         // assigning to hidden is working blind.
