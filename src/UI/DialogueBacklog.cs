@@ -23,9 +23,22 @@ public sealed class DialogueBacklog
 
     private readonly List<BacklogEntry> _entries = new();
 
+    // Choices taken in this conversation, by the panel's own key for a choice.
+    private readonly HashSet<string> _chosen = new();
+
     public int Count => _entries.Count;
 
-    public void Clear() => _entries.Clear();
+    public void Clear()
+    {
+        _entries.Clear();
+        _chosen.Clear();
+    }
+
+    /// <summary>Remembers that a choice was taken, so the panel can mark it as already asked if the
+    /// conversation comes back round to it.</summary>
+    public void MarkChosen(string choiceKey) => _chosen.Add(choiceKey);
+
+    public bool WasChosen(string choiceKey) => _chosen.Contains(choiceKey);
 
     /// <summary>Records a node's text. The same text twice in a row (a rebuild of the same node) is one line.</summary>
     public void AddLine(string text)
