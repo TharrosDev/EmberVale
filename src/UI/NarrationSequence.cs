@@ -24,7 +24,7 @@ namespace Embervale.UI;
 public abstract partial class NarrationSequence : CanvasLayer
 {
     /// <summary>How much of the hint shows while nothing is held: it must never compete with the card.</summary>
-    private const float HintAlpha = 0.55f;
+    private const float HintAlpha = 0.8f;
 
     // The world owner of the pause prompt. The sequence itself is registered as a cinematic lock
     // that leaves the world running; pausing it has to hold the world too, under its own name.
@@ -359,7 +359,9 @@ public abstract partial class NarrationSequence : CanvasLayer
 
     private static Label HintLabel(string text)
     {
-        Label label = UiTheme.Caption(text, UiTheme.Dim);
+        // Bone with a keyline, not the dim tone: the row is already held back by its alpha, and
+        // over an ending's painting the dim tone at that alpha could not be read.
+        Label label = UiTheme.HudInk(UiTheme.Caption(text, UiTheme.Text));
         label.MouseFilter = Control.MouseFilterEnum.Ignore;
         label.VerticalAlignment = VerticalAlignment.Center;
         return label;
@@ -382,10 +384,41 @@ public abstract partial class NarrationSequence : CanvasLayer
         _painting.SetAnchorsPreset(Control.LayoutPreset.FullRect);
         AddChild(_painting);
 
-        _wash = UiTheme.Scrim(0.55f);
+        _wash = UiTheme.Scrim(UiTheme.HighContrast ? 0.9f : UiTheme.NarrationWash);
         _wash.MouseFilter = Control.MouseFilterEnum.Ignore;
         _wash.Visible = false;
         AddChild(_wash);
+
+        // The wash gathers behind the card's text and again under the hint row: one soft
+        // gradient down the view, no box, and the painting keeps its top and its lower middle.
+        // A child of the wash, so it comes and goes with it.
+        float band = UiTheme.HighContrast ? 0.97f : UiTheme.NarrationBand;
+        Color clear = UiTheme.ScrimBg with { A = 0f };
+        var bands = new TextureRect
+        {
+            Texture = new GradientTexture2D
+            {
+                Gradient = new Gradient
+                {
+                    Offsets = new[] { 0f, 0.16f, 0.34f, 0.66f, 0.82f, 1f },
+                    Colors = new[]
+                    {
+                        clear, clear,
+                        UiTheme.ScrimBg with { A = band }, UiTheme.ScrimBg with { A = band },
+                        UiTheme.ScrimBg with { A = band * 0.35f }, UiTheme.ScrimBg with { A = band * 0.9f },
+                    },
+                },
+                Width = 4,
+                Height = 256,
+                FillFrom = Vector2.Zero,
+                FillTo = Vector2.Down,
+            },
+            ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
+            StretchMode = TextureRect.StretchModeEnum.Scale,
+            MouseFilter = Control.MouseFilterEnum.Ignore,
+        };
+        bands.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+        _wash.AddChild(bands);
 
         var centre = new CenterContainer();
         centre.SetAnchorsPreset(Control.LayoutPreset.FullRect);

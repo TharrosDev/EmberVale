@@ -32,8 +32,17 @@ public partial class CreditsScreen : CanvasLayer
         (null, new[] { "ending.credits.3" }),
     };
 
+    /// <summary>The band at the foot of the view the legend keeps to itself: the roll's window
+    /// stops above it.</summary>
+    private const float LegendBand = UiChromeRules.LegendHeight + UiChromeRules.ChromeMargin + UiTheme.SpaceSm;
+
+    /// <summary>How far in from the top and bottom of its window the roll fades out.</summary>
+    private const float EdgeFade = UiTheme.SpaceXl * 2f;
+
     private System.Action? _onBack;
     private Control _root = null!;
+    private TextureRect _window = null!;
+    private Gradient _windowFade = null!;
     private VBoxContainer _roll = null!;
     private float _offset;
     private float _wheel;
@@ -83,12 +92,44 @@ public partial class CreditsScreen : CanvasLayer
         dim.MouseFilter = Control.MouseFilterEnum.Ignore;
         _root.AddChild(dim);
 
+        // The roll's window: the view less the legend's band. It draws nothing itself; its
+        // texture is the mask its children are cut by, clear at the top and bottom edges, so a
+        // line fades in as it rises out of the band and fades out as it reaches the top.
+        _windowFade = new Gradient
+        {
+            Offsets = new[] { 0f, 0.1f, 0.9f, 1f },
+            Colors = new[]
+            {
+                Colors.White with { A = 0f }, Colors.White, Colors.White, Colors.White with { A = 0f },
+            },
+        };
+        _window = new TextureRect
+        {
+            Texture = new GradientTexture2D
+            {
+                Gradient = _windowFade,
+                Width = 4,
+                Height = 256,
+                FillFrom = Vector2.Zero,
+                FillTo = Vector2.Down,
+            },
+            ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
+            StretchMode = TextureRect.StretchModeEnum.Scale,
+            ClipChildren = CanvasItem.ClipChildrenMode.Only,
+            MouseFilter = Control.MouseFilterEnum.Ignore,
+        };
+        _window.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+        _window.OffsetBottom = -LegendBand;
+        _window.Resized += FitWindowFade;
+        _root.AddChild(_window);
+
         // Placed by hand each frame (its position is the scroll), so not in a container.
         // Hidden until that first placement: for one frame it would sit in the top-left corner.
         _roll = new VBoxContainer { MouseFilter = Control.MouseFilterEnum.Ignore, Visible = false };
         _roll.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
-        _root.AddChild(_roll);
+        _window.AddChild(_roll);
         BuildRoll();
+        FitWindowFade();
 
         // For a pointer only: with nothing focusable on the screen, accept is free to mean "faster".
         Button back = UiTheme.Action(Loc.T("common.back"), UiCue.Back);
@@ -111,6 +152,16 @@ public partial class CreditsScreen : CanvasLayer
                 new LegendEntry("ui_up", Loc.T("credits.legend.scroll"), "ui_down"),
                 new LegendEntry("ui_cancel", Loc.T("common.back")),
             });
+    }
+
+    /// <summary>Height of the roll's window: the view less the legend's band.</summary>
+    private float WindowHeight => Mathf.Max(1f, _root.Size.Y - LegendBand);
+
+    /// <summary>Keeps the fade at the window's edges the same number of px at any height.</summary>
+    private void FitWindowFade()
+    {
+        float edge = Mathf.Clamp(EdgeFade / WindowHeight, 0.02f, 0.3f);
+        _windowFade.Offsets = new[] { 0f, edge, 1f - edge, 1f };
     }
 
     private void BuildRoll()
@@ -184,7 +235,7 @@ public partial class CreditsScreen : CanvasLayer
             return;
         }
 
-        Vector2 view = _root.Size;
+        var view = new Vector2(_root.Size.X, WindowHeight);
         float width = Mathf.Min(UiTheme.CreditsColumnWidth, view.X - (UiTheme.SpaceLg * 2f));
         float start = ShellFrontRules.CreditsStart(view.Y);
         float end = ShellFrontRules.CreditsEnd(_roll.GetCombinedMinimumSize().Y, view.Y);
@@ -239,8 +290,7 @@ public partial class CreditsScreen : CanvasLayer
     {
         _heldForCapture = true;
         _started = true;
-        float viewHeight = _root.Size.Y;
-        float start = ShellFrontRules.CreditsStart(viewHeight);
+        float start = ShellFrontRules.CreditsStart(WindowHeight);
         float last = Mathf.Max(start, _roll.GetCombinedMinimumSize().Y);
         _offset = Mathf.Lerp(start, last, Mathf.Clamp(fraction, 0f, 1f));
         UiFx.FadeIn(_root, 0f);

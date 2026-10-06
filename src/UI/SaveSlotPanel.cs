@@ -48,6 +48,11 @@ public partial class SaveSlotPanel : CanvasLayer
     /// photographs half a second later is mid-hold on any machine.</summary>
     private const float CaptureHoldSeconds = 2f;
 
+    /// <summary>The painting to keep behind the sheet: the title's, when the title opened it.
+    /// Null (the pause menu) leaves the sheet on its plain scrim over the world. Set before the
+    /// panel enters the tree.</summary>
+    public Texture2D? Backdrop { get; set; }
+
     private Intent _mode;
     private Action<string>? _onChosen;
     private Action? _onBack;
@@ -159,6 +164,7 @@ public partial class SaveSlotPanel : CanvasLayer
         // the height it is given (a sheet centres its column by default) so the list can scroll.
         (Control root, VBoxContainer col) = UiTheme.Sheet(width, 0.92f, centred: true);
         col.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
+        UiTheme.SheetOverPainting(root, Backdrop);
         AddChild(root);
 
         string titleKey = _mode switch
@@ -581,7 +587,7 @@ public partial class SaveSlotPanel : CanvasLayer
         bool filled = info.Health != SaveHealth.Missing;
         string label = info.DisplayName.Length > 0 ? info.DisplayName : SlotLabel(slot);
         var box = new HBoxContainer { SizeFlagsVertical = Control.SizeFlags.ShrinkCenter };
-        box.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
+        box.AddThemeConstantOverride("separation", UiTheme.SpaceMd);
 
         Button primary;
         if (_mode == Intent.Load)
@@ -654,13 +660,22 @@ public partial class SaveSlotPanel : CanvasLayer
         {
             ring = UiFx.HoldRing(onConfirmed);
             ring.Attach(button);
+            ring.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
 
             // A button that loses focus mid-press never reports the release (it goes to whatever
             // took focus), and the ring would fill on its own and destroy the save.
             button.FocusExited += ring.Release;
             button.TooltipText = Loc.T("slots.hold_hint");
             button.SetMeta(HoldMeta, true);
-            box.AddChild(ring);
+
+            // The ring and its button are one group, closer to each other than to the button
+            // beside them, so the ring between Load and Delete reads as Delete's.
+            var held = new HBoxContainer { SizeFlagsVertical = Control.SizeFlags.ShrinkCenter };
+            held.AddThemeConstantOverride("separation", UiTheme.Space2xs);
+            held.AddChild(ring);
+            held.AddChild(button);
+            box.AddChild(held);
+            return button;
         }
 
         box.AddChild(button);

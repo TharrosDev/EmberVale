@@ -49,6 +49,9 @@ public partial class MainMenu : CanvasLayer
     private string? _noticeText;
     private bool _firstRun;
     private bool _canContinue;
+    private Viewport? _viewport;
+    private Vector2 _builtFor;
+    private bool _resizeQueued;
 
     // The newest save's act, kept against that save so its file is read once and not per visit.
     // Static: every return to the title is a new menu, and the save is the same one.
@@ -76,6 +79,11 @@ public partial class MainMenu : CanvasLayer
         // Whenever a sub-screen (slots, creator, settings, credits) hands the screen back.
         VisibilityChanged += OnVisibilityChanged;
 
+        // What fits depends on the view: a short one drops the seal and the subtitle. The view can
+        // change under the menu (the window, or the UI scale landing after the first build).
+        _viewport = GetViewport();
+        _viewport.SizeChanged += OnViewResized;
+
         _firstRun = FirstRunSetup.ConsumeWanted();
         if (BootSplash.Wanted)
         {
@@ -85,6 +93,49 @@ public partial class MainMenu : CanvasLayer
         else
         {
             Present();
+        }
+    }
+
+    public override void _ExitTree()
+    {
+        if (_viewport != null)
+        {
+            _viewport.SizeChanged -= OnViewResized;
+        }
+    }
+
+    private void OnViewResized()
+    {
+        if (!Visible || _resizeQueued)
+        {
+            return;
+        }
+
+        // Once, at the end of the frame: a window being dragged reports a size every frame.
+        _resizeQueued = true;
+        Callable.From(RebuildForResize).CallDeferred();
+    }
+
+    private void RebuildForResize()
+    {
+        if (!IsInstanceValid(this))
+        {
+            return;
+        }
+
+        _resizeQueued = false;
+        if (!IsInsideTree() || !Visible || GetViewport().GetVisibleRect().Size == _builtFor)
+        {
+            return;
+        }
+
+        // The view changed under a menu the player is on: an open quit prompt stays up with its
+        // focus (it lays itself out), and otherwise focus goes back to the entry it was on.
+        int[]? focused = UiFocus.PathOf(_entries);
+        BuildSheet(keepPrompt: true);
+        if (_prompt == null)
+        {
+            UiFocus.Restore(_entries, focused ?? System.Array.Empty<int>());
         }
     }
 
@@ -149,7 +200,7 @@ public partial class MainMenu : CanvasLayer
         return version;
     }
 
-    private void BuildSheet()
+    private void BuildSheet(bool keepPrompt = false)
     {
         if (_sheet != null)
         {
@@ -159,7 +210,10 @@ public partial class MainMenu : CanvasLayer
             _sheet.QueueFree();
         }
 
-        ClosePrompt(restoreFocus: false);
+        if (!keepPrompt)
+        {
+            ClosePrompt(restoreFocus: false);
+        }
 
         // Continue needs a save it can read a header from; the browser only needs a file to exist,
         // because a save too damaged to list is exactly the one the player has to be shown.
@@ -172,6 +226,7 @@ public partial class MainMenu : CanvasLayer
         }
 
         Vector2 view = GetViewport().GetVisibleRect().Size;
+        _builtFor = view;
         bool compact = view.Y < UiTheme.TitleShortHeight;
         float width = Mathf.Min(UiTheme.TitleSheetWidth, view.X - (UiChromeRules.Gutter(view.X) * 2f));
 
@@ -197,6 +252,10 @@ public partial class MainMenu : CanvasLayer
 
         _legend = new UiLegend();
         AddChild(_legend);
+        if (_prompt != null)
+        {
+            MoveChild(_prompt, -2); // a kept prompt stays over the new sheet and under its legend
+        }
 
         // A short view (a handheld) keeps the wordmark and gives the seal and the subtitle up, so
         // all seven entries stay on screen.
@@ -421,6 +480,7 @@ public partial class MainMenu : CanvasLayer
         // Hide the menu behind the panel; restore it if the player backs out.
         Visible = false;
         panel.Configure(mode, chosen, () => Visible = true);
+        panel.Backdrop = _backdrop.Painting; // the title's picture stays behind it
         AddChild(panel);
         FadeInScreen(panel);
     }
@@ -429,7 +489,7 @@ public partial class MainMenu : CanvasLayer
     /// the game with the created profile, back returns to the title screen.</summary>
     private void OpenCreator(string slot)
     {
-        var creator = new CharacterCreator();
+        var creator = new CharacterCreator { Backdrop = _backdrop.Painting };
         creator.Configure(
             profile => NewCharacterRequested?.Invoke(slot, profile),
             () => Visible = true);
@@ -441,7 +501,7 @@ public partial class MainMenu : CanvasLayer
     {
         // Hide the menu behind the settings panel; restore it when the player backs out.
         Visible = false;
-        SettingsPanel.Open(this, () => Visible = true);
+        SettingsPanel.Open(this, () => Visible = true, backdrop: _backdrop.Painting);
         FadeInScreen(Newest<SettingsPanel>());
     }
 
@@ -450,10 +510,8 @@ public partial class MainMenu : CanvasLayer
     private void OpenAccessibility()
     {
         Visible = false;
-        SettingsPanel.Open(this, () => Visible = true);
-        SettingsPanel? panel = Newest<SettingsPanel>();
-        panel?.ShowTabForCapture((int)SettingsTab.Accessibility);
-        FadeInScreen(panel);
+        SettingsPanel.Open(this, () => Visible = true, SettingsTab.Accessibility, _backdrop.Painting);
+        FadeInScreen(Newest<SettingsPanel>());
     }
 
     private void OpenCredits()
@@ -477,7 +535,9 @@ public partial class MainMenu : CanvasLayer
     }
 
     /// <summary>A sub-screen arrives by fading in over the painting; it leaves at once, as every
-    /// menu does. Each is its own layer, so it is the layer's surfaces that are faded.</summary>
+    /// menu does. Each is its own layer, so it is the layer's surfaces that are faded. A sheet
+    /// that carries the title's painting keeps it solid from the first frame and fades what lies
+    /// over it, so the picture stays up while the scrim comes down.</summary>
     private static void FadeInScreen(Node? screen)
     {
         if (screen == null)
@@ -487,9 +547,23 @@ public partial class MainMenu : CanvasLayer
 
         foreach (Node child in screen.GetChildren())
         {
-            if (child is Control { Visible: true } surface)
+            if (child is not Control { Visible: true } surface)
+            {
+                continue;
+            }
+
+            if (surface.GetNodeOrNull(UiTheme.SheetCoverName) is not { } cover)
             {
                 UiFx.FadeIn(surface);
+                continue;
+            }
+
+            foreach (Node part in surface.GetChildren())
+            {
+                if (part != cover && part is Control { Visible: true } over)
+                {
+                    UiFx.FadeIn(over);
+                }
             }
         }
     }
@@ -507,7 +581,8 @@ public partial class MainMenu : CanvasLayer
         var root = new Control { MouseFilter = Control.MouseFilterEnum.Ignore };
         root.SetAnchorsPreset(Control.LayoutPreset.FullRect);
 
-        ColorRect scrim = UiTheme.Scrim(0.6f);
+        // Dark enough that the menu column the plate sits half over recedes behind it.
+        ColorRect scrim = UiTheme.Scrim(UiTheme.HighContrast ? 0.94f : UiTheme.TitlePromptScrim);
         scrim.MouseFilter = Control.MouseFilterEnum.Stop;
         root.AddChild(scrim);
 
@@ -556,7 +631,7 @@ public partial class MainMenu : CanvasLayer
         WirePair(quit, cancel);
         cancel.GrabFocus();
 
-        UiFx.FadeIn(plate, UiTheme.DurationFast);
+        UiFx.FadeIn(root, UiTheme.DurationFast);
         UpdateLegend();
         SetProcess(true);
     }
@@ -601,10 +676,21 @@ public partial class MainMenu : CanvasLayer
     public CharacterCreator OpenCreatorForCapture()
     {
         Visible = false;
-        var creator = new CharacterCreator();
+        var creator = new CharacterCreator { Backdrop = _backdrop.Painting };
         creator.Configure(_ => { }, () => Visible = true);
         AddChild(creator);
         return creator;
+    }
+
+    /// <summary>Screenshot entry point: the slot browser as the title opens it, over the title's
+    /// painting, with choices that do nothing.</summary>
+    public SaveSlotPanel OpenSlotsForCapture(SaveSlotPanel.Intent intent)
+    {
+        Visible = false;
+        var panel = new SaveSlotPanel { Backdrop = _backdrop.Painting };
+        panel.Configure(intent, _ => { }, () => Visible = true);
+        AddChild(panel);
+        return panel;
     }
 
     /// <summary>Screenshot entry point: the boot splash as a first launch shows it, at rest.</summary>

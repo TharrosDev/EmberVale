@@ -11,7 +11,18 @@ public static partial class UiTheme
 
     /// <summary>The seal above the title's wordmark, and alone on the boot splash.</summary>
     public const float TitleSealSize = 72f;
-    public const float SplashSealSize = 168f;
+    public const float SplashSealSize = 232f;
+
+    /// <summary>The most of the view's height the splash seal takes, so it still clears the
+    /// prompt under it on a short screen.</summary>
+    public const float SplashSealShare = 0.36f;
+
+    /// <summary>How dark the scrim of a sheet opened from the title is: enough for bare text on
+    /// it to read, thin enough that the title's painting is still there behind it.</summary>
+    public const float TitleSheetScrim = 0.84f;
+
+    /// <summary>The scrim under a prompt asked over the title, so the menu behind it recedes.</summary>
+    public const float TitlePromptScrim = 0.8f;
 
     /// <summary>Below this logical height the title drops its seal and subtitle so the seven
     /// entries still fit (a handheld at 853x533).</summary>
@@ -103,6 +114,39 @@ public static partial class UiTheme
         };
         rect.SetAnchorsPreset(Control.LayoutPreset.FullRect);
         return rect;
+    }
+
+    /// <summary>The node name of the painting <see cref="SheetOverPainting"/> lays under a sheet.</summary>
+    public const string SheetCoverName = "SheetCover";
+
+    /// <summary>
+    /// Puts <paramref name="painting"/> under a <see cref="Sheet"/> and thins the sheet's scrim to
+    /// <see cref="TitleSheetScrim"/> so it shows: a screen opened from the title keeps the title's
+    /// picture behind it instead of going to flat black. With no painting the sheet is left as it
+    /// was built. Under high contrast the scrim is nearly solid, as everywhere. The painting is
+    /// the sheet's first child, named <see cref="SheetCoverName"/>, and overhangs the view as the
+    /// title's does at rest, so it is the same picture at the same size.
+    /// </summary>
+    public static void SheetOverPainting(Control sheetRoot, Texture2D? painting)
+    {
+        if (painting == null)
+        {
+            return;
+        }
+
+        if (sheetRoot.GetChildCount() > 0 && sheetRoot.GetChild(0) is ColorRect scrim)
+        {
+            scrim.Color = ScrimBg with { A = HighContrast ? 0.97f : TitleSheetScrim };
+        }
+
+        TextureRect cover = Cover(painting);
+        cover.Name = SheetCoverName;
+        cover.OffsetLeft = -BackdropOverscan;
+        cover.OffsetTop = -BackdropOverscan;
+        cover.OffsetRight = BackdropOverscan;
+        cover.OffsetBottom = BackdropOverscan;
+        sheetRoot.AddChild(cover);
+        sheetRoot.MoveChild(cover, 0);
     }
 
     /// <summary>Moves a <see cref="Sheet"/>'s column to the right of the view, 8% in from that

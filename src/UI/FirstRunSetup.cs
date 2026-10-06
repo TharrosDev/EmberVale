@@ -162,6 +162,9 @@ public partial class FirstRunSetup : CanvasLayer
 
         (Control root, VBoxContainer col) = UiTheme.Sheet(width, 1f, centred: true);
         col.SizeFlagsVertical = Control.SizeFlags.ExpandFill; // so the list can take the height and scroll
+
+        // The first screen a new player sees: the title's opening painting, dimmed, behind it.
+        UiTheme.SheetOverPainting(root, UiTheme.Painting(ShellFrontRules.TitlePainting(1)));
         _root = root;
         AddChild(root);
         MoveChild(root, 0);

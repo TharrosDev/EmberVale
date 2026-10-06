@@ -29,6 +29,9 @@ public partial class TitleBackdrop : Control
     /// <summary>The act whose painting is up.</summary>
     public int Act => _act;
 
+    /// <summary>The painting that is up, for a screen opened over the title to lay under itself.</summary>
+    public Texture2D? Painting => _art.Texture;
+
     /// <summary>Whether the painting is drifting and the embers rising right now.</summary>
     public bool Moving => _embers.Emitting;
 

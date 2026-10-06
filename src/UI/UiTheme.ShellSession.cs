@@ -52,6 +52,22 @@ public static partial class UiTheme
     /// <summary>See <see cref="CreatorPreviewWidth"/>.</summary>
     public const float CreatorPreviewNarrowWidth = 200f;
 
+    /// <summary>The share of a wide sheet the preview column takes, and the most it grows to.</summary>
+    public const float CreatorPreviewShare = 0.34f;
+
+    /// <summary>See <see cref="CreatorPreviewShare"/>.</summary>
+    public const float CreatorPreviewWideWidth = 368f;
+
+    /// <summary>How dark the death sheet's scrim is: the HUD under it must not read through.</summary>
+    public const float DeathScrim = 0.9f;
+
+    /// <summary>The wash over an ending's painting, and how much darker the soft band behind the
+    /// card's text and the one under the hint row are at their fullest.</summary>
+    public const float NarrationWash = 0.6f;
+
+    /// <summary>See <see cref="NarrationWash"/>.</summary>
+    public const float NarrationBand = 0.78f;
+
     /// <summary>Smallest height of the preview and of the options list beside it.</summary>
     public const float CreatorBodyMinHeight = ControlHeight * 3f;
 

@@ -1,4 +1,5 @@
 using Embervale.Appearance;
+using Embervale.Core;
 using Godot;
 
 namespace Embervale.UI;
@@ -12,16 +13,43 @@ namespace Embervale.UI;
 /// stick) turns the figure, the camera frames the whole body or the face
 /// (<see cref="SetFraming"/>), and one of three light rigs is on at a time (<see cref="SetRig"/>).
 ///
-/// The viewport is drawn only when something in it changed. It used to redraw every frame for a
-/// figure that stands still; now a change asks for one frame, and it runs continuously only while
-/// the camera is easing between framings or the figure is being turned. The node sleeps otherwise
-/// and every path that changes the picture wakes it (<see cref="Redraw"/>).
+/// The figure stands in the idle loop the world gives it (the shared full-body library's
+/// <c>idle</c>, the clip <c>CharacterAnimationComponent</c> rests a body on), not in its bind pose,
+/// so this one small viewport draws every frame while the creator is open. Under reduced motion
+/// the loop is held on its first frame and the viewport goes back to drawing only when something
+/// in it changed: a change asks for one frame (<see cref="Redraw"/>), and it runs continuously only
+/// while the camera is easing between framings or the figure is being turned. The node itself
+/// sleeps either way; only the easing needs its tick. A body the library cannot drive has its
+/// arms lowered by hand instead.
+///
+/// The figure stands on a soft pool of light with a faint glow behind it, so it is in a place
+/// and not afloat in a black box.
 /// </summary>
 public partial class CharacterPreview : SubViewportContainer
 {
     private const string ModelPath = "res://assets/models/characters/chr_player_base.glb";
 
     private const float CameraFov = 34f;
+
+    /// <summary>The library name the idle clip is played under, and the clip.</summary>
+    private static readonly StringName IdleLibrary = "meshy";
+    private const string IdleSlot = "idle";
+
+    /// <summary>What the importer names a retargeted skeleton: the mark that a rig speaks the
+    /// shared library's bones (see <c>CharacterAnimationComponent.AddSharedLibrary</c>).</summary>
+    private const string RetargetedSkeletonName = "GeneralSkeleton";
+
+    /// <summary>The fallback pose: the upper-arm bones of the humanoid profile, and how far each
+    /// is lowered from the bind pose's level arms.</summary>
+    private static readonly string[] ArmBones = { "LeftUpperArm", "RightUpperArm" };
+    private const float ArmDropDegrees = 72f;
+
+    /// <summary>The pool of light under the figure and the glow behind it: how wide, and how
+    /// much of the bone tone at the centre. Both fade to nothing at their edge.</summary>
+    private const float FloorPoolSize = 2.6f;
+    private const float FloorPoolAlpha = 0.2f;
+    private const float BackGlowSize = 4.6f;
+    private const float BackGlowAlpha = 0.1f;
 
     /// <summary>What a light rig is: a key and a fill, each an energy, a direction and how far it
     /// is warmed or cooled from white, and the ambient level under them.</summary>
@@ -32,7 +60,7 @@ public partial class CharacterPreview : SubViewportContainer
 
     // The model stands 1.65 m tall. The body framing holds it head to foot; the face framing is
     // head and shoulders, for the hair and eye swatches.
-    private static readonly Vector3 BodyCamera = new(0f, 0.95f, 4.1f);
+    private static readonly Vector3 BodyCamera = new(0f, 0.95f, 3.5f);
     private static readonly Vector3 BodyTarget = new(0f, 0.86f, 0f);
     private static readonly Vector3 FaceCamera = new(0f, 1.52f, 1.15f);
     private static readonly Vector3 FaceTarget = new(0f, 1.5f, 0f);
@@ -60,6 +88,11 @@ public partial class CharacterPreview : SubViewportContainer
     private readonly DirectionalLight3D _fill;
     private readonly Godot.Environment _environment;
     private Node3D? _model;
+    private AnimationPlayer? _animator;
+    private string _idleClip = string.Empty;
+
+    // The idle loop is running, so the viewport draws every frame while it is on screen.
+    private bool _animated;
 
     private float _yaw = CreatorRules.DefaultYaw;
     private int _rig;
@@ -109,11 +142,21 @@ public partial class CharacterPreview : SubViewportContainer
         _camera = new Camera3D { Fov = CameraFov, Current = true };
         _viewport.AddChild(_camera);
 
+        // Ground and air: neither turns with the figure.
+        MeshInstance3D floor = LightPool(FloorPoolSize, FloorPoolAlpha);
+        floor.RotationDegrees = new Vector3(-90f, 0f, 0f);
+        floor.Position = new Vector3(0f, 0.005f, 0f);
+        _viewport.AddChild(floor);
+        MeshInstance3D glow = LightPool(BackGlowSize, BackGlowAlpha);
+        glow.Position = new Vector3(0f, 1f, -1.6f);
+        _viewport.AddChild(glow);
+
         if (GD.Load<PackedScene>(ModelPath)?.Instantiate() is Node3D model)
         {
             model.RotationDegrees = new Vector3(0f, _yaw, 0f);
             _viewport.AddChild(model);
             _model = model;
+            PrepareIdle(model);
         }
 
         ApplyRig();
@@ -124,8 +167,158 @@ public partial class CharacterPreview : SubViewportContainer
     public override void _Ready()
     {
         SetProcess(false);
-        Redraw();
+        StartIdle();
+
+        // The container switched the viewport to Always as it entered the tree.
+        _viewport.RenderTargetUpdateMode = Resting;
     }
+
+    /// <summary>How the viewport draws when nothing is easing or turning: every frame under the
+    /// idle loop, otherwise only on request.</summary>
+    private SubViewport.UpdateMode Resting => _animated ? SubViewport.UpdateMode.Always : SubViewport.UpdateMode.Once;
+
+    /// <summary>A soft round patch of the bone tone, clear at its edge, unlit so it is the same
+    /// under every rig. Facing +Z as built.</summary>
+    private static MeshInstance3D LightPool(float size, float alpha)
+    {
+        var fade = new GradientTexture2D
+        {
+            Gradient = new Gradient
+            {
+                Offsets = new[] { 0f, 1f },
+                Colors = new[] { UiTheme.Text with { A = alpha }, UiTheme.Text with { A = 0f } },
+            },
+            Width = 128,
+            Height = 128,
+            Fill = GradientTexture2D.FillEnum.Radial,
+            FillFrom = new Vector2(0.5f, 0.5f),
+            FillTo = new Vector2(1f, 0.5f),
+        };
+        return new MeshInstance3D
+        {
+            Mesh = new QuadMesh { Size = new Vector2(size, size) },
+            MaterialOverride = new StandardMaterial3D
+            {
+                AlbedoTexture = fade,
+                Transparency = BaseMaterial3D.TransparencyEnum.Alpha,
+                ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
+                CullMode = BaseMaterial3D.CullModeEnum.Disabled,
+            },
+            CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
+        };
+    }
+
+    // --- Pose ---------------------------------------------------------------
+
+    /// <summary>
+    /// Finds the idle loop for <paramref name="model"/> the way the world does: a retargeted rig
+    /// takes the shared full-body library, on its own <see cref="AnimationPlayer"/> or on one made
+    /// for it (a glTF with no clips imports with none). A rig that cannot take it, or a checkout
+    /// with no library, gets its arms lowered from the bind pose instead.
+    /// </summary>
+    private void PrepareIdle(Node3D model)
+    {
+        Skeleton3D? skeleton = Find<Skeleton3D>(model);
+        if (skeleton == null)
+        {
+            return;
+        }
+
+        if ((string)skeleton.Name == RetargetedSkeletonName &&
+            ResourceLoader.Exists(ModelAssets.MeshyAnimationLibrary) &&
+            GD.Load<AnimationLibrary>(ModelAssets.MeshyAnimationLibrary) is { } library &&
+            library.HasAnimation(IdleSlot))
+        {
+            AnimationPlayer? player = Find<AnimationPlayer>(model);
+            if (player == null)
+            {
+                // A child of the model, so its default root ("..") is the model, which is where
+                // the library's %GeneralSkeleton tracks resolve.
+                player = new AnimationPlayer { Name = "PreviewAnimationPlayer" };
+                model.AddChild(player);
+            }
+
+            if (!player.HasAnimationLibrary(IdleLibrary))
+            {
+                player.AddAnimationLibrary(IdleLibrary, library);
+            }
+
+            // The creator can be up over a paused tree, and the figure should still breathe.
+            player.ProcessMode = ProcessModeEnum.Always;
+            player.AnimationFinished += OnIdleFinished;
+            _animator = player;
+            _idleClip = $"{IdleLibrary}/{IdleSlot}";
+            return;
+        }
+
+        LowerArms(skeleton);
+    }
+
+    private void StartIdle()
+    {
+        if (_animator == null || _idleClip.Length == 0)
+        {
+            return;
+        }
+
+        // Posed now, so the first frame drawn is already the idle and not the bind pose.
+        _animator.Play(_idleClip);
+        _animator.Advance(0d);
+        _animated = UiTheme.MotionEnabled;
+        if (!_animated)
+        {
+            _animator.Pause(); // reduced motion: the stance, held still
+        }
+    }
+
+    /// <summary>A clip that is not marked as a loop is simply started again.</summary>
+    private void OnIdleFinished(StringName clip)
+    {
+        if (_animated && _animator != null && IsInstanceValid(_animator))
+        {
+            _animator.Play(_idleClip);
+        }
+    }
+
+    /// <summary>Turns each upper arm about the body's forward axis, toward the ground on
+    /// whichever side it is on: a stance, where the bind pose holds the arms out level.</summary>
+    private static void LowerArms(Skeleton3D skeleton)
+    {
+        foreach (string name in ArmBones)
+        {
+            int bone = skeleton.FindBone(name);
+            if (bone < 0)
+            {
+                continue;
+            }
+
+            Transform3D pose = skeleton.GetBoneGlobalPose(bone);
+            float angle = Mathf.DegToRad(pose.Origin.X >= 0f ? -ArmDropDegrees : ArmDropDegrees);
+            skeleton.SetBoneGlobalPose(bone, new Transform3D(new Basis(Vector3.Back, angle) * pose.Basis, pose.Origin));
+        }
+    }
+
+    private static T? Find<T>(Node node) where T : Node
+    {
+        if (node is T found)
+        {
+            return found;
+        }
+
+        foreach (Node child in node.GetChildren())
+        {
+            if (Find<T>(child) is { } inner)
+            {
+                return inner;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>Whether the figure is in the idle loop (moving, or held on its first frame under
+    /// reduced motion) rather than the lowered-arms fallback. Read by the screenshot harness.</summary>
+    public bool IdleForCapture => _animator != null && _idleClip.Length > 0;
 
     /// <summary>The figure's yaw, in degrees.</summary>
     public float Yaw => _yaw;
@@ -242,7 +435,7 @@ public partial class CharacterPreview : SubViewportContainer
             return;
         }
 
-        _viewport.RenderTargetUpdateMode = SubViewport.UpdateMode.Once;
+        _viewport.RenderTargetUpdateMode = Resting;
         SetProcess(false);
     }
 

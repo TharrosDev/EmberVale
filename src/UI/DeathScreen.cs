@@ -150,15 +150,21 @@ public partial class DeathScreen : CanvasLayer
 
         Vector2 view = GetViewport().GetVisibleRect().Size;
         float width = Mathf.Min(UiTheme.DeathSheetWidth, view.X - (UiChromeRules.Gutter(view.X) * 2f));
-        (Control root, VBoxContainer col) = UiTheme.Sheet(width, 0.82f, centred: true);
+        // Dark enough to be one surface: at the old 0.82 the HUD read through it as a second screen.
+        (Control root, VBoxContainer col) = UiTheme.Sheet(width, UiTheme.HighContrast ? 0.97f : UiTheme.DeathScrim, centred: true);
         col.AddThemeConstantOverride("separation", UiTheme.SpaceLg);
         _root = root;
         AddChild(root);
 
         // Bone, not ember: the line is the one thing on the screen and does not need to shout.
+        // The rule drawn under it is the screen's one ornament.
+        var heading = new VBoxContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
+        heading.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
         Label line = UiTheme.Display(Loc.T("death.line"), UiTheme.Text);
         line.AutowrapMode = TextServer.AutowrapMode.WordSmart;
-        col.AddChild(line);
+        heading.AddChild(line);
+        heading.AddChild(UiOrnament.EmberWipe(seconds: UiTheme.DurationDeath));
+        col.AddChild(heading);
 
         _options = new VBoxContainer { Visible = false };
         _options.AddThemeConstantOverride("separation", UiTheme.SessionEntryGap);

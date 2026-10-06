@@ -46,6 +46,10 @@ public partial class CharacterCreator : CanvasLayer
 
     private static readonly string[] RigKeys = { "create.rig.hearth", "create.rig.overcast", "create.rig.dusk" };
 
+    /// <summary>The painting to keep behind the sheet: the title's, when the title opened it.
+    /// Set before the creator enters the tree.</summary>
+    public Texture2D? Backdrop { get; init; }
+
     private Action<CharacterProfile>? _onConfirm;
     private Action? _onBack;
 
@@ -161,6 +165,7 @@ public partial class CharacterCreator : CanvasLayer
         // A sheet, not a framed panel. It fills the height it is given so the three columns do.
         (Control root, VBoxContainer col) = UiTheme.Sheet(width, 0.92f, centred: true);
         col.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
+        UiTheme.SheetOverPainting(root, Backdrop);
         _root = root;
         AddChild(root);
 
@@ -205,10 +210,11 @@ public partial class CharacterCreator : CanvasLayer
 
         // The figure, its light and how to turn it. The well takes whatever height the sheet has,
         // so the preview is tall on a desktop and shrinks to its floor on a handheld.
-        var side = new VBoxContainer
-        {
-            CustomMinimumSize = new Vector2(narrow ? UiTheme.CreatorPreviewNarrowWidth : UiTheme.CreatorPreviewWidth, 0f),
-        };
+        // Where the sheet is at its widest the figure takes a third of it.
+        float previewWidth = narrow
+            ? UiTheme.CreatorPreviewNarrowWidth
+            : Mathf.Clamp(width * UiTheme.CreatorPreviewShare, UiTheme.CreatorPreviewWidth, UiTheme.CreatorPreviewWideWidth);
+        var side = new VBoxContainer { CustomMinimumSize = new Vector2(previewWidth, 0f) };
         side.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
         body.AddChild(side);
 
@@ -419,7 +425,7 @@ public partial class CharacterCreator : CanvasLayer
                 RefreshSummary();
                 RebuildOptions();
             };
-            input.TooltipText = race.Description;
+            input.TooltipText = ShellSessionRules.WrapTooltip(race.Description);
 
             Label name = UiTheme.Body(race.DisplayName, active ? UiTheme.Accent : UiTheme.Text);
             UiTheme.ApplyType(name, UiTheme.FontRole.Display, UiTheme.BodyFontSize);
@@ -623,7 +629,7 @@ public partial class CharacterCreator : CanvasLayer
                 RefreshSummary();
                 RebuildOptions();
             };
-            input.TooltipText = Loc.T(background.DescKey);
+            input.TooltipText = ShellSessionRules.WrapTooltip(Loc.T(background.DescKey));
 
             Label name = UiTheme.Body(Loc.T(background.NameKey), active ? UiTheme.Accent : UiTheme.Text);
             UiTheme.ApplyType(name, UiTheme.FontRole.Display, UiTheme.BodyFontSize);
