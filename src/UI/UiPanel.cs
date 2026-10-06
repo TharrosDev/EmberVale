@@ -83,6 +83,12 @@ public abstract partial class UiPanel : CanvasLayer
 
     private HubStrip? _hubStrip;
 
+    /// <summary>Whether a full-screen scrim sits behind this screen while it is open. Hub screens
+    /// do by default; a contextual blocking screen (vendor, crafting) may opt in.</summary>
+    protected virtual bool Dims => Hub != null;
+
+    private ColorRect? _scrim;
+
     // The process frame a hub step last happened on. The screen stepped to is opened inside the
     // stepping panel's tick and may tick later in the same frame, where the shoulder button is
     // still "just pressed": without this one press would walk the whole strip.
@@ -141,6 +147,14 @@ public abstract partial class UiPanel : CanvasLayer
         // A modal panel now pauses the tree (GameManager.RefreshPause), so the panel itself has to
         // be pause-immune or it would freeze the moment it opened — no rebuild, no input, no close.
         ProcessMode = ProcessModeEnum.Always;
+
+        if (Dims)
+        {
+            // Under the shell: the world and HUD recede so the screen reads as one surface.
+            _scrim = new ColorRect { Color = UiTheme.ScrimHub, Visible = false, MouseFilter = Control.MouseFilterEnum.Stop };
+            _scrim.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+            AddChild(_scrim);
+        }
 
         Shell = UiTheme.Panel();
         Shell.Visible = false;
@@ -213,6 +227,10 @@ public abstract partial class UiPanel : CanvasLayer
         }
 
         _legend.Visible = open;
+        if (_scrim != null)
+        {
+            _scrim.Visible = open;
+        }
         if (_hubStrip != null)
         {
             _hubStrip.Visible = open;
