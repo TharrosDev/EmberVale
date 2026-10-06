@@ -1,3 +1,4 @@
+using Embervale.Core;
 using Embervale.Core.Diagnostics;
 using Embervale.Core.Events;
 using Godot;
@@ -29,8 +30,44 @@ public sealed class SettingsService
     /// <summary>Loads settings from disk (or defaults) and applies them. Call once on boot.</summary>
     public void LoadAndApply()
     {
+        bool firstRun = !FileAccess.FileExists(SettingsPath);
         Current = Load();
+        if (firstRun && AutoDetectAllowed())
+        {
+            AutoDetectGraphics();
+        }
+
+        // The cap follows the game state so a menu never renders faster than it needs to. One
+        // application-lifetime subscription: this service lives exactly as long as the bus does.
+        EventBus.Instance?.Subscribe<GameStateChangedEvent>(OnGameStateChanged);
         Apply();
+    }
+
+    private void OnGameStateChanged(GameStateChangedEvent e) => ApplyFrameCap(e.Current);
+
+    /// <summary>
+    /// ⚠️ Automation keeps the class default. A probe or capture run has no settings file by
+    /// construction (<c>EMBERVALE_USER_DIR</c> is a fresh folder each run), so detecting there would
+    /// move every baseline to whatever tier the capturing machine earns.
+    /// </summary>
+    private static bool AutoDetectAllowed() =>
+        DisplayServer.GetName() != "headless" &&
+        string.IsNullOrWhiteSpace(OS.GetEnvironment("EMBERVALE_USER_DIR"));
+
+    /// <summary>First run only: start on the preset the adapter can carry, and write it down so the
+    /// pick is the player's from then on. A saved file is never re-detected over.</summary>
+    private void AutoDetectGraphics()
+    {
+        string adapter = RenderingServer.GetVideoAdapterName();
+        long memory = OS.GetMemoryInfo().TryGetValue("physical", out Variant physical) ? physical.AsInt64() : 0L;
+        GraphicsRecommendation pick = GraphicsAutoDetect.Recommend(
+            adapter, RenderingServer.GetVideoAdapterVendor(), (int)RenderingServer.GetVideoAdapterType(),
+            memory, OS.GetProcessorCount());
+        Current.RenderQuality = pick.Tier;
+        Current.MaxFps = pick.MaxFps;
+        Log.Info($"First run: graphics preset '{GraphicsMath.TierName(pick.Tier)}' chosen for '{adapter}' " +
+                 $"({memory / (1024L * 1024L * 1024L)} GB, {OS.GetProcessorCount()} threads).");
+        Save();
     }
 
     private static Settings Load()
@@ -89,7 +126,7 @@ public sealed class SettingsService
             ? DisplayServer.VSyncMode.Enabled
             : DisplayServer.VSyncMode.Disabled);
 
-        Engine.MaxFps = Current.MaxFps < 0 ? 0 : Current.MaxFps;
+        ApplyFrameCap(GameManager.Instance?.State ?? GameState.Boot);
 
         // Global UI scale (30.5B): with the project's canvas_items stretch, the window's content
         // scale factor resizes every 2D surface (HUD, panels, menus) without touching 3D rendering.
@@ -97,6 +134,16 @@ public sealed class SettingsService
         {
             tree.Root.ContentScaleFactor = Mathf.Clamp(Current.UiScale, 0.75f, 1.5f);
         }
+    }
+
+    /// <summary>The saved cap in play; never above <see cref="GraphicsMath.MenuFpsCap"/> on the
+    /// title or pause screen. A headless run has no GPU to spare and its gates count frames, so it
+    /// is left exactly as saved.</summary>
+    private void ApplyFrameCap(GameState state)
+    {
+        bool inMenu = state is GameState.Boot or GameState.MainMenu or GameState.Paused
+            && DisplayServer.GetName() != "headless";
+        Engine.MaxFps = GraphicsMath.FpsCap(Current.MaxFps, inMenu);
     }
 
     private void ApplyAudio()
