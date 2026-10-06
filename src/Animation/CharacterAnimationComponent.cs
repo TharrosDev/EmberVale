@@ -754,7 +754,7 @@ public partial class CharacterAnimationComponent : EntityComponent
     /// <summary>Consecutive locomotion ticks after which the state machine is taken to be at rest.
     /// A travel request is picked up on the machine's next step, so a handful of frames is ample
     /// and the cost of being generous is a few extra reads.</summary>
-    private const int SettledTicks = 8;
+    private const int SettledTicks = 12;
 
     private int _settledTicks;
     private float _sentSpeed = float.NaN;
