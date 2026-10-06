@@ -199,6 +199,19 @@ public partial class PersistentSpawnDirector : Node, ISaveable
             else
             {
                 Despawn(kv.Key);
+
+                // ⚠️ MISSING CONTENT NEVER BRICKS A SAVE. A template that no longer exists (a prop
+                // or NPC cut since the save was written) is skipped with a warning: throwing here
+                // fails the whole load, and the player loses every other thing in the slot over one
+                // actor that cannot come back anyway. A template that IS registered and still builds
+                // nothing is a defect in this build, not in the save, and still fails the load.
+                if (!PersistentActorRegistry.IsRegistered(kv.Value.Template))
+                {
+                    Log.Warn($"Persistent actor '{kv.Key}' was skipped: its template '{kv.Value.Template}' " +
+                             "no longer exists. The rest of the save is unaffected.");
+                    continue;
+                }
+
                 if (Spawn(kv.Value.Template, kv.Key, kv.Value.Pos, kv.Value.Yaw) == null)
                 {
                     throw new InvalidOperationException($"Could not restore persistent actor '{kv.Key}' of template '{kv.Value.Template}'.");

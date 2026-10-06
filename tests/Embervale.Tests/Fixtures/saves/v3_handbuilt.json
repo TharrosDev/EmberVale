@@ -1,0 +1,72 @@
+{
+	"version": 3,
+	"timestamp": 1759000000.0,
+	"header": {
+		"slot": "slot2",
+		"timestamp": 1759000000.0,
+		"playtime": 5400.0,
+		"region": "Frostfang Reach",
+		"region_id": "region.frostfang",
+		"level": 27,
+		"corruption_tier": "Marked",
+		"race_id": "race.umbral",
+		"char_name": "Fixture",
+		"kind": 0,
+		"format": 3,
+		"player_x": -210.5,
+		"player_y": 14.25,
+		"player_z": 1320.0,
+		"player_yaw": -0.5
+	},
+	"objects": {
+		"cell_persistence": {
+			"removed": [
+				"ember_crown.bandit_a"
+			],
+			"state": {
+				"inventory:ember_crown.cottage_chest": {
+					"stacks": []
+				},
+				"setpiece:res://scenes/regions/frostfang_reach/clan_hold.tscn#HoldRaid": {
+					"cleared": false,
+					"fired": true
+				}
+			}
+		},
+		"flags:player": {
+			"flags": [
+				"story.act2.started",
+				"setpiece.square_raid.cleared"
+			]
+		},
+		"map": {
+			"pois": [
+				"ember_crown.town_hub"
+			],
+			"regions": [
+				"region.ember_crown",
+				"region.frostfang"
+			]
+		},
+		"setpiece:res://scenes/regions/ember_crown/citadel.tscn#RampSentries": {
+			"cleared": false,
+			"fired": true
+		},
+		"setpiece:res://scenes/regions/ember_crown/town_hub.tscn#SquareRaid": {
+			"cleared": true,
+			"fired": true
+		},
+		"spawns": {
+			"actors": [
+				{
+					"pid": "cache.world.start",
+					"tid": "prop.cache",
+					"x": 125.0,
+					"y": 3.5,
+					"yaw": 0.0,
+					"z": -40.0
+				}
+			]
+		}
+	}
+}

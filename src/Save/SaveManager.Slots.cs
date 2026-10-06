@@ -8,8 +8,8 @@ namespace Embervale.Save;
 /// <summary>
 /// The slot-facing half of <see cref="SaveManager"/> (ics-base seam): the slot rosters, a
 /// non-throwing slot inspection for the browser, and the "may the game be saved right now" gate
-/// with its block registry. The save-core lane finishes these bodies; the signatures are what the
-/// save UI compiles against, so change a body freely and a signature never.
+/// with its block registry. The signatures are what the save UI compiles against, so change a
+/// body freely and a signature never.
 /// </summary>
 public sealed partial class SaveManager
 {
@@ -46,12 +46,24 @@ public sealed partial class SaveManager
     /// <summary>
     /// Describes a slot for the browser without loading it, and <b>never throws</b>. Returns null
     /// only for a null or blank slot id. Otherwise the result always has <see cref="SaveSlotInfo.Slot"/>,
-    /// <see cref="SaveSlotInfo.Kind"/> and <see cref="SaveSlotInfo.Health"/> set:
-    /// <see cref="SaveHealth.Missing"/> for a slot with no save, <see cref="SaveHealth.Corrupt"/>
-    /// for one that is unreadable, not an object, or has no valid version or objects section,
-    /// <see cref="SaveHealth.Newer"/> for one written by a later format, and
-    /// <see cref="SaveHealth.Ok"/> for one this build can load (an older format it can migrate
-    /// included). Whatever header could be read is filled in even when the health is not Ok.
+    /// <see cref="SaveSlotInfo.Kind"/> and <see cref="SaveSlotInfo.Health"/> set.
+    ///
+    /// This is the full validation a load performs, stopped short of applying anything: parse,
+    /// shape, version and checksum (<see cref="SaveEnvelope"/>), for the save and for its backup
+    /// generation. <see cref="SaveSlotInfo.Health"/> is the health of <b>whatever a load would
+    /// read</b>: <see cref="SaveHealth.Missing"/> for a slot with nothing in it,
+    /// <see cref="SaveHealth.Corrupt"/> for one that is unreadable, misshapen, fails its checksum,
+    /// or has no valid version, <see cref="SaveHealth.Newer"/> for one written by a later format,
+    /// and <see cref="SaveHealth.Ok"/> for one this build can load (an older format it can migrate
+    /// included).
+    ///
+    /// ⚠️ When the save itself is damaged or gone but its backup loads, the answer is
+    /// <see cref="SaveHealth.Ok"/> with <see cref="SaveSlotInfo.RecoveredFromBackup"/> set, and every
+    /// header field describes the <b>backup</b>, because that is the character, region and playtime
+    /// the player will get. <see cref="SaveSlotInfo.PrimaryHealth"/> keeps the raw finding. The
+    /// header always comes from the envelope that would be loaded, never from the
+    /// <c>header.json</c> mirror, so it cannot be stale; the mirror is consulted only to name a
+    /// slot whose every envelope is unreadable.
     /// </summary>
     public SaveSlotInfo? InspectSlot(string slot)
     {
@@ -67,87 +79,69 @@ public sealed partial class SaveManager
         catch (Exception ex)
         {
             Log.Warn($"Could not inspect save slot '{slot}': {ex.Message}");
-            return new SaveSlotInfo { Slot = slot, Health = SaveHealth.Corrupt };
+            return new SaveSlotInfo { Slot = slot, Health = SaveHealth.Corrupt, PrimaryHealth = SaveHealth.Corrupt };
         }
     }
 
     private SaveSlotInfo InspectSlotCore(string slot)
     {
-        if (!SaveExists(slot))
+        string path = FileAccess.FileExists(SlotSavePath(slot)) ? SlotSavePath(slot) : LegacySlotPath(slot);
+        SaveEnvelope primary = SaveEnvelope.Read(ReadText(path));
+        SaveEnvelope backup = SaveEnvelope.Read(ReadText(SlotBackupPath(slot)));
+        bool recovered = SaveBackup.Choose(primary.Health, backup.Health) == SaveSource.Backup;
+        SaveEnvelope described = recovered ? backup : primary;
+
+        SaveSlotInfo info = HeaderOf(described.HeaderJson)
+                            ?? (recovered ? null : HeaderOf(ReadText(SlotHeaderPath(slot))))
+                            ?? new SaveSlotInfo();
+        info.Slot = slot;
+        info.PrimaryHealth = primary.Health;
+        info.Health = SaveBackup.Effective(primary.Health, backup.Health);
+        info.RecoveredFromBackup = recovered;
+        info.HasBackup = backup.Health == SaveHealth.Ok;
+        if (info.TimestampUnix == 0d)
         {
-            return new SaveSlotInfo { Slot = slot, Health = SaveHealth.Missing };
+            info.TimestampUnix = described.Timestamp;
         }
 
-        string path = FileAccess.FileExists(SlotSavePath(slot)) ? SlotSavePath(slot) : LegacySlotPath(slot);
-        Godot.Collections.Dictionary? root = ReadJsonObjectQuietly(path);
-
-        // A save that does not parse is not handed to ReadHeader (its fallback would parse it again,
-        // loudly); the header mirror beside it may still say whose save this was.
-        SaveSlotInfo? header = root != null
-            ? ReadHeader(slot)
-            : ReadJsonObjectQuietly(SlotHeaderPath(slot)) is { } mirror ? SaveSlotInfo.FromDictionary(mirror) : null;
-        SaveSlotInfo info = header ?? new SaveSlotInfo();
-        info.Slot = slot;
-        info.Health = HealthOf(root, out int version);
-        if (version > 0)
+        if (described.Version > 0)
         {
-            info.FormatVersion = version;
+            info.FormatVersion = described.Version;
+        }
+
+        if (described.StoredChecksum.Length > 0)
+        {
+            info.Checksum = described.StoredChecksum;
         }
 
         return info;
     }
 
-    private static SaveHealth HealthOf(Godot.Collections.Dictionary? root, out int version)
+    /// <summary>A header from its JSON text, or null when there is none or it does not parse. Uses a
+    /// <see cref="Json"/> instance rather than <c>Json.ParseString</c> so a bad header is a null
+    /// result and not an engine error line: a corrupt slot is something the browser shows, not
+    /// something it logs.</summary>
+    private static SaveSlotInfo? HeaderOf(string? headerJson)
     {
-        version = 0;
-        if (root == null || !root.TryGetValue("version", out Variant versionVar) ||
-            versionVar.VariantType is not (Variant.Type.Int or Variant.Type.Float))
-        {
-            return SaveHealth.Corrupt;
-        }
-
-        version = versionVar.AsInt32();
-        if (version <= 0)
-        {
-            return SaveHealth.Corrupt;
-        }
-
-        if (version > SaveFormatVersion)
-        {
-            return SaveHealth.Newer;
-        }
-
-        return root.TryGetValue("objects", out Variant objects) && objects.VariantType == Variant.Type.Dictionary
-            ? SaveHealth.Ok
-            : SaveHealth.Corrupt;
-    }
-
-    /// <summary>Like <c>ReadJsonObject</c>, but a file that is not JSON is a null result rather than
-    /// an engine error line: a corrupt slot is something the browser shows, not something it logs.</summary>
-    private static Godot.Collections.Dictionary? ReadJsonObjectQuietly(string path)
-    {
-        using FileAccess? file = FileAccess.Open(path, FileAccess.ModeFlags.Read);
-        if (file == null)
+        if (string.IsNullOrEmpty(headerJson))
         {
             return null;
         }
 
         var json = new Json();
-        if (json.Parse(file.GetAsText()) != Error.Ok)
-        {
-            return null;
-        }
-
-        Variant parsed = json.Data;
-        return parsed.VariantType == Variant.Type.Dictionary ? parsed.AsGodotDictionary() : null;
+        return json.Parse(headerJson) == Error.Ok && SaveRead.AsSection(json.Data) is { } data
+            ? SaveSlotInfo.FromDictionary(data)
+            : null;
     }
 
     /// <summary>
     /// Whether a save may be started right now. On false, <paramref name="reasonKey"/> is a locale
     /// key saying why: the newest live <see cref="PushSaveBlock"/> reason, else
     /// <see cref="ReasonBusy"/>, else <see cref="ReasonNoWorld"/>. On true it is empty.
-    /// ⚠️ This is the question; <see cref="SaveGame(string)"/> does not ask it yet (the save-core
-    /// lane wires the refusal in), so a caller that must respect a block asks first.
+    /// <see cref="SaveGame(string)"/> enforces the first two itself (a blocked or busy save is
+    /// refused with <see cref="Embervale.Core.Events.SaveFailedEvent"/>); it does not enforce the
+    /// third, because the native probes save with no world. A menu asks this first so it can grey
+    /// the button out and say why instead of offering a save that will be refused.
     /// </summary>
     public bool CanSaveNow(out string reasonKey)
     {

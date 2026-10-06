@@ -4924,6 +4924,8 @@ unique.starfall_echo.name,Starfall Echo
 unique.starfall_echo.desc,"Spells have a 20% chance to echo at 60% power, once every 5 seconds."
 # --- END ics:content ---
 # --- BEGIN ics:save-core ---
+save.recovered.title,Loaded from the backup save
+save.recovered.detail,The newest save in this slot could not be read. This is the one before it.
 # --- END ics:save-core ---
 # --- BEGIN ics:save-ui ---
 # --- END ics:save-ui ---

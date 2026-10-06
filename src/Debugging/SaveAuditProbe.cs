@@ -23,6 +23,8 @@ public partial class SaveAuditProbe : RefCounted
     private string _slot = string.Empty;
     private int _loadedEvents;
     private int _savedEvents;
+    private int _startedEvents;
+    private readonly List<string> _failedReasons = new();
 
     private sealed class Fixture : ISaveable
     {
@@ -54,14 +56,18 @@ public partial class SaveAuditProbe : RefCounted
         _slot = "save_audit_" + Guid.NewGuid().ToString("N");
         EventBus.Instance.Subscribe<GameLoadedEvent>(Loaded);
         EventBus.Instance.Subscribe<GameSavedEvent>(Saved);
+        EventBus.Instance.Subscribe<SaveStartedEvent>(Started);
+        EventBus.Instance.Subscribe<SaveFailedEvent>(Failed);
         Func<Godot.Collections.Dictionary>? priorHeader = _manager.HeaderProvider;
         Action<SaveSlotInfo>? priorLocation = _manager.LocationApplier;
         try
         {
             CaptureAndHeaderChecks();
+            IntegrityChecks();
             RestoreChecks();
             SpawnChecks(parent);
             LegacyChecks();
+            DeleteChecks();
         }
         catch (Exception ex)
         {
@@ -75,6 +81,9 @@ public partial class SaveAuditProbe : RefCounted
             _manager.LocationApplier = priorLocation;
             EventBus.Instance.Unsubscribe<GameLoadedEvent>(Loaded);
             EventBus.Instance.Unsubscribe<GameSavedEvent>(Saved);
+            EventBus.Instance.Unsubscribe<SaveStartedEvent>(Started);
+            EventBus.Instance.Unsubscribe<SaveFailedEvent>(Failed);
+            _manager.ClearSaveBlocks();
             _manager.DeleteSlot(_slot);
             _manager.DeleteSlot(_slot + "_legacy");
         }
@@ -92,8 +101,12 @@ public partial class SaveAuditProbe : RefCounted
             ["region_id"] = "region.frostfang", ["player_x"] = 10f, ["player_y"] = 2f,
             ["player_z"] = 14f, ["player_yaw"] = 0.7f,
         };
-        Check(_manager.SaveGame(_slot), "baseline capture failed");
+        Check(_manager.SaveGame(_slot) && _startedEvents == 1 && _savedEvents == 1 && _failedReasons.Count == 0,
+            "a clean save did not publish exactly one SaveStartedEvent and one GameSavedEvent");
         SaveSlotInfo? header = _manager.ReadHeader(_slot);
+        Check(header is { FormatVersion: 4, Kind: SaveKind.Manual } && header.GameBuild.Length > 0 &&
+              header.Checksum.StartsWith(SaveChecksum.Prefix, StringComparison.Ordinal),
+            "header did not record the format version, save kind, game build and content checksum");
         Check(header is { RaceId: "race.umbral", CharacterName: "Audit Wanderer", HasLocation: true },
             "gameplay header lost character race/name or transform");
         Check(header is { Appearance: "appearance.audit_one;appearance.audit_two", Background: "Audit background" },
@@ -102,6 +115,8 @@ public partial class SaveAuditProbe : RefCounted
         int savedBefore = _savedEvents;
         fixture.ThrowOnSave = true;
         Check(!_manager.SaveGame(_slot), "throwing Save() reported success");
+        Check(_startedEvents == 2 && _failedReasons.Count == 1 && _failedReasons[0] == SaveManager.ReasonWriteFailed,
+            "a failed capture did not publish SaveStartedEvent followed by SaveFailedEvent(save.failed.write)");
         Check(ReadSave() == good && _savedEvents == savedBefore,
             "failed capture overwrote the good save or published GameSavedEvent");
         fixture.ThrowOnSave = false;
@@ -130,23 +145,110 @@ public partial class SaveAuditProbe : RefCounted
         Unregister(fixture);
     }
 
+    /// <summary>Checksum, the one backup generation, fallback selection and save blocks.</summary>
+    private void IntegrityChecks()
+    {
+        var fixture = new Fixture("audit.state") { Value = 31 };
+        Register(fixture);
+        string backupPath = _manager.SlotPath(_slot) + SaveBackup.Suffix;
+        Check(_manager.SaveGame(_slot), "generation one could not be saved");
+        fixture.Value = 32;
+        Check(_manager.SaveGame(_slot) && FileAccess.FileExists(backupPath),
+            "replacing a save did not keep the previous generation as save.json.bak");
+        Check(!FileAccess.FileExists(_manager.SlotPath(_slot) + SaveBackup.TempSuffix),
+            "a committed save left its staged .tmp file behind");
+
+        SaveSlotInfo? healthy = _manager.InspectSlot(_slot);
+        Check(healthy is { Health: SaveHealth.Ok, PrimaryHealth: SaveHealth.Ok, RecoveredFromBackup: false, HasBackup: true, FormatVersion: 4 },
+            "InspectSlot did not report a healthy save with a loadable backup");
+        Check(healthy != null && healthy.Checksum.Length > 0 && _manager.ReadHeader(_slot)?.Checksum == healthy.Checksum &&
+              SaveChecksum.ComputeForEnvelope(ReadSave()) == healthy.Checksum,
+            "envelope, header mirror and recomputed content checksum disagree");
+
+        // One changed value with the stored checksum left alone: the file still parses and still
+        // has the right shape, so only the checksum can notice.
+        string good = ReadSave();
+        string tampered = good.Replace("\"value\": 32", "\"value\": 99");
+        Check(tampered != good, "probe could not tamper with the saved value (serialization changed shape)");
+        WriteRaw(_manager.SlotPath(_slot), tampered);
+        Check(_manager.InspectSlot(_slot) is { Health: SaveHealth.Ok, PrimaryHealth: SaveHealth.Corrupt, RecoveredFromBackup: true },
+            "a tampered save passed its integrity check, or its backup was not offered");
+        int loadedBefore = _loadedEvents;
+        Check(_manager.LoadGame(_slot) && fixture.Value == 31 && _manager.LastLoadUsedBackup && _loadedEvents == loadedBefore + 1,
+            "a damaged save did not fall back to its backup generation and say so");
+
+        // Saving over a damaged primary must not move it on top of the good backup.
+        string backupBefore = FileAccess.GetFileAsString(backupPath);
+        fixture.Value = 33;
+        Check(_manager.SaveGame(_slot) && FileAccess.GetFileAsString(backupPath) == backupBefore,
+            "a damaged save was rotated over the good backup generation");
+        Check(_manager.LoadGame(_slot) && fixture.Value == 33 && !_manager.LastLoadUsedBackup,
+            "a healthy save was not loaded from its own file");
+
+        // Interrupted between moving the old save aside and committing the new one: only the backup.
+        DirAccess.RemoveAbsolute(_manager.SlotPath(_slot));
+        Check(_manager.SaveExists(_slot) && _manager.InspectSlot(_slot) is { Health: SaveHealth.Ok, PrimaryHealth: SaveHealth.Missing, RecoveredFromBackup: true } &&
+              _manager.LoadGame(_slot) && fixture.Value == 31 && _manager.LastLoadUsedBackup,
+            "a slot holding only its backup generation was not loadable");
+
+        // No backup to fall back to: the checksum refusal is the outcome, and nothing live changes.
+        DirAccess.RemoveAbsolute(backupPath);
+        WriteRaw(_manager.SlotPath(_slot), tampered);
+        loadedBefore = _loadedEvents;
+        Check(_manager.InspectSlot(_slot) is { Health: SaveHealth.Corrupt, RecoveredFromBackup: false, HasBackup: false } &&
+              !_manager.LoadGame(_slot) && fixture.Value == 31 && _loadedEvents == loadedBefore,
+            "a tampered save with no backup was loaded or changed live state");
+
+        // Both generations unreadable.
+        WriteRaw(_manager.SlotPath(_slot), "not json {");
+        WriteRaw(backupPath, "[1, 2, 3]");
+        Check(_manager.InspectSlot(_slot) is { Health: SaveHealth.Corrupt } && !_manager.LoadGame(_slot) &&
+              fixture.Value == 31 && _loadedEvents == loadedBefore,
+            "two unreadable generations were not refused cleanly");
+        DirAccess.RemoveAbsolute(backupPath);
+
+        // A newer save is never bypassed for an older backup.
+        WriteEnvelope(4, new Godot.Collections.Dictionary { [fixture.SaveId] = fixture.Save() });
+        WriteRaw(backupPath, ReadSave());
+        WriteEnvelope(SaveManager.CurrentFormatVersion + 1, new Godot.Collections.Dictionary());
+        Check(_manager.InspectSlot(_slot) is { Health: SaveHealth.Newer, RecoveredFromBackup: false } && !_manager.LoadGame(_slot),
+            "a save from a newer build was bypassed in favour of its older backup");
+        DirAccess.RemoveAbsolute(backupPath);
+
+        // A live block refuses the save with the block's own reason and never starts it.
+        WriteEnvelope(4, new Godot.Collections.Dictionary { [fixture.SaveId] = fixture.Save() });
+        string before = ReadSave();
+        int startedBefore = _startedEvents;
+        _failedReasons.Clear();
+        IDisposable block = _manager.PushSaveBlock("audit.block");
+        Check(!_manager.CanSaveNow(out string reason) && reason == "audit.block" && !_manager.SaveGame(_slot) &&
+              !_manager.SaveGame(_slot, isAutosave: true) && ReadSave() == before && _startedEvents == startedBefore &&
+              _failedReasons.Count == 2 && _failedReasons[0] == "audit.block",
+            "a save block did not refuse manual and automatic saves with its own reason");
+        block.Dispose();
+        block.Dispose();
+        Check(_manager.CanSaveNow(out _) && _manager.SaveGame(_slot), "releasing the save block did not allow saving again");
+        DirAccess.RemoveAbsolute(backupPath);
+        Unregister(fixture);
+    }
+
     private void RestoreChecks()
     {
         var fixture = new Fixture("audit.state");
         Register(fixture);
         int loadedBefore = _loadedEvents;
-        WriteEnvelope(3.5d, new Godot.Collections.Dictionary { [fixture.SaveId] = fixture.Save() });
+        WriteEnvelope(4.5d, new Godot.Collections.Dictionary { [fixture.SaveId] = fixture.Save() });
         Check(!_manager.LoadGame(_slot) && fixture.Value == 12 && _loadedEvents == loadedBefore,
             "fractional version was accepted or changed live state");
-        WriteEnvelope(3, new Godot.Collections.Dictionary { [fixture.SaveId] = "corrupt" });
+        WriteEnvelope(4, new Godot.Collections.Dictionary { [fixture.SaveId] = "corrupt" });
         Check(!_manager.LoadGame(_slot) && fixture.Value == 12 && _loadedEvents == loadedBefore,
             "malformed object state was treated as a missing entry and reset live state");
 
-        WriteEnvelope(3, new Godot.Collections.Dictionary());
+        WriteEnvelope(4, new Godot.Collections.Dictionary());
         Check(_manager.LoadGame(_slot) && fixture.Value == 0, "missing state did not replace live state with empty");
         bool nestedSave = true;
         fixture.OnLoad = _ => nestedSave = _manager.SaveGame(_slot);
-        WriteEnvelope(3, new Godot.Collections.Dictionary { [fixture.SaveId] = new Godot.Collections.Dictionary { ["value"] = 17 } });
+        WriteEnvelope(4, new Godot.Collections.Dictionary { [fixture.SaveId] = new Godot.Collections.Dictionary { ["value"] = 17 } });
         string beforeLoad = ReadSave();
         Check(_manager.LoadGame(_slot) && fixture.Value == 17 && !nestedSave && ReadSave() == beforeLoad,
             "a restore callback could overwrite its in-flight source save");
@@ -162,8 +264,25 @@ public partial class SaveAuditProbe : RefCounted
                 $"v{version} migration lost non-spatial progress or restored obsolete coordinates");
         }
 
+        // v3 -> v4: a set-piece entry keyed by its scene path reaches the piece under its stable id,
+        // and the v3 header transform (written against the current world) is kept and applied.
+        var piece = new Fixture(SetPieceSaveIds.Build("res://scenes/regions/audit/cell.tscn", "AuditRaid"));
+        Register(piece);
+        int appliedV3 = 0;
+        _manager.LocationApplier = _ => appliedV3++;
+        WriteEnvelope(3, new Godot.Collections.Dictionary
+            {
+                [fixture.SaveId] = new Godot.Collections.Dictionary { ["value"] = 23 },
+                ["setpiece:res://scenes/regions/audit/cell.tscn#AuditRaid"] = new Godot.Collections.Dictionary { ["value"] = 24 },
+            },
+            new Godot.Collections.Dictionary { ["player_x"] = 1f, ["player_y"] = 2f, ["player_z"] = 3f, ["player_yaw"] = 0f });
+        Check(piece.SaveId == "setpiece:audit/cell#AuditRaid" && _manager.LoadGame(_slot) && fixture.Value == 23 &&
+              piece.Value == 24 && appliedV3 == 1,
+            "v3 migration did not carry a scene-path set-piece entry to its stable id, or dropped a valid transform");
+        Unregister(piece);
+
         _manager.LocationApplier = _ => throw new InvalidOperationException("Expected save-audit location failure");
-        WriteEnvelope(3, new Godot.Collections.Dictionary { [fixture.SaveId] = fixture.Save() },
+        WriteEnvelope(4, new Godot.Collections.Dictionary { [fixture.SaveId] = fixture.Save() },
             new Godot.Collections.Dictionary { ["player_x"] = 1f, ["player_y"] = 2f, ["player_z"] = 3f, ["player_yaw"] = 0f });
         loadedBefore = _loadedEvents;
         Check(!_manager.LoadGame(_slot) && _loadedEvents == loadedBefore,
@@ -174,7 +293,7 @@ public partial class SaveAuditProbe : RefCounted
         var child = new Fixture("audit.child") { ThrowOnLoad = true };
         var spawner = new Fixture("audit.spawner") { OnLoad = _ => Register(child) };
         Register(spawner);
-        WriteEnvelope(3, new Godot.Collections.Dictionary { [spawner.SaveId] = spawner.Save(), [child.SaveId] = child.Save() });
+        WriteEnvelope(4, new Godot.Collections.Dictionary { [spawner.SaveId] = spawner.Save(), [child.SaveId] = child.Save() });
         loadedBefore = _loadedEvents;
         Check(!_manager.LoadGame(_slot) && _loadedEvents == loadedBefore,
             "failure in a saveable registered during restoration was reported as a successful load");
@@ -185,7 +304,7 @@ public partial class SaveAuditProbe : RefCounted
         var remover = new Fixture("audit.remover") { OnLoad = _ => Unregister(victim) };
         Register(remover);
         Register(victim);
-        WriteEnvelope(3, new Godot.Collections.Dictionary { [remover.SaveId] = remover.Save() });
+        WriteEnvelope(4, new Godot.Collections.Dictionary { [remover.SaveId] = remover.Save() });
         Check(_manager.LoadGame(_slot), "a saveable unregistered by an earlier restore was still invoked from the stale snapshot");
         Unregister(remover);
     }
@@ -208,13 +327,13 @@ public partial class SaveAuditProbe : RefCounted
             Check(director.TrackedIds.Count == 0 && director.Save()["actors"].AsGodotArray().Count == 0,
                 "empty spawn manifest retained actors from the abandoned timeline");
 
-            WriteEnvelope(3, new Godot.Collections.Dictionary { [director.SaveId] = new Godot.Collections.Dictionary
+            WriteEnvelope(4, new Godot.Collections.Dictionary { [director.SaveId] = new Godot.Collections.Dictionary
             {
                 ["actors"] = new Godot.Collections.Array { new Godot.Collections.Dictionary { ["pid"] = "audit.missing", ["tid"] = "audit.unknown_template" } },
             } });
             int loadedBefore = _loadedEvents;
-            Check(!_manager.LoadGame(_slot) && _loadedEvents == loadedBefore,
-                "unrecreatable persistent actor silently disappeared during a successful load");
+            Check(_manager.LoadGame(_slot) && _loadedEvents == loadedBefore + 1 && director.TrackedIds.Count == 0,
+                "a persistent actor whose template no longer exists failed the whole load instead of being skipped");
         }
         finally { host.Free(); }
     }
@@ -237,12 +356,36 @@ public partial class SaveAuditProbe : RefCounted
         Check(found, "legacy flat save was hidden from Continue and the slot browser");
     }
 
+    /// <summary>Deleting a slot removes every file it owns and says so; an absent slot is not a failure.</summary>
+    private void DeleteChecks()
+    {
+        string path = _manager.SlotPath(_slot);
+        string directory = path.Substring(0, path.Length - "/save.json".Length);
+        WriteRaw(path + SaveBackup.Suffix, "{}");
+        WriteRaw(path + SaveBackup.TempSuffix, "{}");
+        Check(_manager.DeleteSlot(_slot, out IReadOnlyList<string> failures) && failures.Count == 0 &&
+              !DirAccess.DirExistsAbsolute(directory) && !_manager.SaveExists(_slot),
+            "deleting a slot left its backup, staged file or directory behind");
+        Check(!_manager.DeleteSlot(_slot, out failures) && failures.Count == 0 &&
+              _manager.InspectSlot(_slot) is { Health: SaveHealth.Missing },
+            "deleting an absent slot reported a failure, or the slot still inspects as present");
+    }
+
     private void Register(ISaveable fixture) { _registered.Add(fixture); _manager.Register(fixture); }
     private void Unregister(ISaveable fixture) { _manager.Unregister(fixture); _registered.Remove(fixture); }
     private void Loaded(GameLoadedEvent _) => _loadedEvents++;
     private void Saved(GameSavedEvent _) => _savedEvents++;
+    private void Started(SaveStartedEvent _) => _startedEvents++;
+    private void Failed(SaveFailedEvent e) => _failedReasons.Add(e.ReasonKey);
     private void Check(bool condition, string issue) { if (!condition) { _issues.Add(issue); } }
     private string ReadSave() => FileAccess.GetFileAsString(_manager.SlotPath(_slot));
+    private static void WriteRaw(string path, string contents)
+    {
+        using FileAccess file = FileAccess.Open(path, FileAccess.ModeFlags.Write);
+        file.StoreString(contents);
+        file.Flush();
+    }
+
     private void WriteEnvelope(double version, Godot.Collections.Dictionary objects, Godot.Collections.Dictionary? header = null)
     {
         using FileAccess file = FileAccess.Open(_manager.SlotPath(_slot), FileAccess.ModeFlags.Write);

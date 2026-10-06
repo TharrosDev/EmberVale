@@ -77,6 +77,30 @@ public sealed class SaveSlotInfo
     /// <see cref="SaveHealth.Ok"/>.</summary>
     public SaveHealth Health { get; set; } = SaveHealth.Ok;
 
+    // --- Integrity fields (ics save-core). ---
+
+    /// <summary>The game build that wrote the save (<c>application/config/version</c>); empty =
+    /// the header does not say (every save before format 4).</summary>
+    public string GameBuild { get; set; } = string.Empty;
+
+    /// <summary>The content checksum the envelope carries (<see cref="SaveChecksum"/>), mirrored
+    /// here so a header can be matched to its save; empty = none recorded.</summary>
+    public string Checksum { get; set; } = string.Empty;
+
+    /// <summary>What <see cref="SaveManager.InspectSlot"/> found in <c>save.json</c> itself, before
+    /// the backup was considered. Differs from <see cref="Health"/> exactly when
+    /// <see cref="RecoveredFromBackup"/> is set. <b>Never written to disk.</b></summary>
+    public SaveHealth PrimaryHealth { get; set; } = SaveHealth.Ok;
+
+    /// <summary>True when the slot's own save is damaged or gone and everything in this header
+    /// describes its <b>previous generation</b> (<c>save.json.bak</c>), which is what a load of the
+    /// slot will read. The browser should say so: the player is about to lose the newest save's
+    /// progress. <b>Never written to disk.</b></summary>
+    public bool RecoveredFromBackup { get; set; }
+
+    /// <summary>Whether a loadable previous generation sits beside the save. <b>Never written to disk.</b></summary>
+    public bool HasBackup { get; set; }
+
     public Godot.Collections.Dictionary ToDictionary()
     {
         var data = new Godot.Collections.Dictionary
@@ -104,6 +128,16 @@ public sealed class SaveSlotInfo
             data["display_name"] = DisplayName;
         }
 
+        if (GameBuild.Length > 0)
+        {
+            data["build"] = GameBuild;
+        }
+
+        if (Checksum.Length > 0)
+        {
+            data["checksum"] = Checksum;
+        }
+
         // Absence is meaningful for older saves and for a save with no live player. Emitting
         // default zero coordinates turns that absence into a teleport to the world origin.
         if (HasLocation)
@@ -116,31 +150,44 @@ public sealed class SaveSlotInfo
         return data;
     }
 
+    /// <summary>Reads a header. Every field is optional and tolerant (<see cref="SaveRead"/>): an
+    /// absent key or one of the wrong type leaves the default, so a damaged header still describes
+    /// what it can instead of throwing in the slot browser.</summary>
     public static SaveSlotInfo FromDictionary(Godot.Collections.Dictionary data)
     {
         var info = new SaveSlotInfo();
-        if (data.TryGetValue("slot", out Variant slot)) { info.Slot = slot.AsString(); }
-        if (data.TryGetValue("timestamp", out Variant ts)) { info.TimestampUnix = ts.AsDouble(); }
-        if (data.TryGetValue("playtime", out Variant pt)) { info.PlaytimeSeconds = pt.AsDouble(); }
-        if (data.TryGetValue("region", out Variant region)) { info.Region = region.AsString(); }
-        if (data.TryGetValue("region_id", out Variant regionId)) { info.RegionId = regionId.AsString(); }
-        if (data.TryGetValue("player_x", out Variant px)) { info.PlayerX = (float)px.AsDouble(); info.HasLocation = true; }
-        if (data.TryGetValue("player_y", out Variant py)) { info.PlayerY = (float)py.AsDouble(); }
-        if (data.TryGetValue("player_z", out Variant pz)) { info.PlayerZ = (float)pz.AsDouble(); }
-        if (data.TryGetValue("player_yaw", out Variant yaw)) { info.PlayerYaw = (float)yaw.AsDouble(); }
-        if (data.TryGetValue("level", out Variant level)) { info.Level = level.AsInt32(); }
-        if (data.TryGetValue("corruption_tier", out Variant tier)) { info.CorruptionTier = tier.AsString(); }
-        if (data.TryGetValue("race_id", out Variant race)) { info.RaceId = race.AsString(); }
-        if (data.TryGetValue("char_name", out Variant name)) { info.CharacterName = name.AsString(); }
-        if (data.TryGetValue("appearance", out Variant appearance)) { info.Appearance = appearance.AsString(); }
-        if (data.TryGetValue("background", out Variant background)) { info.Background = background.AsString(); }
-        if (data.TryGetValue("kind", out Variant kind))
+        info.Slot = SaveRead.Text(data, "slot", info.Slot);
+        info.TimestampUnix = SaveRead.Number(data, "timestamp");
+        info.PlaytimeSeconds = SaveRead.Number(data, "playtime");
+        info.Region = SaveRead.Text(data, "region", info.Region);
+        info.RegionId = SaveRead.Text(data, "region_id");
+
+        // The transform is all or nothing on X: a header with no player_x has no location, and
+        // restoring the other three alone would be a teleport to wherever X defaults.
+        if (SaveRead.TryNumber(data, "player_x", out double playerX))
         {
-            info.Kind = (SaveKind)System.Math.Clamp(kind.AsInt32(), (int)SaveKind.Manual, (int)SaveKind.Auto);
+            info.PlayerX = (float)playerX;
+            info.PlayerY = SaveRead.Float(data, "player_y");
+            info.PlayerZ = SaveRead.Float(data, "player_z");
+            info.PlayerYaw = SaveRead.Float(data, "player_yaw");
+            info.HasLocation = true;
         }
 
-        if (data.TryGetValue("format", out Variant format)) { info.FormatVersion = System.Math.Max(0, format.AsInt32()); }
-        if (data.TryGetValue("display_name", out Variant displayName)) { info.DisplayName = displayName.AsString(); }
+        info.Level = SaveRead.Int(data, "level", info.Level);
+        info.CorruptionTier = SaveRead.Text(data, "corruption_tier", info.CorruptionTier);
+        info.RaceId = SaveRead.Text(data, "race_id", info.RaceId);
+        info.CharacterName = SaveRead.Text(data, "char_name", info.CharacterName);
+        info.Appearance = SaveRead.Text(data, "appearance");
+        info.Background = SaveRead.Text(data, "background");
+        if (SaveRead.TryNumber(data, "kind", out double kind))
+        {
+            info.Kind = (SaveKind)(int)System.Math.Clamp(kind, (double)SaveKind.Manual, (double)SaveKind.Auto);
+        }
+
+        info.FormatVersion = System.Math.Max(0, SaveRead.Int(data, "format"));
+        info.DisplayName = SaveRead.Text(data, "display_name");
+        info.GameBuild = SaveRead.Text(data, "build");
+        info.Checksum = SaveRead.Text(data, "checksum");
         return info;
     }
 }
