@@ -78,19 +78,34 @@ public partial class HotbarComponent : EntityComponent, ISaveable
 
     /// <summary>Uses the consumable assigned to <paramref name="slot"/> from the bag. No-op for an empty
     /// slot, a missing item, or a non-consumable (a stale id from an old save).</summary>
-    public void Activate(int slot)
+    public bool Activate(int slot)
     {
         if (slot < 0 || slot >= SlotCount || _slots[slot].Length == 0)
         {
-            return;
+            return false;
         }
 
+        // The cooldown group, a full resource and "nothing to cure" are all refused (and explained
+        // to the player) by Consume itself, so a key press and a click in the pack obey one rule.
         ItemInstance? instance = _inventory?.FirstInstanceOf(_slots[slot]);
-        if (instance?.Template is ConsumableItemResource)
-        {
-            _inventory?.Consume(instance);
-        }
+        return instance?.Template is ConsumableItemResource && _inventory!.Consume(instance);
     }
+
+    /// <summary>Seconds until the consumable in <paramref name="slot"/> can be used again; 0 when it
+    /// is ready or the slot is empty. Slots sharing a cooldown group count down together.</summary>
+    public float CooldownRemaining(int slot) =>
+        SlotItem(slot) is { } item ? Timed?.CooldownRemaining(item) ?? 0f : 0f;
+
+    /// <summary>The same cooldown as a 1-to-0 fraction, for the sweep the bar draws over a slot.</summary>
+    public float CooldownFraction(int slot) =>
+        SlotItem(slot) is { } item ? Timed?.CooldownFraction(item) ?? 0f : 0f;
+
+    private ConsumableEffectsComponent? Timed => Entity?.GetComponent<ConsumableEffectsComponent>();
+
+    private ConsumableItemResource? SlotItem(int slot) =>
+        slot >= 0 && slot < SlotCount && _slots[slot].Length > 0
+            ? ItemDatabase.Get(_slots[slot]) as ConsumableItemResource
+            : null;
 
     public override void _Process(double delta)
     {

@@ -1,9 +1,11 @@
 using System.Collections.Generic;
+using Embervale.Combat;
 using Embervale.Core.Diagnostics;
 using Embervale.Core.Events;
 using Embervale.Entities;
 using Embervale.Save;
 using Embervale.Stats;
+using Embervale.World;
 using Godot;
 
 namespace Embervale.Items;
@@ -347,7 +349,7 @@ public partial class InventoryComponent : EntityComponent, ISaveable
     /// (unlock it first).</summary>
     public bool SetJunk(ItemInstance instance, bool junk)
     {
-        if (!Holds(instance) || (junk && instance.Locked))
+        if (!Holds(instance) || (junk && !CanDispose(instance)))
         {
             return false;
         }
@@ -401,7 +403,53 @@ public partial class InventoryComponent : EntityComponent, ISaveable
         return junk;
     }
 
-    private bool Holds(ItemInstance instance)
+    /// <summary>
+    /// Stores all of it, whatever the room: what fits goes in normally and the rest is forced in
+    /// past <see cref="Capacity"/>, the way <see cref="Load"/> restores a pack. For the one case
+    /// where the alternative is deleting an item the owner already had (gear coming off in a swap).
+    /// Over capacity is recoverable; deletion is not.
+    /// </summary>
+    public void AddOrOverflow(ItemInstance instance, int quantity)
+    {
+        int stored = AddInstance(instance, quantity);
+        if (stored >= quantity)
+        {
+            return;
+        }
+
+        // The remainder needs its own identity when part of it already went in under this one.
+        ItemInstance rest = stored > 0 ? instance.Copy() : instance;
+        _ignoreCapacity = true;
+        try
+        {
+            AddInstance(rest, quantity - stored);
+        }
+        finally
+        {
+            _ignoreCapacity = false;
+        }
+
+        Log.Warn($"{Entity?.DisplayName ?? "An inventory"} is over capacity: '{instance.TemplateId}' had no free slot and was kept anyway.");
+    }
+
+    /// <summary>The size of the pack stack holding exactly <paramref name="instance"/> (by
+    /// reference); 0 when it is not in the pack (absent, or in the material bag).</summary>
+    public int PackStackQuantity(ItemInstance instance)
+    {
+        foreach (ItemStack stack in _stacks)
+        {
+            if (ReferenceEquals(stack.Instance, instance))
+            {
+                return stack.Quantity;
+            }
+        }
+
+        return 0;
+    }
+
+    /// <summary>True when this inventory holds exactly <paramref name="instance"/> (by reference),
+    /// in the pack or the material bag.</summary>
+    public bool Holds(ItemInstance instance)
     {
         foreach (ItemStack stack in AllStacks)
         {
@@ -470,9 +518,21 @@ public partial class InventoryComponent : EntityComponent, ISaveable
             return false;
         }
 
-        StatsComponent? stats = Entity?.GetComponent<StatsComponent>();
-        if (stats == null || !stats.IsAlive)
+        if (Entity is not { } owner || owner.GetComponent<StatsComponent>() is not { IsAlive: true })
         {
+            return false;
+        }
+
+        // Refused before anything is spent, and said out loud to the player: a potion that silently
+        // does nothing reads as a dead key.
+        ConsumeRefusal refusal = Holds(instance) ? ConsumableEffectsComponent.Check(owner, consumable) : ConsumeRefusal.None;
+        if (refusal != ConsumeRefusal.None)
+        {
+            if (CombatPerspective.IsPlayer(owner))
+            {
+                EventBus.Instance?.Publish(new WorldHazardNoticeEvent(ConsumableRules.ReasonKey(refusal)));
+            }
+
             return false;
         }
 
@@ -484,14 +544,97 @@ public partial class InventoryComponent : EntityComponent, ISaveable
             return false;
         }
 
-        if (consumable.HealAmount > 0f)
-        {
-            stats.Heal(consumable.HealAmount);
-        }
+        ConsumableEffectsComponent.Apply(owner, consumable);
 
         Log.Info($"Consumed {consumable.DisplayName}.");
         return true;
     }
+
+    /// <summary>Why <paramref name="instance"/> cannot be used right now (cooldown, a full
+    /// resource, nothing to cure), or <see cref="ConsumeRefusal.None"/>. For a UI that greys the
+    /// button; <see cref="ConsumableRules.ReasonKey"/> turns the answer into a locale key.</summary>
+    public ConsumeRefusal CanConsume(ItemInstance? instance)
+    {
+        return instance?.Template is ConsumableItemResource consumable && Entity is { } owner
+            ? ConsumableEffectsComponent.Check(owner, consumable)
+            : ConsumeRefusal.None;
+    }
+
+    // --- Room, and what may leave --------------------------------------------
+
+    /// <summary>Empty pack slots. 0 when the pack is at or over <see cref="Capacity"/>.</summary>
+    public int FreeSlots => Mathf.Max(0, Capacity - _stacks.Count);
+
+    /// <summary>How many new pack slots storing <paramref name="quantity"/> of
+    /// <paramref name="instance"/> would take, after topping up the stacks it can join. 0 for
+    /// anything the material bag takes.</summary>
+    public int SlotsNeededFor(ItemInstance instance, int quantity)
+    {
+        if (UseMaterialBag && IsBagItem(instance))
+        {
+            return 0;
+        }
+
+        int mergeSpace = 0;
+        if (instance.IsStackable)
+        {
+            foreach (ItemStack stack in _stacks)
+            {
+                if (stack.Instance.CanStackWith(instance))
+                {
+                    mergeSpace += stack.SpaceLeft;
+                }
+            }
+        }
+
+        return InventoryRules.SlotsNeeded(quantity, instance.MaxStack, mergeSpace);
+    }
+
+    /// <summary>True when <see cref="AddInstance"/> would store all of it. Ask this before taking
+    /// something from somewhere it cannot be put back.</summary>
+    public bool CanAccept(ItemInstance instance, int quantity = 1) =>
+        SlotsNeededFor(instance, quantity) <= FreeSlots;
+
+    /// <summary>Removes the whole stack holding exactly <paramref name="instance"/> (by reference)
+    /// and returns how many units it held; 0 if this inventory does not hold it.</summary>
+    public int TakeAll(ItemInstance instance)
+    {
+        int taken = TakeAllFrom(_stacks, instance);
+        if (taken == 0)
+        {
+            taken = TakeAllFrom(_materials, instance);
+        }
+
+        if (taken > 0)
+        {
+            NotifyChanged();
+        }
+
+        return taken;
+    }
+
+    private static int TakeAllFrom(List<ItemStack> store, ItemInstance instance)
+    {
+        for (int i = 0; i < store.Count; i++)
+        {
+            if (ReferenceEquals(store[i].Instance, instance))
+            {
+                int quantity = store[i].Quantity;
+                store.RemoveAt(i);
+                return quantity;
+            }
+        }
+
+        return 0;
+    }
+
+    /// <summary>
+    /// Whether the player may be allowed to lose <paramref name="instance"/> by an action that asks
+    /// them: selling, salvaging, dropping, marking as junk. A <see cref="ItemInstance.Locked"/> item
+    /// may not. Every such action checks this first; <see cref="RemoveItem(string, int)"/> does not,
+    /// because a quest turn-in or a recipe is not the player throwing something away by mistake.
+    /// </summary>
+    public static bool CanDispose(ItemInstance? instance) => instance is { Locked: false };
 
     public void Clear()
     {
