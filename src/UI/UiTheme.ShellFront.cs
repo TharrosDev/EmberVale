@@ -116,11 +116,16 @@ public static partial class UiTheme
         return rect;
     }
 
+    /// <summary>The node name of the painting <see cref="SheetOverPainting"/> lays under a sheet.</summary>
+    public const string SheetCoverName = "SheetCover";
+
     /// <summary>
     /// Puts <paramref name="painting"/> under a <see cref="Sheet"/> and thins the sheet's scrim to
     /// <see cref="TitleSheetScrim"/> so it shows: a screen opened from the title keeps the title's
     /// picture behind it instead of going to flat black. With no painting the sheet is left as it
-    /// was built. Under high contrast the scrim is nearly solid, as everywhere.
+    /// was built. Under high contrast the scrim is nearly solid, as everywhere. The painting is
+    /// the sheet's first child, named <see cref="SheetCoverName"/>, and overhangs the view as the
+    /// title's does at rest, so it is the same picture at the same size.
     /// </summary>
     public static void SheetOverPainting(Control sheetRoot, Texture2D? painting)
     {
@@ -135,6 +140,11 @@ public static partial class UiTheme
         }
 
         TextureRect cover = Cover(painting);
+        cover.Name = SheetCoverName;
+        cover.OffsetLeft = -BackdropOverscan;
+        cover.OffsetTop = -BackdropOverscan;
+        cover.OffsetRight = BackdropOverscan;
+        cover.OffsetBottom = BackdropOverscan;
         sheetRoot.AddChild(cover);
         sheetRoot.MoveChild(cover, 0);
     }

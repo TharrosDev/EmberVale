@@ -129,8 +129,14 @@ public partial class MainMenu : CanvasLayer
             return;
         }
 
-        BuildSheet();
-        UiFocus.GrabFirst(_entries);
+        // The view changed under a menu the player is on: an open quit prompt stays up with its
+        // focus (it lays itself out), and otherwise focus goes back to the entry it was on.
+        int[]? focused = UiFocus.PathOf(_entries);
+        BuildSheet(keepPrompt: true);
+        if (_prompt == null)
+        {
+            UiFocus.Restore(_entries, focused ?? System.Array.Empty<int>());
+        }
     }
 
     private void AfterSplash()
@@ -194,7 +200,7 @@ public partial class MainMenu : CanvasLayer
         return version;
     }
 
-    private void BuildSheet()
+    private void BuildSheet(bool keepPrompt = false)
     {
         if (_sheet != null)
         {
@@ -204,7 +210,10 @@ public partial class MainMenu : CanvasLayer
             _sheet.QueueFree();
         }
 
-        ClosePrompt(restoreFocus: false);
+        if (!keepPrompt)
+        {
+            ClosePrompt(restoreFocus: false);
+        }
 
         // Continue needs a save it can read a header from; the browser only needs a file to exist,
         // because a save too damaged to list is exactly the one the player has to be shown.
@@ -243,6 +252,10 @@ public partial class MainMenu : CanvasLayer
 
         _legend = new UiLegend();
         AddChild(_legend);
+        if (_prompt != null)
+        {
+            MoveChild(_prompt, -2); // a kept prompt stays over the new sheet and under its legend
+        }
 
         // A short view (a handheld) keeps the wordmark and gives the seal and the subtitle up, so
         // all seven entries stay on screen.
@@ -522,7 +535,9 @@ public partial class MainMenu : CanvasLayer
     }
 
     /// <summary>A sub-screen arrives by fading in over the painting; it leaves at once, as every
-    /// menu does. Each is its own layer, so it is the layer's surfaces that are faded.</summary>
+    /// menu does. Each is its own layer, so it is the layer's surfaces that are faded. A sheet
+    /// that carries the title's painting keeps it solid from the first frame and fades what lies
+    /// over it, so the picture stays up while the scrim comes down.</summary>
     private static void FadeInScreen(Node? screen)
     {
         if (screen == null)
@@ -532,9 +547,23 @@ public partial class MainMenu : CanvasLayer
 
         foreach (Node child in screen.GetChildren())
         {
-            if (child is Control { Visible: true } surface)
+            if (child is not Control { Visible: true } surface)
+            {
+                continue;
+            }
+
+            if (surface.GetNodeOrNull(UiTheme.SheetCoverName) is not { } cover)
             {
                 UiFx.FadeIn(surface);
+                continue;
+            }
+
+            foreach (Node part in surface.GetChildren())
+            {
+                if (part != cover && part is Control { Visible: true } over)
+                {
+                    UiFx.FadeIn(over);
+                }
             }
         }
     }
