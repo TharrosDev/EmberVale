@@ -2,7 +2,10 @@ using System.Collections.Generic;
 using Embervale.Combat;
 using Embervale.Core;
 using Embervale.Core.Events;
+using Embervale.Core.Services;
 using Embervale.Localization;
+using Embervale.Settings;
+using Embervale.Stats;
 using Godot;
 
 namespace Embervale.UI;
@@ -15,7 +18,9 @@ namespace Embervale.UI;
 /// parenthesised; a resisted blow is dim italic and says so; a parry is a word with no number; a guard
 /// break and a poise break carry their word.
 ///
-/// <para>Off entirely when the Damage Numbers setting is off (<see cref="CombatComfort.DamageNumbers"/>).
+/// <para>Which blows get a number is the player's damage-number mode (<see cref="DamageNumberRules"/>:
+/// none, all, their own blows only, or only crits and kills), and none at all with the HUD element
+/// hidden. A crit is never told apart by colour alone: it is larger and carries a bang.
 /// Under Reduced Motion the numbers hold still and live a little shorter instead of popping and rising.
 /// Rapid same-outcome hits on one target fold into one running total, and a pool of labels caps how
 /// many can be live, so a burn tick or a pack fight cannot carpet the screen.</para>
@@ -23,7 +28,10 @@ namespace Embervale.UI;
 public sealed partial class DamageNumberLayer : Control
 {
     private const int MaxLive = 24;
-    private const int BaseFontSize = 26;
+    private const int OutlineSize = 5;
+
+    /// <summary>The size of an ordinary number; each outcome and amount scales from it.</summary>
+    private static int BaseFontSize => UiTheme.FontSize(UiTheme.TitleFontSize);
 
     private sealed class Entry
     {
@@ -58,7 +66,14 @@ public sealed partial class DamageNumberLayer : Control
 
     private void OnHit(HitConfirmedEvent e)
     {
-        if (!LiveComfort.Get().DamageNumbers || (!e.ByPlayer && !e.OnPlayer))
+        int mode = Mode();
+        if (mode == DamageNumberRules.Off || (!e.ByPlayer && !e.OnPlayer))
+        {
+            return;
+        }
+
+        bool kill = e.ByPlayer && e.Target.GetComponent<StatsComponent>() is { IsAlive: false };
+        if (!DamageNumberRules.Shows(mode, e.ByPlayer, e.OnPlayer, e.Outcome == HitOutcome.Critical, kill))
         {
             return;
         }
@@ -123,6 +138,31 @@ public sealed partial class DamageNumberLayer : Control
         _live.Add(entry);
     }
 
+    /// <summary>The damage-number mode in force: none while the HUD element is hidden, else the
+    /// saved mode (or what the older on/off toggle means).</summary>
+    private static int Mode()
+    {
+        if (GameHud.ElementMode(HudElement.DamageNumbers) == HudElementMode.Hidden)
+        {
+            return DamageNumberRules.Off;
+        }
+
+        return ServiceLocator.Instance is { } locator && locator.TryGet(out SettingsService settings)
+            ? SettingsMath.DamageNumberMode(settings.Current.DamageNumberMode, settings.Current.DamageNumbers)
+            : DamageNumberRules.All;
+    }
+
+    /// <summary>Takes every number off the screen, so a harness can count what one blow adds.</summary>
+    public void ClearForCapture()
+    {
+        foreach (Entry entry in _live)
+        {
+            Recycle(entry);
+        }
+
+        _live.Clear();
+    }
+
     private static Label MakeLabel()
     {
         var label = new Label
@@ -132,8 +172,8 @@ public sealed partial class DamageNumberLayer : Control
             Visible = false,
         };
         UiTheme.ApplyType(label, UiTheme.FontRole.Display, BaseFontSize);
-        label.AddThemeConstantOverride("outline_size", 5);
-        label.AddThemeColorOverride("font_outline_color", new Color(0.03f, 0.03f, 0.03f, 0.9f));
+        label.AddThemeConstantOverride("outline_size", OutlineSize);
+        label.AddThemeColorOverride("font_outline_color", UiTheme.Keyline);
         return label;
     }
 
@@ -142,7 +182,7 @@ public sealed partial class DamageNumberLayer : Control
         string? word = entry.Style.WordKey is { } key ? Loc.T(key) : null;
         Label label = entry.Label;
         label.Text = DamageNumberMath.Compose(entry.Outcome, entry.Amount, word);
-        label.AddThemeColorOverride("font_color", new Color(entry.Style.R, entry.Style.G, entry.Style.B));
+        UiLive.FontColor(label, new Color(entry.Style.R, entry.Style.G, entry.Style.B));
         label.AddThemeFontSizeOverride("font_size", Mathf.RoundToInt(BaseFontSize * entry.SizeScale));
         label.Modulate = new Color(1f, 1f, 1f, entry.Style.Italic ? 0.75f : 1f);
         if (label.GetParent() == null)

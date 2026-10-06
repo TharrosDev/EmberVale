@@ -5512,3 +5512,6 @@ create.name_blank,Leave it empty to go by {0}.
 create.legend.step,Step
 create.legend.turn,Turn
 create.legend.scroll,Scroll
+# ui-upgrade: lane 5 (HUD combat and notices)
+hudc.toast.count,×{0}
+hudc.toast.journal,Journal
