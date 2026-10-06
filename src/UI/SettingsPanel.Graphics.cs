@@ -96,6 +96,7 @@ public partial class SettingsPanel
         HSlider scale = UiTheme.Slider(GraphicsMath.MinRenderScale, GraphicsMath.MaxRenderScale, 0.05, 1.0,
             UiTheme.SettingsControlColumn - UiTheme.SettingsReadout - UiTheme.SpaceSm);
         scale.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        scale.Scrollable = false; // as SliderRow: the wheel belongs to the list
         Label scaleReadout = UiTheme.Body(string.Empty, UiTheme.Dim);
         scaleReadout.CustomMinimumSize = new Vector2(UiTheme.SettingsReadout, 0f);
         scaleReadout.HorizontalAlignment = HorizontalAlignment.Right;

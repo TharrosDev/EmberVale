@@ -36,7 +36,7 @@ public partial class SettingsPanel : CanvasLayer
     private UiTabs _tabs = null!;
     private ScrollContainer _scroll = null!;
     private VBoxContainer _pane = null!;
-    private UiLegend _legend = null!;
+    private UiLegend? _legend;
     private Viewport? _viewport;
 
     private bool _narrow;
@@ -74,8 +74,6 @@ public partial class SettingsPanel : CanvasLayer
         UiState.Open(this);
         Godot.Input.MouseMode = Godot.Input.MouseModeEnum.Visible;
 
-        _legend = new UiLegend();
-        AddChild(_legend);
         Build();
         UiFocus.GrabFirst(_scroll); // gamepad/keyboard land on the first setting (30.5J)
 
@@ -188,7 +186,19 @@ public partial class SettingsPanel : CanvasLayer
         col.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
         _root = root;
         AddChild(root);
-        MoveChild(root, 0); // under the legend and any open prompt
+        MoveChild(root, 0); // under any open prompt and the legend
+
+        // The legend is made again with the sheet: its captions, keycaps and plate are sized and
+        // coloured when they are drawn, and a rebuild is what follows a text-size, font or contrast
+        // change. Last child, so a prompt's scrim never dims the keys that answer the prompt.
+        if (_legend != null)
+        {
+            RemoveChild(_legend);
+            _legend.QueueFree();
+        }
+
+        _legend = new UiLegend();
+        AddChild(_legend);
 
         col.AddChild(UiTheme.Title(Loc.T("settings.title")));
 
@@ -245,9 +255,11 @@ public partial class SettingsPanel : CanvasLayer
 
     /// <summary>
     /// Keeps the tab strip inside the sheet. The six names fit as they are at every size but the
-    /// largest text on a handheld; there each tab gives up width in proportion to its own name and
-    /// clips with an ellipsis (its tooltip keeps the whole name), instead of the strip pushing the
-    /// sheet wider than the screen. Measured, so only once the strip is in the tree.
+    /// largest text on a handheld; there every tab but the active one gives up width in proportion
+    /// to its own name and clips with an ellipsis (its tooltip keeps the whole name), instead of
+    /// the strip pushing the sheet wider than the screen. The active tab is never clipped: a pad
+    /// has no pointer for a tooltip, and stepping the strip then reads each name in turn.
+    /// Measured, so only once the strip is in the tree.
     /// </summary>
     private void FitTabs(float room)
     {
@@ -256,9 +268,10 @@ public partial class SettingsPanel : CanvasLayer
             return;
         }
 
+        int index = 0;
         foreach (Node child in _tabs.GetChildren())
         {
-            if (child is Button tab)
+            if (child is Button tab && index++ != (int)_tab)
             {
                 tab.SizeFlagsStretchRatio = Mathf.Max(1f, tab.GetCombinedMinimumSize().X);
                 tab.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
@@ -286,7 +299,7 @@ public partial class SettingsPanel : CanvasLayer
         };
         Control tabButton = HoldButton(resetTab, () =>
         {
-            _settings.ResetTab(_tab);
+            KeepingHidden(() => _settings.ResetTab(_tab));
             Persist();
             MarkDirty();
         });
@@ -300,7 +313,7 @@ public partial class SettingsPanel : CanvasLayer
         };
         Control allButton = HoldButton(resetAll, () =>
         {
-            _settings.ResetAllButBindingsAndAccessibility();
+            KeepingHidden(_settings.ResetAllButBindingsAndAccessibility);
             Persist();
             MarkDirty();
         });
@@ -639,6 +652,7 @@ public partial class SettingsPanel : CanvasLayer
         HSlider slider = UiTheme.Slider(min, max, step, value,
             UiTheme.SettingsControlColumn - UiTheme.SettingsReadout - UiTheme.SpaceSm);
         slider.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        slider.Scrollable = false; // the wheel scrolls the list; it must not move a setting it passes over
         Label readout = UiTheme.Body(format(value), UiTheme.Dim);
         readout.CustomMinimumSize = new Vector2(UiTheme.SettingsReadout, 0f);
         readout.HorizontalAlignment = HorizontalAlignment.Right;
@@ -780,7 +794,7 @@ public partial class SettingsPanel : CanvasLayer
             entries.Add(new LegendEntry("ui_cancel", Loc.T("common.back")));
         }
 
-        _legend.Set(entries);
+        _legend?.Set(entries);
     }
 
     private void OnDeviceChanged(InputDeviceChangedEvent e)

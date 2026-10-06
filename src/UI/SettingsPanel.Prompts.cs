@@ -87,6 +87,10 @@ public partial class SettingsPanel
 
         _prompt = root;
         AddChild(root);
+        if (_legend is { } legend)
+        {
+            MoveChild(legend, -1); // it names this prompt's keys, so it stays above the scrim
+        }
 
         // Focus stays inside the prompt: each choice's neighbours are the other choices, wrapping,
         // and up and down go nowhere. Paths, so only now that the buttons are in the tree.

@@ -19,6 +19,18 @@ public partial class SettingsPanel
     /// </summary>
     public static readonly bool DifficultyWired = false;
 
+    /// <summary>Runs a reset without it reaching an option this screen does not show: a reset
+    /// must not change what the player cannot see.</summary>
+    private void KeepingHidden(System.Action reset)
+    {
+        int difficulty = _settings.Current.Difficulty;
+        reset();
+        if (!DifficultyWired)
+        {
+            _settings.Current.Difficulty = difficulty;
+        }
+    }
+
     private void BuildGameplay(VBoxContainer body)
     {
         var s = _settings.Current;

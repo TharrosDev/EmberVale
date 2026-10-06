@@ -326,4 +326,35 @@ public static class InputBindingRules
 
         return null;
     }
+
+    /// <summary>
+    /// The saved list with <paramref name="action"/> back on its default, and with it every other
+    /// action whose remap now shares an input with one just restored: putting back one half of a
+    /// swap puts back the other, so a restore can never leave two actions on one key. An action
+    /// that collides without being remapped (a hand-edited file) is left as it is.
+    /// </summary>
+    public static string[] Restore(
+        string[]? entries, string action, BindingDevice device, Func<string, InputBinding> defaultOf)
+    {
+        string[] result = Without(entries, action);
+        var restored = new Queue<string>();
+        restored.Enqueue(action);
+        while (restored.Count > 0)
+        {
+            string current = restored.Dequeue();
+            if (!IsRemappable(current, device))
+            {
+                continue;
+            }
+
+            while (FindConflict(current, defaultOf(current), Effective(result, device, defaultOf)) is { } other
+                   && IsRemapped(result, other, device))
+            {
+                result = Without(result, other);
+                restored.Enqueue(other);
+            }
+        }
+
+        return result;
+    }
 }

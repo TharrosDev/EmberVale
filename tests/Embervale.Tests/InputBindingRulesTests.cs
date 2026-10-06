@@ -522,6 +522,77 @@ public class InputBindingRulesTests
         Assert.Null(InputBindingRules.FindConflict(GameInput.Interact, Space, after));
     }
 
+    private static InputBinding KeyDefault(string action) => action switch
+    {
+        GameInput.Jump => Space,
+        GameInput.Interact => KeyE,
+        GameInput.CycleSpell => KeyF,
+        _ => InputBinding.Unbound,
+    };
+
+    private static void AssertNoSharedInputs(string[] saved)
+    {
+        Dictionary<string, InputBinding> after = InputBindingRules.Effective(saved, BindingDevice.Keyboard, KeyDefault);
+        foreach ((string action, InputBinding binding) in after)
+        {
+            Assert.Null(InputBindingRules.FindConflict(action, binding, after));
+        }
+    }
+
+    [Fact]
+    public void Restore_OfOneHalfOfASwap_PutsTheOtherHalfBackToo()
+    {
+        string[] saved =
+        {
+            InputBindingRules.With(null, GameInput.Jump, KeyE, Space)[0],
+            InputBindingRules.With(null, GameInput.Interact, Space, KeyE)[0],
+            InputBindingRules.With(null, GameInput.Sprint, InputBinding.OfKey(Key.H), InputBinding.Unbound)[0],
+        };
+        string[] after = InputBindingRules.Restore(saved, GameInput.Jump, BindingDevice.Keyboard, KeyDefault);
+        Assert.Equal(new[] { saved[2] }, after);
+        AssertNoSharedInputs(after);
+    }
+
+    [Fact]
+    public void Restore_OfAnActionUnboundByAConflict_PutsBackTheOneThatTookItsKey()
+    {
+        // Jump took E and Interact was unbound; Interact going back to E must not leave Jump on E.
+        string[] saved = InputBindingRules.With(null, GameInput.Jump, KeyE, Space);
+        saved = InputBindingRules.With(saved, GameInput.Interact, InputBinding.Unbound, KeyE);
+        string[] after = InputBindingRules.Restore(saved, GameInput.Interact, BindingDevice.Keyboard, KeyDefault);
+        Assert.Empty(after);
+        AssertNoSharedInputs(after);
+    }
+
+    [Fact]
+    public void Restore_FollowsAChainOfRemaps()
+    {
+        // A three-way rotation: restoring one link leaves the next colliding, and so on round.
+        string[] saved = InputBindingRules.With(null, GameInput.Jump, KeyE, Space);
+        saved = InputBindingRules.With(saved, GameInput.Interact, KeyF, KeyE);
+        saved = InputBindingRules.With(saved, GameInput.CycleSpell, Space, KeyF);
+        Assert.Empty(InputBindingRules.Restore(saved, GameInput.Jump, BindingDevice.Keyboard, KeyDefault));
+    }
+
+    [Fact]
+    public void Restore_WithNothingColliding_TouchesOnlyItsOwnAction()
+    {
+        string[] saved = InputBindingRules.With(null, GameInput.Jump, InputBinding.OfKey(Key.H), Space);
+        saved = InputBindingRules.With(saved, GameInput.Interact, InputBinding.OfKey(Key.R), KeyE);
+        string[] after = InputBindingRules.Restore(saved, GameInput.Jump, BindingDevice.Keyboard, KeyDefault);
+        Assert.Equal(new[] { saved[1] }, after);
+    }
+
+    [Fact]
+    public void Restore_LeavesAnUnremappedCollisionAlone_AndEnds()
+    {
+        // Two defaults that share a key cannot be fixed by restoring; it must not loop on them.
+        string[] saved = InputBindingRules.With(null, GameInput.Jump, InputBinding.OfKey(Key.H), Space);
+        string[] after = InputBindingRules.Restore(saved, GameInput.Jump, BindingDevice.Keyboard,
+            action => action is GameInput.Jump or GameInput.Interact ? Space : InputBinding.Unbound);
+        Assert.Empty(after);
+    }
+
     [Fact]
     public void UnbindingTheOther_LeavesItClearedAndSaved()
     {

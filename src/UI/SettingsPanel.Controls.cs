@@ -130,8 +130,11 @@ public partial class SettingsPanel
                             || InputBindingRules.IsRemapped(s.PadBindings, action, BindingDevice.Gamepad),
             Revert = () =>
             {
-                s.KeyBindings = InputBindingRules.Without(s.KeyBindings, action);
-                s.PadBindings = InputBindingRules.Without(s.PadBindings, action);
+                // With whatever its default now collides with: the other half of a swap goes back too.
+                s.KeyBindings = InputBindingRules.Restore(s.KeyBindings, action, BindingDevice.Keyboard,
+                    a => GameInput.DefaultBinding(a, BindingDevice.Keyboard));
+                s.PadBindings = InputBindingRules.Restore(s.PadBindings, action, BindingDevice.Gamepad,
+                    a => GameInput.DefaultBinding(a, BindingDevice.Gamepad));
             },
         };
 
