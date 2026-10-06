@@ -5515,3 +5515,51 @@ create.legend.scroll,Scroll
 # ui-upgrade: lane 5 (HUD combat and notices)
 hudc.toast.count,×{0}
 hudc.toast.journal,Journal
+# ui-upgrade: trade panels (lane 6b)
+trade.purse.yours,Your purse
+trade.purse.theirs,Their purse
+trade.purse.shelf,Her shelf
+trade.purse.listed,{0} listed
+trade.purse.deep,No limit
+trade.counter,This counter
+trade.legend.details,Scroll details
+trade.legend.browse,Browse
+trade.legend.choose,Choose
+trade.legend.mode,Switch mode
+trade.sell_stack,Sell stack
+trade.need_more,You need {0}g more.
+trade.sold_out,sold out
+trade.junk_confirm,Sell {0} junk stack(s) for {1}g?
+trade.junk_confirm_verb,Sell for {0}g
+trade.price_reasons,Why this price
+trade.order.buy_hint,One press on a ware buys one of it.
+trade.order.sell_hint,One press on a stack sells all of it.
+trade.buy_many,Buy {0}
+trade.buy_max,Buy max ({0})
+trade.sell_many,Sell {0}
+trade.sell_all,Sell all ({0})
+shop.line.spread,"This counter asks {0}% of what a thing is worth here, and pays {1}% for it."
+storage.sort_by,Sort: {0}
+storage.order_hint,One press on a stack moves all of it.
+storage.move_many,{0} {1}
+storage.move_all,{0} all ({1})
+appraisal.heading,Appraisal
+appraisal.by,Valued by {0}
+appraisal.best_at,Best price: {0}
+appraisal.each,gold each
+contracts.carried,{0}/{1} carried
+contracts.risk.short,Short by {0}
+contracts.risk.closing,Board turns within a day
+contracts.risk.contraband,Contraband cargo
+contracts.reward_unit,gold
+contracts.refused_short,You are {0} short of what this posting wants.
+craft.col.recipes,Recipes
+craft.col.ingredients,Ingredients
+craft.col.count,{0} known
+craft.can_make,Can make {0}
+craft.have_of_need,{0}/{1}
+craft.makes,Each craft makes {0}.
+craft.order.none,No recipe is selected.
+craft.order.hint,Everything it needs is in your pack.
+craft.order.hint_commission,He supplies whatever you are short of.
+craft.order.missing,You are missing materials.

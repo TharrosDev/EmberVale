@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Text;
 using Embervale.Economy;
 using Embervale.Localization;
@@ -39,4 +40,22 @@ public static class PriceTooltip
 
         return text.ToString();
     }
+
+    /// <summary>The same breakdown one reason at a time, for a screen that prints it under an item's
+    /// card instead of hiding it behind a hover: a pad has no pointer to hover with.</summary>
+    public static IEnumerable<string> Lines(PriceQuote quote)
+    {
+        foreach (PriceLine line in quote.Lines)
+        {
+            yield return Loc.TF(line.Key, line.Arg, line.Running);
+        }
+    }
+
+    /// <summary>
+    /// The buy/sell spread in one sentence: what a counter asks for a thing and what it pays for the
+    /// same thing, as percentages of its worth here. It answers the question every first sale raises,
+    /// and it is why the two halves of a shop window never quote one number.
+    /// </summary>
+    public static string Spread(int asksPercent, int paysPercent) =>
+        Loc.TF("shop.line.spread", asksPercent, paysPercent);
 }
