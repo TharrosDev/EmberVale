@@ -125,6 +125,23 @@ public class SpellPinRulesTests
     }
 
     [Fact]
+    public void WithPressesInPlaceOfHolds_TheWheelHintAsksForAPress_AndNoOtherStepChanges()
+    {
+        Dictionary<string, string> catalogue = Catalogue();
+        string key = TutorialScript.HintKey(TutorialStep.SpellWheel, holdsToPresses: true);
+        Assert.Equal("Press {0} for the spell wheel.", catalogue[key]);
+        Assert.DoesNotContain("Hold", catalogue["hud.spell.wheel_press"]);
+        foreach (TutorialStep step in TutorialScript.Steps)
+        {
+            Assert.Equal(TutorialScript.HintKey(step), TutorialScript.HintKey(step, holdsToPresses: false));
+            if (step != TutorialStep.SpellWheel)
+            {
+                Assert.Equal(TutorialScript.HintKey(step), TutorialScript.HintKey(step, holdsToPresses: true));
+            }
+        }
+    }
+
+    [Fact]
     public void EveryKeyTheRowAndTheBookAdded_IsInTheCatalogue_WithNoEmDash()
     {
         Dictionary<string, string> catalogue = Catalogue();
@@ -133,6 +150,7 @@ public class SpellPinRulesTests
             "hud.spell.wheel_hold", "hud.spell.wheel_tap", "spellbook.pins", "spellbook.pins_chosen",
             "spellbook.pins_full", "spellbook.pin", "spellbook.pin_to", "spellbook.unpin", "spellbook.prepare",
             "spellbook.prepared", "spellbook.legend.pin", "tutorial.spell_wheel_hold", "wheel.slot.empty", "wheel.slot.hint",
+            "hud.spell.wheel_press", "tutorial.spell_wheel_press",
         };
         foreach (string key in keys)
         {

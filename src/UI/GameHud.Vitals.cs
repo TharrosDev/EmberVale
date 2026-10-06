@@ -105,6 +105,10 @@ public partial class GameHud
     private SpellDisc _spellDisc = null!;
     private HBoxContainer _spellWheelRow = null!;
     private Control _spellHoldGlyph = null!;
+    private Label _spellHoldLabel = null!;
+
+    // With "presses in place of holds" on, the key opens the wheel on a press and there is no tap.
+    private bool _spellPresses;
     private HBoxContainer _spellTap = null!;
     private SpellDisc _spellGhost = null!;
     private Label _spellGhostName = null!;
@@ -264,9 +268,9 @@ public partial class GameHud
         _spellWheelRow.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
         _spellHoldGlyph = new CenterContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
         _spellWheelRow.AddChild(_spellHoldGlyph);
-        Label hold = UiTheme.HudInk(UiTheme.Caption(Loc.T("hud.spell.wheel_hold"), UiTheme.Text));
-        hold.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
-        _spellWheelRow.AddChild(hold);
+        _spellHoldLabel = UiTheme.HudInk(UiTheme.Caption(Loc.T("hud.spell.wheel_hold"), UiTheme.Text));
+        _spellHoldLabel.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
+        _spellWheelRow.AddChild(_spellHoldLabel);
 
         _spellTap = new HBoxContainer
         {
@@ -719,6 +723,10 @@ public partial class GameHud
                 // Font colour, not Modulate: modulate would tint the ink round the letters as well.
                 UiLive.FontColor(_spellName, UiTheme.SchoolColor(spell.School));
                 InvalidateSpellShown();
+
+                // Every settings change lands here (the invalidation clears _spellShown), so the
+                // accessibility setting is read on those ticks and not on every one.
+                _spellPresses = UiFx.HoldsToPresses;
                 NoteVitalsChanged();
 
                 // A settings change comes through here too, and the discs' colours follow the
@@ -736,15 +744,16 @@ public partial class GameHud
 
             // The wheel line: only for a caster with a second spell to hold the key for, and the
             // ghost only once there is a spell to swap back to.
-            int wheel = SpellPinRules.ShowsWheelHint(spells.SpellCount) ? 1 : 0;
+            int wheel = !SpellPinRules.ShowsWheelHint(spells.SpellCount) ? 0 : _spellPresses ? 2 : 1;
             if (wheel != _spellWheelShown)
             {
                 _spellWheelShown = wheel;
-                _spellWheelRow.Visible = wheel == 1;
+                _spellWheelRow.Visible = wheel != 0;
+                _spellHoldLabel.Text = Loc.T(wheel == 2 ? "hud.spell.wheel_press" : "hud.spell.wheel_hold");
                 NoteVitalsChanged();
             }
 
-            string ghost = SpellPinRules.Ghost(spells.PreviousSpellId, spell.Id);
+            string ghost = _spellPresses ? SpellFavouritesRules.None : SpellPinRules.Ghost(spells.PreviousSpellId, spell.Id);
             if (ghost != _spellGhostShown)
             {
                 _spellGhostShown = ghost;

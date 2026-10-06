@@ -735,9 +735,10 @@ public partial class SpellbookPanel : UiPanel
     /// A known spell's two verbs: prepare it (what the cast key casts) and pin it to the wheel.
     ///
     /// ⚠️ Both are always buttons, so the row keeps its shape. The prepared spell's first button
-    /// reads "Prepared" and pressing it prepares it again, which changes nothing: were it a chip,
-    /// the rebuild after a press would find no button where focus had been and drop a pad's focus
-    /// back to the top of the page.
+    /// reads "Prepared" and pressing it does nothing: were it a chip, the rebuild after a press
+    /// would find no button where focus had been and drop a pad's focus back to the top of the
+    /// page. It does not select again, because a selection is an event (the tutorial's wheel step
+    /// and the HUD both listen for it) and nothing was selected.
     /// </summary>
     private Control BuildCardActions(SpellResource spell)
     {
@@ -745,21 +746,22 @@ public partial class SpellbookPanel : UiPanel
         row.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
 
         bool prepared = _spellcasting!.Selected?.Id == spell.Id;
-        Button prepare = UiTheme.Action(Loc.T(prepared ? "spellbook.prepared" : "spellbook.prepare"), UiCue.Confirm);
+
+        // Refused only while a cast is in flight, which a menu can open over; the menu pauses the
+        // world, so what is true when the row is built is still true when it is pressed.
+        Button prepare = UiTheme.Action(
+            Loc.T(prepared ? "spellbook.prepared" : "spellbook.prepare"),
+            prepared ? UiCue.Click : _spellcasting.SelectionLocked ? UiCue.Denied : UiCue.Confirm);
+        string id = spell.Id;
         if (prepared)
         {
             prepare.AddThemeColorOverride("font_color", UiTheme.Accent);
         }
-
-        string id = spell.Id;
-        prepare.Pressed += () =>
+        else
         {
-            // Refused only while a cast is in flight, which a menu can open over.
-            if (!_spellcasting!.Select(id))
-            {
-                UiAudio.Play(UiCue.Denied);
-            }
-        };
+            prepare.Pressed += () => _spellcasting!.Select(id);
+        }
+
         row.AddChild(prepare);
 
         SpellPinChoice choice = SpellPinRules.Decide(_spellcasting.Favourites, id, _pinSlot);

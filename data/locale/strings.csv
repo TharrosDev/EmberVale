@@ -5616,6 +5616,7 @@ wheel.centre.no_previous,No previous spell
 wheel.centre.keeps,Keeps {0}
 # --- lane: hud-spellbook ---
 hud.spell.wheel_hold,Hold: wheel
+hud.spell.wheel_press,Press: wheel
 hud.spell.wheel_tap,Tap:
 spellbook.pins,"Wheel favourites, clockwise from the top. Choose a slot to replace it, or pin a spell to the first free one."
 spellbook.pins_chosen,"Slot {0} chosen. Pin a spell to put it there."
@@ -5626,5 +5627,6 @@ spellbook.unpin,Unpin
 spellbook.prepare,Prepare
 spellbook.legend.pin,Prepare or pin
 tutorial.spell_wheel_hold,"Hold {0} for the spell wheel. Tap it to swap back to your last spell."
+tutorial.spell_wheel_press,"Press {0} for the spell wheel."
 # --- lane: audio ---
 # --- lane: vfx ---

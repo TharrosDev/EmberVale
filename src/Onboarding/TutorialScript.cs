@@ -83,6 +83,12 @@ public static class TutorialScript
         _ => string.Empty,
     };
 
+    /// <summary>As <see cref="HintKey(TutorialStep)"/>, for a player with "presses in place of
+    /// holds" on: the spell wheel then opens on a press and there is no tap, so its hint must not
+    /// ask for a hold. Every other step reads the same either way.</summary>
+    public static string HintKey(TutorialStep step, bool holdsToPresses) =>
+        holdsToPresses && step == TutorialStep.SpellWheel ? "tutorial.spell_wheel_press" : HintKey(step);
+
     /// <summary>The input action whose glyph a step's hint shows, or empty when the step isn't bound
     /// to one action (looking is the mouse itself).</summary>
     public static string ActionFor(TutorialStep step) => step switch
