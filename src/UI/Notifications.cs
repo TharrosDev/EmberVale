@@ -90,6 +90,7 @@ public partial class Notifications : CanvasLayer
         bus?.Subscribe<WorldEventEndedEvent>(OnWorldEventEnded);
         bus?.Subscribe<LocationDiscoveredEvent>(OnLocationDiscovered);
         bus?.Subscribe<GameSavedEvent>(OnGameSaved);
+        SubscribeSave(bus);
         bus?.Subscribe<CompanionRecruitedEvent>(OnCompanionRecruited);
         bus?.Subscribe<CompanionDismissedEvent>(OnCompanionDismissed);
         bus?.Subscribe<CompanionDownedEvent>(OnCompanionDowned);
@@ -140,6 +141,7 @@ public partial class Notifications : CanvasLayer
         bus.Unsubscribe<WorldEventEndedEvent>(OnWorldEventEnded);
         bus.Unsubscribe<LocationDiscoveredEvent>(OnLocationDiscovered);
         bus.Unsubscribe<GameSavedEvent>(OnGameSaved);
+        UnsubscribeSave(bus);
         bus.Unsubscribe<CompanionRecruitedEvent>(OnCompanionRecruited);
         bus.Unsubscribe<CompanionDismissedEvent>(OnCompanionDismissed);
         bus.Unsubscribe<CompanionDownedEvent>(OnCompanionDowned);
@@ -346,14 +348,61 @@ public partial class Notifications : CanvasLayer
     public static bool ShouldAnnounceDiscovery(bool revealWithCell, MapTier tier) =>
         !revealWithCell && tier != MapTier.Detail;
 
-    // Only the autosave cadence (Phase 24D) toasts; manual quicksaves (F5) stay quiet.
+    // --- BEGIN ics:save-ui: save and load feedback -------------------------------------------
+    // Every save says where it went: an autosave quietly, a quick or manual save as a confirmation,
+    // and a save that did not land as a warning with its reason. A toast pushed while the game is
+    // paused waits for play to resume, so the pause menu also writes its own result inline.
+    private void SubscribeSave(EventBus? bus)
+    {
+        bus?.Subscribe<SaveFailedEvent>(OnSaveFailed);
+        bus?.Subscribe<SaveNoticeEvent>(OnSaveNotice);
+        AddChild(new SaveIndicator { Name = "SaveIndicator" });
+    }
+
+    private void UnsubscribeSave(EventBus bus)
+    {
+        bus.Unsubscribe<SaveFailedEvent>(OnSaveFailed);
+        bus.Unsubscribe<SaveNoticeEvent>(OnSaveNotice);
+    }
+
     private void OnGameSaved(GameSavedEvent e)
     {
         if (e.IsAutosave)
         {
             Push(Loc.T("notify.autosaved"), UiTheme.Dim);
+            return;
+        }
+
+        switch (Embervale.Save.SaveSlots.KindOf(e.Slot))
+        {
+            case Embervale.Save.SaveKind.Quick:
+                Push(Loc.T("notify.quicksaved"), UiTheme.Good);
+                break;
+            case Embervale.Save.SaveKind.Manual:
+                Push(Loc.TF("notify.saved_to", SaveSlotPanel.SlotLabel(e.Slot)), UiTheme.Good);
+                break;
         }
     }
+
+    // A refused or failed autosave retries on its own cadence, so only a genuine write failure is
+    // worth a warning there; a block (boss fight, conversation) just means it is waiting its turn.
+    private void OnSaveFailed(SaveFailedEvent e)
+    {
+        bool autosave = Embervale.Save.SaveSlots.KindOf(e.Slot) == Embervale.Save.SaveKind.Auto;
+        if (autosave && e.ReasonKey != Embervale.Save.SaveManager.ReasonWriteFailed)
+        {
+            return;
+        }
+
+        Push(
+            Loc.T(autosave ? "notify.autosave_failed" : "notify.save_failed"), UiTheme.Bad, NoticeCategory.Warning,
+            secondary: Loc.Has(e.ReasonKey) ? Loc.T(e.ReasonKey) : null);
+    }
+
+    private void OnSaveNotice(SaveNoticeEvent e) =>
+        Push(e.Text, e.Warning ? UiTheme.Bad : UiTheme.Dim, e.Warning ? NoticeCategory.Warning : NoticeCategory.Minor);
+
+    // --- END ics:save-ui -----------------------------------------------------------------------
 
     // Companion name keys are Loc keys (like quest titles), so they resolve at display time.
     private void OnCompanionRecruited(CompanionRecruitedEvent e) =>

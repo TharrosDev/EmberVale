@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Embervale.Core;
 using Embervale.Core.Diagnostics;
+using Embervale.Core.Events;
 using Embervale.Races;
 using Embervale.Save;
 using Embervale.World;
@@ -32,14 +33,137 @@ public sealed partial class SessionLifecycleCoordinator : Node
 
     private bool _reloadPending;
     private int _reloadRequestGeneration;
+    private string? _titleNoticeKey;
+
+    /// <summary>The title-screen message for a session that ended because it could not be trusted.</summary>
+    public const string NoticeSessionAborted = "title.notice.session_aborted";
+
+    /// <summary>The title-screen message for a save that passed inspection and still failed to restore.</summary>
+    public const string NoticeLoadFailed = "title.notice.load_failed";
+
+    /// <summary>
+    /// Seconds of <b>active play</b> since this session's state last matched a file on disk: reset by
+    /// every save that lands, by a load, and by a new session. It is what the unsaved-progress
+    /// confirms and the save-on-quit ask about. Paused and loading time does not count, so a player
+    /// who saves from the pause menu and then quits has exactly nothing unsaved.
+    /// </summary>
+    public double SecondsSinceLastSave { get; private set; }
 
     public override void _EnterTree()
     {
         // The pause menu asks for a teardown from a paused tree, so this must keep processing.
         ProcessMode = ProcessModeEnum.Always;
+        EventBus.Instance?.Subscribe<GameSavedEvent>(OnGameSaved);
+        EventBus.Instance?.Subscribe<GameLoadedEvent>(OnGameLoaded);
     }
 
+    public override void _Process(double delta)
+    {
+        if (HasSession && GameManager.Instance is { IsPlaying: true })
+        {
+            SecondsSinceLastSave += delta;
+        }
+    }
+
+    private void OnGameSaved(GameSavedEvent e) => SecondsSinceLastSave = 0d;
+
+    private void OnGameLoaded(GameLoadedEvent e) => SecondsSinceLastSave = 0d;
+
     public bool HasSession => Session != null && IsInstanceValid(Session);
+
+    /// <summary>The message the title screen should show for the way the last session ended or the
+    /// last load was refused, handed over once. Null when there is nothing to say.</summary>
+    public string? ConsumeTitleNotice()
+    {
+        string? key = _titleNoticeKey;
+        _titleNoticeKey = null;
+        return key;
+    }
+
+    /// <summary>The title-screen message for a slot that cannot be loaded.</summary>
+    public static string NoticeKeyFor(SaveHealth health) => health switch
+    {
+        SaveHealth.Corrupt => "title.notice.save_corrupt",
+        SaveHealth.Newer => "title.notice.save_newer",
+        _ => "title.notice.save_missing",
+    };
+
+    /// <summary>
+    /// A save the player asked for (the pause menu, F5). Refused, with the reason published as a
+    /// <see cref="SaveFailedEvent"/> for the toast feed, while a boss fight, a conversation or another
+    /// save holds a block; never writes the autosave ring. A manual save makes its slot the session's
+    /// own, so the next one-press save and F9 follow it. <paramref name="failureKey"/> is the locale
+    /// key saying why it did not land, empty on success.
+    /// </summary>
+    public bool TrySave(string slot, out string failureKey)
+    {
+        failureKey = SaveManager.ReasonWriteFailed;
+        if (SaveManager.Instance is not { } saves || !HasSession)
+        {
+            failureKey = SaveManager.ReasonNoWorld;
+            return false;
+        }
+
+        if (!SaveSlotPolicy.IsPlayerWritable(slot))
+        {
+            Log.Warn($"Refused a player save into '{slot}': the autosave ring is not a player slot.");
+            return false;
+        }
+
+        if (!saves.CanSaveNow(out string blockedKey))
+        {
+            failureKey = blockedKey;
+            EventBus.Instance?.Publish(new SaveFailedEvent(slot, blockedKey));
+            return false;
+        }
+
+        // SaveGame publishes its own SaveFailedEvent when the write does not land.
+        if (!saves.SaveGame(slot))
+        {
+            return false;
+        }
+
+        if (SaveManager.KindOfSlot(slot) == SaveKind.Manual)
+        {
+            saves.ActiveSlot = slot;
+        }
+
+        failureKey = string.Empty;
+        return true;
+    }
+
+    /// <summary>Play since the last save below which leaving does not bother to autosave: saving
+    /// from the pause menu, resuming for a moment and quitting should not rotate the ring.</summary>
+    private const double QuitAutosaveFloorSeconds = 5d;
+
+    /// <summary>
+    /// Writes an autosave before the session is left, when there is anything unsaved. True when the
+    /// player loses nothing by quitting now (it saved, or nothing has happened since the last save);
+    /// false, with the reason, when saving is blocked or the write failed and the caller should ask.
+    /// </summary>
+    public bool AutosaveBeforeQuit(out string failureKey)
+    {
+        failureKey = string.Empty;
+        if (!HasSession || SaveManager.Instance is not { } saves || SecondsSinceLastSave < QuitAutosaveFloorSeconds)
+        {
+            return true;
+        }
+
+        if (!saves.CanSaveNow(out failureKey))
+        {
+            return false;
+        }
+
+        string slot = AutosaveService.NextAutosaveSlot(saves.ListSlots());
+        if (saves.SaveGame(slot, isAutosave: true))
+        {
+            Log.Info($"Autosaved to '{slot}' before leaving the session.");
+            return true;
+        }
+
+        failureKey = SaveManager.ReasonWriteFailed;
+        return false;
+    }
 
     /// <summary>Reloads a checkpoint through a fresh session. Rebuilding restores authored actors
     /// removed after the checkpoint and uses the saved race/region even when an old header has no
@@ -52,9 +176,11 @@ public sealed partial class SessionLifecycleCoordinator : Node
         {
             return false;
         }
-        if (SaveManager.Instance is not { } saves || string.IsNullOrWhiteSpace(slot) || !saves.SaveExists(slot))
+        // Inspected, not merely present: a reload destroys the running session, so a slot that is
+        // corrupt or from a newer build has to be refused while there is still a session to keep.
+        if (SaveManager.Instance is not { } saves || saves.InspectSlot(slot) is not { Health: SaveHealth.Ok })
         {
-            Log.Warn($"Cannot reload slot '{slot}': no saved checkpoint exists.");
+            Log.Warn($"Cannot reload slot '{slot}': it holds no loadable checkpoint.");
             return false;
         }
 
@@ -78,6 +204,8 @@ public sealed partial class SessionLifecycleCoordinator : Node
     {
         _reloadPending = false;
         _reloadRequestGeneration++;
+        EventBus.Instance?.Unsubscribe<GameSavedEvent>(OnGameSaved);
+        EventBus.Instance?.Unsubscribe<GameLoadedEvent>(OnGameLoaded);
     }
 
     /// <summary>Raised after a session is torn down, so the shell can show the title again.</summary>
@@ -108,9 +236,25 @@ public sealed partial class SessionLifecycleCoordinator : Node
     }
 
     /// <summary>Loads an existing save into a freshly-built session, then overlays the slot's state
-    /// onto the registered saveables, continuing that save's playtime.</summary>
-    public void StartLoadedGame(string slot)
+    /// onto the registered saveables, continuing that save's playtime.
+    ///
+    /// <para>False when no session came of it. A slot that is missing, corrupt or from a newer build
+    /// is refused <b>before</b> anything is torn down, so a live session survives a bad F9; a save
+    /// that passes inspection and still fails to restore ends at the title screen. Either way
+    /// <see cref="ConsumeTitleNotice"/> has the message.</para></summary>
+    public bool StartLoadedGame(string slot)
     {
+        if (SaveManager.Instance is { } inspector)
+        {
+            SaveHealth health = inspector.InspectSlot(slot)?.Health ?? SaveHealth.Missing;
+            if (health != SaveHealth.Ok)
+            {
+                Log.Error($"Save slot '{slot}' cannot be loaded ({health}); any running session is left untouched.");
+                _titleNoticeKey = NoticeKeyFor(health);
+                return false;
+            }
+        }
+
         CharacterProfile profile = CharacterProfile.Human;
         string regionId = GameIds.Regions.EmberCrown;
 
@@ -143,8 +287,8 @@ public sealed partial class SessionLifecycleCoordinator : Node
         // writes the transform.
         if (SaveManager.Instance?.LoadGame(slot) == false)
         {
-            AbortToTitle($"Save slot '{slot}' failed to restore; returning to the title screen.");
-            return;
+            AbortToTitle($"Save slot '{slot}' failed to restore; returning to the title screen.", NoticeLoadFailed);
+            return false;
         }
 
         // Same gate as a new game and a portal: the player is at their saved transform, but the
@@ -154,6 +298,7 @@ public sealed partial class SessionLifecycleCoordinator : Node
         string race = profile.RaceId;
         session.Loading.Begin($"Loading {name}...", () =>
             Log.Info($"Loaded game from slot '{slot}' as {name} ({race}). Sandbox ready."));
+        return true;
     }
 
     /// <summary>
@@ -171,6 +316,7 @@ public sealed partial class SessionLifecycleCoordinator : Node
         // start cancels it before its callback can load over that newer state.
         _reloadPending = false;
         _reloadRequestGeneration++;
+        SecondsSinceLastSave = 0d;
         if (!HasSession)
         {
             return;
@@ -188,6 +334,11 @@ public sealed partial class SessionLifecycleCoordinator : Node
         {
             saves.HeaderProvider = null;
             saves.LocationApplier = null;
+
+            // A block belongs to something in the world (a boss, a conversation). That world is gone
+            // and can no longer release it, and a block that outlived it would refuse every save in
+            // the next session.
+            saves.ClearSaveBlocks();
 
             int stranded = 0;
             foreach (string _ in saves.RegisteredSaveIds)
@@ -211,11 +362,13 @@ public sealed partial class SessionLifecycleCoordinator : Node
     /// Leaves a session that cannot be trusted — a partial save restore, a cell that failed to
     /// load, a loading gate that timed out. Continuing would hand the player a world assembled from
     /// some of the save and some of whatever was already live, and the next autosave would write
-    /// that over the good file.
+    /// that over the good file. <paramref name="noticeKey"/> is what the title screen then tells
+    /// the player, so the return is never silent.
     /// </summary>
-    public void AbortToTitle(string reason)
+    public void AbortToTitle(string reason, string noticeKey = NoticeSessionAborted)
     {
         Log.Error(reason);
+        _titleNoticeKey = noticeKey;
         DestroySession();
     }
 

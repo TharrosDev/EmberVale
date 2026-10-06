@@ -21,7 +21,12 @@ public partial class MainMenu : CanvasLayer
     /// <summary>Invoked with the chosen slot when the player loads/continues a save.</summary>
     public System.Action<string>? LoadGameRequested { get; set; }
 
+    /// <summary>A locale key for a message shown above the buttons when the menu opens: why the
+    /// last session ended, when it ended on a failure. Null for an ordinary visit.</summary>
+    public string? NoticeKey { get; init; }
+
     private PanelContainer _panel = null!;
+    private Label _notice = null!;
 
     public override void _Ready()
     {
@@ -108,13 +113,53 @@ public partial class MainMenu : CanvasLayer
         col.AddChild(UiTheme.Divider());
         col.AddChild(new Control { CustomMinimumSize = new Vector2(0f, UiTheme.SpaceMd) });
 
-        bool hasSaves = (SaveManager.Instance?.ListSlots().Count ?? 0) > 0;
+        _notice = UiTheme.Prose(string.Empty, UiTheme.Bad);
+        _notice.HorizontalAlignment = HorizontalAlignment.Left;
+        _notice.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+        _notice.Visible = false;
+        col.AddChild(_notice);
+        if (!string.IsNullOrEmpty(NoticeKey))
+        {
+            ShowNotice(NoticeKey);
+        }
+
+        // Continue needs a save it can read a header from; the browser only needs a file to exist,
+        // because a save too damaged to list is exactly the one the player has to be shown.
+        bool canContinue = (SaveManager.Instance?.ListSlots().Count ?? 0) > 0;
+        bool canBrowse = canContinue || AnyBrowsableSlotHasAFile();
 
         col.AddChild(MenuButton(Loc.T("menu.new_game"), () => OpenSlotPanel(SaveSlotPanel.Intent.New)));
-        col.AddChild(MenuButton(Loc.T("menu.continue"), hasSaves ? ContinueMostRecent : null));
-        col.AddChild(MenuButton(Loc.T("menu.load_game"), hasSaves ? () => OpenSlotPanel(SaveSlotPanel.Intent.Load) : null));
+        col.AddChild(MenuButton(Loc.T("menu.continue"), canContinue ? ContinueMostRecent : null));
+        col.AddChild(MenuButton(Loc.T("menu.load_game"), canBrowse ? () => OpenSlotPanel(SaveSlotPanel.Intent.Load) : null));
         col.AddChild(MenuButton(Loc.T("menu.settings"), OpenSettings));
         col.AddChild(MenuButton(Loc.T("menu.quit"), () => GetTree().Quit()));
+    }
+
+    /// <summary>Shows <paramref name="key"/>'s text above the buttons and brings the menu back if a
+    /// sub-screen had hidden it: a refused or failed load lands the player here, and it must say why.</summary>
+    public void ShowNotice(string key)
+    {
+        _notice.Text = Loc.T(key);
+        _notice.Visible = true;
+        Visible = true;
+    }
+
+    private static bool AnyBrowsableSlotHasAFile()
+    {
+        if (SaveManager.Instance is not { } manager)
+        {
+            return false;
+        }
+
+        foreach (string slot in SaveSlotPanel.BrowsableSlots())
+        {
+            if (manager.SaveExists(slot))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private void OpenSlotPanel(SaveSlotPanel.Intent mode)
@@ -190,8 +235,9 @@ public partial class MainMenu : CanvasLayer
         button.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
         if (onPressed == null)
         {
+            // Only Continue and Load Game are ever disabled, and only for want of a save.
             button.Disabled = true;
-            button.TooltipText = Loc.T("menu.coming_soon");
+            button.TooltipText = Loc.T("menu.no_saves");
         }
         else
         {

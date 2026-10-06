@@ -4662,6 +4662,51 @@ save.failed.write,The save could not be written. Your previous save is untouched
 # --- BEGIN ics:save-core ---
 # --- END ics:save-core ---
 # --- BEGIN ics:save-ui ---
+# Title screen: why Continue / Load Game is disabled and why a load or a session ended.
+menu.no_saves,No saved games yet.
+title.notice.session_aborted,The game could not continue safely and returned to the title screen. Your saves are untouched.
+title.notice.load_failed,That save could not be restored. Nothing was changed on disk. Try another save.
+title.notice.save_corrupt,That save is damaged and cannot be loaded.
+title.notice.save_newer,That save was made by a newer version of the game. Update the game to load it.
+title.notice.save_missing,That save no longer exists.
+# Slot browser: Save mode and kind chips plus the rows for a save that cannot be loaded.
+slots.save_title,SAVE GAME
+slots.quick,Quick Save
+slots.none,No saved games.
+slots.kind.manual,Manual
+slots.kind.quick,Quick
+slots.kind.auto,Autosave
+slots.current,Current
+slots.save_here,Save here
+slots.confirm_overwrite,Confirm save
+slots.confirm_load,Confirm load
+slots.badge.corrupt,Damaged
+slots.badge.newer,Newer version
+slots.corrupt_help,This save is damaged and cannot be loaded. Delete it or save over it.
+slots.newer_help,"Saved by a newer version of the game (format {0}, this version reads up to {1}). Update the game to load it."
+slots.load_unsaved,Loading discards unsaved progress: {0} since the last save.
+# Pause menu: save results and the leave-with-unsaved-progress question.
+pause.save_as,Save to Slot...
+pause.saved_to,Saved to {0}.
+pause.load_refused,That save could not be loaded. The current game is untouched.
+pause.quit_unsaved,{0} Unsaved progress: {1}. Leave anyway?
+pause.quit_anyway,Leave without saving
+save.age.under_minute,under a minute
+save.age.minutes,{0} min
+save.age.hours,{0} h {1} min
+# F5 / F9.
+save.quickload.none,There is no save to load yet.
+save.quickload.confirm,Unsaved progress: {0}. Press F9 again to load anyway.
+save.quickload.refused,That save could not be loaded. The current game is untouched.
+# Save blocks pushed by this lane (BossController and DialoguePanel).
+save.blocked.boss,You cannot save in the middle of a boss fight.
+save.blocked.dialogue,You cannot save during a conversation.
+# Toasts and the saving indicator.
+save.indicator,Saving...
+notify.quicksaved,Quick saved
+notify.saved_to,Saved to {0}
+notify.save_failed,Save failed
+notify.autosave_failed,Autosave failed
 # --- END ics:save-ui ---
 # --- BEGIN ics:save-perf ---
 # --- END ics:save-perf ---
