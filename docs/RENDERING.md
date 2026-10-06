@@ -73,7 +73,7 @@ menu lists the tiers cheapest first through `GraphicsMath.UiOrder`. Never renumb
 | Tier | Render scale | Sun shadow | Cascades | Filter | Sun atlas | SSAO | SSIL | Vol. fog | SSR | Glow | AA | Particles | Mesh LOD |
 | --- | ---: | ---: | --- | --- | ---: | --- | --- | --- | --- | --- | --- | ---: | ---: |
 | Performance | 0.60 | 30 m | 2 | hard | 1024 | off | off | off | off | off | off | 0.15 | 4 px |
-| Low | 0.80 | 60 m | 2 blended | very low | 2048 | off | off | off | off | on, bilinear | FXAA | 0.35 | 3 px |
+| Low | 0.75 | 60 m | 2 blended | very low | 2048 | off | off | off | off | on, bilinear | off | 0.35 | 3 px |
 | Medium | 1.00 | 90 m | 4 blended | project | 2048 | on | off | off | off | on | off | 0.50 | 2 px |
 | High | 1.00 | 130 m | 4 blended | project | 4096 | on | on | on | off | on | off | 0.75 | 1 px |
 | Ultra | 1.00 | 180 m | 4 blended | project | 4096 | on | on | on | on | on | off | 1.00 | 1 px |
@@ -84,7 +84,7 @@ the game did before the field existed, and those three files do not author the n
 The two low tiers also carry the world-scale inputs the streamer consumes, and the smaller buffers
 that matter on a GPU whose video memory is system memory:
 
-| Tier | Draw distance | Scatter density | Actor shadows to | Omni/spot atlas | Sky radiance | Local lights to |
+| Tier | Draw distance | Scatter density | Enemy shadows to | Omni/spot atlas | Sky radiance | Local lights to |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | Performance | 0.60 | 0.40 | 12 m | 1024 | 64 | 22 m |
 | Low | 0.80 | 0.70 | 25 m | 2048 | 128 | 32 m |
@@ -114,18 +114,21 @@ the three, and it replaces TAA rather than stacking on it.
 
 ### First run
 
-With no settings file, `SettingsService` picks a preset from the adapter name, vendor and device
+On a fresh install (no settings file and no save slots), `SettingsService` picks a preset from the adapter name, vendor and device
 type plus installed memory and thread count (`GraphicsAutoDetect`, pure and unit-tested), then
 saves it. Integrated or software adapters start on Performance or Low with a 60 FPS cap; discrete
-adapters start on Medium or High. A saved file is never re-detected over. Headless runs and
+adapters start on Medium or High. A saved file is never re-detected over, and an install that has
+saves but no settings file keeps Medium uncapped (what it was already running) and writes that
+down. Headless runs and
 automation (`EMBERVALE_USER_DIR` set) skip detection and keep Medium, so captures and probes do
 not move with the machine that runs them.
 
 ### Frame pacing
 
-V-Sync is on by default. The cap offers uncapped, 30, 40, 60, 120 and 144. On the title and pause
-screens the cap is never above 60 whatever is saved, so a menu with V-Sync off does not run the GPU
-flat out; play uses the saved cap. `SettingsService.ApplyFrameCap` follows `GameStateChangedEvent`.
+V-Sync is on by default. The cap offers uncapped, 30, 40, 60, 120 and 144, and a saved cap is
+always honoured. Only with V-Sync off and no cap do the title and pause screens fall back to 60, so
+an unpaced menu does not run the GPU flat out. `SettingsService.ApplyFrameCap` follows
+`GameStateChangedEvent`.
 
 ### Where quality reaches the renderer
 

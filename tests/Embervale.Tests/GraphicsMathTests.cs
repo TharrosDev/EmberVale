@@ -103,12 +103,12 @@ public class GraphicsMathTests
     [InlineData(144, false, 144)]
     [InlineData(-5, false, 0)]
     [InlineData(0, true, 60)]
-    [InlineData(144, true, 60)]
+    [InlineData(-5, true, 60)]
+    [InlineData(144, true, 144)]
     [InlineData(60, true, 60)]
-    [InlineData(40, true, 40)]
     [InlineData(30, true, 30)]
-    public void FpsCap_IsTheSavedCapInPlay_AndNeverAboveSixtyInAMenu(int saved, bool inMenu, int expected)
+    public void FpsCap_IsAlwaysTheSavedCap_AndSixtyOnlyForAnUnpacedMenu(int saved, bool unpacedMenu, int expected)
     {
-        Assert.Equal(expected, GraphicsMath.FpsCap(saved, inMenu));
+        Assert.Equal(expected, GraphicsMath.FpsCap(saved, unpacedMenu));
     }
 }

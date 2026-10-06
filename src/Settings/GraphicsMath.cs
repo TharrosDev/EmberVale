@@ -48,7 +48,7 @@ public static class GraphicsMath
     public const float MinRenderScale = 0.5f;
     public const float MaxRenderScale = 1f;
 
-    /// <summary>The frame cap a menu falls back to when play itself is uncapped or faster.</summary>
+    /// <summary>The frame cap a menu falls back to when nothing else paces the frame.</summary>
     public const int MenuFpsCap = 60;
 
     /// <summary>A saved value outside the known tiers reads as Medium, the class default.</summary>
@@ -94,18 +94,13 @@ public static class GraphicsMath
     // --- Frame pacing -------------------------------------------------------
 
     /// <summary>
-    /// The engine frame cap (0 = uncapped). In play it is the saved cap. In a menu it is never above
-    /// <see cref="MenuFpsCap"/>: a title or pause screen has nothing that benefits from more, and with
-    /// V-Sync off and no cap it would otherwise run the GPU flat out to draw a static panel.
+    /// The engine frame cap (0 = uncapped). A saved cap is always honoured. With none, a menu that
+    /// V-Sync is not pacing either (<paramref name="unpacedMenu"/>) falls back to
+    /// <see cref="MenuFpsCap"/>, because it would otherwise run the GPU flat out to draw a static panel.
     /// </summary>
-    public static int FpsCap(int saved, bool inMenu)
+    public static int FpsCap(int saved, bool unpacedMenu)
     {
         int cap = saved < 0 ? 0 : saved;
-        if (!inMenu)
-        {
-            return cap;
-        }
-
-        return cap is > 0 and <= MenuFpsCap ? cap : MenuFpsCap;
+        return cap == 0 && unpacedMenu ? MenuFpsCap : cap;
     }
 }

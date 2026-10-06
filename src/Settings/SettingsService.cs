@@ -34,10 +34,19 @@ public sealed class SettingsService
         Current = Load();
         if (firstRun && AutoDetectAllowed())
         {
-            AutoDetectGraphics();
+            if (HasExistingSaves())
+            {
+                // Not a fresh install: this player has been running the class default without ever
+                // opening the options panel. Keep it, and write it down so it is never re-detected.
+                Save();
+            }
+            else
+            {
+                AutoDetectGraphics();
+            }
         }
 
-        // The cap follows the game state so a menu never renders faster than it needs to. One
+        // The cap follows the game state so an unpaced menu does not run flat out. One
         // application-lifetime subscription: this service lives exactly as long as the bus does.
         EventBus.Instance?.Subscribe<GameStateChangedEvent>(OnGameStateChanged);
         Apply();
@@ -54,7 +63,10 @@ public sealed class SettingsService
         DisplayServer.GetName() != "headless" &&
         string.IsNullOrWhiteSpace(OS.GetEnvironment("EMBERVALE_USER_DIR"));
 
-    /// <summary>First run only: start on the preset the adapter can carry, and write it down so the
+    private static bool HasExistingSaves() =>
+        Embervale.Save.SaveManager.Instance is { } saves && saves.ListSlots().Count > 0;
+
+    /// <summary>A fresh install only (no settings file and no saves): start on the preset the adapter can carry, and write it down so the
     /// pick is the player's from then on. A saved file is never re-detected over.</summary>
     private void AutoDetectGraphics()
     {
@@ -136,14 +148,15 @@ public sealed class SettingsService
         }
     }
 
-    /// <summary>The saved cap in play; never above <see cref="GraphicsMath.MenuFpsCap"/> on the
-    /// title or pause screen. A headless run has no GPU to spare and its gates count frames, so it
-    /// is left exactly as saved.</summary>
+    /// <summary>The saved cap, always. Only when nothing paces the frame at all (V-Sync off and no
+    /// saved cap) does the title or pause screen fall back to <see cref="GraphicsMath.MenuFpsCap"/>.
+    /// A headless run's gates count frames, so it is left exactly as saved.</summary>
     private void ApplyFrameCap(GameState state)
     {
-        bool inMenu = state is GameState.Boot or GameState.MainMenu or GameState.Paused
+        bool unpacedMenu = state is GameState.Boot or GameState.MainMenu or GameState.Paused
+            && !Current.VSync
             && DisplayServer.GetName() != "headless";
-        Engine.MaxFps = GraphicsMath.FpsCap(Current.MaxFps, inMenu);
+        Engine.MaxFps = GraphicsMath.FpsCap(Current.MaxFps, unpacedMenu);
     }
 
     private void ApplyAudio()
