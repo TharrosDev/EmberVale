@@ -633,7 +633,7 @@ public partial class ServiceComponent : InteractableComponent
     /// quest objects and coin reads as nothing to value rather than as an empty valuation.</summary>
     private static bool HasAnythingToValue(InventoryComponent pack)
     {
-        foreach (ItemStack stack in pack.Stacks)
+        foreach (ItemStack stack in pack.AllStacks)
         {
             if (ShopPricing.Sellable(stack.Instance.Type, stack.Instance.TemplateId == GameIds.Currency.Gold))
             {

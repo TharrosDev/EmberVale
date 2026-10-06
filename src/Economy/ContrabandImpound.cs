@@ -66,7 +66,7 @@ public partial class ContrabandImpound : Node, ISaveable
     public static int ContrabandIn(InventoryComponent pack)
     {
         int units = 0;
-        foreach (ItemStack stack in pack.Stacks)
+        foreach (ItemStack stack in pack.AllStacks)
         {
             if (TradeTags.IsContraband(stack.Instance.Template.TagList()))
             {
@@ -89,7 +89,7 @@ public partial class ContrabandImpound : Node, ISaveable
     public int SeizeFrom(InventoryComponent pack)
     {
         int taken = 0;
-        foreach (ItemStack stack in new List<ItemStack>(pack.Stacks))
+        foreach (ItemStack stack in new List<ItemStack>(pack.AllStacks))
         {
             if (!TradeTags.IsContraband(stack.Instance.Template.TagList()))
             {
