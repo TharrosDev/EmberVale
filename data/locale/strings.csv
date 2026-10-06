@@ -4652,6 +4652,16 @@ save.failed.write,The save could not be written. Your previous save is untouched
 # --- BEGIN ics:items ---
 # --- END ics:items ---
 # --- BEGIN ics:loot ---
+# Pickup prompts (ItemPickupComponent) and chest names (ContainerLootComponent).
+interact.pickup,Pick up
+interact.pickup.one,Pick up {0}
+interact.pickup.many,Pick up {0} x{1}
+loot.chest.cache,Supply Cache
+loot.chest.reward,Reward Chest
+# Tooltip lines of regeneration affixes (ItemAffix.DisplayValue); {0} is the signed amount per second.
+affix.effect.health_regen,{0} Health Regeneration
+affix.effect.stamina_regen,{0} Stamina Regeneration
+affix.effect.mana_regen,{0} Mana Regeneration
 # --- END ics:loot ---
 # --- BEGIN ics:crafting ---
 # --- END ics:crafting ---

@@ -1,11 +1,13 @@
 using Embervale.Entities;
+using Embervale.Loot;
 using Godot;
 
 namespace Embervale.Items;
 
 /// <summary>
 /// Builds a world pickup for an item: the item's own model where it authors one, a rarity-tinted
-/// cube where it does not, a rarity-coloured glow on the ground under either, a collider (so the
+/// cube where it does not, a rarity-coloured glow on the ground under either, a light beam over the
+/// rarer ones (<see cref="LootPresentation.BeamHeight"/>), a collider (so the
 /// player's interaction raycast can hit it) and an <see cref="ItemPickupComponent"/>. Used to seed
 /// the sandbox and to drop loot from defeated enemies.
 /// </summary>
@@ -29,6 +31,10 @@ public static class ItemPickupFactory
         Color tint = ItemRarities.Color(instance.Rarity);
         pickup.AddChild(BuildVisual(instance, tint));
         pickup.AddChild(BuildRarityGlow(tint));
+        if (BuildRarityBeam(instance.Rarity, tint) is { } beam)
+        {
+            pickup.AddChild(beam);
+        }
 
         var body = new StaticBody3D { Name = "Collider" };
         body.AddChild(new CollisionShape3D
@@ -85,6 +91,48 @@ public static class ItemPickupFactory
                 EmissionEnergyMultiplier = 0.6f,
             },
         };
+    }
+
+    /// <summary>
+    /// A thin column of rarity-coloured light standing over the pickup, taller the rarer the item
+    /// (<see cref="LootPresentation.BeamHeight"/>); null for a Common drop, which gets none.
+    ///
+    /// The ground glow says "loot here" from a few metres. The beam says it from across a
+    /// battlefield and over tall grass, which is where a boss's legendary actually lands. It is two
+    /// crossed unshaded quads rather than a light: a light per drop would be thirty lights after a
+    /// big fight, and the beam has to read in daylight, where a light does not.
+    /// </summary>
+    private static Node3D? BuildRarityBeam(ItemRarity rarity, Color tint)
+    {
+        float height = LootPresentation.BeamHeight(rarity);
+        if (height <= 0f)
+        {
+            return null;
+        }
+
+        var material = new StandardMaterial3D
+        {
+            AlbedoColor = new Color(tint, 0.28f),
+            Transparency = BaseMaterial3D.TransparencyEnum.Alpha,
+            ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
+            CullMode = BaseMaterial3D.CullModeEnum.Disabled,
+        };
+        var mesh = new QuadMesh { Size = new Vector2(0.14f, height) };
+
+        var beam = new Node3D { Name = "RarityBeam", Position = new Vector3(0f, height * 0.5f, 0f) };
+        for (int i = 0; i < 2; i++)
+        {
+            beam.AddChild(new MeshInstance3D
+            {
+                Name = "Blade" + i,
+                Mesh = mesh,
+                MaterialOverride = material,
+                CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
+                RotationDegrees = new Vector3(0f, i * 90f, 0f),
+            });
+        }
+
+        return beam;
     }
 
     /// <summary>
