@@ -16,10 +16,6 @@ public static partial class UiTheme
     /// <summary>Width of the pause sheet's column.</summary>
     public const float PauseSheetWidth = 380f;
 
-    /// <summary>What the pause sheet's title, tracked objective and status line take, so the entries
-    /// under them know how much of a short viewport is left before they have to scroll.</summary>
-    public const float PauseHeaderReserve = 150f;
-
     /// <summary>Width of the death sheet's column.</summary>
     public const float DeathSheetWidth = 420f;
 

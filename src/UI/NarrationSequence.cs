@@ -48,6 +48,7 @@ public abstract partial class NarrationSequence : CanvasLayer
     private bool _hintForPad;
     private bool _hintForPresses;
     private bool _frozenForCapture;
+    private static bool? _unattended;
     private Godot.Input.MouseModeEnum _mouseBeforePause;
 
     /// <summary>Whether the sequence is currently playing.</summary>
@@ -168,6 +169,11 @@ public abstract partial class NarrationSequence : CanvasLayer
     /// press, so the click that began the game cannot run into the prologue's skip, and it is only
     /// ever driven from here: the ring fills on its own clock and calls <see cref="Finish"/>, and
     /// the cards never wait for it.
+    ///
+    /// With nobody at the controls (<see cref="ShellSessionRules.Unattended"/>) the press skips at
+    /// once, as it did before the hold: every probe and capture run dismisses the prologue with a
+    /// tap of a frame or two, and a hold timed on the wall clock is not something a frame-counted
+    /// script can give.
     /// </summary>
     private void PollSkip()
     {
@@ -175,6 +181,12 @@ public abstract partial class NarrationSequence : CanvasLayer
         {
             if (Godot.Input.IsActionJustPressed(UiLive.Interact) || Godot.Input.IsActionJustPressed(UiLive.Attack))
             {
+                if (Unattended())
+                {
+                    Finish();
+                    return;
+                }
+
                 _skipHeld = true;
                 _skipRing.Press();
             }
@@ -185,6 +197,9 @@ public abstract partial class NarrationSequence : CanvasLayer
             _skipRing.Release();
         }
     }
+
+    private static bool Unattended() => _unattended ??= ShellSessionRules.Unattended(
+        DisplayServer.GetName(), OS.GetEnvironment("EMBERVALE_USER_DIR"), OS.GetCmdlineUserArgs().Length);
 
     private void Finish()
     {
@@ -315,17 +330,22 @@ public abstract partial class NarrationSequence : CanvasLayer
         _hintForPad = InputDevice.GamepadActive;
         _hintForPresses = UiFx.HoldsToPresses;
 
-        // The ring is kept across rebuilds: it may be mid-hold.
-        if (_skipRing.GetParent() == _hint)
+        // The ring stays where it is and the row is rebuilt around it: it may be mid-hold (the
+        // press that starts a hold is also what switches the device), and a ring taken out of
+        // the tree cancels its hold.
+        foreach (Node child in _hint.GetChildren())
         {
-            _hint.RemoveChild(_skipRing);
+            if (child != _skipRing)
+            {
+                _hint.RemoveChild(child);
+                child.QueueFree();
+            }
         }
 
-        UiTheme.ClearChildren(_hint);
         _hint.AddChild(Centred(UiGlyph.For(GameInput.Interact)));
         _hint.AddChild(HintLabel(Loc.T(_hintForPresses ? "narration.skip" : "narration.skip_hold")));
         _skipRing.Visible = !_hintForPresses;
-        _hint.AddChild(_skipRing);
+        _hint.MoveChild(_skipRing, -1);
         _hint.AddChild(new Control { CustomMinimumSize = new Vector2(UiTheme.SpaceSm, 0f), MouseFilter = Control.MouseFilterEnum.Ignore });
         _hint.AddChild(Centred(UiGlyph.For(GameInput.Pause)));
         _hint.AddChild(HintLabel(Loc.T("narration.pause")));

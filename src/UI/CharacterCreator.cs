@@ -73,6 +73,8 @@ public partial class CharacterCreator : CanvasLayer
     private UiLegend _legend = null!;
     // The card buttons of the step on screen, in grid order; empty for a step that is not a grid.
     private readonly List<Button> _cards = new();
+    private bool _wasTyping;
+    private float _scrollCarry;
 
     public void Configure(Action<CharacterProfile> onConfirm, Action onBack)
     {
@@ -104,9 +106,25 @@ public partial class CharacterCreator : CanvasLayer
             _preview.Turn(turn * CreatorRules.TurnDegreesPerSecond * (float)delta);
         }
 
-        // A text field owns the keyboard: Esc there means "stop typing", not "leave the creator",
-        // and Q / E are letters of a name.
-        if (GetViewport().GuiGetFocusOwner() is LineEdit)
+        // The same stick, pushed up or down, scrolls the step: the prose under a card grid holds
+        // nothing focus can land on, so focus alone never brings it into view.
+        float scroll = Godot.Input.GetAxis(UiLive.LookUp, UiLive.LookDown);
+        if (Mathf.Abs(scroll) > Mathf.Abs(turn))
+        {
+            _scrollCarry += scroll * CreatorRules.ScrollPixelsPerSecond * (float)delta;
+            int whole = (int)_scrollCarry;
+            _scrollCarry -= whole;
+            _scroll.ScrollVertical += whole;
+        }
+
+        // A text field being typed in owns the keyboard: Esc there means "stop typing", not "leave
+        // the creator", and Q / E are letters of a name. Only while it is being typed in: a field
+        // that merely has focus (a pad stepped onto it, or Esc ended the typing) must not swallow
+        // Back and the step keys. The press that ends the typing is not also a Back.
+        bool typing = GetViewport().GuiGetFocusOwner() is LineEdit edit && edit.IsEditing();
+        bool wasTyping = _wasTyping;
+        _wasTyping = typing;
+        if (typing || wasTyping)
         {
             return;
         }
@@ -713,6 +731,7 @@ public partial class CharacterCreator : CanvasLayer
         if (pad)
         {
             entries.Add(new LegendEntry(GameInput.LookLeft, Loc.T("create.legend.turn")));
+            entries.Add(new LegendEntry(GameInput.LookUp, Loc.T("create.legend.scroll")));
         }
 
         entries.Add(new LegendEntry("ui_cancel", Loc.T("session.legend.back")));

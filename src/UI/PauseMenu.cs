@@ -29,6 +29,8 @@ namespace Embervale.UI;
 public partial class PauseMenu : CanvasLayer
 {
 	private Control _root = null!;
+	private VBoxContainer _column = null!;
+	private bool _fitQueued;
 	private Control _wipe = null!;
 	private ScrollContainer _menuScroll = null!;
 	private VBoxContainer _menu = null!;
@@ -118,6 +120,7 @@ public partial class PauseMenu : CanvasLayer
 		float width = Mathf.Min(UiTheme.PauseSheetWidth, view.X - (UiChromeRules.Gutter(view.X) * 2f));
 		(Control root, VBoxContainer col) = UiTheme.Sheet(width, 0.55f);
 		_root = root;
+		_column = col;
 		AddChild(root);
 
 		// The time played shares the title's line: on a 533 px handheld view a line of its own is
@@ -153,7 +156,7 @@ public partial class PauseMenu : CanvasLayer
 		col.AddChild(_status);
 
 		// The entries scroll, and only when they must: on a short view, or at a large text size,
-		// the sheet has less room than seven controls. Their height is known without a layout pass.
+		// the sheet has less room than seven controls (FitMenu).
 		(_menuScroll, _menu) = UiTheme.ScrollList();
 		_menu.AddThemeConstantOverride("separation", UiTheme.SessionEntryGap);
 		_menuScroll.SizeFlagsVertical = Control.SizeFlags.ShrinkBegin;
@@ -166,10 +169,6 @@ public partial class PauseMenu : CanvasLayer
 		_menu.AddChild(MenuButton(Loc.T("pause.settings"), OpenSettings));
 		_menu.AddChild(MenuButton(Loc.T("session.pause.main_menu"), () => RequestQuit(ReturnToMainMenu)));
 		_menu.AddChild(MenuButton(Loc.T("session.pause.quit"), () => RequestQuit(() => GetTree().Quit())));
-
-		float entries = _menu.GetChildCount() * UiTheme.ControlHeight;
-		float room = view.Y - (UiTheme.SpaceXl * 2f) - UiTheme.PauseHeaderReserve;
-		_menuScroll.CustomMinimumSize = new Vector2(0f, Mathf.Clamp(room, UiTheme.ControlHeight * 2f, entries));
 
 		// The one question this menu asks ("leave with unsaved progress?") replaces the entries
 		// rather than stacking a dialog on top: one sheet, one focus chain, Esc / B means no.
@@ -194,6 +193,7 @@ public partial class PauseMenu : CanvasLayer
 
 		_legend = new UiLegend();
 		AddChild(_legend);
+		FitMenu();
 	}
 
 	/// <summary>Fills in what the sheet says about the game it paused. Read when the menu opens:
@@ -358,6 +358,7 @@ public partial class PauseMenu : CanvasLayer
 		_onConfirm = null;
 		_confirm.Visible = false;
 		_menuScroll.Visible = true;
+		QueueFitMenu();
 		UiFocus.GrabFirst(_menu);
 		UpdateLegend();
 	}
@@ -373,6 +374,47 @@ public partial class PauseMenu : CanvasLayer
 		_status.Text = text;
 		_status.AddThemeColorOverride("font_color", color);
 		_status.Visible = text.Length > 0;
+		QueueFitMenu();
+	}
+
+	/// <summary>Fits the entries after the layout pass that whatever just changed has queued, so
+	/// a wrapped status line is measured at the width it really has.</summary>
+	private void QueueFitMenu()
+	{
+		if (_fitQueued)
+		{
+			return;
+		}
+
+		_fitQueued = true;
+		Callable.From(() =>
+		{
+			_fitQueued = false;
+			FitMenu();
+		}).CallDeferred();
+	}
+
+	/// <summary>
+	/// Gives the entries the height the view has left under what is really above them (the title,
+	/// the tracked objective, a status line that may wrap, all at the current text size), and no
+	/// more than they need; short of that they scroll. Measured rather than reserved: a fixed
+	/// allowance was too small at a large text size and pushed the last entries off a 533 px view.
+	/// </summary>
+	private void FitMenu()
+	{
+		if (!_menuScroll.Visible)
+		{
+			return; // the confirm has replaced the entries; HideConfirm asks again
+		}
+
+		float above = _column.GetCombinedMinimumSize().Y - _menuScroll.GetCombinedMinimumSize().Y;
+		float room = GetViewport().GetVisibleRect().Size.Y - (UiTheme.SpaceXl * 2f) - above;
+		float entries = _menu.GetCombinedMinimumSize().Y;
+		float height = Mathf.Clamp(room, Mathf.Min(UiTheme.ControlHeight * 2f, entries), entries);
+		if (!Mathf.IsEqualApprox(height, _menuScroll.CustomMinimumSize.Y))
+		{
+			_menuScroll.CustomMinimumSize = new Vector2(0f, height);
+		}
 	}
 
 	/// <summary>
@@ -504,6 +546,7 @@ public partial class PauseMenu : CanvasLayer
 
 		// Fade in on show (instant under reduced motion); UiFx runs while the tree is paused, which
 		// it is whenever this menu is up. The rule under the title is drawn again each time.
+		QueueFitMenu(); // the text or UI scale may have changed in Settings while this was hidden
 		UiFx.FadeIn(_root);
 		UiOrnament.PlayEmberWipe(_wipe);
 		UiFocus.GrabFirst(_confirm.Visible ? _confirm : _menu); // gamepad/keyboard start on Resume (30.5J)

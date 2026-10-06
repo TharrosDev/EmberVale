@@ -5454,3 +5454,4 @@ create.randomise_hint,A random look from what this race offers. Race and backgro
 create.name_blank,Leave it empty to go by {0}.
 create.legend.step,Step
 create.legend.turn,Turn
+create.legend.scroll,Scroll

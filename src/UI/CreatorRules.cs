@@ -43,6 +43,9 @@ public static class CreatorRules
     /// <summary>Degrees a second the figure turns with the stick held over.</summary>
     public const float TurnDegreesPerSecond = 150f;
 
+    /// <summary>Pixels a second the step's choices scroll with the stick held up or down.</summary>
+    public const float ScrollPixelsPerSecond = 600f;
+
     /// <summary>Degrees the figure turns per pixel the pointer is dragged.</summary>
     public const float TurnDegreesPerPixel = 0.6f;
 

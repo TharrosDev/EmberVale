@@ -305,10 +305,10 @@ public partial class SaveSlotPanel : CanvasLayer
             }
         }
 
-        if (_rows.Count > 0)
-        {
-            _back.FocusNeighborTop = _back.GetPathTo(Entry(_rows[^1], secondary: false));
-        }
+        // Never left pointing at a row that has been freed: the last save may just have been deleted.
+        _back.FocusNeighborTop = _rows.Count > 0
+            ? _back.GetPathTo(Entry(_rows[^1], secondary: false))
+            : new NodePath();
     }
 
     private void Link(Button button, int row, bool secondary)
@@ -654,6 +654,10 @@ public partial class SaveSlotPanel : CanvasLayer
         {
             ring = UiFx.HoldRing(onConfirmed);
             ring.Attach(button);
+
+            // A button that loses focus mid-press never reports the release (it goes to whatever
+            // took focus), and the ring would fill on its own and destroy the save.
+            button.FocusExited += ring.Release;
             button.TooltipText = Loc.T("slots.hold_hint");
             button.SetMeta(HoldMeta, true);
             box.AddChild(ring);
