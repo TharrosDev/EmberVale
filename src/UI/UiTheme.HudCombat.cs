@@ -4,7 +4,7 @@ namespace Embervale.UI;
 
 /// <summary>
 /// The combat HUD's share of the theme: the poise colour the target plate and the enemy plates
-/// share, and the lock-on mark.
+/// share, and the lock-on dot.
 /// </summary>
 public static partial class UiTheme
 {
@@ -24,18 +24,5 @@ public static partial class UiTheme
     {
         item.DrawCircle(centre, LockDotRadius + 1.5f, Keyline with { A = Keyline.A * alpha });
         item.DrawCircle(centre, LockDotRadius, AccentHot with { A = alpha });
-    }
-
-    /// <summary>The lock-on mark as a control <paramref name="size"/> px square with the dot at its
-    /// centre, for a caller that positions a node rather than drawing.</summary>
-    public static Control LockDot(float size)
-    {
-        var dot = new LockDotMark
-        {
-            CustomMinimumSize = new Vector2(size, size),
-            Size = new Vector2(size, size),
-            MouseFilter = Control.MouseFilterEnum.Ignore,
-        };
-        return dot;
     }
 }

@@ -15,14 +15,16 @@ namespace Embervale.UI;
 /// and above whatever the HUD's bottom-centre slot is showing, with the speaker's name over it.
 /// Size, the plate's opacity and the name follow the player's subtitle settings; nothing is drawn
 /// with subtitles off or the element hidden, and <see cref="TryShow"/> then answers false so the
-/// caller can say the line some other way (a toast, the boss frame's own line).
+/// caller can say the line some other way (a toast, the boss frame's own line). The same answer
+/// is given while a menu or a conversation holds the world, and a caption already up when one
+/// opens is hidden with its clock stopped until it closes: a line is never spent unseen.
 ///
 /// Asleep while nothing is captioned: <see cref="Show"/> is the only thing that wakes it.
 /// </summary>
 public partial class SubtitleLayer : CanvasLayer
 {
-    /// <summary>Lines waiting behind the one on screen. A fourth pushes the oldest out: a caption
-    /// that arrives long after its line was spoken is worse than none.</summary>
+    /// <summary>Lines waiting behind the one on screen. A fourth is refused, so its caller says it
+    /// another way: a caption that arrives long after its line was spoken is worse than none.</summary>
     private const int MaxQueued = 3;
 
     private readonly record struct Line(string? Speaker, string Text, float Seconds);
@@ -40,6 +42,7 @@ public partial class SubtitleLayer : CanvasLayer
 
     private HudLayout? _layout;
     private bool _showing;
+    private bool _held;
     private bool _speakerNames = true;
     private int _page;
     private int _lineLength;
@@ -55,9 +58,9 @@ public partial class SubtitleLayer : CanvasLayer
 
     public override void _Ready()
     {
-        // A line spoken over a paused menu is still being spoken.
+        // Ticks through a pause so it can tell when the menu holding it has closed.
         ProcessMode = ProcessModeEnum.Always;
-        Layer = 5; // over the HUD, under the chapter banner (6) and every menu
+        Layer = 5; // over the HUD, under the chapter banner (6)
 
         _root = new Control { MouseFilter = Control.MouseFilterEnum.Ignore };
         _root.SetAnchorsPreset(Control.LayoutPreset.FullRect);
@@ -117,6 +120,11 @@ public partial class SubtitleLayer : CanvasLayer
         (Current()?.SubtitlesEnabled ?? true) &&
         GameHud.ElementMode(HudElement.Subtitles) != HudElementMode.Hidden;
 
+    /// <summary>Whether a menu, a conversation or the pause state has the world stopped. A cinematic
+    /// lock (the boss intro) does not: the line is part of what the player is held still to watch.</summary>
+    private static bool Held =>
+        UiState.WorldPaused || GameManager.Instance is { State: not GameState.Playing };
+
     /// <summary>Captions a line on the session's layer if there is one and it would be shown.
     /// False means the line was not captioned and the caller should say it another way.</summary>
     public static bool TryShow(string? speaker, string text, float seconds) =>
@@ -125,10 +133,11 @@ public partial class SubtitleLayer : CanvasLayer
     /// <summary>Captions one line for <paramref name="seconds"/> (its reading time when that is not
     /// positive). <paramref name="speaker"/> is the already-localised name, or null for a line nobody
     /// is credited with. A line arriving while another is up waits its turn. Returns whether the
-    /// line was taken.</summary>
+    /// line was taken: not with subtitles off, the world held, or three lines already waiting.</summary>
     public bool Show(string? speaker, string text, float seconds)
     {
-        if (!IsInsideTree() || !Enabled || string.IsNullOrWhiteSpace(text))
+        if (!IsInsideTree() || !Enabled || Held || string.IsNullOrWhiteSpace(text) ||
+            (_showing && _queue.Count >= MaxQueued))
         {
             return false;
         }
@@ -140,11 +149,6 @@ public partial class SubtitleLayer : CanvasLayer
             return true;
         }
 
-        if (_queue.Count >= MaxQueued)
-        {
-            _queue.Dequeue();
-        }
-
         _queue.Enqueue(line);
         return true;
     }
@@ -154,6 +158,7 @@ public partial class SubtitleLayer : CanvasLayer
     {
         _queue.Clear();
         _showing = false;
+        SetHeld(false);
         SetProcess(false);
         UiFx.FadeOut(_plate, seconds: 0f);
     }
@@ -212,11 +217,27 @@ public partial class SubtitleLayer : CanvasLayer
             return;
         }
 
+        // A menu over the caption: out of its way, and the page's time is not spent behind it.
+        SetHeld(Held);
+        if (_held)
+        {
+            return;
+        }
+
         Place();
         _pageLeft -= delta;
         if (_pageLeft <= 0d)
         {
             NextPage();
+        }
+    }
+
+    private void SetHeld(bool held)
+    {
+        if (held != _held)
+        {
+            _held = held;
+            _root.Visible = !held;
         }
     }
 

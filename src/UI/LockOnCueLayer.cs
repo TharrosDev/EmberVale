@@ -9,8 +9,8 @@ using Godot;
 namespace Embervale.UI;
 
 /// <summary>
-/// The cues that make a lock read: a thin ring that closes onto the lock dot
-/// (<see cref="UiTheme.DrawLockDot"/>) on a newly locked target, and — when a lock ends — a mark
+/// The cues that make a lock read: a thin ring that closes onto a small keylined dot
+/// (<see cref="UiTheme.DrawLockDot"/>) on a newly locked target, the two fading out together, and — when a lock ends — a mark
 /// that says <em>why</em>. A kill is a gold burst where the target fell; a target that
 /// ran out of range or was lost behind cover is a red cross with a word ("Too far", "Lost sight"),
 /// because a silently dropped lock is indistinguishable from a bug. Toggling the lock off yourself
@@ -176,12 +176,13 @@ public sealed partial class LockOnCueLayer : Control
             {
                 case Kind.Acquire:
                 {
-                    // Closes from wide onto the dot: "that one". The dot is what stays.
+                    // Closes from wide onto the dot: "that one". Both fade as it lands, leaving the
+                    // HUD's held reticle.
                     float rest = UiTheme.LockDotRadius + AcquireRestGap;
                     float radius = motion ? Mathf.Lerp(AcquireStartRadius, rest, UiMotion.EaseOut(t)) : rest;
                     DrawArc(at, radius, 0f, Mathf.Tau, 32, UiTheme.Keyline with { A = UiTheme.Keyline.A * fade }, 3f);
                     DrawArc(at, radius, 0f, Mathf.Tau, 32, new Color(UiTheme.AccentHot, fade), 1.5f);
-                    UiTheme.DrawLockDot(this, at, 1f - fade);
+                    UiTheme.DrawLockDot(this, at, fade);
                     break;
                 }
 

@@ -39,6 +39,24 @@ public partial class Nameplate : PanelContainer
     private string? _tagKeyShown;
     private Color _tagTintShown = new(-1f, -1f, -1f, -1f);
 
+    private static Nameplate? _current;
+
+    /// <summary>Who the plate is naming on screen right now, or null: nothing aimed at, or the plate
+    /// hidden by the HUD (the boss frame or an event banner owns the top centre, the element is off).
+    /// What the enemy plates ask so they neither double up on a target nor leave it with no bar.</summary>
+    public static IEntity? Naming =>
+        _current is { } plate && IsInstanceValid(plate) && plate.IsVisibleInTree() ? plate._last : null;
+
+    public override void _EnterTree() => _current = this;
+
+    public override void _ExitTree()
+    {
+        if (ReferenceEquals(_current, this))
+        {
+            _current = null;
+        }
+    }
+
     public Nameplate()
     {
         MouseFilter = MouseFilterEnum.Ignore;

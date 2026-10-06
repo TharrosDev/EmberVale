@@ -18,7 +18,7 @@ namespace Embervale.UI;
 /// the player, or when it is locked, and keeps it while <see cref="EnemyPlateRules.Live"/> says it
 /// is still relevant. At most <see cref="MaxPlates"/> are up; a ninth takes the least relevant
 /// one's place. Two things never carry a plate: a boss, whose plate is the boss frame, and the
-/// target the top-centre nameplate is already naming (the locked target, else the one aimed at).
+/// target the top-centre nameplate is naming on screen (<see cref="Nameplate.Naming"/>).
 ///
 /// A child of <see cref="CombatFeedbackOverlay"/>, beside the damage numbers and the lock cues, so
 /// it shares their canvas layer and their visibility rule. Drawn as rects in one <c>_Draw</c>, from
@@ -68,11 +68,9 @@ public sealed partial class EnemyPlateLayer : Control
     // The player's own components, looked up when the player changes and not every frame.
     private IEntity? _player;
     private LockOnComponent? _lockOn;
-    private InteractionSensor? _sensor;
 
     // What the HUD options say, read when settings are applied.
     private bool _shown = true;
-    private bool _namedElsewhere = true;
 
     /// <summary>How many enemies hold a plate, drawn or not. For the probe and the harness.</summary>
     public int LiveCount => _live;
@@ -178,11 +176,8 @@ public sealed partial class EnemyPlateLayer : Control
         }
     }
 
-    private void ReadOptions()
-    {
+    private void ReadOptions() =>
         _shown = EnemyPlateRules.Shows(GameHud.ElementMode(HudElement.EnemyPlates));
-        _namedElsewhere = GameHud.ElementMode(HudElement.TargetPlate) != HudElementMode.Hidden;
-    }
 
     /// <summary>Gives <paramref name="enemy"/> a plate if it has none, and marks it as just seen.</summary>
     private void Touch(IEntity enemy)
@@ -292,8 +287,9 @@ public sealed partial class EnemyPlateLayer : Control
         Camera3D? camera = GetViewport().GetCamera3D();
         IEntity? locked = ResolvePlayer() ? _lockOn?.Target : null;
 
-        // The nameplate at the top of the screen names the locked target, else the one aimed at.
-        IEntity? named = !_namedElsewhere ? null : locked ?? _sensor?.FocusedEntity;
+        // Whoever the nameplate at the top of the screen is showing. Nobody while the boss frame or
+        // an event banner has taken its place: that target keeps its plate here.
+        IEntity? named = Nameplate.Naming;
         bool motion = UiTheme.MotionEnabled;
         bool dirty = false;
 
@@ -376,7 +372,7 @@ public sealed partial class EnemyPlateLayer : Control
         }
     }
 
-    /// <summary>Refreshes the player's lock-on and aim components when the player changed (a new
+    /// <summary>Refreshes the player's lock-on component when the player changed (a new
     /// session, a rebuilt actor). False with no player.</summary>
     private bool ResolvePlayer()
     {
@@ -386,7 +382,6 @@ public sealed partial class EnemyPlateLayer : Control
         {
             _player = player;
             _lockOn = player?.GetComponent<LockOnComponent>();
-            _sensor = player?.GetComponent<InteractionSensor>();
         }
 
         return player != null;

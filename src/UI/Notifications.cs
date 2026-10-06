@@ -26,7 +26,8 @@ namespace Embervale.UI;
 /// as long as its words take to read, times the player's toast-duration setting. A notice that
 /// repeats one already waiting or already on screen adds to its count ("×3") instead of stacking.
 /// While the player is fighting only warnings are shown; the rest wait and leave in order once the
-/// fight is over. And with the Toasts HUD element hidden, nothing is shown at all.
+/// fight is over. And with the Toasts HUD element hidden, only warnings are shown: a save that
+/// failed or a full pack has no other way to reach the player.
 /// </summary>
 public partial class Notifications : CanvasLayer
 {
@@ -71,9 +72,12 @@ public partial class Notifications : CanvasLayer
     private readonly Dictionary<string, Toast> _shown = new();
     private int _visible;
 
-    // The last blow traded with something, and who with: what "in a fight" means to the feed.
+    // The last blow traded with something, and everyone blows were traded with since the fight
+    // began: what "in a fight" means to the feed.
     private double _blowAt = double.NegativeInfinity;
-    private StatsComponent? _opponent;
+    private readonly HashSet<StatsComponent> _opponents = new();
+    private static readonly System.Predicate<StatsComponent> Fallen =
+        static stats => !IsInstanceValid(stats) || !stats.IsAlive;
 
     /// <summary>Notices waiting to be shown. For harness validation.</summary>
     public int QueuedForCapture => _queue.Count;
@@ -95,7 +99,7 @@ public partial class Notifications : CanvasLayer
     }
 
     /// <summary>Ends the feed's combat reading at once, so a harness need not wait the fight out.</summary>
-    public void EndCombatForCapture() => _blowAt = double.NegativeInfinity;
+    public void EndCombatForCapture() => EndCombat();
 
     // One player action publishes several quest events in one frame; they are collected here and turned into
     // the toasts worth showing once per frame (QuestNoticeCoalescer).
@@ -162,28 +166,33 @@ public partial class Notifications : CanvasLayer
         Entities.IEntity? other = e.OnPlayer ? e.Source : e.ByPlayer ? e.Target : null;
         if (other != null && !Combat.CombatPerspective.IsPlayer(other) && other.GetComponent<StatsComponent>() is { } stats)
         {
-            _opponent = stats;
+            _opponents.Add(stats);
             _blowAt = Now();
         }
     }
 
     /// <summary>Whether the player is in a fight as far as the feed is concerned: a blow was traded a
-    /// moment ago with something that is still standing. A fight that ends in a kill ends at once.</summary>
+    /// moment ago and one of those it was traded with is still standing. A fight ends at once with
+    /// the last of them, not with the first.</summary>
     private bool InCombat()
     {
-        if (!HudDynamicRules.Lingering(Now(), _blowAt, HudDynamicRules.CombatLingerSeconds))
+        if (HudDynamicRules.Lingering(Now(), _blowAt, HudDynamicRules.CombatLingerSeconds))
         {
-            return false;
+            _opponents.RemoveWhere(Fallen);
+            if (_opponents.Count > 0)
+            {
+                return true;
+            }
         }
 
-        if (_opponent != null && IsInstanceValid(_opponent) && _opponent.IsAlive)
-        {
-            return true;
-        }
-
-        _opponent = null;
-        _blowAt = double.NegativeInfinity;
+        EndCombat();
         return false;
+    }
+
+    private void EndCombat()
+    {
+        _opponents.Clear();
+        _blowAt = double.NegativeInfinity;
     }
 
     private void OnDeviceChanged(InputDeviceChangedEvent e) => RefreshGlyphs();
@@ -428,7 +437,9 @@ public partial class Notifications : CanvasLayer
 
     /// <summary>A companion's reaction line. It is something said, so with subtitles on it is
     /// captioned under the speaker's name (<see cref="SubtitleLayer"/>); otherwise it is a
-    /// portrait-less toast: the line, and who said it beneath.
+    /// portrait-less toast: the line, and who said it beneath. A line raised under a menu or in a
+    /// conversation is a toast too, because the feed holds it until the player is back in the world
+    /// and a reaction line is said once per save.
     /// Public so a harness can drive it through the feed's own path.</summary>
     public void PushBark(string companionId, string textKey)
     {
@@ -438,7 +449,8 @@ public partial class Notifications : CanvasLayer
         }
 
         string name = CompanionDatabase.Get(companionId) is { } companion ? Loc.T(companion.NameKey) : string.Empty;
-        if (SubtitleLayer.TryShow(name.Length > 0 ? name : null, Loc.T(textKey), 0f))
+        bool attending = !UiState.MenuOpen && GameManager.Instance?.State == GameState.Playing;
+        if (attending && SubtitleLayer.TryShow(name.Length > 0 ? name : null, Loc.T(textKey), 0f))
         {
             return;
         }
@@ -597,7 +609,8 @@ public partial class Notifications : CanvasLayer
         string text, Color color, NoticeCategory category = NoticeCategory.Minor, string? secondary = null,
         string? cue = null, string? collapseKey = null, int quantity = 1, bool journal = false)
     {
-        if (GameHud.ElementMode(HudElement.Toasts) == HudElementMode.Hidden)
+        // Hidden toasts still let a warning through: it is the only place a failed save is said.
+        if (category != NoticeCategory.Warning && GameHud.ElementMode(HudElement.Toasts) == HudElementMode.Hidden)
         {
             return;
         }

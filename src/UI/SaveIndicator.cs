@@ -18,6 +18,7 @@ public partial class SaveIndicator : Control
 
     private readonly PanelContainer _chip;
     private bool _saving;
+    private bool _up;
     private float _remaining;
 
     public SaveIndicator()
@@ -35,8 +36,10 @@ public partial class SaveIndicator : Control
         _chip.OffsetRight = -UiTheme.SpaceLg;
         _chip.OffsetBottom = -UiTheme.SpaceLg;
         AddChild(_chip);
-        SetProcess(false);
     }
+
+    // Here and not in the constructor: entering the tree turns processing on for a node with a _Process.
+    public override void _Ready() => SetProcess(false);
 
     public override void _EnterTree()
     {
@@ -60,6 +63,7 @@ public partial class SaveIndicator : Control
         if (!_saving && _remaining <= 0f)
         {
             UiFx.FadeOut(_chip, seconds: UiTheme.DurationBase);
+            _up = false;
             SetProcess(false);
         }
     }
@@ -68,8 +72,9 @@ public partial class SaveIndicator : Control
     {
         _saving = true;
         _remaining = MinimumSeconds;
-        if (!IsProcessing())
+        if (!_up)
         {
+            _up = true;
             UiFx.FadeIn(_chip, UiTheme.DurationFast);
             SetProcess(true);
         }
