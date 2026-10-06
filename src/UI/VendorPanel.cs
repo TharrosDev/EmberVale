@@ -58,7 +58,7 @@ public partial class VendorPanel : UiPanel
     private VBoxContainer _packList = null!;
     private ScrollContainer _detailScroll = null!;
     private VBoxContainer _tradeDetail = null!;
-    private HBoxContainer _order = null!;
+    private HFlowContainer _order = null!;
 
     private readonly List<Button> _waresRows = new();
     private readonly List<Button> _packRows = new();
@@ -216,9 +216,10 @@ public partial class VendorPanel : UiPanel
         detail.AddChild(BuildCounter());
 
         // The order bar: how many, for how much, and the verbs. Fixed under the lists so choosing a
-        // quantity never moves a row, and so a refusal is said where the press was made.
-        _order = new HBoxContainer { CustomMinimumSize = new Vector2(0f, UiTheme.ControlHeight) };
-        _order.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
+        // quantity never moves a row, and so a refusal is said where the press was made. It wraps
+        // rather than widen the page when a handheld cannot hold the picker and three verbs in a row.
+        _order = UiTheme.FlowRow();
+        _order.CustomMinimumSize = new Vector2(0f, UiTheme.ControlHeight);
         column.AddChild(_order);
     }
 
@@ -1014,7 +1015,13 @@ public partial class VendorPanel : UiPanel
         BuildInvest(shop);
         BuildHaggle(shop, haggled);
 
-        EnsureSelection(shop);
+        // What was inspected has gone (sold, bought out). If the press came from the order bar, focus
+        // follows the selection to its row: left on the bar it would sit on a verb that now acts on
+        // a different item, and a second press meant for the first would land on the second.
+        if (EnsureSelection(shop) && GetViewport()?.GuiGetFocusOwner() is { } focus && _order.IsAncestorOf(focus))
+        {
+            _focusSelection = true;
+        }
         _selectedRow = null;
         _selectedSlot = null;
         _selectedSlotItem = null;
@@ -1372,9 +1379,13 @@ public partial class VendorPanel : UiPanel
         return null;
     }
 
-    /// <summary>Keeps the selection on something that is still there. What was sold or bought out
-    /// from under it hands over to the first ware, then the first thing in the pack.</summary>
-    private void EnsureSelection(ShopResource shop)
+    /// <summary>
+    /// Keeps the selection on something that is still there, and says whether it had to move it.
+    /// What was sold out of the pack hands over to the next thing in the pack, never to a ware: the
+    /// verb under the player's thumb must not turn from Sell into Buy. Anything else hands over to
+    /// the first ware, then the first thing in the pack.
+    /// </summary>
+    private bool EnsureSelection(ShopResource shop)
     {
         bool found = _selectedTrade is { } item && _selectedSide switch
         {
@@ -1384,29 +1395,35 @@ public partial class VendorPanel : UiPanel
         };
         if (found)
         {
-            return;
+            return false;
         }
 
+        bool had = _selectedTrade != null;
         _buyQuantity = 1;
         _sellQuantity = 1;
-        IReadOnlyList<ShopOffer> offers = Offers(shop);
-        if (offers.Count > 0)
-        {
-            _selectedSide = Side.Wares;
-            _selectedTrade = offers[0].Instance;
-            return;
-        }
-
-        _selectedSide = Side.Pack;
-        _selectedTrade = null;
+        ItemInstance? firstHeld = null;
         if (_pack != null)
         {
             foreach (ItemStack stack in _pack.AllStacks)
             {
-                _selectedTrade = stack.Instance;
+                firstHeld = stack.Instance;
                 break;
             }
         }
+
+        IReadOnlyList<ShopOffer> offers = Offers(shop);
+        if (offers.Count > 0 && (_selectedSide != Side.Pack || firstHeld == null))
+        {
+            _selectedSide = Side.Wares;
+            _selectedTrade = offers[0].Instance;
+        }
+        else
+        {
+            _selectedSide = Side.Pack;
+            _selectedTrade = firstHeld;
+        }
+
+        return had;
     }
 
     // --- Lists --------------------------------------------------------------
