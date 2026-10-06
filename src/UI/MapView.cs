@@ -53,9 +53,10 @@ public partial class MapView : Control
     private readonly List<(LabelCandidate Candidate, string Text, Vector2 Origin, Color Colour)> _labels = new();
 
     // What a label may not be drawn over, in plot pixels, rebuilt with the labels on every draw:
-    // the player's arrow for every label, and the markers and the kept pin names as well for a
-    // territory's lettering. The candidate list is the placer's input, reused between draws.
-    private readonly List<Rect2> _labelBlocks = new();
+    // the square round the player's arrow, which a pin's name steps off, and for a territory's
+    // lettering that square, the markers and the kept pin names. The candidate list is the
+    // placer's input, reused between draws.
+    private Rect2? _playerClear;
     private readonly List<Rect2> _letteringBlocks = new();
     private readonly List<LabelCandidate> _candidates = new();
 
@@ -380,9 +381,9 @@ public partial class MapView : Control
 
         DrawSettlementHalos();
 
-        // The player's arrow is the one mark nothing may cover: it is drawn last, and every label
-        // is placed round it.
-        _labelBlocks.Clear();
+        // The player's arrow is the one mark no name may cover: a pin's name steps off it and a
+        // territory's lettering is placed round it.
+        _playerClear = null;
         _letteringBlocks.Clear();
         if (ResolvePlayer() is var (position, _))
         {
@@ -390,7 +391,7 @@ public partial class MapView : Control
             var clear = new Rect2(
                 here - new Vector2(PlayerClearance, PlayerClearance),
                 new Vector2(PlayerClearance * 2f, PlayerClearance * 2f));
-            _labelBlocks.Add(clear);
+            _playerClear = clear;
             _letteringBlocks.Add(clear);
         }
 
@@ -412,11 +413,13 @@ public partial class MapView : Control
             DrawLettering();
         }
 
+        // The arrow goes over everything that is part of the chart and under the two things the
+        // player is pointing with: the pad's reticle and the name chip beside the cursor.
         DrawWaypoint();
         DrawScaleBar();
+        DrawPlayer();
         DrawCursor();
         DrawHoverLabel();
-        DrawPlayer();
         DrawFrame();
     }
 
@@ -677,7 +680,7 @@ public partial class MapView : Control
                     _ => 4,
                 };
 
-                QueueLabel(pin.Label, at + new Vector2(0f, -(radius + 6f)), colour, rank);
+                QueueLabel(pin.Label, at, radius + 6f, colour, rank);
             }
         }
     }
@@ -982,8 +985,15 @@ public partial class MapView : Control
     private void DrawFrame() =>
         DrawRect(new Rect2(Vector2.Zero, Size), new Color(UiTheme.PanelBorder, 0.55f), false, 1f);
 
-    /// <summary>Measures a pin label and adds it to this frame's competition (39.5C).</summary>
-    private void QueueLabel(string text, Vector2 at, Color colour, int rank)
+    /// <summary>
+    /// Measures a pin label and adds it to this frame's competition (39.5C). The name sits centred
+    /// <paramref name="gap"/> above the pin at <paramref name="pin"/>.
+    ///
+    /// A name that would lie on the player's arrow is moved, never dropped: under the pin, then
+    /// just above the arrow's square, then just below it. Standing in a town is when its name
+    /// matters most, and that is exactly when its pin and the arrow share the same few pixels.
+    /// </summary>
+    private void QueueLabel(string text, Vector2 pin, float gap, Color colour, int rank)
     {
         if (UiTheme.UiFont is not { } font || string.IsNullOrEmpty(text))
         {
@@ -992,15 +1002,36 @@ public partial class MapView : Control
 
         int size = UiTheme.FontSize(UiTheme.CaptionFontSize);
         Vector2 measured = font.GetStringSize(text, HorizontalAlignment.Left, -1, size);
-        var origin = new Vector2(at.X - (measured.X * 0.5f), at.Y);
 
         // DrawString's origin is the text BASELINE, so the box starts a line-height above it.
-        var rect = new Rect2(origin.X, origin.Y - measured.Y, measured.X, measured.Y);
+        var rect = new Rect2(pin.X - (measured.X * 0.5f), pin.Y - gap - measured.Y, measured.X, measured.Y);
+        if (_playerClear is { } arrow && arrow.Intersects(rect))
+        {
+            var bounds = new Rect2(Vector2.Zero, Size);
+            Rect2 home = rect;
+            for (int i = 0; i < 3; i++)
+            {
+                float top = i switch
+                {
+                    0 => pin.Y + gap,
+                    1 => arrow.Position.Y - UiTheme.Space2xs - measured.Y,
+                    _ => arrow.End.Y + UiTheme.Space2xs,
+                };
+
+                var moved = new Rect2(home.Position.X, top, measured.X, measured.Y);
+                if (!arrow.Intersects(moved) && bounds.Encloses(moved))
+                {
+                    rect = moved;
+                    break;
+                }
+            }
+        }
+
+        var origin = new Vector2(rect.Position.X, rect.End.Y);
         _labels.Add((new LabelCandidate(rect, rank, _labels.Count), text, origin, colour));
     }
 
-    /// <summary>Runs the placer over this frame's labels and draws the survivors. A name that would
-    /// cover the player's arrow is dropped like one that would cover another name.</summary>
+    /// <summary>Runs the placer over this frame's labels and draws the survivors.</summary>
     private void DrawPlacedLabels()
     {
         if (_labels.Count == 0)
@@ -1014,7 +1045,7 @@ public partial class MapView : Control
             _candidates.Add(candidate);
         }
 
-        foreach (int index in LabelPlacer.Place(_candidates, new Rect2(Vector2.Zero, Size), _labelBlocks))
+        foreach (int index in LabelPlacer.Place(_candidates, new Rect2(Vector2.Zero, Size)))
         {
             (LabelCandidate kept, string text, Vector2 origin, Color colour) = _labels[index];
             DrawLabelAt(text, origin, colour, UiTheme.CaptionFontSize);

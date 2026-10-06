@@ -54,8 +54,8 @@ public static class PriceTooltip
     /// <summary>
     /// The breakdown as a ledger: what each step is, and the gold after it, as two columns. A step's
     /// words come from its <c>.label</c> key (the line's key with the gold left off); a step with
-    /// no such key keeps its whole sentence and an empty second column. A step that leaves nothing
-    /// to pay reads "no charge".
+    /// no such key keeps its whole sentence and an empty second column. Only the two free jumps
+    /// read "no charge": a sale that pays nothing, or a thing worth nothing, is still 0g.
     /// </summary>
     public static IEnumerable<(string Label, string Value)> Rows(PriceQuote quote)
     {
@@ -70,7 +70,9 @@ public static class PriceTooltip
 
             yield return (
                 Loc.TF(labelKey, line.Arg),
-                line.Running > 0 ? Loc.TF("shop.price", line.Running) : Loc.T("shop.line.free"));
+                line.Key is PriceBreakdown.KeyTravelOwned or PriceBreakdown.KeyTravelMounted
+                    ? Loc.T("shop.line.free")
+                    : Loc.TF("shop.price", line.Running));
         }
     }
 

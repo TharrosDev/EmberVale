@@ -249,7 +249,7 @@ shop.line.standing,how they take to you {0}%: {1}g
 shop.line.specialty,their own trade {0}%: {1}g
 shop.line.haggle,today's bargain {0}%: {1}g
 shop.line.stack,{0} of them: {1}g
-shop.line.glut,"{0} of them, their appetite falling: {1}g"
+shop.line.glut,"{0} of them, their appetite falling — {1}g"
 shop.line.shelf,"her shelf, at {0}% of value: {1}g"
 shop.line.house_cut,less the house's {0}%: {1}g
 shop.line.labour,the work itself: {1}g
@@ -257,7 +257,7 @@ shop.line.material,materials he must supply ({0}): {1}g
 shop.line.travel_local,a jump inside this realm: {1}g
 shop.line.travel_cross,across the realm boundary: {1}g
 shop.line.travel_owned,"a holding of your own, no charge"
-shop.line.travel_mounted,"you ride it yourself, no charge"
+shop.line.travel_mounted,"you ride it yourself — no charge"
 shop.haggle_spent,You have already tried your luck with them today.
 # Trading hours and the travelling trader (Phase 38J). A closed shop names the hour it opens: "closed"
 # alone leaves the player standing at a stall with nothing to do about it, while an hour is an
@@ -1560,7 +1560,7 @@ location.ember_crown.commission.name,The Order Bench
 location.ember_crown.traveller.name,The Wandering Trader
 location.ember_crown.crafting.name,The Crafting Yard
 location.shrine.solaryn.name,Shrine of Solaryn
-location.embermarket.market.desc,"Rows of stalls under awnings, a plaza at the north end, and the realm's densest run of trades: twelve merchants between the aisles and the forecourt."
+location.embermarket.market.desc,"Rows of stalls under awnings, a plaza at the north end, and the realm's densest run of trades — twelve merchants between the aisles and the forecourt."
 location.embermarket.provisions.name,Corvin's Provisions
 location.embermarket.fishmonger.name,Hana's Slab
 location.embermarket.weaver.name,Sable's Loom
