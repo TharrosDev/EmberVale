@@ -1,0 +1,619 @@
+{
+	"header": {
+		"char_name": "Wanderer",
+		"corruption_tier": "Embers",
+		"level": 50,
+		"player_x": -1.41963624954224,
+		"player_y": 0.000942065031267703,
+		"player_yaw": -0.0171931069344282,
+		"player_z": -7.09939384460449,
+		"playtime": 665.279709151416,
+		"race_id": "race.human",
+		"region": "The Ember Crown",
+		"region_id": "region.ember_crown",
+		"slot": "quick",
+		"timestamp": 1785995859.679
+	},
+	"objects": {
+		"bestiary": {
+			"ashen": {
+				"enemy.goblin": 1
+			},
+			"kills": {
+				"enemy.arcane_echo": 1,
+				"enemy.ashfall_elk": 1,
+				"enemy.bandit": 5,
+				"enemy.goblin": 70,
+				"enemy.grave_shade": 2,
+				"enemy.stone_sentinel": 2,
+				"enemy.storm_mote": 1,
+				"enemy.ward_golem": 1,
+				"enemy.wolf": 3
+			}
+		},
+		"cell_persistence": {
+			"removed": [
+				"ember_crown.waystone.relic",
+				"ember_crown.wilds_north.ruin.gem",
+				"ember_crown.wilds_north.cache.potion",
+				"ember_crown.wilds_west.camp.gold",
+				"ember_crown.wilds_west.camp.herb",
+				"ember_crown.wilds_west.camp.hide"
+			],
+			"state": {
+				"inventory:ember_crown.cottage_chest": {
+					"stacks": []
+				},
+				"inventory:ember_crown.cottage_trophy_a": {
+					"stacks": []
+				},
+				"inventory:ember_crown.cottage_trophy_b": {
+					"stacks": []
+				}
+			}
+		},
+		"companion_ai:companion.kael": {
+			"downed": false,
+			"hold_x": -2.31989192962646,
+			"hold_y": 0.000941531150601804,
+			"hold_z": -4.33452367782593,
+			"recovery": 0.0
+		},
+		"companions": {
+			"loyalty": {},
+			"party": [
+				{
+					"id": "companion.kael",
+					"stance": 0,
+					"x": -1.31804776191711,
+					"y": 0.000940461759455502,
+					"yaw": 167.149597167969,
+					"z": -11.9744329452515
+				}
+			]
+		},
+		"container_loot:cache.world.start": {
+			"looted": true
+		},
+		"corruption:player": {
+			"value": 100
+		},
+		"crafting:player": {
+			"known": [
+				"recipe.iron_ingot",
+				"recipe.leather_strips",
+				"recipe.health_potion",
+				"recipe.leather_cap",
+				"recipe.steel_sword",
+				"recipe.iron_ring"
+			]
+		},
+		"equipment:player": {
+			"slots": {
+				"1": {
+					"affixes": [
+						{
+							"id": "affix.suffix.ox",
+							"kind": 1,
+							"label": "of the Ox",
+							"mod": 0,
+							"stat": 1,
+							"value": 22.8337554931641
+						},
+						{
+							"id": "affix.prefix.arcane",
+							"kind": 0,
+							"label": "Arcane",
+							"mod": 0,
+							"stat": 10,
+							"value": 3.70700263977051
+						},
+						{
+							"id": "affix.suffix.eagle",
+							"kind": 1,
+							"label": "of the Eagle",
+							"mod": 0,
+							"stat": 14,
+							"value": 0.270295202732086
+						},
+						{
+							"id": "affix.suffix.tiger",
+							"kind": 1,
+							"label": "of the Tiger",
+							"mod": 0,
+							"stat": 13,
+							"value": 0.0506468191742897
+						}
+					],
+					"id": "item.weapon.steel_sword",
+					"name": "Arcane Steel Sword of the Ox",
+					"rarity": 4
+				},
+				"3": {
+					"affixes": [
+						{
+							"id": "affix.suffix.ox",
+							"kind": 1,
+							"label": "of the Ox",
+							"mod": 0,
+							"stat": 1,
+							"value": 17.6173896789551
+						},
+						{
+							"id": "affix.suffix.bear",
+							"kind": 1,
+							"label": "of the Bear",
+							"mod": 0,
+							"stat": 0,
+							"value": 31.159875869751
+						},
+						{
+							"id": "affix.prefix.sturdy",
+							"kind": 0,
+							"label": "Sturdy",
+							"mod": 0,
+							"stat": 8,
+							"value": 6.30644702911377
+						},
+						{
+							"id": "affix.suffix.swiftness",
+							"kind": 1,
+							"label": "of Swiftness",
+							"mod": 0,
+							"stat": 11,
+							"value": 0.7076016664505
+						}
+					],
+					"id": "item.armor.leather_cap",
+					"name": "Sturdy Leather Cap of the Ox",
+					"rarity": 4
+				},
+				"4": {
+					"affixes": [
+						{
+							"id": "affix.suffix.swiftness",
+							"kind": 1,
+							"label": "of Swiftness",
+							"mod": 0,
+							"stat": 11,
+							"value": 0.609908819198608
+						},
+						{
+							"id": "affix.suffix.warding",
+							"kind": 1,
+							"label": "of Warding",
+							"mod": 0,
+							"stat": 8,
+							"value": 9.12859153747559
+						},
+						{
+							"id": "affix.suffix.bear",
+							"kind": 1,
+							"label": "of the Bear",
+							"mod": 0,
+							"stat": 0,
+							"value": 27.5112762451172
+						},
+						{
+							"id": "affix.suffix.ox",
+							"kind": 1,
+							"label": "of the Ox",
+							"mod": 0,
+							"stat": 1,
+							"value": 20.8806133270264
+						}
+					],
+					"id": "item.armor.leather_vest",
+					"name": "Leather Vest of Swiftness",
+					"rarity": 4
+				},
+				"8": {
+					"affixes": [],
+					"id": "item.ring.iron",
+					"name": "Ring of the Hunter",
+					"rarity": 2
+				}
+			}
+		},
+		"fasttravel": {
+			"nodes": [
+				{
+					"id": "travel.ember_crown.waystone",
+					"label": "Ember Crown Waystone",
+					"region": "region.ember_crown",
+					"x": -0.471276253461838,
+					"y": 0.000941528589464724,
+					"z": -12.7964773178101
+				},
+				{
+					"id": "travel.ember_crown.cottage",
+					"label": "The Ashfall Cottage",
+					"region": "region.ember_crown",
+					"x": -5.39661931991577,
+					"y": 0.000941534468438476,
+					"z": -21.513614654541
+				}
+			]
+		},
+		"flags:player": {
+			"flags": [
+				"flag.elder_thanked"
+			]
+		},
+		"hotbar:player": {
+			"slots": [
+				"item.potion.health",
+				"",
+				"",
+				"",
+				""
+			]
+		},
+		"housing": {
+			"owned": [
+				"property.ember_crown.cottage"
+			]
+		},
+		"inventory:cache.world.start": {
+			"stacks": []
+		},
+		"inventory:ember_crown.cottage_chest": {
+			"stacks": []
+		},
+		"inventory:ember_crown.cottage_trophy_a": {
+			"stacks": []
+		},
+		"inventory:ember_crown.cottage_trophy_b": {
+			"stacks": []
+		},
+		"inventory:player": {
+			"stacks": [
+				{
+					"instance": {
+						"affixes": [],
+						"id": "item.material.goblin_hide",
+						"name": "Goblin Hide",
+						"rarity": 0
+					},
+					"qty": 50
+				},
+				{
+					"instance": {
+						"affixes": [],
+						"id": "item.potion.health",
+						"name": "Health Potion",
+						"rarity": 0
+					},
+					"qty": 10
+				},
+				{
+					"instance": {
+						"affixes": [],
+						"id": "item.material.iron_ore",
+						"name": "Iron Ore",
+						"rarity": 0
+					},
+					"qty": 4
+				},
+				{
+					"instance": {
+						"affixes": [],
+						"id": "item.material.scrap",
+						"name": "Scrap",
+						"rarity": 0
+					},
+					"qty": 65
+				},
+				{
+					"instance": {
+						"affixes": [],
+						"id": "item.material.leather_strips",
+						"name": "Leather Strips",
+						"rarity": 0
+					},
+					"qty": 24
+				},
+				{
+					"instance": {
+						"affixes": [],
+						"id": "item.potion.health",
+						"name": "Health Potion",
+						"rarity": 0
+					},
+					"qty": 10
+				},
+				{
+					"instance": {
+						"affixes": [],
+						"id": "item.material.goblin_hide",
+						"name": "Goblin Hide",
+						"rarity": 0
+					},
+					"qty": 12
+				},
+				{
+					"instance": {
+						"affixes": [],
+						"id": "item.material.grave_dust",
+						"name": "Grave Dust",
+						"rarity": 0
+					},
+					"qty": 2
+				},
+				{
+					"instance": {
+						"affixes": [],
+						"id": "item.material.elemental_mote",
+						"name": "Elemental Mote",
+						"rarity": 1
+					},
+					"qty": 4
+				},
+				{
+					"instance": {
+						"affixes": [],
+						"id": "item.potion.health",
+						"name": "Health Potion",
+						"rarity": 0
+					},
+					"qty": 10
+				},
+				{
+					"instance": {
+						"affixes": [],
+						"id": "item.material.beast_pelt",
+						"name": "Beast Pelt",
+						"rarity": 0
+					},
+					"qty": 6
+				},
+				{
+					"instance": {
+						"affixes": [],
+						"id": "item.gem.ruby",
+						"name": "Ruby",
+						"rarity": 2
+					},
+					"qty": 7
+				},
+				{
+					"instance": {
+						"affixes": [],
+						"id": "item.currency.gold",
+						"name": "Gold Coin",
+						"rarity": 0
+					},
+					"qty": 89
+				},
+				{
+					"instance": {
+						"affixes": [],
+						"id": "item.potion.health",
+						"name": "Health Potion",
+						"rarity": 0
+					},
+					"qty": 5
+				},
+				{
+					"instance": {
+						"affixes": [],
+						"id": "item.material.iron_ingot",
+						"name": "Iron Ingot",
+						"rarity": 0
+					},
+					"qty": 18
+				},
+				{
+					"instance": {
+						"affixes": [],
+						"id": "item.weapon.steel_sword",
+						"name": "Steel Sword",
+						"rarity": 0
+					},
+					"qty": 1
+				},
+				{
+					"instance": {
+						"affixes": [
+							{
+								"id": "affix.suffix.warding",
+								"kind": 1,
+								"label": "of Warding",
+								"mod": 0,
+								"stat": 8,
+								"value": 7.00446128845215
+							}
+						],
+						"id": "item.weapon.steel_sword",
+						"name": "Steel Sword of Warding",
+						"rarity": 1
+					},
+					"qty": 1
+				},
+				{
+					"instance": {
+						"affixes": [],
+						"id": "item.weapon.steel_sword",
+						"name": "Steel Sword",
+						"rarity": 0
+					},
+					"qty": 1
+				}
+			]
+		},
+		"map": {
+			"pois": [
+				"ember_crown.town_hub",
+				"ember_crown.wilds_north",
+				"ember_crown.arena",
+				"ember_crown.wilds_west"
+			],
+			"regions": [
+				"region.ember_crown"
+			]
+		},
+		"mastery:player": {
+			"points": {
+				"1": 36,
+				"2": 3,
+				"3": 16,
+				"5": 1,
+				"6": 2
+			}
+		},
+		"perks:player": {
+			"ranks": {
+				"perk.ashborn_might": 3,
+				"perk.endurance_training": 5,
+				"perk.might": 5,
+				"perk.precision": 3,
+				"perk.toughness": 5,
+				"perk.warding": 5
+			}
+		},
+		"progression:player": {
+			"level": 50,
+			"sp": 23,
+			"spell_sp": 17,
+			"xp": 0
+		},
+		"questlog:player": {
+			"quests": [
+				{
+					"counts": [
+						3
+					],
+					"id": "quest.cull_goblins",
+					"status": 1
+				},
+				{
+					"counts": [
+						3
+					],
+					"id": "quest.gather_iron",
+					"status": 1
+				},
+				{
+					"counts": [
+						4
+					],
+					"id": "quest.kael.oath",
+					"status": 1
+				},
+				{
+					"counts": [
+						3
+					],
+					"id": "quest.warband.bounty",
+					"status": 1
+				},
+				{
+					"counts": [
+						3
+					],
+					"id": "quest.warband.forge",
+					"status": 1
+				},
+				{
+					"counts": [
+						4
+					],
+					"id": "quest.warband.remedies",
+					"status": 1
+				},
+				{
+					"counts": [
+						5
+					],
+					"id": "quest.warband.heart",
+					"status": 1
+				}
+			]
+		},
+		"reputation:player": {
+			"reputation": {
+				"faction.beasts": -27,
+				"faction.dragons": 10,
+				"faction.fallen": -60,
+				"faction.frostfang_clans": 10,
+				"faction.goblins": -100,
+				"faction.hollow": -71,
+				"faction.iron_syndicate": -20,
+				"faction.outlaws": -38,
+				"faction.villagers": 100
+			}
+		},
+		"spawns": {
+			"actors": [
+				{
+					"pid": "cache.world.start",
+					"tid": "prop.cache",
+					"x": 5.0,
+					"y": 0.0,
+					"yaw": 0.0,
+					"z": 0.0
+				}
+			]
+		},
+		"spells:player": {
+			"ranks": {
+				"spell.arcane_lance": 3,
+				"spell.arcane_shield": 3,
+				"spell.ball_lightning": 3,
+				"spell.blink": 1,
+				"spell.blizzard": 3,
+				"spell.ember_siphon": 3,
+				"spell.fireball": 3,
+				"spell.firebolt": 3,
+				"spell.flame_lance": 3,
+				"spell.frost_nova": 3,
+				"spell.lesser_heal": 3,
+				"spell.lifebloom_totem": 3,
+				"spell.storm_conduit": 3
+			},
+			"selected": 9,
+			"spells": [
+				"spell.firebolt",
+				"spell.fireball",
+				"spell.frost_nova",
+				"spell.lesser_heal",
+				"spell.arcane_shield",
+				"spell.ember_siphon",
+				"spell.flame_lance",
+				"spell.blizzard",
+				"spell.ball_lightning",
+				"spell.storm_conduit",
+				"spell.arcane_lance",
+				"spell.blink",
+				"spell.lifebloom_totem"
+			]
+		},
+		"stats:companion.kael": {
+			"resources": {
+				"0": 104.999992370605,
+				"1": 61.1262702941895,
+				"2": 40.0
+			}
+		},
+		"stats:player": {
+			"resources": {
+				"0": 660.671142578125,
+				"1": 427.331756591797,
+				"2": 80.0
+			}
+		},
+		"tutorial": {
+			"finished": true,
+			"step": 0
+		},
+		"weather": {
+			"remaining": 3.66051530838013,
+			"weather": "weather.clear"
+		},
+		"worldclock": {
+			"time": 0.759431421756744
+		}
+	},
+	"timestamp": 1785995859.68,
+	"version": 1
+}
