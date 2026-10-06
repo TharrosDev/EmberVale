@@ -260,19 +260,54 @@ public sealed partial class TradeShots : ShotHarness
         }
     }
 
-    /// <summary>Marks the first few plain stacks as junk, through <see cref="InventoryComponent.SetJunk"/>,
-    /// so the counter has a junk line to offer.</summary>
+    /// <summary>
+    /// Gives the counter a junk line that sells. ⚠️ The first shop is a herbalist, and the staged pack
+    /// holds nothing she deals in: marking its first plain stacks left "None of your junk will sell
+    /// here" on screen and the confirm shot with no total to name. So a few of the shop's own cheap
+    /// wares go into the pack first (a merchant always deals in what she stocks) and are marked,
+    /// through <see cref="InventoryComponent.SetJunk"/>; two stacks she will not take are marked as
+    /// well, so the "more will not sell here" line is photographed too.
+    /// </summary>
     private static void StageJunk()
     {
-        if (Player()?.GetComponent<InventoryComponent>() is not { } pack)
+        if (Player()?.GetComponent<InventoryComponent>() is not { } pack || ShopDatabase.All.Count == 0)
         {
             return;
         }
 
-        int marked = 0;
+        ShopResource shop = ShopDatabase.All[0];
+        System.Collections.Generic.List<string> accepted = shop.AcceptedTagList();
+        int staged = 0;
+        foreach (ShopStockEntry entry in shop.StockList())
+        {
+            if (ItemDatabase.Get(entry.ItemId) is not { } item || item is EquippableItemResource || !item.IsStackable
+                || !ShopPricing.Sellable(item.Type, isCurrency: false) || !TradeTags.Accepts(item.TagList(), accepted)
+                || pack.AddItem(item, 3) == 0)
+            {
+                continue;
+            }
+
+            foreach (ItemStack stack in new System.Collections.Generic.List<ItemStack>(pack.AllStacks))
+            {
+                if (stack.Instance.TemplateId == item.Id && !stack.Instance.Locked)
+                {
+                    pack.SetJunk(stack.Instance, true);
+                }
+            }
+
+            if (++staged >= 2)
+            {
+                break;
+            }
+        }
+
+        int refused = 0;
         foreach (ItemStack stack in new System.Collections.Generic.List<ItemStack>(pack.Stacks))
         {
-            if (!stack.Instance.IsEquippable && !stack.Instance.Locked && pack.SetJunk(stack.Instance, true) && ++marked >= 4)
+            ItemInstance instance = stack.Instance;
+            if (!instance.IsEquippable && !instance.Locked && !instance.Junk
+                && !TradeTags.Accepts(instance.Template.TagList(), accepted)
+                && pack.SetJunk(instance, true) && ++refused >= 2)
             {
                 break;
             }

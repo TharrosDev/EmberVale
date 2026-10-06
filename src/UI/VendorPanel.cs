@@ -1702,8 +1702,9 @@ public partial class VendorPanel : UiPanel
     /// <summary>
     /// The "sell all junk" line at the head of the pack column: how many stacks will go and for how
     /// much, before the press. Absent when nothing is marked. When something is marked and none of
-    /// it can be sold here the button stays, saying so - a junk pile this merchant will not touch is
-    /// worth knowing about at the counter rather than after walking away.
+    /// it can be sold here the line stays, saying so, and the button goes: a junk pile this merchant
+    /// will not touch is worth knowing about at the counter rather than after walking away, but a
+    /// button that can only refuse reads as one that works.
     ///
     /// The press asks first. The confirm names the total the merchant will pay, from the same plan
     /// the sale then runs, and Cancel is beside it. It is a second press and not a hold: the buyback
@@ -1741,6 +1742,13 @@ public partial class VendorPanel : UiPanel
             copy.AddChild(Wrapped(UiTheme.Caption(Loc.TF("shop.junk_skipped", skipped))));
         }
 
+        if (plan.Count == 0)
+        {
+            band.AddChild(copy);
+            _packList.AddChild(band);
+            return;
+        }
+
         HFlowContainer verbs = UiTheme.FlowRow();
         if (armed)
         {
@@ -1766,15 +1774,8 @@ public partial class VendorPanel : UiPanel
         {
             Button sell = UiTheme.Action(Loc.T("shop.sell_junk"));
             sell.TooltipText = Loc.T("shop.sell_junk_hint");
-            bool any = plan.Count > 0;
             sell.Pressed += () =>
             {
-                if (!any)
-                {
-                    Deny(Loc.T("shop.junk_none_sellable"));
-                    return;
-                }
-
                 _junkArmed = true;
                 MarkDirty();
             };
