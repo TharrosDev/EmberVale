@@ -85,7 +85,14 @@ public partial class EnemyAIComponent : EntityComponent
     private SpellcastingComponent? _casting;
     private CombatComponent? _combat;
     private PlayerCharacter? _player;
-    private MeshInstance3D? _mesh;
+    /// <summary>The visual root every factory names "Mesh": a glTF scene root (a plain Node3D)
+    /// for a modelled enemy, or the capsule itself for a fallback.</summary>
+    private Node3D? _visual;
+
+    /// <summary>The geometry whose shadow the far cut turned off, with what each cast before, so
+    /// the restore gives back exactly that and never switches on a mesh authored without one.</summary>
+    private readonly System.Collections.Generic.List<(GeometryInstance3D Node, GeometryInstance3D.ShadowCastingSetting Was)>
+        _shadowCut = new();
     private string _factionId = string.Empty;
 
     private EnemyState _state = EnemyState.Idle;
@@ -170,7 +177,7 @@ public partial class EnemyAIComponent : EntityComponent
         _casting = Entity.GetComponent<SpellcastingComponent>();
         _combat = Entity.GetComponent<CombatComponent>();
         _flight = Entity.GetComponent<FlightComponent>();
-        _mesh = _body.GetNodeOrNull<MeshInstance3D>("Mesh");
+        _visual = _body.GetNodeOrNull<Node3D>("Mesh");
         _nav = new AiNavigator(Entity, _body, _body.GetNodeOrNull<NavigationAgent3D>("NavAgent"));
         _tactics = new EnemyCasterTactics(Entity, _body, _nav, GetTree());
         _senses = new EnemySenses(Entity, _body);
@@ -747,15 +754,44 @@ public partial class EnemyAIComponent : EntityComponent
 
     private void SetShadow(bool on)
     {
-        if (_mesh == null || on == _shadowOn)
+        if (_visual == null || on == _shadowOn || !IsInstanceValid(_visual))
         {
             return;
         }
 
         _shadowOn = on;
-        _mesh.CastShadow = on
-            ? GeometryInstance3D.ShadowCastingSetting.On
-            : GeometryInstance3D.ShadowCastingSetting.Off;
+        if (on)
+        {
+            foreach ((GeometryInstance3D node, GeometryInstance3D.ShadowCastingSetting was) in _shadowCut)
+            {
+                if (IsInstanceValid(node))
+                {
+                    node.CastShadow = was;
+                }
+            }
+
+            _shadowCut.Clear();
+            return;
+        }
+
+        // Walked at the moment of the cut, not cached at init: equipment and the identity kit attach
+        // their meshes under the body later, and runtime-added nodes have no owner.
+        _shadowCut.Clear();
+        CutShadow(_visual);
+        foreach (Node node in _visual.FindChildren("*", nameof(GeometryInstance3D), recursive: true, owned: false))
+        {
+            CutShadow(node);
+        }
+    }
+
+    private void CutShadow(Node node)
+    {
+        if (node is GeometryInstance3D geometry &&
+            geometry.CastShadow != GeometryInstance3D.ShadowCastingSetting.Off)
+        {
+            _shadowCut.Add((geometry, geometry.CastShadow));
+            geometry.CastShadow = GeometryInstance3D.ShadowCastingSetting.Off;
+        }
     }
 
     private static float HorizontalDistance(Vector3 a, Vector3 b)

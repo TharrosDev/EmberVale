@@ -106,7 +106,6 @@ public partial class CharacterAnimationComponent : EntityComponent
 
         if (_player != null)
         {
-            _fullRateMode = _player.CallbackModeProcess;
             AddSharedLibrary();
             _idle = ResolveClip("idle");
             _run = ResolveClip("run");
@@ -119,6 +118,11 @@ public partial class CharacterAnimationComponent : EntityComponent
         }
 
         BuildTree();
+        if (_tree == null && _player != null)
+        {
+            // No tree: the player is the mixer, and this component steps it (see AdvanceMixer).
+            _player.CallbackModeProcess = AnimationMixer.AnimationCallbackModeProcess.Manual;
+        }
 
         _spellcasting = Entity.GetComponent<SpellcastingComponent>();
 
@@ -573,14 +577,16 @@ public partial class CharacterAnimationComponent : EntityComponent
             AnimPlayer = _player.GetPath(),
             // The clips are authored at 30 fps and blended per frame, so the tree ticks with the
             // frame rather than with physics; a physics-stepped tree visibly stutters at high
-            // refresh rates.
-            CallbackModeProcess = AnimationMixer.AnimationCallbackModeProcess.Idle,
+            // refresh rates. This component steps it from _Process (AdvanceMixer).
+            // ⚠️ Set once, before the tree is active, and never written again: changing the mode
+            // on an active tree deactivates and reactivates it, which restarts the state machine
+            // from its entry. A corpse stands back up.
+            CallbackModeProcess = AnimationMixer.AnimationCallbackModeProcess.Manual,
         };
         AddChild(tree);
         tree.Active = true;
 
         _tree = tree;
-        _fullRateMode = AnimationMixer.AnimationCallbackModeProcess.Idle; // the tree is the mixer now
         _playback = tree.Get(LocomotionTree.PlaybackParam).As<AnimationNodeStateMachinePlayback>();
         _upperBlend = (float)tree.Get(UpperBodyBlendParamName);
     }
@@ -613,7 +619,19 @@ public partial class CharacterAnimationComponent : EntityComponent
             return;
         }
 
-        TickLod(delta);
+        TickLod();
+        TickState();
+        // After the state tick, so this frame's parameters and travel requests are the ones posed,
+        // which is the order the engine gave when the mixer was a child stepping itself.
+        AdvanceMixer(delta);
+    }
+
+    private void TickState()
+    {
+        if (_player == null)
+        {
+            return;
+        }
 
         if (_tree != null)
         {
@@ -781,16 +799,15 @@ public partial class CharacterAnimationComponent : EntityComponent
     private bool _lodCoarse;
     private double _lodBanked;
     private int _lodFrame;
-    private AnimationMixer.AnimationCallbackModeProcess _fullRateMode =
-        AnimationMixer.AnimationCallbackModeProcess.Idle;
 
     /// <summary>Whichever mixer is actually advancing the pose: the tree when there is one (it
-    /// drives the player), otherwise the player itself.</summary>
+    /// drives the player), otherwise the player itself. Both are in manual callback mode for their
+    /// whole life, so <see cref="AdvanceMixer"/> is the only thing that moves a pose.</summary>
     private AnimationMixer? Mixer => _tree != null ? _tree : _player;
 
-    private void TickLod(double delta)
+    private void TickLod()
     {
-        _lodTimer -= delta;
+        _lodTimer -= _lastDelta;
         if (_lodTimer <= 0d)
         {
             _lodTimer = LodCheckSeconds;
@@ -804,41 +821,43 @@ public partial class CharacterAnimationComponent : EntityComponent
         {
             SetCoarse(coarse);
         }
+    }
 
-        if (!_lodCoarse)
+    /// <summary>Steps the pose: every frame at full rate, every <see cref="LodStride"/>th frame
+    /// when coarse, and then by the whole of the skipped time so clips keep their real speed.</summary>
+    private void AdvanceMixer(double delta)
+    {
+        _lodBanked += delta;
+        if (_lodCoarse && ++_lodFrame < LodStride)
         {
             return;
         }
 
-        _lodBanked += delta;
-        if (++_lodFrame >= LodStride)
+        Flush();
+    }
+
+    private void Flush()
+    {
+        double step = _lodBanked;
+        _lodBanked = 0d;
+        _lodFrame = 0;
+        if (step > 0d && Mixer is { } mixer && GodotObject.IsInstanceValid(mixer))
         {
-            // The whole of the skipped time, so clips keep their real speed and length.
-            double step = _lodBanked;
-            _lodBanked = 0d;
-            _lodFrame = 0;
-            Mixer?.Advance(step);
+            mixer.Advance(step);
         }
     }
 
+    /// <summary>Only a flag: the mixer's mode never changes, so nothing restarts. Leaving coarse
+    /// hands the pose whatever time was banked, so what follows starts from the present.</summary>
     private void SetCoarse(bool coarse)
     {
-        if (Mixer is not { } mixer || !GodotObject.IsInstanceValid(mixer))
+        if (!coarse)
         {
-            return;
+            Flush();
         }
 
-        if (!coarse && _lodBanked > 0d)
-        {
-            mixer.Advance(_lodBanked); // hand back what was banked before the engine takes over again
-        }
-
-        _lodBanked = 0d;
         _lodFrame = 0;
         _lodCoarse = coarse;
-        mixer.CallbackModeProcess = coarse
-            ? AnimationMixer.AnimationCallbackModeProcess.Manual
-            : _fullRateMode;
     }
 
     /// <summary>Far from the player, or not drawn at all (an unrecruited companion, a flag-gated
