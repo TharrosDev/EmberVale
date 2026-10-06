@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Embervale.Economy;
 using Embervale.Factions;
+using Embervale.Progression;
 using Xunit;
 
 namespace Embervale.Tests;
@@ -236,6 +237,10 @@ public class PriceBreakdownTests
             100, 100, string.Empty, false, 0.4f, true, true, 6, 40, 3).Lines);
         emitted.AddRange(PriceBreakdown.Sell(
             100, 100, string.Empty, false, 0.4f, false, false, 4, 0, 3).Lines);
+        emitted.AddRange(PriceBreakdown.Buy(
+            100, 100, string.Empty, false, 1.5f, ReputationTier.Neutral, false, false, 0.95f).Lines);
+        emitted.AddRange(PriceBreakdown.Sell(
+            100, 100, string.Empty, false, 0.4f, false, false, 1, 0, 3, 1.05f).Lines);
         emitted.AddRange(PriceBreakdown.Consign(
             100, 100, string.Empty, false, 0.85f, 0.2f, 3).Lines);
         emitted.AddRange(PriceBreakdown.Commission(
@@ -249,5 +254,49 @@ public class PriceBreakdownTests
         {
             Assert.Contains(line.Key, PriceBreakdown.AllKeys);
         }
+    }
+
+    [Fact]
+    public void PerkLineIsTheLastRunningAndTheTotalAtEveryCombination()
+    {
+        foreach (ReputationTier tier in AllTiers)
+        {
+            foreach (bool specialty in new[] { false, true })
+            {
+                foreach (bool haggled in new[] { false, true })
+                {
+                    PriceQuote buy = PriceBreakdown.Buy(
+                        137, 137, string.Empty, false, 1.6f, tier, specialty, haggled, PerkEffectMath.BestBuyFactor);
+                    Assert.Equal(
+                        ShopPricing.BuyPrice(137, ShopPricing.MarkupFor(
+                            1.6f, tier, specialty, haggled, PerkEffectMath.BestBuyFactor)),
+                        buy.Total);
+                    Assert.Equal(PriceBreakdown.KeyPerk, buy.Lines[^1].Key);
+                    Assert.Equal(buy.Total, buy.Lines[^1].Running);
+
+                    PriceQuote sell = PriceBreakdown.Sell(
+                        137, 137, string.Empty, false, 0.45f, specialty, haggled, 1, 0, 3, PerkEffectMath.BestSellFactor);
+                    Assert.Equal(
+                        ShopPricing.SellPrice(137, ShopPricing.SellFractionFor(
+                            0.45f, specialty, haggled, PerkEffectMath.BestSellFactor)),
+                        sell.Total);
+                    Assert.Equal(PriceBreakdown.KeyPerk, sell.Lines[^1].Key);
+                    Assert.Equal(sell.Total, sell.Lines[^1].Running);
+                }
+            }
+        }
+    }
+
+    [Fact]
+    public void NoPerkMeansNoPerkLineAndTheOldTotal()
+    {
+        PriceQuote buy = PriceBreakdown.Buy(
+            137, 137, string.Empty, false, 1.6f, ReputationTier.Friendly, true, true);
+        Assert.DoesNotContain(buy.Lines, line => line.Key == PriceBreakdown.KeyPerk);
+        Assert.Equal(
+            ShopPricing.BuyPrice(137, ShopPricing.MarkupFor(1.6f, ReputationTier.Friendly, true, true)), buy.Total);
+
+        PriceQuote sell = PriceBreakdown.Sell(137, 137, string.Empty, false, 0.45f, true, true, 1, 0, 3);
+        Assert.DoesNotContain(sell.Lines, line => line.Key == PriceBreakdown.KeyPerk);
     }
 }

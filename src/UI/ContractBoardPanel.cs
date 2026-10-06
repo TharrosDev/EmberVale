@@ -45,24 +45,22 @@ public partial class ContractBoardPanel : UiPanel
     {
         UiTheme.ApplyWorkspace(shell, 0.68f);
 
-        MarginContainer margin = UiTheme.Padding(12);
+        MarginContainer margin = UiTheme.Padding(UiTheme.PanelPad);
         shell.AddChild(margin);
 
         var column = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
-        column.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
+        column.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
         margin.AddChild(column);
 
         _title = UiTheme.Header(string.Empty);
         column.AddChild(_title);
-        column.AddChild(new HSeparator());
+        column.AddChild(UiTheme.Divider());
 
         (ScrollContainer scroll, VBoxContainer list) = UiTheme.ScrollList();
-        scroll.CustomMinimumSize = new Vector2(0, 260);
-        scroll.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
         column.AddChild(scroll);
         _list = list;
 
-        column.AddChild(new HSeparator());
+        column.AddChild(UiTheme.Divider());
         _footer = UiTheme.Body(string.Empty, UiTheme.Dim);
         column.AddChild(_footer);
     }
@@ -180,7 +178,7 @@ public partial class ContractBoardPanel : UiPanel
                 text, shock.Kind == ShockKind.Shortage ? UiTheme.Bad : UiTheme.Good));
         }
 
-        _list.AddChild(new HSeparator());
+        _list.AddChild(UiTheme.Divider());
     }
 
     private static SupplyShockService? Shocks() =>
@@ -203,41 +201,26 @@ public partial class ContractBoardPanel : UiPanel
         bool deliverable = !filled && item != null && have >= contract.Quantity;
 
         PanelContainer card = UiTheme.Card(filled ? UiTheme.Disabled : deliverable ? UiTheme.Good : UiTheme.Accent);
-        var column = new VBoxContainer();
-        column.AddThemeConstantOverride("separation", 2);
+        var row = new HBoxContainer();
+        row.AddThemeConstantOverride("separation", UiTheme.SpaceMd);
 
-        var titleRow = new HBoxContainer();
-        titleRow.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
+        // Text stack on the left, the verb on the right and centred against the whole stack: with the
+        // button in the headline, its 44 px set the row's top band and left dead air beside the title.
+        var column = new VBoxContainer
+        {
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            SizeFlagsVertical = Control.SizeFlags.ShrinkCenter,
+        };
+        column.AddThemeConstantOverride("separation", UiTheme.LineGap);
 
         Label headline = UiTheme.Body(
             Loc.TF("contracts.wanted", contract.Quantity, item?.DisplayName ?? contract.ItemId),
             filled ? UiTheme.Disabled : UiTheme.Text);
         headline.TooltipText = Loc.T(contract.NameKey);
-        headline.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-        headline.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
-        titleRow.AddChild(headline);
-
-        if (filled)
-        {
-            PanelContainer chip = UiTheme.Chip(Loc.T("contracts.filled"), UiTheme.Disabled);
-            chip.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
-            titleRow.AddChild(chip);
-        }
-        else
-        {
-            Button deliver = UiTheme.Action(Loc.T("contracts.deliver"));
-            deliver.Disabled = !deliverable;
-            ContractResource captured = contract;
-            deliver.Pressed += () => Deliver(captured);
-            deliver.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
-            titleRow.AddChild(deliver);
-        }
-
-        column.AddChild(titleRow);
+        column.AddChild(headline);
         column.AddChild(UiTheme.Caption(Loc.T(contract.NameKey), UiTheme.Dim));
 
-        var chips = new HBoxContainer();
-        chips.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
+        HFlowContainer chips = UiTheme.FlowRow();
         chips.AddChild(UiTheme.Chip(
             $"{have}/{contract.Quantity}", deliverable || filled ? UiTheme.Good : UiTheme.Bad));
         chips.AddChild(UiTheme.Chip(Loc.TF("contracts.reward_gold", contract.RewardGold), UiTheme.Accent));
@@ -250,10 +233,25 @@ public partial class ContractBoardPanel : UiPanel
         }
 
         column.AddChild(chips);
+        row.AddChild(column);
 
-        MarginContainer pad = UiTheme.Padding(UiTheme.SpaceXs);
-        pad.AddChild(column);
-        card.AddChild(pad);
+        if (filled)
+        {
+            PanelContainer chip = UiTheme.Chip(Loc.T("contracts.filled"), UiTheme.Disabled);
+            chip.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
+            row.AddChild(chip);
+        }
+        else
+        {
+            Button deliver = UiTheme.Action(Loc.T("contracts.deliver"));
+            deliver.Disabled = !deliverable;
+            ContractResource captured = contract;
+            deliver.Pressed += () => Deliver(captured);
+            deliver.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
+            row.AddChild(deliver);
+        }
+
+        card.AddChild(row);
         _list.AddChild(card);
     }
 

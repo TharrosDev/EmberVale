@@ -1,6 +1,8 @@
+using System.Linq;
 using Embervale.Core;
 using Embervale.Core.Services;
 using Embervale.Core.Events;
+using Embervale.Corruption;
 using Embervale.Dialogue;
 using Embervale.Economy;
 using Embervale.Factions;
@@ -8,6 +10,7 @@ using Embervale.Items;
 using Embervale.Localization;
 using Embervale.Save;
 using Embervale.Player;
+using Embervale.Progression;
 using Embervale.Quests;
 using Embervale.UI;
 using Embervale.World;
@@ -89,6 +92,10 @@ public sealed partial class PanelShots : ShotHarness
             return "dialogue panel did not open on the tags fixture";
         if ((name.StartsWith("14-") || name.StartsWith("18-") || name.StartsWith("19-")) && !Character.IsOpen)
             return "character/inventory panel did not open";
+        if (name == "14b-progression-stats" && !Character.IsOpen)
+            return "character panel did not stay open on the progression tab";
+        if (name.Length > 2 && name[0] == '2' && name[1] is >= '1' and <= '4')
+            return ValidatePerkShot(name);
         if (name == "15-shop" && !Vendor.IsOpen)
             return "vendor panel did not open";
         if (name == "16-dialogue" && !Dialogue.IsOpen)
@@ -141,6 +148,16 @@ public sealed partial class PanelShots : ShotHarness
             }
 
             Map?.SetZoom(MapProjection.DefaultZoom);
+        });
+
+        // The rail's lower half (filters, legend) is below the fold of a 720 px screen, so it gets its own
+        // frame: the rail is the map's first scroll container, and this scrolls it to the end.
+        Shot("05b-map-rail-bottom", () =>
+        {
+            if (Map is not null && QuestShotFixtures.FindFirst<ScrollContainer>(Map) is { } rail)
+            {
+                rail.ScrollVertical = 100000;
+            }
         });
 
         Shot("06-map-closed", () => Map?.SetOpen(false));
@@ -239,6 +256,9 @@ public sealed partial class PanelShots : ShotHarness
             Character?.ShowGear();
         });
 
+        // The stat block with its per-point lines under each primary (progression P2).
+        Shot("14b-progression-stats", () => Character?.ShowProgression());
+
         Shot("15-shop", () =>
         {
             Character?.SetOpen(false);
@@ -247,6 +267,8 @@ public sealed partial class PanelShots : ShotHarness
                 EventBus.Instance?.Publish(new ShopOpenedEvent(player, ShopDatabase.All[0]));
             }
         });
+
+        Shot("15b-shop-scrolled", () => UiAuditShots.ScrollToEnd(Vendor));
 
         Shot("16-dialogue", () =>
         {
@@ -311,16 +333,185 @@ public sealed partial class PanelShots : ShotHarness
             Character?.SetOpen(false);
             SaveManager.Instance?.DeleteSlot(GuildShotSlot);
         });
+
+        // The perk tree (progression upgrade P6). Four states, each staged through the real components:
+        // an unspent tree, a build with points in it, a corruption-gated branch, and the respec confirmation.
+        Shot("21-perks-empty", () =>
+        {
+            StagePerkPoints(6);
+            Character?.SetOpen(true);
+            Character?.ShowPerks(PerkBranch.Warrior);
+        });
+
+        // Learnable, locked-behind-a-tier and maxed nodes in one frame, lit and unlit connectors, a stocked gold purse.
+        Shot("22-perks-mid-build", () =>
+        {
+            StagePerkPoints(14);
+            StageGold(1000);
+            LearnPerks(("perk.might", 5), ("perk.toughness", 3), ("perk.warding", 2), ("perk.iron_stance", 1), ("perk.second_wind", 1));
+            Character?.ShowPerks(PerkBranch.Warrior);
+        });
+
+        // Keyboard navigation, driven the way a player drives it: focus the first node, then press Right and Down. The
+        // detail pane follows focus, so landing on Second Wind (one right, one down from Might) is the evidence that the
+        // grid has a sensible focus order. Validated below, not just photographed.
+        Shot("22b-perks-navigated", () =>
+        {
+            FocusFirstPerkNode();
+            Press(Key.Right);
+            Press(Key.Down);
+        });
+
+        // Enter on the focused node buys a rank through Learn, the rebuild that follows must keep focus there.
+        Shot("22c-perks-learned-by-key", () => Press(Key.Enter));
+
+        // Untainted players see every Ashbound perk gated; at Touched the first opens and the rest stay shut.
+        Shot("23-perks-corruption-gated", () =>
+        {
+            if (Player()?.GetComponent<CorruptionComponent>() is { } corruption)
+            {
+                corruption.Set(25);
+            }
+
+            Character?.ShowPerks(PerkBranch.Ashbound);
+        });
+
+        Shot("24-perks-respec-confirm", () =>
+        {
+            Player()?.GetComponent<CorruptionComponent>()?.Set(0);
+            Character?.ShowPerks(PerkBranch.Warrior, confirmRespec: true);
+        });
+
+        Shot("25-perks-closed", () => Character?.SetOpen(false));
+    }
+
+    private string? ValidatePerkShot(string name)
+    {
+        if (!Character!.IsOpen)
+        {
+            return "character panel did not open";
+        }
+
+        PerksComponent? perks = Player()?.GetComponent<PerksComponent>();
+        if (perks is null)
+        {
+            return "player has no perks component";
+        }
+
+        PerkTreePanel.ViewState view = Character.PerkTreeState;
+        PerkBranch? branch = view.Branch;
+        bool respecPending = view.ConfirmingRespec;
+        if (name.StartsWith("22b-") && view.FocusedId != "perk.second_wind")
+            return $"keyboard focus is on {view.FocusedId}, expected perk.second_wind";
+        if (name.StartsWith("22c-") && (view.FocusedId != "perk.second_wind" || perks.RankOf("perk.second_wind") != 2))
+            return $"after ui_accept the focused perk is {view.FocusedId} at rank {perks.RankOf("perk.second_wind")}, expected perk.second_wind at 2";
+        PerkBranch expected = name.StartsWith("23-") ? PerkBranch.Ashbound : PerkBranch.Warrior;
+        if (branch != expected)
+            return $"perk tree is on {branch}, expected {expected}";
+        if (respecPending != name.StartsWith("24-"))
+            return respecPending ? "a respec confirmation is showing" : "the respec confirmation is not showing";
+        if ((name.StartsWith("22-") || name.StartsWith("24-")) && perks.PointsSpent == 0)
+            return "no points are spent, so this is not a built tree";
+        if (name.StartsWith("21-") && perks.PointsSpent != 0)
+            return "points are already spent, so this is not an empty tree";
+        if (name.StartsWith("23-") && !PerkDatabase.All.Any(p => p.Branch == PerkBranch.Ashbound && !perks.MeetsCorruption(p)))
+            return "no Ashbound perk is corruption-gated";
+        return null;
+    }
+
+    /// <summary>Focuses the first perk node of the open tree: the first button under the tree canvas.</summary>
+    private void FocusFirstPerkNode()
+    {
+        if (FirstOf<PerkTreeCanvas>(Character!) is { } canvas && FirstOf<Button>(canvas) is { } node)
+        {
+            node.GrabFocus();
+        }
+    }
+
+    private static T? FirstOf<T>(Node root) where T : Node
+    {
+        foreach (Node child in root.GetChildren())
+        {
+            if (child is T match)
+            {
+                return match;
+            }
+
+            if (FirstOf<T>(child) is { } inner)
+            {
+                return inner;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>Sends one key as a press and release into the viewport; the default <c>ui_*</c> actions map it to focus
+    /// navigation and accept, the same path a d-pad or gamepad button takes.</summary>
+    private void Press(Key key)
+    {
+        GetViewport().PushInput(new InputEventKey { Keycode = key, PhysicalKeycode = key, Pressed = true });
+        GetViewport().PushInput(new InputEventKey { Keycode = key, PhysicalKeycode = key, Pressed = false });
+    }
+
+    /// <summary>Tops the unspent skill points up to at least <paramref name="atLeast"/>.</summary>
+    private static void StagePerkPoints(int atLeast)
+    {
+        if (Player()?.GetComponent<ProgressionComponent>() is { } progression && progression.SkillPoints < atLeast)
+        {
+            progression.RefundSkillPoints(atLeast - progression.SkillPoints);
+        }
+    }
+
+    private static void StageGold(int atLeast)
+    {
+        if (Player()?.GetComponent<InventoryComponent>() is { } pack && ItemDatabase.Get(GameIds.Currency.Gold) is { } gold
+            && pack.CountOf(gold) < atLeast)
+        {
+            pack.AddItem(gold, atLeast - pack.CountOf(gold));
+        }
+    }
+
+    /// <summary>Buys ranks through <see cref="PerksComponent.Learn"/>, in order, so gates and costs apply as in play.</summary>
+    private static void LearnPerks(params (string Id, int Rank)[] wanted)
+    {
+        if (Player()?.GetComponent<PerksComponent>() is not { } perks)
+        {
+            return;
+        }
+
+        foreach ((string id, int rank) in wanted)
+        {
+            if (PerkDatabase.Get(id) is { } perk)
+            {
+                while (perks.RankOf(id) < rank && perks.Learn(perk))
+                {
+                }
+            }
+        }
     }
 
     private static PlayerCharacter? Player() =>
         ServiceLocator.Instance is { } locator && locator.TryGet(out PlayerCharacter player) ? player : null;
 
-    private static void StageInventory()
+    /// <summary>Fills the pack so list and grid screens are judged at density: a few rolled Rare and Epic
+    /// pieces first (they carry affix chips, the tallest rows), then plain stock up to 18 slots.
+    /// Shared with <see cref="UiAuditShots"/>.</summary>
+    internal static void StageInventory()
     {
         if (Player()?.GetComponent<InventoryComponent>() is not { } pack)
         {
             return;
+        }
+
+        int rolled = 0;
+        foreach (ItemResource item in ItemDatabase.All.Values)
+        {
+            if (item is EquippableItemResource gear && rolled < 6)
+            {
+                pack.AddInstance(Loot.LootGenerator.RollAffixed(gear, rolled % 2 == 0 ? ItemRarity.Rare : ItemRarity.Epic), 1);
+                rolled++;
+            }
         }
 
         foreach (ItemResource item in ItemDatabase.All.Values)

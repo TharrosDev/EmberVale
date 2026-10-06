@@ -45,6 +45,7 @@ public partial class MapScreen : UiPanel
     private VBoxContainer _filters = null!;
     private VBoxContainer _legend = null!;
     private VBoxContainer _travelList = null!;
+    private ScrollContainer _travelScroll = null!;
     private Button _clearWaypoint = null!;
     private Label _waypointReadout = null!;
 
@@ -65,6 +66,12 @@ public partial class MapScreen : UiPanel
 
     protected override string? ToggleAction => GameInput.Map;
 
+    /// <summary>Floor for each scrolling rail section: three full-height rows and the gaps between them, so
+    /// a list never collapses to a sliver when the rail is squeezed.</summary>
+    private const int RailListMin = (UiTheme.ControlHeight * 3) + (UiTheme.RowGap * 2);
+
+    private static float RailListHeight(int rows) => (UiTheme.ControlHeight * rows) + (UiTheme.RowGap * (rows - 1));
+
     protected override void BuildShell(PanelContainer shell)
     {
         // Near-fullscreen, unlike the 580 px shell 25E used. A map is the one screen where the plot
@@ -77,7 +84,7 @@ public partial class MapScreen : UiPanel
         shell.AddChild(pad);
 
         var col = new VBoxContainer();
-        col.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
+        col.AddThemeConstantOverride("separation", UiTheme.SpaceMd);
         pad.AddChild(col);
 
         col.AddChild(BuildHeader());
@@ -128,8 +135,7 @@ public partial class MapScreen : UiPanel
     private Control BuildRail()
     {
         var rail = new VBoxContainer();
-        rail.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
-        rail.CustomMinimumSize = new Vector2(320f, 0f);
+        rail.AddThemeConstantOverride("separation", UiTheme.RowGap);
         rail.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
 
         _search = new LineEdit
@@ -143,7 +149,7 @@ public partial class MapScreen : UiPanel
         rail.AddChild(_search);
 
         (ScrollContainer scroll, VBoxContainer list) = UiTheme.ScrollList();
-        scroll.CustomMinimumSize = new Vector2(0f, 120f);
+        scroll.CustomMinimumSize = new Vector2(0f, RailListMin);
         scroll.Visible = false;
         _resultsScroll = scroll;
         _results = list;
@@ -151,7 +157,7 @@ public partial class MapScreen : UiPanel
 
         rail.AddChild(UiTheme.SectionRule(Loc.T("map.info_header")));
         _info = new VBoxContainer();
-        _info.AddThemeConstantOverride("separation", 2);
+        _info.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
         rail.AddChild(_info);
 
         // ⚠️ THE TRAVEL LIST IS THE ONE SECTION THAT GROWS WITHOUT A CEILING, SO IT IS THE ONE THAT
@@ -165,31 +171,48 @@ public partial class MapScreen : UiPanel
         // to every other check, and invisible to a player who had not yet discovered enough places.
         rail.AddChild(UiTheme.SectionRule(Loc.T("map.travel_header")));
         (ScrollContainer travelScroll, VBoxContainer travelList) = UiTheme.ScrollList();
-        travelScroll.CustomMinimumSize = new Vector2(0f, 132f);
+        // Sized to its rows (one to three) by RebuildTravelList, so a lone waypoint is not followed by a hole.
+        travelScroll.SizeFlagsVertical = Control.SizeFlags.ShrinkBegin;
+        _travelScroll = travelScroll;
         _travelList = travelList;
-        _travelList.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
         rail.AddChild(travelScroll);
 
         rail.AddChild(UiTheme.SectionRule(Loc.T("map.filters_header")));
         (ScrollContainer filterScroll, VBoxContainer filterList) = UiTheme.ScrollList();
         // A floor as well as a flex: ExpandFill alone is what let it be squashed to nothing.
-        filterScroll.CustomMinimumSize = new Vector2(0f, 96f);
+        filterScroll.CustomMinimumSize = new Vector2(0f, RailListMin);
         filterScroll.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
         _filters = filterList;
         rail.AddChild(filterScroll);
 
         rail.AddChild(UiTheme.SectionRule(Loc.T("map.legend_header")));
         _legend = new VBoxContainer();
-        _legend.AddThemeConstantOverride("separation", 2);
+        _legend.AddThemeConstantOverride("separation", UiTheme.RowGap);
         rail.AddChild(_legend);
 
-        return rail;
+        // The rail's pinned section heights add up to more than a 720 px screen, which stretched the
+        // whole shell past the viewport and pushed the footer off it. The rail scrolls as one instead.
+        rail.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        var gutter = new MarginContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+        gutter.AddThemeConstantOverride("margin_right", UiTheme.ScrollGutter);
+        gutter.AddThemeConstantOverride("margin_top", UiTheme.Space2xs); // the search box's focus ring is not clipped
+        gutter.AddChild(rail);
+
+        var railScroll = new ScrollContainer
+        {
+            CustomMinimumSize = new Vector2(340f, 0f),
+            SizeFlagsVertical = Control.SizeFlags.ExpandFill,
+            HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled,
+            FollowFocus = true,
+        };
+        railScroll.AddChild(gutter);
+        return railScroll;
     }
 
     private Control BuildFooter()
     {
         var row = new HBoxContainer();
-        row.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
+        row.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
 
         row.AddChild(FooterButton("map.zoom_out", () => ZoomBy(1f / 1.3f)));
         row.AddChild(FooterButton("map.zoom_in", () => ZoomBy(1.3f)));
@@ -201,10 +224,14 @@ public partial class MapScreen : UiPanel
         _waypointReadout = UiTheme.Body(string.Empty, UiTheme.AccentHot);
         row.AddChild(_waypointReadout);
 
-        var spacer = new Control { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
-        row.AddChild(spacer);
-
+        // The hint takes whatever width the buttons and the waypoint readout leave and wraps inside it. As a
+        // fixed-width label beside a spacer it pushed the footer, and with it the whole panel, past the
+        // right edge at 1280 px once a waypoint was set.
         Label hint = UiTheme.Caption(Loc.T("map.hint"), UiTheme.Dim);
+        hint.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        hint.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
+        hint.HorizontalAlignment = HorizontalAlignment.Right;
+        hint.AutowrapMode = TextServer.AutowrapMode.WordSmart;
         row.AddChild(hint);
 
         return row;
@@ -578,6 +605,9 @@ public partial class MapScreen : UiPanel
         {
             _travelList.AddChild(UiTheme.Body(Loc.T("map.travel_empty"), UiTheme.Dim));
         }
+
+        int rows = Mathf.Clamp(_travelList.GetChildCount(), 1, 3);
+        _travelScroll.CustomMinimumSize = new Vector2(0f, RailListHeight(rows));
     }
 
     /// <summary>Shared with the HUD minimap since 39.5B — see <see cref="MapPins"/> for why there is
@@ -717,8 +747,6 @@ public partial class MapScreen : UiPanel
             return;
         }
 
-        _info.AddChild(UiTheme.Header(Loc.T(location.NameKey)));
-
         var where = new List<string> { Loc.T(MapCategories.NameKey(location.Category)) };
         string settlement = SettlementNameOf(location.CellId);
         if (settlement.Length > 0)
@@ -726,7 +754,12 @@ public partial class MapScreen : UiPanel
             where.Add(settlement);
         }
 
-        _info.AddChild(UiTheme.Caption(string.Join(BreadcrumbSeparator, where), UiTheme.Dim));
+        // The name and where it is are one lockup; every block after it is a full gap apart.
+        var heading = new VBoxContainer();
+        heading.AddThemeConstantOverride("separation", UiTheme.LineGap);
+        heading.AddChild(UiTheme.Header(Loc.T(location.NameKey)));
+        heading.AddChild(UiTheme.Caption(string.Join(BreadcrumbSeparator, where), UiTheme.Dim));
+        _info.AddChild(heading);
 
         if (location.DescriptionKey.Length > 0)
         {
@@ -738,25 +771,32 @@ public partial class MapScreen : UiPanel
         // Everything below is resolved from the authoritative record, never authored here.
         if (ShopDatabase.Get(location.ShopId) is { } shop)
         {
-            _info.AddChild(UiTheme.Caption(Loc.T("map.trade_header"), UiTheme.Brass));
-            _info.AddChild(UiTheme.Body(Loc.T(shop.NameKey)));
+            _info.AddChild(InfoPair(Loc.T("map.trade_header"), UiTheme.Brass, Loc.T(shop.NameKey)));
         }
 
         if (ServiceDatabase.Get(location.ServiceId) is { } service)
         {
-            _info.AddChild(UiTheme.Caption(Loc.T("map.service_header"), UiTheme.GlyphLight));
-            _info.AddChild(UiTheme.Body(service.PriceGold > 0
+            _info.AddChild(InfoPair(Loc.T("map.service_header"), UiTheme.GlyphLight, service.PriceGold > 0
                 ? Loc.TF("map.service_price", Loc.T(service.NameKey), service.PriceGold)
                 : Loc.T(service.NameKey)));
         }
 
         if (DialogueDatabase.Get(location.DialogueId) is { } dialogue)
         {
-            _info.AddChild(UiTheme.Caption(Loc.T("map.npc_header"), UiTheme.Dim));
-            _info.AddChild(UiTheme.Body(Loc.T(dialogue.SpeakerName)));
+            _info.AddChild(InfoPair(Loc.T("map.npc_header"), UiTheme.Dim, Loc.T(dialogue.SpeakerName)));
         }
 
         AddTravelButton(location);
+    }
+
+    /// <summary>A small caption over its value, tight inside and a full gap from the next pair.</summary>
+    private static Control InfoPair(string caption, Color captionColor, string value)
+    {
+        var pair = new VBoxContainer();
+        pair.AddThemeConstantOverride("separation", UiTheme.LineGap);
+        pair.AddChild(UiTheme.Caption(caption, captionColor));
+        pair.AddChild(UiTheme.Body(value));
+        return pair;
     }
 
     private void AddDistanceLine(string locationId)
@@ -878,7 +918,7 @@ public partial class MapScreen : UiPanel
         UiTheme.ClearChildren(_filters);
 
         var row = new HBoxContainer();
-        row.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
+        row.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
         row.AddChild(FilterBulk("map.show_all", () => _hidden.Clear()));
         row.AddChild(FilterBulk("map.hide_all", HideAll));
         row.AddChild(FilterBulk("map.reset", () => _hidden.Clear()));

@@ -57,8 +57,8 @@ public partial class ChapterBanner : CanvasLayer
         };
         band.AnchorLeft = 0f;
         band.AnchorRight = 1f;
-        band.AnchorTop = 0.60f;
-        band.AnchorBottom = 0.80f;
+        band.AnchorTop = 0.58f;
+        band.AnchorBottom = 0.82f;
         _root.AddChild(band);
 
         _center = new CenterContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
@@ -66,7 +66,7 @@ public partial class ChapterBanner : CanvasLayer
         band.AddChild(_center);
 
         var stack = new VBoxContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
-        stack.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
+        stack.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
         _center.AddChild(stack);
 
         _act = UiTheme.Caption(string.Empty, UiTheme.Accent);

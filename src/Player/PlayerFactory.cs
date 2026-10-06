@@ -1,3 +1,4 @@
+using Embervale.Appearance;
 using Embervale.Combat.Actions;
 using Embervale.Combat;
 using Embervale.Core;
@@ -80,6 +81,9 @@ public static class PlayerFactory
         {
             bodyVisual.Name = "BodyMesh";
             bodyVisual.RotateY(Mathf.Pi);
+            // The chosen look (P8): region tints and build width, resolved against the race's allow-list.
+            // Before the child is added so the corruption controller collects the tinted surface.
+            PlayerAppearance.Apply(bodyVisual, PlayerAppearance.Resolve(profile));
             player.AddChild(bodyVisual);
         }
         else
@@ -219,6 +223,9 @@ public static class PlayerFactory
         // Progression before perks: perks spend the skill points progression awards.
         player.AddChild(new ProgressionComponent { Name = "Progression", CurvePath = ProgressionPath });
         player.AddChild(new PerksComponent { Name = "Perks" });
+        // Primaries (growth, race, gear, perks) become derived-stat bonuses: after the sources of
+        // primaries above, before RaceComponent, whose delta re-applications this reacts to.
+        player.AddChild(new StatDerivationComponent { Name = "StatDerivation" });
 
         // 41.5A: shrine visits persist as ids and re-derive their stat passives on load; shrines
         // themselves remain world callers, never a second save record.

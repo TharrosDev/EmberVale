@@ -19,8 +19,15 @@ public partial class Toast : MarginContainer
     /// <summary>Horizontal slide-in distance (px at reference scale).</summary>
     private const float SlideDistance = 24f;
 
+    /// <summary>Fraction of <see cref="Life"/> after which the toast fades out.</summary>
+    private const float FadeStart = 0.6f;
+
+    /// <summary>How long a shed toast takes to fade out, in seconds.</summary>
+    private const double ExpediteSeconds = 0.25;
+
     private readonly PanelContainer _chip = new();
     private double _age;
+    private double _expediteAge = -1d; // < 0: not being shed
 
     /// <summary>The semantic colour of the thing being announced (a level-up, a failed event, an
     /// autosave). Painted as the chip's left spine. Set before the toast enters the tree.</summary>
@@ -36,7 +43,7 @@ public partial class Toast : MarginContainer
         // ShaderMaterial - a full framed screen's worth of chrome for one line of text that lives
         // four seconds. This is the third instance of the same pattern (status chips in 37.5B, save
         // rows in this same phase): a small widget that reused Panel() as a generic box.
-        StyleBoxFlat style = UiTheme.CardStyle(Accent);
+        StyleBoxFlat style = UiTheme.Compact(UiTheme.CardStyle(Accent));
         style.BgColor = UiTheme.PanelBg with { A = 0.98f };
         style.BorderWidthBottom = 1;
         style.BorderColor = Accent with { A = 0.58f };
@@ -46,6 +53,19 @@ public partial class Toast : MarginContainer
         _chip.AddThemeStyleboxOverride("panel", style);
         AddChild(_chip);
         ApplySlide(UiTheme.Duration(UiTheme.DurationBase) > 0f ? SlideDistance : 0f);
+    }
+
+    /// <summary>True once the toast has started its fade-out, so it no longer counts against the feed's room.</summary>
+    public bool Expiring => _expediteAge >= 0d || _age >= Life * FadeStart;
+
+    /// <summary>Starts a short fade-out (<see cref="ExpediteSeconds"/>) so the feed gets its room back soon, without the
+    /// toast the player is reading disappearing between two frames. A toast already fading is left alone.</summary>
+    public void Expedite()
+    {
+        if (_expediteAge < 0d && _age < Life * FadeStart)
+        {
+            _expediteAge = 0d;
+        }
     }
 
     /// <summary>Parents <paramref name="content"/> into the visible chip.</summary>
@@ -67,7 +87,19 @@ public partial class Toast : MarginContainer
         ApplySlide(SlideDistance * (1f - entrance));
 
         // Fade up with the entrance; hold; then fade out over the final 40% of the lifetime.
-        float alpha = t < 0.6f ? entrance : 1f - ((t - 0.6f) / 0.4f);
+        float alpha = t < FadeStart ? entrance : 1f - ((t - FadeStart) / (1f - FadeStart));
+        if (_expediteAge >= 0d)
+        {
+            _expediteAge += delta;
+            if (_expediteAge >= ExpediteSeconds)
+            {
+                QueueFree();
+                return;
+            }
+
+            alpha = Mathf.Min(alpha, 1f - (float)(_expediteAge / ExpediteSeconds));
+        }
+
         Modulate = new Color(1f, 1f, 1f, Mathf.Clamp(alpha, 0f, 1f));
     }
 

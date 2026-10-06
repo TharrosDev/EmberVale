@@ -54,7 +54,7 @@ through `SaveManager.HeaderProvider` so the manager stays free of gameplay types
 | `region`, `region_id` | display name, **and the region a load restores into** |
 | `player_x/y/z`, `player_yaw` | **the transform a load restores** |
 | `race_id`, `char_name` | the character `StartLoadedGame` spawns |
-| `appearance`, `background` | optional creator choices; appearance ids use `CharacterProfile`'s semicolon encoding |
+| `appearance`, `background` | optional creator choices; appearance ids (`appearance.*`, one per slot) use `CharacterProfile`'s semicolon encoding, and an absent, stale or not-offered id resolves to the slot default (`AppearanceRules.Resolve`) so nothing is saved beyond the ids; `background` is a `background.*` id (anything else, such as a pre-background free-text line, reads as no background). A background's kit, perk rank, flag and standing live in the Inventory/Perks/StoryFlags/Reputation saves; its stat deltas are re-derived from this header on load |
 | `level`, `corruption_tier` | slot browser |
 
 ⚠️ **The header is not decoration — it is load-bearing.** Since the 2026-08-15 audit it drives where
@@ -90,6 +90,16 @@ entry can never be reclaimed after a world rebuild, because the reloaded actor g
 id, so it would both fail to restore *and* linger as orphaned state. The `savecheck` dev command
 flags any volatile key (`SaveKeyPolicy.IsVolatile`); there should be none.
 
+**Additive keys with absent-defaults.** A component may grow keys without a version bump if `Load` says what
+absent means. `perks:<pid>` holds `ranks` (id -> rank), and since perks v2 `free` (id -> ranks that cost no points, kept
+by a respec), `spent` (skill points invested) and `respecs` (count). Absent `free`: the race's innate perk ids count as
+one free rank each. Absent `spent`: the sum of `(rank - free) * Cost` over held perks. Absent `respecs`: 0. `Load` strips
+what it applied, replaces everything from the save and never re-checks prerequisites. `crafting:<pid>` holds `known`
+(recipe ids) and `crafts` (completed crafts: the serial the material-saving perk's roll is derived from, so a quickload replays
+a craft's outcome instead of rerolling it). Absent `crafts`: 0, and `Load` replaces a live serial even when the key is missing.
+
+**Progression** (`progression:player`) also carries `ms`: the highest level whose milestone bonus skill point has been paid (levels 10, 20, 30, 40 and 50 each pay one). Absent `ms` (a save from before milestones): the points for every milestone at or below the saved level are paid once on load and `ms` is set to that level, so the key is written from then on.
+
 **References are ids, never paths or indices.** Spawned actors round-trip as
 `{pid, tid, x, y, z, yaw}` and are rebuilt through `PersistentActorRegistry.Create`. Nothing in a save
 points at a scene path or an array position, which is why authoring can move freely.
@@ -105,6 +115,7 @@ Everything here resets on load, deliberately. **Check this list before assuming 
 | `MusicDirector`, `AmbienceDirector`, `AudioDirector` | audio re-derives from world state |
 | `PlacementDirector` | intentional — a placed prop persists through `PersistentSpawnDirector`, which already records template, position and yaw |
 | `GameManager.State` | the loader decides the state |
+| `StatDerivationComponent` | primaries' derived-stat modifiers are rebuilt from the primaries, which come back from level, race, gear and perks |
 | Player transform / active region | **not** an `ISaveable` — they live in the header (§3) |
 
 ## 6. Failure policy

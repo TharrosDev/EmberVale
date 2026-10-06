@@ -196,9 +196,63 @@ Builders: `Title/Display/Header/Body/Prose/Flavour/Caption` — reach for these 
 
 ## 4. Spacing & radius
 
-Spacing scale (`SpaceXs..SpaceXl` = 5/8/12/18/28): use tokens for separations, paddings
-and margins; `UiTheme.Padding()` defaults to `SpaceMd`. Radii: `RadiusSm` 1 (bars, wells,
-chips), `RadiusMd` 2 (buttons), `RadiusLg` 2 (panels).
+**Breathing room is a rule, not a mood.** The UI had drifted into packed screens: list rows 3 px apart,
+stat lines 1 px apart, chips with 2 px of padding, scrollbars sitting on row borders. The 2026-10 pass
+widened the scale and moved the gaps into tokens, so a screen follows it by using the shared widgets
+and the roles below instead of a number. Legibility comes first: when in doubt, more room, never less.
+
+Scale (px at reference scale, `UiTheme`): `Space2xs` 4 (a label over its caption, an icon beside its
+text) / `SpaceXs` 6 (inside one control) / `SpaceSm` 10 (between related controls) / `SpaceMd` 16
+(panel padding, between groups) / `SpaceLg` 24 (between sections, narrow gutter, HUD safe margin) /
+`SpaceXl` 32 (around a modal's content on a bare screen). Steps are named by size, never by use.
+
+Roles, which the shared widgets already apply:
+
+| Role | Value | Where it lands |
+| ---- | ----- | -------------- |
+| `RowGap` | 8 | `ScrollList` separation (was 3) |
+| `SectionGap` | `SpaceMd` | space above every `SectionRule` |
+| `ChipGap` | `SpaceSm` | between chips |
+| `GridGap` | `SpaceSm` | between cells of a stat or slot grid |
+| `PanelPad` | `SpaceMd` | a full-screen panel's inner margin (`Padding` adds 2 at the sides) |
+| `LineGap` | `Space2xs` | stacked text lines in one card or row, `Meter`, `CardButton` |
+| `ControlHeight` | 44 | minimum height of an `Action`, tab or menu entry (was 38) |
+| `ScrollGutter` | `SpaceMd` | clear space between a list and its scrollbar |
+| `HudGap` | `SpaceMd` | between stacked HUD widgets (party over vitals) and between the HUD bar's cells (`SpaceLg`) |
+| `CompactPadY` / `CompactPadX` | `SpaceSm` / `SpaceMd` | content margins of a HUD card, toast or hint (`UiTheme.Compact`) |
+
+Rules: (1) no literal gap, margin or padding below 4 px in a panel; a literal is a reason to add a token.
+(2) A card's own content margins are its padding, so never wrap a `Card` or `Band` child in a second
+`Padding`; that doubles the left edge. (3) Rows in a list are separated by `RowGap`, sections by
+`SectionGap`, and nothing sits flush against a panel edge or a scrollbar. (4) A control the player
+presses is at least `ControlHeight` tall. (5) Every screen still has to fit 1280x720: a list that grows
+past the panel scrolls (`ScrollList`), the frame never does. Radii: `RadiusSm` 1 (bars, wells, chips),
+`RadiusMd` 2 (buttons), `RadiusLg` 2 (panels).
+
+Rules from the items, trade and crafting pass (group 1):
+
+- **A row is a text stack beside its verb.** Item, recipe, contract and trade rows are one `HBoxContainer` inside a `Card`: slot (if any), a text stack that expands (`LineGap` between its lines), then the button, `ShrinkCenter` against the whole stack. A button in the title line made its 44 px the row's top band and left dead air beside the title, and every recipe or contract row at least 100 px tall.
+- **Chips and small button rows wrap.** Use `UiTheme.FlowRow()` (`ChipGap` across, `SpaceXs` down), never an `HBoxContainer` of chips: a plain row reports the sum of its chips as its minimum width, so one item with three affixes stretched the stash window past the viewport. A name in a row takes `TextOverrunBehavior.TrimEllipsis` plus a tooltip instead of widening its column.
+- **One frame per thing.** A `Card` does not go inside a `Band` (two frames, two left spines, 32 px of width lost): the item detail and each trade column sit bare on the panel, and a list names itself with a `Header` above it. `Padding()` is for a screen's outer margin only; a card's content margins are its padding.
+- **The first section of a container passes `first: true`** to `SectionRule`, so the gap above it is not added on top of the tab strip or the column above. Equipment and backpack headers do this, which is what lets the ten equipment rows fit 1280x720 without scrolling.
+- **A fixed height is a bug.** Lists use `ScrollList()` and the shell's own floor (`ApplyWorkspace` / `ApplyScreenInset`) sets the minimum; a literal `CustomMinimumSize` height on a list or column is how the shop once overflowed the viewport.
+- **Stat blocks are a row of columns.** The Progression sections (attributes, offence, defence, corruption, standing) are 320 px columns in a wrapping `FlowRow`, so three sit side by side at 1280 wide and fold under each other on a narrow handheld viewport. Stat grids use `GridGap` between rows.
+- **Slots draw their frame.** `ItemSlot.Build` is not a flat `Button` (a flat button never paints its `normal` stylebox, so the rarity frame and the empty well were skipped). `ItemSlot.RowSize` (40) goes beside card rows, `ItemSlot.CompactSize` (34) beside two stacked lines with no taller control, `DefaultSize` in grids.
+
+Panel pass 2 (journals, spellbook, map, dialogue, banner) turned those rules into patterns a list screen follows:
+
+- **One frame per list.** A list of `Card`s sits on bare ground (a plain `VBoxContainer` with its own minimum width), never in a `Well`; a detail pane is one `Band` or `Card` whose scroll goes straight inside, with no second `Padding`.
+- **`CardButton` pads once.** Its content margins are the card's own (`SpaceMd`, `SpaceLg` on the spine side), and hover and focus grow outward by those margins, so the focus ring sits on the card's edge instead of floating inside it as a second frame. It used to add a `Padding` as well: 26 px above and below one line of text, and a spellbook with six schools that ran off the page.
+- **Rhythm inside a card or block.** A title and its caption, or a caption and its value, sit `LineGap` apart; a second line that is a different kind of thing (the chips under a dialogue choice) sits `SpaceSm` below; the next block sits `SpaceSm` to `RowGap` below that. Chips wrap at `ChipGap` both ways. Stat lines that belong together (a school's rank, bar and perks) are one `VBoxContainer` at `SpaceXs`.
+- **Tabs and headers a player presses are `ControlHeight`**, not a literal 30 or 32.
+- **Scroll before overflow.** A column that can outgrow the page (the spellbook's school list, the map rail, a dialogue's choices) scrolls through `ScrollList`; its minimum is built from `ControlHeight` and `RowGap` rows (`RailListMin` is three rows), never a pixel count, and a list that holds fewer rows sizes to them so a lone waypoint is not followed by a hole.
+- **A footer row never pins its width.** Buttons, a readout and a hint share one `HBoxContainer`; the hint is the one `ExpandFill` child and wraps. A fixed label plus a spacer pushed the map's footer, and the whole panel with it, past the right edge at 1280 px.
+- **Custom-drawn labels pad like tooltips**: `SpaceSm` at the sides, `SpaceXs` above and below the glyph box (the map's hover label).
+- **The dialogue window is 60% of the viewport (320 to 560 px)** and its choices are one `RowGap` list; the chapter banner's band is 24% of the height with `SpaceSm` between its lines.
+
+**HUD, toasts and shell (pass 3).** (1) A HUD card is a `Band`/`Card` whose stylebox is its padding: call `UiTheme.Compact(card)` and add the content directly. The old `Padding` wrapped inside a stylebox that already had 16 px margins left about 26 px of dead space above and below every HUD card, and made the cards tall enough to collide. (2) Inside a card, group by distance: bars or rows of one kind sit `SpaceXs` apart, groups `SpaceSm` apart, a heading hugs its title at `LineGap`. A tracker objective is one block (text row, "Optional" tag on its own line, bar, hint) so its parts stay together and objectives stand apart. (3) Chips that can multiply (status effects) live in an `HFlowContainer` with `ChipGap`; a box row stretches the card. A chip's `trailing` label is hidden until used, since an empty label still takes its separation. (4) Toasts start under the tracker wherever it ends and stop above the minimap: `Notifications` reads `GameHud.TopRightBottom`/`BottomRightTop`, admits as many toasts as fit (1 to 3) and lets the oldest fade early if the tracker grows. Never place a toast stack with a fixed offset. (5) Anything centred above the hotbar (prompt, tutorial hint, placement strip) sits at `HudLayout.BottomClearance` or higher. (6) A settings or slot list takes a row height of `ControlHeight` and `RowGap` between rows, scrolls inside the workspace frame, and gives the scroll a small floor so the frame keeps a visible margin from the window edge; a frame that is taller than its anchors only grows when something inside it has a large minimum height. (7) A shell button is `ControlHeight` tall; pause entries are not shrunk below it.
+
+Check spacing by looking, not by arithmetic: `godot --path . -- --uishots` (pause, spellbook, bestiary, character Progression, crafting, storage, contracts, appraisal, save slots), `--panelshots`, `--hudshots` and `--shellshots` capture every screen. `EMBERVALE_RES=1920x1080` re-shoots at another window size (a 16:9 size lays out identically to 1280x720, because the project stretches `canvas_items`, so use `1280x800` for the handheld aspect), `EMBERVALE_SLOT` picks the save and `EMBERVALE_USER_DIR` + `EMBERVALE_ARTIFACTS` keep a run's saves and PNGs out of the shared user folder.
 
 Radii stay tight on purpose: this world's surfaces are cut and bound, not moulded. A
 large radius is the fastest way to make a fantasy panel read as a web app.

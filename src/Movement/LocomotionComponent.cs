@@ -1,6 +1,7 @@
 using Embervale.Core.Diagnostics;
 using Embervale.Entities;
 using Embervale.Magic;
+using Embervale.Progression;
 using Embervale.Stats;
 using Embervale.World;
 using Godot;
@@ -496,7 +497,8 @@ public partial class LocomotionComponent : EntityComponent
         // air, is a request, not a sprint.
         if (result.Sprinting && spending && SprintStaminaPerSecond > 0f)
         {
-            _stats.ModifyCurrent(StatType.Stamina, -SprintStaminaPerSecond * dt);
+            _stats.ModifyCurrent(
+                StatType.Stamina, -SprintStaminaPerSecond * PerkQuery.Factor(Entity, PerkEffectKind.SprintStaminaMult) * dt);
         }
 
         return result.Sprinting;

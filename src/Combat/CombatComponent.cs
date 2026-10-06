@@ -2,6 +2,7 @@ using Embervale.Core.Diagnostics;
 using Embervale.Core.Events;
 using Embervale.Entities;
 using Embervale.Magic;
+using Embervale.Progression;
 using Embervale.Stats;
 using Godot;
 
@@ -399,7 +400,8 @@ public partial class CombatComponent : EntityComponent
             parryGrade = blow.Parryable && zone == GuardZone.Front && !_parryConsumed
                 ? Parry.Grade(_blockElapsed, ParryWindow)
                 : ParryGrade.None;
-            float parryCost = ParryStaminaCost * Parry.StaminaFactor(parryGrade);
+            float parryCost = ParryStaminaCost * Parry.StaminaFactor(parryGrade)
+                * PerkQuery.Factor(Entity, PerkEffectKind.ParryStaminaMult);
 
             if (parryGrade != ParryGrade.None && _stats.GetCurrent(StatType.Stamina) >= parryCost)
             {
@@ -429,7 +431,8 @@ public partial class CombatComponent : EntityComponent
                 // Mistimed/held block: chip through, and the guard pays for the blow by its weight.
                 // A guard that cannot pay, or a blow no guard holds, is broken and the full hit lands.
                 float current = _stats.GetCurrent(StatType.Stamina);
-                float cost = DefenceRules.GuardStaminaCost(BlockStaminaCost, blow.GuardPressure, incomingPoise);
+                float cost = DefenceRules.GuardStaminaCost(BlockStaminaCost, blow.GuardPressure, incomingPoise)
+                    * PerkQuery.Factor(Entity, PerkEffectKind.BlockStaminaMult);
                 bool canBreak = blow.CrushesGuard || _stats.GetMax(StatType.Stamina) > 0f;
                 if (!blow.CrushesGuard && current >= cost)
                 {

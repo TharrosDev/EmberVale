@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Embervale.Core.Events;
 using Embervale.Corruption;
 using Embervale.Entities;
+using Embervale.Progression;
 using Embervale.Save;
 using Godot;
 
@@ -109,6 +110,7 @@ public partial class ReputationComponent : EntityComponent, ISaveable
             return;
         }
 
+        delta = PerkEffectMath.ScaleReputation(delta, PerkQuery.Of(Entity, PerkEffectKind.RepGainMult));
         int updated = Mathf.Clamp(Get(factionId) + delta, ReputationTiers.Min, ReputationTiers.Max);
         if (_reputation.TryGetValue(factionId, out int current) && current == updated)
         {

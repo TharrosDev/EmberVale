@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Globalization;
 using Embervale.Combat;
 using Embervale.Stats;
 
@@ -89,6 +90,40 @@ public static class StatsPresentation
     // would cost this class the thing it exists for. The panel formats MitigationFraction with
     // `char.stat_reduced`; a zero value still renders that line rather than being omitted, because
     // an absent line reads as "not applicable" and a resistance of zero is very much applicable.
+
+    /// <summary>One line of "what a point of this primary buys". A stat effect names a <see cref="StatType"/>;
+    /// a non-stat effect (dodge, mana cost) names a Loc key instead, so the panel resolves the label.</summary>
+    public readonly record struct PerPointPart(string? NameKey, StatType? Stat, string Amount);
+
+    /// <summary>The per-point effects of a primary, read from <see cref="StatDerivation"/> so the panel can
+    /// never disagree with what the stats actually grant. Empty for a non-primary.</summary>
+    public static IReadOnlyList<PerPointPart> PerPoint(StatType primary)
+    {
+        var parts = new List<PerPointPart>();
+        foreach (StatDerivation.Effect effect in StatDerivation.Effects(primary))
+        {
+            parts.Add(new PerPointPart(null, effect.Stat, FormatPerPoint(effect.Stat, effect.PerPoint)));
+        }
+
+        if (primary == StatType.Dexterity)
+        {
+            parts.Add(new PerPointPart("char.pp_dodge", null, Signed(StatDerivation.DodgePerPoint * 100f) + "%"));
+        }
+        else if (primary == StatType.Intelligence)
+        {
+            parts.Add(new PerPointPart("char.pp_mana_cost", null, Signed(StatDerivation.ManaCostPerPoint * 100f) + "%"));
+        }
+
+        return parts;
+    }
+
+    /// <summary>A per-point bonus as the player reads it: fractions and multipliers as a signed percentage
+    /// ("+0.2%"), everything else as a signed number ("+0.8").</summary>
+    public static string FormatPerPoint(StatType stat, float perPoint) =>
+        IsFraction(stat) || IsMultiplier(stat) ? Signed(perPoint * 100f) + "%" : Signed(perPoint);
+
+    private static string Signed(float value) =>
+        (value > 0f ? "+" : string.Empty) + value.ToString("0.##", CultureInfo.InvariantCulture);
 
     /// <summary>Every stat the sections display, for tests and for validation.</summary>
     public static IEnumerable<StatType> Displayed()

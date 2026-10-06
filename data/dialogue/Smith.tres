@@ -121,11 +121,36 @@ ConditionArg = ""
 Effect = 0
 EffectArg = ""
 
+; P7 backgrounds: one HasFlag line per background that set its flag at New Game (the flag's reader).
+[sub_resource type="Resource" id="ch_bg_smiths_hand"]
+script = ExtResource("3_choice")
+Text = "dlg.smith.bg.smiths_hand.c"
+Goto = "bg_smiths_hand"
+Condition = 5
+ConditionArg = "flag.background.smiths_hand"
+
+[sub_resource type="Resource" id="ch_bg_smiths_hand_back"]
+script = ExtResource("3_choice")
+Text = "dlg.smith.bg.c_back"
+Goto = "root"
+
+[sub_resource type="Resource" id="ch_bg_merchants_heir"]
+script = ExtResource("3_choice")
+Text = "dlg.smith.bg.merchants_heir.c"
+Goto = "bg_merchants_heir"
+Condition = 5
+ConditionArg = "flag.background.merchants_heir"
+
+[sub_resource type="Resource" id="ch_bg_merchants_heir_back"]
+script = ExtResource("3_choice")
+Text = "dlg.smith.bg.c_back"
+Goto = "root"
+
 [sub_resource type="Resource" id="node_root"]
 script = ExtResource("2_node")
 Id = "root"
 Text = "dlg.smith.root"
-Choices = Array[Resource]([SubResource("ch_offer"), SubResource("ch_active"), SubResource("ch_thanks"), SubResource("ch_trade"), SubResource("ch_closed"), SubResource("ch_commission"), SubResource("ch_bye")])
+Choices = Array[Resource]([SubResource("ch_offer"), SubResource("ch_active"), SubResource("ch_thanks"), SubResource("ch_trade"), SubResource("ch_closed"), SubResource("ch_commission"), SubResource("ch_bg_smiths_hand"), SubResource("ch_bg_merchants_heir"), SubResource("ch_bye")])
 
 [sub_resource type="Resource" id="node_offer"]
 script = ExtResource("2_node")
@@ -187,10 +212,22 @@ Condition = 2
 ConditionArg = "quest.warband.forge"
 NodeId = "cq_forge_check"
 
+[sub_resource type="Resource" id="node_bg_smiths_hand"]
+script = ExtResource("2_node")
+Id = "bg_smiths_hand"
+Text = "dlg.smith.bg.smiths_hand"
+Choices = Array[Resource]([SubResource("ch_bg_smiths_hand_back")])
+
+[sub_resource type="Resource" id="node_bg_merchants_heir"]
+script = ExtResource("2_node")
+Id = "bg_merchants_heir"
+Text = "dlg.smith.bg.merchants_heir"
+Choices = Array[Resource]([SubResource("ch_bg_merchants_heir_back")])
+
 [resource]
 script = ExtResource("1_dlg")
 Id = "dialogue.smith"
 SpeakerName = "dlg.smith.speaker"
 StartNodeId = "root"
-Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_offer"), SubResource("node_accepted"), SubResource("node_inprogress"), SubResource("node_thanks"), SubResource("node_commission"), SubResource("node_closed"), SubResource("node_cq_forge_check"), SubResource("node_cq_forge_thanks")])
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_offer"), SubResource("node_accepted"), SubResource("node_inprogress"), SubResource("node_thanks"), SubResource("node_commission"), SubResource("node_closed"), SubResource("node_cq_forge_check"), SubResource("node_cq_forge_thanks"), SubResource("node_bg_smiths_hand"), SubResource("node_bg_merchants_heir")])
 StartVariants = Array[Resource]([SubResource("start_root_5_117d"), SubResource("start_cq_forge_check_2_cc7b")])

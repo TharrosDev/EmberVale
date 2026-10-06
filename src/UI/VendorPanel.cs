@@ -9,6 +9,7 @@ using Embervale.Entities;
 using Embervale.Factions;
 using Embervale.Items;
 using Embervale.Localization;
+using Embervale.Progression;
 using Embervale.World;
 using Godot;
 
@@ -54,7 +55,7 @@ public partial class VendorPanel : UiPanel
     {
         UiTheme.ApplyScreenInset(shell);
 
-        MarginContainer margin = UiTheme.Padding(12);
+        MarginContainer margin = UiTheme.Padding(UiTheme.PanelPad);
         shell.AddChild(margin);
 
         var column = new VBoxContainer
@@ -77,11 +78,17 @@ public partial class VendorPanel : UiPanel
         _purse = UiTheme.Body(string.Empty, UiTheme.Accent);
         purseLockup.AddChild(_purse);
         identity.AddChild(purseLockup);
-        column.AddChild(identity);
+
+        // The standing band is its own group, so the title gets a full SpaceMd under it (the column's
+        // SpaceSm plus this) instead of the banner sitting flush against it.
+        var identityGap = new MarginContainer();
+        identityGap.AddThemeConstantOverride("margin_bottom", UiTheme.SpaceXs);
+        identityGap.AddChild(identity);
+        column.AddChild(identityGap);
 
         PanelContainer context = UiTheme.Band(UiTheme.IronLit);
         var contextCopy = new VBoxContainer();
-        contextCopy.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
+        contextCopy.AddThemeConstantOverride("separation", UiTheme.LineGap);
         context.AddChild(contextCopy);
 
         // A price that moved must say why it moved. Without this line the discount is invisible and
@@ -137,23 +144,28 @@ public partial class VendorPanel : UiPanel
         contextCopy.AddChild(_haggleRow);
         column.AddChild(context);
 
-        PanelContainer detail = UiTheme.Band(UiTheme.Accent);
-        detail.CustomMinimumSize = new Vector2(0f, 118f);
+        // The detail is a Card already (ItemSlot.Detail), so it sits straight on the panel: wrapping it in a
+        // Band drew two frames and two left spines around one item.
         _tradeDetail = new VBoxContainer();
         _tradeDetail.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
-        detail.AddChild(_tradeDetail);
-        column.AddChild(detail);
-
-        column.AddChild(UiTheme.Divider());
+        column.AddChild(_tradeDetail);
 
         var columns = new HBoxContainer
         {
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-            CustomMinimumSize = new Vector2(0, 360),
             SizeFlagsVertical = Control.SizeFlags.ExpandFill,
         };
-        columns.AddThemeConstantOverride("separation", UiTheme.SpaceMd);
-        column.AddChild(columns);
+        columns.AddThemeConstantOverride("separation", UiTheme.SpaceLg);
+
+        // A section's worth of space above the lists, in place of a rule: each list names itself.
+        var body = new MarginContainer
+        {
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            SizeFlagsVertical = Control.SizeFlags.ExpandFill,
+        };
+        body.AddThemeConstantOverride("margin_top", UiTheme.SpaceXs);
+        body.AddChild(columns);
+        column.AddChild(body);
 
         (_waresHeader, _waresList) = BuildColumn(columns);
         (_packHeader, _packList) = BuildColumn(columns);
@@ -162,18 +174,15 @@ public partial class VendorPanel : UiPanel
     /// <summary>One titled scroll column; both sides are the same shape.</summary>
     private static (Label Header, VBoxContainer List) BuildColumn(Node parent)
     {
-        PanelContainer frame = UiTheme.Band();
-        frame.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-        frame.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
-        parent.AddChild(frame);
-
+        // Bare on the panel, like the stash: a Band around a list of Cards was a frame inside a frame
+        // that cost every row 32 px of width.
         var side = new VBoxContainer
         {
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
             SizeFlagsVertical = Control.SizeFlags.ExpandFill,
         };
-        side.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
-        frame.AddChild(side);
+        side.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
+        parent.AddChild(side);
 
         Label header = UiTheme.Header(string.Empty);
         side.AddChild(header);
@@ -625,7 +634,7 @@ public partial class VendorPanel : UiPanel
     /// says what the answer was (derived, never saved). An unasked merchant prices normally even on a day
     /// they would have said yes — the discount is something the player does, not something the day gives.
     /// </summary>
-    private static bool DealStruck(ShopResource shop)
+    private bool DealStruck(ShopResource shop)
     {
         if (shop.HaggleChance <= 0 || Haggles() is not { } ledger)
         {
@@ -635,8 +644,20 @@ public partial class VendorPanel : UiPanel
         int day = CurrentDay();
 
         return ledger.TriedToday(shop.Id, day) &&
-            HaggleRules.Succeeds(day, shop.Id, shop.HaggleChance);
+            HaggleRules.Succeeds(day, shop.Id, HaggleChanceFor(shop));
     }
+
+    /// <summary>The chance the window quotes and the roll uses: the shop's authored chance plus the player's
+    /// haggle perks. ⚠️ <c>PerkEffectMath.HaggleChance</c> leaves a merchant who never haggles at 0, so a perk
+    /// shapes how often a deal lands and never opens one that was not authored.</summary>
+    private int HaggleChanceFor(ShopResource shop) =>
+        PerkEffectMath.HaggleChance(shop.HaggleChance, PerkQuery.Of(_player, PerkEffectKind.HaggleChanceBonus));
+
+    /// <summary>The player's perk factor on what a shop asks (1 with no perks). Threaded into every quote.</summary>
+    private float BuyPerkFactor() => PerkEffectMath.BuyFactor(PerkQuery.Of(_player, PerkEffectKind.BuyDiscount));
+
+    /// <summary>The player's perk factor on what a shop pays (1 with no perks).</summary>
+    private float SellPerkFactor() => PerkEffectMath.SellFactor(PerkQuery.Of(_player, PerkEffectKind.SellBonus));
 
     /// <summary>Names the standing and what it is doing to the prices, coloured with the same
     /// <c>ReputationTiers.Color</c> ramp the character screen uses so the two cannot disagree.</summary>
@@ -808,7 +829,7 @@ public partial class VendorPanel : UiPanel
 
         _haggleLabel.Text = tried
             ? haggled ? Loc.T("shop.haggle_won") : Loc.T("shop.haggle_lost")
-            : Loc.TF("shop.haggle_offer", shop.HaggleChance);
+            : Loc.TF("shop.haggle_offer", HaggleChanceFor(shop));
         _haggleLabel.AddThemeColorOverride(
             "font_color", tried ? haggled ? UiTheme.Good : UiTheme.Bad : UiTheme.Dim);
 
@@ -835,7 +856,7 @@ public partial class VendorPanel : UiPanel
             return; // already tried today; the button is disabled and says so
         }
 
-        if (!HaggleRules.Succeeds(day, shop.Id, shop.HaggleChance) &&
+        if (!HaggleRules.Succeeds(day, shop.Id, HaggleChanceFor(shop)) &&
             _player?.GetComponent<ReputationComponent>() is { } reputation)
         {
             // The downside, charged once per day because the ledger allows one attempt. Same shape as
@@ -884,7 +905,7 @@ public partial class VendorPanel : UiPanel
                 shop.LocalQuote(offer.Instance.Value, offer.Instance.Template.TagList());
             PriceQuote quote = PriceBreakdown.Buy(
                 offer.Instance.Value, local, TagName(localTag), shocked,
-                shop.BuyMarkup, tier, specialty, haggled);
+                shop.BuyMarkup, tier, specialty, haggled, BuyPerkFactor());
             int price = quote.Total;
             bool affordable = ShopPricing.CanAfford(price, purse);
 
@@ -978,7 +999,8 @@ public partial class VendorPanel : UiPanel
                     shop.ConsignFraction, shop.ConsignCommission, stack.Quantity)
                 : PriceBreakdown.Sell(
                     instance.Value, localSell, TagName(localTag), shocked,
-                    shop.SellFraction, specialty, haggled, stack.Quantity, absorbed, shop.RestockDays);
+                    shop.SellFraction, specialty, haggled, stack.Quantity, absorbed, shop.RestockDays,
+                    SellPerkFactor());
 
             int unitPrice = quote.Unit;
             int payout = !sellable || !inTrade ? 0 : quote.Total;
@@ -1050,8 +1072,9 @@ public partial class VendorPanel : UiPanel
         var row = new HBoxContainer();
         row.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
 
-        Button slot = ItemSlot.Build(instance, quantity, selected: false, size: 34f);
+        Button slot = ItemSlot.Build(instance, quantity, selected: false, size: ItemSlot.RowSize);
         slot.FocusMode = Control.FocusModeEnum.All;
+        slot.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
         slot.TooltipText = Loc.T("shop.inspect_hint");
         slot.Pressed += () =>
         {
@@ -1065,10 +1088,11 @@ public partial class VendorPanel : UiPanel
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
             SizeFlagsVertical = Control.SizeFlags.ShrinkCenter,
         };
-        text.AddThemeConstantOverride("separation", 0);
+        text.AddThemeConstantOverride("separation", UiTheme.LineGap);
 
         Label name = UiTheme.Body(instance.DisplayName, UiTheme.RarityColor(instance.Rarity));
         name.TooltipText = instance.Template.Description;
+        name.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
         text.AddChild(name);
 
         // A price that moved must say why it moved — the same rule the standing caption follows. The
@@ -1076,8 +1100,7 @@ public partial class VendorPanel : UiPanel
         // 25% above the shop across the square reads as one of the two being mispriced.
         if (specialty || glutted || locked)
         {
-            var trade = new HBoxContainer();
-            trade.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
+            HFlowContainer trade = UiTheme.FlowRow();
             if (specialty)
             {
                 trade.AddChild(UiTheme.Chip(Loc.T("shop.specialty"), UiTheme.Accent));
@@ -1102,8 +1125,7 @@ public partial class VendorPanel : UiPanel
 
         if (instance.HasAffixes)
         {
-            var chips = new HBoxContainer();
-            chips.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
+            HFlowContainer chips = UiTheme.FlowRow();
             foreach (ItemAffix affix in instance.Affixes)
             {
                 chips.AddChild(UiTheme.Chip(affix.DisplayValue, UiTheme.Good));
@@ -1131,9 +1153,7 @@ public partial class VendorPanel : UiPanel
         button.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
         row.AddChild(button);
 
-        MarginContainer pad = UiTheme.Padding(UiTheme.SpaceXs);
-        pad.AddChild(row);
-        card.AddChild(pad);
+        card.AddChild(row);
         list.AddChild(card);
     }
 

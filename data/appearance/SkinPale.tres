@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="AppearanceOptionResource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/Appearance/AppearanceOptionResource.cs" id="1_opt"]
+
+[resource]
+script = ExtResource("1_opt")
+Id = "appearance.skin.pale"
+NameKey = "appearance.skin.pale.name"
+Slot = 0
+Tint = Color(0.800, 0.680, 0.620, 1)
+BuildScale = 1.0
+IsDefault = false

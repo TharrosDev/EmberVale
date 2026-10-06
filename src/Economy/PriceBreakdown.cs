@@ -79,6 +79,9 @@ public static class PriceBreakdown
     /// <summary>Today's struck bargain (38S).</summary>
     public const string KeyHaggle = "shop.line.haggle";
 
+    /// <summary>What the player's perks do to the price (a buy discount or a sell bonus).</summary>
+    public const string KeyPerk = "shop.line.perk";
+
     /// <summary>A whole stack at one price each — the unsaturated multiply (38H).</summary>
     public const string KeyStack = "shop.line.stack";
 
@@ -122,7 +125,7 @@ public static class PriceBreakdown
     public static readonly IReadOnlyList<string> AllKeys = new[]
     {
         KeyBase, KeyLocalSurplus, KeyLocalDemand, KeyShockSurplus, KeyShockDemand, KeyMarkup,
-        KeyFraction, KeyStanding, KeySpecialty, KeyHaggle, KeyStack, KeyGlut, KeyShelf, KeyHouseCut,
+        KeyFraction, KeyStanding, KeySpecialty, KeyHaggle, KeyPerk, KeyStack, KeyGlut, KeyShelf, KeyHouseCut,
         KeyLabour, KeyMaterial, KeyTravelLocal, KeyTravelCross, KeyTravelOwned, KeyTravelMounted,
     };
 
@@ -139,7 +142,8 @@ public static class PriceBreakdown
         float markup,
         ReputationTier tier,
         bool specialty,
-        bool haggled)
+        bool haggled,
+        float perkFactor = 1f)
     {
         var lines = new List<PriceLine> { new(KeyBase, string.Empty, baseValue) };
         AddLocal(lines, baseValue, localValue, localTag, shocked);
@@ -172,8 +176,14 @@ public static class PriceBreakdown
                 KeyHaggle, Percent(HaggleRules.BuyDiscount), ShopPricing.BuyPrice(localValue, running)));
         }
 
+        if (perkFactor != 1f)
+        {
+            running *= perkFactor;
+            lines.Add(new(KeyPerk, Percent(perkFactor), ShopPricing.BuyPrice(localValue, running)));
+        }
+
         int total = ShopPricing.BuyPrice(
-            localValue, ShopPricing.MarkupFor(markup, tier, specialty, haggled));
+            localValue, ShopPricing.MarkupFor(markup, tier, specialty, haggled, perkFactor));
 
         return new PriceQuote(lines, total, total);
     }
@@ -193,7 +203,8 @@ public static class PriceBreakdown
         bool haggled,
         int quantity,
         int absorbed,
-        int restockDays)
+        int restockDays,
+        float perkFactor = 1f)
     {
         var lines = new List<PriceLine> { new(KeyBase, string.Empty, baseValue) };
         AddLocal(lines, baseValue, localValue, localTag, shocked);
@@ -223,8 +234,14 @@ public static class PriceBreakdown
                 KeyHaggle, Percent(HaggleRules.SellBonus), ShopPricing.SellPrice(localValue, running)));
         }
 
+        if (perkFactor != 1f)
+        {
+            running *= perkFactor;
+            lines.Add(new(KeyPerk, Percent(perkFactor), ShopPricing.SellPrice(localValue, running)));
+        }
+
         int unit = ShopPricing.SellPrice(
-            localValue, ShopPricing.SellFractionFor(fraction, specialty, haggled));
+            localValue, ShopPricing.SellFractionFor(fraction, specialty, haggled, perkFactor));
         int total = ShopStock.SaturatedPayout(unit, absorbed, quantity, restockDays);
 
         if (ShopStock.SaturationMultiplier(absorbed, restockDays) < 1f)

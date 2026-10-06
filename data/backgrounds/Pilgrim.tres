@@ -1,0 +1,32 @@
+[gd_resource type="Resource" script_class="BackgroundResource" load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://src/Backgrounds/BackgroundResource.cs" id="1_bg"]
+[ext_resource type="Script" path="res://src/Races/RaceStatDelta.cs" id="2_delta"]
+[ext_resource type="Script" path="res://src/Races/RaceReputationTweak.cs" id="3_rep"]
+
+[sub_resource type="Resource" id="Delta_1"]
+script = ExtResource("2_delta")
+Stat = 6
+Amount = 1.0
+
+[sub_resource type="Resource" id="Rep_1"]
+script = ExtResource("3_rep")
+FactionId = "faction.villagers"
+Amount = 2
+
+[sub_resource type="Resource" id="Rep_2"]
+script = ExtResource("3_rep")
+FactionId = "faction.dawnwardens"
+Amount = 2
+
+[resource]
+script = ExtResource("1_bg")
+Id = "background.pilgrim"
+NameKey = "background.pilgrim.name"
+DescKey = "background.pilgrim.desc"
+StartingPerkId = "perk.toughness"
+LeanBranch = "warrior"
+StatDeltas = Array[Resource]([SubResource("Delta_1")])
+StartingItems = Array[String](["item.potion.health", "item.material.healing_herb:4", "item.food.field_ration:2"])
+FlavorFlags = Array[String](["flag.background.pilgrim"])
+ReputationTweaks = Array[Resource]([SubResource("Rep_1"), SubResource("Rep_2")])

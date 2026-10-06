@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="PerkResource" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/Progression/PerkResource.cs" id="1_perk"]
+[ext_resource type="Script" path="res://src/Progression/PerkEffectResource.cs" id="2_effect"]
+
+[sub_resource type="Resource" id="Effect_1"]
+script = ExtResource("2_effect")
+Kind = 5
+ValuePerRank = -0.08
+
+[resource]
+script = ExtResource("1_perk")
+Id = "perk.steady_aim"
+DisplayName = "Steady Aim"
+Description = "Hold the string without strain. Drawing a bow costs 8% less Stamina per rank."
+MaxRank = 3
+Cost = 1
+ValuePerRank = 0.0
+Branch = 2
+Tier = 1
+Column = 1
+PrerequisiteIds = Array[String]([])
+BranchPointsRequired = 0
+Effects = [SubResource("Effect_1")]

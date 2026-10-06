@@ -50,7 +50,7 @@ public partial class BossFrame : PanelContainer
 
         MarginContainer pad = UiTheme.Padding(UiTheme.SpaceMd);
         var col = new VBoxContainer();
-        col.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
+        col.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
 
         _name = UiTheme.Display(Loc.T("boss.name"), UiTheme.Text);
         _name.HorizontalAlignment = HorizontalAlignment.Center;

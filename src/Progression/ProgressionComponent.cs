@@ -37,6 +37,9 @@ public partial class ProgressionComponent : EntityComponent, ISaveable
     /// <summary>Points spent on character perks.</summary>
     public int SkillPoints { get; private set; }
 
+    // The highest level whose milestone bonus has been paid (saved as 'ms').
+    private int _milestoneClaimed;
+
     /// <summary>Points spent buying/upgrading spells in the grimoire (Phase 29.5G) — a pool separate from
     /// <see cref="SkillPoints"/> so perks and spells don't compete for the same currency.</summary>
     public int SpellPoints { get; private set; }
@@ -109,6 +112,10 @@ public partial class ProgressionComponent : EntityComponent, ISaveable
             return;
         }
 
+        // Perks scale every grant (a kill, a quest, a salvage) before it is resolved into levels, so the
+        // XpGained event and the level maths see the same number. Capped at +10% by PerkEffectMath.
+        amount = PerkEffectMath.ScaleXp(amount, PerkQuery.Of(Entity, PerkEffectKind.XpGainMult));
+
         (int newLevel, int newXp, int levelsGained) = ProgressionMath.Resolve(
             Level, CurrentXp, Curve.MaxLevel, amount, Curve.XpToReach);
         Level = newLevel;
@@ -117,8 +124,12 @@ public partial class ProgressionComponent : EntityComponent, ISaveable
         if (levelsGained > 0)
         {
             int skillPointsGained = levelsGained * Curve.SkillPointsPerLevel;
-            SkillPoints += skillPointsGained;
             SpellPoints += skillPointsGained; // one spell point per level too (Phase 29.5G)
+
+            // Milestone levels pay a bonus skill point (not a spell point), once each, however the level was reached.
+            skillPointsGained += ProgressionMath.MilestonesCrossed(_milestoneClaimed, Level, Curve.MilestoneLevels);
+            _milestoneClaimed = Mathf.Max(_milestoneClaimed, Level);
+            SkillPoints += skillPointsGained;
             ApplyGrowth();
             _stats?.RefillResources();
             EventBus.Instance?.Publish(new LeveledUpEvent(Entity, Level, skillPointsGained));
@@ -138,6 +149,15 @@ public partial class ProgressionComponent : EntityComponent, ISaveable
 
         SkillPoints -= cost;
         return true;
+    }
+
+    /// <summary>Returns skill points to the pool: a respec refund, or the dev <c>sp</c> command's grant.</summary>
+    public void RefundSkillPoints(int amount)
+    {
+        if (amount > 0)
+        {
+            SkillPoints += amount;
+        }
     }
 
     /// <summary>Spends spell-book points (buying/upgrading spells). Returns false if too few are available.</summary>
@@ -183,6 +203,7 @@ public partial class ProgressionComponent : EntityComponent, ISaveable
             ["xp"] = CurrentXp,
             ["sp"] = SkillPoints,
             ["spell_sp"] = SpellPoints,
+            ["ms"] = _milestoneClaimed,
         };
     }
 
@@ -192,6 +213,18 @@ public partial class ProgressionComponent : EntityComponent, ISaveable
         CurrentXp = data.TryGetValue("xp", out Variant xpVar) ? Mathf.Max(0, xpVar.AsInt32()) : 0;
         SkillPoints = data.TryGetValue("sp", out Variant spVar) ? Mathf.Max(0, spVar.AsInt32()) : 0;
         SpellPoints = data.TryGetValue("spell_sp", out Variant sspVar) ? Mathf.Max(0, sspVar.AsInt32()) : 0;
+
+        // 'ms' is the highest level whose milestone has been paid. A save from before milestones has no key: pay what
+        // its level has already reached, once, and from then on the key is written.
+        if (data.TryGetValue("ms", out Variant msVar))
+        {
+            _milestoneClaimed = Mathf.Max(0, msVar.AsInt32());
+        }
+        else
+        {
+            SkillPoints += ProgressionMath.MilestonesCrossed(0, Level, Curve?.MilestoneLevels);
+            _milestoneClaimed = Level;
+        }
 
         ApplyGrowth();
 

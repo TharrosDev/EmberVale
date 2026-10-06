@@ -25,6 +25,14 @@ public partial class Notifications : CanvasLayer
     private const int MaxVisible = 3;
     private const int MaxQueued = 12;
 
+    /// <summary>Height one toast with a caption line takes, used to decide how many fit between the tracker
+    /// and the minimap. An estimate on purpose: it only has to be close enough that a stack never reaches
+    /// the minimap, and a toast that is taller just means one fewer shows at a time.</summary>
+    private const float ToastSlot = 72f;
+
+    /// <summary>Wrap width of a toast's text; wide enough that a quest title fits in two lines, not four.</summary>
+    private const float ToastTextWidth = 260f;
+
     private enum NoticeCategory { Minor, Reward, Quest, Warning, Major, Bark }
 
     private sealed class Notice
@@ -43,6 +51,7 @@ public partial class Notifications : CanvasLayer
     }
 
     private VBoxContainer _stack = null!;
+    private GameHud? _hud;
     private readonly Queue<Notice> _queue = new();
     private readonly Dictionary<string, Notice> _coalesced = new();
     private int _visible;
@@ -66,8 +75,8 @@ public partial class Notifications : CanvasLayer
         _stack.GrowVertical = Control.GrowDirection.End;
         _stack.OffsetLeft = -UiTheme.SpaceLg;
         _stack.OffsetRight = -UiTheme.SpaceLg;
-        _stack.OffsetTop = 306;
-        _stack.OffsetBottom = 306;
+        _stack.OffsetTop = UiTheme.SpaceLg;
+        _stack.OffsetBottom = UiTheme.SpaceLg;
         AddChild(_stack);
 
         EventBus bus = EventBus.Instance;
@@ -103,6 +112,8 @@ public partial class Notifications : CanvasLayer
     public override void _Process(double delta)
     {
         FlushQuestNotices();
+        PlaceStack();
+        ShedOverflow();
         bool protectedState = UiState.MenuOpen || GameManager.Instance?.State != GameState.Playing;
         _stack.Visible = !protectedState;
         if (!protectedState)
@@ -147,8 +158,17 @@ public partial class Notifications : CanvasLayer
         bus.Unsubscribe<Narrative.StoryToastRequestedEvent>(OnStoryToast);
     }
 
-    private void OnLeveledUp(LeveledUpEvent e) =>
-        Push(Loc.TF("notify.levelup", e.NewLevel), UiTheme.Accent, NoticeCategory.Major);
+    private void OnLeveledUp(LeveledUpEvent e)
+    {
+        // Say what the level bought: a milestone level pays two points, an ordinary one pays one.
+        string text = e.SkillPointsGained switch
+        {
+            <= 0 => Loc.TF("notify.levelup", e.NewLevel),
+            1 => Loc.TF("notify.levelup_point", e.NewLevel, e.SkillPointsGained),
+            _ => Loc.TF("notify.levelup_points", e.NewLevel, e.SkillPointsGained),
+        };
+        Push(text, UiTheme.Accent, NoticeCategory.Major);
+    }
 
     // --- Quests ---------------------------------------------------------------------------
     //
@@ -433,7 +453,8 @@ public partial class Notifications : CanvasLayer
             return;
         }
 
-        while (_visible < MaxVisible && _queue.Count > 0)
+        PlaceStack();
+        while (_queue.Count > 0 && LiveToasts() < MaxVisible && Fits())
         {
             Notice notice = _queue.Dequeue();
             _coalesced.Remove(notice.Secondary == null ? notice.Text : $"{notice.Text}\n{notice.Secondary}");
@@ -457,27 +478,26 @@ public partial class Notifications : CanvasLayer
             },
         };
 
-        MarginContainer pad = UiTheme.Padding(UiTheme.SpaceMd);
         var row = new HBoxContainer();
-        row.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
+        row.AddThemeConstantOverride("separation", UiTheme.SpaceMd);
         if (notice.Category != NoticeCategory.Bark)
         {
             row.AddChild(UiIcon.Create(IconFor(notice.Category), 22f, notice.Accent));
         }
 
         var copy = new VBoxContainer();
-        copy.AddThemeConstantOverride("separation", 0);
+        copy.AddThemeConstantOverride("separation", UiTheme.LineGap);
         Label label = notice.Category is NoticeCategory.Major or NoticeCategory.Quest
             ? UiTheme.Header(notice.Text)
             : UiTheme.Body(notice.Text);
         label.AutowrapMode = TextServer.AutowrapMode.WordSmart;
-        label.CustomMinimumSize = new Vector2(220f, 0f);
+        label.CustomMinimumSize = new Vector2(ToastTextWidth, 0f);
         copy.AddChild(label);
         if (notice.Secondary != null)
         {
             Label second = UiTheme.Caption(notice.Secondary, UiTheme.Dim);
             second.AutowrapMode = TextServer.AutowrapMode.WordSmart;
-            second.CustomMinimumSize = new Vector2(220f, 0f);
+            second.CustomMinimumSize = new Vector2(ToastTextWidth, 0f);
             copy.AddChild(second);
         }
 
@@ -486,8 +506,7 @@ public partial class Notifications : CanvasLayer
             copy.AddChild(UiTheme.Caption($"×{notice.Count}", UiTheme.Dim));
         }
         row.AddChild(copy);
-        pad.AddChild(row);
-        toast.AddContent(pad);
+        toast.AddContent(row);
 
         if (notice.Cue != null)
         {
@@ -503,6 +522,101 @@ public partial class Notifications : CanvasLayer
             Callable.From(PresentQueued).CallDeferred();
         };
         _stack.AddChild(toast);
+    }
+
+    /// <summary>Starts the feed under the tracker, wherever the tracker ends, instead of at a fixed offset
+    /// that a longer tracker ran into.</summary>
+    private void PlaceStack()
+    {
+        float top = UiTheme.SpaceLg;
+        if (Hud() is { } hud)
+        {
+            top = Mathf.Max(top, hud.TopRightBottom) + UiTheme.HudGap;
+        }
+
+        _stack.OffsetTop = top;
+        _stack.OffsetBottom = top;
+    }
+
+    /// <summary>Room between the top of the stack and the minimap, which sits in the same right-hand column.</summary>
+    private float Room() =>
+        Hud() is { } hud ? hud.BottomRightTop - UiTheme.HudGap - _stack.OffsetTop : float.MaxValue;
+
+    /// <summary>Height the stack takes now, counting toasts that are still fading out: they hold their space
+    /// until they leave, so a new toast has to clear them too.</summary>
+    private float StackHeight()
+    {
+        float height = 0f;
+        int count = 0;
+        foreach (Node child in _stack.GetChildren())
+        {
+            if (child is Control { Visible: true } toast)
+            {
+                height += toast.GetCombinedMinimumSize().Y;
+                count++;
+            }
+        }
+
+        return height + (Mathf.Max(0, count - 1) * UiTheme.SpaceSm);
+    }
+
+    /// <summary>Whether one more toast fits above the minimap. An empty stack always admits one, so a tall
+    /// tracker can never stop notices altogether.</summary>
+    private bool Fits() =>
+        _stack.GetChildCount() == 0 || StackHeight() + UiTheme.SpaceSm + ToastSlot <= Room();
+
+    private int LiveToasts()
+    {
+        int live = 0;
+        foreach (Node child in _stack.GetChildren())
+        {
+            if (child is Toast { Expiring: false })
+            {
+                live++;
+            }
+        }
+
+        return live;
+    }
+
+    /// <summary>The tracker can grow after a toast was admitted (a quest event adds its rows a frame later), which
+    /// would push the stack into the minimap. When what is showing no longer fits, the oldest toast is
+    /// let go early; the queue refills the stack as space allows.</summary>
+    private void ShedOverflow()
+    {
+        if (LiveToasts() <= 1 || StackHeight() <= Room())
+        {
+            return;
+        }
+
+        foreach (Node child in _stack.GetChildren())
+        {
+            if (child is Toast { Expiring: false } oldest)
+            {
+                oldest.Expedite();
+                return;
+            }
+        }
+    }
+
+    private GameHud? Hud()
+    {
+        if (_hud is not null && IsInstanceValid(_hud))
+        {
+            return _hud;
+        }
+
+        _hud = null;
+        foreach (Node sibling in GetParent()?.GetChildren() ?? new Godot.Collections.Array<Node>())
+        {
+            if (sibling is GameHud hud)
+            {
+                _hud = hud;
+                break;
+            }
+        }
+
+        return _hud;
     }
 
     private static UiIcon.Kind IconFor(NoticeCategory category) => category switch

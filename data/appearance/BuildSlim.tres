@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="AppearanceOptionResource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/Appearance/AppearanceOptionResource.cs" id="1_opt"]
+
+[resource]
+script = ExtResource("1_opt")
+Id = "appearance.build.slim"
+NameKey = "appearance.build.slim.name"
+Slot = 4
+Tint = Color(1, 1, 1, 1)
+BuildScale = 0.92
+IsDefault = false

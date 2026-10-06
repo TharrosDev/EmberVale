@@ -24,7 +24,7 @@ one body leave the second silent.
   [yielding duel fight](#a-yielding-duel-fight) · [weapon](#a-new-weapon) ·
   [companion](#a-new-companion)
 - Items: [item](#a-new-item) · [equipment](#a-new-piece-of-equipment) · [affix](#a-new-loot-affix) ·
-  [loot table](#a-new-loot-table--dropper) · [perk](#a-new-perk) · [XP / curve](#a-new-xp-bearing-enemy-or-tuning-the-curve) ·
+  [loot table](#a-new-loot-table--dropper) · [perk](#a-new-perk) · [background](#a-new-background) · [appearance option](#a-new-appearance-option) · [XP / curve](#a-new-xp-bearing-enemy-or-tuning-the-curve) ·
   [crafting recipe](#a-new-crafting-recipe) · [spell](#a-new-spell) · [status effect](#a-new-status-effect)
 - Story: [quest](#a-new-quest) · [chained story quest](#a-chained-story-quest-autostartflagid) ·
   [conversation](#a-new-conversation) · [faction](#a-new-faction) · [NPC routine](#a-new-npc-routine)
@@ -258,12 +258,63 @@ line in `StatBonuses()`. Bonuses apply through `EquipmentComponent`.
 
 ### A new perk
 
-`data/perks/Xxx.tres` (`PerkResource`): `Id`, name, description, `MaxRank`, `Cost`, `Stat`,
-`ModifierType`, `ValuePerRank`.
+**Do not hand-edit `data/perks/*.tres` or the `perk.*` rows in `strings.csv`: `tools/gen_perks.py` owns both and deletes
+a perk file it does not name.** Add a `perk(...)` line to the table in that file and run `python tools/gen_perks.py`
+(`--check` exits 1 if anything is out of date). A perk is `perk(id_tail, "Name", branch, tier, column, max_rank, "Description", fx=[...], pre=[...])`:
+
+- **Position.** `tier` 1-5 fixes the gate (0, 2, 5, 9, 14 branch points) and the cost (1 for tiers 1-2, 2 for tiers 3-4,
+  3 for the tier-5 capstone, which is the only one per branch). `column` is layout only and unique per tier and branch.
+  `pre` lists id tails that must each hold a rank; they must be an earlier tier of the same branch.
+- **Effects.** `E("Kind", value, arg="")` is a non-stat effect (`PerkEffectKind`), `S("Stat", value, "Flat"|"PercentAdd")` an extra
+  stat modifier; `value` is per rank. Use `{0}`, `{1}` in the description for each effect's value, in order: they are
+  filled in with the right unit, so a retune cannot leave a stale number in the text. The six pre-tree perks keep their stat
+  in `legacy=(stat, mod, value)` so their `.tres` shape and ids (in saves and `data/races`) never change.
+- **Caps.** Values are summed over ranks and then capped by `PerkEffectMath` (read each kind's unit on `RangeOf`). The whole
+  catalogue stays under every cap, so a cap is a backstop and not a tuning knob: before raising a total, check the
+  `PerkCatalogueTests` sum, and ⚠️ never raise a price cap without re-proving the shop margin (`ValidateShopTrade`, the
+  contract, commission and wager rules read `PerkEffectMath.Best*`).
+- **Budget.** A main branch must total 34-46 points (`PerkCatalogue.BranchTotalMin/Max`) so one branch fits the 54-point
+  supply and two do not. Only the Ashbound branch is corruption-gated (`corr=`); nothing else may be ("perks shape, never gate").
+
+A new `PerkEffectKind` (append-only) needs three things before a perk may use it: a range in `PerkEffectMath.RangeOf`, a call
+site reading `PerkQuery.Of`/`Factor` (ranged damage in `RangedAttack.Fire`, standing in `ReputationComponent.Add`, salvage XP in
+`CraftingComponent.Deconstruct`, and the others as listed in `docs/NOW.md`), and a perk: `--validate` fails a kind no perk uses.
+A prerequisite and a gate are enforced by `Learn`, **not by `Load`**: a save is restored as it was, and `GrantFree` skips both.
+Drive it with the dev commands `sp <n>`, `perk <id> [rank]`, `learn <id>` and `respec`. The Perks tab lays a branch out from
+`tier` (row) and `column` (at most 5 wide, `PerkRules.MaxColumn`) and draws a connector for each same-branch `pre`, so a new perk
+needs no UI work; look at it with `--panelshots` (frames 21-25). Its branch names are the `perktree.branch.*` locale rows.
+
+### A new background
+
+1. `data/backgrounds/Xxx.tres` (`BackgroundResource`, `Id = "background.<name>"`). `NameKey`/`DescKey` are
+   Loc keys (`background.<name>.name` / `.desc`); a set `LeanBranch` also needs `background.lean.<branch>`.
+2. Grants: `StartingPerkId` (a plain, ungated perk, granted free), `StartingItems` (`"item.id"` or
+   `"item.id:count"`, real ids only), `StartingGold`, `StatDeltas` (`RaceStatDelta`, |x| <= 1),
+   `ReputationTweaks` (`RaceReputationTweak`, |x| <= 5), `FlavorFlags` (`flag.background.<name>`).
+3. ⚠️ **Caps are validator-enforced** (`BackgroundRules`): items at `Value` plus gold <= 80, so a
+   background nudges and never carries a build. `background.wayfarer` must stay empty.
+4. ⚠️ **Every flag needs a reader.** Add a `HasFlag` root choice and node to a hub dialogue (Elder,
+   Innkeeper, Smith have them) and its Loc rows; `--validate` rejects a flag nothing reads.
+5. Grants run once, from `RaceComponent`, on New Game; a load restores them from the component saves.
+   No code change; the creator lists whatever `BackgroundDatabase` holds.
+
+### A new appearance option
+
+1. Add a row to `OPTIONS` in `tools/gen_appearance.py` (slot, name, display name, tint or build scale) and list it
+   under the races that offer it in `RACES`, then run `python tools/gen_appearance.py`. It writes
+   `data/appearance/*.tres`, each race's `AppearanceOptionIds` and the Loc rows (`progression:appearance` block).
+2. ⚠️ **Exactly one `IsDefault` option per slot, and its tint is the region's reference colour**
+   (`AppearanceRules.SkinReference` etc., printed by `tools/gen_player_mask.py`), because the shader moves a region by
+   (tint minus reference); `--validate` checks it. Build stays within 1 +/- 0.15.
+3. A new body model needs its own region mask: run `python tools/gen_player_mask.py --preview out.png`, LOOK at it
+   (red skin, green hair, blue eyes), then render the creator and a corrupted player.
 
 ### A new XP-bearing enemy (or tuning the curve)
 
-`XpValue` on the archetype. Tune levelling in `data/progression/PlayerProgression.tres`.
+`XpValue` on the archetype. Tune levelling in `data/progression/PlayerProgression.tres`. The player's
+per-level primaries (`StrengthPerLevel` ... `EndurancePerLevel`) also feed derived stats through
+`StatDerivation`, so retune the pair together: `--validate` (`ValidatePlayerGrowth`) pins level-cap Health,
+Stamina, Physical Power and Armor, and `StatDerivationTests` pins the arithmetic.
 
 ### A new crafting recipe
 

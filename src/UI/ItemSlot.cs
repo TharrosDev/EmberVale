@@ -18,6 +18,13 @@ public static class ItemSlot
 {
     public const float DefaultSize = 52f;
 
+    /// <summary>Slot beside a card row's text (storage, shop, salvage, appraisal): sits inside the 44 px
+    /// button height of those rows, so a bigger icon costs no row height.</summary>
+    public const float RowSize = 40f;
+
+    /// <summary>Slot beside two stacked text lines with no taller control (the equipment column).</summary>
+    public const float CompactSize = 34f;
+
     /// <summary>
     /// One inventory cell: rarity frame, category glyph (or the item's <c>Icon</c> if one is ever
     /// authored), and a stack count in the corner.
@@ -32,7 +39,9 @@ public static class ItemSlot
         var slot = new Button
         {
             CustomMinimumSize = new Vector2(size, size),
-            Flat = true,
+
+            // Not Flat: a flat button never draws its `normal` stylebox, so the rarity frame and the
+            // empty well were skipped entirely and every slot read as a loose glyph with no edge.
             FocusMode = Control.FocusModeEnum.All,
             ClipText = true,
         };
@@ -96,8 +105,8 @@ public static class ItemSlot
             count.VerticalAlignment = VerticalAlignment.Bottom;
             count.MouseFilter = Control.MouseFilterEnum.Ignore;
             count.SetAnchorsPreset(Control.LayoutPreset.FullRect);
-            count.OffsetRight = -3;
-            count.OffsetBottom = -2;
+            count.OffsetRight = -UiTheme.Space2xs;
+            count.OffsetBottom = -UiTheme.Space2xs;
             slot.AddChild(count);
         }
 
@@ -129,8 +138,7 @@ public static class ItemSlot
 
         if (instance.HasAffixes)
         {
-            var chips = new HBoxContainer();
-            chips.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
+            HFlowContainer chips = UiTheme.FlowRow();
             foreach (ItemAffix affix in instance.Affixes)
             {
                 chips.AddChild(UiTheme.Chip(affix.DisplayValue, UiTheme.Good));
@@ -154,9 +162,7 @@ public static class ItemSlot
             col.AddChild(UiTheme.Flavour(instance.Template.Description));
         }
 
-        MarginContainer pad = UiTheme.Padding(UiTheme.SpaceSm);
-        pad.AddChild(col);
-        card.AddChild(pad);
+        card.AddChild(col); // the card's own margins are the padding; a second pad doubled the left edge
         return card;
     }
 
@@ -177,7 +183,7 @@ public static class ItemSlot
         }
 
         var col = new VBoxContainer();
-        col.AddThemeConstantOverride("separation", 1);
+        col.AddThemeConstantOverride("separation", UiTheme.LineGap);
         col.AddChild(UiTheme.Caption(Loc.T(equipped is null ? "item.vs_empty" : "item.vs_equipped")));
 
         foreach ((StatType stat, float delta) in deltas)

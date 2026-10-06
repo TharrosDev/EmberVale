@@ -49,7 +49,7 @@ public sealed class ItemAffix
             bool percent = ModifierType != ModifierType.Flat || Stat == StatType.CritChance;
             string sign = Value >= 0f ? "+" : string.Empty;
             string number = percent ? $"{Value * 100f:0.#}%" : $"{Value:0.#}";
-            return $"{sign}{number} {StatLabels.Short(Stat)}";
+            return $"{sign}{number} {StatNames.Label(Stat)}";
         }
     }
 

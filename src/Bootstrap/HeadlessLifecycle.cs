@@ -1,14 +1,21 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Embervale.Appearance;
+using Embervale.Backgrounds;
 using Embervale.Core;
 using Embervale.Core.Diagnostics;
 using Embervale.Core.Events;
 using Embervale.Core.Pooling;
 using Embervale.Core.Services;
+using Embervale.Dialogue;
 using Embervale.Entities;
+using Embervale.Factions;
+using Embervale.Items;
+using Embervale.Progression;
 using Embervale.Races;
 using Embervale.Save;
+using Embervale.Stats;
 using Embervale.UI;
 using Embervale.World;
 using Godot;
@@ -112,11 +119,7 @@ public static class HeadlessLifecycle
     private static async Task RunNewGame(
         ApplicationRoot root, SessionLifecycleCoordinator lifecycle, string slot, int cycle)
     {
-        CharacterProfile profile = ReloadAuditRequested()
-            ? new CharacterProfile { RaceId = "race.umbral", CharacterName = "Reload Audit",
-                Background = "A traveller from the Reach", AppearanceOptionIds = ["appearance.audit_one", "appearance.audit_two"] }
-            : CharacterProfile.Human;
-        lifecycle.StartNewGame(slot, profile);
+        lifecycle.StartNewGame(slot, AuditProfile());
 
         if (lifecycle.Session is not { } session)
         {
@@ -135,6 +138,13 @@ public static class HeadlessLifecycle
         }
 
         CheckLandingReady(session, $"cycle {cycle} new-game");
+        // Max level before the save, so the load half proves primaries re-derive from the restored level.
+        session.Players.Player?.GetComponent<ProgressionComponent>()?.AddXp(1_000_000);
+        CheckStatDerivation(session, $"cycle {cycle} new-game");
+        CheckAuditCharacter(session, $"cycle {cycle} new-game");
+
+        // Last, because it respecs and learns on the live player (and Verify below wipes it on purpose).
+        PerksLifecycleProbe.Drive(session.Players.Player, Check);
 
         Check(SaveManager.Instance?.SaveGame(slot) == true, $"cycle {cycle} new-game: the session failed to save.");
     }
@@ -162,6 +172,166 @@ public static class HeadlessLifecycle
             return;
         }
         CheckLandingReady(lifecycle.Session!, $"cycle {cycle} load");
+        CheckStatDerivation(lifecycle.Session!, $"cycle {cycle} load");
+        CheckAuditCharacter(lifecycle.Session!, $"cycle {cycle} load");
+        PerksLifecycleProbe.Verify(lifecycle.Session!.Players.Player, Check);
+    }
+
+    /// <summary>
+    /// The primaries are real: at the player's current level, Physical Power and Health equal their base
+    /// plus per-level growth plus what the invested Strength / Vitality points buy (StatDerivation), and
+    /// the level itself came back from the save. Run at max level on both halves of a round trip.
+    /// </summary>
+    private static void CheckStatDerivation(GameSession session, string label)
+    {
+        if (session.Players.Player is not { } player ||
+            player.GetComponent<StatsComponent>() is not { } stats ||
+            player.GetComponent<ProgressionComponent>() is not { Curve: { } curve } progression)
+        {
+            Failures.Add($"{label}: the player has no stats/progression to derive from.");
+            return;
+        }
+
+        Check(player.GetComponent<StatDerivationComponent>() != null, $"{label}: the player has no StatDerivationComponent.");
+        Check(progression.Level == curve.MaxLevel, $"{label}: expected level {curve.MaxLevel}, found {progression.Level}.");
+
+        float levels = progression.Level - 1;
+        Stat strength = stats.GetStat(StatType.Strength);
+        Stat vitality = stats.GetStat(StatType.Vitality);
+        PerksComponent? perks = player.GetComponent<PerksComponent>();
+        float expectedPower = stats.GetStat(StatType.PhysicalPower).BaseValue + (curve.PhysicalPowerPerLevel * levels)
+            + (0.8f * (strength.Value - strength.BaseValue)) + FlatPerkBonus(perks, StatType.PhysicalPower);
+        float expectedHealth = stats.GetStat(StatType.Health).BaseValue + (curve.HealthPerLevel * levels)
+            + (5f * (vitality.Value - vitality.BaseValue)) + FlatPerkBonus(perks, StatType.Health);
+        Check(Mathf.Abs(stats.GetValue(StatType.PhysicalPower) - expectedPower) < 0.01f,
+            $"{label}: Physical Power {stats.GetValue(StatType.PhysicalPower)} != derived {expectedPower}.");
+        Check(Mathf.Abs(stats.GetValue(StatType.Health) - expectedHealth) < 0.01f,
+            $"{label}: Max Health {stats.GetValue(StatType.Health)} != derived {expectedHealth}.");
+        Check(strength.Value - strength.BaseValue > 0f, $"{label}: Strength did not grow with level.");
+    }
+
+    /// <summary>What the curve has added to a stat by the player's current level (per-level gain times levels gained).</summary>
+    private static float LevelGrowth(ProgressionComponent? progression, StatType stat)
+    {
+        if (progression?.Curve is not { } curve)
+        {
+            return 0f;
+        }
+
+        float perLevel = 0f;
+        foreach ((StatType gained, float gain) in curve.StatGains())
+        {
+            if (gained == stat)
+            {
+                perLevel += gain;
+            }
+        }
+
+        return perLevel * (progression.Level - 1);
+    }
+
+    /// <summary>What the held perks add to a stat as Flat modifiers (the legacy single-stat effect), so the derivation
+    /// check compares only primaries against the stat, not a Soldier's free Might or the perks probe's ranks.</summary>
+    private static float FlatPerkBonus(PerksComponent? perks, StatType stat)
+    {
+        float total = 0f;
+        foreach (PerkResource perk in PerkDatabase.All)
+        {
+            if (perk.Stat == stat && perk.ModifierType == ModifierType.Flat)
+            {
+                total += perk.ValueAtRank(perks?.RankOf(perk.Id) ?? 0);
+            }
+        }
+
+        return total;
+    }
+
+    /// <summary>The non-default character every cycle plays: Umbral (Dexterity, an innate perk, a standing
+    /// penalty) with the Soldier background (a perk, a shield, gold, a flag, a stat point, a standing bonus),
+    /// so a regression in either the race or the background path shows as a changed number after a Load.</summary>
+    private static CharacterProfile AuditProfile() => new()
+    {
+        RaceId = "race.umbral",
+        CharacterName = "Lifecycle Audit",
+        Background = AuditBackground,
+        AppearanceOptionIds = AuditLook,
+    };
+
+    // Real options the Umbral offers, none of them a slot default, so the body must visibly differ from the unmodified model.
+    private static readonly string[] AuditLook =
+    [
+        "appearance.skin.ashen", "appearance.hair.midnight", "appearance.eyes.violet", "appearance.ember.violet", "appearance.build.slim",
+    ];
+
+    private const string AuditBackground = "background.soldier";
+
+    /// <summary>The chosen look reaches the body after New Game and again after Load: the shader carries the chosen
+    /// tints (and not the unmodified references) and the Slim build narrows X/Z without changing height.</summary>
+    private static void CheckAuditLook(Node3D player, string label)
+    {
+        Node3D? body = player.GetNodeOrNull<Node3D>("BodyMesh");
+        ShaderMaterial? material = body == null ? null : PlayerAppearance.FindMaterial(body);
+        if (body == null || material == null)
+        {
+            Failures.Add($"{label}: the player body has no appearance shader.");
+            return;
+        }
+
+        Check(material.GetShaderParameter("skin_tint").AsColor().IsEqualApprox(AppearanceDatabase.Get("appearance.skin.ashen")!.Tint),
+            $"{label}: the body skin tint is not the chosen Ashen.");
+        Check(material.GetShaderParameter("hair_tint").AsColor().IsEqualApprox(AppearanceDatabase.Get("appearance.hair.midnight")!.Tint),
+            $"{label}: the body hair tint is not the chosen Midnight.");
+        Check(material.GetShaderParameter("eye_tint").AsColor().IsEqualApprox(AppearanceDatabase.Get("appearance.eyes.violet")!.Tint),
+            $"{label}: the body eye tint is not the chosen Violet.");
+        Check(material.GetShaderParameter("ember_tint").AsColor().IsEqualApprox(AppearanceDatabase.Get("appearance.ember.violet")!.Tint),
+            $"{label}: the body ember tint is not the chosen Violet.");
+        Check(Math.Abs(body.Scale.X - 0.92f) < 0.001f && Math.Abs(body.Scale.Z - 0.92f) < 0.001f && Math.Abs(body.Scale.Y - 1f) < 0.001f,
+            $"{label}: the Slim build is not 0.92 wide and 1.0 tall (scale {body.Scale}).");
+    }
+
+    /// <summary>
+    /// The audit character's identity and grants, asserted identically after New Game and after Load. The
+    /// background kit is New Game only, so a load that re-granted it would read gold 20 and two shields; a
+    /// load that dropped the profile would read no flag and no Strength point.
+    /// </summary>
+    private static void CheckAuditCharacter(GameSession session, string label)
+    {
+        BackgroundResource? background = BackgroundDatabase.Get(AuditBackground);
+        RaceResource? race = RaceDatabase.Get("race.umbral");
+        if (background == null || race == null || session.Players.Player is not { } player)
+        {
+            Failures.Add($"{label}: audit character, race or background is missing.");
+            return;
+        }
+
+        Check(session.Profile.RaceId == "race.umbral" && session.Profile.Background == AuditBackground,
+            $"{label}: the character profile did not round-trip (race '{session.Profile.RaceId}', background '{session.Profile.Background}').");
+
+        CheckAuditLook(player, label);
+
+        StatsComponent? stats = player.GetComponent<StatsComponent>();
+        // The character may be at any level, and the curve grows the primaries per level: count only what is left over.
+        ProgressionComponent? progression = player.GetComponent<ProgressionComponent>();
+        Check(stats != null && Math.Abs(stats.GetStat(StatType.Strength).Value - stats.GetStat(StatType.Strength).BaseValue - LevelGrowth(progression, StatType.Strength) - 1f) < 0.001f,
+            $"{label}: the background's Strength point was not applied exactly once.");
+        Check(stats != null && Math.Abs(stats.GetStat(StatType.Dexterity).Value - stats.GetStat(StatType.Dexterity).BaseValue - LevelGrowth(progression, StatType.Dexterity) - 4f) < 0.001f,
+            $"{label}: the race's Dexterity delta was not applied exactly once.");
+
+        PerksComponent? perks = player.GetComponent<PerksComponent>();
+        Check(perks?.FreeRankOf("perk.might") == 1, $"{label}: the Soldier's free perk is not at rank 1.");
+        Check(perks?.RankOf("perk.precision") == 1, $"{label}: the Umbral innate perk is not at rank 1.");
+
+        InventoryComponent? pack = player.GetComponent<InventoryComponent>();
+        Check(pack?.CountOf("item.armor.round_shield") == 1, $"{label}: the Soldier's shield count is not exactly 1.");
+        Check(pack?.CountOf(GameIds.Currency.Gold) == background.StartingGold,
+            $"{label}: starting gold is not exactly {background.StartingGold}.");
+
+        Check(player.GetComponent<StoryFlagsComponent>()?.Has("flag.background.soldier") == true,
+            $"{label}: the background flag is not set.");
+
+        int expectedStanding = (FactionDatabase.Get("faction.dawnwardens")?.DefaultReputation ?? 0) + 4;
+        Check(player.GetComponent<ReputationComponent>()?.Get("faction.dawnwardens") == expectedStanding,
+            $"{label}: the background's Dawnwarden standing is not {expectedStanding}.");
     }
 
     private static void CheckLandingReady(GameSession session, string label)
@@ -214,7 +384,7 @@ public static class HeadlessLifecycle
                 "F9 regression: absent checkpoint tore down the live session.");
             original.Profile.RaceId = "race.human";
             original.Profile.CharacterName = "Abandoned Timeline";
-            original.Profile.Background = "Abandoned background";
+            original.Profile.Background = "background.hunter";
             original.Profile.AppearanceOptionIds = ["appearance.abandoned"];
             using var key = new InputEventKey { Keycode = Key.F9, Pressed = true };
             original.DevTools!._UnhandledKeyInput(key);
@@ -242,10 +412,10 @@ public static class HeadlessLifecycle
         }
         CheckLandingReady(restored, $"reload cycle {cycle}");
         Check(priorScope.Count == 0, $"reload cycle {cycle}: abandoned session services survived.");
-        Check(restored.Profile.RaceId == "race.umbral" && restored.Profile.CharacterName == "Reload Audit",
+        Check(restored.Profile.RaceId == "race.umbral" && restored.Profile.CharacterName == "Lifecycle Audit",
             $"reload cycle {cycle}: loaded character came from the abandoned session instead of the header.");
-        Check(restored.Profile.Background == "A traveller from the Reach" &&
-              restored.Profile.AppearanceOptionIds is ["appearance.audit_one", "appearance.audit_two"],
+        Check(restored.Profile.Background == AuditBackground &&
+              restored.Profile.AppearanceOptionIds.AsSpan().SequenceEqual(AuditLook),
             $"reload cycle {cycle}: background or appearance choices were lost.");
         Check(!lifecycle.RequestReload(original, slot), $"reload cycle {cycle}: a stale session could reload over its replacement.");
 

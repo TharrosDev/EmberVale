@@ -2,6 +2,7 @@ using Embervale.Combat.Actions;
 using Embervale.Entities;
 using Embervale.Magic;
 using Embervale.Movement;
+using Embervale.Progression;
 using Embervale.Stats;
 using Godot;
 
@@ -24,6 +25,9 @@ namespace Embervale.Combat;
 public partial class DodgeComponent : EntityComponent
 {
     [ExportGroup("Roll (direction held)")]
+    /// <summary>The cheapest an evade can get from perks and Dexterity together, as a fraction of its base cost.</summary>
+    private const float CombinedCostFloor = 0.4f;
+
     [Export] public float StaminaCost { get; set; } = 22f;
 
     /// <summary>Speed at the push-off; the burst eases down from here (<see cref="Dodge.SpeedAt"/>).
@@ -203,6 +207,12 @@ public partial class DodgeComponent : EntityComponent
         int chain = Dodge.NextChain(_chain, _sinceLastEnd, ChainWindow);
         float cost = Dodge.ChainedCost(
             kind == DodgeKind.Roll ? StaminaCost : BackstepStaminaCost, chain, ChainSurcharge, MaxChainMultiplier);
+
+        // Perks shave the price of an evade ("backstep" narrows an effect to the backstep alone) and so does invested
+        // Dexterity (the player only: StatDerivationComponent). Both are neutral for an entity without them, and the
+        // pair shares one floor so they can never stack past it.
+        cost *= Mathf.Max(CombinedCostFloor, PerkQuery.Factor(Entity, PerkEffectKind.DodgeStaminaMult, kind == DodgeKind.Roll ? "roll" : "backstep")
+            * StatDerivationComponent.DodgeFactor(Entity));
 
         bool grounded = _locomotion?.IsGrounded ?? false;
         float stamina = _stats?.GetCurrent(StatType.Stamina) ?? 0f;

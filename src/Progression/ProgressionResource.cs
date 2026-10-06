@@ -32,6 +32,21 @@ public partial class ProgressionResource : Resource
     [Export] public float PhysicalPowerPerLevel { get; set; } = 1.5f;
     [Export] public float SpellPowerPerLevel { get; set; }
     [Export] public float ArmorPerLevel { get; set; } = 0.5f;
+    /// <summary>Primary-attribute growth per level (default 0: enemy and test curves are unchanged). The
+    /// player's primaries feed the derived stats through <see cref="StatDerivation"/>.</summary>
+    [Export] public float StrengthPerLevel { get; set; }
+    [Export] public float DexterityPerLevel { get; set; }
+    [Export] public float IntelligencePerLevel { get; set; }
+    /// <summary>Levels that each pay one bonus skill point on top of <see cref="SkillPointsPerLevel"/>: the tree is sized
+    /// for (MaxLevel - 1) level points plus one per milestone (PerkCatalogue.SkillPointSupply).</summary>
+    [Export] public int[] MilestoneLevels { get; set; } = System.Array.Empty<int>();
+
+    /// <summary>Skill points a character can earn in total by <see cref="MaxLevel"/>.</summary>
+    public int SkillPointSupply => ((MaxLevel - 1) * SkillPointsPerLevel)
+        + ProgressionMath.MilestonesCrossed(0, MaxLevel, MilestoneLevels);
+
+    [Export] public float VitalityPerLevel { get; set; }
+    [Export] public float EndurancePerLevel { get; set; }
 
     /// <summary>XP needed to advance *from* <paramref name="level"/> to the next.
     /// Returns 0 at or beyond <see cref="MaxLevel"/>.</summary>
@@ -49,6 +64,11 @@ public partial class ProgressionResource : Resource
         if (PhysicalPowerPerLevel != 0f) yield return (StatType.PhysicalPower, PhysicalPowerPerLevel);
         if (SpellPowerPerLevel != 0f) yield return (StatType.SpellPower, SpellPowerPerLevel);
         if (ArmorPerLevel != 0f) yield return (StatType.Armor, ArmorPerLevel);
+        if (StrengthPerLevel != 0f) yield return (StatType.Strength, StrengthPerLevel);
+        if (DexterityPerLevel != 0f) yield return (StatType.Dexterity, DexterityPerLevel);
+        if (IntelligencePerLevel != 0f) yield return (StatType.Intelligence, IntelligencePerLevel);
+        if (VitalityPerLevel != 0f) yield return (StatType.Vitality, VitalityPerLevel);
+        if (EndurancePerLevel != 0f) yield return (StatType.Endurance, EndurancePerLevel);
     }
 
     public static ProgressionResource CreateDefault() => new();

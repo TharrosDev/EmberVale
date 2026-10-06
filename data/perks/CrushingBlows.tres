@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="PerkResource" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/Progression/PerkResource.cs" id="1_perk"]
+[ext_resource type="Script" path="res://src/Progression/PerkEffectResource.cs" id="2_effect"]
+
+[sub_resource type="Resource" id="Effect_1"]
+script = ExtResource("2_effect")
+Stat = 14
+ModifierType = 0
+ValuePerRank = 0.12
+
+[resource]
+script = ExtResource("1_perk")
+Id = "perk.crushing_blows"
+DisplayName = "Crushing Blows"
+Description = "Finish what you started. Critical hits deal 12% more damage per rank."
+MaxRank = 3
+Cost = 2
+ValuePerRank = 0.0
+Branch = 1
+Tier = 3
+Column = 1
+PrerequisiteIds = Array[String](["perk.might"])
+BranchPointsRequired = 5
+Effects = [SubResource("Effect_1")]

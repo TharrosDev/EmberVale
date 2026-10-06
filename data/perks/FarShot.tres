@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="PerkResource" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/Progression/PerkResource.cs" id="1_perk"]
+[ext_resource type="Script" path="res://src/Progression/PerkEffectResource.cs" id="2_effect"]
+
+[sub_resource type="Resource" id="Effect_1"]
+script = ExtResource("2_effect")
+Kind = 19
+ValuePerRank = 0.05
+
+[resource]
+script = ExtResource("1_perk")
+Id = "perk.far_shot"
+DisplayName = "Far Shot"
+Description = "Draw to the ear and let it fly. Arrows hit 5% harder per rank."
+MaxRank = 3
+Cost = 2
+ValuePerRank = 0.0
+Branch = 2
+Tier = 3
+Column = 0
+PrerequisiteIds = Array[String](["perk.steady_aim"])
+BranchPointsRequired = 5
+Effects = [SubResource("Effect_1")]

@@ -2,6 +2,7 @@ using Embervale.Core.Diagnostics;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
+using Embervale.Appearance;
 using Embervale.Core;
 using Embervale.Core.Events;
 using Embervale.Core.Services;
@@ -50,7 +51,12 @@ public static class DevCommands
         console.Register(new ConsoleCommand("guild", "guild <list|<guildId> <offer|join|rank N|leave|refuse|finale|clear>>", "Inspect or drive guild membership through the real story-flag path (Phase 42A).", Guild));
         console.Register(new ConsoleCommand("corruption", "corruption <get|set N|add N|tier>", "Inspect or drive the player's corruption.", Corruption));
         console.Register(new ConsoleCommand("learn", "learn <spellId|perkId>", "Learn a spell or perk (respects corruption gating).", Learn));
+        console.Register(new ConsoleCommand("perk", "perk [<id> [rank]]", "Show perk state and effect totals, or force-grant free ranks of a perk up to rank (default 1; ignores prerequisites, keeps the corruption gate).", PerkCmd));
+        console.Register(new ConsoleCommand("respec", "respec", "Respec every bought perk rank through the real gold-charged path.", RespecCmd));
+        console.Register(new ConsoleCommand("sp", "sp <n>", "Add n skill points.", SkillPointsCmd));
         console.Register(new ConsoleCommand("race", "race [id]", "Show races, or live-apply one to the player (Phase 26C).", RaceCmd));
+        console.Register(new ConsoleCommand("look", "look [appearance ids...]", "Show the player's look, or live-apply appearance option ids the race offers (P8).", LookCmd));
+        console.Register(new ConsoleCommand("background", "background [id]", "Show backgrounds, or live-apply one (kit, perk, flags, standing) to the player (P7).", BackgroundCmd));
         console.Register(new ConsoleCommand("mastery", "mastery", "Show the player's per-school spell mastery (Phase 29.5C).", Mastery));
         console.Register(new ConsoleCommand("weave", "weave [<0..1>|set <0..1>|restore]", "Inspect or tune the region's magic potency — the fading Weave (Phase 29.5E).", WeaveCmd));
         console.Register(new ConsoleCommand("spells", "spells [all]", "List the spells the player knows (or every player spell with ids and lock state).", Spells));
@@ -90,6 +96,7 @@ public static class DevCommands
         console.Register(new ConsoleCommand("pdespawn", "pdespawn <persistentId>", "Free a persistent actor (recreated on load).", PDespawn));
         console.Register(new ConsoleCommand("plist", "plist", "List tracked persistent actors.", PList));
         console.Register(new ConsoleCommand("stats", "stats", "Frame/object counts.", StatsCmd));
+        console.Register(new ConsoleCommand("derived", "derived", "Dump the player's primaries, what each grants, and the derived stats.", Derived));
     }
 
     private static string Help(DevConsole console, string[] args)
@@ -1010,10 +1017,92 @@ public static class DevCommands
 
             return perks.Learn(perk)
                 ? $"learned perk {perk.DisplayName} (rank {perks.RankOf(perk.Id)})"
-                : $"cannot learn {id}: maxed or not enough skill points";
+                : $"cannot learn {id}: {perks.WhyNot(perk)}";
         }
 
         return $"unknown spell/perk id: {id}";
+    }
+
+    private static string PerkCmd(DevConsole console, string[] args)
+    {
+        if (!TryPlayer(out PlayerCharacter player) || player.GetComponent<PerksComponent>() is not { } perks)
+        {
+            return "no perks component";
+        }
+
+        if (args.Length < 1)
+        {
+            var sb = new StringBuilder();
+            sb.Append($"spent {perks.PointsSpent} pts, respecs {perks.RespecCount}, next respec {perks.RespecCost}g");
+            foreach (PerkResource known in PerkDatabase.All)
+            {
+                int held = perks.RankOf(known.Id);
+                if (held > 0)
+                {
+                    sb.Append($"\n  {known.Id} {held}/{known.MaxRank} (free {perks.FreeRankOf(known.Id)}, {known.Branch} t{known.Tier})");
+                }
+            }
+
+            foreach (PerkEffectKind kind in System.Enum.GetValues<PerkEffectKind>())
+            {
+                float total = perks.Effects.Get(kind);
+                if (kind != PerkEffectKind.None && total != 0f)
+                {
+                    sb.Append($"\n  effect {kind} = {total:0.###} (capped {PerkEffectMath.Clamp(kind, total):0.###})");
+                }
+            }
+
+            return sb.ToString();
+        }
+
+        if (PerkDatabase.Get(args[0]) is not { } perk)
+        {
+            return $"unknown perk id: {args[0]}";
+        }
+
+        int target = System.Math.Clamp(ParseInt(args, 1, 1), 1, perk.MaxRank);
+        while (perks.RankOf(perk.Id) < target && perks.GrantFree(perk))
+        {
+        }
+
+        return $"{perk.LocalizedName} ({perk.Id}) rank {perks.RankOf(perk.Id)}/{perk.MaxRank}";
+    }
+
+    private static string RespecCmd(DevConsole console, string[] args)
+    {
+        if (!TryPlayer(out PlayerCharacter player)
+            || player.GetComponent<PerksComponent>() is not { } perks
+            || player.GetComponent<InventoryComponent>() is not { } pack
+            || player.GetComponent<ProgressionComponent>() is not { } progression)
+        {
+            return "no perks, inventory or progression";
+        }
+
+        int cost = perks.RespecCost;
+        int spent = perks.PointsSpent;
+        if (spent <= 0)
+        {
+            return "nothing to respec";
+        }
+
+        if (!perks.Respec(pack))
+        {
+            return $"respec costs {cost}g and you hold {pack.CountOf(GameIds.Currency.Gold)}g (give {GameIds.Currency.Gold} {cost})";
+        }
+
+        return $"respec: paid {cost}g, refunded {spent} point(s), {progression.SkillPoints} unspent";
+    }
+
+    private static string SkillPointsCmd(DevConsole console, string[] args)
+    {
+        if (!TryPlayer(out PlayerCharacter player) || player.GetComponent<ProgressionComponent>() is not { } prog)
+        {
+            return "no progression";
+        }
+
+        int amount = ParseInt(args, 0, 1);
+        prog.RefundSkillPoints(amount);
+        return $"{prog.SkillPoints} skill point(s)";
     }
 
     private static string RaceCmd(DevConsole console, string[] args)
@@ -1035,6 +1124,70 @@ public static class DevCommands
         }
 
         return raceComponent.SwapRaceForDebug(args[0]);
+    }
+
+    private static string LookCmd(DevConsole console, string[] args)
+    {
+        if (!TryPlayer(out PlayerCharacter player) || player.GetComponent<RaceComponent>() is not { } race ||
+            player.GetNodeOrNull<Node3D>("BodyMesh") is not { } body)
+        {
+            return "no race component or body";
+        }
+
+        RaceResource? raceResource = RaceDatabase.Get(race.Profile.RaceId);
+        var rejected = new List<string>();
+        foreach (string id in args)
+        {
+            if (AppearanceDatabase.Get(id) == null || raceResource == null || !raceResource.AppearanceOptionIds.Contains(id))
+            {
+                rejected.Add(id);
+            }
+        }
+
+        if (args.Length > 0)
+        {
+            var merged = new List<string>(race.Profile.AppearanceOptionIds);
+            merged.AddRange(args);
+            AppearanceOptionResource?[] picks = PlayerAppearance.Resolve(raceResource, merged);
+            race.Profile.AppearanceOptionIds = AppearanceRules.ToProfileIds(System.Array.ConvertAll(picks, o => o?.Id ?? string.Empty));
+            PlayerAppearance.Apply(body, picks);
+        }
+
+        string current = string.Join(", ", AppearanceOptionIdsOf(PlayerAppearance.Resolve(race.Profile)));
+        string note = rejected.Count > 0 ? $" (ignored, not offered to {race.Profile.RaceId}: {string.Join(", ", rejected)})" : string.Empty;
+        return $"look: {current}{note}";
+
+        static IEnumerable<string> AppearanceOptionIdsOf(AppearanceOptionResource?[] picks)
+        {
+            foreach (AppearanceOptionResource? pick in picks)
+            {
+                yield return pick?.Id ?? "-";
+            }
+        }
+    }
+
+    private static string BackgroundCmd(DevConsole console, string[] args)
+    {
+        if (args.Length < 1)
+        {
+            var ids = new List<string>();
+            foreach (Backgrounds.BackgroundResource background in Backgrounds.BackgroundDatabase.All)
+            {
+                ids.Add(background.Id);
+            }
+
+            string current = TryPlayer(out PlayerCharacter held) && held.GetComponent<RaceComponent>() is { } race
+                ? Backgrounds.BackgroundRules.ResolveId(race.Profile.Background)
+                : string.Empty;
+            return $"backgrounds: {string.Join(", ", ids)}; current: {(current.Length > 0 ? current : "none")}";
+        }
+
+        if (!TryPlayer(out PlayerCharacter player) || player.GetComponent<RaceComponent>() is not { } raceComponent)
+        {
+            return "no race component";
+        }
+
+        return raceComponent.SwapBackgroundForDebug(args[0]);
     }
 
     private static string Time(DevConsole console, string[] args)
@@ -1410,6 +1563,45 @@ public static class DevCommands
         _ = args;
         return "repro is unavailable in a shipping build";
 #endif
+    }
+
+    private static string Derived(DevConsole console, string[] args)
+    {
+        if (!TryPlayer(out PlayerCharacter player) || player.GetComponent<StatsComponent>() is not { } stats)
+        {
+            return "no player stats";
+        }
+
+        var lines = new List<string>();
+        foreach (StatType primary in StatDerivation.Primaries)
+        {
+            Stat stat = stats.GetStat(primary);
+            float points = stat.Value - stat.BaseValue;
+            var grants = new List<string>();
+            foreach (StatDerivation.Effect bonus in StatDerivation.Bonuses(primary, points))
+            {
+                grants.Add($"{bonus.Stat} {bonus.PerPoint:+0.###;-0.###;0}");
+            }
+
+            lines.Add($"{primary,-12} base {stat.BaseValue:0.##}  now {stat.Value:0.##}  points {points:0.##}  -> {string.Join(", ", grants)}");
+        }
+
+        StatType[] derived =
+        {
+            StatType.Health, StatType.Stamina, StatType.Mana, StatType.PhysicalPower, StatType.SpellPower,
+            StatType.Armor, StatType.CritChance, StatType.AttackSpeed,
+        };
+        var values = new List<string>();
+        foreach (StatType type in derived)
+        {
+            values.Add($"{type} {stats.GetValue(type):0.###}");
+        }
+
+        lines.Add(string.Join("  ", values));
+        float dex = stats.GetStat(StatType.Dexterity).Value - stats.GetStat(StatType.Dexterity).BaseValue;
+        float intel = stats.GetStat(StatType.Intelligence).Value - stats.GetStat(StatType.Intelligence).BaseValue;
+        lines.Add($"dodge stamina x{StatDerivation.DodgeStaminaFactor(dex):0.###}  spell mana x{StatDerivation.ManaCostFactor(intel):0.###}");
+        return string.Join("\n", lines);
     }
 
     private static string StatsCmd(DevConsole console, string[] args)

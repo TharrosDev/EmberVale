@@ -6,6 +6,7 @@ using Embervale.Core.Events;
 using Embervale.Core.Pooling;
 using Embervale.Corruption;
 using Embervale.Entities;
+using Embervale.Progression;
 using Embervale.Save;
 using Embervale.Stats;
 using Embervale.World;
@@ -826,7 +827,7 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
         }
 
         float tickCost = spell.ChannelManaPerSecond * spell.ChannelTickInterval
-            * Weave.CostMultiplier(IsCorrupted(spell));
+            * Weave.CostMultiplier(IsCorrupted(spell)) * CasterCostFactor();
         if (_stats == null || !_stats.IsAlive || _stats.GetCurrent(StatType.Mana) < tickCost)
         {
             EndCast(); // out of mana / dead — the channel is interrupted
@@ -955,16 +956,27 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
     /// Weave (29.5E) empowers and cheapens these as the world dies.</summary>
     private static bool IsCorrupted(SpellResource spell) => spell.MinCorruptionTier > CorruptionTier.Untainted;
 
-    /// <summary>The spell's mana cost after the region's Weave potency (Phase 29.5E).</summary>
-    private static float EffectiveManaCost(SpellResource spell) =>
-        spell.ManaCost * Weave.CostMultiplier(IsCorrupted(spell));
+    /// <summary>The spell's mana cost after the region's Weave potency (Phase 29.5E) and this caster's
+    /// <see cref="PerkEffectKind.ManaCostMult"/> perks (floored by <see cref="PerkEffectMath"/>). Public so
+    /// the HUD shows the price the cast will really charge.</summary>
+    public float EffectiveManaCost(SpellResource spell) => SpellRules.ManaCost(
+        spell.ManaCost, Weave.CostMultiplier(IsCorrupted(spell)), CasterCostFactor());
+
+    /// <summary>What this caster's perks and invested Intelligence (the player only) do to every mana price, under
+    /// one floor so they cannot stack past it. Applies to a channel's per-tick drain as well as an up-front cost.</summary>
+    private float CasterCostFactor() => Mathf.Max(CombinedManaFloor,
+        PerkQuery.Factor(Entity, PerkEffectKind.ManaCostMult) * StatDerivationComponent.ManaFactor(Entity));
+
+    /// <summary>The cheapest a spell can get from perks and Intelligence together, as a fraction of its base cost.</summary>
+    public const float CombinedManaFloor = 0.5f;
 
     /// <summary>Combined cast power: the charge multiplier × the spell's own rank × the caster's
-    /// school mastery (Phase 29.5C) × the region's Weave potency (Phase 29.5E).</summary>
+    /// school mastery (Phase 29.5C) × the caster's school-power perks × the region's Weave potency (Phase 29.5E).</summary>
     private float Empower(SpellResource spell, float power) =>
         power
         * SpellMastery.DamageMultiplier(RankOf(spell), spell.DamagePerRank)
         * (_mastery?.PowerMultiplier(spell.School) ?? 1f)
+        * PerkQuery.Factor(Entity, PerkEffectKind.SchoolPowerBonus, spell.School.ToString())
         * Weave.PowerMultiplier(IsCorrupted(spell));
 
     /// <summary>
@@ -975,7 +987,8 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
     /// </summary>
     private DamagePacket BuildPacket(SpellResource spell, float power, float charge)
     {
-        (float amount, bool isCrit) = CombatMath.RollSpell(spell.BaseDamage, _stats);
+        (float amount, bool isCrit) = CombatMath.RollSpell(
+            spell.BaseDamage, _stats, PerkQuery.Of(Entity, PerkEffectKind.SpellCritBonus));
         float poise = spell.PoiseDamage > 0f ? spell.PoiseDamage : SpellPoiseDamage;
         return new DamagePacket(
             amount * Empower(spell, power), spell.School, Entity, isCrit, poise,

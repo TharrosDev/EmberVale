@@ -620,7 +620,12 @@ public partial class ServiceComponent : InteractableComponent
             ? ContrabandLaw.Fine(service.PriceGold, ImpoundedUnits())
             : service.PriceGold;
 
-        return ShopPricing.ServicePrice(gold, StandingWith(service.FactionId));
+        // The player's service perks ride last, for every kind that goes through here (a bed, a fine, a stake).
+        // ⚠️ WagerRules.Exploitable is proved at PerkEffectMath.BestServiceFactor, so a stake cannot be perked
+        // below the cheapest one the validator checked.
+        float perk = PerkEffectMath.ServiceFactor(PerkQuery.Of(Player(), PerkEffectKind.ServicePriceMult));
+
+        return ShopPricing.ServicePrice(gold, StandingWith(service.FactionId), perk);
     }
 
     /// <summary>Whether the pack holds anything an appraiser could put a price on (38P2). Uses

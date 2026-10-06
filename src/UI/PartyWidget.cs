@@ -50,14 +50,12 @@ public partial class PartyWidget : VBoxContainer
         PanelContainer frame = UiTheme.Card(UiTheme.Friendly);
         frame.MouseFilter = MouseFilterEnum.Ignore;
         frame.CustomMinimumSize = new Vector2(250, 0);
+        UiTheme.Compact(frame);
         AddChild(frame);
 
-        MarginContainer padding = UiTheme.Padding(UiTheme.SpaceSm);
-        frame.AddChild(padding);
-
         _list = new VBoxContainer();
-        _list.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
-        padding.AddChild(_list);
+        _list.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
+        frame.AddChild(_list);
 
         EventBus bus = EventBus.Instance;
         bus?.Subscribe<CompanionRecruitedEvent>(OnPartyChanged);
@@ -137,7 +135,7 @@ public partial class PartyWidget : VBoxContainer
             }
 
             var line = new HBoxContainer();
-            line.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
+            line.AddThemeConstantOverride("separation", UiTheme.SpaceMd);
 
             Label name = UiTheme.Body(Loc.T(companion.NameKey));
             name.SizeFlagsHorizontal = SizeFlags.ExpandFill;
@@ -168,7 +166,7 @@ public partial class PartyWidget : VBoxContainer
         if (_rows.Count > 0)
         {
             var hint = new HBoxContainer { MouseFilter = MouseFilterEnum.Ignore };
-            hint.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
+            hint.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
 
             PanelContainer cap = UiTheme.KeyCap(GameInput.PromptLabel(GameInput.CompanionCommand));
             cap.SizeFlagsVertical = SizeFlags.ShrinkCenter;

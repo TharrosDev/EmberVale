@@ -804,16 +804,22 @@ public partial class MapView : Control
 
             int size = UiTheme.FontSize(UiTheme.BodyFontSize);
             Vector2 measured = font.GetStringSize(pin.Label, HorizontalAlignment.Left, -1, size);
-            Vector2 origin = _cursor + new Vector2(14f, -6f);
+            Vector2 origin = _cursor + new Vector2(UiTheme.SpaceMd, -UiTheme.SpaceXs);
 
             // Flip to the other side of the cursor rather than run off the edge of the plot.
-            if (origin.X + measured.X + 8f > Size.X)
+            if (origin.X + measured.X + UiTheme.SpaceSm > Size.X)
             {
-                origin.X = _cursor.X - measured.X - 14f;
+                origin.X = _cursor.X - measured.X - UiTheme.SpaceMd;
             }
 
+            // The box wraps the glyphs (ascent above the baseline, descent below) with a tooltip's padding,
+            // SpaceSm at the sides and SpaceXs above and below, instead of hugging the text.
+            float ascent = font.GetAscent(size);
+            float height = ascent + font.GetDescent(size);
             DrawRect(
-                new Rect2(origin - new Vector2(5f, measured.Y - 2f), measured + new Vector2(10f, 6f)),
+                new Rect2(
+                    origin - new Vector2(UiTheme.SpaceSm, ascent + UiTheme.SpaceXs),
+                    new Vector2(measured.X + (UiTheme.SpaceSm * 2f), height + (UiTheme.SpaceXs * 2f))),
                 new Color(UiTheme.PanelBg, 0.92f));
             DrawString(font, origin, pin.Label, HorizontalAlignment.Left, -1, size, UiTheme.Text);
             return;

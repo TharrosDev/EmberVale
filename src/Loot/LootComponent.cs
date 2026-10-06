@@ -4,6 +4,7 @@ using Embervale.Core.Diagnostics;
 using Embervale.Core.Events;
 using Embervale.Entities;
 using Embervale.Items;
+using Embervale.Progression;
 using Godot;
 
 namespace Embervale.Loot;
@@ -56,10 +57,12 @@ public partial class LootComponent : EntityComponent
         }
 
         _dropped = true;
-        DropLoot();
+        DropLoot(e.Killer);
     }
 
-    private void DropLoot()
+    /// <param name="killer">Whoever landed the killing blow, or null (a fall, a damage-over-time tick with no
+    /// owner). Its <see cref="PerkEffectKind.LootQuality"/> perks add to this actor's own luck.</param>
+    private void DropLoot(IEntity? killer)
     {
         if (Table == null || Entity == null)
         {
@@ -72,7 +75,8 @@ public partial class LootComponent : EntityComponent
             return;
         }
 
-        List<LootDrop> drops = LootGenerator.Generate(Table, QualityBonus);
+        List<LootDrop> drops = LootGenerator.Generate(
+            Table, QualityBonus + PerkQuery.Of(killer, PerkEffectKind.LootQuality));
         if (drops.Count == 0)
         {
             return;

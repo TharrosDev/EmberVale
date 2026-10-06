@@ -34,6 +34,11 @@ public partial class SaveSlotPanel : CanvasLayer
 
     private VBoxContainer _list = null!;
 
+    /// <summary>Smallest height the slot list scrolls in; the workspace frame gives it the rest.</summary>
+    private const float ScrollMinHeight = 160f;
+
+    private const float ActionWidth = 96f;
+
     public void Configure(Intent mode, Action<string> onChosen, Action onBack)
     {
         _mode = mode;
@@ -55,27 +60,28 @@ public partial class SaveSlotPanel : CanvasLayer
         AddChild(backdrop);
 
         PanelContainer panel = UiTheme.Panel();
-        UiTheme.ApplyWorkspace(panel, 0.58f);
+        UiTheme.ApplyWorkspace(panel, 0.66f);
         AddChild(panel);
 
-        MarginContainer pad = UiTheme.Padding(18);
+        MarginContainer pad = UiTheme.Padding(UiTheme.SpaceLg);
         panel.AddChild(pad);
 
         var col = new VBoxContainer();
-        col.AddThemeConstantOverride("separation", 10);
+        col.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
         pad.AddChild(col);
 
         Label header = UiTheme.Header(Loc.T(_mode == Intent.New ? "slots.new_title" : "slots.load_title"));
         col.AddChild(header);
-        col.AddChild(new HSeparator());
+        col.AddChild(UiTheme.Divider());
 
-        _list = new VBoxContainer();
-        _list.AddThemeConstantOverride("separation", 8);
-        col.AddChild(_list);
+        // The list scrolls inside the frame: with three manual slots and the autosave ring it is taller
+        // than a 720 px window, and an unscrolled list pushed the whole panel off both edges.
+        (ScrollContainer scroll, _list) = UiTheme.ScrollList();
+        scroll.CustomMinimumSize = new Vector2(0f, ScrollMinHeight);
+        col.AddChild(scroll);
 
-        col.AddChild(new HSeparator());
+        col.AddChild(UiTheme.Divider());
         Button back = UiTheme.Action(Loc.T("common.back"));
-        back.CustomMinimumSize = new Vector2(0, 32);
         back.Pressed += () => { _onBack?.Invoke(); QueueFree(); };
         col.AddChild(back);
 
@@ -138,12 +144,10 @@ public partial class SaveSlotPanel : CanvasLayer
             : corrupted ? UiTheme.CorruptionText
             : UiTheme.Accent;
 
-        PanelContainer rowPanel = UiTheme.Card(spine);
+        PanelContainer rowPanel = UiTheme.Compact(UiTheme.Card(spine));
         var row = new HBoxContainer();
-        row.AddThemeConstantOverride("separation", 12);
-        MarginContainer rowPad = UiTheme.Padding(UiTheme.SpaceSm);
-        rowPanel.AddChild(rowPad);
-        rowPad.AddChild(row);
+        row.AddThemeConstantOverride("separation", UiTheme.SpaceMd);
+        rowPanel.AddChild(row);
 
         row.AddChild(BuildThumbnail(slot, info != null));
 
@@ -152,7 +156,7 @@ public partial class SaveSlotPanel : CanvasLayer
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
             SizeFlagsVertical = Control.SizeFlags.ShrinkCenter,
         };
-        text.AddThemeConstantOverride("separation", 2);
+        text.AddThemeConstantOverride("separation", UiTheme.LineGap);
 
         Label title = UiTheme.Body(label, info == null ? UiTheme.Disabled : UiTheme.Text);
         UiTheme.ApplyType(title, UiTheme.FontRole.Display, UiTheme.HeaderFontSize);
@@ -167,13 +171,17 @@ public partial class SaveSlotPanel : CanvasLayer
             // Structured rather than one crammed line: the region names the place, the chips carry
             // the two facts a player compares between slots, and the caption carries the two they
             // read once. The old single string put all five at the same weight.
-            text.AddChild(UiTheme.Body(info.Region, UiTheme.Accent));
-
-            var chips = new HBoxContainer();
-            chips.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
-            chips.AddChild(UiTheme.Chip(Loc.TF("slots.level", info.Level), UiTheme.Text));
-            chips.AddChild(UiTheme.Chip(info.CorruptionTier, corrupted ? UiTheme.CorruptionText : UiTheme.Dim));
-            text.AddChild(chips);
+            // Region and chips share a line (and wrap if the column is narrow), which keeps a row to
+            // three lines: a four-line row made six slots a screen and a half tall.
+            var facts = new HFlowContainer();
+            facts.AddThemeConstantOverride("h_separation", UiTheme.ChipGap);
+            facts.AddThemeConstantOverride("v_separation", UiTheme.SpaceXs);
+            Label region = UiTheme.Body(info.Region, UiTheme.Accent);
+            region.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
+            facts.AddChild(region);
+            facts.AddChild(UiTheme.Chip(Loc.TF("slots.level", info.Level), UiTheme.Text));
+            facts.AddChild(UiTheme.Chip(info.CorruptionTier, corrupted ? UiTheme.CorruptionText : UiTheme.Dim));
+            text.AddChild(facts);
 
             text.AddChild(UiTheme.Caption(DescribeSave(info)));
         }
@@ -187,7 +195,8 @@ public partial class SaveSlotPanel : CanvasLayer
     {
         var rect = new TextureRect
         {
-            CustomMinimumSize = new Vector2(96, 54),
+            CustomMinimumSize = new Vector2(112, 63),
+            SizeFlagsVertical = Control.SizeFlags.ShrinkCenter,
             StretchMode = TextureRect.StretchModeEnum.KeepAspectCovered,
             ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
         };
@@ -204,21 +213,30 @@ public partial class SaveSlotPanel : CanvasLayer
         return rect;
     }
 
+    /// <summary>A button in a slot row: a full control tall and wide enough that Load and Delete are
+    /// equal targets rather than two different-sized words.</summary>
+    private static Button RowAction(string text)
+    {
+        Button button = UiTheme.Action(text);
+        button.CustomMinimumSize = new Vector2(ActionWidth, UiTheme.ControlHeight);
+        return button;
+    }
+
     private Control BuildActions(string slot, bool filled)
     {
-        var box = new HBoxContainer();
-        box.AddThemeConstantOverride("separation", 6);
+        var box = new HBoxContainer { SizeFlagsVertical = Control.SizeFlags.ShrinkCenter };
+        box.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
 
         bool awaitingThisSlot = _pendingActionSlot == slot;
 
         if (awaitingThisSlot)
         {
-            Button confirm = UiTheme.Action(Loc.T(_pendingIsDelete ? "common.confirm_delete" : "common.confirm_new"));
+            Button confirm = RowAction(Loc.T(_pendingIsDelete ? "common.confirm_delete" : "common.confirm_new"));
             confirm.AddThemeColorOverride("font_color", UiTheme.Bad);
             confirm.Pressed += () => CommitPending(slot);
             box.AddChild(confirm);
 
-            Button cancel = UiTheme.Action(Loc.T("common.cancel"));
+            Button cancel = RowAction(Loc.T("common.cancel"));
             cancel.Pressed += () => { _pendingActionSlot = null; RefreshList(); };
             box.AddChild(cancel);
             return box;
@@ -227,7 +245,7 @@ public partial class SaveSlotPanel : CanvasLayer
         if (_mode == Intent.New)
         {
             // Empty → start directly; filled → overwriting an existing save needs a confirm.
-            Button start = UiTheme.Action(Loc.T(filled ? "common.overwrite" : "common.new_game"));
+            Button start = RowAction(Loc.T(filled ? "common.overwrite" : "common.new_game"));
             start.Pressed += () =>
             {
                 if (filled)
@@ -245,7 +263,7 @@ public partial class SaveSlotPanel : CanvasLayer
         }
         else
         {
-            Button load = UiTheme.Action(Loc.T("common.load"));
+            Button load = RowAction(Loc.T("common.load"));
             load.Disabled = !filled;
             load.Pressed += () => Choose(slot);
             box.AddChild(load);
@@ -253,7 +271,7 @@ public partial class SaveSlotPanel : CanvasLayer
 
         if (filled)
         {
-            Button delete = UiTheme.Action(Loc.T("common.delete"));
+            Button delete = RowAction(Loc.T("common.delete"));
             delete.Pressed += () =>
             {
                 _pendingActionSlot = slot;

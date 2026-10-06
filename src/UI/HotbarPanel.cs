@@ -20,6 +20,10 @@ public partial class HotbarPanel : CanvasLayer
     private HBoxContainer _row = null!;
     private bool _dirty = true;
 
+    /// <summary>Cell size: wide enough for a two-line item name, tall enough for the number line and both.</summary>
+    private const float CellWidth = 90f;
+    private const float CellHeight = 72f;
+
     /// <summary>When set (by the bootstrap, to <see cref="GameHud.BottomDock"/>), the bar parents
     /// into the HUD's bottom flow bar instead of anchoring itself — flow siblings can't overlap
     /// the vitals at any UI scale. Null falls back to self-anchoring (kept for tests/tools).</summary>
@@ -59,11 +63,11 @@ public partial class HotbarPanel : CanvasLayer
             AddChild(panel);
         }
 
-        MarginContainer pad = UiTheme.Padding(8);
+        MarginContainer pad = UiTheme.Padding(UiTheme.SpaceSm);
         panel.AddChild(pad);
 
         var column = new VBoxContainer();
-        column.AddThemeConstantOverride("separation", 4);
+        column.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
         pad.AddChild(column);
 
         Label caption = UiTheme.Body(Loc.T("hud.consumables"), UiTheme.Dim);
@@ -71,7 +75,7 @@ public partial class HotbarPanel : CanvasLayer
         column.AddChild(caption);
 
         _row = new HBoxContainer();
-        _row.AddThemeConstantOverride("separation", 6);
+        _row.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
         column.AddChild(_row);
 
         EventBus.Instance?.Subscribe<HotbarChangedEvent>(OnDirty);
@@ -122,23 +126,31 @@ public partial class HotbarPanel : CanvasLayer
             bool filled = id.Length > 0;
 
             Button cell = UiTheme.Action(string.Empty);
-            cell.CustomMinimumSize = new Vector2(78f, 46f);
+            cell.CustomMinimumSize = new Vector2(CellWidth, CellHeight);
             cell.TooltipText = Loc.T(filled ? "hud.hotbar_hint" : "hud.hotbar_empty_hint");
             cell.Disabled = !filled;
 
-            var stack = new VBoxContainer
-            {
-                MouseFilter = Control.MouseFilterEnum.Ignore,
-                SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-            };
-            stack.AddThemeConstantOverride("separation", 0);
-            stack.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+            // The cell is a Button, which never sizes to its children, so the content is pinned to the cell
+            // with an inset of its own: without one the name and the count ran into the cell's border.
+            var inset = new MarginContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
+            inset.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+            inset.AddThemeConstantOverride("margin_left", UiTheme.SpaceXs);
+            inset.AddThemeConstantOverride("margin_right", UiTheme.SpaceXs);
+            inset.AddThemeConstantOverride("margin_top", UiTheme.Space2xs);
+            inset.AddThemeConstantOverride("margin_bottom", UiTheme.Space2xs);
+
+            var stack = new VBoxContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
+            stack.AddThemeConstantOverride("separation", UiTheme.LineGap);
+            inset.AddChild(stack);
 
             // The number is the binding, so it is always present and always in the same corner —
-            // that is what makes the row scannable as "slot 3" rather than as a list of names.
+            // that is what makes the row scannable as "slot 3" rather than as a list of names. The count
+            // shares its line (right edge), which keeps a two-line name from pushing the count off the cell.
+            var head = new HBoxContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
             Label number = UiTheme.Caption($"{i + 1}", filled ? UiTheme.Accent : UiTheme.Disabled);
-            number.HorizontalAlignment = HorizontalAlignment.Center;
-            stack.AddChild(number);
+            number.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+            head.AddChild(number);
+            stack.AddChild(head);
 
             if (filled)
             {
@@ -146,21 +158,19 @@ public partial class HotbarPanel : CanvasLayer
                 int count = _inventory?.CountOf(id) ?? 0;
 
                 Label label = UiTheme.Caption(name, UiTheme.Text);
-                label.HorizontalAlignment = HorizontalAlignment.Center;
                 label.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+                label.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
                 stack.AddChild(label);
 
                 // A count of one is not information — every consumable you can use you have at least
                 // one of, so printing "x1" adds a character to every slot and tells the player nothing.
                 if (count > 1)
                 {
-                    Label qty = UiTheme.Caption($"×{count}", UiTheme.Dim);
-                    qty.HorizontalAlignment = HorizontalAlignment.Center;
-                    stack.AddChild(qty);
+                    head.AddChild(UiTheme.Caption($"×{count}", UiTheme.Dim));
                 }
             }
 
-            cell.AddChild(stack);
+            cell.AddChild(inset);
             int slot = i;
             cell.Pressed += () => _hotbar?.Clear(slot);
             _row.AddChild(cell);

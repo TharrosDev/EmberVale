@@ -23,9 +23,14 @@ public partial class HudLayout : Control
     /// <summary>Inset between the screen edge and every slot.</summary>
     public int SafeMargin { get; set; } = UiTheme.SpaceLg;
 
+    /// <summary>Clear height from the screen's bottom edge to the top of the hotbar block plus a
+    /// <see cref="UiTheme.HudGap"/>: anything centred above the hotbar (prompt, tutorial hint, the
+    /// placement strip) sits at or above this line so it never touches the slots.</summary>
+    public const int BottomClearance = 160;
+
     /// <summary>How far above the bottom edge the bottom-centre slot floats (prompt near the
-    /// player's natural gaze).</summary>
-    public int BottomCenterLift { get; set; } = 96;
+    /// player's natural gaze): <see cref="BottomClearance"/> less the safe margin the slot adds itself.</summary>
+    public int BottomCenterLift { get; set; } = BottomClearance - UiTheme.SpaceLg;
 
     /// <summary>Top-left stack (context: time, weather).</summary>
     public VBoxContainer TopLeft { get; private set; } = null!;
@@ -95,7 +100,7 @@ public partial class HudLayout : Control
             MouseFilter = MouseFilterEnum.Ignore,
             SizeFlagsVertical = SizeFlags.ShrinkEnd,
         };
-        BottomLeft.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
+        BottomLeft.AddThemeConstantOverride("separation", UiTheme.HudGap);
         bar.AddChild(BottomLeft);
 
         bar.AddChild(new Control { MouseFilter = MouseFilterEnum.Ignore, SizeFlagsHorizontal = SizeFlags.ExpandFill });
@@ -116,7 +121,7 @@ public partial class HudLayout : Control
             MouseFilter = MouseFilterEnum.Ignore,
             SizeFlagsVertical = SizeFlags.ShrinkEnd,
         };
-        BottomRight.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
+        BottomRight.AddThemeConstantOverride("separation", UiTheme.HudGap);
         bar.AddChild(BottomRight);
     }
 
@@ -127,7 +132,7 @@ public partial class HudLayout : Control
     private VBoxContainer Slot(string name, float horizontal, float vertical, int extraLift = 0)
     {
         var slot = new VBoxContainer { Name = name, MouseFilter = MouseFilterEnum.Ignore };
-        slot.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
+        slot.AddThemeConstantOverride("separation", UiTheme.HudGap);
 
         slot.AnchorLeft = horizontal;
         slot.AnchorRight = horizontal;

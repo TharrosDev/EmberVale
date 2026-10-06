@@ -66,4 +66,20 @@ public static class ProgressionMath
 
         return (level, xp, levelsGained);
     }
+
+    /// <summary>How many milestone levels lie in (<paramref name="claimedUpTo"/>, <paramref name="level"/>]: the bonus
+    /// skill points a character has reached but not yet been paid. Pure, so the boundaries are unit-tested.</summary>
+    public static int MilestonesCrossed(int claimedUpTo, int level, int[]? milestones)
+    {
+        int crossed = 0;
+        foreach (int milestone in milestones ?? System.Array.Empty<int>())
+        {
+            if (milestone > claimedUpTo && milestone <= level)
+            {
+                crossed++;
+            }
+        }
+
+        return crossed;
+    }
 }

@@ -71,7 +71,7 @@ public partial class GameHud : CanvasLayer
 
     // Status-effect chips (30.5C): one tinted chip per active effect. The row is rebuilt only
     // when the effect set changes (signature compare); timers update in place per frame.
-    private HBoxContainer _statusRow = null!;
+    private HFlowContainer _statusRow = null!;
 
     // Control and Weave chips (magic upgrade): silenced / rooted / stunned state and the region's fading
     // Weave, in a wrapping row above the status chips. Rebuilt only when the signature changes.
@@ -148,6 +148,12 @@ public partial class GameHud : CanvasLayer
     /// <summary>Adds time to the tracker's same-objective clock, so the harness can photograph the hint without
     /// waiting out <see cref="TrackerRules.HintDelaySeconds"/>. The clock is the real one; this only nudges it.</summary>
     public void AdvanceTrackerDwell(float seconds) => _questDwell.Tick(_questObjectiveKey, seconds);
+
+    /// <summary>Bottom edge of the top-right stack (the tracker), so the toast feed can start below it.</summary>
+    public float TopRightBottom => _layout.TopRight.GetGlobalRect().End.Y;
+
+    /// <summary>Top edge of the bottom-right stack (the minimap), so the toast feed can stop above it.</summary>
+    public float BottomRightTop => _layout.BottomRight.GetGlobalRect().Position.Y;
 
     public void SetClock(WorldClock? clock) => _clock = clock;
 
@@ -242,13 +248,18 @@ public partial class GameHud : CanvasLayer
         panel.CustomMinimumSize = new Vector2(286, 0);
         _layout.BottomLeft.AddChild(panel);
 
+        // Groups (the three bars, the level line, the spell, the status chips) sit SpaceSm apart; the
+        // bars within their group sit SpaceXs apart, so the card reads as clusters and not as one stack.
         var col = new VBoxContainer();
-        col.AddThemeConstantOverride("separation", 4);
+        col.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
         WrapPadded(panel, col);
 
-        (_hpBar, _hpText) = AddVital(col, UiIcon.Kind.Health, Loc.T("hud.hp"), UiTheme.Health, primary: true);
-        (_staBar, _staText) = AddVital(col, UiIcon.Kind.Stamina, Loc.T("hud.sta"), UiTheme.Stamina, primary: false);
-        (_mpBar, _mpText) = AddVital(col, UiIcon.Kind.Mana, Loc.T("hud.mp"), UiTheme.Mana, primary: false);
+        var bars = new VBoxContainer();
+        bars.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
+        col.AddChild(bars);
+        (_hpBar, _hpText) = AddVital(bars, UiIcon.Kind.Health, Loc.T("hud.hp"), UiTheme.Health, primary: true);
+        (_staBar, _staText) = AddVital(bars, UiIcon.Kind.Stamina, Loc.T("hud.sta"), UiTheme.Stamina, primary: false);
+        (_mpBar, _mpText) = AddVital(bars, UiIcon.Kind.Mana, Loc.T("hud.mp"), UiTheme.Mana, primary: false);
 
         _footer = UiTheme.Body("", UiTheme.Dim);
         col.AddChild(_footer);
@@ -297,12 +308,14 @@ public partial class GameHud : CanvasLayer
         col.AddChild(_castBar);
 
         _controlRow = new HFlowContainer { CustomMinimumSize = new Vector2(168f, 0f) };
-        _controlRow.AddThemeConstantOverride("h_separation", UiTheme.SpaceXs);
+        _controlRow.AddThemeConstantOverride("h_separation", UiTheme.ChipGap);
         _controlRow.AddThemeConstantOverride("v_separation", UiTheme.SpaceXs);
         col.AddChild(_controlRow);
 
-        _statusRow = new HBoxContainer();
-        _statusRow.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
+        // A flow row, not a box: six status chips in a box are wider than the whole card and stretch it.
+        _statusRow = new HFlowContainer { CustomMinimumSize = new Vector2(168f, 0f) };
+        _statusRow.AddThemeConstantOverride("h_separation", UiTheme.ChipGap);
+        _statusRow.AddThemeConstantOverride("v_separation", UiTheme.SpaceXs);
         col.AddChild(_statusRow);
     }
 
@@ -373,15 +386,15 @@ public partial class GameHud : CanvasLayer
         // The spine carries the tracked quest's priority, matching the journal.
         _questPanel = Ignore(UiTheme.Band(UiTheme.QuestMain));
         _questPanel.Visible = false;
-        _questPanel.CustomMinimumSize = new Vector2(210, 0);
+        _questPanel.CustomMinimumSize = new Vector2(280, 0);
         _layout.TopRight.AddChild(_questPanel);
 
         var col = new VBoxContainer();
-        col.AddThemeConstantOverride("separation", 2);
+        col.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
         _questHeader = UiTheme.Header(Loc.T("hud.quest"));
         col.AddChild(_questHeader);
         _questList = new VBoxContainer();
-        _questList.AddThemeConstantOverride("separation", 2);
+        _questList.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
         col.AddChild(_questList);
 
         // Distance + bearing to the tracked objective. Its own label under the objective rows, so
@@ -808,9 +821,9 @@ public partial class GameHud : CanvasLayer
             float cd = spells.CooldownOf(spell);
 
             // The cost the cast will actually charge: the region's Weave bends it (corrupted spells get
-            // cheaper as the Weave fades, ordinary ones dearer), so showing the sheet cost would lie.
-            float cost = spell.ManaCost
-                * Weave.CostMultiplier(spell.MinCorruptionTier > CorruptionTier.Untainted);
+            // cheaper as the Weave fades, ordinary ones dearer) and the caster's perks shave it, so
+            // showing the sheet cost would lie.
+            float cost = spells.EffectiveManaCost(spell);
 
             // ⚠️ Affordability is ASKED, not decided (§48). The HUD compares against the live mana
             // reading purely to colour the number; whether the cast is allowed remains
@@ -929,6 +942,7 @@ public partial class GameHud : CanvasLayer
             // every status effect a 2 px brass rule and its own grain ShaderMaterial — a five-chip
             // row was five framed screens' worth of chrome for five words of text.
             PanelContainer chip = UiTheme.Chip(SpellText.Name(effect.Definition), tint, out Label time);
+            time.Visible = true;
             chip.TooltipText = SpellText.Description(effect.Definition);
             chip.MouseFilter = Control.MouseFilterEnum.Pass;
             _statusChips.Add((effect, time));
@@ -1167,6 +1181,11 @@ public partial class GameHud : CanvasLayer
             spine.BorderColor = tint;
         }
 
+        // The chapter and the title are one heading, so they sit close; the objectives below are SpaceSm away.
+        var heading = new VBoxContainer();
+        heading.AddThemeConstantOverride("separation", UiTheme.LineGap);
+        _questList.AddChild(heading);
+
         // Which chapter this is, above the title. Absent text means no label rather than a raw key.
         if (progress.Quest.ChapterKey.Length > 0 &&
             JournalIndexRules.FirstResolving(
@@ -1174,7 +1193,7 @@ public partial class GameHud : CanvasLayer
         {
             Label chapter = UiTheme.Caption(Loc.T(chapterKey), UiTheme.Dim);
             chapter.AutowrapMode = TextServer.AutowrapMode.WordSmart;
-            _questList.AddChild(chapter);
+            heading.AddChild(chapter);
         }
 
         // The title is the thing you glance at, so it is Display-faced and wraps rather than
@@ -1182,7 +1201,7 @@ public partial class GameHud : CanvasLayer
         Label title = UiTheme.Body(Loc.T(progress.Quest.Title), tint);
         UiTheme.ApplyType(title, UiTheme.FontRole.Display, UiTheme.BodyFontSize);
         title.AutowrapMode = TextServer.AutowrapMode.WordSmart;
-        _questList.AddChild(title);
+        heading.AddChild(title);
 
         var objectives = progress.Quest.ObjectiveList();
         for (int i = 0; i < objectives.Count; i++)
@@ -1205,8 +1224,14 @@ public partial class GameHud : CanvasLayer
             // leading spaces for indent — so a long objective wrapped its own progress count onto the
             // next line, and the count was the same weight as the words. It is a row now: the text
             // wraps, the count holds the right edge.
+            // One block per objective (row, optional tag, bar, hint) so its parts hug each other and the
+            // objectives stand apart from one another.
+            var block = new VBoxContainer();
+            block.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
+            _questList.AddChild(block);
+
             var line = new HBoxContainer();
-            line.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
+            line.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
 
             TextureRect bullet = UiIcon.Create(
                 locked ? UiIcon.Kind.Lock : done ? UiIcon.Kind.Quest : UiIcon.Kind.Waypoint,
@@ -1223,14 +1248,6 @@ public partial class GameHud : CanvasLayer
             text.CustomMinimumSize = new Vector2(110f, 0f);
             line.AddChild(text);
 
-            // Optional steps are told apart by a word, not by being dimmer.
-            if (objectives[i].IsOptional)
-            {
-                PanelContainer optionalChip = UiTheme.Chip(Loc.T("questui.chip.optional_short"), UiTheme.Dim);
-                optionalChip.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
-                line.AddChild(optionalChip);
-            }
-
             // A 1-of-1 objective's "0/1" is noise — the bullet already says done or not.
             if (objectives[i].RequiredCount > 1)
             {
@@ -1239,17 +1256,28 @@ public partial class GameHud : CanvasLayer
                     done ? UiTheme.QuestComplete : UiTheme.Dim));
             }
 
-            _questList.AddChild(line);
+            block.AddChild(line);
+
+            // Optional steps are told apart by a word, not by being dimmer. The tag sits on its own line,
+            // under the text it describes, so it no longer competes with the wrapped objective and its count.
+            if (objectives[i].IsOptional)
+            {
+                var tag = new MarginContainer { SizeFlagsHorizontal = Control.SizeFlags.ShrinkBegin };
+                tag.AddThemeConstantOverride("margin_left", 12 + UiTheme.SpaceSm);
+                tag.AddChild(UiTheme.Chip(Loc.T("questui.chip.optional_short"), UiTheme.Dim));
+                block.AddChild(tag);
+            }
 
             // A bar under any objective that counts to more than one (37.5B). "3/10 pelts" is a
             // number you have to read; a bar is a glance. Pointless for a 1-of-1 objective, so it
             // is not drawn there.
             if (objectives[i].RequiredCount > 1)
             {
-                ProgressBar track = UiTheme.Bar(done ? UiTheme.QuestComplete : UiTheme.Accent, 186f);
-                track.CustomMinimumSize = new Vector2(186f, 3f);
+                ProgressBar track = UiTheme.Bar(done ? UiTheme.QuestComplete : UiTheme.Accent, 0f);
+                track.CustomMinimumSize = new Vector2(0f, 4f);
+                track.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
                 track.Value = Mathf.Clamp(have / (double)required, 0d, 1d);
-                _questList.AddChild(track);
+                block.AddChild(track);
             }
 
             // The hint for the CURRENT objective sits under it, hidden until the player has stayed on this
@@ -1260,7 +1288,7 @@ public partial class GameHud : CanvasLayer
                 UiTheme.ApplyType(hint, UiTheme.FontRole.SerifItalic, UiTheme.CaptionFontSize);
                 hint.CustomMinimumSize = new Vector2(186f, 0f);
                 hint.Visible = false;
-                _questList.AddChild(hint);
+                block.AddChild(hint);
                 _questHint = hint;
             }
         }
@@ -1377,7 +1405,7 @@ public partial class GameHud : CanvasLayer
         JuicedBar bar = JuicedBar.Create(fill);
         bar.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
         bar.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
-        bar.CustomMinimumSize = new Vector2(150f, primary ? HealthBarHeight : MinorBarHeight);
+        bar.CustomMinimumSize = new Vector2(168f, primary ? HealthBarHeight : MinorBarHeight);
         row.AddChild(bar);
 
         // The reading, in the same weight as the bar it belongs to. Tabular-ish fixed width so the
@@ -1411,13 +1439,13 @@ public partial class GameHud : CanvasLayer
         _layout.TopCenter.AddChild(_bossFrame);
     }
 
-    /// <summary>Wraps <paramref name="content"/> in the theme's padding and parents it under
-    /// <paramref name="panel"/> (a single inner margin container).</summary>
+    /// <summary>Parents <paramref name="content"/> under <paramref name="panel"/> with the compact HUD margins.
+    /// The band's stylebox is the padding: a second <see cref="UiTheme.Padding"/> inside it used to stack on
+    /// top and left every HUD card about 26 px of dead space top and bottom.</summary>
     private static void WrapPadded(PanelContainer panel, Control content)
     {
-        MarginContainer pad = UiTheme.Padding(10);
-        pad.AddChild(content);
-        panel.AddChild(pad);
+        UiTheme.Compact(panel);
+        panel.AddChild(content);
     }
 
     private static T Ignore<T>(T control)

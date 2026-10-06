@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="BackgroundResource" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://src/Backgrounds/BackgroundResource.cs" id="1_bg"]
+[ext_resource type="Script" path="res://src/Races/RaceStatDelta.cs" id="2_delta"]
+[ext_resource type="Script" path="res://src/Races/RaceReputationTweak.cs" id="3_rep"]
+
+[sub_resource type="Resource" id="Delta_1"]
+script = ExtResource("2_delta")
+Stat = 3
+Amount = 1.0
+
+[sub_resource type="Resource" id="Rep_1"]
+script = ExtResource("3_rep")
+FactionId = "faction.villagers"
+Amount = 3
+
+[resource]
+script = ExtResource("1_bg")
+Id = "background.smiths_hand"
+NameKey = "background.smiths_hand.name"
+DescKey = "background.smiths_hand.desc"
+StartingPerkId = "perk.thrifty_hands"
+LeanBranch = "crafter"
+StatDeltas = Array[Resource]([SubResource("Delta_1")])
+StartingItems = Array[String](["item.material.iron_ingot:3", "item.material.coal:4"])
+StartingGold = 10
+FlavorFlags = Array[String](["flag.background.smiths_hand"])
+ReputationTweaks = Array[Resource]([SubResource("Rep_1")])

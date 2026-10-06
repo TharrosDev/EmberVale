@@ -38,24 +38,23 @@ public partial class StoragePanel : UiPanel
     {
         UiTheme.ApplyWorkspace(shell, 0.82f);
 
-        MarginContainer margin = UiTheme.Padding(12);
+        MarginContainer margin = UiTheme.Padding(UiTheme.PanelPad);
         shell.AddChild(margin);
 
         var column = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
-        column.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
+        column.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
         margin.AddChild(column);
 
         _title = UiTheme.Header(string.Empty);
         column.AddChild(_title);
-        column.AddChild(new HSeparator());
+        column.AddChild(UiTheme.Divider());
 
         var columns = new HBoxContainer
         {
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-            CustomMinimumSize = new Vector2(0, 300),
             SizeFlagsVertical = Control.SizeFlags.ExpandFill,
         };
-        columns.AddThemeConstantOverride("separation", UiTheme.SpaceMd);
+        columns.AddThemeConstantOverride("separation", UiTheme.SpaceLg);
         column.AddChild(columns);
 
         (_packHeader, _packList) = BuildColumn(columns);
@@ -68,7 +67,7 @@ public partial class StoragePanel : UiPanel
     private static (Label Header, VBoxContainer List) BuildColumn(Node parent)
     {
         var side = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
-        side.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
+        side.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
         parent.AddChild(side);
 
         Label header = UiTheme.Header(string.Empty);
@@ -255,8 +254,9 @@ public partial class StoragePanel : UiPanel
         var row = new HBoxContainer();
         row.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
 
-        Button slot = ItemSlot.Build(instance, stack.Quantity, selected: false, size: 34f);
+        Button slot = ItemSlot.Build(instance, stack.Quantity, selected: false, size: ItemSlot.RowSize);
         slot.FocusMode = Control.FocusModeEnum.None; // the action button is the row's focus target
+        slot.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
         slot.MouseFilter = Control.MouseFilterEnum.Ignore;
         row.AddChild(slot);
 
@@ -265,16 +265,16 @@ public partial class StoragePanel : UiPanel
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
             SizeFlagsVertical = Control.SizeFlags.ShrinkCenter,
         };
-        text.AddThemeConstantOverride("separation", 0);
+        text.AddThemeConstantOverride("separation", UiTheme.LineGap);
 
         Label name = UiTheme.Body(instance.DisplayName, UiTheme.RarityColor(instance.Rarity));
         name.TooltipText = instance.Template.Description;
+        name.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
         text.AddChild(name);
 
         if (instance.HasAffixes)
         {
-            var chips = new HBoxContainer();
-            chips.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
+            HFlowContainer chips = UiTheme.FlowRow();
             foreach (ItemAffix affix in instance.Affixes)
             {
                 chips.AddChild(UiTheme.Chip(affix.DisplayValue, UiTheme.Good));
@@ -295,9 +295,7 @@ public partial class StoragePanel : UiPanel
         button.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
         row.AddChild(button);
 
-        MarginContainer pad = UiTheme.Padding(UiTheme.SpaceXs);
-        pad.AddChild(row);
-        card.AddChild(pad);
+        card.AddChild(row);
         list.AddChild(card);
     }
 }

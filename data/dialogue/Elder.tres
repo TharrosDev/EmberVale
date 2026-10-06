@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="DialogueResource" load_steps=78 format=3 uid="uid://cmbrvldlgeldr"]
+[gd_resource type="Resource" script_class="DialogueResource" load_steps=87 format=3 uid="uid://cmbrvldlgeldr"]
 
 [ext_resource type="Script" path="res://src/Dialogue/DialogueResource.cs" id="1_dlg"]
 [ext_resource type="Script" path="res://src/Dialogue/DialogueNode.cs" id="2_node"]
@@ -363,11 +363,48 @@ ConditionArg = ""
 Effect = 0
 EffectArg = ""
 
+; P7 backgrounds: one HasFlag line per background that set its flag at New Game (the flag's reader).
+[sub_resource type="Resource" id="ch_bg_soldier"]
+script = ExtResource("3_choice")
+Text = "dlg.elder.bg.soldier.c"
+Goto = "bg_soldier"
+Condition = 5
+ConditionArg = "flag.background.soldier"
+
+[sub_resource type="Resource" id="ch_bg_soldier_back"]
+script = ExtResource("3_choice")
+Text = "dlg.elder.bg.c_back"
+Goto = "root"
+
+[sub_resource type="Resource" id="ch_bg_pilgrim"]
+script = ExtResource("3_choice")
+Text = "dlg.elder.bg.pilgrim.c"
+Goto = "bg_pilgrim"
+Condition = 5
+ConditionArg = "flag.background.pilgrim"
+
+[sub_resource type="Resource" id="ch_bg_pilgrim_back"]
+script = ExtResource("3_choice")
+Text = "dlg.elder.bg.c_back"
+Goto = "root"
+
+[sub_resource type="Resource" id="ch_bg_hedge_scholar"]
+script = ExtResource("3_choice")
+Text = "dlg.elder.bg.hedge_scholar.c"
+Goto = "bg_hedge_scholar"
+Condition = 5
+ConditionArg = "flag.background.hedge_scholar"
+
+[sub_resource type="Resource" id="ch_bg_hedge_scholar_back"]
+script = ExtResource("3_choice")
+Text = "dlg.elder.bg.c_back"
+Goto = "root"
+
 [sub_resource type="Resource" id="node_root"]
 script = ExtResource("2_node")
 Id = "root"
 Text = "dlg.elder.root"
-Choices = Array[Resource]([SubResource("ch_ending_dawnfire"), SubResource("ch_ending_embers"), SubResource("ch_root_friend"), SubResource("ch_root_pure"), SubResource("ch_root_marked"), SubResource("ch_heart_thanks"), SubResource("ch_heart_offer"), SubResource("ch_heart_active"), SubResource("ch_root_thanks"), SubResource("ch_root_offer"), SubResource("ch_root_active"), SubResource("ch_root_kael"), SubResource("ch_root_dread"), SubResource("ch_root_cq_dray_spared"), SubResource("ch_root_cq_dray_pressed"), SubResource("ch_root_cq_arcs_done"), SubResource("ch_root_restart_smoke"), SubResource("ch_root_bye")])
+Choices = Array[Resource]([SubResource("ch_ending_dawnfire"), SubResource("ch_ending_embers"), SubResource("ch_root_friend"), SubResource("ch_root_pure"), SubResource("ch_root_marked"), SubResource("ch_heart_thanks"), SubResource("ch_heart_offer"), SubResource("ch_heart_active"), SubResource("ch_root_thanks"), SubResource("ch_root_offer"), SubResource("ch_root_active"), SubResource("ch_root_kael"), SubResource("ch_root_dread"), SubResource("ch_root_cq_dray_spared"), SubResource("ch_root_cq_dray_pressed"), SubResource("ch_root_cq_arcs_done"), SubResource("ch_root_restart_smoke"), SubResource("ch_bg_soldier"), SubResource("ch_bg_pilgrim"), SubResource("ch_bg_hedge_scholar"), SubResource("ch_root_bye")])
 
 [sub_resource type="Resource" id="node_offer"]
 script = ExtResource("2_node")
@@ -549,10 +586,28 @@ Id = "cq_ik_roads"
 Text = "dlg.elder.cq_ik_roads"
 Choices = Array[Resource]([SubResource("ch_cq_ik_roads_back"), SubResource("ch_cq_ik_roads_go")])
 
+[sub_resource type="Resource" id="node_bg_soldier"]
+script = ExtResource("2_node")
+Id = "bg_soldier"
+Text = "dlg.elder.bg.soldier"
+Choices = Array[Resource]([SubResource("ch_bg_soldier_back")])
+
+[sub_resource type="Resource" id="node_bg_pilgrim"]
+script = ExtResource("2_node")
+Id = "bg_pilgrim"
+Text = "dlg.elder.bg.pilgrim"
+Choices = Array[Resource]([SubResource("ch_bg_pilgrim_back")])
+
+[sub_resource type="Resource" id="node_bg_hedge_scholar"]
+script = ExtResource("2_node")
+Id = "bg_hedge_scholar"
+Text = "dlg.elder.bg.hedge_scholar"
+Choices = Array[Resource]([SubResource("ch_bg_hedge_scholar_back")])
+
 [resource]
 script = ExtResource("1_dlg")
 Id = "dialogue.elder"
 SpeakerName = "dlg.elder.speaker"
 StartNodeId = "root"
-Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_offer"), SubResource("node_accepted"), SubResource("node_inprogress"), SubResource("node_thanks"), SubResource("node_friend"), SubResource("node_pure"), SubResource("node_marked"), SubResource("node_heart_offer"), SubResource("node_heart_accepted"), SubResource("node_heart_inprogress"), SubResource("node_heart_thanks"), SubResource("node_kael_ask"), SubResource("node_kael_where"), SubResource("node_kael_already"), SubResource("node_dread"), SubResource("node_ending_dawnfire"), SubResource("node_ending_embers"), SubResource("node_cq_sq_hook"), SubResource("node_cq_sq_who"), SubResource("node_cq_sq_after"), SubResource("node_cq_ik_after"), SubResource("node_cq_dray_spared"), SubResource("node_cq_dray_pressed"), SubResource("node_cq_arcs_done"), SubResource("node_cq_ik_roads")])
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_offer"), SubResource("node_accepted"), SubResource("node_inprogress"), SubResource("node_thanks"), SubResource("node_friend"), SubResource("node_pure"), SubResource("node_marked"), SubResource("node_heart_offer"), SubResource("node_heart_accepted"), SubResource("node_heart_inprogress"), SubResource("node_heart_thanks"), SubResource("node_kael_ask"), SubResource("node_kael_where"), SubResource("node_kael_already"), SubResource("node_dread"), SubResource("node_ending_dawnfire"), SubResource("node_ending_embers"), SubResource("node_cq_sq_hook"), SubResource("node_cq_sq_who"), SubResource("node_cq_sq_after"), SubResource("node_cq_ik_after"), SubResource("node_cq_dray_spared"), SubResource("node_cq_dray_pressed"), SubResource("node_cq_arcs_done"), SubResource("node_cq_ik_roads"), SubResource("node_bg_soldier"), SubResource("node_bg_pilgrim"), SubResource("node_bg_hedge_scholar")])
 StartVariants = Array[Resource]([SubResource("start_root_5_50e7"), SubResource("start_cq_ik_after_5_d7fa"), SubResource("start_root_5_fef3"), SubResource("start_cq_sq_after_5_f85e"), SubResource("start_cq_sq_hook_2_ef3a")])

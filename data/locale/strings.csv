@@ -366,8 +366,6 @@ rep.tier.friendly,Friendly
 rep.tier.honored,Honored
 rep.tier.allied,Allied
 char.xp_max,MAX
-char.level_line,Level {0}    XP {1}
-char.skill_points,Skill points: {0}
 char.spell_points,Spell points: {0}
 char.corruption,CORRUPTION
 char.corruption_line,{0}   ({1}/{2})
@@ -378,7 +376,6 @@ corruption.tier.marked,Marked
 corruption.tier.ashbound,Ashbound
 corruption.tier.embers,Embers
 char.perks,PERKS
-char.perk_rank,{0}  ({1}/{2})
 char.perk_learn,Learn ({0})
 char.perk_maxed,[maxed]
 char.perk_needs,[needs {0}]
@@ -473,14 +470,19 @@ item.empty_slot,Empty
 item.select_hint,Select an item to inspect it.
 
 # --- Character stats & progression (Phase 37.5C2) ---
-char.tab_stats,STATS
 char.stats_attributes,Attributes
 char.stats_combat,Offence
 char.stats_defence,Defence
 char.stat_reduced,"{0}% reduced"
+# --- BEGIN progression:stats ---
+char.stat_per_point,Per point: {0}
+char.pp_dodge,dodge stamina cost
+char.pp_mana_cost,spell mana cost
+# --- END progression:stats ---
 char.level_badge,"Level {0}"
 char.xp_progress,"{0} / {1} XP"
 char.points_skill,"{0} skill"
+char.skill_points,Skill points: {0}
 char.points_spell,"{0} spell"
 char.perk_rank_short,"{0}/{1}"
 char.perks_none,No perks are known yet.
@@ -782,6 +784,8 @@ dlg.ironking.absorb.declined,"You turn from it. The fire gutters, unclaimed, and
 dlg.ironking.absorb.c_absorbed_bye,"So be it."
 dlg.ironking.absorb.c_declined_bye,"Not today."
 notify.levelup,Level up!  You are now level {0}
+notify.levelup_point,Level up!  You are now level {0}  (+{1} skill point)
+notify.levelup_points,Level up!  You are now level {0}  (+{1} skill points)
 notify.quest_started,Quest started:  {0}
 notify.quest_complete,Quest complete:  {0}
 notify.quest_failed,Quest failed:  {0}
@@ -4347,3 +4351,294 @@ questui.tag.guild_rank,{0} rank {1}
 questui.tag.item,{0} {1}
 questui.tag.story,Story
 # --- END campaign:ui ---
+# --- BEGIN progression:perks ---
+perk.might.name,Might
+perk.might.desc,Blows land harder. +2 Physical Power per rank.
+perk.toughness.name,Toughness
+perk.toughness.desc,Hardened against harm. +15 maximum Health per rank.
+perk.iron_stance.name,Iron Stance
+perk.iron_stance.desc,Plant your feet behind the shield. Blocking costs 8% less Stamina per rank.
+perk.brawler.name,Brawler
+perk.brawler.desc,Swing like you mean to keep swinging. Attacks cost 5% less Stamina per rank.
+perk.warding.name,Warding
+perk.warding.desc,"Thicker hide, sturdier guard. +3 Armor per rank."
+perk.second_wind.name,Second Wind
+perk.second_wind.desc,Breath comes back fast. Sprinting costs 5% less Stamina per rank.
+perk.riposte.name,Riposte
+perk.riposte.desc,A clean parry costs little to give. Parrying costs 15% less Stamina per rank.
+perk.crushing_blows.name,Crushing Blows
+perk.crushing_blows.desc,Finish what you started. Critical hits deal 12% more damage per rank.
+perk.shield_wall.name,Shield Wall
+perk.shield_wall.desc,Nothing gets past the rim. +6% Armor and blocking costs 6% less Stamina per rank.
+perk.unbroken.name,Unbroken
+perk.unbroken.desc,You keep standing. +5% maximum Health per rank.
+perk.warlord.name,Warlord
+perk.warlord.desc,The field is yours. +10% Physical Power and attacks cost 10% less Stamina.
+perk.precision.name,Precision
+perk.precision.desc,A keener eye for weak points. +2% Crit Chance per rank.
+perk.steady_aim.name,Steady Aim
+perk.steady_aim.desc,Hold the string without strain. Drawing a bow costs 8% less Stamina per rank.
+perk.endurance_training.name,Endurance Training
+perk.endurance_training.desc,Lungs and legs that last. +10 maximum Stamina per rank.
+perk.fleet_foot.name,Fleet Foot
+perk.fleet_foot.desc,Light on the trail. +0.15 Move Speed per rank.
+perk.evasion.name,Evasion
+perk.evasion.desc,Move before the blow lands. Dodging costs 6% less Stamina per rank.
+perk.hunters_eye.name,Hunter's Eye
+perk.hunters_eye.desc,"You know what is worth taking. Slain foes drop better gear, raising loot quality by 0.04 per rank."
+perk.wind_reader.name,Wind Reader
+perk.wind_reader.desc,You read the weak point and the breeze. Critical hits deal 8% more damage per rank.
+perk.far_shot.name,Far Shot
+perk.far_shot.desc,Draw to the ear and let it fly. Arrows hit 5% harder per rank.
+perk.quickdraw.name,Quickdraw
+perk.quickdraw.desc,"Nock, draw, loose. Drawing costs 7% less Stamina and attacks are 3% faster per rank."
+perk.marksman.name,Marksman
+perk.marksman.desc,Every shot is placed. Arrows hit 6% harder and +2% Crit Chance per rank.
+perk.deadeye.name,Deadeye
+perk.deadeye.desc,"One arrow, one answer. Arrows hit 10% harder and critical hits deal 15% more damage."
+perk.arcane_focus.name,Arcane Focus
+perk.arcane_focus.desc,Thought sharpened to a point. +2 Spell Power per rank.
+perk.thrift.name,Thrift
+perk.thrift.desc,Spend less to cast. Every spell costs 5% less mana per rank.
+perk.deep_well.name,Deep Well
+perk.deep_well.desc,A larger reservoir to draw on. +10 maximum Mana per rank.
+perk.elementalist.name,Elementalist
+perk.elementalist.desc,"Mastery of the three loud schools. Fire, Frost and Lightning spells hit 4% harder per rank."
+perk.ward_weaver.name,Ward Weaver
+perk.ward_weaver.desc,"Wards woven into the hem. +3 Fire, Frost, Lightning and Arcane resistance per rank."
+perk.wild_attunement.name,Wild Attunement
+perk.wild_attunement.desc,The quiet schools answer you. Nature and Necrotic spells hit 5% harder per rank.
+perk.channeler.name,Channeler
+perk.channeler.desc,Steady hands shape the weave. Spells crit 3% more often per rank.
+perk.wellspring.name,Wellspring
+perk.wellspring.desc,The well refills itself. +8% maximum Mana per rank.
+perk.arcane_economy.name,Arcane Economy
+perk.arcane_economy.desc,Nothing wasted in the weave. Every spell costs 8% less mana per rank.
+perk.archmage.name,Archmage
+perk.archmage.desc,Every school bends to you. All spells hit 10% harder and crit 4% more often.
+perk.cutpurse.name,Cutpurse
+perk.cutpurse.desc,You know a fence who asks no questions. Merchants pay 1% more per rank.
+perk.light_feet.name,Light Feet
+perk.light_feet.desc,A runner's economy of effort. Sprinting costs 8% less Stamina per rank.
+perk.keen_edge.name,Keen Edge
+perk.keen_edge.desc,A blade kept for the right moment. +2% Crit Chance per rank.
+perk.quick_hands.name,Quick Hands
+perk.quick_hands.desc,"Fast fingers, fast steel. +2% Attack Speed per rank."
+perk.fortune.name,Fortune
+perk.fortune.desc,"Luck follows the bold. Slain foes drop better gear, raising loot quality by 0.05 per rank."
+perk.backstep_adept.name,Backstep Adept
+perk.backstep_adept.desc,Give ground without paying for it. Backsteps cost 10% less Stamina per rank.
+perk.dirty_fighting.name,Dirty Fighting
+perk.dirty_fighting.desc,No rules in an alley. Critical hits deal 8% more damage per rank.
+perk.shadowstep.name,Shadowstep
+perk.shadowstep.desc,Roll out of trouble cheaply. Dodge rolls cost 8% less Stamina per rank.
+perk.ruthless.name,Ruthless
+perk.ruthless.desc,End it quickly. +2% Crit Chance and attacks cost 4% less Stamina per rank.
+perk.lucky_break.name,Lucky Break
+perk.lucky_break.desc,"The dice remember you. Slain foes drop better gear, raising loot quality by 0.05 per rank."
+perk.cold_calculation.name,Cold Calculation
+perk.cold_calculation.desc,Every opening counted. Critical hits deal 10% more damage per rank.
+perk.shadowdancer.name,Shadowdancer
+perk.shadowdancer.desc,"You are never where the blow lands. Dodging costs 10% less Stamina, +0.3 Move Speed and +4% Crit Chance."
+perk.thrifty_hands.name,Thrifty Hands
+perk.thrifty_hands.desc,Nothing wasted at the bench. A craft has a 4% chance per rank to give one unit of its largest material back.
+perk.salvager.name,Salvager
+perk.salvager.desc,Strip it clean. Salvaging recovers 4% more of the materials per rank.
+perk.forge_lore.name,Forge Lore
+perk.forge_lore.desc,You know how fire behaves. +5 Fire resistance per rank.
+perk.stout_back.name,Stout Back
+perk.stout_back.desc,Hauling ore builds a frame. +10 maximum Health per rank.
+perk.artisans_eye.name,Artisan's Eye
+perk.artisans_eye.desc,You see what a piece teaches. Salvaging earns 10% more experience per rank.
+perk.reclaimer.name,Reclaimer
+perk.reclaimer.desc,Nothing is truly broken. Salvaging recovers 4% more of the materials per rank.
+perk.leather_apron.name,Leather Apron
+perk.leather_apron.desc,Sparks find leather instead of skin. +2 Armor per rank.
+perk.efficient_hands.name,Efficient Hands
+perk.efficient_hands.desc,A practised cut. A craft has a further 3% chance per rank to give a material back.
+perk.deep_salvage.name,Deep Salvage
+perk.deep_salvage.desc,Down to the last rivet. Salvaging recovers 3% more of the materials per rank.
+perk.forge_ward.name,Forge Ward
+perk.forge_ward.desc,+8 Fire resistance and +3 Armor per rank.
+perk.bench_mastery.name,Bench Mastery
+perk.bench_mastery.desc,The work teaches you back. Salvaging earns 5% more experience per rank.
+perk.master_artisan.name,Master Artisan
+perk.master_artisan.desc,"A craftsman's economy. A craft has a further 7% chance to give a material back, and salvaging recovers 3% more."
+perk.silver_tongue.name,Silver Tongue
+perk.silver_tongue.desc,"Smooth words, softer prices. Haggling succeeds 5 points more often per rank, wherever a merchant haggles at all."
+perk.road_wise.name,Road Wise
+perk.road_wise.desc,You know what a bed and a ferry should cost. Services cost 2% less per rank.
+perk.quick_study.name,Quick Study
+perk.quick_study.desc,Lessons stick. You earn 2% more experience per rank.
+perk.well_regarded.name,Well Regarded
+perk.well_regarded.desc,A good name travels. Standing with factions rises 3% faster per rank.
+perk.fair_dealer.name,Fair Dealer
+perk.fair_dealer.desc,A reputation for honest trade. Merchants ask 1% less per rank.
+perk.appraiser.name,Appraiser
+perk.appraiser.desc,You know what your goods are worth. Merchants pay 1% more per rank.
+perk.pathfinder.name,Pathfinder
+perk.pathfinder.desc,You have walked every road twice. +0.1 Move Speed per rank.
+perk.negotiator.name,Negotiator
+perk.negotiator.desc,"You never open with your real number. Haggling succeeds 5 points more often per rank, wherever a merchant haggles at all."
+perk.scholar.name,Scholar
+perk.scholar.desc,Study pays. You earn 2% more experience per rank.
+perk.respected.name,Respected
+perk.respected.desc,Doors open. Standing with factions rises 5% faster per rank.
+perk.shrewd_buyer.name,Shrewd Buyer
+perk.shrewd_buyer.desc,You have seen every markup. Merchants ask a further 1% less per rank.
+perk.diplomat.name,Diplomat
+perk.diplomat.desc,Rooms settle when you walk in. Standing with factions rises 5% faster and services cost 1% less.
+perk.cinder_veil.name,Cinder Veil
+perk.cinder_veil.desc,Ash thickens on the skin. +5 Fire resistance and +3 Necrotic resistance per rank. Needs the Touched.
+perk.ashborn_might.name,Ashborn Might
+perk.ashborn_might.desc,The corruption answers when called. +3 Spell Power per rank. Only the Marked may take it.
+perk.ember_heart.name,Ember Heart
+perk.ember_heart.desc,Something burns where the pulse was. +15 maximum Health and +2 Physical Power per rank. Only the Ashbound may take it.
+# --- END progression:perks ---
+# --- BEGIN progression:p4a ---
+# --- END progression:p4a ---
+# --- BEGIN progression:p4b ---
+shop.line.perk,"your perks {0}% — {1}g"
+# --- END progression:p4b ---
+# --- BEGIN progression:p4c ---
+# --- END progression:p4c ---
+# --- BEGIN progression:p6 ---
+perktree.branch.none,Other
+perktree.branch.warrior,Warrior
+perktree.branch.archer,Archer
+perktree.branch.mage,Mage
+perktree.branch.rogue,Rogue
+perktree.branch.crafter,Crafter
+perktree.branch.social,Social
+perktree.branch.ashbound,Ashbound
+perktree.branch_tab,"{0} ({1})"
+perktree.tier,Tier {0}
+perktree.tier_gate,{0} pts
+perktree.tier_open,Open
+perktree.node_maxed,Maxed
+perktree.node_locked,Locked
+perktree.node_points,{0} pts
+perktree.node_corrupt,Needs {0}
+perktree.capstone,Capstone
+perktree.detail_rank,Rank {0} of {1}
+perktree.detail_cost,Skill point cost per rank: {0}
+perktree.detail_requires,Requires: {0}
+perktree.why_learn,Ready to learn (cost {0}). Select it to buy the next rank.
+perktree.why_maxed,Fully learned.
+perktree.why_corruption,Out of reach until your corruption reaches {0}.
+perktree.why_prerequisite,Learn {0} first.
+perktree.why_branch,"Spend {0} points in {1} first (you have spent {2})."
+perktree.why_points,"Skill points needed: {0}. You have {1}."
+perktree.respec,Respec
+perktree.respec_cost,Respec ({0} gold)
+perktree.respec_tip,Sell back every bought rank and get the points back. Free ranks stay.
+perktree.respec_nothing,No perk points are spent yet.
+perktree.respec_cancel,Cancel
+perktree.respec_confirm,"Sell back every bought rank? It costs {1} gold (you hold {2}) and returns skill points: {0}. Ranks that came free with your race or background stay."
+perktree.respec_poor,"Not enough gold: a respec costs {0} and you hold {1}."
+# --- END progression:p6 ---
+# --- BEGIN progression:backgrounds ---
+# Character backgrounds (P7): soft nudges chosen in the creator. Names, descriptions, lean-branch badges, the creator summary
+# lines, and the hub-dialogue lines that read each background's flag.
+background.wayfarer.name,Wayfarer
+background.wayfarer.desc,"No past worth a ledger line. You arrive with what you carry and nothing more, and every road is equally open to you."
+background.soldier.name,Soldier
+background.soldier.desc,"You stood in a line and learned to hold it. A shield, a little coin, and the Dawnwardens remember the colours you wore."
+background.hunter.name,Hunter
+background.hunter.desc,Years of tracking pelts through cold hills left you a keen eye and a long stride. The Ash Hunters have heard of hunters like you.
+background.hedge_scholar.name,Hedge-scholar
+background.hedge_scholar.desc,"You learned letters and herb-lore from a roadside teacher. A worn herbal, a few dried leaves, and the Veiled Archive counts you a fellow reader."
+background.cutpurse.name,Cutpurse
+background.cutpurse.desc,"You lived off other people's purses and learned to keep your feet quiet. A good knife, some stolen coin, and friends in low places."
+background.smiths_hand.name,Smith's hand
+background.smiths_hand.desc,"You worked a forge long enough to read iron by its colour. A little ingot and coal for a bench of your own, and the village trusts a trade it understands."
+background.merchants_heir.name,Merchant's heir
+background.merchants_heir.desc,"You grew up counting other people's coin. A fat purse and a trader's patience, and the villagers like a family that pays on time."
+background.pilgrim.name,Pilgrim
+background.pilgrim.desc,"You walked the long road on faith and a sore pair of feet. Bread, herbs and a draught for the road, and every hearth gives a pilgrim a place."
+background.lean.warrior,Warrior
+background.lean.archer,Archer
+background.lean.mage,Mage
+background.lean.rogue,Rogue
+background.lean.crafter,Crafter
+background.lean.social,Social
+create.bg_lean,Leans {0}
+create.bg_perk,Starting perk
+create.bg_kit,Kit
+create.bg_stat,Attribute
+create.bg_standing,Standing
+create.bg_gold,{0} gold
+create.bg_item,{0} x{1}
+create.bg_nothing,Nothing extra. You start as the road found you.
+dlg.elder.bg.soldier.c,I carried a spear before I came here.
+dlg.elder.bg.soldier,"The Elder looks at how you stand, feet apart and shoulders square. ""You have stood in a line, I can tell. Then you know a village at your back is worth more than a wall in front of you. Keep that, whatever you do next."""
+dlg.elder.bg.pilgrim.c,I have walked the pilgrim road.
+dlg.elder.bg.pilgrim,"""The long road, and you came the last of it on foot."" The Elder nods slowly. ""Folk here give a pilgrim a hearth and ask nothing for it. Rest first, then go where you are going."""
+dlg.elder.bg.hedge_scholar.c,I learned my letters and herb-lore at a hedge school.
+dlg.elder.bg.hedge_scholar,"""Letters."" The Elder sounds almost fond. ""We have two who can read and one who reads well. If you find anything worth knowing out there, bring it back and read it to us."""
+dlg.elder.bg.c_back,Something else.
+dlg.innkeeper.bg.hunter.c,I have hunted these hills for pelts.
+dlg.innkeeper.bg.hunter,"Holt eyes the dagger on your belt and the old stains on your sleeve. ""A hunter likes the end of the bar where the door can be watched. That stool is warm, take it."""
+dlg.innkeeper.bg.cutpurse.c,I have lived off other people's purses.
+dlg.innkeeper.bg.cutpurse,"Holt does not look up from the cup he is drying. ""Then keep your hands where I can see them and I will keep your secret. Bed and bread cost the same for everyone, friend."""
+dlg.innkeeper.bg.c_back,Something else.
+dlg.smith.bg.smiths_hand.c,I swung a hammer at a forge once.
+dlg.smith.bg.smiths_hand,"Bryn takes your hand and turns it over, thumbing the calluses. ""Hammer hands. Good. If you ever want to know what a blade is made of, the bench is right there."""
+dlg.smith.bg.merchants_heir.c,I grew up counting other people's coin.
+dlg.smith.bg.merchants_heir,"""A trader's child."" Bryn snorts, but kindly. ""Then you know a fair price from a flattering one. Do not let anyone tell you my iron is dear. It is only honest."""
+dlg.smith.bg.c_back,Something else.
+# --- END progression:backgrounds ---
+# --- BEGIN progression:appearance ---
+# Character appearance (P8): option names (generated by tools/gen_appearance.py) and the creator's appearance section.
+create.appearance,Appearance
+create.appearance_hint,Looks are cosmetic; they change nothing else.
+create.appearance.skin,Skin
+create.appearance.hair,Hair
+create.appearance.eyes,Eyes
+create.appearance.ember,Ember glow
+create.appearance.build,Build
+appearance.skin.fair.name,Fair
+appearance.skin.pale.name,Pale
+appearance.skin.tan.name,Tan
+appearance.skin.olive.name,Olive
+appearance.skin.brown.name,Brown
+appearance.skin.deep.name,Deep
+appearance.skin.ashen.name,Ashen
+appearance.skin.silver.name,Silver
+appearance.skin.moss.name,Moss
+appearance.skin.slate.name,Slate
+appearance.skin.copper.name,Copper
+appearance.skin.scarlet.name,Scarlet
+appearance.skin.gold.name,Gold
+appearance.hair.brown.name,Brown
+appearance.hair.black.name,Black
+appearance.hair.auburn.name,Auburn
+appearance.hair.blonde.name,Blonde
+appearance.hair.ginger.name,Ginger
+appearance.hair.grey.name,Grey
+appearance.hair.white.name,White
+appearance.hair.ash.name,Ash
+appearance.hair.cinder.name,Cinder red
+appearance.hair.moss.name,Moss
+appearance.hair.midnight.name,Midnight
+appearance.hair.violet.name,Violet
+appearance.eyes.brown.name,Brown
+appearance.eyes.blue.name,Blue
+appearance.eyes.green.name,Green
+appearance.eyes.amber.name,Amber
+appearance.eyes.grey.name,Grey
+appearance.eyes.violet.name,Violet
+appearance.eyes.gold.name,Gold
+appearance.eyes.red.name,Red
+appearance.eyes.ice.name,Ice
+appearance.ember.ember.name,Ember
+appearance.ember.gold.name,Gold
+appearance.ember.violet.name,Violet
+appearance.ember.azure.name,Azure
+appearance.ember.verdant.name,Verdant
+appearance.ember.crimson.name,Crimson
+appearance.ember.pale.name,Pale
+appearance.build.slim.name,Slim
+appearance.build.average.name,Average
+appearance.build.broad.name,Broad
+# --- END progression:appearance ---

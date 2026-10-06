@@ -5,6 +5,7 @@ using Embervale.Economy;
 using Embervale.Entities;
 using Embervale.Items;
 using Embervale.Localization;
+using Embervale.Progression;
 using Godot;
 
 namespace Embervale.UI;
@@ -43,23 +44,21 @@ public partial class AppraisalPanel : UiPanel
     {
         UiTheme.ApplyWorkspace(shell, 0.70f);
 
-        MarginContainer margin = UiTheme.Padding(12);
+        MarginContainer margin = UiTheme.Padding(UiTheme.PanelPad);
         shell.AddChild(margin);
 
         var column = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
-        column.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
+        column.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
         margin.AddChild(column);
 
         _title = UiTheme.Header(string.Empty);
         column.AddChild(_title);
-        column.AddChild(new HSeparator());
+        column.AddChild(UiTheme.Divider());
 
         _header = UiTheme.Body(string.Empty, UiTheme.Dim);
         column.AddChild(_header);
 
         (ScrollContainer scroll, VBoxContainer list) = UiTheme.ScrollList();
-        scroll.CustomMinimumSize = new Vector2(0, 280);
-        scroll.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
         column.AddChild(scroll);
         _list = list;
     }
@@ -143,7 +142,9 @@ public partial class AppraisalPanel : UiPanel
         }
 
         List<string> tags = instance.Template.TagList();
-        EconomyReport.BestBuyers(instance.Template, tags, out Offer best, out _);
+        EconomyReport.BestBuyers(
+            instance.Template, tags, out Offer best, out _,
+            sellPerkFactor: PerkEffectMath.SellFactor(PerkQuery.Of(_pack?.Entity, PerkEffectKind.SellBonus)));
         ConsignQuote quote = EconomyReport.BestConsignment(instance.Template, tags);
 
         if (!best.Has && !quote.Has)
@@ -155,10 +156,11 @@ public partial class AppraisalPanel : UiPanel
         // ItemSlot, and the numbers to the right — so an item looks the same here as where it is sold.
         PanelContainer card = UiTheme.Card(UiTheme.RarityColor(instance.Rarity));
         var row = new HBoxContainer();
-        row.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
+        row.AddThemeConstantOverride("separation", UiTheme.SpaceMd);
 
-        Button slot = ItemSlot.Build(instance, stack.Quantity, selected: false, size: 30f);
+        Button slot = ItemSlot.Build(instance, stack.Quantity, selected: false, size: ItemSlot.RowSize);
         slot.FocusMode = Control.FocusModeEnum.None;
+        slot.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
         slot.MouseFilter = Control.MouseFilterEnum.Ignore;
         row.AddChild(slot);
 
@@ -167,7 +169,7 @@ public partial class AppraisalPanel : UiPanel
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
             SizeFlagsVertical = Control.SizeFlags.ShrinkCenter,
         };
-        text.AddThemeConstantOverride("separation", 0);
+        text.AddThemeConstantOverride("separation", UiTheme.LineGap);
 
         Label name = UiTheme.Body(instance.DisplayName, UiTheme.RarityColor(instance.Rarity));
         name.TooltipText = instance.Template.Description;

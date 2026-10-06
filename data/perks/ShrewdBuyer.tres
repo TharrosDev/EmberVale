@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="PerkResource" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/Progression/PerkResource.cs" id="1_perk"]
+[ext_resource type="Script" path="res://src/Progression/PerkEffectResource.cs" id="2_effect"]
+
+[sub_resource type="Resource" id="Effect_1"]
+script = ExtResource("2_effect")
+Kind = 10
+ValuePerRank = 0.01
+
+[resource]
+script = ExtResource("1_perk")
+Id = "perk.shrewd_buyer"
+DisplayName = "Shrewd Buyer"
+Description = "You have seen every markup. Merchants ask a further 1% less per rank."
+MaxRank = 2
+Cost = 2
+ValuePerRank = 0.0
+Branch = 6
+Tier = 4
+Column = 0
+PrerequisiteIds = Array[String](["perk.negotiator"])
+BranchPointsRequired = 9
+Effects = [SubResource("Effect_1")]

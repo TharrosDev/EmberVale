@@ -40,16 +40,16 @@ public partial class PlacementHud : UiPanel
         shell.AnchorBottom = 1f;
         shell.OffsetLeft = -210;
         shell.OffsetRight = 210;
-        shell.OffsetTop = -150;
-        shell.OffsetBottom = -60;
+        shell.OffsetTop = -HudLayout.BottomClearance;
+        shell.OffsetBottom = -HudLayout.BottomClearance;
         shell.GrowHorizontal = Control.GrowDirection.Both;
         shell.GrowVertical = Control.GrowDirection.Begin;
 
-        MarginContainer margin = UiTheme.Padding(10);
+        MarginContainer margin = UiTheme.Padding(UiTheme.SpaceSm);
         shell.AddChild(margin);
 
         var column = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
-        column.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
+        column.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
         margin.AddChild(column);
 
         _title = UiTheme.Title(string.Empty);
@@ -58,7 +58,7 @@ public partial class PlacementHud : UiPanel
         _keys = UiTheme.Caption(string.Empty, UiTheme.Dim);
         column.AddChild(_keys);
 
-        column.AddChild(new HSeparator());
+        column.AddChild(UiTheme.Divider());
 
         _status = UiTheme.Body(string.Empty);
         column.AddChild(_status);

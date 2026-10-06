@@ -27,4 +27,4 @@ StatDeltas = Array[Resource]([SubResource("Delta_int"), SubResource("Delta_sp"),
 InnatePerkIds = Array[String]([])
 InnateSpellIds = Array[String](["spell.null_lance"])
 ReputationTweaks = Array[Resource]([])
-AppearanceOptionIds = Array[String]([])
+AppearanceOptionIds = Array[String](["appearance.skin.fair", "appearance.skin.pale", "appearance.skin.gold", "appearance.skin.silver", "appearance.skin.tan", "appearance.hair.brown", "appearance.hair.blonde", "appearance.hair.white", "appearance.hair.violet", "appearance.hair.midnight", "appearance.eyes.brown", "appearance.eyes.blue", "appearance.eyes.violet", "appearance.eyes.gold", "appearance.eyes.ice", "appearance.ember.ember", "appearance.ember.gold", "appearance.ember.violet", "appearance.ember.azure", "appearance.ember.verdant", "appearance.ember.crimson", "appearance.ember.pale", "appearance.build.average", "appearance.build.slim", "appearance.build.broad"])

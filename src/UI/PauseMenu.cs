@@ -68,20 +68,20 @@ public partial class PauseMenu : CanvasLayer
 		// (the default End grow would push it toward the bottom-right of centre).
 		_panel.GrowHorizontal = Control.GrowDirection.Both;
 		_panel.GrowVertical = Control.GrowDirection.Both;
-		_panel.CustomMinimumSize = new Vector2(280, 0);
+		_panel.CustomMinimumSize = new Vector2(320, 0);
 		AddChild(_panel);
 
-		MarginContainer pad = UiTheme.Padding(16);
+		MarginContainer pad = UiTheme.Padding(UiTheme.SpaceLg);
 		_panel.AddChild(pad);
 
 		var col = new VBoxContainer();
-		col.AddThemeConstantOverride("separation", 8);
+		col.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
 		pad.AddChild(col);
 
 		Label header = UiTheme.Title(Loc.T("pause.title"));
 		header.HorizontalAlignment = HorizontalAlignment.Center;
 		col.AddChild(header);
-		col.AddChild(new HSeparator());
+		col.AddChild(UiTheme.Divider());
 
 		col.AddChild(MenuButton(Loc.T("pause.resume"), Resume));
 		col.AddChild(MenuButton(Loc.T("pause.save"), () => { if (SaveManager.Instance is { } s) { s.SaveGame(s.ActiveSlot); } }));
@@ -165,7 +165,6 @@ public partial class PauseMenu : CanvasLayer
 	private static Button MenuButton(string text, System.Action onPressed)
 	{
 		Button button = UiTheme.Action(text);
-		button.CustomMinimumSize = new Vector2(0, 34);
 		button.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
 		button.Pressed += () => onPressed();
 		return button;
@@ -179,6 +178,11 @@ public partial class PauseMenu : CanvasLayer
 		SetPanelVisible(false);
 		SettingsPanel.Open(this, () => SetPanelVisible(true));
 	}
+
+	/// <summary>Opens and closes the menu for the screenshot harnesses, which cannot press Esc.</summary>
+	public void OpenForCapture() => Open();
+
+	public void CloseForCapture() => Resume();
 
 	private void Open()
 	{
