@@ -58,7 +58,7 @@ public partial class CraftingPanel : UiPanel
         "craft.status.crafted", "craft.status.crafted_some", "craft.status.salvaged", "craft.status.salvaged_some",
         "craft.locked.trainer", "craft.locked.trainer_or_scroll", "craft.locked.scroll", "craft.locked.unknown",
         "craft.toast.recipe_learned", "craft.toast.recipes_learned", "craft.toast.recipes_learned_detail",
-        "craft.toast.rank_up",
+        "craft.toast.rank_up", "craft.order.hint", "craft.order.hint_commission",
     };
 
     /// <summary>The confirm token for "salvage all junk" (an item is its own token).</summary>
@@ -288,7 +288,7 @@ public partial class CraftingPanel : UiPanel
         // panels toggle on a polled action, so "iron" would otherwise open the inventory over this.
         _search.FocusEntered += () => GameInput.SetTextEntry(true);
         _search.FocusExited += () => GameInput.SetTextEntry(false);
-        _search.TextSubmitted += _ => _search.ReleaseFocus();
+        _search.TextSubmitted += _ => _focusSelection = true; // back to the recipes, not to no focus at all
         bar.AddChild(_search);
 
         var names = new string[CategoryKeys.Count];
@@ -322,6 +322,7 @@ public partial class CraftingPanel : UiPanel
     protected override void OnReady()
     {
         EventBus.Instance?.Subscribe<CraftingStationOpenedEvent>(OnStationOpened);
+        EventBus.Instance?.Subscribe<InputDeviceChangedEvent>(OnDeviceChanged);
         EventBus.Instance?.Subscribe<InventoryChangedEvent>(OnInventoryChanged);
         EventBus.Instance?.Subscribe<ItemCraftedEvent>(OnItemCrafted);
         EventBus.Instance?.Subscribe<ItemDeconstructedEvent>(OnItemDeconstructed);
@@ -331,6 +332,7 @@ public partial class CraftingPanel : UiPanel
     public override void _ExitTree()
     {
         EventBus.Instance?.Unsubscribe<CraftingStationOpenedEvent>(OnStationOpened);
+        EventBus.Instance?.Unsubscribe<InputDeviceChangedEvent>(OnDeviceChanged);
         EventBus.Instance?.Unsubscribe<InventoryChangedEvent>(OnInventoryChanged);
         EventBus.Instance?.Unsubscribe<ItemCraftedEvent>(OnItemCrafted);
         EventBus.Instance?.Unsubscribe<ItemDeconstructedEvent>(OnItemDeconstructed);
@@ -379,6 +381,7 @@ public partial class CraftingPanel : UiPanel
         if (open)
         {
             UiOrnament.PlayEmberWipe(_wipe);
+            ResetDetailScroll();
         }
         else
         {
@@ -389,6 +392,9 @@ public partial class CraftingPanel : UiPanel
     }
 
     private void OnInventoryChanged(InventoryChangedEvent e) => MarkDirty();
+
+    /// <summary>The legend carries an entry only a pad has (scroll details).</summary>
+    private void OnDeviceChanged(InputDeviceChangedEvent e) => MarkDirty();
 
     private void OnItemCrafted(ItemCraftedEvent e) => MarkDirty();
 
@@ -429,6 +435,10 @@ public partial class CraftingPanel : UiPanel
             if (_selectedRow != null && IsInstanceValid(_selectedRow))
             {
                 _selectedRow.GrabFocus();
+            }
+            else if (GetViewport().GuiGetFocusOwner() is LineEdit)
+            {
+                UiFocus.GrabFirst(Shell); // a search that matched nothing
             }
         }
 
@@ -810,7 +820,15 @@ public partial class CraftingPanel : UiPanel
         _selectedSlotItem = preview;
         ItemSlot.SetSelected(slot, preview, true);
         _confirm = null;
+        ResetDetailScroll();
         _detailDirty = true;
+    }
+
+    /// <summary>Another recipe's ingredients and card open at their head, not where the last were left.</summary>
+    private void ResetDetailScroll()
+    {
+        _ingredientScroll.ScrollVertical = 0;
+        _resultScroll.ScrollVertical = 0;
     }
 
     /// <summary>The ingredient column, the result column and the order bar for the selected recipe.</summary>

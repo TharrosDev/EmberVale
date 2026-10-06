@@ -282,6 +282,7 @@ public partial class VendorPanel : UiPanel
     protected override void OnReady()
     {
         EventBus.Instance?.Subscribe<ShopOpenedEvent>(OnShopOpened);
+        EventBus.Instance?.Subscribe<InputDeviceChangedEvent>(OnDeviceChanged);
         EventBus.Instance?.Subscribe<InventoryChangedEvent>(OnInventoryChanged);
         EventBus.Instance?.Subscribe<GameLoadedEvent>(OnGameLoaded);
     }
@@ -289,6 +290,7 @@ public partial class VendorPanel : UiPanel
     public override void _ExitTree()
     {
         EventBus.Instance?.Unsubscribe<ShopOpenedEvent>(OnShopOpened);
+        EventBus.Instance?.Unsubscribe<InputDeviceChangedEvent>(OnDeviceChanged);
         EventBus.Instance?.Unsubscribe<InventoryChangedEvent>(OnInventoryChanged);
         EventBus.Instance?.Unsubscribe<GameLoadedEvent>(OnGameLoaded);
     }
@@ -347,6 +349,9 @@ public partial class VendorPanel : UiPanel
 
     private void OnInventoryChanged(InventoryChangedEvent e) => MarkDirty();
 
+    /// <summary>The legend carries an entry only a pad has (scroll details).</summary>
+    private void OnDeviceChanged(InputDeviceChangedEvent e) => MarkDirty();
+
     public override void _Process(double delta)
     {
         if (IsOpen)
@@ -383,7 +388,11 @@ public partial class VendorPanel : UiPanel
         // lists stay as they are.
         if (_detailDirty)
         {
+            // A refused press sets only the reason, and the bar it is said in is rebuilt around the
+            // pressed verb: focus goes back to the same place on the new bar.
+            int[]? focusPath = UiFocus.PathOf(_order);
             RebuildTradeDetail();
+            UiFocus.Restore(_order, focusPath);
         }
 
         TradeRow.StickScroll(_detailScroll, delta);
@@ -1320,7 +1329,7 @@ public partial class VendorPanel : UiPanel
     /// cursor. Within one list only the detail column and the order bar are rebuilt and the selection
     /// frame moves in place; crossing to another list rebuilds, because the legend's verb changes.
     /// </summary>
-    private void Select(Side side, ItemInstance instance, Button? slot)
+    private void Select(Side side, ItemInstance instance, Button? slot, Button? row)
     {
         if (_focusSelection || IsSelected(side, instance))
         {
@@ -1332,11 +1341,13 @@ public partial class VendorPanel : UiPanel
             ItemSlot.SetSelected(_selectedSlot, _selectedSlotItem, false);
         }
 
-        bool crossed = side != _selectedSide || _selectedTrade == null;
+        // The legend names the accept verb by side and offers Compare only for a piece that can be worn.
+        bool legendChanged = side != _selectedSide || _selectedTrade?.IsEquippable != instance.IsEquippable;
         _selectedSide = side;
         _selectedTrade = instance;
         _selectedSlot = slot;
         _selectedSlotItem = instance;
+        _selectedRow = row;
         if (slot != null)
         {
             ItemSlot.SetSelected(slot, instance, true);
@@ -1346,8 +1357,9 @@ public partial class VendorPanel : UiPanel
         _buyQuantity = 1;
         _sellQuantity = 1;
         _feedback = string.Empty;
+        _detailScroll.ScrollVertical = 0; // a new card opens at its head
         _detailDirty = true;
-        if (crossed)
+        if (legendChanged)
         {
             MarkDirty();
         }
@@ -1639,9 +1651,11 @@ public partial class VendorPanel : UiPanel
     {
         bool selected = IsSelected(side, instance) && _selectedRow == null;
         Button? slot = null;
+        Button? input = null;
         TradeRow.Built row = TradeRow.Build(
-            instance, quantity, selected, live, price, note, () => Select(side, instance, slot), act);
+            instance, quantity, selected, live, price, note, () => Select(side, instance, slot, input), act);
         slot = row.Slot;
+        input = row.Input;
         if (selected)
         {
             _selectedRow = row.Input;
@@ -2038,7 +2052,7 @@ public partial class VendorPanel : UiPanel
             ? ItemPresentation.ClampQuantity(_sellQuantity, stack.Quantity, keepOne: false)
             : stack.Quantity;
 
-        string verb = Loc.T(shop.IsConsignment ? "shop.consign" : "shop.sell");
+        string verb = shop.IsConsignment ? Loc.T("shop.consign") : Loc.T("shop.sell");
         Label note = OrderNote(string.Empty, bad: false);
         Label total = OrderTotal();
         Button sell = OrderVerb(verb);
@@ -2104,8 +2118,10 @@ public partial class VendorPanel : UiPanel
 
     /// <summary>
     /// The explicit neighbours a pad walks: up and down inside a list, right from the wares to the
-    /// pack, and right again to the counter's own dealings or the order bar. Run after every rebuild
-    /// of the lists or of the order bar, once the rows are in the tree.
+    /// pack, and right again to the counter's own dealings or the order bar. Left from the first list
+    /// goes round to the order bar: stepping there through the other list would select a row on the
+    /// way and turn the bar into that row's order. The bar leads back to the row it acts on. Run
+    /// after every rebuild of the lists or of the order bar, once the rows are in the tree.
     /// </summary>
     private void WireFocus()
     {
@@ -2116,8 +2132,9 @@ public partial class VendorPanel : UiPanel
         Control? pack = _packRows.Count > 0 ? _packRows[0] : counter;
         Control? wares = _waresRows.Count > 0 ? _waresRows[0] : null;
 
-        TradeRow.WireColumn(_waresRows, null, pack);
-        TradeRow.WireColumn(_packRows, wares, counter);
+        TradeRow.WireColumn(_waresRows, order, pack);
+        TradeRow.WireColumn(_packRows, wares ?? order, counter);
+        TradeRow.WireOrderBar(_order, _selectedRow);
     }
 
     private static Control? FirstFocusable(Node root)

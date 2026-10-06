@@ -138,6 +138,40 @@ public static class TradeRow
     }
 
     /// <summary>
+    /// Wires an order bar back to the row it acts on: up from any of its controls and left from the
+    /// first. Left to geometry, either lands on whichever row sits nearest, which selects that row
+    /// and rebuilds the bar under the player as another item's order.
+    /// </summary>
+    public static void WireOrderBar(Control bar, Control? row)
+    {
+        if (row == null || !GodotObject.IsInstanceValid(row) || !row.IsInsideTree() || !bar.IsInsideTree())
+        {
+            return;
+        }
+
+        bool first = true;
+        WireBack(bar, row.GetPath(), ref first);
+    }
+
+    private static void WireBack(Node node, NodePath row, ref bool first)
+    {
+        foreach (Node child in node.GetChildren())
+        {
+            if (child is Control { FocusMode: Control.FocusModeEnum.All } control)
+            {
+                control.FocusNeighborTop = row;
+                if (first)
+                {
+                    first = false;
+                    control.FocusNeighborLeft = row;
+                }
+            }
+
+            WireBack(child, row, ref first);
+        }
+    }
+
+    /// <summary>
     /// Wires a column of rows for a pad: up and down walk the column, and left and right step to
     /// the columns beside it (or stay put when there is none). Call it after the rows are in the
     /// tree: <c>FocusNeighbor*</c> takes a path, and a detached node has none.

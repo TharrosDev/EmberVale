@@ -34,6 +34,7 @@ public partial class ContractBoardPanel : UiPanel
     private Label _title = null!;
     private Control _wipe = null!;
     private Label _rotation = null!;
+    private Label _refusal = null!;
     private VBoxContainer _list = null!;
 
     private IEntity? _player;
@@ -75,6 +76,14 @@ public partial class ContractBoardPanel : UiPanel
             shell, UiIcon.Kind.Travel, out _title, out HBoxContainer aside, out _wipe);
         _rotation = UiTheme.Caption(string.Empty);
         aside.AddChild(_rotation);
+
+        // Why the last Deliver was refused. Fixed above the list and never one of its children: a
+        // line added at the head would shift every card by one, and focus is restored across a
+        // rebuild by position - it would come back on the posting above the one that was pressed.
+        _refusal = UiTheme.Caption(string.Empty, UiTheme.Bad);
+        _refusal.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+        _refusal.Visible = false;
+        column.AddChild(_refusal);
 
         (ScrollContainer scroll, VBoxContainer list) = UiTheme.ScrollList();
         column.AddChild(scroll);
@@ -138,12 +147,8 @@ public partial class ContractBoardPanel : UiPanel
 
         int daysLeft = ContractRules.DaysLeft(day, _rotationDays);
 
-        if (_feedback.Length > 0)
-        {
-            Label refused = UiTheme.Caption(_feedback, UiTheme.Bad);
-            refused.AutowrapMode = TextServer.AutowrapMode.WordSmart;
-            _list.AddChild(refused);
-        }
+        _refusal.Text = _feedback;
+        _refusal.Visible = _feedback.Length > 0;
 
         // The postings come first: they are what the board is for, and their Deliver buttons are
         // what a pad lands on. The road news reads underneath.

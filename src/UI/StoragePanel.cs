@@ -115,7 +115,7 @@ public partial class StoragePanel : UiPanel
         }
     }
 
-    private static string MoveVerb(Side side) => Loc.T(side == Side.Pack ? "storage.store" : "storage.take");
+    private static string MoveVerb(Side side) => side == Side.Pack ? Loc.T("storage.store") : Loc.T("storage.take");
 
     protected override void BuildShell(PanelContainer shell)
     {
@@ -187,7 +187,7 @@ public partial class StoragePanel : UiPanel
         };
         search.FocusEntered += () => GameInput.SetTextEntry(true);
         search.FocusExited += () => GameInput.SetTextEntry(false);
-        search.TextSubmitted += _ => search.ReleaseFocus();
+        search.TextSubmitted += _ => _focusSelection = true; // back to the lists, not to no focus at all
         tools.AddChild(search);
         column.AddChild(tools);
 
@@ -222,12 +222,14 @@ public partial class StoragePanel : UiPanel
     protected override void OnReady()
     {
         EventBus.Instance?.Subscribe<StorageOpenedEvent>(OnStorageOpened);
+        EventBus.Instance?.Subscribe<InputDeviceChangedEvent>(OnDeviceChanged);
         EventBus.Instance?.Subscribe<InventoryChangedEvent>(OnInventoryChanged);
     }
 
     public override void _ExitTree()
     {
         EventBus.Instance?.Unsubscribe<StorageOpenedEvent>(OnStorageOpened);
+        EventBus.Instance?.Unsubscribe<InputDeviceChangedEvent>(OnDeviceChanged);
         EventBus.Instance?.Unsubscribe<InventoryChangedEvent>(OnInventoryChanged);
         GameInput.SetTextEntry(false);
     }
@@ -277,6 +279,9 @@ public partial class StoragePanel : UiPanel
 
     private void OnInventoryChanged(InventoryChangedEvent e) => MarkDirty();
 
+    /// <summary>The legend carries an entry only a pad has (scroll details).</summary>
+    private void OnDeviceChanged(InputDeviceChangedEvent e) => MarkDirty();
+
     public override void _Process(double delta)
     {
         if (IsOpen)
@@ -308,11 +313,19 @@ public partial class StoragePanel : UiPanel
             {
                 _selectedRow.GrabFocus();
             }
+            else if (GetViewport().GuiGetFocusOwner() is LineEdit)
+            {
+                UiFocus.GrabFirst(Shell); // a search that left the inspected stack off both lists
+            }
         }
 
         if (_detailDirty)
         {
+            // A refused press sets only the reason, and the bar it is said in is rebuilt around the
+            // pressed verb: focus goes back to the same place on the new bar.
+            int[]? focusPath = UiFocus.PathOf(_order);
             RebuildDetail();
+            UiFocus.Restore(_order, focusPath);
         }
 
         TradeRow.StickScroll(_detailScroll, delta);
@@ -575,7 +588,7 @@ public partial class StoragePanel : UiPanel
         return had;
     }
 
-    private void Select(Side side, ItemStack stack, Button? slot)
+    private void Select(Side side, ItemStack stack, Button? slot, Button? row)
     {
         if (_focusSelection || (_selectedSide == side && ReferenceEquals(_selected, stack)))
         {
@@ -587,10 +600,12 @@ public partial class StoragePanel : UiPanel
             ItemSlot.SetSelected(_selectedSlot, _selected?.Instance, false);
         }
 
-        bool crossed = side != _selectedSide || _selected == null;
+        // The legend names the verb by side and offers Compare only for a piece that can be worn.
+        bool legendChanged = side != _selectedSide || _selected?.Instance.IsEquippable != stack.Instance.IsEquippable;
         _selectedSide = side;
         _selected = stack;
         _selectedSlot = slot;
+        _selectedRow = row;
         if (slot != null)
         {
             ItemSlot.SetSelected(slot, stack.Instance, true);
@@ -598,10 +613,11 @@ public partial class StoragePanel : UiPanel
 
         _partialQuantity = 1;
         _feedback = string.Empty;
+        _detailScroll.ScrollVertical = 0; // a new card opens at its head
         _detailDirty = true;
-        if (crossed)
+        if (legendChanged)
         {
-            MarkDirty(); // the legend's verb changes with the side
+            MarkDirty();
         }
     }
 
@@ -661,14 +677,16 @@ public partial class StoragePanel : UiPanel
         bool selected = _selectedSide == side && ReferenceEquals(_selected, stack);
 
         Button? slot = null;
+        Button? input = null;
         ItemStack captured = stack;
         TradeRow.Built row = TradeRow.Build(
             instance, stack.Quantity, selected, accepted,
             price: string.Empty,
             note: accepted ? string.Empty : Loc.T("storage.too_plain"),
-            onSelect: () => Select(side, captured, slot),
+            onSelect: () => Select(side, captured, slot, input),
             onAct: () => TryMove(side, captured, captured.Quantity));
         slot = row.Slot;
+        input = row.Input;
         if (selected)
         {
             _selectedRow = row.Input;
@@ -758,7 +776,9 @@ public partial class StoragePanel : UiPanel
     }
 
     /// <summary>Up and down inside a list, left and right between the two, and right from the
-    /// stored column to the order bar. Run once the rows are in the tree.</summary>
+    /// stored column to the order bar. Left from the pack goes round to the bar as well: stepping
+    /// there through the stored column would select a stack on the way and turn the bar into its
+    /// order. The bar leads back to the row it acts on. Run once the rows are in the tree.</summary>
     private void WireFocus()
     {
         Control? order = null;
@@ -773,8 +793,9 @@ public partial class StoragePanel : UiPanel
 
         Control? pack = _packRows.Count > 0 ? _packRows[0] : null;
         Control? store = _storeRows.Count > 0 ? _storeRows[0] : order;
-        TradeRow.WireColumn(_packRows, null, store);
-        TradeRow.WireColumn(_storeRows, pack, order);
+        TradeRow.WireColumn(_packRows, order, store);
+        TradeRow.WireColumn(_storeRows, pack ?? order, order);
+        TradeRow.WireOrderBar(_order, _selectedRow);
     }
 
     // --- Capture hooks (src/Debugging/TradeShots.cs) ------------------------
