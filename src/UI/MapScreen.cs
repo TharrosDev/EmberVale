@@ -336,8 +336,8 @@ public partial class MapScreen : UiPanel
         // Right stick pans (the look_* actions already exist for the camera), so the map is
         // navigable on a pad without inventing a binding.
         var stick = new Vector2(
-            Godot.Input.GetActionStrength(GameInput.LookRight) - Godot.Input.GetActionStrength(GameInput.LookLeft),
-            Godot.Input.GetActionStrength(GameInput.LookDown) - Godot.Input.GetActionStrength(GameInput.LookUp));
+            Godot.Input.GetActionStrength(UiLive.LookRight) - Godot.Input.GetActionStrength(UiLive.LookLeft),
+            Godot.Input.GetActionStrength(UiLive.LookDown) - Godot.Input.GetActionStrength(UiLive.LookUp));
         if (stick.LengthSquared() > 0.04f)
         {
             SetProjection(_projection.Panned(-stick * 600f * (float)delta));

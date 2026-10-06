@@ -79,8 +79,8 @@ public abstract partial class NarrationSequence : CanvasLayer
 
         // Interact/attack skip; Esc deliberately does not, or one press would both end the narration
         // and open the pause menu behind it.
-        if (Godot.Input.IsActionJustPressed(GameInput.Interact) ||
-            Godot.Input.IsActionJustPressed(GameInput.Attack))
+        if (Godot.Input.IsActionJustPressed(UiLive.Interact) ||
+            Godot.Input.IsActionJustPressed(UiLive.Attack))
         {
             Finish();
             return;

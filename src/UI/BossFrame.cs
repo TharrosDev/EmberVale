@@ -118,6 +118,10 @@ public partial class BossFrame : PanelContainer
         EventBus.Instance?.Subscribe<BossPhaseChangedEvent>(OnPhase);
         EventBus.Instance?.Subscribe<EntityDiedEvent>(OnDied);
         EventBus.Instance?.Subscribe<BossWithdrewEvent>(OnWithdrew);
+
+        // Asleep between fights: Present and ShowMessage wake it, and the tick puts it back to
+        // sleep on the frame it hides itself.
+        SetProcess(Visible);
     }
 
     public override void _ExitTree()
@@ -142,6 +146,7 @@ public partial class BossFrame : PanelContainer
     public void Present(IEntity boss, string displayName, int totalPhases, string epithetKey, string introLineKey)
     {
         _boss = boss;
+        SetProcess(true);
         _totalPhases = Mathf.Max(1, totalPhases);
         _bar.Snap(1d);
         _name.Text = displayName;
@@ -244,6 +249,7 @@ public partial class BossFrame : PanelContainer
     {
         _message.Text = text;
         _message.Visible = true;
+        SetProcess(true);
         _messageUntil = Time.GetTicksMsec() + durationMs;
     }
 
@@ -285,6 +291,7 @@ public partial class BossFrame : PanelContainer
         if (_boss == null && !_message.Visible && _fade is not { Visible: true })
         {
             Visible = false;
+            SetProcess(false); // nothing left to drive until the next fight
         }
     }
 }
