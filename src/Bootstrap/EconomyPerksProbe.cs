@@ -217,13 +217,16 @@ internal static class EconomyPerksProbe
     }
 
     /// <summary>The first recipe with a plain (not rolled) output and an ingredient needing 2 or more; the
-    /// material is the one <see cref="MaterialSaving.SavedIngredient"/> picks.</summary>
+    /// material is the one <see cref="MaterialSaving.SavedIngredient"/> picks. A recipe that asks for a
+    /// crafting rank is passed over: <c>CraftOnce</c> loads a save with no skill in it, so the craft would be
+    /// refused for a reason that has nothing to do with what this probe measures.</summary>
     private static CraftingRecipeResource? FindRecipe(out string materialId)
     {
         materialId = string.Empty;
         foreach (CraftingRecipeResource recipe in RecipeDatabase.All)
         {
-            if (recipe.OutputRarity != ItemRarity.Common || ItemDatabase.Get(recipe.OutputItemId) is null)
+            if (recipe.OutputRarity != ItemRarity.Common || ItemDatabase.Get(recipe.OutputItemId) is null
+                || CraftingSkill.RequiredRank(recipe.Tier) > 0)
             {
                 continue;
             }

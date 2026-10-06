@@ -15,15 +15,28 @@
 ; rank for coin, so this sells *a lesson*: one payment, one flag, one grant. Gold reaches skill points
 ; only through levelling, and only as far as the authored content allows. A trainer granting XP with no
 ; UnlockFlagId would be an infinite gold-to-levels pump, and --validate rejects that pairing.
+;
+; ics crafting: the lesson is now the realm's whole craft curriculum, and TaughtRecipeIds is GENERATED
+; by tools/gen_recipes.py (every catalogue recipe whose discovery is "trainer" or "scroll"). Edit the
+; catalogue, not that line. It carries the scroll recipes too because recipe reachability has exactly
+; two routes (Recipes.Starting or a trainer) and a new trainer needs a map location nobody in this
+; pass could add; a recipe scroll is the second, free way to the same knowledge.
+; ⚠️ Knowing a recipe is not being able to make it: a recipe above tier 1 needs a crafting rank
+; (CraftingSkill.RequiredRank), so buying the lesson early hands over no late-game gear.
+;
+; UnlockFlagId changed from flag.trainer.ember_crown.smithing on purpose. The flag is the receipt, and
+; a save that bought the one-recipe lesson holds the old receipt: keeping it would leave that save
+; "already taught" and unable to learn any of the recipes added here. The cost is that such a save can
+; take the lesson (and its XP) once more. PriceGold rose from 250 with the size of what is taught.
 
 [resource]
 script = ExtResource("1_service")
 Id = "service.ember_crown.trainer"
-NameKey = "service.ember_crown.trainer.name"
+NameKey = "service.ember_crown.trainer.crafts_name"
 Kind = 0
-PriceGold = 250
+PriceGold = 400
 FactionId = "faction.villagers"
-UnlockFlagId = "flag.trainer.ember_crown.smithing"
+UnlockFlagId = "flag.trainer.ember_crown.crafting"
 RestHour = 8
-TaughtRecipeIds = Array[String](["recipe.drakescale_mail"])
+TaughtRecipeIds = Array[String](["recipe.drakescale_mail", "recipe.steel_ingot", "recipe.blacksteel_ingot", "recipe.sunsteel_ingot", "recipe.moonsilver_ingot", "recipe.starmetal_ingot", "recipe.iron_sword", "recipe.hunting_bow", "recipe.oak_staff", "recipe.iron_cuirass", "recipe.rawhide_jerkin", "recipe.homespun_robe", "recipe.frostpine_bow", "recipe.frostpine_staff", "recipe.steel_cuirass", "recipe.frosthide_jerkin", "recipe.frostwool_robe", "recipe.blacksteel_sword", "recipe.cinderwood_bow", "recipe.cinderwood_staff", "recipe.blacksteel_cuirass", "recipe.ashhide_jerkin", "recipe.ashweave_robe", "recipe.sunsteel_sword", "recipe.goldenpalm_bow", "recipe.goldenpalm_staff", "recipe.sunsteel_cuirass", "recipe.dunehide_jerkin", "recipe.sunsilk_robe", "recipe.moonsilver_sword", "recipe.gloamwood_bow", "recipe.gloamwood_staff", "recipe.moonsilver_cuirass", "recipe.duskhide_jerkin", "recipe.gloamweave_robe", "recipe.starmetal_sword", "recipe.starwood_bow", "recipe.starwood_staff", "recipe.starmetal_cuirass", "recipe.skyhide_jerkin", "recipe.starweave_robe", "recipe.copper_ring", "recipe.copper_charm", "recipe.steel_arrows", "recipe.blacksteel_arrows", "recipe.health_greater", "recipe.health_superior", "recipe.stamina_lesser", "recipe.stamina_greater", "recipe.stamina_superior", "recipe.mana_lesser", "recipe.mana_greater", "recipe.mana_superior", "recipe.cure_lesser", "recipe.cure_greater", "recipe.cure_superior", "recipe.might_lesser", "recipe.insight_lesser", "recipe.stoneskin_lesser", "recipe.spiced_roast", "recipe.frostfang_broth", "recipe.ember_tea"])
 XpReward = 300

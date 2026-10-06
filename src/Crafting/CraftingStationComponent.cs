@@ -16,9 +16,16 @@ public partial class CraftingStationComponent : InteractableComponent
 {
     [Export] public CraftingStationType Station { get; set; } = CraftingStationType.Forge;
 
-    [Export] public string StationName { get; set; } = "Forge";
+    /// <summary>An optional locale key naming this particular station (a master's own anvil, say).
+    /// Anything that is not a key in the catalogue, including the English word older scenes authored
+    /// here, is ignored and the station is named after its <see cref="Station"/> type.</summary>
+    [Export] public string StationName { get; set; } = string.Empty;
 
-    public override string Prompt => $"Use {StationName}";
+    /// <summary>The station's name as the player reads it.</summary>
+    public string StationLabel =>
+        Localization.Loc.Has(StationName) ? Localization.Loc.T(StationName) : CraftingStations.Label(Station);
+
+    public override string Prompt => Localization.Loc.TF("craft.prompt_use", StationLabel);
 
     public override bool Interact(IEntity instigator)
     {
@@ -28,7 +35,7 @@ public partial class CraftingStationComponent : InteractableComponent
             return false;
         }
 
-        EventBus.Instance?.Publish(new CraftingStationOpenedEvent(instigator, Station, StationName));
+        EventBus.Instance?.Publish(new CraftingStationOpenedEvent(instigator, Station, StationLabel));
         return true;
     }
 }
