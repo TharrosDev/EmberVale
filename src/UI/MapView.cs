@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Embervale.Core.Services;
 using Embervale.Economy;
+using Embervale.Localization;
 using Embervale.Player;
 using Embervale.World;
 using Godot;
@@ -50,6 +51,14 @@ public partial class MapView : Control
     /// <summary>This frame's label competition — measured in <see cref="QueueLabel"/>, resolved by
     /// <see cref="LabelPlacer"/>, drawn in <see cref="DrawPlacedLabels"/>. Cleared every `_Draw`.</summary>
     private readonly List<(LabelCandidate Candidate, string Text, Vector2 Origin, Color Colour)> _labels = new();
+
+    // Reused by PinNear, so a pan that re-asks for the snap every frame allocates nothing.
+    private readonly List<Vector2> _pickPoints = new();
+    private readonly List<string> _pickIds = new();
+
+    // The scale bar's caption, rebuilt only when the bar changes length.
+    private int _scaleMetres = -1;
+    private string _scaleText = string.Empty;
 
     private bool _dragging;
     private bool _dragMoved;
@@ -113,6 +122,17 @@ public partial class MapView : Control
     }
 
     public Vector3? Waypoint { get; set; }
+
+    /// <summary>
+    /// Draws the gamepad cursor: a reticle at the centre of the plot, which is where a pad "points"
+    /// (the right stick moves the map under it). <see cref="MapScreen"/> turns it on while a pad is
+    /// in use; a mouse has its own pointer and its own hover label.
+    /// </summary>
+    public bool ShowCursor { get; set; }
+
+    /// <summary>The pin the cursor has snapped to (<see cref="MapSnapRules.SnapRadius"/>), ringed
+    /// and named. Null when nothing is near enough.</summary>
+    public string? SnapId { get; set; }
 
     /// <summary>
     /// Drops every label from the plot (39.5B): region lettering, pin names and the hover caption.
@@ -285,27 +305,27 @@ public partial class MapView : Control
 
     /// <summary>The nearest visible pin within <see cref="PickRadius"/> of a pixel, or null.
     /// Nearest rather than first so overlapping markers pick the one actually under the cursor.</summary>
-    private string? PinAt(Vector2 pixel)
-    {
-        string? best = null;
-        float bestDistance = PickRadius * PickRadius;
+    private string? PinAt(Vector2 pixel) => PinNear(pixel, PickRadius);
 
+    /// <summary>The nearest pin this plot is drawing within <paramref name="radius"/> pixels of
+    /// <paramref name="pixel"/>, or null. The mouse asks with <see cref="PickRadius"/>; the gamepad
+    /// cursor asks with the wider snap radius.</summary>
+    public string? PinNear(Vector2 pixel, float radius)
+    {
+        _pickPoints.Clear();
+        _pickIds.Clear();
+        MapProjection fitted = Fitted;
         foreach (MapPin pin in Pins)
         {
-            if (!Shows(pin))
+            if (Shows(pin))
             {
-                continue;
-            }
-
-            float distance = Fitted.WorldToScreen(pin.WorldXz).DistanceSquaredTo(pixel);
-            if (distance <= bestDistance)
-            {
-                bestDistance = distance;
-                best = pin.Id;
+                _pickPoints.Add(fitted.WorldToScreen(pin.WorldXz));
+                _pickIds.Add(pin.Id);
             }
         }
 
-        return best;
+        int index = MapSnapRules.Nearest(_pickPoints, pixel, radius);
+        return index < 0 ? null : _pickIds[index];
     }
 
     // ── Drawing ───────────────────────────────────────────────────────────────────────────────
@@ -331,7 +351,14 @@ public partial class MapView : Control
         {
             DrawTextureRect(relief.Texture, ScreenRect(relief.World), false);
             DrawRoads();
-            DrawGraticule();
+
+            // The full map lets the terrain read on its own: shaded relief already gives a pan
+            // something to move against, and a grid over it is one more layer between the player
+            // and the ground. The minimap keeps its grid.
+            if (Compact)
+            {
+                DrawGraticule();
+            }
         }
         else
         {
@@ -366,6 +393,8 @@ public partial class MapView : Control
 
         DrawWaypoint();
         DrawPlayer();
+        DrawScaleBar();
+        DrawCursor();
         DrawHoverLabel();
         DrawFrame();
     }
@@ -812,18 +841,107 @@ public partial class MapView : Control
                 origin.X = _cursor.X - measured.X - UiTheme.SpaceMd;
             }
 
-            // The box wraps the glyphs (ascent above the baseline, descent below) with a tooltip's padding,
-            // SpaceSm at the sides and SpaceXs above and below, instead of hugging the text.
-            float ascent = font.GetAscent(size);
-            float height = ascent + font.GetDescent(size);
-            DrawRect(
-                new Rect2(
-                    origin - new Vector2(UiTheme.SpaceSm, ascent + UiTheme.SpaceXs),
-                    new Vector2(measured.X + (UiTheme.SpaceSm * 2f), height + (UiTheme.SpaceXs * 2f))),
-                new Color(UiTheme.PanelBg, 0.92f));
-            DrawString(font, origin, pin.Label, HorizontalAlignment.Left, -1, size, UiTheme.Text);
+            DrawNameChip(font, pin.Label, origin, size);
             return;
         }
+    }
+
+    /// <summary>A name on its own small plate, <paramref name="origin"/> being the text's left
+    /// baseline. The box wraps the glyphs (ascent above the baseline, descent below) with a tooltip's
+    /// padding, SpaceSm at the sides and SpaceXs above and below, instead of hugging the text.</summary>
+    private void DrawNameChip(Font font, string text, Vector2 origin, int size)
+    {
+        Vector2 measured = font.GetStringSize(text, HorizontalAlignment.Left, -1, size);
+        float ascent = font.GetAscent(size);
+        float height = ascent + font.GetDescent(size);
+        DrawRect(
+            new Rect2(
+                origin - new Vector2(UiTheme.SpaceSm, ascent + UiTheme.SpaceXs),
+                new Vector2(measured.X + (UiTheme.SpaceSm * 2f), height + (UiTheme.SpaceXs * 2f))),
+            new Color(UiTheme.PanelBg, 0.92f));
+        DrawString(font, origin, text, HorizontalAlignment.Left, -1, size, UiTheme.Text);
+    }
+
+    /// <summary>
+    /// The gamepad cursor: a reticle at the centre of the plot and, when a pin is near enough to
+    /// take the snap, a ring round that pin with its name on a plate. The ring and the name are the
+    /// signal; the focus colour only agrees with them.
+    /// </summary>
+    private void DrawCursor()
+    {
+        if (Compact || !ShowCursor)
+        {
+            return;
+        }
+
+        Vector2 centre = Size * 0.5f;
+        foreach (Vector2 arm in ReticleArms)
+        {
+            DrawLine(centre + (arm * 6f), centre + (arm * 15f), UiTheme.Keyline, 4f);
+            DrawLine(centre + (arm * 7f), centre + (arm * 14f), UiTheme.Text, 2f);
+        }
+
+        if (SnapId == null || UiTheme.UiFont is not { } font)
+        {
+            return;
+        }
+
+        foreach (MapPin pin in Pins)
+        {
+            if (pin.Id != SnapId)
+            {
+                continue;
+            }
+
+            Vector2 at = Projection.WorldToScreen(pin.WorldXz);
+            float radius = RadiusOf(pin.Tier) + 8f;
+            DrawArc(at, radius + 1.5f, 0f, Mathf.Tau, 28, UiTheme.Keyline, 4f);
+            DrawArc(at, radius, 0f, Mathf.Tau, 28, UiTheme.FocusRing, 2f);
+
+            int size = UiTheme.FontSize(UiTheme.BodyFontSize);
+            Vector2 measured = font.GetStringSize(pin.Label, HorizontalAlignment.Left, -1, size);
+            float ascent = font.GetAscent(size);
+            var origin = new Vector2(
+                Mathf.Clamp(at.X - (measured.X * 0.5f), UiTheme.SpaceMd, Mathf.Max(UiTheme.SpaceMd, Size.X - measured.X - UiTheme.SpaceMd)),
+                at.Y - radius - UiTheme.SpaceMd);
+
+            // Under the pin instead when there is no room above it.
+            if (origin.Y - ascent - UiTheme.SpaceXs < 0f)
+            {
+                origin.Y = at.Y + radius + UiTheme.SpaceMd + ascent;
+            }
+
+            DrawNameChip(font, pin.Label, origin, size);
+            return;
+        }
+    }
+
+    private static readonly Vector2[] ReticleArms = { Vector2.Up, Vector2.Down, Vector2.Left, Vector2.Right };
+
+    /// <summary>A scale bar in the plot's lower left corner: the one measure that says how far apart
+    /// two places are at this zoom. Its length steps through round distances.</summary>
+    private void DrawScaleBar()
+    {
+        if (Compact || Size.X < 240f)
+        {
+            return;
+        }
+
+        int metres = MapSnapRules.ScaleBarMetres(Projection.Zoom, 120f);
+        if (metres != _scaleMetres)
+        {
+            _scaleMetres = metres;
+            _scaleText = Loc.TF("kn.map.scale", metres);
+        }
+
+        var left = new Vector2(UiTheme.SpaceMd, Size.Y - UiTheme.SpaceMd);
+        var right = left + new Vector2(metres * Projection.Zoom, 0f);
+        var tick = new Vector2(0f, -UiTheme.Space2xs);
+        DrawLine(left + new Vector2(-1f, 0f), right + new Vector2(1f, 0f), UiTheme.Keyline, 4f);
+        DrawLine(left, right, UiTheme.Text, 2f);
+        DrawLine(left, left + tick, UiTheme.Text, 2f);
+        DrawLine(right, right + tick, UiTheme.Text, 2f);
+        DrawLabelAt(_scaleText, left + new Vector2(0f, -UiTheme.SpaceSm), UiTheme.Text, UiTheme.CaptionFontSize);
     }
 
     /// <summary>A hairline inside the plot's edge, so the map reads as a framed chart.</summary>

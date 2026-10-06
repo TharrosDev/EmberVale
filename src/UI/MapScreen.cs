@@ -28,6 +28,11 @@ namespace Embervale.UI;
 /// — the brief's §4, and invariant 5's "the explanation is the charge" applied to a second screen.
 ///
 /// Modal, because the pan/zoom/select interaction needs the mouse.
+///
+/// <b>The 2026-10 pass</b> gave the plot the screen: the footer of view buttons is gone (their verbs
+/// are in the legend), the rail is two tabs (the place in hand, and a legend whose rows are the
+/// filters), a gamepad has a cursor that snaps to the nearest pin, and fast travel asks once before
+/// it goes.
 /// </summary>
 public partial class MapScreen : UiPanel
 {
@@ -38,16 +43,28 @@ public partial class MapScreen : UiPanel
 
     private MapView _view = null!;
     private LineEdit _search = null!;
+    private Control _searchRow = null!;
     private Label _breadcrumb = null!;
-    private VBoxContainer _results = null!;
-    private ScrollContainer _resultsScroll = null!;
+    private VBoxContainer _rail = null!;
+    private UiTabs _railTabs = null!;
+    private VBoxContainer _railBody = null!;
+
+    // The selected marker's block, rebuilt with the rail; the info helpers add their lines to it.
     private VBoxContainer _info = null!;
-    private VBoxContainer _filters = null!;
-    private VBoxContainer _legend = null!;
-    private VBoxContainer _travelList = null!;
-    private ScrollContainer _travelScroll = null!;
-    private Button _clearWaypoint = null!;
-    private Label _waypointReadout = null!;
+
+    // The rail's two tabs, by UiTabs index.
+    private const int PlaceTab = 0;
+    private const int LegendTab = 1;
+
+    // The legend lists groups; expanded, it lists every category under its group.
+    private bool _legendExpanded;
+
+    // The waystone a travel button asked for, while the confirmation is up.
+    private string? _pendingTravelId;
+    private bool _focusConfirm;
+
+    // The screenshot harness has no pad to make the cursor appear with.
+    private bool _cursorForced;
 
     private MapProjection _projection = new(Vector2.Zero, MapProjection.DefaultZoom, Vector2.One);
     private readonly HashSet<MapCategory> _hidden = new();
@@ -68,29 +85,63 @@ public partial class MapScreen : UiPanel
 
     protected override HubTab? Hub => HubTab.Map;
 
-    /// <summary>Floor for each scrolling rail section: three full-height rows and the gaps between them, so
-    /// a list never collapses to a sliver when the rail is squeezed.</summary>
-    private const int RailListMin = (UiTheme.ControlHeight * 3) + (UiTheme.RowGap * 2);
+    /// <summary>While the travel confirmation is up, cancel steps back out of it and the map stays.</summary>
+    protected override bool CloseOnCancel => _pendingTravelId == null;
 
-    private static float RailListHeight(int rows) => (UiTheme.ControlHeight * rows) + (UiTheme.RowGap * (rows - 1));
+    /// <summary>The map's verbs for the device in hand. A pad moves the map under a cursor; a mouse
+    /// drags it and points for itself.</summary>
+    protected override IReadOnlyList<LegendEntry> Legend
+    {
+        get
+        {
+            if (_pendingTravelId != null)
+            {
+                return new[]
+                {
+                    new LegendEntry("ui_accept", Loc.T("kn.legend.confirm")),
+                    new LegendEntry("ui_cancel", Loc.T("kn.legend.back")),
+                };
+            }
+
+            var entries = new List<LegendEntry>();
+            if (InputDevice.GamepadActive)
+            {
+                entries.Add(new LegendEntry(GameInput.LookRight, Loc.T("kn.legend.pan")));
+                entries.Add(new LegendEntry(GameInput.MenuSubPrev, Loc.T("kn.legend.zoom"), GameInput.MenuSubNext));
+                entries.Add(new LegendEntry(KnowledgeInput.Primary, Loc.T("kn.legend.select")));
+                entries.Add(new LegendEntry(KnowledgeInput.Secondary, Loc.T("kn.legend.waypoint")));
+            }
+            else
+            {
+                entries.Add(new LegendEntry(GameInput.Attack, Loc.T("kn.legend.pan_select")));
+                entries.Add(new LegendEntry(GameInput.MenuSubPrev, Loc.T("kn.legend.zoom"), GameInput.MenuSubNext));
+                entries.Add(new LegendEntry(GameInput.Block, Loc.T("kn.legend.waypoint")));
+            }
+
+            entries.AddRange(base.Legend);
+            return entries;
+        }
+    }
+
+    /// <summary>The rail takes under a third of the page, so the plot is the screen.</summary>
+    private float RailWidth() => Mathf.Clamp(UiTheme.UsableWidth(Shell) * 0.30f, 250f, 340f);
 
     protected override void BuildShell(PanelContainer shell)
     {
         // Near-fullscreen, unlike the 580 px shell 25E used. A map is the one screen where the plot
         // IS the content: shrinking it to leave room for chrome is what made the old one a legend
         // with a picture attached.
-        shell.SetAnchorsPreset(Control.LayoutPreset.FullRect);
         UiTheme.ApplyScreenInset(shell);
+        VBoxContainer col = UiTheme.HubPage(shell, Loc.T("kn.title.map"), out HBoxContainer aside);
 
-        MarginContainer pad = UiTheme.Padding(UiTheme.SpaceLg);
-        shell.AddChild(pad);
-
-        var col = new VBoxContainer();
-        col.AddThemeConstantOverride("separation", UiTheme.SpaceMd);
-        pad.AddChild(col);
-
-        col.AddChild(BuildHeader());
-        col.AddChild(UiTheme.Divider());
+        // Where the player is, in words (§29). The single most useful line on the screen and the one
+        // the old map had no way to produce.
+        _breadcrumb = UiTheme.Body(string.Empty, UiTheme.Accent);
+        _breadcrumb.HorizontalAlignment = HorizontalAlignment.Right;
+        _breadcrumb.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        _breadcrumb.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
+        _breadcrumb.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
+        aside.AddChild(_breadcrumb);
 
         var body = new HBoxContainer();
         body.AddThemeConstantOverride("separation", UiTheme.SpaceMd);
@@ -109,147 +160,55 @@ public partial class MapScreen : UiPanel
         well.AddChild(_view);
 
         body.AddChild(BuildRail());
-        col.AddChild(UiTheme.Divider());
-        col.AddChild(BuildFooter());
     }
 
-    private Control BuildHeader()
-    {
-        var row = new HBoxContainer();
-        row.AddThemeConstantOverride("separation", UiTheme.SpaceMd);
-
-        row.AddChild(UiTheme.Title(Loc.T("map.title")));
-
-        var spacer = new Control { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
-        row.AddChild(spacer);
-
-        // Where the player is, in words (§29). The single most useful line on the screen and the one
-        // the old map had no way to produce.
-        _breadcrumb = UiTheme.Body(string.Empty, UiTheme.Accent);
-        _breadcrumb.HorizontalAlignment = HorizontalAlignment.Right;
-        row.AddChild(_breadcrumb);
-
-        return row;
-    }
-
-    /// <summary>The right-hand rail: search, results, selection, filters, legend — top to bottom in
-    /// the order a player actually uses them.</summary>
+    /// <summary>
+    /// The right-hand rail: two tabs over one scroll. "Place" is what the player is doing (search,
+    /// the selected marker, the waypoint, fast travel); "Legend" says what the marks mean, and each
+    /// of its rows is the switch that hides that kind of mark.
+    ///
+    /// ⚠️ ONE SCROLL FOR THE WHOLE RAIL, AND THAT IS A FIX (39.5C). The sections used to scroll
+    /// separately, and a rail whose pinned heights outgrew the page squashed whichever one could
+    /// flex: seven attuned waystones collapsed the filter list to a row of buttons sliced in half.
+    /// </summary>
     private Control BuildRail()
     {
-        var rail = new VBoxContainer();
-        rail.AddThemeConstantOverride("separation", UiTheme.RowGap);
-        rail.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
+        _rail = new VBoxContainer { SizeFlagsVertical = Control.SizeFlags.ExpandFill };
+        _rail.AddThemeConstantOverride("separation", UiTheme.RowGap);
+        _rail.CustomMinimumSize = new Vector2(RailWidth(), 0f);
+
+        _railTabs = new UiTabs();
+        _railTabs.Add(Loc.T("kn.map.tab_place"));
+        _railTabs.Add(Loc.T("kn.map.tab_legend"));
+        _railTabs.TabChanged += _ => MarkDirty();
+        _rail.AddChild(_railTabs);
+
+        (ScrollContainer scroll, VBoxContainer list) = UiTheme.ScrollList();
+        _rail.AddChild(scroll);
 
         _search = new LineEdit
         {
             PlaceholderText = Loc.T("map.search_placeholder"),
             ClearButtonEnabled = true,
+            CustomMinimumSize = new Vector2(0f, UiTheme.ControlHeight),
         };
+        UiSkin.Apply(_search);
         UiTheme.ApplyType(_search, UiTheme.FontRole.Interface, UiTheme.BodyFontSize);
         _search.TextChanged += OnSearchChanged;
         _search.TextSubmitted += OnSearchSubmitted;
-        rail.AddChild(_search);
 
-        (ScrollContainer scroll, VBoxContainer list) = UiTheme.ScrollList();
-        scroll.CustomMinimumSize = new Vector2(0f, RailListMin);
-        scroll.Visible = false;
-        _resultsScroll = scroll;
-        _results = list;
-        rail.AddChild(scroll);
+        // The search box's focus ring is drawn on its edge, which the scroll would clip.
+        var searchRow = new MarginContainer();
+        searchRow.AddThemeConstantOverride("margin_top", UiTheme.Space2xs);
+        searchRow.AddThemeConstantOverride("margin_left", UiTheme.Space2xs);
+        searchRow.AddChild(_search);
+        _searchRow = searchRow;
+        list.AddChild(searchRow);
 
-        rail.AddChild(UiTheme.SectionRule(Loc.T("map.info_header")));
-        _info = new VBoxContainer();
-        _info.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
-        rail.AddChild(_info);
-
-        // ⚠️ THE TRAVEL LIST IS THE ONE SECTION THAT GROWS WITHOUT A CEILING, SO IT IS THE ONE THAT
-        // SCROLLS (39.5C).
-        //
-        // It was a plain VBox, and it gains a row per attuned waystone — so a well-travelled player's
-        // rail was taller than the screen. A `VBoxContainer` resolves that by squashing whichever
-        // child has `ExpandFill`, which was the FILTERS scroll: at seven destinations the filter box
-        // collapsed to about fourteen pixels and rendered as a row of buttons **sliced in half**, with
-        // the legend sitting on top of the remains. Found by the first `--panelshots` run; invisible
-        // to every other check, and invisible to a player who had not yet discovered enough places.
-        rail.AddChild(UiTheme.SectionRule(Loc.T("map.travel_header")));
-        (ScrollContainer travelScroll, VBoxContainer travelList) = UiTheme.ScrollList();
-        // Sized to its rows (one to three) by RebuildTravelList, so a lone waypoint is not followed by a hole.
-        travelScroll.SizeFlagsVertical = Control.SizeFlags.ShrinkBegin;
-        _travelScroll = travelScroll;
-        _travelList = travelList;
-        rail.AddChild(travelScroll);
-
-        rail.AddChild(UiTheme.SectionRule(Loc.T("map.filters_header")));
-        (ScrollContainer filterScroll, VBoxContainer filterList) = UiTheme.ScrollList();
-        // A floor as well as a flex: ExpandFill alone is what let it be squashed to nothing.
-        filterScroll.CustomMinimumSize = new Vector2(0f, RailListMin);
-        filterScroll.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
-        _filters = filterList;
-        rail.AddChild(filterScroll);
-
-        rail.AddChild(UiTheme.SectionRule(Loc.T("map.legend_header")));
-        _legend = new VBoxContainer();
-        _legend.AddThemeConstantOverride("separation", UiTheme.RowGap);
-        rail.AddChild(_legend);
-
-        // The rail's pinned section heights add up to more than a 720 px screen, which stretched the
-        // whole shell past the viewport and pushed the footer off it. The rail scrolls as one instead.
-        rail.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-        var gutter = new MarginContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
-        gutter.AddThemeConstantOverride("margin_right", UiTheme.ScrollGutter);
-        gutter.AddThemeConstantOverride("margin_top", UiTheme.Space2xs); // the search box's focus ring is not clipped
-        gutter.AddChild(rail);
-
-        var railScroll = new ScrollContainer
-        {
-            CustomMinimumSize = new Vector2(340f, 0f),
-            SizeFlagsVertical = Control.SizeFlags.ExpandFill,
-            HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled,
-            FollowFocus = true,
-        };
-        railScroll.AddChild(gutter);
-        return railScroll;
-    }
-
-    private Control BuildFooter()
-    {
-        var row = new HBoxContainer();
-        row.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
-
-        row.AddChild(FooterButton("map.zoom_out", () => ZoomBy(1f / 1.3f)));
-        row.AddChild(FooterButton("map.zoom_in", () => ZoomBy(1.3f)));
-        row.AddChild(FooterButton("map.center_player", CenterOnPlayer));
-        row.AddChild(FooterButton("map.reset_view", ResetView));
-        _clearWaypoint = FooterButton("map.waypoint_clear", () => _map?.SetWaypoint(null));
-        row.AddChild(_clearWaypoint);
-
-        _waypointReadout = UiTheme.Body(string.Empty, UiTheme.AccentHot);
-        row.AddChild(_waypointReadout);
-
-        // The hint takes whatever width the buttons and the waypoint readout leave and wraps inside it. As a
-        // fixed-width label beside a spacer it pushed the footer, and with it the whole panel, past the
-        // right edge at 1280 px once a waypoint was set.
-        Label hint = UiTheme.Caption(Loc.T("map.hint"), UiTheme.Dim);
-        hint.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-        hint.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
-        hint.HorizontalAlignment = HorizontalAlignment.Right;
-        hint.AutowrapMode = TextServer.AutowrapMode.WordSmart;
-        row.AddChild(hint);
-
-        return row;
-    }
-
-    private Button FooterButton(string key, System.Action action)
-    {
-        Button button = UiTheme.Action(Loc.T(key));
-
-        // Never rebuild inside a button signal (CLAUDE.md §8) — mark dirty and let _Process do it.
-        button.Pressed += () =>
-        {
-            action();
-            MarkDirty();
-        };
-        return button;
+        _railBody = new VBoxContainer();
+        _railBody.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
+        list.AddChild(_railBody);
+        return _rail;
     }
 
     protected override void OnReady()
@@ -262,7 +221,12 @@ public partial class MapScreen : UiPanel
         EventBus.Instance?.Subscribe<QuestStageChangedEvent>(OnStageChanged);
         EventBus.Instance?.Subscribe<QuestCompletedEvent>(OnQuestCompleted);
         EventBus.Instance?.Subscribe<QuestFailedEvent>(OnQuestFailed);
+
+        // The cursor and the legend's verbs both follow the device in hand.
+        EventBus.Instance?.Subscribe<InputDeviceChangedEvent>(OnDeviceChanged);
     }
+
+    private void OnDeviceChanged(InputDeviceChangedEvent e) => MarkDirty();
 
     private void OnQuestStarted(QuestStartedEvent e) => MarkDirty();
 
@@ -282,6 +246,7 @@ public partial class MapScreen : UiPanel
         EventBus.Instance?.Unsubscribe<QuestStageChangedEvent>(OnStageChanged);
         EventBus.Instance?.Unsubscribe<QuestCompletedEvent>(OnQuestCompleted);
         EventBus.Instance?.Unsubscribe<QuestFailedEvent>(OnQuestFailed);
+        EventBus.Instance?.Unsubscribe<InputDeviceChangedEvent>(OnDeviceChanged);
     }
 
     public void SetMapService(MapService? map)
@@ -300,6 +265,8 @@ public partial class MapScreen : UiPanel
     {
         if (!open)
         {
+            // A confirmation never outlives the screen it was asked on.
+            _pendingTravelId = null;
             return;
         }
 
@@ -329,6 +296,14 @@ public partial class MapScreen : UiPanel
             return;
         }
 
+        // CloseOnCancel is off while the confirmation is up, so cancel is this screen's to answer:
+        // it backs out of the question and leaves the map open.
+        if (_pendingTravelId != null && Godot.Input.IsActionJustPressed(UiLive.UiCancel))
+        {
+            UiAudio.Play(UiCue.Back);
+            CancelTravel();
+        }
+
         if ((_map != null && _shownRevision != _map.Revision) ||
             (_travel != null && _shownTravelRevision != _travel.Revision))
         {
@@ -352,6 +327,36 @@ public partial class MapScreen : UiPanel
             _lastPlayerAt = at;
             _view.QueueRedraw();
         }
+    }
+
+    /// <summary>The cursor's two verbs (<see cref="KnowledgeInput"/>): select the pin it has snapped
+    /// to, and set or clear the waypoint under it.</summary>
+    public override void _Input(InputEvent @event)
+    {
+        if (!IsOpen || _pendingTravelId != null || !_view.ShowCursor)
+        {
+            return;
+        }
+
+        if (KnowledgeInput.IsPrimary(@event))
+        {
+            UiAudio.Play(UiCue.Click);
+            OnPicked(_view.SnapId);
+            GetViewport().SetInputAsHandled();
+        }
+        else if (KnowledgeInput.IsSecondary(@event))
+        {
+            ToggleWaypointAtCursor();
+            GetViewport().SetInputAsHandled();
+        }
+    }
+
+    /// <summary>The sub-tab actions (Z / C, LT / RT) zoom: on a map the triggers are the zoom, and the
+    /// rail's two tabs are a press away by focus.</summary>
+    protected override void OnSubTab(int delta)
+    {
+        float target = MapSnapRules.StepZoom(_projection.Zoom, delta);
+        ZoomBy(target / _projection.Zoom);
     }
 
     public override void _UnhandledKeyInput(InputEvent @event)
@@ -393,6 +398,56 @@ public partial class MapScreen : UiPanel
         // view is looking, so panning the map was rebuilding the whole screen tens of times a second
         // to produce identical content. The plot repaints itself; the rail does not need to know.
         _view.QueueRedraw();
+        UpdateCursor();
+    }
+
+    /// <summary>
+    /// Shows the cursor while a pad is in hand and snaps it to the nearest drawn pin. Called
+    /// whenever the view or the pins change; writes to the plot only when the answer does.
+    /// </summary>
+    private void UpdateCursor()
+    {
+        bool cursor = _cursorForced || InputDevice.GamepadActive;
+        string? snap = cursor && _view.Size.X > 1f
+            ? _view.PinNear(_view.Size * 0.5f, MapSnapRules.SnapRadius)
+            : null;
+        if (cursor == _view.ShowCursor && snap == _view.SnapId)
+        {
+            return;
+        }
+
+        _view.ShowCursor = cursor;
+        _view.SnapId = snap;
+        _view.QueueRedraw();
+    }
+
+    /// <summary>Marks the spot under the cursor (the snapped pin's own position when there is one), or
+    /// clears the mark when the cursor is already on it. One waypoint, as the mouse's right click sets.</summary>
+    private void ToggleWaypointAtCursor()
+    {
+        if (_map == null)
+        {
+            return;
+        }
+
+        SyncViewport();
+        Vector2 centre = _view.Size * 0.5f;
+        Vector2? mark = _map.Waypoint is { } set ? _projection.WorldToScreen(new Vector2(set.X, set.Z)) : null;
+        if (MapSnapRules.ClearsWaypoint(mark, centre, MapSnapRules.SnapRadius * 0.5f))
+        {
+            UiAudio.Play(UiCue.Back);
+            _map.SetWaypoint(null);
+        }
+        else
+        {
+            Vector2 world = _view.SnapId != null && _map.PositionOf(_view.SnapId) is { } pin
+                ? new Vector2(pin.X, pin.Z)
+                : _projection.ScreenToWorld(centre);
+            UiAudio.Play(UiCue.Confirm);
+            _map.SetWaypoint(new Vector3(world.X, 0f, world.Y));
+        }
+
+        MarkDirty();
     }
 
     /// <summary>Keeps the stored projection's viewport in step with the plot, so a rebuild after a
@@ -417,6 +472,7 @@ public partial class MapScreen : UiPanel
         _projection = ClampToContent(projection);
         _view.Projection = _projection;
         _view.QueueRedraw();
+        UpdateCursor();
     }
 
     /// <summary>Keeps the view within a screen of the known world, so it can never be lost in
@@ -452,19 +508,16 @@ public partial class MapScreen : UiPanel
         }
     }
 
-    private void ResetView()
-    {
-        _selectedId = null;
-        _hidden.Clear();
-        _query = string.Empty;
-        _search.Text = string.Empty;
-        SetProjection(_projection with { Zoom = MapProjection.DefaultZoom });
-        CenterOnPlayer();
-    }
-
     private void OnPicked(string? id)
     {
         _selectedId = id;
+
+        // A marker chosen while the rail is on its legend brings the rail back to what was chosen.
+        if (id != null)
+        {
+            _railTabs.Select(PlaceTab);
+        }
+
         MarkDirty();
     }
 
@@ -523,6 +576,72 @@ public partial class MapScreen : UiPanel
     /// Routed through the same clamp every mouse wheel goes through.</summary>
     public void SetZoom(float zoom) => SetProjection(_projection with { Zoom = zoom });
 
+    /// <summary>Opens the map on a location: centred, selected, its details in the rail. How the
+    /// journal's "Show on map" arrives here.</summary>
+    public void ShowLocation(string id)
+    {
+        SetOpen(true);
+        _railTabs.Select(PlaceTab);
+        FocusLocation(id);
+    }
+
+    // ── Capture hooks ─────────────────────────────────────────────────────────────────────────
+
+    /// <summary>The marker the rail is describing, as of the last rebuild.</summary>
+    public string? SelectedLocationId => _selectedId;
+
+    /// <summary>Whether the rail is on its legend tab, and whether that legend lists categories.</summary>
+    public bool LegendOpen => _railTabs.Current == LegendTab;
+
+    public bool LegendExpanded => _legendExpanded;
+
+    /// <summary>The pin the gamepad cursor has snapped to.</summary>
+    public string? SnappedId => _view.SnapId;
+
+    /// <summary>The waystone a travel confirmation is up for, or null.</summary>
+    public string? PendingTravelId => _pendingTravelId;
+
+    /// <summary>Puts the rail on its legend, folded or unfolded, the way its tab and its button do.</summary>
+    public void ShowLegendForCapture(bool expanded)
+    {
+        _railTabs.Select(LegendTab);
+        _legendExpanded = expanded;
+        MarkDirty();
+    }
+
+    public void ShowPlaceForCapture()
+    {
+        _railTabs.Select(PlaceTab);
+        MarkDirty();
+    }
+
+    /// <summary>Shows the gamepad cursor without a gamepad and brings a location under it.</summary>
+    public void SnapForCapture(string id)
+    {
+        _cursorForced = true;
+        FocusLocation(id);
+    }
+
+    /// <summary>Asks to travel to the first attuned waystone, as pressing its button does. False when
+    /// none is attuned.</summary>
+    public bool RequestTravelForCapture()
+    {
+        if (_travel == null)
+        {
+            return false;
+        }
+
+        foreach (TravelNode node in _travel.Nodes)
+        {
+            RequestTravel(node.Id);
+            return true;
+        }
+
+        return false;
+    }
+
+    public void CancelTravelForCapture() => CancelTravel();
+
     // ── Rebuild ───────────────────────────────────────────────────────────────────────────────
 
     protected override void Rebuild()
@@ -553,14 +672,46 @@ public partial class MapScreen : UiPanel
         _view.Relief = MapCartography.Relief(CurrentRegionId()) is { } relief ? (relief.Texture, relief.World) : null;
         _view.Roads = MapCartography.Roads(CurrentRegionId());
         _view.QueueRedraw();
+        UpdateCursor();
+
+        // Called here as well as in BuildShell: the UI-scale setting can change mid-session.
+        UiTheme.ApplyScreenInset(Shell);
+        _rail.CustomMinimumSize = new Vector2(RailWidth(), 0f);
 
         RebuildBreadcrumb();
-        RebuildWaypointReadout();
-        RebuildTravelList();
-        RebuildResults();
-        RebuildInfo();
-        RebuildFilters();
-        RebuildLegend();
+        RebuildRail();
+    }
+
+    private void RebuildRail()
+    {
+        UiTheme.ClearChildren(_railBody);
+
+        TravelNode pending = default;
+        bool confirming = _pendingTravelId != null && _travel != null &&
+            _travel.TryGetNode(_pendingTravelId, out pending);
+        if (!confirming)
+        {
+            _pendingTravelId = null;
+        }
+
+        bool place = _railTabs.Current == PlaceTab;
+        _searchRow.Visible = place && !confirming;
+
+        if (confirming)
+        {
+            BuildTravelConfirm(pending);
+        }
+        else if (place)
+        {
+            RebuildResults();
+            RebuildInfo();
+            RebuildWaypoint();
+            RebuildTravelList();
+        }
+        else
+        {
+            RebuildLegend();
+        }
     }
 
     private List<MapLandTile> BuildLand()
@@ -590,7 +741,7 @@ public partial class MapScreen : UiPanel
     /// </summary>
     private void RebuildTravelList()
     {
-        UiTheme.ClearChildren(_travelList);
+        _railBody.AddChild(UiTheme.SectionRule(Loc.T("kn.map.travel_header")));
         if (_travel == null)
         {
             return;
@@ -600,39 +751,45 @@ public partial class MapScreen : UiPanel
         foreach (TravelNode node in _travel.Nodes)
         {
             any = true;
-            _travelList.AddChild(TravelButton(node));
+            _railBody.AddChild(TravelButton(node));
         }
 
         if (!any)
         {
-            _travelList.AddChild(UiTheme.Body(Loc.T("map.travel_empty"), UiTheme.Dim));
+            _railBody.AddChild(UiTheme.Body(Loc.T("map.travel_empty"), UiTheme.Dim));
         }
-
-        int rows = Mathf.Clamp(_travelList.GetChildCount(), 1, 3);
-        _travelScroll.CustomMinimumSize = new Vector2(0f, RailListHeight(rows));
     }
 
     /// <summary>Shared with the HUD minimap since 39.5B — see <see cref="MapPins"/> for why there is
     /// exactly one pin builder.</summary>
     private void RebuildPins() => MapPins.Rebuild(_pins, _map, _travel);
 
-    /// <summary>How far the waypoint is and which way, on the footer beside the button that
-    /// clears it — so the mark is answerable without selecting anything.</summary>
-    private void RebuildWaypointReadout()
+    /// <summary>The player's own mark: how far it is and which way, and the button that clears it.
+    /// Shown only while there is one.</summary>
+    private void RebuildWaypoint()
     {
-        Vector3? waypoint = _map?.Waypoint;
-        _clearWaypoint.Disabled = waypoint == null;
-
-        if (waypoint is not { } mark || PlayerPosition() is not { } player)
+        if (_map?.Waypoint is not { } mark)
         {
-            _waypointReadout.Text = string.Empty;
             return;
         }
 
-        (int metres, string dirKey) = MapDistance.Describe(player.X, player.Z, mark.X, mark.Z);
-        _waypointReadout.Text = dirKey.Length == 0
-            ? Loc.T("map.distance_here")
-            : Loc.TF("map.waypoint_distance", metres, Loc.T(dirKey));
+        _railBody.AddChild(UiTheme.SectionRule(Loc.T("kn.map.waypoint_header")));
+        if (PlayerPosition() is { } player)
+        {
+            (int metres, string dirKey) = MapDistance.Describe(player.X, player.Z, mark.X, mark.Z);
+            _railBody.AddChild(UiTheme.IconLabel(
+                UiIcon.Kind.Waypoint,
+                dirKey.Length == 0 ? Loc.T("map.distance_here") : Loc.TF("map.distance", metres, Loc.T(dirKey)),
+                tint: UiTheme.AccentHot));
+        }
+
+        Button clear = UiTheme.Action(Loc.T("map.waypoint_clear"), UiCue.Back);
+        clear.Pressed += () =>
+        {
+            _map?.SetWaypoint(null);
+            MarkDirty();
+        };
+        _railBody.AddChild(clear);
     }
 
     private void RebuildBreadcrumb()
@@ -661,20 +818,15 @@ public partial class MapScreen : UiPanel
 
     private void RebuildResults()
     {
-        UiTheme.ClearChildren(_results);
-
         if (_query.Trim().Length == 0)
         {
-            _resultsScroll.Visible = false;
             return;
         }
-
-        _resultsScroll.Visible = true;
 
         IReadOnlyList<MapSearchHit> hits = MapSearch.Rank(_query, SearchEntries());
         if (hits.Count == 0)
         {
-            _results.AddChild(UiTheme.Body(Loc.T("map.search_none"), UiTheme.Dim));
+            _railBody.AddChild(UiTheme.Body(Loc.T("map.search_none"), UiTheme.Dim));
             return;
         }
 
@@ -688,7 +840,7 @@ public partial class MapScreen : UiPanel
                 FocusLocation(id);
                 MarkDirty();
             };
-            _results.AddChild(button);
+            _railBody.AddChild(button);
         }
     }
 
@@ -735,7 +887,12 @@ public partial class MapScreen : UiPanel
 
     private void RebuildInfo()
     {
-        UiTheme.ClearChildren(_info);
+        _railBody.AddChild(UiTheme.SectionRule(Loc.T("kn.map.selected_header"), first: _query.Trim().Length == 0));
+
+        var info = new VBoxContainer();
+        info.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
+        _info = info;
+        _railBody.AddChild(info);
 
         if (_map is null or { HasAnyDiscovery: false })
         {
@@ -745,7 +902,10 @@ public partial class MapScreen : UiPanel
 
         if (_selectedId == null || MapLocationDatabase.Get(_selectedId) is not { } location)
         {
-            _info.AddChild(UiTheme.Body(Loc.T("map.info_none"), UiTheme.Dim));
+            Label none = UiTheme.Body(Loc.T("map.info_none"), UiTheme.Dim);
+            none.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+            _info.AddChild(none);
+            AddCentreButton();
             return;
         }
 
@@ -759,8 +919,12 @@ public partial class MapScreen : UiPanel
         // The name and where it is are one lockup; every block after it is a full gap apart.
         var heading = new VBoxContainer();
         heading.AddThemeConstantOverride("separation", UiTheme.LineGap);
-        heading.AddChild(UiTheme.Header(Loc.T(location.NameKey)));
-        heading.AddChild(UiTheme.Caption(string.Join(BreadcrumbSeparator, where), UiTheme.Dim));
+        Label placeName = UiTheme.Header(Loc.T(location.NameKey));
+        placeName.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+        heading.AddChild(placeName);
+        Label placeKind = UiTheme.Caption(string.Join(BreadcrumbSeparator, where), UiTheme.Dim);
+        placeKind.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+        heading.AddChild(placeKind);
         _info.AddChild(heading);
 
         if (location.DescriptionKey.Length > 0)
@@ -789,6 +953,15 @@ public partial class MapScreen : UiPanel
         }
 
         AddTravelButton(location);
+        AddCentreButton();
+    }
+
+    /// <summary>The way back to yourself: the one view button the legend has no room for.</summary>
+    private void AddCentreButton()
+    {
+        Button centre = UiTheme.Action(Loc.T("map.center_player"));
+        centre.Pressed += CenterOnPlayer;
+        _info.AddChild(centre);
     }
 
     /// <summary>A small caption over its value, tight inside and a full gap from the next pair.</summary>
@@ -900,31 +1073,127 @@ public partial class MapScreen : UiPanel
         Button button = UiTheme.Action(fee > 0
             ? $"{Loc.TF("travel.button", node.Label)}   {Loc.TF("map.travel_cost", fee)}"
             : $"{Loc.TF("travel.button", node.Label)}   {Loc.T("map.travel_free")}");
+        button.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
+        button.ClipText = true;
 
         // Greyed with the reason rather than hidden — a waypoint you cannot currently afford is
         // still somewhere you have attuned to, and hiding it would read as losing the attunement.
         button.Disabled = !affordable;
         button.TooltipText = affordable ? PriceTooltip.Render(quote) : Loc.T("map.travel_cannot_afford");
 
+        // The press asks; the confirmation travels. A jump is a hard load and a fee, and one stray
+        // press on a list of them should cost neither.
         string id = node.Id;
-        button.Pressed += () =>
-        {
-            SetOpen(false);
-            EventBus.Instance?.Publish(new FastTravelRequestedEvent(id));
-        };
+        button.Pressed += () => RequestTravel(id);
         return button;
     }
 
-    private void RebuildFilters()
+    private void RequestTravel(string nodeId)
     {
-        UiTheme.ClearChildren(_filters);
+        _pendingTravelId = nodeId;
+        _focusConfirm = true;
+        _railTabs.Select(PlaceTab);
+        MarkDirty();
+    }
 
-        var row = new HBoxContainer();
-        row.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
-        row.AddChild(FilterBulk("map.show_all", () => _hidden.Clear()));
-        row.AddChild(FilterBulk("map.hide_all", HideAll));
-        row.AddChild(FilterBulk("map.reset", () => _hidden.Clear()));
-        _filters.AddChild(row);
+    private void CancelTravel()
+    {
+        _pendingTravelId = null;
+        MarkDirty();
+    }
+
+    private void ConfirmTravel()
+    {
+        if (_pendingTravelId is not { } id)
+        {
+            return;
+        }
+
+        _pendingTravelId = null;
+        SetOpen(false);
+        EventBus.Instance?.Publish(new FastTravelRequestedEvent(id));
+    }
+
+    /// <summary>
+    /// The question fast travel asks before it goes: where to, and what it costs. A press, not a
+    /// hold: the journey can be made back, so it is confirmed like any other choice. It takes the
+    /// rail's place while it is up, and cancel (or leaving the screen) withdraws it.
+    /// </summary>
+    private void BuildTravelConfirm(TravelNode node)
+    {
+        PriceQuote quote = TravelCosts.QuoteFor(node, CurrentRegionId());
+
+        PanelContainer card = UiTheme.Card(UiTheme.Accent);
+        var col = new VBoxContainer();
+        col.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
+
+        var heading = new VBoxContainer();
+        heading.AddThemeConstantOverride("separation", UiTheme.LineGap);
+        heading.AddChild(UiTheme.Caption(Loc.T("kn.map.travel_confirm"), UiTheme.Dim));
+        Label destination = UiTheme.Header(node.Label);
+        destination.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+        heading.AddChild(destination);
+        col.AddChild(heading);
+
+        Label fee = UiTheme.Body(quote.Total > 0
+            ? Loc.TF("kn.map.travel_fee", quote.Total)
+            : Loc.T("kn.map.travel_no_fee"));
+        fee.TooltipText = PriceTooltip.Render(quote);
+        col.AddChild(fee);
+
+        HFlowContainer buttons = UiTheme.FlowRow();
+        Button go = UiTheme.Action(Loc.T("kn.map.travel_go"), UiCue.Confirm);
+        go.Pressed += ConfirmTravel;
+        buttons.AddChild(go);
+        Button back = UiTheme.Action(Loc.T("kn.map.travel_cancel"), UiCue.Back);
+        back.Pressed += CancelTravel;
+        buttons.AddChild(back);
+        col.AddChild(buttons);
+
+        card.AddChild(col);
+        _railBody.AddChild(card);
+
+        // The rebuild that follows restores focus by position, which is wherever the travel button
+        // was. The question is new, so focus goes to its answer, after that restore has run.
+        if (_focusConfirm)
+        {
+            _focusConfirm = false;
+            go.CallDeferred(Control.MethodName.GrabFocus);
+        }
+    }
+
+    /// <summary>
+    /// The legend (§28), which is also the filter: one row per group of marks on this map, each a
+    /// switch that hides the group. Unfolded, every category is listed under its group with a switch
+    /// of its own.
+    ///
+    /// ⚠️ Only groups with something in them get a row. A filter for a category the realm has no
+    /// content for is a control that does nothing, which reads as a broken filter rather than an
+    /// empty world.
+    /// </summary>
+    private void RebuildLegend()
+    {
+        HFlowContainer head = UiTheme.FlowRow();
+        Button fold = UiTheme.Action(Loc.T(_legendExpanded ? "kn.map.legend_collapse" : "kn.map.legend_expand"));
+        fold.Pressed += () =>
+        {
+            _legendExpanded = !_legendExpanded;
+            MarkDirty();
+        };
+        head.AddChild(fold);
+
+        if (_hidden.Count > 0)
+        {
+            Button all = UiTheme.Action(Loc.T("map.show_all"));
+            all.Pressed += () =>
+            {
+                _hidden.Clear();
+                MarkDirty();
+            };
+            head.AddChild(all);
+        }
+
+        _railBody.AddChild(head);
 
         foreach (MapGroup group in System.Enum.GetValues<MapGroup>())
         {
@@ -937,20 +1206,61 @@ public partial class MapScreen : UiPanel
                 }
             }
 
-            // ⚠️ Only groups with something in them get a row. A filter for a category the realm has
-            // no content for is a control that does nothing, which reads as a broken filter rather
-            // than an empty world — the same empty-promise the journal's Failed section would be.
             if (present.Count == 0)
             {
                 continue;
             }
 
-            _filters.AddChild(UiTheme.Caption(Loc.T(MapCategories.NameKey(group)), UiTheme.Dim));
+            _railBody.AddChild(GroupToggle(group, present));
+            if (!_legendExpanded)
+            {
+                continue;
+            }
+
             foreach (MapCategory category in present)
             {
-                _filters.AddChild(FilterToggle(category));
+                var indent = new MarginContainer();
+                indent.AddThemeConstantOverride("margin_left", UiTheme.SpaceLg);
+                indent.AddChild(FilterToggle(category));
+                _railBody.AddChild(indent);
             }
         }
+
+        // The marks that are not places, and so have no switch. Each line is shown only when this
+        // map draws it.
+        _railBody.AddChild(UiTheme.SectionRule(Loc.T("kn.map.legend_marks")));
+        _railBody.AddChild(UiTheme.IconLabel(UiIcon.Kind.Waypoint, Loc.T("map.legend_player"), tint: UiTheme.Text));
+
+        // Quest pins: a filled diamond is the main thread, an outlined one an errand, a ring the tracked one.
+        if (_questPins.Exists(p => p.IsMain))
+        {
+            _railBody.AddChild(MarkRow(MarkKind.Diamond, Loc.T("questui.legend.main"), UiTheme.Adapt(UiTheme.QuestMain)));
+        }
+
+        if (_questPins.Exists(p => !p.IsMain))
+        {
+            _railBody.AddChild(MarkRow(MarkKind.DiamondHollow, Loc.T("questui.legend.side"), UiTheme.Adapt(UiTheme.QuestSide)));
+        }
+
+        if (_questPins.Exists(p => p.Tracked))
+        {
+            _railBody.AddChild(UiTheme.IconLabel(UiIcon.Kind.Waypoint, Loc.T("questui.legend.tracked"), tint: UiTheme.Text));
+        }
+
+        if (_map?.Waypoint != null)
+        {
+            _railBody.AddChild(MarkRow(MarkKind.Cross, Loc.T("map.legend_waypoint"), UiTheme.Adapt(UiTheme.AccentHot)));
+        }
+    }
+
+    /// <summary>A legend line whose sample is the shape the plot draws, not a stand-in icon.</summary>
+    private static Control MarkRow(MarkKind kind, string text, Color colour)
+    {
+        var row = new HBoxContainer();
+        row.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
+        row.AddChild(new MarkGlyph(kind, colour, 20f));
+        row.AddChild(UiTheme.Body(text));
+        return row;
     }
 
     private bool HasPin(MapCategory category)
@@ -966,30 +1276,55 @@ public partial class MapScreen : UiPanel
         return false;
     }
 
-    private void HideAll()
+    /// <summary>A group's legend row: its icon in its colour, its name, and the switch that shows or
+    /// hides every category of the group this map has.</summary>
+    private Control GroupToggle(MapGroup group, List<MapCategory> present)
     {
-        foreach (MapCategory category in System.Enum.GetValues<MapCategory>())
-        {
-            _hidden.Add(category);
-        }
-    }
+        bool shown = present.Exists(category => !_hidden.Contains(category));
+        CheckButton button = UiTheme.Toggle(shown);
+        button.Text = Loc.T(MapCategories.NameKey(group));
+        button.CustomMinimumSize = new Vector2(0f, UiTheme.ControlHeight);
+        button.AddThemeColorOverride("font_color", shown ? UiTheme.Text : UiTheme.Disabled);
 
-    private Button FilterBulk(string key, System.Action action)
-    {
-        Button button = UiTheme.Action(Loc.T(key));
-        button.Pressed += () =>
+        button.Icon = UiIcon.Texture(IconOf(group));
+        button.ExpandIcon = true;
+        button.AddThemeConstantOverride("icon_max_width", UiTheme.HeaderFontSize);
+        Color ink = shown ? LegendColour(group) : UiTheme.Disabled;
+        foreach (string state in IconStates)
         {
-            action();
+            button.AddThemeColorOverride(state, ink);
+        }
+
+        button.Toggled += value =>
+        {
+            foreach (MapCategory category in present)
+            {
+                if (value)
+                {
+                    _hidden.Remove(category);
+                }
+                else
+                {
+                    _hidden.Add(category);
+                }
+            }
+
             MarkDirty();
         };
         return button;
     }
+
+    private static readonly string[] IconStates =
+    {
+        "icon_normal_color", "icon_hover_color", "icon_pressed_color", "icon_hover_pressed_color", "icon_focus_color",
+    };
 
     private Control FilterToggle(MapCategory category)
     {
         bool shown = !_hidden.Contains(category);
         CheckButton button = UiTheme.Toggle(shown);
         button.Text = Loc.T(MapCategories.NameKey(category));
+        button.CustomMinimumSize = new Vector2(0f, UiTheme.ControlHeight);
         button.AddThemeColorOverride("font_color", shown ? UiTheme.Text : UiTheme.Disabled);
         button.Toggled += value =>
         {
@@ -1005,55 +1340,6 @@ public partial class MapScreen : UiPanel
             MarkDirty();
         };
         return button;
-    }
-
-    /// <summary>The legend (§28) — only the groups actually on screen, so it explains this map
-    /// rather than every map the game could draw.</summary>
-    private void RebuildLegend()
-    {
-        UiTheme.ClearChildren(_legend);
-
-        foreach (MapGroup group in System.Enum.GetValues<MapGroup>())
-        {
-            bool any = false;
-            foreach (MapCategory category in MapCategories.InGroup(group))
-            {
-                if (HasPin(category))
-                {
-                    any = true;
-                    break;
-                }
-            }
-
-            if (any)
-            {
-                _legend.AddChild(UiTheme.IconLabel(
-                    IconOf(group), Loc.T(MapCategories.NameKey(group)), tint: LegendColour(group)));
-            }
-        }
-
-        _legend.AddChild(UiTheme.IconLabel(UiIcon.Kind.Waypoint, Loc.T("map.legend_player"), tint: UiTheme.Text));
-
-        // Quest pins: a filled diamond is the main thread, an outlined one an errand, a ring the tracked one.
-        // Each line is shown only when this map draws it.
-        if (_questPins.Exists(p => p.IsMain))
-        {
-            _legend.AddChild(UiTheme.IconLabel(UiIcon.Kind.Quest, Loc.T("questui.legend.main"), tint: UiTheme.Adapt(UiTheme.QuestMain)));
-        }
-
-        if (_questPins.Exists(p => !p.IsMain))
-        {
-            _legend.AddChild(UiTheme.IconLabel(UiIcon.Kind.Quest, Loc.T("questui.legend.side"), tint: UiTheme.Adapt(UiTheme.QuestSide)));
-        }
-
-        if (_questPins.Exists(p => p.Tracked))
-        {
-            _legend.AddChild(UiTheme.IconLabel(UiIcon.Kind.Waypoint, Loc.T("questui.legend.tracked"), tint: UiTheme.Text));
-        }
-        if (_map?.Waypoint != null)
-        {
-            _legend.AddChild(UiTheme.IconLabel(UiIcon.Kind.Waypoint, Loc.T("map.legend_waypoint"), tint: UiTheme.AccentHot));
-        }
     }
 
     private static UiIcon.Kind IconOf(MapGroup group) => group switch
