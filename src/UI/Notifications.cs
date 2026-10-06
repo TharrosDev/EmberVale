@@ -97,6 +97,7 @@ public partial class Notifications : CanvasLayer
         bus?.Subscribe<CompanionLoyaltyTierChangedEvent>(OnCompanionLoyalty);
         bus?.Subscribe<WagerSettledEvent>(OnWagerSettled);
         bus?.Subscribe<SupplyShockRelievedEvent>(OnShockRelieved);
+        SubscribeLoot(bus); // ics:inv-ui: pickups, pack full, recipe learned (Notifications.Loot.cs)
         bus?.Subscribe<MountChangedEvent>(OnMountChanged);
         bus?.Subscribe<MountRefusedEvent>(OnMountRefused);
         bus?.Subscribe<BlessingClaimedEvent>(OnBlessingClaimed);
@@ -147,6 +148,7 @@ public partial class Notifications : CanvasLayer
         bus.Unsubscribe<CompanionLoyaltyTierChangedEvent>(OnCompanionLoyalty);
         bus.Unsubscribe<WagerSettledEvent>(OnWagerSettled);
         bus.Unsubscribe<SupplyShockRelievedEvent>(OnShockRelieved);
+        UnsubscribeLoot(bus); // ics:inv-ui
         bus.Unsubscribe<MountChangedEvent>(OnMountChanged);
         bus.Unsubscribe<MountRefusedEvent>(OnMountRefused);
         bus.Unsubscribe<BlessingClaimedEvent>(OnBlessingClaimed);
