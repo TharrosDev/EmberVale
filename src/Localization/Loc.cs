@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using Embervale.Core.Diagnostics;
 using Godot;
@@ -22,6 +23,21 @@ public static class Loc
     private const string CatalogPath = "res://data/locale/strings.csv";
 
     private static bool _initialized;
+
+    /// <summary>
+    /// Resolved strings for the active locale, so a repeat lookup never leaves managed code.
+    ///
+    /// <para><c>TranslationServer.Translate</c> takes and returns a <c>StringName</c>: every call
+    /// built two finalizable wrappers (each registered with the engine's disposables tracker),
+    /// crossed into native code and allocated a fresh managed string for the answer. Widgets
+    /// that resolve labels as they refresh (the party rows do it every frame) paid that per
+    /// label per frame, and the garbage was all finalizer-queue garbage.</para>
+    ///
+    /// <para>Only hits are kept. A key that resolved to itself is asked again, so a translation
+    /// registered after boot (a fixture harness adds its own) is still found. The two things
+    /// that can change a hit, the catalogue loading and the locale switching, both clear it.</para>
+    /// </summary>
+    private static readonly ConcurrentDictionary<string, string> Resolved = new();
 
     /// <summary>Loads the catalogue and selects the default locale. Idempotent; safe to call once at boot.</summary>
     public static void Initialize(string catalogPath = CatalogPath)
@@ -55,11 +71,31 @@ public static class Loc
         }
 
         TranslationServer.SetLocale(DefaultLocale);
+        Resolved.Clear();
         Log.Info($"Localization: loaded {total} string(s) across {byLocale.Count} locale(s); locale '{DefaultLocale}'.");
     }
 
     /// <summary>Resolves a key to text in the active locale. An unknown key returns the key itself.</summary>
-    public static string T(string key) => TranslationServer.Translate(key).ToString();
+    public static string T(string key)
+    {
+        if (string.IsNullOrEmpty(key))
+        {
+            return TranslationServer.Translate(key).ToString();
+        }
+
+        if (Resolved.TryGetValue(key, out string? cached))
+        {
+            return cached;
+        }
+
+        string text = TranslationServer.Translate(key).ToString();
+        if (!string.Equals(text, key, System.StringComparison.Ordinal))
+        {
+            Resolved[key] = text;
+        }
+
+        return text;
+    }
 
     /// <summary>Whether the catalogue actually carries <paramref name="key"/>. An unresolved key
     /// translates to itself, which is exactly what leaks a raw <c>some.key</c> into the UI — the
@@ -81,6 +117,7 @@ public static class Loc
         }
 
         TranslationServer.SetLocale(locale);
+        Resolved.Clear();
         return true;
     }
 
