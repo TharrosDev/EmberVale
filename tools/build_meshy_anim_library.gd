@@ -30,10 +30,18 @@
 #      facing the camera. The idle slot is the original with every key pulled to IDLE_MOTION of its
 #      motion about the clip's mean pose, then turned as a whole so the mean hips yaw is zero. The
 #      untouched original is kept as "idle_alert".
-#   3. strafe_right IS MIRRORED from strafe_left; Meshy shipped only the one.
+#   3. THE STRAFE'S CHEST IS SQUARED TO THE FRONT. The source is a sideways walk with a weapon held
+#      across the body: the hips and legs step sideways, and the whole torso is turned 28 degrees
+#      toward the way it is going. Under a body that faces the camera's way that read as a lunge to
+#      one side, and the facing probe failed it. The upper body is turned back on the hips (half at
+#      the Spine, the rest at the Chest, so no one joint takes it all) until the chest's mean facing
+#      is forward, and the neck is turned so the head's is too. The Hips track is not touched, so
+#      the legs go on stepping exactly sideways.
+#   4. strafe_right IS MIRRORED from strafe_left (after the squaring); Meshy shipped only the one.
 #
 # Every one of these prints what it did, per clip, so the log is the check: hips travel removed (in
-# metres), idle mean yaw and range before and after.
+# metres), idle mean yaw and range before and after, the strafe's chest and head facing before and
+# after.
 #
 # Re-run whenever the sources or their .import retarget settings change — the committed .res is
 # otherwise unreproducible. It writes anim_meshy.res and nothing else.
@@ -60,7 +68,14 @@ const LOOPS := ["idle", "idle_alert", "walk", "run", "sprint", "walk_back", "str
 const DETREND := ["sprint", "walk_back", "strafe_left", "walk", "run", "combat_walk_fwd",
 	"combat_walk_back", "dodge", "hit", "jump", "attack3", "heavy_overhead"]
 
+# The clips whose upper body is turned on the hips until the chest faces forward on average.
+const SQUARE_CHEST := ["strafe_left"]
+
 const HIPS := "Hips"
+const SPINE := "Spine"
+const CHEST := "Chest"
+const NECK := "Neck"
+const HEAD := "Head"
 const IDLE := "idle"
 const IDLE_ALERT := "idle_alert"
 const STRAFE_LEFT := "strafe_left"
@@ -157,6 +172,9 @@ func _initialize() -> void:
 
 		if slot in DETREND:
 			_detrend_hips(anim, slot, metres)
+
+		if slot in SQUARE_CHEST:
+			_square_chest(anim, slot, skeleton)
 
 		if slot == IDLE:
 			# The original, exactly as it arrived, under its own name.
@@ -408,6 +426,110 @@ func _mean_position(anim: Animation, track: int) -> Vector3:
 	for i in samples:
 		total += anim.position_track_interpolate(track, anim.length * float(i) / float(samples))
 	return total / float(samples)
+
+
+# Turns a clip's upper body on its hips so the chest faces forward on average, and the head with it.
+#
+# The turn is about the vertical axis, in the skeleton's space, and it is put in ABOVE the hips: half
+# at the Spine and whatever is then left at the Chest, so the twist is shared between two joints the
+# way a real torso shares it. Everything above (shoulders, arms, neck, head) is carried round by it;
+# the neck is then turned by whatever the head's own mean facing has become, so a head that was
+# already looking where the body is going is put back there. The Hips track is not read or written:
+# the pelvis keeps its angle and the legs keep stepping the way the clip travels.
+func _square_chest(anim: Animation, slot: String, skeleton: Skeleton3D) -> void:
+	var chest := skeleton.find_bone(CHEST)
+	var head := skeleton.find_bone(HEAD)
+	var hips := skeleton.find_bone(HIPS)
+	if chest < 0 or skeleton.find_bone(SPINE) < 0:
+		_failures.append("%s: the rig has no Spine/Chest bone; its chest cannot be squared" % slot)
+		return
+
+	var before := _facing_yaw(anim, skeleton, chest)
+	var head_before := 0.0
+	if head >= 0:
+		head_before = _facing_yaw(anim, skeleton, head)
+
+	if not _turn_from(anim, skeleton, SPINE, Quaternion(Vector3.UP, -before * 0.5)):
+		_failures.append("%s: no Spine rotation track; its chest cannot be squared" % slot)
+		return
+	var midway := _facing_yaw(anim, skeleton, chest)
+	if not _turn_from(anim, skeleton, CHEST, Quaternion(Vector3.UP, -midway)):
+		_failures.append("%s: no Chest rotation track; its chest cannot be squared" % slot)
+		return
+	var after := _facing_yaw(anim, skeleton, chest)
+
+	var head_after := 0.0
+	if head >= 0:
+		var head_carried := _facing_yaw(anim, skeleton, head)
+		if _turn_from(anim, skeleton, NECK, Quaternion(Vector3.UP, -head_carried)):
+			head_after = _facing_yaw(anim, skeleton, head)
+		else:
+			head_after = head_carried
+
+	var hips_yaw := 0.0
+	if hips >= 0:
+		hips_yaw = _facing_yaw(anim, skeleton, hips)
+	print("    square  %-18s chest mean facing %+.1f deg -> %+.1f deg (turned %+.1f at the Spine, %+.1f at the Chest); head %+.1f deg -> %+.1f deg; hips left at %+.1f deg"
+		% [slot, rad_to_deg(before), rad_to_deg(after), rad_to_deg(-before * 0.5), rad_to_deg(-midway),
+		   rad_to_deg(head_before), rad_to_deg(head_after), rad_to_deg(hips_yaw)])
+
+
+# A bone's rotation in the skeleton's space at a time in a clip: each ancestor's rotation, the
+# clip's where it has a track and the bone's rest where it has none, down to the bone itself.
+func _global_rotation(anim: Animation, skeleton: Skeleton3D, bone: int, time: float) -> Quaternion:
+	var chain: Array[int] = []
+	var at: int = bone
+	while at >= 0:
+		chain.push_front(at)
+		at = skeleton.get_bone_parent(at)
+
+	var total := Quaternion.IDENTITY
+	for index in chain:
+		var local: Quaternion = skeleton.get_bone_rest(index).basis.orthonormalized().get_rotation_quaternion()
+		var track := _bone_track(anim, skeleton.get_bone_name(index), Animation.TYPE_ROTATION_3D)
+		if track >= 0:
+			local = anim.rotation_track_interpolate(track, time)
+		total = (total * local.normalized()).normalized()
+	return total
+
+
+# Which way a bone faces over a clip, as the circular mean of its yaw in radians: 0 is the rig's
+# forward (+Z), positive turns toward +X. The same measure tools/facing_probe.gd takes of the chest
+# on the real body: the turn the pose has taken from the bone's rest, carried through +Z.
+func _facing_yaw(anim: Animation, skeleton: Skeleton3D, bone: int) -> float:
+	var rest: Quaternion = skeleton.get_bone_global_rest(bone).basis.orthonormalized().get_rotation_quaternion()
+	var rest_inverse: Quaternion = rest.normalized().inverse()
+	var samples := _sample_count(anim)
+	var sum_sin := 0.0
+	var sum_cos := 0.0
+	for i in samples:
+		var pose: Quaternion = _global_rotation(anim, skeleton, bone, anim.length * float(i) / float(samples))
+		var forward: Vector3 = (pose * rest_inverse) * Vector3(0.0, 0.0, 1.0)
+		var yaw := atan2(forward.x, forward.z)
+		sum_sin += sin(yaw)
+		sum_cos += cos(yaw)
+	return atan2(sum_sin, sum_cos)
+
+
+# Turns a bone, and everything it carries, by a rotation given in the skeleton's space. The bone's
+# global rotation becomes turn * global, so each key of its local track becomes
+# above^-1 * turn * above * key, where "above" is its parent's global rotation at that key's time.
+# The parent chain does not include the bone itself, so rewriting the keys in place is safe. False
+# when the bone or its rotation track is not there.
+func _turn_from(anim: Animation, skeleton: Skeleton3D, bone_name: String, turn: Quaternion) -> bool:
+	var bone := skeleton.find_bone(bone_name)
+	var track := _bone_track(anim, bone_name, Animation.TYPE_ROTATION_3D)
+	if bone < 0 or track < 0:
+		return false
+
+	var parent := skeleton.get_bone_parent(bone)
+	for k in anim.track_get_key_count(track):
+		var above := Quaternion.IDENTITY
+		if parent >= 0:
+			above = _global_rotation(anim, skeleton, parent, anim.track_get_key_time(track, k))
+		var q: Quaternion = anim.track_get_key_value(track, k)
+		anim.track_set_key_value(track, k, (above.inverse() * turn * above * q.normalized()).normalized())
+	return true
 
 
 # A copy of a clip reflected left to right, which is how strafe_right is made from strafe_left.

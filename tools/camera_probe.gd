@@ -13,9 +13,19 @@
 # It also holds the FIRST-PERSON eye to account (the 2026-10 camera pass). The eye used to ride the
 # animated head bone, so a sprint bobbed and lurched the view and let the skull into frame. It is
 # now anchored to where the head rests and takes a fraction of the head's travel, and the head is cut
-# out of the body by its shader. Three things are measured on the real body: the eye barely moves
-# from frame to frame at a sprint, it stays inside the head cut-out looking fully down and fully up,
-# and the cut-out comes on in first person and goes off again in third.
+# out of the body by its shader. Measured on the real body: the eye barely moves from frame to frame
+# at a sprint; level, looking fully down and looking fully up, the whole head is inside the cut-out
+# round the head, the camera's near plane is inside the cut-out round the eye, and the shoulders,
+# hips, hands and feet are outside both (there is still a body to look down at); looking down, the
+# eye is out in front of the chest rather than in it; and the cut-outs come on in first person and
+# go off again in third.
+#
+# ⚠️ WHAT THIS USED TO ASK WAS THE WRONG QUESTION. It required the eye to stay inside the sphere round
+# the HEAD, on the reasoning that an eye outside it would see the face. The face is inside that
+# sphere wherever the eye is, so it is never drawn; and an eye held inside a sphere round the head is
+# an eye held over the neck, which looking down is an eye in the chest (the first-person frame was
+# solid black). The eye now leans out ahead of the body as the look goes down, and what keeps the
+# body off the near plane is a second cut-out that is centred on the eye itself.
 #
 # Run:  Godot_..._console.exe --headless --path . --script res://tools/camera_probe.gd
 extends SceneTree
@@ -42,6 +52,18 @@ const MAX_EYE_STEP := 0.03
 # How far the look is pitched for the cut-out check, in degrees either way.
 const LOOK_DEGREES := 80.0
 
+# Looking fully down, the eye must be at least this far ahead of the upper chest bone, along the
+# body's facing (metres). The chest's surface stands about 0.14 m ahead of that bone on
+# chr_player_base and the near plane is 0.08 m, so less than this is a frame full of chest.
+const MIN_EYE_AHEAD_OF_CHEST := 0.2
+
+# Points of the head, from the head bone in the body's axes (up, forward), in metres: the crown, the
+# face, the back of the skull and the chin on chr_player_base. All of them must be cut out.
+const HEAD_POINTS := [[0.18, 0.0], [0.05, 0.10], [0.05, -0.11], [-0.05, 0.04]]
+
+# Bones that must NOT be cut out at any pitch: the body the player looks down at.
+const BODY_BONES := ["LeftUpperArm", "RightUpperArm", "Hips", "LeftHand", "RightHand", "LeftFoot", "RightFoot"]
+
 var _failures: Array[String] = []
 
 
@@ -54,7 +76,7 @@ func _initialize() -> void:
 	await _check_first_person_eye()
 	print("---")
 	if _failures.is_empty():
-		print("PASS: walls retract the camera, people do not, it restores, it ticks through a dialogue, and the first-person eye is steady and inside the head cut-out")
+		print("PASS: walls retract the camera, people do not, it restores, it ticks through a dialogue, and the first-person eye is steady, clear of the body and never shows the head")
 		quit(0)
 	else:
 		for f in _failures:
@@ -398,13 +420,9 @@ func _check_first_person_eye() -> void:
 		await _look(rig, degrees)
 		var reached := rad_to_deg(rig.Pitch)
 		var from_centre := camera.global_position.distance_to(rig.HeadSphereCentre)
-		print("first person, looking %+.0f deg: the eye is %.3f m from the cut-out's centre"
-			% [reached, from_centre])
 		if absf(reached - degrees) > 4.0:
 			_failures.append("the look could not be pitched to %+.0f deg (it reached %+.0f)" % [degrees, reached])
-		if from_centre >= radius:
-			_failures.append("looking %+.0f deg puts the eye %.3f m from the head cut-out's centre, outside its %.2f m radius — the player's own face is in view"
-				% [reached, from_centre, radius])
+		_check_cutouts(body, camera, reached, from_centre)
 	await _look(rig, 0.0)
 
 	# --- and it comes back in third person ------------------------------------------------------
@@ -419,9 +437,103 @@ func _check_first_person_eye() -> void:
 	var still_cut := _surfaces_cut(body)
 	if still_cut > 0:
 		_failures.append("%d body surface(s) still carry the fp_head cut-out in third person" % still_cut)
+	if rig.EyeSphereRadius > 0.0:
+		_failures.append("the cut-out round the camera is still on in third person (radius %.3f m)" % rig.EyeSphereRadius)
 
 	body.queue_free()
 	await process_frame
+
+
+# One pitch of the cut-out check. The two spheres are read back off the body's own mesh instance,
+# which is what the shader is given, not recomputed from the rig.
+func _check_cutouts(body: CharacterBody3D, camera: Camera3D, reached: float, from_centre: float) -> void:
+	var head_sphere := Vector4.ZERO
+	var eye_sphere := Vector4.ZERO
+	for found in body.find_children("*", "MeshInstance3D", true, false):
+		var mesh_instance := found as MeshInstance3D
+		if mesh_instance == null:
+			continue
+		var head_value = mesh_instance.get_instance_shader_parameter("fp_head")
+		var eye_value = mesh_instance.get_instance_shader_parameter("fp_eye")
+		if head_value is Vector4 and head_value.w > 0.0:
+			head_sphere = head_value
+			if eye_value is Vector4:
+				eye_sphere = eye_value
+			break
+
+	var eye: Vector3 = camera.global_position
+	var head_centre := Vector3(head_sphere.x, head_sphere.y, head_sphere.z)
+	var eye_centre := Vector3(eye_sphere.x, eye_sphere.y, eye_sphere.z)
+
+	# The far corners of the near plane: the furthest from the eye that the near plane cuts.
+	var size: Vector2 = root.get_visible_rect().size
+	var aspect := 16.0 / 9.0
+	if size.x > 1.0 and size.y > 1.0:
+		aspect = size.x / size.y
+	var half := tan(deg_to_rad(camera.fov) * 0.5)
+	var near_corner := camera.near * sqrt(1.0 + half * half * (1.0 + aspect * aspect))
+
+	print("first person, looking %+.0f deg: eye %.3f m from the head cut-out's centre (radius %.2f); eye cut-out radius %.3f m, %.3f m off the camera; near plane corners at %.3f m"
+		% [reached, from_centre, head_sphere.w, eye_sphere.w, eye.distance_to(eye_centre), near_corner])
+
+	if head_sphere.w <= 0.0:
+		_failures.append("looking %+.0f deg no body surface carries a head cut-out" % reached)
+		return
+	if eye_sphere.w <= 0.0:
+		_failures.append("looking %+.0f deg no body surface carries the fp_eye cut-out round the camera — whatever of the body is nearest the eye is sliced by the near plane"
+			% reached)
+	else:
+		if eye.distance_to(eye_centre) > 0.02:
+			_failures.append("looking %+.0f deg the eye cut-out is centred %.3f m from the camera — it is not following the eye"
+				% [reached, eye.distance_to(eye_centre)])
+		if eye_sphere.w < near_corner:
+			_failures.append("looking %+.0f deg the eye cut-out (%.3f m) is smaller than the near plane's corners (%.3f m) — the near plane can still slice the body"
+				% [reached, eye_sphere.w, near_corner])
+
+	var skeletons := body.find_children("*", "Skeleton3D", true, false)
+	if skeletons.is_empty():
+		_failures.append("the first-person body has no skeleton to check the cut-outs against")
+		return
+	var sk: Skeleton3D = skeletons[0]
+	var up: Vector3 = body.global_basis.y.normalized()
+	var forward: Vector3 = -body.global_basis.z.normalized()
+
+	# The head, all of it, is cut out: the face cannot be in view from anywhere.
+	var head_bone := sk.find_bone("Head")
+	if head_bone < 0:
+		_failures.append("chr_player_base has no Head bone")
+		return
+	var head: Vector3 = sk.global_transform * sk.get_bone_global_pose(head_bone).origin
+	for point in HEAD_POINTS:
+		var at: Vector3 = head + up * point[0] + forward * point[1]
+		if at.distance_to(head_centre) >= head_sphere.w:
+			_failures.append("looking %+.0f deg a point of the head (%.2f up, %.2f forward of the bone) is %.3f m from the head cut-out's centre, outside its %.2f m radius — part of the player's own head is drawn"
+				% [reached, point[0], point[1], at.distance_to(head_centre), head_sphere.w])
+
+	# The body is not: there is something to look down at.
+	for bone_name in BODY_BONES:
+		var bone := sk.find_bone(bone_name)
+		if bone < 0:
+			continue
+		var joint: Vector3 = sk.global_transform * sk.get_bone_global_pose(bone).origin
+		if joint.distance_to(head_centre) < head_sphere.w or joint.distance_to(eye_centre) < eye_sphere.w:
+			_failures.append("looking %+.0f deg the %s joint is inside a first-person cut-out (%.3f m from the head's centre, %.3f m from the eye) — the body the player should see is being hidden"
+				% [reached, bone_name, joint.distance_to(head_centre), joint.distance_to(eye_centre)])
+
+	# Looking down, the eye is out in front of the chest, not in it.
+	if reached < -45.0:
+		var chest_bone := sk.find_bone("UpperChest")
+		if chest_bone < 0:
+			chest_bone = sk.find_bone("Chest")
+		if chest_bone >= 0:
+			var chest: Vector3 = sk.global_transform * sk.get_bone_global_pose(chest_bone).origin
+			var ahead := (eye - chest).dot(forward)
+			var above := (eye - chest).dot(up)
+			print("first person, looking %+.0f deg: the eye is %.3f m ahead of and %+.3f m above the %s bone"
+				% [reached, ahead, above, sk.get_bone_name(chest_bone)])
+			if ahead < MIN_EYE_AHEAD_OF_CHEST:
+				_failures.append("looking %+.0f deg the eye is only %.3f m ahead of the chest bone (at least %.2f m is needed to clear the chest's surface and the near plane) — the frame is the player's own torso"
+					% [reached, ahead, MIN_EYE_AHEAD_OF_CHEST])
 
 
 # How many of the body's mesh instances currently carry a head cut-out (an fp_head with a radius).

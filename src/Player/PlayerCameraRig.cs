@@ -236,6 +236,14 @@ public partial class PlayerCameraRig : EntityComponent
 
     public float HeadSphereRadius => CameraRigMath.HeadSphereRadius;
 
+    /// <summary>Radius of the cut-out round the camera itself as last set, zero while the head is
+    /// drawn. Read by the camera probe.</summary>
+    public float EyeSphereRadius { get; private set; }
+
+    /// <summary>How far out to third person the camera is: 0 at the first-person eye, 1 at the
+    /// over-the-shoulder seat. Read by what only belongs to one view (the first-person arm).</summary>
+    public float ThirdPersonBlend => _modeBlend;
+
     /// <summary>True from a conversation opening to it closing. Set by the dialogue events rather
     /// than read off the panel, so the rig does not know the UI exists. Public so the camera probe
     /// can stand in for the events, which a script cannot publish.</summary>
@@ -718,7 +726,14 @@ public partial class PlayerCameraRig : EntityComponent
     ///
     /// <para>It goes by the camera's distance from the head (<see cref="CameraRigMath.HeadHidden"/>),
     /// not by the view mode, so a swap shows the head as the camera leaves it and a third-person
-    /// camera a wall has squeezed into the skull hides it.</para>
+    /// camera a wall has squeezed into the skull hides it. Fully in first person it stays hidden
+    /// further out, because looking down leans the eye out ahead of the head.</para>
+    ///
+    /// <para>A second sphere goes round the camera itself, sized from its near plane and field of
+    /// view (<see cref="CameraRigMath.EyeSphereRadius"/>). The head's sphere follows the head and the
+    /// eye is anchored to where the head rests, so the two part company in every clip that moves the
+    /// head; the eye's own sphere is what guarantees nothing of the body is ever nearer the camera
+    /// than its near plane, wherever a clip has put the collar or a shoulder.</para>
     /// </summary>
     private void UpdateHeadCutout(double delta)
     {
@@ -738,12 +753,14 @@ public partial class PlayerCameraRig : EntityComponent
         Vector3 head = (_skeleton.GlobalTransform * _skeleton.GetBoneGlobalPose(_headBone)).Origin;
         HeadSphereCentre = CameraRigMath.HeadSphereCentre(head, body.Y.Normalized(), -body.Z.Normalized());
 
-        bool hidden = CameraRigMath.HeadHidden(
-            _headHidden, Camera.GlobalPosition.DistanceTo(HeadSphereCentre));
+        Vector3 eye = Camera.GlobalPosition;
+        bool hidden = CameraRigMath.HeadHidden(_headHidden, eye.DistanceTo(HeadSphereCentre), _modeBlend);
         if (hidden || _headHidden)
         {
+            EyeSphereRadius = hidden ? CameraRigMath.EyeSphereRadius(Camera.Near, Camera.Fov, ViewAspect()) : 0f;
             PlayerAppearance.SetHeadCutout(
                 _bodySurfaces, HeadSphereCentre, hidden ? CameraRigMath.HeadSphereRadius : 0f);
+            PlayerAppearance.SetEyeCutout(_bodySurfaces, eye, EyeSphereRadius);
         }
 
         _headRescan -= delta;
@@ -757,6 +774,14 @@ public partial class PlayerCameraRig : EntityComponent
                 HideHeadPieces();
             }
         }
+    }
+
+    /// <summary>Width over height of what the camera draws into, or 16:9 where there is no window
+    /// to measure (a headless probe).</summary>
+    private float ViewAspect()
+    {
+        Vector2 size = Camera?.GetViewport()?.GetVisibleRect().Size ?? Vector2.Zero;
+        return size.X > 1f && size.Y > 1f ? size.X / size.Y : 16f / 9f;
     }
 
     /// <summary>Switches everything hung on the head bone to shadows-only, remembering what each

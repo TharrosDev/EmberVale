@@ -271,6 +271,15 @@ public partial class CharacterAnimationComponent : EntityComponent
     /// False when the body has no skeleton or nothing on it reads as a hand (a quadruped, a turret).</summary>
     public bool TryGetCastingHand(out Vector3 position)
     {
+        // Something that poses the arm after the animation (the first-person arm) said where the
+        // hand is actually drawn. Only as fresh as the last frame: the moment it stops saying so,
+        // the bone is the answer again.
+        if (_hasReportedHand && Engine.GetProcessFrames() - _reportedHandFrame <= 1)
+        {
+            position = _reportedHand;
+            return true;
+        }
+
         if (_skeleton != null && IsInstanceValid(_skeleton) && _skeleton.IsInsideTree() &&
             HumanoidBones.FindHand(_skeleton, right: false) is { Length: > 0 } hand)
         {
@@ -280,6 +289,23 @@ public partial class CharacterAnimationComponent : EntityComponent
 
         position = default;
         return false;
+    }
+
+    private Vector3 _reportedHand;
+    private ulong _reportedHandFrame;
+    private bool _hasReportedHand;
+
+    /// <summary>
+    /// Tells the component where the casting hand is drawn this frame, in world space, when a
+    /// skeleton modifier has moved it from where the clip put it. A modifier's pose lasts one frame
+    /// and the bone reads back as the clip's afterwards, so without this an effect anchored to the
+    /// hand would sit where the hand is not. Called every frame it applies; it lapses by itself.
+    /// </summary>
+    public void ReportCastingHand(Vector3 world)
+    {
+        _reportedHand = world;
+        _reportedHandFrame = Engine.GetProcessFrames();
+        _hasReportedHand = true;
     }
 
     /// <summary>The body's skeleton, for effects that anchor to a bone; null when it has none.</summary>

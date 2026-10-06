@@ -138,6 +138,24 @@ public static class PlayerAppearance
         }
     }
 
+    /// <summary>The shader's second per-instance cut-out: a sphere round the first-person camera itself
+    /// (xyz centre in world space, w radius; zero is off).</summary>
+    public static readonly StringName EyeCutoutParameter = "fp_eye";
+
+    /// <summary>Sets the cut-out round the camera on the player's own body, the way
+    /// <see cref="SetHeadCutout"/> sets the one round the head.</summary>
+    public static void SetEyeCutout(IReadOnlyList<MeshInstance3D> surfaces, Vector3 eye, float radius)
+    {
+        var value = new Vector4(eye.X, eye.Y, eye.Z, radius);
+        for (int i = 0; i < surfaces.Count; i++)
+        {
+            if (GodotObject.IsInstanceValid(surfaces[i]))
+            {
+                surfaces[i].SetInstanceShaderParameter(EyeCutoutParameter, value);
+            }
+        }
+    }
+
     private static AppearanceOptionResource? Pick(IReadOnlyList<AppearanceOptionResource?> picks, AppearanceSlot slot) =>
         (int)slot < picks.Count ? picks[(int)slot] : null;
 
@@ -185,11 +203,19 @@ public static class PlayerAppearance
         material.SetShaderParameter("metallic_amount", source.Metallic);
         material.SetShaderParameter("roughness_amount", source.Roughness);
         material.SetShaderParameter("specular_amount", source.MetallicSpecular);
+        material.SetShaderParameter("emission_amount", EmissionOf(source));
         material.SetShaderParameter("skin_ref", ToColor(AppearanceRules.SkinReference));
         material.SetShaderParameter("hair_ref", ToColor(AppearanceRules.HairReference));
         material.SetShaderParameter("eye_ref", ToColor(AppearanceRules.EyeReference));
         return material;
     }
+
+    /// <summary>How strongly the source material draws its atlas as emission. A Meshy body is drawn by
+    /// it: the atlas is the emissive texture and the surface is a full metal, so without this the body
+    /// takes no colour from anything but reflections. Zero for a material that has no emissive texture,
+    /// which leaves a lit body exactly as it was.</summary>
+    private static float EmissionOf(StandardMaterial3D source) =>
+        source.EmissionEnabled && source.EmissionTexture != null ? source.EmissionEnergyMultiplier : 0f;
 
     private static void SetTints(ShaderMaterial material, IReadOnlyList<AppearanceOptionResource?> picks)
     {
