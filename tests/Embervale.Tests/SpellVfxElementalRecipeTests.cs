@@ -97,6 +97,21 @@ public class SpellVfxElementalRecipeTests
         Assert.True(Radius("spell.rime_shard", DamageType.Frost, 0.2f) < VfxRecipeRules.FireballRadius);
     }
 
+    /// <summary>The largest a beat in the hand, or just out of it, is scaled.</summary>
+    private const float MaxNearScale = 1.25f;
+
+    [Theory]
+    [MemberData(nameof(Spells))]
+    public void WhatIsDrawnInTheHandStaysNearItsOrdinarySize(string id, DamageType school, SpellDelivery delivery)
+    {
+        // The wind-up aura, the release flash and a bolt's core are flares, and a flare's halo is six
+        // times its radius across. These are drawn at the player's own hand: a scale that looks
+        // modest on a target ten metres off is half the frame there.
+        SpellVfxRecipe recipe = SpellVfxCatalog.For(id, school, delivery);
+        Assert.InRange(recipe.Cast.Scale, 0.5f, MaxNearScale);
+        Assert.InRange(recipe.Travel.Scale, 0.5f, MaxNearScale);
+    }
+
     [Fact]
     public void WhatStandsIsItsLingerStage()
     {

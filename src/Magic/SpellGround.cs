@@ -50,6 +50,11 @@ public partial class SpellGround : Node3D
         Ring.Position = new Vector3(0f, 0.06f, 0f);
         TelegraphClass cls = Spell.Blockable ? TelegraphClass.Standard : TelegraphClass.Unblockable;
         Ring.Arm(Delay, Radius, SpellSchools.Color(Spell.School), cls);
+
+        // Where the effect layer draws the landing, the plain ring under the player's own spell is a
+        // second, thicker ring round the same spot. It stays armed (a probe reads that) but unseen.
+        // Anyone else's keeps its ring: its shape is the warning of what kind of blow is coming.
+        Ring.Visible = !(SpellVfx.Active && CombatPerspective.IsPlayer(Caster));
         SpellVfx.GroundTelegraph(this, Spell, Caster, Radius, Delay);
     }
 

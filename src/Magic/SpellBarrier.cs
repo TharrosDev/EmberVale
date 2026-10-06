@@ -101,6 +101,11 @@ public partial class SpellBarrier : Node3D
 
         Ring.Position = new Vector3(0f, 0.06f, 0f);
         Ring.Arm(Delay, Width * 0.5f, SpellSchools.Color(Spell.School));
+
+        // Where the effect layer draws the line the player's own wall will stand on, the plain ring is
+        // a circle round a thing that is not one. It stays armed (a probe reads that) but unseen;
+        // anyone else's wall keeps its ring as the warning it is.
+        Ring.Visible = !(SpellVfx.Active && CombatPerspective.IsPlayer(Caster));
         SpellVfx.BarrierTelegraph(this, Spell, Caster, Width, Delay);
     }
 

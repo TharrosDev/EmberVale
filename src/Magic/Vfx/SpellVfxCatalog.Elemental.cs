@@ -16,6 +16,11 @@ namespace Embervale.Magic.Vfx;
 /// Scale</c> metres across, and from 1.2 m up (Medium tier and above) fire and frost get a body of
 /// flowing noise inside the flash. Fire wants that body, so its impacts are scaled past 1.2 m;
 /// frost does not (a ball of white is not ice), so its single hits stay under it.</para>
+///
+/// <para>A Cast or Travel scale multiplies a flare whose halo is six times its radius across, in the
+/// player's own hand or just leaving it: a metre or two from the first-person eye and three from the
+/// third-person camera. They stay near 1 (see <c>MaxNearScale</c> in the tests); a spell is made
+/// bigger with a body, a trail and what it throws, not with a wider glow.</para>
 /// </summary>
 public static partial class SpellVfxCatalog
 {
@@ -34,7 +39,7 @@ public static partial class SpellVfxCatalog
         // explosion, with smoke rising off where it landed.
         recipes["spell.emberlash"] = new SpellVfxRecipe(
             Cast: new VfxStage { Flare = true, Particles = VfxParticles.Embers, Scale = 1.2f },
-            Travel: new VfxStage { Flare = true, Particles = VfxParticles.Embers, Scale = 1.6f },
+            Travel: new VfxStage { Flare = true, Particles = VfxParticles.Embers, Scale = 1.25f },
             Impact: new VfxStage
             {
                 Flare = true,
@@ -50,7 +55,7 @@ public static partial class SpellVfxCatalog
         // on every foe it runs through.
         recipes["spell.flame_lance"] = new SpellVfxRecipe(
             Cast: new VfxStage { Flare = true, Particles = VfxParticles.Embers, Scale = 1.15f },
-            Travel: new VfxStage { Flare = true, Particles = VfxParticles.Embers, Scale = 1.3f },
+            Travel: new VfxStage { Flare = true, Particles = VfxParticles.Embers, Scale = 1.15f },
             Impact: new VfxStage
             {
                 Flare = true,
@@ -77,7 +82,7 @@ public static partial class SpellVfxCatalog
 
         // Sunfall: the biggest fire in the game. A meteor for the delay, then the blast.
         recipes["spell.sunfall"] = new SpellVfxRecipe(
-            Cast: new VfxStage { Flare = true, Particles = VfxParticles.Embers, Scale = 1.4f },
+            Cast: new VfxStage { Flare = true, Particles = VfxParticles.Embers, Scale = 1.15f },
             Travel: VfxStage.None,
             Impact: new VfxStage
             {
@@ -96,7 +101,9 @@ public static partial class SpellVfxCatalog
     private static void RegisterFrost(Dictionary<string, SpellVfxRecipe> recipes)
     {
         // Rime Shard: cold drawn into the hand, a rim-lit shard of ice in flight, and a burst of
-        // splinters and frost where it lands.
+        // splinters where it lands. Its frost is laid by its special case, on the floor under what
+        // it struck: a mark asked for here is centred on the hit, chest high, and a mark is a box
+        // that paints everything inside it.
         recipes["spell.rime_shard"] = new SpellVfxRecipe(
             Cast: new VfxStage { Flare = true, Particles = VfxParticles.Motes, Inward = true },
             Travel: new VfxStage { Flare = true, Particles = VfxParticles.Shards, Shell = true, Scale = 1.15f },
@@ -105,14 +112,13 @@ public static partial class SpellVfxCatalog
                 Flare = true,
                 Particles = VfxParticles.Shards,
                 Secondary = VfxParticles.Motes,
-                Mark = VfxMark.Frost,
                 Scale = 1.05f,
             },
             Linger: new VfxStage { Particles = VfxParticles.Motes, Scale = 0.8f });
 
         // Frost Nova: a ring of ice thrown out along the ground from the caster.
         recipes["spell.frost_nova"] = new SpellVfxRecipe(
-            Cast: new VfxStage { Flare = true, Particles = VfxParticles.Motes, Inward = true, Scale = 1.2f },
+            Cast: new VfxStage { Flare = true, Particles = VfxParticles.Motes, Inward = true },
             Travel: VfxStage.None,
             Impact: new VfxStage
             {
@@ -125,7 +131,7 @@ public static partial class SpellVfxCatalog
 
         // Blizzard: the zone is the spell. Its linger stage is the snow that falls in it.
         recipes["spell.blizzard"] = new SpellVfxRecipe(
-            Cast: new VfxStage { Flare = true, Particles = VfxParticles.Motes, Inward = true, Scale = 1.3f },
+            Cast: new VfxStage { Flare = true, Particles = VfxParticles.Motes, Inward = true, Scale = 1.1f },
             Travel: VfxStage.None,
             Impact: new VfxStage { Ring = true, Particles = VfxParticles.Shards },
             Linger: new VfxStage
@@ -161,7 +167,7 @@ public static partial class SpellVfxCatalog
                 Particles = VfxParticles.Sparks,
                 Bolt = true,
                 Shell = true,
-                Scale = 1.5f,
+                Scale = 1.25f,
             },
             Impact: new VfxStage
             {

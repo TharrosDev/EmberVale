@@ -16,12 +16,13 @@ public static partial class SpellVfx
     /// <item><b>A big effect is built from structure, not from a big flare.</b> A flare's halo is two
     /// and a half times its core, so a flare sized to a 4 m blast paints most of the frame one flat
     /// colour. Here a blast is a small core that is gone in about 0.14 s (never wider than
-    /// <see cref="CoreCap"/>), thin shock rings out to the true radius, a body of eroding noise where
-    /// the school has one, and particles, smoke and marks. Nothing that is centred on the caster
-    /// uses a sphere at all: the camera sits inside it.</item>
+    /// <see cref="CoreCap"/>, and smaller the nearer the camera is), one shock ring out to the true
+    /// radius at a fraction of the school's strength (<see cref="RingEnergy"/>), a body of eroding
+    /// noise where the school has one, and particles, smoke and marks. Nothing that is centred on
+    /// the caster uses a sphere at all: the camera sits inside it.</item>
     /// <item><b>The tiers are different pictures.</b> Performance is the core, one ring and one
-    /// particle layer. Medium adds the bodies of noise, smoke, second rings and marks. High adds
-    /// distortion, more strands and a second layer of most things; Ultra adds a third.</item>
+    /// particle layer. Medium adds the bodies of noise, smoke and marks. High adds distortion, more
+    /// strands and a second layer of most things; Ultra adds a third.</item>
     /// </list>
     /// </summary>
     private static void RegisterElementalSpecials(SpellVfxSpecialTable table)
@@ -83,8 +84,23 @@ public static partial class SpellVfx
     /// <summary>Seconds a blast's white-hot core lasts.</summary>
     private const float CoreSeconds = 0.14f;
 
-    /// <summary>The colour cold mist is drawn in: smoke, but pale and blue instead of soot.</summary>
-    private static readonly Color MistTint = new(0.5f, 0.64f, 0.76f);
+    /// <summary>
+    /// A shock ring's strength against the school's. The ring block draws its band at the school's
+    /// core energy and fills the inside of the band with a third of that, so at full strength a ring
+    /// around the caster is a white disc on the floor (frost and lightning clip to white first):
+    /// the dome this file exists to remove, lying down. At this strength the band keeps its colour
+    /// and the fill is a faint wash.
+    /// </summary>
+    private const float RingEnergy = 0.3f;
+
+    /// <summary>The widest a blast's core is drawn against its distance from the camera. The halo is
+    /// 2.5 times the core, so this keeps the whole flash under about a quarter of the frame's width
+    /// however close the blast is (a nova, a dash's end and a point-blank Sunfall are at the caster).</summary>
+    private const float CorePerMetre = 0.12f;
+
+    /// <summary>The colour cold mist is drawn in. Smoke is unlit, so this is as bright as it gets at
+    /// any hour: a pale tint is a glowing white bank at dusk, and reads as the dome coming back.</summary>
+    private static readonly Color MistTint = new(0.3f, 0.4f, 0.5f);
 
     /// <summary>The colour of the rock a meteor throws up: dull and hot, not white.</summary>
     private static readonly Color DebrisTint = new(1f, 0.42f, 0.1f);
@@ -105,19 +121,23 @@ public static partial class SpellVfx
     /// <summary>The brief hot heart of a blast: bright, small and gone in <see cref="CoreSeconds"/>.</summary>
     private static void BlastCore(in VfxCast cast, Vector3 at, float radius, float lightRange)
     {
-        VfxFlareSpec core = VfxFlareSpec.At(at, Mathf.Min(CoreCap, radius), cast.Colors);
+        float near = _director is { HasCamera: true } director
+            ? Mathf.Max(0.25f, director.DistanceToCamera(at) * CorePerMetre)
+            : CoreCap;
+        VfxFlareSpec core = VfxFlareSpec.At(at, Mathf.Min(Mathf.Min(CoreCap, near), radius), cast.Colors);
         core.Life = CoreSeconds;
         core.Light = VfxQuality.Budget.MaxLights > 0;
         core.LightRange = lightRange;
         cast.Fx.Flare(core);
     }
 
-    /// <summary>A shock ring and nothing else: no core, no halo, so it costs only its own thin line.</summary>
+    /// <summary>A shock ring and nothing else: no core and no halo, at <see cref="RingEnergy"/> of
+    /// the school's strength (times <paramref name="energy"/>, for a ring seen from far off).</summary>
     private static void ThinRing(
         in VfxCast cast, Vector3 at, float radius, float life, Vector3 normal = default, bool inward = false,
         float energy = 1f)
     {
-        VfxFlareSpec ring = VfxFlareSpec.At(at, 0.2f, energy >= 1f ? cast.Colors : cast.Colors.Scaled(energy, 1f));
+        VfxFlareSpec ring = VfxFlareSpec.At(at, 0.2f, cast.Colors.Scaled(RingEnergy * energy, 1f));
         ring.NoCore = true;
         ring.Ring = true;
         ring.RingRadius = radius;
@@ -132,6 +152,7 @@ public static partial class SpellVfx
     private static void Fork(
         in VfxCast cast, Vector3 from, Vector3 to, float width, float life, int branches = 0, float jitter = 0.16f)
     {
+        float length = from.DistanceTo(to);
         cast.Fx.Bolt(new VfxBoltSpec
         {
             Mode = VfxBoltMode.Lightning,
@@ -139,13 +160,30 @@ public static partial class SpellVfx
             To = to,
             Colors = cast.Colors,
             Width = width,
-            Jitter = jitter,
-            Segments = VfxRecipeRules.BoltSegments(VfxQuality.Budget, from.DistanceTo(to)),
+            Jitter = Kink(jitter, length),
+            Segments = VfxRecipeRules.BoltSegments(VfxQuality.Budget, length),
             Branches = branches,
             Life = life,
             Seed = _director!.NextSeed(),
         });
     }
+
+    /// <summary>A bolt's sideways kink for its length. The kink is a fraction of the length, so the
+    /// same fraction that makes a 2 m fork lively throws the middle of an 18 m beam a metre off its
+    /// line; this holds the swing of a long bolt to under half a metre.</summary>
+    private static float Kink(float jitter, float length) => Mathf.Min(jitter, 0.9f / Mathf.Max(0.5f, length));
+
+    /// <summary>How far above and below the floor a mark on it reaches. Kept low: a mark is a decal,
+    /// and a decal paints everything inside its box, not only the ground.</summary>
+    private static float FloorReach(float radius) => Mathf.Clamp(radius * 0.15f, 0.5f, 0.9f);
+
+    /// <summary>The school's colours for a body of fire: its heart is the hot body colour, not the
+    /// near-white of a flare's core, so a billow is flame all the way through and not a white ball.</summary>
+    private static VfxSchoolColors Flame(in VfxSchoolColors colors) => colors with
+    {
+        Core = colors.Core.Lerp(colors.Mid, 0.55f),
+        CoreEnergy = colors.MidEnergy * 1.25f,
+    };
 
     /// <summary>Forks thrown out from a point, biased down toward the floor: where lightning grounds.</summary>
     private static void GroundForks(in VfxCast cast, Vector3 from, int count, float reach, float drop, float width)
@@ -217,7 +255,11 @@ public static partial class SpellVfx
         VfxPlan plan = cast.Plan(VfxRole.Cast);
         VfxBudget budget = VfxQuality.Budget;
         float full = Mathf.Clamp(charge, 0f, 1f);
-        VfxFlareSpec snap = VfxFlareSpec.At(hand, (0.26f + (0.2f * cast.Weight) + (0.22f * full)) * plan.Scale, cast.Colors);
+
+        // The hand is two or three metres from the third-person camera, and a flare's halo is six
+        // times its radius across: past this size the release is a flash over half the frame.
+        float size = Mathf.Min(0.45f, (0.24f + (0.16f * cast.Weight) + (0.16f * full)) * plan.Scale);
+        VfxFlareSpec snap = VfxFlareSpec.At(hand, size, cast.Colors);
         snap.Life = 0.18f;
         snap.Light = plan.Light;
         snap.LightRange = 5f;
@@ -281,7 +323,7 @@ public static partial class SpellVfx
         Vector3 aim = aimed ? direction.Normalized() : Vector3.Forward;
         Vector3 velocity = aimed ? aim * Mathf.Max(0f, spell.ProjectileSpeed) : Vector3.Zero;
 
-        VfxShellSpec body = VfxShellSpec.Sphere(origin, size * 0.8f, cast.Colors);
+        VfxShellSpec body = VfxShellSpec.Sphere(origin, size * 0.8f, Flame(cast.Colors));
         body.Sustain = true;
         body.Layered = true;
         body.Scroll = new Vector2(0.3f, 1.7f);
@@ -315,9 +357,9 @@ public static partial class SpellVfx
     }
 
     /// <summary>
-    /// A fire hit fed a Kindled target another stack: a tongue of flame up the bearer and a thin
-    /// ring around its chest, one for every stack that catches. (The third stack's detonation is
-    /// drawn by the status itself.)
+    /// A fire hit fed a Kindled target another stack: a tongue of flame up the bearer, a thin ring
+    /// around its chest, and over its head one pip of fire for every stack it now burns with, so the
+    /// count to the detonation can be read. (The detonation is drawn by the status itself.)
     /// </summary>
     private static bool KindleCatches(
         in VfxCast cast, SpellProcKind kind, IEntity? target, Vector3 position, float radius)
@@ -337,7 +379,8 @@ public static partial class SpellVfx
             flare.Get?.Follow(VfxAnchor.To(body, Vector3.Up));
         }
 
-        ThinRing(cast, chest, 0.75f, 0.3f);
+        ThinRing(cast, chest, 0.75f, 0.3f, energy: 1.5f);
+        KindlePips(cast, target);
         VfxBurstSpec embers = VfxBurstSpec.At(position + (Vector3.Up * 0.5f), cast.Colors, budget.ParticleMultiplier * 0.9f);
         embers.Direction = Vector3.Up;
         embers.Spread = 18f;
@@ -353,6 +396,37 @@ public static partial class SpellVfx
         }
 
         return true;
+    }
+
+    /// <summary>The most Burning stacks a bearer's pips count out.</summary>
+    private const int MaxKindlePips = 5;
+
+    /// <summary>A row of small flames over a Kindled bearer's head, one for each Burning stack. The
+    /// count is only read to be drawn.</summary>
+    private static void KindlePips(in VfxCast cast, IEntity? target)
+    {
+        if (VfxAnchor.BodyOf(target) is not { } body || _director is not { HasCamera: true } director)
+        {
+            return;
+        }
+
+        int stacks = Mathf.Min(
+            MaxKindlePips, target!.GetComponent<StatusEffectsComponent>()?.StacksOf(StatusIds.Burning) ?? 0);
+        if (stacks <= 0)
+        {
+            return;
+        }
+
+        // Laid out across the view, so the row is a row from wherever it is seen.
+        Vector3 across = director.CameraForward.Cross(Vector3.Up);
+        across = across.LengthSquared() < 0.0001f ? Vector3.Right : across.Normalized();
+        for (int i = 0; i < stacks; i++)
+        {
+            Vector3 offset = (Vector3.Up * 2.25f) + (across * ((i - ((stacks - 1) * 0.5f)) * 0.2f));
+            VfxFlareSpec pip = VfxFlareSpec.At(body.GlobalPosition + offset, 0.06f, cast.Colors);
+            pip.Life = 0.9f;
+            cast.Fx.Flare(pip).Get?.Follow(VfxAnchor.To(body, offset));
+        }
     }
 
     /// <summary>Smoke rolling off the top of the wall of fire (Medium and up) and sparks spat out of
@@ -464,7 +538,7 @@ public static partial class SpellVfx
 
         if (rich)
         {
-            VfxShellSpec rock = VfxShellSpec.Sphere(Vector3.Zero, size, cast.Colors);
+            VfxShellSpec rock = VfxShellSpec.Sphere(Vector3.Zero, size, Flame(cast.Colors));
             rock.Sustain = true;
             rock.Layered = true;
             rock.Scroll = new Vector2(0.3f, 1.8f);
@@ -516,8 +590,8 @@ public static partial class SpellVfx
 
     /// <summary>
     /// Sunfall lands. Performance: a core that is gone in a blink, one shock ring and a fountain of
-    /// embers. Medium adds the billow of fire that erodes into smoke, a second ring, glowing debris
-    /// and the scorch. High adds the pressure wave, a rising cap of fire over the billow and a second
+    /// embers. Medium adds the billow of fire that erodes into smoke, glowing debris and the
+    /// scorch. High adds the pressure wave, a rising cap of fire over the billow and a second
     /// smoke column; Ultra a ring of embers kicked up at the blast's edge and a spray of sparks.
     /// </summary>
     private static bool SunfallBlast(in VfxCast cast, Vector3 position, float radius, SpellBurstSource source, float charge)
@@ -536,7 +610,7 @@ public static partial class SpellVfx
         bool hitsPlayer = !cast.ByPlayer && PlayerWithin(position, radius + 0.5f);
 
         BlastCore(cast, heart, radius * 0.26f, radius * 3.4f);
-        ThinRing(cast, floor + (Vector3.Up * 0.12f), radius * 1.15f, 0.34f);
+        ThinRing(cast, floor + (Vector3.Up * 0.12f), radius * 1.15f, 0.34f, energy: 1.6f);
 
         // The fountain: straight up and hot, on every tier.
         VfxBurstSpec fountain = VfxBurstSpec.At(heart, cast.Colors, density * (1.7f + (0.3f * full)));
@@ -561,7 +635,8 @@ public static partial class SpellVfx
 
         // The billow: swells from a quarter of its size, and burns away from the inside into smoke.
         float ball = Mathf.Min(2.4f, radius * 0.5f);
-        VfxShellSpec billow = VfxShellSpec.Sphere(heart, ball, cast.Colors);
+        VfxSchoolColors flame = Flame(cast.Colors);
+        VfxShellSpec billow = VfxShellSpec.Sphere(heart, ball, flame);
         billow.Life = 0.62f;
         billow.BurnsAway = true;
         billow.StartScale = 0.25f;
@@ -574,8 +649,6 @@ public static partial class SpellVfx
         VfxFlareSpec glow = VfxFlareSpec.At(heart, Mathf.Min(0.9f, radius * 0.22f), cast.Colors.Scaled(0.4f, 0.5f));
         glow.Life = 0.55f;
         fx.Flare(glow);
-
-        ThinRing(cast, floor + (Vector3.Up * 0.14f), radius * 0.7f, 0.6f, energy: 0.7f);
 
         VfxBurstSpec debris = VfxBurstSpec.At(floor + (Vector3.Up * 0.4f), cast.Colors, density * 1.2f);
         debris.Tint = DebrisTint;
@@ -602,11 +675,18 @@ public static partial class SpellVfx
             Size = radius * 2.1f,
             Colors = cast.Colors,
             Life = 12f,
-            Reach = Mathf.Max(1f, radius * 0.5f),
+            Reach = FloorReach(radius),
         });
 
-        // The one blast with a screen flash: near white, faint, and still under every comfort cap.
-        fx.Screen(BlastWhite, 0.22f + (0.08f * full), hitsPlayer);
+        // The one blast with a screen flash: near white, faint, still under every comfort cap, and
+        // only for a blast the camera is all but inside. One seen from across the field lights
+        // the field, not the lens.
+        float away = _director is { HasCamera: true } director ? director.DistanceToCamera(heart) : 0f;
+        float close = 1f - Mathf.Clamp((away - radius) / (radius * 1.5f), 0f, 1f);
+        if (close > 0.05f)
+        {
+            fx.Screen(BlastWhite, (0.22f + (0.08f * full)) * close, hitsPlayer);
+        }
 
         if (!lavish)
         {
@@ -622,7 +702,7 @@ public static partial class SpellVfx
         });
 
         // The cap: a second, smaller ball that climbs out of the first as it dies.
-        VfxShellSpec cap = VfxShellSpec.Sphere(heart + (Vector3.Up * (ball * 0.9f)), ball * 0.6f, cast.Colors.Scaled(0.8f, 1f));
+        VfxShellSpec cap = VfxShellSpec.Sphere(heart + (Vector3.Up * (ball * 0.9f)), ball * 0.6f, flame.Scaled(0.8f, 1f));
         cap.Life = 0.9f;
         cap.BurnsAway = true;
         cap.StartScale = 0.35f;
@@ -659,7 +739,8 @@ public static partial class SpellVfx
 
     // --- frost -----------------------------------------------------------------------------------
 
-    /// <summary>Extra splinters off a Rime Shard that landed, and a breath of cold mist under it.</summary>
+    /// <summary>Extra splinters off a Rime Shard that landed, a breath of cold mist under it, and
+    /// frost on the floor at the feet of what it struck.</summary>
     private static bool RimeShardHit(in VfxCast cast, in SpellImpactInfo hit)
     {
         VfxBudget budget = VfxQuality.Budget;
@@ -679,17 +760,33 @@ public static partial class SpellVfx
         VfxBurstSpec mist = VfxBurstSpec.At(
             hit.Position + (Vector3.Down * 0.3f), cast.Colors, budget.ParticleMultiplier * budget.DebrisMultiplier * 0.3f);
         mist.Tint = MistTint;
-        mist.SizeScale = 0.55f;
+        mist.SizeScale = 0.5f;
         mist.SpeedScale = 0.5f;
         mist.GravityScale = -0.3f;
         mist.LifeScale = 0.7f;
         cast.Fx.Burst(VfxParticles.Smoke, mist);
+
+        // At the feet of a body, or where the shard struck the world; never hung in the air.
+        Node3D? struck = VfxAnchor.BodyOf(hit.Target);
+        if (struck != null || hit.Kind == SpellImpactKind.World)
+        {
+            cast.Fx.Mark(new VfxGroundMarkSpec
+            {
+                Mark = VfxMark.Frost,
+                Position = struck?.GlobalPosition ?? hit.Position,
+                Size = 1.7f,
+                Colors = cast.Colors,
+                Life = 7f,
+                Reach = 0.5f,
+            });
+        }
+
         return false;
     }
 
     /// <summary>
     /// Frost Nova: ice thrown out along the ground from the caster. Nothing here is a sphere or a
-    /// large flare, because the camera is at its centre: a snap of light at the chest, thin rings
+    /// large flare, because the camera is at its centre: a snap of light at the chest, one ring
     /// racing out along the floor, shards kicked up low and (Medium and up) a crown of crystals
     /// standing up at the nova's edge, mist rolling out over the floor and frost left under it.
     /// </summary>
@@ -727,8 +824,6 @@ public static partial class SpellVfx
             return true;
         }
 
-        ThinRing(cast, floor + (Vector3.Up * 0.14f), radius * 0.62f, 0.48f, energy: 0.7f);
-
         // The crown: big slow shards born across the outer half and thrown straight up.
         VfxBurstSpec crown = VfxBurstSpec.At(low, cast.Colors, density * 1.3f);
         crown.Extents = new Vector3(radius * 0.75f, 0.05f, radius * 0.75f);
@@ -740,12 +835,13 @@ public static partial class SpellVfx
         fx.Burst(VfxParticles.Shards, crown);
 
         // Mist that stays on the floor: pale smoke with its buoyancy all but taken away.
-        VfxBurstSpec mist = VfxBurstSpec.At(low, cast.Colors, density * budget.DebrisMultiplier * 0.9f);
+        // Small and thin: the caster and the camera are standing in it.
+        VfxBurstSpec mist = VfxBurstSpec.At(low, cast.Colors, density * 0.9f);
         mist.Tint = MistTint;
-        mist.Extents = new Vector3(radius * 0.55f, 0.1f, radius * 0.55f);
+        mist.Extents = new Vector3(radius * 0.6f, 0.08f, radius * 0.6f);
         mist.GravityScale = 0.05f;
         mist.SpeedScale = 1.4f;
-        mist.SizeScale = Mathf.Clamp(radius * 0.28f, 0.7f, 1.4f);
+        mist.SizeScale = Mathf.Clamp(radius * 0.17f, 0.5f, 0.8f);
         mist.LifeScale = 1.2f;
         fx.Burst(VfxParticles.Smoke, mist);
 
@@ -756,7 +852,7 @@ public static partial class SpellVfx
             Size = radius * 2.1f,
             Colors = cast.Colors,
             Life = 5f,
-            Reach = Mathf.Max(1f, radius * 0.4f),
+            Reach = FloorReach(radius),
         });
 
         if (VfxQuality.Tier >= VfxTier.High)
@@ -856,13 +952,15 @@ public static partial class SpellVfx
         hail.SizeScale = 0.6f;
         rig.Add(cast.Fx.Burst(VfxParticles.Shards, hail)).Get?.Follow(VfxAnchor.To(zone, Vector3.Up * 3.4f));
 
-        VfxBurstSpec mist = VfxBurstSpec.At(Vector3.Zero, cast.Colors, density * budget.DebrisMultiplier * area * 0.4f);
+        // Six seconds of it around the caster: small puffs, and few of them, or it is a bank of fog
+        // between the camera and the fight.
+        VfxBurstSpec mist = VfxBurstSpec.At(Vector3.Zero, cast.Colors, density * area * 0.3f);
         mist.Continuous = true;
         mist.Tint = MistTint;
-        mist.Extents = new Vector3(radius * 0.7f, 0.1f, radius * 0.7f);
+        mist.Extents = new Vector3(radius * 0.7f, 0.08f, radius * 0.7f);
         mist.GravityScale = 0.03f;
         mist.SpeedScale = 0.5f;
-        mist.SizeScale = Mathf.Clamp(radius * 0.25f, 0.7f, 1.5f);
+        mist.SizeScale = Mathf.Clamp(radius * 0.15f, 0.5f, 0.85f);
         rig.Add(cast.Fx.Burst(VfxParticles.Smoke, mist)).Get?.Follow(VfxAnchor.To(zone, Vector3.Up * 0.25f));
 
         VfxHandle<VfxGroundMark> frost = rig.Add(cast.Fx.Mark(new VfxGroundMarkSpec
@@ -871,7 +969,7 @@ public static partial class SpellVfx
             Size = radius * 2f,
             Colors = cast.Colors,
             Sustain = true,
-            Reach = 1.5f,
+            Reach = FloorReach(radius),
         }));
         frost.Get?.Follow(floor);
         return true;
@@ -888,7 +986,7 @@ public static partial class SpellVfx
 
         radius = Mathf.Max(0.5f, radius);
         VfxBudget budget = VfxQuality.Budget;
-        ThinRing(cast, position + (Vector3.Up * 0.05f), radius, 0.5f, energy: 0.8f);
+        ThinRing(cast, position + (Vector3.Up * 0.05f), radius, 0.5f, energy: 0.7f);
 
         VfxBurstSpec squall = VfxBurstSpec.At(position + (Vector3.Up * 2.6f), cast.Colors, budget.ParticleMultiplier * 0.9f);
         squall.Extents = new Vector3(radius * 0.7f, 0.3f, radius * 0.7f);
@@ -1044,7 +1142,7 @@ public static partial class SpellVfx
         mist.Extents = new Vector3(width * 0.5f, 0.08f, 0.4f);
         mist.GravityScale = 0.03f;
         mist.SpeedScale = 0.35f;
-        mist.SizeScale = 0.7f;
+        mist.SizeScale = 0.6f;
         VfxHandle<VfxBurst> lying = rig.Add(cast.Fx.Burst(VfxParticles.Smoke, mist));
         if (lying.Get is { } cold)
         {
@@ -1059,7 +1157,7 @@ public static partial class SpellVfx
             Depth = Mathf.Clamp(1.8f / width, 0.15f, 1f),
             Colors = colors,
             Life = Mathf.Max(6f, (cast.Spell?.BarrierDuration ?? 0f) + 4f),
-            Reach = 1.2f,
+            Reach = 0.6f,
         }));
         if (mark.Get is { } frost)
         {
@@ -1158,7 +1256,7 @@ public static partial class SpellVfx
             To = to,
             Colors = cast.Colors,
             Width = AtTheEye(from) ? 0.016f : 0.028f,
-            Jitter = 0.075f,
+            Jitter = Kink(0.075f, from.DistanceTo(to)),
             Segments = VfxRecipeRules.BoltSegments(VfxQuality.Budget, from.DistanceTo(to)),
             Seed = _director!.NextSeed(),
         }));
@@ -1181,14 +1279,18 @@ public static partial class SpellVfx
     private static bool StormConduitTick(
         in VfxCast cast, VfxRig rig, Node3D projectile, Vector3 handOffset, Vector3 direction, float charge)
     {
+        // Five new shapes a second is a flicker, which is the point of it and exactly what Reduced
+        // Motion asks not to be shown: there the steady line is the whole beam.
         VfxBudget budget = VfxQuality.Budget;
-        if (!budget.SecondaryDebris || cast.Spell is not { } spell || direction.LengthSquared() < 0.0001f)
+        if (!budget.SecondaryDebris || VfxQuality.ReducedMotion || cast.Spell is not { } spell ||
+            direction.LengthSquared() < 0.0001f)
         {
             return false;
         }
 
         Vector3 aim = direction.Normalized();
-        Vector3 from = projectile.GlobalPosition + handOffset;
+        Vector3 origin = projectile.GlobalPosition;
+        Vector3 from = origin + handOffset;
         float reach = Mathf.Max(1f, spell.Range);
 
         // Where the beam last struck something, while that is still true.
@@ -1199,10 +1301,13 @@ public static partial class SpellVfx
             reach = Mathf.Clamp(beam.ClipDistance, 0.5f, reach);
         }
 
-        Vector3 to = from + (aim * reach);
+        // The beam runs from the hand to a point on the true aim (which starts at the aim origin,
+        // not at the hand), so the strands do too. Drawn from the hand along the aim they would end
+        // as far wide of the beam's end as the hand is from the aim origin.
+        Vector3 to = origin + (aim * reach);
         if (AtTheEye(from))
         {
-            from += aim * Mathf.Min(0.9f, reach * 0.3f);
+            from += (to - from).Normalized() * Mathf.Min(0.9f, reach * 0.3f);
         }
 
         int strands = VfxQuality.Tier >= VfxTier.High ? 2 : 1;
@@ -1302,7 +1407,7 @@ public static partial class SpellVfx
         fx.Flare(depart);
         BlastCore(cast, end, 0.42f, 6f);
         float reach = Mathf.Max(1f, cast.Spell?.DashHitRadius ?? 1.4f);
-        ThinRing(cast, to + (Vector3.Up * 0.12f), reach, 0.28f);
+        ThinRing(cast, to + (Vector3.Up * 0.12f), reach, 0.28f, energy: 1.3f);
 
         VfxBurstSpec clap = VfxBurstSpec.At(to + (Vector3.Up * 0.3f), cast.Colors, density * 1.2f);
         clap.Direction = Vector3.Up;
@@ -1336,7 +1441,7 @@ public static partial class SpellVfx
                     Size = last ? reach * 1.6f : 1.2f,
                     Colors = cast.Colors,
                     Life = last ? 8f : 6f,
-                    Reach = 1.2f,
+                    Reach = 0.6f,
                 });
             }
         }
