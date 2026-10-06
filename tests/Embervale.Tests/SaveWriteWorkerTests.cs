@@ -238,4 +238,36 @@ public sealed class SaveWriteWorkerTests : IDisposable
         Assert.False(File.Exists(header));
         Assert.Equal("new save", File.ReadAllText(save));
     }
+
+    [Fact]
+    public void WriteAtomic_KeepingThePrevious_LeavesItAsTheBackupGeneration()
+    {
+        string path = In("save.json");
+        Assert.True(SaveFiles.WriteAtomic(path, "one", out _, keepPrevious: true));
+        Assert.False(File.Exists(path + ".bak")); // nothing to keep on the first write
+
+        Assert.True(SaveFiles.WriteAtomic(path, "two", out _, keepPrevious: true));
+        Assert.True(SaveFiles.WriteAtomic(path, "three", out _, keepPrevious: true));
+        Assert.Equal("three", File.ReadAllText(path));
+        Assert.Equal("two", File.ReadAllText(path + ".bak")); // exactly one generation back
+        Assert.False(File.Exists(path + ".tmp"));
+    }
+
+    [Fact]
+    public void Commit_NotKeepingThePrevious_LeavesAGoodBackupAlone()
+    {
+        string save = In(Path.Combine("slot1", "save.json"));
+        string header = In(Path.Combine("slot1", "header.json"));
+        Directory.CreateDirectory(In("slot1"));
+        File.WriteAllText(save, "damaged");
+        File.WriteAllText(save + ".bak", "good backup");
+
+        // A damaged primary is replaced in place: rotating it would destroy the good generation.
+        Assert.True(SaveFiles.Commit(new SaveCommit(save, "new save", header, "h")).Saved);
+        Assert.Equal("good backup", File.ReadAllText(save + ".bak"));
+
+        Assert.True(SaveFiles.Commit(new SaveCommit(save, "newer save", header, "h", KeepPrevious: true)).Saved);
+        Assert.Equal("new save", File.ReadAllText(save + ".bak"));
+        Assert.Equal("newer save", File.ReadAllText(save));
+    }
 }
