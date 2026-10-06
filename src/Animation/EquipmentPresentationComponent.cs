@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Embervale.Enemies;
 using Embervale.Entities;
+using Embervale.Items;
 using Embervale.Npc;
 using Godot;
 
@@ -62,6 +63,49 @@ public partial class EquipmentPresentationComponent : EntityComponent
         SocketSpace? Space = null);
 
     private readonly Dictionary<string, Node3D> _attached = new();
+
+    /// <summary>The weapon family currently drawn in the main hand, set by
+    /// <c>EquipmentComponent</c> on every swap; <see cref="WeaponClass.None"/> for the actor's
+    /// starting weapon or a classless one. Presentation reads the family here rather than reaching
+    /// into the item system.</summary>
+    public WeaponClass WieldedClass { get; set; } = WeaponClass.None;
+
+    /// <summary>A model to hang and the uniform scale to hang it at.</summary>
+    public readonly record struct WeaponModel(string Path, float Scale);
+
+    private const string SwordModel = "res://assets/models/weapons/wpn_sword_iron.glb";
+    private const string DaggerModel = "res://assets/models/weapons/wpn_dagger_iron.glb";
+    private const string BowModel = "res://assets/models/weapons/wpn_bow_hunting.glb";
+    private const string ShieldModel = "res://assets/models/equipment/eqp_shield_round.glb";
+
+    /// <summary>
+    /// The model an equipped item is drawn with: its own <paramref name="authoredPath"/> when it has
+    /// one, otherwise a stand-in for its <paramref name="weaponClass"/> from the models already in
+    /// the game. Empty path (keep whatever is in the hand) only for a classless item with no model,
+    /// which is the legacy behaviour.
+    ///
+    /// <para>There are four weapon meshes, so the stand-ins are coarse on purpose: the bow and the
+    /// dagger are themselves, a greatsword is the sword drawn larger, and every other melee family
+    /// borrows the sword until it has a mesh of its own. That is still better than what it replaces,
+    /// where a modelless bow was drawn as whichever blade was last in the fist.</para>
+    /// </summary>
+    public static WeaponModel ModelFor(string authoredPath, WeaponClass weaponClass)
+    {
+        if (!string.IsNullOrEmpty(authoredPath))
+        {
+            return new WeaponModel(authoredPath, 1f);
+        }
+
+        return weaponClass switch
+        {
+            WeaponClass.Bow => new WeaponModel(BowModel, 1f),
+            WeaponClass.Dagger => new WeaponModel(DaggerModel, 1f),
+            WeaponClass.Shield => new WeaponModel(ShieldModel, 1f),
+            WeaponClass.Greatsword => new WeaponModel(SwordModel, 1.3f),
+            WeaponClass.None => new WeaponModel(string.Empty, 1f),
+            _ => new WeaponModel(SwordModel, 1f),
+        };
+    }
 
     protected override void OnInitialize()
     {

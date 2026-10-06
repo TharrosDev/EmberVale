@@ -1,10 +1,12 @@
 using Embervale.Combat.Actions;
 using Embervale.Core.Events;
 using Embervale.Entities;
+using Embervale.Items;
 using Embervale.Movement;
 using Embervale.Player;
 using Embervale.Progression;
 using Embervale.Stats;
+using Embervale.World;
 using Godot;
 
 namespace Embervale.Combat;
@@ -42,6 +44,17 @@ public sealed class RangedAttack
             arrow.QueueFree(); // A shot may finish after its owner has left the scene.
     }
 
+    /// <summary>Whether this shooter's arrows are counted. The player's are; nobody else's.</summary>
+    public static bool NeedsAmmo(IEntity? shooter) => shooter is PlayerCharacter;
+
+    /// <summary>
+    /// Whether <paramref name="shooter"/> has an arrow to loose: always true for anyone whose arrows
+    /// are not counted. <see cref="Fire"/> is the enforcement; this is the same answer for a HUD or
+    /// an input gate that wants to refuse the draw before it starts.
+    /// </summary>
+    public static bool HasAmmo(IEntity? shooter) =>
+        !NeedsAmmo(shooter) || shooter!.GetComponent<EquipmentComponent>() is not { } quiver || quiver.AmmoCount > 0;
+
     public void Fire(
         WeaponResource bow,
         ActionDefinitionResource definition,
@@ -60,10 +73,26 @@ public sealed class RangedAttack
         BowDrawComponent? draw = shooter?.GetComponent<BowDrawComponent>();
         float charge = draw?.Take() ?? 1f;
 
+        // The arrow. Only the player's quiver is real: an AI archer, a companion and a probe's bare
+        // archer loose for free, exactly as before. The draw above is already taken, so a dry
+        // release resets the string instead of leaving it held.
+        float arrowDamage = 0f;
+        if (NeedsAmmo(shooter) && shooter!.GetComponent<EquipmentComponent>() is { } quiver)
+        {
+            int tier = quiver.Ammo?.Template.Tier ?? 0;
+            if (!quiver.ConsumeAmmo())
+            {
+                EventBus.Instance?.Publish(new WorldHazardNoticeEvent(AmmoRules.NoAmmoReasonKey));
+                return;
+            }
+
+            arrowDamage = AmmoRules.BonusDamage(tier);
+        }
+
         float mounted = MountedCombat.DamageScale(
             mount is { IsMounted: true }, mount is { IsGalloping: true });
         (float amount, bool isCrit) = CombatMath.RollAttack(
-            bow.BaseDamage * definition.DamageScale * mounted, stats);
+            (bow.BaseDamage + arrowDamage) * definition.DamageScale * mounted, stats);
 
         // ⚠️ THE DRAW SCALES THE ROLLED DAMAGE, NOT THE WEAPON'S BASE. RollAttack adds the archer's power
         // stat to the base, and on a levelled character that stat is most of the number: scaling only
