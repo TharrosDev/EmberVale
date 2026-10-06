@@ -105,7 +105,7 @@ Status: **done**, **partial**, **not built** (never started; not needed for the 
 | 52 | Audio production | not built |
 | 53 | Art complete | partial: all seven Meshy bosses adopted; no final pass |
 | 53.5 | Photo mode | not built |
-| 54 | Accessibility and input | partial: full gamepad play, subtitles, colour-vision modes, high contrast, reduced motion; no key remapping; the difficulty setting is stored but no gameplay system reads it; no audit |
+| 54 | Accessibility and input | partial: full gamepad play, colour-vision modes, high contrast, reduced motion; since 2026-10-06 (built and rendered, not played; below) key and gamepad remapping, a caption layer with subtitle options, first-run accessibility setup, a readable-font switch, presses in place of holds, and a difficulty setting that scales the damage of blows on the player; no audit |
 | 55 | G3 acceptance campaign | replaced by the headless `--story` gate plus the pending maintainer play-through |
 
 ### Stages E–G — Release, Launch, Live
@@ -134,6 +134,43 @@ combat/animation/camera overhaul (one action timeline, true first person, ranged
 world-production overhaul (offline bake, residency tiers, safe placement), the 3D asset gap pass,
 the 2026-09 world rebuild (52- and 36-cell realms in atlas bands, save v3), and the lifecycle
 finalizer fix (`ResidentResources`).
+
+### UI, HUD and meta-shell upgrade (2026-10-06)
+
+One foundation, eight lanes in two waves of four, a review-fix pass per lane, then three polish
+lanes, merged on `claude/ui-upgrade`. The direction was "banked embers": keep the identity (ash,
+bone, ember, violet) and move from boxed panels on a picture to cut plates with one lit edge,
+real iconography, one motion and sound language, and the structure a player expects (hub strip,
+footer legend, tabbed settings, a configurable HUD).
+
+- **Foundation.** `UiTheme` split into partials; `UiFx`, `HoldRing`, `UiAudio`, `UiGlyph`,
+  `UiLegend`, `HubStrip`, `UiSkin`, `UiTheme.Sheet`, the plate tokens, a bent text-scale curve,
+  HUD options and metrics, `ItemIcons` with an atlas packer, the new settings fields, and empty
+  shells for the death screen, subtitles, credits and enemy plates so no lane touched
+  composition code.
+- **Wave 1.** Settings and input (six tabs, remapping, HUD options), HUD core (bare keylined
+  vitals, hotbar, tracker, prompts), items (slot marks, detail card, compare, perk tree states),
+  knowledge panels (journal, map, bestiary, dialogue typewriter).
+- **Wave 2.** Shell front (splash, title, first run, loading, credits), shell session (slots,
+  pause, creator, death, narration), HUD combat (boss bar, enemy plates, damage-number modes,
+  toasts, subtitles), trade (vendor, crafting, storage, appraisal, contracts).
+- **Between the waves.** Two edits the settings lane could not make in frozen files landed
+  centrally: pad look sensitivity reached `PlayerLookInput`, and the difficulty multiplier
+  reached `CombatComponent.ReceiveDamage`, which is what turned a stored setting into a mechanic.
+- **Polish.** The orchestrator ran the harnesses, read the frames and handed defects back by
+  lane: HUD (ink weight and halo, plate opacity, square hotbar cells, a centred bottom bar, the
+  lock dot), shell (painting behind sub-screens, creator idle and framing, ending-card contrast,
+  the handheld title), panels (map tone and labels, compare columns, price ledger, hub plate on
+  the two outliers).
+
+What the screenshots found that reading had not: a tracker plate tinted blue by the sky behind a
+0.66 alpha; a title built before the handheld viewport existed, pushing Quit under the legend; a
+race tooltip running off both screen edges; a spellbook page 28 px wider than its frame; a hotbar
+48 px off the crosshair that jumped when the minimap hid. Three "defects" were the harness's own
+setup: a pin-snap shot whose pin was never discovered, a junk confirm staged at a shop that buys
+no junk, and a hotbar-states shot on a level 50 save that nothing could lock. The lanes wrote
+under a no-engine rule; the gates and seven shot harnesses were then run centrally, and the
+record is in [`NOW.md`](NOW.md). It has not been played.
 
 ### Performance pass (2026-10-06)
 
@@ -248,7 +285,14 @@ Each of these shipped a defect or a false pass. Rules already written in `CLAUDE
 - **Ask what a tool can actually see.** The Godot MCP drives the editor, where the runtime HUD does not
   exist; UI defects shipped through a green battery until `--hudshots` / `--panelshots` rendered the
   real screens. Build the capture harness before the UI work, not after.
-- **A harness shot is evidence only if it drives the thing you changed.**
+- **A harness shot is evidence only if it drives the thing you changed.** And a failing shot may
+  be its own staging: check that the fixture can reach the state before changing the screen.
+- **Parallel agents share whatever they were not told is theirs.** Two UI lanes wrote a helper
+  script of the same name into one scratch folder and each ran the other's once. Give every lane
+  its own folder as well as its own worktree.
+- **A frozen file needs a way to ask.** Lanes that could not edit shared files listed exact
+  edits as requests; the two that mattered (difficulty, pad sensitivity) landed between waves.
+  The ones nobody collected are still gaps: dedicated menu actions for compare, track and mark.
 - **The gate that finds a placement defect is rarely the one that names the thing.** `--validate` and
   the layout check passed buildings standing on roads; the traversal probe and a render found them.
 - **When a new state is defined by a negation, grep for the negation.** Quest branches (41D) broke six

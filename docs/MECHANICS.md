@@ -156,8 +156,9 @@ caps the first two at 25%).
   you; nameplates show a poise bar and a state tag. `CombatFeedbackDirector`, `HitStopDirector`,
   `HitReactionComponent`, `WeaponTrailComponent`, `CombatFeedbackOverlay`, `DamageDirectionOverlay`.
 - **Floating damage numbers** — crits large and gold, blocks small in parentheses, resisted dim with
-  a word, parry a word with no number; rapid hits on one target merge. Off with the Damage Numbers
-  setting; held still under Reduced Motion. `DamageNumberLayer`, `DamageNumberMath`.
+  a word, parry a word with no number; rapid hits on one target merge. A setting picks all hits,
+  your blows only, crits and kills only, or off; held still under Reduced Motion.
+  `DamageNumberLayer`, `DamageNumberMath`, `DamageNumberRules`.
 - **Lock-on** — middle mouse; cycles targets in range, faces the target, and says when it breaks
   (target died, too far, lost sight). With Lock-On Assist it prefers a target mid-swing or nearly dead,
   passes the lock to the next enemy within 10 m on a kill, and steps on a mouse flick or a full stick
@@ -314,7 +315,8 @@ caps the first two at 25%).
   refills from the pack when the slot runs dry, and will not draw on an empty quiver; arrow tier
   adds 4 damage a tier above the first. `EquipmentComponent.ConsumeAmmo`, `AmmoRules`.
 - **Hotbar** — five consumable slots on `1`–`5`, or hold `LT` and press D-pad / Select on a pad; each
-  cell sweeps its cooldown. `HotbarComponent`, `HotbarPanel`.
+  cell sweeps its cooldown and shows when it is level-locked, has nothing to do or has run out.
+  `HotbarComponent`, `HotbarPanel`.
 - **Loot tables** — 52 (`data/loot`): 21 family and shop tables, 24 tier pools (gear, materials,
   supplies, scrolls for each of six tiers, `data/loot/tiers`) and 7 Flamebearer chest tables
   (`data/loot/bosses`). Rows nest other tables (`{tier}` in a path resolves to the realm's tier),
@@ -589,14 +591,130 @@ caps the first two at 25%).
 
 ## UI, HUD and meta-shell
 
-- **Title and New Game** — main menu, character creator, loading screen. `MainMenu`, `LoadingScreen`.
-- **HUD** — vitals, spell, quest tracker, time and weather, event banner, nameplates, prompt,
-  crosshair, minimap, compass, party, boss bar. `GameHud`, `BossFrame`.
-- **Panels** — inventory, spellbook, journal, map, bestiary, dialogue, vendor, crafting, storage,
-  appraisal, contract board, save slots, settings, pause. `UiPanel`, `UiTheme` (`src/UI`).
-- **Settings** — window mode, vsync, FPS cap (uncapped, 30, 40, 60, 120, 144), quality preset,
-  volumes, mouse sensitivity, invert Y, camera mode and shoulder, tutorials, reduced motion,
-  subtitles, colour-vision modes, high contrast. `Settings`, `SettingsService`.
+The 2026-10 UI upgrade rebuilt this whole section. It was rendered by the shot harnesses and has
+not been played; [`NOW.md`](NOW.md) lists what is unverified, and [`UI_STYLE.md`](UI_STYLE.md) §13
+maps the code.
+
+- **Boot splash** — the seal and "Press any button", once per launch; never shown to a headless,
+  isolated or flagged run. `BootSplash`, `ShellFrontRules.Attended`.
+- **First-run setup** — a first launch with no saves offers subtitles, text size, high contrast,
+  reduced motion and colour vision, each applied live beside a sample. `FirstRunSetup`,
+  `ShellFrontRules.FirstRun`.
+- **Title** — a painting for the act the newest save has reached (four variants; slow drift and
+  embers, held still by Reduced Motion or the static-background setting), Continue naming its
+  save (character, level, region, playtime) or disabled with the reason, New Game, Load Game,
+  Settings, Accessibility, Credits, and Quit behind a confirm. `MainMenu`, `TitleBackdrop`.
+- **Character creator** — a step rail (race, appearance, background, name), a summary strip of
+  the combined stat nudges, a turntable preview with three light rigs, face framing and an idle
+  pose, and Randomise look. `CharacterCreator`, `CharacterPreview`, `CreatorRules`.
+- **Save slot rows** — thumbnail, kind (manual, quick, auto) as a glyph and a word, character,
+  region, level, corruption tier, playtime and local date, with the damaged, newer-format and
+  backup badges; delete and overwrite are a hold. `SaveSlotPanel`, `ShellSessionRules`.
+- **Loading screen** — the destination realm's painting and name, a progress line fed by the
+  loading gate's four stages, and one tip or a lore card for a realm already discovered; no press
+  to continue. `LoadingScreen`, `LoadingProgressEvent`, `LoadingCardRules`.
+- **Pause sheet** — the tracked quest's current objective and time played over Resume, Save, Save
+  to Slot, Load, Settings, main menu and quit. `PauseMenu`.
+- **Death screen** — the frame darkens over one line, then Rise or Load last save. Death itself is
+  unchanged: the player is back at the region's spawn the same frame, with no penalty; Rise only
+  lifts the screen. Not shown to an automated run or under another menu. `DeathScreen`,
+  `PlayerHost`.
+- **Credits screen** — a scrolling roll from the title: speeds up while held, moves by hand, and
+  returns to the title at its end. The ending still plays its own credits cards. `CreditsScreen`.
+- **Narration** — cards on black; the two endings play over their own paintings; skip is a hold,
+  and pausing asks Resume or Skip. `NarrationSequence`.
+- **Hold to confirm** — delete or overwrite a save, reset settings or bindings, respec, and skip a
+  narration fill a ring over 0.9 s; an accessibility setting makes each a single press. `HoldRing`,
+  `UiFx`.
+- **HUD** — vitals with level and a corruption row, prepared spell, quest tracker, time and
+  weather, event banner, target plate, prompt, crosshair, minimap, compass, party, hotbar, boss
+  bar. `GameHud`, `BossFrame`, `Nameplate`, `HotbarPanel`.
+- **HUD presets and per-element modes** — Full, Dynamic or Minimal, or always / dynamic / hidden
+  for each of fourteen elements. A dynamic element shows in a fight, while a pool is below max,
+  for four seconds after it changes, and while `N` is held. `HudOptions`, `HudDynamicRules`,
+  `GameHud.Options`.
+- **HUD scale, opacity and safe zone** — 0.75 to 1.5, 0.3 to 1, and up to a tenth of the screen
+  inset from every edge. `HudLayout`, `HudMetrics`.
+- **Vitals** — bars straight on the world with notches (health at 15% and 30%, stamina at the
+  winded mark, mana at the prepared spell's cost), a pale chunk for the length a hit just removed,
+  and a mark that changes shape when low or winded. `GameHud.Vitals`, `JuicedBar`.
+- **Hotbar cells** — the item's picture, key glyph, count, a cooldown wipe with its last nine
+  seconds counted, and ready, unusable, level-locked and run-out states. `HotbarPanel`,
+  `HotbarRules`.
+- **Quest tracker** — at most three objective lines, then "+N more"; it steps aside for the boss
+  bar on a narrow screen. `GameHud.Tracker`, `TrackerFoldRules`.
+- **Enemy plates** — up to eight health and poise bars over the enemies in the fight, kept six
+  seconds after the last blow and faded by 36 m; never doubled with the boss bar or the target
+  plate. `EnemyPlateLayer`, `EnemyPlateRules`.
+- **Subtitles** — captions for companion barks and boss intro lines (there is no voice acting):
+  two-line pages above the hotbar, with size, plate opacity and speaker names as settings; they
+  wait out menus. `SubtitleLayer`, `SubtitleRules`.
+- **Notifications** — toasts and banners. A toast stays three seconds or a quarter-second a word,
+  whichever is longer, times a setting; repeats fold into a count; in a fight only warnings show
+  and the rest wait for the last opponent to fall; a hidden feed still shows warnings; a quest
+  toast names the journal key. `Notifications`, `Toast`, `ToastRules`.
+- **Input glyphs** — every prompt and legend draws the bound key, or the pad button in Xbox,
+  PlayStation or by-position shapes, and follows a device change or a remap. `UiGlyph`,
+  `UiGlyphRules`.
+- **Panels** — character (pack, materials, progression, perks, guilds), spellbook, journal, map,
+  bestiary, dialogue, vendor, crafting, storage, appraisal, contract board, save slots, settings,
+  pause. `UiPanel`, `UiTheme` (`src/UI`).
+- **Hub strip and legend** — Character, Spellbook, Journal, Map and Bestiary share a strip: `Q`/`E`
+  or LB/RB step between them without unpausing, `Z`/`C` or LT/RT step a screen's own tabs, and
+  every screen lists its verbs in a footer legend. `HubStrip`, `UiLegend`, `UiPanel`.
+- **Item icons** — 79 painted archetype pictures on one atlas, chosen from the item's id; an id
+  nothing recognises keeps its category glyph. `ItemIcons`, `ItemIconRules`,
+  `tools/pack_ui_atlas.gd`.
+- **Item slots and detail card** — rarity as frame, ticks and word; a pip on items new since the
+  pack was last closed; worn, locked and junk marks; a card with one hero number, signed deltas
+  against the worn piece, affixes, set and unique text. `ItemSlot`, `ItemDetailCard`,
+  `ItemPresentation`.
+- **Compare** — `Shift` or L3 flips any item card to the candidate and the worn piece side by
+  side; focusing an equipment slot narrows the pack to what fits it and shows the stats after the
+  swap. `ItemDetailCard`, `InventoryPanel`, `StatsPresentation.DerivedDelta`.
+- **Perk tree states** — locked, available, owned and maxed nodes each have a frame and a mark,
+  the route from owned perks to the focused one is lit, the d-pad follows prerequisite lines, a
+  refused press says why, and respec is a hold. `PerkTreePanel`, `PerkTreeRules`, `PerkNodeMark`.
+- **Trade screens** — vendor (wares, pack, detail; both purses; an order bar; a price ledger of
+  every reason; sell all junk behind a confirm), crafting (recipes craftable first, ingredients
+  with have and need, the result with compare, craft max; Craft, Reforge and Salvage as tabs),
+  storage (pack, chest, detail; deposit all materials; take all), appraisal and the contract
+  board with risk chips. `VendorPanel`, `CraftingPanel`, `StoragePanel`, `AppraisalPanel`,
+  `ContractBoardPanel`, `TradeRules`.
+- **Map screen** — a smoked-vellum plot with a scale bar, a rail with Place and Legend tabs where
+  the legend filters pins by group and category, a pad cursor that snaps to the nearest pin, zoom
+  on the sub-tab keys, and a confirm card before every fast travel. `MapScreen`, `MapView`,
+  `MapSnapRules`.
+- **Journal and bestiary pages** — journal sections as tabs, drawn objective marks, and Show on
+  map; bestiary entries sealed until sighted, then a kill tally, then resistances and lore.
+  `QuestLogPanel`, `BestiaryPanel`, `BestiaryFactRules`.
+- **Dialogue typewriter** — a lower-third window; the line writes itself at 48 characters a
+  second and the options arrive when it finishes; a press finishes the line without choosing;
+  options carry a mark for plot, consequence, already asked and leave. Off under Reduced Motion.
+  `DialoguePanel`, `DialoguePaceRules`.
+- **UI audio cues** — click, focus, confirm, back, tab, open, close, denied and hold tick, one
+  sound per action, with a title music bed and a low-pass over the world while a menu pauses it;
+  all procedural. `UiAudio`, `UiAudioRules`.
+- **Settings** — six tabs (Graphics, Audio, Controls, Gameplay, Interface, Accessibility) with a
+  description pane and previews, a restore-default button on each changed row, and hold-to-reset
+  for a tab or for everything (which keeps bindings and accessibility options). Window mode,
+  vsync, FPS cap (uncapped, 30, 40, 60, 120, 144), quality preset, volumes, mouse sensitivity,
+  invert Y, camera mode and shoulder, tutorials. `SettingsPanel`, `SettingsTabRules`, `Settings`,
+  `SettingsService`.
+- **Key and gamepad remapping** — 31 actions, each with a keyboard and a pad binding; a clash
+  offers swap, unbind the other, or cancel; Esc, Enter, Tab, the arrows, the function keys, Start
+  and Guide cannot be bound; pad movement and the pad hotbar chord are fixed. Saved with the
+  settings and applied at boot. `InputBindingRules`, `GameInput.ApplyBindings`.
+- **Pad look sensitivity** — separate horizontal and vertical multipliers, 0.25 to 3.
+  `PlayerLookInput`, `SettingsMath`.
+- **Difficulty** — Story, Normal or Hard scales the damage of a blow that lands on the player
+  (melee, ranged, spell hits and detonations) by 0.6, 1 or 1.35. Nothing else moves: not damage
+  over time, falls or reflected damage, not what the player deals, not health, loot or
+  experience. `DifficultyRules`, `SettingsService.IncomingDamageScale`,
+  `CombatComponent.ReceiveDamage`.
+- **Accessibility options** — text size, UI scale, colour-vision modes, high contrast, reduced
+  motion, a readable font everywhere, presses instead of holds, and the subtitle options.
+  `SettingsPanel.Accessibility`, `UiTheme`.
 - **Advanced graphics** — render scale, upscaling (bilinear, FSR 1.0, FSR 2.2), anti-aliasing (off,
   FXAA, MSAA 2x/4x, TAA), shadow quality, ambient occlusion, volumetric fog and glow, each starting
   from the preset; a moved control makes the preset read Custom. `SettingsPanel`, `GraphicsMath`.
@@ -604,13 +722,11 @@ caps the first two at 25%).
   preset its adapter, memory and thread count earn; never re-run over a saved file.
   `GraphicsAutoDetect`.
 - **Menu frame pacing** — with V-Sync off and no cap, the title and pause screens hold 60 FPS.
-  `SettingsService.ApplyFrameCap`. *Partial (settings):* a difficulty setting is stored but no gameplay system reads
-  it; there is no key remapping.
-- **Gamepad** — plays the whole game; prompt glyphs follow the active device. `GameInput`,
-  `InputDevice`.
+  `SettingsService.ApplyFrameCap`.
+- **Gamepad** — plays the whole game, menus included. *Partial:* no pad has been physically
+  driven through the new screens or the remapping flow. `GameInput`, `InputDevice`.
 - **Localization** — every player-facing string through `Loc.T` and `data/locale/strings.csv`
   (English only). `Loc`, `LocaleAudit`.
-- **Notifications** — toasts and banners. `Notifications`, `Toast`.
 
 ## Save and load
 
@@ -655,8 +771,10 @@ caps the first two at 25%).
   four times a second; not processed while hidden. `ProfilerOverlay`, `WorldPerformanceMonitor`.
 - **Headless gates** (any build) — `--validate`, `--lifecycle`, `--story`, `--state`, `--economy`,
   `--worldgen`, `--world-bake`, `--worldmap`. `src/Bootstrap/Headless*.cs`.
-- **Render harnesses** — HUD, panel, guild, shrine, enemy and shell shots; world shots. `*Shots.cs`,
-  `tools/world_shots.gd`.
+- **Render harnesses** — shell, meta, HUD, combat, panel, UI-audit and trade shots
+  (`--shellshots`, `--metashots`, `--hudshots`, `--combat-shots`, `--panelshots`, `--uishots`,
+  `--tradeshots`), each checking the state it photographs; guild, shrine, enemy and look shots;
+  world shots. `*Shots.cs`, `tools/world_shots.gd`.
 - **SDK** — `python tools/embervale.py` (doctor, build, validate, test, scenario, screenshot, perf,
   world gates, assets). [`TOOLING.md`](TOOLING.md).
 - **Generators** — regions, map locations, the campaign, guild dialogue, perks, appearance, buildings,
@@ -671,4 +789,5 @@ caps the first two at 25%).
 - Sockets and gem enchanting (struck; reforging at a forge is the only way to change a finished
   item), a lore codex, photo mode, cinematics beyond narration cards.
 - A second vault or warehouse: storage is the bank, property stashes and the material bag.
-- Key remapping; extra locales; storefront, platform and live-ops features.
+- Extra locales; storefront, platform and live-ops features.
+- Voice acting, a death penalty, Steam Input glyphs, a live 3D title scene.
