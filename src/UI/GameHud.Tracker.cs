@@ -51,8 +51,20 @@ public partial class GameHud
     private int _questClockShown = int.MinValue;
     private int _questClockHot = -1;
 
+    // As _vitalsQuiet: the rebuild that answers an invalidation is not a change to announce.
+    private bool _trackerQuiet = true;
+    private int _questRowsDrawn;
+    private int _questRowsFolded;
+
+    /// <summary>How many objective lines the tracker is drawing. Read by the screenshot harness.</summary>
+    public int TrackerRowsForCapture => _questRowsDrawn;
+
+    /// <summary>How many objectives are folded into the "+N more" line. Read by the screenshot harness.</summary>
+    public int TrackerFoldedForCapture => _questRowsFolded;
+
     private void InvalidateTrackerShown()
     {
+        _trackerQuiet = true;
         _questShapeKnown = false;
         _questHeaderShown = -1;
         _questWhereMode = -1;
@@ -74,15 +86,16 @@ public partial class GameHud
 
     private void BuildQuestTracker()
     {
-        // The spine carries the tracked quest's priority, matching the journal.
-        _questPanel = Ignore(UiTheme.Band(UiTheme.QuestMain));
+        // A plate, because the tracker is the one HUD widget that is mostly sentences. Its single lit
+        // edge is the spine, which carries the tracked quest's priority and matches the journal.
+        _questPanel = Ignore(UiTheme.HudPlate(UiTheme.QuestMain));
         _questPanel.Visible = false;
         _questPanel.CustomMinimumSize = new Vector2(HudMetrics.TrackerMin, 0);
         _layout.TopRight.AddChild(_questPanel);
 
         var col = new VBoxContainer();
         col.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
-        _questHeader = UiTheme.Header(Loc.T("hud.quest"));
+        _questHeader = UiTheme.HudInk(UiTheme.Header(Loc.T("hud.quest")));
         col.AddChild(_questHeader);
         _questList = new VBoxContainer();
         _questList.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
@@ -90,17 +103,17 @@ public partial class GameHud
 
         // Distance + bearing to the tracked objective. Its own label under the objective rows, so
         // the rows can stay on their rebuild-on-change signature while this updates as you walk.
-        _questWhere = UiTheme.Caption("", UiTheme.Accent);
+        _questWhere = UiTheme.HudInk(UiTheme.Caption("", UiTheme.Accent));
         _questWhere.Visible = false;
         col.AddChild(_questWhere);
 
         // The deadline on a timed quest (41C). Its own label for the same reason as the one above:
         // it changes every frame, and the objective rows must not be rebuilt at that rate (§50).
-        _questClock = UiTheme.Caption("", UiTheme.Dim);
+        _questClock = UiTheme.HudInk(UiTheme.Caption("", UiTheme.Dim));
         _questClock.Visible = false;
         col.AddChild(_questClock);
 
-        WrapPadded(_questPanel, col);
+        _questPanel.AddChild(col);
     }
 
     private void UpdateQuest(float delta)
@@ -117,6 +130,7 @@ public partial class GameHud
             _questShapeKnown = false;
             _questFlash.Observe(null, delta);
             _questDwell.Tick(null, delta);
+            _trackerQuiet = false;
             return;
         }
 
@@ -130,11 +144,28 @@ public partial class GameHud
         // cache key, and neither is visible to a build, a test or a validator.
         if (QuestShapeChanged(active, delta))
         {
-            _questCurrentObjective = ObjectiveFocusRules.Current(QuestProgressViews.States(active));
+            System.Collections.Generic.List<ObjectiveState> states = QuestProgressViews.States(active);
+            string keyBefore = _questObjectiveKey;
+            _questCurrentObjective = ObjectiveFocusRules.Current(states);
             _questObjectiveKey = _questCurrentObjective >= 0 ? $"{active.Quest.Id}:{_questCurrentObjective}" : string.Empty;
             _questPlaceKnown = false; // the current objective, and so its place, may have moved
-            RebuildQuestRows(active);
+            RebuildQuestRows(active, states);
+
+            // Every real change brings a Dynamic tracker up (nothing used to, so that mode showed
+            // an empty corner). A new quest or a new step also gets the entry cue: the rows rise in
+            // from clear. A count ticking up does not, or three kills would be three flickers. Under
+            // reduced motion the fade collapses and the "Now tracking" header below is the cue.
+            if (!_trackerQuiet)
+            {
+                MarkChanged(HudElement.QuestTracker);
+                if (_questObjectiveKey != keyBefore)
+                {
+                    UiFx.FadeIn(_questList);
+                }
+            }
         }
+
+        _trackerQuiet = false;
 
         // "Now tracking" holds the header for a few seconds after the tracked quest changes, and the
         // current objective's hint appears once the player has sat on the same step for a while.
@@ -337,7 +368,7 @@ public partial class GameHud
     /// <summary>Structured tracker rows (30.5D): the chapter, an accent title, then one line per objective —
     /// complete objectives tick over to dead-green so progress reads at a glance. Optional objectives carry
     /// an "Optional" tag; the current objective carries its hint, hidden until the player has lingered.</summary>
-    private void RebuildQuestRows(QuestProgress progress)
+    private void RebuildQuestRows(QuestProgress progress, System.Collections.Generic.List<ObjectiveState> states)
     {
         foreach (Node child in _questList.GetChildren())
         {
@@ -351,7 +382,7 @@ public partial class GameHud
         // errand colour for a side quest. The band's stylebox is its own instance, so recolouring it
         // touches nothing else.
         Color tint = progress.Quest.IsMainQuest ? UiTheme.QuestMain : UiTheme.QuestSide;
-        if (_questPanel.GetThemeStylebox("panel") is StyleBoxFlat spine)
+        if (_questPanel.GetThemeStylebox("panel") is StyleBoxFlat spine && spine.BorderColor != tint)
         {
             spine.BorderColor = tint;
         }
@@ -366,26 +397,33 @@ public partial class GameHud
             JournalIndexRules.FirstResolving(
                 JournalIndexRules.ChapterTitleKeys(progress.Quest.ChapterKey), Loc.Has) is { } chapterKey)
         {
-            Label chapter = UiTheme.Caption(Loc.T(chapterKey), UiTheme.Dim);
+            Label chapter = UiTheme.HudInk(UiTheme.Caption(Loc.T(chapterKey), UiTheme.Dim));
             chapter.AutowrapMode = TextServer.AutowrapMode.WordSmart;
             heading.AddChild(chapter);
         }
 
         // The title is the thing you glance at, so it is Display-faced and wraps rather than
         // clipping — a truncated quest name is a quest you cannot identify.
-        Label title = UiTheme.Body(Loc.T(progress.Quest.Title), tint);
+        Label title = UiTheme.HudInk(UiTheme.Body(Loc.T(progress.Quest.Title), tint));
         UiTheme.ApplyType(title, UiTheme.FontRole.Display, UiTheme.BodyFontSize);
         title.AutowrapMode = TextServer.AutowrapMode.WordSmart;
         heading.AddChild(title);
 
+        // At most TrackerFoldRules.MaxLines objectives, chosen by the rule (the current step first,
+        // finished ones last) and drawn in authored order; the rest are a count on the last line. A
+        // nine-step quest used to put nine rows down the right edge of the screen.
         var objectives = progress.Quest.ObjectiveList();
-        for (int i = 0; i < objectives.Count; i++)
+        System.Collections.Generic.List<int> drawn = TrackerFoldRules.Visible(states, _questCurrentObjective);
+        _questRowsDrawn = drawn.Count;
+        _questRowsFolded = TrackerFoldRules.Hidden(states);
+        foreach (int i in drawn)
         {
             // ⚠️ 41D, and the two states are not the same state. Out of branch = the player is on
-            // the other path, so the row is not drawn at all. In branch but not active = locked
-            // behind an earlier step on a SequentialObjectives quest, which IS drawn, dimmed and
-            // padlocked — an errand that silently grows rows as you finish them reads as a bug.
-            if (!progress.IsObjectiveInBranch(i))
+            // the other path, so the row is not drawn at all (the fold rule never picks one). In
+            // branch but not active = locked behind an earlier step on a SequentialObjectives quest,
+            // which IS drawn, dimmed and padlocked — an errand that silently grows rows as you
+            // finish them reads as a bug.
+            if (i < 0 || i >= objectives.Count)
             {
                 continue;
             }
@@ -410,25 +448,25 @@ public partial class GameHud
 
             TextureRect bullet = UiIcon.Create(
                 locked ? UiIcon.Kind.Lock : done ? UiIcon.Kind.Quest : UiIcon.Kind.Waypoint,
-                12f,
+                HudCoreMetrics.BulletSize,
                 done ? UiTheme.QuestComplete : locked ? UiTheme.Dim : UiTheme.Text);
             line.AddChild(bullet);
 
-            Label text = UiTheme.Caption(
+            Label text = UiTheme.HudInk(UiTheme.Caption(
                 Loc.T(objectives[i].ShortLabel()),
-                done ? UiTheme.QuestComplete : locked ? UiTheme.Dim : UiTheme.Text);
+                done ? UiTheme.QuestComplete : locked ? UiTheme.Dim : UiTheme.Text));
             text.AutowrapMode = TextServer.AutowrapMode.WordSmart;
             text.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
             // Without a floor the chip and count win the row and the objective wraps a word per line.
-            text.CustomMinimumSize = new Vector2(110f, 0f);
+            text.CustomMinimumSize = new Vector2(HudCoreMetrics.TrackerTextMin, 0f);
             line.AddChild(text);
 
             // A 1-of-1 objective's "0/1" is noise — the bullet already says done or not.
             if (objectives[i].RequiredCount > 1)
             {
-                line.AddChild(UiTheme.Caption(
+                line.AddChild(UiTheme.HudInk(UiTheme.Caption(
                     $"{have}/{objectives[i].RequiredCount}",
-                    done ? UiTheme.QuestComplete : UiTheme.Dim));
+                    done ? UiTheme.QuestComplete : UiTheme.Dim)));
             }
 
             block.AddChild(line);
@@ -438,7 +476,7 @@ public partial class GameHud
             if (objectives[i].IsOptional)
             {
                 var tag = new MarginContainer { SizeFlagsHorizontal = Control.SizeFlags.ShrinkBegin };
-                tag.AddThemeConstantOverride("margin_left", 12 + UiTheme.SpaceSm);
+                tag.AddThemeConstantOverride("margin_left", (int)HudCoreMetrics.BulletSize + UiTheme.SpaceSm);
                 tag.AddChild(UiTheme.Chip(Loc.T("questui.chip.optional_short"), UiTheme.Dim));
                 block.AddChild(tag);
             }
@@ -449,7 +487,7 @@ public partial class GameHud
             if (objectives[i].RequiredCount > 1)
             {
                 ProgressBar track = UiTheme.Bar(done ? UiTheme.QuestComplete : UiTheme.Accent, 0f);
-                track.CustomMinimumSize = new Vector2(0f, 4f);
+                track.CustomMinimumSize = new Vector2(0f, HudCoreMetrics.BarThinHeight);
                 track.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
                 track.Value = Mathf.Clamp(have / (double)required, 0d, 1d);
                 block.AddChild(track);
@@ -459,13 +497,18 @@ public partial class GameHud
             // step long enough to look stuck (TrackerRules.HintDelaySeconds). UpdateQuest toggles it.
             if (i == _questCurrentObjective && objectives[i].HintKey.Length > 0 && Loc.Has(objectives[i].HintKey))
             {
-                Label hint = UiTheme.Flavour(Loc.T(objectives[i].HintKey), UiTheme.Dim);
+                Label hint = UiTheme.HudInk(UiTheme.Flavour(Loc.T(objectives[i].HintKey), UiTheme.Dim));
                 UiTheme.ApplyType(hint, UiTheme.FontRole.SerifItalic, UiTheme.CaptionFontSize);
-                hint.CustomMinimumSize = new Vector2(186f, 0f);
+                hint.CustomMinimumSize = new Vector2(HudCoreMetrics.TrackerTextMin, 0f);
                 hint.Visible = false;
                 block.AddChild(hint);
                 _questHint = hint;
             }
+        }
+
+        if (_questRowsFolded > 0)
+        {
+            _questList.AddChild(UiTheme.HudInk(UiTheme.Caption(Loc.TF("hud.quest.more", _questRowsFolded), UiTheme.Dim)));
         }
     }
 }
