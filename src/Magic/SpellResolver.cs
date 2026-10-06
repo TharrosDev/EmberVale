@@ -414,16 +414,28 @@ public static class SpellResolver
         }
 
         PhysicsDirectSpaceState3D space = context.GetWorld3D().DirectSpaceState;
-        var query = new PhysicsShapeQueryParameters3D
-        {
-            Shape = new SphereShape3D { Radius = radius },
-            Transform = new Transform3D(Basis.Identity, center),
-            CollideWithAreas = true,
-            CollideWithBodies = false,
-            CollisionMask = CombatLayers.Hurtbox,
-        };
 
-        var pulled = new HitDedupe();
+        // A pull runs every physics frame for as long as its well stands, so the query, its sphere
+        // and the dedupe set are kept and re-aimed rather than rebuilt sixty times a second.
+        if (_pullQuery == null || _pullShape == null ||
+            !GodotObject.IsInstanceValid(_pullQuery) || !GodotObject.IsInstanceValid(_pullShape))
+        {
+            _pullShape = new SphereShape3D();
+            _pullQuery = new PhysicsShapeQueryParameters3D
+            {
+                Shape = _pullShape,
+                CollideWithAreas = true,
+                CollideWithBodies = false,
+                CollisionMask = CombatLayers.Hurtbox,
+            };
+        }
+
+        _pullShape.Radius = radius;
+        _pullQuery.Transform = new Transform3D(Basis.Identity, center);
+        PhysicsShapeQueryParameters3D query = _pullQuery;
+
+        HitDedupe pulled = PullDedupe;
+        pulled.Clear();
         foreach (Godot.Collections.Dictionary hit in space.IntersectShape(query, MaxHurtboxesPerBurst))
         {
             if (!hit.TryGetValue("collider", out Variant v) || v.AsGodotObject() is not Hurtbox hurtbox ||
@@ -448,5 +460,11 @@ public static class SpellResolver
                 body.MoveAndCollide(toCentre / distance * step);
             }
         }
+
+        pulled.Clear(); // do not keep the last frame's actors alive between pulls
     }
+
+    private static PhysicsShapeQueryParameters3D? _pullQuery;
+    private static SphereShape3D? _pullShape;
+    private static readonly HitDedupe PullDedupe = new();
 }

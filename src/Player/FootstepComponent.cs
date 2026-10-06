@@ -199,6 +199,15 @@ public partial class FootstepComponent : EntityComponent
         return FootstepAudio.Pitch(_variant, PitchVariants, PitchJitter, intensity, SprintPitchRise);
     }
 
+    /// <summary>Seconds between re-reading the distance to the camera. Every walking actor in the
+    /// world carries this component and asked the question — a viewport, a camera and two positions
+    /// across the engine boundary — on every physics frame, to decide whether a step it was not
+    /// taking would have been heard.</summary>
+    private const float AudibleInterval = 0.25f;
+
+    private float _audibleTimer;
+    private bool _audible;
+
     private bool Audible()
     {
         if (MaxAudibleDistance <= 0f)
@@ -206,9 +215,16 @@ public partial class FootstepComponent : EntityComponent
             return true;
         }
 
-        return _body!.GetViewport()?.GetCamera3D() is { } camera &&
-               camera.GlobalPosition.DistanceSquaredTo(_body.GlobalPosition) <=
-               MaxAudibleDistance * MaxAudibleDistance;
+        _audibleTimer -= (float)GetPhysicsProcessDeltaTime();
+        if (_audibleTimer <= 0f)
+        {
+            _audibleTimer = AudibleInterval;
+            _audible = _body!.GetViewport()?.GetCamera3D() is { } camera &&
+                       camera.GlobalPosition.DistanceSquaredTo(_body.GlobalPosition) <=
+                       MaxAudibleDistance * MaxAudibleDistance;
+        }
+
+        return _audible;
     }
 
     /// <summary>Finds the rig's feet, retrying about once a second: a body's model can arrive after
