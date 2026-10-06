@@ -31,6 +31,8 @@ public partial class LoadingScreen : CanvasLayer
     private const float SweepPerSecond = 0.55f;
     private const float SweepSpan = 0.22f;
 
+    private static readonly bool Headless = DisplayServer.GetName() == "headless";
+
     private Control _root = null!;
     private TextureRect _art = null!;
     private MarginContainer _block = null!;
@@ -41,6 +43,7 @@ public partial class LoadingScreen : CanvasLayer
 
     private string? _regionId;
     private string _painting = string.Empty;
+    private string _wantedPainting = string.Empty;
     private string? _cardKey;
     private int _step = -1;
     private float _fill;
@@ -182,6 +185,10 @@ public partial class LoadingScreen : CanvasLayer
             ShowRegion(e.RegionId);
         }
 
+        // Now, not on the next tick: inside a session this arrives in the same call that put the
+        // cover up, so the first frame drawn already has the realm on it.
+        ApplyPainting();
+
         // A stage count that runs backwards is a second load opened on top of the first.
         if (e.Step < _step || UiTheme.Duration(UiTheme.DurationBase) <= 0f)
         {
@@ -193,24 +200,39 @@ public partial class LoadingScreen : CanvasLayer
     }
 
     /// <summary>
-    /// Puts up the painting and the name for a load into <paramref name="regionId"/>, or the
-    /// generic pair for null. ⚠️ Both come from the destination and nothing else, which is what
-    /// keeps the hidden realm off this screen until the player is walking into it.
+    /// Names the load: the realm for <paramref name="regionId"/>, or the generic "Loading" for
+    /// null, and which painting belongs behind it. ⚠️ Both come from the destination and nothing
+    /// else, which is what keeps the hidden realm off this screen until the player is walking
+    /// into it; a painting left up from the last load is taken down here, before a frame can
+    /// show it, and the right one is read by <see cref="ApplyPainting"/>.
     /// </summary>
     private void ShowRegion(string? regionId)
     {
         _regionId = regionId;
         _name.Text = (regionId != null ? RegionDatabase.Get(regionId)?.DisplayName : null) ?? Loc.T("loading.title");
 
-        // A headless run draws nothing, so it never pays to read a painting off disk.
-        string painting = LoadingCardRules.Painting(regionId);
-        if (painting == _painting || DisplayServer.GetName() == "headless")
+        _wantedPainting = LoadingCardRules.Painting(regionId);
+        if (_wantedPainting != _painting)
+        {
+            _painting = string.Empty;
+            _art.Texture = null;
+        }
+    }
+
+    /// <summary>
+    /// Reads the wanted painting if it is not the one up. Kept apart from <see cref="ShowRegion"/>
+    /// so a load into a realm reads one painting, not the generic one and then the realm's. A
+    /// headless run draws nothing, so it never reads one at all.
+    /// </summary>
+    private void ApplyPainting()
+    {
+        if (_wantedPainting == _painting || Headless)
         {
             return;
         }
 
-        _painting = painting;
-        _art.Texture = UiTheme.Painting(painting);
+        _painting = _wantedPainting;
+        _art.Texture = UiTheme.Painting(_painting);
     }
 
     private void ShowCard(string key)
@@ -282,6 +304,8 @@ public partial class LoadingScreen : CanvasLayer
 
             return;
         }
+
+        ApplyPainting(); // a cover that no progress event dressed gets the generic painting here
 
         if (_step < 0)
         {
