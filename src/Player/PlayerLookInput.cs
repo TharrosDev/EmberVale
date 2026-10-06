@@ -60,6 +60,12 @@ public partial class PlayerLookInput : EntityComponent
     /// path used to run in.</summary>
     public void TickStickLook(double delta)
     {
+        // The spell wheel has the right stick; the router hands it over itself.
+        if (PlayGate.WheelOpen)
+        {
+            return;
+        }
+
         Vector2 look = Godot.Input.GetVector(
             InputActions.LookLeft, InputActions.LookRight, InputActions.LookUp, InputActions.LookDown);
         if (look == Vector2.Zero)
@@ -102,6 +108,14 @@ public partial class PlayerLookInput : EntityComponent
             GameManager.Instance is { IsPlaying: false } ||
             UiState.MenuOpen)
         {
+            return;
+        }
+
+        // The spell wheel has the mouse: its motion steers the wheel's cursor, not the camera. The
+        // mouse stays captured throughout.
+        if (PlayGate.WheelOpen)
+        {
+            SpellWheelInput.Motion(motion.Relative);
             return;
         }
 

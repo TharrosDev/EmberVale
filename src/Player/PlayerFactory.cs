@@ -156,6 +156,14 @@ public static class PlayerFactory
             Hitbox = hitbox,
         });
         player.AddChild(new HitReactionComponent { Name = "HitReaction" });
+        // Smooths the camera and the body mesh between physics ticks. Before the animation component
+        // and foot IK, which read the rig it will offset. Inert for now: it only holds the two nodes.
+        player.AddChild(new PlayerVisualSmoother
+        {
+            Name = "VisualSmoother",
+            CameraPivot = cameraPivot,
+            BodyMesh = player.GetNodeOrNull<Node3D>("BodyMesh"),
+        });
         // 30C: plays the rig's idle/run/block/attack/hit/death clips off combat/locomotion state.
         player.AddChild(new Embervale.Animation.CharacterAnimationComponent { Name = "Animation" });
         // The player's visible loadout: the drawn sword in the right hand, and Session 2's

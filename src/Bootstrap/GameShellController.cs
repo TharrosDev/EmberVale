@@ -140,10 +140,17 @@ public sealed partial class GameShellController : Node
         bool tradeShots = HasFlag("--tradeshots");
         bool lookShots = HasFlag("--look-shots");
         bool uiShots = HasFlag("--uishots");
+        bool spellShots = HasFlag("--spellshots");
+        bool camShots = HasFlag("--camshots");
+        bool vfxPerf = HasFlag("--vfxperf");
         bool capture = hudShots || panelShots || shrineShots || guildShots || enemyShots || combatShots || lookShots || uiShots
-            || metaShots || tradeShots;
+            || metaShots || tradeShots || spellShots || camShots;
 
-        if ((!capture && !HasFlag("--play")) || MostRecentSlot() is not { } slot)
+        // The effect scenario needs a session like the capture harnesses do, but it is there to
+        // measure frame times, so the world's performance sampling stays on for it.
+        bool scenario = capture || vfxPerf;
+
+        if ((!scenario && !HasFlag("--play")) || MostRecentSlot() is not { } slot)
         {
             return;
         }
@@ -158,6 +165,9 @@ public sealed partial class GameShellController : Node
             : uiShots ? "--uishots"
             : metaShots ? "--metashots"
             : tradeShots ? "--tradeshots"
+            : spellShots ? "--spellshots"
+            : camShots ? "--camshots"
+            : vfxPerf ? "--vfxperf"
             : "--play";
         Log.Info($"{mode}: continuing most recent save '{slot}'.");
         StartLoadedGame(slot);
@@ -232,6 +242,21 @@ public sealed partial class GameShellController : Node
         if (tradeShots)
         {
             AddChild(new Debugging.TradeShots { Name = "TradeShots" });
+        }
+
+        if (spellShots)
+        {
+            AddChild(new Debugging.SpellShots { Name = "SpellShots" });
+        }
+
+        if (camShots)
+        {
+            AddChild(new Debugging.CamShots { Name = "CamShots" });
+        }
+
+        if (vfxPerf)
+        {
+            AddChild(new Debugging.VfxPerfScenario { Name = "VfxPerf" });
         }
 #endif
     }

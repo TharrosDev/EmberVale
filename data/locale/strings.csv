@@ -878,6 +878,7 @@ tutorial.interact,"Look at someone and press {0} to speak or use"
 tutorial.inventory,"Press {0} to open your character screen"
 tutorial.journal,"Press {0} to read your quest journal"
 tutorial.cast,"Press {0} to cast your prepared spell"
+tutorial.spell_wheel,"Hold {0} to choose a spell, or tap it for your last one"
 # --- Phase 33D: the slice stitch ---
 boss.challenge_locked,"The brazier is cold. The warband still holds the north."
 closing.absorbed,"The Iron King is ash, and his ember burns behind your ribs. It is warm. That is what frightens you. Far away, on a throne of ash, something older turns its attention towards you."
@@ -5203,7 +5204,7 @@ settings.bind.action.dodge,Dodge
 settings.bind.action.attack,Attack
 settings.bind.action.block,Block
 settings.bind.action.cast,Cast spell
-settings.bind.action.cycle_spell,Next spell
+settings.bind.action.cycle_spell,Spell wheel (hold) / previous (tap)
 settings.bind.action.lock_on,Lock on
 settings.bind.action.lock_cycle_next,Next target
 settings.bind.action.lock_cycle_prev,Previous target
@@ -5225,7 +5226,7 @@ settings.bind.action.hotbar_4,Hotbar slot 4
 settings.bind.action.hotbar_5,Hotbar slot 5
 settings.bind.desc.walk_toggle,Switches walking on and off. A stick already walks when it is pushed part way.
 settings.bind.desc.interact,Tap to interact. Hold to sweep up loot.
-settings.bind.desc.cycle_spell,Steps through your prepared spells.
+settings.bind.desc.cycle_spell,Hold to open the spell wheel and let go over a spell to prepare it. Tap to swap back to the spell you had before.
 settings.bind.desc.companion_command,"Cycles the party's standing order: follow, hold, engage."
 settings.bind.desc.toggle_camera,Swaps between first and third person.
 settings.bind.desc.mount,"Whistles your mount up, or steps off it."
@@ -5275,6 +5276,7 @@ settings.hud_element.prompts,Interaction prompts
 settings.hud_element.crosshair,Crosshair
 settings.hud_element.toasts,Notifications
 settings.hud_element.subtitles,Subtitles
+settings.hud_element.spell_wheel,Spell wheel
 settings.hud_dynamic.vitals,"Dynamic shows it in combat, while anything is below full, and in menus. Hidden removes it."
 settings.hud_dynamic.hotbar,"Dynamic shows it in combat, when a slot changes, and in menus. Hidden removes it."
 settings.hud_dynamic.party,"Dynamic shows it in combat, while someone is hurt, and when it changes. Hidden removes it."
@@ -5596,3 +5598,8 @@ kn.dialogue.more,More below
 settings.spell_effects,Spell effects
 settings.spell_effects.follow,Follow preset
 settings.spell_effects.desc,"How rich spell effects are: particles, lights and marks left on the ground. Follow preset uses the graphics quality above."
+# Spell wheel, HUD spellbook, spell audio and spell effects (2026-10). Each lane adds its rows inside its own block, below its marker and above the next.
+# --- lane: wheel ---
+# --- lane: hud-spellbook ---
+# --- lane: audio ---
+# --- lane: vfx ---

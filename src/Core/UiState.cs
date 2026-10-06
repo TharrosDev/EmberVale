@@ -45,6 +45,8 @@ public static class UiState
     /// </summary>
     public static void Open(object owner, bool pausesWorld = true)
     {
+        // A menu takes the screen from the spell wheel; the wheel closes without selecting.
+        PlayGate.WheelOpen = false;
         _owners.Add(owner);
         if (pausesWorld)
         {
@@ -74,6 +76,8 @@ public static class UiState
     /// </summary>
     public static void ClearAll()
     {
+        // The wheel gate is session state of the same kind and has no reset of its own.
+        PlayGate.WheelOpen = false;
         _owners.Clear();
         _worldPausers.Clear();
         Changed?.Invoke();

@@ -39,4 +39,7 @@ public enum TutorialStep
 
     /// <summary>Cast the prepared spell.</summary>
     Cast,
+
+    /// <summary>Choose another spell: hold for the wheel, or tap for the previous one.</summary>
+    SpellWheel,
 }

@@ -27,6 +27,7 @@ public enum HudElement
     Crosshair = 11,
     Toasts = 12,
     Subtitles = 13,
+    SpellWheel = 14,
 }
 
 /// <summary>How one HUD element behaves. ⚠️ Append-only: the ordinal is what is saved.</summary>
@@ -100,8 +101,10 @@ public static class HudPresets
         HudPreset.Minimal => element switch
         {
             HudElement.Vitals or HudElement.Hotbar or HudElement.Crosshair => HudElementMode.Dynamic,
+            // The wheel is only ever on screen while its button is held, and without it the spells
+            // past the first are a blind step-through.
             HudElement.TargetPlate or HudElement.Prompts or HudElement.Toasts
-                or HudElement.Subtitles => HudElementMode.Always,
+                or HudElement.Subtitles or HudElement.SpellWheel => HudElementMode.Always,
             _ => HudElementMode.Hidden,
         },
         _ => HudElementMode.Always,

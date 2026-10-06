@@ -440,6 +440,7 @@ public class EnumStabilityTests
         Assert.Equal(8, (int)TutorialStep.Inventory);
         Assert.Equal(9, (int)TutorialStep.Journal);
         Assert.Equal(10, (int)TutorialStep.Cast);
+        Assert.Equal(11, (int)TutorialStep.SpellWheel);
     }
 
     [Fact]
@@ -651,6 +652,7 @@ public class EnumStabilityTests
         Assert.Equal(11, (int)Embervale.UI.HudElement.Crosshair);
         Assert.Equal(12, (int)Embervale.UI.HudElement.Toasts);
         Assert.Equal(13, (int)Embervale.UI.HudElement.Subtitles);
+        Assert.Equal(14, (int)Embervale.UI.HudElement.SpellWheel);
     }
 
     [Fact]

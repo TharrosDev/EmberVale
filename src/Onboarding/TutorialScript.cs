@@ -31,6 +31,7 @@ public static class TutorialScript
         TutorialStep.Inventory,
         TutorialStep.Journal,
         TutorialStep.Cast,
+        TutorialStep.SpellWheel,
     };
 
     /// <summary>The first step of a fresh game.</summary>
@@ -78,6 +79,7 @@ public static class TutorialScript
         TutorialStep.Inventory => "tutorial.inventory",
         TutorialStep.Journal => "tutorial.journal",
         TutorialStep.Cast => "tutorial.cast",
+        TutorialStep.SpellWheel => "tutorial.spell_wheel",
         _ => string.Empty,
     };
 
@@ -94,6 +96,7 @@ public static class TutorialScript
         TutorialStep.Inventory => GameInput.Inventory,
         TutorialStep.Journal => GameInput.Journal,
         TutorialStep.Cast => GameInput.Cast,
+        TutorialStep.SpellWheel => GameInput.CycleSpell,
         _ => string.Empty,
     };
 }

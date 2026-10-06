@@ -50,7 +50,7 @@ public sealed class AudioLibrary
 
     private Dictionary<string, AudioStream> Build()
     {
-        return new Dictionary<string, AudioStream>
+        var streams = new Dictionary<string, AudioStream>
         {
             // Combat SFX (positional). Real Kenney impact/RPG one-shots, procedural fallback each.
             ["sfx.combat.swing"] = Load("res://assets/audio/sfx/combat/swing.ogg",
@@ -196,6 +196,87 @@ public sealed class AudioLibrary
                 ProceduralAudio.Sine(392f, 1.3f, gain: 0.26f, attackSeconds: 0.01f, releaseSeconds: 0.6f),
                 ProceduralAudio.Sine(523f, 1.1f, gain: 0.22f, attackSeconds: 0.02f, releaseSeconds: 0.5f))),
         };
+
+        // Spell SFX (positional): a cast, an impact and a blast per school, and seven shared
+        // one-shots. SpellAudio owns the ids and the recording paths; each has a procedural stand-in
+        // so a missing file is never silent. shipped: false keeps an absent recording at info.
+        foreach (string cue in SpellAudio.AllCues)
+        {
+            streams[cue] = Load(SpellAudio.AssetPath(cue), () => SpellPlaceholder(cue), shipped: false);
+        }
+
+        return streams;
+    }
+
+    /// <summary>
+    /// A spell cue's stand-in. A school is a pitch and a brightness (fire low and rough, frost high
+    /// and glassy, lightning a bright crack, arcane a clean fifth, nature a soft third, necrotic a
+    /// low beat) and the event is the envelope: a rising shimmer for a cast, a short thud for an
+    /// impact, a long low-ended burst for a blast.
+    /// </summary>
+    private static float[] SpellPlaceholder(string cueId)
+    {
+        switch (cueId)
+        {
+            case SpellAudio.Windup:
+                return ProceduralAudio.Mix(
+                    ProceduralAudio.Sine(330f, 0.6f, gain: 0.16f, attackSeconds: 0.5f, releaseSeconds: 0.08f),
+                    ProceduralAudio.Sine(495f, 0.6f, gain: 0.10f, attackSeconds: 0.55f, releaseSeconds: 0.05f));
+            case SpellAudio.Fizzle:
+                return ProceduralAudio.Mix(
+                    ProceduralAudio.NoiseBurst(0.18f, lowpass: 0.25f, gain: 0.20f, seed: 101, releaseSeconds: 0.14f),
+                    ProceduralAudio.Sine(196f, 0.12f, gain: 0.14f, releaseSeconds: 0.09f));
+            case SpellAudio.WardBreak:
+                return ProceduralAudio.Mix(
+                    ProceduralAudio.Sine(1320f, 0.20f, gain: 0.24f, releaseSeconds: 0.16f),
+                    ProceduralAudio.Sine(1760f, 0.16f, gain: 0.16f, releaseSeconds: 0.12f),
+                    ProceduralAudio.NoiseBurst(0.14f, lowpass: 0.9f, gain: 0.22f, seed: 102));
+            case SpellAudio.Freeze:
+                return ProceduralAudio.Mix(
+                    ProceduralAudio.Sine(1568f, 0.25f, gain: 0.20f, releaseSeconds: 0.2f),
+                    ProceduralAudio.NoiseBurst(0.20f, lowpass: 0.9f, gain: 0.16f, seed: 103, releaseSeconds: 0.16f));
+            case SpellAudio.Heal:
+                return ProceduralAudio.Mix(
+                    ProceduralAudio.Sine(523.3f, 0.5f, gain: 0.16f, attackSeconds: 0.04f, releaseSeconds: 0.3f),
+                    ProceduralAudio.Sine(659.3f, 0.5f, gain: 0.13f, attackSeconds: 0.08f, releaseSeconds: 0.3f),
+                    ProceduralAudio.Sine(784.0f, 0.45f, gain: 0.10f, attackSeconds: 0.12f, releaseSeconds: 0.28f));
+            case SpellAudio.Blink:
+                return ProceduralAudio.Mix(
+                    ProceduralAudio.NoiseBurst(0.12f, lowpass: 0.8f, gain: 0.20f, seed: 104, attackSeconds: 0.03f),
+                    ProceduralAudio.Sine(990f, 0.10f, gain: 0.16f, releaseSeconds: 0.08f));
+            case SpellAudio.Thunder:
+                return ProceduralAudio.Mix(
+                    ProceduralAudio.NoiseBurst(0.9f, lowpass: 0.08f, gain: 0.45f, seed: 105, releaseSeconds: 0.6f),
+                    ProceduralAudio.Sine(55f, 0.6f, gain: 0.30f, releaseSeconds: 0.45f));
+        }
+
+        // sfx.spell.<school>.<event>
+        string[] parts = cueId.Substring(SpellAudio.Prefix.Length).Split('.');
+        (float tone, float second, float bright, int seed) = parts[0] switch
+        {
+            "fire" => (165f, 1.5f, 0.45f, 110),
+            "frost" => (880f, 1.5f, 0.92f, 120),
+            "lightning" => (523f, 2f, 0.98f, 130),
+            "arcane" => (660f, 1.5f, 0.85f, 140),
+            "nature" => (330f, 1.25f, 0.55f, 150),
+            _ => (110f, 1.06f, 0.30f, 160), // necrotic: two close low tones that beat
+        };
+
+        return parts.Length > 1 ? parts[1] switch
+        {
+            "impact" => ProceduralAudio.Mix(
+                ProceduralAudio.Sine(tone * 0.5f, 0.14f, gain: 0.40f, releaseSeconds: 0.10f),
+                ProceduralAudio.Sine(tone * second, 0.10f, gain: 0.18f, releaseSeconds: 0.08f),
+                ProceduralAudio.NoiseBurst(0.12f, lowpass: bright, gain: 0.26f, seed: seed + 1)),
+            "blast" => ProceduralAudio.Mix(
+                ProceduralAudio.Sine(70f, 0.42f, gain: 0.42f, releaseSeconds: 0.32f),
+                ProceduralAudio.Sine(tone * 0.5f, 0.30f, gain: 0.24f, releaseSeconds: 0.24f),
+                ProceduralAudio.NoiseBurst(0.45f, lowpass: bright * 0.7f, gain: 0.34f, seed: seed + 2, releaseSeconds: 0.34f)),
+            _ => ProceduralAudio.Mix(
+                ProceduralAudio.Sine(tone, 0.28f, gain: 0.26f, attackSeconds: 0.01f, releaseSeconds: 0.2f),
+                ProceduralAudio.Sine(tone * second, 0.24f, gain: 0.18f, attackSeconds: 0.03f, releaseSeconds: 0.18f),
+                ProceduralAudio.NoiseBurst(0.14f, lowpass: bright, gain: 0.14f, seed: seed)),
+        } : ProceduralAudio.Sine(tone, 0.2f, gain: 0.2f);
     }
 
     /// <summary>Loads a real asset if present, else a procedural placeholder from <paramref name="fallback"/>.
