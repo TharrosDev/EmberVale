@@ -5469,3 +5469,46 @@ credits.type.heading,Typefaces
 credits.type.faces,"Cinzel, Inter and EB Garamond by their project authors, under the SIL Open Font License."
 credits.legend.faster,Faster
 credits.legend.scroll,Scroll
+# ui-upgrade: shell session (lane 2)
+session.legend.select,Select
+session.legend.hold,Hold to confirm
+session.legend.back,Back
+slots.title.new,Choose a slot
+slots.title.load,Load game
+slots.title.save,Save game
+slots.row.empty,Empty slot
+slots.row.played,Played {0}
+slots.row.saved,Saved {0}
+slots.hold_hint,Hold to confirm
+slots.ask.load_title,Load this save?
+slots.ask.overwrite_title,Overwrite this save?
+slots.ask.overwrite_text,{0} will be replaced.
+slots.ask.delete_title,Delete this save?
+slots.ask.delete_text,{0} will be gone for good.
+session.pause.tracking,Tracking
+session.pause.played,Played {0}
+session.pause.objective_count,{0} ({1}/{2})
+session.pause.save_as,Save to slot
+session.pause.main_menu,Main menu
+session.pause.quit,Quit to desktop
+death.line,The ember gutters
+death.rise,Rise
+death.load,Load last save
+death.no_save,Nothing has been saved yet.
+narration.paused,Paused
+narration.resume,Resume
+narration.skip,Skip
+narration.skip_hold,Hold to skip
+narration.pause,Pause
+create.step.background,Background
+create.rig,Light: {0}
+create.rig.hearth,Hearth
+create.rig.overcast,Overcast
+create.rig.dusk,Ember dusk
+create.turn_hint,Drag to turn
+create.randomise,Randomise look
+create.randomise_hint,A random look from what this race offers. Race and background stay as they are.
+create.name_blank,Leave it empty to go by {0}.
+create.legend.step,Step
+create.legend.turn,Turn
+create.legend.scroll,Scroll

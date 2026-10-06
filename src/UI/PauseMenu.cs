@@ -1,5 +1,9 @@
 using Embervale.Core;
+using Embervale.Core.Events;
+using Embervale.Core.Services;
 using Embervale.Localization;
+using Embervale.Player;
+using Embervale.Quests;
 using Embervale.Save;
 using Godot;
 
@@ -11,7 +15,9 @@ namespace Embervale.UI;
 /// <see cref="Node.ProcessModeEnum.Always"/> so its buttons work while the tree is paused,
 /// dims the scene behind a backdrop, and drives the <see cref="GameManager"/> pause state
 /// (which frees/recaptures the mouse through the player controller). Built via
-/// <see cref="UiTheme"/>.
+/// <see cref="UiTheme"/>: a frameless sheet over the paused frame, its entries text on the scrim,
+/// with the tracked objective and the time played above them so a player coming back to the game
+/// reads where they were before choosing anything.
 ///
 /// <para><b>Saving and loading (ics save-ui).</b> <i>Save</i> writes the session's manual slot in
 /// one press, or opens the slot browser when the session has none yet (a game loaded from an
@@ -22,17 +28,29 @@ namespace Embervale.UI;
 /// </summary>
 public partial class PauseMenu : CanvasLayer
 {
-	private ColorRect _backdrop = null!;
-	private PanelContainer _panel = null!;
+	private Control _root = null!;
+	private VBoxContainer _column = null!;
+	private bool _fitQueued;
+	private Control _wipe = null!;
+	private ScrollContainer _menuScroll = null!;
 	private VBoxContainer _menu = null!;
 	private VBoxContainer _confirm = null!;
 	private Label _confirmText = null!;
 	private Button _confirmYes = null!;
 	private Label _status = null!;
+	private VBoxContainer _tracked = null!;
+	private Label _trackedQuest = null!;
+	private Label _trackedObjective = null!;
+	private Label _played = null!;
+	private UiLegend _legend = null!;
 	private System.Action? _onConfirm;
 	private SaveSlotPanel? _browser;
 	private ulong _browserClosedFrame = ulong.MaxValue;
 	private bool _open;
+
+	// This save's play time, counted the way SaveManager counts the one it stamps into a header
+	// (active play only, continued from the loaded save). The manager keeps its own private.
+	private double _playtimeSeconds;
 
 	public override void _Ready()
 	{
@@ -42,8 +60,20 @@ public partial class PauseMenu : CanvasLayer
 		SetPanelVisible(false);
 	}
 
+	public override void _EnterTree() => EventBus.Instance?.Subscribe<GameLoadedEvent>(OnGameLoaded);
+
+	public override void _ExitTree() => EventBus.Instance?.Unsubscribe<GameLoadedEvent>(OnGameLoaded);
+
+	private void OnGameLoaded(GameLoadedEvent e) =>
+		_playtimeSeconds = SaveManager.Instance?.ReadHeader(e.Slot)?.PlaytimeSeconds ?? 0d;
+
 	public override void _Process(double delta)
 	{
+		if (GameManager.Instance is { IsPlaying: true })
+		{
+			_playtimeSeconds += delta;
+		}
+
 		// The slot browser owns Esc / B while it is up, and the press that closed it must not also
 		// resume the game.
 		if ((_browser != null && IsInstanceValid(_browser)) || _browserClosedFrame == Engine.GetProcessFrames())
@@ -84,63 +114,74 @@ public partial class PauseMenu : CanvasLayer
 
 	private void Build()
 	{
-		_backdrop = UiTheme.Scrim(0.55f);
-		_backdrop.MouseFilter = Control.MouseFilterEnum.Stop;
-		AddChild(_backdrop);
+		// A sheet, not a framed panel: the entries sit on the scrim behind one lit rule, and the
+		// frame the player paused on still reads through it.
+		Vector2 view = GetViewport().GetVisibleRect().Size;
+		float width = Mathf.Min(UiTheme.PauseSheetWidth, view.X - (UiChromeRules.Gutter(view.X) * 2f));
+		(Control root, VBoxContainer col) = UiTheme.Sheet(width, 0.55f);
+		_root = root;
+		_column = col;
+		AddChild(root);
 
-		_panel = UiTheme.Panel();
-		_panel.SetAnchorsPreset(Control.LayoutPreset.Center);
-		// Grow from the centre anchor in both directions so the panel is truly centred
-		// (the default End grow would push it toward the bottom-right of centre).
-		_panel.GrowHorizontal = Control.GrowDirection.Both;
-		_panel.GrowVertical = Control.GrowDirection.Both;
-		_panel.CustomMinimumSize = new Vector2(320, 0);
-		AddChild(_panel);
+		// The time played shares the title's line: on a 533 px handheld view a line of its own is
+		// the one that pushes the last entry off the sheet.
+		var head = new HBoxContainer();
+		head.AddThemeConstantOverride("separation", UiTheme.SpaceMd);
+		Label title = UiTheme.Title(Loc.T("pause.title"));
+		title.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+		head.AddChild(title);
+		_played = UiTheme.Caption(string.Empty);
+		_played.SizeFlagsVertical = Control.SizeFlags.ShrinkEnd;
+		head.AddChild(_played);
+		col.AddChild(head);
 
-		MarginContainer pad = UiTheme.Padding(UiTheme.SpaceLg);
-		_panel.AddChild(pad);
+		_wipe = UiOrnament.EmberWipe();
+		col.AddChild(_wipe);
 
-		var col = new VBoxContainer();
-		col.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
-		pad.AddChild(col);
-
-		Label header = UiTheme.Title(Loc.T("pause.title"));
-		header.HorizontalAlignment = HorizontalAlignment.Center;
-		col.AddChild(header);
+		// What the player was doing: the tracked quest and its current step, in the tracker's words.
+		_tracked = new VBoxContainer();
+		_tracked.AddThemeConstantOverride("separation", UiTheme.LineGap);
+		_tracked.AddChild(UiTheme.Caption(Loc.T("session.pause.tracking")));
+		_trackedQuest = UiTheme.Body(string.Empty);
+		_trackedQuest.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
+		_tracked.AddChild(_trackedQuest);
+		_trackedObjective = UiTheme.Caption(string.Empty, UiTheme.Text);
+		_trackedObjective.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
+		_tracked.AddChild(_trackedObjective);
+		col.AddChild(_tracked);
 
 		_status = UiTheme.Caption(string.Empty);
-		_status.HorizontalAlignment = HorizontalAlignment.Center;
 		_status.AutowrapMode = TextServer.AutowrapMode.WordSmart;
-		_status.CustomMinimumSize = new Vector2(280, 0);
 		_status.Visible = false;
 		col.AddChild(_status);
-		col.AddChild(UiTheme.Divider());
 
-		_menu = new VBoxContainer();
-		_menu.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
-		col.AddChild(_menu);
+		// The entries scroll, and only when they must: on a short view, or at a large text size,
+		// the sheet has less room than seven controls (FitMenu).
+		(_menuScroll, _menu) = UiTheme.ScrollList();
+		_menu.AddThemeConstantOverride("separation", UiTheme.SessionEntryGap);
+		_menuScroll.SizeFlagsVertical = Control.SizeFlags.ShrinkBegin;
+		col.AddChild(_menuScroll);
 
-		_menu.AddChild(MenuButton(Loc.T("pause.resume"), Resume));
-		_menu.AddChild(MenuButton(Loc.T("pause.save"), Save));
-		_menu.AddChild(MenuButton(Loc.T("pause.save_as"), () => OpenBrowser(SaveSlotPanel.Intent.Save)));
+		_menu.AddChild(MenuButton(Loc.T("pause.resume"), Resume, UiCue.Back));
+		_menu.AddChild(MenuButton(Loc.T("pause.save"), Save, UiCue.Confirm));
+		_menu.AddChild(MenuButton(Loc.T("session.pause.save_as"), () => OpenBrowser(SaveSlotPanel.Intent.Save)));
 		_menu.AddChild(MenuButton(Loc.T("pause.load"), () => OpenBrowser(SaveSlotPanel.Intent.Load)));
 		_menu.AddChild(MenuButton(Loc.T("pause.settings"), OpenSettings));
-		_menu.AddChild(MenuButton(Loc.T("pause.main_menu"), () => RequestQuit(ReturnToMainMenu)));
-		_menu.AddChild(MenuButton(Loc.T("pause.quit"), () => RequestQuit(() => GetTree().Quit())));
+		_menu.AddChild(MenuButton(Loc.T("session.pause.main_menu"), () => RequestQuit(ReturnToMainMenu)));
+		_menu.AddChild(MenuButton(Loc.T("session.pause.quit"), () => RequestQuit(() => GetTree().Quit())));
 
-		// The one question this menu asks ("leave with unsaved progress?") replaces the buttons
-		// rather than stacking a dialog on top: one panel, one focus chain, Esc / B means no.
+		// The one question this menu asks ("leave with unsaved progress?") replaces the entries
+		// rather than stacking a dialog on top: one sheet, one focus chain, Esc / B means no.
 		_confirm = new VBoxContainer { Visible = false };
 		_confirm.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
 		col.AddChild(_confirm);
 
 		_confirmText = UiTheme.Prose(string.Empty, UiTheme.Text);
 		_confirmText.AutowrapMode = TextServer.AutowrapMode.WordSmart;
-		_confirmText.CustomMinimumSize = new Vector2(280, 0);
 		_confirm.AddChild(_confirmText);
 
 		// Cancel first, so the default focus is the answer that loses nothing.
-		_confirm.AddChild(MenuButton(Loc.T("common.cancel"), HideConfirm));
+		_confirm.AddChild(MenuButton(Loc.T("common.cancel"), HideConfirm, UiCue.Back));
 		_confirmYes = MenuButton(string.Empty, () =>
 		{
 			System.Action? confirmed = _onConfirm;
@@ -149,6 +190,43 @@ public partial class PauseMenu : CanvasLayer
 		});
 		_confirmYes.AddThemeColorOverride("font_color", UiTheme.Bad);
 		_confirm.AddChild(_confirmYes);
+
+		_legend = new UiLegend();
+		AddChild(_legend);
+		FitMenu();
+	}
+
+	/// <summary>Fills in what the sheet says about the game it paused. Read when the menu opens:
+	/// nothing it shows can change while the world is held.</summary>
+	private void RefreshSummary()
+	{
+		(int hours, int minutes) = ShellSessionRules.Playtime(_playtimeSeconds);
+		_played.Text = Loc.TF("session.pause.played", Loc.TF("slots.playtime", hours, $"{minutes:00}"));
+
+		QuestProgress? quest = ServiceLocator.Instance is { } locator && locator.TryGet(out PlayerCharacter player)
+			? player.GetComponent<QuestLogComponent>()?.Tracked
+			: null;
+
+		// A ledger quest is an umbrella record the tracker never shows; this does not either.
+		_tracked.Visible = quest != null && !quest.Quest.IsLedger;
+		if (quest == null || !_tracked.Visible)
+		{
+			return;
+		}
+
+		_trackedQuest.Text = Loc.T(quest.Quest.Title);
+		_trackedQuest.AddThemeColorOverride("font_color", quest.Quest.IsMainQuest ? UiTheme.QuestMain : UiTheme.QuestSide);
+
+		// No live step means every objective is met and the quest is waiting to be handed in.
+		ObjectiveResource? objective = QuestProgressViews.CurrentObjective(quest, out int index);
+		_trackedObjective.Visible = objective != null;
+		if (objective != null)
+		{
+			string step = Loc.T(objective.ShortLabel());
+			_trackedObjective.Text = objective.RequiredCount > 1
+				? Loc.TF("session.pause.objective_count", step, quest.Counts[index], objective.RequiredCount)
+				: step;
+		}
 	}
 
 	// --- Save -----------------------------------------------------------------------------
@@ -269,24 +347,74 @@ public partial class PauseMenu : CanvasLayer
 		_confirmText.Text = message;
 		_confirmYes.Text = confirmLabel;
 		_onConfirm = onConfirm;
-		_menu.Visible = false;
+		_menuScroll.Visible = false;
 		_confirm.Visible = true;
 		UiFocus.GrabFirst(_confirm);
+		UpdateLegend();
 	}
 
 	private void HideConfirm()
 	{
 		_onConfirm = null;
 		_confirm.Visible = false;
-		_menu.Visible = true;
+		_menuScroll.Visible = true;
+		QueueFitMenu();
 		UiFocus.GrabFirst(_menu);
+		UpdateLegend();
 	}
+
+	private void UpdateLegend() => _legend.Set(new[]
+	{
+		new LegendEntry("ui_accept", Loc.T("session.legend.select")),
+		new LegendEntry("ui_cancel", Loc.T(_confirm.Visible ? "common.cancel" : "pause.resume")),
+	});
 
 	private void SetStatus(string text, Color color)
 	{
 		_status.Text = text;
 		_status.AddThemeColorOverride("font_color", color);
 		_status.Visible = text.Length > 0;
+		QueueFitMenu();
+	}
+
+	/// <summary>Fits the entries after the layout pass that whatever just changed has queued, so
+	/// a wrapped status line is measured at the width it really has.</summary>
+	private void QueueFitMenu()
+	{
+		if (_fitQueued)
+		{
+			return;
+		}
+
+		_fitQueued = true;
+		Callable.From(() =>
+		{
+			_fitQueued = false;
+			FitMenu();
+		}).CallDeferred();
+	}
+
+	/// <summary>
+	/// Gives the entries the height the view has left under what is really above them (the title,
+	/// the tracked objective, a status line that may wrap, all at the current text size), and no
+	/// more than they need; short of that they scroll. Measured rather than reserved: a fixed
+	/// allowance was too small at a large text size and pushed the last entries off a 533 px view.
+	/// </summary>
+	private void FitMenu()
+	{
+		if (!_menuScroll.Visible)
+		{
+			return; // the confirm has replaced the entries; HideConfirm asks again
+		}
+
+		float above = _column.GetCombinedMinimumSize().Y - _menuScroll.GetCombinedMinimumSize().Y;
+		float room = GetViewport().GetVisibleRect().Size.Y - (UiTheme.SpaceXl * 2f) - above;
+		float entries = _menu.GetCombinedMinimumSize().Y;
+		float height = Mathf.Clamp(room, Mathf.Min(UiTheme.ControlHeight * 2f, entries), entries);
+		if (!Mathf.IsEqualApprox(height, _menuScroll.CustomMinimumSize.Y))
+		{
+			_menuScroll.CustomMinimumSize = new Vector2(0f, height);
+		}
 	}
 
 	/// <summary>
@@ -362,10 +490,11 @@ public partial class PauseMenu : CanvasLayer
 		return null;
 	}
 
-	private static Button MenuButton(string text, System.Action onPressed)
+	/// <summary>One entry of the sheet: text until it is focused (<see cref="UiTheme.SessionAction"/>),
+	/// a full control tall.</summary>
+	private static Button MenuButton(string text, System.Action onPressed, UiCue cue = UiCue.Click)
 	{
-		Button button = UiTheme.Action(text);
-		button.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+		Button button = UiTheme.SessionAction(text, cue);
 		button.Pressed += () => onPressed();
 		return button;
 	}
@@ -384,12 +513,17 @@ public partial class PauseMenu : CanvasLayer
 
 	public void CloseForCapture() => Resume();
 
+	/// <summary>Whether the sheet is up and drawn. Read by the screenshot harness.</summary>
+	public bool ShownForCapture => _open && _root.Visible;
+
 	private void Open()
 	{
 		_open = true;
 		SetStatus(string.Empty, UiTheme.Dim);
+		RefreshSummary();
 		HideConfirm();
 		SetPanelVisible(true);
+		UiAudio.Play(UiCue.Open);
 		GameManager.Instance?.ChangeState(GameState.Paused);
 	}
 
@@ -402,19 +536,19 @@ public partial class PauseMenu : CanvasLayer
 
 	private void SetPanelVisible(bool visible)
 	{
-		_backdrop.Visible = visible;
-		_panel.Visible = visible;
-
-		// Fade in on show (30.5I; instant under reduced motion — Duration collapses to 0);
-		// hiding stays instant so resume never lags input. Tween pause mode Process because
-		// the tree is paused while this menu is up.
-		if (visible)
+		_legend.Visible = visible;
+		if (!visible)
 		{
-			_backdrop.Modulate = new Color(1f, 1f, 1f, 0f);
-			_panel.Modulate = new Color(1f, 1f, 1f, 0f);
-			UiTheme.AnimateModulate(_backdrop, Colors.White, UiTheme.DurationBase);
-			UiTheme.AnimateModulate(_panel, Colors.White, UiTheme.DurationBase);
-			UiFocus.GrabFirst(_confirm.Visible ? _confirm : _menu); // gamepad/keyboard start on Resume (30.5J)
+			// Hiding is instant so resume never lags input.
+			_root.Visible = false;
+			return;
 		}
+
+		// Fade in on show (instant under reduced motion); UiFx runs while the tree is paused, which
+		// it is whenever this menu is up. The rule under the title is drawn again each time.
+		QueueFitMenu(); // the text or UI scale may have changed in Settings while this was hidden
+		UiFx.FadeIn(_root);
+		UiOrnament.PlayEmberWipe(_wipe);
+		UiFocus.GrabFirst(_confirm.Visible ? _confirm : _menu); // gamepad/keyboard start on Resume (30.5J)
 	}
 }

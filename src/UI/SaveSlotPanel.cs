@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Embervale.Corruption;
 using Embervale.Localization;
 using Embervale.Save;
 using Godot;
@@ -8,16 +9,20 @@ namespace Embervale.UI;
 
 /// <summary>
 /// The save-slot browser (Phase 24C): a modal list of slots the player picks from to start a new
-/// game, load a save, or (from the pause menu) save into a slot. Each filled slot shows its header
-/// metadata (character, region, level, corruption tier, playtime, date) and a screenshot thumbnail.
-/// Opened by the <see cref="MainMenu"/> and the <see cref="PauseMenu"/> in one of three
-/// <see cref="Intent"/>s; deletes a slot (with an inline confirm) via
-/// <see cref="SaveManager.DeleteSlot"/>. Built in code through <see cref="UiTheme"/>.
+/// game, load a save, or (from the pause menu) save into a slot. Each filled slot shows a
+/// screenshot thumbnail, how it was made, whose it is and where they stood, their level and
+/// corruption, how long they played and when they left. Opened by the <see cref="MainMenu"/> and
+/// the <see cref="PauseMenu"/> in one of three <see cref="Intent"/>s. Built in code through
+/// <see cref="UiTheme"/>: a frameless sheet, like the settings screen.
 ///
 /// <para>Slots are read with <see cref="SaveManager.InspectSlot"/>, so a save that is corrupt or was
 /// written by a newer build is a row with a badge and an explanation rather than an "Empty" the
-/// player would start a new game over without knowing. Such a row cannot be loaded; writing over it
-/// asks first, exactly as writing over a good save does.</para>
+/// player would start a new game over without knowing. Such a row cannot be loaded.</para>
+///
+/// <para>Deleting a save and writing over one cannot be undone, so both are held
+/// (<see cref="HoldRing"/>); with the holds-to-presses setting on, a press asks first instead.
+/// Loading over unsaved progress asks too. A thumbnail is decoded when its row is first on
+/// screen, one a frame, and kept for as long as the browser is open.</para>
 /// </summary>
 public partial class SaveSlotPanel : CanvasLayer
 {
@@ -33,37 +38,43 @@ public partial class SaveSlotPanel : CanvasLayer
         Save,
     }
 
-    /// <summary>The second click a row is waiting for.</summary>
-    private enum Pending
-    {
-        None,
-        Overwrite,
-        Delete,
-        Load,
-    }
+    /// <summary>The buttons of one row, for the focus wiring: what the row does, and its Delete.</summary>
+    private readonly record struct RowButtons(Button Primary, Button? Secondary);
+
+    /// <summary>Marks a button that has to be held, so the legend can say so while it has focus.</summary>
+    private const string HoldMeta = "slot_hold";
+
+    /// <summary>How long the capture harness's hold takes: long enough that the frame it
+    /// photographs half a second later is mid-hold on any machine.</summary>
+    private const float CaptureHoldSeconds = 2f;
 
     private Intent _mode;
     private Action<string>? _onChosen;
     private Action? _onBack;
     private string? _loadWarning;
     private string? _currentSlot;
-    private string? _pendingSlot;
-    private Pending _pending;
 
-    // Inspected once per open and again after a delete: InspectSlot parses the whole save, and a
-    // confirm click only changes which buttons a row shows.
+    // Inspected once per open and again after a delete: InspectSlot parses the whole save.
     private readonly List<SaveSlotInfo> _entries = new();
 
+    // Decoded screenshots by slot, null for a slot with none. Kept for the life of the panel, so a
+    // refresh after a delete does not read every PNG again.
+    private readonly Dictionary<string, Texture2D?> _thumbnails = new();
+    private readonly List<(string Slot, TextureRect Rect)> _undecoded = new();
+    private readonly List<RowButtons> _rows = new();
+    private readonly Dictionary<string, HoldRing> _deleteRings = new();
+
+    private ScrollContainer _scroll = null!;
     private VBoxContainer _list = null!;
     private Button _back = null!;
-
-    /// <summary>Smallest height the slot list scrolls in; the workspace frame gives it the rest.</summary>
-    private const float ScrollMinHeight = 160f;
-
-    private const float ActionWidth = 96f;
+    private UiLegend _legend = null!;
+    private SessionPrompt? _prompt;
+    private Viewport? _viewport;
+    private HoldRing? _captureRing;
+    private bool _narrow;
 
     /// <param name="loadWarning">Already-localized text shown above the list in <see cref="Intent.Load"/>;
-    /// when set, loading a row asks for a second click (the running game has unsaved progress).</param>
+    /// when set, loading a row asks first (the running game has unsaved progress).</param>
     /// <param name="currentSlot">The running session's own slot, marked in <see cref="Intent.Save"/>.</param>
     public void Configure(
         Intent mode, Action<string> onChosen, Action onBack, string? loadWarning = null, string? currentSlot = null)
@@ -124,32 +135,40 @@ public partial class SaveSlotPanel : CanvasLayer
         Layer = 12; // above the main menu and the pause menu
         Godot.Input.MouseMode = Godot.Input.MouseModeEnum.Visible;
         Build();
+
+        // The legend names what the focused button does, and a held one is not a pressed one.
+        _viewport = GetViewport();
+        _viewport.GuiFocusChanged += OnFocusChanged;
+    }
+
+    public override void _ExitTree()
+    {
+        if (_viewport != null)
+        {
+            _viewport.GuiFocusChanged -= OnFocusChanged;
+        }
     }
 
     private void Build()
     {
-        var backdrop = UiTheme.Scrim(0.92f);
-        backdrop.MouseFilter = Control.MouseFilterEnum.Stop;
-        AddChild(backdrop);
+        Vector2 view = GetViewport().GetVisibleRect().Size;
+        _narrow = view.X < UiChromeRules.NarrowWidth;
+        float width = Mathf.Min(view.X - (UiChromeRules.Gutter(view.X) * 2f), UiTheme.SessionSheetMaxWidth);
 
-        PanelContainer panel = UiTheme.Panel();
-        UiTheme.ApplyWorkspace(panel, 0.66f);
-        AddChild(panel);
-
-        MarginContainer pad = UiTheme.Padding(UiTheme.SpaceLg);
-        panel.AddChild(pad);
-
-        var col = new VBoxContainer();
-        col.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
-        pad.AddChild(col);
+        // A sheet, not a framed panel: the column sits on the scrim behind one lit rule. It fills
+        // the height it is given (a sheet centres its column by default) so the list can scroll.
+        (Control root, VBoxContainer col) = UiTheme.Sheet(width, 0.92f, centred: true);
+        col.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
+        AddChild(root);
 
         string titleKey = _mode switch
         {
-            Intent.New => "slots.new_title",
-            Intent.Save => "slots.save_title",
-            _ => "slots.load_title",
+            Intent.New => "slots.title.new",
+            Intent.Save => "slots.title.save",
+            _ => "slots.title.load",
         };
-        col.AddChild(UiTheme.Header(Loc.T(titleKey)));
+        col.AddChild(UiTheme.Title(Loc.T(titleKey)));
+        col.AddChild(UiOrnament.EmberWipe());
 
         if (_mode == Intent.Load && !string.IsNullOrEmpty(_loadWarning))
         {
@@ -158,36 +177,44 @@ public partial class SaveSlotPanel : CanvasLayer
             col.AddChild(warning);
         }
 
-        col.AddChild(UiTheme.Divider());
+        // The list scrolls inside the sheet: with three manual slots and the autosave ring it is
+        // taller than a 720 px window. Its floor is small so the footer stays on a handheld screen.
+        (_scroll, _list) = UiTheme.ScrollList();
+        _scroll.CustomMinimumSize = new Vector2(0f, UiTheme.SlotListMinHeight);
+        col.AddChild(_scroll);
 
-        // The list scrolls inside the frame: with three manual slots and the autosave ring it is taller
-        // than a 720 px window, and an unscrolled list pushed the whole panel off both edges.
-        (ScrollContainer scroll, _list) = UiTheme.ScrollList();
-        scroll.CustomMinimumSize = new Vector2(0f, ScrollMinHeight);
-        col.AddChild(scroll);
+        col.AddChild(UiTheme.SessionRule());
 
-        col.AddChild(UiTheme.Divider());
-        _back = UiTheme.Action(Loc.T("common.back"));
+        var footer = new HBoxContainer();
+        _back = UiTheme.Action(Loc.T("common.back"), UiCue.Back);
         _back.Pressed += Back;
-        col.AddChild(_back);
+        footer.AddChild(_back);
+        col.AddChild(footer);
+
+        _legend = new UiLegend();
+        AddChild(_legend);
 
         Inspect();
         RefreshList();
+        UpdateLegend();
     }
 
     public override void _Process(double delta)
     {
-        // Esc / gamepad B backs out (30.5J), matching the settings panel. A row waiting for its
-        // second click takes the press first, so cancel always undoes the nearest thing.
+        DecodeOneThumbnail();
+
+        // Esc / gamepad B backs out (30.5J), matching the settings panel. An open question takes
+        // the press first, so cancel always undoes the nearest thing.
         if (!Godot.Input.IsActionJustPressed(UiLive.UiCancel))
         {
             return;
         }
 
-        if (_pending != Pending.None)
+        UiAudio.Play(UiCue.Back);
+        if (_prompt is { IsOpen: true })
         {
-            ClearPending();
-            RefreshList();
+            _prompt.Close();
+            _prompt = null;
             return;
         }
 
@@ -228,10 +255,11 @@ public partial class SaveSlotPanel : CanvasLayer
 
     private void RefreshList()
     {
-        foreach (Node child in _list.GetChildren())
-        {
-            child.QueueFree();
-        }
+        UiTheme.ClearChildren(_list);
+        _undecoded.Clear();
+        _rows.Clear();
+        _deleteRings.Clear();
+        _captureRing = null;
 
         if (_entries.Count == 0)
         {
@@ -243,29 +271,73 @@ public partial class SaveSlotPanel : CanvasLayer
             _list.AddChild(BuildRow(info));
         }
 
-        // Refresh frees the row the gamepad/keyboard focus sat on (confirm/delete flows) —
-        // re-land on the first row once the new tree exists (30.5J), or on Back when no row can act.
+        WireRows();
+
+        // Refresh frees the row the gamepad/keyboard focus sat on (after a delete) - re-land on the
+        // first row once the new tree exists (30.5J), or on Back when no row can act.
         Callable.From(() =>
         {
-            if (IsInstanceValid(this) && !IsQueuedForDeletion() && !UiFocus.GrabFirst(_list))
+            if (IsInstanceValid(this) && !IsQueuedForDeletion() && _prompt is not { IsOpen: true } &&
+                !UiFocus.GrabFirst(_list))
             {
                 _back.GrabFocus();
             }
         }).CallDeferred();
     }
 
+    /// <summary>
+    /// Up and down walk a column of the rows, left and right the two buttons of one. The engine's
+    /// own search is by distance, and from a row's Delete the nearest thing above is as often the
+    /// next row's Load. A row whose first button cannot be pressed (a damaged save's Load) is
+    /// entered at its Delete. Paths, so only once the rows are in the tree.
+    /// </summary>
+    private void WireRows()
+    {
+        for (int i = 0; i < _rows.Count; i++)
+        {
+            RowButtons row = _rows[i];
+            Link(row.Primary, i, secondary: false);
+            if (row.Secondary is { } secondary)
+            {
+                Link(secondary, i, secondary: true);
+                row.Primary.FocusNeighborRight = row.Primary.GetPathTo(secondary);
+                secondary.FocusNeighborLeft = secondary.GetPathTo(row.Primary);
+            }
+        }
+
+        // Never left pointing at a row that has been freed: the last save may just have been deleted.
+        _back.FocusNeighborTop = _rows.Count > 0
+            ? _back.GetPathTo(Entry(_rows[^1], secondary: false))
+            : new NodePath();
+    }
+
+    private void Link(Button button, int row, bool secondary)
+    {
+        if (row > 0)
+        {
+            button.FocusNeighborTop = button.GetPathTo(Entry(_rows[row - 1], secondary));
+        }
+
+        Control below = row < _rows.Count - 1 ? Entry(_rows[row + 1], secondary) : _back;
+        button.FocusNeighborBottom = button.GetPathTo(below);
+    }
+
+    /// <summary>The button focus lands on when it enters a row from above or below.</summary>
+    private static Button Entry(RowButtons row, bool secondary) =>
+        row.Secondary is { } other && (secondary || row.Primary.Disabled) ? other : row.Primary;
+
     private Control BuildRow(SaveSlotInfo info)
     {
-        // A Card, not a Panel (37.5F). Every save row had been a full framed panel, so after 37.5A
-        // a list of six slots was six brass frames and six grain shaders stacked vertically - the
-        // frames competed with each other and with the panel actually containing them.
+        // A Card, not a Panel (37.5F): a list of six slots must not be six brass frames.
         //
         // The spine carries corruption: a save's tier is the one thing about it that is a *state*
         // rather than a statistic, and it is what a returning player is orienting on. A save that
-        // cannot be loaded outranks that: its spine is the warning colour.
+        // cannot be loaded outranks that: its spine is the warning colour. Neither is said by
+        // colour alone: the row carries the tier's mark, pips and name, or a badge.
         bool filled = info.Health != SaveHealth.Missing;
         bool loadable = info.Health == SaveHealth.Ok;
-        bool corrupted = loadable && !string.Equals(info.CorruptionTier, "Untainted", StringComparison.OrdinalIgnoreCase);
+        CorruptionTier tier = loadable ? ShellSessionRules.TierOf(info.CorruptionTier) : CorruptionTier.Untainted;
+        bool corrupted = tier > CorruptionTier.Untainted;
         Color spine = !filled ? UiTheme.Disabled
             : !loadable ? UiTheme.Bad
             : corrupted ? UiTheme.CorruptionText
@@ -284,72 +356,108 @@ public partial class SaveSlotPanel : CanvasLayer
             SizeFlagsVertical = Control.SizeFlags.ShrinkCenter,
         };
         text.AddThemeConstantOverride("separation", UiTheme.LineGap);
+        row.AddChild(text);
 
-        string label = info.DisplayName.Length > 0 ? info.DisplayName : SlotLabel(info.Slot);
-        Label title = UiTheme.Body(label, filled ? UiTheme.Text : UiTheme.Disabled);
-        UiTheme.ApplyType(title, UiTheme.FontRole.Display, UiTheme.HeaderFontSize);
-        text.AddChild(title);
+        text.AddChild(BuildHeading(info, filled, loadable));
 
         if (!filled)
         {
-            text.AddChild(UiTheme.Body(Loc.T("slots.empty"), UiTheme.Disabled));
+            text.AddChild(UiTheme.Caption(Loc.T("slots.row.empty"), UiTheme.Disabled));
         }
         else
         {
-            // Structured rather than one crammed line: the name and region say whose save and where,
-            // the chips carry the facts a player compares between slots, and the caption carries the
-            // two they read once. Name, region and chips share a line (and wrap if the column is
-            // narrow), which keeps a row to three lines: a four-line row made six slots a screen and
-            // a half tall.
-            var facts = new HFlowContainer();
-            facts.AddThemeConstantOverride("h_separation", UiTheme.ChipGap);
-            facts.AddThemeConstantOverride("v_separation", UiTheme.SpaceXs);
-
-            if (!loadable)
-            {
-                facts.AddChild(UiTheme.Chip(
-                    Loc.T(info.Health == SaveHealth.Newer ? "slots.badge.newer" : "slots.badge.corrupt"), UiTheme.Bad));
-            }
-
-            // The newest save in the slot is damaged and a load will read the one before it: said on
-            // the row, in words, before the player commits to it.
-            if (loadable && info.RecoveredFromBackup)
-            {
-                facts.AddChild(UiTheme.Chip(Loc.T("slots.badge.backup"), UiTheme.Bad));
-            }
-
             if (loadable)
             {
-                Label name = UiTheme.Body(info.CharacterName, UiTheme.Text);
-                name.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
-                facts.AddChild(name);
-
-                Label region = UiTheme.Body(info.Region, UiTheme.Accent);
-                region.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
-                facts.AddChild(region);
-                facts.AddChild(UiTheme.Chip(Loc.TF("slots.level", info.Level), UiTheme.Text));
-                facts.AddChild(UiTheme.Chip(info.CorruptionTier, corrupted ? UiTheme.CorruptionText : UiTheme.Dim));
+                text.AddChild(BuildFacts(info, tier, corrupted));
             }
-
-            if (_mode == Intent.Load)
-            {
-                facts.AddChild(UiTheme.Chip(Loc.T(KindKey(info.Kind)), UiTheme.Dim));
-            }
-            else if (_mode == Intent.Save && info.Slot == _currentSlot)
-            {
-                facts.AddChild(UiTheme.Chip(Loc.T("slots.current"), UiTheme.Accent));
-            }
-
-            text.AddChild(facts);
 
             Label caption = UiTheme.Caption(Describe(info), loadable ? null : UiTheme.Bad);
             caption.AutowrapMode = TextServer.AutowrapMode.WordSmart;
             text.AddChild(caption);
         }
 
-        row.AddChild(text);
         row.AddChild(BuildActions(info));
         return rowPanel;
+    }
+
+    /// <summary>The row's first line: how the save was made (a mark and the word, in the load
+    /// browser, where the three kinds are mixed), what the slot is called, and what is wrong with it.</summary>
+    private Control BuildHeading(SaveSlotInfo info, bool filled, bool loadable)
+    {
+        HFlowContainer head = UiTheme.FlowRow();
+
+        var name = new HBoxContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
+        name.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
+        if (_mode == Intent.Load && filled)
+        {
+            name.AddChild(new SessionGlyph(KindShape(info.Kind), UiTheme.Dim, UiTheme.SlotGlyphSize));
+        }
+
+        // The player's own label can be any length; a slot's default name is two words.
+        bool labelled = info.DisplayName.Length > 0;
+        Label title = UiTheme.Body(labelled ? info.DisplayName : SlotLabel(info.Slot), filled ? UiTheme.Text : UiTheme.Disabled);
+        UiTheme.ApplyType(title, labelled ? UiTheme.FontRole.Interface : UiTheme.FontRole.Display, UiTheme.BodyFontSize);
+        name.AddChild(title);
+        head.AddChild(name);
+
+        if (_mode == Intent.Load && filled)
+        {
+            Label kind = UiTheme.Caption(Loc.T(KindKey(info.Kind)));
+            kind.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
+            head.AddChild(kind);
+        }
+        else if (_mode == Intent.Save && filled && info.Slot == _currentSlot)
+        {
+            head.AddChild(UiTheme.Chip(Loc.T("slots.current"), UiTheme.Accent));
+        }
+
+        if (filled && !loadable)
+        {
+            head.AddChild(UiTheme.Chip(
+                Loc.T(info.Health == SaveHealth.Newer ? "slots.badge.newer" : "slots.badge.corrupt"), UiTheme.Bad));
+        }
+
+        // The newest save in the slot is damaged and a load will read the one before it: said on
+        // the row, in words, before the player commits to it.
+        if (loadable && info.RecoveredFromBackup)
+        {
+            head.AddChild(UiTheme.Chip(Loc.T("slots.badge.backup"), UiTheme.Bad));
+        }
+
+        return head;
+    }
+
+    /// <summary>The row's second line: whose save, where they stood, their level and corruption.
+    /// It wraps when the column is narrow. A save header carries no chapter or mission, so the
+    /// region is the place the row names.</summary>
+    private static Control BuildFacts(SaveSlotInfo info, CorruptionTier tier, bool corrupted)
+    {
+        HFlowContainer facts = UiTheme.FlowRow();
+
+        Label name = UiTheme.Body(info.CharacterName, UiTheme.Text);
+        name.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
+        facts.AddChild(name);
+
+        Label region = UiTheme.Body(info.Region, UiTheme.Accent);
+        region.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
+        facts.AddChild(region);
+
+        facts.AddChild(UiTheme.Chip(Loc.TF("slots.level", info.Level), UiTheme.Text));
+
+        Color tint = corrupted ? UiTheme.CorruptionText : UiTheme.Dim;
+        var corruption = new HBoxContainer
+        {
+            MouseFilter = Control.MouseFilterEnum.Ignore,
+            SizeFlagsVertical = Control.SizeFlags.ShrinkCenter,
+        };
+        corruption.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
+        corruption.AddChild(new SessionGlyph(SessionGlyph.Shape.Corruption, tint, UiTheme.SlotGlyphSize));
+        corruption.AddChild(new SessionGlyph(
+            SessionGlyph.Shape.Pips, tint, UiTheme.SlotGlyphSize,
+            ShellSessionRules.CorruptionPips(tier), ShellSessionRules.CorruptionPipCount));
+        corruption.AddChild(UiTheme.Caption(CorruptionTiers.DisplayName(tier), tint));
+        facts.AddChild(corruption);
+        return facts;
     }
 
     private static string KindKey(SaveKind kind) => kind switch
@@ -359,34 +467,111 @@ public partial class SaveSlotPanel : CanvasLayer
         _ => "slots.kind.manual",
     };
 
-    private static Control BuildThumbnail(string slot, bool filled)
+    private static SessionGlyph.Shape KindShape(SaveKind kind) => kind switch
     {
+        SaveKind.Quick => SessionGlyph.Shape.Quick,
+        SaveKind.Auto => SessionGlyph.Shape.Auto,
+        _ => SessionGlyph.Shape.Manual,
+    };
+
+    // --- Thumbnails -----------------------------------------------------------
+
+    private Control BuildThumbnail(string slot, bool filled)
+    {
+        // A well, so a save with no screenshot (and an empty slot) shows a cut frame, not a hole.
+        float scale = _narrow ? 0.8f : 1f;
+        PanelContainer well = UiTheme.Well();
+        well.CustomMinimumSize = new Vector2(UiTheme.SlotThumbWidth, UiTheme.SlotThumbHeight) * scale;
+        well.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
+        well.MouseFilter = Control.MouseFilterEnum.Ignore;
+
         var rect = new TextureRect
         {
-            CustomMinimumSize = new Vector2(112, 63),
-            SizeFlagsVertical = Control.SizeFlags.ShrinkCenter,
             StretchMode = TextureRect.StretchModeEnum.KeepAspectCovered,
             ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
+            MouseFilter = Control.MouseFilterEnum.Ignore,
         };
+        well.AddChild(rect);
 
-        if (filled && SaveManager.Instance is { } manager)
+        if (!filled)
+        {
+            return well;
+        }
+
+        if (_thumbnails.TryGetValue(slot, out Texture2D? known))
+        {
+            rect.Texture = known;
+        }
+        else
+        {
+            _undecoded.Add((slot, rect));
+        }
+
+        return well;
+    }
+
+    /// <summary>
+    /// Decodes at most one screenshot a frame, and only for a row that is on screen: the list
+    /// used to read and decode every slot's PNG inside the open, and again on every refresh.
+    /// A row scrolled or focused into view is decoded the frame after it arrives.
+    /// </summary>
+    private void DecodeOneThumbnail()
+    {
+        if (_undecoded.Count == 0)
+        {
+            return;
+        }
+
+        Rect2 window = _scroll.GetGlobalRect();
+        for (int i = 0; i < _undecoded.Count; i++)
+        {
+            (string slot, TextureRect rect) = _undecoded[i];
+            if (!IsInstanceValid(rect) || !rect.IsInsideTree())
+            {
+                _undecoded.RemoveAt(i--);
+                continue;
+            }
+
+            if (!rect.GetGlobalRect().Intersects(window))
+            {
+                continue;
+            }
+
+            _undecoded.RemoveAt(i);
+            rect.Texture = Thumbnail(slot);
+            return;
+        }
+    }
+
+    private Texture2D? Thumbnail(string slot)
+    {
+        if (_thumbnails.TryGetValue(slot, out Texture2D? cached))
+        {
+            return cached;
+        }
+
+        Texture2D? texture = null;
+        if (SaveManager.Instance is { } manager)
         {
             string path = manager.ScreenshotPath(slot);
-            if (FileAccess.FileExists(path) && Image.LoadFromFile(path) is { } image)
+            if (FileAccess.FileExists(path) && Image.LoadFromFile(path) is { } image && !image.IsEmpty())
             {
-                rect.Texture = ImageTexture.CreateFromImage(image);
+                texture = ImageTexture.CreateFromImage(image);
             }
         }
 
-        return rect;
+        _thumbnails[slot] = texture;
+        return texture;
     }
+
+    // --- Actions --------------------------------------------------------------
 
     /// <summary>A button in a slot row: a full control tall and wide enough that Load and Delete are
     /// equal targets rather than two different-sized words.</summary>
-    private static Button RowAction(string text)
+    private static Button RowAction(string text, UiCue cue = UiCue.Click)
     {
-        Button button = UiTheme.Action(text);
-        button.CustomMinimumSize = new Vector2(ActionWidth, UiTheme.ControlHeight);
+        Button button = UiTheme.Action(text, cue);
+        button.CustomMinimumSize = new Vector2(UiTheme.SlotActionWidth, UiTheme.ControlHeight);
         return button;
     }
 
@@ -394,29 +579,18 @@ public partial class SaveSlotPanel : CanvasLayer
     {
         string slot = info.Slot;
         bool filled = info.Health != SaveHealth.Missing;
+        string label = info.DisplayName.Length > 0 ? info.DisplayName : SlotLabel(slot);
         var box = new HBoxContainer { SizeFlagsVertical = Control.SizeFlags.ShrinkCenter };
         box.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
 
-        if (_pending != Pending.None && _pendingSlot == slot)
-        {
-            Button confirm = RowAction(Loc.T(ConfirmKey()));
-            confirm.AddThemeColorOverride("font_color", UiTheme.Bad);
-            confirm.Pressed += () => CommitPending(slot);
-            box.AddChild(confirm);
-
-            Button cancel = RowAction(Loc.T("common.cancel"));
-            cancel.Pressed += () => { ClearPending(); RefreshList(); };
-            box.AddChild(cancel);
-            return box;
-        }
-
+        Button primary;
         if (_mode == Intent.Load)
         {
             // A corrupt or newer-format save is shown so the player knows it is there; it is never
             // handed to a load, which would tear the title (or the running game) down to fail.
-            Button load = RowAction(Loc.T("common.load"));
-            load.Disabled = info.Health != SaveHealth.Ok;
-            load.Pressed += () =>
+            primary = RowAction(Loc.T("common.load"));
+            primary.Disabled = info.Health != SaveHealth.Ok;
+            primary.Pressed += () =>
             {
                 if (string.IsNullOrEmpty(_loadWarning))
                 {
@@ -424,81 +598,103 @@ public partial class SaveSlotPanel : CanvasLayer
                 }
                 else
                 {
-                    Ask(slot, Pending.Load);
+                    Ask(Loc.T("slots.ask.load_title"), _loadWarning, Loc.T("common.load"), () => Choose(slot));
                 }
             };
-            box.AddChild(load);
+            box.AddChild(primary);
+        }
+        else if (ShellSessionRules.WriteNeedsHold(info.Health))
+        {
+            // Writing over a save cannot be undone. A save that cannot be loaded counts: it may be
+            // recoverable, and "Empty" would hide that it exists.
+            primary = HoldAction(
+                box, Loc.T("common.overwrite"), out _,
+                Loc.T("slots.ask.overwrite_title"), Loc.TF("slots.ask.overwrite_text", label),
+                () => Choose(slot));
         }
         else
         {
-            // Empty → act directly; filled → writing over a save needs a confirm. A save that cannot
-            // be loaded counts as filled: it may be recoverable, and "Empty" would hide that it exists.
-            string emptyKey = _mode == Intent.New ? "common.new_game" : "slots.save_here";
-            Button write = RowAction(Loc.T(filled ? "common.overwrite" : emptyKey));
-            write.Pressed += () =>
-            {
-                if (filled)
-                {
-                    Ask(slot, Pending.Overwrite);
-                }
-                else
-                {
-                    Choose(slot);
-                }
-            };
-            box.AddChild(write);
+            primary = RowAction(Loc.T(_mode == Intent.New ? "common.new_game" : "slots.save_here"), UiCue.Confirm);
+            primary.Pressed += () => Choose(slot);
+            box.AddChild(primary);
         }
 
+        Button? delete = null;
         if (filled)
         {
-            Button delete = RowAction(Loc.T("common.delete"));
-            delete.Pressed += () => Ask(slot, Pending.Delete);
-            box.AddChild(delete);
+            delete = HoldAction(
+                box, Loc.T("common.delete"), out HoldRing? ring,
+                Loc.T("slots.ask.delete_title"), Loc.TF("slots.ask.delete_text", label),
+                () => Delete(slot));
+            if (ring != null)
+            {
+                _deleteRings[slot] = ring;
+            }
         }
 
+        _rows.Add(new RowButtons(primary, delete));
         return box;
     }
 
-    private string ConfirmKey() => _pending switch
+    /// <summary>
+    /// A button for something that cannot be undone, with its ring: hold it to confirm. With the
+    /// holds-to-presses setting on there is no ring and a press asks first, with Cancel focused,
+    /// so one stray press still changes nothing.
+    /// </summary>
+    private Button HoldAction(
+        Container box, string text, out HoldRing? ring, string askTitle, string askText, Action onConfirmed)
     {
-        Pending.Delete => "common.confirm_delete",
-        Pending.Load => "slots.confirm_load",
-        _ => _mode == Intent.New ? "common.confirm_new" : "slots.confirm_overwrite",
-    };
-
-    private void Ask(string slot, Pending pending)
-    {
-        _pendingSlot = slot;
-        _pending = pending;
-        RefreshList();
-    }
-
-    private void ClearPending()
-    {
-        _pendingSlot = null;
-        _pending = Pending.None;
-    }
-
-    private void CommitPending(string slot)
-    {
-        if (_pending == Pending.Delete)
+        Button button = RowAction(text);
+        ring = null;
+        if (UiFx.HoldsToPresses)
         {
-            // A file that would not go leaves the slot on disk; the re-inspection below then shows
-            // it still there instead of an emptied row that comes back.
-            if (SaveManager.Instance is { } saves && !saves.DeleteSlot(slot, out IReadOnlyList<string> failures) &&
-                failures.Count > 0)
-            {
-                Embervale.Core.Events.EventBus.Instance?.Publish(new SaveNoticeEvent(Loc.T("slots.delete_failed"), Warning: true));
-            }
-
-            ClearPending();
-            Inspect();
-            RefreshList();
+            button.Pressed += () => Ask(askTitle, askText, text, onConfirmed);
         }
         else
         {
-            Choose(slot); // overwrite or load confirmed
+            ring = UiFx.HoldRing(onConfirmed);
+            ring.Attach(button);
+
+            // A button that loses focus mid-press never reports the release (it goes to whatever
+            // took focus), and the ring would fill on its own and destroy the save.
+            button.FocusExited += ring.Release;
+            button.TooltipText = Loc.T("slots.hold_hint");
+            button.SetMeta(HoldMeta, true);
+            box.AddChild(ring);
         }
+
+        box.AddChild(button);
+        return button;
+    }
+
+    /// <summary>Asks before something that loses data, with Cancel focused.</summary>
+    private void Ask(string title, string text, string confirmLabel, Action onConfirmed)
+    {
+        _prompt?.Close();
+        _prompt = SessionPrompt.Open(
+            this, title, text,
+            new SessionPrompt.Choice(Loc.T("common.cancel"), UiCue.Back, () => _prompt = null, Focused: true),
+            new SessionPrompt.Choice(confirmLabel, UiCue.Confirm, () =>
+            {
+                _prompt = null;
+                onConfirmed();
+            }, Danger: true));
+        MoveChild(_legend, -1); // it names this prompt's keys, so it stays above the scrim
+    }
+
+    private void Delete(string slot)
+    {
+        // A file that would not go leaves the slot on disk; the re-inspection below then shows
+        // it still there instead of an emptied row that comes back.
+        if (SaveManager.Instance is { } saves && !saves.DeleteSlot(slot, out IReadOnlyList<string> failures) &&
+            failures.Count > 0)
+        {
+            Embervale.Core.Events.EventBus.Instance?.Publish(new SaveNoticeEvent(Loc.T("slots.delete_failed"), Warning: true));
+        }
+
+        _thumbnails.Remove(slot);
+        Inspect();
+        RefreshList();
     }
 
     private void Choose(string slot)
@@ -508,9 +704,22 @@ public partial class SaveSlotPanel : CanvasLayer
         chosen?.Invoke(slot);
     }
 
-    /// <summary>The caption under a filled row: for a loadable save the two facts a player reads
-    /// once rather than compares (how long they played and when they left; region, level and
-    /// corruption tier moved onto the card itself in 37.5F), otherwise why it cannot be loaded.</summary>
+    // --- Legend ---------------------------------------------------------------
+
+    private void OnFocusChanged(Control focus) => UpdateLegend();
+
+    private void UpdateLegend()
+    {
+        bool hold = GetViewport()?.GuiGetFocusOwner() is { } focus && focus.HasMeta(HoldMeta);
+        _legend.Set(new[]
+        {
+            new LegendEntry("ui_accept", Loc.T(hold ? "session.legend.hold" : "session.legend.select")),
+            new LegendEntry("ui_cancel", Loc.T("session.legend.back")),
+        });
+    }
+
+    /// <summary>The caption under a filled row: for a loadable save how long they played and when
+    /// they left, on the player's own clock; otherwise why it cannot be loaded.</summary>
     private static string Describe(SaveSlotInfo info)
     {
         if (info.Health == SaveHealth.Newer)
@@ -523,10 +732,55 @@ public partial class SaveSlotPanel : CanvasLayer
             return Loc.T("slots.corrupt_help");
         }
 
-        int total = (int)info.PlaytimeSeconds;
-        string played = Loc.TF("slots.playtime", total / 3600, $"{(total % 3600) / 60:00}");
-        string date = Time.GetDatetimeStringFromUnixTime((long)info.TimestampUnix, true);
-        string meta = Loc.TF("slots.meta", played, date);
+        (int hours, int minutes) = ShellSessionRules.Playtime(info.PlaytimeSeconds);
+        string played = Loc.TF("slots.row.played", Loc.TF("slots.playtime", hours, $"{minutes:00}"));
+        string saved = Loc.TF("slots.row.saved", ShellSessionRules.LocalDate(info.TimestampUnix, TimeZoneInfo.Local));
+        string meta = Loc.TF("slots.meta", played, saved);
         return info.RecoveredFromBackup ? Loc.TF("slots.backup_help", meta) : meta;
+    }
+
+    // --- Capture hooks --------------------------------------------------------
+
+    /// <summary>Capture hook: shows <paramref name="rows"/> in place of what is on disk, so every
+    /// kind of row can be photographed without authoring a damaged save.</summary>
+    public void ShowRowsForCapture(IReadOnlyList<SaveSlotInfo> rows)
+    {
+        _entries.Clear();
+        _entries.AddRange(rows);
+        RefreshList();
+    }
+
+    /// <summary>How many rows the list holds. Read by the screenshot harness.</summary>
+    public int RowCountForCapture => _entries.Count;
+
+    /// <summary>Capture hook: starts holding <paramref name="slot"/>'s Delete and leaves it held.
+    /// The hold is slowed and completes to nothing, so a capture never deletes a save. False when
+    /// the row has no ring (no such row, or the holds-to-presses setting is on).</summary>
+    public bool HoldDeleteForCapture(string slot)
+    {
+        if (!_deleteRings.TryGetValue(slot, out HoldRing? ring) || !IsInstanceValid(ring))
+        {
+            return false;
+        }
+
+        ring.Completed = static () => { };
+        ring.Seconds = CaptureHoldSeconds;
+        ring.Press();
+        _captureRing = ring;
+        return ring.Holding;
+    }
+
+    /// <summary>How full the ring <see cref="HoldDeleteForCapture"/> is holding has got, 0..1.</summary>
+    public float HoldProgressForCapture => _captureRing != null && IsInstanceValid(_captureRing) ? _captureRing.Progress : 0f;
+
+    /// <summary>Capture hook: lets go of the held Delete and rebuilds the rows with their real rings.</summary>
+    public void ReleaseHoldForCapture()
+    {
+        if (_captureRing != null && IsInstanceValid(_captureRing))
+        {
+            _captureRing.Release();
+        }
+
+        RefreshList();
     }
 }
