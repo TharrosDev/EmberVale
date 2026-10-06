@@ -822,7 +822,10 @@ SHOP_STOCK = {
          ("item.potion.stoneskin_lesser", 2, {}), ("item.food.ember_tea", 3, {})]
         + [("item.potion.resist_%s_lesser" % s, 2, {}) for s in SCHOOLS]
         + [("item.potion.might_superior", 1, gate(5)), ("item.potion.insight_superior", 1, gate(5)),
-           ("item.potion.stoneskin_superior", 1, gate(5))]),
+           ("item.potion.stoneskin_superior", 1, gate(5))]
+        # A travelling stall may not be the only seller of a consumable (--validate), so the
+        # resident herbalist carries the superior wards too.
+        + [("item.potion.resist_%s_superior" % s, 1, gate(5)) for s in SCHOOLS]),
     "EmbermarketCurios": (
         [("item.potion.resist_%s_superior" % s, 1, gate(5)) for s in SCHOOLS]
         + [(scroll("health_superior"), 1, gate(5)), (scroll("stamina_superior"), 1, gate(5)),
@@ -845,7 +848,8 @@ SHOP_STOCK = {
          (scroll("frostfang_broth"), 1, gate(2)), (scroll("spiced_roast"), 1, gate(3)), (scroll("ember_tea"), 1, gate(3))]),
     "EmberdeepQuartermaster": ([("item.food.hearth_stew", 6, {}), ("item.food.oatcake", 8, {})]),
     "EmbermarketFishmonger": ([("item.food.grilled_catch", 5, {})]),
-    "TarnCurer": ([("item.food.grilled_catch", 6, {}), ("item.food.eel_pie", 4, {}), ("item.food.roe_toast", 3, {})]),
+    "TarnCurer": ([("item.food.grilled_catch", 6, {}), ("item.food.eel_pie", 4, {}), ("item.food.roe_toast", 3, {}),
+                   ("item.food.spiced_roast", 2, {}), ("item.food.frostfang_broth", 2, {})]),
     "EmbermarketCaravan": ([("item.food.spiced_roast", 2, {}), ("item.food.frostfang_broth", 2, {})]),
     "EmberCrownTraveller": (
         [("item.armor.windrunner_treads", 1, gate(2)),

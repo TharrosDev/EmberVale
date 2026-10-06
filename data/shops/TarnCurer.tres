@@ -57,6 +57,16 @@ script = ExtResource("2_entry")
 ItemId = "item.food.roe_toast"
 Quantity = 3
 
+[sub_resource type="Resource" id="Stock_ics_4"]
+script = ExtResource("2_entry")
+ItemId = "item.food.spiced_roast"
+Quantity = 2
+
+[sub_resource type="Resource" id="Stock_ics_5"]
+script = ExtResource("2_entry")
+ItemId = "item.food.frostfang_broth"
+Quantity = 2
+
 [resource]
 script = ExtResource("1_shop")
 Id = "shop.tarn.curer"
@@ -65,7 +75,7 @@ NameKey = "shop.tarn.curer.name"
 FactionId = "faction.villagers"
 AcceptedTags = Array[String](["fish", "food"])
 Specialties = Array[String](["fish"])
-Stock = Array[Resource]([SubResource("Stock_fresh"), SubResource("Stock_eel"), SubResource("Stock_roe"), SubResource("Stock_oil"), SubResource("Stock_smoked"), SubResource("Stock_ics_1"), SubResource("Stock_ics_2"), SubResource("Stock_ics_3")])
+Stock = Array[Resource]([SubResource("Stock_fresh"), SubResource("Stock_eel"), SubResource("Stock_roe"), SubResource("Stock_oil"), SubResource("Stock_smoked"), SubResource("Stock_ics_1"), SubResource("Stock_ics_2"), SubResource("Stock_ics_3"), SubResource("Stock_ics_4"), SubResource("Stock_ics_5")])
 RestockDays = 1
 BuyMarkup = 1.18
 SellFraction = 0.28
