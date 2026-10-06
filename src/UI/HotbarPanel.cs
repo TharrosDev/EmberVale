@@ -47,7 +47,7 @@ public partial class HotbarPanel : CanvasLayer
     private readonly Control?[] _sweeps = new Control?[HotbarComponent.SlotCount];
     private readonly Label?[] _waits = new Label?[HotbarComponent.SlotCount];
     private readonly TextureRect?[] _icons = new TextureRect?[HotbarComponent.SlotCount];
-    private readonly TextureRect?[] _locks = new TextureRect?[HotbarComponent.SlotCount];
+    private readonly HudIcon?[] _locks = new HudIcon?[HotbarComponent.SlotCount];
     private readonly Label?[] _countLabels = new Label?[HotbarComponent.SlotCount];
     private readonly ConsumableItemResource?[] _items = new ConsumableItemResource?[HotbarComponent.SlotCount];
     private readonly Color[] _iconTints = new Color[HotbarComponent.SlotCount];
@@ -490,7 +490,9 @@ public partial class HotbarPanel : CanvasLayer
                 body.AddChild(icon);
                 _icons[i] = icon;
 
-                TextureRect padlock = UiIcon.Create(UiIcon.Kind.Lock, glyphSide, UiTheme.Text);
+                // Keylined: it is drawn over the item's own picture, dimmed, and has to read on it.
+                HudIcon padlock = HudIcon.Create(
+                    UiIcon.Kind.Lock, picture != null ? HudCoreMetrics.HotbarGlyph : glyphSide, UiTheme.Text);
                 padlock.Visible = false;
                 body.AddChild(padlock);
                 _locks[i] = padlock;
