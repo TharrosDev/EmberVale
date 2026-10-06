@@ -5600,6 +5600,20 @@ settings.spell_effects.follow,Follow preset
 settings.spell_effects.desc,"How rich spell effects are: particles, lights and marks left on the ground. Follow preset uses the graphics quality above."
 # Spell wheel, HUD spellbook, spell audio and spell effects (2026-10). Each lane adds its rows inside its own block, below its marker and above the next.
 # --- lane: wheel ---
+wheel.legend.release,Release to select
+wheel.legend.select,Select
+wheel.legend.cancel,Cancel
+wheel.legend.centre_cancel,Centre to cancel
+wheel.legend.centre_previous,Centre for the previous spell
+wheel.previous,Previous
+wheel.state.locked,needs {0}
+wheel.school.known,Spells known: {0}
+wheel.school.none,No spells known
+wheel.slot.empty,Empty slot
+wheel.slot.hint,Pin a spell here from the spellbook
+wheel.centre.cancel,Cancel
+wheel.centre.no_previous,No previous spell
+wheel.centre.keeps,Keeps {0}
 # --- lane: hud-spellbook ---
 # --- lane: audio ---
 # --- lane: vfx ---
