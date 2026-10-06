@@ -250,10 +250,10 @@ public sealed partial class HudShots : ShotHarness
 
         // Hostile convergence: low resources + statuses + tracked quest + boss priority + queued
         // quest notice. This is the frame that proves the top-centre suppression contract under load.
-        // It also puts the HUD options back to their defaults for every shot after it.
+        // It also puts the HUD options back to what the settings held for every shot after it.
         Shot("07b-boss-hostile", () =>
         {
-            SetHudOptions(HudPreset.Full);
+            RestoreHudOptions();
             StageBossPressure();
         });
 
@@ -421,22 +421,54 @@ public sealed partial class HudShots : ShotHarness
         return Numbered(candidate) != Numbered(best) ? Numbered(candidate) : candidate > best;
     }
 
+    // The HUD options the settings held before the first options shot overwrote them.
+    private bool _hudOptionsHeld;
+    private int[] _heldModes = System.Array.Empty<int>();
+    private float _heldScale = 1f;
+    private float _heldSafeZone;
+
     /// <summary>
     /// Writes HUD options into the live settings and announces them the way applying the options
-    /// screen does. The settings are never saved, and the announcement is the event alone: a full
+    /// screen does. The harness never saves them, and the announcement is the event alone: a full
     /// <see cref="SettingsService.Apply"/> would also re-apply the window mode and UI scale this
-    /// harness set for itself.
+    /// harness set for itself. What was there is kept for <see cref="RestoreHudOptions"/>, because
+    /// the settings object is the live one: the shots after these have to be taken with the options
+    /// the shots before them had, and anything else that saves it must not write these values out.
     /// </summary>
-    private static void SetHudOptions(HudPreset preset, float scale = 1f, float safeZone = 0f)
+    private void SetHudOptions(HudPreset preset, float scale = 1f, float safeZone = 0f)
     {
         if (ServiceLocator.Instance is not { } locator || !locator.TryGet(out SettingsService settings))
         {
             return;
         }
 
+        if (!_hudOptionsHeld)
+        {
+            _hudOptionsHeld = true;
+            _heldModes = (int[])settings.Current.HudElementModes.Clone();
+            _heldScale = settings.Current.HudScale;
+            _heldSafeZone = settings.Current.HudSafeZone;
+        }
+
         settings.Current.HudElementModes = HudPresets.ToSaved(HudPresets.Modes(preset));
         settings.Current.HudScale = scale;
         settings.Current.HudSafeZone = safeZone;
+        EventBus.Instance?.Publish(new SettingsAppliedEvent(settings.Current));
+    }
+
+    /// <summary>Puts back the HUD options the options shots replaced, and announces them.</summary>
+    private void RestoreHudOptions()
+    {
+        if (!_hudOptionsHeld || ServiceLocator.Instance is not { } locator ||
+            !locator.TryGet(out SettingsService settings))
+        {
+            return;
+        }
+
+        _hudOptionsHeld = false;
+        settings.Current.HudElementModes = _heldModes;
+        settings.Current.HudScale = _heldScale;
+        settings.Current.HudSafeZone = _heldSafeZone;
         EventBus.Instance?.Publish(new SettingsAppliedEvent(settings.Current));
     }
 
