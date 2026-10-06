@@ -216,14 +216,13 @@ public partial class SkyController : Node3D
         }
 
         // ── WORLD SCALE SEAM ─────────────────────────────────────────────────────────────────────
-        // These three are the streamer's inputs. Publish them to the streaming lane's static here,
-        // and nowhere else, so they change exactly when a preset or a shadow override does:
-        //     WorldQualityScale.DrawDistance = DrawDistanceScale;
-        //     WorldQualityScale.ScatterDensity = ScatterDensityScale;
-        //     WorldQualityScale.ActorShadowDistance = ActorShadowDistance;
+        // These three are the streamer's inputs. Published here, and nowhere else, so they change
+        // exactly when a preset or a shadow override does. Medium, High and Ultra author 1 / 1, at
+        // which every consumer does nothing; Set raises Changed only when a value moved.
         DrawDistanceScale = _quality.DrawDistanceScale;
         ScatterDensityScale = _quality.ScatterDensityScale;
         ActorShadowDistance = shadows ? shadow.ActorShadowDistance : 0f;
+        WorldQualityScale.Set(DrawDistanceScale, ScatterDensityScale, ActorShadowDistance);
 
         _applied = (tier, overrides);
     }

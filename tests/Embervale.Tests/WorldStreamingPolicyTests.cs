@@ -78,7 +78,7 @@ public sealed class WorldStreamingPolicyTests
         finally
         {
             WorldQualityScale.Changed -= OnChanged;
-            WorldQualityScale.Set(1f, 1f, 60f);
+            WorldQualityScale.Set(1f, 1f, WorldQualityScale.UncutActorShadowDistance);
         }
     }
 

@@ -84,7 +84,7 @@ func _run() -> void:
     await frames(60)
     for entry in [["morning",8,"weather.clear"],["midday",12,"weather.clear"],["sunset",18,"weather.clear"],["night",0,"weather.clear"],["rain",12,"weather.rain"],["fog",9,"weather.fog"]]:
         await capture(entry[0],entry[1],entry[2])
-    for tier in 4:
+    for tier in 5:
         sky.call("ApplyQuality",tier)
         await capture("quality-"+str(tier),12,"weather.clear")
     sky.call("ApplyQuality",1)

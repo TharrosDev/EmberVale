@@ -26,8 +26,12 @@ public static class WorldQualityScale
     /// <summary>Fraction of ground-cover instances drawn, 0..1.</summary>
     public static float ScatterDensity { get; private set; } = 1f;
 
-    /// <summary>Metres from the camera beyond which an actor stops casting a shadow.</summary>
-    public static float ActorShadowDistance { get; private set; } = 60f;
+    /// <summary>The value a tier that never cuts actor shadows authors; also the value before any
+    /// tier has been applied, so a world with no sky controller behaves as it always did.</summary>
+    public const float UncutActorShadowDistance = 10000f;
+
+    /// <summary>Metres from the player beyond which an actor stops casting a shadow.</summary>
+    public static float ActorShadowDistance { get; private set; } = UncutActorShadowDistance;
 
     /// <summary>Raised after <see cref="Set"/> changed at least one value.</summary>
     public static event Action? Changed;

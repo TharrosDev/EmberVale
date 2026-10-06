@@ -242,8 +242,11 @@ public partial class EnemyAIComponent : EntityComponent
         if (_farCheckTimer <= 0d)
         {
             _farCheckTimer = FarCheckInterval;
-            _far = IsFarFromPlayer();
-            SetShadow(!_far);
+            _far = IsFarFromPlayer(out float playerDistanceSquared);
+            // The quality tier may cut actor shadows closer than the AI's own active distance; from
+            // Medium up its distance is effectively unlimited, so only the far test decides.
+            float shadowReach = Embervale.World.WorldQualityScale.ActorShadowDistance;
+            SetShadow(!_far && playerDistanceSquared <= shadowReach * shadowReach);
         }
 
         bool far = _far;
@@ -729,15 +732,17 @@ public partial class EnemyAIComponent : EntityComponent
     }
 
     /// <summary>True when no player exists or the player is beyond <see cref="ActiveDistance"/>.</summary>
-    private bool IsFarFromPlayer()
+    private bool IsFarFromPlayer(out float distanceSquared)
     {
+        distanceSquared = float.MaxValue;
         PlayerCharacter? player = _senses.AnyPlayer();
         if (player == null)
         {
             return true;
         }
 
-        return _body.GlobalPosition.DistanceSquaredTo(player.GlobalPosition) > _profile.ActiveDistance * _profile.ActiveDistance;
+        distanceSquared = _body.GlobalPosition.DistanceSquaredTo(player.GlobalPosition);
+        return distanceSquared > _profile.ActiveDistance * _profile.ActiveDistance;
     }
 
     private void SetShadow(bool on)
