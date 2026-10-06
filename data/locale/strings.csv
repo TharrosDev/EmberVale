@@ -5116,3 +5116,53 @@ ui.hub.journal,Journal
 ui.hub.map,Map
 ui.hub.bestiary,Bestiary
 credits.title,Credits
+# ui-upgrade: lane 7 (knowledge panels)
+kn.title.journal,Journal
+kn.title.map,World map
+kn.title.bestiary,Field journal
+kn.legend.section,Section
+kn.legend.category,Category
+kn.legend.school,School
+kn.legend.track,Track
+kn.legend.untrack,Untrack
+kn.legend.show_on_map,Show on map
+kn.legend.confirm,Confirm
+kn.legend.back,Back
+kn.legend.pan,Pan
+kn.legend.pan_select,Drag to pan and click to select
+kn.legend.zoom,Zoom
+kn.legend.select,Select
+kn.legend.waypoint,Waypoint
+kn.legend.skip,Skip
+kn.legend.choose,Choose
+kn.journal.tracking,Tracking: {0}
+kn.journal.show_on_map,Show on map
+kn.journal.show_on_map_tip,Open the map on this step's place
+kn.map.tab_place,Place
+kn.map.tab_legend,Legend
+kn.map.selected_header,Selected
+kn.map.waypoint_header,Waypoint
+kn.map.travel_header,Fast travel
+kn.map.travel_confirm,Travel to
+kn.map.travel_fee,Passage costs {0} gold.
+kn.map.travel_no_fee,Passage is free.
+kn.map.travel_go,Travel
+kn.map.travel_cancel,Stay here
+kn.map.legend_expand,Show categories
+kn.map.legend_collapse,Hide categories
+kn.map.legend_marks,Other marks
+kn.map.scale,{0} m
+kn.bestiary.progress,{0} of {1} catalogued
+kn.bestiary.unknown,Unrecorded
+kn.bestiary.unknown_hint,"Nothing is written here yet. Bring one down, and the Ash Hunters will have a name to put to it."
+kn.bestiary.row_sighted,"Sighted, slain {0} of {1}"
+kn.bestiary.stage_sighted,Sighted
+kn.bestiary.stage_known,Known
+kn.bestiary.slain,slain
+kn.bestiary.resists,Resists
+kn.bestiary.open_to,Open to
+kn.bestiary.lore,Field notes
+kn.dialogue.mark_plot,Moves the story on
+kn.dialogue.mark_special,Has a consequence
+kn.dialogue.mark_exhausted,Already asked
+kn.dialogue.mark_leave,Ends the conversation
