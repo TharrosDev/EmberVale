@@ -108,4 +108,28 @@ public class LabelPlacerTests
 
         Assert.Equal(new[] { 0 }, kept);
     }
+
+    [Fact]
+    public void DropsALabelThatWouldCoverBlockedGround()
+    {
+        // The player's arrow: whatever a label's rank, it gives way, and a label clear of the arrow
+        // is untouched by it.
+        var arrow = new List<Rect2> { new(20f, 5f, 30f, 30f) };
+        var kept = LabelPlacer.Place(
+            new List<LabelCandidate> { At(10f, 10f, 0, 0), At(200f, 200f, 4, 1) }, Plot, arrow);
+
+        Assert.Equal(new[] { 1 }, kept);
+    }
+
+    [Fact]
+    public void ABlockedLabelDoesNotHoldItsGroundAgainstTheNext()
+    {
+        // The first choice is on the arrow; the second overlaps the first but not the arrow, and
+        // must be kept: a dropped label reserves nothing.
+        var arrow = new List<Rect2> { new(0f, 0f, 30f, 30f) };
+        var kept = LabelPlacer.Place(
+            new List<LabelCandidate> { At(10f, 10f, 0, 0), At(40f, 14f, 1, 1) }, Plot, arrow);
+
+        Assert.Equal(new[] { 1 }, kept);
+    }
 }

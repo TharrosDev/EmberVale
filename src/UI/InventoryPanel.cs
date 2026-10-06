@@ -188,9 +188,6 @@ public partial class InventoryPanel : UiPanel
 
     private Label _title = null!;
 
-    /// <summary>The least an "If equipped" stat name is given before it wraps.</summary>
-    private const float PreviewNameMin = 88f;
-
     /// <summary>The page width under which the title leaves the tab row: the four tabs and the
     /// search field need the whole of a handheld's row.</summary>
     private const float TitleMinWidth = 1000f;
@@ -1894,7 +1891,6 @@ public partial class InventoryPanel : UiPanel
             // Wraps, like the card's own stat names: "Arcane Re..." beside a number says nothing.
             Label name = UiTheme.Body(Embervale.Stats.StatNames.Label(stat), UiTheme.Dim);
             name.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-            name.CustomMinimumSize = new Vector2(PreviewNameMin, 0f);
             name.AutowrapMode = TextServer.AutowrapMode.WordSmart;
             grid.AddChild(name);
 
