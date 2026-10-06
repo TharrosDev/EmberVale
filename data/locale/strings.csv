@@ -5319,3 +5319,8 @@ settings.preview.rarity.epic,Epic
 settings.preview.rarity.legendary,Legendary
 settings.preview.good,Gain
 settings.preview.bad,Loss
+# ui-upgrade: lane 4 (HUD core)
+hud.prompt.hold_gather,Hold to gather nearby
+hud.quest.more,+{0} more
+hud.hotbar.count,×{0}
+hud.hotbar.chord,Hold for quick items

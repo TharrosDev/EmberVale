@@ -28,8 +28,17 @@ public partial class GameHud
     private Label _bannerTimer = null!;
 
     private PanelContainer _promptPanel = null!;
+    private Control _promptGlyph = null!;
     private Label _promptText = null!;
-    private Label _promptCap = null!;
+    private Label _promptNoun = null!;
+    private Label _promptHold = null!;
+
+    // A glyph is a snapshot of a binding on a device (UiGlyph), so each is redrawn when either moves.
+    private bool _promptGlyphStale = true;
+    private bool _spellGlyphStale = true;
+
+    // As _vitalsQuiet: the tick after an invalidation restates everything, and that is not news.
+    private bool _contextQuiet = true;
 
     private TextureRect _lockReticle = null!;
 
@@ -46,9 +55,16 @@ public partial class GameHud
     private int _bannerHot = -1;
 
     private string? _promptShown;
+    private string? _promptNounShown;
+    private int _promptHoldShown = -1;
 
     private void InvalidateContextShown()
     {
+        _promptNounShown = null;
+        _promptHoldShown = -1;
+        _promptGlyphStale = true;
+        _spellGlyphStale = true;
+        _contextQuiet = true;
         _phaseShown = -1;
         _hourShown = -1;
         _weatherKnown = false;
@@ -70,7 +86,8 @@ public partial class GameHud
     /// </summary>
     private void BuildContext()
     {
-        PanelContainer panel = Ignore(UiTheme.Band());
+        // One line of inked text on the world, no ground: a clock does not need a box to be a clock.
+        PanelContainer panel = Ignore(UiTheme.HudBare());
         _layout.TopLeft.AddChild(panel);
 
         var row = new HBoxContainer();
@@ -78,22 +95,22 @@ public partial class GameHud
 
         // Shape AND colour carry the phase, so it survives ColorVision (§40) — and it is never the
         // only channel, because the phase name is on the same row.
-        _phaseGlyph = UiIcon.Create(UiIcon.Kind.Sun, 18f, UiTheme.Accent);
+        _phaseGlyph = UiIcon.Create(UiIcon.Kind.Sun, HudCoreMetrics.IconSize, UiTheme.Accent);
         row.AddChild(_phaseGlyph);
 
-        _context = UiTheme.Body("", UiTheme.Text);
+        _context = UiTheme.HudInk(UiTheme.Body("", UiTheme.Text));
         _context.VerticalAlignment = VerticalAlignment.Center;
         row.AddChild(_context);
 
-        _phaseText = UiTheme.Caption("", UiTheme.Dim);
+        _phaseText = UiTheme.HudInk(UiTheme.Caption("", UiTheme.Dim));
         _phaseText.VerticalAlignment = VerticalAlignment.Center;
         row.AddChild(_phaseText);
 
-        _weatherText = UiTheme.Caption("", UiTheme.Dim);
+        _weatherText = UiTheme.HudInk(UiTheme.Caption("", UiTheme.Dim));
         _weatherText.VerticalAlignment = VerticalAlignment.Center;
         row.AddChild(_weatherText);
 
-        WrapPadded(panel, row);
+        panel.AddChild(row);
     }
 
     /// <summary>The phase's glyph and tint. Warm at midday, cold at night, ember at the edges of the
@@ -108,58 +125,101 @@ public partial class GameHud
 
     private void BuildBanner()
     {
-        _bannerPanel = Ignore(UiTheme.Band(UiTheme.AccentHot));
+        _bannerPanel = Ignore(UiTheme.HudPlate(UiTheme.AccentHot));
         _bannerPanel.Visible = false;
         _bannerPanel.SizeFlagsHorizontal = Control.SizeFlags.ShrinkCenter;
         _layout.TopCenter.AddChild(_bannerPanel);
 
         var row = new HBoxContainer();
         row.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
-        row.AddChild(UiIcon.Create(UiIcon.Kind.Warning, 18f, UiTheme.Accent));
-        _bannerText = UiTheme.Body("", UiTheme.Accent);
+        row.AddChild(UiIcon.Create(UiIcon.Kind.Warning, HudCoreMetrics.IconSize, UiTheme.Accent));
+        _bannerText = UiTheme.HudInk(UiTheme.Body("", UiTheme.Accent));
         row.AddChild(_bannerText);
-        _bannerTimer = UiTheme.Body("", UiTheme.Dim);
+        _bannerTimer = UiTheme.HudInk(UiTheme.Body("", UiTheme.Dim));
         row.AddChild(_bannerTimer);
-        WrapPadded(_bannerPanel, row);
+        _bannerPanel.AddChild(row);
     }
 
     /// <summary>A diamond marker (Phase 29H) tracked onto the locked-on target's screen position.</summary>
     private void BuildLockReticle()
     {
-        _lockReticle = UiIcon.Create(UiIcon.Kind.Waypoint, 28f, UiTheme.AccentHot);
+        _lockReticle = UiIcon.Create(UiIcon.Kind.Waypoint, HudCoreMetrics.ReticleSize, UiTheme.AccentHot);
         _lockReticle.Visible = false;
-        _lockReticle.Size = new Vector2(28f, 28f);
+        _lockReticle.Size = new Vector2(HudCoreMetrics.ReticleSize, HudCoreMetrics.ReticleSize);
         _layout.Overlay.AddChild(_lockReticle);
     }
 
-    /// <summary>Swap the interaction keycap glyph when the player switches between keyboard
-    /// and gamepad (30.5J) — "E" ↔ "X" live, no rebuild.</summary>
-    private void OnInputDeviceChanged(InputDeviceChangedEvent e)
-    {
-        _promptCap.Text = GameInput.PromptLabel(GameInput.Interact);
+    /// <summary>Redraw the prompt's and the spell row's glyphs when the player switches between
+    /// keyboard and gamepad (30.5J): "E" becomes the pad's own button shape, live, no rebuild.</summary>
+    private void OnInputDeviceChanged(InputDeviceChangedEvent e) => MarkGlyphsStale();
 
-        // 39.5B: the spell row grew a keycap too, and a keycap that does not follow the device is
-        // worse than none — it confidently names a key the player's controller does not have.
-        _spellCap.Text = GameInput.PromptLabel(GameInput.Cast);
+    private void OnInputBindingsChanged(InputBindingsChangedEvent e) => MarkGlyphsStale();
+
+    // A glyph that does not follow the device or the binding is worse than none: it confidently
+    // names a key the player's controller does not have (39.5B).
+    private void MarkGlyphsStale()
+    {
+        _promptGlyphStale = true;
+        _spellGlyphStale = true;
     }
 
+    /// <summary>Puts <paramref name="action"/>'s glyph for the device in hand into <paramref name="host"/>,
+    /// replacing the one that was there.</summary>
+    private static void SetGlyph(Control host, string action)
+    {
+        foreach (Node child in host.GetChildren())
+        {
+            host.RemoveChild(child);
+            child.QueueFree();
+        }
+
+        host.AddChild(UiGlyph.For(action));
+    }
+
+    /// <summary>
+    /// The interaction prompt: the input's glyph, then what it does and to what.
+    ///
+    /// The phrase is one localized string ("Loot Iron chest"), because word order is the
+    /// translator's. Where it ends with the name of the thing aimed at, that name is set apart as
+    /// the noun (<see cref="PromptRules.Split"/>); where it does not, the phrase is shown whole.
+    /// Picking something up can also be held to gather everything nearby, which nothing told the
+    /// player before: the second line says so, only for a pickup.
+    /// </summary>
     private void BuildPrompt()
     {
-        _promptPanel = Ignore(UiTheme.Band(UiTheme.Accent));
+        _promptPanel = Ignore(UiTheme.HudPlate(UiTheme.Accent));
         _promptPanel.Visible = false;
         _promptPanel.SizeFlagsHorizontal = Control.SizeFlags.ShrinkCenter;
         _layout.BottomCenter.AddChild(_promptPanel);
 
-        // A keycap chip + the prompt text ("[E] Loot" as a real glyph, not string brackets).
-        // The cap's label resolves from the InputMap so a future rebind stays correct.
         var row = new HBoxContainer();
         row.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
-        PanelContainer cap = UiTheme.KeyCap(GameInput.PromptLabel(GameInput.Interact), out _promptCap);
-        cap.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
-        row.AddChild(cap);
-        _promptText = UiTheme.Body("", UiTheme.Accent);
-        row.AddChild(_promptText);
-        WrapPadded(_promptPanel, row);
+
+        _promptGlyph = new CenterContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
+        row.AddChild(_promptGlyph);
+
+        var lines = new VBoxContainer { SizeFlagsVertical = Control.SizeFlags.ShrinkCenter };
+        lines.AddThemeConstantOverride("separation", 0);
+        row.AddChild(lines);
+
+        var phrase = new HBoxContainer();
+        phrase.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
+        _promptText = UiTheme.HudInk(UiTheme.Body("", UiTheme.Text));
+        phrase.AddChild(_promptText);
+        _promptNoun = UiTheme.HudInk(UiTheme.Body("", UiTheme.Accent));
+        _promptNoun.Visible = false;
+        phrase.AddChild(_promptNoun);
+        lines.AddChild(phrase);
+
+        _promptHold = UiTheme.HudInk(UiTheme.Caption(Loc.T("hud.prompt.hold_gather"), UiTheme.Dim));
+        _promptHold.Visible = false;
+        lines.AddChild(_promptHold);
+
+        _promptPanel.AddChild(row);
+
+        // GameHud's own subscriptions do not include a rebind; this one is taken and returned here.
+        EventBus.Instance?.Subscribe<InputBindingsChangedEvent>(OnInputBindingsChanged);
+        TreeExiting += () => EventBus.Instance?.Unsubscribe<InputBindingsChangedEvent>(OnInputBindingsChanged);
     }
 
     private void UpdateContext()
@@ -192,6 +252,7 @@ public partial class GameHud
             _phaseGlyph.Texture = UiIcon.Texture(icon);
             _phaseGlyph.Modulate = UiTheme.Adapt(tint);
             _phaseText.Text = Loc.T(DayPhases.NameKey(phase));
+            NoteClockChanged();
         }
 
         int hour = clock.Hour;
@@ -211,6 +272,20 @@ public partial class GameHud
             {
                 _weatherText.Text = $"· {current.DisplayName}";
             }
+
+            NoteClockChanged();
+        }
+
+        _contextQuiet = false;
+    }
+
+    /// <summary>A Dynamic clock comes up when the day turns a phase or the weather changes, which is
+    /// when the player would look at it. The hour ticking over is not news.</summary>
+    private void NoteClockChanged()
+    {
+        if (!_contextQuiet)
+        {
+            MarkChanged(HudElement.Clock);
         }
     }
 
@@ -274,12 +349,39 @@ public partial class GameHud
 
         // Interaction prompt for an aimed-at interactable.
         string? prompt = focusSensor?.FocusPrompt;
-        if (!string.IsNullOrEmpty(prompt) && Shows(HudElement.Prompts))
+        bool prompting = !string.IsNullOrEmpty(prompt);
+
+        // Aiming at something is what a Dynamic crosshair, and a Dynamic target plate, are for.
+        if (prompting || focus != null)
         {
-            if (prompt != _promptShown)
+            MarkChanged(HudElement.Crosshair);
+            MarkChanged(HudElement.TargetPlate);
+        }
+
+        if (prompting && Shows(HudElement.Prompts))
+        {
+            string? noun = focusSensor!.FocusedEntity?.DisplayName;
+            if (prompt != _promptShown || noun != _promptNounShown)
             {
                 _promptShown = prompt;
-                _promptText.Text = prompt;
+                _promptNounShown = noun;
+                (string verb, string thing) = PromptRules.Split(prompt!, noun);
+                _promptText.Text = verb;
+                _promptNoun.Text = thing;
+                _promptNoun.Visible = thing.Length > 0;
+            }
+
+            int hold = focusSensor.FocusedInteractable is Embervale.Items.ItemPickupComponent ? 1 : 0;
+            if (hold != _promptHoldShown)
+            {
+                _promptHoldShown = hold;
+                _promptHold.Visible = hold == 1;
+            }
+
+            if (_promptGlyphStale)
+            {
+                _promptGlyphStale = false;
+                SetGlyph(_promptGlyph, GameInput.Interact);
             }
 
             _promptPanel.Visible = true;

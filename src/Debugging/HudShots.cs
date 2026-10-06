@@ -11,6 +11,7 @@ using Embervale.Magic;
 using Embervale.Player;
 using Embervale.Quests;
 using Embervale.Localization;
+using Embervale.Settings;
 using Embervale.Stats;
 using Embervale.UI;
 using Embervale.World;
@@ -71,6 +72,25 @@ public sealed partial class HudShots : ShotHarness
         }
         if (name == "05b3-tracker-hint" && Hud() is { TrackerHintVisible: false })
             return "the objective hint did not appear after the dwell";
+        if (name == "05b4-tracker-folded" && Hud() is { } folded &&
+            (folded.TrackerRowsForCapture != TrackerFoldRules.MaxLines || folded.TrackerFoldedForCapture != 2))
+            return $"the tracker drew {folded.TrackerRowsForCapture} objective(s) and folded {folded.TrackerFoldedForCapture}, expected 3 and 2";
+        if (name == "05a2-hotbar-states")
+        {
+            if (QuestShotFixtures.FindFirst<HotbarPanel>(GetTree().Root) is not { } bar)
+                return "the hotbar panel is missing";
+            if (bar.SlotStateForCapture(CoolingSlot) != HotbarSlotState.Cooling)
+                return $"slot {CoolingSlot + 1} is {bar.SlotStateForCapture(CoolingSlot)}, expected Cooling";
+            if (bar.SlotStateForCapture(LockedSlot) != HotbarSlotState.Locked)
+                return $"slot {LockedSlot + 1} is {bar.SlotStateForCapture(LockedSlot)}, expected Locked";
+        }
+        if (name.StartsWith("13") || name.StartsWith("14"))
+        {
+            if (Hud() is not { } hud)
+                return "GameHud is missing";
+            if (HudOptionsFailure(name, hud) is { } failure)
+                return failure;
+        }
         if (name == "07c-boss-epithet" && QuestShotFixtures.FindFirst<BossFrame>(GetTree().Root) is not { Visible: true })
             return "the boss frame is not showing";
         if (name == "10-objective-toast" && QuestShotFixtures.FindFirst<Toast>(GetTree().Root) is null)
@@ -101,6 +121,33 @@ public sealed partial class HudShots : ShotHarness
         {
             combat.IsInvulnerable = true;
         }
+
+        HoldRegeneration();
+    }
+
+    /// <summary>
+    /// Stops the capture player's pools refilling, for the same reason it ignores damage.
+    ///
+    /// ⚠️ <b>This is why 02, 03 and 04 failed their own prerequisites.</b> Each drains a pool with
+    /// <see cref="StatsComponent.SetCurrent"/> and is checked half a second later. The player
+    /// regenerates health at 3 a second, mana at 4 and stamina at 15, and none of those waits for
+    /// anything here: the delays that hold regeneration back are reset by taking a hit or spending
+    /// stamina, and the harness does neither. So by the capture the "empty" stamina bar had refilled
+    /// and health and mana had climbed back over the lines the shots are named for, and the harness
+    /// (correctly) refused to call those frames evidence.
+    ///
+    /// The rates are the stats' own properties, so this is the same authority the drains use. The
+    /// tick still runs, which matters: it is what notices stamina at zero and sets the winded state
+    /// the fourth shot exists to show.
+    /// </summary>
+    private static void HoldRegeneration()
+    {
+        if (Stats() is { } stats)
+        {
+            stats.HealthRegen = 0f;
+            stats.StaminaRegen = 0f;
+            stats.ManaRegen = 0f;
+        }
     }
 
     /// <summary>
@@ -126,15 +173,20 @@ public sealed partial class HudShots : ShotHarness
         // photographed in its busiest honest state rather than with an empty dock and no party strip.
         Shot("05a-party-hotbar", StageHotbarAndParty);
 
+        // The cell states that are not "ready": one consumable waiting out its cooldown (the wipe, and
+        // its seconds once nine or fewer are left) and one the player is too low a level to use (the
+        // padlock). Both through the hotbar's own Activate and the item's own level requirement.
+        Shot("05a2-hotbar-states", StageHotbarStates);
+
         // ⚠️ The save this harness loads has no active quest, so without this the tracker — and the
         // distance/bearing readout that is one of 39.5B's headline changes — never appears in a single
         // image. A capture set that silently omits the feature under review is the failure mode this
         // whole tool exists to prevent.
         Shot("05b-quest-tracked", StartAndTrackAQuest);
 
-        // The campaign tracker: a chapter label above the title, the spine in the main-quest colour, a done
-        // step, the current step and an optional step carrying its "Optional" tag. Built in memory because no
-        // authored quest carries the new fields yet.
+        // The campaign tracker: a chapter label above the title, the spine in the main-quest colour, the
+        // current step, an optional step carrying its "Optional" tag and the next locked step, with the
+        // rest folded into a count. Built in memory because no authored quest carries the new fields yet.
         Shot("05b2-tracker-campaign", () =>
         {
             if (QuestShotFixtures.Log() is { } log)
@@ -146,6 +198,15 @@ public sealed partial class HudShots : ShotHarness
         // The objective hint, which only appears after the player has sat on one step for a while
         // (TrackerRules.HintDelaySeconds). The harness advances the dwell clock rather than waiting.
         Shot("05b3-tracker-hint", () => Hud()?.AdvanceTrackerDwell(TrackerRules.HintDelaySeconds + 5f));
+
+        // The same five-objective quest, checked for the fold: three lines and "+2 more".
+        Shot("05b4-tracker-folded", () =>
+        {
+            if (QuestShotFixtures.Log() is { } log)
+            {
+                QuestShotFixtures.StartTrackedMainQuest(log);
+            }
+        });
 
         // ⚠️ The compass's destination channel — chevron, distance, and the edge arrow for a mark
         // behind you — is invisible in every other shot, because the one authored quest destination
@@ -159,9 +220,42 @@ public sealed partial class HudShots : ShotHarness
 
         Shot("07-dawn", () => SetHour(6));
 
+        // The player's HUD options, each driven through the settings the options screen writes.
+        // Before the boss shots, because a boss on screen is combat and would hold a Dynamic HUD up.
+        //
+        // Dynamic at rest: full pools, no blow landed, nothing just changed. Nearly everything steps
+        // back. Then the same preset the moment the player is hit.
+        Shot("13-dynamic-exploration", () =>
+        {
+            Stats()?.RefillResources();
+            SetHudOptions(HudPreset.Dynamic);
+            Hud()?.SettleDynamicForCapture();
+        });
+
+        Shot("13b-dynamic-combat", TakeABlow);
+
+        // Minimal, under a second blow: the navigation aids are gone for good and the vitals, hotbar
+        // and crosshair are up only because of the fight.
+        Shot("13c-minimal-combat", () =>
+        {
+            SetHudOptions(HudPreset.Minimal);
+            TakeABlow();
+        });
+
+        Shot("14a-hud-scale-085", () => SetHudOptions(HudPreset.Full, scale: 0.85f));
+
+        Shot("14b-hud-scale-125", () => SetHudOptions(HudPreset.Full, scale: 1.25f));
+
+        Shot("14c-safe-zone-10", () => SetHudOptions(HudPreset.Full, safeZone: 0.1f));
+
         // Hostile convergence: low resources + statuses + tracked quest + boss priority + queued
         // quest notice. This is the frame that proves the top-centre suppression contract under load.
-        Shot("07b-boss-hostile", StageBossPressure);
+        // It also puts the HUD options back to what the settings held for every shot after it.
+        Shot("07b-boss-hostile", () =>
+        {
+            RestoreHudOptions();
+            StageBossPressure();
+        });
 
         // A boss with an epithet card and its own intro line, staged through the frame's own entry point.
         Shot("07c-boss-epithet", StageBossEpithet);
@@ -254,6 +348,198 @@ public sealed partial class HudShots : ShotHarness
         {
             roster.Recruit("companion.kael");
         }
+    }
+
+    private const int CoolingSlot = 0;
+    private const int LockedSlot = 4;
+
+    /// <summary>
+    /// Uses a real consumable that has a cooldown, and assigns one the player is too low a level for.
+    /// Both are found in the item database rather than named, so the shot follows the catalogue: the
+    /// longest cooldown the player may use right now, and the lowest level requirement above them.
+    /// Health is low from the earlier shots, so a restorative is not refused for being pointless.
+    /// </summary>
+    private static void StageHotbarStates()
+    {
+        if (Player() is not { } player ||
+            player.GetComponent<InventoryComponent>() is not { } pack ||
+            player.GetComponent<HotbarComponent>() is not { } bar)
+        {
+            return;
+        }
+
+        HoldRegeneration();
+        int level = player.GetComponent<Progression.ProgressionComponent>()?.Level ?? 1;
+        ConsumableItemResource? timed = null;
+        ConsumableItemResource? gated = null;
+        foreach (ItemResource item in ItemDatabase.All.Values)
+        {
+            if (item is not ConsumableItemResource consumable)
+            {
+                continue;
+            }
+
+            if (consumable.RequiredLevel > level)
+            {
+                if (gated == null || consumable.RequiredLevel < gated.RequiredLevel)
+                {
+                    gated = consumable;
+                }
+            }
+            else if (BetterCooldown(consumable.CooldownSeconds, timed?.CooldownSeconds ?? 0f) &&
+                     ConsumableEffectsComponent.Check(player, consumable) == ConsumeRefusal.None)
+            {
+                timed = consumable;
+            }
+        }
+
+        if (timed != null)
+        {
+            pack.AddItem(timed, 3);
+            bar.Assign(CoolingSlot, timed.Id);
+            bar.Activate(CoolingSlot);
+        }
+
+        if (gated != null)
+        {
+            pack.AddItem(gated, 2);
+            bar.Assign(LockedSlot, gated.Id);
+        }
+    }
+
+    /// <summary>Whether a cooldown makes the better picture: one short enough to print its seconds
+    /// (and long enough to outlast the hold before the capture) beats one that only shows the wipe,
+    /// and within either kind the longer wins.</summary>
+    private static bool BetterCooldown(float candidate, float best)
+    {
+        static bool Numbered(float seconds) => seconds >= 3f && seconds <= HotbarRules.NumeralSeconds;
+        if (candidate <= 0f)
+        {
+            return false;
+        }
+
+        return Numbered(candidate) != Numbered(best) ? Numbered(candidate) : candidate > best;
+    }
+
+    // The HUD options the settings held before the first options shot overwrote them.
+    private bool _hudOptionsHeld;
+    private int[] _heldModes = System.Array.Empty<int>();
+    private float _heldScale = 1f;
+    private float _heldSafeZone;
+
+    /// <summary>
+    /// Writes HUD options into the live settings and announces them the way applying the options
+    /// screen does. The harness never saves them, and the announcement is the event alone: a full
+    /// <see cref="SettingsService.Apply"/> would also re-apply the window mode and UI scale this
+    /// harness set for itself. What was there is kept for <see cref="RestoreHudOptions"/>, because
+    /// the settings object is the live one: the shots after these have to be taken with the options
+    /// the shots before them had, and anything else that saves it must not write these values out.
+    /// </summary>
+    private void SetHudOptions(HudPreset preset, float scale = 1f, float safeZone = 0f)
+    {
+        if (ServiceLocator.Instance is not { } locator || !locator.TryGet(out SettingsService settings))
+        {
+            return;
+        }
+
+        if (!_hudOptionsHeld)
+        {
+            _hudOptionsHeld = true;
+            _heldModes = (int[])settings.Current.HudElementModes.Clone();
+            _heldScale = settings.Current.HudScale;
+            _heldSafeZone = settings.Current.HudSafeZone;
+        }
+
+        settings.Current.HudElementModes = HudPresets.ToSaved(HudPresets.Modes(preset));
+        settings.Current.HudScale = scale;
+        settings.Current.HudSafeZone = safeZone;
+        EventBus.Instance?.Publish(new SettingsAppliedEvent(settings.Current));
+    }
+
+    /// <summary>Puts back the HUD options the options shots replaced, and announces them.</summary>
+    private void RestoreHudOptions()
+    {
+        if (!_hudOptionsHeld || ServiceLocator.Instance is not { } locator ||
+            !locator.TryGet(out SettingsService settings))
+        {
+            return;
+        }
+
+        _hudOptionsHeld = false;
+        settings.Current.HudElementModes = _heldModes;
+        settings.Current.HudScale = _heldScale;
+        settings.Current.HudSafeZone = _heldSafeZone;
+        EventBus.Instance?.Publish(new SettingsAppliedEvent(settings.Current));
+    }
+
+    /// <summary>The player takes a hit: the event a landed blow raises, which is what the HUD's
+    /// combat reading listens for, and some health gone so the bars have something to say.</summary>
+    private static void TakeABlow()
+    {
+        if (Player() is not { } player)
+        {
+            return;
+        }
+
+        SetFraction(StatType.Health, 0.6f);
+        Vector3 at = player.Body is { } body ? body.GlobalPosition : Vector3.Zero;
+        EventBus.Instance?.Publish(new Combat.HitConfirmedEvent(
+            null, player, 12f, Combat.DamageType.Physical, Combat.HitOutcome.Hit, Combat.HitKind.Normal,
+            false, at, ByPlayer: false, OnPlayer: true));
+    }
+
+    /// <summary>What a HUD-options shot failed to reach, or null. Each is read back from the HUD's own
+    /// answers (<see cref="GameHud.Shows"/>, <see cref="GameHud.LayoutWidth"/>), not from the settings
+    /// just written, so a preset that was saved and never applied does not pass.</summary>
+    private string? HudOptionsFailure(string name, GameHud hud)
+    {
+        switch (name)
+        {
+            case "13-dynamic-exploration":
+                foreach (HudElement element in new[]
+                         { HudElement.Vitals, HudElement.Minimap, HudElement.QuestTracker, HudElement.Clock })
+                {
+                    if (hud.Shows(element))
+                        return $"{element} is still showing under the Dynamic preset at rest";
+                }
+                return null;
+
+            case "13b-dynamic-combat":
+                foreach (HudElement element in new[] { HudElement.Vitals, HudElement.Hotbar, HudElement.Crosshair })
+                {
+                    if (!hud.Shows(element))
+                        return $"{element} did not come up under the Dynamic preset in combat";
+                }
+                return null;
+
+            case "13c-minimal-combat":
+                if (!hud.Shows(HudElement.Vitals))
+                    return "the vitals did not come up under the Minimal preset in combat";
+                foreach (HudElement element in new[]
+                         { HudElement.Compass, HudElement.Minimap, HudElement.QuestTracker, HudElement.Clock })
+                {
+                    if (hud.Shows(element))
+                        return $"{element} is showing under the Minimal preset";
+                }
+                return null;
+
+            case "14a-hud-scale-085":
+                return LayoutFailure(hud, 0.85f, 0f);
+            case "14b-hud-scale-125":
+                return LayoutFailure(hud, 1.25f, 0f);
+            case "14c-safe-zone-10":
+                return LayoutFailure(hud, 1f, 0.1f);
+            default:
+                return null;
+        }
+    }
+
+    private string? LayoutFailure(GameHud hud, float scale, float safeZone)
+    {
+        float expected = HudMetrics.LayoutWidth(GetViewport().GetVisibleRect().Size.X, scale, safeZone);
+        return Mathf.Abs(hud.LayoutWidth - expected) > 2f
+            ? $"the HUD lays out {hud.LayoutWidth:0} wide, expected {expected:0} at scale {scale} and safe zone {safeZone}"
+            : null;
     }
 
     /// <summary>Raises three notices in one frame through the events the feed already answers.</summary>
