@@ -60,6 +60,9 @@ public readonly record struct CameraProfile(
     /// <summary>The mounted framing at a full gallop, which <see cref="ForSpeed"/> leans toward.</summary>
     private static readonly CameraProfile MountedGallop = new(1.35f, 0.4f, 9f, 1f, 0.5f, 0.5f, 1.25f);
 
+    /// <summary>How far an aim (a drawn bow, a held cast) widens the shoulder offset.</summary>
+    public const float AimShoulderScale = 1.12f;
+
     /// <summary>Fraction of sprint speed a walk sits at (1 over the 1.6 sprint multiplier). A sprint
     /// lean is measured from here, so simply walking does not already half-apply it.</summary>
     public const float SprintLeanFloor = 0.6f;
@@ -86,8 +89,10 @@ public readonly record struct CameraProfile(
         // target is rarely far above or below the horizon.
         CameraContext.TargetLock => new(0.86f, 0.18f, -4f, 1.15f, 0.28f, 0.45f, 1.1f),
 
-        // Tight over the shoulder and narrow, which reads as looking down a shaft.
-        CameraContext.Aim => new(0.7f, 0.02f, -12f, 1.3f, 0.18f, 0.3f, 1.35f),
+        // Tight over the shoulder and narrow, which reads as looking down a shaft. The shoulder
+        // widens only a little: at 1.3 an aimed cast swung the camera far enough out that the
+        // caster's back left the frame, and third person is meant to sit behind it.
+        CameraContext.Aim => new(0.7f, 0.02f, -12f, AimShoulderScale, 0.18f, 0.3f, 1.35f),
 
         // The resting seat on a mount: higher and further back, the walk-pace framing.
         CameraContext.Mounted => new(1.2f, 0.3f, 3f, 1f, 0.5f, 0.5f, 1.25f),
