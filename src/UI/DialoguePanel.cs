@@ -49,6 +49,17 @@ public partial class DialoguePanel : UiPanel
     // The choices on screen, in the order the number keys address them (1 = first).
     private readonly List<System.Action> _choiceActions = new();
 
+    // ics:save-ui. A conversation holds a save block for as long as its session is live: a save
+    // taken between a choice and its consequence would restore a world the dialogue half-changed.
+    private const string SaveBlockReason = "save.blocked.dialogue";
+    private System.IDisposable? _saveBlock;
+
+    private void ReleaseSaveBlock()
+    {
+        _saveBlock?.Dispose();
+        _saveBlock = null;
+    }
+
     protected override void BuildShell(PanelContainer shell)
     {
         _scrim = UiTheme.Scrim(0.40f);
@@ -88,6 +99,7 @@ public partial class DialoguePanel : UiPanel
         EventBus.Instance?.Unsubscribe<DialogueStartedEvent>(OnDialogueStarted);
         EventBus.Instance?.Unsubscribe<InputDeviceChangedEvent>(OnDeviceChanged);
         GetViewport().SizeChanged -= LayoutShell;
+        ReleaseSaveBlock();
     }
 
     protected override void OnOpenChanged(bool open)
@@ -125,6 +137,7 @@ public partial class DialoguePanel : UiPanel
         _player = e.Player;
         _dialogue = e.Dialogue;
         _session = new DialogueSession(e.Dialogue, e.Player);
+        _saveBlock ??= Embervale.Save.SaveManager.Instance?.PushSaveBlock(SaveBlockReason);
         _backlog.Clear();
         _historyOpen = false;
 
@@ -229,6 +242,7 @@ public partial class DialoguePanel : UiPanel
         _dialogue = null;
         _player = null;
         _choiceActions.Clear();
+        ReleaseSaveBlock();
         SetOpen(false);
 
         if (player != null && dialogue != null)

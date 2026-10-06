@@ -43,6 +43,10 @@ public sealed partial class GameShellController : Node
         {
             NewCharacterRequested = StartNewGame,
             LoadGameRequested = StartLoadedGame,
+
+            // A session that ended because it could not be trusted says so here; without it a failed
+            // load is a loading screen followed by the title, which reads as the game restarting.
+            NoticeKey = Lifecycle.ConsumeTitleNotice(),
         };
         AddChild(_menu);
         GameManager.Instance?.ChangeState(GameState.MainMenu);
@@ -66,10 +70,45 @@ public sealed partial class GameShellController : Node
         Lifecycle.StartNewGame(slot, profile);
     }
 
+    /// <summary>
+    /// Loads a slot from the title. The title is dismissed only once a session exists: a slot the
+    /// coordinator refuses (missing, corrupt, newer) or one that fails to restore leaves this menu up
+    /// with the reason on it. ⚠️ A restore that fails after the build destroys the session, which
+    /// raises <c>SessionEnded</c> while this menu is still alive, so <see cref="ShowTitle"/> returns
+    /// early and the notice is delivered here instead.
+    /// </summary>
     private void StartLoadedGame(string slot)
     {
-        DismissTitle();
-        Lifecycle.StartLoadedGame(slot);
+        if (Lifecycle.StartLoadedGame(slot))
+        {
+            DismissTitle();
+            return;
+        }
+
+        string? notice = Lifecycle.ConsumeTitleNotice();
+        if (notice != null && _menu != null && IsInstanceValid(_menu))
+        {
+            _menu.ShowNotice(notice);
+        }
+    }
+
+    /// <summary>
+    /// Closing the window (the title bar, Alt+F4) while a session is live writes an autosave first,
+    /// the same one the pause menu's quit buttons write. There is no asking here: the engine quits
+    /// after this notification returns, so a blocked or failed save is simply lost progress, logged.
+    /// </summary>
+    public override void _Notification(int what)
+    {
+        if (what != NotificationWMCloseRequest || !Lifecycle.HasSession ||
+            GameManager.Instance?.State is not (GameState.Playing or GameState.Paused))
+        {
+            return;
+        }
+
+        if (!Lifecycle.AutosaveBeforeQuit(out string failureKey))
+        {
+            Log.Warn($"Window closed with unsaved progress; the autosave was refused ({failureKey}).");
+        }
     }
 
     private void DismissTitle()
