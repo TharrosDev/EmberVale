@@ -136,8 +136,9 @@ public partial class GameHud
         // uses. The ornament budget says a HUD widget earns none of it; the boss frame is the sole
         // exception and it has its own class.
         PanelContainer panel = Ignore(UiTheme.Band());
-        panel.CustomMinimumSize = new Vector2(286, 0);
+        panel.CustomMinimumSize = new Vector2(HudMetrics.VitalsMin, 0);
         _layout.BottomLeft.AddChild(panel);
+        _vitalsPanel = panel;
 
         // Groups (the three bars, the level line, the spell, the status chips) sit SpaceSm apart; the
         // bars within their group sit SpaceXs apart, so the card reads as clusters and not as one stack.

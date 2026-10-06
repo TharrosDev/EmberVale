@@ -77,6 +77,11 @@ public static class GameInput
     public const string MenuSubPrev = "menu_sub_prev";
     public const string MenuSubNext = "menu_sub_next";
 
+    /// <summary>Held to bring back every HUD element the player has set to Dynamic (see
+    /// <c>HudDynamicRules</c>). Keyboard only by default: every pad button already has a job, and
+    /// the binding screen is where a player frees one for it.</summary>
+    public const string HudRecall = "hud_recall";
+
     /// <summary>Right-stick look (Phase 54). Mouse-look stays event-driven in
     /// <c>PlayerLookInput._Input</c>; a stick is a held axis, so it is polled per frame instead.</summary>
     public const string LookLeft = "look_left";
@@ -425,6 +430,7 @@ public static class GameInput
         Bind(MenuTabNext, new InputEventKey { PhysicalKeycode = Key.E });
         Bind(MenuSubPrev, new InputEventKey { PhysicalKeycode = Key.Z });
         Bind(MenuSubNext, new InputEventKey { PhysicalKeycode = Key.C });
+        Bind(HudRecall, new InputEventKey { PhysicalKeycode = Key.N });
 
         Key[] digits = { Key.Key1, Key.Key2, Key.Key3, Key.Key4, Key.Key5 };
         for (int i = 0; i < Hotbar.Length; i++)

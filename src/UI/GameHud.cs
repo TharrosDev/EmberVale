@@ -94,11 +94,15 @@ public partial class GameHud : CanvasLayer
         }
     }
 
-    // Colour-vision and contrast settings change what the semantic colour tokens resolve to.
-    private void OnSettingsApplied(Settings.SettingsAppliedEvent e) => InvalidateShown();
+    // Colour-vision and contrast settings change what the semantic colour tokens resolve to, and
+    // the HUD options (scale, opacity, safe zone, element modes) are read here too.
+    private void OnSettingsApplied(Settings.SettingsAppliedEvent e) => ApplyOptions();
 
     // A load can replace anything a cache was keyed on while leaving the objects in place.
     private void OnGameLoaded(GameLoadedEvent e) => InvalidateShown();
+
+    // Both edges are global rects, which carry the HUD scale and the safe-zone offset of the
+    // layout's scaled parent, so they stay screen coordinates whatever the HUD options are.
 
     /// <summary>Bottom edge of the top-right stack (the tracker), so the toast feed can start below it.</summary>
     public float TopRightBottom => _layout.TopRight.GetGlobalRect().End.Y;
@@ -128,7 +132,8 @@ public partial class GameHud : CanvasLayer
         AddChild(_layout);
 
         BuildVignette(); // backmost overlay — built first so the HUD widgets draw over it
-        _layout.Overlay.AddChild(new Crosshair());
+        _crosshair = new Crosshair();
+        _layout.Overlay.AddChild(_crosshair);
         _damageDirection = new DamageDirectionOverlay { Name = "DamageDirection" };
         _layout.Overlay.AddChild(_damageDirection);
         BuildParty();
@@ -145,6 +150,7 @@ public partial class GameHud : CanvasLayer
         BuildPrompt();
         BuildLockReticle();
         BuildLevelUp();
+        ReadyOptions();
 
         EventBus.Instance?.Subscribe<XpGainedEvent>(OnXpGained);
         EventBus.Instance?.Subscribe<LeveledUpEvent>(OnLeveledUp);
@@ -166,6 +172,7 @@ public partial class GameHud : CanvasLayer
         EventBus.Instance?.Unsubscribe<Settings.SettingsAppliedEvent>(OnSettingsApplied);
         EventBus.Instance?.Unsubscribe<Embervale.Dialogue.StoryFlagChangedEvent>(OnStoryFlagChanged);
         EventBus.Instance?.Unsubscribe<GameLoadedEvent>(OnGameLoaded);
+        ExitOptions();
     }
 
     /// <summary>
@@ -273,6 +280,7 @@ public partial class GameHud : CanvasLayer
         // a HUD over a menu when the two disagree by a frame.
         ApplyMode(HudVisibility.ModeFor(
             GameManager.Instance is { IsPlaying: true }, UiState.MenuOpen, UiState.WorldPaused));
+        UpdateElements();
 
         if (!HudVisibility.ShowsVitals(_mode))
         {
@@ -303,7 +311,7 @@ public partial class GameHud : CanvasLayer
         bool boss = _bossFrame.Visible;
         bool eventBanner = _bannerPanel.Visible;
 
-        _compass.Visible = !boss;
+        _compass.Visible = !boss && Shows(HudElement.Compass);
         if (boss)
         {
             _bannerPanel.Visible = false;
@@ -324,7 +332,8 @@ public partial class GameHud : CanvasLayer
     /// exactly one group, so nothing can be added to the HUD later and quietly miss the rule — which
     /// is the failure mode a per-widget list has. The data-driven <c>Visible</c> flags inside a slot
     /// (the quest panel hiding itself with no quest, the prompt hiding itself with no focus) are
-    /// untouched and still decide what shows WITHIN a visible slot.
+    /// untouched and still decide what shows WITHIN a visible slot. The slot writes themselves are in
+    /// <see cref="ApplyElementVisibility"/>, where the mode table meets the player's element modes.
     /// </summary>
     private void ApplyMode(HudMode mode)
     {
@@ -334,18 +343,7 @@ public partial class GameHud : CanvasLayer
         }
 
         _mode = mode;
-
-        _layout.BottomLeft.Visible = HudVisibility.ShowsVitals(mode);   // vitals, spell, status, party
-        // The hotbar rides with the vitals rather than the rest: assigning a quick-use slot is done
-        // from inside the inventory (its own 1–5 buttons), and doing that with the bar you are
-        // assigning to hidden is working blind.
-        _layout.BottomDock.Visible = HudVisibility.ShowsVitals(mode);   // quick-use hotbar
-        _layout.TopLeft.Visible = HudVisibility.ShowsNavigation(mode);  // clock + weather
-        _layout.TopRight.Visible = HudVisibility.ShowsNavigation(mode); // quest tracker
-        _layout.TopCenter.Visible = HudVisibility.ShowsTopCentre(mode); // boss survives cinematic locks
-        _layout.BottomRight.Visible = HudVisibility.ShowsNavigation(mode); // minimap
-        _layout.BottomCenter.Visible = HudVisibility.ShowsPrompt(mode); // interaction prompt, tutorial hint
-        _layout.Overlay.Visible = HudVisibility.ShowsHud(mode);         // crosshair, vignette, reticle, arcs
+        ApplyElementVisibility();
 
         // No stale UI survives a transition (§52). The lock reticle and the damage arcs are the two
         // that position themselves from live world state, so hiding their layer is not enough —

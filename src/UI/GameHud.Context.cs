@@ -270,11 +270,11 @@ public partial class GameHud
 
         // Nameplate for an aimed-at damageable that isn't the player. The widget owns the
         // validity guard, the snap-on-target-change and the disposition tint (37.5B).
-        _nameplate.Show(focus, _player);
+        _nameplate.Show(Shows(HudElement.TargetPlate) ? focus : null, _player);
 
         // Interaction prompt for an aimed-at interactable.
         string? prompt = focusSensor?.FocusPrompt;
-        if (!string.IsNullOrEmpty(prompt))
+        if (!string.IsNullOrEmpty(prompt) && Shows(HudElement.Prompts))
         {
             if (prompt != _promptShown)
             {

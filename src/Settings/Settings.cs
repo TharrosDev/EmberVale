@@ -207,8 +207,8 @@ public partial class Settings : Resource
     /// which keeps it readable.</summary>
     [Export(PropertyHint.Range, "0.3,1")] public float HudOpacity { get; set; } = 1f;
 
-    /// <summary>Extra inset of the HUD from every screen edge, as a fraction of the viewport's
-    /// shorter side, for a television that crops the picture. 0 = the margins as designed.</summary>
+    /// <summary>Extra inset of the HUD from every screen edge, as a fraction of the viewport on
+    /// that axis, for a television that crops the picture. 0 = the margins as designed.</summary>
     [Export(PropertyHint.Range, "0,0.1")] public float HudSafeZone { get; set; } = 0f;
 
     /// <summary>Right-stick look speed per axis, multiplied onto <see cref="MouseSensitivity"/>

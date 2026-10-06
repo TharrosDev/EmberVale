@@ -77,7 +77,7 @@ public partial class GameHud
         // The spine carries the tracked quest's priority, matching the journal.
         _questPanel = Ignore(UiTheme.Band(UiTheme.QuestMain));
         _questPanel.Visible = false;
-        _questPanel.CustomMinimumSize = new Vector2(280, 0);
+        _questPanel.CustomMinimumSize = new Vector2(HudMetrics.TrackerMin, 0);
         _layout.TopRight.AddChild(_questPanel);
 
         var col = new VBoxContainer();

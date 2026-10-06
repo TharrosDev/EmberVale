@@ -100,6 +100,51 @@ public class SettingsMathTests
         Assert.Equal(1, SettingsMath.ClampSubtitleSize(1));
     }
 
+    // The defaults themselves, read from the source: the one way to pin them without building the
+    // Resource. Each is the behaviour before the field existed, and the order is the append order.
+    [Fact]
+    public void NewFields_DeclareTheDefaultsThatMeanTodaysBehaviour()
+    {
+        var dir = new System.IO.DirectoryInfo(System.AppContext.BaseDirectory);
+        while (dir != null && !System.IO.File.Exists(System.IO.Path.Combine(dir.FullName, "project.godot")))
+        {
+            dir = dir.Parent;
+        }
+
+        Assert.NotNull(dir);
+        string source = System.IO.File.ReadAllText(System.IO.Path.Combine(dir!.FullName, "src", "Settings", "Settings.cs"));
+
+        string[] declarations =
+        {
+            "bool ReadableFont { get; set; } = false;",
+            "bool HoldsToPresses { get; set; } = false;",
+            "int[] HudElementModes { get; set; } = System.Array.Empty<int>();",
+            "float HudScale { get; set; } = 1f;",
+            "float HudOpacity { get; set; } = 1f;",
+            "float HudSafeZone { get; set; } = 0f;",
+            "float PadSensitivityX { get; set; } = 1f;",
+            "float PadSensitivityY { get; set; } = 1f;",
+            "string[] KeyBindings { get; set; } = System.Array.Empty<string>();",
+            "string[] PadBindings { get; set; } = System.Array.Empty<string>();",
+            "int SubtitleSize { get; set; } = 1;",
+            "float SubtitleBackground { get; set; } = 0.5f;",
+            "bool SubtitleSpeakerNames { get; set; } = true;",
+            "bool StaticMenuBackground { get; set; } = false;",
+            "float ToastDuration { get; set; } = 1f;",
+            "int DamageNumberMode { get; set; } = -1;",
+        };
+
+        int last = source.IndexOf("bool HighContrast { get; set; } = false;", System.StringComparison.Ordinal);
+        Assert.True(last >= 0, "HighContrast, the last field before the appended block, was not found");
+        foreach (string declaration in declarations)
+        {
+            int at = source.IndexOf(declaration, System.StringComparison.Ordinal);
+            Assert.True(at >= 0, $"Settings.cs no longer declares: {declaration}");
+            Assert.True(at > last, $"Out of append order: {declaration}");
+            last = at;
+        }
+    }
+
     [Fact]
     public void NewFieldClamps_HoldTheirEnds()
     {
