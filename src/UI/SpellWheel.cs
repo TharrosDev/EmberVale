@@ -85,6 +85,7 @@ public partial class SpellWheel : Control, ISpellWheelView
     private bool _usingStick;
     private bool _legendForPad;
     private Vector2 _cursor;
+    private Vector2 _drawnCursor;
     private SpellWheelPick _pick = SpellWheelPick.None;
     private int _latched = -1;
     private string _selectedId = string.Empty;
@@ -304,6 +305,7 @@ public partial class SpellWheel : Control, ISpellWheelView
 
         Sample();
         Repick(audible: false);
+        QueueRedraw();
     }
 
     /// <summary>Hides a wheel opened by <see cref="OpenForCapture"/> at once, selecting nothing.</summary>
@@ -326,6 +328,7 @@ public partial class SpellWheel : Control, ISpellWheelView
         _capture = capture;
         _usingStick = false;
         _cursor = Vector2.Zero;
+        _drawnCursor = Vector2.Zero;
         _pick = SpellWheelPick.None;
         _latched = -1;
         _open = true;
@@ -422,9 +425,10 @@ public partial class SpellWheel : Control, ISpellWheelView
 
         // The seam says closed (a menu took the gate, the session is going), or the caster is gone:
         // close through the seam so the router and the gate agree, and directly if it had already
-        // forgotten this wheel.
+        // forgotten this wheel. A HUD mode that hides the overlay while the wheel is up closes it
+        // too: a wheel nobody can see must not keep the look and the attack gated.
         bool lost = _caster == null || !IsInstanceValid(_caster);
-        if (lost || (!_capture && !SpellWheelInput.IsOpen))
+        if (lost || (!_capture && (!SpellWheelInput.IsOpen || !IsVisibleInTree())))
         {
             SpellWheelInput.Cancel();
             if (_open)
@@ -448,6 +452,7 @@ public partial class SpellWheel : Control, ISpellWheelView
         if ((now - _sampledUsec) / 1_000_000f >= SpellWheelMetrics.RepaintSeconds)
         {
             Sample();
+            StyleLegendGround();
             QueueRedraw();
         }
 
@@ -460,7 +465,12 @@ public partial class SpellWheel : Control, ISpellWheelView
     private void Repick(bool audible)
     {
         SpellWheelPick pick = SpellWheelRules.Pick(_cursor, _layout, _latched);
-        _latched = SpellWheelRules.Latch(pick);
+        int latched = SpellWheelRules.Latch(pick);
+
+        // Every move repaints (the pointer tick follows the cursor inside a wedge too), but a stick
+        // held still calls this every physics tick and must not redraw the wheel each time.
+        bool changed = pick != _pick || latched != _latched || _cursor != _drawnCursor;
+        _latched = latched;
         if (pick != _pick)
         {
             _pick = pick;
@@ -470,8 +480,11 @@ public partial class SpellWheel : Control, ISpellWheelView
             }
         }
 
-        // Every move repaints: the pointer tick follows the cursor inside a wedge too.
-        QueueRedraw();
+        if (changed)
+        {
+            _drawnCursor = _cursor;
+            QueueRedraw();
+        }
     }
 
     // --- Legend -------------------------------------------------------------------------------
@@ -479,7 +492,7 @@ public partial class SpellWheel : Control, ISpellWheelView
     private void BuildLegend()
     {
         _legendForPad = InputDevice.GamepadActive;
-        _legendBox.BgColor = UiTheme.ScrimBg with { A = UiTheme.HighContrast ? 1f : 0.80f };
+        StyleLegendGround();
         _legendBox.SetCornerRadiusAll(UiTheme.RadiusSm);
         _legendBox.SetContentMarginAll(UiTheme.Space2xs);
         _legendBox.ContentMarginLeft = UiTheme.SpaceSm;
@@ -497,6 +510,17 @@ public partial class SpellWheel : Control, ISpellWheelView
 
         AddLegend(UiGlyph.For(GameInput.Block), Loc.T("wheel.legend.cancel"));
         AddLegend(CentreMark(), Loc.T(_toggled ? "wheel.legend.centre_previous" : "wheel.legend.centre_cancel"));
+    }
+
+    /// <summary>The legend's ground. Re-read while the wheel is up, so a high-contrast change in the
+    /// middle of a toggled wheel takes without waiting for the next open.</summary>
+    private void StyleLegendGround()
+    {
+        Color ground = UiTheme.ScrimBg with { A = UiTheme.HighContrast ? 1f : 0.80f };
+        if (_legendBox.BgColor != ground)
+        {
+            _legendBox.BgColor = ground;
+        }
     }
 
     private void AddLegend(Control glyph, string verb)
@@ -830,9 +854,11 @@ public partial class SpellWheel : Control, ISpellWheelView
         float half = side * 0.5f;
         bool dimmed = cell.Locked || !cell.Affordable;
 
+        // A spell that cannot be cast now is drawn unlit: its glyph in the school's colour on a dark
+        // disc, so it is still told apart from its neighbours.
         Color school = UiTheme.SchoolColor(spell.School);
-        Color disc = dimmed ? UiTheme.WellBg.Lerp(school, UiTheme.WheelDimmed) with { A = 1f } : school;
-        Color ink = dimmed ? UiTheme.WheelGlyphInk with { A = 0.75f } : UiTheme.WheelGlyphInk;
+        Color disc = dimmed ? UiTheme.WheelUnlitDisc(spell.School) : school;
+        Color ink = dimmed ? UiTheme.WheelUnlitInk(spell.School) : UiTheme.WheelGlyphInk;
 
         DrawCircle(at, half + 1.5f, UiTheme.Keyline, true, -1f, true);
         SpellGlyphs.Draw(this, spell.Id, new Rect2(at - new Vector2(half, half), new Vector2(side, side)), disc, ink);
@@ -853,7 +879,7 @@ public partial class SpellWheel : Control, ISpellWheelView
             DrawBracket(at, half + 3f, radialDegrees + 180f);
         }
 
-        int size = Mathf.Clamp(Mathf.RoundToInt(side * 0.36f), 11, 18);
+        int size = Mathf.Clamp(Mathf.RoundToInt(side * 0.36f), 12, 18); // UI_STYLE's 12 px floor
         if (cell.Locked)
         {
             DrawPadlock(at, side * 0.42f, UiTheme.CorruptionText);

@@ -17,6 +17,16 @@ public static partial class UiTheme
     /// <summary>How much of its colour a spell the caster cannot use right now keeps.</summary>
     public const float WheelDimmed = 0.42f;
 
+    /// <summary>The disc of a spell the caster cannot use right now: the well, barely warmed by the
+    /// school, dark enough that <see cref="WheelUnlitInk"/> reads on it.</summary>
+    public static Color WheelUnlitDisc(DamageType school) =>
+        WellBg.Lerp(SchoolColor(school), 0.18f) with { A = 1f };
+
+    /// <summary>The glyph of a spell the caster cannot use right now: the school's colour, where a
+    /// castable spell's is dark ink on that colour.</summary>
+    public static Color WheelUnlitInk(DamageType school) =>
+        SchoolColor(school).Lerp(Text, HighContrast ? 0.5f : 0.15f) with { A = 1f };
+
     /// <summary>Width, in px, of the wheel's keylines.</summary>
     public static float WheelLine => HighContrast ? 3f : 2f;
 
