@@ -4,22 +4,30 @@ using Embervale.Core.Services;
 using Embervale.Localization;
 using Embervale.Settings;
 using Godot;
+using S = Embervale.Settings.Settings;
 
 namespace Embervale.UI;
 
-/// <summary>The Graphics section of <see cref="SettingsPanel"/>: window, preset and the per-control overrides.</summary>
+/// <summary>The Graphics tab of <see cref="SettingsPanel"/>: window, preset and the per-control overrides.</summary>
 public partial class SettingsPanel
 {
     private void BuildGraphics(VBoxContainer body)
     {
         var s = _settings.Current;
 
-        Section(body, Loc.T("settings.section.graphics"));
-        body.AddChild(DropdownRow(Loc.T("settings.window_mode"),
+        Section(body, Loc.T("settings.section.display"), first: true);
+        body.AddChild(DropdownRow(
+            Info(Loc.T("settings.window_mode"), Loc.T("settings.window_mode.desc"), nameof(S.WindowMode)),
             new[] { Loc.T("settings.window_mode.windowed"), Loc.T("settings.window_mode.fullscreen"), Loc.T("settings.window_mode.borderless") },
             s.WindowMode, i => { s.WindowMode = i; Persist(); }));
+
         // Presets read cheapest first; the saved int behind each is GraphicsMath's, not this order.
-        _quality = UiTheme.Dropdown(
+        // Restoring the row puts back the default preset and drops every override with it.
+        RowInfo quality = Info(Loc.T("settings.render_quality"), Loc.T("settings.render_quality.desc"),
+            nameof(S.RenderQuality), nameof(S.RenderScale), nameof(S.ScalingMode), nameof(S.AntiAliasing),
+            nameof(S.ShadowQuality), nameof(S.AmbientOcclusion), nameof(S.VolumetricFog), nameof(S.Glow));
+        _qualityInfo = quality;
+        _quality = Dropdown(
             new[]
             {
                 Loc.T("settings.render_quality.performance"), Loc.T("settings.render_quality.low"),
@@ -40,13 +48,17 @@ public partial class SettingsPanel
             // Deferred: dropping the Custom entry edits this dropdown's own list mid-selection.
             Callable.From(RefreshGraphics).CallDeferred();
         };
-        body.AddChild(Row(Loc.T("settings.render_quality"), _quality));
-        body.AddChild(ToggleRow(Loc.T("settings.vsync"), s.VSync, v => { s.VSync = v; Persist(); }));
+        body.AddChild(Row(quality, _quality));
+        body.AddChild(ToggleRow(
+            Info(Loc.T("settings.vsync"), Loc.T("settings.vsync.desc"), nameof(S.VSync)),
+            s.VSync, v => { s.VSync = v; Persist(); }));
         // Applies live: FOV is only judgeable by watching the world move under it.
-        body.AddChild(SliderRow(Loc.T("settings.fov"), 60.0, 110.0, 1.0, s.FieldOfView,
-            v => s.FieldOfView = (float)v));
+        body.AddChild(SliderRow(
+            Info(Loc.T("settings.fov"), Loc.T("settings.fov.desc"), nameof(S.FieldOfView)),
+            60.0, 110.0, 1.0, s.FieldOfView, v => s.FieldOfView = v, Whole));
         int[] fpsPresets = { 0, 30, 40, 60, 120, 144 };
-        body.AddChild(DropdownRow(Loc.T("settings.max_fps"),
+        body.AddChild(DropdownRow(
+            Info(Loc.T("settings.max_fps"), Loc.T("settings.max_fps.desc"), nameof(S.MaxFps)),
             new[] { Loc.T("settings.max_fps.uncapped"), "30", "40", "60", "120", "144" },
             System.Array.IndexOf(fpsPresets, s.MaxFps) is var fi && fi >= 0 ? fi : 0,
             i => { s.MaxFps = fpsPresets[i]; Persist(); }));
@@ -57,6 +69,7 @@ public partial class SettingsPanel
     // --- Advanced graphics --------------------------------------------------
 
     private OptionButton _quality = null!;
+    private RowInfo? _qualityInfo;
 
     /// <summary>One per advanced control: shows what the given preset plus the saved overrides
     /// resolve to, without raising the control's own change signal.</summary>
@@ -68,19 +81,23 @@ public partial class SettingsPanel
     /// <summary>
     /// The individual controls a preset drives. Each shows the preset's value until the player moves
     /// it; a moved control is stored as an override and the preset then reads "Custom". Setting it
-    /// back to the preset's value, or picking any preset, returns to the plain preset.
+    /// back to the preset's value, restoring the row, or picking any preset, returns it to the
+    /// preset: a control's default here is "what the preset says", not a fixed value.
     /// </summary>
     private void BuildAdvancedGraphics(VBoxContainer body)
     {
         var s = _settings.Current;
-        Section(body, Loc.T("settings.section.graphics_advanced"));
+        Section(body, Loc.T("settings.section.advanced"));
 
         // Render scale. Live while dragging, like every slider here, and written on release.
+        RowInfo scaleInfo = Info(Loc.T("settings.render_scale"), Loc.T("settings.render_scale.note"), nameof(S.RenderScale));
         var scaleBox = new HBoxContainer();
         scaleBox.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
-        HSlider scale = UiTheme.Slider(GraphicsMath.MinRenderScale, GraphicsMath.MaxRenderScale, 0.05, 1.0, 150f);
+        HSlider scale = UiTheme.Slider(GraphicsMath.MinRenderScale, GraphicsMath.MaxRenderScale, 0.05, 1.0,
+            UiTheme.SettingsControlColumn - UiTheme.SettingsReadout - UiTheme.SpaceSm);
+        scale.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
         Label scaleReadout = UiTheme.Body(string.Empty, UiTheme.Dim);
-        scaleReadout.CustomMinimumSize = new Vector2(48, 0);
+        scaleReadout.CustomMinimumSize = new Vector2(UiTheme.SettingsReadout, 0f);
         scaleReadout.HorizontalAlignment = HorizontalAlignment.Right;
         scale.ValueChanged += v =>
         {
@@ -90,29 +107,31 @@ public partial class SettingsPanel
             }
 
             s.RenderScale = GraphicsMath.OverrideScale((float)v, preset.RenderScale);
-            scaleReadout.Text = $"{Mathf.RoundToInt((float)v * 100f)}%";
+            scaleReadout.Text = Percent((float)v);
             _settings.Apply();
             SyncQualityLabel();
+            Touched(scaleInfo);
         };
         scale.DragEnded += _ => Persist();
         scaleBox.AddChild(scale);
         scaleBox.AddChild(scaleReadout);
-        body.AddChild(Row(Loc.T("settings.render_scale"), scaleBox, Loc.T("settings.render_scale.note")));
+        body.AddChild(Row(scaleInfo, scaleBox));
         _graphicsSync.Add(preset =>
         {
             float value = GraphicsMath.ResolveScale(s.RenderScale, preset.RenderScale);
             scale.SetValueNoSignal(value);
-            scaleReadout.Text = $"{Mathf.RoundToInt(value * 100f)}%";
+            scaleReadout.Text = Percent(value);
         });
 
         // FSR 2.2 is offered because Forward+ supports it, and never chosen by a preset: it is the
         // most expensive of the three and an integrated GPU is exactly where that shows.
-        AdvancedChoice(body, Loc.T("settings.scaling_mode"),
+        AdvancedChoice(body,
+            Info(Loc.T("settings.scaling_mode"), Loc.T("settings.scaling_mode.note"), nameof(S.ScalingMode)),
             new[] { Loc.T("settings.scaling_mode.bilinear"), Loc.T("settings.scaling_mode.fsr1"), Loc.T("settings.scaling_mode.fsr2") },
             preset => GraphicsMath.Resolve(s.ScalingMode, preset.ScalingMode),
-            (value, preset) => s.ScalingMode = GraphicsMath.Override(value, preset.ScalingMode),
-            Loc.T("settings.scaling_mode.note"));
-        AdvancedChoice(body, Loc.T("settings.anti_aliasing"),
+            (value, preset) => s.ScalingMode = GraphicsMath.Override(value, preset.ScalingMode));
+        AdvancedChoice(body,
+            Info(Loc.T("settings.anti_aliasing"), Loc.T("settings.anti_aliasing.desc"), nameof(S.AntiAliasing)),
             new[]
             {
                 Loc.T("settings.anti_aliasing.off"), Loc.T("settings.anti_aliasing.fxaa"),
@@ -121,7 +140,8 @@ public partial class SettingsPanel
             },
             preset => GraphicsMath.Resolve(s.AntiAliasing, preset.AntiAliasing),
             (value, preset) => s.AntiAliasing = GraphicsMath.Override(value, preset.AntiAliasing));
-        AdvancedChoice(body, Loc.T("settings.shadow_quality"),
+        AdvancedChoice(body,
+            Info(Loc.T("settings.shadow_quality"), Loc.T("settings.shadow_quality.desc"), nameof(S.ShadowQuality)),
             new[]
             {
                 Loc.T("settings.shadow_quality.off"), Loc.T("settings.shadow_quality.lowest"),
@@ -131,24 +151,27 @@ public partial class SettingsPanel
             _ => GraphicsMath.Resolve(s.ShadowQuality, GraphicsMath.PresetShadowChoice(s.RenderQuality)),
             (value, _) => s.ShadowQuality = GraphicsMath.Override(value, GraphicsMath.PresetShadowChoice(s.RenderQuality)));
 
-        AdvancedToggle(body, Loc.T("settings.ambient_occlusion"),
+        AdvancedToggle(body,
+            Info(Loc.T("settings.ambient_occlusion"), Loc.T("settings.ambient_occlusion.desc"), nameof(S.AmbientOcclusion)),
             preset => GraphicsMath.Resolve(s.AmbientOcclusion, preset.AmbientOcclusion),
             (value, preset) => s.AmbientOcclusion = GraphicsMath.Override(value, preset.AmbientOcclusion));
-        AdvancedToggle(body, Loc.T("settings.volumetric_fog"),
+        AdvancedToggle(body,
+            Info(Loc.T("settings.volumetric_fog"), Loc.T("settings.volumetric_fog.desc"), nameof(S.VolumetricFog)),
             preset => GraphicsMath.Resolve(s.VolumetricFog, preset.VolumetricFog),
             (value, preset) => s.VolumetricFog = GraphicsMath.Override(value, preset.VolumetricFog));
-        AdvancedToggle(body, Loc.T("settings.glow"),
+        AdvancedToggle(body,
+            Info(Loc.T("settings.glow"), Loc.T("settings.glow.desc"), nameof(S.Glow)),
             preset => GraphicsMath.Resolve(s.Glow, preset.Glow),
             (value, preset) => s.Glow = GraphicsMath.Override(value, preset.Glow));
 
         RefreshGraphics();
     }
 
-    private void AdvancedChoice(VBoxContainer body, string label, string[] options,
+    private void AdvancedChoice(VBoxContainer body, RowInfo info, string[] options,
         System.Func<World.RenderQualityResource, int> read,
-        System.Action<int, World.RenderQualityResource> write, string? explanation = null)
+        System.Action<int, World.RenderQualityResource> write)
     {
-        OptionButton dropdown = UiTheme.Dropdown(options, 0);
+        OptionButton dropdown = Dropdown(options, 0);
         dropdown.ItemSelected += index =>
         {
             if (Preset() is not { } preset)
@@ -159,12 +182,13 @@ public partial class SettingsPanel
             write((int)index, preset);
             Persist();
             SyncQualityLabel();
+            Touched(info);
         };
-        body.AddChild(Row(label, dropdown, explanation));
+        body.AddChild(Row(info, dropdown));
         _graphicsSync.Add(preset => dropdown.Select(System.Math.Clamp(read(preset), 0, options.Length - 1)));
     }
 
-    private void AdvancedToggle(VBoxContainer body, string label,
+    private void AdvancedToggle(VBoxContainer body, RowInfo info,
         System.Func<World.RenderQualityResource, bool> read,
         System.Action<bool, World.RenderQualityResource> write)
     {
@@ -179,14 +203,20 @@ public partial class SettingsPanel
             write(pressed, preset);
             Persist();
             SyncQualityLabel();
+            Touched(info);
         };
-        body.AddChild(Row(label, toggle));
+        body.AddChild(Row(info, toggle));
         _graphicsSync.Add(preset => toggle.SetPressedNoSignal(read(preset)));
     }
 
     /// <summary>Re-reads every advanced control from the preset and overrides now in force.</summary>
     private void RefreshGraphics()
     {
+        if (_tab != SettingsTab.Graphics || !IsInstanceValid(_quality))
+        {
+            return; // deferred from a selection, and the tab was left before it ran
+        }
+
         SyncQualityLabel();
         if (Preset() is not { } preset)
         {
@@ -196,6 +226,15 @@ public partial class SettingsPanel
         foreach (System.Action<World.RenderQualityResource> sync in _graphicsSync)
         {
             sync(preset);
+        }
+
+        // Picking a preset cleared every override, so every row's restore button goes with them.
+        foreach (RowInfo row in _rows)
+        {
+            if (row.RevertButton != null && row.Changed != null)
+            {
+                row.RevertButton.Visible = row.Changed();
+            }
         }
     }
 
@@ -214,5 +253,9 @@ public partial class SettingsPanel
         }
 
         _quality.Select(custom ? presets : GraphicsMath.UiIndexOfTier(_settings.Current.RenderQuality));
+        if (_qualityInfo is { RevertButton: { } revert, Changed: { } changed })
+        {
+            revert.Visible = changed();
+        }
     }
 }
