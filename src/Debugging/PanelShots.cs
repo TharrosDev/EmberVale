@@ -94,6 +94,8 @@ public sealed partial class PanelShots : ShotHarness
             return "character/inventory panel did not open";
         if (name == "14b-progression-stats" && !Character.IsOpen)
             return "character panel did not stay open on the progression tab";
+        if (name == "14c-gear-materials" && (!Character.IsOpen || !Character.ShowingMaterials))
+            return "character panel is not showing the material bag";
         if (name.Length > 2 && name[0] == '2' && name[1] is >= '1' and <= '4')
             return ValidatePerkShot(name);
         if (name == "15-shop" && !Vendor.IsOpen)
@@ -258,6 +260,11 @@ public sealed partial class PanelShots : ShotHarness
 
         // The stat block with its per-point lines under each primary (progression P2).
         Shot("14b-progression-stats", () => Character?.ShowProgression());
+
+        // The material bag (ics:inv-ui): the Gear screen's second grid, through the tab a click
+        // throws. StageInventory's materials land here now that the player's bag is on, so this is
+        // also the frame that shows the pack grid no longer carrying them.
+        Shot("14c-gear-materials", () => Character?.ShowMaterials());
 
         Shot("15-shop", () =>
         {
