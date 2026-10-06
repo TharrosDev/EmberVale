@@ -241,9 +241,9 @@ public partial class LockOnComponent : EntityComponent
 
         // Flick the right stick to step to the next target in that direction (the mouse does the
         // same from _Input). Only with the assist on; the cycle keys always work.
-        if (Assist && InputMap.HasAction(GameInput.LookLeft) && InputMap.HasAction(GameInput.LookRight))
+        if (Assist && InputMap.HasAction(InputActions.LookLeft) && InputMap.HasAction(InputActions.LookRight))
         {
-            int flick = _flick.FeedStick(Input.GetAxis(GameInput.LookLeft, GameInput.LookRight), dt);
+            int flick = _flick.FeedStick(Input.GetAxis(InputActions.LookLeft, InputActions.LookRight), dt);
             if (flick != 0)
             {
                 Cycle(flick);

@@ -115,6 +115,15 @@ public partial class EnemyAIComponent : EntityComponent
 
     private bool _shadowOn = true;
 
+    /// <summary>Seconds between "is the player near enough to matter" checks. The answer drives
+    /// level of detail only, and it used to be asked — two position reads across the engine
+    /// boundary and a player lookup — by every enemy on every physics frame, including the ones
+    /// whose whole point was that they were asleep.</summary>
+    private const double FarCheckInterval = 0.25d;
+
+    private double _farCheckTimer;
+    private bool _far;
+
     /// <summary>Navmesh steering, arrival and facing — shared with the companion brain, which used
     /// to carry its own drifted copy of the same three-answer rule.</summary>
     private AiNavigator _nav = null!;
@@ -229,8 +238,15 @@ public partial class EnemyAIComponent : EntityComponent
 
         // Level of detail: a live enemy far from the player ticks rarely and stops casting a
         // shadow. The dead state always runs so corpses still despawn on schedule.
-        bool far = IsFarFromPlayer();
-        SetShadow(!far);
+        _farCheckTimer -= delta;
+        if (_farCheckTimer <= 0d)
+        {
+            _farCheckTimer = FarCheckInterval;
+            _far = IsFarFromPlayer();
+            SetShadow(!_far);
+        }
+
+        bool far = _far;
         if (far && _state != EnemyState.Dead && _lod.ShouldSleep(delta, _profile.SleepInterval))
         {
             return;

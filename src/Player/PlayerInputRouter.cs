@@ -87,7 +87,7 @@ public partial class PlayerInputRouter : EntityComponent
             return;
         }
 
-        if (Godot.Input.IsActionJustPressed(GameInput.ToggleCamera))
+        if (Godot.Input.IsActionJustPressed(InputActions.ToggleCamera))
         {
             _rig?.ToggleMode();
         }
@@ -96,7 +96,7 @@ public partial class PlayerInputRouter : EntityComponent
         _interaction?.UpdateFocus();
 
         Vector2 input = Godot.Input.GetVector(
-            GameInput.MoveLeft, GameInput.MoveRight, GameInput.MoveForward, GameInput.MoveBack);
+            InputActions.MoveLeft, InputActions.MoveRight, InputActions.MoveForward, InputActions.MoveBack);
 
         // Orient input by the body's yaw so "forward" is where the player faces.
         Vector3 wishDir = _yaw.GlobalBasis * new Vector3(input.X, 0f, input.Y);
@@ -107,49 +107,49 @@ public partial class PlayerInputRouter : EntityComponent
         // exactly as long as the action and needs no cleanup.
         Vector3 actionMove = wishDir * (_weapon?.MoveScale ?? 1f);
 
-        if (Godot.Input.IsActionJustPressed(GameInput.Mount))
+        if (Godot.Input.IsActionJustPressed(InputActions.Mount))
         {
             _mount?.Toggle();
         }
 
         // Walk is a gait on the motor, not a scale on the wish, so sprint can still override it and
         // the stick's own magnitude still counts underneath it.
-        if (Godot.Input.IsActionJustPressed(GameInput.WalkToggle) && _locomotion != null)
+        if (Godot.Input.IsActionJustPressed(InputActions.WalkToggle) && _locomotion != null)
         {
             _locomotion.Walking = !_locomotion.Walking;
         }
 
         // A press, not a hold: the motor buffers it (JumpAssist), so one pressed a moment before
         // landing or during a roll still fires.
-        bool jump = Godot.Input.IsActionJustPressed(GameInput.Jump);
+        bool jump = Godot.Input.IsActionJustPressed(InputActions.Jump);
 
         // Held sprint is a request. On foot the motor answers it from the player's stamina (refused
         // while winded); mounted, the horse answers — it turns the raw wish (not the swing-scaled one: a mounted blow must not rein the horse
         // in) into its own heading, gait and speed, and gates the jump. Ride hands everything back
         // unchanged when not mounted, so there is no branch here.
-        bool sprintHeld = Godot.Input.IsActionPressed(GameInput.Sprint);
+        bool sprintHeld = Godot.Input.IsActionPressed(InputActions.Sprint);
         bool sprint = _mount?.Ride(delta, wishDir, sprintHeld, ref actionMove, ref jump) ?? sprintHeld;
         _locomotion?.Move(delta, actionMove, sprint, jump);
 
         // Dodge can't interrupt a committed swing (the attack commit window); DodgeComponent buffers a
         // press made inside it and fires it the instant the swing becomes cancellable.
-        if (Godot.Input.IsActionJustPressed(GameInput.Dodge))
+        if (Godot.Input.IsActionJustPressed(InputActions.Dodge))
         {
             _dodge?.TryDodge(wishDir);
         }
 
         // Lock-on: toggle/cycle the target, drop it if dead/out of range, and face it.
         _lockOn?.Tick();
-        if (Godot.Input.IsActionJustPressed(GameInput.LockOn))
+        if (Godot.Input.IsActionJustPressed(InputActions.LockOn))
         {
             _lockOn?.Toggle(_interaction?.FocusedEntity);
         }
 
-        if (Godot.Input.IsActionJustPressed(GameInput.LockCycleNext))
+        if (Godot.Input.IsActionJustPressed(InputActions.LockCycleNext))
         {
             _lockOn?.Cycle(1);
         }
-        else if (Godot.Input.IsActionJustPressed(GameInput.LockCyclePrev))
+        else if (Godot.Input.IsActionJustPressed(InputActions.LockCyclePrev))
         {
             _lockOn?.Cycle(-1);
         }
@@ -174,7 +174,7 @@ public partial class PlayerInputRouter : EntityComponent
             Vector3 velocity = (_yaw as CharacterBody3D)?.Velocity ?? Vector3.Zero;
             float sprintSpeed = _locomotion != null ? _locomotion.BaseSpeed * _locomotion.SprintMultiplier : 0f;
             _rig.Feed(new CameraInputs(
-                Aiming: Godot.Input.IsActionPressed(GameInput.Cast) ||
+                Aiming: Godot.Input.IsActionPressed(InputActions.Cast) ||
                         _weapon is { Weapon.IsRanged: true, IsCommitted: true },
                 LockedOn: _lockOn?.Target != null,
                 InCombat: _combat is { IsBlocking: true } || _weapon is { IsCommitted: true },
@@ -201,7 +201,7 @@ public partial class PlayerInputRouter : EntityComponent
 
         if (_combat != null)
         {
-            _combat.IsBlocking = Godot.Input.IsActionPressed(GameInput.Block);
+            _combat.IsBlocking = Godot.Input.IsActionPressed(InputActions.Block);
         }
 
         TickAttack(delta, input);
@@ -209,34 +209,34 @@ public partial class PlayerInputRouter : EntityComponent
         // region combat-ranged
         // The bow's draw is how long attack stays held through the shot's startup; the arrow still
         // leaves on the action's release frame, this only sets how strong it is.
-        _bowDraw?.Tick(delta, Godot.Input.IsActionPressed(GameInput.Attack));
+        _bowDraw?.Tick(delta, Godot.Input.IsActionPressed(InputActions.Attack));
         // endregion
 
         // Cast: press begins (instant fires now; charged/channeled hold), release ends.
-        if (Godot.Input.IsActionJustPressed(GameInput.Cast))
+        if (Godot.Input.IsActionJustPressed(InputActions.Cast))
         {
             _spellcasting?.BeginCast();
         }
-        else if (Godot.Input.IsActionPressed(GameInput.Cast))
+        else if (Godot.Input.IsActionPressed(InputActions.Cast))
         {
             _spellcasting?.UpdateCast(delta);
         }
 
-        if (Godot.Input.IsActionJustReleased(GameInput.Cast))
+        if (Godot.Input.IsActionJustReleased(InputActions.Cast))
         {
             _spellcasting?.EndCast();
         }
 
-        if (Godot.Input.IsActionJustPressed(GameInput.CycleSpell))
+        if (Godot.Input.IsActionJustPressed(InputActions.CycleSpell))
         {
             _spellcasting?.Cycle(1);
         }
 
-        if (Godot.Input.IsActionJustPressed(GameInput.Interact))
+        if (Godot.Input.IsActionJustPressed(InputActions.Interact))
         {
             _interaction?.TryInteract();
         }
-        else if (Godot.Input.IsActionPressed(GameInput.Interact))
+        else if (Godot.Input.IsActionPressed(InputActions.Interact))
         {
             _interaction?.TickAutoPickup(delta);
         }
@@ -255,9 +255,9 @@ public partial class PlayerInputRouter : EntityComponent
             return;
         }
 
-        bool pressed = Godot.Input.IsActionJustPressed(GameInput.Attack);
-        bool held = Godot.Input.IsActionPressed(GameInput.Attack);
-        bool released = Godot.Input.IsActionJustReleased(GameInput.Attack);
+        bool pressed = Godot.Input.IsActionJustPressed(InputActions.Attack);
+        bool held = Godot.Input.IsActionPressed(InputActions.Attack);
+        bool released = Godot.Input.IsActionJustReleased(InputActions.Attack);
 
         if (_weapon.Weapon is { IsRanged: true })
         {

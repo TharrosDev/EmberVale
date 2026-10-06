@@ -371,9 +371,7 @@ public static class SpellResolver
             return;
         }
 
-        var flash = new SpellFlash { Radius = radius, FlashColor = color };
-        parent.AddChild(flash);
-        flash.GlobalPosition = center;
+        SpellFlash.Spawn(parent, center, radius, color);
     }
 
     /// <summary>

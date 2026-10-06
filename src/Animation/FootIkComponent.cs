@@ -172,6 +172,44 @@ internal sealed partial class FootIkModifier : SkeletonModifier3D
     private float _weight;
     private float _pelvis;
 
+    /// <summary>Seconds between re-reading how far this rig is from the camera and whether it is
+    /// drawn at all. Both gate the whole solve and neither changes meaningfully inside a fifth of a
+    /// second, but asking cost four engine calls per character per frame, including for every rig
+    /// far beyond <see cref="FootIkComponent.MaxDistance"/> that then did nothing.</summary>
+    private const float GateInterval = 0.2f;
+
+    /// <summary>How far a foot may drift, in metres, before the ground under it is looked up again.
+    /// A standing character's feet move by millimetres with its idle clip while the ground under
+    /// them does not move at all, so the two rays a frame it used to cast returned the same answer
+    /// every time.</summary>
+    private const float ProbeReuseDistance = 0.015f;
+
+    private float _gateTimer;
+    private float _gateDistance;
+    private bool _gateVisible;
+
+    // One query object and one exclude list for the life of the rig; only From/To change per cast.
+    private PhysicsRayQueryParameters3D? _query;
+    private Godot.Collections.Array<Rid>? _exclude;
+
+    // Dictionary keys for the ray result, built once: indexing with a string literal marshals a
+    // new engine string on every lookup.
+    private static readonly Variant PositionKey = "position";
+    private static readonly Variant NormalKey = "normal";
+
+    private struct ProbeCache
+    {
+        public bool Valid;
+        public Vector3 At;
+        public float FloorY;
+        public bool Hit;
+        public float HitY;
+        public Vector3 HitNormal;
+    }
+
+    private ProbeCache _leftProbe;
+    private ProbeCache _rightProbe;
+
     // ⚠️ ...WithDelta, not _ProcessModification. Godot 4.7 declares both; the plain one takes no
     // arguments, so overriding it with a delta silently overrides nothing and the feet never move.
     public override void _ProcessModificationWithDelta(double delta)
@@ -200,6 +238,7 @@ internal sealed partial class FootIkModifier : SkeletonModifier3D
         }
 
         float dt = (float)delta;
+        RefreshGate(skeleton, dt);
         _weight = FootPlacement.StepWeight(_weight, ShouldPlace(skeleton, body), dt, Ik.BlendSeconds);
         if (_weight <= 0.001f)
         {
@@ -207,6 +246,7 @@ internal sealed partial class FootIkModifier : SkeletonModifier3D
             // rather than from wherever the feet were when the character left the ground.
             _left.Offset = _right.Offset = _pelvis = 0f;
             _left.Normal = _right.Normal = Vector3.Up;
+            _leftProbe.Valid = _rightProbe.Valid = false;
             return;
         }
 
@@ -220,8 +260,8 @@ internal sealed partial class FootIkModifier : SkeletonModifier3D
         Vector3 leftWorld = toWorld * leftPose.Origin;
         Vector3 rightWorld = toWorld * rightPose.Origin;
 
-        Probe(skeleton, body, leftWorld, floorY, dt, ref _left);
-        Probe(skeleton, body, rightWorld, floorY, dt, ref _right);
+        Probe(skeleton, body, leftWorld, floorY, dt, ref _left, ref _leftProbe);
+        Probe(skeleton, body, rightWorld, floorY, dt, ref _right, ref _rightProbe);
 
         // The pelvis drops first: the legs are then solved against a body that has already made
         // room for them, which is what keeps the low knee bent instead of the leg straight.
@@ -278,39 +318,79 @@ internal sealed partial class FootIkModifier : SkeletonModifier3D
         // A flier's legs hang in the air like a jumper's, so flight counts with the roll.
         bool dashing = Ik.Locomotion is { IsDashing: true } || Ik.Locomotion is { Flying: true };
 
-        float distance = Ik.MaxDistance;
-        if (skeleton.GetViewport()?.GetCamera3D() is { } camera)
+        return FootPlacement.ShouldPlace(
+            grounded, acting, _gateVisible, _gateDistance, Ik.MaxDistance, mounted, dashing);
+    }
+
+    /// <summary>Re-reads the camera distance and visibility on <see cref="GateInterval"/>.</summary>
+    private void RefreshGate(Skeleton3D skeleton, float dt)
+    {
+        _gateTimer -= dt;
+        if (_gateTimer > 0f)
         {
-            distance = camera.GlobalPosition.DistanceTo(skeleton.GlobalPosition);
+            return;
         }
 
-        return FootPlacement.ShouldPlace(
-            grounded, acting, skeleton.IsVisibleInTree(), distance, Ik.MaxDistance, mounted, dashing);
+        _gateTimer = GateInterval;
+        _gateVisible = skeleton.IsVisibleInTree();
+        _gateDistance = Ik.MaxDistance;
+        if (skeleton.GetViewport()?.GetCamera3D() is { } camera)
+        {
+            _gateDistance = camera.GlobalPosition.DistanceTo(skeleton.GlobalPosition);
+        }
     }
 
     /// <summary>Finds the ground under one foot and eases that leg's offset and normal toward it.
     /// The offset is the ground's height relative to the BODY's floor, so the animated swing is kept
     /// and only the terrain difference is added.</summary>
-    private void Probe(Skeleton3D skeleton, Node3D body, Vector3 foot, float floorY, float dt, ref Leg leg)
+    private void Probe(
+        Skeleton3D skeleton, Node3D body, Vector3 foot, float floorY, float dt, ref Leg leg, ref ProbeCache cache)
     {
         float target = 0f;
         Vector3 normal = Vector3.Up;
 
-        var query = PhysicsRayQueryParameters3D.Create(
-            new Vector3(foot.X, floorY + Ik.ProbeAbove, foot.Z),
-            new Vector3(foot.X, floorY - Ik.ProbeBelow, foot.Z),
-            Combat.CombatLayers.World);
-        query.HitBackFaces = false;
-        if (body is CollisionObject3D self)
+        // Cast only when the foot has actually gone somewhere. The ray is vertical through the
+        // foot's XZ over a band set by the body's floor height, so those three numbers are the
+        // whole question; while they hold still the previous answer is the answer.
+        float dx = foot.X - cache.At.X;
+        float dz = foot.Z - cache.At.Z;
+        if (!cache.Valid || (dx * dx) + (dz * dz) > ProbeReuseDistance * ProbeReuseDistance ||
+            Mathf.Abs(floorY - cache.FloorY) > ProbeReuseDistance)
         {
-            query.Exclude = new Godot.Collections.Array<Rid> { self.GetRid() };
+            Vector3 from = new(foot.X, floorY + Ik.ProbeAbove, foot.Z);
+            Vector3 to = new(foot.X, floorY - Ik.ProbeBelow, foot.Z);
+            if (_query == null)
+            {
+                _query = PhysicsRayQueryParameters3D.Create(from, to, Combat.CombatLayers.World);
+                _query.HitBackFaces = false;
+                if (body is CollisionObject3D self)
+                {
+                    _exclude = new Godot.Collections.Array<Rid> { self.GetRid() };
+                    _query.Exclude = _exclude;
+                }
+            }
+
+            _query.From = from;
+            _query.To = to;
+
+            using Godot.Collections.Dictionary hit = skeleton.GetWorld3D().DirectSpaceState.IntersectRay(_query);
+            cache.Valid = true;
+            cache.At = foot;
+            cache.FloorY = floorY;
+            cache.Hit = hit.Count > 0;
+            if (cache.Hit)
+            {
+                cache.HitY = ((Vector3)hit[PositionKey]).Y;
+                cache.HitNormal = (Vector3)hit[NormalKey];
+            }
         }
 
-        Godot.Collections.Dictionary hit = skeleton.GetWorld3D().DirectSpaceState.IntersectRay(query);
-        if (hit.Count > 0)
+        if (cache.Hit)
         {
-            target = FootPlacement.FootLift(floorY, ((Vector3)hit["position"]).Y, Ik.MaxLift, Ik.MaxDrop);
-            normal = (Vector3)hit["normal"];
+            // FootLift is relative to the body's current floor, so it is re-derived every frame
+            // from the cached hit height rather than cached itself.
+            target = FootPlacement.FootLift(floorY, cache.HitY, Ik.MaxLift, Ik.MaxDrop);
+            normal = cache.HitNormal;
         }
 
         leg.Offset = FootPlacement.Smooth(leg.Offset, target, Ik.Sharpness, dt);
