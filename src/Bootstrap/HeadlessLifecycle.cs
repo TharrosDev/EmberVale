@@ -57,6 +57,9 @@ public static class HeadlessLifecycle
 
     private static readonly List<string> Failures = new();
 
+    /// <summary>The temp user directory this run created for itself, removed again at the end.</summary>
+    private static string? _ownedUserDir;
+
     public static bool Requested() => HeadlessValidation.HasFlag(FlagArgument) || ReloadAuditRequested();
 
     private static bool ReloadAuditRequested()
@@ -84,6 +87,10 @@ public static class HeadlessLifecycle
             root.GetTree().Quit(1);
             return;
         }
+
+        // After the check above on purpose: the reload audit must be handed its isolation, not
+        // have this fallback grant it one.
+        IsolateFromPlayerSaves();
 
         await Frames(root, ReclaimFrames);
 
@@ -114,6 +121,37 @@ public static class HeadlessLifecycle
 
         CleanUpProbeSlots();
         Report(root.GetTree(), baselineOrphans, cycles, reloadAudit);
+    }
+
+    /// <summary>
+    /// Keeps the gate off the developer's own saves. It maxes a character's level and builds and
+    /// destroys sessions, and it used to do that with the real autosave ring live under it: the
+    /// level-up autosaved, and <c>auto1..auto3</c> ended up holding a "Lifecycle Audit" character.
+    ///
+    /// Three independent guards, so that no single one being absent re-opens the hole:
+    ///   * autosaves are off for the whole process (every session this gate builds gets a fresh
+    ///     <see cref="AutosaveService"/>, so removing one node, as <c>StoryPlaythrough</c> does for
+    ///     its single session, would not cover the next);
+    ///   * when no <c>EMBERVALE_USER_DIR</c> isolates the run, it is pointed at a temp directory of
+    ///     its own, so even the probe slots never touch the real save folder (tooling builds; an
+    ///     export build ignores the variable and relies on the other two guards);
+    ///   * save writes are forced inline, because the gate reads its files back on the next line.
+    /// </summary>
+    private static void IsolateFromPlayerSaves()
+    {
+        AutosaveService.Suppressed = true;
+        SaveWriteQueue.ForceInline = true;
+
+        if (System.IO.Path.IsPathFullyQualified(OS.GetEnvironment("EMBERVALE_USER_DIR")))
+        {
+            return;
+        }
+
+        string isolated = System.IO.Path.Combine(
+            System.IO.Path.GetTempPath(), "embervale-lifecycle", System.Environment.ProcessId.ToString());
+        OS.SetEnvironment("EMBERVALE_USER_DIR", isolated);
+        _ownedUserDir = isolated;
+        Log.Info($"lifecycle: no isolated EMBERVALE_USER_DIR was given; saves for this run go to '{isolated}'.");
     }
 
     private static async Task RunNewGame(
@@ -546,6 +584,18 @@ public static class HeadlessLifecycle
         for (int cycle = 1; cycle <= Cycles; cycle++)
         {
             saves.DeleteSlot($"lifecycle_probe_{cycle}");
+        }
+
+        if (_ownedUserDir != null)
+        {
+            try
+            {
+                System.IO.Directory.Delete(_ownedUserDir, true);
+            }
+            catch (Exception ex) when (ex is System.IO.IOException or UnauthorizedAccessException)
+            {
+                Log.Warn($"lifecycle: could not remove the temp user directory '{_ownedUserDir}': {ex.Message}");
+            }
         }
     }
 

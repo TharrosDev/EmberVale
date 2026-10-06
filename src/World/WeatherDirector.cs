@@ -233,16 +233,14 @@ public partial class WeatherDirector : Node, ISaveable
     {
         WeatherType previous = CurrentType;
 
-        if (data.TryGetValue("weather", out Variant idVar) &&
-            WeatherDatabase.Get(idVar.AsString()) is { } loaded)
-        {
-            _current = loaded;
-        }
-
-        if (data.TryGetValue("remaining", out Variant remVar))
-        {
-            _hoursRemaining = remVar.AsSingle();
-        }
+        // Replaced, never merged: an absent or unknown state is the fresh-game sky (what _Ready
+        // builds), and an absent timer is a fresh spell of it, not the abandoned timeline's storm.
+        _current = (data.TryGetValue("weather", out Variant idVar) ? WeatherDatabase.Get(idVar.AsString()) : null)
+                   ?? WeatherDatabase.Get(StartWeatherId)
+                   ?? (WeatherDatabase.All.Count > 0 ? WeatherDatabase.All[0] : null);
+        _hoursRemaining = data.TryGetValue("remaining", out Variant remVar)
+            ? remVar.AsSingle()
+            : _current?.RollDuration() ?? 6f;
 
         Announce(previous);
 

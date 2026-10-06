@@ -1068,6 +1068,12 @@ public partial class MountComponent : EntityComponent, ISaveable
             float value = Mathf.Clamp(stamina.AsSingle(), 0f, MountRules.StaminaMax);
             _gallop = new MountRules.GallopState(value, value <= 0f, false);
         }
+        else
+        {
+            // Said out loud rather than left to StripState above: no saved pool is a rested horse,
+            // whatever Mount() or a later edit to the teardown does to the live one in between.
+            _gallop = MountRules.Fresh;
+        }
 
         if (wasMounted != IsMounted)
         {
