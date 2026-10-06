@@ -39,6 +39,12 @@ public sealed partial class UICompositionRoot : Node, IHubHost
 
     public BestiaryPanel Bestiary { get; private set; } = null!;
 
+    /// <summary>The death screen. Built with the shell; <c>PlayerHost</c> calls into it.</summary>
+    public DeathScreen Death { get; private set; } = null!;
+
+    /// <summary>Captions for spoken lines, for whatever speaks one.</summary>
+    public SubtitleLayer Subtitles { get; private set; } = null!;
+
     /// <summary>The five hub screens by tab, for a panel stepping to its neighbour. Null for one
     /// this session has not built (the map and the bestiary arrive with their services).</summary>
     public UiPanel? HubPanel(HubTab tab) => tab switch
@@ -51,8 +57,8 @@ public sealed partial class UICompositionRoot : Node, IHubHost
         _ => null,
     };
 
-    /// <summary>The always-on overlays: the HUD itself, toasts, the combat feedback flash, the
-    /// pause menu and the loading screen.</summary>
+    /// <summary>The always-on overlays: the HUD itself, toasts, the combat feedback flash,
+    /// subtitles, the death screen, the pause menu and the loading screen.</summary>
     public void BuildShell()
     {
         Hud = new GameHud();
@@ -60,6 +66,13 @@ public sealed partial class UICompositionRoot : Node, IHubHost
 
         AddChild(new Notifications());
         AddChild(new CombatFeedbackOverlay());
+
+        Subtitles = new SubtitleLayer();
+        AddChild(Subtitles);
+
+        Death = new DeathScreen();
+        AddChild(Death);
+
         AddChild(new PauseMenu());
         AddChild(new LoadingScreen());
     }
