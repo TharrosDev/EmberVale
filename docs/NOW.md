@@ -329,7 +329,8 @@ python tools/gen_main_story.py             # main-story quests + ArchivistTruth/
 python tools/gen_items.py [--check]        # items, sets, unique effects, shop gear from tools/items/catalogue.py
 python tools/gen_recipes.py [--check]      # generated recipes, trainer list, commission margin (--report)
 python tools/items/gen_loot.py [--check]   # affixes, tier pools, boss chest tables
-python tools/world_bake.py --bake | --check
+python tools/world_bake.py --bake | --check   # --bake prepares only regions whose inputs changed;
+                                               # --full forces all, --region <slug> forces one
 python tools/world_atlas.py --check        # realm bands, crossings, hidden-realm secrecy, this doc table
 godot --headless --path . -- --validate
 godot --headless --path . -- --lifecycle   # session teardown gate
