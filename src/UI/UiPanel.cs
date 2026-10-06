@@ -157,6 +157,12 @@ public abstract partial class UiPanel : CanvasLayer
                 : Godot.Input.MouseModeEnum.Captured;
         }
 
+        if (Modal)
+        {
+            // Yields to the press or the cancel that caused it (UiAudioRules): one sound per action.
+            UiAudio.Play(open ? UiCue.Open : UiCue.Close);
+        }
+
         if (open)
         {
             MarkDirty();
@@ -187,6 +193,7 @@ public abstract partial class UiPanel : CanvasLayer
         if (CloseOnCancel && Godot.Input.IsActionJustPressed(UiLive.UiCancel))
         {
             LastCancelCloseFrame = Engine.GetProcessFrames();
+            UiAudio.Play(UiCue.Back);
             SetOpen(false);
             return;
         }

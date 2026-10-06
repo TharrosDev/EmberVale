@@ -23,7 +23,7 @@ namespace Embervale.Audio;
 /// </summary>
 public partial class AudioDirector : Node
 {
-    private readonly AudioLibrary _library = new();
+    private AudioLibrary _library = null!;
     private NodePool<PositionalSfxPlayer> _sfxPool = null!;
     private NodePool<OneShotAudioPlayer> _flatPool = null!;
 
@@ -33,9 +33,20 @@ public partial class AudioDirector : Node
         _sfxPool = new NodePool<PositionalSfxPlayer>(() => new PositionalSfxPlayer { Released = p => _sfxPool.Return(p) }, prewarm: 6);
         _flatPool = new NodePool<OneShotAudioPlayer>(() => new OneShotAudioPlayer { Released = p => _flatPool.Return(p) }, prewarm: 2);
 
-        // Shared so MusicDirector reuses the built streams. Owned by this node: the registration
-        // goes when the director does, without _ExitTree having to remember it.
-        ServiceScope.RegisterOwned(this, _library);
+        // The application's library when there is one (UiAudio registers it at boot), so a session
+        // does not synthesise every placeholder again. Otherwise this director's own, shared so
+        // MusicDirector reuses the built streams and owned by this node: the registration goes
+        // when the director does, without _ExitTree having to remember it.
+        if (ServiceLocator.Instance is { } locator && locator.TryGet(out AudioLibrary shared))
+        {
+            _library = shared;
+        }
+        else
+        {
+            _library = new AudioLibrary();
+            ServiceScope.RegisterOwned(this, _library);
+        }
+
         EventBus.Instance?.Subscribe<SoundCueRequestedEvent>(OnSoundCue);
         EventBus.Instance?.Subscribe<MusicCueRequestedEvent>(OnMusicCue);
         EventBus.Instance?.Subscribe<ItemPickedUpEvent>(OnItemPickedUp);

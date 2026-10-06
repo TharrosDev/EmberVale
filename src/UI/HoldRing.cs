@@ -90,6 +90,7 @@ public partial class HoldRing : Control
 
         if (UiFx.HoldsToPresses || Seconds <= 0f)
         {
+            UiAudio.Play(UiCue.Confirm);
             Completed?.Invoke();
             return;
         }
@@ -157,6 +158,11 @@ public partial class HoldRing : Control
             QueueRedraw();
         }
 
+        if (_held && UiAudioRules.HoldTicks(before, _progress))
+        {
+            UiAudio.Play(UiCue.HoldTick, UiAudioRules.HoldPitch(_progress));
+        }
+
         if (!_held && _progress <= 0f)
         {
             SetProcess(false);
@@ -167,6 +173,7 @@ public partial class HoldRing : Control
         if (_held && _progress >= 1f && !_fired)
         {
             _fired = true;
+            UiAudio.Play(UiCue.Confirm);
             Completed?.Invoke();
         }
     }

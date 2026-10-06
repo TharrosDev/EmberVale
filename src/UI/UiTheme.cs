@@ -1024,7 +1024,10 @@ public static partial class UiTheme
         return box;
     }
 
-    public static Button Action(string text)
+    /// <summary>The standard button. <paramref name="cue"/> is what a press sounds like: the plain
+    /// click unless the caller knows the press means more (<see cref="UiCue.Confirm"/> for a
+    /// commit, <see cref="UiCue.Back"/> for a way out).</summary>
+    public static Button Action(string text, UiCue cue = UiCue.Click)
     {
         var button = new Button
         {
@@ -1034,20 +1037,22 @@ public static partial class UiTheme
         };
         ApplyInteractiveStyle(button);
         ApplyType(button, FontRole.Display, BodyFontSize);
-        button.Pressed += PlayUiClick; // Phase 31C: one seam gives every menu button its click
+        // Phase 31C: one seam gives every menu button its click.
+        if (cue == UiCue.Click)
+        {
+            button.Pressed += PlayUiClick;
+        }
+        else
+        {
+            button.Pressed += () => UiAudio.Play(cue);
+        }
+
         return button;
     }
 
-    /// <summary>Plays the shared UI click cue via the <c>AudioDirector</c> (Phase 31C). Safe before the
-    /// director exists (title boot) — resolves each press, no-ops if unavailable.</summary>
-    private static void PlayUiClick()
-    {
-        if (Core.Services.ServiceLocator.Instance is { } locator
-            && locator.TryGet(out Audio.AudioDirector audio))
-        {
-            audio.PlayCue("ui.click");
-        }
-    }
+    /// <summary>Plays the shared UI click through <see cref="UiAudio"/>, which lives as long as the
+    /// application does, so a button on the title screen sounds like one inside a session.</summary>
+    private static void PlayUiClick() => UiAudio.Play(UiCue.Click);
 
     /// <summary>A small keycap chip (e.g. the "E" in the interaction prompt): the key's label
     /// in a bordered well, sized to its content.</summary>

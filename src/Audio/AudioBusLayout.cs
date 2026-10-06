@@ -40,4 +40,39 @@ public static class AudioBusLayout
             AudioServer.SetBusSend(index, AudioBuses.Master);
         }
     }
+
+    // The world's own buses. Music, the UI and voices stay clear.
+    private static readonly string[] DuckedBuses = { AudioBuses.Sfx, AudioBuses.Ambience };
+
+    private const float DuckCutoffHz = 1400f;
+
+    /// <summary>
+    /// Muffles the world's sound (SFX and ambience) behind a low-pass while a menu has the world
+    /// paused, and clears it again. Driven by <c>UiAudio</c> from <c>UiState.WorldPaused</c>.
+    /// The filter is each bus's only effect, added the first time it is needed and switched on and
+    /// off after that; volumes are untouched, so the settings sliders mean what they did.
+    /// </summary>
+    public static void SetMenuDuck(bool ducked)
+    {
+        foreach (string bus in DuckedBuses)
+        {
+            int index = AudioServer.GetBusIndex(bus);
+            if (index < 0)
+            {
+                continue;
+            }
+
+            if (AudioServer.GetBusEffectCount(index) == 0)
+            {
+                if (!ducked)
+                {
+                    continue;
+                }
+
+                AudioServer.AddBusEffect(index, new AudioEffectLowPassFilter { CutoffHz = DuckCutoffHz });
+            }
+
+            AudioServer.SetBusEffectEnabled(index, 0, ducked);
+        }
+    }
 }

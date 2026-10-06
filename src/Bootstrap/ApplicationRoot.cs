@@ -176,6 +176,10 @@ public partial class ApplicationRoot : Node3D, IServiceScopeHost
         settings.LoadAndApply();
         Scope.Register(settings);
 
+        // The interface's sound, for the title screen as much as for a session. After the buses
+        // and their volumes exist; before any screen that could make one.
+        AddChild(new Embervale.UI.UiAudio { Name = "UiAudio" });
+
         // After the settings exist (the skin reads high contrast and text scale) and before any
         // screen is built. Re-run on every apply; it rebuilds only when one of those two moved.
         Embervale.UI.UiSkin.Install();
