@@ -340,6 +340,26 @@ public class HudCoreRulesTests
         Assert.True(HudLayout.BottomClearance <= block + UiTheme.SpaceMd, "the prompt floats well clear of the hotbar");
     }
 
+    [Fact]
+    public void TheTrackerYieldsToTheBossBar_OnlyWhereTheTwoWouldMeet()
+    {
+        Assert.True(HudCoreMetrics.BossBarMeetsTracker(HudCoreMetrics.NarrowWidth));
+        Assert.False(HudCoreMetrics.BossBarMeetsTracker(HudMetrics.ReferenceWidth));
+        Assert.False(HudCoreMetrics.BossBarMeetsTracker(1920f));
+        Assert.False(HudCoreMetrics.BossBarMeetsTracker(3440f));
+        Assert.False(HudCoreMetrics.BossBarMeetsTracker(0f));
+        Assert.False(HudCoreMetrics.BossBarMeetsTracker(float.NaN));
+
+        // One crossing: narrower than it the two meet, wider they never do.
+        bool met = true;
+        for (float width = HudCoreMetrics.NarrowWidth; width <= 3440f; width += 7f)
+        {
+            bool meets = HudCoreMetrics.BossBarMeetsTracker(width);
+            Assert.False(meets && !met, $"the boss bar meets the tracker again at a layout width of {width}");
+            met = meets;
+        }
+    }
+
     /// <summary>Height of the hotbar's chord line: a pad glyph (<c>UiGlyph.Height</c>).</summary>
     private const float ChordLine = 22f;
 

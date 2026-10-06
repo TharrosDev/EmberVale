@@ -123,7 +123,8 @@ public static class HudCoreMetrics
 
     /// <summary>
     /// The least width the bottom bar needs at a layout width: the vitals, the hotbar and the framed
-    /// minimap, the two spacers between them (four gaps) and the safe margin either side. Nothing
+    /// minimap, the gaps between them (two, counted as the four the bar once had, which leaves it a
+    /// little slack) and the safe margin either side. Nothing
     /// lays out from this; it is the sum the sizes above are held to, so the minimap is never pushed
     /// off the right edge.
     /// </summary>
@@ -145,6 +146,24 @@ public static class HudCoreMetrics
         return layoutWidth > 0f && float.IsFinite(between)
             ? MathF.Round(Math.Clamp(between, CompassNarrow, full))
             : full;
+    }
+
+    /// <summary>
+    /// Whether the boss bar, centred, would reach the quest tracker at this layout width. The bar has
+    /// a floor it does not shrink below (<see cref="HudMetrics.BossBarMin"/>: it is read from across
+    /// a fight), so on a narrow layout the two meet, and there the tracker steps aside for as long as
+    /// the boss frame is up. A fight for your life is not when you reread your errands.
+    /// </summary>
+    public static bool BossBarMeetsTracker(float layoutWidth)
+    {
+        if (!(layoutWidth > 0f) || !float.IsFinite(layoutWidth))
+        {
+            return false;
+        }
+
+        float barRight = (layoutWidth / 2f) + (HudMetrics.BossBarWidth(layoutWidth) / 2f);
+        float trackerLeft = layoutWidth - UiTheme.SpaceLg - HudMetrics.TrackerWidth(layoutWidth);
+        return barRight + UiTheme.SpaceMd > trackerLeft;
     }
 
     private static float Narrowed(float layoutWidth, float atNarrow, float atRoomy)

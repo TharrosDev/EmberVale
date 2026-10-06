@@ -217,7 +217,7 @@ public partial class GameHud
         // assigning to hidden is working blind.
         _layout.BottomDock.Visible = vitals && Shows(HudElement.Hotbar);            // quick-use hotbar
         _layout.TopLeft.Visible = navigation && Shows(HudElement.Clock);            // clock + weather
-        _layout.TopRight.Visible = navigation && Shows(HudElement.QuestTracker);    // quest tracker
+        _layout.TopRight.Visible = navigation && Shows(HudElement.QuestTracker) && !_trackerYields; // quest tracker
         _layout.TopCenter.Visible = HudVisibility.ShowsTopCentre(mode);             // boss survives cinematic locks
         _layout.BottomRight.Visible = navigation && Shows(HudElement.Minimap);      // minimap
         _layout.BottomCenter.Visible = HudVisibility.ShowsPrompt(mode);             // interaction prompt, tutorial hint
