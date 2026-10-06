@@ -28,32 +28,74 @@ namespace Embervale.UI;
 /// </summary>
 public partial class VendorPanel : UiPanel
 {
+    /// <summary>Which list the inspected item is on. It decides what accept does to it.</summary>
+    private enum Side
+    {
+        Wares,
+        Buyback,
+        Pack,
+    }
+
     private Label _title = null!;
+    private Control _wipe = null!;
     private Label _purse = null!;
+    private Label _vendorPurseOwner = null!;
+    private Label _vendorPurse = null!;
     private Label _standing = null!;
     private Label _localTrade = null!;
     private Label _localShock = null!;
-    private HBoxContainer _investRow = null!;
+    private VBoxContainer _investRow = null!;
     private Label _investLabel = null!;
     private Button _investButton = null!;
-    private HBoxContainer _haggleRow = null!;
+    private VBoxContainer _haggleRow = null!;
     private Label _haggleLabel = null!;
     private Button _haggleButton = null!;
     private Label _waresHeader = null!;
+    private Label _waresNote = null!;
     private Label _packHeader = null!;
+    private Label _packNote = null!;
     private VBoxContainer _waresList = null!;
     private VBoxContainer _packList = null!;
+    private ScrollContainer _detailScroll = null!;
     private VBoxContainer _tradeDetail = null!;
-    private Label _feedback = null!;
+    private HBoxContainer _order = null!;
+
+    private readonly List<Button> _waresRows = new();
+    private readonly List<Button> _packRows = new();
+
     private ItemInstance? _selectedTrade;
+    private Side _selectedSide;
+
+    /// <summary>The slot wearing the selection frame, so a selection that follows focus moves the
+    /// frame in place instead of rebuilding both lists on every step.</summary>
+    private Button? _selectedSlot;
+    private ItemInstance? _selectedSlotItem;
 
     private IEntity? _player;
     private InventoryComponent? _pack;
     private ShopResource? _shop;
     private bool _justOpened;
+    private bool _detailDirty;
 
-    /// <summary>How many of the selected pack stack the detail's "sell some" picker is set to.</summary>
+    /// <summary>Focus is to go to the selected row after the next rebuild (on opening, and after a
+    /// capture hook chose the selection). Until it has, a row taking focus does not reselect.</summary>
+    private bool _focusSelection;
+    private Button? _selectedRow;
+
+    /// <summary>The total the junk confirm named on the last rebuild; zero when it is not showing.</summary>
+    private int _junkTotalShown;
+
+    /// <summary>Why the last press did nothing, shown in the order bar until the next press or selection.</summary>
+    private string _feedback = string.Empty;
+
+    /// <summary>"Sell all junk" has been pressed once and is waiting for its confirm.</summary>
+    private bool _junkArmed;
+
+    /// <summary>How many of the selected pack stack the order bar's picker is set to.</summary>
     private int _sellQuantity = 1;
+
+    /// <summary>How many of the selected ware the order bar's picker is set to.</summary>
+    private int _buyQuantity = 1;
 
     /// <summary>The most a buyback shelf remembers. Twelve is a counter's worth: enough to undo a
     /// "sell all junk" that took something it should not have, small enough to read at a glance.</summary>
@@ -95,151 +137,145 @@ public partial class VendorPanel : UiPanel
         BoughtBack.Clear();
     }
 
+    /// <summary>A counter is a blocking screen of its own: the world recedes behind the same scrim
+    /// the hub screens use.</summary>
+    protected override bool Dims => true;
+
+    protected override IReadOnlyList<LegendEntry> Legend
+    {
+        get
+        {
+            var entries = new List<LegendEntry>();
+            if (_selectedTrade is { } item && _shop is { } shop)
+            {
+                entries.Add(new LegendEntry("ui_accept", AcceptVerb(shop)));
+                if (item.IsEquippable)
+                {
+                    entries.Add(new LegendEntry(ItemSlot.CompareAction, Loc.T("item.detail.compare")));
+                }
+            }
+
+            if (InputDevice.GamepadActive)
+            {
+                entries.Add(new LegendEntry(GameInput.LookDown, Loc.T("trade.legend.details")));
+            }
+
+            entries.AddRange(base.Legend);
+            return entries;
+        }
+    }
+
+    /// <summary>What accept does to the selected row, as the legend and the card's footer name it.</summary>
+    private string AcceptVerb(ShopResource shop) => _selectedSide switch
+    {
+        Side.Wares => Loc.T("shop.buy"),
+        Side.Buyback => Loc.T("shop.buy_back"),
+        _ => shop.IsConsignment ? Loc.T("shop.consign") : Loc.T("trade.sell_stack"),
+    };
+
     protected override void BuildShell(PanelContainer shell)
     {
         UiTheme.ApplyScreenInset(shell);
 
-        MarginContainer margin = UiTheme.Padding(UiTheme.PanelPad);
-        shell.AddChild(margin);
+        VBoxContainer column = UiTheme.TradePage(
+            shell, UiIcon.Kind.Service, out _title, out HBoxContainer purses, out _wipe);
 
-        var column = new VBoxContainer
-        {
-            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-            SizeFlagsVertical = Control.SizeFlags.ExpandFill,
-        };
-        column.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
-        margin.AddChild(column);
-
-        var identity = new HBoxContainer();
-        identity.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
-        identity.AddChild(UiIcon.Create(UiIcon.Kind.Service, 30f, UiTheme.Accent));
-        _title = UiTheme.Title(string.Empty);
-        _title.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-        identity.AddChild(_title);
-        var purseLockup = new HBoxContainer { SizeFlagsVertical = Control.SizeFlags.ShrinkCenter };
-        purseLockup.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
-        purseLockup.AddChild(UiIcon.Create(UiIcon.Kind.Currency, 20f, UiTheme.Accent));
-        _purse = UiTheme.Body(string.Empty, UiTheme.Accent);
-        purseLockup.AddChild(_purse);
-        identity.AddChild(purseLockup);
-
-        // The standing band is its own group, so the title gets a full SpaceMd under it (the column's
-        // SpaceSm plus this) instead of the banner sitting flush against it.
-        var identityGap = new MarginContainer();
-        identityGap.AddThemeConstantOverride("margin_bottom", UiTheme.SpaceXs);
-        identityGap.AddChild(identity);
-        column.AddChild(identityGap);
-
-        PanelContainer context = UiTheme.Band(UiTheme.IronLit);
-        var contextCopy = new VBoxContainer();
-        contextCopy.AddThemeConstantOverride("separation", UiTheme.LineGap);
-        context.AddChild(contextCopy);
-
-        // A price that moved must say why it moved. Without this line the discount is invisible and
-        // reads as the shop being mispriced — the same reason every Phase 37 refusal names itself.
-        _standing = UiTheme.Caption(string.Empty);
-        contextCopy.AddChild(_standing);
-
-        // What the place itself does to the prices (38G), directly under what the merchant thinks of
-        // you — two different reasons a number moved, in the order the player meets them.
-        _localTrade = UiTheme.Caption(string.Empty);
-        _localTrade.AddThemeColorOverride("font_color", UiTheme.Dim);
-        contextCopy.AddChild(_localTrade);
-
-        // The event, under the standing state of the trade (38T): the line above says what this place
-        // is normally like, this one says what has happened to it this week. Two lines rather than one
-        // sentence because the first is a fact about the place and the second expires.
-        _localShock = UiTheme.Caption(string.Empty);
-        contextCopy.AddChild(_localShock);
-
-        // The stake line (38I). It sits with the standing caption rather than in the wares column
-        // because it is a fact about the merchant, not a ware: what it buys is her purse and the rows
-        // she keeps back, and both are visible from here.
-        _investRow = new HBoxContainer { Visible = false };
-        _investRow.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
-
-        _investLabel = UiTheme.Caption(string.Empty);
-        _investLabel.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-        _investLabel.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
-        _investRow.AddChild(_investLabel);
-
-        _investButton = UiTheme.Action(Loc.T("shop.invest"));
-        _investButton.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
-        _investButton.Pressed += OnInvestPressed;
-        _investRow.AddChild(_investButton);
-        contextCopy.AddChild(_investRow);
-
-        // The haggle line (38S), directly under the stake and for the same reason: it is a fact about
-        // the merchant rather than a ware. Hidden entirely on a merchant who will not negotiate, which
-        // is every shop authored before this sub-phase — a greyed-out button on twenty counters would
-        // teach the player the feature is broken.
-        _haggleRow = new HBoxContainer { Visible = false };
-        _haggleRow.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
-
-        _haggleLabel = UiTheme.Caption(string.Empty);
-        _haggleLabel.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-        _haggleLabel.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
-        _haggleRow.AddChild(_haggleLabel);
-
-        _haggleButton = UiTheme.Action(Loc.T("shop.haggle"));
-        _haggleButton.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
-        _haggleButton.Pressed += OnHagglePressed;
-        _haggleRow.AddChild(_haggleButton);
-        contextCopy.AddChild(_haggleRow);
-        column.AddChild(context);
-
-        // The detail is a Card already (ItemSlot.Detail), so it sits straight on the panel: wrapping it in a
-        // Band drew two frames and two left spines around one item.
-        _tradeDetail = new VBoxContainer();
-        _tradeDetail.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
-        column.AddChild(_tradeDetail);
-
-        // Why the last press did nothing: a full pack on a purchase used to refund the gold and say
-        // nothing at all, which reads as the Buy button being broken.
-        _feedback = UiTheme.Caption(string.Empty, UiTheme.Bad);
-        _feedback.Visible = false;
-        column.AddChild(_feedback);
+        // Both purses, always in view: what the player can spend and what the merchant can pay are
+        // the two numbers every refusal at a counter comes down to.
+        purses.AddChild(UiTheme.PurseReadout(out Label mine, out _purse));
+        mine.Text = Loc.T("trade.purse.yours");
+        purses.AddChild(UiTheme.PurseReadout(out _vendorPurseOwner, out _vendorPurse));
 
         var columns = new HBoxContainer
         {
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
             SizeFlagsVertical = Control.SizeFlags.ExpandFill,
         };
-        columns.AddThemeConstantOverride("separation", UiTheme.SpaceLg);
+        columns.AddThemeConstantOverride("separation", UiTheme.SpaceMd);
+        column.AddChild(columns);
 
-        // A section's worth of space above the lists, in place of a rule: each list names itself.
-        var body = new MarginContainer
-        {
-            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-            SizeFlagsVertical = Control.SizeFlags.ExpandFill,
-        };
-        body.AddThemeConstantOverride("margin_top", UiTheme.SpaceXs);
-        body.AddChild(columns);
-        column.AddChild(body);
+        // Bare on the panel: a Band around a list of Cards was a frame inside a frame that cost
+        // every row 32 px of width. Each list names itself.
+        columns.AddChild(UiTheme.TradeColumn(0f, out _waresHeader, out _waresNote, out _waresList));
+        columns.AddChild(UiTheme.ColumnRule());
+        columns.AddChild(UiTheme.TradeColumn(0f, out _packHeader, out _packNote, out _packList));
+        columns.AddChild(UiTheme.ColumnRule());
 
-        (_waresHeader, _waresList) = BuildColumn(columns);
-        (_packHeader, _packList) = BuildColumn(columns);
+        // The detail column: the inspected item's card and its price, then what is true of the
+        // counter itself. It scrolls as one, so a tall card never pushes the frame.
+        (_detailScroll, VBoxContainer detail) = UiTheme.ScrollList();
+        _detailScroll.SizeFlagsHorizontal = Control.SizeFlags.Fill;
+        detail.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
+        columns.AddChild(_detailScroll);
+
+        // The detail is a Card already (ItemSlot.Detail), so it sits straight on the panel: wrapping it in a
+        // Band drew two frames and two left spines around one item.
+        _tradeDetail = new VBoxContainer();
+        _tradeDetail.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
+        detail.AddChild(_tradeDetail);
+        detail.AddChild(BuildCounter());
+
+        // The order bar: how many, for how much, and the verbs. Fixed under the lists so choosing a
+        // quantity never moves a row, and so a refusal is said where the press was made.
+        _order = new HBoxContainer { CustomMinimumSize = new Vector2(0f, UiTheme.ControlHeight) };
+        _order.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
+        column.AddChild(_order);
     }
 
-    /// <summary>One titled scroll column; both sides are the same shape.</summary>
-    private static (Label Header, VBoxContainer List) BuildColumn(Node parent)
+    /// <summary>What is true of this merchant rather than of any one ware: how they take to the
+    /// player, what the place does to prices, the news from the road, and the two dealings a
+    /// counter may offer (a haggle, a stake).</summary>
+    private Control BuildCounter()
     {
-        // Bare on the panel, like the stash: a Band around a list of Cards was a frame inside a frame
-        // that cost every row 32 px of width.
-        var side = new VBoxContainer
-        {
-            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-            SizeFlagsVertical = Control.SizeFlags.ExpandFill,
-        };
-        side.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
-        parent.AddChild(side);
+        var counter = new VBoxContainer();
+        counter.AddThemeConstantOverride("separation", UiTheme.LineGap);
+        counter.AddChild(UiTheme.SectionRule(Loc.T("trade.counter")));
 
-        Label header = UiTheme.Header(string.Empty);
-        side.AddChild(header);
+        // A price that moved must say why it moved. Without this line the discount is invisible and
+        // reads as the shop being mispriced — the same reason every Phase 37 refusal names itself.
+        _standing = Wrapped(UiTheme.Caption(string.Empty));
+        counter.AddChild(_standing);
 
-        (ScrollContainer scroll, VBoxContainer list) = UiTheme.ScrollList();
-        side.AddChild(scroll);
-        return (header, list);
+        // What the place itself does to the prices (38G), directly under what the merchant thinks of
+        // you — two different reasons a number moved, in the order the player meets them.
+        _localTrade = Wrapped(UiTheme.Caption(string.Empty, UiTheme.Dim));
+        counter.AddChild(_localTrade);
+
+        // The event, under the standing state of the trade (38T): the line above says what this place
+        // is normally like, this one says what has happened to it this week. Two lines rather than one
+        // sentence because the first is a fact about the place and the second expires.
+        _localShock = Wrapped(UiTheme.Caption(string.Empty));
+        counter.AddChild(_localShock);
+
+        // The haggle line (38S). Hidden entirely on a merchant who will not negotiate, which is every
+        // shop authored before that sub-phase — a greyed-out button on twenty counters would teach the
+        // player the feature is broken.
+        _haggleRow = new VBoxContainer { Visible = false };
+        _haggleRow.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
+        _haggleLabel = Wrapped(UiTheme.Caption(string.Empty));
+        _haggleRow.AddChild(_haggleLabel);
+        _haggleButton = UiTheme.Action(Loc.T("shop.haggle"));
+        _haggleButton.Pressed += OnHagglePressed;
+        _haggleRow.AddChild(_haggleButton);
+        counter.AddChild(_haggleRow);
+
+        // The stake line (38I). It is a fact about the merchant, not a ware: what it buys is her purse
+        // and the rows she keeps back.
+        _investRow = new VBoxContainer { Visible = false };
+        _investRow.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
+        _investLabel = Wrapped(UiTheme.Caption(string.Empty));
+        _investRow.AddChild(_investLabel);
+        _investButton = UiTheme.Action(Loc.T("shop.invest"));
+        _investButton.Pressed += OnInvestPressed;
+        _investRow.AddChild(_investButton);
+        counter.AddChild(_investRow);
+        return counter;
+    }
+
+    private static Label Wrapped(Label label)
+    {
+        label.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+        return label;
     }
 
     protected override void OnReady()
@@ -263,10 +299,23 @@ public partial class VendorPanel : UiPanel
         MarkDirty();
     }
 
+    /// <summary>Why the last press did nothing: a full pack on a purchase used to refund the gold and
+    /// say nothing at all, which reads as the Buy button being broken. Shown in the order bar.</summary>
     private void SetFeedback(string text)
     {
-        _feedback.Text = text;
-        _feedback.Visible = text.Length > 0;
+        if (_feedback != text)
+        {
+            _feedback = text;
+            _detailDirty = true;
+        }
+    }
+
+    /// <summary>A press that was refused: the reason where the press was made, and the refusal cue.
+    /// The cue outranks a button's own click, so one press makes one sound.</summary>
+    private void Deny(string reason)
+    {
+        SetFeedback(reason);
+        UiAudio.Play(UiCue.Denied);
     }
 
     private void OnShopOpened(ShopOpenedEvent e)
@@ -281,9 +330,14 @@ public partial class VendorPanel : UiPanel
         _pack = pack;
         _shop = e.Shop;
         _selectedTrade = null;
-        SetFeedback(string.Empty);
+        _selectedSide = Side.Wares;
+        _junkArmed = false;
+        _buyQuantity = 1;
+        _sellQuantity = 1;
+        _feedback = string.Empty;
 
         SetOpen(true);
+        _focusSelection = true;
 
         // The same interact press that opened the shop is still "just pressed" this frame; swallow it
         // so the close-on-interact below does not fire immediately.
@@ -309,6 +363,37 @@ public partial class VendorPanel : UiPanel
         }
 
         base._Process(delta);
+        if (!IsOpen)
+        {
+            return;
+        }
+
+        // The panel focuses its first control when it opens; a counter starts on the inspected row.
+        if (_focusSelection)
+        {
+            _focusSelection = false;
+            if (_selectedRow != null && IsInstanceValid(_selectedRow))
+            {
+                _selectedRow.GrabFocus();
+            }
+        }
+
+        // A selection that only moved within a list: the card and the order bar follow it, the
+        // lists stay as they are.
+        if (_detailDirty)
+        {
+            RebuildTradeDetail();
+        }
+
+        TradeRow.StickScroll(_detailScroll, delta);
+    }
+
+    protected override void OnOpenChanged(bool open)
+    {
+        if (open)
+        {
+            UiOrnament.PlayEmberWipe(_wipe);
+        }
     }
 
     private void Close()
@@ -318,6 +403,7 @@ public partial class VendorPanel : UiPanel
         _player = null;
         _pack = null;
         _shop = null;
+        _selectedTrade = null;
 
         if (player != null)
         {
@@ -341,23 +427,23 @@ public partial class VendorPanel : UiPanel
     /// 38B adds the shelf decrement as a fourth step, deliberately last: nothing may consume stock on a
     /// path that ends without the player holding the goods.
     /// </summary>
-    private void Buy(ShopResource shop, ShopOffer offer, int price)
+    private bool Buy(ShopResource shop, ShopOffer offer, int price)
     {
         if (_pack is not { } pack || ItemDatabase.Get(GameIds.Currency.Gold) is not { } gold)
         {
-            return;
+            return false;
         }
 
         if (!offer.Available ||
             LockFor(shop, offer, StandingWith(shop)) != StockLock.Open ||
             !ShopPricing.CanAfford(price, Purse()))
         {
-            return; // the button is already disabled and says why; re-checked on the press
+            return false; // TryBuy has already said why; re-checked on the press
         }
 
         if (!pack.RemoveItem(GameIds.Currency.Gold, price))
         {
-            return; // the gold went somewhere between the rebuild and the press; deliver nothing
+            return false; // the gold went somewhere between the rebuild and the press; deliver nothing
         }
 
         if (pack.AddInstance(offer.Instance, 1) <= 0)
@@ -365,7 +451,7 @@ public partial class VendorPanel : UiPanel
             pack.AddItem(gold, price); // pack full — hand the money straight back
             SetFeedback(Loc.T("shop.pack_full"));
             ItemTransfer.AnnouncePackFull(offer.Instance, 1);
-            return;
+            return false;
         }
 
         SetFeedback(string.Empty);
@@ -378,7 +464,49 @@ public partial class VendorPanel : UiPanel
         }
 
         MarkDirty();
+        return true;
     }
+
+    /// <summary>
+    /// The press on a ware: buys up to <paramref name="count"/> of it, one whole <see cref="Buy"/> at a
+    /// time, and stops at the first that fails (the pack filled). A refused press says why in the
+    /// order bar and plays the refusal cue; it is never a silent button.
+    /// </summary>
+    private void TryBuy(ShopResource shop, ShopOffer offer, int price, int count)
+    {
+        StockLock locked = LockFor(shop, offer, StandingWith(shop));
+        TradeRules.BuyRefusal refusal = TradeRules.RefusalOf(
+            locked == StockLock.Open, offer.Available, ShopPricing.CanAfford(price, Purse()));
+        if (refusal != TradeRules.BuyRefusal.None)
+        {
+            Deny(BuyRefusalText(refusal, locked, offer, price));
+            return;
+        }
+
+        int bought = 0;
+        for (int i = 0; i < count; i++)
+        {
+            // Every unit after the first is its own copy: handing one instance to the pack twice
+            // would leave two slots sharing a lock, a junk mark and an upgrade level.
+            ShopOffer unit = i == 0 ? offer : offer with { Instance = ItemInstance.Plain(offer.Instance.Template) };
+            if (!Buy(shop, unit, price))
+            {
+                break;
+            }
+
+            bought++;
+        }
+
+        UiAudio.Play(bought > 0 ? UiCue.Confirm : UiCue.Denied);
+    }
+
+    private string BuyRefusalText(TradeRules.BuyRefusal refusal, StockLock locked, ShopOffer offer, int price) => refusal switch
+    {
+        TradeRules.BuyRefusal.Locked => LockRefusal(locked, offer.Row!),
+        TradeRules.BuyRefusal.SoldOut => Loc.T("shop.sold_out"),
+        TradeRules.BuyRefusal.CannotAfford => Loc.TF("trade.need_more", TradeRules.Shortfall(price, Purse())),
+        _ => string.Empty,
+    };
 
     /// <summary>
     /// Which gate, if any, is holding a row shut for this player (38I). Evaluated here rather than in
@@ -866,8 +994,14 @@ public partial class VendorPanel : UiPanel
             return;
         }
 
-        _title.Text = Loc.TF("shop.title", Loc.T(shop.NameKey));
-        _purse.Text = Loc.TF("shop.purse", Purse());
+        // Re-read on every rebuild: the UI scale can change mid-session, and offsets applied once
+        // would keep a stale gutter until the game restarted.
+        UiTheme.ApplyScreenInset(Shell);
+        _detailScroll.CustomMinimumSize = new Vector2(TradeRules.DetailWidth(UiTheme.UsableWidth(Shell)), 0f);
+
+        UiTheme.SetTradeTitle(_title, Loc.T(shop.NameKey));
+        _purse.Text = Loc.TF("shop.price", Purse());
+        BuildVendorPurse(shop);
 
         ReputationTier tier = StandingWith(shop);
 
@@ -879,10 +1013,36 @@ public partial class VendorPanel : UiPanel
         BuildLocalTrade(shop);
         BuildInvest(shop);
         BuildHaggle(shop, haggled);
+
+        EnsureSelection(shop);
+        _selectedRow = null;
+        _selectedSlot = null;
+        _selectedSlotItem = null;
+        _waresRows.Clear();
+        _packRows.Clear();
         BuildWares(shop, tier, haggled);
         BuildBuyback(shop);
         BuildPack(shop, haggled);
-        RebuildTradeDetail(shop, haggled);
+        RebuildTradeDetail();
+    }
+
+    /// <summary>
+    /// The merchant's side of the title row. A merchant with a finite purse shows it, because a
+    /// player dumping a field of loot has to be able to see why the last few rows stopped being
+    /// sellable. ⚠️ A broker has none, and the readout says what she has instead (38P): a shelf.
+    /// </summary>
+    private void BuildVendorPurse(ShopResource shop)
+    {
+        if (shop.IsConsignment)
+        {
+            _vendorPurseOwner.Text = Loc.T("trade.purse.shelf");
+            _vendorPurse.Text = Loc.TF("trade.purse.listed", Ledger()?.Pending ?? 0);
+            return;
+        }
+
+        int purse = Stock()?.PurseFor(shop) ?? ShopStock.UnlimitedPurse;
+        _vendorPurseOwner.Text = Loc.T("trade.purse.theirs");
+        _vendorPurse.Text = purse < 0 ? Loc.T("trade.purse.deep") : Loc.TF("shop.price", purse);
     }
 
     /// <summary>
@@ -1126,17 +1286,157 @@ public partial class VendorPanel : UiPanel
         MarkDirty();
     }
 
+    // --- Selection ----------------------------------------------------------
+
+    private static IReadOnlyList<ShopOffer> Offers(ShopResource shop) =>
+        Stock()?.OfferFor(shop) ?? System.Array.Empty<ShopOffer>();
+
+    private bool IsSelected(Side side, ItemInstance instance)
+    {
+        if (_selectedSide != side || _selectedTrade is not { } selected)
+        {
+            return false;
+        }
+
+        if (ReferenceEquals(selected, instance))
+        {
+            return true;
+        }
+
+        // A ware on an authored row is a fresh copy on every listing, so it is matched by what it is.
+        return side == Side.Wares && !selected.HasAffixes && !instance.HasAffixes &&
+            selected.TemplateId == instance.TemplateId && selected.Rarity == instance.Rarity;
+    }
+
+    /// <summary>
+    /// Makes a row the inspected one. Called when a row takes focus, so on a pad the card follows the
+    /// cursor. Within one list only the detail column and the order bar are rebuilt and the selection
+    /// frame moves in place; crossing to another list rebuilds, because the legend's verb changes.
+    /// </summary>
+    private void Select(Side side, ItemInstance instance, Button? slot)
+    {
+        if (_focusSelection || IsSelected(side, instance))
+        {
+            return; // a rebuild restoring focus must not undo a selection made for it
+        }
+
+        if (_selectedSlot != null && IsInstanceValid(_selectedSlot))
+        {
+            ItemSlot.SetSelected(_selectedSlot, _selectedSlotItem, false);
+        }
+
+        bool crossed = side != _selectedSide || _selectedTrade == null;
+        _selectedSide = side;
+        _selectedTrade = instance;
+        _selectedSlot = slot;
+        _selectedSlotItem = instance;
+        if (slot != null)
+        {
+            ItemSlot.SetSelected(slot, instance, true);
+        }
+
+        // A picker left at 30 for ore must not open at 30 for potions.
+        _buyQuantity = 1;
+        _sellQuantity = 1;
+        _feedback = string.Empty;
+        _detailDirty = true;
+        if (crossed)
+        {
+            MarkDirty();
+        }
+    }
+
+    private ShopOffer? SelectedOffer(ShopResource shop)
+    {
+        foreach (ShopOffer offer in Offers(shop))
+        {
+            if (IsSelected(Side.Wares, offer.Instance))
+            {
+                return offer;
+            }
+        }
+
+        return null;
+    }
+
+    private BuybackEntry? SelectedBuyback(ShopResource shop)
+    {
+        foreach (BuybackEntry entry in Buybacks)
+        {
+            if (entry.ShopId == shop.Id && IsSelected(Side.Buyback, entry.Instance))
+            {
+                return entry;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>Keeps the selection on something that is still there. What was sold or bought out
+    /// from under it hands over to the first ware, then the first thing in the pack.</summary>
+    private void EnsureSelection(ShopResource shop)
+    {
+        bool found = _selectedTrade is { } item && _selectedSide switch
+        {
+            Side.Wares => SelectedOffer(shop) != null,
+            Side.Buyback => SelectedBuyback(shop) != null,
+            _ => HeldStack(item) != null,
+        };
+        if (found)
+        {
+            return;
+        }
+
+        _buyQuantity = 1;
+        _sellQuantity = 1;
+        IReadOnlyList<ShopOffer> offers = Offers(shop);
+        if (offers.Count > 0)
+        {
+            _selectedSide = Side.Wares;
+            _selectedTrade = offers[0].Instance;
+            return;
+        }
+
+        _selectedSide = Side.Pack;
+        _selectedTrade = null;
+        if (_pack != null)
+        {
+            foreach (ItemStack stack in _pack.AllStacks)
+            {
+                _selectedTrade = stack.Instance;
+                break;
+            }
+        }
+    }
+
+    // --- Lists --------------------------------------------------------------
+
+    private const string NoteGap = "   ·   ";
+
+    /// <summary>
+    /// The buy-side quote for one unit of a ware. 38G: what the good is worth HERE, not in the realm at
+    /// large; both sides of this counter spread over the same local value. 38U: the quote IS the price —
+    /// the row shows <c>Total</c> and <see cref="Buy"/> charges it, which is the only way an explanation
+    /// cannot drift from a bill.
+    /// </summary>
+    private PriceQuote BuyQuoteFor(ShopResource shop, ItemInstance instance, ReputationTier tier, bool haggled)
+    {
+        (int local, string localTag, bool shocked) = shop.LocalQuote(instance.Value, instance.Template.TagList());
+        return PriceBreakdown.Buy(
+            instance.Value, local, TagName(localTag), shocked,
+            shop.BuyMarkup, tier, IsSpecialty(shop, instance), haggled, BuyPerkFactor());
+    }
+
     private void BuildWares(ShopResource shop, ReputationTier tier, bool haggled)
     {
         UiTheme.ClearChildren(_waresList);
 
         // Naming the cadence is what lets a player tell "gone" from "gone forever" — a sold-out row
         // with no restock is a different thing from one that will be back tomorrow.
-        _waresHeader.Text = shop.RestockDays > 0
-            ? $"{Loc.T("shop.wares")}   {Loc.TF("shop.restocks", shop.RestockDays)}"
-            : Loc.T("shop.wares");
+        _waresHeader.Text = Loc.T("shop.wares");
+        _waresNote.Text = shop.RestockDays > 0 ? Loc.TF("shop.restocks", shop.RestockDays) : string.Empty;
 
-        IReadOnlyList<ShopOffer> offers = Stock()?.OfferFor(shop) ?? System.Array.Empty<ShopOffer>();
+        IReadOnlyList<ShopOffer> offers = Offers(shop);
         if (offers.Count == 0)
         {
             _waresList.AddChild(UiTheme.Body(Loc.T("shop.empty"), UiTheme.Dim));
@@ -1144,80 +1444,119 @@ public partial class VendorPanel : UiPanel
         }
 
         int purse = Purse();
-        if (_selectedTrade == null && offers.Count > 0)
-        {
-            _selectedTrade = offers[0].Instance;
-        }
         foreach (ShopOffer offer in offers)
         {
-            bool specialty = IsSpecialty(shop, offer.Instance);
-
-            // 38G: what the good is worth HERE, not in the realm at large. Both sides of this counter
-            // spread over the same local value, so the 38A invariant is untouched at the shop.
-            //
-            // 38U: the quote below IS the price — the row shows `quote.Total` and Buy charges it. The
-            // breakdown is not a second opinion about a number computed elsewhere, which is the only
-            // way an explanation cannot drift from a bill.
-            (int local, string localTag, bool shocked) =
-                shop.LocalQuote(offer.Instance.Value, offer.Instance.Template.TagList());
-            PriceQuote quote = PriceBreakdown.Buy(
-                offer.Instance.Value, local, TagName(localTag), shocked,
-                shop.BuyMarkup, tier, specialty, haggled, BuyPerkFactor());
-            int price = quote.Total;
-            bool affordable = ShopPricing.CanAfford(price, purse);
+            int price = BuyQuoteFor(shop, offer.Instance, tier, haggled).Total;
 
             // 38I: a gated row is shown, greyed, with the gate named — the same choice a sold-out row
-            // makes below, and for a stronger reason. A hidden row teaches nothing; a locked one is
-            // how the player learns that standing and a stake buy something.
+            // makes, and for a stronger reason. A hidden row teaches nothing; a locked one is how the
+            // player learns that standing and a stake buy something. A sold-out row stays on the shelf
+            // too: removing it would read as the shop never having stocked the thing.
             StockLock locked = LockFor(shop, offer, tier);
+            TradeRules.BuyRefusal refusal = TradeRules.RefusalOf(
+                locked == StockLock.Open, offer.Available, ShopPricing.CanAfford(price, purse));
 
-            // A sold-out row stays on the shelf, greyed. Removing it would read as the shop never
-            // having stocked the thing, which is the opposite of what happened.
+            var notes = new List<string>();
+            if (IsSpecialty(shop, offer.Instance))
+            {
+                notes.Add(Loc.T("shop.specialty"));
+            }
+
+            if (refusal == TradeRules.BuyRefusal.Locked)
+            {
+                notes.Add(Loc.T("shop.locked"));
+            }
+            else if (refusal == TradeRules.BuyRefusal.SoldOut)
+            {
+                notes.Add(Loc.T("trade.sold_out"));
+            }
+
             ShopOffer captured = offer;
             AddRow(
-                _waresList,
-                offer.Instance,
+                _waresList, _waresRows, Side.Wares, offer.Instance,
                 quantity: offer.Unlimited ? 1 : offer.Remaining,
-                priceText: Loc.TF("shop.price", price),
-                action: Loc.T("shop.buy"),
-                enabled: offer.Available && locked == StockLock.Open && affordable,
-
-                // The lock is named before the price: a player who cannot buy this at any amount of
-                // gold must not be told to come back with more of it.
-                refusal: locked != StockLock.Open ? LockRefusal(locked, offer.Row!)
-                    : offer.Available ? Loc.T("shop.cannot_afford")
-                    : Loc.T("shop.sold_out"),
-                onPressed: () => Buy(shop, captured, price),
-                priceTooltip: PriceTooltip.Render(quote),
-                specialty: specialty,
-                locked: locked != StockLock.Open);
+                live: refusal == TradeRules.BuyRefusal.None,
+                price: Loc.TF("shop.price", price),
+                note: string.Join(NoteGap, notes),
+                act: () => TryBuy(shop, captured, price, 1));
         }
     }
+
+    /// <summary>What a pack stack would fetch at this counter, and why it might not.</summary>
+    private readonly record struct PackState(
+        PriceQuote Quote, int Payout, bool Enabled, bool Priced, string Refusal, bool Specialty, bool Glutted);
+
+    /// <summary>
+    /// The sell-side state of <paramref name="quantity"/> of a stack: one place asked by the row, the
+    /// order bar's picker and the press itself, so they cannot disagree.
+    ///
+    /// Six refusals, each named separately: not for sale at all, not this merchant's trade, nothing an
+    /// honest merchant will touch, worth nothing, locked by the player, or the merchant cannot cover
+    /// it. Collapsing them would tell a player with a Legendary to try a cheaper shop when the real
+    /// answer is to come back after a restock — and 38F's addition is the one that has somewhere to
+    /// send them, so it names the trade. The lock comes after the merchant's own reasons: unlocking
+    /// something she would not buy anyway is a wasted trip to the pack. A seventh, the broker's own:
+    /// she already shows a lot of this kind, and takes the next when that one has sold
+    /// (<see cref="ConsignmentRules.BlocksListing"/>).
+    /// </summary>
+    private PackState StateOf(ShopResource shop, ItemStack stack, bool haggled, int quantity)
+    {
+        ItemInstance instance = stack.Instance;
+        bool sellable = ShopPricing.Sellable(instance.Type, IsCurrency(instance));
+        bool inTrade = InTrade(shop, instance);
+        bool kept = instance.Locked;
+
+        // The merchant's own coin, when they have a finite amount of it. ⚠️ A broker has none (38P):
+        // she fronts no money at all, so there is no purse to run down.
+        int purse = shop.IsConsignment ? -1 : Stock()?.PurseFor(shop) ?? -1;
+        int absorbed = shop.IsConsignment ? 0 : Stock()?.AbsorbedOf(shop, instance.TemplateId) ?? 0;
+
+        // The quote itself, and the 38H / 38G / 38P / 38U reasoning behind each argument, is in
+        // SellQuoteFor.
+        PriceQuote quote = SellQuoteFor(shop, instance, quantity, haggled);
+        bool priced = sellable && inTrade;
+        int payout = priced ? quote.Total : 0;
+        bool afforded = purse < 0 || payout <= purse;
+        bool shelved = shop.IsConsignment &&
+            (Ledger()?.Holds(shop.Id, instance.TemplateId, CurrentDay()) ?? false);
+
+        string refusal = !sellable ? Loc.T("shop.unsellable")
+            : !inTrade ? TradeRefusal(shop, instance)
+            : payout <= 0 ? Loc.T("shop.worthless")
+            : kept ? Loc.T("shop.locked_item")
+            : shelved ? Loc.T("shop.consign_listed")
+            : Loc.T("shop.vendor_broke");
+
+        return new PackState(
+            quote, payout,
+            Enabled: priced && payout > 0 && afforded && !kept && !shelved,
+            Priced: priced,
+            Refusal: refusal,
+            Specialty: IsSpecialty(shop, instance),
+            Glutted: ShopStock.SaturationMultiplier(absorbed, shop.RestockDays) < 1f);
+    }
+
+    /// <summary>The broker's price names the wait as well as the money: an offer that is better than
+    /// every counter in town and does not pay today is only a good deal if the player can see both
+    /// halves of it before pressing.</summary>
+    private static string PayoutText(ShopResource shop, int payout) => shop.IsConsignment
+        ? Loc.TF("shop.consign_price", payout, shop.ConsignDays)
+        : Loc.TF("shop.price", payout);
 
     private void BuildPack(ShopResource shop, bool haggled)
     {
         UiTheme.ClearChildren(_packList);
+        _packHeader.Text = Loc.T("shop.your_pack");
+        _packNote.Text = string.Empty;
 
         if (_pack is not { } pack)
         {
-            _packHeader.Text = Loc.T("shop.your_pack");
             return;
         }
 
-        // The merchant's own coin, when they have a finite amount of it — a player dumping a field of
-        // loot has to be able to see why the last few rows stopped being sellable.
-        //
-        // ⚠️ A broker has none, and the header says what she has instead (38P): a shelf. She fronts no
-        // money at all, so there is no purse to run down and nothing to explain a refused row with.
-        int purse = shop.IsConsignment ? -1 : Stock()?.PurseFor(shop) ?? -1;
-        string header = shop.IsConsignment
-            ? $"{Loc.T("shop.your_pack")}   {Loc.TF("shop.consign_shelf", Ledger()?.Pending ?? 0)}"
-            : purse >= 0
-                ? $"{Loc.T("shop.your_pack")}   {Loc.TF("shop.vendor_purse", purse)}"
-                : Loc.T("shop.your_pack");
-        _packHeader.Text = $"{header}   {Loc.TF("storage.slots", pack.UsedSlots, pack.Capacity)}";
+        _packNote.Text = Loc.TF("storage.slots", pack.UsedSlots, pack.Capacity);
 
-        // Snapshot: the button closures mutate this list, and a row built off a stack that has since
+        // Snapshot: the row closures mutate this list, and a row built off a stack that has since
         // been removed would sell a ghost. Pack then material bag: trade goods are materials, and a
         // player whose ore lives in the bag still has ore to sell.
         var held = new List<ItemStack>(pack.AllStacks);
@@ -1231,195 +1570,120 @@ public partial class VendorPanel : UiPanel
 
         foreach (ItemStack stack in held)
         {
-            ItemInstance instance = stack.Instance;
-            bool sellable = ShopPricing.Sellable(instance.Type, IsCurrency(instance));
-            bool inTrade = InTrade(shop, instance);
-            bool specialty = IsSpecialty(shop, instance);
-            bool kept = instance.Locked;
+            PackState state = StateOf(shop, stack, haggled, stack.Quantity);
 
-            // The quote itself, and the 38H / 38G / 38P / 38U reasoning behind each argument, is in
-            // SellQuoteFor: one place asked by this row, the "sell some" picker and the junk total.
-            int absorbed = shop.IsConsignment ? 0 : Stock()?.AbsorbedOf(shop, instance.TemplateId) ?? 0;
-            PriceQuote quote = SellQuoteFor(shop, instance, stack.Quantity, haggled);
+            // A price that moved must say why it moved. The line-by-line breakdown is in the detail
+            // column; these are the markers a glance down the list owes.
+            var notes = new List<string>();
+            if (state.Specialty)
+            {
+                notes.Add(Loc.T("shop.specialty"));
+            }
 
-            int unitPrice = quote.Unit;
-            int payout = !sellable || !inTrade ? 0 : quote.Total;
-            bool glutted = ShopStock.SaturationMultiplier(absorbed, shop.RestockDays) < 1f;
+            if (state.Glutted)
+            {
+                notes.Add(Loc.T("shop.glutted"));
+            }
 
-            // Six refusals, each named separately: not for sale at all, not this merchant's trade,
-            // nothing an honest merchant will touch, worth nothing, locked by the player, or the
-            // merchant cannot cover it. Collapsing them would tell a player with a Legendary to try a
-            // cheaper shop when the real answer is to come back after a restock — and 38F's addition
-            // is the one that has somewhere to send them, so it names the trade. The lock comes after
-            // the merchant's own reasons: unlocking something she would not buy anyway is a wasted trip
-            // to the pack.
-            // A seventh, the broker's own: she already shows a lot of this kind, and takes the next
-            // when that one has sold (ConsignmentRules.BlocksListing).
-            bool afforded = purse < 0 || payout <= purse;
-            bool shelved = shop.IsConsignment &&
-                (Ledger()?.Holds(shop.Id, instance.TemplateId, CurrentDay()) ?? false);
-            string refusal = !sellable ? Loc.T("shop.unsellable")
-                : !inTrade ? TradeRefusal(shop, instance)
-                : payout <= 0 ? Loc.T("shop.worthless")
-                : kept ? Loc.T("shop.locked_item")
-                : shelved ? Loc.T("shop.consign_listed")
-                : Loc.T("shop.vendor_broke");
-
-            // The broker's price line names the wait as well as the money: an offer that is better
-            // than every counter in town and does not pay today is only a good deal if the player can
-            // see both halves of it before pressing.
-            string priceText = !sellable || !inTrade ? string.Empty
-                : shop.IsConsignment ? Loc.TF("shop.consign_price", payout, shop.ConsignDays)
-                : Loc.TF("shop.price", payout);
+            if (stack.Instance.Locked)
+            {
+                notes.Add(Loc.T("item.locked"));
+            }
 
             ItemStack captured = stack;
             AddRow(
-                _packList,
-                instance,
-                stack.Quantity,
-                priceText: priceText,
-                action: Loc.T(shop.IsConsignment ? "shop.consign" : "shop.sell"),
-                enabled: sellable && inTrade && payout > 0 && afforded && !kept && !shelved,
-                refusal: refusal,
-                onPressed: shop.IsConsignment
-                    ? () => Consign(shop, captured, unitPrice)
-                    : () => Sell(shop, captured, captured.Quantity, payout),
+                _packList, _packRows, Side.Pack, stack.Instance, stack.Quantity,
+                live: state.Enabled,
 
-                // A refused row explains the refusal, not the arithmetic — quoting a breakdown of a
-                // payout nobody is being offered is the "come back with more gold" mistake in another
-                // costume.
-                priceTooltip: sellable && inTrade ? PriceTooltip.Render(quote) : string.Empty,
-                specialty: specialty,
-                glutted: glutted);
+                // A refused row explains the refusal, not the arithmetic — quoting a payout nobody is
+                // being offered is the "come back with more gold" mistake in another costume.
+                price: state.Priced ? PayoutText(shop, state.Payout) : string.Empty,
+                note: string.Join(NoteGap, notes),
+                act: () => TrySell(shop, captured, captured.Quantity));
         }
     }
 
     /// <summary>
-    /// One trade row, on the 37.5C item vocabulary so an item looks the same here as in the pack:
-    /// a <see cref="UiTheme.Card"/> spined in its rarity (never <c>UiTheme.Panel()</c>, which is a
-    /// full screen carrying a brass rule and a grain shader), an <see cref="ItemSlot"/>, and the
-    /// price beside the action. A refused row keeps its button, greyed and explained — the 37 rule
-    /// that every refusal names itself, and UI_STYLE §2's that <c>Disabled</c> always carries a
-    /// second channel.
+    /// One trade row, on the shared item vocabulary so an item looks the same here as in the pack
+    /// (<see cref="TradeRow"/>). Taking focus selects it; accept is its verb. A refused row stays
+    /// focusable and greyed, and the press on it says why — the 37 rule that every refusal names
+    /// itself, and UI_STYLE §2's that <c>Disabled</c> always carries a second channel.
     /// </summary>
     private void AddRow(
         VBoxContainer list,
+        List<Button> rows,
+        Side side,
         ItemInstance instance,
         int quantity,
-        string priceText,
-        string action,
-        bool enabled,
-        string refusal,
-        System.Action onPressed,
-        string priceTooltip = "",
-        bool specialty = false,
-        bool glutted = false,
-        bool locked = false)
+        bool live,
+        string price,
+        string note,
+        System.Action act)
     {
-        PanelContainer card = UiTheme.Card(UiTheme.RarityColor(instance.Rarity));
-        var row = new HBoxContainer();
-        row.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
-
-        Button slot = ItemSlot.Build(instance, quantity, selected: false, size: ItemSlot.RowSize);
-        slot.FocusMode = Control.FocusModeEnum.All;
-        slot.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
-        slot.TooltipText = Loc.T("shop.inspect_hint");
-        slot.Pressed += () =>
+        bool selected = IsSelected(side, instance) && _selectedRow == null;
+        Button? slot = null;
+        TradeRow.Built row = TradeRow.Build(
+            instance, quantity, selected, live, price, note, () => Select(side, instance, slot), act);
+        slot = row.Slot;
+        if (selected)
         {
-            if (!ReferenceEquals(_selectedTrade, instance))
-            {
-                _sellQuantity = 1; // a picker left at 30 for ore must not open at 30 for potions
-            }
-
-            _selectedTrade = instance;
-            MarkDirty();
-        };
-        row.AddChild(slot);
-
-        var text = new VBoxContainer
-        {
-            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-            SizeFlagsVertical = Control.SizeFlags.ShrinkCenter,
-        };
-        text.AddThemeConstantOverride("separation", UiTheme.LineGap);
-
-        Label name = UiTheme.Body(instance.DisplayName, UiTheme.RarityColor(instance.Rarity));
-        name.TooltipText = instance.Template.Description;
-        name.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
-        text.AddChild(name);
-
-        // A price that moved must say why it moved — the same rule the standing caption follows. The
-        // full line-by-line breakdown is 38U's; this is the marker 38F owes, and without it a payout
-        // 25% above the shop across the square reads as one of the two being mispriced.
-        if (specialty || glutted || locked)
-        {
-            HFlowContainer trade = UiTheme.FlowRow();
-            if (specialty)
-            {
-                trade.AddChild(UiTheme.Chip(Loc.T("shop.specialty"), UiTheme.Accent));
-            }
-
-            // 38I: the chip is the glance, the tooltip is the reason. A greyed button alone reads as
-            // "you cannot afford this", which for a gated row is the wrong answer at any price.
-            if (locked)
-            {
-                trade.AddChild(UiTheme.Chip(Loc.T("shop.locked"), UiTheme.Disabled));
-            }
-
-            // 38H: a payout that fell has to say why, or a merchant who paid 6 gold yesterday and 3 today
-            // reads as a pricing bug rather than as a market the player has been filling up.
-            if (glutted)
-            {
-                trade.AddChild(UiTheme.Chip(Loc.T("shop.glutted"), UiTheme.Dim));
-            }
-
-            text.AddChild(trade);
+            _selectedRow = row.Input;
+            _selectedSlot = row.Slot;
+            _selectedSlotItem = instance;
         }
 
-        if (instance.HasAffixes)
-        {
-            HFlowContainer chips = UiTheme.FlowRow();
-            foreach (ItemAffix affix in instance.Affixes)
-            {
-                chips.AddChild(UiTheme.Chip(affix.DisplayValue, UiTheme.Good));
-            }
+        list.AddChild(row.Card);
+        rows.Add(row.Input);
+    }
 
-            text.AddChild(chips);
+    /// <summary>The press on a pack row or the order bar's Sell: sells (or lists) that many, or says
+    /// why not.</summary>
+    private void TrySell(ShopResource shop, ItemStack stack, int quantity)
+    {
+        PackState state = StateOf(shop, stack, DealStruck(shop), quantity);
+        if (!state.Enabled)
+        {
+            Deny(state.Refusal);
+            return;
         }
 
-        row.AddChild(text);
+        // Read before the sale: Take decrements this very stack object.
+        int before = stack.Quantity;
+        if (shop.IsConsignment)
+        {
+            Consign(shop, stack, state.Quote.Unit);
+        }
+        else
+        {
+            Sell(shop, stack, quantity, state.Payout);
+        }
 
-        Label price = UiTheme.Caption(priceText, enabled ? UiTheme.Accent : UiTheme.Disabled);
-        price.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
-
-        // 38U's whole deliverable: the number says why it is that number, line by line, from the same
-        // quote the button charges. ⚠️ This only shows because UiTheme's label builders set
-        // MouseFilterEnum.Pass — a Godot Label defaults to Ignore and is never the node under the
-        // cursor, which is why the item description one line up had been dead since 38A.
-        price.TooltipText = priceTooltip;
-        row.AddChild(price);
-
-        Button button = UiTheme.Action(action);
-        button.Disabled = !enabled;
-        button.TooltipText = enabled ? string.Empty : refusal;
-        button.Pressed += onPressed;
-        button.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
-        row.AddChild(button);
-
-        card.AddChild(row);
-        list.AddChild(card);
+        if (stack.Quantity < before)
+        {
+            UiAudio.Play(UiCue.Confirm);
+        }
+        else
+        {
+            Deny(Loc.T("shop.vendor_broke"));
+        }
     }
 
     /// <summary>
     /// The "sell all junk" line at the head of the pack column: how many stacks will go and for how
     /// much, before the press. Absent when nothing is marked. When something is marked and none of
-    /// it can be sold here the button stays, greyed, saying so - a junk pile this merchant will not
-    /// touch is worth knowing about at the counter rather than after walking away.
+    /// it can be sold here the button stays, saying so - a junk pile this merchant will not touch is
+    /// worth knowing about at the counter rather than after walking away.
+    ///
+    /// The press asks first. The confirm names the total the merchant will pay, from the same plan
+    /// the sale then runs, and Cancel is beside it. It is a second press and not a hold: the buyback
+    /// shelf can still undo it.
     /// </summary>
     private void BuildJunkRow(ShopResource shop, bool haggled)
     {
+        _junkTotalShown = 0;
         if (_pack is not { } pack || shop.IsConsignment || pack.JunkStacks().Count == 0)
         {
+            _junkArmed = false;
             return;
         }
 
@@ -1430,34 +1694,64 @@ public partial class VendorPanel : UiPanel
             total += payout;
         }
 
-        PanelContainer band = UiTheme.Band(UiTheme.IronLit);
-        var row = new HBoxContainer();
-        row.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
+        bool armed = _junkArmed && plan.Count > 0;
+        _junkArmed = armed;
 
-        var copy = new VBoxContainer
-        {
-            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-            SizeFlagsVertical = Control.SizeFlags.ShrinkCenter,
-        };
-        copy.AddThemeConstantOverride("separation", UiTheme.LineGap);
-        copy.AddChild(UiTheme.Body(
-            plan.Count > 0 ? Loc.TF("shop.junk_preview", plan.Count, total) : Loc.T("shop.junk_none_sellable"),
-            plan.Count > 0 ? UiTheme.Accent : UiTheme.Dim));
+        PanelContainer band = UiTheme.Compact(UiTheme.Band(armed ? UiTheme.Accent : UiTheme.IronLit));
+        var copy = new VBoxContainer();
+        copy.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
+
+        string line = armed ? Loc.TF("trade.junk_confirm", plan.Count, total)
+            : plan.Count > 0 ? Loc.TF("shop.junk_preview", plan.Count, total)
+            : Loc.T("shop.junk_none_sellable");
+        copy.AddChild(Wrapped(UiTheme.Body(line, plan.Count > 0 ? UiTheme.Accent : UiTheme.Dim)));
         if (skipped > 0 && plan.Count > 0)
         {
-            copy.AddChild(UiTheme.Caption(Loc.TF("shop.junk_skipped", skipped)));
+            copy.AddChild(Wrapped(UiTheme.Caption(Loc.TF("shop.junk_skipped", skipped))));
         }
 
-        row.AddChild(copy);
+        HFlowContainer verbs = UiTheme.FlowRow();
+        if (armed)
+        {
+            _junkTotalShown = total;
+            Button confirm = UiTheme.Action(Loc.TF("trade.junk_confirm_verb", total), UiCue.Confirm);
+            confirm.Pressed += () =>
+            {
+                _junkArmed = false;
+                SellAllJunk(shop);
+                MarkDirty();
+            };
+            verbs.AddChild(confirm);
 
-        Button sell = UiTheme.Action(Loc.T("shop.sell_junk"));
-        sell.Disabled = plan.Count == 0;
-        sell.TooltipText = plan.Count == 0 ? Loc.T("shop.junk_none_sellable") : Loc.T("shop.sell_junk_hint");
-        sell.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
-        sell.Pressed += () => SellAllJunk(shop);
-        row.AddChild(sell);
+            Button cancel = UiTheme.Action(Loc.T("item.cancel"), UiCue.Back);
+            cancel.Pressed += () =>
+            {
+                _junkArmed = false;
+                MarkDirty();
+            };
+            verbs.AddChild(cancel);
+        }
+        else
+        {
+            Button sell = UiTheme.Action(Loc.T("shop.sell_junk"));
+            sell.TooltipText = Loc.T("shop.sell_junk_hint");
+            bool any = plan.Count > 0;
+            sell.Pressed += () =>
+            {
+                if (!any)
+                {
+                    Deny(Loc.T("shop.junk_none_sellable"));
+                    return;
+                }
 
-        band.AddChild(row);
+                _junkArmed = true;
+                MarkDirty();
+            };
+            verbs.AddChild(sell);
+        }
+
+        copy.AddChild(verbs);
+        band.AddChild(copy);
         _packList.AddChild(band);
     }
 
@@ -1489,43 +1783,286 @@ public partial class VendorPanel : UiPanel
         {
             BuybackEntry captured = entry;
             AddRow(
-                _waresList,
-                entry.Instance,
-                entry.Quantity,
-                priceText: Loc.TF("shop.price", entry.Price),
-                action: Loc.T("shop.buy_back"),
-                enabled: ShopPricing.CanAfford(entry.Price, purse),
-                refusal: Loc.T("shop.cannot_afford"),
-                onPressed: () => BuyBack(shop, captured),
-                priceTooltip: Loc.T("shop.buyback_hint"));
+                _waresList, _waresRows, Side.Buyback, entry.Instance, entry.Quantity,
+                live: ShopPricing.CanAfford(entry.Price, purse),
+                price: Loc.TF("shop.price", entry.Price),
+                note: string.Empty,
+                act: () => TryBuyBack(shop, captured));
         }
     }
 
-    /// <summary>
-    /// The inspected item: its card, compared against what the player is wearing, and - for a stack
-    /// in the player's own pack - the "sell some" picker. The comparison is the point of inspecting
-    /// a ware at all: without it the question "is this better than mine" meant closing the shop,
-    /// opening the pack and remembering two sets of numbers.
-    /// </summary>
-    private void RebuildTradeDetail(ShopResource shop, bool haggled)
+    private void TryBuyBack(ShopResource shop, BuybackEntry entry)
     {
+        if (!ShopPricing.CanAfford(entry.Price, Purse()))
+        {
+            Deny(Loc.TF("trade.need_more", TradeRules.Shortfall(entry.Price, Purse())));
+            return;
+        }
+
+        int before = Purse();
+        BuyBack(shop, entry);
+        UiAudio.Play(Purse() < before ? UiCue.Confirm : UiCue.Denied);
+    }
+
+    // --- The detail column and the order bar --------------------------------
+
+    /// <summary>
+    /// The inspected item: its card, compared against what the player is wearing, the reasons for
+    /// its price, and under the lists the order bar with how many and the verbs. The comparison is
+    /// the point of inspecting a ware at all: without it the question "is this better than mine"
+    /// meant closing the shop, opening the pack and remembering two sets of numbers.
+    /// </summary>
+    private void RebuildTradeDetail()
+    {
+        _detailDirty = false;
         UiTheme.ClearChildren(_tradeDetail);
+        UiTheme.ClearChildren(_order);
+        if (_shop is not { } shop)
+        {
+            return;
+        }
+
         if (_selectedTrade is not { } item)
         {
-            _tradeDetail.AddChild(UiTheme.IconLabel(
-                UiIcon.Kind.Inventory, Loc.T("shop.inspect_hint"), tint: UiTheme.Dim));
+            _tradeDetail.AddChild(Wrapped(UiTheme.Caption(Loc.T("shop.inspect_hint"))));
+            OrderNote(_feedback, bad: true);
+            WireFocus();
             return;
         }
 
         _tradeDetail.AddChild(ItemSlot.Detail(item, new ItemSlot.DetailContext(
             _player?.GetComponent<EquipmentComponent>(),
             _player?.GetComponent<ProgressionComponent>()?.Level ?? 0,
-            Compare: true)));
-
-        if (HeldStack(item) is { } stack && SellSomeRow(shop, stack, haggled) is { } some)
+            Compare: true)
         {
-            _tradeDetail.AddChild(some);
+            Actions = new[] { new LegendEntry("ui_accept", AcceptVerb(shop)) },
+        }));
+
+        bool haggled = DealStruck(shop);
+        if (_selectedSide == Side.Wares && SelectedOffer(shop) is { } offer)
+        {
+            BuildBuyOrder(shop, offer, haggled);
         }
+        else if (_selectedSide == Side.Buyback && SelectedBuyback(shop) is { } entry)
+        {
+            BuildBuybackOrder(shop, entry);
+        }
+        else if (_selectedSide == Side.Pack && HeldStack(item) is { } stack)
+        {
+            BuildSellOrder(shop, stack, haggled);
+        }
+        else
+        {
+            OrderNote(_feedback, bad: true);
+        }
+
+        WireFocus();
+    }
+
+    /// <summary>
+    /// Why the price is what it is, as lines under the card rather than only as a tooltip: a pad has
+    /// no pointer to hover with. One line per reason with the running gold (38U), then the counter's
+    /// spread, which is the answer to "why did she pay me a third of what she charges".
+    /// </summary>
+    private void AddPriceLines(PriceQuote quote, ShopResource shop)
+    {
+        var block = new VBoxContainer();
+        block.AddThemeConstantOverride("separation", UiTheme.LineGap);
+        block.AddChild(UiTheme.Caption(Loc.T("trade.price_reasons"), UiTheme.Accent));
+        foreach (string line in PriceTooltip.Lines(quote))
+        {
+            block.AddChild(Wrapped(UiTheme.Caption(line, UiTheme.Text)));
+        }
+
+        // A broker has no spread: she lists at a fraction and takes a cut, and both are lines above.
+        if (!shop.IsConsignment)
+        {
+            (int asks, int pays) = TradeRules.Spread(shop.BuyMarkup, shop.SellFraction);
+            block.AddChild(Wrapped(UiTheme.Caption(PriceTooltip.Spread(asks, pays))));
+        }
+
+        _tradeDetail.AddChild(block);
+    }
+
+    /// <summary>The order bar's words: why the last press did nothing, why this one would not, or
+    /// what the bar is for. Takes the width the picker and the verbs leave.</summary>
+    private Label OrderNote(string text, bool bad)
+    {
+        Label note = Wrapped(UiTheme.Caption(text, bad ? UiTheme.Bad : UiTheme.Dim));
+        note.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        note.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
+        note.CustomMinimumSize = new Vector2(OrderNoteMin, 0f);
+        _order.AddChild(note);
+        return note;
+    }
+
+    private const float OrderNoteMin = 96f;
+    private const float OrderTotalMin = 72f;
+
+    private Label OrderTotal()
+    {
+        Label total = UiTheme.Body(string.Empty, UiTheme.Accent);
+        total.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
+        total.CustomMinimumSize = new Vector2(OrderTotalMin, 0f);
+        total.HorizontalAlignment = HorizontalAlignment.Right;
+        return total;
+    }
+
+    private Button OrderVerb(string text)
+    {
+        Button button = UiTheme.Action(text);
+        button.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
+        return button;
+    }
+
+    /// <summary>
+    /// Buying: one, a chosen number, or as many as the purse, the shelf and a stack allow in one
+    /// press. A ware the player cannot have keeps its Buy, greyed, with the reason beside it, and
+    /// pressing it plays the refusal rather than nothing.
+    /// </summary>
+    private void BuildBuyOrder(ShopResource shop, ShopOffer offer, bool haggled)
+    {
+        ReputationTier tier = StandingWith(shop);
+        PriceQuote quote = BuyQuoteFor(shop, offer.Instance, tier, haggled);
+        int price = quote.Total;
+        AddPriceLines(quote, shop);
+
+        StockLock locked = LockFor(shop, offer, tier);
+        TradeRules.BuyRefusal refusal = TradeRules.RefusalOf(
+            locked == StockLock.Open, offer.Available, ShopPricing.CanAfford(price, Purse()));
+        string reason = _feedback.Length > 0 ? _feedback : BuyRefusalText(refusal, locked, offer, price);
+        OrderNote(reason.Length > 0 ? reason : Loc.T("trade.order.buy_hint"), bad: reason.Length > 0);
+
+        // A rolled ware is one of a kind; an authored row sells as many as will go.
+        int most = refusal != TradeRules.BuyRefusal.None ? 0
+            : offer.Row is null ? 1
+            : TradeRules.MaxBuy(
+                price, Purse(), offer.Remaining,
+                offer.Instance.IsStackable ? offer.Instance.MaxStack : TradeRules.MaxOrder);
+        _buyQuantity = Mathf.Clamp(_buyQuantity, 1, Mathf.Max(1, most));
+
+        Label total = OrderTotal();
+        total.TooltipText = PriceTooltip.Render(quote);
+        Button buy = OrderVerb(Loc.T("shop.buy"));
+        if (refusal != TradeRules.BuyRefusal.None)
+        {
+            buy.AddThemeColorOverride("font_color", UiTheme.Disabled);
+            total.AddThemeColorOverride("font_color", UiTheme.Disabled);
+        }
+
+        void Requote(int quantity)
+        {
+            _buyQuantity = quantity;
+            total.Text = Loc.TF("shop.price", price * quantity);
+            buy.Text = quantity > 1 ? Loc.TF("trade.buy_many", quantity) : Loc.T("shop.buy");
+        }
+
+        if (most > 1)
+        {
+            _order.AddChild(QuantityPicker.Build(1, most, _buyQuantity, Requote));
+        }
+
+        _order.AddChild(total);
+
+        ShopOffer captured = offer;
+        buy.Pressed += () => TryBuy(shop, captured, price, _buyQuantity);
+        _order.AddChild(buy);
+
+        if (most > 1)
+        {
+            Button max = OrderVerb(Loc.TF("trade.buy_max", most));
+            max.Pressed += () => TryBuy(shop, captured, price, most);
+            _order.AddChild(max);
+        }
+
+        Requote(_buyQuantity);
+    }
+
+    private void BuildBuybackOrder(ShopResource shop, BuybackEntry entry)
+    {
+        bool affordable = ShopPricing.CanAfford(entry.Price, Purse());
+        string reason = _feedback.Length > 0 ? _feedback
+            : affordable ? string.Empty
+            : Loc.TF("trade.need_more", TradeRules.Shortfall(entry.Price, Purse()));
+        OrderNote(reason.Length > 0 ? reason : Loc.T("shop.buyback_hint"), bad: reason.Length > 0);
+
+        Label total = OrderTotal();
+        total.Text = Loc.TF("shop.price", entry.Price);
+        _order.AddChild(total);
+
+        Button back = OrderVerb(Loc.T("shop.buy_back"));
+        if (!affordable)
+        {
+            back.AddThemeColorOverride("font_color", UiTheme.Disabled);
+        }
+
+        back.Pressed += () => TryBuyBack(shop, entry);
+        _order.AddChild(back);
+    }
+
+    /// <summary>
+    /// Selling: the whole stack in one press, or part of it through the picker. The price beside the
+    /// picker is requoted in place as it moves, from the same <see cref="StateOf"/> the press then
+    /// charges - never by rebuilding, which would free the slider mid-drag. A quantity the merchant's
+    /// purse cannot cover greys the verb and says why. A broker lists whole stacks, so she gets no
+    /// picker; neither does a single item, a locked one, or anything this counter refuses outright.
+    /// </summary>
+    private void BuildSellOrder(ShopResource shop, ItemStack stack, bool haggled)
+    {
+        ItemInstance instance = stack.Instance;
+        PackState whole = StateOf(shop, stack, haggled, stack.Quantity);
+        if (whole.Priced)
+        {
+            AddPriceLines(whole.Quote, shop);
+        }
+
+        bool partial = stack.Quantity >= 2 && !shop.IsConsignment && !instance.Locked && whole.Priced;
+        _sellQuantity = partial
+            ? ItemPresentation.ClampQuantity(_sellQuantity, stack.Quantity, keepOne: false)
+            : stack.Quantity;
+
+        string verb = Loc.T(shop.IsConsignment ? "shop.consign" : "shop.sell");
+        Label note = OrderNote(string.Empty, bad: false);
+        Label total = OrderTotal();
+        Button sell = OrderVerb(verb);
+
+        void Requote(int quantity)
+        {
+            _sellQuantity = quantity;
+            PackState state = StateOf(shop, stack, haggled, quantity);
+            total.Text = state.Priced ? PayoutText(shop, state.Payout) : string.Empty;
+            total.TooltipText = state.Priced ? PriceTooltip.Render(state.Quote) : string.Empty;
+            sell.Text = partial && quantity > 1 ? Loc.TF("trade.sell_many", quantity) : verb;
+
+            string why = _feedback.Length > 0 ? _feedback : state.Enabled ? string.Empty : state.Refusal;
+            note.Text = why.Length > 0 ? why : Loc.T("trade.order.sell_hint");
+            note.AddThemeColorOverride("font_color", why.Length > 0 ? UiTheme.Bad : UiTheme.Dim);
+            sell.AddThemeColorOverride("font_color", state.Enabled ? UiTheme.Text : UiTheme.Disabled);
+            total.AddThemeColorOverride("font_color", state.Enabled ? UiTheme.Accent : UiTheme.Disabled);
+        }
+
+        if (partial)
+        {
+            _order.AddChild(QuantityPicker.Build(1, stack.Quantity, _sellQuantity, quantity =>
+            {
+                _feedback = string.Empty; // the reason belonged to the amount just moved away from
+                Requote(quantity);
+            }));
+        }
+
+        _order.AddChild(total);
+
+        sell.Pressed += () => TrySell(shop, stack, partial ? _sellQuantity : stack.Quantity);
+        _order.AddChild(sell);
+
+        if (partial)
+        {
+            Button all = OrderVerb(Loc.TF("trade.sell_all", stack.Quantity));
+            all.Pressed += () => TrySell(shop, stack, stack.Quantity);
+            _order.AddChild(all);
+        }
+
+        Requote(_sellQuantity);
     }
 
     private ItemStack? HeldStack(ItemInstance instance)
@@ -1546,67 +2083,126 @@ public partial class VendorPanel : UiPanel
         return null;
     }
 
+    // --- Focus --------------------------------------------------------------
+
     /// <summary>
-    /// The quantity picker for selling part of a stack, or null when there is no "part" to sell: a
-    /// single item, a broker (she lists whole stacks), or anything this counter refuses outright.
-    ///
-    /// The price beside it is requoted in place as the slider moves, from the same
-    /// <see cref="SellQuoteFor"/> the press then charges - never by rebuilding, which would free the
-    /// slider mid-drag. A quantity the merchant's purse cannot cover greys the button and says why.
+    /// The explicit neighbours a pad walks: up and down inside a list, right from the wares to the
+    /// pack, and right again to the counter's own dealings or the order bar. Run after every rebuild
+    /// of the lists or of the order bar, once the rows are in the tree.
     /// </summary>
-    private Control? SellSomeRow(ShopResource shop, ItemStack stack, bool haggled)
+    private void WireFocus()
     {
-        ItemInstance instance = stack.Instance;
-        if (stack.Quantity < 2 || shop.IsConsignment || instance.Locked ||
-            !ShopPricing.Sellable(instance.Type, IsCurrency(instance)) || !InTrade(shop, instance))
+        Control? order = FirstFocusable(_order);
+        Control? counter = _haggleRow.Visible && !_haggleButton.Disabled ? _haggleButton
+            : _investRow.Visible && !_investButton.Disabled ? _investButton
+            : order;
+        Control? pack = _packRows.Count > 0 ? _packRows[0] : counter;
+        Control? wares = _waresRows.Count > 0 ? _waresRows[0] : null;
+
+        TradeRow.WireColumn(_waresRows, null, pack);
+        TradeRow.WireColumn(_packRows, wares, counter);
+    }
+
+    private static Control? FirstFocusable(Node root)
+    {
+        foreach (Node child in root.GetChildren())
         {
-            return null;
+            if (child is Control { Visible: true } control)
+            {
+                if (control.FocusMode == Control.FocusModeEnum.All && control is not BaseButton { Disabled: true })
+                {
+                    return control;
+                }
+
+                if (FirstFocusable(control) is { } inner)
+                {
+                    return inner;
+                }
+            }
         }
 
-        _sellQuantity = ItemPresentation.ClampQuantity(_sellQuantity, stack.Quantity, keepOne: false);
-        int merchantPurse = Stock()?.PurseFor(shop) ?? -1;
+        return null;
+    }
 
-        var row = new HBoxContainer();
-        row.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
+    // --- Capture hooks (src/Debugging/TradeShots.cs) ------------------------
 
-        Label caption = UiTheme.Caption(Loc.T("shop.sell_some"));
-        caption.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
-        row.AddChild(caption);
+    /// <summary>The total the "sell all junk" confirm is naming right now; zero when it is not showing.</summary>
+    public int JunkConfirmTotal => _junkTotalShown;
 
-        Label price = UiTheme.Body(string.Empty, UiTheme.Accent);
-        price.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
-        price.CustomMinimumSize = new Vector2(72f, 0f);
-        price.HorizontalAlignment = HorizontalAlignment.Right;
+    /// <summary>Whether the inspected item is one of the merchant's wares (as opposed to the pack's).</summary>
+    public bool InspectingWare => _selectedTrade != null && _selectedSide == Side.Wares;
 
-        Button sell = UiTheme.Action(Loc.T("shop.sell"));
-        sell.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
+    /// <summary>Presses "Sell all junk" once, leaving the confirm that names the total on screen.</summary>
+    public void ArmJunkSaleForCapture()
+    {
+        _junkArmed = true;
+        MarkDirty();
+    }
 
-        void Requote(int quantity)
+    /// <summary>
+    /// Inspects the first ware (then the first pack item) that has something worn to be compared
+    /// with, and shows the card's one-item or side-by-side view. False when nothing on either list
+    /// has a worn rival.
+    /// </summary>
+    public bool CompareForCapture(bool sideBySide)
+    {
+        if (_shop is not { } shop || _player?.GetComponent<EquipmentComponent>() is not { } worn)
         {
-            _sellQuantity = quantity;
-            PriceQuote quote = SellQuoteFor(shop, instance, quantity, haggled);
-            bool covered = merchantPurse < 0 || quote.Total <= merchantPurse;
-            price.Text = Loc.TF("shop.price", quote.Total);
-            price.TooltipText = PriceTooltip.Render(quote);
-            sell.Disabled = quote.Total <= 0 || !covered;
-            sell.TooltipText = quote.Total <= 0 ? Loc.T("shop.worthless")
-                : covered ? string.Empty
-                : Loc.T("shop.vendor_broke");
+            return false;
         }
 
-        HBoxContainer picker = QuantityPicker.Build(1, stack.Quantity, _sellQuantity, Requote);
-        picker.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-        row.AddChild(picker);
-        row.AddChild(price);
-
-        sell.Pressed += () =>
+        ItemInstance? pick = null;
+        Side side = Side.Wares;
+        foreach (ShopOffer offer in Offers(shop))
         {
-            int quantity = ItemPresentation.ClampQuantity(_sellQuantity, stack.Quantity, keepOne: false);
-            Sell(shop, stack, quantity, SellQuoteFor(shop, instance, quantity, DealStruck(shop)).Total);
-        };
-        row.AddChild(sell);
+            if (HasRival(worn, offer.Instance))
+            {
+                pick = offer.Instance;
+                break;
+            }
+        }
 
-        Requote(_sellQuantity);
-        return row;
+        if (pick == null && _pack != null)
+        {
+            side = Side.Pack;
+            foreach (ItemStack stack in _pack.Stacks)
+            {
+                if (HasRival(worn, stack.Instance))
+                {
+                    pick = stack.Instance;
+                    break;
+                }
+            }
+        }
+
+        if (pick == null)
+        {
+            return false;
+        }
+
+        _selectedSide = side;
+        _selectedTrade = pick;
+        _focusSelection = true;
+        ItemSlot.CompareOpen = sideBySide;
+        MarkDirty();
+        return true;
+    }
+
+    private static bool HasRival(EquipmentComponent worn, ItemInstance instance)
+    {
+        if (instance.Equippable is not { } gear || worn.IsInstanceEquipped(instance))
+        {
+            return false;
+        }
+
+        foreach (EquipmentSlot slot in ItemPresentation.RivalSlots(gear.Slot))
+        {
+            if (worn.GetEquipped(slot) != null)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
