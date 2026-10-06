@@ -58,6 +58,42 @@ ItemId = "item.material.dreamsmoke"
 Quantity = 4
 RequiredFlagId = "flag.hollowreach.barrels_hushed"
 
+[sub_resource type="Resource" id="Stock_ics_1"]
+script = ExtResource("2_entry")
+ItemId = "item.ring.moonsilver"
+Quantity = 1
+RequiredFlagId = "flag.crimson_prophet_defeated"
+
+[sub_resource type="Resource" id="Stock_ics_2"]
+script = ExtResource("2_entry")
+ItemId = "item.amulet.moonsilver_locket"
+Quantity = 1
+RequiredFlagId = "flag.crimson_prophet_defeated"
+
+[sub_resource type="Resource" id="Stock_ics_3"]
+script = ExtResource("2_entry")
+ItemId = "item.ring.starmetal"
+Quantity = 1
+RequiredFlagId = "flag.hollow_queen_defeated"
+
+[sub_resource type="Resource" id="Stock_ics_4"]
+script = ExtResource("2_entry")
+ItemId = "item.amulet.starmetal_torc"
+Quantity = 1
+RequiredFlagId = "flag.hollow_queen_defeated"
+
+[sub_resource type="Resource" id="Stock_ics_5"]
+script = ExtResource("2_entry")
+ItemId = "item.amulet.magpies_charm"
+Quantity = 1
+RequiredFlagId = "flag.iron_syndicate.verdict_given"
+
+[sub_resource type="Resource" id="Stock_ics_6"]
+script = ExtResource("2_entry")
+ItemId = "item.ring.last_ember"
+Quantity = 1
+RequiredFlagId = "flag.hollow_queen_defeated"
+
 [resource]
 script = ExtResource("1_shop")
 Id = "shop.hollowreach.hull"
@@ -65,7 +101,7 @@ NameKey = "shop.hollowreach.hull.name"
 FactionId = ""
 AcceptedTags = Array[String](["contraband", "luxury", "gem", "jewelry"])
 Specialties = Array[String](["contraband", "gem"])
-Stock = Array[Resource]([SubResource("Stock_moonstone"), SubResource("Stock_ash"), SubResource("Stock_spice"), SubResource("Stock_dreamsmoke")])
+Stock = Array[Resource]([SubResource("Stock_moonstone"), SubResource("Stock_ash"), SubResource("Stock_spice"), SubResource("Stock_dreamsmoke"), SubResource("Stock_ics_1"), SubResource("Stock_ics_2"), SubResource("Stock_ics_3"), SubResource("Stock_ics_4"), SubResource("Stock_ics_5"), SubResource("Stock_ics_6")])
 RestockDays = 2
 BuyMarkup = 1.62
 SellFraction = 0.55

@@ -33,6 +33,67 @@ script = ExtResource("2_entry")
 ItemId = "item.armor.leather_cap"
 Quantity = 2
 
+[sub_resource type="Resource" id="Stock_ics_1"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.rawhide_coif"
+Quantity = 1
+
+[sub_resource type="Resource" id="Stock_ics_2"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.rawhide_jerkin"
+Quantity = 1
+
+[sub_resource type="Resource" id="Stock_ics_3"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.rawhide_gloves"
+Quantity = 1
+
+[sub_resource type="Resource" id="Stock_ics_4"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.rawhide_breeches"
+Quantity = 1
+
+[sub_resource type="Resource" id="Stock_ics_5"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.rawhide_boots"
+Quantity = 1
+
+[sub_resource type="Resource" id="Stock_ics_6"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.frosthide_jerkin"
+Quantity = 1
+RequiredFlagId = "flag.iron_king_defeated"
+
+[sub_resource type="Resource" id="Stock_ics_7"]
+script = ExtResource("2_entry")
+ItemId = "item.recipe_scroll.ashhide_jerkin"
+Quantity = 1
+RequiredFlagId = "flag.storm_tyrant_defeated"
+
+[sub_resource type="Resource" id="Stock_ics_8"]
+script = ExtResource("2_entry")
+ItemId = "item.recipe_scroll.dunehide_jerkin"
+Quantity = 1
+RequiredFlagId = "flag.beast_lord_defeated"
+
+[sub_resource type="Resource" id="Stock_ics_9"]
+script = ExtResource("2_entry")
+ItemId = "item.recipe_scroll.duskhide_jerkin"
+Quantity = 1
+RequiredFlagId = "flag.crimson_prophet_defeated"
+
+[sub_resource type="Resource" id="Stock_ics_10"]
+script = ExtResource("2_entry")
+ItemId = "item.recipe_scroll.skyhide_jerkin"
+Quantity = 1
+RequiredFlagId = "flag.hollow_queen_defeated"
+
+[sub_resource type="Resource" id="Stock_ics_11"]
+script = ExtResource("2_entry")
+ItemId = "item.weapon.farsight"
+Quantity = 1
+RequiredFlagId = "flag.ash_hunters.verdict_given"
+
 [resource]
 script = ExtResource("1_shop")
 Id = "shop.embermarket.tannery"
@@ -40,7 +101,7 @@ NameKey = "shop.embermarket.tannery.name"
 FactionId = "faction.villagers"
 AcceptedTags = Array[String](["leather", "pelt"])
 Specialties = Array[String](["leather", "pelt"])
-Stock = Array[Resource]([SubResource("Stock_hide"), SubResource("Stock_strips"), SubResource("Stock_pelt"), SubResource("Stock_cap")])
+Stock = Array[Resource]([SubResource("Stock_hide"), SubResource("Stock_strips"), SubResource("Stock_pelt"), SubResource("Stock_cap"), SubResource("Stock_ics_1"), SubResource("Stock_ics_2"), SubResource("Stock_ics_3"), SubResource("Stock_ics_4"), SubResource("Stock_ics_5"), SubResource("Stock_ics_6"), SubResource("Stock_ics_7"), SubResource("Stock_ics_8"), SubResource("Stock_ics_9"), SubResource("Stock_ics_10"), SubResource("Stock_ics_11")])
 RestockDays = 2
 BuyMarkup = 1.5
 SellFraction = 0.45

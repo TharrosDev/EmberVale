@@ -43,6 +43,34 @@ script = ExtResource("2_entry")
 ItemId = "item.food.smoked_fish"
 Quantity = 4
 
+[sub_resource type="Resource" id="Stock_ics_1"]
+script = ExtResource("2_entry")
+ItemId = "item.food.hearth_stew"
+Quantity = 4
+
+[sub_resource type="Resource" id="Stock_ics_2"]
+script = ExtResource("2_entry")
+ItemId = "item.food.oatcake"
+Quantity = 6
+
+[sub_resource type="Resource" id="Stock_ics_3"]
+script = ExtResource("2_entry")
+ItemId = "item.recipe_scroll.frostfang_broth"
+Quantity = 1
+RequiredFlagId = "flag.iron_king_defeated"
+
+[sub_resource type="Resource" id="Stock_ics_4"]
+script = ExtResource("2_entry")
+ItemId = "item.recipe_scroll.spiced_roast"
+Quantity = 1
+RequiredFlagId = "flag.storm_tyrant_defeated"
+
+[sub_resource type="Resource" id="Stock_ics_5"]
+script = ExtResource("2_entry")
+ItemId = "item.recipe_scroll.ember_tea"
+Quantity = 1
+RequiredFlagId = "flag.storm_tyrant_defeated"
+
 [resource]
 script = ExtResource("1_shop")
 Id = "shop.embermarket.provisions"
@@ -50,7 +78,7 @@ NameKey = "shop.embermarket.provisions.name"
 FactionId = "faction.villagers"
 AcceptedTags = Array[String](["food", "herb"])
 Specialties = Array[String](["food"])
-Stock = Array[Resource]([SubResource("Stock_bread"), SubResource("Stock_ration"), SubResource("Stock_grain"), SubResource("Stock_salt"), SubResource("Stock_fish")])
+Stock = Array[Resource]([SubResource("Stock_bread"), SubResource("Stock_ration"), SubResource("Stock_grain"), SubResource("Stock_salt"), SubResource("Stock_fish"), SubResource("Stock_ics_1"), SubResource("Stock_ics_2"), SubResource("Stock_ics_3"), SubResource("Stock_ics_4"), SubResource("Stock_ics_5")])
 RestockDays = 1
 BuyMarkup = 1.5
 SellFraction = 0.4

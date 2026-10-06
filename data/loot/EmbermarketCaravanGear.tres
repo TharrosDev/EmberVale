@@ -38,9 +38,745 @@ MinQuantity = 1
 MaxQuantity = 1
 RollAffixes = true
 
+[sub_resource type="Resource" id="Entry_ics_1"]
+script = ExtResource("2_entry")
+ItemId = "item.weapon.sunsteel_sword"
+DropChance = 0.025
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_ics_2"]
+script = ExtResource("2_entry")
+ItemId = "item.weapon.sunsteel_dagger"
+DropChance = 0.025
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_ics_3"]
+script = ExtResource("2_entry")
+ItemId = "item.weapon.sunsteel_axe"
+DropChance = 0.025
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_ics_4"]
+script = ExtResource("2_entry")
+ItemId = "item.weapon.sunsteel_mace"
+DropChance = 0.025
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_ics_5"]
+script = ExtResource("2_entry")
+ItemId = "item.weapon.sunsteel_spear"
+DropChance = 0.025
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_ics_6"]
+script = ExtResource("2_entry")
+ItemId = "item.weapon.goldenpalm_staff"
+DropChance = 0.025
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_ics_7"]
+script = ExtResource("2_entry")
+ItemId = "item.weapon.sunsteel_greatsword"
+DropChance = 0.025
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_ics_8"]
+script = ExtResource("2_entry")
+ItemId = "item.weapon.goldenpalm_bow"
+DropChance = 0.025
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_ics_9"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.sunsilk_hood"
+DropChance = 0.025
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_ics_10"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.sunsilk_robe"
+DropChance = 0.025
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_ics_11"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.sunsilk_wraps"
+DropChance = 0.025
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_ics_12"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.sunsilk_trousers"
+DropChance = 0.025
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_ics_13"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.sunsilk_shoes"
+DropChance = 0.025
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_ics_14"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.dunehide_coif"
+DropChance = 0.025
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_ics_15"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.dunehide_jerkin"
+DropChance = 0.025
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_ics_16"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.dunehide_gloves"
+DropChance = 0.025
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_ics_17"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.dunehide_breeches"
+DropChance = 0.025
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_ics_18"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.dunehide_boots"
+DropChance = 0.025
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_ics_19"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.sunsteel_helm"
+DropChance = 0.025
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_ics_20"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.sunsteel_cuirass"
+DropChance = 0.025
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_ics_21"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.sunsteel_gauntlets"
+DropChance = 0.025
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_ics_22"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.sunsteel_greaves"
+DropChance = 0.025
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_ics_23"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.sunsteel_sabatons"
+DropChance = 0.025
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_ics_24"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.sunsteel_shield"
+DropChance = 0.025
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_ics_25"]
+script = ExtResource("2_entry")
+ItemId = "item.ring.gold"
+DropChance = 0.025
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_ics_26"]
+script = ExtResource("2_entry")
+ItemId = "item.amulet.gold_medallion"
+DropChance = 0.025
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_ics_27"]
+script = ExtResource("2_entry")
+ItemId = "item.weapon.moonsilver_sword"
+DropChance = 0.025
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_ics_28"]
+script = ExtResource("2_entry")
+ItemId = "item.weapon.moonsilver_dagger"
+DropChance = 0.025
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_ics_29"]
+script = ExtResource("2_entry")
+ItemId = "item.weapon.moonsilver_axe"
+DropChance = 0.025
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_ics_30"]
+script = ExtResource("2_entry")
+ItemId = "item.weapon.moonsilver_mace"
+DropChance = 0.025
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_ics_31"]
+script = ExtResource("2_entry")
+ItemId = "item.weapon.moonsilver_spear"
+DropChance = 0.025
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_ics_32"]
+script = ExtResource("2_entry")
+ItemId = "item.weapon.gloamwood_staff"
+DropChance = 0.025
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_ics_33"]
+script = ExtResource("2_entry")
+ItemId = "item.weapon.moonsilver_greatsword"
+DropChance = 0.025
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_ics_34"]
+script = ExtResource("2_entry")
+ItemId = "item.weapon.gloamwood_bow"
+DropChance = 0.025
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_ics_35"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.gloamweave_hood"
+DropChance = 0.025
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_ics_36"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.gloamweave_robe"
+DropChance = 0.025
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_ics_37"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.gloamweave_wraps"
+DropChance = 0.025
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_ics_38"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.gloamweave_trousers"
+DropChance = 0.025
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_ics_39"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.gloamweave_shoes"
+DropChance = 0.025
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_ics_40"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.duskhide_coif"
+DropChance = 0.025
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_ics_41"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.duskhide_jerkin"
+DropChance = 0.025
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_ics_42"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.duskhide_gloves"
+DropChance = 0.025
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_ics_43"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.duskhide_breeches"
+DropChance = 0.025
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_ics_44"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.duskhide_boots"
+DropChance = 0.025
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_ics_45"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.moonsilver_helm"
+DropChance = 0.025
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_ics_46"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.moonsilver_cuirass"
+DropChance = 0.025
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_ics_47"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.moonsilver_gauntlets"
+DropChance = 0.025
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_ics_48"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.moonsilver_greaves"
+DropChance = 0.025
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_ics_49"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.moonsilver_sabatons"
+DropChance = 0.025
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_ics_50"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.moonsilver_shield"
+DropChance = 0.025
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_ics_51"]
+script = ExtResource("2_entry")
+ItemId = "item.ring.moonsilver"
+DropChance = 0.025
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_ics_52"]
+script = ExtResource("2_entry")
+ItemId = "item.amulet.moonsilver_locket"
+DropChance = 0.025
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_ics_53"]
+script = ExtResource("2_entry")
+ItemId = "item.weapon.starmetal_sword"
+DropChance = 0.025
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_ics_54"]
+script = ExtResource("2_entry")
+ItemId = "item.weapon.starmetal_dagger"
+DropChance = 0.025
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_ics_55"]
+script = ExtResource("2_entry")
+ItemId = "item.weapon.starmetal_axe"
+DropChance = 0.025
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_ics_56"]
+script = ExtResource("2_entry")
+ItemId = "item.weapon.starmetal_mace"
+DropChance = 0.025
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_ics_57"]
+script = ExtResource("2_entry")
+ItemId = "item.weapon.starmetal_spear"
+DropChance = 0.025
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_ics_58"]
+script = ExtResource("2_entry")
+ItemId = "item.weapon.starwood_staff"
+DropChance = 0.025
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_ics_59"]
+script = ExtResource("2_entry")
+ItemId = "item.weapon.starmetal_greatsword"
+DropChance = 0.025
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_ics_60"]
+script = ExtResource("2_entry")
+ItemId = "item.weapon.starwood_bow"
+DropChance = 0.025
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_ics_61"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.starweave_hood"
+DropChance = 0.025
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_ics_62"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.starweave_robe"
+DropChance = 0.025
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_ics_63"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.starweave_wraps"
+DropChance = 0.025
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_ics_64"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.starweave_trousers"
+DropChance = 0.025
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_ics_65"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.starweave_shoes"
+DropChance = 0.025
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_ics_66"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.skyhide_coif"
+DropChance = 0.025
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_ics_67"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.skyhide_jerkin"
+DropChance = 0.025
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_ics_68"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.skyhide_gloves"
+DropChance = 0.025
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_ics_69"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.skyhide_breeches"
+DropChance = 0.025
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_ics_70"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.skyhide_boots"
+DropChance = 0.025
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_ics_71"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.starmetal_helm"
+DropChance = 0.025
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_ics_72"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.starmetal_cuirass"
+DropChance = 0.025
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_ics_73"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.starmetal_gauntlets"
+DropChance = 0.025
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_ics_74"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.starmetal_greaves"
+DropChance = 0.025
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_ics_75"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.starmetal_sabatons"
+DropChance = 0.025
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_ics_76"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.starmetal_shield"
+DropChance = 0.025
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_ics_77"]
+script = ExtResource("2_entry")
+ItemId = "item.ring.starmetal"
+DropChance = 0.025
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_ics_78"]
+script = ExtResource("2_entry")
+ItemId = "item.amulet.starmetal_torc"
+DropChance = 0.025
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_ics_79"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.sunspire_templars_helm"
+DropChance = 0.012
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = false
+
+[sub_resource type="Resource" id="Entry_ics_80"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.sunspire_templars_cuirass"
+DropChance = 0.012
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = false
+
+[sub_resource type="Resource" id="Entry_ics_81"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.sunspire_templars_gauntlets"
+DropChance = 0.012
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = false
+
+[sub_resource type="Resource" id="Entry_ics_82"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.sunspire_templars_greaves"
+DropChance = 0.012
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = false
+
+[sub_resource type="Resource" id="Entry_ics_83"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.sunspire_templars_sabatons"
+DropChance = 0.012
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = false
+
+[sub_resource type="Resource" id="Entry_ics_84"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.gloamwardens_coif"
+DropChance = 0.012
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = false
+
+[sub_resource type="Resource" id="Entry_ics_85"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.gloamwardens_jerkin"
+DropChance = 0.012
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = false
+
+[sub_resource type="Resource" id="Entry_ics_86"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.gloamwardens_breeches"
+DropChance = 0.012
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = false
+
+[sub_resource type="Resource" id="Entry_ics_87"]
+script = ExtResource("2_entry")
+ItemId = "item.weapon.gloamwardens_dagger"
+DropChance = 0.012
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = false
+
+[sub_resource type="Resource" id="Entry_ics_88"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.starfall_hood"
+DropChance = 0.012
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = false
+
+[sub_resource type="Resource" id="Entry_ics_89"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.starfall_robe"
+DropChance = 0.012
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = false
+
+[sub_resource type="Resource" id="Entry_ics_90"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.starfall_wraps"
+DropChance = 0.012
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = false
+
+[sub_resource type="Resource" id="Entry_ics_91"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.starfall_trousers"
+DropChance = 0.012
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = false
+
+[sub_resource type="Resource" id="Entry_ics_92"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.starfall_shoes"
+DropChance = 0.012
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = false
+
 [resource]
 script = ExtResource("1_table")
-Entries = Array[Resource]([SubResource("Entry_vest"), SubResource("Entry_dagger"), SubResource("Entry_ring")])
+Entries = Array[Resource]([SubResource("Entry_vest"), SubResource("Entry_dagger"), SubResource("Entry_ring"), SubResource("Entry_ics_1"), SubResource("Entry_ics_2"), SubResource("Entry_ics_3"), SubResource("Entry_ics_4"), SubResource("Entry_ics_5"), SubResource("Entry_ics_6"), SubResource("Entry_ics_7"), SubResource("Entry_ics_8"), SubResource("Entry_ics_9"), SubResource("Entry_ics_10"), SubResource("Entry_ics_11"), SubResource("Entry_ics_12"), SubResource("Entry_ics_13"), SubResource("Entry_ics_14"), SubResource("Entry_ics_15"), SubResource("Entry_ics_16"), SubResource("Entry_ics_17"), SubResource("Entry_ics_18"), SubResource("Entry_ics_19"), SubResource("Entry_ics_20"), SubResource("Entry_ics_21"), SubResource("Entry_ics_22"), SubResource("Entry_ics_23"), SubResource("Entry_ics_24"), SubResource("Entry_ics_25"), SubResource("Entry_ics_26"), SubResource("Entry_ics_27"), SubResource("Entry_ics_28"), SubResource("Entry_ics_29"), SubResource("Entry_ics_30"), SubResource("Entry_ics_31"), SubResource("Entry_ics_32"), SubResource("Entry_ics_33"), SubResource("Entry_ics_34"), SubResource("Entry_ics_35"), SubResource("Entry_ics_36"), SubResource("Entry_ics_37"), SubResource("Entry_ics_38"), SubResource("Entry_ics_39"), SubResource("Entry_ics_40"), SubResource("Entry_ics_41"), SubResource("Entry_ics_42"), SubResource("Entry_ics_43"), SubResource("Entry_ics_44"), SubResource("Entry_ics_45"), SubResource("Entry_ics_46"), SubResource("Entry_ics_47"), SubResource("Entry_ics_48"), SubResource("Entry_ics_49"), SubResource("Entry_ics_50"), SubResource("Entry_ics_51"), SubResource("Entry_ics_52"), SubResource("Entry_ics_53"), SubResource("Entry_ics_54"), SubResource("Entry_ics_55"), SubResource("Entry_ics_56"), SubResource("Entry_ics_57"), SubResource("Entry_ics_58"), SubResource("Entry_ics_59"), SubResource("Entry_ics_60"), SubResource("Entry_ics_61"), SubResource("Entry_ics_62"), SubResource("Entry_ics_63"), SubResource("Entry_ics_64"), SubResource("Entry_ics_65"), SubResource("Entry_ics_66"), SubResource("Entry_ics_67"), SubResource("Entry_ics_68"), SubResource("Entry_ics_69"), SubResource("Entry_ics_70"), SubResource("Entry_ics_71"), SubResource("Entry_ics_72"), SubResource("Entry_ics_73"), SubResource("Entry_ics_74"), SubResource("Entry_ics_75"), SubResource("Entry_ics_76"), SubResource("Entry_ics_77"), SubResource("Entry_ics_78"), SubResource("Entry_ics_79"), SubResource("Entry_ics_80"), SubResource("Entry_ics_81"), SubResource("Entry_ics_82"), SubResource("Entry_ics_83"), SubResource("Entry_ics_84"), SubResource("Entry_ics_85"), SubResource("Entry_ics_86"), SubResource("Entry_ics_87"), SubResource("Entry_ics_88"), SubResource("Entry_ics_89"), SubResource("Entry_ics_90"), SubResource("Entry_ics_91"), SubResource("Entry_ics_92")])
 GoldItemId = "item.currency.gold"
 GoldChance = 0.0
 GoldMin = 0

@@ -78,6 +78,75 @@ ItemId = "item.kit.alchemy"
 Quantity = 1
 RequiredTier = 5
 
+[sub_resource type="Resource" id="Stock_ics_1"]
+script = ExtResource("2_entry")
+ItemId = "item.potion.stamina_lesser"
+Quantity = 4
+
+[sub_resource type="Resource" id="Stock_ics_2"]
+script = ExtResource("2_entry")
+ItemId = "item.potion.mana_lesser"
+Quantity = 4
+
+[sub_resource type="Resource" id="Stock_ics_3"]
+script = ExtResource("2_entry")
+ItemId = "item.potion.cure_lesser"
+Quantity = 3
+
+[sub_resource type="Resource" id="Stock_ics_4"]
+script = ExtResource("2_entry")
+ItemId = "item.potion.health_greater"
+Quantity = 3
+RequiredFlagId = "flag.storm_tyrant_defeated"
+
+[sub_resource type="Resource" id="Stock_ics_5"]
+script = ExtResource("2_entry")
+ItemId = "item.recipe_scroll.health_greater"
+Quantity = 1
+RequiredFlagId = "flag.storm_tyrant_defeated"
+
+[sub_resource type="Resource" id="Stock_ics_6"]
+script = ExtResource("2_entry")
+ItemId = "item.recipe_scroll.stamina_greater"
+Quantity = 1
+RequiredFlagId = "flag.storm_tyrant_defeated"
+
+[sub_resource type="Resource" id="Stock_ics_7"]
+script = ExtResource("2_entry")
+ItemId = "item.recipe_scroll.mana_greater"
+Quantity = 1
+RequiredFlagId = "flag.storm_tyrant_defeated"
+
+[sub_resource type="Resource" id="Stock_ics_8"]
+script = ExtResource("2_entry")
+ItemId = "item.recipe_scroll.cure_greater"
+Quantity = 1
+RequiredFlagId = "flag.storm_tyrant_defeated"
+
+[sub_resource type="Resource" id="Stock_ics_9"]
+script = ExtResource("2_entry")
+ItemId = "item.potion.health_superior"
+Quantity = 2
+RequiredFlagId = "flag.crimson_prophet_defeated"
+
+[sub_resource type="Resource" id="Stock_ics_10"]
+script = ExtResource("2_entry")
+ItemId = "item.potion.stamina_superior"
+Quantity = 2
+RequiredFlagId = "flag.crimson_prophet_defeated"
+
+[sub_resource type="Resource" id="Stock_ics_11"]
+script = ExtResource("2_entry")
+ItemId = "item.potion.mana_superior"
+Quantity = 2
+RequiredFlagId = "flag.crimson_prophet_defeated"
+
+[sub_resource type="Resource" id="Stock_ics_12"]
+script = ExtResource("2_entry")
+ItemId = "item.potion.cure_superior"
+Quantity = 1
+RequiredFlagId = "flag.crimson_prophet_defeated"
+
 [resource]
 script = ExtResource("1_shop")
 Id = "shop.ember_crown.apothecary"
@@ -85,7 +154,7 @@ NameKey = "shop.ember_crown.apothecary.name"
 FactionId = "faction.villagers"
 AcceptedTags = Array[String](["herb", "reagent", "potion", "arcane"])
 Specialties = Array[String](["herb", "reagent", "potion"])
-Stock = Array[Resource]([SubResource("Stock_potion"), SubResource("Stock_herb"), SubResource("Stock_dust"), SubResource("Stock_mote"), SubResource("Stock_scale"), SubResource("Stock_kit")])
+Stock = Array[Resource]([SubResource("Stock_potion"), SubResource("Stock_herb"), SubResource("Stock_dust"), SubResource("Stock_mote"), SubResource("Stock_scale"), SubResource("Stock_kit"), SubResource("Stock_ics_1"), SubResource("Stock_ics_2"), SubResource("Stock_ics_3"), SubResource("Stock_ics_4"), SubResource("Stock_ics_5"), SubResource("Stock_ics_6"), SubResource("Stock_ics_7"), SubResource("Stock_ics_8"), SubResource("Stock_ics_9"), SubResource("Stock_ics_10"), SubResource("Stock_ics_11"), SubResource("Stock_ics_12")])
 RestockDays = 1
 BuyMarkup = 1.6
 SellFraction = 0.4

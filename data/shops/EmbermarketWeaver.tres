@@ -27,6 +27,61 @@ script = ExtResource("2_entry")
 ItemId = "item.material.tanned_hide"
 Quantity = 3
 
+[sub_resource type="Resource" id="Stock_ics_1"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.homespun_hood"
+Quantity = 1
+
+[sub_resource type="Resource" id="Stock_ics_2"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.homespun_robe"
+Quantity = 1
+
+[sub_resource type="Resource" id="Stock_ics_3"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.homespun_wraps"
+Quantity = 1
+
+[sub_resource type="Resource" id="Stock_ics_4"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.homespun_trousers"
+Quantity = 1
+
+[sub_resource type="Resource" id="Stock_ics_5"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.homespun_shoes"
+Quantity = 1
+
+[sub_resource type="Resource" id="Stock_ics_6"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.frostwool_robe"
+Quantity = 1
+RequiredFlagId = "flag.iron_king_defeated"
+
+[sub_resource type="Resource" id="Stock_ics_7"]
+script = ExtResource("2_entry")
+ItemId = "item.recipe_scroll.ashweave_robe"
+Quantity = 1
+RequiredFlagId = "flag.storm_tyrant_defeated"
+
+[sub_resource type="Resource" id="Stock_ics_8"]
+script = ExtResource("2_entry")
+ItemId = "item.recipe_scroll.sunsilk_robe"
+Quantity = 1
+RequiredFlagId = "flag.beast_lord_defeated"
+
+[sub_resource type="Resource" id="Stock_ics_9"]
+script = ExtResource("2_entry")
+ItemId = "item.recipe_scroll.gloamweave_robe"
+Quantity = 1
+RequiredFlagId = "flag.crimson_prophet_defeated"
+
+[sub_resource type="Resource" id="Stock_ics_10"]
+script = ExtResource("2_entry")
+ItemId = "item.recipe_scroll.starweave_robe"
+Quantity = 1
+RequiredFlagId = "flag.hollow_queen_defeated"
+
 [resource]
 script = ExtResource("1_shop")
 Id = "shop.embermarket.weaver"
@@ -34,7 +89,7 @@ NameKey = "shop.embermarket.weaver.name"
 FactionId = "faction.villagers"
 AcceptedTags = Array[String](["textile", "leather"])
 Specialties = Array[String](["textile"])
-Stock = Array[Resource]([SubResource("Stock_linen"), SubResource("Stock_wool"), SubResource("Stock_hide")])
+Stock = Array[Resource]([SubResource("Stock_linen"), SubResource("Stock_wool"), SubResource("Stock_hide"), SubResource("Stock_ics_1"), SubResource("Stock_ics_2"), SubResource("Stock_ics_3"), SubResource("Stock_ics_4"), SubResource("Stock_ics_5"), SubResource("Stock_ics_6"), SubResource("Stock_ics_7"), SubResource("Stock_ics_8"), SubResource("Stock_ics_9"), SubResource("Stock_ics_10")])
 RestockDays = 2
 BuyMarkup = 1.55
 SellFraction = 0.42
