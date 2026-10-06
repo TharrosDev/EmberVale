@@ -28,6 +28,16 @@ public sealed partial class PerkTreePanel : VBoxContainer
         public string? FocusedId { get; set; }
 
         public bool ConfirmingRespec { get; set; }
+
+        /// <summary>The perk a rank was just bought in. The next build draws its heading rule as an ember wipe
+        /// and clears this, so the flourish plays once per purchase and never on a plain rebuild.</summary>
+        public string? LearnedId { get; set; }
+
+        /// <summary>The perk whose last press was refused. Its reason is shown as a warning until focus moves on.</summary>
+        public string? DeniedId { get; set; }
+
+        /// <summary>How many of the four node visuals the last build drew (read by the screenshot harness).</summary>
+        public int VisualsShown { get; set; }
     }
 
     private readonly PerksComponent _perks;
@@ -38,12 +48,15 @@ public sealed partial class PerkTreePanel : VBoxContainer
     private readonly float _usableWidth;
 
     private VBoxContainer _detail = null!;
+    private PerkTreeCanvas? _canvas;
+    private HashSet<string> _branchIds = new();
+    private readonly HashSet<PerkNodeVisual> _visuals = new();
 
     /// <summary>Set while building the grid: nodes are too narrow for body-size status text beside five pips.</summary>
     private bool _compact;
 
-    /// <summary>Each node's grid cell and its focusable button, in the order they were added; linked in <see cref="_Ready"/>.</summary>
-    private readonly List<((int Tier, int Column) Cell, Button Input)> _focusNodes = new();
+    /// <summary>Each node's perk, grid cell and focusable button, in the order they were added; linked in <see cref="_Ready"/>.</summary>
+    private readonly List<(PerkResource Perk, (int Tier, int Column) Cell, Button Input)> _focusNodes = new();
 
     public PerkTreePanel(
         PerksComponent perks,
@@ -84,7 +97,10 @@ public sealed partial class PerkTreePanel : VBoxContainer
             .OrderBy(p => p.Tier).ThenBy(p => p.Column).ThenBy(p => p.Id, StringComparer.Ordinal)
             .ToList();
 
+        _branchIds = new HashSet<string>(inBranch.Select(p => p.Id));
+
         AddChild(BuildHeader());
+        AddChild(BuildHeadingRule());
         AddChild(BuildBranchStrip(branches));
 
         var body = new HBoxContainer { SizeFlagsVertical = SizeFlags.ExpandFill };
@@ -92,27 +108,71 @@ public sealed partial class PerkTreePanel : VBoxContainer
         body.AddChild(BuildCanvas(inBranch));
         body.AddChild(BuildDetailColumn(inBranch));
         AddChild(body);
+        _view.VisualsShown = _visuals.Count;
+    }
+
+    /// <summary>The one rule under the heading. After a purchase it is drawn by a line of heat
+    /// (<see cref="UiOrnament.EmberWipe"/>); otherwise it is the same rule already cool, so the tree does not
+    /// shift by a pixel when a rank is bought.</summary>
+    private Control BuildHeadingRule()
+    {
+        const float Thickness = 2f;
+        bool bought = _view.LearnedId != null;
+        _view.LearnedId = null;
+        if (bought)
+        {
+            return UiOrnament.EmberWipe(Thickness);
+        }
+
+        return new ColorRect
+        {
+            Color = UiTheme.RuleLit,
+            CustomMinimumSize = new Vector2(0f, Thickness),
+            MouseFilter = MouseFilterEnum.Ignore,
+            SizeFlagsHorizontal = SizeFlags.ExpandFill,
+        };
     }
 
     /// <summary>Wires arrow / d-pad focus between nodes. Only now are the buttons in the tree: a NodePath does not exist before.
+    /// Up and down follow the prerequisite lines where a perk has one (<see cref="PerkTreeRules.FocusTargetAlongEdges"/>).
     /// A step with no node that way points at the button itself, so focus never leaves the grid sideways or down; "up" off
     /// the top row is left to the default search, which finds the branch strip.</summary>
     public override void _Ready()
     {
         List<(int Tier, int Column)> cells = _focusNodes.Select(n => n.Cell).ToList();
+        var index = new Dictionary<string, int>();
+        for (int i = 0; i < _focusNodes.Count; i++)
+        {
+            index[_focusNodes[i].Perk.Id] = i;
+        }
+
+        var edges = new List<(int From, int To)>();
+        for (int i = 0; i < _focusNodes.Count; i++)
+        {
+            foreach (string prerequisite in _focusNodes[i].Perk.PrerequisiteIds)
+            {
+                if (index.TryGetValue(prerequisite, out int from))
+                {
+                    edges.Add((from, i));
+                }
+            }
+        }
+
         for (int i = 0; i < _focusNodes.Count; i++)
         {
             Button input = _focusNodes[i].Input;
-            Link(input, Side.Left, i, PerkTreeDirection.Left, cells, stayPut: true);
-            Link(input, Side.Right, i, PerkTreeDirection.Right, cells, stayPut: true);
-            Link(input, Side.Top, i, PerkTreeDirection.Up, cells, stayPut: false);
-            Link(input, Side.Bottom, i, PerkTreeDirection.Down, cells, stayPut: true);
+            Link(input, Side.Left, i, PerkTreeDirection.Left, cells, edges, stayPut: true);
+            Link(input, Side.Right, i, PerkTreeDirection.Right, cells, edges, stayPut: true);
+            Link(input, Side.Top, i, PerkTreeDirection.Up, cells, edges, stayPut: false);
+            Link(input, Side.Bottom, i, PerkTreeDirection.Down, cells, edges, stayPut: true);
         }
     }
 
-    private void Link(Button input, Side side, int from, PerkTreeDirection direction, List<(int Tier, int Column)> cells, bool stayPut)
+    private void Link(
+        Button input, Side side, int from, PerkTreeDirection direction,
+        List<(int Tier, int Column)> cells, List<(int From, int To)> edges, bool stayPut)
     {
-        int target = PerkTreeRules.FocusTarget(cells, from, direction);
+        int target = PerkTreeRules.FocusTargetAlongEdges(cells, edges, from, direction);
         if (target >= 0)
         {
             input.SetFocusNeighbor(side, _focusNodes[target].Input.GetPath());
@@ -130,8 +190,10 @@ public sealed partial class PerkTreePanel : VBoxContainer
         var row = new HBoxContainer();
         row.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
 
-        Control title = UiTheme.SectionRule(Loc.T("char.perks"));
+        // A bare heading: the rule under the row (BuildHeadingRule) is this section's one rule.
+        Label title = UiTheme.Header(Loc.T("char.perks"));
         title.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+        title.SizeFlagsVertical = SizeFlags.ShrinkCenter;
         row.AddChild(title);
 
         int points = _progression?.SkillPoints ?? 0;
@@ -140,8 +202,9 @@ public sealed partial class PerkTreePanel : VBoxContainer
         return row;
     }
 
-    /// <summary>The Respec button, or its Cancel / confirm pair. Cancel comes first so the focus restore after the
-    /// rebuild (child index 0 of this slot) lands on the safe choice.</summary>
+    /// <summary>The Respec button, or its Cancel / hold-to-confirm pair. Cancel comes first so the focus restore after the
+    /// rebuild (child index 0 of this slot) lands on the safe choice. The respec itself is only ever committed by
+    /// the hold ring: it cannot be undone, and its gold is spent.</summary>
     private Control BuildRespecControls()
     {
         var slot = new HBoxContainer();
@@ -158,9 +221,14 @@ public sealed partial class PerkTreePanel : VBoxContainer
             };
             slot.AddChild(cancel);
 
-            Button confirm = UiTheme.Action(Loc.TF("perktree.respec_cost", cost));
+            // With holds turned into presses (the accessibility setting) the ring completes on the press, so the
+            // button must not ask for a hold it will not wait for.
+            Button confirm = UiTheme.Action(UiFx.HoldsToPresses
+                ? Loc.TF("perktree.respec_cost", cost)
+                : Loc.TF("perktree.respec_hold", cost));
+            UiTheme.ApplyType(confirm, UiTheme.FontRole.Interface, UiTheme.BodyFontSize); // a sentence, not a carved label
             confirm.Disabled = _wallet == null || !_perks.CanRespec(_wallet);
-            confirm.Pressed += () =>
+            HoldRing ring = UiFx.HoldRing(() =>
             {
                 _view.ConfirmingRespec = false;
                 if (_wallet != null)
@@ -169,8 +237,10 @@ public sealed partial class PerkTreePanel : VBoxContainer
                 }
 
                 _changed();
-            };
+            });
+            ring.Attach(confirm);
             slot.AddChild(confirm);
+            slot.AddChild(ring);
             return slot;
         }
 
@@ -222,6 +292,7 @@ public sealed partial class PerkTreePanel : VBoxContainer
         {
             SizeFlagsVertical = SizeFlags.ShrinkBegin,
         };
+        _canvas = canvas;
 
         for (int tier = 1; tier <= rows; tier++)
         {
@@ -262,32 +333,32 @@ public sealed partial class PerkTreePanel : VBoxContainer
     {
         int rank = _perks.RankOf(perk.Id);
         PerkNodeState state = PerkTreeRules.StateOf(_perks.WhyNot(perk));
+        PerkNodeVisual visual = PerkTreeRules.VisualOf(state, rank);
+        _visuals.Add(visual);
         (string caption, Color captionColor) = NodeCaption(perk, state);
-
-        // A learned perk that cannot advance right now keeps a brass spine; the rest follow their state.
-        Color spine = state switch
-        {
-            PerkNodeState.Maxed => UiTheme.Accent,
-            PerkNodeState.Learnable => UiTheme.Good,
-            PerkNodeState.CorruptionGated => UiTheme.Corruption,
-            _ => rank > 0 ? UiTheme.Brass : UiTheme.Disabled,
-        };
 
         // A grid node is smaller than a list row, so it brings its own tighter frame; CardButton sizes its hover and
         // focus rings from that frame's margins.
-        StyleBoxFlat box = UiTheme.CardStyle(spine);
+        StyleBoxFlat box = NodeFrame(visual, state);
         box.SetContentMarginAll(UiTheme.SpaceXs);
         box.ContentMarginLeft = UiTheme.SpaceSm;
-        PanelContainer card = UiTheme.CardButton(spine, out Button input, out VBoxContainer content, box);
+        PanelContainer card = UiTheme.CardButton(null, out Button input, out VBoxContainer content, box);
 
         content.AddThemeConstantOverride("separation", 1);
 
         Color nameColor = state == PerkNodeState.CorruptionGated
             ? UiTheme.CorruptionText
             : rank > 0 || state == PerkNodeState.Learnable ? UiTheme.Text : UiTheme.Dim;
+
+        // The mark is the node's state as a shape, beside the name that says which perk it is.
+        var head = new HBoxContainer { MouseFilter = MouseFilterEnum.Ignore };
+        head.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
+        head.AddChild(Centred(new PerkNodeMark(visual, perk.IsCapstone, MarkColor(visual, state), _compact ? 12f : 14f)));
         Label name = UiTheme.Body(perk.LocalizedName, nameColor);
+        name.SizeFlagsHorizontal = SizeFlags.ExpandFill;
         name.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
-        content.AddChild(name);
+        head.AddChild(name);
+        content.AddChild(head);
 
         var row = new HBoxContainer();
         row.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
@@ -299,19 +370,73 @@ public sealed partial class PerkTreePanel : VBoxContainer
         row.AddChild(status);
         content.AddChild(row);
 
-        _focusNodes.Add(((perk.Tier, perk.Column), input));
+        _focusNodes.Add((perk, (perk.Tier, perk.Column), input));
         input.TooltipText = perk.LocalizedName;
         input.FocusEntered += () => ShowDetail(perk);
         input.MouseEntered += () => ShowDetail(perk);
         input.Pressed += () =>
         {
-            if (_perks.CanLearn(perk))
+            // Learn publishes the change and the host rebuilds on its next frame. A refusal changes nothing, so
+            // it says why in the pane and sounds like a refusal instead of doing nothing at all.
+            if (_perks.CanLearn(perk) && _perks.Learn(perk))
             {
-                _perks.Learn(perk);
+                _view.DeniedId = null;
+                _view.LearnedId = perk.Id;
+                UiAudio.Play(UiCue.Confirm);
+            }
+            else
+            {
+                _view.DeniedId = perk.Id;
+                UiAudio.Play(UiCue.Denied);
+                ShowDetail(perk);
             }
         };
         return card;
     }
+
+    /// <summary>The frame a node state takes. Locked is cut into the panel; available is a plate with one lit
+    /// top edge and no spine; owned carries a brass spine; maxed an ember spine and a warmed face.</summary>
+    private static StyleBoxFlat NodeFrame(PerkNodeVisual visual, PerkNodeState state)
+    {
+        switch (visual)
+        {
+            case PerkNodeVisual.Maxed:
+            {
+                StyleBoxFlat box = UiTheme.CardStyle(UiTheme.Accent);
+                box.BgColor = UiTheme.CardBg.Lerp(UiTheme.Accent, 0.08f);
+                box.BorderWidthBottom = 2;
+                return box;
+            }
+
+            case PerkNodeVisual.Owned:
+                return UiTheme.CardStyle(UiTheme.Brass);
+
+            case PerkNodeVisual.Available:
+            {
+                StyleBoxFlat box = UiTheme.CardStyle();
+                box.BorderColor = state == PerkNodeState.Learnable ? UiTheme.RuleLit : UiTheme.Rule;
+                box.BorderWidthTop = 2;
+                box.BorderWidthBottom = 0;
+                return box;
+            }
+
+            default:
+            {
+                StyleBoxFlat box = UiTheme.WellStyle();
+                box.BorderColor = state == PerkNodeState.CorruptionGated ? UiTheme.Corruption : UiTheme.Rule;
+                box.BorderWidthTop = 1;
+                return box;
+            }
+        }
+    }
+
+    private static Color MarkColor(PerkNodeVisual visual, PerkNodeState state) => visual switch
+    {
+        PerkNodeVisual.Maxed => UiTheme.Accent,
+        PerkNodeVisual.Owned => UiTheme.BrassLit,
+        PerkNodeVisual.Available => state == PerkNodeState.Learnable ? UiTheme.Good : UiTheme.Dim,
+        _ => state == PerkNodeState.CorruptionGated ? UiTheme.CorruptionText : UiTheme.Disabled,
+    };
 
     private (string Text, Color Color) NodeCaption(PerkResource perk, PerkNodeState state) => state switch
     {
@@ -375,6 +500,15 @@ public sealed partial class PerkTreePanel : VBoxContainer
     private void ShowDetail(PerkResource perk)
     {
         _view.FocusedId = perk.Id;
+        if (_view.DeniedId != perk.Id)
+        {
+            _view.DeniedId = null;
+        }
+
+        _canvas?.SetPath(PerkTreeRules.PathTo(
+            perk.Id,
+            id => PerkDatabase.Get(id)?.PrerequisiteIds.Where(_branchIds.Contains) ?? Enumerable.Empty<string>(),
+            id => _perks.RankOf(id) > 0));
         UiTheme.ClearChildren(_detail);
 
         int rank = _perks.RankOf(perk.Id);
@@ -420,7 +554,23 @@ public sealed partial class PerkTreePanel : VBoxContainer
         }
 
         (string reason, Color reasonColor) = ReasonLine(perk, block);
-        _detail.AddChild(UiTheme.Prose(reason, reasonColor));
+        if (_view.DeniedId != perk.Id)
+        {
+            _detail.AddChild(UiTheme.Prose(reason, reasonColor));
+            return;
+        }
+
+        // A refused press: the same sentence, now with the warning mark beside it so the refusal is a shape
+        // as well as a colour.
+        var refused = new HBoxContainer();
+        refused.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
+        TextureRect warning = UiIcon.Create(UiIcon.Kind.Warning, 16f, UiTheme.Bad);
+        warning.SizeFlagsVertical = SizeFlags.ShrinkBegin;
+        refused.AddChild(warning);
+        Label why = UiTheme.Prose(reason, UiTheme.Bad);
+        why.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+        refused.AddChild(why);
+        _detail.AddChild(refused);
     }
 
     private string PrerequisiteNames(PerkResource perk) => string.Join(

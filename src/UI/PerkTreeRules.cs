@@ -16,6 +16,17 @@ public enum PerkNodeState
     Maxed,
 }
 
+/// <summary>The four ways a node is drawn. Each has its own frame and its own mark, so the tree still
+/// reads with the colour taken away: a cut-in well and a padlock, a plate with one lit edge and a hollow
+/// diamond, a plate with a spine and a filled diamond, a plate with a spine and a ringed diamond.</summary>
+public enum PerkNodeVisual
+{
+    Locked,
+    Available,
+    Owned,
+    Maxed,
+}
+
 /// <summary>The perk tree's decisions that need no Godot: node state, which branches get a column,
 /// the branch the tree opens on, and the grid size. <see cref="PerkTreePanel"/> draws what these say.</summary>
 public static class PerkTreeRules
@@ -31,6 +42,24 @@ public static class PerkTreeRules
         PerkBlock.SkillPoints => PerkNodeState.NeedsPoints,
         _ => PerkNodeState.Locked,
     };
+
+    /// <summary>How a node is drawn. A perk with a rank in it is owned whatever stops the next rank; one with
+    /// none is available when only skill points stand in the way (the tree is open that far) and locked
+    /// behind a prerequisite, a tier gate or corruption.</summary>
+    public static PerkNodeVisual VisualOf(PerkNodeState state, int rank)
+    {
+        if (state == PerkNodeState.Maxed)
+        {
+            return PerkNodeVisual.Maxed;
+        }
+
+        if (rank > 0)
+        {
+            return PerkNodeVisual.Owned;
+        }
+
+        return state is PerkNodeState.Learnable or PerkNodeState.NeedsPoints ? PerkNodeVisual.Available : PerkNodeVisual.Locked;
+    }
 
     /// <summary>Locale key of a branch's name. <see cref="PerkBranch.None"/> reads "Other".</summary>
     public static string BranchKey(PerkBranch branch) => "perktree.branch." + branch.ToString().ToLowerInvariant();
@@ -147,5 +176,75 @@ public static class PerkTreeRules
         int heldColumnGap = Math.Abs(held.Column - column);
         int otherColumnGap = Math.Abs(other.Column - column);
         return otherColumnGap < heldColumnGap || (otherColumnGap == heldColumnGap && other.Column < held.Column);
+    }
+
+    /// <summary>
+    /// <see cref="FocusTarget"/> with up and down following the tree's lines: down lands on the nearest perk
+    /// this one opens, up on the nearest perk it requires (nearest tier first, then nearest column, the lower
+    /// column on a tie). A perk with no line that way falls back to the plain grid step, so every row stays
+    /// reachable. Left and right are the grid step. <paramref name="edges"/> are (prerequisite, dependent)
+    /// index pairs into <paramref name="cells"/>.
+    /// </summary>
+    public static int FocusTargetAlongEdges(
+        IReadOnlyList<(int Tier, int Column)> cells,
+        IReadOnlyList<(int From, int To)> edges,
+        int from,
+        PerkTreeDirection direction)
+    {
+        if (direction is PerkTreeDirection.Left or PerkTreeDirection.Right)
+        {
+            return FocusTarget(cells, from, direction);
+        }
+
+        (int tier, int column) = cells[from];
+        int best = -1;
+        foreach ((int prerequisite, int dependent) in edges)
+        {
+            int other = direction == PerkTreeDirection.Down
+                ? (prerequisite == from ? dependent : -1)
+                : (dependent == from ? prerequisite : -1);
+            if (other < 0 || other >= cells.Count || other == from)
+            {
+                continue;
+            }
+
+            // A line only counts when it runs the way the step does: a prerequisite authored on the same
+            // row or below is not "up".
+            bool rightWay = direction == PerkTreeDirection.Down ? cells[other].Tier > tier : cells[other].Tier < tier;
+            if (rightWay && (best < 0 || Closer(cells[best], cells[other], tier, column, direction)))
+            {
+                best = other;
+            }
+        }
+
+        return best >= 0 ? best : FocusTarget(cells, from, direction);
+    }
+
+    /// <summary>
+    /// The lines to light for a focused perk: every prerequisite line above it, followed upward until it
+    /// meets a perk that is already owned. The lines above an owned perk are lit by ownership already, so
+    /// what this adds is the route still to buy. Each pair is (prerequisite, dependent).
+    /// </summary>
+    public static List<(string From, string To)> PathTo(
+        string focused, Func<string, IEnumerable<string>> prerequisitesOf, Func<string, bool> owned)
+    {
+        var path = new List<(string, string)>();
+        var seen = new HashSet<string> { focused };
+        var open = new Queue<string>();
+        open.Enqueue(focused);
+        while (open.Count > 0)
+        {
+            string node = open.Dequeue();
+            foreach (string prerequisite in prerequisitesOf(node))
+            {
+                path.Add((prerequisite, node));
+                if (!owned(prerequisite) && seen.Add(prerequisite))
+                {
+                    open.Enqueue(prerequisite);
+                }
+            }
+        }
+
+        return path;
     }
 }

@@ -5116,3 +5116,38 @@ ui.hub.journal,Journal
 ui.hub.map,Map
 ui.hub.bestiary,Bestiary
 credits.title,Credits
+# ui-upgrade: items and character (lane 6a)
+item.rarity.common,Common
+item.rarity.uncommon,Uncommon
+item.rarity.rare,Rare
+item.rarity.epic,Epic
+item.rarity.legendary,Legendary
+item.new,New
+item.equipped,Equipped
+item.slot_empty_tip,{0}: empty
+item.slot_empty_fits,"Empty, {0} in pack"
+item.slot_empty_title,{0} is empty
+item.slot_empty_pick,"Pieces in your pack that fit: {0}. Select the slot again to step into them."
+item.slot_empty_none,Nothing in your pack fits this slot.
+item.pack_fits,Fits {0}
+item.hero.damage,Damage
+item.hero.armor,Armor
+item.hero.health,Health restored
+item.hero.stamina,Stamina restored
+item.hero.mana,Mana restored
+item.detail.carry,"{0} wt   ·   {1}g"
+item.detail.compare,Compare
+item.detail.worn,Worn
+item.detail.this,This item
+item.detail.same,Same as worn
+item.preview.title,If equipped
+item.strip.sort,Sort: {0}
+item.strip.kind,Kind: {0}
+item.strip.show_all,Show whole pack
+item.strip.show_all_tip,The pack is showing only what fits the equipment slot you chose. Press to show everything again.
+item.strip.step_tip,Press to step to the next choice.
+char.details,DETAILS
+char.legend.select,Select
+char.legend.learn,Learn rank
+char.legend.tabs,Switch tab
+perktree.respec_hold,Hold to respec ({0} gold)
