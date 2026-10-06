@@ -19,7 +19,7 @@ namespace Embervale.UI;
 /// (<see cref="WellBg"/> → <see cref="PanelBg"/> → <see cref="CardBg"/>), and the semantic ramps
 /// the UI had been going without (rarity, magic school, quest state, disposition).
 /// </summary>
-public static class UiTheme
+public static partial class UiTheme
 {
     // --- Palette tokens (see docs/UI_STYLE.md §2) -----------------------------
     // Surfaces: warm charcoal ash, never blue-black. Three depths, and the ordering is the
