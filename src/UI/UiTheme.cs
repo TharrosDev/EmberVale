@@ -1103,10 +1103,11 @@ public static partial class UiTheme
         return (root, caption, bar);
     }
 
-    /// <summary>A labelled on/off switch (settings rows). Caller wires <c>Toggled</c>.</summary>
+    /// <summary>A labelled on/off switch (settings rows). Caller wires <c>Toggled</c>. The switch
+    /// itself, like the slider's track and the dropdown's list, is drawn from <see cref="UiSkin"/>.</summary>
     public static CheckButton Toggle(bool value)
     {
-        var check = new CheckButton { ButtonPressed = value };
+        var check = UiSkin.Apply(new CheckButton { ButtonPressed = value });
         check.AddThemeColorOverride("font_color", Text);
         check.AddThemeColorOverride("font_hover_color", Accent);
         return check;
@@ -1122,17 +1123,20 @@ public static partial class UiTheme
             MaxValue = max,
             Step = step,
             Value = value,
-            CustomMinimumSize = new Vector2(width, 18f),
+            CustomMinimumSize = new Vector2(width, 20f),
             SizeFlagsVertical = Control.SizeFlags.ShrinkCenter,
         };
-        return slider;
+        return UiSkin.Apply(slider);
     }
 
     /// <summary>An enumerated chooser (window mode, FPS cap, difficulty). Caller wires
     /// <c>ItemSelected</c>.</summary>
     public static OptionButton Dropdown(string[] options, int selected)
     {
-        var option = new OptionButton();
+        // The list it drops is a window of its own: no override on the button reaches it, so it is
+        // handed the skin directly as well as through the default theme (UiSkin).
+        var option = UiSkin.Apply(new OptionButton());
+        UiSkin.Apply(option.GetPopup());
         ApplyInteractiveStyle(option);
         ApplyType(option, FontRole.Interface, BodyFontSize);
         for (int i = 0; i < options.Length; i++)
@@ -1159,6 +1163,7 @@ public static partial class UiTheme
             HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled,
             FollowFocus = true, // keep the focused row in view under gamepad/keyboard nav (30.5J)
         };
+        UiSkin.Apply(scroll); // its scrollbars, and any default-themed control in its rows
 
         var list = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
         list.AddThemeConstantOverride("separation", RowGap);

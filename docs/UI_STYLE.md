@@ -542,3 +542,30 @@ the realm; if no door resolves it falls back to the direct pointer.
 **Map.** Quest pins show the current objective of every live non-ledger quest. Reveal is spoiler-safe
 (`MapQuestReveal`): a quest reveals only the places its live objectives name and each later place when that
 objective opens, never both branches of a fork. The legend names only the pin kinds on screen.
+
+## 13. Foundation for the 2026-10 UI upgrade
+
+What the foundation pass added for the lanes to build on. Values live in code; this is the map.
+
+**Tokens** (`UiTheme`). A surface is a cut plate with one lit edge, not a box with four.
+
+| Token | Use |
+| ----- | --- |
+| `Rule` | the cold hairline between rows, columns and tabs on one surface |
+| `RuleLit` | the single lit edge of a plate or sheet; at most one per surface |
+| `Keyline` | the dark 1 px outline around HUD bars, icons and glyphs drawn on the live world |
+| `FocusRing` | the focus indicator only; brighter than `Accent`, 3:1 or better on every surface (`UiContrastTests`) |
+| `EmberGlow` | translucent heat under a lit edge or a wipe; never text |
+| `ScrimHub` | the one scrim all five hub screens share |
+| `ButtonFace`, `ButtonFaceHover`, `ButtonFacePressed`, `ButtonFaceFocus` | the faces `Action` and `Dropdown` draw, public so the contrast audit reads the real values |
+| `DurationTab` (0.16 s) | a tab or hub-screen switch |
+
+**Type.** `FontSize(token)` bends the text-scale setting: sizes up to body take all of the change, header 85%, title 70%, display and up half (`ScaledFontSize`, pinned by `UiTypeScaleTests`). The 12 px floor stays. The `ReadableFont` setting sets every role in Inter (`ResolveRole`).
+
+**Sheet.** `UiTheme.Sheet(width, scrimOpacity, centred)` returns `(Root, Column)`: a frameless column on a scrim with one `RuleLit` edge. The shell's ground (title, pause, death) in place of `Panel()`.
+
+**Motion** (`UiFx`). `FadeIn`, `FadeOut(node, then)`, `Rise`, `Stagger(container)`, `Pulse`. Each kills the run in flight on its node, runs while the tree is paused, ignores time scale and collapses under reduced motion to its final state. Call them after the node is in the tree. Closing a menu is still instant. `UiOrnament.EmberWipe()` is the one opening flourish: a rule drawn by a line of heat, one per screen.
+
+**Hold to confirm.** `UiFx.HoldRing(onComplete)` builds a `HoldRing`; drive it with `Attach(button)`, `HoldAction` or `Press()`/`Release()`. For irreversible actions only. The `HoldsToPresses` setting makes one press complete it; reduced motion never shortens the hold.
+
+**Engine-drawn controls** (`UiSkin`). Sliders, check buttons and boxes, line edits, scrollbars, popup menus, tooltips and the default font are skinned by one code-built `Theme`: merged into the engine default theme at boot and whenever high contrast or text scale changes, and handed to each control by the `Slider`, `Toggle`, `Dropdown` and `ScrollList` builders. A hand-built control of one of those kinds calls `UiSkin.Apply(control)`. Icons are `assets/ui/icons/controls/*.svg` and carry their own colours.
