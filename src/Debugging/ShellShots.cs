@@ -1,3 +1,4 @@
+using Embervale.Bootstrap;
 using Embervale.Core;
 using Embervale.Core.Events;
 using Embervale.UI;
@@ -6,7 +7,9 @@ using Godot;
 namespace Embervale.Debugging;
 
 /// <summary>Rendered title-shell coverage: the authored main menu, its real settings flow, the save-slot
-/// browser in both intents and the loading screen.</summary>
+/// browser in both intents and the loading screen, then the front of the shell: the boot splash,
+/// first-run setup, the title under each act's painting, the quit prompt, the loading screen
+/// for each realm at two stages, and the credits.</summary>
 public sealed partial class ShellShots : ShotHarness
 {
     protected override string Flag => "--shellshots";
@@ -16,6 +19,25 @@ public sealed partial class ShellShots : ShotHarness
     public MainMenu? Menu { get; set; }
 
     private CharacterCreator? _creator;
+    private BootSplash? _splash;
+    private FirstRunSetup? _firstRun;
+    private CreditsScreen? _credits;
+    private float _creditsTopOffset = float.MaxValue;
+
+    /// <summary>The realms with a loading painting, by the slug their shots carry.</summary>
+    private static readonly (string Slug, string RegionId)[] Realms =
+    {
+        ("ember-crown", "region.ember_crown"),
+        ("frostfang", "region.frostfang_reach"),
+        ("ashen-wilds", "region.ashen_wilds"),
+        ("sunspire", "region.sunspire"),
+        ("pale", "region.pale_concord"),
+        ("celestial", "region.celestial"),
+    };
+
+    /// <summary>The two gate stages each realm's loading screen is photographed at.</summary>
+    private const int EarlyStep = 1;
+    private const int LateStep = 3;
 
     protected override void BuildShotList()
     {
@@ -86,6 +108,48 @@ public sealed partial class ShellShots : ShotHarness
         Shot("11-save-slots-new-closed", CloseSlots);
         Shot("12-loading", ShowLoading);
         Shot("13-loading-closed", HideLoading);
+
+        // --- ui-upgrade: shell front (ValidateFrontShot checks each state occurred) ---
+        Shot("14-splash", () => _splash = Menu?.OpenSplashForCapture());
+        Shot("15-first-run", () =>
+        {
+            _splash?.QueueFree();
+            _firstRun = Menu?.OpenFirstRunForCapture();
+            _firstRun?.SettleForCapture();
+        });
+        for (int act = 1; act <= ShellFrontRules.LastAct; act++)
+        {
+            int shown = act;
+            Shot($"16-title-act{shown}", () =>
+            {
+                _firstRun?.QueueFree();
+                _firstRun = null;
+                if (Menu is not null)
+                {
+                    Menu.Visible = true;
+                    Menu.SetActForCapture(shown);
+                    Menu.SettleForCapture();
+                }
+            });
+        }
+
+        Shot("17-quit-confirm", () => Menu?.OpenQuitConfirmForCapture());
+        Shot("17a-quit-confirm-closed", () => Menu?.CloseQuitConfirmForCapture());
+
+        foreach ((string slug, string regionId) in Realms)
+        {
+            Shot($"18-loading-{slug}-early", () => ShowLoadingFor(regionId, EarlyStep));
+            Shot($"18-loading-{slug}-late", () => ShowLoadingFor(regionId, LateStep));
+        }
+
+        Shot("19-credits-top", () =>
+        {
+            HideLoading();
+            _credits = Menu?.OpenCreditsForCapture();
+            _credits?.SetScrollForCapture(0f);
+        });
+        Shot("19a-credits-mid", () => _credits?.SetScrollForCapture(0.55f));
+        // --- end ui-upgrade: shell front ---
     }
 
     // --- ui-upgrade: settings ---
@@ -93,7 +157,7 @@ public sealed partial class ShellShots : ShotHarness
     private SettingsPanel? SettingsUi() => QuestShotFixtures.FindFirst<SettingsPanel>(GetTree().Root);
 
     protected override string? ValidateShotState(string name) =>
-        name.Contains("-settings-", System.StringComparison.Ordinal) ? ValidateSettingsShot(name) : null;
+        name.Contains("-settings-", System.StringComparison.Ordinal) ? ValidateSettingsShot(name) : ValidateFrontShot(name);
 
     /// <summary>The tab, prompt and layout each settings shot claims to show.</summary>
     private string? ValidateSettingsShot(string name)
@@ -181,4 +245,116 @@ public sealed partial class ShellShots : ShotHarness
     }
 
     private void HideLoading() => GetTree().Root.GetNodeOrNull("AuditLoading")?.QueueFree();
+
+    // --- ui-upgrade: shell front ---
+
+    /// <summary>The loading screen dressed for a load into <paramref name="regionId"/> with
+    /// <paramref name="step"/> stages cleared, driven the way the gate drives it: the state
+    /// change first, then the progress events.</summary>
+    private void ShowLoadingFor(string regionId, int step)
+    {
+        if (GetTree().Root.GetNodeOrNull("AuditLoading") is null)
+        {
+            ShowLoading();
+        }
+
+        EventBus.Instance?.Publish(new LoadingProgressEvent(regionId, step));
+    }
+
+    /// <summary>The state each shell-front shot claims to show. Shots from before this block
+    /// (and the "closed" ones) claim nothing here.</summary>
+    private string? ValidateFrontShot(string name)
+    {
+        if (name == "14-splash")
+        {
+            return _splash is { } splash && IsInstanceValid(splash) && splash.WaitingForCapture
+                ? null : "the boot splash is not up and waiting";
+        }
+
+        if (name == "15-first-run")
+        {
+            return _firstRun is { } setup && IsInstanceValid(setup) && setup.ReadyForCapture
+                ? null : "first-run setup is not open with its questions built";
+        }
+
+        if (name.StartsWith("16-title-act", System.StringComparison.Ordinal))
+        {
+            if (Menu is not { Visible: true } menu)
+            {
+                return "the title is not showing";
+            }
+
+            int act = int.Parse(name[^1..]);
+            return menu.ActForCapture == act ? null : $"the title painting is act {menu.ActForCapture}, expected {act}";
+        }
+
+        if (name == "17-quit-confirm")
+        {
+            return Menu is { QuitConfirmOpenForCapture: true } ? null : "the quit prompt is not open";
+        }
+
+        if (name.StartsWith("18-loading-", System.StringComparison.Ordinal))
+        {
+            return ValidateLoadingShot(name);
+        }
+
+        if (name is "19-credits-top" or "19a-credits-mid")
+        {
+            return ValidateCreditsShot(name);
+        }
+
+        return null;
+    }
+
+    private string? ValidateCreditsShot(string name)
+    {
+        if (_credits is not { } credits || !IsInstanceValid(credits) || credits.LineCountForCapture == 0)
+        {
+            return "the credits are not open";
+        }
+
+        if (name == "19-credits-top")
+        {
+            _creditsTopOffset = credits.OffsetForCapture;
+            return null;
+        }
+
+        // The mid-scroll shot has to have moved: the same frame twice proves nothing.
+        return credits.OffsetForCapture > _creditsTopOffset
+            ? null : "the credits roll did not move from its opening position";
+    }
+
+    private string? ValidateLoadingShot(string name)
+    {
+        if (GetTree().Root.GetNodeOrNull<LoadingScreen>("AuditLoading") is not { ShownForCapture: true } loading)
+        {
+            return "the loading screen is not up";
+        }
+
+        foreach ((string slug, string regionId) in Realms)
+        {
+            if (!name.StartsWith($"18-loading-{slug}-", System.StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            int step = name.EndsWith("-early", System.StringComparison.Ordinal) ? EarlyStep : LateStep;
+            if (loading.RegionForCapture != regionId)
+            {
+                return $"the loading screen is dressed for '{loading.RegionForCapture}', expected '{regionId}'";
+            }
+
+            if (loading.StepForCapture != step)
+            {
+                return $"the loading screen is on step {loading.StepForCapture}, expected {step}";
+            }
+
+            return loading.PaintingForCapture == LoadingCardRules.Painting(regionId)
+                ? null : $"the painting is '{loading.PaintingForCapture}', expected '{LoadingCardRules.Painting(regionId)}'";
+        }
+
+        return "no realm matches this shot's name";
+    }
+
+    // --- end ui-upgrade: shell front ---
 }
