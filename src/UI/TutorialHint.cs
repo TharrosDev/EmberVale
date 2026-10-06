@@ -7,42 +7,48 @@ using Godot;
 namespace Embervale.UI;
 
 /// <summary>
-/// The onboarding's entire visible footprint (Phase 33B): one framed line above the hotbar naming
-/// the verb being taught and the key that performs it. It appears when a hint starts, clears when
-/// the player performs it, and is absent the rest of the game — no tutorial pop-ups, no modal
-/// windows, nothing to dismiss.
+/// The onboarding's entire visible footprint (Phase 33B): one line above the hotbar naming the verb
+/// being taught and the input that performs it. It appears when a hint starts, clears when the
+/// player performs it, and is absent the rest of the game — no tutorial pop-ups, no modal windows,
+/// nothing to dismiss.
 ///
-/// The key glyph is resolved live through <see cref="GameInput.PromptLabel"/>, so a rebind (or
-/// picking up a gamepad) never leaves the hint naming a key that does nothing.
+/// It is the interaction prompt's sibling and is built like it: the same HUD plate with its one lit
+/// edge, the input's glyph first (<see cref="UiGlyph"/>), then the sentence. Both follow the device
+/// and the bindings by event, so a rebind (or picking up a gamepad) never leaves the hint naming a
+/// key that does nothing, and the widget has no frame callback at all.
 /// </summary>
 public partial class TutorialHint : VBoxContainer
 {
     private PanelContainer _frame = null!;
+    private Control _glyph = null!;
     private Label _label = null!;
     private TutorialStep _step = TutorialStep.None;
-    private const float RefreshSeconds = 0.25f;
-    private float _refresh;
 
     public override void _Ready()
     {
         MouseFilter = MouseFilterEnum.Ignore;
         Visible = false;
 
-        // A Card, not a Panel (37.5H). One line of teaching text had been wearing a full brass
-        // frame plus a grain shader, which made the least important thing on screen the most
-        // ornamented.
-        _frame = UiTheme.Card(UiTheme.Accent);
-        _frame.MouseFilter = MouseFilterEnum.Ignore;
-        UiTheme.Compact(_frame);
+        _frame = UiTheme.HudPlate(UiTheme.Accent);
+        _frame.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
         AddChild(_frame);
 
-        _label = UiTheme.Body(string.Empty, UiTheme.Text);
-        _label.HorizontalAlignment = HorizontalAlignment.Center;
-        _frame.AddChild(_label);
+        var row = new HBoxContainer { MouseFilter = MouseFilterEnum.Ignore };
+        row.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
+        _frame.AddChild(row);
+
+        _glyph = new CenterContainer { MouseFilter = MouseFilterEnum.Ignore };
+        row.AddChild(_glyph);
+
+        _label = UiTheme.HudInk(UiTheme.Body(string.Empty, UiTheme.Text));
+        _label.SizeFlagsVertical = SizeFlags.ShrinkCenter;
+        row.AddChild(_label);
 
         EventBus bus = EventBus.Instance;
         bus?.Subscribe<TutorialStepChangedEvent>(OnStepChanged);
         bus?.Subscribe<TutorialStepCompletedEvent>(OnStepCompleted);
+        bus?.Subscribe<InputDeviceChangedEvent>(OnDeviceChanged);
+        bus?.Subscribe<InputBindingsChangedEvent>(OnBindingsChanged);
     }
 
     public override void _ExitTree()
@@ -55,25 +61,16 @@ public partial class TutorialHint : VBoxContainer
 
         bus.Unsubscribe<TutorialStepChangedEvent>(OnStepChanged);
         bus.Unsubscribe<TutorialStepCompletedEvent>(OnStepCompleted);
+        bus.Unsubscribe<InputDeviceChangedEvent>(OnDeviceChanged);
+        bus.Unsubscribe<InputBindingsChangedEvent>(OnBindingsChanged);
     }
 
-    public override void _Process(double delta)
+    /// <summary>A locale switch re-resolves the sentence.</summary>
+    public override void _Notification(int what)
     {
-        // Re-resolve the glyph each frame the hint is up: the player may switch to a gamepad
-        // mid-hint, and a hint naming the wrong input is worse than none.
-        // Still re-resolved while the hint is up (a device switch or a rebind must not leave it
-        // naming the wrong input), but four times a second: each resolve walks the input map and
-        // translates and formats the line, and none of that changes between two frames.
-        if (_step == TutorialStep.None || !Visible)
+        if (what == NotificationTranslationChanged && _label != null)
         {
-            return;
-        }
-
-        _refresh -= (float)delta;
-        if (_refresh <= 0f)
-        {
-            _refresh = RefreshSeconds;
-            _label.Text = HintText(_step);
+            Refresh();
         }
     }
 
@@ -81,10 +78,7 @@ public partial class TutorialHint : VBoxContainer
     {
         _step = e.Step;
         Visible = e.Step != TutorialStep.None;
-        if (Visible)
-        {
-            _label.Text = HintText(e.Step);
-        }
+        Refresh();
     }
 
     // The completed hint clears immediately; the director holds the gap before the next one.
@@ -95,6 +89,36 @@ public partial class TutorialHint : VBoxContainer
             _step = TutorialStep.None;
             Visible = false;
         }
+    }
+
+    // The player may switch to a gamepad, or rebind the key, while the hint is up.
+    private void OnDeviceChanged(InputDeviceChangedEvent e) => Refresh();
+
+    private void OnBindingsChanged(InputBindingsChangedEvent e) => Refresh();
+
+    /// <summary>Restates the glyph and the sentence for the step being taught.</summary>
+    private void Refresh()
+    {
+        if (_step == TutorialStep.None)
+        {
+            return;
+        }
+
+        foreach (Node child in _glyph.GetChildren())
+        {
+            _glyph.RemoveChild(child);
+            child.QueueFree();
+        }
+
+        // Looking has no bound action - its copy names the mouse itself, so it takes no glyph.
+        string action = TutorialScript.ActionFor(_step);
+        _glyph.Visible = action.Length > 0;
+        if (action.Length > 0)
+        {
+            _glyph.AddChild(UiGlyph.For(action));
+        }
+
+        _label.Text = HintText(_step);
     }
 
     private static string HintText(TutorialStep step)

@@ -35,9 +35,9 @@ public partial class Crosshair : Control
     private const float HitPopDistance = 3.5f;
 
     // Bone-pale (the token text colour) so the reticle sits in the dying-world palette; the
-    // dark offset outline keeps it readable on bright scenes.
+    // HUD keyline under it keeps it readable on bright scenes.
     private static readonly Color LineColor = new(UiTheme.Text, 0.95f);
-    private static readonly Color Outline = new(0f, 0f, 0f, 0.5f);
+    private static readonly Color Outline = UiTheme.Keyline;
 
     private double _hitPop;     // seconds left of the hit-marker pop
     private Color _hitTint = LineColor;
@@ -103,6 +103,9 @@ public partial class Crosshair : Control
         DrawArm(c, Vector2.Up, kick, color);
         DrawArm(c, Vector2.Down, kick, color);
 
+        // The centre dot, keylined like the arms: it is the aim point, and the one part of the
+        // reticle that is never moved by a hit.
+        DrawRect(new Rect2(c - new Vector2(2f, 2f), new Vector2(4f, 4f)), Outline);
         DrawRect(new Rect2(c - new Vector2(1f, 1f), new Vector2(2f, 2f)), color);
     }
 
@@ -111,8 +114,9 @@ public partial class Crosshair : Control
         Vector2 from = centre + (direction * (Gap + kick));
         Vector2 to = centre + (direction * (Gap + kick + Length));
 
-        // A 1px-offset dark line first gives the bright reticle contrast on light scenes.
-        DrawLine(from + Vector2.One, to + Vector2.One, Outline, Thickness + 1f);
+        // The keyline first, a pixel proud of the arm on every side, gives the bright reticle
+        // contrast on light scenes without the lopsided look of an offset shadow.
+        DrawLine(from - direction, to + direction, Outline, Thickness + 2f);
         DrawLine(from, to, color, Thickness);
     }
 }
