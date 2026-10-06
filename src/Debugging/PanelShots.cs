@@ -326,6 +326,8 @@ public sealed partial class PanelShots : ShotHarness
         // Emberbound membership that the save does not contain. It must read exactly like 14.
         Shot("19-guilds-reloaded", () =>
         {
+            // A harness save is not a player save: a conversation or duel the driver left open must not refuse it.
+            SaveManager.Instance?.ClearSaveBlocks();
             SaveManager.Instance?.SaveGame(GuildShotSlot);
             MutateGuildsAfterSaving();
             SaveManager.Instance?.LoadGame(GuildShotSlot);

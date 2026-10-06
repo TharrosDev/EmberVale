@@ -340,6 +340,8 @@ public static class HeadlessStory
         switch (questId)
         {
             case "quest.main.smoke_over_the_square" when dawnfire:
+                // A harness save is not a player save: a conversation or duel the driver left open must not refuse it.
+                SaveManager.Instance?.ClearSaveBlocks();
                 SaveManager.Instance?.SaveGame(Slot + "_kael");
                 break;
 
@@ -351,6 +353,7 @@ public static class HeadlessStory
                 break;
 
             case "quest.main.dry_wells" when dawnfire:
+                SaveManager.Instance?.ClearSaveBlocks();
                 SaveManager.Instance?.SaveGame(Slot + "_flock");
                 break;
 

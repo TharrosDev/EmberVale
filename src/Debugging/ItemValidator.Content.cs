@@ -328,29 +328,45 @@ public static partial class ItemValidator
         }
     }
 
-    private static HashSet<string> ContentObtainableIds()
+    /// <summary>Every item id a loot table under <paramref name="directory"/> can drop, sub-folders
+    /// included: the tier pools (<c>data/loot/tiers</c>) and the Flamebearers' chest tables
+    /// (<c>data/loot/bosses</c>) are where almost all catalogue gear and every boss signature is
+    /// dropped from, and the family tables at the top only nest them by path.</summary>
+    private static void ContentCollectDrops(string directory, HashSet<string> ids)
     {
-        var ids = new HashSet<string>();
-        if (DirAccess.DirExistsAbsolute(ContentLootDirectory))
+        if (!DirAccess.DirExistsAbsolute(directory))
         {
-            foreach (string file in DirAccess.GetFilesAt(ContentLootDirectory))
-            {
-                string name = file.EndsWith(".remap", StringComparison.Ordinal) ? file[..^6] : file;
-                if (!name.EndsWith(".tres", StringComparison.Ordinal) ||
-                    ResidentResources.Load<LootTable>($"{ContentLootDirectory}/{name}") is not { } table)
-                {
-                    continue; // ContentValidator.ValidateLootTables reports a table that fails to load
-                }
+            return;
+        }
 
-                foreach (Variant element in table.Entries)
+        foreach (string file in DirAccess.GetFilesAt(directory))
+        {
+            string name = file.EndsWith(".remap", StringComparison.Ordinal) ? file[..^6] : file;
+            if (!name.EndsWith(".tres", StringComparison.Ordinal) ||
+                ResidentResources.Load<LootTable>($"{directory}/{name}") is not { } table)
+            {
+                continue; // ContentValidator.ValidateLootTables reports a table that fails to load
+            }
+
+            foreach (Variant element in table.Entries)
+            {
+                if (element.As<LootEntry>() is { } entry && entry.DropChance > 0f && !string.IsNullOrEmpty(entry.ItemId))
                 {
-                    if (element.As<LootEntry>() is { } entry && entry.DropChance > 0f)
-                    {
-                        ids.Add(entry.ItemId);
-                    }
+                    ids.Add(entry.ItemId);
                 }
             }
         }
+
+        foreach (string sub in DirAccess.GetDirectoriesAt(directory))
+        {
+            ContentCollectDrops($"{directory}/{sub}", ids);
+        }
+    }
+
+    private static HashSet<string> ContentObtainableIds()
+    {
+        var ids = new HashSet<string>();
+        ContentCollectDrops(ContentLootDirectory, ids);
 
         foreach (CraftingRecipeResource recipe in RecipeDatabase.All)
         {
