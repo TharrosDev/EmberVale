@@ -25,6 +25,13 @@ public sealed class EnemySenses
     private readonly Node3D _body;
 
     private PlayerCharacter? _player;
+
+    // The player's own components, kept beside the player reference. Each lookup walks the
+    // player's children one engine call at a time, and both of these are asked by every enemy on
+    // every tick it thinks. They live and die with the player node, so they are dropped whenever
+    // the player reference is, and re-resolved if either is ever freed on its own.
+    private Stats.StatsComponent? _playerStats;
+    private ReputationComponent? _playerReputation;
     private PhysicsRayQueryParameters3D? _losQuery;
     private Godot.Collections.Array<Rid>? _losExclude;
 
@@ -98,7 +105,17 @@ public sealed class EnemySenses
             return true;
         }
 
-        ReputationComponent? reputation = Player()?.GetComponent<ReputationComponent>();
+        ReputationComponent? reputation = null;
+        if (Player() is { } player)
+        {
+            if (_playerReputation == null || !GodotObject.IsInstanceValid(_playerReputation))
+            {
+                _playerReputation = player.GetComponent<ReputationComponent>();
+            }
+
+            reputation = _playerReputation;
+        }
+
         return reputation == null || reputation.IsHostile(factionId);
     }
 
@@ -111,7 +128,12 @@ public sealed class EnemySenses
             return null;
         }
 
-        Stats.StatsComponent? stats = player.GetComponent<Stats.StatsComponent>();
+        if (_playerStats == null || !GodotObject.IsInstanceValid(_playerStats))
+        {
+            _playerStats = player.GetComponent<Stats.StatsComponent>();
+        }
+
+        Stats.StatsComponent? stats = _playerStats;
         return stats == null || stats.IsAlive ? player : null;
     }
 
@@ -206,6 +228,8 @@ public sealed class EnemySenses
         }
 
         _player = null;
+        _playerStats = null;
+        _playerReputation = null;
         if (ServiceLocator.Instance is { } locator && locator.TryGet(out PlayerCharacter found))
         {
             _player = found;

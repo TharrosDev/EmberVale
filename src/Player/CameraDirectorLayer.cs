@@ -298,7 +298,7 @@ public partial class CameraDirectorLayer : EntityComponent, ICameraLayer
     }
 
     private static float StickDeflection() => Godot.Input.GetVector(
-        GameInput.LookLeft, GameInput.LookRight, GameInput.LookUp, GameInput.LookDown).Length();
+        InputActions.LookLeft, InputActions.LookRight, InputActions.LookUp, InputActions.LookDown).Length();
 
     /// <summary>The union of every visible mesh's bounds under <paramref name="root"/>, in world space.
     /// Zero-sized when there is no mesh. Walked once per subject, when its view starts, so the child

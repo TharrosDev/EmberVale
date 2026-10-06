@@ -151,12 +151,16 @@ public partial class HitReactionComponent : EntityComponent
 
         // RecoilReturn is the authored floor: a light hit settles in that time, a heavy one takes longer.
         _settleSeconds = Mathf.Max(RecoilReturn, recoil.SettleSeconds);
+
+        // The spring only runs while there is a recoil to settle; this is what starts it again.
+        SetProcess(true);
     }
 
     public override void _Process(double delta)
     {
         if (_mesh == null || !GodotObject.IsInstanceValid(_mesh))
         {
+            SetProcess(false); // OnHit refuses a missing mesh too, so nothing will ever need this tick
             return;
         }
 
@@ -164,6 +168,9 @@ public partial class HitReactionComponent : EntityComponent
                       Mathf.Abs(_lean) >= 0.0005f || Mathf.Abs(_leanVelocity) >= 0.0005f;
         if (!moving)
         {
+            // Settled. Every actor carries one of these and is at rest unless it was just struck,
+            // so stop being called until the next confirmed hit (OnHit) starts a recoil.
+            SetProcess(false);
             return;
         }
 

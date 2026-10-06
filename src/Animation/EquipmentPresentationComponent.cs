@@ -338,9 +338,22 @@ internal sealed partial class SocketFollower : Node3D
     public Vector3 AuthoredRotation { get; init; }
     public Vector3 VisualScale { get; init; } = Vector3.One;
 
+    // The bone's rest and the authored rotation never change after the piece is mounted, so the
+    // two matrices derived from them are worked out once instead of on every frame for every
+    // piece on every character (a rest fetch across the engine boundary plus an inverse and an
+    // Euler conversion each time).
+    private Basis _restInverse = Basis.Identity;
+    private Basis _authored = Basis.Identity;
+
     public override void _Ready()
     {
         TopLevel = true;
+        if (GodotObject.IsInstanceValid(Skeleton))
+        {
+            _restInverse = Skeleton.GetBoneGlobalRest(BoneIndex).Basis.Inverse();
+        }
+
+        _authored = Basis.FromEuler(AuthoredRotation);
         Follow();
     }
 
@@ -353,13 +366,12 @@ internal sealed partial class SocketFollower : Node3D
             return;
         }
 
-        Transform3D rest = Skeleton.GetBoneGlobalRest(BoneIndex);
         Transform3D pose = Skeleton.GetBoneGlobalPose(BoneIndex);
-        Basis skeletonBasis = Skeleton.GlobalTransform.Basis.Orthonormalized();
-        Basis delta = (pose.Basis * rest.Basis.Inverse()).Orthonormalized();
-        Basis authored = Basis.FromEuler(AuthoredRotation);
-        Basis finalBasis = (skeletonBasis * delta * authored).Scaled(VisualScale);
-        Vector3 origin = (Skeleton.GlobalTransform * pose).Origin + skeletonBasis * (delta * Offset);
+        Transform3D skeletonTransform = Skeleton.GlobalTransform; // read once; it was fetched twice
+        Basis skeletonBasis = skeletonTransform.Basis.Orthonormalized();
+        Basis delta = (pose.Basis * _restInverse).Orthonormalized();
+        Basis finalBasis = (skeletonBasis * delta * _authored).Scaled(VisualScale);
+        Vector3 origin = (skeletonTransform * pose).Origin + skeletonBasis * (delta * Offset);
         GlobalTransform = new Transform3D(finalBasis, origin);
     }
 }

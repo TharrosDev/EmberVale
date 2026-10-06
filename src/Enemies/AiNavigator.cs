@@ -225,7 +225,22 @@ public sealed class AiNavigator
         return a.DistanceTo(b);
     }
 
-    /// <summary>Resolved per call, as both brains did: a locomotion component can be added or
-    /// replaced during a body's life and caching it was never the contract.</summary>
-    private LocomotionComponent? Locomotion => _owner.GetComponent<LocomotionComponent>();
+    /// <summary>The body's motor. Looked up by walking the owner's children, which is a engine call
+    /// per child, and this is asked on every frame an actor moves or stands — so the answer is
+    /// kept. It is still not a fixed contract: a freed component is looked up again, and a body
+    /// with no motor yet is asked every time until it has one, exactly as before.</summary>
+    private LocomotionComponent? Locomotion
+    {
+        get
+        {
+            if (_locomotion == null || !GodotObject.IsInstanceValid(_locomotion))
+            {
+                _locomotion = _owner.GetComponent<LocomotionComponent>();
+            }
+
+            return _locomotion;
+        }
+    }
+
+    private LocomotionComponent? _locomotion;
 }

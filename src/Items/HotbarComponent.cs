@@ -1,6 +1,7 @@
 using Embervale.Core;
 using Embervale.Core.Events;
 using Embervale.Entities;
+using Embervale.Player;
 using Embervale.Save;
 using Godot;
 
@@ -116,7 +117,7 @@ public partial class HotbarComponent : EntityComponent, ISaveable
 
         for (int i = 0; i < SlotCount; i++)
         {
-            if (Input.IsActionJustPressed(GameInput.Hotbar[i]))
+            if (Input.IsActionJustPressed(InputActions.Hotbar[i]))
             {
                 Activate(i);
             }

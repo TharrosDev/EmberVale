@@ -26,7 +26,17 @@ public partial class CombatComponent : EntityComponent
     public int Team { get; set; }
 
     [Export]
-    public float MaxPoise { get; set; } = 50f;
+    public float MaxPoise
+    {
+        get => _maxPoise;
+        set
+        {
+            _maxPoise = value;
+            WakeTick(); // a raised ceiling leaves poise below it, which the tick then refills
+        }
+    }
+
+    private float _maxPoise = 50f;
 
     /// <summary>Poise recovered per second while not staggered.</summary>
     [Export]
@@ -99,7 +109,35 @@ public partial class CombatComponent : EntityComponent
     private bool _parryConsumed;
 
     /// <summary>Set by a controller (player input / AI) to raise the guard.</summary>
-    public bool IsBlocking { get; set; }
+    public bool IsBlocking
+    {
+        get => _isBlocking;
+        set
+        {
+            _isBlocking = value;
+            if (value)
+            {
+                WakeTick(); // the tick times the parry window from the frame the guard goes up
+            }
+        }
+    }
+
+    private bool _isBlocking;
+
+    /// <summary>True while <see cref="_Process"/> is switched off because every timer it advances
+    /// is at rest: no flinch, stagger or punish window running, poise full, guard down. That is an
+    /// actor out of combat, which is most actors most of the time. Everything that starts one of
+    /// those clocks calls <see cref="WakeTick"/>.</summary>
+    private bool _tickAsleep;
+
+    private void WakeTick()
+    {
+        if (_tickAsleep)
+        {
+            _tickAsleep = false;
+            SetProcess(true);
+        }
+    }
 
     /// <summary>While true the entity ignores all incoming damage — the dodge i-frame window (Phase 29E).</summary>
     public bool IsInvulnerable { get; set; }
@@ -292,6 +330,15 @@ public partial class CombatComponent : EntityComponent
         }
 
         _wasBlocking = IsBlocking;
+
+        // At rest: nothing above can change until a hit, a stagger or a raised guard, and each of
+        // those wakes the tick. Poise below its ceiling keeps it awake (it is still refilling, or
+        // waiting out a stun to).
+        if (!IsBlocking && _flinchTimer <= 0d && _openTimer <= 0d && _staggerTimer <= 0d && _poise >= MaxPoise)
+        {
+            _tickAsleep = true;
+            SetProcess(false);
+        }
     }
 
     /// <summary>Forces a stagger of at least <paramref name="duration"/> seconds (an attacker that was
@@ -305,6 +352,7 @@ public partial class CombatComponent : EntityComponent
         _staggerTimer = Mathf.Max(_staggerTimer, duration);
         _flinchTimer = 0d;
         _poise = MaxPoise;
+        WakeTick();
         LastResponse = response;
         if (Entity != null)
         {
@@ -340,6 +388,7 @@ public partial class CombatComponent : EntityComponent
         }
 
         _openTimer = Mathf.Max(_openTimer, seconds);
+        WakeTick();
         if (Entity != null)
         {
             EventBus.Instance?.Publish(new PunishWindowOpenedEvent(Entity, _openCause, (float)_openTimer));
@@ -557,6 +606,7 @@ public partial class CombatComponent : EntityComponent
             incomingPoise, blocked, factor, InWindup ? WindupPoiseMultiplier : 1f);
         float overkill = PoiseReaction.Overkill(poiseDamage, _poise, MaxPoise);
         _poise -= poiseDamage;
+        WakeTick();
 
         if (MaxPoise <= 0f || _poise > 0f)
         {
