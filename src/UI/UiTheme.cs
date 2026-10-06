@@ -660,14 +660,19 @@ public static partial class UiTheme
     /// </summary>
     public static void ApplyScreenInset(Control shell)
     {
-        float width = shell.GetViewportRect().Size.X;
-        int gutter = width < 1100f ? SpaceLg : 70;
+        Vector2 view = shell.GetViewportRect().Size;
+        int gutter = UiChromeRules.Gutter(view.X);
+
+        // A UiPanel draws its footer legend in the bottom gutter, beside this shell. The gutter is
+        // already tall enough on a desktop viewport; on a narrow one the shell gives up the few
+        // pixels the legend's row needs so the two never overlap.
+        bool legend = shell.GetParent() is UiPanel;
 
         shell.SetAnchorsPreset(Control.LayoutPreset.FullRect);
         shell.OffsetLeft = gutter;
         shell.OffsetTop = gutter;
         shell.OffsetRight = -gutter;
-        shell.OffsetBottom = -gutter;
+        shell.OffsetBottom = -UiChromeRules.BottomInset(gutter, legend);
     }
 
     /// <summary>A responsive authored workspace: wider than a dialog, quieter than full-screen.</summary>
@@ -692,7 +697,7 @@ public static partial class UiTheme
     public static float UsableWidth(Control shell)
     {
         float width = shell.GetViewportRect().Size.X;
-        int gutter = width < 1100f ? SpaceLg : 70;
+        int gutter = UiChromeRules.Gutter(width);
         return Mathf.Max(320f, width - (gutter * 2f) - ((PanelPad + 2f) * 2f));
     }
 

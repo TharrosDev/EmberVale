@@ -74,3 +74,7 @@ public readonly record struct SoundCueRequestedEvent(
 /// <summary>Raised when the player's active input device flips between keyboard/mouse and
 /// gamepad (30.5J, via <see cref="InputDevice"/>) — prompt glyphs refresh on it.</summary>
 public readonly record struct InputDeviceChangedEvent(bool Gamepad) : IGameEvent;
+
+/// <summary>Raised after the player's bindings are changed (a remap applied, a reset to defaults),
+/// so anything showing a key or button glyph redraws it. Published by whoever rewrote the InputMap.</summary>
+public readonly record struct InputBindingsChangedEvent : IGameEvent;

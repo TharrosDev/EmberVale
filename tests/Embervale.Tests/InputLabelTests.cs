@@ -30,4 +30,28 @@ public class InputLabelTests
         Assert.Equal("?", GameInput.ButtonLabel(JoyButton.Invalid));
         Assert.Equal("?", GameInput.ButtonLabel(JoyButton.Paddle3));
     }
+
+    [Theory]
+    [InlineData(MouseButton.Left, "LMB")]
+    [InlineData(MouseButton.Right, "RMB")]
+    [InlineData(MouseButton.Middle, "MMB")]
+    [InlineData(MouseButton.WheelUp, "Wheel Up")]
+    [InlineData(MouseButton.WheelDown, "Wheel Down")]
+    [InlineData(MouseButton.None, "?")]
+    public void MouseLabel_NamesTheButtonsActionsAreBoundTo(MouseButton button, string expected) =>
+        Assert.Equal(expected, GameInput.MouseLabel(button));
+
+    [Theory]
+    [InlineData(JoyAxis.TriggerLeft, "LT")]
+    [InlineData(JoyAxis.TriggerRight, "RT")]
+    [InlineData(JoyAxis.LeftX, "LS")]
+    [InlineData(JoyAxis.LeftY, "LS")]
+    [InlineData(JoyAxis.RightY, "RS")]
+    [InlineData(JoyAxis.Invalid, "?")]
+    public void AxisLabel_NamesTriggersAndSticks(JoyAxis axis, string expected) =>
+        Assert.Equal(expected, GameInput.AxisLabel(axis));
+
+    [Fact]
+    public void TheTriggerLabel_IsTheOneTheHotbarChordShows() =>
+        Assert.Equal(GameInput.HotbarChordLabel, GameInput.AxisLabel(JoyAxis.TriggerLeft));
 }

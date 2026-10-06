@@ -1,5 +1,8 @@
+using System;
+using System.Collections.Generic;
 using Embervale.Core;
 using Embervale.Core.Events;
+using Embervale.Localization;
 using Godot;
 
 namespace Embervale.UI;
@@ -36,6 +39,19 @@ public abstract partial class UiPanel : CanvasLayer
     /// <summary>Whether ui_cancel (Esc / gamepad B) closes the panel (30.5J). Defaults to the
     /// modal contract; panels with their own lifecycle (dialogue) opt out.</summary>
     protected virtual bool CloseOnCancel => Modal;
+
+    /// <summary>
+    /// The footer legend: what the buttons do on this screen, as glyph and verb pairs, drawn in the
+    /// bottom gutter beside the shell (<see cref="UiLegend"/>). Read after every rebuild, so a
+    /// panel may answer differently per tab or selection. The default is the one thing every modal
+    /// panel shares: cancel closes it. An override usually adds its own entries in front of
+    /// <c>base.Legend</c>.
+    /// </summary>
+    protected virtual IReadOnlyList<LegendEntry> Legend => CloseOnCancel
+        ? new[] { new LegendEntry("ui_cancel", Loc.T("ui.legend.close")) }
+        : Array.Empty<LegendEntry>();
+
+    private UiLegend _legend = null!;
 
     /// <summary>The process frame a panel last closed on cancel — the pause menu skips its Esc
     /// on this frame so one press never both closes a panel and opens the pause menu.</summary>
@@ -95,6 +111,11 @@ public abstract partial class UiPanel : CanvasLayer
         Shell.Visible = false;
         AddChild(Shell);
         BuildShell(Shell);
+
+        // A sibling of the shell, not a child: it sits in the gutter under the frame and must not
+        // take part in the frame's layout or its open fade.
+        _legend = new UiLegend { Visible = false };
+        AddChild(_legend);
         OnReady();
 
         if (ToggleAction is { } action)
@@ -137,6 +158,12 @@ public abstract partial class UiPanel : CanvasLayer
 
         _open = open;
         Shell.Visible = open;
+        if (open)
+        {
+            _legend.Set(Legend);
+        }
+
+        _legend.Visible = open;
         SetProcess(open || TicksWhileClosed);
         EventBus.Instance?.Publish(new UiPanelToggledEvent(this, open));
         if (Modal)
@@ -206,6 +233,7 @@ public abstract partial class UiPanel : CanvasLayer
             // navigation), restore it to the same spot in the new tree (30.5J).
             int[]? focusPath = UiFocus.PathOf(Shell);
             Rebuild();
+            _legend.Set(Legend);
             if (_focusPending)
             {
                 _focusPending = false;

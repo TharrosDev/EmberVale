@@ -263,9 +263,72 @@ public static class GameInput
                 Key code = key.PhysicalKeycode != Key.None ? key.PhysicalKeycode : key.Keycode;
                 return OS.GetKeycodeString(code);
             }
+
+            // Attack, block and lock-on live on the mouse; without this they prompted as "?".
+            if (bound is InputEventMouseButton mouse)
+            {
+                return MouseLabel(mouse.ButtonIndex);
+            }
         }
 
         return "?";
+    }
+
+    /// <summary>Display labels for mouse buttons (pure; pinned by tests).</summary>
+    public static string MouseLabel(MouseButton button) => button switch
+    {
+        MouseButton.Left => "LMB",
+        MouseButton.Right => "RMB",
+        MouseButton.Middle => "MMB",
+        MouseButton.WheelUp => "Wheel Up",
+        MouseButton.WheelDown => "Wheel Down",
+        MouseButton.Xbutton1 => "Mouse 4",
+        MouseButton.Xbutton2 => "Mouse 5",
+        _ => "?",
+    };
+
+    /// <summary>Xbox-style display labels for the pad's axes: the triggers, and the stick an axis
+    /// belongs to (pure; pinned by tests).</summary>
+    public static string AxisLabel(JoyAxis axis) => axis switch
+    {
+        JoyAxis.TriggerLeft => "LT",
+        JoyAxis.TriggerRight => "RT",
+        JoyAxis.LeftX or JoyAxis.LeftY => "LS",
+        JoyAxis.RightX or JoyAxis.RightY => "RS",
+        _ => "?",
+    };
+
+    /// <summary>
+    /// The first gamepad binding of <paramref name="action"/>, for a glyph to be drawn from: a
+    /// button (<paramref name="axis"/> is then <see cref="JoyAxis.Invalid"/>) or an axis
+    /// (<paramref name="button"/> is then <see cref="JoyButton.Invalid"/>). False when the action
+    /// has no pad binding at all.
+    /// </summary>
+    public static bool TryPadBinding(string action, out JoyButton button, out JoyAxis axis)
+    {
+        button = JoyButton.Invalid;
+        axis = JoyAxis.Invalid;
+        if (!InputMap.HasAction(action))
+        {
+            return false;
+        }
+
+        foreach (InputEvent bound in InputMap.ActionGetEvents(action))
+        {
+            if (bound is InputEventJoypadButton pad)
+            {
+                button = pad.ButtonIndex;
+                return true;
+            }
+
+            if (bound is InputEventJoypadMotion motion)
+            {
+                axis = motion.Axis;
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /// <summary>The display label for <paramref name="action"/>'s first bound gamepad button
@@ -278,6 +341,12 @@ public static class GameInput
             if (bound is InputEventJoypadButton pad)
             {
                 return ButtonLabel(pad.ButtonIndex);
+            }
+
+            // Attack and guard are on the triggers, which are axes.
+            if (bound is InputEventJoypadMotion motion)
+            {
+                return AxisLabel(motion.Axis);
             }
         }
 
