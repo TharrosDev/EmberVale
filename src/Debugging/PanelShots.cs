@@ -9,6 +9,7 @@ using Embervale.Enemies;
 using Embervale.Factions;
 using Embervale.Items;
 using Embervale.Localization;
+using Embervale.Magic;
 using Embervale.Save;
 using Embervale.Player;
 using Embervale.Progression;
@@ -244,6 +245,14 @@ public sealed partial class PanelShots : ShotHarness
                 return BestiaryAt(BestiaryStage.Known);
             case "29-hub-spellbook":
                 return Spellbook is { IsOpen: true } ? null : "spellbook did not open";
+            case "29b-spellbook-pins":
+                return Spellbook is not { IsOpen: true } book ? "spellbook did not open"
+                    : book.PinSlotsForCapture != SpellFavouritesRules.SlotCount ? $"the pin row drew {book.PinSlotsForCapture} slot(s), expected {SpellFavouritesRules.SlotCount}"
+                    : WheelShotFixtures.Caster() is not { } caster ? "player has no SpellcastingComponent"
+                    : caster.SpellCount < WheelShotFixtures.LearnableCount() ? $"the caster knows {caster.SpellCount} spell(s), expected all {WheelShotFixtures.LearnableCount()}"
+                    : null;
+            case "29c-spellbook-pin-focused":
+                return Spellbook is { IsOpen: true, PinFocusedForCapture: true } ? null : "no spell card's pin button holds focus";
             case "30-knowledge-closed":
                 return Bestiary is { IsOpen: true } || Spellbook is { IsOpen: true } ? "a hub screen is still open" : null;
             default:
@@ -619,7 +628,24 @@ public sealed partial class PanelShots : ShotHarness
             Spellbook?.SetOpen(true);
         });
 
-        Shot("30-knowledge-closed", () => Spellbook?.SetOpen(false));
+        // The eight favourite slots over the page, on a caster that knows every learnable spell, with
+        // the last slot emptied so an empty socket and a Pin that has somewhere to go are both shown.
+        // The page turns to the first school with an unpinned spell.
+        Shot("29b-spellbook-pins", () =>
+        {
+            WheelShotFixtures.TeachEverything();
+            WheelShotFixtures.Caster()?.SetFavourite(SpellFavouritesRules.SlotCount - 1, SpellFavouritesRules.None);
+            Spellbook?.ShowUnpinnedForCapture();
+        });
+
+        // A card's Pin button under keyboard or pad focus.
+        Shot("29c-spellbook-pin-focused", () => Spellbook?.FocusPinForCapture());
+
+        Shot("30-knowledge-closed", () =>
+        {
+            Spellbook?.SetOpen(false);
+            WheelShotFixtures.Restore();
+        });
     }
 
     private string _bestiaryUnseen = string.Empty;

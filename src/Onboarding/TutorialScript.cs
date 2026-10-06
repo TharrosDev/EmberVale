@@ -79,7 +79,7 @@ public static class TutorialScript
         TutorialStep.Inventory => "tutorial.inventory",
         TutorialStep.Journal => "tutorial.journal",
         TutorialStep.Cast => "tutorial.cast",
-        TutorialStep.SpellWheel => "tutorial.spell_wheel",
+        TutorialStep.SpellWheel => "tutorial.spell_wheel_hold",
         _ => string.Empty,
     };
 
