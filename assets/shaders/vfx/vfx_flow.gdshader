@@ -28,6 +28,25 @@ uniform float edge_soft = 0.0;
 uniform float soft_depth = 0.0;
 uniform sampler2D depth_texture : hint_depth_texture, repeat_disable, filter_nearest;
 
+// THE BALL OF A BLAST. All four default to 0, which leaves a sheet of fire or a ward exactly as it
+// was. `billow` pushes the surface in and out along its normal with the noise, so a ball has a
+// lumpy outline instead of a circle. `front` lights a thin bright line where the noise is just
+// above the erosion threshold: the burning edge of every hole. `thin` makes the cooler parts of the
+// body more transparent, so it is a mass of flame and not a filled disc. `cool` (0..1, animated
+// from code) turns what is left of it to `color_dark` and makes it cover what is behind: smoke.
+uniform float billow = 0.0;
+uniform float front = 0.0;
+uniform float thin = 0.0;
+uniform float cool = 0.0;
+uniform vec4 color_dark : source_color = vec4(0.03, 0.028, 0.026, 1.0);
+
+void vertex() {
+	if (billow > 0.0) {
+		float lump = textureLod(noise, UV * tiling * 0.7 + scroll * (TIME + time_offset) * 0.5, 0.0).r;
+		VERTEX += NORMAL * (lump - 0.5) * billow;
+	}
+}
+
 void fragment() {
 	float t = TIME + time_offset;
 	vec2 uv = UV * tiling;
@@ -38,7 +57,9 @@ void fragment() {
 	// Height above the base of the sheet: flames thin out as they climb.
 	float height = 1.0 - UV.y;
 	float threshold = erode + height * fade_top * 0.75;
-	float body = smoothstep(threshold, threshold + 0.22, n + (1.0 - height) * fade_top * 0.35);
+	float lifted = n + (1.0 - height) * fade_top * 0.35;
+	float body = smoothstep(threshold, threshold + 0.22, lifted);
+	float burning = body * (1.0 - smoothstep(threshold + 0.22, threshold + 0.42, lifted)) * front;
 	float sides = mix(1.0, smoothstep(0.0, 0.18, UV.x) * smoothstep(0.0, 0.18, 1.0 - UV.x), fade_sides);
 
 	// The shell: a bright rim with the noise crawling over it, eaten away as `erode` rises.
@@ -55,12 +76,15 @@ void fragment() {
 		float scene_depth = textureLod(depth_texture, SCREEN_UV, 0.0).r;
 		vec4 scene_view = INV_PROJECTION_MATRIX * vec4(SCREEN_UV * 2.0 - 1.0, scene_depth, 1.0);
 		scene_view.xyz /= scene_view.w;
-		fade *= clamp(1.0 - smoothstep(scene_view.z + soft_depth, scene_view.z, VERTEX.z), 0.0, 1.0);
+		fade *= clamp((VERTEX.z - scene_view.z) / soft_depth, 0.0, 1.0);
 	}
 
 	float heat = smoothstep(0.35, 0.95, intensity * (0.6 + 0.6 * n));
+	heat = max(heat * (1.0 - cool), burning * (1.0 - cool * 0.7));
+	intensity *= mix(1.0, 0.3 + 0.7 * max(heat, cool), thin);
 	vec3 rgb = mix(color_edge.rgb, color_core.rgb, heat) * energy;
+	rgb = mix(rgb, color_dark.rgb, cool * (1.0 - burning));
 	float alpha = clamp(intensity * opacity, 0.0, 1.0) * fade;
 	ALBEDO = rgb * alpha;
-	ALPHA = alpha * occlude;
+	ALPHA = alpha * mix(occlude, max(occlude, 0.85), cool);
 }

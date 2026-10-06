@@ -43,6 +43,10 @@ internal struct VfxBoltSpec
     /// <summary>Seconds of path a trail keeps.</summary>
     public float TrailSeconds;
 
+    /// <summary>A beam or tether drawn as electricity: a hair-thin white line in a coloured fringe,
+    /// in several flickering strands. A <see cref="VfxBoltMode.Lightning"/> strike always is.</summary>
+    public bool Electric;
+
     public int Seed;
 }
 
@@ -57,6 +61,13 @@ internal struct VfxBoltSpec
 ///
 /// <para>Each bolt is drawn twice in the one mesh: the line, and a wide faint copy under it. That
 /// copy is the bolt's halo, the glow the renderer does not add when bloom is off.</para>
+///
+/// <para><b>Electricity</b> (a lightning strike, or a beam or tether marked
+/// <see cref="VfxBoltSpec.Electric"/>) is not a glowing tube: the line is a third of the width asked
+/// for and white-hot, the fringe is the school colour, the path has twice the tier's segments and a
+/// bounded sway so it is jagged rather than bent, one or two thinner strands weave round the main
+/// one (<see cref="VfxRichness.BoltStrands"/>), and it flickers. Forks are
+/// <see cref="VfxBoltSpec.Branches"/>.</para>
 /// </summary>
 public partial class VfxBolt : VfxEffect
 {
@@ -70,6 +81,19 @@ public partial class VfxBolt : VfxEffect
 
     private const float HaloWidth = 3.6f;
     private const float HaloAlpha = 0.28f;
+
+    /// <summary>An electric line's width against the width asked for, and its fringe against the line.</summary>
+    private const float ElectricWidth = 0.34f;
+
+    private const float ElectricFringe = 6f;
+    private const float ElectricFringeAlpha = 0.14f;
+
+    /// <summary>The furthest an electric path may sway from its straight line, metres: past this a
+    /// long bolt is a bent tube, not a jagged one.</summary>
+    private const float StrikeSway = 0.55f;
+
+    private const float BeamSway = 0.22f;
+    private const int MaxSegments = 48;
     private const int MaxTrailPoints = 40;
 
     private readonly ImmediateMesh _mesh = new();
@@ -90,6 +114,7 @@ public partial class VfxBolt : VfxEffect
     private float _settleSeconds = VfxRecipeRules.HandSettleSeconds;
     private bool _settleAccelerates;
     private int _seed;
+    private bool _electric;
     private int _jitters;
     private double _expireAt;
     private float _life;
@@ -106,6 +131,7 @@ public partial class VfxBolt : VfxEffect
             GIMode = GeometryInstance3D.GIModeEnum.Disabled,
             ExtraCullMargin = 2f,
         };
+        VfxMaterials.OnLayer(_instance);
         AddChild(_instance);
     }
 
@@ -114,6 +140,8 @@ public partial class VfxBolt : VfxEffect
     {
         _spec = spec;
         _seed = spec.Seed;
+        _electric = spec.Mode == VfxBoltMode.Lightning ||
+                    (spec.Electric && spec.Mode is VfxBoltMode.Beam or VfxBoltMode.Tether);
         _jitters = 0;
         _followsFrom = false;
         _followsTo = false;
@@ -143,8 +171,10 @@ public partial class VfxBolt : VfxEffect
         _material.SetShaderParameter(VfxMaterials.Energy, colors.CoreEnergy);
         _material.SetShaderParameter(VfxMaterials.Opacity, 1f);
         _material.SetShaderParameter(VfxMaterials.WidthScale, 1f);
-        bool flows = spec.Mode is VfxBoltMode.Tether or VfxBoltMode.Beam;
-        _material.SetShaderParameter(VfxMaterials.FlowAmount, flows ? 0.75f : 0f);
+        bool flows = !_electric && spec.Mode is VfxBoltMode.Tether or VfxBoltMode.Beam;
+        _material.SetShaderParameter(VfxMaterials.WhiteCore, _electric ? 0.85f : 0f);
+        _material.SetShaderParameter(VfxMaterials.CoreWidth, _electric ? 0.5f : 0.28f);
+        _material.SetShaderParameter(VfxMaterials.FlowAmount, flows ? 0.75f : spec.Mode == VfxBoltMode.Trail ? 0.45f : 0f);
         _material.SetShaderParameter(VfxMaterials.FlowSpeed, spec.Mode == VfxBoltMode.Tether ? 2.5f : 4f);
         _material.SetShaderParameter(VfxMaterials.UvScale, Mathf.Max(1f, spec.From.DistanceTo(spec.To) * 0.4f));
 
@@ -240,7 +270,7 @@ public partial class VfxBolt : VfxEffect
         // A strike flickers back up on each new shape; a tether swells and dies smoothly.
         float fade = lightning
             ? (1f - (t * t)) * (0.7f + (0.3f * (1f - ((t * (StrikeRejitters + 1)) % 1f))))
-            : Mathf.Sin(Mathf.Min(1f, t * 1.15f) * Mathf.Pi);
+            : Mathf.Sin(Mathf.Min(1f, t * 1.15f) * Mathf.Pi) * Flicker();
         _material.SetShaderParameter(VfxMaterials.Opacity, Mathf.Clamp(fade, 0f, 1f));
         return true;
     }
@@ -265,8 +295,21 @@ public partial class VfxBolt : VfxEffect
 
         Rebuild();
         float fadeIn = Mathf.Clamp((float)Age / 0.06f, 0f, 1f);
-        _material.SetShaderParameter(VfxMaterials.Opacity, fadeIn * StopFade());
+        _material.SetShaderParameter(VfxMaterials.Opacity, fadeIn * StopFade() * Flicker());
         return true;
+    }
+
+    /// <summary>Electricity is never steady: a fast, uneven dip in brightness. 1 for anything else,
+    /// and under Reduced Motion.</summary>
+    private float Flicker()
+    {
+        if (!_electric || VfxQuality.ReducedMotion)
+        {
+            return 1f;
+        }
+
+        float age = (float)Age;
+        return 0.78f + (0.14f * Mathf.Sin(age * 83f)) + (0.08f * Mathf.Sin((age * 141f) + 1.7f));
     }
 
     private bool TickTrail()
@@ -343,13 +386,25 @@ public partial class VfxBolt : VfxEffect
     private void Rebuild()
     {
         int segments = Mathf.Max(2, _spec.Segments);
-        VfxBoltPath.Generate(_spec.From, _spec.To, segments, _spec.Jitter, _seed, _points);
+        float jitter = _spec.Jitter;
+        float width = Mathf.Max(0.005f, _spec.Width);
+        if (_electric)
+        {
+            // Twice the kinks, and a sway bounded in metres: jagged, not bent.
+            float length = Mathf.Max(0.01f, _spec.From.DistanceTo(_spec.To));
+            float sway = _spec.Mode == VfxBoltMode.Lightning ? StrikeSway : BeamSway;
+            segments = Mathf.Min(MaxSegments, segments * 2);
+            jitter = Mathf.Min(jitter, VfxBoltPath.JitterFor(length, sway));
+            width *= ElectricWidth;
+        }
+
+        VfxBoltPath.Generate(_spec.From, _spec.To, segments, jitter, _seed, _points);
         _branchPoints.Clear();
         _branchStarts.Clear();
         if (_spec.Branches > 0 && _spec.Mode == VfxBoltMode.Lightning)
         {
             VfxBoltPath.Branches(
-                _points, _spec.Branches, Mathf.Max(2, segments / 3), _spec.Jitter * 1.4f, _seed, _branchPoints,
+                _points, _spec.Branches, Mathf.Max(2, segments / 3), jitter * 1.4f, _seed, _branchPoints,
                 _branchStarts, _scratch);
         }
 
@@ -359,15 +414,34 @@ public partial class VfxBolt : VfxEffect
             return;
         }
 
-        float width = Mathf.Max(0.005f, _spec.Width);
         _mesh.SurfaceBegin(Mesh.PrimitiveType.Triangles);
-        Strip(_points, 0, _points.Count, width * HaloWidth, HaloAlpha, taperTip: false);
+        if (_electric)
+        {
+            Strip(_points, 0, _points.Count, width * ElectricFringe, ElectricFringeAlpha, taperTip: false);
+        }
+        else
+        {
+            Strip(_points, 0, _points.Count, width * HaloWidth, HaloAlpha, taperTip: false);
+        }
+
         Strip(_points, 0, _points.Count, width, 1f, taperTip: false);
         for (int b = 0; b < _branchStarts.Count; b++)
         {
             int start = _branchStarts[b];
             int end = b + 1 < _branchStarts.Count ? _branchStarts[b + 1] : _branchPoints.Count;
-            Strip(_branchPoints, start, end - start, width * 0.55f, 0.8f, taperTip: true);
+            Strip(_branchPoints, start, end - start, width * 0.7f, 0.85f, taperTip: true);
+        }
+
+        if (_electric)
+        {
+            // Thinner strands between the same two ends, each on its own shape.
+            int strands = Mathf.Clamp(VfxQuality.Rich.BoltStrands, 1, 4);
+            for (int s = 1; s < strands; s++)
+            {
+                VfxBoltPath.Generate(
+                    _spec.From, _spec.To, segments, jitter * 1.5f, unchecked(_seed + (s * 104729)), _scratch);
+                Strip(_scratch, 0, _scratch.Count, width * 0.55f, 0.6f, taperTip: false);
+            }
         }
 
         _mesh.SurfaceEnd();

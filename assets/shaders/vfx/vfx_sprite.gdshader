@@ -31,6 +31,19 @@ uniform float align_velocity = 0.0;
 uniform float soft_depth = 0.0;
 uniform sampler2D depth_texture : hint_depth_texture, repeat_disable, filter_nearest;
 
+// HEAT (flame puffs that cool to smoke). With `use_heat` 1 the particle colour ramp is not a colour:
+// its red is brightness and its green is heat, 1 at birth and 0 when cold. The sprite is then drawn
+// in `tint` while hot and `tint_cool` when cold, and covers `occlude` while hot and `occlude_cool`
+// when cold: one emitter is the fire and the smoke it turns into.
+uniform float use_heat = 0.0;
+uniform vec4 tint_cool : source_color = vec4(0.02, 0.02, 0.02, 1.0);
+uniform float occlude_cool = 0.0;
+
+// DISSOLVE: the mask is torn by noise (more as a heat particle cools), so a puff is ragged and
+// breaks up instead of being a soft disc that fades.
+uniform sampler2D noise : hint_default_white, repeat_enable, filter_linear;
+uniform float dissolve = 0.0;
+
 void vertex() {
 	float scale_x = length(MODEL_MATRIX[0].xyz);
 	float scale_y = length(MODEL_MATRIX[1].xyz);
@@ -56,17 +69,27 @@ void vertex() {
 
 void fragment() {
 	float shape = texture(mask, UV).r;
-	vec4 colour = tint * COLOR;
+	float heat = mix(1.0, COLOR.g, use_heat);
+	float bright = mix(1.0, COLOR.r, use_heat);
+	if (dissolve > 0.0) {
+		float grain = textureLod(noise, UV * 1.3, 0.0).r;
+		float cut = dissolve * (0.2 + 0.6 * (1.0 - heat));
+		shape *= smoothstep(cut, cut + 0.3, shape * (0.55 + 0.9 * grain));
+	}
+	vec3 plain = tint.rgb * COLOR.rgb;
+	vec3 heated = mix(tint_cool.rgb, tint.rgb, heat) * bright;
+	vec3 base = mix(plain, heated, use_heat);
 	float fade = smoothstep(0.3, 1.2, length(VERTEX));
 	if (soft_depth > 0.0) {
 		// Fade where the quad meets the ground or a wall, so a flare on the floor has no cut line.
+		// View-space Z is negative ahead of the camera: the scene behind the quad is further below 0.
 		float scene_depth = textureLod(depth_texture, SCREEN_UV, 0.0).r;
 		vec4 scene_view = INV_PROJECTION_MATRIX * vec4(SCREEN_UV * 2.0 - 1.0, scene_depth, 1.0);
 		scene_view.xyz /= scene_view.w;
-		fade *= clamp(1.0 - smoothstep(scene_view.z + soft_depth, scene_view.z, VERTEX.z), 0.0, 1.0);
+		fade *= clamp((VERTEX.z - scene_view.z) / soft_depth, 0.0, 1.0);
 	}
-	float alpha = clamp(shape * colour.a * opacity, 0.0, 1.0) * fade;
-	vec3 rgb = mix(colour.rgb, vec3(1.0), clamp(hot_core * shape * shape, 0.0, 1.0)) * energy;
+	float alpha = clamp(shape * tint.a * COLOR.a * opacity, 0.0, 1.0) * fade;
+	vec3 rgb = mix(base, vec3(1.0), clamp(hot_core * shape * shape, 0.0, 1.0)) * energy;
 	ALBEDO = rgb * alpha;
-	ALPHA = alpha * occlude;
+	ALPHA = alpha * mix(occlude, mix(occlude_cool, occlude, heat), use_heat);
 }

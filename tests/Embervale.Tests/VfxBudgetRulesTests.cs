@@ -172,11 +172,13 @@ public class VfxBudgetRulesTests
             VfxQuality.Apply(VfxBudgetRules.FollowPreset, GraphicsMath.Performance, reducedMotion: true);
             Assert.Equal(VfxTier.Performance, VfxQuality.Tier);
             Assert.Equal(VfxBudgetRules.For(VfxTier.Performance), VfxQuality.Budget);
+            Assert.Equal(VfxBudgetRules.Richness(VfxTier.Performance), VfxQuality.Rich);
             Assert.True(VfxQuality.ReducedMotion);
 
             VfxQuality.Apply(4, GraphicsMath.Performance, reducedMotion: false);
             Assert.Equal(VfxTier.Ultra, VfxQuality.Tier);
             Assert.Equal(VfxBudgetRules.For(VfxTier.Ultra), VfxQuality.Budget);
+            Assert.Equal(VfxBudgetRules.Richness(VfxTier.Ultra), VfxQuality.Rich);
         }
         finally
         {

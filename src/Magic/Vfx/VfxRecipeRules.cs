@@ -109,13 +109,13 @@ public static class VfxRecipeRules
     public const float DistortionWeight = 0.7f;
 
     /// <summary>The weight at which a hit earns a screen flash.</summary>
-    public const float ScreenFlashWeight = 0.8f;
+    public const float ScreenFlashWeight = 0.9f;
 
     /// <summary>The burst radius (metres) at which a blast earns a pressure wave.</summary>
     public const float DistortionRadius = 2.5f;
 
     /// <summary>The burst radius (metres) at which a blast earns a screen flash.</summary>
-    public const float ScreenFlashRadius = 5f;
+    public const float ScreenFlashRadius = 6f;
 
     /// <summary>The smallest blast that gets a fireball body.</summary>
     public const float FireballRadius = 1.2f;

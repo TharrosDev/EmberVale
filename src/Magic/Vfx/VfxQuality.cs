@@ -16,6 +16,9 @@ public static class VfxQuality
     /// <summary>What that tier may spend.</summary>
     public static VfxBudget Budget { get; private set; } = VfxBudgetRules.For(DefaultTier);
 
+    /// <summary>What that tier's effects are built from (rays, billows, debris, strands).</summary>
+    public static VfxRichness Rich { get; private set; } = VfxBudgetRules.Richness(DefaultTier);
+
     /// <summary>Reduced Motion: no distortion, bolts hold still, screen flashes are capped.</summary>
     public static bool ReducedMotion { get; private set; }
 
@@ -25,6 +28,7 @@ public static class VfxQuality
     {
         Tier = VfxBudgetRules.Resolve(spellEffects, renderQuality);
         Budget = VfxBudgetRules.For(Tier);
+        Rich = VfxBudgetRules.Richness(Tier);
         ReducedMotion = reducedMotion;
     }
 
@@ -33,6 +37,7 @@ public static class VfxQuality
     {
         Tier = DefaultTier;
         Budget = VfxBudgetRules.For(DefaultTier);
+        Rich = VfxBudgetRules.Richness(DefaultTier);
         ReducedMotion = false;
     }
 }

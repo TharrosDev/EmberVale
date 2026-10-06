@@ -11,6 +11,15 @@ render_mode blend_add, unshaded, cull_disabled, depth_draw_never, shadows_disabl
 // (`skip_vertex_transform`: this shader writes VERTEX in view space itself.)
 //
 // UV.x runs along the line. COLOR is per-vertex brightness and alpha (a trail fading to its tail).
+//
+// The half width is clamped to an angle as seen from the camera: never wider than `max_angle`
+// (metres of half width per metre of distance), so a trail or a beam that starts beside the
+// first-person camera is a line and not a wedge across the screen, and never thinner than
+// `min_angle`, so a distant bolt does not alias away.
+//
+// `core_width` is how much of the width is the bright line and `white_core` how far that line is
+// pushed to white: lightning is a hair of white inside a coloured fringe, a fire trail is a soft
+// body of its own colour.
 // ==================================================================================================
 
 uniform sampler2D noise : hint_default_white, repeat_enable, filter_linear;
@@ -22,6 +31,10 @@ uniform float width_scale = 1.0;
 uniform float flow_speed = 0.0;
 uniform float flow_amount = 0.0;
 uniform float uv_scale = 1.0;
+uniform float max_angle = 0.045;
+uniform float min_angle = 0.0009;
+uniform float core_width = 0.28;
+uniform float white_core = 0.0;
 
 void vertex() {
 	vec3 view_position = (MODELVIEW_MATRIX * vec4(VERTEX, 1.0)).xyz;
@@ -33,19 +46,22 @@ void vertex() {
 	} else {
 		side = vec3(1.0, 0.0, 0.0);
 	}
-	view_position += side * (UV.y * 2.0 - 1.0) * UV2.x * width_scale;
+	float depth = max(0.05, -view_position.z);
+	float half_width = clamp(UV2.x * width_scale, depth * min_angle, depth * max_angle);
+	view_position += side * (UV.y * 2.0 - 1.0) * half_width;
 	VERTEX = view_position;
 	NORMAL = vec3(0.0, 0.0, 1.0);
 }
 
 void fragment() {
 	float across = clamp(abs(UV.y * 2.0 - 1.0), 0.0, 1.0);
-	float core = 1.0 - smoothstep(0.0, 0.28, across);
-	float glow = (1.0 - across) * (1.0 - across);
+	float core = 1.0 - smoothstep(0.0, max(core_width, 0.01), across);
+	float glow = (1.0 - across) * (1.0 - across) * (1.0 - across);
 	float n = textureLod(noise, vec2(UV.x * uv_scale - TIME * flow_speed, UV.y * 0.5), 0.0).r;
 	float flow = mix(1.0, 0.25 + 1.5 * n, flow_amount);
 	float fade = smoothstep(0.3, 1.2, length(VERTEX));
 
-	ALBEDO = mix(color_edge.rgb, color_core.rgb, core) * COLOR.rgb * energy;
-	ALPHA = clamp((core + glow * 0.7 * flow) * COLOR.a * opacity, 0.0, 1.0) * fade;
+	vec3 hot = mix(color_core.rgb, vec3(1.0), clamp(white_core, 0.0, 1.0));
+	ALBEDO = mix(color_edge.rgb, hot, core) * COLOR.rgb * energy;
+	ALPHA = clamp((core + glow * 0.5 * flow) * COLOR.a * opacity, 0.0, 1.0) * fade;
 }

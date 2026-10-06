@@ -104,11 +104,11 @@ public static partial class SpellVfx
             {
                 // Ice closes over the bearer and holds for a moment; shards and cold fall off it.
                 VfxSchoolColors ice = VfxPalette.For(DamageType.Frost);
-                VfxShellSpec shell = VfxShellSpec.Sphere(chest, 1f, ice);
+                VfxShellSpec shell = VfxShellSpec.IceShell(chest, 1f, ice);
                 shell.Size = new Vector3(1.5f, 2.1f, 1.5f);
-                shell.Fresnel = true;
                 shell.Occlude = 0.35f;
                 shell.Life = 0.9f;
+                shell.BurnsAway = true;
                 shell.StartScale = 0.7f;
                 VfxHandle<VfxShell> frozen = cast.Fx.Shell(shell);
                 if (body != null)
@@ -123,6 +123,7 @@ public static partial class SpellVfx
                 snap.LightRange = 4f;
                 cast.Fx.Flare(snap);
                 cast.Fx.Burst(VfxParticles.Shards, VfxBurstSpec.At(chest, ice, budget.ParticleMultiplier * 0.8f));
+                ShardBurst(cast, chest, 1.2f, up: false);
                 cast.Fx.Mark(new VfxGroundMarkSpec
                 {
                     Mark = VfxMark.Frost,

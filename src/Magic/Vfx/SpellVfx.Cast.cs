@@ -193,7 +193,9 @@ public static partial class SpellVfx
             snap.Life = 0.2f;
             snap.Light = plan.Light;
             snap.LightRange = 4.5f;
-            snap.Streak = cast.Weight >= 0.7f || full >= 0.8f;
+
+            // A heavy or fully charged cast leaves the hand with a burst of rays, not a wider disc.
+            snap.Rays = cast.Weight >= 0.6f || full >= 0.6f;
             cast.Fx.Flare(snap);
         }
 
@@ -222,6 +224,12 @@ public static partial class SpellVfx
     /// <summary>The cast beat at the casting hand, when the cast animation starts.</summary>
     public static void HandFlash(IEntity caster, SpellResource spell, Vector3 hand)
     {
+        if (caster != null && IsPlayer(caster) && VfxAnchor.BodyOf(caster) is { } own &&
+            TryFirstPersonHand(own, out Vector3 inView))
+        {
+            hand = inView;
+        }
+
         if (!Begin(spell, caster, hand, out VfxCast cast))
         {
             return;

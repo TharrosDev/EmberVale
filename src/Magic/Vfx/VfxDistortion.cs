@@ -45,6 +45,7 @@ public partial class VfxDistortion : VfxEffect
             CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
             GIMode = GeometryInstance3D.GIModeEnum.Disabled,
         };
+        VfxMaterials.OnLayer(_sphere);
         AddChild(_sphere);
     }
 

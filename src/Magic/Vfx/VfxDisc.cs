@@ -2,6 +2,24 @@ using Godot;
 
 namespace Embervale.Magic.Vfx;
 
+/// <summary>What a <see cref="VfxDisc"/> is patterned with.</summary>
+public enum VfxDiscPattern
+{
+    None,
+
+    /// <summary>The rune circle: thin lines, drawn at full strength.</summary>
+    Rune,
+
+    /// <summary>Hoar frost: six crystalline spokes and their feathering.</summary>
+    Frost,
+
+    /// <summary>Glowing cracks, as in a fresh scorch: the ground about to break open.</summary>
+    Cracks,
+
+    /// <summary>Roots cracking outward from the centre.</summary>
+    Roots,
+}
+
 /// <summary>What one <see cref="VfxDisc"/> is asked to draw.</summary>
 internal struct VfxDiscSpec
 {
@@ -21,8 +39,15 @@ internal struct VfxDiscSpec
     /// <summary>A bright front sweeps from the centre to the rim over <see cref="Life"/>.</summary>
     public bool Fills;
 
-    /// <summary>Draws the rune circle on it.</summary>
+    /// <summary>Draws the rune circle on it. The same as <see cref="Pattern"/> = Rune.</summary>
     public bool Rune;
+
+    /// <summary>What the disc is patterned with (frost, cracks, roots), when it is not a rune.</summary>
+    public VfxDiscPattern Pattern;
+
+    /// <summary>A sustained disc's pattern spreads out from the centre over this many seconds
+    /// (frost creeping across the floor). 0 = it is there at once.</summary>
+    public float SpreadSeconds;
 
     /// <summary>Radians a second the rune turns. Held still under Reduced Motion.</summary>
     public float Spin;
@@ -30,7 +55,7 @@ internal struct VfxDiscSpec
     /// <summary>How fast the noise flows outward; negative flows inward.</summary>
     public float Flow;
 
-    /// <summary>Strength of the soft noise disc inside the rim (0..1).</summary>
+    /// <summary>Strength of the soft noise wisps inside the rim (0..1).</summary>
     public float Body;
 
     /// <summary>Strength of the rim line (0..1).</summary>
@@ -62,8 +87,14 @@ internal struct VfxDiscSpec
 /// <summary>
 /// A disc of light on the floor (<c>vfx_ground.gdshader</c>): the flourish over a ground spell's
 /// telegraph, the floor of a zone, the line a wall will stand on, and, turned to face the camera, a
-/// sigil at a hand or over a target. Drawn on every tier (it is one quad), which matters on the two
-/// lowest, where there are no ground-mark decals to show where a zone is.
+/// sigil at a hand or over a target. Drawn on every tier, which matters on the two lowest, where
+/// there are no ground-mark decals to show where a zone is.
+///
+/// <para>It is a rim, a pattern and wisps, not a filled disc. The soft body is governed
+/// (<see cref="VfxCoverageRules"/>): a zone the camera stands in would otherwise tint the whole
+/// floor of the frame. On the leanest tier a standing zone's floor is drawn on an annulus, rim only,
+/// so its middle costs nothing; a telegraph is always whole, because its filling front is the
+/// warning.</para>
 /// </summary>
 public partial class VfxDisc : VfxEffect
 {
@@ -88,6 +119,7 @@ public partial class VfxDisc : VfxEffect
             GIMode = GeometryInstance3D.GIModeEnum.Disabled,
             Position = new Vector3(0f, Lift, 0f),
         };
+        VfxMaterials.OnLayer(_quad);
         AddChild(_quad);
     }
 
@@ -100,19 +132,33 @@ public partial class VfxDisc : VfxEffect
 
         float diameter = Mathf.Max(0.05f, spec.Radius) * 2f;
         float depth = spec.Depth <= 0f ? 1f : spec.Depth;
+        VfxDiscPattern pattern = spec.Rune ? VfxDiscPattern.Rune : spec.Pattern;
+        bool lined = pattern == VfxDiscPattern.Rune;
+
+        // Rim only where the tier draws no full floor: a standing, unpatterned disc on the ground.
+        bool rimOnly = !VfxQuality.Rich.FullDisc && spec.Sustain && !spec.Fills && !spec.FaceCamera && !lined;
+        _quad.Mesh = rimOnly ? VfxMaterials.Annulus : VfxMaterials.Plane;
         _quad.Scale = new Vector3(diameter, 1f, diameter * depth);
         _quad.Position = spec.FaceCamera ? Vector3.Zero : new Vector3(0f, Lift, 0f);
 
         VfxSchoolColors colors = spec.Colors;
+        Texture2D? texture = VfxTextures.Pattern(pattern);
         _material.SetShaderParameter(VfxMaterials.Tint, colors.Mid);
         _material.SetShaderParameter(VfxMaterials.Energy, colors.MidEnergy * (spec.Energy <= 0f ? 1f : spec.Energy));
-        _material.SetShaderParameter(VfxMaterials.Pattern, spec.Rune ? VfxTextures.Rune : default(Variant));
-        _material.SetShaderParameter(VfxMaterials.PatternMix, spec.Rune ? 1f : 0f);
+        _material.SetShaderParameter(VfxMaterials.Pattern, texture != null ? texture : default(Variant));
+        _material.SetShaderParameter(VfxMaterials.PatternMix, texture != null ? (lined ? 1f : 0.8f) : 0f);
+
+        // A rune is thin lines and is drawn as it is. The others have a soft base that would fill
+        // the disc: only what is above it shows, and the governor may thin it.
+        _material.SetShaderParameter(VfxMaterials.PatternFloor, lined ? 0f : pattern == VfxDiscPattern.Cracks ? 0.25f : 0.5f);
+        _material.SetShaderParameter(VfxMaterials.PatternSoft, lined ? 0f : 0.6f);
+        _material.SetShaderParameter(VfxMaterials.Reveal, spec.Sustain && spec.SpreadSeconds > 0f ? 1f : 0f);
         _material.SetShaderParameter(VfxMaterials.Flow, spec.Flow);
         _material.SetShaderParameter(VfxMaterials.Disc, spec.Body);
         _material.SetShaderParameter(VfxMaterials.Rim, spec.Rim);
         _material.SetShaderParameter(VfxMaterials.Spin, 0f);
-        _material.SetShaderParameter(VfxMaterials.Fill, spec.Fills ? 0f : 1f);
+        _material.SetShaderParameter(VfxMaterials.Fill, spec.Fills || spec.SpreadSeconds > 0f ? 0f : 1f);
+        _material.SetShaderParameter(VfxMaterials.BodyOpacity, 1f);
         _material.SetShaderParameter(VfxMaterials.Opacity, 0f);
         Face();
     }
@@ -126,6 +172,14 @@ public partial class VfxDisc : VfxEffect
             _material.SetShaderParameter(VfxMaterials.Spin, _spin);
         }
 
+        if (!_spec.FaceCamera && Director is { HasCamera: true } director)
+        {
+            // The governor, on the soft body alone: the rim, the front and a rune's lines stay.
+            _material.SetShaderParameter(
+                VfxMaterials.BodyOpacity,
+                VfxCoverageRules.Opacity(_spec.Radius * 0.8f, director.DistanceToCamera(GlobalPosition), VfxQuality.Tier, 1d));
+        }
+
         float fadeIn = Mathf.Clamp((float)Age / 0.15f, 0f, 1f);
         if (Stopping)
         {
@@ -136,6 +190,12 @@ public partial class VfxDisc : VfxEffect
 
         if (_spec.Sustain)
         {
+            if (_spec.SpreadSeconds > 0f)
+            {
+                float spread = Mathf.Clamp((float)Age / _spec.SpreadSeconds, 0f, 1f);
+                _material.SetShaderParameter(VfxMaterials.Fill, 1f - ((1f - spread) * (1f - spread)));
+            }
+
             _material.SetShaderParameter(VfxMaterials.Opacity, fadeIn);
             return true;
         }

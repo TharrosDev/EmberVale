@@ -55,8 +55,9 @@ public static partial class SpellVfx
             ? direction.Normalized() * Mathf.Max(0f, spell.ProjectileSpeed)
             : Vector3.Zero;
         float full = Mathf.Clamp(charge, 0f, 1f);
-        float size = (0.2f + (0.16f * cast.Weight) + (0.2f * full)) * plan.Scale;
+        float size = (0.24f + (0.18f * cast.Weight) + (0.2f * full)) * plan.Scale;
         VfxBudget budget = VfxQuality.Budget;
+        VfxRichness rich = VfxQuality.Rich;
 
         // A channel throws a bolt every tick and draws them as one beam (see Beam): each bolt is
         // only a bright pulse running along it, with no trail or debris of its own.
@@ -92,10 +93,13 @@ public static partial class SpellVfx
             // A heavy bolt has a body of flowing noise inside its glow, not light alone.
             if (budget.SecondaryDebris && (cast.Weight >= 0.6f || full >= 0.6f || plan.Shell))
             {
-                VfxShellSpec body = VfxShellSpec.Sphere(visualOrigin, size * 0.8f, cast.Colors);
+                VfxShellSpec body = plan.Shell && cast.School == DamageType.Frost
+                    ? VfxShellSpec.IceShell(visualOrigin, size * 0.8f, cast.Colors)
+                    : VfxShellSpec.Sphere(visualOrigin, size * 0.8f, cast.Colors);
                 body.Sustain = true;
                 body.Fresnel = plan.Shell;
                 body.Layered = !plan.Shell;
+                body.Ragged = !plan.Shell;
                 body.Scroll = new Vector2(0.2f, 1.1f);
                 VfxHandle<VfxShell> shell = rig.Add(cast.Fx.Shell(body));
                 if (shell.Get is { } flow)
@@ -141,6 +145,31 @@ public static partial class SpellVfx
                 shed.Density = plan.Density * 0.35f;
                 shed.SpeedScale = 0.25f;
                 Shed(rig, cast, VfxParticles.Sparks, shed, anchor, handOffset, velocity);
+            }
+        }
+
+        if (plan.Flare && rich.Billow)
+        {
+            // What a school's bolt is beyond a glow: fire is a turbulent body of flame that leaves
+            // dark smoke behind it; frost sheds glints.
+            if (SchoolSmokes(cast.School))
+            {
+                VfxBurstSpec flame = VfxBurstSpec.At(visualOrigin, cast.Colors, budget.ParticleMultiplier * (0.9f + (0.6f * full)));
+                flame.Continuous = true;
+                flame.Extents = Vector3.One * (size * 0.25f);
+                flame.SpeedScale = 0.2f;
+                flame.LifeScale = 0.55f;
+                flame.SizeScale = Mathf.Clamp(size * 2.1f, 0.35f, 1.6f);
+                flame.GravityScale = 0.6f;
+                Shed(rig, cast, VfxEmitter.Flame, flame, anchor, handOffset, velocity);
+            }
+            else if (cast.School == DamageType.Frost && rich.Glints)
+            {
+                VfxBurstSpec glints = VfxBurstSpec.At(visualOrigin, cast.Colors, budget.ParticleMultiplier * 0.7f);
+                glints.Continuous = true;
+                glints.Extents = Vector3.One * (size * 0.5f);
+                glints.LifeScale = 0.6f;
+                Shed(rig, cast, VfxEmitter.Glints, glints, anchor, handOffset, velocity);
             }
         }
 
@@ -204,6 +233,7 @@ public static partial class SpellVfx
             To = to,
             Colors = cast.Colors,
             Width = 0.06f + (0.05f * cast.Weight),
+            Electric = cast.School == DamageType.Lightning,
             Jitter = cast.School == DamageType.Lightning ? 0.05f : 0.018f,
             Segments = VfxRecipeRules.BoltSegments(budget, from.DistanceTo(to)),
             Seed = _director.NextSeed(),
@@ -247,6 +277,19 @@ public static partial class SpellVfx
 
     private static void Shed(
         VfxRig rig, in VfxCast cast, VfxParticles kind, in VfxBurstSpec spec, in VfxAnchor anchor, Vector3 handOffset,
+        Vector3 velocity)
+    {
+        VfxHandle<VfxBurst> stream = rig.Add(cast.Fx.Burst(kind, spec));
+        if (stream.Get is { } emitter)
+        {
+            emitter.Follow(anchor);
+            emitter.SettleFrom(handOffset);
+            emitter.Glide(velocity);
+        }
+    }
+
+    private static void Shed(
+        VfxRig rig, in VfxCast cast, VfxEmitter kind, in VfxBurstSpec spec, in VfxAnchor anchor, Vector3 handOffset,
         Vector3 velocity)
     {
         VfxHandle<VfxBurst> stream = rig.Add(cast.Fx.Burst(kind, spec));

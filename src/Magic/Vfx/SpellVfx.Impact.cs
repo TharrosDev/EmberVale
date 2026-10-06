@@ -46,7 +46,7 @@ public static partial class SpellVfx
         // this is one body inside it lighting up.
         if (onBody && (channelled || VfxRecipeRules.IsSplash(spell.Delivery, spell.ImpactRadius)))
         {
-            VfxFlareSpec spark = VfxFlareSpec.At(hit.Position, 0.42f * scale, cast.Colors);
+            VfxFlareSpec spark = VfxFlareSpec.At(hit.Position, 0.36f * scale, cast.Colors);
             spark.Life = 0.2f;
             cast.Fx.Flare(spark);
             VfxParticles thrown = hit.Kind == SpellImpactKind.Blocked
@@ -110,7 +110,10 @@ public static partial class SpellVfx
         Node3D? body = VfxAnchor.BodyOf(hit.Target);
         if (plan.Shell && body != null)
         {
-            VfxShellSpec shell = VfxShellSpec.Sphere(body.GlobalPosition + Vector3.Up, 0.95f, cast.Colors);
+            // On a frost spell the shell is ice closing over the struck; on any other, a rim of light.
+            VfxShellSpec shell = cast.School == DamageType.Frost
+                ? VfxShellSpec.IceShell(body.GlobalPosition + Vector3.Up, 0.95f, cast.Colors)
+                : VfxShellSpec.Sphere(body.GlobalPosition + Vector3.Up, 0.95f, cast.Colors);
             shell.Fresnel = true;
             shell.Life = 0.7f;
             shell.BurnsAway = true;
@@ -205,7 +208,11 @@ public static partial class SpellVfx
 
         bool hitsPlayer = !cast.ByPlayer && PlayerWithin(position, radius + 0.5f);
         VfxPlan plan = cast.Plan(VfxRole.Burst, radius, hitsPlayer);
-        Blast(cast, plan, position, radius, Vector3.Zero, groundY, hitsPlayer);
+
+        // Something that fell out of the sky lands harder than a blast of the same reach: the fire
+        // is drawn larger than the damage (the ring still marks the true radius).
+        bool fell = source == SpellBurstSource.Ground && FallsFromSky(spell, 1f);
+        Blast(cast, plan, position, radius, Vector3.Zero, groundY, hitsPlayer, streak: fell, bodyScale: fell ? 1.4f : 1f);
         Linger(cast, position, null, radius);
     }
 
@@ -267,21 +274,41 @@ public static partial class SpellVfx
         // A body of flowing noise filling the wedge, so a breath is a volume and not only its sparks.
         if (plan.Flare && budget.SecondaryDebris && VfxRecipeRules.SchoolFireball(cast.School))
         {
-            VfxShellSpec gout = VfxShellSpec.Sphere(origin + (axis * (range * 0.55f)), 0.5f, cast.Colors);
+            VfxShellSpec gout = VfxShellSpec.Ball(
+                origin + (axis * (range * 0.55f)), 0.5f, cast.Colors, SchoolSmokes(cast.School));
             gout.Size = new Vector3(widthAtEnd * 1.3f, widthAtEnd * 1.3f, range * 0.95f);
             gout.Forward = axis;
-            gout.Life = 0.34f;
-            gout.BurnsAway = true;
+            gout.Life = 0.38f;
             gout.StartScale = 0.45f;
             gout.Scroll = new Vector2(0.1f, 1.4f);
-            gout.Opacity = 0.75f;
+            gout.Tiling = new Vector2(3f, 2f);
+            gout.Opacity = 0.7f;
             cast.Fx.Shell(gout);
+        }
+
+        // What the breath is made of: flame that cools to smoke down the wedge, or cold mist.
+        VfxEmitter breath = SchoolSmokes(cast.School)
+            ? VfxEmitter.Flame
+            : cast.School == DamageType.Frost ? VfxEmitter.Mist : VfxEmitter.None;
+        if (plan.Flare && breath != VfxEmitter.None && VfxQuality.Rich.Billow)
+        {
+            VfxBurstPreset puffs = VfxBurstPresets.For(breath);
+            VfxBurstSpec fire = VfxBurstSpec.At(origin + (axis * 0.3f), cast.Colors, budget.ParticleMultiplier * 1.2f);
+            fire.Direction = axis;
+            fire.Spread = half * 0.8f;
+            fire.LifeScale = Mathf.Clamp(0.7f / Mathf.Max(0.1f, puffs.Life), 0.25f, 1f);
+            fire.Speed = range / (Mathf.Max(0.1f, puffs.Life * fire.LifeScale) * 0.75f);
+            fire.Damping = 1.2f;
+            fire.GravityScale = 0.4f;
+            fire.SizeScale = Mathf.Clamp(widthAtEnd * 0.45f / Mathf.Max(0.1f, puffs.SizeMax), 0.5f, 2.4f);
+            fire.Extents = Vector3.One * 0.15f;
+            cast.Fx.Burst(breath, fire);
         }
 
         // Widening flashes down the axis: the reach and the shape, readable at a glance.
         if (plan.Flare)
         {
-            int puffs = cast.Fx.Full ? 3 : 1;
+            int puffs = cast.Fx.Full && VfxQuality.Rich.Rays ? 3 : 1;
             for (int i = 1; i <= puffs; i++)
             {
                 float travelled = range * i / (puffs + 0.5f);
@@ -293,8 +320,11 @@ public static partial class SpellVfx
                     continue;
                 }
 
+                // Glints of heat down the wedge, not a wall of discs: the body and the particles
+                // are the breath, these only light it.
                 VfxFlareSpec puff = VfxFlareSpec.At(
-                    at, Mathf.Max(0.25f, travelled * Mathf.Tan(Mathf.DegToRad(half)) * 0.75f), cast.Colors.Scaled(0.7f, 0.8f));
+                    at, Mathf.Clamp(travelled * Mathf.Tan(Mathf.DegToRad(half)) * 0.35f, 0.25f, 1.3f),
+                    cast.Colors.Scaled(0.6f, 0.7f));
                 puff.Life = 0.26f + (0.05f * i);
                 puff.Light = plan.Light && i == 1;
                 puff.LightRange = Mathf.Max(4f, range * 0.8f);
@@ -367,6 +397,7 @@ public static partial class SpellVfx
             To = to,
             Colors = cast.Colors,
             Width = kind == SpellArcKind.Brand ? 0.085f : 0.06f,
+            Electric = school == DamageType.Lightning,
             Jitter = kind == SpellArcKind.Spread ? 0.13f : 0f,
             Segments = VfxRecipeRules.BoltSegments(budget, length),
             Branches = kind == SpellArcKind.Chain ? budget.BoltBranches : 0,
@@ -377,6 +408,7 @@ public static partial class SpellVfx
         // Where it lands.
         VfxFlareSpec end = VfxFlareSpec.At(to, strike ? 0.45f : 0.3f, cast.Colors);
         end.Life = strike ? 0.2f : 0.35f;
+        end.Rays = strike;
         end.Light = strike && budget.MaxLights > 0;
         end.LightRange = 4f;
         cast.Fx.Flare(end);
@@ -423,7 +455,7 @@ public static partial class SpellVfx
     /// </summary>
     private static void Blast(
         in VfxCast cast, in VfxPlan plan, Vector3 centre, float radius, Vector3 ringNormal, float groundY,
-        bool hitsPlayer, bool streak = false)
+        bool hitsPlayer, bool streak = false, float bodyScale = 1f)
     {
         if (plan.IsEmpty)
         {
@@ -432,24 +464,32 @@ public static partial class SpellVfx
 
         VfxSpawner fx = cast.Fx;
         VfxSchoolColors colors = cast.Colors;
+        VfxRichness rich = VfxQuality.Rich;
         radius = Mathf.Max(0.15f, radius);
+
+        // The size of the fire, as opposed to the reach of the damage: a meteor's is larger.
+        float body = radius * Mathf.Max(0.5f, bodyScale);
         bool grounded = !float.IsNaN(groundY) && Mathf.Abs(centre.Y - groundY) <= Mathf.Max(1.5f, radius);
         var floor = new Vector3(centre.X, grounded ? groundY : centre.Y, centre.Z);
-        float life = Mathf.Clamp(0.28f + (radius * 0.04f), 0.28f, 0.6f);
+        float life = Mathf.Clamp(0.3f + (radius * 0.05f), 0.3f, 0.7f) * rich.LifeScale;
 
         if (plan.Flare)
         {
-            VfxFlareSpec flare = VfxFlareSpec.At(centre, radius * 0.55f, colors);
+            // A flash whose white heart is capped and brief (VfxFlare and the coverage governor see
+            // to that); what makes it large is the rays, the ring and everything built below.
+            VfxFlareSpec flare = VfxFlareSpec.At(centre, body * 0.55f, colors);
             flare.Life = life;
             flare.Light = plan.Light;
             flare.LightRange = Mathf.Max(3.5f, radius * 2.6f);
-            flare.Streak = streak || plan.ScreenFlash || radius >= 3.5f;
+            flare.Rays = radius >= 0.9f || cast.Weight >= 0.5f || streak;
+            flare.Streak = streak && radius >= 1.2f;
             flare.Inward = plan.Inward;
             if (plan.Ring && !grounded)
             {
                 flare.Ring = true;
                 flare.RingRadius = radius;
                 flare.RingNormal = ringNormal;
+                flare.RingStreaks = 0.8f;
             }
 
             fx.Flare(flare);
@@ -463,20 +503,32 @@ public static partial class SpellVfx
             ring.Ring = true;
             ring.RingRadius = radius;
             ring.RingNormal = grounded ? Vector3.Zero : ringNormal;
-            ring.Life = life + 0.12f;
+            ring.RingStreaks = 0.8f;
+            ring.Life = life + 0.15f;
             ring.Inward = plan.Inward;
             fx.Flare(ring);
+
+            if (rich.DebrisLayers >= 2 && radius >= 2f && !plan.Inward)
+            {
+                // The top tier: a second, slower, fainter front rolling out past the first.
+                ring.Colors = colors.Scaled(0.45f, 1f);
+                ring.RingRadius = radius * 1.3f;
+                ring.RingStreaks = 0f;
+                ring.Life = (life + 0.15f) * 1.7f;
+                fx.Flare(ring);
+            }
         }
 
         if (plan.Fireball)
         {
-            VfxShellSpec ball = VfxShellSpec.Sphere(centre, radius * 0.62f, colors);
-            ball.Life = life + 0.18f;
-            ball.BurnsAway = true;
-            ball.StartScale = 0.3f;
-            ball.Layered = true;
-            ball.Scroll = new Vector2(0.08f, 0.5f);
+            VfxShellSpec ball = VfxShellSpec.Ball(centre, body * 0.6f, colors, SchoolSmokes(cast.School));
+            ball.Life = life + 0.3f;
             fx.Shell(ball);
+        }
+
+        if (plan.Flare)
+        {
+            Signature(cast, plan, centre, floor, radius, body, grounded);
         }
 
         float throwScale = Mathf.Clamp(0.6f + (radius * 0.32f), 0.6f, 3f);
@@ -485,6 +537,7 @@ public static partial class SpellVfx
         {
             VfxBurstSpec debris = VfxBurstSpec.At(centre, colors, plan.Density * amount);
             debris.SizeScale = Mathf.Clamp(0.85f + (radius * 0.1f), 0.85f, 1.8f);
+            debris.LifeScale = rich.LifeScale;
             if (plan.Inward)
             {
                 debris.Inward = true;
@@ -546,7 +599,8 @@ public static partial class SpellVfx
             });
         }
 
-        if (plan.ScreenFlash)
+        // Only a blast the player is standing in flashes the screen, and then only slightly.
+        if (plan.ScreenFlash && VfxScreenRules.PlayerCentred(PlayerDistance(centre), radius))
         {
             float strength = Mathf.Clamp(0.4f + (cast.Weight * 0.4f) + (radius * 0.05f), 0f, 1f);
             fx.Screen(SpellSchools.Color(cast.School), strength, hitsPlayer);

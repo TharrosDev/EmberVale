@@ -289,12 +289,14 @@ public class VfxRecipeRulesTests
     [MemberData(nameof(Tiers))]
     public void AFallbackBlastIsBuiltFromTheBlocksItsTierAllows(VfxTier tier)
     {
-        // End to end, as SpellVfx.Burst does it: a fire nova nobody authored, five metres across.
+        // End to end, as SpellVfx.Burst does it: a fire nova nobody authored, large enough to ask
+        // for a screen flash (whether it is shown is VfxScreenRules' and the player's distance).
+        float radius = VfxRecipeRules.ScreenFlashRadius + 0.5f;
         VfxBudget budget = VfxBudgetRules.For(tier);
         VfxStage stage = VfxRecipeRules.Enrich(
             SpellVfxCatalog.Fallback(DamageType.Fire, SpellDelivery.Area).Impact, VfxRole.Burst,
-            new VfxTraits(DamageType.Fire, SpellDelivery.Area, 0.6f, 5f, false));
-        VfxPlan plan = VfxRecipeRules.Plan(stage, budget, VfxDetail.Full, false, true, false, 5f, DamageType.Fire);
+            new VfxTraits(DamageType.Fire, SpellDelivery.Area, 0.6f, radius, false));
+        VfxPlan plan = VfxRecipeRules.Plan(stage, budget, VfxDetail.Full, false, true, false, radius, DamageType.Fire);
 
         Assert.True(plan.Flare && plan.Ring && plan.Light && plan.ScreenFlash);
         Assert.Equal(VfxParticles.Embers, plan.Particles);
