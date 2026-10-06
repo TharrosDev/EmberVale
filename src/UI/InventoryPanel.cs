@@ -76,10 +76,24 @@ public partial class InventoryPanel : UiPanel
     private ulong _selectedFrame = ulong.MaxValue;
     private bool _pressSelected;
 
-    /// <summary>The pack's cells by the instance each shows, and the equipment column's cells in
-    /// order, for restyling a selection and wiring focus without rebuilding either.</summary>
+    // Whether the press in flight came from the mouse. A second click on a piece of gear puts it on;
+    // accept on a pad or the keys steps into the detail pane, which nothing else leads to.
+    private bool _pressByMouse;
+
+    // Set by a full rebuild and cleared once the base has put focus back. Focus arriving on a control
+    // because the rebuild restored it there is not the player walking onto it, and must not narrow
+    // the pack, leave the material bag or end the choosing for a slot.
+    private bool _restoring;
+
+    // Whether focus was in the detail pane when the rebuild began. An action there can empty the pane
+    // (unequip, use, drop), and focus then goes back to the cell it came from, not to the screen's first tab.
+    private bool _paneHadFocus;
+
+    /// <summary>The pack's cells by the instance each shows, and the equipment column's rows in
+    /// order, for restyling a selection and wiring focus without rebuilding either. A row's cell is
+    /// the pressable laid over the whole row; its well is the framed slot drawn inside it.</summary>
     private readonly Dictionary<ItemInstance, Button> _cellOf = new(ReferenceEqualityComparer.Instance);
-    private readonly List<(EquipmentSlot Slot, ItemInstance? Item, Button Cell)> _equipCells = new();
+    private readonly List<(EquipmentSlot Slot, ItemInstance? Item, Button Cell, Button Well)> _equipCells = new();
 
     /// <summary>The strip's focusable controls of the current fill, for the same focus wiring.</summary>
     private readonly List<Control> _stripControls = new();
@@ -454,7 +468,7 @@ public partial class InventoryPanel : UiPanel
             var entries = new List<LegendEntry>();
             if (_activeTab == CharTab.Gear)
             {
-                entries.Add(new LegendEntry("ui_accept", Loc.T("char.legend.select")));
+                entries.Add(new LegendEntry("ui_accept", Loc.T("char.legend.actions")));
                 entries.Add(new LegendEntry(ItemSlot.CompareAction, Loc.T("item.detail.compare")));
             }
             else if (_activeTab == CharTab.Perks)
@@ -476,6 +490,16 @@ public partial class InventoryPanel : UiPanel
         (int tab, bool bag) = InventoryTabRules.FromStop(InventoryTabRules.Step(stop, delta, TabDefs.Length));
 
         UiAudio.Play(UiCue.Tab);
+
+        // Focus left in the equipment column would be put back there by the rebuild, on a column that
+        // belongs to the pack view. It moves to the view's own tab, and down from there is the grid.
+        int view = bag ? 1 : 0;
+        if (tab == 0 && _activeTab == CharTab.Gear && FocusIsIn(_equipList) && view < _stripControls.Count
+            && IsInstanceValid(_stripControls[view]) && _stripControls[view].IsInsideTree())
+        {
+            _stripControls[view].GrabFocus();
+        }
+
         _bagView = bag;
         _equipFocus = null;
         _pending = Pending.None;
@@ -494,7 +518,21 @@ public partial class InventoryPanel : UiPanel
     public override void _Process(double delta)
     {
         base._Process(delta);
-        if (!IsOpen || _activeTab != CharTab.Gear || (!_packStale && !_detailStale))
+        bool paneHadFocus = _restoring && _paneHadFocus;
+        _restoring = false;
+        _paneHadFocus = false;
+        if (!IsOpen || _activeTab != CharTab.Gear)
+        {
+            return;
+        }
+
+        if (paneHadFocus && !FocusIsIn(_detailList))
+        {
+            Control? back = SelectionCell() ?? (_gridCells.Count > 0 && _gridCells[0].IsInsideTree() ? _gridCells[0] : null);
+            back?.GrabFocus();
+        }
+
+        if (!_packStale && !_detailStale)
         {
             return;
         }
@@ -627,6 +665,8 @@ public partial class InventoryPanel : UiPanel
 
     protected override void Rebuild()
     {
+        _restoring = true;
+        _paneHadFocus = FocusIsIn(_detailList);
         UiTheme.ClearChildren(_list);
 
         // Re-derived per rebuild so a mid-session UI-scale change lands without a restart.
@@ -1104,21 +1144,24 @@ public partial class InventoryPanel : UiPanel
     /// the pack is whole again: the way into the narrowed view is the equipment column, so the way out
     /// is leaving the columns. A mouse click on a strip button is not a walk. It keeps the view it
     /// clicked in (a rebuild here would free the button under the cursor before its press landed) and
-    /// uses the "show whole pack" button instead.
+    /// uses the "show whole pack" button instead. Nor is focus put back on a strip button by the
+    /// rebuild its own press caused.
     /// </summary>
     private void OnStripFocus()
     {
-        if (_equipFocus != null && !Godot.Input.IsMouseButtonPressed(MouseButton.Left))
+        if (_equipFocus != null && !_restoring && !Godot.Input.IsMouseButtonPressed(MouseButton.Left))
         {
             _equipFocus = null;
             MarkDirty();
         }
     }
 
-    /// <summary>The worn-gear column: one cell per slot, in the canonical display order, so an empty
-    /// slot is as visible as a filled one. Focusing a cell narrows the pack to what fits that slot;
-    /// pressing it steps into those candidates. An empty slot shows the ghost of what belongs in it
-    /// and says how many pieces in the pack would fit.</summary>
+    /// <summary>The worn-gear column: one row per slot, in the canonical display order, so an empty
+    /// slot is as visible as a filled one. The whole row is the pressable, at the control height: the
+    /// 34 px well inside it is too small a target to be the only way into choosing for a slot.
+    /// Focusing a row narrows the pack to what fits that slot; pressing a worn one steps into the
+    /// detail pane, pressing an empty one into the candidates. An empty slot shows the ghost of what
+    /// belongs in it and says how many pieces in the pack would fit.</summary>
     private void FillEquipment()
     {
         UiTheme.ClearChildren(_equipList);
@@ -1138,13 +1181,23 @@ public partial class InventoryPanel : UiPanel
 
             // The quiver holds a whole stack, so its cell counts the arrows left.
             int held = slot == EquipmentSlot.Ammo ? Mathf.Max(1, _equipment.AmmoCount) : 1;
-            Button cell = item is null
+            Button well = item is null
                 ? ItemSlot.BuildEmpty(slot, ItemSlot.CompactSize)
                 : ItemSlot.Build(item, held, ReferenceEquals(item, _selected), ItemSlot.CompactSize, ItemSlot.Marks.Equipped);
+            well.FocusMode = Control.FocusModeEnum.None;
+            well.MouseFilter = Control.MouseFilterEnum.Ignore;
+            line.AddChild(well);
+
+            // A frame that draws nothing and pads nothing: the row is a target, not a card.
+            var bare = new StyleBoxFlat { DrawCenter = false };
+            bare.SetContentMarginAll(0f);
+            PanelContainer row = UiTheme.CardButton(null, out Button cell, out VBoxContainer content, bare);
+            row.CustomMinimumSize = new Vector2(0f, UiTheme.ControlHeight);
+            content.Alignment = BoxContainer.AlignmentMode.Center;
+            cell.TooltipText = well.TooltipText;
             cell.FocusEntered += () => BrowseSlot(captured);
             cell.ButtonDown += NotePress;
             cell.Pressed += () => ChooseFor(captured);
-            line.AddChild(cell);
 
             var text = new VBoxContainer
             {
@@ -1167,8 +1220,9 @@ public partial class InventoryPanel : UiPanel
             text.AddChild(name);
             line.AddChild(text);
 
-            _equipList.AddChild(line);
-            _equipCells.Add((slot, item, cell));
+            content.AddChild(line);
+            _equipList.AddChild(row);
+            _equipCells.Add((slot, item, cell, well));
         }
     }
 
@@ -1398,7 +1452,7 @@ public partial class InventoryPanel : UiPanel
     private void LinkFocus()
     {
         Button? home = null;
-        foreach ((EquipmentSlot slot, ItemInstance? _, Button cell) in _equipCells)
+        foreach ((EquipmentSlot slot, ItemInstance? _, Button cell, Button _) in _equipCells)
         {
             if (cell.IsInsideTree() && (home == null || slot == _equipFocus))
             {
@@ -1470,6 +1524,84 @@ public partial class InventoryPanel : UiPanel
                 control.FocusNeighborBottom = anyCell ? _gridCells[0].GetPath() : new NodePath();
             }
         }
+
+        // Left out of the detail pane goes back to the cell the pane is describing. The engine's own
+        // search would pick whichever pack cell is nearest, and arriving there reselects.
+        if (SelectionCell() is { } back)
+        {
+            LinkPane(_detailList, back.GetPath(), leads: true);
+        }
+    }
+
+    /// <summary>Points the pane's controls left at <paramref name="back"/>: every one that has no
+    /// other control before it in its own row. Returns whether it found any control at all.</summary>
+    private static bool LinkPane(Node node, NodePath back, bool leads)
+    {
+        bool row = node is HBoxContainer or HFlowContainer;
+        bool any = false;
+        foreach (Node child in node.GetChildren())
+        {
+            bool found;
+            if (child is Control { FocusMode: Control.FocusModeEnum.All } control)
+            {
+                if (leads)
+                {
+                    control.FocusNeighborLeft = back;
+                }
+
+                found = true;
+            }
+            else
+            {
+                found = LinkPane(child, back, leads);
+            }
+
+            any |= found;
+            if (row && found)
+            {
+                leads = false;
+            }
+        }
+
+        return any;
+    }
+
+    /// <summary>The cell showing what the detail pane describes: the selected item's pack cell or
+    /// equipment row, or, with nothing selected, the row of the slot being chosen for.</summary>
+    private Control? SelectionCell()
+    {
+        if (_selected != null && _cellOf.TryGetValue(_selected, out Button? packed) && IsInstanceValid(packed) && packed.IsInsideTree())
+        {
+            return packed;
+        }
+
+        foreach ((EquipmentSlot slot, ItemInstance? item, Button cell, Button _) in _equipCells)
+        {
+            if (cell.IsInsideTree() && (_selected != null ? ReferenceEquals(item, _selected) : slot == _equipFocus))
+            {
+                return cell;
+            }
+        }
+
+        return null;
+    }
+
+    private bool FocusIsIn(Control root) =>
+        GetViewport()?.GuiGetFocusOwner() is { } focus && root.IsAncestorOf(focus);
+
+    /// <summary>Steps from a cell into the detail pane's first live button. This is the pad's and the
+    /// keys' only way to the pane that does not cross another cell, and crossing a cell reselects.</summary>
+    private void EnterPane()
+    {
+        if (_packStale || _detailStale)
+        {
+            return; // the pane is about to be refilled
+        }
+
+        if (!UiFocus.GrabFirst(_detailList))
+        {
+            UiAudio.Play(UiCue.Denied);
+        }
     }
 
     // --- Selection follows focus ---------------------------------------------------------------
@@ -1487,6 +1619,11 @@ public partial class InventoryPanel : UiPanel
     /// slot is empty) and the pack narrows to what would fit it.</summary>
     private void BrowseSlot(EquipmentSlot slot)
     {
+        if (_restoring)
+        {
+            return;
+        }
+
         ItemInstance? worn = _equipment?.GetEquipped(slot);
         if (_equipFocus == slot && !_bagView && ReferenceEquals(_selected, worn))
         {
@@ -1539,7 +1676,7 @@ public partial class InventoryPanel : UiPanel
             ItemSlot.SetSelected(cell, instance, selected);
         }
 
-        foreach ((EquipmentSlot _, ItemInstance? item, Button worn) in _equipCells)
+        foreach ((EquipmentSlot _, ItemInstance? item, Button _, Button worn) in _equipCells)
         {
             if (ReferenceEquals(item, instance) && IsInstanceValid(worn))
             {
@@ -1550,10 +1687,15 @@ public partial class InventoryPanel : UiPanel
 
     /// <summary>A press began. If the selection moved on this same frame, the press is the click that
     /// moved it (a click focuses a cell before it presses it) and is spent on selecting.</summary>
-    private void NotePress() => _pressSelected = _selectedFrame == Engine.GetProcessFrames();
+    private void NotePress()
+    {
+        _pressSelected = _selectedFrame == Engine.GetProcessFrames();
+        _pressByMouse = Godot.Input.IsMouseButtonPressed(MouseButton.Left);
+    }
 
-    /// <summary>A pack cell was pressed. The first press selects; pressing the selected piece of gear
-    /// again puts it on, which is the whole journey a pad would otherwise make to the Equip button.
+    /// <summary>A pack cell was pressed. The first press selects. Accept on the selected cell steps
+    /// into the detail pane, onto the first thing that can be done with the item (Equip, for gear).
+    /// A second mouse click on a piece of gear puts it on, since the mouse reaches the pane unaided.
     /// Only gear: putting on the wrong helmet is undone in one press, drinking the wrong potion is not.</summary>
     private void Activate(ItemInstance instance)
     {
@@ -1563,8 +1705,9 @@ public partial class InventoryPanel : UiPanel
             return;
         }
 
-        if (!instance.IsEquippable || _equipment == null)
+        if (!_pressByMouse || !instance.IsEquippable || _equipment == null)
         {
+            EnterPane();
             return;
         }
 
@@ -1580,11 +1723,24 @@ public partial class InventoryPanel : UiPanel
         }
     }
 
-    /// <summary>An equipment cell was pressed: step into the pack's candidates for that slot.</summary>
+    /// <summary>An equipment row was pressed. Worn gear steps into the detail pane, where Unequip is;
+    /// an empty slot steps into the pack's candidates for it (right from any row does the same).</summary>
     private void ChooseFor(EquipmentSlot slot)
     {
-        if (_pressSelected || _equipFocus != slot || _packStale)
+        if (_pressSelected || _packStale)
         {
+            return;
+        }
+
+        if (_equipFocus != slot || _bagView)
+        {
+            BrowseSlot(slot); // focus was put back here by a rebuild: the press is the choosing
+            return;
+        }
+
+        if (_equipment?.GetEquipped(slot) != null)
+        {
+            EnterPane();
             return;
         }
 
@@ -1623,9 +1779,7 @@ public partial class InventoryPanel : UiPanel
         bool worn = _equipment != null && _equipment.IsInstanceEquipped(instance);
         var context = new ItemSlot.DetailContext(_equipment, _progression?.Level ?? 0, Compare: true)
         {
-            Actions = !worn && instance.IsEquippable
-                ? new[] { new LegendEntry("ui_accept", Loc.T("char.equip")) }
-                : null,
+            Actions = new[] { new LegendEntry("ui_accept", Loc.T("char.legend.actions")) },
         };
         col.AddChild(ItemSlot.Detail(instance, context));
 

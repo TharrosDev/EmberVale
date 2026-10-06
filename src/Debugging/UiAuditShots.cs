@@ -105,9 +105,10 @@ public sealed partial class UiAuditShots : ShotHarness
             return $"the perk tree drew {sheet.PerkTreeState.VisualsShown} of the four node states";
         }
 
-        if (name.StartsWith("16-") && GetViewport().GetVisibleRect().Size.X > 900f)
+        // The scale the shot set, not a width: an ultrawide window at 1.5 is still wider than a handheld.
+        if (name.StartsWith("16-") && !Mathf.IsEqualApprox(GetTree().Root.ContentScaleFactor, 1.5f))
         {
-            return $"the view is {GetViewport().GetVisibleRect().Size.X:0} px wide, not a handheld's";
+            return $"the UI scale is {GetTree().Root.ContentScaleFactor:0.##}, not the handheld's 1.5";
         }
 
         return null;

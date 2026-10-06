@@ -5127,7 +5127,7 @@ item.equipped,Equipped
 item.slot_empty_tip,{0}: empty
 item.slot_empty_fits,"Empty, {0} in pack"
 item.slot_empty_title,{0} is empty
-item.slot_empty_pick,"Pieces in your pack that fit: {0}. Select the slot again to step into them."
+item.slot_empty_pick,"Pieces in your pack that fit: {0}. Press the slot to step into them."
 item.slot_empty_none,Nothing in your pack fits this slot.
 item.pack_fits,Fits {0}
 item.hero.damage,Damage
@@ -5147,7 +5147,7 @@ item.strip.show_all,Show whole pack
 item.strip.show_all_tip,The pack is showing only what fits the equipment slot you chose. Press to show everything again.
 item.strip.step_tip,Press to step to the next choice.
 char.details,DETAILS
-char.legend.select,Select
+char.legend.actions,Actions
 char.legend.learn,Learn rank
 char.legend.tabs,Switch tab
 perktree.respec_hold,Hold to respec ({0} gold)
