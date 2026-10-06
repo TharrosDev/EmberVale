@@ -111,9 +111,16 @@ public static class SaveChecksum
     // never touched. 50, 50.0 and 5e1 are one number here; 50 and 50.5 are not.
     private static string Number(JsonElement element)
     {
+        // An integer at or past 2^53 is hashed as the double it becomes, not by its digits: the
+        // engine's parser returns every number as a float, so 8123456789012345678 comes back from
+        // a tool's read-and-rewrite as 8123456789012345900.0 and has to hash the same. Compared as
+        // a double because Math.Abs(long.MinValue) throws.
         if (element.TryGetInt64(out long whole))
         {
-            return whole.ToString(CultureInfo.InvariantCulture);
+            double asDouble = whole;
+            return Math.Abs(asDouble) < 9007199254740992d
+                ? whole.ToString(CultureInfo.InvariantCulture)
+                : asDouble.ToString("G15", CultureInfo.InvariantCulture);
         }
 
         if (!element.TryGetDouble(out double value))

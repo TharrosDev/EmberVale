@@ -329,7 +329,12 @@ public sealed partial class SessionLifecycleCoordinator : Node
     /// event unsubscription — has run by the time this returns, and the next New Game starts
     /// against an empty registry. <c>QueueFree</c> then reclaims the memory at end of frame.</para>
     /// </summary>
-    public void DestroySession()
+    public void DestroySession() => DestroySession(raiseEnded: true);
+
+    /// <param name="raiseEnded">False only when the session is being <b>replaced</b> (an in-session
+    /// reload): raising <see cref="SessionEnded"/> there made the shell build a title screen that
+    /// nothing dismissed, over the session about to start.</param>
+    private void DestroySession(bool raiseEnded)
     {
         // A queued request belongs to the session that made it. A quit or a different session
         // start cancels it before its callback can load over that newer state.
@@ -374,7 +379,10 @@ public sealed partial class SessionLifecycleCoordinator : Node
         Input.MouseMode = Input.MouseModeEnum.Visible;
         GameManager.Instance?.ChangeState(GameState.MainMenu);
 
-        SessionEnded?.Invoke();
+        if (raiseEnded)
+        {
+            SessionEnded?.Invoke();
+        }
     }
 
     /// <summary>
@@ -411,8 +419,10 @@ public sealed partial class SessionLifecycleCoordinator : Node
 
     private GameSession BeginSession(string slot, CharacterProfile profile, bool applyStartingGrants, string regionId)
     {
-        // A second session is never additive: whatever is live goes first.
-        DestroySession();
+        // A second session is never additive: whatever is live goes first. It is replaced rather
+        // than ended, so the shell is not told to bring the title back; a start that then fails
+        // goes through AbortToTitle, which does.
+        DestroySession(raiseEnded: false);
 
         // No GC drain here. The previous session's C# Resource wrappers used to be collectable while
         // still in Godot's resource cache, and Build re-loading one was the lifecycle FATAL; that is

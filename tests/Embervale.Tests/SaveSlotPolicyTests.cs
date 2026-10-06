@@ -38,39 +38,19 @@ public class SaveSlotPolicyTests
     [Fact]
     public void ManualTarget_KeepsAManualSession()
     {
-        Assert.Equal("slot2", SaveSlotPolicy.ManualSaveTarget("slot2", "Kael", new[] { Save("slot1", 900) }));
+        Assert.Equal("slot2", SaveSlotPolicy.ManualSaveTarget("slot2"));
     }
 
-    [Fact]
-    public void ManualTarget_AfterAnAutosaveLoad_IsThatCharactersNewestManualSlot()
+    [Theory]
+    [InlineData("auto1")]
+    [InlineData(SaveSlots.Quick)]
+    [InlineData("")]
+    [InlineData(null)]
+    public void ManualTarget_IsNeverGuessed_WhenTheSessionHasNoManualSlot(string? activeSlot)
     {
-        SaveSlotInfo[] saves =
-        {
-            Save("slot1", 100),
-            Save("slot2", 300, "Mira"),
-            Save("slot3", 200),
-            Save("auto1", 999),
-        };
-
-        Assert.Equal("slot3", SaveSlotPolicy.ManualSaveTarget("auto1", "Kael", saves));
-        Assert.Equal("slot2", SaveSlotPolicy.ManualSaveTarget(SaveSlots.Quick, "Mira", saves));
-    }
-
-    [Fact]
-    public void ManualTarget_IsNullWhenTheCharacterHasNeverSavedByHand()
-    {
-        SaveSlotInfo[] saves = { Save("slot1", 100, "Mira"), Save("auto2", 500), Save(SaveSlots.Quick, 600) };
-
-        Assert.Null(SaveSlotPolicy.ManualSaveTarget("auto2", "Kael", saves));
-        Assert.Null(SaveSlotPolicy.ManualSaveTarget("", "Kael", saves));
-    }
-
-    [Fact]
-    public void ManualTarget_IgnoresUnloadableAndNonRosterSlots()
-    {
-        SaveSlotInfo[] saves = { Save("slot1", 100, health: SaveHealth.Corrupt), Save("slot5", 400) };
-
-        Assert.Null(SaveSlotPolicy.ManualSaveTarget("auto1", "Kael", saves));
+        // No fallback by character name: two playthroughs that both kept the default name are
+        // indistinguishable, and guessing wrote one over the other's slot without asking.
+        Assert.Null(SaveSlotPolicy.ManualSaveTarget(activeSlot));
     }
 
     [Fact]

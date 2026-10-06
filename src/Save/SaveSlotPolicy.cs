@@ -9,10 +9,10 @@ namespace Embervale.Save;
 /// slot browser all ask here instead of each deciding for itself.
 ///
 /// <para>The rules: the player writes by hand to three fixed manual slots or the quick slot, never
-/// to the autosave ring; F5 always writes the quick slot; a session that was loaded from an autosave
-/// or the quick slot saves by hand into the last manual slot that character used, and has no target
-/// (the caller prompts) when that character has never saved by hand; F9 loads whichever of the quick
-/// slot and the session's own slot is newer.</para>
+/// to the autosave ring; F5 always writes the quick slot; a one-press manual save writes the session's
+/// own slot only when that is a manual slot, and otherwise has no target (the caller prompts), so a
+/// session loaded from an autosave or the quick slot picks its slot once; F9 loads whichever of the
+/// quick slot and the session's own slot is newer.</para>
 /// </summary>
 public static class SaveSlotPolicy
 {
@@ -37,35 +37,17 @@ public static class SaveSlotPolicy
         !string.IsNullOrWhiteSpace(slot) && SaveSlots.KindOf(slot) != SaveKind.Auto;
 
     /// <summary>
-    /// The slot a one-press manual save writes, or null when the player has to pick one.
-    /// A session running from a manual slot keeps it. A session running from an autosave or the quick
-    /// slot continues in the newest player manual slot holding <paramref name="characterName"/>'s
-    /// save; with none, there is no target.
+    /// The slot a one-press manual save writes, or null when the player has to pick one: the
+    /// session's own slot when that is a manual slot, and nothing otherwise.
+    ///
+    /// <para>There is deliberately no fallback that looks for "this character's" manual slot. A
+    /// save carries no playthrough identity beyond the character's name, which defaults to the same
+    /// word for everyone who leaves it blank, so a match on it once wrote a second playthrough over
+    /// the first one's slot with no confirmation. The slot browser the caller opens instead asks
+    /// before it overwrites.</para>
     /// </summary>
-    public static string? ManualSaveTarget(string? activeSlot, string characterName, IEnumerable<SaveSlotInfo> saves)
-    {
-        if (!string.IsNullOrWhiteSpace(activeSlot) && SaveSlots.KindOf(activeSlot) == SaveKind.Manual)
-        {
-            return activeSlot;
-        }
-
-        SaveSlotInfo? newest = null;
-        foreach (SaveSlotInfo info in saves)
-        {
-            if (info.Health != SaveHealth.Ok || Array.IndexOf(PlayerManual, info.Slot) < 0 ||
-                !string.Equals(info.CharacterName, characterName, StringComparison.Ordinal))
-            {
-                continue;
-            }
-
-            if (newest == null || info.TimestampUnix > newest.TimestampUnix)
-            {
-                newest = info;
-            }
-        }
-
-        return newest?.Slot;
-    }
+    public static string? ManualSaveTarget(string? activeSlot) =>
+        !string.IsNullOrWhiteSpace(activeSlot) && SaveSlots.KindOf(activeSlot) == SaveKind.Manual ? activeSlot : null;
 
     /// <summary>
     /// The slot F9 loads, or null when there is nothing to load: the newer of the session's own slot

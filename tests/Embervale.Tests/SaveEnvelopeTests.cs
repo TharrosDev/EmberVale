@@ -205,9 +205,25 @@ public class SaveEnvelopeTests
         Assert.Equal(Of("0.1"), Of("0.10"));
         Assert.Equal(Of("0.1"), Of("0.10000000000000002")); // one unit in the last place: the same number
         Assert.Equal(Of("-1.41963624954224"), Of("-1.4196362495422400"));
-        Assert.NotEqual(Of("9007199254740993"), Of("9007199254740992"));
+        Assert.NotEqual(Of("9007199254740991"), Of("9007199254740990"));
         Assert.NotEqual(Of("1"), Of("-1"));
         Assert.NotEqual(Of("1e99999"), Of("-1e99999"));
+    }
+
+    [Theory]
+    [InlineData("8123456789012345678", "8123456789012345900.0")]
+    [InlineData("8123456789012345678", "8.1234567890123459e+18")]
+    [InlineData("6917529027641081857", "6917529027641081900.0")]
+    [InlineData("-8123456789012345678", "-8123456789012345900.0")]
+    [InlineData("9007199254740992", "9007199254740992.0")]
+    [InlineData("-9223372036854775808", "-9223372036854775808.0")]
+    public void Checksum_HashesAnIntegerPastDoublePrecision_AsTheFloatTheEngineHandsBack(string written, string reparsed)
+    {
+        // The engine parses every number as a float, so an integer of 2^53 or more is rewritten by a
+        // tool as the nearest double. Hashing its exact digits made that rewrite a corrupt save.
+        static string Of(string number) => Sum("{\"stats:player\":{\"v\":" + number + "}}");
+        Assert.Equal(Of(written), Of(reparsed));
+        Assert.NotEqual(Of(written), Of("1"));
     }
 
     [Fact]

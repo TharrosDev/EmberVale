@@ -112,7 +112,12 @@ public sealed class LootLedger : ISaveable
         }
     }
 
-    private static long NewSalt() => System.Random.Shared.NextInt64(1, long.MaxValue);
+    /// <summary>Exclusive upper bound of a salt: 2^53, past which a whole number is no longer exact
+    /// as a double. The engine's JSON parser returns every number as a float, so a larger salt came
+    /// back from the first load rounded, and every unopened chest rerolled.</summary>
+    public const long SaltLimit = 1L << 53;
+
+    private static long NewSalt() => System.Random.Shared.NextInt64(1, SaltLimit);
 }
 
 /// <summary>Turns a persistent id and a save's salt into an RNG seed. Pure, so the same chest in the

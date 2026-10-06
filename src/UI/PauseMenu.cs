@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Embervale.Core;
 using Embervale.Localization;
 using Embervale.Save;
@@ -16,7 +15,7 @@ namespace Embervale.UI;
 ///
 /// <para><b>Saving and loading (ics save-ui).</b> <i>Save</i> writes the session's manual slot in
 /// one press, or opens the slot browser when the session has none yet (a game loaded from an
-/// autosave whose character never saved by hand). <i>Save to Slot</i> and <i>Load</i> open the
+/// autosave or the quick slot). <i>Save to Slot</i> and <i>Load</i> open the
 /// <see cref="SaveSlotPanel"/> over this menu; Esc / B there returns here. Both ways out write an
 /// autosave first, and ask before leaving when that save is refused or fails. The outcome of a save
 /// is written under the title, because toasts are held back while the game is paused.</para>
@@ -155,16 +154,16 @@ public partial class PauseMenu : CanvasLayer
 	// --- Save -----------------------------------------------------------------------------
 
 	/// <summary>One-press save into the session's manual slot. A session with no manual slot of its
-	/// own (it was loaded from an autosave or the quick slot and this character never saved by hand)
-	/// is asked to pick one instead of having one guessed for it.</summary>
+	/// own (it was loaded from an autosave or the quick slot) is asked to pick one in the browser,
+	/// which confirms an overwrite, instead of having one guessed for it.</summary>
 	private void Save()
 	{
-		if (SaveManager.Instance is not { } saves || SessionHost() is not { Session: { } session })
+		if (SaveManager.Instance is not { } saves || SessionHost() is not { Session: not null })
 		{
 			return;
 		}
 
-		string? target = SaveSlotPolicy.ManualSaveTarget(saves.ActiveSlot, session.Profile.CharacterName, ManualSaves(saves));
+		string? target = SaveSlotPolicy.ManualSaveTarget(saves.ActiveSlot);
 		if (target == null)
 		{
 			OpenBrowser(SaveSlotPanel.Intent.Save);
@@ -185,22 +184,6 @@ public partial class PauseMenu : CanvasLayer
 		SetStatus(
 			saved ? Loc.TF("pause.saved_to", SaveSlotPanel.SlotLabel(slot)) : Loc.T(failureKey),
 			saved ? UiTheme.Good : UiTheme.Bad);
-	}
-
-	/// <summary>Headers of the player's manual slots that hold a save, for the slot-target policy.
-	/// Read from the header mirror, which is all the policy needs and far cheaper than inspecting.</summary>
-	private static List<SaveSlotInfo> ManualSaves(SaveManager saves)
-	{
-		var found = new List<SaveSlotInfo>();
-		foreach (string slot in SaveSlotPolicy.PlayerManualSlots)
-		{
-			if (saves.SaveExists(slot) && saves.ReadHeader(slot) is { } info)
-			{
-				found.Add(info);
-			}
-		}
-
-		return found;
 	}
 
 	// --- Slot browser ---------------------------------------------------------------------

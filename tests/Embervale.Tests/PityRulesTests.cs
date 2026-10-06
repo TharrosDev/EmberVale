@@ -91,7 +91,8 @@ public class PityRulesTests
 
         Assert.Equal(1, ledger.NextChestOrdinal());
         Assert.Equal(2, ledger.NextChestOrdinal());
-        Assert.NotEqual(0L, ledger.Salt);
+        // Exact as a double, so it survives the engine's float-only JSON parse on load.
+        Assert.InRange(ledger.Salt, 1L, LootLedger.SaltLimit - 1);
     }
 
     [Fact]

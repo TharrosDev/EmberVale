@@ -284,6 +284,15 @@ internal static class LegacyFixtures
 
         objects[run.Flags.SaveId] = new Godot.Collections.Dictionary { ["flags"] = flags };
 
+        // The objects no longer match the checksum the save was written with, and a legacy save
+        // never carried one: an absent checksum is accepted, a stale one is refused as corrupt.
+        document.Remove(SaveEnvelope.ChecksumKey);
+        if (document.TryGetValue(SaveEnvelope.HeaderKey, out Variant header) &&
+            header.VariantType == Variant.Type.Dictionary)
+        {
+            header.AsGodotDictionary().Remove(SaveEnvelope.ChecksumKey);
+        }
+
         using (FileAccess? file = FileAccess.Open(path, FileAccess.ModeFlags.Write))
         {
             if (file == null)
