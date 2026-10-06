@@ -32,6 +32,9 @@ public partial class PlacementHud : UiPanel
 
     protected override bool CloseOnCancel => true;
 
+    // Opens itself by polling the placement director, so it has to keep ticking while closed.
+    protected override bool TicksWhileClosed => true;
+
     protected override void BuildShell(PanelContainer shell)
     {
         shell.AnchorLeft = 0.5f;

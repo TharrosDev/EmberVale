@@ -83,7 +83,67 @@ public sealed partial class CompassStrip : Control
     private CompassMarkState _markState = CompassMarkState.Active;
     private string? _portalRegionName;
 
-    public void SetPlayer(IEntity? player) => _player = player;
+    // --- Redraw-on-change (performance pass) -----------------------------------
+    //
+    // The strip used to repaint itself every frame: ~115 rule segments, the centre wedge, up to five
+    // letters each measured and drawn twice, and a freshly formatted distance. Now the parts that
+    // never move (the rule and the wedge) live on their own canvas item, drawn once and kept by the
+    // engine, and the moving parts repaint only when what they show has moved by more than the eye
+    // can see: the heading by a tenth of a degree (a quarter of a pixel on this strip) or, with a
+    // destination marked, the player by two centimetres.
+    private const float HeadingStep = Mathf.Pi / 1800f; // 0.1 degree
+    private const float MoveStepSquared = 0.02f * 0.02f;
+
+    private Control _fixed = null!;
+    private bool _stale = true;
+    private bool _drawnBody;
+    private float _drawnHeading;
+    private Vector3 _drawnOrigin;
+    private Vector3? _drawnWaypoint;
+
+    // The eight letters, translated and measured once per font and size instead of once per frame.
+    private readonly string[] _cardinalText = new string[Cardinals.Length];
+    private readonly float[] _cardinalWidth = new float[Cardinals.Length];
+    private Font? _measuredFont;
+    private int _measuredBodySize;
+    private int _measuredCaptionSize;
+
+    // The distance line under each destination, rebuilt when the number or its label changes.
+    private DistanceLabel _objectiveDistance;
+    private DistanceLabel _waypointDistance;
+
+    private struct DistanceLabel
+    {
+        public bool Known;
+        public float Shown;
+        public string? Prefix;
+        public int Size;
+        public string Text;
+        public float Width;
+    }
+
+    // Reused polygon buffers: the engine copies the points on each draw call, so one array per
+    // shape is enough and none is allocated per frame.
+    private readonly Vector2[] _three = new Vector2[3];
+    private readonly Vector2[] _four = new Vector2[4];
+    private readonly Vector2[] _five = new Vector2[5];
+
+    public void SetPlayer(IEntity? player)
+    {
+        _player = player;
+        _stale = true;
+    }
+
+    /// <summary>Drops the cached letters and distance lines and repaints (locale or colour-vision
+    /// change): the strip holds translated text and adapted colours.</summary>
+    public void InvalidateText()
+    {
+        _measuredFont = null;
+        _objectiveDistance = default;
+        _waypointDistance = default;
+        _stale = true;
+        _fixed?.QueueRedraw();
+    }
 
     /// <summary>The tracked objective's world position, or null when there is nothing to walk toward.
     ///
@@ -102,6 +162,13 @@ public sealed partial class CompassStrip : Control
         MouseFilter = MouseFilterEnum.Ignore;
         CustomMinimumSize = new Vector2(Width, Height);
         Size = CustomMinimumSize;
+
+        // The rule and the centre wedge. Behind the parent, so the letters and destination marks
+        // still draw over them exactly as they did when all of it was one pass.
+        _fixed = new Control { Name = "Fixed", MouseFilter = MouseFilterEnum.Ignore, ShowBehindParent = true };
+        _fixed.SetAnchorsPreset(LayoutPreset.FullRect);
+        _fixed.Draw += DrawFixed;
+        AddChild(_fixed);
     }
 
     public override void _Process(double delta)
@@ -110,10 +177,73 @@ public sealed partial class CompassStrip : Control
         if (_resolveTimer <= 0f)
         {
             _resolveTimer = ObjectiveResolveInterval;
+            Vector3? before = _objectiveTarget;
+            CompassMarkKind kindBefore = _markKind;
+            CompassMarkState stateBefore = _markState;
+            string? realmBefore = _portalRegionName;
             _objectiveTarget = ResolveObjectiveTarget();
+            if (before != _objectiveTarget || kindBefore != _markKind || stateBefore != _markState ||
+                realmBefore != _portalRegionName)
+            {
+                _stale = true;
+            }
         }
 
-        QueueRedraw(); // the heading moves every frame; one widget, cheap to repaint
+        // Hidden (a boss owns the top centre, or a menu is up): nothing to repaint. The engine
+        // repaints the strip itself when it is shown again, and _stale survives until then.
+        if (IsVisibleInTree() && NeedsRedraw())
+        {
+            _stale = false;
+            QueueRedraw();
+        }
+    }
+
+    /// <summary>Whether anything the moving half of the strip shows has changed since it was last
+    /// painted. <see cref="_Draw"/> records what it painted, so this compares against the screen.</summary>
+    private bool NeedsRedraw()
+    {
+        if (_stale)
+        {
+            return true;
+        }
+
+        if (_player?.Body is not { } body || !IsInstanceValid(body))
+        {
+            return _drawnBody; // the letters are up and there is no longer a player to face
+        }
+
+        if (!_drawnBody ||
+            Mathf.Abs(CompassMath.WrapPi(HeadingOf(body) - _drawnHeading)) > HeadingStep)
+        {
+            return true;
+        }
+
+        Vector3? waypoint = CurrentWaypoint();
+        if (waypoint != _drawnWaypoint)
+        {
+            return true;
+        }
+
+        // Standing still or walking with nothing marked, the player's position changes nothing here.
+        if (_objectiveTarget == null && waypoint == null)
+        {
+            return false;
+        }
+
+        Vector3 origin = body.GlobalPosition;
+        float dx = origin.X - _drawnOrigin.X;
+        float dz = origin.Z - _drawnOrigin.Z;
+        return (dx * dx) + (dz * dz) > MoveStepSquared;
+    }
+
+    private static Vector3? CurrentWaypoint() =>
+        ServiceLocator.Instance is { } locator && locator.TryGet(out MapService map) ? map.Waypoint : null;
+
+    private void DrawFixed()
+    {
+        float halfWidth = Size.X / 2f;
+        DrawRule(halfWidth);
+        DrawCentreMark(halfWidth);
     }
 
     public override void _Draw()
@@ -121,11 +251,9 @@ public sealed partial class CompassStrip : Control
         float halfWidth = Size.X / 2f;
         float centreX = halfWidth;
 
-        DrawRule(halfWidth);
-        DrawCentreMark(centreX);
-
         if (_player?.Body is not { } body || !IsInstanceValid(body))
         {
+            _drawnBody = false;
             return;
         }
 
@@ -137,9 +265,12 @@ public sealed partial class CompassStrip : Control
 
         // Destinations last so nothing draws over them. The objective is the game's mark; the
         // waypoint is the player's own and wins ties by being drawn after it.
-        Vector3? waypoint = ServiceLocator.Instance is { } locator && locator.TryGet(out MapService map)
-            ? map.Waypoint
-            : null;
+        Vector3? waypoint = CurrentWaypoint();
+
+        _drawnBody = true;
+        _drawnHeading = heading;
+        _drawnOrigin = origin;
+        _drawnWaypoint = waypoint;
 
         if (_objectiveTarget is { } target)
         {
@@ -147,14 +278,14 @@ public sealed partial class CompassStrip : Control
             // tone; both agree with the tracker band beside them. An optional objective is hollow.
             Color objectiveTint = _markKind == CompassMarkKind.Main ? UiTheme.QuestMain : UiTheme.QuestSide;
             DrawDestination(font, target, origin, heading, halfWidth, centreX, objectiveTint,
-                playerWaypoint: false, showDistance: waypoint == null,
+                playerWaypoint: false, showDistance: waypoint == null, ref _objectiveDistance,
                 hollow: _markState == CompassMarkState.Optional, label: _portalRegionName);
         }
 
         if (waypoint is { } playerMark)
         {
             DrawDestination(font, playerMark, origin, heading, halfWidth, centreX, UiTheme.AccentHot,
-                playerWaypoint: true, showDistance: true);
+                playerWaypoint: true, showDistance: true, ref _waypointDistance);
         }
     }
 
@@ -162,14 +293,15 @@ public sealed partial class CompassStrip : Control
     /// to pop against. Drawn in segments because a single line cannot carry a gradient.</summary>
     private void DrawRule(float halfWidth)
     {
-        int segments = Mathf.Max(Mathf.RoundToInt(Size.X / 4f), 8);
-        float step = Size.X / segments;
+        float width = Size.X;
+        int segments = Mathf.Max(Mathf.RoundToInt(width / 4f), 8);
+        float step = width / segments;
 
         for (int i = 0; i < segments; i++)
         {
             float x = i * step;
             float alpha = EdgeFade(x + (step * 0.5f), halfWidth);
-            DrawRect(new Rect2(x, RuleY, step + 1f, 1f), new Color(UiTheme.Brass, 0.55f * alpha));
+            _fixed.DrawRect(new Rect2(x, RuleY, step + 1f, 1f), new Color(UiTheme.Brass, 0.55f * alpha));
         }
     }
 
@@ -178,22 +310,35 @@ public sealed partial class CompassStrip : Control
     private void DrawCentreMark(float centreX)
     {
         var mark = UiTheme.Adapt(UiTheme.Accent);
-        DrawColoredPolygon(
-            new[]
-            {
-                new Vector2(centreX - 5f, RuleY + 6f),
-                new Vector2(centreX + 5f, RuleY + 6f),
-                new Vector2(centreX, RuleY - 1f),
-            },
-            mark);
+        _three[0] = new Vector2(centreX - 5f, RuleY + 6f);
+        _three[1] = new Vector2(centreX + 5f, RuleY + 6f);
+        _three[2] = new Vector2(centreX, RuleY - 1f);
+        _fixed.DrawColoredPolygon(_three, mark);
     }
 
     /// <summary>The eight headings. N is ember and the true cardinals are bone at body size; the
     /// intercardinals are dim and smaller — so a glance lands on one letter, not eight.</summary>
     private void DrawCardinals(Font font, float heading, float halfWidth, float centreX)
     {
-        foreach ((string key, float angle) in Cardinals)
+        int bodySize = UiTheme.FontSize(UiTheme.BodyFontSize);
+        int captionSize = UiTheme.FontSize(UiTheme.CaptionFontSize);
+        if (!ReferenceEquals(font, _measuredFont) || bodySize != _measuredBodySize ||
+            captionSize != _measuredCaptionSize)
         {
+            _measuredFont = font;
+            _measuredBodySize = bodySize;
+            _measuredCaptionSize = captionSize;
+            for (int i = 0; i < Cardinals.Length; i++)
+            {
+                _cardinalText[i] = Loc.T(Cardinals[i].Key);
+                _cardinalWidth[i] = font.GetStringSize(
+                    _cardinalText[i], HorizontalAlignment.Left, -1f, IsMajor(Cardinals[i].Angle) ? bodySize : captionSize).X;
+            }
+        }
+
+        for (int i = 0; i < Cardinals.Length; i++)
+        {
+            float angle = Cardinals[i].Angle;
             float rel = CompassMath.Relative(angle, heading);
             if (!CompassMath.InView(rel, Fov))
             {
@@ -201,14 +346,17 @@ public sealed partial class CompassStrip : Control
             }
 
             float x = centreX + CompassMath.StripOffset(rel, Fov, halfWidth);
-            bool major = Mathf.IsZeroApprox(Mathf.PosMod(angle + 0.001f, Mathf.Pi / 2f) - 0.001f);
+            bool major = IsMajor(angle);
             bool north = Mathf.IsZeroApprox(angle);
 
             Color colour = north ? UiTheme.Adapt(UiTheme.Accent) : major ? UiTheme.Text : UiTheme.Dim;
-            DrawLabel(font, Loc.T(key), x, new Color(colour, EdgeFade(x, halfWidth)),
-                major ? UiTheme.BodyFontSize : UiTheme.CaptionFontSize, LetterBaseline);
+            DrawMeasuredLabel(font, _cardinalText[i], _cardinalWidth[i], x,
+                new Color(colour, EdgeFade(x, halfWidth)), major ? bodySize : captionSize, LetterBaseline);
         }
     }
+
+    private static bool IsMajor(float angle) =>
+        Mathf.IsZeroApprox(Mathf.PosMod(angle + 0.001f, Mathf.Pi / 2f) - 0.001f);
 
     /// <summary>
     /// A destination: a chevron above the rule, its distance below, and — when it is behind the
@@ -221,7 +369,8 @@ public sealed partial class CompassStrip : Control
     /// </summary>
     private void DrawDestination(
         Font font, Vector3 target, Vector3 origin, float heading, float halfWidth, float centreX,
-        Color tint, bool playerWaypoint, bool showDistance, bool hollow = false, string? label = null)
+        Color tint, bool playerWaypoint, bool showDistance, ref DistanceLabel distance,
+        bool hollow = false, string? label = null)
     {
         float dx = target.X - origin.X;
         float dz = target.Z - origin.Z;
@@ -232,19 +381,22 @@ public sealed partial class CompassStrip : Control
         {
             float edgeX = rel > 0f ? Size.X - 6f : 6f;
             float direction = rel > 0f ? 1f : -1f;
-            Vector2[] arrow =
-            {
-                new(edgeX + (direction * 5f), MarkTop + 5f),
-                new(edgeX - (direction * 4f), MarkTop),
-                new(edgeX - (direction * 4f), MarkTop + 10f),
-            };
+            var tip = new Vector2(edgeX + (direction * 5f), MarkTop + 5f);
+            var top = new Vector2(edgeX - (direction * 4f), MarkTop);
+            var bottom = new Vector2(edgeX - (direction * 4f), MarkTop + 10f);
             if (playerWaypoint || hollow)
             {
-                DrawPolyline(new[] { arrow[1], arrow[0], arrow[2] }, new Color(mark, hollow ? 0.6f : 0.9f), 2f);
+                _three[0] = top;
+                _three[1] = tip;
+                _three[2] = bottom;
+                DrawPolyline(_three, new Color(mark, hollow ? 0.6f : 0.9f), 2f);
             }
             else
             {
-                DrawColoredPolygon(arrow, new Color(mark, 0.85f));
+                _three[0] = tip;
+                _three[1] = top;
+                _three[2] = bottom;
+                DrawColoredPolygon(_three, new Color(mark, 0.85f));
             }
             return;
         }
@@ -254,50 +406,54 @@ public sealed partial class CompassStrip : Control
 
         if (playerWaypoint)
         {
-            Vector2[] diamond =
-            {
-                new(x, MarkTop),
-                new(x + 6f, MarkTop + 5f),
-                new(x, MarkTop + 10f),
-                new(x - 6f, MarkTop + 5f),
-                new(x, MarkTop),
-            };
-            DrawPolyline(diamond, new Color(mark, fade), 2f);
+            _five[0] = new Vector2(x, MarkTop);
+            _five[1] = new Vector2(x + 6f, MarkTop + 5f);
+            _five[2] = new Vector2(x, MarkTop + 10f);
+            _five[3] = new Vector2(x - 6f, MarkTop + 5f);
+            _five[4] = new Vector2(x, MarkTop);
+            DrawPolyline(_five, new Color(mark, fade), 2f);
         }
         else if (hollow)
         {
             // An optional objective: the chevron's outline only, and dimmer, so it reads as "also".
-            DrawPolyline(
-                new[]
-                {
-                    new Vector2(x - 6f, MarkTop),
-                    new Vector2(x + 6f, MarkTop),
-                    new Vector2(x, MarkTop + 9f),
-                    new Vector2(x - 6f, MarkTop),
-                },
-                new Color(mark, fade * 0.7f),
-                2f);
+            _four[0] = new Vector2(x - 6f, MarkTop);
+            _four[1] = new Vector2(x + 6f, MarkTop);
+            _four[2] = new Vector2(x, MarkTop + 9f);
+            _four[3] = new Vector2(x - 6f, MarkTop);
+            DrawPolyline(_four, new Color(mark, fade * 0.7f), 2f);
         }
         else
         {
-            DrawColoredPolygon(
-                new[]
-                {
-                    new Vector2(x - 6f, MarkTop),
-                    new Vector2(x + 6f, MarkTop),
-                    new Vector2(x, MarkTop + 9f),
-                },
-                new Color(mark, fade));
+            _three[0] = new Vector2(x - 6f, MarkTop);
+            _three[1] = new Vector2(x + 6f, MarkTop);
+            _three[2] = new Vector2(x, MarkTop + 9f);
+            DrawColoredPolygon(_three, new Color(mark, fade));
         }
 
         // §16: a distance for the destination that matters, and only that one. Printing it for every
         // marker is the "excessive text" the same section warns against.
         if (showDistance)
         {
-            (string value, string unitKey) = CompassMath.Distance(Mathf.Sqrt((dx * dx) + (dz * dz)));
-            string readout = $"{value}{Loc.T(unitKey)}";
-            DrawLabel(font, label != null ? $"{label} {readout}" : readout, x, new Color(mark, fade),
-                UiTheme.CaptionFontSize, DistanceBaseline);
+            // Whole metres below a kilometre, a tenth of a kilometre above: the line is rebuilt and
+            // re-measured when that number (or the realm it names) changes, not on every repaint.
+            float metres = Mathf.Sqrt((dx * dx) + (dz * dz));
+            float shown = metres < 1000f
+                ? System.MathF.Round(metres)
+                : 100000f + System.MathF.Round(metres / 100f, System.MidpointRounding.AwayFromZero);
+            int size = UiTheme.FontSize(UiTheme.CaptionFontSize);
+            if (!distance.Known || shown != distance.Shown || label != distance.Prefix || size != distance.Size)
+            {
+                (string value, string unitKey) = CompassMath.Distance(metres);
+                string readout = $"{value}{Loc.T(unitKey)}";
+                distance.Known = true;
+                distance.Shown = shown;
+                distance.Prefix = label;
+                distance.Size = size;
+                distance.Text = label != null ? $"{label} {readout}" : readout;
+                distance.Width = font.GetStringSize(distance.Text, HorizontalAlignment.Left, -1f, size).X;
+            }
+
+            DrawMeasuredLabel(font, distance.Text, distance.Width, x, new Color(mark, fade), size, DistanceBaseline);
         }
     }
 
@@ -312,13 +468,13 @@ public sealed partial class CompassStrip : Control
             : Mathf.Clamp((1f - distance) / fadeZone, 0f, 1f);
     }
 
-    /// <summary>A centred, shadowed label on a given baseline. The shadow is not decoration: the
-    /// strip has no panel behind it now, so a letter crossing a bright sky is otherwise invisible.</summary>
-    private void DrawLabel(Font font, string text, float x, Color colour, int sizeToken, float baselineY)
+    /// <summary>A centred, shadowed label on a given baseline, from text measured once by the caller.
+    /// The shadow is not decoration: the strip has no panel behind it now, so a letter crossing a
+    /// bright sky is otherwise invisible.</summary>
+    private void DrawMeasuredLabel(
+        Font font, string text, float width, float x, Color colour, int size, float baselineY)
     {
-        int size = UiTheme.FontSize(sizeToken);
-        Vector2 measured = font.GetStringSize(text, HorizontalAlignment.Left, -1f, size);
-        var pos = new Vector2(x - (measured.X / 2f), baselineY);
+        var pos = new Vector2(x - (width / 2f), baselineY);
 
         DrawString(font, pos + Vector2.One, text, HorizontalAlignment.Left, -1f, size,
             new Color(UiTheme.Engrave, colour.A));

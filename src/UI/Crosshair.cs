@@ -51,6 +51,9 @@ public partial class Crosshair : Control
         GetViewport().SizeChanged += QueueRedraw;
 
         EventBus.Instance?.Subscribe<DamageDealtEvent>(OnDamage);
+
+        // Ticks only while a hit-marker pop is decaying (OnDamage wakes it).
+        SetProcess(false);
     }
 
     public override void _ExitTree()
@@ -71,12 +74,14 @@ public partial class Crosshair : Control
 
         _hitPop = HitPopSeconds;
         _hitTint = e.IsCrit ? new Color(UiTheme.AccentHot, 0.95f) : LineColor;
+        SetProcess(true);
     }
 
     public override void _Process(double delta)
     {
         if (_hitPop <= 0d)
         {
+            SetProcess(false);
             return;
         }
 

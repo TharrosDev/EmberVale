@@ -53,8 +53,8 @@ public partial class PauseMenu : CanvasLayer
 
 		// Gamepad B (ui_cancel) resumes like Esc while open (30.5J). Esc raises both actions
 		// on one press; the OR evaluates once, so it still toggles exactly once.
-		bool pressed = Godot.Input.IsActionJustPressed(GameInput.Pause) ||
-			(_open && Godot.Input.IsActionJustPressed("ui_cancel"));
+		bool pressed = Godot.Input.IsActionJustPressed(UiLive.Pause) ||
+			(_open && Godot.Input.IsActionJustPressed(UiLive.UiCancel));
 		if (!pressed)
 		{
 			return;

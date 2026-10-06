@@ -113,14 +113,37 @@ public partial class Notifications : CanvasLayer
 
     public override void _Process(double delta)
     {
+        bool protectedState = UiState.MenuOpen || GameManager.Instance?.State != GameState.Playing;
+
+        // Nothing showing, nothing queued, nothing pending: the four passes below have no toast to
+        // place, shed or present, and each of them walks the stack or asks the HUD for a layout rect.
+        // Only the stack's visibility is kept current, so a toast pushed later appears into the
+        // state it always did. (PresentQueued places the stack itself before it shows anything.)
+        if (_visible == 0 && _queue.Count == 0 && !_questNotices.HasPending)
+        {
+            SetStackShown(!protectedState);
+            return;
+        }
+
         FlushQuestNotices();
         PlaceStack();
         ShedOverflow();
-        bool protectedState = UiState.MenuOpen || GameManager.Instance?.State != GameState.Playing;
-        _stack.Visible = !protectedState;
+        SetStackShown(!protectedState);
         if (!protectedState)
         {
             PresentQueued();
+        }
+    }
+
+    private int _stackShown = -1;
+
+    private void SetStackShown(bool shown)
+    {
+        int key = shown ? 1 : 0;
+        if (key != _stackShown)
+        {
+            _stackShown = key;
+            _stack.Visible = shown;
         }
     }
 
@@ -599,9 +622,10 @@ public partial class Notifications : CanvasLayer
     {
         float height = 0f;
         int count = 0;
-        foreach (Node child in _stack.GetChildren())
+        int children = _stack.GetChildCount();
+        for (int i = 0; i < children; i++) // by index: GetChildren() builds an array per call
         {
-            if (child is Control { Visible: true } toast)
+            if (_stack.GetChild(i) is Control { Visible: true } toast)
             {
                 height += toast.GetCombinedMinimumSize().Y;
                 count++;
@@ -619,9 +643,10 @@ public partial class Notifications : CanvasLayer
     private int LiveToasts()
     {
         int live = 0;
-        foreach (Node child in _stack.GetChildren())
+        int children = _stack.GetChildCount();
+        for (int i = 0; i < children; i++)
         {
-            if (child is Toast { Expiring: false })
+            if (_stack.GetChild(i) is Toast { Expiring: false })
             {
                 live++;
             }
@@ -640,9 +665,10 @@ public partial class Notifications : CanvasLayer
             return;
         }
 
-        foreach (Node child in _stack.GetChildren())
+        int children = _stack.GetChildCount();
+        for (int i = 0; i < children; i++)
         {
-            if (child is Toast { Expiring: false } oldest)
+            if (_stack.GetChild(i) is Toast { Expiring: false } oldest)
             {
                 oldest.Expedite();
                 return;

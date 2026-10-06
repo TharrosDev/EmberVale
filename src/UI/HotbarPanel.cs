@@ -40,6 +40,10 @@ public partial class HotbarPanel : CanvasLayer
     private readonly Control?[] _sweeps = new Control?[HotbarComponent.SlotCount];
     private readonly Label?[] _waits = new Label?[HotbarComponent.SlotCount];
     private bool _sweeping;
+    private int _panelShown = -1;
+
+    // Converted once: a string handed to Input converts (and allocates) on every call.
+    private static readonly StringName ChordAction = GameInput.HotbarChord;
 
     /// <summary>Cell size: wide enough for a two-line item name, tall enough for the number line and both.</summary>
     private const float CellWidth = 90f;
@@ -133,10 +137,16 @@ public partial class HotbarPanel : CanvasLayer
     {
         bool playing = GameManager.Instance is { IsPlaying: true };
         // Toggle the panel, not this layer — when docked the panel lives under the GameHud layer.
-        _panel.Visible = playing;
+        // Written when the state changes, not restated to the engine every frame.
+        int shown = playing ? 1 : 0;
+        if (shown != _panelShown)
+        {
+            _panelShown = shown;
+            _panel.Visible = playing;
+        }
 
         GameInput.SetHotbarChord(
-            playing && !UiState.MenuOpen && Godot.Input.IsActionPressed(GameInput.HotbarChord));
+            playing && !UiState.MenuOpen && Godot.Input.IsActionPressed(ChordAction));
 
         if (GameInput.TextEntryActive && GetViewport()?.GuiGetFocusOwner() is not LineEdit)
         {

@@ -41,15 +41,29 @@ public abstract partial class UiPanel : CanvasLayer
     /// on this frame so one press never both closes a panel and opens the pause menu.</summary>
     internal static ulong LastCancelCloseFrame { get; private set; }
 
+    /// <summary>Whether a closed panel still needs its tick. A panel with a toggle key polls for that
+    /// key; one opened only from code has nothing to do while closed and stops processing entirely.
+    /// A subclass that opens itself by polling (the placement HUD) must return true.</summary>
+    protected virtual bool TicksWhileClosed => ToggleAction != null;
+
+    // The toggle action as a StringName, converted once: a string passed to Input converts (and
+    // allocates) on every call, and this is polled every frame.
+    private StringName? _toggleName;
+
+    // Mirrors Shell.Visible. SetOpen is its only writer, so the per-frame checks read a field
+    // instead of crossing into the engine.
+    private bool _open;
+
     private bool _dirty = true;
 
     // Open-transition fade (30.5I): elapsed time since the panel opened, reset per open.
     private float _openElapsed;
+    private bool _fading;
 
     // Grab focus on the first rebuild after opening (30.5J) so gamepad/keyboard can navigate.
     private bool _focusPending;
 
-    public bool IsOpen => Shell.Visible;
+    public bool IsOpen => _open;
 
     /// <summary>
     /// Releases this panel's <see cref="UiState"/> registration if it is freed while still open.
@@ -82,6 +96,14 @@ public abstract partial class UiPanel : CanvasLayer
         AddChild(Shell);
         BuildShell(Shell);
         OnReady();
+
+        if (ToggleAction is { } action)
+        {
+            _toggleName = action;
+        }
+
+        // A closed panel that nothing can open from its own tick does not tick (re-enabled in SetOpen).
+        SetProcess(_open || TicksWhileClosed);
     }
 
     /// <summary>Builds the static layout once: anchors on <paramref name="shell"/>, padding,
@@ -108,12 +130,14 @@ public abstract partial class UiPanel : CanvasLayer
 
     public void SetOpen(bool open)
     {
-        if (Shell.Visible == open)
+        if (_open == open)
         {
             return;
         }
 
+        _open = open;
         Shell.Visible = open;
+        SetProcess(open || TicksWhileClosed);
         EventBus.Instance?.Publish(new UiPanelToggledEvent(this, open));
         if (Modal)
         {
@@ -141,7 +165,8 @@ public abstract partial class UiPanel : CanvasLayer
             // Fade the shell in (ease-out, DurationBase); closing stays instant so dismissal
             // never lags input. Reduced motion collapses the duration to 0 (snaps opaque).
             _openElapsed = 0f;
-            Shell.Modulate = new Color(1f, 1f, 1f, UiTheme.Duration(UiTheme.DurationBase) > 0f ? 0f : 1f);
+            _fading = UiTheme.Duration(UiTheme.DurationBase) > 0f;
+            Shell.Modulate = new Color(1f, 1f, 1f, _fading ? 0f : 1f);
         }
 
         OnOpenChanged(open);
@@ -149,18 +174,24 @@ public abstract partial class UiPanel : CanvasLayer
 
     public override void _Process(double delta)
     {
-        if (ToggleAction is { } action && Godot.Input.IsActionJustPressed(action))
+        if (_toggleName is { } action && Godot.Input.IsActionJustPressed(action))
         {
             Toggle();
         }
 
-        if (IsOpen && CloseOnCancel && Godot.Input.IsActionJustPressed("ui_cancel"))
+        if (!_open)
+        {
+            return;
+        }
+
+        if (CloseOnCancel && Godot.Input.IsActionJustPressed(UiLive.UiCancel))
         {
             LastCancelCloseFrame = Engine.GetProcessFrames();
             SetOpen(false);
+            return;
         }
 
-        if (Shell.Visible && _dirty)
+        if (_dirty)
         {
             _dirty = false;
 
@@ -179,12 +210,13 @@ public abstract partial class UiPanel : CanvasLayer
             }
         }
 
-        if (Shell.Visible && Shell.Modulate.A < 1f)
+        if (_fading)
         {
             // Settles opaque even if reduced motion flips mid-fade (Duration collapses to 0).
             _openElapsed += (float)delta;
             float alpha = UiMotion.EaseOut(UiMotion.Progress(_openElapsed, UiTheme.Duration(UiTheme.DurationBase)));
             Shell.Modulate = new Color(1f, 1f, 1f, alpha);
+            _fading = alpha < 1f;
         }
     }
 }
