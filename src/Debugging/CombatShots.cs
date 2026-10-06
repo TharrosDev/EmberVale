@@ -168,8 +168,11 @@ public sealed partial class CombatShots : ShotHarness
                 : null);
 
         // One pickup, then two more of the same item while its toast is still up: one toast, "×3".
-        Shot("22-toast-pickup", () => PickUp(1),
-            () => Find<Notifications>() is not { ToastCountForCapture: > 0 } ? "the pickup raised no toast" : null);
+        Shot("22-toast-pickup", () => PickUp(1, intoEmptyFeed: true),
+            () => Find<Notifications>() is not { } feed ? "the notification feed is missing"
+                : feed.QueuedForCapture > 0 ? "the pickup is still waiting behind another toast"
+                : feed.ToastCountForCapture != 1 ? "the pickup raised no toast"
+                : null);
         Shot("23-toast-collapse-x3", () => PickUp(2),
             () => Find<Notifications>() is not { ToastCountForCapture: 3 }
                 ? $"the pickup toast counts {Find<Notifications>()?.ToastCountForCapture ?? 0}, expected 3"
@@ -284,8 +287,14 @@ public sealed partial class CombatShots : ShotHarness
     }
 
     /// <summary>Picks the staged item up <paramref name="times"/> times through the event a real
-    /// pickup raises, with the fight over and the feed's merge window skipped.</summary>
-    private void PickUp(int times)
+    /// pickup raises, with the fight over and the feed's merge window skipped.
+    ///
+    /// The first pickup goes into an emptied feed. At 853x533 logical the level-up toast the two
+    /// shots before raised is two lines tall and is the only toast that fits between the tracker and
+    /// the minimap, so the pickup waited behind it: '22' photographed the level-up and passed on its
+    /// count, and '23' then added to a notice that was still queued and read 1 where it expected 3.
+    /// The feed was right both times; the harness was photographing the wrong toast.</summary>
+    private void PickUp(int times, bool intoEmptyFeed = false)
     {
         RestoreSettings();
         if (Player() is not { } player || ItemDatabase.Get(PickupItem) is not { } item ||
@@ -295,6 +304,11 @@ public sealed partial class CombatShots : ShotHarness
         }
 
         feed.EndCombatForCapture();
+        if (intoEmptyFeed)
+        {
+            feed.ClearShownForCapture();
+        }
+
         for (int i = 0; i < times; i++)
         {
             EventBus.Instance?.Publish(new ItemPickedUpEvent(player, item, 1));

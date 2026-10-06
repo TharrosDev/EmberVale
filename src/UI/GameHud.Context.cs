@@ -19,7 +19,7 @@ namespace Embervale.UI;
 public partial class GameHud
 {
     private Label _context = null!;
-    private TextureRect _phaseGlyph = null!;
+    private HudIcon _phaseGlyph = null!;
     private Label _phaseText = null!;
     private Label _weatherText = null!;
 
@@ -40,7 +40,7 @@ public partial class GameHud
     // As _vitalsQuiet: the tick after an invalidation restates everything, and that is not news.
     private bool _contextQuiet = true;
 
-    private TextureRect _lockReticle = null!;
+    private Control _lockReticle = null!;
 
     // -1 = nothing shown yet, -2 = the "no clock" empty state, otherwise the DayPhase.
     private int _phaseShown = -1;
@@ -86,8 +86,11 @@ public partial class GameHud
     /// </summary>
     private void BuildContext()
     {
-        // One line of inked text on the world, no ground: a clock does not need a box to be a clock.
-        PanelContainer panel = Ignore(UiTheme.HudBare());
+        // One line of inked text on a shade. It sat bare on the world, and this is the corner of the
+        // screen that is sky: bone text and a gold sun over a bright noon were not there. The shade is
+        // the thinnest ground the HUD has and carries no edge, so it is still a line and not a box.
+        PanelContainer panel = Ignore(UiTheme.HudShade());
+        panel.SizeFlagsHorizontal = Control.SizeFlags.ShrinkBegin;
         _layout.TopLeft.AddChild(panel);
 
         var row = new HBoxContainer();
@@ -95,18 +98,21 @@ public partial class GameHud
 
         // Shape AND colour carry the phase, so it survives ColorVision (§40) — and it is never the
         // only channel, because the phase name is on the same row.
-        _phaseGlyph = UiIcon.Create(UiIcon.Kind.Sun, HudCoreMetrics.IconSize, UiTheme.Accent);
+        _phaseGlyph = HudIcon.Create(UiIcon.Kind.Sun, HudCoreMetrics.IconSize, UiTheme.Accent);
+        _phaseGlyph.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
         row.AddChild(_phaseGlyph);
 
         _context = UiTheme.HudInk(UiTheme.Body("", UiTheme.Text));
         _context.VerticalAlignment = VerticalAlignment.Center;
         row.AddChild(_context);
 
-        _phaseText = UiTheme.HudInk(UiTheme.Caption("", UiTheme.Dim));
+        // The phase and the weather are subordinate by size, not by being dimmer: Dim over a
+        // translucent ground over the sky is the pairing that could not be read.
+        _phaseText = UiTheme.HudInk(UiTheme.Caption("", UiTheme.Text));
         _phaseText.VerticalAlignment = VerticalAlignment.Center;
         row.AddChild(_phaseText);
 
-        _weatherText = UiTheme.HudInk(UiTheme.Caption("", UiTheme.Dim));
+        _weatherText = UiTheme.HudInk(UiTheme.Caption("", UiTheme.Text));
         _weatherText.VerticalAlignment = VerticalAlignment.Center;
         row.AddChild(_weatherText);
 
@@ -140,12 +146,21 @@ public partial class GameHud
         _bannerPanel.AddChild(row);
     }
 
-    /// <summary>A diamond marker (Phase 29H) tracked onto the locked-on target's screen position.</summary>
+    /// <summary>The held lock-on mark (Phase 29H), tracked onto the locked target's screen position:
+    /// the same small keylined dot <see cref="LockOnCueLayer"/> closes its ring onto
+    /// (<see cref="UiTheme.DrawLockDot"/>). It was the waypoint pin, which said "go here" on the one
+    /// thing the player is already fighting.</summary>
     private void BuildLockReticle()
     {
-        _lockReticle = UiIcon.Create(UiIcon.Kind.Waypoint, HudCoreMetrics.ReticleSize, UiTheme.AccentHot);
-        _lockReticle.Visible = false;
-        _lockReticle.Size = new Vector2(HudCoreMetrics.ReticleSize, HudCoreMetrics.ReticleSize);
+        var reticle = new Control
+        {
+            Name = "LockReticle",
+            Visible = false,
+            MouseFilter = Control.MouseFilterEnum.Ignore,
+            Size = new Vector2(HudCoreMetrics.ReticleSize, HudCoreMetrics.ReticleSize),
+        };
+        reticle.Draw += () => UiTheme.DrawLockDot(reticle, reticle.Size * 0.5f);
+        _lockReticle = reticle;
         _layout.Overlay.AddChild(_lockReticle);
     }
 
@@ -250,7 +265,7 @@ public partial class GameHud
             (UiIcon.Kind icon, Color tint) = PhaseMark(phase);
             _phaseGlyph.Visible = true;
             _phaseGlyph.Texture = UiIcon.Texture(icon);
-            _phaseGlyph.Modulate = UiTheme.Adapt(tint);
+            _phaseGlyph.Tint = UiTheme.Adapt(tint);
             _phaseText.Text = Loc.T(DayPhases.NameKey(phase));
             NoteClockChanged();
         }

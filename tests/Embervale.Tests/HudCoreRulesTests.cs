@@ -308,8 +308,60 @@ public class HudCoreRulesTests
         Assert.True(HudCoreMetrics.BarMinorHeight > HudCoreMetrics.BarThinHeight);
         Assert.True(HudCoreMetrics.HotbarIcon < HudCoreMetrics.HotbarCellNarrow);
         Assert.True(HudCoreMetrics.HotbarCellNarrow >= UiTheme.ControlHeight);
-        Assert.True(HudCoreMetrics.HotbarCellHeight > HudCoreMetrics.HotbarCell);
+
+        // Square where there is room, and never shorter than the head line over the smallest icon.
+        Assert.Equal(HudCoreMetrics.HotbarCell, HudCoreMetrics.HotbarCellHeight(HudCoreMetrics.HotbarCell));
+        Assert.Equal(
+            HudCoreMetrics.HotbarCellHeightMin, HudCoreMetrics.HotbarCellHeight(HudCoreMetrics.HotbarCellNarrow));
+        Assert.True(HudCoreMetrics.HotbarCellHeightMin >= UiTheme.ControlHeight);
+        for (float width = HudCoreMetrics.HotbarCellNarrow; width <= HudCoreMetrics.HotbarCell; width += 1f)
+        {
+            float height = HudCoreMetrics.HotbarCellHeight(width);
+            float room = height - HudCoreMetrics.HotbarHead - (2f * UiTheme.Space2xs);
+            Assert.True(height - width <= 8f, $"a {width} px cell is {height} tall");
+            Assert.True(HudCoreMetrics.HotbarIconSide(height) <= room, $"the icon overruns a {height} px cell");
+            Assert.True(HudCoreMetrics.HotbarIconSide(height) <= width - (2f * UiTheme.Space2xs));
+            Assert.True(
+                HudCoreMetrics.HotbarGlyphSide(height) + UiTheme.CaptionFontSize <= room,
+                $"the fallback glyph and a line of name overrun a {height} px cell");
+        }
+
+        Assert.Equal(HudCoreMetrics.HotbarIcon, HudCoreMetrics.HotbarIconSide(HudCoreMetrics.HotbarCell));
     }
+
+    [Fact]
+    public void TheBottomClearance_ClearsTheHotbar_AndItsChordLine()
+    {
+        // Safe margin, the tallest cell, the pad's chord line above it (a glyph and the gap under
+        // it), then a HUD gap of clear air.
+        float block = UiTheme.SpaceLg + HudCoreMetrics.HotbarCellHeight(HudCoreMetrics.HotbarCell)
+            + ChordLine + UiTheme.SpaceXs + UiTheme.HudGap;
+        Assert.True(HudLayout.BottomClearance >= block, $"the clearance is {HudLayout.BottomClearance}, the hotbar block {block}");
+        Assert.True(HudLayout.BottomClearance <= block + UiTheme.SpaceMd, "the prompt floats well clear of the hotbar");
+    }
+
+    [Fact]
+    public void TheTrackerYieldsToTheBossBar_OnlyWhereTheTwoWouldMeet()
+    {
+        Assert.True(HudCoreMetrics.BossBarMeetsTracker(HudCoreMetrics.NarrowWidth));
+        Assert.False(HudCoreMetrics.BossBarMeetsTracker(HudMetrics.ReferenceWidth));
+        Assert.False(HudCoreMetrics.BossBarMeetsTracker(1920f));
+        Assert.False(HudCoreMetrics.BossBarMeetsTracker(3440f));
+        Assert.False(HudCoreMetrics.BossBarMeetsTracker(0f));
+        Assert.False(HudCoreMetrics.BossBarMeetsTracker(float.NaN));
+
+        // One crossing: narrower than it the two meet, wider they never do.
+        bool met = true;
+        for (float width = HudCoreMetrics.NarrowWidth; width <= 3440f; width += 7f)
+        {
+            bool meets = HudCoreMetrics.BossBarMeetsTracker(width);
+            Assert.False(meets && !met, $"the boss bar meets the tracker again at a layout width of {width}");
+            met = meets;
+        }
+    }
+
+    /// <summary>Height of the hotbar's chord line: a pad glyph (<c>UiGlyph.Height</c>).</summary>
+    private const float ChordLine = 22f;
 
     [Fact]
     public void AReading_HasRoomForFourDigitsEitherSide_AndGrowsWithTheType()

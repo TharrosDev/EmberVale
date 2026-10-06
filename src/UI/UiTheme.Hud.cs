@@ -13,19 +13,35 @@ public static partial class UiTheme
 {
     /// <summary>Outline, in px, on HUD text drawn over the world. Without it a bone-pale number
     /// crossing a bright sky is not there.</summary>
-    public const int HudInkSize = 2;
+    public const int HudInkSize = 3;
+
+    /// <summary>Width, in px, of the soft dark halo behind the keyline. The keyline alone holds a
+    /// letter's edge; over a bright sky or pale ground it is the halo that gives the letter something
+    /// darker than the scene to sit on.</summary>
+    public const int HudHaloSize = 6;
 
     // What RefreshHud finds the HUD's pieces by. Plain strings: a static StringName here would be
     // built by the type initialiser, which the pure tests run without an engine.
     private const string HudInkMeta = "hud_ink";
     private const string HudBareMeta = "hud_bare";
     private const string HudPlateMeta = "hud_plate";
+    private const string HudShadeMeta = "hud_shade";
 
     /// <summary>The ground of a HUD plate: the panel ash, thin enough to see the world through.</summary>
-    public static Color HudPlateBg => PanelBg with { A = HighContrast ? 1f : 0.66f };
+    public static Color HudPlateBg => PanelBg with { A = HighContrast ? 1f : 0.82f };
+
+    /// <summary>The ground of a HUD shade: thinner than a plate, for one line of text.</summary>
+    public static Color HudShadeBg => PanelBg with { A = HighContrast ? 1f : 0.58f };
+
+    /// <summary>The halo behind HUD text (see <see cref="HudHaloSize"/>).</summary>
+    public static Color HudHalo => Keyline with { A = 0.38f };
 
     /// <summary>The ground of a HUD slot (a hotbar cell).</summary>
-    public static Color HudSlotBg => WellBg with { A = HighContrast ? 1f : 0.74f };
+    public static Color HudSlotBg => WellBg with { A = HighContrast ? 1f : 0.62f };
+
+    /// <summary>How much of <see cref="HudSlotBg"/> an empty slot keeps: a hint of a well, so five
+    /// unassigned cells are not the heaviest thing on the HUD.</summary>
+    public const float HudSlotQuiet = 0.3f;
 
     /// <summary>The lighter edge just inside a keyline, which keeps a bar's outline readable when the
     /// scene behind it is as dark as the keyline is.</summary>
@@ -43,8 +59,36 @@ public static partial class UiTheme
     {
         text.AddThemeConstantOverride("outline_size", HighContrast ? HudInkSize + 1 : HudInkSize);
         text.AddThemeColorOverride("font_outline_color", Keyline);
+
+        // The halo is the label's shadow, drawn with no offset and an outline of its own.
+        text.AddThemeColorOverride("font_shadow_color", HudHalo);
+        text.AddThemeConstantOverride("shadow_offset_x", 0);
+        text.AddThemeConstantOverride("shadow_offset_y", 1);
+        text.AddThemeConstantOverride("shadow_outline_size", HudHaloSize);
         text.SetMeta(HudInkMeta, true);
         return text;
+    }
+
+    /// <summary>A HUD shade: a thin ash ground with no lit edge, for a line of text that has to read
+    /// over any sky (the clock, a boss's name) without becoming a plate. The stylebox is the padding.</summary>
+    public static PanelContainer HudShade()
+    {
+        var shade = new PanelContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
+        shade.AddThemeStyleboxOverride("panel", HudShadeStyle());
+        shade.SetMeta(HudShadeMeta, true);
+        return shade;
+    }
+
+    private static StyleBoxFlat HudShadeStyle()
+    {
+        var box = new StyleBoxFlat { BgColor = HudShadeBg };
+        box.SetBorderWidthAll(0);
+        box.SetCornerRadiusAll(RadiusSm);
+        box.ContentMarginTop = SpaceXs;
+        box.ContentMarginBottom = SpaceXs;
+        box.ContentMarginLeft = SpaceSm;
+        box.ContentMarginRight = SpaceSm;
+        return box;
     }
 
     /// <summary>A HUD group with no ground at all: its children sit on the world. Under high contrast
@@ -97,6 +141,10 @@ public static partial class UiTheme
                 plate.BgColor = HudPlateBg;
                 plate.BorderWidthLeft = HudPlateEdge;
             }
+            else if (control.HasMeta(HudShadeMeta) && control.GetThemeStylebox("panel") is StyleBoxFlat shade)
+            {
+                shade.BgColor = HudShadeBg;
+            }
 
             control.QueueRedraw();
         }
@@ -121,14 +169,16 @@ public static partial class UiTheme
     }
 
     /// <summary>A HUD slot's face: a keylined well. <paramref name="edge"/> replaces the keyline for
-    /// a state that has to be seen (hover, focus).</summary>
+    /// a state that has to be seen (hover, focus). A <paramref name="groundAlpha"/> below one is an
+    /// empty slot: its ground thins and its keyline thins with it, except under high contrast.</summary>
     public static StyleBoxFlat HudSlotStyle(Color? edge = null, float groundAlpha = 1f)
     {
         Color ground = HudSlotBg;
+        float quiet = HighContrast ? 1f : groundAlpha;
         var box = new StyleBoxFlat
         {
-            BgColor = ground with { A = ground.A * groundAlpha },
-            BorderColor = edge ?? Keyline,
+            BgColor = ground with { A = ground.A * quiet },
+            BorderColor = edge ?? Keyline with { A = Keyline.A * Mathf.Lerp(0.6f, 1f, quiet) },
         };
         box.SetBorderWidthAll(edge is null ? 1 : 2);
         box.SetCornerRadiusAll(RadiusSm);

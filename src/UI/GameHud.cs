@@ -113,7 +113,7 @@ public partial class GameHud : CanvasLayer
         get
         {
             Rect2 rect = _layout.TopRight.GetGlobalRect();
-            return Shows(HudElement.QuestTracker) ? rect.End.Y : rect.Position.Y;
+            return Shows(HudElement.QuestTracker) && !_trackerYields ? rect.End.Y : rect.Position.Y;
         }
     }
 
@@ -320,13 +320,25 @@ public partial class GameHud : CanvasLayer
         UpdateProgressionPops(delta);
     }
 
+    // Whether the quest tracker is standing aside for the boss bar (a narrow layout, a boss up).
+    private bool _trackerYields;
+
     /// <summary>Top-centre suppression contract: boss owns the region; an event banner outranks an
     /// aimed target; the compass is the quiet fallback. This prevents independent widgets from
-    /// becoming a vertical alert stack during hostile combinations.</summary>
+    /// becoming a vertical alert stack during hostile combinations. On a layout too narrow for the
+    /// boss bar and the quest tracker side by side (<see cref="HudCoreMetrics.BossBarMeetsTracker"/>)
+    /// the boss owns that too: the bar ran under the tracker's plate at 853 px.</summary>
     private void ResolveTopCentrePriority()
     {
         bool boss = _bossFrame.Visible;
         bool eventBanner = _bannerPanel.Visible;
+
+        bool yields = boss && HudCoreMetrics.BossBarMeetsTracker(LayoutWidth);
+        if (yields != _trackerYields)
+        {
+            _trackerYields = yields;
+            ApplyElementVisibility();
+        }
 
         _compass.Visible = !boss && Shows(HudElement.Compass);
         if (boss)

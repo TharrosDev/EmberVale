@@ -95,6 +95,16 @@ public sealed partial class HudShots : ShotHarness
             return "the boss frame is not showing";
         if (name == "10-objective-toast" && QuestShotFixtures.FindFirst<Toast>(GetTree().Root) is null)
             return "no toast is on screen";
+        if (name == "10b-toast-stack" && QuestShotFixtures.FindFirst<Notifications>(GetTree().Root) is { } feed)
+        {
+            // Three where three fit. A short screen (853x533 logical) has room for fewer between the
+            // tracker and the minimap, and the feed is right to hold the rest back there.
+            int shown = feed.LiveToastsForCapture;
+            if (shown == 0 || shown + feed.QueuedForCapture < 3)
+                return $"{shown} toast(s) on screen and {feed.QueuedForCapture} waiting, expected three notices";
+            if (GetViewport().GetVisibleRect().Size.Y >= 700f && shown < 3)
+                return $"{shown} toast(s) on screen, expected 3";
+        }
         if (name == "11-chapter-banner" &&
             QuestShotFixtures.FindFirst<ChapterBanner>(GetTree().Root) is not { Showing: "ch.1" })
             return "the chapter banner is not showing";
@@ -182,7 +192,11 @@ public sealed partial class HudShots : ShotHarness
         // distance/bearing readout that is one of 39.5B's headline changes — never appears in a single
         // image. A capture set that silently omits the feature under review is the failure mode this
         // whole tool exists to prevent.
-        Shot("05b-quest-tracked", StartAndTrackAQuest);
+        Shot("05b-quest-tracked", () =>
+        {
+            RestoreLevel(); // the hotbar-states shot may have lowered it to have something to lock
+            StartAndTrackAQuest();
+        });
 
         // The campaign tracker: a chapter label above the title, the spine in the main-quest colour, the
         // current step, an optional step carrying its "Optional" tag and the next locked step, with the
@@ -261,7 +275,13 @@ public sealed partial class HudShots : ShotHarness
         Shot("07c-boss-epithet", StageBossEpithet);
 
         // The visibility rule this sub-phase added — the one shot that proves a HUD is ABSENT.
-        Shot("08-menu-open", () => UiState.Open(this));
+        // The boss's captioned line goes first: a caption is held, not spent, while a menu is up, so
+        // it would come back when the menu closes and sit in every shot from 09 to 10b.
+        Shot("08-menu-open", () =>
+        {
+            QuestShotFixtures.FindFirst<SubtitleLayer>(GetTree().Root)?.Dismiss();
+            UiState.Open(this);
+        });
 
         Shot("09-menu-closed", () => UiState.Close(this));
 
@@ -369,7 +389,7 @@ public sealed partial class HudShots : ShotHarness
         }
 
         HoldRegeneration();
-        int level = player.GetComponent<Progression.ProgressionComponent>()?.Level ?? 1;
+        int level = LevelBelowAGate(player);
         ConsumableItemResource? timed = null;
         ConsumableItemResource? gated = null;
         foreach (ItemResource item in ItemDatabase.All.Values)
@@ -405,6 +425,62 @@ public sealed partial class HudShots : ShotHarness
             pack.AddItem(gated, 2);
             bar.Assign(LockedSlot, gated.Id);
         }
+    }
+
+    // The capture player's progression as the save had it, while a shot holds its level down.
+    private static Godot.Collections.Dictionary? _heldProgression;
+
+    /// <summary>
+    /// The capture player's level, lowered if it has to be for some consumable to be out of reach.
+    ///
+    /// ⚠️ <b>This is why '05a2-hotbar-states' failed with "slot 5 is Empty, expected Locked".</b> The
+    /// shot looks for the lowest level requirement ABOVE the player, and the save the harness loads
+    /// is level 50: above every consumable in the catalogue. Nothing was gated, so nothing was
+    /// assigned and the cell stayed empty. The hotbar was right.
+    ///
+    /// The level goes down through <see cref="Progression.ProgressionComponent.Load"/>, the
+    /// component's own restore path and the only writer of a level that is not earned XP, to one
+    /// below the catalogue's highest requirement; <see cref="RestoreLevel"/> puts back what the save
+    /// held before the next shot. A save already below a gate is left alone.
+    /// </summary>
+    private static int LevelBelowAGate(IEntity player)
+    {
+        if (player.GetComponent<Progression.ProgressionComponent>() is not { } progression)
+        {
+            return 1;
+        }
+
+        int highest = 0;
+        foreach (ItemResource item in ItemDatabase.All.Values)
+        {
+            if (item is ConsumableItemResource consumable)
+            {
+                highest = Mathf.Max(highest, consumable.RequiredLevel);
+            }
+        }
+
+        if (highest < 2 || progression.Level < highest)
+        {
+            return progression.Level; // already below a gate, or the catalogue has none to be below
+        }
+
+        _heldProgression ??= progression.Save();
+        Godot.Collections.Dictionary lowered = progression.Save();
+        lowered["level"] = highest - 1;
+        lowered["xp"] = 0;
+        progression.Load(lowered);
+        return progression.Level;
+    }
+
+    /// <summary>Puts the capture player's progression back to what the save held.</summary>
+    private static void RestoreLevel()
+    {
+        if (_heldProgression != null && Player()?.GetComponent<Progression.ProgressionComponent>() is { } progression)
+        {
+            progression.Load(_heldProgression);
+        }
+
+        _heldProgression = null;
     }
 
     /// <summary>Whether a cooldown makes the better picture: one short enough to print its seconds
@@ -542,17 +618,47 @@ public sealed partial class HudShots : ShotHarness
             : null;
     }
 
-    /// <summary>Raises three notices in one frame through the events the feed already answers.</summary>
+    /// <summary>
+    /// Raises three notices in one frame through the events the feed already answers, into a feed
+    /// emptied of the objective toast the shot before raised.
+    ///
+    /// The third was a companion's remark, and with subtitles on a remark is a caption, not a toast
+    /// (<see cref="Notifications.PushBark"/>): the stack this shot exists to photograph came out two
+    /// deep. A pickup is a toast under every setting.
+    /// </summary>
     private void StageToastStack()
     {
-        if (Player() is not { } player)
+        if (Player() is not { } player || QuestShotFixtures.FindFirst<Notifications>(GetTree().Root) is not { } feed)
         {
             return;
         }
 
+        // Under an ordinary tracker. The five-objective campaign fixture the shots before this one
+        // track is the tallest tracker the game can draw, and under it two toasts are all that fit
+        // above the minimap at 1280x720: the feed holds the third back, which is the rule working
+        // and not the stack this shot is for.
+        if (QuestShotFixtures.Log() is { } log)
+        {
+            foreach (QuestProgress progress in log.Quests)
+            {
+                if (progress.Status == QuestStatus.Active && !progress.Quest.IsLedger &&
+                    progress.Quest.Id != QuestShotFixtures.AshWind)
+                {
+                    log.Track(progress.Quest.Id);
+                    break;
+                }
+            }
+        }
+
+        feed.EndCombatForCapture();
+        feed.ClearShownForCapture();
         EventBus.Instance?.Publish(new Progression.LeveledUpEvent(player, 7, 1));
         EventBus.Instance?.Publish(new GameSavedEvent("shots", true));
-        QuestShotFixtures.FindFirst<Notifications>(GetTree().Root)?.PushBark("companion.kael", "shot.boss.intro");
+        if (ItemDatabase.Get("item.ammo.arrows") is { } arrows)
+        {
+            EventBus.Instance?.Publish(new ItemPickedUpEvent(player, arrows, 12));
+            feed.FlushLootForCapture();
+        }
     }
 
     /// <summary>Starts the first quest the player can actually take and tracks it, so the tracker,

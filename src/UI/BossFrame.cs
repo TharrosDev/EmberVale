@@ -14,7 +14,7 @@ namespace Embervale.UI;
 ///
 /// It owns its own event subscriptions and its own <c>_Process</c>, which is the point of the
 /// split: <c>GameHud</c> no longer carries three boss subscriptions and an <c>UpdateBoss</c> it
-/// only forwards to. It sits bare on the world like the vitals do: the name carved above one
+/// only forwards to. It sits on the world like the vitals do: the name carved on a thin shade above one
 /// keylined bar as wide as <see cref="HudMetrics.BossBarWidth"/> allows, with the length a blow
 /// just removed held behind the fill for a beat. The display face is all the ornament it takes.
 ///
@@ -31,8 +31,9 @@ public partial class BossFrame : PanelContainer
     /// <summary>How long an authored intro line stays, as the frame's line or as a caption.</summary>
     private const float IntroSeconds = 4.5f;
 
-    private static readonly Vector2 PipSize = new(18f, 4f);
+    private static readonly Vector2 PipSize = new(20f, 6f);
 
+    private PanelContainer _title = null!;
     private Label _name = null!;
     private Label _epithet = null!;
     private JuicedBar _bar = null!;
@@ -64,17 +65,28 @@ public partial class BossFrame : PanelContainer
         var col = new VBoxContainer { MouseFilter = MouseFilterEnum.Ignore };
         col.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
 
+        // The name and its epithet share one shade, as wide as the name and no wider. The frame
+        // sits where the sky is, and thin carved capitals with a keyline were lost against a bright
+        // one; the bar under them needs no ground and gets none.
+        _title = UiTheme.HudShade();
+        _title.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
+        var title = new VBoxContainer { MouseFilter = MouseFilterEnum.Ignore };
+        title.AddThemeConstantOverride("separation", 0);
+        _title.AddChild(title);
+        col.AddChild(_title);
+
         _name = UiTheme.HudInk(UiTheme.Display(Loc.T("boss.name"), UiTheme.Text));
         _name.HorizontalAlignment = HorizontalAlignment.Center;
-        col.AddChild(_name);
+        title.AddChild(_name);
 
         // The boss's epithet card ("The Black-Iron King"), set in the book italic under the name. Hidden for
         // a boss that authors none, so the frame is unchanged for them.
-        _epithet = UiTheme.HudInk(UiTheme.Flavour(string.Empty, UiTheme.Dim));
+        _epithet = UiTheme.HudInk(UiTheme.Flavour(string.Empty, UiTheme.Text));
         UiTheme.ApplyType(_epithet, UiTheme.FontRole.SerifItalic, UiTheme.BodyFontSize);
         _epithet.HorizontalAlignment = HorizontalAlignment.Center;
+        _epithet.AutowrapMode = TextServer.AutowrapMode.Off;
         _epithet.Visible = false;
-        col.AddChild(_epithet);
+        title.AddChild(_epithet);
 
         float width = HudMetrics.BossBarWidth(HudMetrics.ReferenceWidth);
         _bar = JuicedBar.Create(UiTheme.Health, width);
@@ -98,7 +110,11 @@ public partial class BossFrame : PanelContainer
         _pips.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
         phase.AddChild(_pips);
 
-        _phaseText = UiTheme.HudInk(UiTheme.Caption(""));
+        // Body size and bone: it was a dim caption, the smallest and faintest text on the HUD, set
+        // over the sky and read from across a fight.
+        _phaseText = UiTheme.HudInk(UiTheme.Body("", UiTheme.Text));
+        _phaseText.MouseFilter = MouseFilterEnum.Ignore;
+        _phaseText.SizeFlagsVertical = SizeFlags.ShrinkCenter;
         phase.AddChild(_phaseText);
         col.AddChild(phase);
 
@@ -203,6 +219,7 @@ public partial class BossFrame : PanelContainer
         _epithet.Visible = epithet != null;
         _epithet.Text = epithet != null ? Loc.T(epithet) : string.Empty;
 
+        _title.Visible = true;
         _name.Visible = true;
         _bar.Visible = true;
         _pips.Visible = true;
@@ -260,6 +277,7 @@ public partial class BossFrame : PanelContainer
     {
         _boss = null;
         _bar.Visible = false;
+        _title.Visible = false;
         _name.Visible = false;
         _epithet.Visible = false;
         _pips.Visible = false;
@@ -271,12 +289,16 @@ public partial class BossFrame : PanelContainer
         UiTheme.ClearChildren(_pips);
         for (int i = 0; i < _totalPhases; i++)
         {
-            _pips.AddChild(new ColorRect
+            // Each pip is keylined like the bar above it, so an unlit one is a dark slot with an
+            // edge over a dark hall and a bright sky alike, not a mark that only one of them shows.
+            var pip = new ColorRect
             {
                 Color = UiTheme.Keyline,
                 CustomMinimumSize = PipSize,
                 MouseFilter = MouseFilterEnum.Ignore,
-            });
+            };
+            pip.Draw += () => UiTheme.DrawKeyline(pip, new Rect2(Vector2.Zero, pip.Size));
+            _pips.AddChild(pip);
         }
     }
 

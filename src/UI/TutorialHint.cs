@@ -10,7 +10,9 @@ namespace Embervale.UI;
 /// The onboarding's entire visible footprint (Phase 33B): one line above the hotbar naming the verb
 /// being taught and the input that performs it. It appears when a hint starts, clears when the
 /// player performs it, and is absent the rest of the game — no tutorial pop-ups, no modal windows,
-/// nothing to dismiss.
+/// nothing to dismiss. It also stands down for the two things that share its part of the screen
+/// (a chapter card, a captioned line) and comes back when they have gone: the verb is still being
+/// taught, and three things stacked over the player teach nothing.
 ///
 /// It is the interaction prompt's sibling and is built like it: the same HUD plate with its one lit
 /// edge, the input's glyph first (<see cref="UiGlyph"/>), then the sentence. Both follow the device
@@ -49,10 +51,15 @@ public partial class TutorialHint : VBoxContainer
         bus?.Subscribe<TutorialStepCompletedEvent>(OnStepCompleted);
         bus?.Subscribe<InputDeviceChangedEvent>(OnDeviceChanged);
         bus?.Subscribe<InputBindingsChangedEvent>(OnBindingsChanged);
+        SubtitleLayer.CaptioningChanged += ApplyVisible;
+        ChapterBanner.PresentingChanged += ApplyVisible;
     }
 
     public override void _ExitTree()
     {
+        SubtitleLayer.CaptioningChanged -= ApplyVisible;
+        ChapterBanner.PresentingChanged -= ApplyVisible;
+
         EventBus? bus = EventBus.Instance;
         if (bus == null)
         {
@@ -77,7 +84,7 @@ public partial class TutorialHint : VBoxContainer
     private void OnStepChanged(TutorialStepChangedEvent e)
     {
         _step = e.Step;
-        Visible = e.Step != TutorialStep.None;
+        ApplyVisible();
         Refresh();
     }
 
@@ -87,7 +94,18 @@ public partial class TutorialHint : VBoxContainer
         if (_step == e.Step)
         {
             _step = TutorialStep.None;
-            Visible = false;
+            ApplyVisible();
+        }
+    }
+
+    /// <summary>Up while a verb is being taught and neither a chapter card nor a caption has the
+    /// lower middle of the screen. Both say when that changes, so this is not polled.</summary>
+    private void ApplyVisible()
+    {
+        bool visible = _step != TutorialStep.None && !SubtitleLayer.Captioning && !ChapterBanner.Presenting;
+        if (visible != Visible)
+        {
+            Visible = visible;
         }
     }
 

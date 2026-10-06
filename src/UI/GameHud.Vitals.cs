@@ -26,8 +26,8 @@ public partial class GameHud
     private Label _hpText = null!;
     private Label _staText = null!;
     private Label _mpText = null!;
-    private TextureRect _hpIcon = null!;
-    private TextureRect _staIcon = null!;
+    private HudIcon _hpIcon = null!;
+    private HudIcon _staIcon = null!;
 
     // The corruption gauge: hidden until the player carries any. Violet is its colour everywhere, so
     // here it also gets a hatched fill, a mark of its own and the tier as a word.
@@ -268,20 +268,29 @@ public partial class GameHud
         _castBar.Visible = false;
         spell.AddChild(_castBar);
 
-        // The level and the XP it just gained, on one line.
+        var bars = new VBoxContainer();
+        bars.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
+        col.AddChild(bars);
+
+        // The level and the XP it just gained, on one line. It heads the bars: set over the left end
+        // of the health bar, past the mark column, and as close to it as the bars are to each other.
+        // As its own group a SpaceSm above them it sat on the world belonging to nothing.
         var level = new HBoxContainer();
         level.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
-        _footer = UiTheme.HudInk(UiTheme.Body("", UiTheme.Dim));
+        level.AddChild(new Control
+        {
+            CustomMinimumSize = new Vector2(HudCoreMetrics.IconSize, 0f),
+            MouseFilter = Control.MouseFilterEnum.Ignore,
+        });
+        _footer = UiTheme.HudInk(UiTheme.Caption("", UiTheme.Text));
+        _footer.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
         level.AddChild(_footer);
         _xpPop = UiTheme.HudInk(UiTheme.Caption("", UiTheme.Accent));
         _xpPop.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
         _xpPop.Visible = false;
         level.AddChild(_xpPop);
-        col.AddChild(level);
+        bars.AddChild(level);
 
-        var bars = new VBoxContainer();
-        bars.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
-        col.AddChild(bars);
         BuildCorruptionRow(bars);
         (_hpBar, _hpText, _hpIcon) = AddVital(bars, UiIcon.Kind.Health, UiTheme.Health, primary: true);
         (_staBar, _staText, _staIcon) = AddVital(bars, UiIcon.Kind.Stamina, UiTheme.Stamina, primary: false);
@@ -411,7 +420,9 @@ public partial class GameHud
 
     private void OnXpGained(XpGainedEvent e)
     {
-        if (!ReferenceEquals(e.Entity, _player))
+        // A restored progression re-publishes its XP with nothing gained, so the bar's listeners
+        // catch up. That is not a gain, and "+0 XP" is not something to tell the player.
+        if (!ReferenceEquals(e.Entity, _player) || e.Amount <= 0)
         {
             return;
         }
@@ -936,6 +947,9 @@ public partial class GameHud
         }
     }
 
+    /// <summary>How far a row's mark is lifted from its bar's colour toward <see cref="UiTheme.Text"/>.</summary>
+    private const float MarkLift = 0.45f;
+
     /// <summary>
     /// One resource row: its mark, its bar, its reading.
     ///
@@ -950,14 +964,16 @@ public partial class GameHud
     /// <see cref="ColorVision"/> (§40). Every row has the same mark column and the same reading
     /// column, so the three bars start and end on the same two lines.
     /// </summary>
-    private static (JuicedBar Bar, Label Value, TextureRect Icon) AddVital(
+    private static (JuicedBar Bar, Label Value, HudIcon Icon) AddVital(
         VBoxContainer col, UiIcon.Kind icon, Color fill, bool primary)
     {
         var row = new HBoxContainer();
         row.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
 
+        // Keylined, and in the bar's colour lifted toward bone: the glyphs are thin strokes, and in
+        // the fill's own colour with no edge they sank into whatever ground was behind them.
         float markSize = primary ? HudCoreMetrics.IconSize : HudCoreMetrics.IconMinor;
-        TextureRect mark = UiIcon.Create(icon, markSize, fill);
+        HudIcon mark = HudIcon.Create(icon, markSize, fill.Lerp(UiTheme.Text, MarkLift));
         mark.CustomMinimumSize = new Vector2(HudCoreMetrics.IconSize, markSize);
         mark.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
         row.AddChild(mark);

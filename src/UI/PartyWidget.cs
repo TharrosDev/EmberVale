@@ -156,7 +156,7 @@ public partial class PartyWidget : VBoxContainer
                 }
 
                 row.DownedShown = downedKey;
-                UiLive.FontColor(row.Order, downed ? UiTheme.Bad : UiTheme.Dim);
+                UiLive.FontColor(row.Order, downed ? UiTheme.Bad : UiTheme.Text);
                 UiLive.FontColor(row.Name, downed ? UiTheme.Bad : UiTheme.Text);
             }
 
@@ -203,7 +203,9 @@ public partial class PartyWidget : VBoxContainer
             loyalty.SizeFlagsVertical = SizeFlags.ShrinkCenter;
             line.AddChild(loyalty);
 
-            Label order = UiTheme.HudInk(UiTheme.Caption(string.Empty, UiTheme.Dim));
+            // Text, not Dim: this strip has no ground, and at a handheld's scale a dim caption over
+            // the world is the line the player cannot read. Its size already makes it secondary.
+            Label order = UiTheme.HudInk(UiTheme.Caption(string.Empty, UiTheme.Text));
             order.SizeFlagsVertical = SizeFlags.ShrinkCenter;
             line.AddChild(order);
             block.AddChild(line);
@@ -235,7 +237,7 @@ public partial class PartyWidget : VBoxContainer
             cap.SizeFlagsVertical = SizeFlags.ShrinkCenter;
             hint.AddChild(cap);
 
-            Label label = UiTheme.HudInk(UiTheme.Caption(Loc.T("hud.party_hint"), UiTheme.Dim));
+            Label label = UiTheme.HudInk(UiTheme.Caption(Loc.T("hud.party_hint"), UiTheme.Text));
             label.SizeFlagsVertical = SizeFlags.ShrinkCenter;
             hint.AddChild(label);
 

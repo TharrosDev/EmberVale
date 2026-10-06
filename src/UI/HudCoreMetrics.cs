@@ -35,16 +35,23 @@ public static class HudCoreMetrics
     /// <summary>...and at <see cref="NarrowWidth"/>, still above <c>UiTheme.ControlHeight</c>.</summary>
     public const float HotbarCellNarrow = 56f;
 
-    /// <summary>Height of a hotbar cell: the key, the icon and two lines of the item's name. Taller
-    /// than it is wide because the name is what tells two potions of one shape apart, and a name
-    /// cut to one short line does not.</summary>
-    public const float HotbarCellHeight = 88f;
+    /// <summary>The least height of a hotbar cell: the line that holds the key and the count, and
+    /// under it the smallest icon. A cell is square wherever its width allows that, so it is only
+    /// taller than it is wide on the narrowest layouts.</summary>
+    public const float HotbarCellHeightMin = 64f;
 
-    /// <summary>A painted item icon in a hotbar cell.</summary>
+    /// <summary>The line at the top of a hotbar cell: the key's cap on the left, the count on the right.</summary>
+    public const float HotbarHead = 24f;
+
+    /// <summary>A painted item icon in a full-size hotbar cell.</summary>
     public const float HotbarIcon = 40f;
 
-    /// <summary>The effect glyph a cell falls back to when its item has no painted icon.</summary>
+    /// <summary>The effect glyph a cell falls back to when its item has no painted icon. Smaller than
+    /// the painting, because that cell also carries the item's name.</summary>
     public const float HotbarGlyph = 24f;
+
+    /// <summary>...and in a cell too short to hold that glyph over a line of text.</summary>
+    public const float HotbarGlyphNarrow = 16f;
 
     /// <summary>The lock-on reticle.</summary>
     public const float ReticleSize = 28f;
@@ -98,9 +105,26 @@ public static class HudCoreMetrics
             ? Narrowed(layoutWidth, HotbarCellNarrow, HotbarCell)
             : HotbarCell;
 
+    /// <summary>Height of a hotbar cell that is <paramref name="cellWidth"/> wide: square, down to
+    /// <see cref="HotbarCellHeightMin"/>. A painted icon is its own label (the tooltip has the name),
+    /// so the two lines of name that made the cell a tall dark box are gone.</summary>
+    public static float HotbarCellHeight(float cellWidth) =>
+        float.IsFinite(cellWidth) ? MathF.Max(cellWidth, HotbarCellHeightMin) : HotbarCell;
+
+    /// <summary>Side of the painted icon in a cell <paramref name="cellHeight"/> tall: what the head
+    /// line and the cell's inset leave, and never more than <see cref="HotbarIcon"/>.</summary>
+    public static float HotbarIconSide(float cellHeight) =>
+        Math.Clamp(cellHeight - HotbarHead - (2f * UiTheme.Space2xs), HotbarGlyphNarrow, HotbarIcon);
+
+    /// <summary>Side of the fallback glyph in a cell <paramref name="cellHeight"/> tall, leaving a
+    /// line for the name under it.</summary>
+    public static float HotbarGlyphSide(float cellHeight) =>
+        cellHeight >= HotbarCell ? HotbarGlyph : HotbarGlyphNarrow;
+
     /// <summary>
     /// The least width the bottom bar needs at a layout width: the vitals, the hotbar and the framed
-    /// minimap, the two spacers between them (four gaps) and the safe margin either side. Nothing
+    /// minimap, the gaps between them (two, counted as the four the bar once had, which leaves it a
+    /// little slack) and the safe margin either side. Nothing
     /// lays out from this; it is the sum the sizes above are held to, so the minimap is never pushed
     /// off the right edge.
     /// </summary>
@@ -122,6 +146,24 @@ public static class HudCoreMetrics
         return layoutWidth > 0f && float.IsFinite(between)
             ? MathF.Round(Math.Clamp(between, CompassNarrow, full))
             : full;
+    }
+
+    /// <summary>
+    /// Whether the boss bar, centred, would reach the quest tracker at this layout width. The bar has
+    /// a floor it does not shrink below (<see cref="HudMetrics.BossBarMin"/>: it is read from across
+    /// a fight), so on a narrow layout the two meet, and there the tracker steps aside for as long as
+    /// the boss frame is up. A fight for your life is not when you reread your errands.
+    /// </summary>
+    public static bool BossBarMeetsTracker(float layoutWidth)
+    {
+        if (!(layoutWidth > 0f) || !float.IsFinite(layoutWidth))
+        {
+            return false;
+        }
+
+        float barRight = (layoutWidth / 2f) + (HudMetrics.BossBarWidth(layoutWidth) / 2f);
+        float trackerLeft = layoutWidth - UiTheme.SpaceLg - HudMetrics.TrackerWidth(layoutWidth);
+        return barRight + UiTheme.SpaceMd > trackerLeft;
     }
 
     private static float Narrowed(float layoutWidth, float atNarrow, float atRoomy)

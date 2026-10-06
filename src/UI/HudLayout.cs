@@ -29,12 +29,13 @@ public partial class HudLayout : Control
     /// <summary>Inset between the screen edge and every slot.</summary>
     public int SafeMargin { get; set; } = UiTheme.SpaceLg;
 
-    /// <summary>Clear height from the screen's bottom edge to the top of the hotbar block plus a
+    /// <summary>Clear height from the screen's bottom edge to the top of the hotbar block (the safe
+    /// margin, a square cell, and the chord line a pad puts over the cells) plus a
     /// <see cref="UiTheme.HudGap"/>: anything centred above the hotbar (prompt, tutorial hint, the
     /// placement strip) sits at or above this line so it never touches the slots. In the scaled
     /// HUD's own units: anything outside <see cref="Scaled"/> converts with
     /// <see cref="HudMetrics.ScreenClearance"/>.</summary>
-    public const int BottomClearance = 160;
+    public const int BottomClearance = 140;
 
     /// <summary>How far above the bottom edge the bottom-centre slot floats (prompt near the
     /// player's natural gaze): <see cref="BottomClearance"/> less the safe margin the slot adds itself.</summary>
@@ -49,19 +50,20 @@ public partial class HudLayout : Control
     /// <summary>Top-right stack (quest tracker).</summary>
     public VBoxContainer TopRight { get; private set; } = null!;
 
-    /// <summary>Bottom-left stack (vitals) — first cell of the bottom flow bar.</summary>
+    /// <summary>Bottom-left stack (vitals), in the left cell of the bottom flow bar.</summary>
     public VBoxContainer BottomLeft { get; private set; } = null!;
 
-    /// <summary>Dock for the quick-use hotbar, centred in the bottom bar's free space. A flow
-    /// sibling of <see cref="BottomLeft"/>, so the hotbar and vitals can never overlap at any
-    /// UI scale or resolution.</summary>
+    /// <summary>Dock for the quick-use hotbar, on the screen's centre line wherever the bottom bar
+    /// has room for it there. A flow sibling of the cells that hold <see cref="BottomLeft"/> and
+    /// <see cref="BottomRight"/>, so the hotbar, vitals and minimap can never overlap at any UI
+    /// scale or resolution.</summary>
     public VBoxContainer BottomDock { get; private set; } = null!;
 
     /// <summary>Bottom-centre stack (interaction prompt), floated above the screen edge.</summary>
     public VBoxContainer BottomCenter { get; private set; } = null!;
 
-    /// <summary>Bottom-right stack (minimap, 39.5B) — the last cell of the bottom flow bar, so it can
-    /// no more overlap the hotbar than the hotbar can overlap the vitals.</summary>
+    /// <summary>Bottom-right stack (minimap, 39.5B), in the right cell of the bottom flow bar, so it
+    /// can no more overlap the hotbar than the hotbar can overlap the vitals.</summary>
     public VBoxContainer BottomRight { get; private set; } = null!;
 
     /// <summary>Free layer for screen-space widgets that position themselves (lock reticle) and
@@ -99,9 +101,18 @@ public partial class HudLayout : Control
         TopRight = Slot("TopRight", horizontal: 1f, vertical: 0f);
         BottomCenter = Slot("BottomCenter", horizontal: 0.5f, vertical: 1f, extraLift: BottomCenterLift);
 
-        // The bottom edge is a full-width flow bar: vitals left, the hotbar dock centred in the
-        // remaining space by twin spacers. Flow layout means these can never overlap, no matter
-        // how small the effective viewport gets (high UI scale, low resolution, Steam Deck).
+        // The bottom edge is a full-width flow bar of three cells: vitals in the left one, the hotbar
+        // dock between, the minimap in the right one. Flow layout means these can never overlap, no
+        // matter how small the effective viewport gets (high UI scale, low resolution, Steam Deck).
+        //
+        // The two side cells expand equally, and a box shares its width among expanding children by
+        // their whole size, not by what is left over after their minimums. So the cells are the same
+        // width wherever both fit, and the hotbar sits on the screen's centre line under the
+        // crosshair and the prompt. It used to sit between twin spacers, centred in what the vitals
+        // and the minimap left: 48 px right of centre because the vitals are the wider of the two,
+        // and it jumped another 100 px when a menu took the minimap away. The cells stay when what
+        // is in them hides, so nothing moves the hotbar now. Where both do not fit, the wider side
+        // keeps its width and the hotbar gives way toward the other, as before.
         var bar = new HBoxContainer { Name = "BottomBar", MouseFilter = MouseFilterEnum.Ignore };
         bar.AddThemeConstantOverride("separation", UiTheme.SpaceMd);
         bar.AnchorLeft = 0f;
@@ -122,9 +133,7 @@ public partial class HudLayout : Control
             SizeFlagsVertical = SizeFlags.ShrinkEnd,
         };
         BottomLeft.AddThemeConstantOverride("separation", UiTheme.HudGap);
-        bar.AddChild(BottomLeft);
-
-        bar.AddChild(new Control { MouseFilter = MouseFilterEnum.Ignore, SizeFlagsHorizontal = SizeFlags.ExpandFill });
+        bar.AddChild(Cell("BottomLeftCell", BoxContainer.AlignmentMode.Begin, BottomLeft));
 
         BottomDock = new VBoxContainer
         {
@@ -134,8 +143,6 @@ public partial class HudLayout : Control
         };
         bar.AddChild(BottomDock);
 
-        bar.AddChild(new Control { MouseFilter = MouseFilterEnum.Ignore, SizeFlagsHorizontal = SizeFlags.ExpandFill });
-
         BottomRight = new VBoxContainer
         {
             Name = "BottomRight",
@@ -143,7 +150,23 @@ public partial class HudLayout : Control
             SizeFlagsVertical = SizeFlags.ShrinkEnd,
         };
         BottomRight.AddThemeConstantOverride("separation", UiTheme.HudGap);
-        bar.AddChild(BottomRight);
+        bar.AddChild(Cell("BottomRightCell", BoxContainer.AlignmentMode.End, BottomRight));
+    }
+
+    /// <summary>One side cell of the bottom bar: it takes an equal share of the bar's width and holds
+    /// <paramref name="slot"/> against its outer edge. It has no size of its own, so a narrow bar
+    /// squeezes it down to the slot and no further.</summary>
+    private static HBoxContainer Cell(string name, BoxContainer.AlignmentMode alignment, Control slot)
+    {
+        var cell = new HBoxContainer
+        {
+            Name = name,
+            Alignment = alignment,
+            MouseFilter = MouseFilterEnum.Ignore,
+            SizeFlagsHorizontal = SizeFlags.ExpandFill,
+        };
+        cell.AddChild(slot);
+        return cell;
     }
 
     /// <summary>A stacked slot pinned to a corner/edge. <paramref name="horizontal"/> and
