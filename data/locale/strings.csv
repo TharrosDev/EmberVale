@@ -9,7 +9,6 @@ menu.continue,Continue
 menu.load_game,Load Game
 menu.settings,Settings
 menu.quit,Quit
-menu.coming_soon,Coming soon
 pause.title,PAUSED
 pause.resume,Resume
 pause.save,Save
@@ -280,7 +279,6 @@ service.ember_crown.inn.name,The Ashen Hearth
 service.ashfall.bed.name,Your Own Bed
 service.not_yours,"{0} — this is not yours. The deed post outside says what it would take."
 service.ember_crown.bank.name,The Guild Vault
-service.ember_crown.trainer.name,Bryn's Smithing Lesson
 service.ember_crown.stable.name,The Ember Crown Stables
 service.prompt_rest,"Rest at {0} ({1} gold)"
 service.prompt_account,"Open an account at {0} ({1} gold)"
@@ -4966,6 +4964,7 @@ hud.hotbar_hint_pad,{0} to use
 loot.picked_up,{0}
 loot.picked_up_many,{0} ×{1}
 loot.pack_full,Your pack is full: {0} was left behind.
+loot.reward_chest,A reward chest stands where it fell.
 item.scroll.teaches,Teaches the recipe: {0}
 item.scroll.known,You already know the recipe: {0}
 # --- END ics:inv-ui ---
@@ -5049,6 +5048,9 @@ slots.confirm_overwrite,Confirm save
 slots.confirm_load,Confirm load
 slots.badge.corrupt,Damaged
 slots.badge.newer,Newer version
+slots.badge.backup,Backup
+slots.backup_help,"The newest save here is damaged, so this loads the one before it. {0}"
+slots.delete_failed,Some of this save's files could not be deleted.
 slots.corrupt_help,This save is damaged and cannot be loaded. Delete it or save over it.
 slots.newer_help,"Saved by a newer version of the game (format {0}, this version reads up to {1}). Update the game to load it."
 slots.load_unsaved,Loading discards unsaved progress: {0} since the last save.

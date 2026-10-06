@@ -311,6 +311,13 @@ public partial class SaveSlotPanel : CanvasLayer
                     Loc.T(info.Health == SaveHealth.Newer ? "slots.badge.newer" : "slots.badge.corrupt"), UiTheme.Bad));
             }
 
+            // The newest save in the slot is damaged and a load will read the one before it: said on
+            // the row, in words, before the player commits to it.
+            if (loadable && info.RecoveredFromBackup)
+            {
+                facts.AddChild(UiTheme.Chip(Loc.T("slots.badge.backup"), UiTheme.Bad));
+            }
+
             if (loadable)
             {
                 Label name = UiTheme.Body(info.CharacterName, UiTheme.Text);
@@ -476,7 +483,14 @@ public partial class SaveSlotPanel : CanvasLayer
     {
         if (_pending == Pending.Delete)
         {
-            SaveManager.Instance?.DeleteSlot(slot);
+            // A file that would not go leaves the slot on disk; the re-inspection below then shows
+            // it still there instead of an emptied row that comes back.
+            if (SaveManager.Instance is { } saves && !saves.DeleteSlot(slot, out IReadOnlyList<string> failures) &&
+                failures.Count > 0)
+            {
+                Embervale.Core.Events.EventBus.Instance?.Publish(new SaveNoticeEvent(Loc.T("slots.delete_failed"), Warning: true));
+            }
+
             ClearPending();
             Inspect();
             RefreshList();
@@ -512,6 +526,7 @@ public partial class SaveSlotPanel : CanvasLayer
         int total = (int)info.PlaytimeSeconds;
         string played = Loc.TF("slots.playtime", total / 3600, $"{(total % 3600) / 60:00}");
         string date = Time.GetDatetimeStringFromUnixTime((long)info.TimestampUnix, true);
-        return Loc.TF("slots.meta", played, date);
+        string meta = Loc.TF("slots.meta", played, date);
+        return info.RecoveredFromBackup ? Loc.TF("slots.backup_help", meta) : meta;
     }
 }

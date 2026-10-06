@@ -29,12 +29,14 @@ public partial class Notifications
     {
         bus?.Subscribe<ItemPickedUpEvent>(OnItemPickedUp);
         bus?.Subscribe<InventoryFullEvent>(OnPackFull);
+        bus?.Subscribe<RewardChestSpawnedEvent>(OnRewardChest);
     }
 
     private void UnsubscribeLoot(EventBus bus)
     {
         bus.Unsubscribe<ItemPickedUpEvent>(OnItemPickedUp);
         bus.Unsubscribe<InventoryFullEvent>(OnPackFull);
+        bus.Unsubscribe<RewardChestSpawnedEvent>(OnRewardChest);
     }
 
     private void OnItemPickedUp(ItemPickedUpEvent e)
@@ -100,6 +102,11 @@ public partial class Notifications
             Push(Loc.TF("loot.pack_full", e.Item.DisplayName), UiTheme.Bad, NoticeCategory.Warning);
         }
     }
+
+    /// <summary>A Flamebearer fell and left its chest: said once, so the reward is not walked past
+    /// in the quiet after the fight. Not raised by a load (the chest is restored, not spawned).</summary>
+    private void OnRewardChest(RewardChestSpawnedEvent e) =>
+        Push(Loc.T("loot.reward_chest"), UiTheme.Accent, NoticeCategory.Reward);
 
     /// <summary>Companions and merchants carry packs too; the feed is the player's.</summary>
     private static bool IsPlayer(IEntity? owner) =>
