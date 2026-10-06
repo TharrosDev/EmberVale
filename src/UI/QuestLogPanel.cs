@@ -63,7 +63,9 @@ public partial class QuestLogPanel : UiPanel
 
             if (SelectedLocationId() != null)
             {
-                entries.Add(new LegendEntry(KnowledgeInput.Secondary, Loc.T("kn.legend.show_on_map")));
+                // On a pad this is the stick's click, drawn with the stick's glyph: the words say so.
+                entries.Add(new LegendEntry(KnowledgeInput.Secondary,
+                    Loc.T(InputDevice.GamepadActive ? "kn.legend.show_on_map_click" : "kn.legend.show_on_map")));
             }
 
             entries.AddRange(base.Legend);

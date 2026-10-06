@@ -109,7 +109,9 @@ public partial class MapScreen : UiPanel
                 entries.Add(new LegendEntry(GameInput.LookRight, Loc.T("kn.legend.pan")));
                 entries.Add(new LegendEntry(GameInput.MenuSubPrev, Loc.T("kn.legend.zoom"), GameInput.MenuSubNext));
                 entries.Add(new LegendEntry(KnowledgeInput.Primary, Loc.T("kn.legend.select")));
-                entries.Add(new LegendEntry(KnowledgeInput.Secondary, Loc.T("kn.legend.waypoint")));
+
+                // The stick's click draws the stick's own glyph, the one Pan has: the words say which.
+                entries.Add(new LegendEntry(KnowledgeInput.Secondary, Loc.T("kn.legend.waypoint_click")));
             }
             else
             {
@@ -197,6 +199,11 @@ public partial class MapScreen : UiPanel
         _search.TextChanged += OnSearchChanged;
         _search.TextSubmitted += OnSearchSubmitted;
 
+        // While the field has focus the gameplay keys are out of the map (GameInput.SetTextEntry):
+        // a search for "forge" must not mark a waypoint, and one for "mill" must not close the map.
+        _search.FocusEntered += () => GameInput.SetTextEntry(true);
+        _search.FocusExited += () => GameInput.SetTextEntry(false);
+
         // The search box's focus ring is drawn on its edge, which the scroll would clip.
         var searchRow = new MarginContainer();
         searchRow.AddThemeConstantOverride("margin_top", UiTheme.Space2xs);
@@ -247,6 +254,7 @@ public partial class MapScreen : UiPanel
         EventBus.Instance?.Unsubscribe<QuestCompletedEvent>(OnQuestCompleted);
         EventBus.Instance?.Unsubscribe<QuestFailedEvent>(OnQuestFailed);
         EventBus.Instance?.Unsubscribe<InputDeviceChangedEvent>(OnDeviceChanged);
+        GameInput.SetTextEntry(false);
     }
 
     public void SetMapService(MapService? map)
@@ -267,6 +275,10 @@ public partial class MapScreen : UiPanel
         {
             // A confirmation never outlives the screen it was asked on.
             _pendingTravelId = null;
+
+            // A hidden field gives up focus on its own, but the keyboard coming back must not depend
+            // on that signal arriving.
+            GameInput.SetTextEntry(false);
             return;
         }
 
@@ -333,13 +345,17 @@ public partial class MapScreen : UiPanel
     /// to, and set or clear the waypoint under it.</summary>
     public override void _Input(InputEvent @event)
     {
-        if (!IsOpen || _pendingTravelId != null || !_view.ShowCursor)
+        // Asked of the device now, not of the plot's cached flag (which waits for the next rebuild),
+        // and never while the search box is being typed in: its letters are not verbs.
+        if (!IsOpen || _pendingTravelId != null || !(_cursorForced || InputDevice.GamepadActive) ||
+            GetViewport().GuiGetFocusOwner() is LineEdit)
         {
             return;
         }
 
         if (KnowledgeInput.IsPrimary(@event))
         {
+            UpdateCursor();
             UiAudio.Play(UiCue.Click);
             OnPicked(_view.SnapId);
             GetViewport().SetInputAsHandled();
