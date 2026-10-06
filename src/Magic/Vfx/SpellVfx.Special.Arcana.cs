@@ -17,12 +17,6 @@ public static partial class SpellVfx
     /// <summary>How far from the camera a first-person body's head is at most (metres).</summary>
     private const float ArcanaInsideViewDistance = 0.8f;
 
-    /// <summary>How far a ring on the floor has to run to be seen past the bottom of a first-person
-    /// frame, and how far it runs when the caster is seen from outside.</summary>
-    private const float ArcanaFloorReachInside = 3f;
-
-    private const float ArcanaFloorReachOutside = 1.9f;
-
     /// <summary>
     /// The special cases of the arcane, nature and necrotic spells and of the enemy-only spells (the
     /// spells whose recipes live in <c>SpellVfxCatalog.Arcana.cs</c>).
@@ -34,6 +28,9 @@ public static partial class SpellVfx
     /// pressure wave and extra rings; Ultra doubles the debris. <b>A spell on oneself is laid out so
     /// first person sees it</b>: the floor ring and the rising particles reach past the bottom of the
     /// frame (<see cref="ArcanaInside"/>), since the body-sized shell is hidden from inside.</para>
+    ///
+    /// <para>The sizes these are held to (how far a floor ring runs, how big a breath's body, smoke
+    /// and glints may be, what the lean tiers leave out) are in <see cref="VfxArcanaRules"/>.</para>
     /// </summary>
     private static void RegisterArcanaSpecials(SpellVfxSpecialTable table)
     {
@@ -65,8 +62,20 @@ public static partial class SpellVfx
 
         table.For("spell.ember_siphon").Arc = NecroticDrain;
         table.For("spell.grave_mark").Arc = NecroticDrain;
-        table.For("spell.wither").Arc = NecroticDrain;
+        SpellVfxSpecial wither = table.For("spell.wither");
+        wither.Arc = NecroticDrain;
+        wither.Impact = WitherImpact;
         table.For("spell.ash_breath").Arc = NecroticDrain;
+
+        // One body lighting up inside a breath, every tick it stands there.
+        table.For("spell.dragon_breath").Impact = static (in VfxCast cast, in SpellImpactInfo hit) =>
+            ArcanaBreathHit(cast, hit, VfxParticles.Embers);
+        table.For("spell.drake_breath").Impact = static (in VfxCast cast, in SpellImpactInfo hit) =>
+            ArcanaBreathHit(cast, hit, VfxParticles.Shards);
+        table.For("spell.ash_breath").Impact = static (in VfxCast cast, in SpellImpactInfo hit) =>
+            ArcanaBreathHit(cast, hit, VfxParticles.Embers);
+        table.For("spell.elder_word").Impact = static (in VfxCast cast, in SpellImpactInfo hit) =>
+            ArcanaBreathHit(cast, hit, VfxParticles.Motes);
 
         SpellVfxSpecial soulTithe = table.For("spell.soul_tithe");
         soulTithe.Release = SoulTitheRelease;
@@ -101,6 +110,9 @@ public static partial class SpellVfx
 
     /// <summary>The pressure wave and the extra rings are drawn (High and up).</summary>
     private static bool ArcanaLavish => VfxQuality.Tier >= VfxTier.High;
+
+    /// <summary>The short list only: cores, one ring, the first particles (Performance and Low).</summary>
+    private static bool ArcanaLean => VfxArcanaRules.IsLean(VfxQuality.Tier);
 
     /// <summary>Everything, twice (Ultra).</summary>
     private static bool ArcanaWild => VfxQuality.Tier >= VfxTier.Ultra;
@@ -161,12 +173,27 @@ public static partial class SpellVfx
         return cast.Fx.Flare(ring);
     }
 
-    /// <summary>A soft glow that rides a body for a moment: the "it worked" of a spell on oneself.</summary>
-    private static void ArcanaAfterglow(in VfxCast cast, Node3D body, in VfxSchoolColors colors, float seconds)
+    /// <summary>How long a floor ring takes to run its reach: longer from inside the caster, where it
+    /// has further to go and is most of the cue.</summary>
+    private static float ArcanaFloorSeconds(bool inside, float seconds) => inside ? seconds + 0.35f : seconds;
+
+    /// <summary>A soft glow that rides a body for a moment: the "it worked" of a spell on oneself.
+    /// Left out from <paramref name="inside"/> that body: a halo at the chest is a wash over the
+    /// whole view to an eye half a metre above it.</summary>
+    private static void ArcanaAfterglow(
+        in VfxCast cast, Node3D body, in VfxSchoolColors colors, float seconds, bool inside)
     {
+        if (inside)
+        {
+            return;
+        }
+
         VfxFlareSpec glow = VfxFlareSpec.At(body.GlobalPosition + Vector3.Up, 0.28f, colors.Scaled(0.5f, 0.9f));
         glow.Life = seconds;
-        glow.Light = VfxQuality.Budget.MaxLights > 0;
+
+        // The hand's snap already took a light; a second one held for a second is for the tiers
+        // that have lights to spare.
+        glow.Light = !ArcanaLean;
         glow.LightRange = 4f;
         cast.Fx.Flare(glow).Get?.Follow(VfxAnchor.To(body, Vector3.Up));
     }
@@ -210,7 +237,7 @@ public static partial class SpellVfx
         Vector3 feet = body.GlobalPosition;
         Vector3 chest = feet + Vector3.Up;
         bool inside = cast.ByPlayer && ArcanaInside(body);
-        float reach = inside ? ArcanaFloorReachInside : ArcanaFloorReachOutside;
+        float reach = VfxArcanaRules.FloorReach(inside);
         ArcanaSnap(cast, hand, colors);
 
         VfxShellSpec ward = VfxShellSpec.Sphere(chest, 1.02f, colors);
@@ -220,8 +247,8 @@ public static partial class SpellVfx
         ward.Opacity = 0.85f;
         cast.Fx.Shell(ward).Get?.Follow(VfxAnchor.To(body, Vector3.Up));
 
-        ArcanaRing(cast, feet + (Vector3.Up * 0.12f), reach, colors, 0.55f);
-        VfxDiscSpec circle = VfxDiscSpec.At(feet, inside ? 2.6f : 1.5f, colors);
+        ArcanaRing(cast, feet + (Vector3.Up * 0.12f), reach, colors, ArcanaFloorSeconds(inside, 0.55f));
+        VfxDiscSpec circle = VfxDiscSpec.At(feet, inside ? reach * 0.8f : 1.5f, colors);
         circle.Life = 1.4f;
         circle.Rune = true;
         circle.Spin = 1.2f;
@@ -277,8 +304,13 @@ public static partial class SpellVfx
         bool inside = cast.ByPlayer && _director!.HasCamera &&
                       _director.DistanceToCamera(to + (Vector3.Up * 1.6f)) < ArcanaInsideViewDistance;
 
-        // Where they were.
-        ArcanaRing(cast, from + (Vector3.Up * 0.12f), 1.5f, colors, 0.4f, inward: true);
+        // Where they were. (The lean tiers keep the hoop that folds shut and drop the floor's.)
+        bool lean = ArcanaLean;
+        if (!lean)
+        {
+            ArcanaRing(cast, from + (Vector3.Up * 0.12f), 1.5f, colors, 0.4f, inward: true);
+        }
+
         VfxFlareSpec fold = VfxFlareSpec.At(gone, 0.26f, colors);
         fold.Life = 0.22f;
         fold.Ring = along != Vector3.Zero;
@@ -291,13 +323,17 @@ public static partial class SpellVfx
         drawn.Extents = Vector3.One * 1.1f;
         drawn.LifeScale = 0.45f;
         cast.Fx.Burst(VfxParticles.Motes, drawn);
-        VfxDiscSpec left = VfxDiscSpec.At(from, 1.1f, colors);
-        left.Life = 0.7f;
-        left.Rune = true;
-        left.Spin = -3f;
-        left.Flow = -0.8f;
-        left.Body = 0.15f;
-        cast.Fx.Disc(left);
+        if (!lean)
+        {
+            VfxDiscSpec left = VfxDiscSpec.At(from, 1.1f, colors);
+            left.Life = 0.7f;
+            left.Rune = true;
+            left.Spin = -3f;
+            left.Flow = -0.8f;
+            left.Body = 0.15f;
+            cast.Fx.Disc(left);
+        }
+
         cast.Fx.Distortion(new VfxDistortionSpec { Position = gone, Radius = 1.3f, Life = 0.35f, Strength = 0.03f, Inward = true });
 
         // The line between: a smooth streak, a crackle along it, and what it shakes loose.
@@ -331,7 +367,8 @@ public static partial class SpellVfx
                 });
             }
 
-            VfxBurstSpec wake = VfxBurstSpec.At((gone + here) * 0.5f, colors, ArcanaAmount(Mathf.Clamp(length * 0.14f, 0.4f, 1.5f)));
+            VfxBurstSpec wake = VfxBurstSpec.At(
+                (gone + here) * 0.5f, colors, lean ? 0f : ArcanaAmount(Mathf.Clamp(length * 0.14f, 0.4f, 1.5f)));
             wake.Extents = new Vector3(
                 Mathf.Max(0.2f, Mathf.Abs(line.X) * 0.5f), 0.4f, Mathf.Max(0.2f, Mathf.Abs(line.Z) * 0.5f));
             wake.SpeedScale = 0.4f;
@@ -346,14 +383,15 @@ public static partial class SpellVfx
         appear.Light = budget.MaxLights > 0;
         appear.LightRange = 5f;
         cast.Fx.Flare(appear);
-        ArcanaRing(cast, to + (Vector3.Up * 0.12f), inside ? ArcanaFloorReachInside : ArcanaFloorReachOutside, colors, 0.5f);
+        ArcanaRing(
+            cast, to + (Vector3.Up * 0.12f), VfxArcanaRules.FloorReach(inside), colors, ArcanaFloorSeconds(inside, 0.5f));
         VfxBurstSpec thrown = VfxBurstSpec.At(here, colors, ArcanaAmount(0.9f));
         thrown.SpeedScale = 1.3f;
         cast.Fx.Burst(VfxParticles.Motes, thrown);
         VfxBurstSpec sparks = VfxBurstSpec.At(here, colors, ArcanaDebris(0.5f));
         sparks.SpeedScale = 0.8f;
         cast.Fx.Burst(VfxParticles.Sparks, sparks);
-        VfxDiscSpec arrived = VfxDiscSpec.At(to, inside ? 2.4f : 1.3f, colors);
+        VfxDiscSpec arrived = VfxDiscSpec.At(to, inside ? VfxArcanaRules.FloorReachInside * 0.8f : 1.3f, colors);
         arrived.Life = 0.9f;
         arrived.Rune = true;
         arrived.Spin = 3f;
@@ -436,8 +474,12 @@ public static partial class SpellVfx
         Vector3 skim = floor + (Vector3.Up * 0.12f);
         Vector3 heart = floor + Vector3.Up;
 
+        bool lean = ArcanaLean;
         ArcanaRing(cast, skim, radius, colors, 0.38f, inward: true);
-        ArcanaRing(cast, skim, radius * 0.62f, colors, 0.6f, inward: true);
+        if (!lean)
+        {
+            ArcanaRing(cast, skim, radius * 0.62f, colors, 0.6f, inward: true);
+        }
 
         VfxFlareSpec core = VfxFlareSpec.At(heart, Mathf.Clamp(radius * 0.11f, 0.3f, 0.5f), colors);
         core.Life = 0.3f;
@@ -445,12 +487,15 @@ public static partial class SpellVfx
         core.LightRange = Mathf.Max(4f, radius * 2f);
         cast.Fx.Flare(core);
 
-        VfxShellSpec orb = VfxShellSpec.Sphere(heart, Mathf.Clamp(radius * 0.18f, 0.45f, 0.8f), colors);
-        orb.Fresnel = true;
-        orb.Life = 0.55f;
-        orb.BurnsAway = true;
-        orb.StartScale = 0.35f;
-        cast.Fx.Shell(orb);
+        if (!lean)
+        {
+            VfxShellSpec orb = VfxShellSpec.Sphere(heart, Mathf.Clamp(radius * 0.18f, 0.45f, 0.8f), colors);
+            orb.Fresnel = true;
+            orb.Life = 0.55f;
+            orb.BurnsAway = true;
+            orb.StartScale = 0.35f;
+            cast.Fx.Shell(orb);
+        }
 
         var across = new Vector3(radius * 0.9f, 1.2f, radius * 0.9f);
         VfxBurstSpec dust = VfxBurstSpec.At(heart, colors, ArcanaAmount(Mathf.Clamp(0.6f + (radius * 0.25f), 0.6f, 2f)));
@@ -489,7 +534,7 @@ public static partial class SpellVfx
         rune.Body = 0.22f;
         rune.Rim = 0.8f;
         cast.Fx.Disc(rune);
-        VfxBurstSpec settling = VfxBurstSpec.At(heart, colors, ArcanaAmount(0.6f));
+        VfxBurstSpec settling = VfxBurstSpec.At(heart, colors, lean ? 0f : ArcanaAmount(0.6f));
         settling.Inward = true;
         settling.Extents = new Vector3(radius * 0.8f, 1f, radius * 0.8f);
         settling.LifeScale = 1.5f;
@@ -501,7 +546,9 @@ public static partial class SpellVfx
             Size = radius * 2f,
             Colors = colors,
             Life = 6f,
-            Spin = -0.5f,
+
+            // Against the disc over it: two circles turning opposite ways while both are there.
+            Spin = 0.4f,
             Reach = 1f,
         });
         return true;
@@ -549,8 +596,9 @@ public static partial class SpellVfx
         light.SpeedScale = 0.9f;
         cast.Fx.Burst(VfxParticles.Motes, light);
 
-        ArcanaRing(cast, feet + (Vector3.Up * 0.12f), inside ? ArcanaFloorReachInside : ArcanaFloorReachOutside, colors, 0.6f);
-        VfxDiscSpec bloom = VfxDiscSpec.At(feet, inside ? 2.5f : 1.4f, colors);
+        ArcanaRing(
+            cast, feet + (Vector3.Up * 0.12f), VfxArcanaRules.FloorReach(inside), colors, ArcanaFloorSeconds(inside, 0.6f));
+        VfxDiscSpec bloom = VfxDiscSpec.At(feet, inside ? VfxArcanaRules.FloorReachInside * 0.8f : 1.4f, colors);
         bloom.Life = 1.2f;
         bloom.Flow = 0.6f;
         bloom.Body = 0.55f;
@@ -564,10 +612,10 @@ public static partial class SpellVfx
         cast.Fx.Burst(VfxParticles.Leaves, petals);
         if (ArcanaLavish)
         {
-            ArcanaRing(cast, feet + (Vector3.Up * 0.12f), inside ? 2f : 1.1f, colors, 0.95f);
+            ArcanaRing(cast, feet + (Vector3.Up * 0.12f), inside ? VfxArcanaRules.FloorReachInside * 0.6f : 1.1f, colors, 0.95f);
         }
 
-        ArcanaAfterglow(cast, body, colors, 1f);
+        ArcanaAfterglow(cast, body, colors, 1f, inside);
         return true;
     }
 
@@ -717,7 +765,7 @@ public static partial class SpellVfx
         });
 
         // Leaves still coming down after it.
-        VfxBurstSpec falling = VfxBurstSpec.At(floor + (Vector3.Up * 1.7f), colors, ArcanaAmount(0.5f));
+        VfxBurstSpec falling = VfxBurstSpec.At(floor + (Vector3.Up * 1.7f), colors, ArcanaLean ? 0f : ArcanaAmount(0.5f));
         falling.Extents = new Vector3(radius * 0.6f, 0.4f, radius * 0.6f);
         falling.SpeedScale = 0.3f;
         falling.LifeScale = 1.6f;
@@ -756,10 +804,25 @@ public static partial class SpellVfx
         swarm.Tint = ArcanaSting;
         swarm.Continuous = true;
         swarm.Extents = Vector3.One * 0.22f;
-        swarm.SpeedScale = 1.6f;
-        swarm.LifeScale = 0.35f;
+        swarm.LifeScale = 0.25f;
         swarm.SizeScale = 1.2f;
         swarm.GravityScale = 0f;
+        if (velocity != Vector3.Zero)
+        {
+            // Particles live in the world, not on the emitter: left to themselves they would be a
+            // dotted line metres long behind a bolt this fast. Thrown forward at up to the bolt's own
+            // speed they keep pace with it, the quickest at its head and the rest strung out a
+            // couple of metres behind, which is a swarm.
+            swarm.Direction = velocity;
+            swarm.Spread = 4f;
+            swarm.Speed = velocity.Length();
+            swarm.Damping = 0f;
+        }
+        else
+        {
+            swarm.SpeedScale = 1.6f;
+        }
+
         Shed(rig, cast, VfxParticles.Motes, swarm, anchor, handOffset, velocity);
 
         if (ArcanaRich)
@@ -768,7 +831,7 @@ public static partial class SpellVfx
             stragglers.Continuous = true;
             stragglers.Extents = Vector3.One * 0.3f;
             stragglers.SpeedScale = 0.8f;
-            stragglers.LifeScale = 0.8f;
+            stragglers.LifeScale = 0.5f;
             stragglers.GravityScale = 0f;
             Shed(rig, cast, VfxParticles.Motes, stragglers, anchor, handOffset, velocity);
         }
@@ -811,8 +874,9 @@ public static partial class SpellVfx
         float spread = inside ? 2.2f : 0.5f;
         ArcanaSnap(cast, hand, colors);
 
-        // The top hoop is at the eye from inside, so first person keeps the two below it.
-        int hoops = inside ? 2 : 3;
+        // The top hoop is at the eye from inside, so first person keeps the two below it; so do the
+        // lean tiers.
+        int hoops = inside || ArcanaLean ? 2 : 3;
         for (int i = 0; i < hoops; i++)
         {
             VfxHandle<VfxFlare> hoop = ArcanaRing(
@@ -829,7 +893,7 @@ public static partial class SpellVfx
         chips.GravityScale = 0.5f;
         cast.Fx.Burst(VfxParticles.Leaves, chips);
 
-        VfxBurstSpec green = VfxBurstSpec.At(chest, colors, ArcanaAmount(inside ? 1f : 0.7f));
+        VfxBurstSpec green = VfxBurstSpec.At(chest, colors, ArcanaLean && !inside ? 0f : ArcanaAmount(inside ? 1f : 0.7f));
         green.Extents = new Vector3(spread + 0.1f, 0.8f, spread + 0.1f);
         green.SpeedScale = 0.7f;
         cast.Fx.Burst(VfxParticles.Motes, green);
@@ -843,7 +907,19 @@ public static partial class SpellVfx
         splinters.SizeScale = 0.6f;
         cast.Fx.Burst(VfxParticles.Shards, splinters);
 
-        ArcanaRing(cast, feet + (Vector3.Up * 0.12f), inside ? ArcanaFloorReachInside : ArcanaFloorReachOutside, colors, 0.55f);
+        ArcanaRing(
+            cast, feet + (Vector3.Up * 0.12f), VfxArcanaRules.FloorReach(inside), colors, ArcanaFloorSeconds(inside, 0.55f));
+        if (inside)
+        {
+            // No hoops to see from in here: the ground itself greens for a beat instead.
+            VfxDiscSpec ground = VfxDiscSpec.At(feet, VfxArcanaRules.FloorReachInside * 0.8f, colors);
+            ground.Life = 1.1f;
+            ground.Flow = -0.5f;
+            ground.Body = 0.4f;
+            ground.Rim = 0.5f;
+            cast.Fx.Disc(ground).Get?.Follow(VfxAnchor.To(body));
+        }
+
         cast.Fx.Mark(new VfxGroundMarkSpec
         {
             Mark = VfxMark.Roots,
@@ -853,7 +929,7 @@ public static partial class SpellVfx
             Life = 5f,
             Reach = 1f,
         });
-        ArcanaAfterglow(cast, body, colors, 0.8f);
+        ArcanaAfterglow(cast, body, colors, 0.8f, inside);
         return true;
     }
 
@@ -903,9 +979,13 @@ public static partial class SpellVfx
         home.SizeScale = 0.8f;
         cast.Fx.Burst(VfxParticles.Embers, home);
 
-        VfxFlareSpec taken = VfxFlareSpec.At(to, 0.18f, colors.Scaled(0.7f, 0.8f));
-        taken.Life = 0.4f;
-        cast.Fx.Flare(taken);
+        if (!ArcanaLean)
+        {
+            VfxFlareSpec taken = VfxFlareSpec.At(to, 0.18f, colors.Scaled(0.7f, 0.8f));
+            taken.Life = 0.4f;
+            cast.Fx.Flare(taken);
+        }
+
         VfxBurstSpec mend = VfxBurstSpec.At(to, colors, ArcanaAmount(0.6f));
         mend.Inward = true;
         mend.Extents = Vector3.One * 0.65f;
@@ -1002,7 +1082,20 @@ public static partial class SpellVfx
         float spread = inside ? 2.4f : 1.3f;
         ArcanaSnap(cast, hand, bone);
 
-        ArcanaRing(cast, feet + (Vector3.Up * 0.12f), inside ? ArcanaFloorReachInside : 2f, bone, 0.5f, inward: true);
+        ArcanaRing(
+            cast, feet + (Vector3.Up * 0.12f), inside ? VfxArcanaRules.FloorReachInside : 2f, bone,
+            ArcanaFloorSeconds(inside, 0.5f), inward: true);
+        if (inside)
+        {
+            // A pale floor drawing in under the caster, in place of the hoop about a chest they cannot see.
+            VfxDiscSpec ground = VfxDiscSpec.At(feet, VfxArcanaRules.FloorReachInside * 0.8f, bone);
+            ground.Life = 1.1f;
+            ground.Flow = -0.8f;
+            ground.Body = 0.35f;
+            ground.Rim = 0.5f;
+            cast.Fx.Disc(ground).Get?.Follow(VfxAnchor.To(body));
+        }
+
         if (!inside)
         {
             ArcanaRing(cast, chest, 0.9f, bone, 0.65f, inward: true).Get?.Follow(VfxAnchor.To(body, Vector3.Up));
@@ -1020,7 +1113,7 @@ public static partial class SpellVfx
         cast.Fx.Burst(VfxParticles.Sparks, stitches);
 
         // The rot leaving, in the school's own colour: small, slow, and falling.
-        VfxBurstSpec rot = VfxBurstSpec.At(feet + (Vector3.Up * 0.8f), cast.Colors, ArcanaAmount(0.35f));
+        VfxBurstSpec rot = VfxBurstSpec.At(feet + (Vector3.Up * 0.8f), cast.Colors, ArcanaLean ? 0f : ArcanaAmount(0.35f));
         rot.Extents = new Vector3(inside ? 1.8f : 0.4f, 0.5f, inside ? 1.8f : 0.4f);
         rot.SpeedScale = 0.4f;
         rot.SizeScale = 0.5f;
@@ -1029,10 +1122,10 @@ public static partial class SpellVfx
 
         if (ArcanaLavish)
         {
-            ArcanaRing(cast, feet + (Vector3.Up * 0.12f), inside ? 2f : 1.2f, bone, 0.8f, inward: true);
+            ArcanaRing(cast, feet + (Vector3.Up * 0.12f), inside ? VfxArcanaRules.FloorReachInside * 0.6f : 1.2f, bone, 0.8f, inward: true);
         }
 
-        ArcanaAfterglow(cast, body, bone, 0.9f);
+        ArcanaAfterglow(cast, body, bone, 0.9f, inside);
         return true;
     }
 
@@ -1058,7 +1151,66 @@ public static partial class SpellVfx
         return false;
     }
 
+    /// <summary>
+    /// Wither landing on the first-person player. The generic hit is a flare at the struck body's
+    /// middle, which for this body is half a metre under the eye: a flash across the whole view.
+    /// From inside, the rot is drawn where it can be looked at instead: a front closing along the
+    /// floor and dark wisps falling about the feet. Anyone else struck gets the generic hit.
+    /// </summary>
+    private static bool WitherImpact(in VfxCast cast, in SpellImpactInfo hit)
+    {
+        if (hit.Kind != SpellImpactKind.Target || VfxAnchor.BodyOf(hit.Target) is not { } body || !ArcanaInside(body))
+        {
+            return false;
+        }
+
+        Vector3 feet = body.GlobalPosition;
+        ArcanaRing(cast, feet + (Vector3.Up * 0.12f), VfxArcanaRules.FloorReachInside * 0.7f, cast.Colors, 0.7f, inward: true);
+        VfxBurstSpec rot = VfxBurstSpec.At(feet + (Vector3.Up * 0.5f), cast.Colors, ArcanaAmount(0.7f));
+        rot.Extents = new Vector3(2f, 0.4f, 2f);
+        rot.SpeedScale = 0.4f;
+        rot.SizeScale = 0.5f;
+        rot.GravityScale = -3f;
+        cast.Fx.Burst(VfxParticles.Wisps, rot);
+        return true;
+    }
+
     // --- breaths ---------------------------------------------------------------------------------
+
+    /// <summary>
+    /// One body struck by one tick of a breath, replacing the generic splash. That one is a flare at
+    /// the body's middle every tick, with the school's own particles (pale wisps the size of a fist
+    /// for the ash breath): three times a second, on the player, with the camera a few metres
+    /// behind or half a metre above. Here it is a small spark with its halo turned down and a few of
+    /// the breath's own particles, and on the first-person player no spark at all: only the
+    /// particles, low, where they do not cross the lens.
+    /// </summary>
+    private static bool ArcanaBreathHit(in VfxCast cast, in SpellImpactInfo hit, VfxParticles thrown)
+    {
+        if (hit.Kind is not (SpellImpactKind.Target or SpellImpactKind.Blocked))
+        {
+            return false;
+        }
+
+        Vector3 at = hit.Position;
+        bool lens = VfxAnchor.BodyOf(hit.Target) is { } body && ArcanaInside(body);
+        if (lens)
+        {
+            at = new Vector3(at.X, at.Y - 0.6f, at.Z);
+        }
+        else
+        {
+            float scale = VfxRecipeRules.ImpactScale(cast.Weight, hit.Charge, hit.Crit, hit.Killed, hit.Kind);
+            VfxFlareSpec spark = VfxFlareSpec.At(at, 0.26f * scale, cast.Colors.Scaled(0.8f, 0.5f));
+            spark.Life = 0.2f;
+            cast.Fx.Flare(spark);
+        }
+
+        VfxBurstSpec few = VfxBurstSpec.At(at, cast.Colors, ArcanaAmount(0.35f));
+        few.SpeedScale = 0.8f;
+        cast.Fx.Burst(hit.Kind == SpellImpactKind.Blocked ? VfxParticles.Sparks : thrown, few);
+        return true;
+    }
 
     /// <summary>What one breath is made of.</summary>
     /// <param name="Spray">The particles thrown down the wedge: the breath itself, on every tier.</param>
@@ -1118,13 +1270,18 @@ public static partial class SpellVfx
         if (look.Haze != VfxParticles.None)
         {
             VfxBurstPreset drift = VfxBurstPresets.For(look.Haze);
-            VfxBurstSpec haze = VfxBurstSpec.At(origin + (axis * (range * 0.3f)), colors, ArcanaDebris(0.5f * look.HazeAmount));
+            // Smoke covers what is behind it and ticks overlap, so a breath's smoke is a few short-lived
+            // puffs a tick on any tier: thickened, it is a wall of fog between the player and the dragon.
+            bool smoke = look.Haze == VfxParticles.Smoke;
+            VfxBurstSpec haze = VfxBurstSpec.At(
+                origin + (axis * (range * 0.3f)), colors, VfxArcanaRules.HazeDensity(budget, look.HazeAmount, smoke));
             haze.Tint = look.HazeTint;
             haze.Direction = axis;
             haze.Spread = half;
-            haze.Speed = range * 0.5f / Mathf.Max(0.1f, drift.Life);
+            haze.LifeScale = smoke ? 0.6f : 1f;
+            haze.Speed = range * 0.5f / Mathf.Max(0.1f, drift.Life * haze.LifeScale);
             haze.Extents = Vector3.One * Mathf.Max(0.15f, widthAtEnd * 0.18f);
-            haze.SizeScale = look.Haze == VfxParticles.Smoke ? Mathf.Clamp(widthAtEnd * 0.3f, 0.8f, 2.2f) : 1.2f;
+            haze.SizeScale = smoke ? Mathf.Clamp(widthAtEnd * 0.2f, 0.7f, 1.5f) : 1.2f;
             cast.Fx.Burst(look.Haze, haze);
         }
 
@@ -1149,35 +1306,45 @@ public static partial class SpellVfx
             cast.Fx.Flare(heat);
         }
 
-        // A body for the near half of the wedge, thin enough to see through. (A sphere shell is not
-        // drawn at all for a camera inside it, so whoever stands in the breath sees its particles.)
+        // A body at the mouth: a tongue of flame (or ice) a few metres long, not the wedge filled.
+        // A body the size of the wedge is metres across, and whoever it is aimed at looks straight
+        // down its length: that was the blank frame. It is left out when the camera is near its
+        // far end, and a sphere shell is not drawn at all for a camera inside it.
         if (look.Gout && budget.SecondaryDebris)
         {
-            float girth = Mathf.Max(0.6f, widthAtEnd * 0.9f);
-            VfxShellSpec gout = VfxShellSpec.Sphere(origin + (axis * (range * 0.42f)), 0.5f, colors);
-            gout.Size = new Vector3(girth, girth, range * 0.75f);
-            gout.Forward = axis;
-            gout.Life = 0.36f;
-            gout.BurnsAway = true;
-            gout.StartScale = 0.4f;
-            gout.Scroll = new Vector2(0.1f, 1.6f);
-            gout.Opacity = 0.42f;
-            gout.Energy = 0.8f;
-            cast.Fx.Shell(gout);
+            float length = VfxArcanaRules.GoutLength(range);
+            float girth = VfxArcanaRules.GoutGirth(length, slope);
+            Vector3 centre = origin + (axis * (0.3f + (length * 0.5f)));
+            if (director.DistanceToCamera(centre) > (length * 0.5f) + VfxArcanaRules.GoutClearance)
+            {
+                VfxShellSpec gout = VfxShellSpec.Sphere(centre, 0.5f, colors);
+                gout.Size = new Vector3(girth, girth, length);
+                gout.Forward = axis;
+                gout.Life = 0.36f;
+                gout.BurnsAway = true;
+                gout.StartScale = 0.4f;
+                gout.Scroll = new Vector2(0.1f, 1.6f);
+                gout.Opacity = 0.5f;
+                gout.Energy = 0.8f;
+                gout.Layered = ArcanaWild;
+                cast.Fx.Shell(gout);
+            }
         }
 
-        // Glints down the axis: more of them on the richer tiers, none of them large.
-        int glints = !cast.Fx.Full ? 0 : ArcanaWild ? 3 : ArcanaRich ? 2 : 1;
+        // Glints down the axis: more of them on the richer tiers, none on the leanest, none of them
+        // large and none near the camera. Their halos are turned well down: seen from the far end
+        // of a breath they stack on one point of the screen.
+        int glints = cast.Fx.Full ? VfxArcanaRules.Glints(VfxQuality.Tier) : 0;
         for (int i = 1; i <= glints; i++)
         {
             float travelled = range * i / (glints + 1f);
             Vector3 at = origin + (axis * travelled);
-            if (director.DistanceToCamera(at) < 3f)
+            if (director.DistanceToCamera(at) < VfxArcanaRules.GlintMinCameraDistance)
             {
                 continue;
             }
 
-            VfxFlareSpec glint = VfxFlareSpec.At(at, Mathf.Clamp(travelled * slope * 0.18f, 0.25f, 0.5f), colors.Scaled(0.6f, 0.6f));
+            VfxFlareSpec glint = VfxFlareSpec.At(at, VfxArcanaRules.GlintRadius(travelled, slope), colors.Scaled(0.7f, 0.35f));
             glint.Life = 0.22f + (0.05f * i);
             cast.Fx.Flare(glint);
         }

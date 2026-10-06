@@ -139,8 +139,10 @@ public static partial class SpellVfxCatalog
 
         // Paid for in blood: red leaves the caster, the bolt is heavy and trails smoke, and it lands
         // hard. A kill sends a wisp of mana home.
+        // (Embers in the hand, not wisps: a wisp is a pale ball the size of a fist, and a handful of
+        // them round the hand hid it.)
         recipes["spell.soul_tithe"] = new SpellVfxRecipe(
-            Cast: new VfxStage { Flare = true, Particles = VfxParticles.Wisps, Scale = 0.85f },
+            Cast: new VfxStage { Flare = true, Particles = VfxParticles.Embers, Scale = 0.85f },
             Travel: new VfxStage { Flare = true, Particles = VfxParticles.Wisps, Secondary = VfxParticles.Smoke },
             Impact: new VfxStage
             {
@@ -160,9 +162,9 @@ public static partial class SpellVfxCatalog
             Linger: new VfxStage { Flare = true });
 
         // A sigil at the hand, a quick dim bolt, and the same sigil stamped on the target and left
-        // hanging over it.
+        // hanging over it. Fine motes are drawn in to the hand so the sigil there is not hidden.
         recipes["spell.grave_mark"] = new SpellVfxRecipe(
-            Cast: new VfxStage { Flare = true, Sigil = true, Particles = VfxParticles.Wisps, Scale = 0.8f },
+            Cast: new VfxStage { Flare = true, Sigil = true, Particles = VfxParticles.Motes, Inward = true, Scale = 0.8f },
             Travel: new VfxStage { Flare = true, Scale = 0.7f },
             Impact: new VfxStage { Flare = true, Ring = true, Sigil = true, Particles = VfxParticles.Wisps, Scale = 0.8f },
             Linger: new VfxStage { Sigil = true });

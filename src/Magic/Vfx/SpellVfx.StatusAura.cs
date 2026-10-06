@@ -63,7 +63,7 @@ public static partial class SpellVfx
 
             case StatusVfxShape.Thorns:
             {
-                if (VfxQuality.Budget.GroundMarks > 0)
+                if (StatusMarks)
                 {
                     rig.Add(fx.Mark(new VfxGroundMarkSpec
                     {
@@ -147,7 +147,7 @@ public static partial class SpellVfx
                 mist.SpeedScale = 0.4f;
                 mist.GravityScale = -1.2f;
                 StatusEmit(rig, fx, body, low, VfxParticles.Motes, mist);
-                if (VfxQuality.Budget.GroundMarks > 0)
+                if (StatusMarks)
                 {
                     rig.Add(fx.Mark(new VfxGroundMarkSpec
                     {
@@ -197,6 +197,16 @@ public static partial class SpellVfx
     /// </summary>
     internal static bool StatusAuraHidden(IEntity? bearer) =>
         !Active || VfxAnchor.BodyOf(bearer) is not { } body || ArcanaInside(body);
+
+    /// <summary>
+    /// Whether a status leaves its own patch on the floor (roots under the rooted, frost under the
+    /// frozen). Only where the mark budget is generous: marks are kept newest first, and on a tier
+    /// with a handful of them a snare that roots four bodies would push its own roots, and every
+    /// scorch in the fight, off the ground.
+    /// </summary>
+    private static bool StatusMarks => VfxQuality.Budget.GroundMarks >= StatusMarkBudget;
+
+    private const int StatusMarkBudget = 12;
 
     /// <summary>The statuses that are a swirl of something: what it is, where on the body, and which
     /// way it drifts, by status and failing that by school. True when the stream was drawn.</summary>
