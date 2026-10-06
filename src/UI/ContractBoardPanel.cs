@@ -32,7 +32,8 @@ namespace Embervale.UI;
 public partial class ContractBoardPanel : UiPanel
 {
     private Label _title = null!;
-    private Label _footer = null!;
+    private Control _wipe = null!;
+    private Label _rotation = null!;
     private VBoxContainer _list = null!;
 
     private IEntity? _player;
@@ -41,28 +42,52 @@ public partial class ContractBoardPanel : UiPanel
     private int _slots = 3;
     private int _rotationDays = 4;
 
+    /// <summary>Postings drawn on the last rebuild, and how many of them are still open.</summary>
+    private int _postings;
+    private int _openPostings;
+
+    /// <summary>Why the last Deliver press did nothing.</summary>
+    private string _feedback = string.Empty;
+
+    protected override bool Dims => true;
+
+    protected override IReadOnlyList<LegendEntry> Legend
+    {
+        get
+        {
+            var entries = new List<LegendEntry>();
+            if (_openPostings > 0)
+            {
+                entries.Add(new LegendEntry("ui_accept", Loc.T("contracts.deliver")));
+            }
+
+            entries.AddRange(base.Legend);
+            return entries;
+        }
+    }
+
     protected override void BuildShell(PanelContainer shell)
     {
         UiTheme.ApplyWorkspace(shell, 0.68f);
 
-        MarginContainer margin = UiTheme.Padding(UiTheme.PanelPad);
-        shell.AddChild(margin);
-
-        var column = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
-        column.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
-        margin.AddChild(column);
-
-        _title = UiTheme.Header(string.Empty);
-        column.AddChild(_title);
-        column.AddChild(UiTheme.Divider());
+        // When the board turns over sits beside its name: it is the one deadline every posting shares.
+        VBoxContainer column = UiTheme.TradePage(
+            shell, UiIcon.Kind.Travel, out _title, out HBoxContainer aside, out _wipe);
+        _rotation = UiTheme.Caption(string.Empty);
+        aside.AddChild(_rotation);
 
         (ScrollContainer scroll, VBoxContainer list) = UiTheme.ScrollList();
         column.AddChild(scroll);
         _list = list;
+    }
 
-        column.AddChild(UiTheme.Divider());
-        _footer = UiTheme.Body(string.Empty, UiTheme.Dim);
-        column.AddChild(_footer);
+    protected override void OnOpenChanged(bool open)
+    {
+        _feedback = string.Empty;
+        if (open)
+        {
+            UiOrnament.PlayEmberWipe(_wipe);
+        }
     }
 
     protected override void OnReady()
@@ -102,16 +127,26 @@ public partial class ContractBoardPanel : UiPanel
 
     protected override void Rebuild()
     {
-        _title.Text = Loc.TF("contracts.title", _board);
+        UiTheme.SetTradeTitle(_title, _board);
         UiTheme.ClearChildren(_list);
+        _postings = 0;
+        _openPostings = 0;
 
         int day = Day();
         int cycle = ContractRules.Cycle(day, _rotationDays);
         int pool = ContractDatabase.All.Count;
 
-        AddNotices(day);
+        int daysLeft = ContractRules.DaysLeft(day, _rotationDays);
 
-        int rows = 0;
+        if (_feedback.Length > 0)
+        {
+            Label refused = UiTheme.Caption(_feedback, UiTheme.Bad);
+            refused.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+            _list.AddChild(refused);
+        }
+
+        // The postings come first: they are what the board is for, and their Deliver buttons are
+        // what a pad lands on. The road news reads underneath.
         for (int slot = 0; slot < _slots; slot++)
         {
             int index = ContractRules.SlotContract(cycle, slot, pool);
@@ -120,18 +155,21 @@ public partial class ContractBoardPanel : UiPanel
                 continue;
             }
 
-            AddRow(ContractDatabase.All[index], cycle);
-            rows++;
+            AddRow(ContractDatabase.All[index], cycle, daysLeft);
+            _postings++;
         }
 
-        if (rows == 0)
+        if (_postings == 0)
         {
             _list.AddChild(UiTheme.Body(Loc.T("contracts.none"), UiTheme.Dim));
-            _footer.Text = string.Empty;
-            return;
+            _rotation.Text = string.Empty;
+        }
+        else
+        {
+            _rotation.Text = Loc.TF("contracts.rotation", daysLeft);
         }
 
-        _footer.Text = Loc.TF("contracts.rotation", ContractRules.DaysLeft(day, _rotationDays));
+        AddNotices(day);
     }
 
     /// <summary>
@@ -159,7 +197,7 @@ public partial class ContractBoardPanel : UiPanel
             return;
         }
 
-        _list.AddChild(UiTheme.Caption(Loc.T("contracts.notices"), UiTheme.Dim));
+        _list.AddChild(UiTheme.SectionRule(Loc.T("contracts.notices"), first: _postings == 0));
 
         foreach (SupplyShock shock in live)
         {
@@ -174,11 +212,23 @@ public partial class ContractBoardPanel : UiPanel
                 _ => Loc.TF("contracts.notice_fair", place, left),
             };
 
-            _list.AddChild(UiTheme.Body(
-                text, shock.Kind == ShockKind.Shortage ? UiTheme.Bad : UiTheme.Good));
-        }
+            // A shortage and a windfall differ by icon as well as by colour.
+            bool shortage = shock.Kind == ShockKind.Shortage;
+            var notice = new HBoxContainer();
+            notice.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
+            TextureRect mark = UiIcon.Create(
+                shortage ? UiIcon.Kind.Warning : UiIcon.Kind.Travel,
+                UiTheme.BodyFontSize + 3f,
+                shortage ? UiTheme.Bad : UiTheme.Good);
+            mark.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
+            notice.AddChild(mark);
 
-        _list.AddChild(UiTheme.Divider());
+            Label words = UiTheme.Body(text);
+            words.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+            words.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+            notice.AddChild(words);
+            _list.AddChild(notice);
+        }
     }
 
     private static SupplyShockService? Shocks() =>
@@ -187,25 +237,39 @@ public partial class ContractBoardPanel : UiPanel
             : null;
 
     /// <summary>
-    /// One posting: what is wanted, how much of it the player is carrying, and what it pays.
+    /// One posting as a card: the goods wanted (their picture, how many, whose job it is), what the
+    /// job risks as chips that say it in words, and on the right the one number the card is read
+    /// for - the gold it pays - over its Deliver button.
     ///
-    /// A filled row stays on the board, greyed, rather than disappearing — 38I's rule that a locked row
+    /// A filled card stays on the board, greyed, rather than disappearing — 38I's rule that a locked row
     /// teaches and a hidden one does not. A board that silently shrank as the player worked it would
     /// read as postings being withdrawn.
     /// </summary>
-    private void AddRow(ContractResource contract, int cycle)
+    private void AddRow(ContractResource contract, int cycle, int daysLeft)
     {
         ItemResource? item = ItemDatabase.Get(contract.ItemId);
         bool filled = Ledger()?.Filled(contract.Id, cycle) ?? false;
         int have = _pack?.CountOf(contract.ItemId) ?? 0;
         bool deliverable = !filled && item != null && have >= contract.Quantity;
+        if (!filled)
+        {
+            _openPostings++;
+        }
 
         PanelContainer card = UiTheme.Card(filled ? UiTheme.Disabled : deliverable ? UiTheme.Good : UiTheme.Accent);
         var row = new HBoxContainer();
         row.AddThemeConstantOverride("separation", UiTheme.SpaceMd);
 
-        // Text stack on the left, the verb on the right and centred against the whole stack: with the
-        // button in the headline, its 44 px set the row's top band and left dead air beside the title.
+        if (item != null)
+        {
+            Button slot = ItemSlot.Build(ItemInstance.Plain(item), contract.Quantity, selected: false, size: ItemSlot.RowSize);
+            slot.FocusMode = Control.FocusModeEnum.None;
+            slot.MouseFilter = Control.MouseFilterEnum.Ignore;
+            slot.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
+            row.AddChild(slot);
+        }
+
+        // Text stack on the left, the reward and its verb on the right, centred against the whole stack.
         var column = new VBoxContainer
         {
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
@@ -216,14 +280,17 @@ public partial class ContractBoardPanel : UiPanel
         Label headline = UiTheme.Body(
             Loc.TF("contracts.wanted", contract.Quantity, item?.DisplayName ?? contract.ItemId),
             filled ? UiTheme.Disabled : UiTheme.Text);
+        headline.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
         headline.TooltipText = Loc.T(contract.NameKey);
         column.AddChild(headline);
-        column.AddChild(UiTheme.Caption(Loc.T(contract.NameKey), UiTheme.Dim));
+
+        Label job = UiTheme.Caption(Loc.T(contract.NameKey), UiTheme.Dim);
+        job.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+        column.AddChild(job);
 
         HFlowContainer chips = UiTheme.FlowRow();
         chips.AddChild(UiTheme.Chip(
-            $"{have}/{contract.Quantity}", deliverable || filled ? UiTheme.Good : UiTheme.Bad));
-        chips.AddChild(UiTheme.Chip(Loc.TF("contracts.reward_gold", contract.RewardGold), UiTheme.Accent));
+            Loc.TF("contracts.carried", have, contract.Quantity), deliverable || filled ? UiTheme.Good : UiTheme.Dim));
 
         if (contract.ReputationDelta != 0 && contract.FactionId.Length > 0)
         {
@@ -232,25 +299,55 @@ public partial class ContractBoardPanel : UiPanel
                 UiTheme.Accent));
         }
 
+        // What the job asks the player to put up with, each as a chip with its own icon and words.
+        TradeRules.ContractRisk risks = TradeRules.RisksOf(
+            item != null && TradeTags.IsContraband(item.TagList()), daysLeft, have, contract.Quantity, filled);
+        if ((risks & TradeRules.ContractRisk.Short) != 0)
+        {
+            chips.AddChild(UiTheme.IconChip(
+                UiIcon.Kind.Warning, Loc.TF("contracts.risk.short", contract.Quantity - have), UiTheme.Bad));
+        }
+
+        if ((risks & TradeRules.ContractRisk.ClosingSoon) != 0)
+        {
+            chips.AddChild(UiTheme.IconChip(UiIcon.Kind.Moon, Loc.T("contracts.risk.closing"), UiTheme.Bad));
+        }
+
+        if ((risks & TradeRules.ContractRisk.Contraband) != 0)
+        {
+            chips.AddChild(UiTheme.IconChip(UiIcon.Kind.Lock, Loc.T("contracts.risk.contraband"), UiTheme.Bad));
+        }
+
         column.AddChild(chips);
         row.AddChild(column);
+
+        var pay = new VBoxContainer { SizeFlagsVertical = Control.SizeFlags.ShrinkCenter };
+        pay.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
+        pay.AddChild(UiTheme.HeroFact(
+            contract.RewardGold.ToString(), Loc.T("contracts.reward_unit"), filled ? UiTheme.Disabled : UiTheme.Accent));
 
         if (filled)
         {
             PanelContainer chip = UiTheme.Chip(Loc.T("contracts.filled"), UiTheme.Disabled);
-            chip.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
-            row.AddChild(chip);
+            chip.SizeFlagsHorizontal = Control.SizeFlags.ShrinkEnd;
+            pay.AddChild(chip);
         }
         else
         {
+            // Pressable either way: a posting the player cannot fill yet says how much is missing
+            // on its chip, and the press answers with the refusal rather than with nothing.
             Button deliver = UiTheme.Action(Loc.T("contracts.deliver"));
-            deliver.Disabled = !deliverable;
+            if (!deliverable)
+            {
+                deliver.AddThemeColorOverride("font_color", UiTheme.Disabled);
+            }
+
             ContractResource captured = contract;
             deliver.Pressed += () => Deliver(captured);
-            deliver.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
-            row.AddChild(deliver);
+            pay.AddChild(deliver);
         }
 
+        row.AddChild(pay);
         card.AddChild(row);
         _list.AddChild(card);
     }
@@ -272,16 +369,23 @@ public partial class ContractBoardPanel : UiPanel
         int cycle = ContractRules.Cycle(Day(), _rotationDays);
 
         if (_pack is not { } pack || Ledger() is not { } ledger || ledger.Filled(contract.Id, cycle) ||
-            ItemDatabase.Get(GameIds.Currency.Gold) is not { } gold ||
-            _pack.CountOf(contract.ItemId) < contract.Quantity)
+            ItemDatabase.Get(GameIds.Currency.Gold) is not { } gold)
         {
             return;
         }
 
-        if (!pack.RemoveItem(contract.ItemId, contract.Quantity))
+        int have = pack.CountOf(contract.ItemId);
+        if (have < contract.Quantity || !pack.RemoveItem(contract.ItemId, contract.Quantity))
         {
-            return; // the goods went somewhere between the draw and the press; pay nothing
+            // Short, or the goods went somewhere between the draw and the press: pay nothing, say why.
+            _feedback = Loc.TF("contracts.refused_short", Mathf.Max(1, contract.Quantity - have));
+            UiAudio.Play(UiCue.Denied);
+            MarkDirty();
+            return;
         }
+
+        _feedback = string.Empty;
+        UiAudio.Play(UiCue.Confirm);
 
         if (contract.RewardGold > 0 && pack.AddItem(gold, contract.RewardGold) < contract.RewardGold)
         {
@@ -310,4 +414,9 @@ public partial class ContractBoardPanel : UiPanel
     private static T? Resolve<T>()
         where T : class =>
         ServiceLocator.Instance is { } locator && locator.TryGet(out T service) ? service : null;
+
+    // --- Capture hooks (src/Debugging/TradeShots.cs) ------------------------
+
+    /// <summary>Postings drawn as cards on the last rebuild.</summary>
+    public int PostingCount => _postings;
 }

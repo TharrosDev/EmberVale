@@ -17,45 +17,61 @@ namespace Embervale.UI;
 /// <see cref="AppraisalOpenedEvent"/>, this resolves the player's <see cref="InventoryComponent"/>
 /// and lists what everything in the pack is worth and to whom.
 ///
-/// <b>It is the first panel in the game that only reads.</b> There is no button on a row and nothing
-/// here changes state — which is why it is much shorter than the two panels it is shaped on: all of
-/// their length is the transfer surface.
+/// <b>It is the first panel in the game that only reads.</b> Nothing here changes state — which is
+/// why it is much shorter than the two panels it is shaped on: all of their length is the transfer
+/// surface. A row takes focus so a pad can walk the list, and pressing it does nothing.
+///
+/// Each row leads with one number, the best price a counter will pay for one of the thing, and says
+/// under the name who pays it.
 ///
 /// ⚠️ <b>Every number comes from <see cref="EconomyReport"/>, which is the same code the arbitrage
 /// table reads and which prices through the same <see cref="ShopPricing"/> calls
 /// <see cref="VendorPanel"/> charges.</b> That chain is the whole point of the sub-phase: an
 /// appraiser that computed its own prices would quote a number the merchant then refuses to pay, and
 /// a valuation the game does not honour is worse than no valuation at all.
-///
-/// ⚠️ <b>Not built on <see cref="VendorPanel"/>'s row.</b> That one is built around a press, its
-/// enabled state and its refusal text; sharing it would mean a "no button" branch through every one
-/// of its callers to save a dozen lines here.
 /// </summary>
 public partial class AppraisalPanel : UiPanel
 {
     private Label _title = null!;
+    private Control _wipe = null!;
+    private Label _appraiserLine = null!;
     private Label _header = null!;
     private VBoxContainer _list = null!;
 
     private InventoryComponent? _pack;
     private string _appraiser = string.Empty;
+    private int _rows;
+
+    protected override bool Dims => true;
+
+    protected override IReadOnlyList<LegendEntry> Legend
+    {
+        get
+        {
+            var entries = new List<LegendEntry>();
+            if (_rows > 1)
+            {
+                entries.Add(new LegendEntry("ui_up", Loc.T("trade.legend.browse"), "ui_down"));
+            }
+
+            entries.AddRange(base.Legend);
+            return entries;
+        }
+    }
 
     protected override void BuildShell(PanelContainer shell)
     {
         UiTheme.ApplyWorkspace(shell, 0.70f);
 
-        MarginContainer margin = UiTheme.Padding(UiTheme.PanelPad);
-        shell.AddChild(margin);
+        VBoxContainer column = UiTheme.TradePage(
+            shell, UiIcon.Kind.Currency, out _title, out HBoxContainer aside, out _wipe);
+        UiTheme.SetTradeTitle(_title, Loc.T("appraisal.heading"));
 
-        var column = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
-        column.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
-        margin.AddChild(column);
+        _appraiserLine = UiTheme.Caption(string.Empty);
+        aside.AddChild(_appraiserLine);
 
-        _title = UiTheme.Header(string.Empty);
-        column.AddChild(_title);
-        column.AddChild(UiTheme.Divider());
-
-        _header = UiTheme.Body(string.Empty, UiTheme.Dim);
+        _header = UiTheme.Caption(string.Empty);
+        _header.AutowrapMode = TextServer.AutowrapMode.WordSmart;
         column.AddChild(_header);
 
         (ScrollContainer scroll, VBoxContainer list) = UiTheme.ScrollList();
@@ -73,6 +89,14 @@ public partial class AppraisalPanel : UiPanel
     {
         EventBus.Instance?.Unsubscribe<AppraisalOpenedEvent>(OnAppraisalOpened);
         EventBus.Instance?.Unsubscribe<InventoryChangedEvent>(OnInventoryChanged);
+    }
+
+    protected override void OnOpenChanged(bool open)
+    {
+        if (open)
+        {
+            UiOrnament.PlayEmberWipe(_wipe);
+        }
     }
 
     private void OnAppraisalOpened(AppraisalOpenedEvent e)
@@ -99,8 +123,9 @@ public partial class AppraisalPanel : UiPanel
 
     protected override void Rebuild()
     {
-        _title.Text = Loc.TF("appraisal.title", _appraiser);
+        _appraiserLine.Text = Loc.TF("appraisal.by", _appraiser);
         UiTheme.ClearChildren(_list);
+        _rows = 0;
 
         if (_pack is not { } pack)
         {
@@ -112,17 +137,17 @@ public partial class AppraisalPanel : UiPanel
         var stacks = new List<ItemStack>(pack.AllStacks);
         stacks.Sort((a, b) => b.Instance.Value.CompareTo(a.Instance.Value));
 
-        int rows = 0;
         foreach (ItemStack stack in stacks)
         {
             if (AddRow(stack))
             {
-                rows++;
+                _rows++;
             }
         }
 
-        _header.Text = rows > 0 ? Loc.T("appraisal.subtitle") : string.Empty;
-        if (rows == 0)
+        _header.Text = _rows > 0 ? Loc.T("appraisal.subtitle") : string.Empty;
+        _header.Visible = _rows > 0;
+        if (_rows == 0)
         {
             _list.AddChild(UiTheme.Body(Loc.T("appraisal.nothing"), UiTheme.Dim));
         }
@@ -152,10 +177,14 @@ public partial class AppraisalPanel : UiPanel
             return false;
         }
 
-        // Same vocabulary as the vendor window's row (37.5C): a Card spined in the item's rarity, an
-        // ItemSlot, and the numbers to the right — so an item looks the same here as where it is sold.
-        PanelContainer card = UiTheme.Card(UiTheme.RarityColor(instance.Rarity));
-        var row = new HBoxContainer();
+        // Same vocabulary as a counter's row: a card spined in the item's rarity, the shared slot,
+        // and the number on the right — so an item looks the same here as where it is sold.
+        Color rarity = UiTheme.RarityColor(instance.Rarity);
+        PanelContainer card = UiTheme.CardButton(
+            rarity, out Button input, out VBoxContainer content, UiTheme.TradeRowStyle(rarity));
+        input.TooltipText = instance.Template.Description;
+
+        var row = new HBoxContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
         row.AddThemeConstantOverride("separation", UiTheme.SpaceMd);
 
         Button slot = ItemSlot.Build(instance, stack.Quantity, selected: false, size: ItemSlot.RowSize);
@@ -166,38 +195,72 @@ public partial class AppraisalPanel : UiPanel
 
         var text = new VBoxContainer
         {
+            MouseFilter = Control.MouseFilterEnum.Ignore,
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
             SizeFlagsVertical = Control.SizeFlags.ShrinkCenter,
         };
         text.AddThemeConstantOverride("separation", UiTheme.LineGap);
 
-        Label name = UiTheme.Body(instance.DisplayName, UiTheme.RarityColor(instance.Rarity));
-        name.TooltipText = instance.Template.Description;
+        Label name = UiTheme.Body(instance.DisplayName, rarity);
+        name.MouseFilter = Control.MouseFilterEnum.Ignore;
+        name.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
         text.AddChild(name);
 
-        // ⚠️ Quoted PER UNIT even for a stack of twenty, because that is the number that survives
-        // contact with the counter: 38H's saturation drops the price as a stack crosses it, so a
-        // multiplied total would be the one figure on screen the game genuinely will not honour.
-        text.AddChild(UiTheme.Body(
-            best.Has ? Loc.TF("appraisal.buyer", ShopName(best.Shop), best.Price) : Loc.T("appraisal.no_buyer"),
+        text.AddChild(Quiet(
+            best.Has ? Loc.TF("appraisal.best_at", ShopName(best.Shop)) : Loc.T("appraisal.no_buyer"),
             best.Has ? UiTheme.Dim : UiTheme.Disabled));
 
         // The broker's line only appears when she would take it, so its presence is itself the answer
-        // to "is this worth carrying to Mirelle" without the player comparing two numbers.
+        // to "is this worth carrying to her" without the player comparing two numbers.
         if (quote.Has)
         {
-            text.AddChild(UiTheme.Body(
+            text.AddChild(Quiet(
                 Loc.TF("appraisal.consign", ShopName(quote.Shop), quote.Net, quote.Days), UiTheme.Accent));
         }
 
         row.AddChild(text);
-        card.AddChild(row);
+
+        // ⚠️ Quoted PER UNIT even for a stack of twenty, because that is the number that survives
+        // contact with the counter: 38H's saturation drops the price as a stack crosses it, so a
+        // multiplied total would be the one figure on screen the game genuinely will not honour.
+        if (best.Has)
+        {
+            var worth = new VBoxContainer
+            {
+                MouseFilter = Control.MouseFilterEnum.Ignore,
+                SizeFlagsVertical = Control.SizeFlags.ShrinkCenter,
+            };
+            worth.AddThemeConstantOverride("separation", 0);
+            Label price = UiTheme.Header(Loc.TF("shop.price", best.Price));
+            price.HorizontalAlignment = HorizontalAlignment.Right;
+            worth.AddChild(price);
+            Label unit = UiTheme.Caption(Loc.T("appraisal.each"));
+            unit.MouseFilter = Control.MouseFilterEnum.Ignore;
+            unit.HorizontalAlignment = HorizontalAlignment.Right;
+            worth.AddChild(unit);
+            row.AddChild(worth);
+        }
+
+        content.AddChild(row);
         _list.AddChild(card);
         return true;
+    }
+
+    private static Label Quiet(string text, Color color)
+    {
+        Label label = UiTheme.Caption(text, color);
+        label.MouseFilter = Control.MouseFilterEnum.Ignore;
+        label.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+        return label;
     }
 
     /// <summary>The merchant's own name rather than her id — the id is a debugging string and this is
     /// the one place in the game a shop is named without the player standing in front of it.</summary>
     private static string ShopName(string shopId) =>
         ShopDatabase.Get(shopId) is { } shop && shop.NameKey.Length > 0 ? Loc.T(shop.NameKey) : shopId;
+
+    // --- Capture hooks (src/Debugging/TradeShots.cs) ------------------------
+
+    /// <summary>Valued rows drawn on the last rebuild.</summary>
+    public int ShownRowCount => _rows;
 }
