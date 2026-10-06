@@ -135,6 +135,111 @@ ItemId = "item.armor.drakescale_mail"
 Quantity = 1
 RequiredInvestment = 2
 
+[sub_resource type="Resource" id="Stock_ics_1"]
+script = ExtResource("2_entry")
+ItemId = "item.weapon.iron_sword"
+Quantity = 1
+
+[sub_resource type="Resource" id="Stock_ics_2"]
+script = ExtResource("2_entry")
+ItemId = "item.weapon.iron_axe"
+Quantity = 1
+
+[sub_resource type="Resource" id="Stock_ics_3"]
+script = ExtResource("2_entry")
+ItemId = "item.weapon.iron_mace"
+Quantity = 1
+
+[sub_resource type="Resource" id="Stock_ics_4"]
+script = ExtResource("2_entry")
+ItemId = "item.weapon.iron_greatsword"
+Quantity = 1
+
+[sub_resource type="Resource" id="Stock_ics_5"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.iron_helm"
+Quantity = 1
+
+[sub_resource type="Resource" id="Stock_ics_6"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.iron_cuirass"
+Quantity = 1
+
+[sub_resource type="Resource" id="Stock_ics_7"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.iron_gauntlets"
+Quantity = 1
+
+[sub_resource type="Resource" id="Stock_ics_8"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.iron_greaves"
+Quantity = 1
+
+[sub_resource type="Resource" id="Stock_ics_9"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.iron_sabatons"
+Quantity = 1
+
+[sub_resource type="Resource" id="Stock_ics_10"]
+script = ExtResource("2_entry")
+ItemId = "item.weapon.steel_axe"
+Quantity = 1
+RequiredFlagId = "flag.iron_king_defeated"
+
+[sub_resource type="Resource" id="Stock_ics_11"]
+script = ExtResource("2_entry")
+ItemId = "item.weapon.steel_greatsword"
+Quantity = 1
+RequiredFlagId = "flag.iron_king_defeated"
+
+[sub_resource type="Resource" id="Stock_ics_12"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.steel_cuirass"
+Quantity = 1
+RequiredFlagId = "flag.iron_king_defeated"
+
+[sub_resource type="Resource" id="Stock_ics_13"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.steel_shield"
+Quantity = 1
+RequiredFlagId = "flag.iron_king_defeated"
+
+[sub_resource type="Resource" id="Stock_ics_14"]
+script = ExtResource("2_entry")
+ItemId = "item.ammo.steel_arrows"
+Quantity = 40
+RequiredFlagId = "flag.iron_king_defeated"
+
+[sub_resource type="Resource" id="Stock_ics_15"]
+script = ExtResource("2_entry")
+ItemId = "item.ammo.blacksteel_arrows"
+Quantity = 40
+RequiredFlagId = "flag.storm_tyrant_defeated"
+
+[sub_resource type="Resource" id="Stock_ics_16"]
+script = ExtResource("2_entry")
+ItemId = "item.ammo.sunsteel_arrows"
+Quantity = 40
+RequiredFlagId = "flag.beast_lord_defeated"
+
+[sub_resource type="Resource" id="Stock_ics_17"]
+script = ExtResource("2_entry")
+ItemId = "item.ammo.moonsilver_arrows"
+Quantity = 40
+RequiredFlagId = "flag.crimson_prophet_defeated"
+
+[sub_resource type="Resource" id="Stock_ics_18"]
+script = ExtResource("2_entry")
+ItemId = "item.ammo.starmetal_arrows"
+Quantity = 40
+RequiredFlagId = "flag.hollow_queen_defeated"
+
+[sub_resource type="Resource" id="Stock_ics_19"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.mirrorguard"
+Quantity = 1
+RequiredFlagId = "flag.dawnwardens.finale_service"
+
 [resource]
 script = ExtResource("1_shop")
 Id = "shop.ember_crown.smith"
@@ -142,7 +247,7 @@ NameKey = "shop.ember_crown.smith.name"
 FactionId = "faction.villagers"
 AcceptedTags = Array[String](["metal", "ore", "weapon", "armor", "tool"])
 Specialties = Array[String](["metal", "weapon", "armor"])
-Stock = Array[Resource]([SubResource("Stock_ingot"), SubResource("Stock_strips"), SubResource("Stock_scrap"), SubResource("Stock_sword"), SubResource("Stock_cap"), SubResource("Stock_vest"), SubResource("Stock_ring"), SubResource("Stock_mail"), SubResource("Stock_bow"), SubResource("Stock_arrows"), SubResource("Stock_shield")])
+Stock = Array[Resource]([SubResource("Stock_ingot"), SubResource("Stock_strips"), SubResource("Stock_scrap"), SubResource("Stock_sword"), SubResource("Stock_cap"), SubResource("Stock_vest"), SubResource("Stock_ring"), SubResource("Stock_mail"), SubResource("Stock_bow"), SubResource("Stock_arrows"), SubResource("Stock_shield"), SubResource("Stock_ics_1"), SubResource("Stock_ics_2"), SubResource("Stock_ics_3"), SubResource("Stock_ics_4"), SubResource("Stock_ics_5"), SubResource("Stock_ics_6"), SubResource("Stock_ics_7"), SubResource("Stock_ics_8"), SubResource("Stock_ics_9"), SubResource("Stock_ics_10"), SubResource("Stock_ics_11"), SubResource("Stock_ics_12"), SubResource("Stock_ics_13"), SubResource("Stock_ics_14"), SubResource("Stock_ics_15"), SubResource("Stock_ics_16"), SubResource("Stock_ics_17"), SubResource("Stock_ics_18"), SubResource("Stock_ics_19")])
 RestockDays = 2
 BuyMarkup = 1.5
 SellFraction = 0.45

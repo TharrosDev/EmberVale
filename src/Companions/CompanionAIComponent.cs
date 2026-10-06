@@ -164,10 +164,14 @@ public partial class CompanionAIComponent : EntityComponent, ISaveable
 
     public void Load(Godot.Collections.Dictionary data)
     {
+        // Replaced, never merged: with no saved anchor the companion holds where they stand (what
+        // OnInitialize seeds), not at a post from the timeline being abandoned, which a Hold order
+        // would otherwise walk them back to across the map.
+        Vector3 here = _body == null ? Vector3.Zero : _body.IsInsideTree() ? _body.GlobalPosition : _body.Position;
         _holdAnchor = new Vector3(
-            data.TryGetValue("hold_x", out Variant hx) ? hx.AsSingle() : _holdAnchor.X,
-            data.TryGetValue("hold_y", out Variant hy) ? hy.AsSingle() : _holdAnchor.Y,
-            data.TryGetValue("hold_z", out Variant hz) ? hz.AsSingle() : _holdAnchor.Z);
+            data.TryGetValue("hold_x", out Variant hx) ? hx.AsSingle() : here.X,
+            data.TryGetValue("hold_y", out Variant hy) ? hy.AsSingle() : here.Y,
+            data.TryGetValue("hold_z", out Variant hz) ? hz.AsSingle() : here.Z);
 
         if (data.TryGetValue("downed", out Variant downed) && downed.AsBool())
         {

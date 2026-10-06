@@ -95,6 +95,7 @@ public static class ContentValidator
         ValidateDuplicateIds(issues);
         EnvironmentValidation.Validate(issues);
         ValidateLootTables(issues);
+        ItemValidator.Collect(issues);
         ValidateRecipes(issues);
         ValidateRecipeReachability(issues);
         ValidateQuests(issues);

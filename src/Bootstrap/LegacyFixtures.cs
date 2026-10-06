@@ -239,6 +239,8 @@ internal static class LegacyFixtures
     /// them (no <c>seen</c> key, only legacy flags), and loads that through the real path.</summary>
     private static async Task<bool> LoadFixtureAsync(StoryPlaythrough run, Fixture fixture, string slot, string label)
     {
+        // A harness save is not a player save: a conversation or duel the driver left open must not refuse it.
+        SaveManager.Instance?.ClearSaveBlocks();
         if (SaveManager.Instance?.SaveGame(slot) != true)
         {
             Fail(label, "could not write the base save");
@@ -281,6 +283,15 @@ internal static class LegacyFixtures
         }
 
         objects[run.Flags.SaveId] = new Godot.Collections.Dictionary { ["flags"] = flags };
+
+        // The objects no longer match the checksum the save was written with, and a legacy save
+        // never carried one: an absent checksum is accepted, a stale one is refused as corrupt.
+        document.Remove(SaveEnvelope.ChecksumKey);
+        if (document.TryGetValue(SaveEnvelope.HeaderKey, out Variant header) &&
+            header.VariantType == Variant.Type.Dictionary)
+        {
+            header.AsGodotDictionary().Remove(SaveEnvelope.ChecksumKey);
+        }
 
         using (FileAccess? file = FileAccess.Open(path, FileAccess.ModeFlags.Write))
         {

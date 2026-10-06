@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="AffixDefinition" load_steps=2 format=3 uid="uid://cyqoicakglbey"]
+
+[ext_resource type="Script" path="res://src/Items/AffixDefinition.cs" id="1_affix"]
+
+[resource]
+script = ExtResource("1_affix")
+Id = "affix.suffix.might"
+Label = "of Might"
+Kind = 1
+Stat = 3
+ModifierType = 0
+MinValue = 1.0
+MaxValue = 3.0
+MinRarity = 1
+Weight = 0.5
+Group = "attribute"
+ForWeapons = true
+ForArmor = true
+ForAccessories = true

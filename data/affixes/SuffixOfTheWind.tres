@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="AffixDefinition" load_steps=2 format=3 uid="uid://ccsboebjpyyr0"]
+
+[ext_resource type="Script" path="res://src/Items/AffixDefinition.cs" id="1_affix"]
+
+[resource]
+script = ExtResource("1_affix")
+Id = "affix.suffix.wind"
+Label = "of the Wind"
+Kind = 1
+Stat = 11
+ModifierType = 1
+MinValue = 0.02
+MaxValue = 0.05
+MinRarity = 2
+Weight = 0.5
+MinItemLevel = 14
+IsPercent = true
+Group = "haste"
+ForWeapons = false
+ForArmor = true
+ForAccessories = true

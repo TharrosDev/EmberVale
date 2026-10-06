@@ -702,9 +702,8 @@ public static class DevCommands
 
         if (args.Length > 0 && args[0].ToLowerInvariant() == "status")
         {
-            string next = SaveManager.Instance is { } sm
-                ? AutosaveService.NextAutosaveSlot(sm.ListSlots())
-                : AutosaveService.RingSlots[0];
+            // The service's own in-memory ring, which is what the next autosave will really use.
+            string next = autosave.NextSlot;
             return $"ring: {string.Join(", ", AutosaveService.RingSlots)} — next overwrite: {next}";
         }
 

@@ -58,4 +58,20 @@ public static class ConsignmentRules
     /// </summary>
     public static bool HasSold(int dayListed, int currentDay, int days) =>
         ShopStock.IsRestockDue(dayListed, currentDay, days);
+
+    /// <summary>
+    /// Whether a lot already on a broker's shelf blocks listing <paramref name="templateId"/> at
+    /// <paramref name="shopId"/> today: she shows one lot of a kind at a time, and takes the next
+    /// once that one has sold.
+    ///
+    /// ⚠️ <b>This is the broker's only cap, and it is load-bearing.</b> She has no purse to run dry
+    /// (38C) and no appetite to glut (38H), so without it "buy planks, carve a bow, list it" paid
+    /// about 100 gold a bow for as many bows as a pack holds: a crafted piece is worth several times
+    /// its materials, which no spread over a single item's value can see. One lot of a kind bounds
+    /// that the way a purse bounds a counter, and costs the one rare find she exists for nothing.
+    /// </summary>
+    public static bool BlocksListing(
+        string lotShopId, string lotTemplateId, int dayListed, int days,
+        string shopId, string templateId, int currentDay) =>
+        lotShopId == shopId && lotTemplateId == templateId && !HasSold(dayListed, currentDay, days);
 }

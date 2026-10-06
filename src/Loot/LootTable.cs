@@ -31,4 +31,24 @@ public partial class LootTable : Resource
     /// <summary>Additive bias toward higher rarities for affixed drops (see
     /// <see cref="LootRarity.Roll"/>).</summary>
     [Export] public float QualityBonus { get; set; }
+
+    // --- Level-aware generation (ics). Every field is absent-default: a table authored before
+    // these existed rolls level-less, scattered on the ground, exactly as it did. ---
+
+    [ExportGroup("Tier")]
+    /// <summary>The realm tier this table rolls at, 1..6. 0 (the default) takes the tier of the
+    /// realm the roll happens in, which is what lets one family table serve an enemy in every
+    /// realm; a boss table pins its own.</summary>
+    [Export(PropertyHint.Range, "0,6,1")] public int Tier { get; set; }
+
+    /// <summary>Narrows the tier's level band from below (0 = the band's own floor).</summary>
+    [Export] public int MinItemLevel { get; set; }
+
+    /// <summary>Narrows the tier's level band from above (0 = the band's own ceiling).</summary>
+    [Export] public int MaxItemLevel { get; set; }
+
+    [ExportGroup("Delivery")]
+    /// <summary>When the owner dies, its drops go into a reward chest stood at the death position
+    /// instead of being scattered on the ground (a boss).</summary>
+    [Export] public bool DropsAsChest { get; set; }
 }

@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using Godot;
 
 namespace Embervale.Core;
@@ -79,6 +81,175 @@ public static class GameInput
 
     /// <summary>Hotbar slots 1-5 (number-row keys) — quick-use/equip an assigned item.</summary>
     public static readonly string[] Hotbar = { "hotbar_1", "hotbar_2", "hotbar_3", "hotbar_4", "hotbar_5" };
+
+    // --- ics:inv-ui: hotbar on a pad, and typing in a search field -------------------------------
+
+    /// <summary>The held half of the gamepad hotbar chord: the left trigger. It has its own action
+    /// rather than reading <see cref="Block"/>, which the right mouse button also presses.</summary>
+    public const string HotbarChord = "hotbar_chord";
+
+    /// <summary>The pressed half of the chord, one button per hotbar slot. Every pad button already
+    /// has a job, so these are borrowed for as long as the trigger is held and no longer: see
+    /// <see cref="SetHotbarChord"/>.</summary>
+    public static readonly JoyButton[] HotbarChordButtons =
+    {
+        JoyButton.DpadUp, JoyButton.DpadRight, JoyButton.DpadDown, JoyButton.DpadLeft, JoyButton.Back,
+    };
+
+    /// <summary>The display label of the chord's held half.</summary>
+    public const string HotbarChordLabel = "LT";
+
+    private static readonly List<(StringName Action, InputEvent Event)> ParkedForChord = new();
+    private static readonly List<(StringName Action, InputEvent Event)> ParkedForText = new();
+
+    /// <summary>Whether the d-pad is currently lent to the hotbar.</summary>
+    public static bool HotbarChordHeld { get; private set; }
+
+    /// <summary>Whether the keyboard is currently lent to a text field.</summary>
+    public static bool TextEntryActive { get; private set; }
+
+    /// <summary>The pad chord for a hotbar slot, e.g. "LT+D-Up" (pure; pinned by tests).</summary>
+    public static string HotbarPadLabel(int slot) =>
+        slot >= 0 && slot < HotbarChordButtons.Length
+            ? $"{HotbarChordLabel}+{ButtonLabel(HotbarChordButtons[slot])}"
+            : "?";
+
+    /// <summary>The device-aware label a hotbar cell shows: its key, or on a pad the chord's pressed
+    /// button alone (a cell has no room for the whole chord; the bar names the trigger once).</summary>
+    public static string HotbarPromptLabel(int slot)
+    {
+        if (slot < 0 || slot >= Hotbar.Length || slot >= HotbarChordButtons.Length)
+        {
+            return "?";
+        }
+
+        return InputDevice.GamepadActive ? ButtonLabel(HotbarChordButtons[slot]) : KeyLabel(Hotbar[slot]);
+    }
+
+    /// <summary>
+    /// Lends the chord buttons to the hotbar actions while <paramref name="held"/>, and hands them
+    /// back after. The d-pad and Select already open the map, the bestiary, the journal and two
+    /// more, and those are polled with <c>IsActionJustPressed</c> all over the game, so a chord
+    /// that merely added a second reader would open the map every time a potion was drunk. Moving
+    /// the bindings is the one place the conflict can be settled for every reader at once.
+    /// </summary>
+    public static void SetHotbarChord(bool held)
+    {
+        if (held == HotbarChordHeld)
+        {
+            return;
+        }
+
+        HotbarChordHeld = held;
+        if (held)
+        {
+            Park(ParkedForChord, e => e is InputEventJoypadButton pad && Array.IndexOf(HotbarChordButtons, pad.ButtonIndex) >= 0);
+            for (int i = 0; i < Hotbar.Length && i < HotbarChordButtons.Length; i++)
+            {
+                InputMap.ActionAddEvent(Hotbar[i], new InputEventJoypadButton { ButtonIndex = HotbarChordButtons[i] });
+            }
+
+            return;
+        }
+
+        // Take back exactly what was lent: the slot's own chord button, and nothing else that may
+        // have been bound to the action since.
+        for (int i = 0; i < Hotbar.Length && i < HotbarChordButtons.Length; i++)
+        {
+            foreach (InputEvent bound in InputMap.ActionGetEvents(Hotbar[i]))
+            {
+                if (bound is InputEventJoypadButton pad && pad.ButtonIndex == HotbarChordButtons[i])
+                {
+                    InputMap.ActionEraseEvent(Hotbar[i], bound);
+                }
+            }
+
+            ReleaseIfPressed(Hotbar[i]);
+        }
+
+        Restore(ParkedForChord);
+    }
+
+    /// <summary>
+    /// Takes every gameplay key binding out of the map while a text field has focus, and puts them
+    /// back after. Panels toggle on a polled action (I, J, M, B, T, E), so without this a search
+    /// for "bow" opens the bestiary and one for "iron" closes the inventory. The engine's own
+    /// <c>ui_*</c> actions are left alone: Esc still closes the panel and arrows still move focus.
+    /// </summary>
+    public static void SetTextEntry(bool typing)
+    {
+        if (typing == TextEntryActive)
+        {
+            return;
+        }
+
+        TextEntryActive = typing;
+        if (typing)
+        {
+            Park(ParkedForText, e => e is InputEventKey);
+        }
+        else
+        {
+            Restore(ParkedForText);
+        }
+    }
+
+    private static void Park(List<(StringName Action, InputEvent Event)> parked, Func<InputEvent, bool> match)
+    {
+        foreach (StringName action in InputMap.GetActions())
+        {
+            string name = action.ToString();
+            if (name.StartsWith("ui_", StringComparison.Ordinal) || Array.IndexOf(Hotbar, name) >= 0)
+            {
+                continue;
+            }
+
+            bool erased = false;
+            foreach (InputEvent bound in InputMap.ActionGetEvents(action))
+            {
+                if (match(bound))
+                {
+                    InputMap.ActionEraseEvent(action, bound);
+                    parked.Add((action, bound));
+                    erased = true;
+                }
+            }
+
+            // Only an action that just lost a binding. Releasing everything held dropped Block, the
+            // movement axes and the chord's own trigger the moment the chord was pulled, and a
+            // bottomed-out trigger sends no further event to press them again.
+            if (erased)
+            {
+                ReleaseIfPressed(action);
+            }
+        }
+    }
+
+    private static void Restore(List<(StringName Action, InputEvent Event)> parked)
+    {
+        foreach ((StringName action, InputEvent bound) in parked)
+        {
+            if (InputMap.HasAction(action) && !InputMap.ActionHasEvent(action, bound))
+            {
+                InputMap.ActionAddEvent(action, bound);
+            }
+        }
+
+        parked.Clear();
+    }
+
+    /// <summary>An action whose binding is moved while it is down would never see its release and
+    /// would then never fire "just pressed" again. Only a held action is released: releasing an
+    /// idle one would raise a "just released" nobody caused.</summary>
+    private static void ReleaseIfPressed(StringName action)
+    {
+        if (Input.IsActionPressed(action))
+        {
+            Input.ActionRelease(action);
+        }
+    }
+
+    // --- end ics:inv-ui ---------------------------------------------------------------------------
 
     /// <summary>The display label for <paramref name="action"/>'s first bound key (e.g. "E"),
     /// resolved live from the InputMap so HUD prompts stay correct if bindings change
@@ -223,6 +394,11 @@ public static class GameInput
         Bind(LockOn, new InputEventJoypadButton { ButtonIndex = JoyButton.RightStick });
         Bind(Cast, new InputEventJoypadButton { ButtonIndex = JoyButton.RightShoulder });
         Bind(CycleSpell, new InputEventJoypadButton { ButtonIndex = JoyButton.LeftShoulder });
+
+        // The hotbar chord's held half. Half-pressed is not held: a guard that is only being
+        // feathered must not lend the d-pad away.
+        Bind(HotbarChord, new InputEventJoypadMotion { Axis = JoyAxis.TriggerLeft, AxisValue = 1f });
+        InputMap.ActionSetDeadzone(HotbarChord, 0.5f);
 
         Bind("ui_up", new InputEventJoypadMotion { Axis = JoyAxis.LeftY, AxisValue = -1f });
         Bind("ui_down", new InputEventJoypadMotion { Axis = JoyAxis.LeftY, AxisValue = 1f });

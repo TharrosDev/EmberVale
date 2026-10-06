@@ -43,6 +43,110 @@ script = ExtResource("2_entry")
 ItemId = "item.material.warding_chalk"
 Quantity = 3
 
+[sub_resource type="Resource" id="Stock_ics_1"]
+script = ExtResource("2_entry")
+ItemId = "item.potion.might_lesser"
+Quantity = 2
+
+[sub_resource type="Resource" id="Stock_ics_2"]
+script = ExtResource("2_entry")
+ItemId = "item.potion.insight_lesser"
+Quantity = 2
+
+[sub_resource type="Resource" id="Stock_ics_3"]
+script = ExtResource("2_entry")
+ItemId = "item.potion.stoneskin_lesser"
+Quantity = 2
+
+[sub_resource type="Resource" id="Stock_ics_4"]
+script = ExtResource("2_entry")
+ItemId = "item.food.ember_tea"
+Quantity = 3
+
+[sub_resource type="Resource" id="Stock_ics_5"]
+script = ExtResource("2_entry")
+ItemId = "item.potion.resist_fire_lesser"
+Quantity = 2
+
+[sub_resource type="Resource" id="Stock_ics_6"]
+script = ExtResource("2_entry")
+ItemId = "item.potion.resist_frost_lesser"
+Quantity = 2
+
+[sub_resource type="Resource" id="Stock_ics_7"]
+script = ExtResource("2_entry")
+ItemId = "item.potion.resist_lightning_lesser"
+Quantity = 2
+
+[sub_resource type="Resource" id="Stock_ics_8"]
+script = ExtResource("2_entry")
+ItemId = "item.potion.resist_arcane_lesser"
+Quantity = 2
+
+[sub_resource type="Resource" id="Stock_ics_9"]
+script = ExtResource("2_entry")
+ItemId = "item.potion.resist_nature_lesser"
+Quantity = 2
+
+[sub_resource type="Resource" id="Stock_ics_10"]
+script = ExtResource("2_entry")
+ItemId = "item.potion.resist_necrotic_lesser"
+Quantity = 2
+
+[sub_resource type="Resource" id="Stock_ics_11"]
+script = ExtResource("2_entry")
+ItemId = "item.potion.might_superior"
+Quantity = 1
+RequiredFlagId = "flag.crimson_prophet_defeated"
+
+[sub_resource type="Resource" id="Stock_ics_12"]
+script = ExtResource("2_entry")
+ItemId = "item.potion.insight_superior"
+Quantity = 1
+RequiredFlagId = "flag.crimson_prophet_defeated"
+
+[sub_resource type="Resource" id="Stock_ics_13"]
+script = ExtResource("2_entry")
+ItemId = "item.potion.stoneskin_superior"
+Quantity = 1
+RequiredFlagId = "flag.crimson_prophet_defeated"
+
+[sub_resource type="Resource" id="Stock_ics_14"]
+script = ExtResource("2_entry")
+ItemId = "item.potion.resist_fire_superior"
+Quantity = 1
+RequiredFlagId = "flag.crimson_prophet_defeated"
+
+[sub_resource type="Resource" id="Stock_ics_15"]
+script = ExtResource("2_entry")
+ItemId = "item.potion.resist_frost_superior"
+Quantity = 1
+RequiredFlagId = "flag.crimson_prophet_defeated"
+
+[sub_resource type="Resource" id="Stock_ics_16"]
+script = ExtResource("2_entry")
+ItemId = "item.potion.resist_lightning_superior"
+Quantity = 1
+RequiredFlagId = "flag.crimson_prophet_defeated"
+
+[sub_resource type="Resource" id="Stock_ics_17"]
+script = ExtResource("2_entry")
+ItemId = "item.potion.resist_arcane_superior"
+Quantity = 1
+RequiredFlagId = "flag.crimson_prophet_defeated"
+
+[sub_resource type="Resource" id="Stock_ics_18"]
+script = ExtResource("2_entry")
+ItemId = "item.potion.resist_nature_superior"
+Quantity = 1
+RequiredFlagId = "flag.crimson_prophet_defeated"
+
+[sub_resource type="Resource" id="Stock_ics_19"]
+script = ExtResource("2_entry")
+ItemId = "item.potion.resist_necrotic_superior"
+Quantity = 1
+RequiredFlagId = "flag.crimson_prophet_defeated"
+
 [resource]
 script = ExtResource("1_shop")
 Id = "shop.embermarket.herbalist"
@@ -50,7 +154,7 @@ NameKey = "shop.embermarket.herbalist.name"
 FactionId = "faction.villagers"
 AcceptedTags = Array[String](["herb", "reagent", "potion"])
 Specialties = Array[String](["herb", "reagent"])
-Stock = Array[Resource]([SubResource("Stock_bloom"), SubResource("Stock_herb"), SubResource("Stock_stone"), SubResource("Stock_health"), SubResource("Stock_dust"), SubResource("Stock_chalk")])
+Stock = Array[Resource]([SubResource("Stock_bloom"), SubResource("Stock_herb"), SubResource("Stock_stone"), SubResource("Stock_health"), SubResource("Stock_dust"), SubResource("Stock_chalk"), SubResource("Stock_ics_1"), SubResource("Stock_ics_2"), SubResource("Stock_ics_3"), SubResource("Stock_ics_4"), SubResource("Stock_ics_5"), SubResource("Stock_ics_6"), SubResource("Stock_ics_7"), SubResource("Stock_ics_8"), SubResource("Stock_ics_9"), SubResource("Stock_ics_10"), SubResource("Stock_ics_11"), SubResource("Stock_ics_12"), SubResource("Stock_ics_13"), SubResource("Stock_ics_14"), SubResource("Stock_ics_15"), SubResource("Stock_ics_16"), SubResource("Stock_ics_17"), SubResource("Stock_ics_18"), SubResource("Stock_ics_19")])
 RestockDays = 1
 BuyMarkup = 1.6
 SellFraction = 0.45

@@ -100,8 +100,8 @@ Status: **done**, **partial**, **not built** (never started; not needed for the 
 | 49 | Act IV and endings | done (finish run): Ashen Knight, Morthul, the throne choice, both endings, credits |
 | 50 | Side content and pacing | partial: guild arcs and realm settlements; no dedicated pass |
 | 50.5 | Lore codex | not built |
-| 51 | Itemization pass | partial: one relic per Flamebearer; no catalogue pass |
-| 51.5 | Enchanting and sockets | not built |
+| 51 | Itemization pass | built 2026-10-06, not yet played: a generated six-tier catalogue (373 items, 8 sets, 22 unique effects, 43 affixes, 52 loot tables), level-aware loot, boss reward chests; see the section below |
+| 51.5 | Enchanting and sockets | scoped 2026-10-06: reforging at a forge (reroll, upgrade to +5, promote a rarity) is the whole of it; sockets and gem enchanting are struck |
 | 52 | Audio production | not built |
 | 53 | Art complete | partial: all seven Meshy bosses adopted; no final pass |
 | 53.5 | Photo mode | not built |
@@ -114,7 +114,7 @@ Status: **done**, **partial**, **not built** (never started; not needed for the 
 | --- | --- | --- |
 | 56 | Balance and difficulty | open: the new bosses need tuning |
 | 57 | Performance cert | not run; the 16.67 ms budget stays a soft target |
-| 58 | Save hardening | partial: v2 to v3 migration shipped with the world rebuild; no dedicated pass |
+| 58 | Save hardening | built 2026-10-06 (gate results in `NOW.md`): format 4 (checksum, one backup generation, stable set-piece keys), save blocks, queued writes, a slot browser that reads slot health |
 | 59 | QA and soak | not run |
 | 60 | Localization completion | out of scope (English only) |
 | 61 | Platform compliance and storefront | out of scope |
@@ -134,6 +134,35 @@ combat/animation/camera overhaul (one action timeline, true first person, ranged
 world-production overhaul (offline bake, residency tiers, safe placement), the 3D asset gap pass,
 the 2026-09 world rebuild (52- and 36-cell realms in atlas bands, save v3), and the lifecycle
 finalizer fix (`ResidentResources`).
+
+### Item, crafting and save upgrade (2026-10-05/06)
+
+Nine lanes on one foundation, merged on `claude/ics-integration`. The foundation fixed the shared
+seams first (item schema fields, `ItemInstance` workmanship and marks, the material bag, save slot
+rosters and the save gate, `ItemValidator`, the planned id catalogue) so the lanes could not
+collide; each lane then built one system against them.
+
+- **Items.** Every consumable effect kind with shared cooldown groups, required levels,
+  two-handed weapons, lossless swaps, real ammunition, item sets and ten unique-effect kinds.
+- **Catalogue.** `tools/items/catalogue.py` plus `gen_items.py`: 296 generated items in six realm
+  tiers on one stat budget that C# (`ItemBudget`) and Python both compute, stocked into shops.
+- **Loot.** Tier pools, item-level rolls near the looter's level, pity, 32 new affixes including
+  regeneration and signature affixes, and a persistent reward chest per Flamebearer.
+- **Crafting.** 67 generated recipes, a crafting skill, workmanship, bulk orders, recipe scrolls,
+  one shared salvage plan, and reforging priced so that it can never be sold at a profit.
+- **Inventory UI.** Material bag tab, search, marks, partial stacks, junk and buyback, hotbar
+  cooldowns and a pad chord, a merged loot feed.
+- **Save.** Format 4 with a checksum and one backup generation, pure envelope, migration and slot
+  rules under xUnit, save blocks, an in-game slot browser, writes and thumbnails off the main
+  thread, and an autosave that waits for a quiet moment.
+
+Fixes after the merge included: salvage and reforge of worn gear with a
+full pack, consumables ignoring their required level, a chest losing spilled loot across a save, a
+loot salt too large to survive JSON, commissions rolling above Common, consignment losing its
+quantity, and a one-press save guessing a slot. No sockets, durability, repair or encumbrance
+were added. The whole upgrade was written under a no-engine rule: it compiles and its filtered
+unit tests pass, and `--validate`, `--lifecycle`, `--story`, the save-audit probe and every render
+were left to the single gates run recorded in [`NOW.md`](NOW.md).
 
 ### Magic upgrade integration (2026-10-01/02)
 

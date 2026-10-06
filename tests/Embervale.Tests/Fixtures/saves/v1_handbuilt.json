@@ -1,0 +1,83 @@
+{
+	"version": 1,
+	"timestamp": 1755000000.0,
+	"header": {
+		"slot": "quick",
+		"timestamp": 1755000000.0,
+		"playtime": 600.0,
+		"region": "The Ember Crown",
+		"region_id": "region.ember_crown",
+		"level": 4,
+		"corruption_tier": "Untainted",
+		"race_id": "race.human",
+		"char_name": "Fixture",
+		"player_x": -1.5,
+		"player_y": 0.0,
+		"player_z": -7.0,
+		"player_yaw": 0.25
+	},
+	"objects": {
+		"companions": {
+			"loyalty": {},
+			"party": [
+				{
+					"id": "companion.kael",
+					"stance": 1,
+					"x": -1.25,
+					"y": 0.0,
+					"z": -12.0,
+					"yaw": 167.0
+				}
+			]
+		},
+		"fasttravel": {
+			"nodes": [
+				{
+					"id": "travel.ember_crown.waystone",
+					"region": "region.ember_crown",
+					"x": -0.5,
+					"y": 0.0,
+					"z": -12.75
+				}
+			]
+		},
+		"inventory:player": {
+			"stacks": [
+				{
+					"instance": {
+						"affixes": [],
+						"id": "item.weapon.iron_sword",
+						"name": "Iron Sword",
+						"rarity": 0
+					},
+					"qty": 1
+				}
+			]
+		},
+		"map": {
+			"pois": [
+				"ember_crown.town_hub",
+				"ember_crown.arena"
+			],
+			"regions": [
+				"region.ember_crown"
+			]
+		},
+		"progression:player": {
+			"level": 4,
+			"xp": 310
+		},
+		"spawns": {
+			"actors": [
+				{
+					"pid": "cache.world.start",
+					"tid": "prop.cache",
+					"x": 5.0,
+					"y": 0.0,
+					"yaw": 0.0,
+					"z": 0.0
+				}
+			]
+		}
+	}
+}

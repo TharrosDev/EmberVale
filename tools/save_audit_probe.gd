@@ -15,7 +15,7 @@ func _initialize() -> void:
 	await process_frame
 	await process_frame
 	if failures.is_empty():
-		print("PASS: save capture integrity, character metadata, migrations, live restore failures, spawn reconciliation and legacy discovery")
+		print("PASS: save capture integrity, save events and blocks, character metadata, checksum, backup generation and fallback, v1-v3 migrations, live restore failures, spawn reconciliation with missing templates, legacy discovery and slot deletion")
 		quit(0)
 	else:
 		for issue in failures: print("FAIL: %s" % issue)

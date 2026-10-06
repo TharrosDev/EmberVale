@@ -64,6 +64,7 @@ public static class ItemGrant
 
         Vector3 spot = Loot.LootComponent.ScatterAround(body.GlobalPosition, 0);
         parent.CallDeferred(Node.MethodName.AddChild, ItemPickupFactory.Create(instance, overflow, spot));
+        Embervale.Core.Events.EventBus.Instance?.Publish(new Loot.InventoryFullEvent(recipient, instance.Template, overflow));
         Log.Info($"{recipient.DisplayName}'s pack is full: {overflow}x {instance.DisplayName} " +
                  "dropped at their feet.");
         return stored;

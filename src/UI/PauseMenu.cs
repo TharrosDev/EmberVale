@@ -6,17 +6,32 @@ using Godot;
 namespace Embervale.UI;
 
 /// <summary>
-/// The pause menu (Phase 18): a real modal menu on the <c>pause</c> action (Esc) — Resume,
-/// quick Save / Load, and Quit — replacing the bare pause toggle. It runs with
+/// The pause menu (Phase 18): a real modal menu on the <c>pause</c> action (Esc) — Resume, Save,
+/// Load, Settings and the two ways out — replacing the bare pause toggle. It runs with
 /// <see cref="Node.ProcessModeEnum.Always"/> so its buttons work while the tree is paused,
 /// dims the scene behind a backdrop, and drives the <see cref="GameManager"/> pause state
 /// (which frees/recaptures the mouse through the player controller). Built via
 /// <see cref="UiTheme"/>.
+///
+/// <para><b>Saving and loading (ics save-ui).</b> <i>Save</i> writes the session's manual slot in
+/// one press, or opens the slot browser when the session has none yet (a game loaded from an
+/// autosave or the quick slot). <i>Save to Slot</i> and <i>Load</i> open the
+/// <see cref="SaveSlotPanel"/> over this menu; Esc / B there returns here. Both ways out write an
+/// autosave first, and ask before leaving when that save is refused or fails. The outcome of a save
+/// is written under the title, because toasts are held back while the game is paused.</para>
 /// </summary>
 public partial class PauseMenu : CanvasLayer
 {
 	private ColorRect _backdrop = null!;
 	private PanelContainer _panel = null!;
+	private VBoxContainer _menu = null!;
+	private VBoxContainer _confirm = null!;
+	private Label _confirmText = null!;
+	private Button _confirmYes = null!;
+	private Label _status = null!;
+	private System.Action? _onConfirm;
+	private SaveSlotPanel? _browser;
+	private ulong _browserClosedFrame = ulong.MaxValue;
 	private bool _open;
 
 	public override void _Ready()
@@ -29,6 +44,13 @@ public partial class PauseMenu : CanvasLayer
 
 	public override void _Process(double delta)
 	{
+		// The slot browser owns Esc / B while it is up, and the press that closed it must not also
+		// resume the game.
+		if ((_browser != null && IsInstanceValid(_browser)) || _browserClosedFrame == Engine.GetProcessFrames())
+		{
+			return;
+		}
+
 		// Gamepad B (ui_cancel) resumes like Esc while open (30.5J). Esc raises both actions
 		// on one press; the OR evaluates once, so it still toggles exactly once.
 		bool pressed = Godot.Input.IsActionJustPressed(GameInput.Pause) ||
@@ -46,7 +68,11 @@ public partial class PauseMenu : CanvasLayer
 			return;
 		}
 
-		if (_open)
+		if (_open && _confirm.Visible)
+		{
+			HideConfirm(); // cancel answers the question with "no" before it resumes anything
+		}
+		else if (_open)
 		{
 			Resume();
 		}
@@ -81,14 +107,186 @@ public partial class PauseMenu : CanvasLayer
 		Label header = UiTheme.Title(Loc.T("pause.title"));
 		header.HorizontalAlignment = HorizontalAlignment.Center;
 		col.AddChild(header);
+
+		_status = UiTheme.Caption(string.Empty);
+		_status.HorizontalAlignment = HorizontalAlignment.Center;
+		_status.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+		_status.CustomMinimumSize = new Vector2(280, 0);
+		_status.Visible = false;
+		col.AddChild(_status);
 		col.AddChild(UiTheme.Divider());
 
-		col.AddChild(MenuButton(Loc.T("pause.resume"), Resume));
-		col.AddChild(MenuButton(Loc.T("pause.save"), () => { if (SaveManager.Instance is { } s) { s.SaveGame(s.ActiveSlot); } }));
-		col.AddChild(MenuButton(Loc.T("pause.load"), () => { RequestLoad(); }));
-		col.AddChild(MenuButton(Loc.T("pause.settings"), OpenSettings));
-		col.AddChild(MenuButton(Loc.T("pause.main_menu"), ReturnToMainMenu));
-		col.AddChild(MenuButton(Loc.T("pause.quit"), () => GetTree().Quit()));
+		_menu = new VBoxContainer();
+		_menu.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
+		col.AddChild(_menu);
+
+		_menu.AddChild(MenuButton(Loc.T("pause.resume"), Resume));
+		_menu.AddChild(MenuButton(Loc.T("pause.save"), Save));
+		_menu.AddChild(MenuButton(Loc.T("pause.save_as"), () => OpenBrowser(SaveSlotPanel.Intent.Save)));
+		_menu.AddChild(MenuButton(Loc.T("pause.load"), () => OpenBrowser(SaveSlotPanel.Intent.Load)));
+		_menu.AddChild(MenuButton(Loc.T("pause.settings"), OpenSettings));
+		_menu.AddChild(MenuButton(Loc.T("pause.main_menu"), () => RequestQuit(ReturnToMainMenu)));
+		_menu.AddChild(MenuButton(Loc.T("pause.quit"), () => RequestQuit(() => GetTree().Quit())));
+
+		// The one question this menu asks ("leave with unsaved progress?") replaces the buttons
+		// rather than stacking a dialog on top: one panel, one focus chain, Esc / B means no.
+		_confirm = new VBoxContainer { Visible = false };
+		_confirm.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
+		col.AddChild(_confirm);
+
+		_confirmText = UiTheme.Prose(string.Empty, UiTheme.Text);
+		_confirmText.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+		_confirmText.CustomMinimumSize = new Vector2(280, 0);
+		_confirm.AddChild(_confirmText);
+
+		// Cancel first, so the default focus is the answer that loses nothing.
+		_confirm.AddChild(MenuButton(Loc.T("common.cancel"), HideConfirm));
+		_confirmYes = MenuButton(string.Empty, () =>
+		{
+			System.Action? confirmed = _onConfirm;
+			HideConfirm();
+			confirmed?.Invoke();
+		});
+		_confirmYes.AddThemeColorOverride("font_color", UiTheme.Bad);
+		_confirm.AddChild(_confirmYes);
+	}
+
+	// --- Save -----------------------------------------------------------------------------
+
+	/// <summary>One-press save into the session's manual slot. A session with no manual slot of its
+	/// own (it was loaded from an autosave or the quick slot) is asked to pick one in the browser,
+	/// which confirms an overwrite, instead of having one guessed for it.</summary>
+	private void Save()
+	{
+		if (SaveManager.Instance is not { } saves || SessionHost() is not { Session: not null })
+		{
+			return;
+		}
+
+		string? target = SaveSlotPolicy.ManualSaveTarget(saves.ActiveSlot);
+		if (target == null)
+		{
+			OpenBrowser(SaveSlotPanel.Intent.Save);
+			return;
+		}
+
+		SaveTo(target);
+	}
+
+	private void SaveTo(string slot)
+	{
+		if (SessionHost() is not { } lifecycle)
+		{
+			return;
+		}
+
+		bool saved = lifecycle.TrySave(slot, out string failureKey);
+		SetStatus(
+			saved ? Loc.TF("pause.saved_to", SaveSlotPanel.SlotLabel(slot)) : Loc.T(failureKey),
+			saved ? UiTheme.Good : UiTheme.Bad);
+	}
+
+	// --- Slot browser ---------------------------------------------------------------------
+
+	private void OpenBrowser(SaveSlotPanel.Intent intent)
+	{
+		if (SaveManager.Instance is not { } saves || SessionHost() is not { } lifecycle)
+		{
+			return;
+		}
+
+		// Loading throws away whatever has happened since the last save; past the threshold the
+		// browser says how much and asks for a second click on the row.
+		string? warning = intent == SaveSlotPanel.Intent.Load && SaveSlotPolicy.NeedsUnsavedConfirm(lifecycle.SecondsSinceLastSave)
+			? Loc.TF("slots.load_unsaved", UnsavedAge(lifecycle.SecondsSinceLastSave))
+			: null;
+
+		var browser = new SaveSlotPanel();
+		browser.Configure(intent, slot => OnBrowserChose(intent, slot), CloseBrowser, warning, saves.ActiveSlot);
+		_browser = browser;
+		SetPanelVisible(false);
+		AddChild(browser);
+	}
+
+	private void CloseBrowser()
+	{
+		_browser = null;
+		_browserClosedFrame = Engine.GetProcessFrames();
+		SetPanelVisible(true);
+	}
+
+	private void OnBrowserChose(SaveSlotPanel.Intent intent, string slot)
+	{
+		CloseBrowser();
+		if (intent == SaveSlotPanel.Intent.Save)
+		{
+			SaveTo(slot);
+			return;
+		}
+
+		if (SessionHost() is { Session: { } session } lifecycle && lifecycle.RequestReload(session, slot))
+		{
+			SetPanelVisible(false);
+			return;
+		}
+
+		SetStatus(Loc.T("pause.load_refused"), UiTheme.Bad);
+	}
+
+	// --- Leaving --------------------------------------------------------------------------
+
+	/// <summary>
+	/// Both ways out go through here. Leaving writes an autosave first, so quitting never costs
+	/// progress on its own; when saving is blocked (a boss fight, a conversation) or the write fails,
+	/// the player is told why and how much play is at stake, and chooses.
+	/// </summary>
+	private void RequestQuit(System.Action proceed)
+	{
+		Bootstrap.SessionLifecycleCoordinator? lifecycle = SessionHost();
+		if (lifecycle == null || lifecycle.AutosaveBeforeQuit(out string failureKey))
+		{
+			proceed();
+			return;
+		}
+
+		ShowConfirm(
+			Loc.TF("pause.quit_unsaved", Loc.T(failureKey), UnsavedAge(lifecycle.SecondsSinceLastSave)),
+			Loc.T("pause.quit_anyway"),
+			proceed);
+	}
+
+	/// <summary>How long ago the game was last saved, as the player would say it.</summary>
+	public static string UnsavedAge(double seconds)
+	{
+		int minutes = SaveSlotPolicy.WholeMinutes(seconds);
+		return minutes < 1 ? Loc.T("save.age.under_minute")
+			: minutes < 60 ? Loc.TF("save.age.minutes", minutes)
+			: Loc.TF("save.age.hours", minutes / 60, minutes % 60);
+	}
+
+	private void ShowConfirm(string message, string confirmLabel, System.Action onConfirm)
+	{
+		_confirmText.Text = message;
+		_confirmYes.Text = confirmLabel;
+		_onConfirm = onConfirm;
+		_menu.Visible = false;
+		_confirm.Visible = true;
+		UiFocus.GrabFirst(_confirm);
+	}
+
+	private void HideConfirm()
+	{
+		_onConfirm = null;
+		_confirm.Visible = false;
+		_menu.Visible = true;
+		UiFocus.GrabFirst(_menu);
+	}
+
+	private void SetStatus(string text, Color color)
+	{
+		_status.Text = text;
+		_status.AddThemeColorOverride("font_color", color);
+		_status.Visible = text.Length > 0;
 	}
 
 	/// <summary>
@@ -134,8 +332,10 @@ public partial class PauseMenu : CanvasLayer
 		}).CallDeferred();
 	}
 
-	/// <summary>Same checkpoint route as F9. The coordinator owns the deferred rebuild, so this
-	/// menu can be destroyed without leaving a callback that walks its old parent chain.</summary>
+	/// <summary>Same checkpoint route as F9, with no questions asked: reloads the session's own slot.
+	/// The menu's Load button goes through the browser instead; this stays for callers that already
+	/// know the answer (the lifecycle gate drives it). The coordinator owns the deferred rebuild, so
+	/// this menu can be destroyed without leaving a callback that walks its old parent chain.</summary>
 	public bool RequestLoad()
 	{
 		if (SaveManager.Instance is not { } saves || SessionHost() is not { Session: { } session } lifecycle)
@@ -187,6 +387,8 @@ public partial class PauseMenu : CanvasLayer
 	private void Open()
 	{
 		_open = true;
+		SetStatus(string.Empty, UiTheme.Dim);
+		HideConfirm();
 		SetPanelVisible(true);
 		GameManager.Instance?.ChangeState(GameState.Paused);
 	}
@@ -212,7 +414,7 @@ public partial class PauseMenu : CanvasLayer
 			_panel.Modulate = new Color(1f, 1f, 1f, 0f);
 			UiTheme.AnimateModulate(_backdrop, Colors.White, UiTheme.DurationBase);
 			UiTheme.AnimateModulate(_panel, Colors.White, UiTheme.DurationBase);
-			UiFocus.GrabFirst(_panel); // gamepad/keyboard start on Resume (30.5J)
+			UiFocus.GrabFirst(_confirm.Visible ? _confirm : _menu); // gamepad/keyboard start on Resume (30.5J)
 		}
 	}
 }

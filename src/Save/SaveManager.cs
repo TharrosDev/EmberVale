@@ -19,10 +19,17 @@ namespace Embervale.Save;
 ///
 /// Legacy single-file saves (<c>user://saves/&lt;slot&gt;.json</c>) are still readable and are
 /// migrated to the directory layout on the next save.
+///
+/// The rules that decide whether a file may be loaded are pure and live beside this class, where
+/// xUnit can run them: <see cref="SaveEnvelope"/> (parse, shape, version, checksum),
+/// <see cref="SaveMigrations"/> (the v1 -> v4 chain), <see cref="SaveChecksum"/> and
+/// <see cref="SaveBackup"/> (the one previous generation each slot keeps as <c>save.json.bak</c>).
+/// This class does the file work and the dispatch to live saveables. docs/SAVE_FORMAT.md is the
+/// contract.
 /// </summary>
 public sealed partial class SaveManager : Node
 {
-    private const int SaveFormatVersion = 3;
+    private const int SaveFormatVersion = SaveEnvelope.CurrentVersion;
     private static string SaveDirectory => Embervale.Core.UserDataPaths.Resolve("saves");
 
     public static SaveManager Instance { get; private set; } = null!;
@@ -90,8 +97,17 @@ public sealed partial class SaveManager : Node
         Instance = this;
     }
 
+    public override void _Ready()
+    {
+        // A crash between staging a file and renaming it over its target leaves the staged copy
+        // behind. It is never read, so it is only removed: once, before anything can be saving.
+        CleanOrphanedTemps();
+    }
+
     public override void _ExitTree()
     {
+        // A write still queued when the process ends is a save the player was told had been taken.
+        SaveWriteQueue.Flush();
         if (Instance == this)
         {
             _saveables.Clear();
@@ -174,9 +190,15 @@ public sealed partial class SaveManager : Node
     /// <summary>The full-save file path for a slot (the new directory layout).</summary>
     public string SlotPath(string slot) => SlotSavePath(slot);
 
-    /// <summary>Whether a slot has a save in either the new or the legacy layout.</summary>
-    public bool SaveExists(string slot) =>
-        FileAccess.FileExists(SlotSavePath(slot)) || FileAccess.FileExists(LegacySlotPath(slot));
+    /// <summary>Whether a slot has a save in either the new or the legacy layout, or a backup
+    /// generation with nothing in front of it (a save interrupted between moving the old file aside
+    /// and committing the new one), which a load reads as the slot.</summary>
+    public bool SaveExists(string slot)
+    {
+        SaveWriteQueue.Flush();
+        return FileAccess.FileExists(SlotSavePath(slot)) || FileAccess.FileExists(LegacySlotPath(slot)) ||
+               FileAccess.FileExists(SlotBackupPath(slot));
+    }
 
     // --- Save ---------------------------------------------------------------
 
@@ -185,18 +207,41 @@ public sealed partial class SaveManager : Node
 
     /// <summary>Serializes all registered saveables to the given slot. <paramref name="isAutosave"/>
     /// only flavours the published <see cref="GameSavedEvent"/> (Phase 24D) — the autosave cadence
-    /// lives in <see cref="AutosaveService"/>; this stays the low-level writer. Returns success.</summary>
+    /// lives in <see cref="AutosaveService"/>; this stays the low-level writer. Returns success.
+    ///
+    /// ⚠️ <b>A live <see cref="PushSaveBlock"/> refuses every save, autosaves included.</b> A block
+    /// says "a save taken now would be a bad place to come back to" (mid boss fight, mid
+    /// conversation), and that is exactly as true of a save the game takes as of one the player
+    /// asks for. The refusal publishes <see cref="SaveFailedEvent"/> with the block's own reason and
+    /// no <see cref="SaveStartedEvent"/>, like the busy refusal below.
+    ///
+    /// ⚠️ <b>In windowed play a true return means "captured and queued".</b> The files are written
+    /// by <see cref="SaveWriteQueue"/> off the main thread and the <see cref="GameSavedEvent"/> (or a
+    /// <see cref="SaveFailedEvent"/>) follows when the disk answers. Headless and tooling runs write
+    /// before returning, as they always did. Every read of a slot flushes the queue first.</summary>
     public bool SaveGame(string slot, bool isAutosave)
     {
+        if (_saveBlocks.Count > 0)
+        {
+            string reason = _saveBlocks[^1].ReasonKey;
+            Log.Info($"Save to slot '{slot}' refused: saving is blocked ({reason}).");
+            EventBus.Instance?.Publish(new SaveFailedEvent(slot, reason));
+            return false;
+        }
+
         if (_operationInProgress)
         {
             Log.Warn($"Cannot save slot '{slot}' while another save/load is in progress.");
+            EventBus.Instance?.Publish(new SaveFailedEvent(slot, ReasonBusy));
             return false;
         }
         _operationInProgress = true;
+        bool saved = false;
         try
         {
-            return SaveGameCore(slot, isAutosave);
+            EventBus.Instance?.Publish(new SaveStartedEvent(slot, isAutosave ? SaveKind.Auto : KindOfSlot(slot)));
+            saved = SaveGameCore(slot, isAutosave);
+            return saved;
         }
         catch (Exception ex)
         {
@@ -206,6 +251,10 @@ public sealed partial class SaveManager : Node
         finally
         {
             _operationInProgress = false;
+            if (!saved)
+            {
+                EventBus.Instance?.Publish(new SaveFailedEvent(slot, ReasonWriteFailed));
+            }
         }
     }
 
@@ -251,17 +300,55 @@ public sealed partial class SaveManager : Node
             return false;
         }
 
-        Godot.Collections.Dictionary header = BuildHeader(slot).ToDictionary();
+        // The checksum is of the objects exactly as they are serialized, so it is computed from the
+        // text about to be written and then put in over a placeholder: one serialization, and the
+        // hash is of the bytes a load will actually read. The placeholder is unique to this save,
+        // so no captured state can contain it.
+        string pending = "pending:" + Guid.NewGuid().ToString("N");
+        SaveSlotInfo info = BuildHeader(slot);
+        info.Checksum = pending;
+        Godot.Collections.Dictionary header = info.ToDictionary();
 
         var root = new Godot.Collections.Dictionary
         {
-            ["version"] = SaveFormatVersion,
-            ["timestamp"] = Time.GetUnixTimeFromSystem(),
-            ["header"] = header,
-            ["objects"] = objects,
+            [SaveEnvelope.VersionKey] = SaveFormatVersion,
+            [SaveEnvelope.TimestampKey] = Time.GetUnixTimeFromSystem(),
+            [SaveEnvelope.ChecksumKey] = pending,
+            [SaveEnvelope.HeaderKey] = header,
+            [SaveEnvelope.ObjectsKey] = objects,
         };
 
-        if (!AtomicWrite(SlotSavePath(slot), Json.Stringify(root, "\t")))
+        // ⚠️ Reading the document back before it is committed is also the last guard on the write:
+        // a value the serializer emits and no parser accepts (a NaN that became the bare word nan)
+        // would otherwise replace a good save with one that can never be loaded.
+        string document = Json.Stringify(root, "\t");
+        if (SaveChecksum.ComputeForEnvelope(document) is not { } checksum)
+        {
+            Log.Error($"Save slot '{slot}' serialized to a document that does not read back; previous save preserved.");
+            return false;
+        }
+
+        document = document.Replace(pending, checksum, StringComparison.Ordinal);
+        string headerDocument = Json.Stringify(header, "\t").Replace(pending, checksum, StringComparison.Ordinal);
+
+        // One previous generation is kept, and only a sound one: moving a damaged save.json over
+        // the backup would destroy the good copy the backup exists to be.
+        SaveWriteQueue.Flush();
+        bool keepPrevious = SaveBackup.ShouldRotate(SaveEnvelope.Read(ReadText(SlotSavePath(slot))).Health);
+
+        // Windowed play hands the disk work to the write queue so a save never stalls a frame; the
+        // outcome arrives through FinishSave. Gates and tooling take the synchronous path below,
+        // which is the one whose log lines the save-audit probe pins.
+        if (!SaveWriteQueue.RunsInline)
+        {
+            int objectCount = objects.Count;
+            SaveWriteQueue.CommitSave(slot, SlotSavePath(slot), document, SlotHeaderPath(slot), headerDocument,
+                LegacySlotPath(slot), keepPrevious, landed => FinishSave(slot, isAutosave, objectCount, landed));
+            CaptureScreenshot(slot);
+            return true;
+        }
+
+        if (!AtomicWrite(SlotSavePath(slot), document, keepPrevious))
         {
             return false;
         }
@@ -282,7 +369,7 @@ public sealed partial class SaveManager : Node
         // correct, because the envelope carries the same header and ReadHeader already falls back
         // to it. ponytail: a mirror that can be rebuilt does not need a transaction, it needs to be
         // absent when it would lie.
-        if (!AtomicWrite(SlotHeaderPath(slot), Json.Stringify(header, "\t")))
+        if (!AtomicWrite(SlotHeaderPath(slot), headerDocument))
         {
             string mirror = SlotHeaderPath(slot);
             if (FileAccess.FileExists(mirror) && DirAccess.RemoveAbsolute(mirror) != Error.Ok)
@@ -307,16 +394,35 @@ public sealed partial class SaveManager : Node
             DirAccess.RemoveAbsolute(legacy);
         }
 
-        Log.Info($"Saved {objects.Count} object(s) to slot '{slot}'.");
-        EventBus.Instance?.Publish(new GameSavedEvent(slot, isAutosave));
+        FinishSave(slot, isAutosave, objects.Count, landed: true);
         return true;
     }
 
-    /// <summary>Atomic write: stage to a temp file, then rename over the target so a crash
-    /// mid-write can never truncate a previously-good file.</summary>
-    private static bool AtomicWrite(string target, string contents)
+    /// <summary>Announces how a save ended. Called on the main thread: straight away for a
+    /// synchronous write, and from the write queue's completion for a queued one, which keeps
+    /// "every start is followed by exactly one GameSavedEvent or SaveFailedEvent" true.</summary>
+    private void FinishSave(string slot, bool isAutosave, int objectCount, bool landed)
     {
-        string temp = $"{target}.tmp";
+        if (!landed)
+        {
+            Log.Error($"Save slot '{slot}' could not be written; previous save preserved.");
+            EventBus.Instance?.Publish(new SaveFailedEvent(slot, ReasonWriteFailed));
+            return;
+        }
+
+        Log.Info($"Saved {objectCount} object(s) to slot '{slot}'.");
+        EventBus.Instance?.Publish(new GameSavedEvent(slot, isAutosave));
+    }
+
+    /// <summary>Atomic write: stage to a temp file, then rename over the target so a crash
+    /// mid-write can never truncate a previously-good file. With <paramref name="keepPrevious"/>
+    /// the file being replaced is moved to <c>&lt;target&gt;.bak</c> between the two, so the slot
+    /// always holds the generation before this one. A staged file that could not be committed is
+    /// removed rather than left behind.</summary>
+    private static bool AtomicWrite(string target, string contents, bool keepPrevious = false)
+    {
+        string temp = target + SaveBackup.TempSuffix;
+        bool staged;
         using (FileAccess? file = FileAccess.Open(temp, FileAccess.ModeFlags.Write))
         {
             if (file == null)
@@ -327,53 +433,55 @@ public sealed partial class SaveManager : Node
 
             file.StoreString(contents);
             file.Flush();
-            if (file.GetError() != Error.Ok)
+            staged = file.GetError() == Error.Ok;
+            if (!staged)
             {
                 Log.Error($"Could not write temp file '{temp}': {file.GetError()}; previous file preserved.");
-                return false;
+            }
+        }
+
+        if (!staged)
+        {
+            RemoveOrphan(temp);
+            return false;
+        }
+
+        // The window between the two renames has no primary file. A crash inside it is survivable
+        // by construction: the previous generation is whole under its .bak name, SaveExists counts
+        // it, and a load reads it (reporting that it did).
+        string previous = target + SaveBackup.Suffix;
+        bool keptPrevious = false;
+        if (keepPrevious && FileAccess.FileExists(target))
+        {
+            Error kept = DirAccess.RenameAbsolute(target, previous);
+            keptPrevious = kept == Error.Ok;
+            if (!keptPrevious)
+            {
+                Log.Warn($"Could not keep '{target}' as a backup generation ({kept}); replacing it without one.");
             }
         }
 
         Error renamed = DirAccess.RenameAbsolute(temp, target);
         if (renamed != Error.Ok)
         {
+            if (keptPrevious)
+            {
+                DirAccess.RenameAbsolute(previous, target);
+            }
+
             Log.Error($"Could not commit '{target}' (rename failed: {renamed}); previous file preserved.");
+            RemoveOrphan(temp);
             return false;
         }
 
         return true;
     }
 
-    /// <summary>Grabs a small thumbnail of the current frame for the slot browser (Phase 24C).
-    /// Best-effort: any failure is logged and ignored — a missing thumbnail never breaks a save.</summary>
-    private void CaptureScreenshot(string slot)
-    {
-        // The dummy renderer has no texture. A headless save is valid without a thumbnail;
-        // calling GetImage there emits a native error even though the save itself succeeds.
-        if (DisplayServer.GetName() == "headless")
-        {
-            return;
-        }
-        try
-        {
-            Image? image = GetViewport()?.GetTexture()?.GetImage();
-            if (image == null)
-            {
-                return;
-            }
-
-            image.Resize(320, 180, Image.Interpolation.Bilinear);
-            Error error = image.SavePng(ScreenshotPath(slot));
-            if (error != Error.Ok)
-            {
-                Log.Warn($"Could not write screenshot for slot '{slot}': {error}.");
-            }
-        }
-        catch (Exception ex)
-        {
-            Log.Warn($"Screenshot capture failed for slot '{slot}'; continuing without one: {ex.Message}");
-        }
-    }
+    /// <summary>The slot browser's thumbnail (Phase 24C). <see cref="SaveThumbnailService"/> picks
+    /// the frame (the live one in play, the one cached on the way into a menu otherwise) and encodes
+    /// and writes it behind the save on the write queue. Best effort: it never breaks a save.</summary>
+    private void CaptureScreenshot(string slot) =>
+        SaveThumbnailService.Write(ScreenshotPath(slot), GetViewport());
 
     private SaveSlotInfo BuildHeader(string slot)
     {
@@ -382,6 +490,9 @@ public sealed partial class SaveManager : Node
             Slot = slot,
             TimestampUnix = Time.GetUnixTimeFromSystem(),
             PlaytimeSeconds = _playtimeSeconds,
+            Kind = KindOfSlot(slot),
+            FormatVersion = SaveFormatVersion,
+            GameBuild = ProjectSettings.GetSetting("application/config/version", string.Empty).AsString(),
         };
 
         if (HeaderProvider?.Invoke() is { } fields)
@@ -406,9 +517,15 @@ public sealed partial class SaveManager : Node
     // --- Slot management ----------------------------------------------------
 
     /// <summary>Reads a slot's lightweight header (from <c>header.json</c>, falling back to the
-    /// header embedded in <c>save.json</c>). Null if the slot has no readable header.</summary>
+    /// header embedded in <c>save.json</c>, then to the one embedded in the backup generation when
+    /// the slot has nothing else). Null if the slot has no readable header.
+    ///
+    /// ⚠️ This is the cheap read and it trusts the files it finds. It does not notice a damaged
+    /// <c>save.json</c>; <see cref="InspectSlot"/> does, and answers with the header of whichever
+    /// generation a load will really read. A caller about to load a slot wants that one.</summary>
     public SaveSlotInfo? ReadHeader(string slot)
     {
+        SaveWriteQueue.Flush();
         if (ReadJsonObject(SlotHeaderPath(slot)) is { } headerDoc)
         {
             SaveSlotInfo info = SaveSlotInfo.FromDictionary(headerDoc);
@@ -416,17 +533,18 @@ public sealed partial class SaveManager : Node
             return info;
         }
 
-        // Fall back to the header inside the full save (or a bare header for a legacy save).
+        // Fall back to the header inside the full save (or a bare header for a legacy save), and
+        // last to the backup generation's, which only ever has the embedded copy.
         string fullPath = FileAccess.FileExists(SlotSavePath(slot)) ? SlotSavePath(slot) : LegacySlotPath(slot);
-        if (ReadJsonObject(fullPath) is { } root)
+        if ((ReadJsonObject(fullPath) ?? ReadJsonObject(SlotBackupPath(slot))) is { } root)
         {
-            SaveSlotInfo info = root.TryGetValue("header", out Variant h) && h.VariantType == Variant.Type.Dictionary
-                ? SaveSlotInfo.FromDictionary(h.AsGodotDictionary())
+            SaveSlotInfo info = SaveRead.Section(root, SaveEnvelope.HeaderKey) is { } embedded
+                ? SaveSlotInfo.FromDictionary(embedded)
                 : new SaveSlotInfo();
             info.Slot = slot;
-            if (info.TimestampUnix == 0d && root.TryGetValue("timestamp", out Variant ts))
+            if (info.TimestampUnix == 0d)
             {
-                info.TimestampUnix = ts.AsDouble();
+                info.TimestampUnix = SaveRead.Number(root, SaveEnvelope.TimestampKey);
             }
 
             return info;
@@ -438,6 +556,7 @@ public sealed partial class SaveManager : Node
     /// <summary>Every save slot's header, for the load/continue browser.</summary>
     public IReadOnlyList<SaveSlotInfo> ListSlots()
     {
+        SaveWriteQueue.Flush();
         var slots = new List<SaveSlotInfo>();
         using DirAccess? dir = DirAccess.Open(SaveDirectory);
         if (dir == null)
@@ -467,41 +586,91 @@ public sealed partial class SaveManager : Node
     }
 
     /// <summary>Deletes a slot's directory (and any legacy flat file). Returns success.</summary>
-    public bool DeleteSlot(string slot)
+    public bool DeleteSlot(string slot) => DeleteSlot(slot, out _);
+
+    /// <summary>
+    /// Deletes everything a slot owns: the save, its backup generation, the header, the thumbnail,
+    /// any staged file, and the legacy flat file. True only when the slot existed and is now gone.
+    /// <paramref name="failures"/> names each file that would not go, with the engine's reason, so
+    /// a caller can say what is still on disk instead of showing an emptied slot that comes back.
+    /// </summary>
+    public bool DeleteSlot(string slot, out IReadOnlyList<string> failures)
     {
-        bool removedAnything = false;
+        SaveWriteQueue.Flush();
+        var failed = new List<string>();
+        failures = failed;
+        bool existed = false;
 
-        using (DirAccess? dir = DirAccess.Open(SlotDir(slot)))
+        string directory = SlotDir(slot);
+        if (DirAccess.DirExistsAbsolute(directory))
         {
-            if (dir != null)
+            existed = true;
+            using (DirAccess? dir = DirAccess.Open(directory))
             {
-                foreach (string file in dir.GetFiles())
+                if (dir == null)
                 {
-                    dir.Remove(file);
+                    failed.Add($"{slot}/ ({DirAccess.GetOpenError()})");
                 }
+                else
+                {
+                    foreach (string file in dir.GetFiles())
+                    {
+                        Error removed = dir.Remove(file);
+                        if (removed != Error.Ok)
+                        {
+                            failed.Add($"{slot}/{file} ({removed})");
+                        }
+                    }
 
-                removedAnything = true;
+                    // Nothing the game writes is a directory, so one here is removed only if empty.
+                    foreach (string child in dir.GetDirectories())
+                    {
+                        Error removed = dir.Remove(child);
+                        if (removed != Error.Ok)
+                        {
+                            failed.Add($"{slot}/{child}/ ({removed})");
+                        }
+                    }
+                }
+            }
+
+            if (failed.Count == 0)
+            {
+                Error removed = DirAccess.RemoveAbsolute(directory);
+                if (removed != Error.Ok)
+                {
+                    failed.Add($"{slot}/ ({removed})");
+                }
             }
         }
 
-        if (removedAnything)
+        foreach (string flat in new[] { LegacySlotPath(slot), LegacySlotPath(slot) + SaveBackup.TempSuffix })
         {
-            DirAccess.RemoveAbsolute(SlotDir(slot));
+            if (!FileAccess.FileExists(flat))
+            {
+                continue;
+            }
+
+            existed = true;
+            Error removed = DirAccess.RemoveAbsolute(flat);
+            if (removed != Error.Ok)
+            {
+                failed.Add($"{flat.Substring(flat.LastIndexOf('/') + 1)} ({removed})");
+            }
         }
 
-        string legacy = LegacySlotPath(slot);
-        if (FileAccess.FileExists(legacy))
+        if (failed.Count > 0)
         {
-            DirAccess.RemoveAbsolute(legacy);
-            removedAnything = true;
+            Log.Warn($"Save slot '{slot}' was not fully deleted; still on disk: {string.Join(", ", failed)}.");
+            return false;
         }
 
-        if (removedAnything)
+        if (existed)
         {
             Log.Info($"Deleted save slot '{slot}'.");
         }
 
-        return removedAnything;
+        return existed;
     }
 
     private static Godot.Collections.Dictionary? ReadJsonObject(string path)
@@ -531,6 +700,8 @@ public sealed partial class SaveManager : Node
     /// </summary>
     public bool LoadGame(string slot)
     {
+        // A load must never read a slot whose write is still queued.
+        SaveWriteQueue.Flush();
         if (_operationInProgress)
         {
             Log.Warn($"Cannot load slot '{slot}' while another save/load is in progress.");
@@ -554,22 +725,66 @@ public sealed partial class SaveManager : Node
 
     private bool LoadGameCore(string slot)
     {
+        LastLoadUsedBackup = false;
+
         // Prefer the new directory layout; fall back to a legacy flat file.
         string path = FileAccess.FileExists(SlotSavePath(slot)) ? SlotSavePath(slot) : LegacySlotPath(slot);
-        if (!FileAccess.FileExists(path))
+        bool hasPrimary = FileAccess.FileExists(path);
+        if (!hasPrimary && !FileAccess.FileExists(SlotBackupPath(slot)))
         {
             Log.Warn($"Save slot '{slot}' does not exist.");
             return false;
         }
 
-        using FileAccess? file = FileAccess.Open(path, FileAccess.ModeFlags.Read);
-        if (file == null)
+        // Everything that can refuse a save without touching live state is decided here, on the
+        // file's text, by the same pure validation InspectSlot shows the browser: parse, shape,
+        // version, checksum. Nothing below this block can discover that the document is bad.
+        Error openError = Error.Ok;
+        string? json = hasPrimary ? ReadText(path, out openError) : null;
+        SaveEnvelope envelope = SaveEnvelope.Read(json);
+        bool usedBackup = false;
+        if (!envelope.IsLoadable)
         {
-            Log.Error($"Could not read save slot '{slot}': {FileAccess.GetOpenError()}");
+            string? backupJson = ReadText(SlotBackupPath(slot));
+            SaveEnvelope backup = SaveEnvelope.Read(backupJson);
+            if (SaveBackup.Choose(envelope.Health, backup.Health) == SaveSource.Backup)
+            {
+                Log.Warn($"Save slot '{slot}' cannot be loaded from its save file ({envelope.Fault}); " +
+                         "loading the previous generation from save.json.bak instead.");
+                json = backupJson;
+                envelope = backup;
+                usedBackup = true;
+            }
+        }
+
+        if (!envelope.IsLoadable || json == null)
+        {
+            Log.Error(hasPrimary && json == null
+                ? $"Could not read save slot '{slot}': {openError}"
+                : FaultMessage(slot, envelope));
             return false;
         }
 
-        string json = file.GetAsText();
+        if (envelope.NeedsMigration)
+        {
+            var notes = new List<string>();
+            if (SaveMigrations.MigrateText(json, MigrationLookups(), notes) is not { } migrated)
+            {
+                Log.Error($"Save slot '{slot}' is version {envelope.Version} and could not be migrated to " +
+                          $"{SaveFormatVersion}; refusing to load rather than feeding a partial document to live components.");
+                return false;
+            }
+
+            foreach (string note in notes)
+            {
+                Log.Info($"Save slot '{slot}': {note}");
+            }
+
+            json = migrated;
+        }
+
+        // The engine's own parser builds what the saveables read, so every number and string
+        // reaches them typed exactly as it always has.
         Variant parsed = Json.ParseString(json);
         if (parsed.VariantType != Variant.Type.Dictionary)
         {
@@ -578,40 +793,12 @@ public sealed partial class SaveManager : Node
         }
 
         var root = parsed.AsGodotDictionary();
-
-        // A missing "version" is not an old save, it is not one of ours. Every envelope this game has
-        // ever written carries one, so the key's absence means a truncated write, a hand-edited file, or
-        // some other JSON object entirely — and the migration path below would wave it through as
-        // "version 0, older, best effort" and start feeding fragments to live components. Refused here so
-        // the only unversioned outcome is a clean failure.
-        if (!root.TryGetValue("version", out Variant versionVariant) ||
-            versionVariant.VariantType is not (Variant.Type.Int or Variant.Type.Float))
-        {
-            Log.Error($"Save slot '{slot}' has no version field; refusing to load (it is not an Embervale save).");
-            return false;
-        }
-
-        double rawVersion = versionVariant.AsDouble();
-        if (!double.IsFinite(rawVersion) || rawVersion != Math.Truncate(rawVersion) ||
-            rawVersion < int.MinValue || rawVersion > int.MaxValue)
-        {
-            Log.Error($"Save slot '{slot}' has an invalid version; refusing to load.");
-            return false;
-        }
-        int version = (int)rawVersion;
-        if (!TryMigrate(slot, version, ref root))
-        {
-            return false;
-        }
-
-        if (!root.TryGetValue("objects", out Variant objectsVariant) ||
-            objectsVariant.VariantType != Variant.Type.Dictionary)
+        if (SaveRead.Section(root, SaveEnvelope.ObjectsKey) is not { } objects)
         {
             Log.Error($"Save slot '{slot}' has no 'objects' section.");
             return false;
         }
 
-        var objects = objectsVariant.AsGodotDictionary();
         foreach (KeyValuePair<Variant, Variant> entry in objects)
         {
             if (entry.Value.VariantType != Variant.Type.Dictionary)
@@ -623,11 +810,9 @@ public sealed partial class SaveManager : Node
 
         // Continue this save's playtime from where it was last written, and keep the header around:
         // it also carries the region/transform the LocationApplier restores once the overlay lands.
-        SaveSlotInfo? savedHeader = null;
-        if (root.TryGetValue("header", out Variant headerVariant) && headerVariant.VariantType == Variant.Type.Dictionary)
-        {
-            savedHeader = SaveSlotInfo.FromDictionary(headerVariant.AsGodotDictionary());
-        }
+        SaveSlotInfo? savedHeader = SaveRead.Section(root, SaveEnvelope.HeaderKey) is { } savedHeaderData
+            ? SaveSlotInfo.FromDictionary(savedHeaderData)
+            : null;
         _playtimeSeconds = savedHeader?.PlaytimeSeconds ?? 0d;
 
         int restored = 0;
@@ -751,227 +936,64 @@ public sealed partial class SaveManager : Node
             LocationApplier?.Invoke(savedHeader);
         }
 
+        LastLoadUsedBackup = usedBackup;
         EventBus.Instance?.Publish(new GameLoadedEvent(slot));
+
+        // Said to the player, not only to the log: they are standing in the save before the one
+        // they chose, and the next save in this slot makes that permanent.
+        if (usedBackup)
+        {
+            EventBus.Instance?.Publish(new Narrative.StoryToastRequestedEvent(RecoveredTitleKey, RecoveredDetailKey));
+        }
+
         return true;
     }
 
-    /// <summary>
-    /// Migration seam for the versioned save envelope. Today the format is at
-    /// <see cref="SaveFormatVersion"/>; this is where future format changes upgrade an
-    /// older document in place before it reaches the saveables. A newer-than-known file
-    /// is refused rather than silently misread.
-    /// </summary>
-    private bool TryMigrate(string slot, int version, ref Godot.Collections.Dictionary root)
+    /// <summary>The exact refusal line for a save the envelope validation turned away. ⚠️ These
+    /// strings are pinned by regex in <c>tools/world_quality_check.py</c> (the save-audit gate's
+    /// expected errors); change one there in the same commit or the gate fails on its own probe.</summary>
+    private static string FaultMessage(string slot, SaveEnvelope envelope) => envelope.Fault switch
     {
-        if (version == SaveFormatVersion)
-        {
-            return true;
-        }
+        SaveEnvelopeFault.Missing =>
+            $"Save slot '{slot}' has no save file and no loadable backup generation.",
 
-        if (version > SaveFormatVersion)
-        {
-            Log.Error($"Save slot '{slot}' is version {version}, newer than this build supports ({SaveFormatVersion}); refusing to load.");
-            return false;
-        }
+        // A missing "version" is not an old save, it is not one of ours. Every envelope this game
+        // has ever written carries one, so its absence means a truncated write, a hand-edited file,
+        // or some other JSON object entirely.
+        SaveEnvelopeFault.NoVersion =>
+            $"Save slot '{slot}' has no version field; refusing to load (it is not an Embervale save).",
+        SaveEnvelopeFault.InvalidVersion =>
+            $"Save slot '{slot}' has an invalid version; refusing to load.",
+        SaveEnvelopeFault.Newer =>
+            $"Save slot '{slot}' is version {envelope.Version}, newer than this build supports ({SaveFormatVersion}); refusing to load.",
 
-        // version < SaveFormatVersion: walk forward one step at a time.
-        if (version == 1)
-        {
-            MigrateV1ToV2(slot, root);
-            version = 2;
-        }
+        // ⚠️ ANYTHING BELOW THE FIRST FORMAT IS REFUSED RATHER THAN BEST-EFFORTED. There is no such
+        // thing as a legitimate v0 Embervale save: nothing ever wrote one. A document that declares
+        // one is hand-edited, foreign, or corrupt, and an unmigratable save must fail loudly, not
+        // load in pieces.
+        SaveEnvelopeFault.TooOld =>
+            $"Save slot '{slot}' is version {envelope.Version}, older than the first format this game " +
+            "wrote (1), and no migration step covers it; refusing to load " +
+            "rather than feeding a partial document to live components.",
+        SaveEnvelopeFault.NoObjects =>
+            $"Save slot '{slot}' has no 'objects' section.",
+        SaveEnvelopeFault.BadEntry =>
+            $"Save slot '{slot}' entry '{envelope.FaultDetail}' is not an object; refusing to load.",
+        SaveEnvelopeFault.ChecksumMismatch =>
+            $"Save slot '{slot}' failed its integrity check (stored {envelope.StoredChecksum}, " +
+            $"content is {envelope.ComputedChecksum}); refusing to load.",
+        _ => $"Save slot '{slot}' is corrupt or not an object.",
+    };
 
-        if (version == 2)
-        {
-            MigrateV2ToV3(slot, root);
-            version = 3;
-        }
-
-        if (version == SaveFormatVersion)
-        {
-            return true;
-        }
-
-        // ⚠️ ANYTHING STILL BELOW THE FIRST FORMAT IS REFUSED RATHER THAN BEST-EFFORTED. There is no
-        // such thing as a legitimate v0 Embervale save — nothing ever wrote one. A document that
-        // declares a version below the first is hand-edited, foreign, or corrupt, and the old branch
-        // waved all three through with a warning and started feeding their fragments to live
-        // components. An unmigratable save must fail loudly, not load in pieces.
-        Log.Error($"Save slot '{slot}' is version {version}, older than the first format this game " +
-                  $"wrote (1), and no migration step covers it; refusing to load " +
-                  "rather than feeding a partial document to live components.");
-        return false;
-    }
-
-    /// <summary>
-    /// v1 -> v2: THE WORLD MOVED UNDER THE SAVE (the 2026-08-29 geography overhaul).
-    ///
-    /// Every world coordinate a v1 document holds was written against a lattice that no longer
-    /// exists: the Ember Crown's cells all moved except the town hub, Frostfang Reach was lifted
-    /// out of the Ember Crown's coordinate space entirely (its old points are now inside the arena
-    /// and the northern wilds), and the ground stopped being flat, so even an unmoved X/Z can have
-    /// eight metres of hillside over it. A saved position is therefore not merely stale — it can
-    /// put the player inside terrain or in the void, which is exactly the failure this step exists
-    /// to make impossible.
-    ///
-    /// Three things carry world coordinates that a player can be TELEPORTED to, and all three are
-    /// discarded rather than guessed at:
-    ///   the header transform  — dropped, so <c>ApplySavedLocation</c> falls through to the region's
-    ///                           own SpawnPoint, which is authored, on the ground, and always valid;
-    ///   the fast-travel net   — dropped, because a jump to a v1 landing point is a jump into a hill
-    ///                           (the posts themselves are unmoved and can be re-attuned by walking
-    ///                            to them, and <c>FastTravelService.Refresh</c> keeps them honest
-    ///                            from here on);
-    ///   the map's saved pins  — dropped, because they are the positions of cells that have moved.
-    ///                           Every one of them re-registers the moment its cell loads.
-    ///
-    /// ⚠️ EVERYTHING ELSE IS KEPT ON PURPOSE. Quests, flags, inventory, perks, reputation, the
-    /// economy, blessings and companion rosters carry no coordinates and a player's progress is not
-    /// a casualty of a terrain change. Persistent actor positions are kept too: they are dropped
-    /// loot and world caches inside cells that mostly did not move relative to their own contents,
-    /// and losing a chest is worse than a chest sitting a metre low.
-    /// </summary>
-    private static void MigrateV1ToV2(string slot, Godot.Collections.Dictionary root)
+    /// <summary>The world data the v2 -> v3 migration step needs, read from the content databases.
+    /// The chain itself is pure (<see cref="SaveMigrations"/>); this is its one seam to the game.</summary>
+    private static SaveMigrationLookups MigrationLookups() => new()
     {
-        int cleared = 0;
-        if (root.TryGetValue("header", out Variant headerV) &&
-            headerV.VariantType == Variant.Type.Dictionary)
-        {
-            var header = headerV.AsGodotDictionary();
-            foreach (string key in new[] { "player_x", "player_y", "player_z", "player_yaw" })
-            {
-                if (header.ContainsKey(key))
-                {
-                    header.Remove(key);
-                    cleared++;
-                }
-            }
-        }
-
-        // ⚠️ "objects", not "state": the envelope key was always "objects", so until the 2026-09 world
-        // rebuild this step never actually discarded the records it documents discarding.
-        if (root.TryGetValue("objects", out Variant stateV) &&
-            stateV.VariantType == Variant.Type.Dictionary)
-        {
-            var state = stateV.AsGodotDictionary();
-            foreach (string key in new[] { "fasttravel", "map" })
-            {
-                if (state.ContainsKey(key))
-                {
-                    state.Remove(key);
-                    cleared++;
-                }
-            }
-        }
-
-        root["version"] = 2;
-        Log.Info($"Save slot '{slot}': migrated v1 -> v2, discarding {cleared} pre-overhaul " +
-                 "coordinate record(s). The player lands at the region's spawn point and " +
-                 "fast-travel posts need re-attuning; nothing else was touched.");
-    }
-
-    /// <summary>The homestead build-yard centre every v2 save's placed props were written against,
-    /// before the 2026-09 world rebuild moved the holding. History, not configuration.</summary>
-    private static readonly Vector3 V2HomesteadYard = new(95f, 0f, 90f);
-
-    /// <summary>
-    /// v2 -> v3: THE WORLD REBUILD (2026-09). Every settlement moved and the realms grew roughly eight
-    /// times in area, so a v2 world coordinate names a place that is now somewhere else. Progress is
-    /// kept whole; only positions a player could be put back at are dealt with, and none is guessed at:
-    ///   the header transform  — dropped; the player lands at the region's authored SpawnPoint;
-    ///   the map               — saved footprints and the waypoint dropped; pin positions stay but are
-    ///                           outranked by the bake's <c>WorldPlaceIndex</c>, as are travel landings;
-    ///   the party             — every companion set to Follow, so the post-load catch-up brings them
-    ///                           to the player instead of restoring them at a v2 point;
-    ///   a live world event    — dropped (its origin is a v2 point; cooldowns are kept);
-    ///   placed holding props  — moved by exactly the distance the build yard moved, so a player's
-    ///                           furniture stays arranged on their own lawn;
-    ///   the start cache       — re-seated beside the new spawn.
-    /// Flags, quests, inventory, discovery and attunement carry no coordinates and are untouched.
-    /// </summary>
-    private static void MigrateV2ToV3(string slot, Godot.Collections.Dictionary root)
-    {
-        int changed = 0;
-        if (root.TryGetValue("header", out Variant headerV) && headerV.VariantType == Variant.Type.Dictionary)
-        {
-            var header = headerV.AsGodotDictionary();
-            foreach (string key in new[] { "player_x", "player_y", "player_z", "player_yaw" })
-            {
-                changed += header.Remove(key) ? 1 : 0;
-            }
-        }
-
-        if (!root.TryGetValue("objects", out Variant objectsV) || objectsV.VariantType != Variant.Type.Dictionary)
-        {
-            root["version"] = 3;
-            return;
-        }
-        var objects = objectsV.AsGodotDictionary();
-
-        if (Section(objects, "map") is { } map)
-        {
-            changed += map.Remove("footprints") ? 1 : 0;
-            changed += map.Remove("waypoint") ? 1 : 0;
-        }
-
-        if (Section(objects, "world_events") is { } events)
-        {
-            changed += events.Remove("active") ? 1 : 0;
-        }
-
-        if (Section(objects, "companions") is { } companions &&
-            companions.TryGetValue("party", out Variant partyV) && partyV.VariantType == Variant.Type.Array)
-        {
-            foreach (Variant member in partyV.AsGodotArray())
-            {
-                if (member.VariantType == Variant.Type.Dictionary)
-                {
-                    member.AsGodotDictionary()["stance"] = 0; // CompanionStance.Follow
-                    changed++;
-                }
-            }
-        }
-
-        if (Section(objects, "spawns") is { } spawns &&
-            spawns.TryGetValue("actors", out Variant actorsV) && actorsV.VariantType == Variant.Type.Array)
-        {
-            Vector3 spawn = World.RegionDatabase.Get(GameIds.Regions.EmberCrown)?.SpawnPoint ?? Vector3.Zero;
-            foreach (Variant element in actorsV.AsGodotArray())
-            {
-                if (element.VariantType != Variant.Type.Dictionary)
-                {
-                    continue;
-                }
-                var actor = element.AsGodotDictionary();
-                string pid = actor.TryGetValue("pid", out Variant pidV) ? pidV.AsString() : string.Empty;
-                Vector3 shift;
-                if (pid == "cache.world.start")
-                {
-                    actor["x"] = spawn.X + 5f;
-                    actor["y"] = 0f;
-                    actor["z"] = spawn.Z - 5f;
-                    changed++;
-                    continue;
-                }
-                if (!pid.StartsWith("place.", System.StringComparison.Ordinal) ||
-                    Housing.PropertyDatabase.Get(pid.Substring(6).Split('#')[0]) is not { } property)
-                {
-                    continue;
-                }
-                shift = property.PlacementWorldCenter - V2HomesteadYard;
-                actor["x"] = (actor.TryGetValue("x", out Variant x) ? x.AsSingle() : 0f) + shift.X;
-                actor["z"] = (actor.TryGetValue("z", out Variant z) ? z.AsSingle() : 0f) + shift.Z;
-                changed++;
-            }
-        }
-
-        root["version"] = 3;
-        Log.Info($"Save slot '{slot}': migrated v2 -> v3 for the world rebuild, updating {changed} " +
-                 "coordinate record(s). The player lands at the region's spawn point; progress is untouched.");
-    }
-
-    private static Godot.Collections.Dictionary? Section(Godot.Collections.Dictionary objects, string key) =>
-        objects.TryGetValue(key, out Variant value) && value.VariantType == Variant.Type.Dictionary
-            ? value.AsGodotDictionary()
-            : null;
+        StartSpawn = static () => World.RegionDatabase.Get(GameIds.Regions.EmberCrown) is { } region
+            ? ((double)region.SpawnPoint.X, (double)region.SpawnPoint.Z)
+            : ((double X, double Z)?)null,
+        PropertyYard = static id => Housing.PropertyDatabase.Get(id) is { } property
+            ? ((double)property.PlacementWorldCenter.X, (double)property.PlacementWorldCenter.Z)
+            : ((double X, double Z)?)null,
+    };
 }

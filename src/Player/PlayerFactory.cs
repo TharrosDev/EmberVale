@@ -104,7 +104,9 @@ public static class PlayerFactory
         player.AddChild(new LocomotionComponent { Name = "Locomotion", SprintCostsStamina = true, TakesFallDamage = true });
         player.AddChild(new FootstepComponent { Name = "Footsteps" });
         player.AddChild(new CombatComponent { Name = "Combat", Team = PlayerTeam });
-        player.AddChild(new InventoryComponent { Name = "Inventory" });
+        // The player keeps crafting materials in the uncapped material bag (the character screen's
+        // Materials tab); every other inventory in the game leaves the flag off.
+        player.AddChild(new InventoryComponent { Name = "Inventory", UseMaterialBag = true });
         player.AddChild(BuildHurtbox());
 
         // Pitch pivot at eye height; the first-person camera rides the pivot directly
@@ -250,6 +252,13 @@ public static class PlayerFactory
 
         // Hotbar: quick-use bar (1-5) the player assigns from the inventory; resolves bag + equipment.
         player.AddChild(new HotbarComponent { Name = "Hotbar" });
+
+        // Consumable cooldown groups and over-time restores, and the unique effects worn gear and
+        // item-set thresholds carry. Both sit after Stats, Combat, Inventory and Equipment, which
+        // they resolve; neither holds saved state (cooldowns drop on load, effects re-derive from
+        // the equipment restore).
+        player.AddChild(new ConsumableEffectsComponent { Name = "ConsumableEffects" });
+        player.AddChild(new UniqueEffectsComponent { Name = "UniqueEffects" });
 
         // Reputation: tracks standing with every faction and reacts to kills the player lands.
         player.AddChild(new ReputationComponent { Name = "Reputation" });

@@ -8,9 +8,23 @@ namespace Embervale.UI;
 
 /// <summary>
 /// The persistent bottom-of-screen <b>consumables</b> quick-use bar — five cells mirroring the player's
-/// <see cref="HotbarComponent"/>. Each shows its number, the assigned consumable's name and live count;
-/// pressing 1-5 uses the slot (handled by the component), clicking a cell here clears it. Consumables are
-/// assigned from the inventory panel. Rebuilds from a dirty flag, never during a button signal.
+/// <see cref="HotbarComponent"/>. Each shows its binding, an icon for what the consumable does, its
+/// name and live count; pressing the binding uses the slot (handled by the component), clicking a cell
+/// here clears it. Consumables are assigned from the inventory panel. Rebuilds from a dirty flag,
+/// never during a button signal.
+///
+/// Three things here are not just drawing:
+/// <list type="bullet">
+/// <item>the <b>cooldown sweep</b>: the wait is drawn over the cell from the real cooldown the
+/// player's <see cref="HotbarComponent.CooldownFraction"/> reports, the same one that refuses the
+/// use, so the bar cannot disagree with the rule;</item>
+/// <item>the <b>gamepad chord</b>: while the left trigger is held, the d-pad and Select are lent to
+/// the five slots (<see cref="GameInput.SetHotbarChord"/>), so the component's own polling fires
+/// with no second input path;</item>
+/// <item>a <b>watchdog</b> that hands the keyboard back if a search field lost focus without saying
+/// so (<see cref="GameInput.SetTextEntry"/>). This node lives as long as the session and processes
+/// through a pause, which is what makes it the right place for both of the last two.</item>
+/// </list>
 /// </summary>
 public partial class HotbarPanel : CanvasLayer
 {
@@ -18,7 +32,14 @@ public partial class HotbarPanel : CanvasLayer
     private InventoryComponent? _inventory;
     private PanelContainer _panel = null!;
     private HBoxContainer _row = null!;
+    private Label _caption = null!;
     private bool _dirty = true;
+
+    // Per slot: the overlay that draws its cooldown sweep and the seconds reading on it (null for
+    // a slot whose item has no cooldown).
+    private readonly Control?[] _sweeps = new Control?[HotbarComponent.SlotCount];
+    private readonly Label?[] _waits = new Label?[HotbarComponent.SlotCount];
+    private bool _sweeping;
 
     /// <summary>Cell size: wide enough for a two-line item name, tall enough for the number line and both.</summary>
     private const float CellWidth = 90f;
@@ -43,6 +64,10 @@ public partial class HotbarPanel : CanvasLayer
 
     public override void _Ready()
     {
+        // Through a pause: the chord has to be let go and the keyboard handed back whether or not the
+        // world is running. The cooldowns themselves tick on the player and stop with the tree.
+        ProcessMode = ProcessModeEnum.Always;
+
         // A Well, not a Panel (37.5H). The hotbar is a strip of slots docked to the bottom bar;
         // as a full framed panel it carried a 2 px brass rule and its own grain ShaderMaterial,
         // competing with the vitals panel beside it. Recessed reads correctly for a row of slots.
@@ -70,40 +95,98 @@ public partial class HotbarPanel : CanvasLayer
         column.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
         pad.AddChild(column);
 
-        Label caption = UiTheme.Body(Loc.T("hud.consumables"), UiTheme.Dim);
-        caption.HorizontalAlignment = HorizontalAlignment.Center;
-        column.AddChild(caption);
+        _caption = UiTheme.Body(Loc.T("hud.consumables"), UiTheme.Dim);
+        _caption.HorizontalAlignment = HorizontalAlignment.Center;
+        column.AddChild(_caption);
 
         _row = new HBoxContainer();
         _row.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
         column.AddChild(_row);
 
-        EventBus.Instance?.Subscribe<HotbarChangedEvent>(OnDirty);
-        EventBus.Instance?.Subscribe<InventoryChangedEvent>(OnDirty);
+        EventBus.Instance?.Subscribe<HotbarChangedEvent>(OnHotbarChanged);
+        EventBus.Instance?.Subscribe<InventoryChangedEvent>(OnInventoryChanged);
+        EventBus.Instance?.Subscribe<InputDeviceChangedEvent>(OnDeviceChanged);
+        EventBus.Instance?.Subscribe<GameLoadedEvent>(OnGameLoaded);
     }
 
     public override void _ExitTree()
     {
-        EventBus.Instance?.Unsubscribe<HotbarChangedEvent>(OnDirty);
-        EventBus.Instance?.Unsubscribe<InventoryChangedEvent>(OnDirty);
+        EventBus.Instance?.Unsubscribe<HotbarChangedEvent>(OnHotbarChanged);
+        EventBus.Instance?.Unsubscribe<InventoryChangedEvent>(OnInventoryChanged);
+        EventBus.Instance?.Unsubscribe<InputDeviceChangedEvent>(OnDeviceChanged);
+        EventBus.Instance?.Unsubscribe<GameLoadedEvent>(OnGameLoaded);
+
+        // The session is going away: nothing may be left borrowed from the input map.
+        GameInput.SetHotbarChord(false);
+        GameInput.SetTextEntry(false);
     }
 
-    private void OnDirty(HotbarChangedEvent e) => _dirty = true;
+    private void OnHotbarChanged(HotbarChangedEvent e) => _dirty = true;
 
-    private void OnDirty(InventoryChangedEvent e) => _dirty = true;
+    private void OnInventoryChanged(InventoryChangedEvent e) => _dirty = true;
+
+    private void OnDeviceChanged(InputDeviceChangedEvent e) => _dirty = true;
+
+    private void OnGameLoaded(GameLoadedEvent e) => _dirty = true;
 
     public override void _Process(double delta)
     {
         bool playing = GameManager.Instance is { IsPlaying: true };
         // Toggle the panel, not this layer — when docked the panel lives under the GameHud layer.
         _panel.Visible = playing;
-        if (!_dirty || !playing)
+
+        GameInput.SetHotbarChord(
+            playing && !UiState.MenuOpen && Godot.Input.IsActionPressed(GameInput.HotbarChord));
+
+        if (GameInput.TextEntryActive && GetViewport()?.GuiGetFocusOwner() is not LineEdit)
+        {
+            GameInput.SetTextEntry(false);
+        }
+
+        if (!playing)
         {
             return;
         }
 
-        _dirty = false;
-        Rebuild();
+        if (_dirty)
+        {
+            _dirty = false;
+            Rebuild();
+        }
+
+        UpdateSweeps();
+    }
+
+    /// <summary>Redraws the sweeps while any cooldown runs, and once more after the last one ends
+    /// so the final sliver is wiped rather than left frozen on the cell.</summary>
+    private void UpdateSweeps()
+    {
+        bool running = false;
+        for (int i = 0; i < HotbarComponent.SlotCount && !running; i++)
+        {
+            running = _sweeps[i] != null && _hotbar != null && _hotbar.CooldownRemaining(i) > 0f;
+        }
+
+        if (!running && !_sweeping)
+        {
+            return;
+        }
+
+        _sweeping = running;
+        for (int i = 0; i < HotbarComponent.SlotCount; i++)
+        {
+            if (_sweeps[i] is not { } sweep || !IsInstanceValid(sweep))
+            {
+                continue;
+            }
+
+            double left = _hotbar?.CooldownRemaining(i) ?? 0d;
+            sweep.QueueRedraw();
+            if (_waits[i] is { } wait && IsInstanceValid(wait))
+            {
+                wait.Text = left > 0d ? ItemPresentation.Seconds((float)System.Math.Ceiling(left)) : string.Empty;
+            }
+        }
     }
 
     private void Rebuild()
@@ -112,6 +195,11 @@ public partial class HotbarPanel : CanvasLayer
         {
             child.QueueFree();
         }
+
+        bool pad = InputDevice.GamepadActive;
+        _caption.Text = pad
+            ? Loc.TF("hud.consumables_pad", GameInput.HotbarChordLabel)
+            : Loc.T("hud.consumables");
 
         // ⚠️ AN EMPTY SLOT SHOWS ITS NUMBER AND NOTHING ELSE (§53, §72, §73).
         //
@@ -124,10 +212,11 @@ public partial class HotbarPanel : CanvasLayer
         {
             string id = _hotbar?.Get(i) ?? string.Empty;
             bool filled = id.Length > 0;
+            var consumable = ItemDatabase.Get(id) as ConsumableItemResource;
 
             Button cell = UiTheme.Action(string.Empty);
             cell.CustomMinimumSize = new Vector2(CellWidth, CellHeight);
-            cell.TooltipText = Loc.T(filled ? "hud.hotbar_hint" : "hud.hotbar_empty_hint");
+            cell.TooltipText = Tooltip(i, filled, consumable, pad);
             cell.Disabled = !filled;
 
             // The cell is a Button, which never sizes to its children, so the content is pinned to the cell
@@ -143,19 +232,33 @@ public partial class HotbarPanel : CanvasLayer
             stack.AddThemeConstantOverride("separation", UiTheme.LineGap);
             inset.AddChild(stack);
 
-            // The number is the binding, so it is always present and always in the same corner —
-            // that is what makes the row scannable as "slot 3" rather than as a list of names. The count
-            // shares its line (right edge), which keeps a two-line name from pushing the count off the cell.
+            // The binding is always present and always in the same corner — that is what makes the row
+            // scannable as "slot 3" rather than as a list of names. On a pad it is the chord's button
+            // (the bar's caption names the trigger to hold). The effect icon and the count share its
+            // line, which keeps a two-line name from pushing either off the cell.
             var head = new HBoxContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
-            Label number = UiTheme.Caption($"{i + 1}", filled ? UiTheme.Accent : UiTheme.Disabled);
+            head.AddThemeConstantOverride("separation", UiTheme.Space2xs);
+            Label number = UiTheme.Caption(GameInput.HotbarPromptLabel(i), filled ? UiTheme.Accent : UiTheme.Disabled);
             number.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
             head.AddChild(number);
             stack.AddChild(head);
+
+            _sweeps[i] = null;
+            _waits[i] = null;
 
             if (filled)
             {
                 string name = ItemDatabase.Get(id)?.DisplayName ?? id;
                 int count = _inventory?.CountOf(id) ?? 0;
+
+                // What the slot does, as a shape: a heart, a bolt, a drop, a shield, a sun. Read
+                // faster than the name, and it is the part that survives when the name is two
+                // truncated lines.
+                if (consumable != null)
+                {
+                    head.AddChild(UiIcon.Create(
+                        ItemPresentation.EffectIcon(consumable.Effect), 14f, ItemSlot.EffectColor(consumable.Effect)));
+                }
 
                 Label label = UiTheme.Caption(name, UiTheme.Text);
                 label.AutowrapMode = TextServer.AutowrapMode.WordSmart;
@@ -171,9 +274,100 @@ public partial class HotbarPanel : CanvasLayer
             }
 
             cell.AddChild(inset);
+
+            if (consumable is { CooldownSeconds: > 0f })
+            {
+                AddSweep(cell, i);
+            }
+
             int slot = i;
             cell.Pressed += () => _hotbar?.Clear(slot);
             _row.AddChild(cell);
         }
+
+        // Draw the new cells' sweeps on their first frame, whether or not a cooldown started since.
+        _sweeping = true;
+    }
+
+    /// <summary>
+    /// The cooldown overlay for one cell: a dark wedge covering the share of the wait still to run,
+    /// unwinding clockwise from twelve o'clock, with the seconds left in the middle. The wedge is the
+    /// glance and the number is the answer; neither depends on a colour.
+    ///
+    /// Drawn through the <c>Draw</c> signal of a plain <see cref="Control"/> rather than a subclass
+    /// overriding <c>_Draw</c>, so the bar adds no new script type for five small overlays.
+    /// </summary>
+    private void AddSweep(Button cell, int slot)
+    {
+        var sweep = new Control { MouseFilter = Control.MouseFilterEnum.Ignore, ClipContents = true };
+        sweep.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+
+        Color shade = UiTheme.ScrimBg with { A = 0.66f };
+        sweep.Draw += () =>
+        {
+            float fraction = _hotbar?.CooldownFraction(slot) ?? 0f;
+            if (fraction < 0.01f)
+            {
+                return;
+            }
+
+            Vector2 centre = sweep.Size / 2f;
+            float radius = sweep.Size.Length(); // past the corners; the control clips it to the cell
+            int steps = Mathf.Max(3, Mathf.CeilToInt(32f * fraction));
+            float from = (-Mathf.Pi / 2f) + (Mathf.Tau * (1f - fraction));
+            float span = Mathf.Tau * fraction;
+
+            Vector2 previous = centre + (new Vector2(Mathf.Cos(from), Mathf.Sin(from)) * radius);
+            for (int s = 1; s <= steps; s++)
+            {
+                float angle = from + (span * s / steps);
+                Vector2 next = centre + (new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * radius);
+                sweep.DrawColoredPolygon(new[] { centre, previous, next }, shade);
+                previous = next;
+            }
+        };
+
+        Label wait = UiTheme.Header(string.Empty);
+        wait.MouseFilter = Control.MouseFilterEnum.Ignore;
+        wait.HorizontalAlignment = HorizontalAlignment.Center;
+        wait.VerticalAlignment = VerticalAlignment.Center;
+        wait.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+        sweep.AddChild(wait);
+
+        cell.AddChild(sweep);
+        _sweeps[slot] = sweep;
+        _waits[slot] = wait;
+    }
+
+    /// <summary>The cell's tooltip: for a filled slot, what the consumable does and how long it
+    /// makes the player wait, then how to use the slot on the device in hand.</summary>
+    private static string Tooltip(int slot, bool filled, ConsumableItemResource? consumable, bool pad)
+    {
+        if (!filled)
+        {
+            return Loc.T("hud.hotbar_empty_hint");
+        }
+
+        string hint = pad
+            ? Loc.TF("hud.hotbar_hint_pad", GameInput.HotbarPadLabel(slot))
+            : Loc.T("hud.hotbar_hint");
+        if (consumable == null)
+        {
+            return hint;
+        }
+
+        var lines = new System.Collections.Generic.List<string> { consumable.DisplayName };
+        if (ItemSlot.EffectText(consumable) is { Length: > 0 } effect)
+        {
+            lines.Add(effect);
+        }
+
+        if (ItemSlot.CooldownText(consumable) is { } cooldown)
+        {
+            lines.Add(cooldown);
+        }
+
+        lines.Add(hint);
+        return string.Join("\n", lines);
     }
 }

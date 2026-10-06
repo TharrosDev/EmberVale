@@ -33,13 +33,109 @@ script = ExtResource("2_entry")
 ItemId = "item.material.leather_strips"
 Quantity = 6
 
+[sub_resource type="Resource" id="Stock_ics_1"]
+script = ExtResource("2_entry")
+ItemId = "item.potion.health_greater"
+Quantity = 3
+
+[sub_resource type="Resource" id="Stock_ics_2"]
+script = ExtResource("2_entry")
+ItemId = "item.potion.stamina_greater"
+Quantity = 2
+
+[sub_resource type="Resource" id="Stock_ics_3"]
+script = ExtResource("2_entry")
+ItemId = "item.potion.mana_greater"
+Quantity = 2
+
+[sub_resource type="Resource" id="Stock_ics_4"]
+script = ExtResource("2_entry")
+ItemId = "item.potion.cure_greater"
+Quantity = 2
+
+[sub_resource type="Resource" id="Stock_ics_5"]
+script = ExtResource("2_entry")
+ItemId = "item.potion.might_greater"
+Quantity = 1
+
+[sub_resource type="Resource" id="Stock_ics_6"]
+script = ExtResource("2_entry")
+ItemId = "item.potion.insight_greater"
+Quantity = 1
+
+[sub_resource type="Resource" id="Stock_ics_7"]
+script = ExtResource("2_entry")
+ItemId = "item.potion.stoneskin_greater"
+Quantity = 1
+
+[sub_resource type="Resource" id="Stock_ics_8"]
+script = ExtResource("2_entry")
+ItemId = "item.potion.resist_fire_greater"
+Quantity = 1
+
+[sub_resource type="Resource" id="Stock_ics_9"]
+script = ExtResource("2_entry")
+ItemId = "item.potion.resist_frost_greater"
+Quantity = 1
+
+[sub_resource type="Resource" id="Stock_ics_10"]
+script = ExtResource("2_entry")
+ItemId = "item.potion.resist_lightning_greater"
+Quantity = 1
+
+[sub_resource type="Resource" id="Stock_ics_11"]
+script = ExtResource("2_entry")
+ItemId = "item.potion.resist_arcane_greater"
+Quantity = 1
+
+[sub_resource type="Resource" id="Stock_ics_12"]
+script = ExtResource("2_entry")
+ItemId = "item.potion.resist_nature_greater"
+Quantity = 1
+
+[sub_resource type="Resource" id="Stock_ics_13"]
+script = ExtResource("2_entry")
+ItemId = "item.potion.resist_necrotic_greater"
+Quantity = 1
+
+[sub_resource type="Resource" id="Stock_ics_14"]
+script = ExtResource("2_entry")
+ItemId = "item.ammo.steel_arrows"
+Quantity = 30
+
+[sub_resource type="Resource" id="Stock_ics_15"]
+script = ExtResource("2_entry")
+ItemId = "item.ammo.blacksteel_arrows"
+Quantity = 30
+
+[sub_resource type="Resource" id="Stock_ics_16"]
+script = ExtResource("2_entry")
+ItemId = "item.material.blacksteel_ingot"
+Quantity = 2
+
+[sub_resource type="Resource" id="Stock_ics_17"]
+script = ExtResource("2_entry")
+ItemId = "item.weapon.blacksteel_sword"
+Quantity = 1
+
+[sub_resource type="Resource" id="Stock_ics_18"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.ashhide_jerkin"
+Quantity = 1
+
+[sub_resource type="Resource" id="Stock_ics_19"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.briarheart_cuirass"
+Quantity = 1
+RequiredFlagId = "flag.beast_lord_defeated"
+
 [resource]
 script = ExtResource("1_shop")
 Id = "shop.last_hearth.scavenger"
 CellId = "ashen_wilds.last_hearth"
 NameKey = "shop.last_hearth.scavenger.name"
 FactionId = "faction.villagers"
-Stock = Array[Resource]([SubResource("Stock_ration"), SubResource("Stock_potion"), SubResource("Stock_herb"), SubResource("Stock_scrap"), SubResource("Stock_leather")])
+Stock = Array[Resource]([SubResource("Stock_ration"), SubResource("Stock_potion"), SubResource("Stock_herb"), SubResource("Stock_scrap"), SubResource("Stock_leather"), SubResource("Stock_ics_1"), SubResource("Stock_ics_2"), SubResource("Stock_ics_3"), SubResource("Stock_ics_4"), SubResource("Stock_ics_5"), SubResource("Stock_ics_6"), SubResource("Stock_ics_7"), SubResource("Stock_ics_8"), SubResource("Stock_ics_9"), SubResource("Stock_ics_10"), SubResource("Stock_ics_11"), SubResource("Stock_ics_12"), SubResource("Stock_ics_13"), SubResource("Stock_ics_14"), SubResource("Stock_ics_15"), SubResource("Stock_ics_16"), SubResource("Stock_ics_17"), SubResource("Stock_ics_18"), SubResource("Stock_ics_19")])
 RestockDays = 2
 BuyMarkup = 1.7
 SellFraction = 0.35

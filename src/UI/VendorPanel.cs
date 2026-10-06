@@ -44,12 +44,56 @@ public partial class VendorPanel : UiPanel
     private VBoxContainer _waresList = null!;
     private VBoxContainer _packList = null!;
     private VBoxContainer _tradeDetail = null!;
+    private Label _feedback = null!;
     private ItemInstance? _selectedTrade;
 
     private IEntity? _player;
     private InventoryComponent? _pack;
     private ShopResource? _shop;
     private bool _justOpened;
+
+    /// <summary>How many of the selected pack stack the detail's "sell some" picker is set to.</summary>
+    private int _sellQuantity = 1;
+
+    /// <summary>The most a buyback shelf remembers. Twelve is a counter's worth: enough to undo a
+    /// "sell all junk" that took something it should not have, small enough to read at a glance.</summary>
+    private const int BuybackCapacity = 12;
+
+    /// <summary>One thing the player sold and can still have back for what they were paid.</summary>
+    private sealed class BuybackEntry
+    {
+        public required string ShopId { get; init; }
+        public required ItemInstance Instance { get; init; }
+        public int Quantity { get; set; }
+        public int Price { get; set; }
+    }
+
+    /// <summary>
+    /// The buyback shelf, newest first. ⚠️ <b>Session state, deliberately never saved</b>: it is an
+    /// undo for a slip of the hand, not a second inventory. Static so it outlives the window being
+    /// rebuilt, and emptied on every load - a save loaded from before the sale still holds the item,
+    /// so an entry that survived the load would hand the player a second copy of it.
+    /// </summary>
+    private static readonly List<BuybackEntry> Buybacks = new();
+
+    /// <summary>
+    /// Units bought back per (shop, template) that have not been sold again yet. A sale of those
+    /// units is the same goods crossing the counter a second time, so it earns none of a sale's
+    /// side effects (shortage relief, fence standing, the merchant's glut): without this, one item
+    /// sold and bought back twelve times broke a shortage. Session state like the shelf, and cleared
+    /// with it - but NOT when an entry falls off the shelf or the window closes.
+    /// </summary>
+    private static readonly Dictionary<(string ShopId, string TemplateId), int> BoughtBack = new();
+
+    /// <summary>Empties the shelf and its credits. A new session is another playthrough: nothing sold
+    /// in the last one may be bought by this one's character. Called from
+    /// <c>SessionLifecycleCoordinator.ResetSessionStatics</c>, because New Game publishes no
+    /// <see cref="GameLoadedEvent"/>.</summary>
+    internal static void ResetSession()
+    {
+        Buybacks.Clear();
+        BoughtBack.Clear();
+    }
 
     protected override void BuildShell(PanelContainer shell)
     {
@@ -150,6 +194,12 @@ public partial class VendorPanel : UiPanel
         _tradeDetail.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
         column.AddChild(_tradeDetail);
 
+        // Why the last press did nothing: a full pack on a purchase used to refund the gold and say
+        // nothing at all, which reads as the Buy button being broken.
+        _feedback = UiTheme.Caption(string.Empty, UiTheme.Bad);
+        _feedback.Visible = false;
+        column.AddChild(_feedback);
+
         var columns = new HBoxContainer
         {
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
@@ -196,12 +246,27 @@ public partial class VendorPanel : UiPanel
     {
         EventBus.Instance?.Subscribe<ShopOpenedEvent>(OnShopOpened);
         EventBus.Instance?.Subscribe<InventoryChangedEvent>(OnInventoryChanged);
+        EventBus.Instance?.Subscribe<GameLoadedEvent>(OnGameLoaded);
     }
 
     public override void _ExitTree()
     {
         EventBus.Instance?.Unsubscribe<ShopOpenedEvent>(OnShopOpened);
         EventBus.Instance?.Unsubscribe<InventoryChangedEvent>(OnInventoryChanged);
+        EventBus.Instance?.Unsubscribe<GameLoadedEvent>(OnGameLoaded);
+    }
+
+    /// <summary>A load is another timeline: nothing sold in the abandoned one can be bought back.</summary>
+    private void OnGameLoaded(GameLoadedEvent e)
+    {
+        ResetSession();
+        MarkDirty();
+    }
+
+    private void SetFeedback(string text)
+    {
+        _feedback.Text = text;
+        _feedback.Visible = text.Length > 0;
     }
 
     private void OnShopOpened(ShopOpenedEvent e)
@@ -216,6 +281,7 @@ public partial class VendorPanel : UiPanel
         _pack = pack;
         _shop = e.Shop;
         _selectedTrade = null;
+        SetFeedback(string.Empty);
 
         SetOpen(true);
 
@@ -297,8 +363,12 @@ public partial class VendorPanel : UiPanel
         if (pack.AddInstance(offer.Instance, 1) <= 0)
         {
             pack.AddItem(gold, price); // pack full — hand the money straight back
+            SetFeedback(Loc.T("shop.pack_full"));
+            ItemTransfer.AnnouncePackFull(offer.Instance, 1);
             return;
         }
+
+        SetFeedback(string.Empty);
 
         // Paid for and delivered, so the sale stands either way; a false here would mean the shelf and
         // the window had drifted within one frame, which is worth a line in the log.
@@ -391,7 +461,14 @@ public partial class VendorPanel : UiPanel
     /// <em>every</em> stack, so selling one of two differently-affixed copies of one template would
     /// see the first removal satisfy both and evaporate the other. Rolled items go by reference.
     /// </summary>
-    private void Sell(ShopResource shop, ItemStack stack, int payout)
+    /// <remarks>
+    /// <paramref name="quantity"/> is how much of the stack goes (the row button passes all of it,
+    /// the detail's picker passes part), and <paramref name="payout"/> is the quote for exactly that
+    /// many. A locked stack is refused here as well as on the button: the lock is the player's own
+    /// word that this one is not for sale, and "sell all junk" must not be able to argue with it.
+    /// What was sold goes on the buyback shelf at the price it fetched.
+    /// </remarks>
+    private void Sell(ShopResource shop, ItemStack stack, int quantity, int payout)
     {
         if (_pack is not { } pack || ItemDatabase.Get(GameIds.Currency.Gold) is not { } gold)
         {
@@ -401,6 +478,8 @@ public partial class VendorPanel : UiPanel
         ItemInstance instance = stack.Instance;
         if (!ShopPricing.Sellable(instance.Type, IsCurrency(instance)) ||
             !InTrade(shop, instance) ||
+            instance.Locked ||
+            quantity <= 0 || quantity > stack.Quantity ||
             payout <= 0)
         {
             return; // the button is already disabled and says why; re-checked on the press
@@ -415,9 +494,9 @@ public partial class VendorPanel : UiPanel
             return;
         }
 
-        bool removed = instance.IsStackable
-            ? pack.RemoveItem(instance.TemplateId, stack.Quantity)
-            : pack.RemoveOneInstance(instance) != null;
+        // ItemTransfer.Take keeps the split the comment above describes (by id only when this stack
+        // is all the player holds of the thing, by reference otherwise) and adds the partial case.
+        bool removed = ItemTransfer.Take(pack, stack, quantity);
 
         if (!removed)
         {
@@ -432,19 +511,190 @@ public partial class VendorPanel : UiPanel
         // Recorded last, and only here (38H): the merchant now has the goods, so their appetite for the
         // next one has genuinely fallen. Every early return above leaves the player holding the item, and
         // none of them may mark a merchant as glutted for a sale that did not happen.
-        stock?.Absorb(shop, instance.TemplateId, stack.Quantity);
+        //
+        // ⚠️ Only for units that are new to this counter. Whatever was bought back and is now being
+        // sold again already moved the glut, the shortage and the faction once, and the buyback
+        // undid none of them - so counting it again is the same cart paid for twice.
+        int fresh = ItemPresentation.SpendCredit(BoughtBack, (shop.Id, instance.TemplateId), quantity);
+        if (fresh > 0)
+        {
+            stock?.Absorb(shop, instance.TemplateId, fresh);
+        }
 
         // The goods have reached the settlement (38T), so a shortage of their kind is that much nearer
         // broken. ⚠️ Here beside Absorb for exactly its reason: every early return above leaves the
         // player holding the item, and none of them may credit a haul that did not arrive. A sale to a
         // broker deliberately does NOT count — she is holding it for the player, not selling it here.
-        if (shop.CellId.Length > 0)
+        if (fresh > 0 && shop.CellId.Length > 0)
         {
-            Shocks()?.Deliver(shop.CellId, instance.Template.TagList(), stack.Quantity);
+            Shocks()?.Deliver(shop.CellId, instance.Template.TagList(), fresh);
         }
 
-        FenceStanding(shop, instance);
+        if (fresh > 0)
+        {
+            FenceStanding(shop, instance);
+        }
+
+        // On the shelf at what it fetched, unmarked: a junk mark on something the player went back
+        // for would put it straight into the next "sell all junk".
+        ItemPresentation.PushRecent(
+            Buybacks,
+            new BuybackEntry
+            {
+                ShopId = shop.Id,
+                Instance = ItemTransfer.Unmarked(instance),
+                Quantity = quantity,
+                Price = payout,
+            },
+            BuybackCapacity);
+
+        SetFeedback(string.Empty);
         MarkDirty();
+    }
+
+    /// <summary>
+    /// Buys a sold item back for exactly what the merchant paid. Delivered first and charged for
+    /// what actually fitted: the player was checked to hold the full price a line earlier, so the
+    /// charge cannot fall short, and a stack that only partly fits leaves its remainder on the
+    /// shelf at the remainder of its price rather than being lost or refused whole. The merchant's
+    /// purse gets the coin back (clamped to its ceiling, like every refund).
+    /// </summary>
+    private void BuyBack(ShopResource shop, BuybackEntry entry)
+    {
+        if (_pack is not { } pack || !Buybacks.Contains(entry) || !ShopPricing.CanAfford(entry.Price, Purse()))
+        {
+            return; // the button is already disabled and says why; re-checked on the press
+        }
+
+        int moved = pack.AddInstance(entry.Instance.Copy(), entry.Quantity);
+        if (moved <= 0)
+        {
+            SetFeedback(Loc.T("shop.pack_full"));
+            ItemTransfer.AnnouncePackFull(entry.Instance, entry.Quantity);
+            return;
+        }
+
+        int charge = ItemPresentation.ShareOf(entry.Price, moved, entry.Quantity);
+        if (!pack.RemoveItem(GameIds.Currency.Gold, charge))
+        {
+            Log.Warn($"Shop '{shop.Id}': bought back '{entry.Instance.TemplateId}' but could not charge {charge}g.");
+        }
+
+        Stock()?.RefundPurse(shop, charge);
+
+        (string, string) credit = (shop.Id, entry.Instance.TemplateId);
+        BoughtBack[credit] = BoughtBack.GetValueOrDefault(credit) + moved;
+
+        if (moved >= entry.Quantity)
+        {
+            Buybacks.Remove(entry);
+            SetFeedback(string.Empty);
+        }
+        else
+        {
+            entry.Quantity -= moved;
+            entry.Price -= charge;
+            SetFeedback(Loc.T("shop.pack_full"));
+        }
+
+        MarkDirty();
+    }
+
+    /// <summary>
+    /// What "sell all junk" would do at this counter right now: the junk stacks this merchant will
+    /// take, in held order, each with the payout it would get at that point in the run. The run is
+    /// simulated the way it will execute - every stack sold deepens the merchant's glut for the next
+    /// one of its kind and drains the purse the rest must fit in - so the total on the button is the
+    /// total paid. <paramref name="skipped"/> counts junk stacks left behind (not this merchant's
+    /// trade, worth nothing here, or more than the purse can still cover).
+    /// </summary>
+    private List<(ItemStack Stack, int Payout)> JunkPlan(ShopResource shop, bool haggled, out int skipped)
+    {
+        var plan = new List<(ItemStack, int)>();
+        skipped = 0;
+        if (_pack is not { } pack || shop.IsConsignment)
+        {
+            return plan;
+        }
+
+        int purse = Stock()?.PurseFor(shop) ?? -1;
+        var soldThisRun = new Dictionary<string, int>();
+        foreach (ItemStack stack in pack.JunkStacks())
+        {
+            ItemInstance instance = stack.Instance;
+            soldThisRun.TryGetValue(instance.TemplateId, out int already);
+
+            int payout = ShopPricing.Sellable(instance.Type, IsCurrency(instance)) && InTrade(shop, instance)
+                ? SellQuoteFor(shop, instance, stack.Quantity, haggled, already).Total
+                : 0;
+
+            if (payout <= 0 || (purse >= 0 && payout > purse))
+            {
+                skipped++;
+                continue;
+            }
+
+            plan.Add((stack, payout));
+            soldThisRun[instance.TemplateId] = already + stack.Quantity;
+            if (purse >= 0)
+            {
+                purse -= payout;
+            }
+        }
+
+        return plan;
+    }
+
+    /// <summary>Sells the plan, in the plan's order, through the one <see cref="Sell"/> every other
+    /// sale takes - so the purse, the glut, the shortage relief and the fence's standing all move
+    /// exactly as they would for the same stacks sold by hand.</summary>
+    private void SellAllJunk(ShopResource shop)
+    {
+        foreach ((ItemStack stack, int payout) in JunkPlan(shop, DealStruck(shop), out _))
+        {
+            Sell(shop, stack, stack.Quantity, payout);
+        }
+    }
+
+    /// <summary>
+    /// The sell-side quote for <paramref name="quantity"/> of an item at this counter: the same two
+    /// <see cref="PriceBreakdown"/> calls, with the same arguments, that priced a pack row before
+    /// this was a method. It exists so the row, the "sell some" picker and the junk total ask one
+    /// place. <paramref name="soldThisRun"/> is units of the same template a bulk sale has already
+    /// handed over in this pass, which the merchant's appetite has to count.
+    /// </summary>
+    private PriceQuote SellQuoteFor(ShopResource shop, ItemInstance instance, int quantity, bool haggled, int soldThisRun = 0)
+    {
+        bool specialty = IsSpecialty(shop, instance);
+
+        // 38H: the stack's units are priced one at a time as the merchant's appetite falls, so
+        // selling twenty at once pays exactly what selling them singly would. The multiply this
+        // replaced made dumping the whole stack strictly optimal.
+        //
+        // ⚠️ A broker's rows take neither correction (38P). She never touches the goods, so there
+        // is no appetite to glut and no purse to run down — a stack of twenty lists for twenty
+        // times one, which is the whole reason to walk them across the square to her.
+        int absorbed = shop.IsConsignment
+            ? 0
+            : (Stock()?.AbsorbedOf(shop, instance.TemplateId) ?? 0) + soldThisRun;
+
+        // 38G, and the broker takes it too: she fronts no money and takes no saturation, but she
+        // still stands somewhere, and what she can get for a thing depends on where that is.
+        //
+        // 38U: one quote per row, and it is the payout rather than a commentary on it. ⚠️ The two
+        // branches differ in more than a fraction — a broker's stack is a multiply and a counter's
+        // is 38H's decaying sum — so the split lives in PriceBreakdown where both endings are
+        // written down beside each other, not in a ternary that hides which one ran.
+        (int localSell, string localTag, bool shocked) =
+            shop.LocalQuote(instance.Value, instance.Template.TagList());
+        return shop.IsConsignment
+            ? PriceBreakdown.Consign(
+                instance.Value, localSell, TagName(localTag), shocked,
+                shop.ConsignFraction, shop.ConsignCommission, quantity)
+            : PriceBreakdown.Sell(
+                instance.Value, localSell, TagName(localTag), shocked,
+                shop.SellFraction, specialty, haggled, quantity, absorbed, shop.RestockDays,
+                SellPerkFactor());
     }
 
     /// <summary>
@@ -462,7 +712,10 @@ public partial class VendorPanel : UiPanel
     ///
     /// What replaces the purse check is the ledger entry: nothing is paid here at all. The gold exists
     /// only as a promise until the clerk's counter is pressed some days later, which is what a
-    /// consignment <em>is</em> — and it is why the whole-stack payout above needs no cap.
+    /// consignment <em>is</em> — and it is why the whole-stack payout above needs no purse.
+    ///
+    /// ⚠️ Her one cap is the shelf itself: one unsold lot of a kind at a time
+    /// (<see cref="ConsignmentRules.BlocksListing"/>). Checked here before the goods move.
     /// </summary>
     private void Consign(ShopResource shop, ItemStack stack, int netPerUnit)
     {
@@ -474,14 +727,17 @@ public partial class VendorPanel : UiPanel
         ItemInstance instance = stack.Instance;
         if (!ShopPricing.Sellable(instance.Type, IsCurrency(instance)) ||
             !InTrade(shop, instance) ||
-            netPerUnit <= 0)
+            instance.Locked ||
+            netPerUnit <= 0 ||
+            ledger.Holds(shop.Id, instance.TemplateId, CurrentDay()))
         {
             return; // the button is already disabled and says why; re-checked on the press
         }
 
-        bool removed = instance.IsStackable
-            ? pack.RemoveItem(instance.TemplateId, stack.Quantity)
-            : pack.RemoveOneInstance(instance) != null;
+        // Read before the removal: Take decrements this very stack object, so afterwards it says 0
+        // and a listing of nothing is no listing - the goods would simply be gone.
+        int quantity = stack.Quantity;
+        bool removed = ItemTransfer.Take(pack, stack, quantity);
 
         if (!removed)
         {
@@ -493,7 +749,7 @@ public partial class VendorPanel : UiPanel
         // early return above leaves the player still holding the item, and none of them may put an
         // entry on a shelf that never received it.
         ledger.Add(
-            shop.Id, instance.TemplateId, stack.Quantity, netPerUnit, CurrentDay(), shop.ConsignDays);
+            shop.Id, instance.TemplateId, quantity, netPerUnit, CurrentDay(), shop.ConsignDays);
         MarkDirty();
     }
 
@@ -624,8 +880,9 @@ public partial class VendorPanel : UiPanel
         BuildInvest(shop);
         BuildHaggle(shop, haggled);
         BuildWares(shop, tier, haggled);
+        BuildBuyback(shop);
         BuildPack(shop, haggled);
-        RebuildTradeDetail();
+        RebuildTradeDetail(shop, haggled);
     }
 
     /// <summary>
@@ -960,61 +1217,52 @@ public partial class VendorPanel : UiPanel
                 : Loc.T("shop.your_pack");
         _packHeader.Text = $"{header}   {Loc.TF("storage.slots", pack.UsedSlots, pack.Capacity)}";
 
-        if (pack.UsedSlots == 0)
+        // Snapshot: the button closures mutate this list, and a row built off a stack that has since
+        // been removed would sell a ghost. Pack then material bag: trade goods are materials, and a
+        // player whose ore lives in the bag still has ore to sell.
+        var held = new List<ItemStack>(pack.AllStacks);
+        if (held.Count == 0)
         {
             _packList.AddChild(UiTheme.Body(Loc.T("shop.pack_empty"), UiTheme.Dim));
             return;
         }
 
-        // Snapshot: the button closures mutate this list, and a row built off a stack that has since
-        // been removed would sell a ghost.
-        foreach (ItemStack stack in new List<ItemStack>(pack.Stacks))
+        BuildJunkRow(shop, haggled);
+
+        foreach (ItemStack stack in held)
         {
             ItemInstance instance = stack.Instance;
             bool sellable = ShopPricing.Sellable(instance.Type, IsCurrency(instance));
             bool inTrade = InTrade(shop, instance);
             bool specialty = IsSpecialty(shop, instance);
+            bool kept = instance.Locked;
 
-            // 38H: the stack's units are priced one at a time as the merchant's appetite falls, so
-            // selling twenty at once pays exactly what selling them singly would. The multiply this
-            // replaced made dumping the whole stack strictly optimal.
-            //
-            // ⚠️ A broker's rows take neither correction (38P). She never touches the goods, so there
-            // is no appetite to glut and no purse to run down — a stack of twenty lists for twenty
-            // times one, which is the whole reason to walk them across the square to her.
+            // The quote itself, and the 38H / 38G / 38P / 38U reasoning behind each argument, is in
+            // SellQuoteFor: one place asked by this row, the "sell some" picker and the junk total.
             int absorbed = shop.IsConsignment ? 0 : Stock()?.AbsorbedOf(shop, instance.TemplateId) ?? 0;
-
-            // 38G, and the broker takes it too: she fronts no money and takes no saturation, but she
-            // still stands somewhere, and what she can get for a thing depends on where that is.
-            //
-            // 38U: one quote per row, and it is the payout rather than a commentary on it. ⚠️ The two
-            // branches differ in more than a fraction — a broker's stack is a multiply and a counter's
-            // is 38H's decaying sum — so the split lives in PriceBreakdown where both endings are
-            // written down beside each other, not in a ternary that hides which one ran.
-            (int localSell, string localTag, bool shocked) =
-                shop.LocalQuote(instance.Value, instance.Template.TagList());
-            PriceQuote quote = shop.IsConsignment
-                ? PriceBreakdown.Consign(
-                    instance.Value, localSell, TagName(localTag), shocked,
-                    shop.ConsignFraction, shop.ConsignCommission, stack.Quantity)
-                : PriceBreakdown.Sell(
-                    instance.Value, localSell, TagName(localTag), shocked,
-                    shop.SellFraction, specialty, haggled, stack.Quantity, absorbed, shop.RestockDays,
-                    SellPerkFactor());
+            PriceQuote quote = SellQuoteFor(shop, instance, stack.Quantity, haggled);
 
             int unitPrice = quote.Unit;
             int payout = !sellable || !inTrade ? 0 : quote.Total;
             bool glutted = ShopStock.SaturationMultiplier(absorbed, shop.RestockDays) < 1f;
 
-            // Five refusals, each named separately: not for sale at all, not this merchant's trade,
-            // nothing an honest merchant will touch, worth nothing, or the merchant cannot cover it.
-            // Collapsing them would tell a player with a Legendary to try a cheaper shop when the real
-            // answer is to come back after a restock — and 38F's addition is the one that has somewhere
-            // to send them, so it names the trade.
+            // Six refusals, each named separately: not for sale at all, not this merchant's trade,
+            // nothing an honest merchant will touch, worth nothing, locked by the player, or the
+            // merchant cannot cover it. Collapsing them would tell a player with a Legendary to try a
+            // cheaper shop when the real answer is to come back after a restock — and 38F's addition
+            // is the one that has somewhere to send them, so it names the trade. The lock comes after
+            // the merchant's own reasons: unlocking something she would not buy anyway is a wasted trip
+            // to the pack.
+            // A seventh, the broker's own: she already shows a lot of this kind, and takes the next
+            // when that one has sold (ConsignmentRules.BlocksListing).
             bool afforded = purse < 0 || payout <= purse;
+            bool shelved = shop.IsConsignment &&
+                (Ledger()?.Holds(shop.Id, instance.TemplateId, CurrentDay()) ?? false);
             string refusal = !sellable ? Loc.T("shop.unsellable")
                 : !inTrade ? TradeRefusal(shop, instance)
                 : payout <= 0 ? Loc.T("shop.worthless")
+                : kept ? Loc.T("shop.locked_item")
+                : shelved ? Loc.T("shop.consign_listed")
                 : Loc.T("shop.vendor_broke");
 
             // The broker's price line names the wait as well as the money: an offer that is better
@@ -1031,11 +1279,11 @@ public partial class VendorPanel : UiPanel
                 stack.Quantity,
                 priceText: priceText,
                 action: Loc.T(shop.IsConsignment ? "shop.consign" : "shop.sell"),
-                enabled: sellable && inTrade && payout > 0 && afforded,
+                enabled: sellable && inTrade && payout > 0 && afforded && !kept && !shelved,
                 refusal: refusal,
                 onPressed: shop.IsConsignment
                     ? () => Consign(shop, captured, unitPrice)
-                    : () => Sell(shop, captured, payout),
+                    : () => Sell(shop, captured, captured.Quantity, payout),
 
                 // A refused row explains the refusal, not the arithmetic — quoting a breakdown of a
                 // payout nobody is being offered is the "come back with more gold" mistake in another
@@ -1078,6 +1326,11 @@ public partial class VendorPanel : UiPanel
         slot.TooltipText = Loc.T("shop.inspect_hint");
         slot.Pressed += () =>
         {
+            if (!ReferenceEquals(_selectedTrade, instance))
+            {
+                _sellQuantity = 1; // a picker left at 30 for ore must not open at 30 for potions
+            }
+
             _selectedTrade = instance;
             MarkDirty();
         };
@@ -1157,7 +1410,104 @@ public partial class VendorPanel : UiPanel
         list.AddChild(card);
     }
 
-    private void RebuildTradeDetail()
+    /// <summary>
+    /// The "sell all junk" line at the head of the pack column: how many stacks will go and for how
+    /// much, before the press. Absent when nothing is marked. When something is marked and none of
+    /// it can be sold here the button stays, greyed, saying so - a junk pile this merchant will not
+    /// touch is worth knowing about at the counter rather than after walking away.
+    /// </summary>
+    private void BuildJunkRow(ShopResource shop, bool haggled)
+    {
+        if (_pack is not { } pack || shop.IsConsignment || pack.JunkStacks().Count == 0)
+        {
+            return;
+        }
+
+        List<(ItemStack Stack, int Payout)> plan = JunkPlan(shop, haggled, out int skipped);
+        int total = 0;
+        foreach ((ItemStack _, int payout) in plan)
+        {
+            total += payout;
+        }
+
+        PanelContainer band = UiTheme.Band(UiTheme.IronLit);
+        var row = new HBoxContainer();
+        row.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
+
+        var copy = new VBoxContainer
+        {
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            SizeFlagsVertical = Control.SizeFlags.ShrinkCenter,
+        };
+        copy.AddThemeConstantOverride("separation", UiTheme.LineGap);
+        copy.AddChild(UiTheme.Body(
+            plan.Count > 0 ? Loc.TF("shop.junk_preview", plan.Count, total) : Loc.T("shop.junk_none_sellable"),
+            plan.Count > 0 ? UiTheme.Accent : UiTheme.Dim));
+        if (skipped > 0 && plan.Count > 0)
+        {
+            copy.AddChild(UiTheme.Caption(Loc.TF("shop.junk_skipped", skipped)));
+        }
+
+        row.AddChild(copy);
+
+        Button sell = UiTheme.Action(Loc.T("shop.sell_junk"));
+        sell.Disabled = plan.Count == 0;
+        sell.TooltipText = plan.Count == 0 ? Loc.T("shop.junk_none_sellable") : Loc.T("shop.sell_junk_hint");
+        sell.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
+        sell.Pressed += () => SellAllJunk(shop);
+        row.AddChild(sell);
+
+        band.AddChild(row);
+        _packList.AddChild(band);
+    }
+
+    /// <summary>
+    /// The buyback shelf, under the merchant's own wares: what the player sold at this counter this
+    /// session, newest first, each for the price it fetched. Nothing is drawn when the shelf is
+    /// empty - an empty "Buyback" heading on every counter would be furniture.
+    /// </summary>
+    private void BuildBuyback(ShopResource shop)
+    {
+        var mine = new List<BuybackEntry>();
+        foreach (BuybackEntry entry in Buybacks)
+        {
+            if (entry.ShopId == shop.Id)
+            {
+                mine.Add(entry);
+            }
+        }
+
+        if (mine.Count == 0)
+        {
+            return;
+        }
+
+        _waresList.AddChild(UiTheme.SectionRule(Loc.T("shop.buyback")));
+
+        int purse = Purse();
+        foreach (BuybackEntry entry in mine)
+        {
+            BuybackEntry captured = entry;
+            AddRow(
+                _waresList,
+                entry.Instance,
+                entry.Quantity,
+                priceText: Loc.TF("shop.price", entry.Price),
+                action: Loc.T("shop.buy_back"),
+                enabled: ShopPricing.CanAfford(entry.Price, purse),
+                refusal: Loc.T("shop.cannot_afford"),
+                onPressed: () => BuyBack(shop, captured),
+                priceTooltip: Loc.T("shop.buyback_hint"));
+        }
+    }
+
+    /// <summary>
+    /// The inspected item: its card, compared against what the player is wearing, and - for a stack
+    /// in the player's own pack - the "sell some" picker. The comparison is the point of inspecting
+    /// a ware at all: without it the question "is this better than mine" meant closing the shop,
+    /// opening the pack and remembering two sets of numbers.
+    /// </summary>
+    private void RebuildTradeDetail(ShopResource shop, bool haggled)
     {
         UiTheme.ClearChildren(_tradeDetail);
         if (_selectedTrade is not { } item)
@@ -1167,6 +1517,96 @@ public partial class VendorPanel : UiPanel
             return;
         }
 
-        _tradeDetail.AddChild(ItemSlot.Detail(item));
+        _tradeDetail.AddChild(ItemSlot.Detail(item, new ItemSlot.DetailContext(
+            _player?.GetComponent<EquipmentComponent>(),
+            _player?.GetComponent<ProgressionComponent>()?.Level ?? 0,
+            Compare: true)));
+
+        if (HeldStack(item) is { } stack && SellSomeRow(shop, stack, haggled) is { } some)
+        {
+            _tradeDetail.AddChild(some);
+        }
+    }
+
+    private ItemStack? HeldStack(ItemInstance instance)
+    {
+        if (_pack == null)
+        {
+            return null;
+        }
+
+        foreach (ItemStack stack in _pack.AllStacks)
+        {
+            if (ReferenceEquals(stack.Instance, instance))
+            {
+                return stack;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// The quantity picker for selling part of a stack, or null when there is no "part" to sell: a
+    /// single item, a broker (she lists whole stacks), or anything this counter refuses outright.
+    ///
+    /// The price beside it is requoted in place as the slider moves, from the same
+    /// <see cref="SellQuoteFor"/> the press then charges - never by rebuilding, which would free the
+    /// slider mid-drag. A quantity the merchant's purse cannot cover greys the button and says why.
+    /// </summary>
+    private Control? SellSomeRow(ShopResource shop, ItemStack stack, bool haggled)
+    {
+        ItemInstance instance = stack.Instance;
+        if (stack.Quantity < 2 || shop.IsConsignment || instance.Locked ||
+            !ShopPricing.Sellable(instance.Type, IsCurrency(instance)) || !InTrade(shop, instance))
+        {
+            return null;
+        }
+
+        _sellQuantity = ItemPresentation.ClampQuantity(_sellQuantity, stack.Quantity, keepOne: false);
+        int merchantPurse = Stock()?.PurseFor(shop) ?? -1;
+
+        var row = new HBoxContainer();
+        row.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
+
+        Label caption = UiTheme.Caption(Loc.T("shop.sell_some"));
+        caption.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
+        row.AddChild(caption);
+
+        Label price = UiTheme.Body(string.Empty, UiTheme.Accent);
+        price.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
+        price.CustomMinimumSize = new Vector2(72f, 0f);
+        price.HorizontalAlignment = HorizontalAlignment.Right;
+
+        Button sell = UiTheme.Action(Loc.T("shop.sell"));
+        sell.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
+
+        void Requote(int quantity)
+        {
+            _sellQuantity = quantity;
+            PriceQuote quote = SellQuoteFor(shop, instance, quantity, haggled);
+            bool covered = merchantPurse < 0 || quote.Total <= merchantPurse;
+            price.Text = Loc.TF("shop.price", quote.Total);
+            price.TooltipText = PriceTooltip.Render(quote);
+            sell.Disabled = quote.Total <= 0 || !covered;
+            sell.TooltipText = quote.Total <= 0 ? Loc.T("shop.worthless")
+                : covered ? string.Empty
+                : Loc.T("shop.vendor_broke");
+        }
+
+        HBoxContainer picker = QuantityPicker.Build(1, stack.Quantity, _sellQuantity, Requote);
+        picker.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        row.AddChild(picker);
+        row.AddChild(price);
+
+        sell.Pressed += () =>
+        {
+            int quantity = ItemPresentation.ClampQuantity(_sellQuantity, stack.Quantity, keepOne: false);
+            Sell(shop, stack, quantity, SellQuoteFor(shop, instance, quantity, DealStruck(shop)).Total);
+        };
+        row.AddChild(sell);
+
+        Requote(_sellQuantity);
+        return row;
     }
 }

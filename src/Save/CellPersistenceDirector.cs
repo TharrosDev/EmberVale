@@ -26,6 +26,17 @@ namespace Embervale.Save;
 ///   * it is itself <see cref="ISaveable"/>, so the ledger round-trips through a full save/load too.
 ///
 /// Transient actors (no <see cref="IEntity.PersistentId"/>) are ignored by design.
+///
+/// <b>What a save costs here.</b> <see cref="Save"/> used to re-walk every node of every loaded
+/// cell, on every save, to find the handful of persistent actors among thousands of meshes and
+/// colliders. Each cell now carries a <see cref="CellLedger"/>: the actor list found by the one
+/// walk a cell load already needs, kept current by the removal hook, and re-walked only when the
+/// cell is marked stale or its root's child count has changed. <b>The dirty flag covers membership,
+/// not component state</b>: nothing in the game announces "this component's saved state changed",
+/// and a guessed list of events that imply it would be one missed event away from a chest that
+/// reloads full. So the listed actors' components are still asked for their state on every save,
+/// which is a few dozen small dictionaries, and a cell with no persistent actors costs nothing.
+/// A cell streaming out is always walked in full, exactly as before.
 /// </summary>
 [GlobalClass]
 public partial class CellPersistenceDirector : Node, ISaveable
@@ -39,10 +50,31 @@ public partial class CellPersistenceDirector : Node, ISaveable
     // reappear when their cell reloads.
     private readonly HashSet<string> _removed = new();
 
-    // Currently-loaded cell roots, and the set of cells whose actors are leaving the tree because
-    // the cell is unloading (so those frees are not mistaken for gameplay removals).
-    private readonly Dictionary<string, Node3D> _cells = new();
+    // Currently-loaded cells, and the set of cells whose actors are leaving the tree because the
+    // cell is unloading (so those frees are not mistaken for gameplay removals).
+    private readonly Dictionary<string, CellLedger> _cells = new();
     private readonly HashSet<string> _unloading = new();
+
+    /// <summary>A loaded cell and the persistent actors known to be in it.</summary>
+    private sealed class CellLedger
+    {
+        public CellLedger(Node3D root)
+        {
+            Root = root;
+        }
+
+        public Node3D Root { get; }
+
+        /// <summary>The cell's persistent actors as of the last walk, less the ones removed since.</summary>
+        public List<IEntity> Actors { get; } = new();
+
+        /// <summary>The root's child count at the last walk. A different count means something was
+        /// added to or taken from the cell, which is reason enough to look again.</summary>
+        public int ChildCount { get; set; } = -1;
+
+        /// <summary>Set when the actor list can no longer be trusted; the next snapshot re-walks.</summary>
+        public bool Stale { get; set; } = true;
+    }
 
     // Instance ids of bodies whose TreeExiting is already hooked, so a body is hooked once and not
     // once per reconcile. See HookRemoval — entries are dropped by the handler itself as it fires.
@@ -68,8 +100,9 @@ public partial class CellPersistenceDirector : Node, ISaveable
     private void OnCellLoaded(RegionCellLoadedEvent e)
     {
         _unloading.Remove(e.CellId); // a fresh load: clear any stale unloading flag for this cell
-        _cells[e.CellId] = e.Root;
-        Reconcile(e.CellId, e.Root);
+        var cell = new CellLedger(e.Root);
+        _cells[e.CellId] = cell;
+        Reconcile(e.CellId, cell);
     }
 
     private void OnCellUnloaded(RegionCellUnloadedEvent e)
@@ -77,17 +110,26 @@ public partial class CellPersistenceDirector : Node, ISaveable
         // The streamer frees the cell root right after this returns; mark it unloading so the
         // actors' TreeExiting (fired at end of frame) is not read as a gameplay removal.
         _unloading.Add(e.CellId);
-        if (_cells.TryGetValue(e.CellId, out Node3D? root))
+        if (_cells.TryGetValue(e.CellId, out CellLedger? cell))
         {
-            Snapshot(root);
+            // Always a full walk: this is the last look at the cell before it is freed, and the
+            // ledger is the only thing that will remember it.
+            if (IsInstanceValid(cell.Root))
+            {
+                cell.Stale = true;
+                Snapshot(e.CellId, cell);
+            }
+
             _cells.Remove(e.CellId);
         }
     }
 
-    /// <summary>Culls removed actors and restores stored state on the survivors of a freshly-loaded cell.</summary>
-    private void Reconcile(string cellId, Node3D root)
+    /// <summary>Culls removed actors and restores stored state on the survivors of a freshly-loaded
+    /// cell. The walk it needs anyway is also what fills the cell's actor list.</summary>
+    private void Reconcile(string cellId, CellLedger cell)
     {
-        foreach (IEntity actor in PersistentActorsIn(root))
+        cell.Actors.Clear();
+        foreach (IEntity actor in PersistentActorsIn(cell.Root))
         {
             string pid = actor.PersistentId!;
             if (_removed.Contains(pid))
@@ -104,16 +146,50 @@ public partial class CellPersistenceDirector : Node, ISaveable
                 }
             }
 
+            cell.Actors.Add(actor);
             HookRemoval(cellId, actor);
         }
+
+        cell.ChildCount = cell.Root.GetChildCount();
+        cell.Stale = false;
     }
 
-    /// <summary>Stores the current component state of a cell's surviving persistent actors.</summary>
-    private void Snapshot(Node3D root)
+    /// <summary>
+    /// Stores the current component state of a cell's surviving persistent actors.
+    ///
+    /// The actors come from the cell's list. The tree is only walked again when the list is stale
+    /// or the root's child count moved, and an actor that walk turns up for the first time is
+    /// hooked like any other, so one added after the cell loaded is both saved and tracked.
+    /// </summary>
+    private void Snapshot(string cellId, CellLedger cell)
     {
-        foreach (IEntity actor in PersistentActorsIn(root))
+        if (cell.Stale || cell.Root.GetChildCount() != cell.ChildCount)
         {
-            if (_removed.Contains(actor.PersistentId!))
+            cell.Actors.Clear();
+            foreach (IEntity actor in PersistentActorsIn(cell.Root))
+            {
+                if (_removed.Contains(actor.PersistentId!))
+                {
+                    continue;
+                }
+
+                cell.Actors.Add(actor);
+                if (!_unloading.Contains(cellId))
+                {
+                    HookRemoval(cellId, actor);
+                }
+            }
+
+            cell.ChildCount = cell.Root.GetChildCount();
+            cell.Stale = false;
+        }
+
+        foreach (IEntity actor in cell.Actors)
+        {
+            // The list can outlive an actor by a frame (the removal hook fires as it leaves the
+            // tree); anything no longer in the tree is not this cell's to describe.
+            if (actor.Body is not Node body || !IsInstanceValid(body) || !body.IsInsideTree() ||
+                _removed.Contains(actor.PersistentId!))
             {
                 continue;
             }
@@ -162,6 +238,10 @@ public partial class CellPersistenceDirector : Node, ISaveable
 
             _removed.Add(pid);
             DropState(actor);
+            if (_cells.TryGetValue(cellId, out CellLedger? cell))
+            {
+                cell.Actors.Remove(actor);
+            }
         };
     }
 
@@ -203,11 +283,11 @@ public partial class CellPersistenceDirector : Node, ISaveable
     public Godot.Collections.Dictionary Save()
     {
         // Capture the live state of currently-loaded cells so a save mid-exploration is complete.
-        foreach (Node3D root in _cells.Values)
+        foreach (KeyValuePair<string, CellLedger> cell in _cells)
         {
-            if (IsInstanceValid(root))
+            if (IsInstanceValid(cell.Value.Root))
             {
-                Snapshot(root);
+                Snapshot(cell.Key, cell.Value);
             }
         }
 
@@ -260,9 +340,9 @@ public partial class CellPersistenceDirector : Node, ISaveable
         }
 
         // Apply to any cells already streamed in (e.g. loading a save while a cell is live).
-        foreach (KeyValuePair<string, Node3D> cell in new Dictionary<string, Node3D>(_cells))
+        foreach (KeyValuePair<string, CellLedger> cell in new Dictionary<string, CellLedger>(_cells))
         {
-            if (IsInstanceValid(cell.Value))
+            if (IsInstanceValid(cell.Value.Root))
             {
                 Reconcile(cell.Key, cell.Value);
             }

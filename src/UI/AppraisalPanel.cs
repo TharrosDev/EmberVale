@@ -109,7 +109,7 @@ public partial class AppraisalPanel : UiPanel
 
         // Dearest first: the player opened this to find out what is worth carrying across town, and
         // pack order is the order things were picked up in, which answers a different question.
-        var stacks = new List<ItemStack>(pack.Stacks);
+        var stacks = new List<ItemStack>(pack.AllStacks);
         stacks.Sort((a, b) => b.Instance.Value.CompareTo(a.Instance.Value));
 
         int rows = 0;

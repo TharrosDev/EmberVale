@@ -2,16 +2,23 @@ using Embervale.Core.Events;
 using Embervale.Entities;
 using Embervale.Interaction;
 using Embervale.Items;
+using Embervale.Loot;
+using Embervale.Save;
 using Godot;
 
 namespace Embervale.Player;
 
 /// <summary>
 /// What the player is looking at, whether it can be interacted with, and the hold-E sweep that
-/// vacuums up nearby loot.
+/// vacuums up nearby loot. Walking over coin or crafting materials collects them without a press.
 ///
 /// <para>This is the only component that decides what <c>E</c> acts on, and the HUD's nameplate and
 /// prompt read the same three properties, so the reticle and the verb can never disagree.</para>
+///
+/// <para>It also owns the two pieces of loot state that live exactly as long as the player does and
+/// have no factory of their own: the saved <see cref="LootLedger"/> (bad-luck protection and
+/// once-per-save drops) and the <see cref="AffixRegenBinding"/> that makes regeneration affixes on
+/// worn gear take effect.</para>
 /// </summary>
 [GlobalClass]
 public partial class InteractionSensor : EntityComponent
@@ -27,7 +34,18 @@ public partial class InteractionSensor : EntityComponent
     /// at head height is measurably further from it than from the eye.</summary>
     private const float CapsuleReachAllowance = 1.2f;
 
+    /// <summary>Radius of the walk-over sweep that collects coin and materials with no press, and
+    /// how often it runs. Tighter than the held sweep on purpose: it should take what the player
+    /// walked through, not hoover a room.</summary>
+    private const float WalkOverRadius = 1.8f;
+    private const ulong WalkOverIntervalMs = 150;
+
     private double _autoPickupTimer;
+    private ulong _nextWalkOverMs;
+    private AffixRegenBinding? _regen;
+
+    /// <summary>The player's saved loot history; see <see cref="LootLedger"/>.</summary>
+    public LootLedger Ledger { get; } = new();
     private PlayerCameraRig? _rig;
     private PlayerPhysicsQueries? _queries;
 
@@ -45,6 +63,23 @@ public partial class InteractionSensor : EntityComponent
     {
         _rig = Entity!.GetComponent<PlayerCameraRig>();
         _queries = Entity.GetComponent<PlayerPhysicsQueries>();
+
+        // The ledger is saved only for an owner that persists, the same rule RegisterSaveable
+        // applies to a component's own state.
+        if (SaveKeyPolicy.ShouldPersist(Entity.PersistentId))
+        {
+            SaveManager.Instance?.Register(Ledger);
+        }
+
+        _regen = new AffixRegenBinding(Entity);
+        _regen.Bind();
+    }
+
+    protected override void OnTeardown()
+    {
+        SaveManager.Instance?.Unregister(Ledger);
+        _regen?.Release();
+        _regen = null;
     }
 
     /// <summary>
@@ -64,6 +99,8 @@ public partial class InteractionSensor : EntityComponent
             ClearFocus();
             return;
         }
+
+        TickWalkOverLoot(body);
 
         Vector3 from = camera.GlobalPosition;
         Vector3 forward = -camera.GlobalTransform.Basis.Z;
@@ -109,6 +146,29 @@ public partial class InteractionSensor : EntityComponent
         // progress rides this event.
         EventBus.Instance?.Publish(new InteractionPerformedEvent(Entity!, focused));
         return true;
+    }
+
+    /// <summary>
+    /// Collects coin and plain crafting materials the player walks over
+    /// (<see cref="ItemPickupComponent.IsAutoLoot"/>), with no press and no full-pack notice.
+    /// Called from <see cref="UpdateFocus"/>, which runs every playing frame, and throttled here.
+    /// </summary>
+    private void TickWalkOverLoot(Node3D body)
+    {
+        ulong now = Time.GetTicksMsec();
+        if (now < _nextWalkOverMs || _queries == null)
+        {
+            return;
+        }
+
+        _nextWalkOverMs = now + WalkOverIntervalMs;
+        foreach (IEntity found in _queries.OverlapSphere(body.GlobalPosition, WalkOverRadius, maxResults: 12))
+        {
+            if (found.GetComponent<ItemPickupComponent>() is { IsAutoLoot: true } pickup)
+            {
+                pickup.Collect(Entity!, announceFull: false);
+            }
+        }
     }
 
     /// <summary>Hold E to vacuum nearby loot — saves tapping E per item when a kill drops a pile.

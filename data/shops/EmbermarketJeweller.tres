@@ -40,6 +40,52 @@ script = ExtResource("3_tier")
 Cost = 2000
 PurseBonus = 500
 
+[sub_resource type="Resource" id="Stock_ics_1"]
+script = ExtResource("2_entry")
+ItemId = "item.ring.copper"
+Quantity = 1
+
+[sub_resource type="Resource" id="Stock_ics_2"]
+script = ExtResource("2_entry")
+ItemId = "item.amulet.copper_charm"
+Quantity = 1
+
+[sub_resource type="Resource" id="Stock_ics_3"]
+script = ExtResource("2_entry")
+ItemId = "item.ring.silver"
+Quantity = 1
+RequiredFlagId = "flag.iron_king_defeated"
+
+[sub_resource type="Resource" id="Stock_ics_4"]
+script = ExtResource("2_entry")
+ItemId = "item.amulet.silver_pendant"
+Quantity = 1
+RequiredFlagId = "flag.iron_king_defeated"
+
+[sub_resource type="Resource" id="Stock_ics_5"]
+script = ExtResource("2_entry")
+ItemId = "item.ring.obsidian"
+Quantity = 1
+RequiredFlagId = "flag.storm_tyrant_defeated"
+
+[sub_resource type="Resource" id="Stock_ics_6"]
+script = ExtResource("2_entry")
+ItemId = "item.amulet.obsidian_talisman"
+Quantity = 1
+RequiredFlagId = "flag.storm_tyrant_defeated"
+
+[sub_resource type="Resource" id="Stock_ics_7"]
+script = ExtResource("2_entry")
+ItemId = "item.ring.gold"
+Quantity = 1
+RequiredFlagId = "flag.beast_lord_defeated"
+
+[sub_resource type="Resource" id="Stock_ics_8"]
+script = ExtResource("2_entry")
+ItemId = "item.amulet.gold_medallion"
+Quantity = 1
+RequiredFlagId = "flag.beast_lord_defeated"
+
 [resource]
 script = ExtResource("1_shop")
 Id = "shop.embermarket.jeweller"
@@ -47,7 +93,7 @@ NameKey = "shop.embermarket.jeweller.name"
 FactionId = "faction.villagers"
 AcceptedTags = Array[String](["gem", "jewelry", "luxury"])
 Specialties = Array[String](["gem", "jewelry"])
-Stock = Array[Resource]([SubResource("Stock_sapphire"), SubResource("Stock_ruby"), SubResource("Stock_ring")])
+Stock = Array[Resource]([SubResource("Stock_sapphire"), SubResource("Stock_ruby"), SubResource("Stock_ring"), SubResource("Stock_ics_1"), SubResource("Stock_ics_2"), SubResource("Stock_ics_3"), SubResource("Stock_ics_4"), SubResource("Stock_ics_5"), SubResource("Stock_ics_6"), SubResource("Stock_ics_7"), SubResource("Stock_ics_8")])
 RestockDays = 3
 BuyMarkup = 1.7
 SellFraction = 0.45

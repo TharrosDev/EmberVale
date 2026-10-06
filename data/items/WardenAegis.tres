@@ -22,3 +22,6 @@ Slot = 4
 BonusArmor = 16.0
 BonusMaxHealth = 20.0
 TradeTags = Array[String](["armor"])
+ItemLevel = 16
+Tier = 2
+ArmorWeight = 3

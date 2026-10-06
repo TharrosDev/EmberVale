@@ -19,17 +19,47 @@ MinQuantity = 1
 MaxQuantity = 2
 RollAffixes = false
 
-[sub_resource type="Resource" id="Entry_vest"]
+; ics: tier pools, added by tools/items/gen_loot.py. {tier} is the realm tier of the roll.
+
+[sub_resource type="Resource" id="Entry_tier_gear"]
 script = ExtResource("2_entry")
-ItemId = "item.armor.leather_vest"
-DropChance = 0.16
+ItemId = ""
+DropChance = 0.22
 MinQuantity = 1
 MaxQuantity = 1
-RollAffixes = true
+RollAffixes = false
+TablePath = "res://data/loot/tiers/Tier{tier}Gear.tres"
+
+[sub_resource type="Resource" id="Entry_tier_materials"]
+script = ExtResource("2_entry")
+ItemId = ""
+DropChance = 0.35
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = false
+TablePath = "res://data/loot/tiers/Tier{tier}Materials.tres"
+
+[sub_resource type="Resource" id="Entry_tier_supplies"]
+script = ExtResource("2_entry")
+ItemId = ""
+DropChance = 0.25
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = false
+TablePath = "res://data/loot/tiers/Tier{tier}Supplies.tres"
+
+[sub_resource type="Resource" id="Entry_tier_scrolls"]
+script = ExtResource("2_entry")
+ItemId = ""
+DropChance = 0.04
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = false
+TablePath = "res://data/loot/tiers/Tier{tier}Scrolls.tres"
 
 [resource]
 script = ExtResource("1_table")
-Entries = Array[Resource]([SubResource("Entry_strips"), SubResource("Entry_ingot"), SubResource("Entry_vest")])
+Entries = Array[Resource]([SubResource("Entry_strips"), SubResource("Entry_ingot"), SubResource("Entry_tier_gear"), SubResource("Entry_tier_materials"), SubResource("Entry_tier_supplies"), SubResource("Entry_tier_scrolls")])
 GoldItemId = "item.currency.gold"
 GoldChance = 0.7
 GoldMin = 10

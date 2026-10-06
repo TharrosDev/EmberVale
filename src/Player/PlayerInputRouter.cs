@@ -264,7 +264,18 @@ public partial class PlayerInputRouter : EntityComponent
             _attackInput.Reset();
             if (pressed && !(_dodge?.InterceptAttack() ?? false))
             {
-                _weapon.TryAttack();
+                // An empty quiver refuses the draw itself: no string pulled, no stamina spent, no
+                // animation for an arrow that will not leave. RangedAttack.Fire still enforces it
+                // at the release for anything that starts a shot another way.
+                if (RangedAttack.HasAmmo(_weapon.Entity))
+                {
+                    _weapon.TryAttack();
+                }
+                else
+                {
+                    Embervale.Core.Events.EventBus.Instance?.Publish(
+                        new Embervale.World.WorldHazardNoticeEvent(Embervale.Items.AmmoRules.NoAmmoReasonKey));
+                }
             }
 
             return;

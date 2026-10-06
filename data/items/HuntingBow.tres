@@ -21,3 +21,7 @@ Weapon = ExtResource("2_bow")
 WorldModelPath = "res://assets/models/weapons/wpn_bow_hunting.glb"
 BonusPhysicalPower = 2.0
 TradeTags = Array[String](["weapon"])
+ItemLevel = 5
+Tier = 1
+TwoHanded = true
+WeaponClass = 8

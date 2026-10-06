@@ -333,20 +333,96 @@ names one via `BossId`; `EnemyArchetypeFactory` attaches `BossController` to any
 
 ### 2.8 Items, loot and progression (`src/Items`, `src/Loot`, `src/Progression`)
 
+**Templates and instances.**
+
 - `ItemResource` (id, name, type, rarity, `MaxStack`, weight, value, icon, trade tags,
-  **`WorldModelPath`** — one model for hand, ground and plinth). `ItemDatabase` maps ids.
-  `EquippableItemResource` adds slot, flat bonuses, optional `Weapon`.
-- `ItemInstance`: rolled rarity, generated name, frozen affixes; only affix-less instances stack.
-  `ItemStack` holds an instance; inventory, equipment, pickups, UI and saves all flow instances.
-- `InventoryComponent` (`ISaveable`): slot stacking, `AddInstance` (clamps to `Capacity`),
-  `RemoveOneInstance`. `EquipmentComponent` (`ISaveable`) applies bonuses as modifiers sourced to the
-  item and swaps the weapon.
-- `AffixDefinition`/`AffixDatabase.ApplicableTo`, `LootTable`/`LootEntry`, `LootGenerator`
-  (`LootRarity.Roll` → weighted affixes → scaled values), `LootComponent` rolls on death (deferred add).
+  **`WorldModelPath`**, one model for hand, ground and plinth) plus the catalogue fields `ItemLevel`,
+  `Tier` (0 untiered, 1 to 6 by realm), `RequiredLevel`, `SetId` and `UniqueEffectId`, all
+  absent-default. `ItemDatabase` maps ids.
+- `EquippableItemResource` adds slot, flat `Bonus*` fields (armour, powers, health, stamina, mana,
+  crit, move speed, all six school resistances) yielded by `StatBonuses()`, the two regeneration
+  bonuses, `TwoHanded`, `WeaponClass`, `ArmorWeight` and an optional `Weapon`.
+  `ConsumableItemResource` adds `Effect` (`ConsumableEffectKind`), `Magnitude`, `DurationSeconds`,
+  the buff stat and kind, `CureStatusIds`, `CooldownSeconds` and `CooldownGroup`; the legacy
+  `HealAmount` is still read when a Heal has no `Magnitude`.
+- `ItemInstance`: rolled rarity, generated name, frozen affixes, and five additive fields saved only
+  off their default: `Quality` (`CraftQuality`), `UpgradeLevel` (0 to `ItemUpgrades.MaxLevel`),
+  `ItemLevel` (0 means the template's), `Locked`, `Junk`. `Value` and the template's flat bonuses are
+  scaled by workmanship (`CraftQualities`, `ItemUpgrades`); rolled affixes never are. Only affix-less
+  copies of equal workmanship and level stack (`CanStackWith`); marks are not compared. `ItemStack`
+  holds an instance; inventory, equipment, pickups, UI and saves all flow instances.
+- The numbers of generated gear are one budget: `ItemBudget` in `ItemValidator.Content.cs` mirrors
+  `budget_points`, `weapon_damage`, `item_value` and `STAT_WEIGHT` in `tools/gen_items.py`, and
+  `--validate` and `ItemCatalogueTests` recompute every written item against it.
+
+**Inventory and equipment.**
+
+- `InventoryComponent` (`ISaveable`): the pack (`Stacks`, limited by `Capacity`) and, when
+  `UseMaterialBag` is set (the player only, in `PlayerFactory`), the uncapped `Materials` bag that
+  takes every affix-less `ItemType.Material` (`IsBagItem`). `CountOf` / `Contains` / `RemoveItem`
+  span both; `AllStacks` is for readers that must see everything. `AddInstance` clamps to capacity
+  and returns what it stored; `AddOrOverflow` never loses an item; `CanAccept` / `SlotsNeededFor`
+  answer room before a move. `SetLocked` / `SetJunk` are the only writers of the marks, and the
+  lock is enforced at each action that would lose the item. `Load` clears both stores, ignores
+  capacity and re-sorts every entry, which is also the bag migration in both directions.
+- `Consume` asks `ConsumableEffectsComponent.Check` first (`ConsumeRefusal`: cooldown, already
+  full, nothing to cure, level too low), removes the exact held unit, then `Apply`s: an instant or
+  over-time restore, a buff as a runtime `StatusEffectResource` (`status.consumable.<leaf>`), or a
+  cleanse. Cooldowns are keyed by `CooldownGroup` (else the item id), tick with the tree and are
+  cleared on `GameLoadingEvent`.
+- `EquipmentComponent` (`ISaveable`): `CanEquip` returns an `EquipRefusal` from `InventoryRules`
+  (level, off hand against a two-handed main hand, no room for what comes off) and `Equip` applies
+  only what it allowed. Bonuses are modifiers sourced to the instance. The Ammo slot holds a whole
+  stack (`AmmoCount`, saved as `ammo_qty`); `ConsumeAmmo` refills from the pack and vacates the slot
+  on the last arrow. `TakeEquipped` removes a worn piece without needing a pack slot (salvage and
+  reforge use it).
+- Derived state (`EquipmentComponent.Derived.cs`) is rebuilt by `RefreshDerived` after every
+  change and at the end of `Load`, and is never saved: gear regeneration, `SetPieces`
+  (`SetRules.CountPieces` over distinct worn pieces), set stat bonuses under one private source,
+  and `ActiveUniqueEffectIds` (worn items' own plus active set thresholds').
+- `UniqueEffectsComponent` rebuilds its active list on `EquipmentChangedEvent` and runs the ten
+  `UniqueEffectKind`s from existing events (`DamageDealtEvent`, `EntityDamagedEvent`,
+  `EntityDiedEvent`, `SpellHitEvent`, `ActionReleasedEvent`, `ItemPickedUpEvent`); the arithmetic is
+  pure in `UniqueEffectRules`. Follow-up damage is guarded against re-entry. Nothing is saved.
+- `HotbarComponent` (`ISaveable`, five slots) and `HotbarPanel` (cooldown sweep, the pad chord).
+
+**Loot.**
+
+- `LootTable` (`Entries`, gold, `QualityBonus`, `Tier`, `MinItemLevel` / `MaxItemLevel`,
+  `DropsAsChest`) and `LootEntry` (item or nested `TablePath`, `Group` + `Weight`, `MinLevel` /
+  `MaxLevel`, `MinRarity`, `OncePerSave`). `LootGenerator.Generate(table, LootContext)` walks the
+  table: a table's own `Tier` overrides the context's, `{tier}` in a nested path resolves through
+  `LootTiers.ResolvePath`, one row of a group is picked by weight, and nesting stops at depth 4.
+- An equippable row with `RollAffixes` rolls rarity (`LootRarity.Roll` with table quality, perk
+  luck and `PityRules.BonusQuality`), applies the pity guarantee and the row and template floors,
+  picks an item level (`LootTiers.RollItemLevel`, clamped to the table's and the item tier's
+  band), then affixes: `AffixDatabase.ApplicableTo(template, rarity, itemLevel)`, a signature
+  affix first at Epic and above, no repeated stat or `Group`, values blended by quality and scaled
+  by `AffixDefinition.ScaleForLevel`. `RollAffixed` is the same roll for crafting and shops.
+- `LootComponent` rolls on death with `ContextFor(killer)`: the active region's realm tier, the
+  player's level, the `LootQuality` perk and the `LootLedger`. A `DropsAsChest` table spawns a
+  persistent `prop.cache` through `PersistentSpawnDirector` and arms its `ContainerLootComponent`
+  with the table path; a withdrawing duel leaves none.
+- `ContainerLootComponent` (`ISaveable`) rolls its table on first open with an RNG seeded from
+  `LootSeeds.For(PersistentId, ledger.Salt)`, so the result does not change across reloads. It
+  tracks the pickups it spilled and saves the uncollected ones (`spilled`), handing them back on
+  the next press after a load.
+- `LootLedger` (`ISaveable`, `loot_ledger`, owned by the player's `InteractionSensor`): the dry
+  streak, once-per-save claims, the per-save salt (kept under 2^53 so it survives JSON) and the
+  reward chest ordinal.
+- `ItemPickupFactory` builds the pickup with a rarity beam; `ItemPickupComponent.IsAutoLoot` marks
+  coin and plain materials for walk-over collection, except what the player dropped
+  (`PlayerDropped`) and contraband. `AffixRegenBinding` turns regeneration affixes into regen
+  rates on `EquipmentChangedEvent`.
 - Kill attribution: `DamagePacket.Source` → `EntityDiedEvent.Killer`.
-- `ProgressionResource` (XP curve, max level, skill points, per-level gains), `ExperienceComponent`
-  (bounty), `ProgressionComponent` (`ISaveable`; growth recomputed from level, never stored),
-  `PerksComponent` (`ISaveable`, modifiers re-applied on load).
+
+**Validation.** `ItemValidator` (`src/Debugging/ItemValidator*.cs`, called once from
+`ContentValidator`) owns the item, set, unique-effect, affix, loot-table, recipe and reforge arms,
+including obtainability (every generated equippable has a source) and stat budgets.
+
+**Progression.** `ProgressionResource` (XP curve, max level, skill points, per-level gains),
+`ExperienceComponent` (bounty), `ProgressionComponent` (`ISaveable`; growth recomputed from level,
+never stored), `PerksComponent` (`ISaveable`, modifiers re-applied on load).
 
 ### 2.9 Quests (`src/Quests`)
 
@@ -556,10 +632,45 @@ normals and collision build on worker threads under an epoch stamp.
 
 ### 2.17 Crafting (`src/Crafting`)
 
-`CraftingRecipeResource` (station, ingredients, output, rarity). `CraftingComponent` (`ISaveable`):
-known recipes (seeded from `GameIds.Recipes.Starting`, `Learn` from trainers), `Craft` (affixed output
-through `LootGenerator.RollAffixed`), `Deconstruct` (floored fraction plus XP), `Commission`.
-`CraftingStationComponent` opens the modal `CraftingPanel` (Craft / Salvage tabs).
+- `CraftingRecipeResource`: `Station` (`CraftingStationType`: Hand, Forge, Workbench, Alchemy),
+  `Ingredients`, output id and quantity, `OutputRarity`, `Tier` (1 to 6) and `ScrollItemId`. Its
+  player-facing name is the locale row `<id>.name`. 67 of the 82 are generated from
+  `catalogue.PLANNED_RECIPES` by `tools/gen_recipes.py`, which also writes the trainer's
+  `TaughtRecipeIds` and checks `GameIds.Recipes.Starting`.
+- `CraftingComponent` (`ISaveable`): known recipes (seeded from `GameIds.Recipes.Starting` on init
+  and again on every `Load`; `Learn` from a trainer, `StudyScroll` from a recipe scroll). `CanMake`
+  is knowledge, station (`StationAccepts`: hand recipes craft anywhere) and a real output;
+  `CanCraft` adds the skill rank (`CraftingSkill.RequiredRank(Tier)`) and the ingredients, counted
+  across pack and material bag. `Craft(recipe, station, count)` loops single crafts up to
+  `MaxBulk`. A craft removes the inputs, adds the output, and rolls everything back when the
+  output does not fit.
+- **Skill and workmanship.** `CraftingSkill` is pure: XP to rank (0 to 10), XP per craft, the
+  workmanship odds from mastery (rank above the recipe's requirement) and `AffixLuck`. Unstackable
+  gear gets a `CraftQuality` from `CraftingSkill.Roll(rank, tier, crafts, recipeId)`, a
+  `StableRoll` over the saved craft serial, so a quickload replays the outcome. Output with a
+  rarity above Common goes through `LootGenerator.RollAffixed` at the template's item level.
+- **Salvage.** `PlanSalvage` is the one computation of a salvage's yield (the window previews it,
+  `Deconstruct` pays it): the recipe's ingredients at `Deconstruction.RecoveredQuantity` when the
+  open station is the recipe's own, generic scrap otherwise, plus XP. A recipe that makes several
+  at once is never reversed. Worn gear comes off through `EquipmentComponent.TakeEquipped`; a
+  salvage whose materials do not fit is refused and the item put back. `SalvageAllJunk` runs each
+  junk-marked piece through the same path.
+- **Reforging** (Forge only). `RerollQuote` / `UpgradeQuote` / `PromoteQuote` return a
+  `ReforgeQuote` (gold, the tier's ingot from `ReforgeRules.MaterialFor`, a block reason key, bill
+  lines); `RerollAffix`, `Upgrade` and `Promote` do nothing a quote did not allow. Prices are pure
+  in `ReforgeRules`: a reroll leaves the value unchanged and climbs with the item's prior rerolls
+  (a ledger of `{fp, n}` rows keyed by `Fingerprint`, newest 128); an upgrade or promotion costs a
+  base fee plus `GainMultiple` times the value it adds, and `ItemValidator.Crafting` fails
+  `--validate` if any row is `Exploitable`. The replacement affix comes from the loot generator's
+  pool at the item's level, less the stats and groups that stay, and the RNG is seeded from the
+  fingerprint and the saved reforge serial.
+- **Commission.** `Commission` supplies the missing ingredients, then crafts with
+  `commissioned: true`: no skill gate, Common rarity, Standard workmanship, no skill XP. The price
+  rules are `CommissionRules` (`src/Economy`).
+- `MaterialSaving` hands one unit of the largest ingredient back on a derived roll.
+- `CraftingStationComponent` opens the modal `CraftingPanel` (craft, salvage and reforge views,
+  search, filters, quantity picker, one pinned recipe saved as `pinned`).
+- Saved keys: `known`, `crafts`, and the additive `skill_xp`, `reforges`, `rerolls`, `pinned`.
 
 ### 2.18 Factions and guilds (`src/Factions`)
 
@@ -650,18 +761,48 @@ rolls back). Any kind but Bank can be opened from dialogue (`OpenService`). A wo
 failure policy, migrations).
 
 - `ISaveable` (`SaveId`, `Save()` / `Load(dict)` with a Godot `Dictionary`). `SaveManager` writes
-  `user://saves/<slot>/save.json` in a versioned envelope (legacy flat files remain readable);
-  writes are staged, flushed and checked before atomic replacement. Failed captures refuse the save,
-  and failed restores refuse the load. `TryMigrate` upgrades older envelopes and refuses newer; load warns
-  about orphaned entries and unclaimed saveables.
+  `user://saves/<slot>/save.json` in a versioned envelope (format 4; legacy flat files remain
+  readable) with a `sha256:` checksum over `objects`. Failed captures refuse the save, and failed
+  restores refuse the load; load warns about orphaned entries and unclaimed saveables.
+- **The decisions are pure and Godot-free**, so xUnit runs them: `SaveEnvelope.Read` validates a
+  document's text without applying it (parse, shape, version, checksum) and is what both `LoadGame`
+  and `InspectSlot` ask; `SaveChecksum` is the canonical hash; `SaveMigrations` is the v1 to v4
+  chain with world data injected through `SaveMigrationLookups`; `SaveBackup` decides when the
+  outgoing file is kept as `save.json.bak` and when a load reads it; `SaveSlots` / `SaveKind` /
+  `SaveHealth` name the rosters; `SaveSlotPolicy` decides where a player save goes and what F9
+  loads; `SetPieceSaveIds` builds the stable set-piece key; `SaveRead` is the tolerant reader every
+  `Load` should use.
+- **Writing.** `SaveGameCore` captures every saveable, serializes once, computes the checksum
+  from that text and commits. In gates and tooling (`SaveWriteQueue.RunsInline`: headless, a
+  redirected user dir, any user argument) `AtomicWrite` stages to `.tmp`, rotates a sound previous
+  file to `.bak` and renames. In windowed play the same commit (`SaveFiles.Commit`) runs on
+  `SaveWriteQueue`, one job at a time on a `SaveWriteWorker`; `SaveGame` returns once the snapshot
+  is taken and `FinishSave` publishes `GameSavedEvent` or `SaveFailedEvent` when the disk answers.
+  Every read of the slots, a session teardown and a window close `Flush` the queue first.
+- **Blocks and events.** `PushSaveBlock(reasonKey)` returns a token; while any is live every save
+  is refused (`BossController` holds one from the first blow, `DialoguePanel` for a conversation).
+  `CanSaveNow` is what a menu asks. `SaveStartedEvent`, `GameSavedEvent` and `SaveFailedEvent`
+  drive `SaveIndicator` and the toasts.
+- **Slots and the player.** `SessionLifecycleCoordinator.TrySave` is the player's save (never into
+  the autosave ring; a manual save makes its slot the session's `ActiveSlot`);
+  `AutosaveBeforeQuit` writes the ring and flushes before the session is left. `InspectSlot`
+  validates a slot the way a load would and reports `SaveHealth`, whether the backup will be read,
+  and the header a load would use; `SaveSlotPanel` shows it.
+- **Autosave.** `AutosaveCadence` is the pure clock (interval, debounce, event delay, deferral
+  with a soft cap, ring index); `AutosaveService` feeds it play time and events, asks `CanSaveNow`
+  and whether the player is busy (fought in the last few seconds, enemies engaged nearby, off the
+  floor), and writes `auto1..auto3`. `SaveThumbnailService` caches the last frame of play when the
+  state leaves `Playing` and encodes the 320x180 PNG on the write queue.
 - **Identity:** `EntityComponent.SaveKey(prefix)` prefers `PersistentId` (the player is `player`).
   Components call **`RegisterSaveable()`** in `OnInitialize`, which registers only when the owner has a
   stable id (`SaveKeyPolicy`); world services register in `_EnterTree` with fixed keys. `savecheck` (F1)
   should report 0 volatile ids. Empty or duplicate `SaveId`s refuse the save and preserve progress.
 - Benign warnings: "no usable entry for `<id>`" from a save older than the saveable.
 - `PersistentSpawnDirector` (`spawns`) recreates tracked spawned actors from a manifest via
-  `PersistentActorRegistry`; recreated components restore through the in-flight-load hook. Ambient
-  mobs and loot stay transient.
+  `PersistentActorRegistry`; recreated components restore through the in-flight-load hook. A
+  template the build no longer registers is skipped with a warning. Ambient mobs and loot stay
+  transient, except what a chest spilled (§2.8). `CellPersistenceDirector` (`cell_persistence`)
+  keeps a per-cell actor list and holds the state of streamed-out cells.
 
 ### 2.23 Audio (`src/Audio`)
 
@@ -770,7 +911,9 @@ Health = 100.0
   `EnumStabilityTests` pins ordinals. Reordering silently re-maps data (a Rare item becomes Epic).
 - Ids referenced from code live in `GameIds` (`src/Core/GameIds.cs`); the validator flags drift.
 - Some content is generated: regions (`gen_regions.py`), map locations (`gen_map_locations.py`), the
-  main story (`gen_main_story.py`), prepared cells (`world_bake.py`).
+  main story (`gen_main_story.py`), prepared cells (`world_bake.py`), and the item catalogue: items,
+  sets, unique effects and shop gear (`gen_items.py`), recipes (`gen_recipes.py`), affixes and loot
+  tables (`items/gen_loot.py`), all from `tools/items/catalogue.py`, each with a `--check` gate.
 
 ### 4.1 Cross-reference validation
 

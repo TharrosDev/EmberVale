@@ -25,11 +25,15 @@ public enum CraftingStationType
 /// <summary>Display helpers for <see cref="CraftingStationType"/>.</summary>
 public static class CraftingStations
 {
-    public static string Label(CraftingStationType station) => station switch
+    /// <summary>The locale key of a station's name. Pure, so the mapping is testable.</summary>
+    public static string LabelKey(CraftingStationType station) => station switch
     {
-        CraftingStationType.Forge => "Forge",
-        CraftingStationType.Workbench => "Workbench",
-        CraftingStationType.Alchemy => "Alchemy Table",
-        _ => "Hand",
+        CraftingStationType.Forge => "craft.station_forge",
+        CraftingStationType.Workbench => "craft.station_workbench",
+        CraftingStationType.Alchemy => "craft.station_alchemy",
+        _ => "craft.station_hand",
     };
+
+    /// <summary>A station's name as the player reads it.</summary>
+    public static string Label(CraftingStationType station) => Localization.Loc.T(LabelKey(station));
 }

@@ -213,6 +213,8 @@ internal sealed class StoryPlaythrough
     /// <summary>The real save path and a real load, with the session torn down in between.</summary>
     public async Task<bool> ReloadAsync(string slot, string what)
     {
+        // A harness save is not a player save: a conversation or duel the driver left open must not refuse it.
+        SaveManager.Instance?.ClearSaveBlocks();
         if (SaveManager.Instance?.SaveGame(slot) != true)
         {
             Fail($"{what}: the session failed to save to '{slot}'");

@@ -19,3 +19,5 @@ Slot = 9
 BonusCritChance = 0.04
 BonusFrostResist = 12.0
 TradeTags = Array[String](["jewelry"])
+ItemLevel = 18
+Tier = 2

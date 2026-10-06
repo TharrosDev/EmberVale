@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="AffixDefinition" load_steps=2 format=3 uid="uid://cmcrf1nauluqq"]
+
+[ext_resource type="Script" path="res://src/Items/AffixDefinition.cs" id="1_affix"]
+
+[resource]
+script = ExtResource("1_affix")
+Id = "affix.prefix.kingsbane"
+Label = "Kingsbane"
+Kind = 0
+Stat = 9
+ModifierType = 1
+MinValue = 0.1
+MaxValue = 0.16
+MinRarity = 3
+Weight = 1.0
+IsPercent = true
+Group = "power"
+ForWeapons = true
+ForArmor = false
+ForAccessories = false

@@ -9,7 +9,6 @@ menu.continue,Continue
 menu.load_game,Load Game
 menu.settings,Settings
 menu.quit,Quit
-menu.coming_soon,Coming soon
 pause.title,PAUSED
 pause.resume,Resume
 pause.save,Save
@@ -146,6 +145,7 @@ shop.sell,Sell
 shop.consign,List
 shop.consign_price,"{0}g in {1}d"
 shop.consign_shelf,On her shelf: {0}
+shop.consign_listed,She already has one of these on her shelf. Come back when it sells.
 appraisal.title,APPRAISAL — {0}
 appraisal.subtitle,"Per unit, at your standing. A merchant pays less as you fill her up."
 appraisal.buyer,"{0} pays {1}g"
@@ -280,7 +280,6 @@ service.ember_crown.inn.name,The Ashen Hearth
 service.ashfall.bed.name,Your Own Bed
 service.not_yours,"{0} — this is not yours. The deed post outside says what it would take."
 service.ember_crown.bank.name,The Guild Vault
-service.ember_crown.trainer.name,Bryn's Smithing Lesson
 service.ember_crown.stable.name,The Ember Crown Stables
 service.prompt_rest,"Rest at {0} ({1} gold)"
 service.prompt_account,"Open an account at {0} ({1} gold)"
@@ -4642,3 +4641,442 @@ appearance.build.slim.name,Slim
 appearance.build.average.name,Average
 appearance.build.broad.name,Broad
 # --- END progression:appearance ---
+# --- BEGIN ics:foundation ---
+# Save gate reasons (SaveManager.CanSaveNow / SaveFailedEvent). A refusal names why, because "cannot save"
+# alone reads as a broken key. Lanes that push their own save block author its reason in their own block.
+save.blocked.busy,Another save or load is still running.
+save.blocked.no_world,There is no game in progress to save.
+save.failed.write,The save could not be written. Your previous save is untouched.
+# --- END ics:foundation ---
+# --- BEGIN ics:items ---
+# Equipment slot names (EquipmentSlots.Label). One key per slot so each is pinned by LocKeyUsageTests.
+item.slot.none,None
+item.slot.main_hand,Main Hand
+item.slot.off_hand,Off Hand
+item.slot.head,Head
+item.slot.chest,Chest
+item.slot.hands,Hands
+item.slot.legs,Legs
+item.slot.feet,Feet
+item.slot.ring,Ring
+item.slot.amulet,Amulet
+item.slot.ammo,Ammo
+# Why an item could not be used or equipped (ConsumableRules / InventoryRules / AmmoRules reason keys).
+# Shown as a warning toast, and available to a panel that wants to say it beside a greyed button.
+item.use.refused.cooldown,You cannot use that again yet.
+item.use.refused.full,You have no need of that right now.
+item.use.refused.nothing_to_cure,There is nothing for that to cure.
+item.equip.refused.level,You are not yet experienced enough to use that.
+item.equip.refused.two_handed,Both hands are full. Put the two-handed weapon away first.
+item.equip.refused.pack_full,Your pack has no room for what that would take off.
+item.ammo.refused.none,You have no arrows.
+# --- END ics:items ---
+# --- BEGIN ics:loot ---
+# Pickup prompts (ItemPickupComponent) and chest names (ContainerLootComponent).
+interact.pickup,Pick up
+interact.pickup.one,Pick up {0}
+interact.pickup.many,Pick up {0} x{1}
+loot.chest.cache,Supply Cache
+loot.chest.reward,Reward Chest
+# Tooltip lines of regeneration affixes (ItemAffix.DisplayValue); {0} is the signed amount per second.
+affix.effect.health_regen,{0} Health Regeneration
+affix.effect.stamina_regen,{0} Stamina Regeneration
+affix.effect.mana_regen,{0} Mana Regeneration
+# --- END ics:loot ---
+# --- BEGIN ics:crafting ---
+# The crafting window, the crafting skill, reforging and salvage. Keys chosen at runtime (a rank title,
+# a workmanship tier, a refusal reason, a filter name) are required by ItemValidator.Crafting.cs.
+craft.prompt_use,Use {0}
+craft.station_hand,By Hand
+craft.title,{0}   (E to close)
+craft.mode_reforge,Reforge
+craft.search_placeholder,Search recipes
+craft.filter.all,All
+craft.filter.weapons,Weapons
+craft.filter.armor,Armor
+craft.filter.accessories,Accessories
+craft.filter.consumables,Consumables
+craft.filter.materials,Materials
+craft.filter.other,Other
+craft.craftable_only,Craftable only
+craft.skill,Crafting: {0} ({1} / {2})
+craft.skill_max,Crafting: {0}
+craft.rank.0,Untrained
+craft.rank.1,Novice
+craft.rank.2,Apprentice
+craft.rank.3,Journeyman
+craft.rank.4,Artisan
+craft.rank.5,Expert
+craft.rank.6,Master
+craft.rank.7,Grand Master
+craft.rank.8,Paragon
+craft.rank.9,Luminary
+craft.rank.10,Legend
+craft.quality.standard,Standard
+craft.quality.fine,Fine
+craft.quality.superior,Superior
+craft.quality.masterwork,Masterwork
+craft.pinned,Pinned
+craft.pin,Pin
+craft.unpin,Unpin
+craft.pinned_missing,Still needed: {0}
+craft.needs_station,Needs {0}
+craft.needs_rank,Needs crafting rank: {0}
+craft.output,→ {0}x {1}
+craft.amount,{0}x {1}
+craft.have_need,{0} {1}/{2}
+craft.stat,{0} {1}
+craft.odds,Workmanship odds: Fine {0}% · Superior {1}% · Masterwork {2}%
+craft.commission_plain,"A master's piece is the plain one: no affixes, standard workmanship."
+craft.qty_less,-
+craft.qty_more,+
+craft.qty,x{0}
+craft.qty_max,Max ({0})
+craft.craft_many,Craft x{0}
+craft.status.crafted,Crafted {0}x {1}.
+craft.status.crafted_some,"Crafted {0}x {1}, then the pack was full."
+craft.status.crafted_quality,Crafted {0}x {1}: {2} workmanship.
+craft.status.no_room,No room in your pack. Nothing was used.
+craft.status.salvaged,Items salvaged: {0}.
+craft.status.salvaged_some,Items salvaged: {0}. The rest had no room for their materials.
+craft.status.reforged,Reforged {0}.
+craft.status.reforge_failed,The reforge could not be done. Nothing was charged.
+craft.locked.header,Not yet learned
+craft.locked.chip,Unknown
+craft.locked.trainer,Taught by {0}.
+craft.locked.trainer_or_scroll,"Taught by {0}, or learned from a recipe scroll."
+craft.locked.scroll,Learned from a recipe scroll.
+craft.locked.unknown,Nobody is known to teach this.
+craft.locked.study,Study scroll
+craft.locked_item,Locked
+craft.reforge.needs_forge,Reforging needs a forge.
+craft.reforge.none,You carry no gear to reforge.
+craft.reforge.open,Reforge
+craft.reforge.close,Close
+craft.reforge.level,Upgrade {0}/{1}
+craft.reforge.upgrade,Upgrade
+craft.reforge.upgrade_desc,Raise its upgrade level. Each level adds {0}% to its base bonuses.
+craft.reforge.promote,Promote
+craft.reforge.promote_desc,Raise its rarity one step and add a new affix.
+craft.reforge.reroll,Reroll
+craft.reforge.reroll_desc,Replace {0} with a different affix.
+craft.reforge.block.station,Reforging needs a forge.
+craft.reforge.block.gold,Not enough gold.
+craft.reforge.block.materials,Not enough metal.
+craft.reforge.block.max_level,Already at the highest upgrade level.
+craft.reforge.block.rarity,Only Uncommon and Rare gear can be promoted.
+craft.reforge.block.no_affix,It has no affix to reroll.
+craft.reforge.block.no_pool,No other affix fits this piece.
+craft.reforge.block.not_held,You no longer carry this.
+craft.reforge.line.work,"the smith's work — {1}g"
+craft.reforge.line.rerolls,"reworked {0} times before — {1}g"
+craft.reforge.line.gain,"the value it adds — {1}g"
+craft.salvage.junk,Salvage all junk ({0})
+craft.salvage.junk_confirm,Salvage {0} junk items? Press again
+craft.salvage.confirm,Press again to salvage
+craft.salvage.better_station,Materials at: {0}
+craft.toast.recipe_learned,New recipe learned
+craft.toast.recipes_learned,New recipes learned
+craft.toast.recipes_learned_detail,Open a crafting station to see them.
+craft.toast.rank_up,Crafting skill improved
+service.ember_crown.trainer.crafts_name,Bryn's Crafting Lessons
+# --- BEGIN ics:crafting:recipes (generated by tools/gen_recipes.py; do not edit by hand) ---
+recipe.kit.alchemy.name,Build Alchemy Kit
+recipe.kit.banner.name,Sew Guild Banner
+recipe.kit.brazier.name,Forge Iron Brazier
+recipe.kit.crate.name,Build Banded Crate
+recipe.kit.display_stand.name,Build Display Stand
+recipe.drakescale_mail.name,Forge Drakescale Mail
+recipe.kit.forge.name,Build Forge Kit
+recipe.health_potion.name,Brew Health Potion
+recipe.iron_ingot.name,Smelt Iron Ingot
+recipe.iron_ring.name,Cast Iron Ring
+recipe.leather_cap.name,Stitch Leather Cap
+recipe.leather_strips.name,Tan Leather Strips
+recipe.leather_vest.name,Stitch Leather Vest
+recipe.steel_sword.name,Forge Steel Sword
+recipe.kit.workbench.name,Build Workbench Kit
+recipe.steel_ingot.name,Smelt Steel Ingot
+recipe.blacksteel_ingot.name,Smelt Blacksteel Ingot
+recipe.sunsteel_ingot.name,Smelt Sunsteel Ingot
+recipe.moonsilver_ingot.name,Smelt Moonsilver Ingot
+recipe.starmetal_ingot.name,Smelt Starmetal Ingot
+recipe.iron_sword.name,Forge Iron Sword
+recipe.hunting_bow.name,Carve Hunting Bow
+recipe.oak_staff.name,Carve Oak Staff
+recipe.iron_cuirass.name,Forge Iron Cuirass
+recipe.rawhide_jerkin.name,Stitch Rawhide Jerkin
+recipe.homespun_robe.name,Stitch Homespun Robe
+recipe.frostpine_bow.name,Carve Frostpine Bow
+recipe.frostpine_staff.name,Carve Frostpine Staff
+recipe.steel_cuirass.name,Forge Steel Cuirass
+recipe.frosthide_jerkin.name,Stitch Frosthide Jerkin
+recipe.frostwool_robe.name,Stitch Frostwool Robe
+recipe.blacksteel_sword.name,Forge Blacksteel Sword
+recipe.cinderwood_bow.name,Carve Cinderwood Bow
+recipe.cinderwood_staff.name,Carve Cinderwood Staff
+recipe.blacksteel_cuirass.name,Forge Blacksteel Cuirass
+recipe.ashhide_jerkin.name,Stitch Ashhide Jerkin
+recipe.ashweave_robe.name,Stitch Ashweave Robe
+recipe.sunsteel_sword.name,Forge Sunsteel Sword
+recipe.goldenpalm_bow.name,Carve Goldenpalm Bow
+recipe.goldenpalm_staff.name,Carve Goldenpalm Staff
+recipe.sunsteel_cuirass.name,Forge Sunsteel Cuirass
+recipe.dunehide_jerkin.name,Stitch Dunehide Jerkin
+recipe.sunsilk_robe.name,Stitch Sunsilk Robe
+recipe.moonsilver_sword.name,Forge Moonsilver Sword
+recipe.gloamwood_bow.name,Carve Gloamwood Bow
+recipe.gloamwood_staff.name,Carve Gloamwood Staff
+recipe.moonsilver_cuirass.name,Forge Moonsilver Cuirass
+recipe.duskhide_jerkin.name,Stitch Duskhide Jerkin
+recipe.gloamweave_robe.name,Stitch Gloamweave Robe
+recipe.starmetal_sword.name,Forge Starmetal Sword
+recipe.starwood_bow.name,Carve Starwood Bow
+recipe.starwood_staff.name,Carve Starwood Staff
+recipe.starmetal_cuirass.name,Forge Starmetal Cuirass
+recipe.skyhide_jerkin.name,Stitch Skyhide Jerkin
+recipe.starweave_robe.name,Stitch Starweave Robe
+recipe.copper_ring.name,Forge Copper Ring
+recipe.copper_charm.name,Forge Copper Charm
+recipe.arrows.name,Fletch Arrows
+recipe.steel_arrows.name,Fletch Steel Arrows
+recipe.blacksteel_arrows.name,Fletch Blacksteel Arrows
+recipe.health_greater.name,Brew Greater Health Potion
+recipe.health_superior.name,Brew Superior Health Potion
+recipe.stamina_lesser.name,Brew Lesser Stamina Draught
+recipe.stamina_greater.name,Brew Greater Stamina Draught
+recipe.stamina_superior.name,Brew Superior Stamina Draught
+recipe.mana_lesser.name,Brew Lesser Mana Potion
+recipe.mana_greater.name,Brew Greater Mana Potion
+recipe.mana_superior.name,Brew Superior Mana Potion
+recipe.cure_lesser.name,Brew Lesser Antidote
+recipe.cure_greater.name,Brew Greater Antidote
+recipe.cure_superior.name,Brew Panacea
+recipe.might_lesser.name,Brew Lesser Elixir of Might
+recipe.insight_lesser.name,Brew Lesser Elixir of Insight
+recipe.stoneskin_lesser.name,Brew Lesser Stoneskin Elixir
+recipe.grilled_catch.name,Cook Grilled Catch
+recipe.hearth_stew.name,Cook Hearth Stew
+recipe.oatcake.name,Cook Honeyed Oatcake
+recipe.eel_pie.name,Cook Eel Pie
+recipe.spiced_roast.name,Cook Spiced Roast
+recipe.frostfang_broth.name,Cook Frostfang Broth
+recipe.ember_tea.name,Cook Emberbloom Tea
+recipe.roe_toast.name,Cook Tarn Roe Toast
+# --- END ics:crafting:recipes ---
+# --- END ics:crafting ---
+# --- BEGIN ics:inv-ui ---
+# Item card facts (ItemSlot.Detail). A fact at its default prints nothing, so these appear only on items that have them.
+item.level,Item level {0}
+item.upgrade,Upgraded +{0} of {1}
+item.locked,Locked
+item.junk,Junk
+item.two_handed,Two-handed
+item.quality.standard,Standard
+item.quality.fine,Fine
+item.quality.superior,Superior
+item.quality.masterwork,Masterwork
+item.weapon_class.sword,Sword
+item.weapon_class.dagger,Dagger
+item.weapon_class.axe,Axe
+item.weapon_class.mace,Mace
+item.weapon_class.spear,Spear
+item.weapon_class.staff,Staff
+item.weapon_class.greatsword,Greatsword
+item.weapon_class.bow,Bow
+item.weapon_class.shield,Shield
+item.armor_weight.light,Light armour
+item.armor_weight.medium,Medium armour
+item.armor_weight.heavy,Heavy armour
+item.requires_level,Requires level {0}
+item.requires_level_unmet,Requires level {0} (you are level {1})
+item.set_header,{0}   {1}/{2} worn
+item.set_bonus_on,{0} pieces (active): {1}
+item.set_bonus_off,{0} pieces: {1}
+item.vs_slot,vs {0}: {1}
+item.vs_slot_empty,vs {0} (empty)
+# What a consumable does. {0} is the amount, the last argument a duration such as 8s or 2m.
+item.effect.heal,Restores {0} health
+item.effect.heal_over,Restores {0} health over {1}
+item.effect.stamina,Restores {0} stamina
+item.effect.stamina_over,Restores {0} stamina over {1}
+item.effect.mana,Restores {0} mana
+item.effect.mana_over,Restores {0} mana over {1}
+item.effect.buff,{0} {1} for {2}
+item.effect.buff_instant,{0} {1}
+item.effect.cure,Cures {0}
+item.effect.cure_all,Cures every harmful effect
+item.cooldown,Cooldown {0}
+item.cooldown_shared,"Cooldown {0}, shared with other {1}"
+item.cooldown_group.potion,potions
+item.cooldown_group.elixir,elixirs
+item.cooldown_group.food,food
+item.cooling_down,Ready again in {0}
+# The pack screen: search, the pack and material bag views, the extra sorts and the gear-slot filter.
+item.search,Search
+item.search_placeholder,Name or kind
+item.no_match,Nothing matches.
+item.materials_empty,No materials yet.
+item.view_pack,Pack {0}/{1}
+item.view_materials,Materials {0}
+item.sort_type,Kind
+item.sort_level,Level
+item.filter_any_slot,Any slot
+# Stack actions. Every refusal keeps its button and explains itself in the tooltip.
+item.split,Split
+item.split_prompt,Move how many into a new stack?
+item.split_confirm,Split stack
+item.split_no_room,Your pack has no free slot for the other half.
+item.lock,Lock
+item.unlock,Unlock
+item.lock_hint,"A locked item cannot be sold, dropped or marked as junk."
+item.mark_junk,Mark as junk
+item.unjunk,Not junk
+item.junk_hint,Junk can be sold in one press at any merchant who will take it.
+item.junk_locked,Unlock it before marking it as junk.
+item.drop,Drop
+item.drop_confirm,Drop {0} ×{1} at your feet?
+item.drop_locked,Unlock it before dropping it.
+item.drop_quest,You should hold on to this.
+item.cancel,Cancel
+# The stash: bulk moves, moving part of a stack, and why a move did not happen.
+storage.deposit_materials,Store all materials
+storage.take_all,Take all
+storage.some,Some
+storage.some_hint,Choose how many to move.
+storage.pack_full,Your pack is full. The rest stayed where it was.
+storage.full,There is no more room here. The rest stayed in your pack.
+# The counter: junk in one press, part of a stack, the buyback shelf, and the player's own lock.
+shop.pack_full,Your pack is full.
+shop.locked_item,You have locked this. Unlock it in your pack to sell it.
+shop.sell_junk,Sell all junk
+shop.sell_junk_hint,Sells every item you marked as junk that this merchant will buy.
+shop.junk_preview,Junk: {0} to sell for {1}g
+shop.junk_skipped,{0} more marked as junk will not sell here.
+shop.junk_none_sellable,None of your junk will sell here.
+shop.sell_some,Sell some
+shop.buyback,BUYBACK
+shop.buy_back,Buy back
+shop.buyback_hint,The price you were paid for it. This shelf is cleared when you load a game.
+# The consumables bar on a controller. {0} is the trigger to hold, or the whole chord.
+hud.consumables_pad,Consumables   hold {0}
+hud.hotbar_hint_pad,{0} to use
+# The loot feed: pickups (merged while they keep coming), a refused pickup, a recipe learned.
+loot.picked_up,{0}
+loot.picked_up_many,{0} ×{1}
+loot.pack_full,Your pack is full: {0} was left behind.
+loot.reward_chest,A reward chest stands where it fell.
+item.scroll.teaches,Teaches the recipe: {0}
+item.scroll.known,You already know the recipe: {0}
+# --- END ics:inv-ui ---
+# --- BEGIN ics:content ---
+# Item sets and unique effects. Generated by tools/gen_items.py from tools/items/catalogue.py.
+set.emberguard.name,Emberguard
+set.frostfang_hunter.name,Frostfang Hunter
+set.stormcaller.name,Stormcaller
+set.ashen_reaver.name,Ashen Reaver
+set.wildheart.name,Wildheart
+set.sunspire_templar.name,Sunspire Templar
+set.gloamwarden.name,Gloamwarden
+set.starfall.name,Starfall
+unique.crownbreaker.name,Crownbreaker
+unique.crownbreaker.desc,Critical hits deal 50% more damage to enemies below 30% health.
+unique.stormcleaver.name,Tyrant's Thunder
+unique.stormcleaver.desc,Hits have a 25% chance to brand the target with storm.
+unique.packlords_hunger.name,Packlord's Hunger
+unique.packlords_hunger.desc,A kill restores 8% of your health.
+unique.prophets_pyre.name,Prophet's Pyre
+unique.prophets_pyre.desc,"Spells have a 15% chance to echo at 50% power, once every 4 seconds."
+unique.hollow_diadem.name,Hollow Grace
+unique.hollow_diadem.desc,25% of the damage you take is paid from mana while any remains.
+unique.ashen_oath.name,Ashen Oath
+unique.ashen_oath.desc,Below 35% health you deal 30% more damage.
+unique.unmaking_touch.name,Unmaking Touch
+unique.unmaking_touch.desc,Hits have a 20% chance to set decay on the target.
+unique.mirrorguard.name,Mirrorguard
+unique.mirrorguard.desc,A block returns 40% of the blocked damage to the attacker.
+unique.farsight.name,Farsight
+unique.farsight.desc,Critical hits deal 75% more damage to enemies below 25% health.
+unique.sages_reservoir.name,Sage's Reservoir
+unique.sages_reservoir.desc,"Spells have a 10% chance to echo at 75% power, once every 6 seconds."
+unique.magpies_luck.name,Magpie's Luck
+unique.magpies_luck.desc,You find 20% more gold.
+unique.emberpike.name,Kindling Point
+unique.emberpike.desc,Hits have a 30% chance to set the target burning.
+unique.windrunner.name,Windrunner
+unique.windrunner.desc,A dodge that avoids a hit refunds 12 stamina.
+unique.briarheart.name,Briarheart
+unique.briarheart.desc,Melee attackers take 14 damage when they hit you.
+unique.gravetender.name,Gravetender's Due
+unique.gravetender.desc,A kill restores 5% of your health.
+unique.winters_bite.name,Winter's Bite
+unique.winters_bite.desc,Hits have a 35% chance to chill the target.
+unique.last_ember.name,The Last Ember
+unique.last_ember.desc,Below 25% health you deal 40% more damage.
+unique.reavers_fury.name,Reaver's Fury
+unique.reavers_fury.desc,Below 50% health you deal 20% more damage.
+unique.wildheart_feast.name,Wildheart Feast
+unique.wildheart_feast.desc,A kill restores 4% of your health.
+unique.templars_rebuke.name,Templar's Rebuke
+unique.templars_rebuke.desc,A block returns 30% of the blocked damage to the attacker.
+unique.gloamwardens_step.name,Gloamwarden's Step
+unique.gloamwardens_step.desc,A dodge that avoids a hit refunds 18 stamina.
+unique.starfall_echo.name,Starfall Echo
+unique.starfall_echo.desc,"Spells have a 20% chance to echo at 60% power, once every 5 seconds."
+# --- END ics:content ---
+# --- BEGIN ics:save-core ---
+save.recovered.title,Loaded from the backup save
+save.recovered.detail,The newest save in this slot could not be read. This is the one before it.
+# --- END ics:save-core ---
+# --- BEGIN ics:save-ui ---
+# Title screen: why Continue / Load Game is disabled and why a load or a session ended.
+menu.no_saves,No saved games yet.
+title.notice.session_aborted,The game could not continue safely and returned to the title screen. Your saves are untouched.
+title.notice.load_failed,That save could not be restored. Nothing was changed on disk. Try another save.
+title.notice.save_corrupt,That save is damaged and cannot be loaded.
+title.notice.save_newer,That save was made by a newer version of the game. Update the game to load it.
+title.notice.save_missing,That save no longer exists.
+# Slot browser: Save mode and kind chips plus the rows for a save that cannot be loaded.
+slots.save_title,SAVE GAME
+slots.quick,Quick Save
+slots.none,No saved games.
+slots.kind.manual,Manual
+slots.kind.quick,Quick
+slots.kind.auto,Autosave
+slots.current,Current
+slots.save_here,Save here
+slots.confirm_overwrite,Confirm save
+slots.confirm_load,Confirm load
+slots.badge.corrupt,Damaged
+slots.badge.newer,Newer version
+slots.badge.backup,Backup
+slots.backup_help,"The newest save here is damaged, so this loads the one before it. {0}"
+slots.delete_failed,Some of this save's files could not be deleted.
+slots.corrupt_help,This save is damaged and cannot be loaded. Delete it or save over it.
+slots.newer_help,"Saved by a newer version of the game (format {0}, this version reads up to {1}). Update the game to load it."
+slots.load_unsaved,Loading discards unsaved progress: {0} since the last save.
+# Pause menu: save results and the leave-with-unsaved-progress question.
+pause.save_as,Save to Slot...
+pause.saved_to,Saved to {0}.
+pause.load_refused,That save could not be loaded. The current game is untouched.
+pause.quit_unsaved,{0} Unsaved progress: {1}. Leave anyway?
+pause.quit_anyway,Leave without saving
+save.age.under_minute,under a minute
+save.age.minutes,{0} min
+save.age.hours,{0} h {1} min
+# F5 / F9.
+save.quickload.none,There is no save to load yet.
+save.quickload.confirm,Unsaved progress: {0}. Press F9 again to load anyway.
+save.quickload.refused,That save could not be loaded. The current game is untouched.
+# Save blocks pushed by this lane (BossController and DialoguePanel).
+save.blocked.boss,You cannot save in the middle of a boss fight.
+save.blocked.dialogue,You cannot save during a conversation.
+# Toasts and the saving indicator.
+save.indicator,Saving...
+notify.quicksaved,Quick saved
+notify.saved_to,Saved to {0}
+notify.save_failed,Save failed
+notify.autosave_failed,Autosave failed
+# --- END ics:save-ui ---
+# --- BEGIN ics:save-perf ---
+# --- END ics:save-perf ---

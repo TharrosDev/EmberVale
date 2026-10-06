@@ -29,6 +29,11 @@ script = ExtResource("2_entry")
 ItemId = "item.material.salt"
 Quantity = 4
 
+[sub_resource type="Resource" id="Stock_ics_1"]
+script = ExtResource("2_entry")
+ItemId = "item.food.grilled_catch"
+Quantity = 5
+
 [resource]
 script = ExtResource("1_shop")
 Id = "shop.embermarket.fishmonger"
@@ -36,7 +41,7 @@ NameKey = "shop.embermarket.fishmonger.name"
 FactionId = "faction.villagers"
 AcceptedTags = Array[String](["fish", "food"])
 Specialties = Array[String](["fish"])
-Stock = Array[Resource]([SubResource("Stock_fish"), SubResource("Stock_oil"), SubResource("Stock_salt")])
+Stock = Array[Resource]([SubResource("Stock_fish"), SubResource("Stock_oil"), SubResource("Stock_salt"), SubResource("Stock_ics_1")])
 RestockDays = 1
 BuyMarkup = 1.5
 SellFraction = 0.42

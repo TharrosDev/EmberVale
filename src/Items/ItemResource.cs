@@ -68,6 +68,27 @@ public partial class ItemResource : Resource
     /// </summary>
     [Export] public Godot.Collections.Array<string> TradeTags { get; set; } = new();
 
+    // --- Scaling and identity (ics-base). Every field below is absent-default: an item authored
+    // before it existed keeps loading unchanged and reads as "legacy / unscaled / none". ---
+
+    /// <summary>The level this item's numbers are authored for. 0 = unscaled (a legacy or
+    /// level-free item). A rolled copy carries its own <see cref="ItemInstance.ItemLevel"/>.</summary>
+    [ExportGroup("Scaling")]
+    [Export] public int ItemLevel { get; set; }
+
+    /// <summary>Realm tier 1-6 (Ember Crown through the Celestial Realm); 0 = legacy, no tier.</summary>
+    [Export(PropertyHint.Range, "0,6,1")] public int Tier { get; set; }
+
+    /// <summary>The character level needed to equip or use it; 0 = no requirement.</summary>
+    [Export] public int RequiredLevel { get; set; }
+
+    /// <summary>The <c>set.*</c> id this item is a piece of (<see cref="ItemSetDatabase"/>); empty for none.</summary>
+    [ExportGroup("Identity")]
+    [Export] public string SetId { get; set; } = "";
+
+    /// <summary>The <c>unique.*</c> id this item carries (<see cref="UniqueEffectDatabase"/>); empty for none.</summary>
+    [Export] public string UniqueEffectId { get; set; } = "";
+
     public bool IsStackable => MaxStack > 1;
 
     /// <summary>The tags as a plain list, for the Godot-free <see cref="Economy.TradeTags"/> helpers

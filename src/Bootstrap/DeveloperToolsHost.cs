@@ -7,6 +7,7 @@ using Embervale.Corruption;
 using Embervale.Debugging;
 using Embervale.Entities;
 using Embervale.Factions;
+using Embervale.Localization;
 using Embervale.Magic;
 using Embervale.Player;
 using Embervale.Progression;
@@ -42,6 +43,11 @@ public sealed partial class DeveloperToolsHost : Node
     private Entity? _dummy;
     private PlayerCharacter? _player;
     private double _respawnCountdown = -1d;
+
+    /// <summary>How long a first F9 stays armed for the confirming second press.</summary>
+    private const ulong QuickLoadConfirmMs = 4000;
+
+    private ulong _quickLoadArmedUntil;
 
     public GameSession Session { get; init; } = null!;
 
@@ -148,18 +154,13 @@ public sealed partial class DeveloperToolsHost : Node
                 AdjustGoblinReputation();
                 break;
             case Key.F5:
-                if (SaveManager.Instance is { } saver)
-                {
-                    saver.SaveGame(saver.ActiveSlot);
-                }
-
+                // Always the quick slot: F5 used to write the session's own slot, which after
+                // loading an autosave was a ring slot the next autosave would rotate away. A
+                // refusal (boss fight, conversation) toasts its reason via SaveFailedEvent.
+                Session.Lifecycle.TrySave(SaveSlotPolicy.QuickSaveTarget, out _);
                 break;
             case Key.F9:
-                if (SaveManager.Instance is { } loader)
-                {
-                    Session.Lifecycle.RequestReload(Session, loader.ActiveSlot);
-                }
-
+                QuickLoad();
                 break;
             case Key.F1:
                 _console?.Toggle();
@@ -171,6 +172,55 @@ public sealed partial class DeveloperToolsHost : Node
                 _profiler?.Toggle();
                 break;
             // Esc is owned by the PauseMenu (it opens the pause menu and pauses the game).
+        }
+    }
+
+    /// <summary>
+    /// F9: reloads the newer of the quick slot and the session's own slot. With more than
+    /// <see cref="SaveSlotPolicy.UnsavedWarningSeconds"/> of unsaved play at stake the first press
+    /// only says so, and a second press inside <see cref="QuickLoadConfirmMs"/> goes through — a
+    /// modal for a key the player hits on reflex would be worse than the mistake it prevents. The
+    /// slot is inspected before anything is torn down (<c>RequestReload</c>), so a missing or
+    /// corrupt save leaves the running session exactly as it was.
+    /// </summary>
+    private void QuickLoad()
+    {
+        if (SaveManager.Instance is not { } saves)
+        {
+            return;
+        }
+
+        var candidates = new System.Collections.Generic.List<SaveSlotInfo>(2);
+        foreach (string slot in new[] { saves.ActiveSlot, SaveManager.QuickSlot })
+        {
+            if (!string.IsNullOrWhiteSpace(slot) && saves.SaveExists(slot) && saves.ReadHeader(slot) is { } header &&
+                !candidates.Exists(known => known.Slot == slot))
+            {
+                candidates.Add(header);
+            }
+        }
+
+        string? target = SaveSlotPolicy.QuickLoadTarget(saves.ActiveSlot, Session.Profile.CharacterName, candidates);
+        if (target == null)
+        {
+            EventBus.Instance?.Publish(new SaveNoticeEvent(Loc.T("save.quickload.none"), Warning: true));
+            return;
+        }
+
+        double unsaved = Session.Lifecycle.SecondsSinceLastSave;
+        ulong now = Time.GetTicksMsec();
+        if (SaveSlotPolicy.NeedsUnsavedConfirm(unsaved) && now > _quickLoadArmedUntil)
+        {
+            _quickLoadArmedUntil = now + QuickLoadConfirmMs;
+            EventBus.Instance?.Publish(new SaveNoticeEvent(
+                Loc.TF("save.quickload.confirm", PauseMenu.UnsavedAge(unsaved)), Warning: true));
+            return;
+        }
+
+        _quickLoadArmedUntil = 0;
+        if (!Session.Lifecycle.RequestReload(Session, target))
+        {
+            EventBus.Instance?.Publish(new SaveNoticeEvent(Loc.T("save.quickload.refused"), Warning: true));
         }
     }
 

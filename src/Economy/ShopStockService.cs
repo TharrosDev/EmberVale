@@ -487,7 +487,7 @@ public partial class ShopStockService : Node, ISaveable
         {
             foreach (Variant element in rolled.AsGodotArray())
             {
-                if (ItemInstance.FromSave(element.AsGodotDictionary()) is { } instance)
+                if (ItemInstance.FromSave(SaveRead.AsSection(element)) is { } instance)
                 {
                     state.Rolled.Add(instance);
                 }

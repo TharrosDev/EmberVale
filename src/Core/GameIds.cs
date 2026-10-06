@@ -285,6 +285,16 @@ public static class GameIds
         public const string BannerKit = "recipe.kit.banner";
         public const string DisplayStandKit = "recipe.kit.display_stand";
 
+        // ics crafting — the recipes tools/items/catalogue.py marks "known": common sense needs no
+        // lesson, so plain arrows and camp cooking are seeded. tools/gen_recipes.py --check fails when
+        // this list and the catalogue disagree. Every other planned recipe is taught, not seeded.
+        public const string Arrows = "recipe.arrows";
+        public const string GrilledCatch = "recipe.grilled_catch";
+        public const string HearthStew = "recipe.hearth_stew";
+        public const string Oatcake = "recipe.oatcake";
+        public const string EelPie = "recipe.eel_pie";
+        public const string RoeToast = "recipe.roe_toast";
+
         /// <summary>
         /// Every recipe the player begins with — the single source of truth shared by
         /// <see cref="Player.PlayerFactory"/>, which seeds it, and the content validator, which checks
@@ -309,6 +319,7 @@ public static class GameIds
             // is also why it had to be gated on eight dragon scales instead of on being learned.
             IronIngot, LeatherStrips, HealthPotion, LeatherCap, SteelSword, LeatherVest, IronRing,
             ForgeKit, WorkbenchKit, AlchemyKit, BrazierKit, CrateKit, BannerKit, DisplayStandKit,
+            Arrows, GrilledCatch, HearthStew, Oatcake, EelPie, RoeToast,
         };
     }
 

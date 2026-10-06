@@ -25,3 +25,6 @@ WorldModelPath = "res://assets/models/equipment/eqp_shield_round.glb"
 Slot = 2
 BonusArmor = 4.0
 TradeTags = Array[String](["armor", "metal"])
+ItemLevel = 5
+Tier = 1
+WeaponClass = 9

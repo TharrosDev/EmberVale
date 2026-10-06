@@ -44,6 +44,23 @@ public partial class CraftingRecipeResource : Resource
     /// affix-less item; higher rolls affixes through the loot generator).</summary>
     [Export] public ItemRarity OutputRarity { get; set; } = ItemRarity.Common;
 
+    /// <summary>Realm tier 1-6 of what this makes; 0 = a legacy recipe with none. Decides the
+    /// crafting rank the crafter's own hands need (<see cref="CraftingSkill.RequiredRank"/>), the
+    /// experience a craft pays and the odds of fine workmanship.</summary>
+    [Export(PropertyHint.Range, "0,6,1")] public int Tier { get; set; }
+
+    /// <summary>The <c>item.recipe_scroll.*</c> id whose use teaches this recipe; empty when no
+    /// scroll does. The recipe names its scroll (not the reverse) so a scroll is an ordinary item
+    /// and <see cref="CraftingComponent.StudyScroll"/> is the one place the link is read.</summary>
+    [Export] public string ScrollItemId { get; set; } = string.Empty;
+
+    /// <summary>The locale key of this recipe's name: its id plus <c>.name</c>.</summary>
+    public string NameKey => Id + ".name";
+
+    /// <summary>The name to show: the catalogue's when it has one, else the authored
+    /// <see cref="DisplayName"/> (a recipe added without a locale row still reads as English).</summary>
+    public string LocalizedName => Localization.Loc.Has(NameKey) ? Localization.Loc.T(NameKey) : DisplayName;
+
     /// <summary>The ingredients as a typed list (skipping malformed/empty rows).</summary>
     public List<RecipeIngredient> IngredientList()
     {
