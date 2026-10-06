@@ -44,8 +44,13 @@ public static class LabelPlacer
     /// clips its contents, so a name running past the right edge is not omitted, it is *sliced in
     /// half* — and "The Fact" where "The Factor's Rest" should be reads as corrupted data rather than
     /// as a label that did not fit.
+    ///
+    /// <paramref name="blocked"/> is ground no label may cover, whatever its rank: the player's
+    /// arrow, and for a territory's lettering the markers and the names already drawn. A candidate
+    /// touching any of it is dropped exactly as one touching a kept label is.
     /// </summary>
-    public static List<int> Place(IReadOnlyList<LabelCandidate> candidates, Rect2 bounds)
+    public static List<int> Place(
+        IReadOnlyList<LabelCandidate> candidates, Rect2 bounds, IReadOnlyList<Rect2>? blocked = null)
     {
         var order = new List<LabelCandidate>(candidates);
         order.Sort((a, b) =>
@@ -66,6 +71,23 @@ public static class LabelPlacer
             }
 
             bool collides = false;
+            if (blocked != null)
+            {
+                for (int i = 0; i < blocked.Count; i++)
+                {
+                    if (blocked[i].Intersects(box))
+                    {
+                        collides = true;
+                        break;
+                    }
+                }
+            }
+
+            if (collides)
+            {
+                continue;
+            }
+
             foreach (Rect2 taken in kept)
             {
                 if (taken.Intersects(box))

@@ -10,8 +10,9 @@ namespace Embervale.UI;
 /// the prepared region heightfield and the authored presentation paths.</summary>
 public static class MapCartography
 {
-    /// <summary>Metres per relief-texture pixel. A kilometre realm is a 260-pixel texture.</summary>
-    private const int ReliefStride = 4;
+    /// <summary>Height samples per relief-texture pixel. Two keeps a ridge line a line at the zoom
+    /// that shows a district; at four the plot was a blur of 14-pixel texels there.</summary>
+    private const int ReliefStride = 2;
 
     private static readonly Dictionary<string, (ImageTexture Texture, Rect2 World)> ReliefCache = new();
 
@@ -80,7 +81,9 @@ public static class MapCartography
             high = Math.Max(high, h);
         }
 
-        var image = Image.CreateEmpty(width, height, false, Image.Format.Rgba8);
+        // Written into one buffer and handed over whole: a SetPixel per texel is a native call each,
+        // and at this stride that was a visible hitch the first time the map opened.
+        byte[] pixels = new byte[width * height * 4];
         float metres = prepared.SampleStep * ReliefStride;
         for (int y = 0; y < height; y++)
         {
@@ -90,22 +93,25 @@ public static class MapCartography
                 float h = prepared.Heights[index];
                 float east = prepared.Heights[(y * ReliefStride * prepared.Columns) + Math.Min(prepared.Columns - 1, (x + 1) * ReliefStride)];
                 float south = prepared.Heights[(Math.Min(prepared.Rows - 1, (y + 1) * ReliefStride) * prepared.Columns) + (x * ReliefStride)];
-                // North-west light, soft: a map hints at relief rather than rendering it.
-                float shade = Math.Clamp(0.86f + (((h - east) + (h - south)) * 0.22f / metres), 0.55f, 1.08f);
+                // North-west light, soft: a map hints at relief rather than rendering it. The land is
+                // the smoked vellum of UiTheme.MapLandLow..High, so the plot sits in the dark page
+                // and roads, pins and lettering are the light things on it.
+                float shade = Math.Clamp(0.90f + (((h - east) + (h - south)) * 0.20f / metres), 0.62f, 1.16f);
                 float t = high > low ? (h - low) / (high - low) : 0f;
-                var ground = new Color(0.40f + (0.16f * t), 0.37f + (0.13f * t), 0.30f + (0.12f * t), 0.92f);
-                Color colour = new(ground.R * shade, ground.G * shade, ground.B * shade, ground.A);
+                Color ground = UiTheme.MapLandLow.Lerp(UiTheme.MapLandHigh, t);
+                Color colour = new(ground.R * shade, ground.G * shade, ground.B * shade, 1f);
                 if (prepared.GeneratedWaterSurfaces.Length > index &&
                     prepared.GeneratedWaterSurfaces[index] > h + 0.05f)
                 {
-                    colour = new Color(0.22f, 0.30f, 0.34f, 0.95f);
+                    colour = UiTheme.MapWater;
                 }
-                image.SetPixel(x, y, colour);
+                Write(pixels, ((y * width) + x) * 4, colour);
             }
         }
 
-        PaintAuthoredWater(image, prepared, regionId, metres);
+        PaintAuthoredWater(pixels, width, height, prepared, regionId, metres);
 
+        var image = Image.CreateFromData(width, height, false, Image.Format.Rgba8, pixels);
         var world = new Rect2(prepared.MinX, prepared.MinZ, width * metres, height * metres);
         (ImageTexture, Rect2) relief = (ImageTexture.CreateFromImage(image), world);
         ReliefCache[regionId] = relief;
@@ -115,7 +121,8 @@ public static class MapCartography
     /// <summary>A declared lake is drawn where its basin is: inside the body's extent, ground lower
     /// than the rim of that extent is under water. The shoreline is the terrain's own contour, the same
     /// rule the in-world water surface follows.</summary>
-    private static void PaintAuthoredWater(Image image, WorldPreparedRegionResource prepared, string regionId, float metres)
+    private static void PaintAuthoredWater(
+        byte[] pixels, int width, int height, WorldPreparedRegionResource prepared, string regionId, float metres)
     {
         if (RegionDatabase.Get(regionId) is not { } region)
         {
@@ -144,21 +151,29 @@ public static class MapCartography
                 rim.Sort();
                 float surface = rim[rim.Count / 2] - 0.6f;
                 int x0 = Math.Max(0, (int)((cx - water.Extent.X - prepared.MinX) / metres));
-                int x1 = Math.Min(image.GetWidth() - 1, (int)((cx + water.Extent.X - prepared.MinX) / metres));
+                int x1 = Math.Min(width - 1, (int)((cx + water.Extent.X - prepared.MinX) / metres));
                 int y0 = Math.Max(0, (int)((cz - water.Extent.Y - prepared.MinZ) / metres));
-                int y1 = Math.Min(image.GetHeight() - 1, (int)((cz + water.Extent.Y - prepared.MinZ) / metres));
+                int y1 = Math.Min(height - 1, (int)((cz + water.Extent.Y - prepared.MinZ) / metres));
                 for (int y = y0; y <= y1; y++)
                 {
                     for (int x = x0; x <= x1; x++)
                     {
                         if (HeightAt(prepared, prepared.MinX + (x * metres), prepared.MinZ + (y * metres)) < surface)
                         {
-                            image.SetPixel(x, y, new Color(0.22f, 0.30f, 0.34f, 0.95f));
+                            Write(pixels, ((y * width) + x) * 4, UiTheme.MapWater);
                         }
                     }
                 }
             }
         }
+    }
+
+    private static void Write(byte[] pixels, int at, Color colour)
+    {
+        pixels[at] = (byte)Math.Clamp((int)MathF.Round(colour.R * 255f), 0, 255);
+        pixels[at + 1] = (byte)Math.Clamp((int)MathF.Round(colour.G * 255f), 0, 255);
+        pixels[at + 2] = (byte)Math.Clamp((int)MathF.Round(colour.B * 255f), 0, 255);
+        pixels[at + 3] = (byte)Math.Clamp((int)MathF.Round(colour.A * 255f), 0, 255);
     }
 
     private static float HeightAt(WorldPreparedRegionResource prepared, float worldX, float worldZ)

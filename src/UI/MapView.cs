@@ -52,6 +52,13 @@ public partial class MapView : Control
     /// <see cref="LabelPlacer"/>, drawn in <see cref="DrawPlacedLabels"/>. Cleared every `_Draw`.</summary>
     private readonly List<(LabelCandidate Candidate, string Text, Vector2 Origin, Color Colour)> _labels = new();
 
+    // What a label may not be drawn over, in plot pixels, rebuilt with the labels on every draw:
+    // the player's arrow for every label, and the markers and the kept pin names as well for a
+    // territory's lettering. The candidate list is the placer's input, reused between draws.
+    private readonly List<Rect2> _labelBlocks = new();
+    private readonly List<Rect2> _letteringBlocks = new();
+    private readonly List<LabelCandidate> _candidates = new();
+
     // Reused by PinNear, so a pan that re-asks for the snap every frame allocates nothing.
     private readonly List<Vector2> _pickPoints = new();
     private readonly List<string> _pickIds = new();
@@ -330,11 +337,14 @@ public partial class MapView : Control
 
     // ── Drawing ───────────────────────────────────────────────────────────────────────────────
 
-    /// <summary>Unmapped ground — the colour under everything.</summary>
-    private static Color Deep => new(0.030f, 0.030f, 0.027f);
+    /// <summary>Half the side of the square kept clear round the player's arrow.</summary>
+    private const float PlayerClearance = 15f;
 
-    /// <summary>Ground the player has walked, before its per-cell tone variation.</summary>
-    private static Color Ground => new(0.24f, 0.215f, 0.174f, 0.74f);
+    /// <summary>The width of the dark outline round every word on the plot, in pixels.</summary>
+    private const int LabelKeyline = 4;
+
+    /// <summary>How far a territory's name steps down, then up, from its anchor to find clear ground.</summary>
+    private static readonly float[] LetteringSteps = { 0f, 1f, -1f, 2f, -2f };
 
     public override void _Draw()
     {
@@ -342,10 +352,10 @@ public partial class MapView : Control
         // graticule disagreeing about where the centre of the map is.
         Projection = Fitted;
 
-        DrawRect(new Rect2(Vector2.Zero, Size), Deep);
+        DrawRect(new Rect2(Vector2.Zero, Size), UiTheme.MapDeep);
         if (_mapMaterial is { } material)
         {
-            DrawTextureRect(material, new Rect2(Vector2.Zero, Size), true, new Color(0.72f, 0.67f, 0.58f, 0.72f));
+            DrawTextureRect(material, new Rect2(Vector2.Zero, Size), true, UiTheme.MapVellum);
         }
         if (Relief is { } relief)
         {
@@ -368,17 +378,21 @@ public partial class MapView : Control
             DrawCoastline();
         }
 
-        // Region names sit under the markers, as a cartographer would letter a territory.
-        if (!Compact)
-        {
-            foreach (MapMarker region in Regions)
-            {
-                Vector2 at = Projection.WorldToScreen(new Vector2(region.X, region.Z));
-                DrawLabel(region.Label, at, new Color(UiTheme.Accent, 0.45f), UiTheme.HeaderFontSize);
-            }
-        }
-
         DrawSettlementHalos();
+
+        // The player's arrow is the one mark nothing may cover: it is drawn last, and every label
+        // is placed round it.
+        _labelBlocks.Clear();
+        _letteringBlocks.Clear();
+        if (ResolvePlayer() is var (position, _))
+        {
+            Vector2 here = Projection.WorldToScreen(new Vector2(position.X, position.Z));
+            var clear = new Rect2(
+                here - new Vector2(PlayerClearance, PlayerClearance),
+                new Vector2(PlayerClearance * 2f, PlayerClearance * 2f));
+            _labelBlocks.Add(clear);
+            _letteringBlocks.Add(clear);
+        }
 
         // Weakest tier first, so a settlement is never buried under a stall and the player is never
         // buried under anything — the same overlap-resolves-hierarchy rule the 25E plot had.
@@ -391,11 +405,18 @@ public partial class MapView : Control
         DrawPins(MapTier.Primary);
         DrawPlacedLabels();
 
+        // A territory's name goes on after the markers and their names and gives way to all of
+        // them: it is lettered on whatever ground they left clear.
+        if (!Compact)
+        {
+            DrawLettering();
+        }
+
         DrawWaypoint();
-        DrawPlayer();
         DrawScaleBar();
         DrawCursor();
         DrawHoverLabel();
+        DrawPlayer();
         DrawFrame();
     }
 
@@ -418,27 +439,36 @@ public partial class MapView : Control
             // A stable, tiny tone shift per cell so abutting ground is not one flat wash — the same
             // hand-drawn-map cue that keeps a large area from reading as a single grey rectangle.
             float shade = (((StableRoll.Seed(tile.CellId) % 100u) / 100f) - 0.5f) * 0.035f;
+            Color ground = UiTheme.MapLand;
             var tone = new Color(
-                Ground.R + shade, Ground.G + (shade * 0.9f), Ground.B + (shade * 0.7f), Ground.A);
+                ground.R + shade, ground.G + (shade * 0.9f), ground.B + (shade * 0.7f), ground.A);
 
             DrawRect(ScreenRect(tile.Rect), tone);
         }
     }
 
-    /// <summary>Draws the physical route network over known land. A dark shoulder and pale core keep
-    /// adjoining segments legible at both world-map and minimap zoom without turning them into UI
-    /// lines disconnected from the terrain underneath.</summary>
+    /// <summary>Draws the physical route network over known land. A dark shoulder and a pale, opaque
+    /// core: on the smoked ground the core is the lightest line on the plot after the lettering, so a
+    /// road reads at a glance at both world-map and minimap zoom. Every shoulder goes down before any
+    /// core, so a junction is one pale shape and not a core cut by its neighbour's shoulder.</summary>
     private void DrawRoads()
     {
+        var shoulder = new Color(UiTheme.Engrave, 0.85f);
         foreach (MapRoadSegment road in Roads)
         {
-            Vector2 start = Projection.WorldToScreen(road.Start);
-            Vector2 end = Projection.WorldToScreen(road.End);
-            float core = Mathf.Clamp(road.Width * Projection.Zoom * 0.55f, 1.25f, 7f);
-            DrawLine(start, end, new Color(UiTheme.Engrave, 0.78f), core + 3f, true);
-            DrawLine(start, end, new Color(UiTheme.Text, road.Width >= 4f ? 0.42f : 0.27f), core, true);
+            DrawLine(
+                Projection.WorldToScreen(road.Start), Projection.WorldToScreen(road.End), shoulder, RoadCore(road) + 3f, true);
+        }
+
+        foreach (MapRoadSegment road in Roads)
+        {
+            DrawLine(
+                Projection.WorldToScreen(road.Start), Projection.WorldToScreen(road.End),
+                road.Width >= 4f ? UiTheme.MapRoad : UiTheme.MapTrack, RoadCore(road), true);
         }
     }
+
+    private float RoadCore(MapRoadSegment road) => Mathf.Clamp(road.Width * Projection.Zoom * 0.55f, 1.25f, 7f);
 
     /// <summary>
     /// The outline of the known world — every land edge that no other cell covers.
@@ -629,6 +659,8 @@ public partial class MapView : Control
             DrawShape(group, at, radius, colour);
             DrawCategoryDetail(pin.Category, at, radius, opacity);
             DrawTravelState(pin, at, radius, opacity);
+            float seal = radius + 4f;
+            _letteringBlocks.Add(new Rect2(at - new Vector2(seal, seal), new Vector2(seal * 2f, seal * 2f)));
 
             // Labels only for what is big enough to earn one: everything at once is the icon soup
             // §50 names. The selection always gets its name; hover gets its own label by the cursor.
@@ -810,9 +842,11 @@ public partial class MapView : Control
             at - (forward * 5.5f) - (right * 6f),
         };
 
-        DrawCircle(at, 12f, new Color(UiTheme.Text, 0.14f));
+        // A dark disc under the arrow and a keyline round it: bone on smoke, whatever is beneath.
+        DrawCircle(at, 12.5f, new Color(UiTheme.Keyline, 0.55f));
+        DrawArc(at, 12.5f, 0f, Mathf.Tau, 28, new Color(UiTheme.Text, 0.35f), 1f, true);
+        DrawPolyline(new[] { tri[0], tri[1], tri[2], tri[0] }, UiTheme.Keyline, 4f, true);
         DrawColoredPolygon(tri, UiTheme.Text);
-        DrawPolyline(new[] { tri[0], tri[1], tri[2], tri[0] }, UiTheme.Engrave, 1.5f);
     }
 
     /// <summary>The hovered marker's name beside the cursor — the cheapest way to make a dense plot
@@ -965,7 +999,8 @@ public partial class MapView : Control
         _labels.Add((new LabelCandidate(rect, rank, _labels.Count), text, origin, colour));
     }
 
-    /// <summary>Runs the placer over this frame's labels and draws the survivors.</summary>
+    /// <summary>Runs the placer over this frame's labels and draws the survivors. A name that would
+    /// cover the player's arrow is dropped like one that would cover another name.</summary>
     private void DrawPlacedLabels()
     {
         if (_labels.Count == 0)
@@ -973,38 +1008,77 @@ public partial class MapView : Control
             return;
         }
 
-        var candidates = new List<LabelCandidate>(_labels.Count);
+        _candidates.Clear();
         foreach ((LabelCandidate candidate, _, _, _) in _labels)
         {
-            candidates.Add(candidate);
+            _candidates.Add(candidate);
         }
 
-        foreach (int index in LabelPlacer.Place(candidates, new Rect2(Vector2.Zero, Size)))
+        foreach (int index in LabelPlacer.Place(_candidates, new Rect2(Vector2.Zero, Size), _labelBlocks))
         {
-            (_, string text, Vector2 origin, Color colour) = _labels[index];
+            (LabelCandidate kept, string text, Vector2 origin, Color colour) = _labels[index];
             DrawLabelAt(text, origin, colour, UiTheme.CaptionFontSize);
+            _letteringBlocks.Add(kept.Rect);
         }
     }
 
     /// <summary>
-    /// A label on the plot, centred on <paramref name="at"/>.
-    ///
-    /// Falls back to drawing nothing rather than throwing if the UI face is unavailable: a nameless
-    /// map is a degraded map, a crashed one is no map. (37.5E.)
+    /// Letters each territory's name near its anchor, on the first of a few spots (the anchor, then a
+    /// line or two below and above it) that is clear of the player's arrow, every marker and every
+    /// pin name already drawn. A name with nowhere clear to go is left off: the breadcrumb over the
+    /// plot says which realm this is, and lettering across a marker says nothing.
     /// </summary>
-    private void DrawLabel(string text, Vector2 at, Color colour, int sizeToken)
+    private void DrawLettering()
     {
-        if (UiTheme.UiFont is not { } font || string.IsNullOrEmpty(text))
+        if (Regions.Count == 0 || UiTheme.MapLetteringFont is not { } font)
         {
             return;
         }
 
-        int size = UiTheme.FontSize(sizeToken);
-        Vector2 measured = font.GetStringSize(text, HorizontalAlignment.Left, -1, size);
-        DrawLabelAt(text, at - new Vector2(measured.X * 0.5f, 0f), colour, sizeToken);
+        int size = UiTheme.FontSize(UiTheme.HeaderFontSize);
+        float line = font.GetAscent(size) + font.GetDescent(size);
+        var bounds = new Rect2(Vector2.Zero, Size);
+        foreach (MapMarker region in Regions)
+        {
+            if (string.IsNullOrEmpty(region.Label))
+            {
+                continue;
+            }
+
+            Vector2 anchor = Projection.WorldToScreen(new Vector2(region.X, region.Z));
+            Vector2 measured = font.GetStringSize(region.Label, HorizontalAlignment.Left, -1, size);
+            _candidates.Clear();
+            for (int i = 0; i < LetteringSteps.Length; i++)
+            {
+                var origin = new Vector2(
+                    anchor.X - (measured.X * 0.5f),
+                    anchor.Y + (LetteringSteps[i] * (line + UiTheme.SpaceMd)));
+                _candidates.Add(new LabelCandidate(new Rect2(origin.X, origin.Y - measured.Y, measured.X, measured.Y), i, i));
+            }
+
+            // The steps do not overlap one another, so the placer may keep several. Its answer is in
+            // index order and the indices are the steps in order of preference: the first is drawn.
+            List<int> clear = LabelPlacer.Place(_candidates, bounds, _letteringBlocks);
+            if (clear.Count == 0)
+            {
+                continue;
+            }
+
+            Rect2 spot = _candidates[clear[0]].Rect;
+            var baseline = new Vector2(spot.Position.X, spot.End.Y);
+            DrawStringOutline(
+                font, baseline, region.Label, HorizontalAlignment.Left, -1, size, LabelKeyline, UiTheme.Keyline);
+            DrawString(font, baseline, region.Label, HorizontalAlignment.Left, -1, size, UiTheme.Dim);
+            _letteringBlocks.Add(spot);
+        }
     }
 
-    /// <summary>A label whose left-baseline origin is already decided (the placer's output).</summary>
+    /// <summary>
+    /// A label whose left-baseline origin is already decided (the placer's output).
+    ///
+    /// Draws nothing rather than throwing if the UI face is unavailable: a nameless map is a
+    /// degraded map, a crashed one is no map. (37.5E.)
+    /// </summary>
     private void DrawLabelAt(string text, Vector2 origin, Color colour, int sizeToken)
     {
         if (UiTheme.UiFont is not { } font || string.IsNullOrEmpty(text))
@@ -1014,9 +1088,13 @@ public partial class MapView : Control
 
         int size = UiTheme.FontSize(sizeToken);
 
-        // Drawn once dark and offset, then in colour: a plot label crosses terrain of every value,
-        // and an unshadowed one disappears over its own marker.
-        DrawString(font, origin + Vector2.One, text, HorizontalAlignment.Left, -1, size, UiTheme.Engrave);
+        // A dark keyline all the way round, then the word: a plot label crosses roads, relief and
+        // water, and a one-pixel drop shadow left its top and left edges to dissolve into them.
+        // The keyline takes the label's own opacity, so a tier fading in does not arrive as a black
+        // word first.
+        DrawStringOutline(
+            font, origin, text, HorizontalAlignment.Left, -1, size, LabelKeyline,
+            new Color(UiTheme.Keyline, UiTheme.Keyline.A * colour.A));
         DrawString(font, origin, text, HorizontalAlignment.Left, -1, size, colour);
     }
 
