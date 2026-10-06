@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="AffixDefinition" load_steps=2 format=3 uid="uid://c4unco7oboauw"]
+
+[ext_resource type="Script" path="res://src/Items/AffixDefinition.cs" id="1_affix"]
+
+[resource]
+script = ExtResource("1_affix")
+Id = "affix.suffix.wellspring"
+Label = "of the Wellspring"
+Kind = 1
+Stat = 2
+ModifierType = 0
+MinValue = 0.4
+MaxValue = 1.2
+MinRarity = 2
+Weight = 0.6
+Effect = 3
+ForWeapons = false
+ForArmor = true
+ForAccessories = true

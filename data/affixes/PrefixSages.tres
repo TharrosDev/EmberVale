@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="AffixDefinition" load_steps=2 format=3 uid="uid://clqr0gopjt4q5"]
+
+[ext_resource type="Script" path="res://src/Items/AffixDefinition.cs" id="1_affix"]
+
+[resource]
+script = ExtResource("1_affix")
+Id = "affix.prefix.sages"
+Label = "Sage's"
+Kind = 0
+Stat = 2
+ModifierType = 0
+MinValue = 10.0
+MaxValue = 30.0
+MinRarity = 1
+Weight = 0.8
+ForWeapons = true
+ForArmor = true
+ForAccessories = true

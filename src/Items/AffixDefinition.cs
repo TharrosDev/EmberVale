@@ -49,6 +49,15 @@ public partial class AffixDefinition : Resource
     /// (e.g. tiers of one affix all in "power"). Empty (the absent-default) excludes nothing.</summary>
     [Export] public string Group { get; set; } = string.Empty;
 
+    /// <summary>What the rolled number does when worn. <see cref="AffixEffect.Stat"/> (the
+    /// absent-default) is a modifier on <see cref="Stat"/>; a regen member adds the number to that
+    /// regeneration rate instead, and <see cref="Stat"/> then only names the resource it restores.</summary>
+    [Export] public AffixEffect Effect { get; set; } = AffixEffect.Stat;
+
+    /// <summary>False pins the rolled value to the authored range at every item level. For the few
+    /// stats where a larger number is not simply "better gear": flat movement speed is the case.</summary>
+    [Export] public bool ScalesWithLevel { get; set; } = true;
+
     [ExportGroup("Applicable Gear Families")]
     [Export] public bool ForWeapons { get; set; } = true;
     [Export] public bool ForArmor { get; set; } = true;
@@ -77,10 +86,50 @@ public partial class AffixDefinition : Resource
     /// Rolls a concrete affix. <paramref name="quality"/> (0..1) biases the value
     /// toward <see cref="MaxValue"/>: higher rarity / luckier drops roll higher.
     /// </summary>
-    public ItemAffix Roll(RandomNumberGenerator rng, float quality)
+    /// <param name="rng">The generator to roll on.</param>
+    /// <param name="quality">0..1 bias toward <see cref="MaxValue"/>.</param>
+    /// <param name="itemLevel">The level the item is generated at; the authored range is the range
+    /// at level 1 and grows with it (<see cref="ScaleForLevel"/>). 0 is a level-less roll, unscaled.</param>
+    public ItemAffix Roll(RandomNumberGenerator rng, float quality, int itemLevel = 0)
     {
         float value = BlendValue(MinValue, MaxValue, quality, rng.Randf());
-        return new ItemAffix(Id, Label, Kind, Stat, value, ModifierType);
+        return new ItemAffix(Id, Label, Kind, Stat, ScaleForLevel(value, itemLevel, GrowthPerLevel), ModifierType, Effect);
+    }
+
+    /// <summary>True when the rolled value is a fraction shown as a percentage: the authored hint,
+    /// or any modifier that is not flat.</summary>
+    public bool ReadsAsPercent => IsPercent || ModifierType != ModifierType.Flat;
+
+    /// <summary>How fast this affix's range grows per item level. Flat amounts keep pace with the
+    /// gear they sit on; fractions and regeneration rates grow slowly, because a percentage already
+    /// scales with the stat it multiplies.</summary>
+    public float GrowthPerLevel => !ScalesWithLevel
+        ? 0f
+        : ReadsAsPercent
+            ? PercentGrowthPerLevel
+            : Effect != AffixEffect.Stat ? RegenGrowthPerLevel : FlatGrowthPerLevel;
+
+    public const float FlatGrowthPerLevel = 0.05f;
+    public const float RegenGrowthPerLevel = 0.02f;
+    public const float PercentGrowthPerLevel = 0.01f;
+
+    /// <summary>The highest item level the scaling counts; a higher level scales as this one.</summary>
+    public const int MaxScaledLevel = 50;
+
+    /// <summary>
+    /// The one place an affix value meets an item level. The authored range is what the affix rolls
+    /// at level 1 (and on a level-less roll); each level above adds <paramref name="growthPerLevel"/>
+    /// of it, linearly, up to <see cref="MaxScaledLevel"/>. Pure, so the curve is unit-tested.
+    /// </summary>
+    public static float ScaleForLevel(float value, int itemLevel, float growthPerLevel)
+    {
+        if (itemLevel <= 1 || growthPerLevel <= 0f)
+        {
+            return value;
+        }
+
+        int levels = System.Math.Min(itemLevel, MaxScaledLevel) - 1;
+        return value * (1f + (growthPerLevel * levels));
     }
 
     /// <summary>

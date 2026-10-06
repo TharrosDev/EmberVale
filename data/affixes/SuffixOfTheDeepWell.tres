@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="AffixDefinition" load_steps=2 format=3 uid="uid://c4k0s6j2mmrpt"]
+
+[ext_resource type="Script" path="res://src/Items/AffixDefinition.cs" id="1_affix"]
+
+[resource]
+script = ExtResource("1_affix")
+Id = "affix.suffix.deep_well"
+Label = "of the Deep Well"
+Kind = 1
+Stat = 2
+ModifierType = 0
+MinValue = 1.2
+MaxValue = 2.5
+MinRarity = 3
+Weight = 1.0
+Effect = 3
+ForWeapons = true
+ForArmor = false
+ForAccessories = true

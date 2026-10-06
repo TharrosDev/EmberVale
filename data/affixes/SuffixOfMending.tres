@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="AffixDefinition" load_steps=2 format=3 uid="uid://cmdvomts2ghoy"]
+
+[ext_resource type="Script" path="res://src/Items/AffixDefinition.cs" id="1_affix"]
+
+[resource]
+script = ExtResource("1_affix")
+Id = "affix.suffix.mending"
+Label = "of Mending"
+Kind = 1
+Stat = 0
+ModifierType = 0
+MinValue = 0.3
+MaxValue = 1.0
+MinRarity = 2
+Weight = 0.5
+Effect = 1
+ForWeapons = false
+ForArmor = true
+ForAccessories = true

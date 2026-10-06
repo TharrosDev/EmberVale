@@ -77,7 +77,7 @@ public sealed partial class PlayerHost : Node3D
         var cache = new Entity
         {
             Name = "PersistentCache",
-            DisplayName = "Supply Cache",
+            DisplayName = Embervale.Localization.Loc.T("loot.chest.cache"),
             Position = position,
         };
 
@@ -110,9 +110,17 @@ public sealed partial class PlayerHost : Node3D
         var inventory = new InventoryComponent { Name = "Inventory", Capacity = 12 };
         cache.AddChild(inventory);
 
-        // Chests are lootable — E transfers the contents to the player. Seed starter loot on a fresh
-        // spawn; a save's restored (possibly emptied) contents overwrite this on load.
-        cache.AddChild(new ContainerLootComponent { Name = "Loot" });
+        // Chests are lootable — E pops the contents onto the floor, and the first open also rolls the
+        // chest's loot table for the realm it stands in. Seed starter supplies on a fresh spawn; a
+        // save's restored (possibly emptied) contents overwrite this on load.
+        //
+        // This one template builds two kinds of chest. An ordinary cache keeps the default table
+        // (ContainerLootComponent.DefaultTablePath). A boss's reward chest is the same prop stood at
+        // the death position by LootComponent, which then arms it with the boss's table; the table
+        // path is saved by the component, so the chest is still a reward chest after a load rebuilds
+        // it from here. That is why there is no second template: a second one would need
+        // registering before any load reconciles, and this builder is the only one that already is.
+        cache.AddChild(new ContainerLootComponent { Name = "Loot", TablePath = ContainerLootComponent.DefaultTablePath });
         if (ItemDatabase.Get(GameIds.Items.HealthPotion) is { } potion)
         {
             inventory.AddItem(potion, 2);

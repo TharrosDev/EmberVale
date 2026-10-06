@@ -615,6 +615,16 @@ public class EnumStabilityTests
     // --- ics:items: enum tests for this lane go between the markers (one owner per block) ---
     // --- end ics:items ---
     // --- ics:loot: enum tests for this lane go between the markers (one owner per block) ---
+    [Fact]
+    public void AffixEffect_Ordinals()
+    {
+        // Authored into data/affixes/*.tres and saved on every rolled regen affix ("fx").
+        Assert.Equal(0, (int)AffixEffect.Stat);
+        Assert.Equal(1, (int)AffixEffect.HealthRegen);
+        Assert.Equal(2, (int)AffixEffect.StaminaRegen);
+        Assert.Equal(3, (int)AffixEffect.ManaRegen);
+    }
+
     // --- end ics:loot ---
     // --- ics:crafting: enum tests for this lane go between the markers (one owner per block) ---
     // --- end ics:crafting ---

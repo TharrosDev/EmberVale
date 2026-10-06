@@ -19,9 +19,38 @@ MinQuantity = 1
 MaxQuantity = 2
 RollAffixes = false
 
+; ics: tier pools, added by tools/items/gen_loot.py. {tier} is the realm tier of the roll.
+
+[sub_resource type="Resource" id="Entry_tier_gear"]
+script = ExtResource("2_entry")
+ItemId = ""
+DropChance = 0.04
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = false
+TablePath = "res://data/loot/tiers/Tier{tier}Gear.tres"
+
+[sub_resource type="Resource" id="Entry_tier_materials"]
+script = ExtResource("2_entry")
+ItemId = ""
+DropChance = 0.2
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = false
+TablePath = "res://data/loot/tiers/Tier{tier}Materials.tres"
+
+[sub_resource type="Resource" id="Entry_tier_supplies"]
+script = ExtResource("2_entry")
+ItemId = ""
+DropChance = 0.04
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = false
+TablePath = "res://data/loot/tiers/Tier{tier}Supplies.tres"
+
 [resource]
 script = ExtResource("1_table")
-Entries = Array[Resource]([SubResource("Entry_pelt"), SubResource("Entry_herb")])
+Entries = Array[Resource]([SubResource("Entry_pelt"), SubResource("Entry_herb"), SubResource("Entry_tier_gear"), SubResource("Entry_tier_materials"), SubResource("Entry_tier_supplies")])
 GoldItemId = "item.currency.gold"
 GoldChance = 0.0
 GoldMin = 0

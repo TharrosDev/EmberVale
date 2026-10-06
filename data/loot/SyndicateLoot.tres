@@ -11,22 +11,6 @@ MinQuantity = 1
 MaxQuantity = 1
 RollAffixes = false
 
-[sub_resource type="Resource" id="Entry_ring"]
-script = ExtResource("2_entry")
-ItemId = "item.ring.iron"
-DropChance = 0.25
-MinQuantity = 1
-MaxQuantity = 1
-RollAffixes = true
-
-[sub_resource type="Resource" id="Entry_sword"]
-script = ExtResource("2_entry")
-ItemId = "item.weapon.steel_sword"
-DropChance = 0.22
-MinQuantity = 1
-MaxQuantity = 1
-RollAffixes = true
-
 ; Phase 38O - the Syndicate's half of the contraband supply, and the dearer half. A courier loyal to
 ; the contract is exactly who is carrying the stone with no register entry.
 
@@ -46,9 +30,47 @@ MinQuantity = 1
 MaxQuantity = 1
 RollAffixes = false
 
+; ics: tier pools, added by tools/items/gen_loot.py. {tier} is the realm tier of the roll.
+
+[sub_resource type="Resource" id="Entry_tier_gear"]
+script = ExtResource("2_entry")
+ItemId = ""
+DropChance = 0.25
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = false
+TablePath = "res://data/loot/tiers/Tier{tier}Gear.tres"
+
+[sub_resource type="Resource" id="Entry_tier_materials"]
+script = ExtResource("2_entry")
+ItemId = ""
+DropChance = 0.35
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = false
+TablePath = "res://data/loot/tiers/Tier{tier}Materials.tres"
+
+[sub_resource type="Resource" id="Entry_tier_supplies"]
+script = ExtResource("2_entry")
+ItemId = ""
+DropChance = 0.3
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = false
+TablePath = "res://data/loot/tiers/Tier{tier}Supplies.tres"
+
+[sub_resource type="Resource" id="Entry_tier_scrolls"]
+script = ExtResource("2_entry")
+ItemId = ""
+DropChance = 0.06
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = false
+TablePath = "res://data/loot/tiers/Tier{tier}Scrolls.tres"
+
 [resource]
 script = ExtResource("1_table")
-Entries = Array[Resource]([SubResource("Entry_ruby"), SubResource("Entry_ring"), SubResource("Entry_sword"), SubResource("Entry_moonstone"), SubResource("Entry_ash")])
+Entries = Array[Resource]([SubResource("Entry_ruby"), SubResource("Entry_moonstone"), SubResource("Entry_ash"), SubResource("Entry_tier_gear"), SubResource("Entry_tier_materials"), SubResource("Entry_tier_supplies"), SubResource("Entry_tier_scrolls")])
 GoldItemId = "item.currency.gold"
 GoldChance = 0.9
 GoldMin = 15

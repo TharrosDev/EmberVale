@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="AffixDefinition" load_steps=2 format=3 uid="uid://cml4y6pwlagtb"]
+
+[ext_resource type="Script" path="res://src/Items/AffixDefinition.cs" id="1_affix"]
+
+[resource]
+script = ExtResource("1_affix")
+Id = "affix.prefix.runed"
+Label = "Runed"
+Kind = 0
+Stat = 10
+ModifierType = 1
+MinValue = 0.04
+MaxValue = 0.1
+MinRarity = 2
+Weight = 0.6
+MinItemLevel = 10
+IsPercent = true
+Group = "power"
+ForWeapons = true
+ForArmor = false
+ForAccessories = true

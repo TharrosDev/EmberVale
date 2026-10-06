@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="AffixDefinition" load_steps=2 format=3 uid="uid://ceiq8vi344nrt"]
+
+[ext_resource type="Script" path="res://src/Items/AffixDefinition.cs" id="1_affix"]
+
+[resource]
+script = ExtResource("1_affix")
+Id = "affix.prefix.lucid"
+Label = "Lucid"
+Kind = 0
+Stat = 2
+ModifierType = 1
+MinValue = 0.04
+MaxValue = 0.1
+MinRarity = 1
+Weight = 0.6
+MinItemLevel = 8
+IsPercent = true
+ForWeapons = true
+ForArmor = true
+ForAccessories = true
