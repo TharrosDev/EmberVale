@@ -37,7 +37,9 @@ namespace Embervale.Audio;
 /// </summary>
 public partial class AudioDirector : Node
 {
-    /// <summary>How long after its wind-up should have ended a cast is still waited for.</summary>
+    /// <summary>How long after its wind-up should have ended a held cast is kept before it may be
+    /// swept out as abandoned. Only housekeeping: a release always sounds its cast, however long the
+    /// wall clock says it took (the tree may have been paused under it).</summary>
     private const double WindupGraceSeconds = 0.75;
 
     /// <summary>A riser this close to its natural end is left to finish, never stopped: past its end
@@ -252,7 +254,7 @@ public partial class AudioDirector : Node
         double now = Now;
         if (_windups.Count >= MaxRemembered)
         {
-            _windups.Clear();
+            SweepAbandonedCasts(now);
         }
 
         PositionalSfxPlayer? riser = null;
@@ -273,12 +275,35 @@ public partial class AudioDirector : Node
             e.SpellId, now + e.WindupSeconds + WindupGraceSeconds, riser, riserStream, riserEnds);
     }
 
+    /// <summary>Drops the held casts whose wind-up is long over (cancelled with no event, or their
+    /// caster gone), and everything if that was not enough room.</summary>
+    private void SweepAbandonedCasts(double now)
+    {
+        var abandoned = new List<ulong>();
+        foreach (KeyValuePair<ulong, PendingCast> entry in _windups)
+        {
+            if (now >= entry.Value.Expires)
+            {
+                abandoned.Add(entry.Key);
+            }
+        }
+
+        foreach (ulong id in abandoned)
+        {
+            _windups.Remove(id);
+        }
+
+        if (_windups.Count >= MaxRemembered)
+        {
+            _windups.Clear();
+        }
+    }
+
     /// <summary>A spell was cast. One still in its wind-up sounds when the action releases it; anything
     /// else (an actor with no action timeline, a channel's tick, a support cast) sounds now.</summary>
     private void OnSpellCast(SpellCastEvent e)
     {
-        if (_windups.TryGetValue(e.Caster.RuntimeId, out PendingCast pending) && pending.SpellId == e.SpellId &&
-            Now < pending.Expires)
+        if (_windups.TryGetValue(e.Caster.RuntimeId, out PendingCast pending) && pending.SpellId == e.SpellId)
         {
             return;
         }
@@ -286,15 +311,13 @@ public partial class AudioDirector : Node
         PlayCast(e.Caster, e.SpellId);
     }
 
-    /// <summary>The cast action reached its release: the spell leaves, and so does its sound.</summary>
+    /// <summary>The cast action reached its release: the spell leaves, and so does its sound. No
+    /// clock is consulted: a wind-up the pause menu sat on for a minute still releases its spell,
+    /// and a cast abandoned without an event is replaced by the caster's next wind-up before any
+    /// release of theirs can find it.</summary>
     private void OnActionReleased(ActionReleasedEvent e)
     {
-        if (e.Kind != ActionKind.Cast || !_windups.Remove(e.Actor.RuntimeId, out PendingCast pending))
-        {
-            return;
-        }
-
-        if (Now < pending.Expires)
+        if (e.Kind == ActionKind.Cast && _windups.Remove(e.Actor.RuntimeId, out PendingCast pending))
         {
             PlayCast(e.Actor, pending.SpellId);
         }
@@ -359,7 +382,9 @@ public partial class AudioDirector : Node
     private static DamageType SchoolOf(string spellId) =>
         SpellDatabase.Get(spellId)?.School ?? DamageType.Physical;
 
-    /// <summary>A spell landed on a target: the school's impact, softer when a zone's pulse landed it.</summary>
+    /// <summary>A spell landed on a target: the school's impact, softer when a zone's pulse landed it.
+    /// A channelled spell lands on every tick, so its impacts are softer too and held to one in
+    /// <see cref="SpellAudio.ChannelImpactGapSeconds"/> per caster.</summary>
     private void OnSpellImpact(SpellImpactEvent e)
     {
         if (!TryPosition(e.Target, 1.1f, out Vector3 at))
@@ -367,10 +392,17 @@ public partial class AudioDirector : Node
             return;
         }
 
-        DamageType school = SchoolOf(e.SpellId);
+        SpellResource? spell = SpellDatabase.Get(e.SpellId);
+        DamageType school = spell?.School ?? DamageType.Physical;
+        bool channelled = spell is { CastMode: CastMode.Channeled };
         bool byPlayer = CombatPerspective.IsPlayer(e.Caster);
         bool zonePulse = e.SpellId == _zonePulseSpell && SpellAudio.TooSoon(Now, _zonePulseAt, SpellAudio.CoalesceSeconds);
-        PlaySpellCue(SpellAudio.Impact(school, zonePulse, e.Weight, e.Charge, byPlayer, GD.Randf()), at);
+        SpellCue cue = SpellAudio.Impact(school, zonePulse, e.Weight, e.Charge, byPlayer, GD.Randf());
+        PlaySpellCue(
+            channelled ? SpellAudio.ChannelTick(cue) : cue,
+            at,
+            channelled ? EmitterOf(e.Caster) : AnyEmitter,
+            SpellAudio.ImpactGap(channelled));
         if (!zonePulse)
         {
             PlayThunder(school, e.Weight, e.Charge, byPlayer, at);

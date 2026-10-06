@@ -142,7 +142,7 @@ public class SpellAudioRoutingTests
     [InlineData(HitOutcome.Resisted)]
     public void ASpellThatLanded_TakesNoMeleeCue(HitOutcome outcome)
     {
-        Assert.False(CombatFx.PlaysHitCue(outcome, HitKind.Spell));
+        Assert.False(CombatFx.PlaysHitCue(outcome, spellImpact: true));
     }
 
     [Theory]
@@ -151,24 +151,36 @@ public class SpellAudioRoutingTests
     [InlineData(HitOutcome.GuardBroken)]
     public void ASpellAGuardMet_KeepsTheGuardsCue(HitOutcome outcome)
     {
-        Assert.True(CombatFx.PlaysHitCue(outcome, HitKind.Spell));
+        Assert.True(CombatFx.PlaysHitCue(outcome, spellImpact: true));
+    }
+
+    // The blow's kind is inferred from the attacker's last action, so a burn's tick, a detonation
+    // or a combo's bonus soon after a cast reads as a spell with no impact event behind it.
+    [Fact]
+    public void EveryBlowWithNoSpellImpactBehindIt_KeepsItsCue()
+    {
+        foreach (HitOutcome outcome in Enum.GetValues<HitOutcome>())
+        {
+            Assert.True(CombatFx.PlaysHitCue(outcome, spellImpact: false));
+        }
     }
 
     [Fact]
-    public void EveryBlowThatIsNotASpell_KeepsItsCue()
+    public void AChannelsImpacts_AreSofterAndSlowerThanItsTicks()
     {
-        foreach (HitKind kind in Enum.GetValues<HitKind>())
-        {
-            if (kind == HitKind.Spell)
-            {
-                continue;
-            }
+        SpellCue hit = SpellAudio.Impact(DamageType.Lightning, zonePulse: false, 0.15f, 0f, byPlayer: true, 0.5f);
+        SpellCue tick = SpellAudio.ChannelTick(hit);
+        Assert.Equal(hit.CueId, tick.CueId);
+        Assert.Equal(hit.VolumeDb + SpellAudio.ChannelDb, tick.VolumeDb, 4);
+        Assert.True(SpellAudio.ChannelTick(hit with { VolumeDb = SpellAudio.MinDb }).VolumeDb >= SpellAudio.MinDb);
 
-            foreach (HitOutcome outcome in Enum.GetValues<HitOutcome>())
-            {
-                Assert.True(CombatFx.PlaysHitCue(outcome, kind));
-            }
-        }
+        Assert.Equal(SpellAudio.CoalesceSeconds, SpellAudio.ImpactGap(channelled: false));
+        Assert.Equal(SpellAudio.ChannelImpactGapSeconds, SpellAudio.ImpactGap(channelled: true));
+
+        // Storm Conduit ticks every 0.2 s: every other tick sounds. A breath at 0.35 s sounds each.
+        Assert.True(SpellAudio.TooSoon(10.2, 10.0, SpellAudio.ImpactGap(true)));
+        Assert.False(SpellAudio.TooSoon(10.4, 10.0, SpellAudio.ImpactGap(true)));
+        Assert.False(SpellAudio.TooSoon(10.35, 10.0, SpellAudio.ImpactGap(true)));
     }
 
     [Fact]

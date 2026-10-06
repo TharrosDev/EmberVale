@@ -248,8 +248,9 @@ public partial class CombatFeedbackDirector : Node
         effect.Launch(new Color(spark.R, spark.G, spark.B), spark.Scale, spark.Ring);
 
         // A landed spell already has its school's impact cue (the audio director plays it off
-        // SpellImpactEvent); the melee hit on top of it would be two sounds for one blow.
-        if (!CombatFx.PlaysHitCue(outcome, kind))
+        // SpellImpactEvent); the melee hit on top of it would be two sounds for one blow. Asked of
+        // the event, not of the kind: the kind is also inferred from the attacker's last action.
+        if (!CombatFx.PlaysHitCue(outcome, spellImpact: p.SpellWeight >= 0f))
         {
             return;
         }

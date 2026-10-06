@@ -99,6 +99,10 @@ public static class SpellAudio
     /// <summary>One caster's channel sounds its cast cue no more often than this.</summary>
     public const double ChannelGapSeconds = 0.55;
 
+    /// <summary>One caster's channel sounds its impact no more often than this: a beam ticks five
+    /// times a second and a breath three, and an impact runs longer than either gap.</summary>
+    public const double ChannelImpactGapSeconds = 0.3;
+
     /// <summary>The weight a lightning spell needs before thunder follows it.</summary>
     public const float ThunderWeight = 0.55f;
 
@@ -243,6 +247,14 @@ public static class SpellAudio
     public static SpellCue Impact(
         DamageType school, bool zonePulse, float impactWeight, float charge, bool byPlayer, float roll01) =>
         Zone(Resolve(school, SpellAudioEvent.Impact, impactWeight, charge, byPlayer, roll01), zonePulse);
+
+    /// <summary>An impact one tick of a channelled spell landed: it repeats, so it is
+    /// <see cref="ChannelDb"/> down like the channel's cast cue.</summary>
+    public static SpellCue ChannelTick(SpellCue impact) =>
+        impact with { VolumeDb = Math.Max(MinDb, impact.VolumeDb + ChannelDb) };
+
+    /// <summary>The shortest time between two impacts of one caster's spell.</summary>
+    public static double ImpactGap(bool channelled) => channelled ? ChannelImpactGapSeconds : CoalesceSeconds;
 
     /// <summary>The shortest time between two blasts from one emitter.</summary>
     public static double BurstGap(bool zonePulse) => zonePulse ? ZoneGapSeconds : CoalesceSeconds;
