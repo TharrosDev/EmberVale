@@ -5,6 +5,7 @@
     python tools/assets.py validate                   # every hard gate, in the order they need
     python tools/assets.py adopt SRC DEST             # source model -> validated production asset
     python tools/assets.py audit                      # full Blender + Godot inspection
+    python tools/assets.py audit-weight               # estimated texture video memory by class
     python tools/assets.py build TARGET               # Blender rebuild + its mandatory follow-up
 
 The contract these commands enforce is docs/3D_ASSETS.md. Read that; you do not need to know
@@ -344,6 +345,67 @@ def cmd_audit(args: argparse.Namespace) -> int:
     return result.returncode
 
 
+def apply_texture_budget() -> list[str]:
+    """Write every off-budget texture's .import to its class budget; returns the paths changed.
+
+    The budget and the text edit both belong to audit_3d.py. This is only the file write, kept
+    here because audit_3d.py never modifies a production asset.
+    """
+    changed = []
+    for record in audit_3d.texture_weight():
+        if not record["problems"]:
+            continue
+        sidecar = ROOT / (record["path"] + ".import")
+        text = sidecar.read_text(encoding="utf-8")
+        sidecar.write_text(audit_3d.patch_texture_import(text, record["targets"]),
+                           encoding="utf-8", newline="\n")
+        changed.append(record["path"])
+    return changed
+
+
+def cmd_audit_weight(args: argparse.Namespace) -> int:
+    """Estimated texture video memory per budget class, and everything off its budget.
+
+    Pure python: it reads png headers and .import sidecars, so it runs anywhere in a second. It is
+    an estimate of what the importer will produce, not a measurement of a running game.
+    """
+    if args.fix:
+        for path in apply_texture_budget():
+            print(f"  fixed {path}.import")
+    records = audit_3d.texture_weight()
+    megabytes = 1024 * 1024
+    print(f"Embervale texture weight - {len(records)} textures under assets/models")
+    print("-" * 78)
+    for group in sorted({record["group"] for record in records}):
+        members = [record for record in records if record["group"] == group]
+        print(f"  {group:<18} {len(members):>3} textures  {sum(r['bytes'] for r in members) / megabytes:>8.1f} MB")
+    print(f"  {'TOTAL':<18} {len(records):>3} textures  {sum(r['bytes'] for r in records) / megabytes:>8.1f} MB")
+    print("-" * 78)
+    if args.verbose:
+        for record in sorted(records, key=lambda r: -r["bytes"]):
+            print(f"  {record['bytes'] / megabytes:>6.2f} MB  {'x'.join(map(str, record['size'])):<10} "
+                  f"limit={record['params'].get('process/size_limit', '?'):<5} {record['path']}")
+        print("-" * 78)
+    problems = [f"{record['path']} ({'x'.join(map(str, record['size']))} {record['group']}/{record['role']}): "
+                + ", ".join(record["problems"]) for record in records if record["problems"]]
+    # Automatic LODs and shadow meshes are the two mesh import settings every model must carry.
+    for path in sorted(p for p in MODELS.rglob("*") if p.suffix.lower() in MODEL_EXTENSIONS):
+        config = audit_3d.parse_import(path)
+        missing = [key for key in ("meshes/generate_lods", "meshes/create_shadow_meshes")
+                   if config.get(key) is not True]
+        if missing:
+            problems.append(f"{audit_3d.rel(path)}: {', '.join(missing)} is not true")
+    if problems:
+        print(f"OFF BUDGET ({len(problems)}):")
+        for problem in problems:
+            print(f"  {problem}")
+        print("  fix textures with: python tools/assets.py audit-weight --fix   (then a Godot import pass)")
+        return 1 if args.check else 0
+    print("every texture is within its class budget; every model has LODs and shadow meshes")
+    print("contract: docs/3D_ASSETS.md (Texture weight)")
+    return 0
+
+
 BUILD_TARGETS = {
     "npc-kit": ["tools/build_npc_kit.py"],
     "enemy-identity": ["tools/build_enemy_identity_assets.py"],
@@ -446,6 +508,18 @@ def cmd_adopt(args: argparse.Namespace) -> int:
         print("assets adopt: import failed; manifest and rig checks were not advanced.")
         return 1
 
+    # The first import is what creates a new texture's .import (and extracts an embedded image to
+    # <model>_texture_N.png), so the class budget can only be written now, and a second pass is
+    # what applies it. Without this a fresh 2048 atlas ships uncapped until someone audits it.
+    budgeted = apply_texture_budget()
+    if budgeted:
+        print(f"  -> texture budget written to {len(budgeted)} .import file(s); importing again")
+        imported = run_process([str(engine), "--headless", "--path", ".", "--import"], timeout=1800, cwd=ROOT)
+        if imported.returncode:
+            print(imported.output or imported.launch_error)
+            print("assets adopt: the texture-budget reimport failed.")
+            return 1
+
     write_json(MANIFEST, build_manifest())
     entry = next((a for a in load_manifest()["assets"] if a["id"] == dest.stem), None)
     if entry is None:
@@ -501,6 +575,12 @@ def main() -> int:
     audit.add_argument("--output", type=Path, default=None)
     audit.add_argument("--render", choices=("none", "selected", "all"), default="none")
     audit.set_defaults(func=cmd_audit)
+
+    weight = sub.add_parser("audit-weight", help="estimated texture video memory by budget class")
+    weight.add_argument("--check", action="store_true", help="exit 1 when anything is off budget")
+    weight.add_argument("--fix", action="store_true", help="write the class budget into each .import")
+    weight.add_argument("--verbose", "-v", action="store_true", help="list every texture, heaviest first")
+    weight.set_defaults(func=cmd_audit_weight)
 
     build = sub.add_parser("build", help="Blender rebuild plus its mandatory follow-up")
     build.add_argument("target", choices=sorted(BUILD_TARGETS) + ["anim-library"])
