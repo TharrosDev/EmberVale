@@ -16,3 +16,5 @@ Slot = 8
 BonusPhysicalPower = 2.0
 BonusCritChance = 0.05
 TradeTags = Array[String](["jewelry", "arcane"])
+ItemLevel = 5
+Tier = 1

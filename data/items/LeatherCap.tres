@@ -15,3 +15,6 @@ Value = 15
 Slot = 3
 BonusArmor = 4.0
 TradeTags = Array[String](["armor", "leather"])
+ItemLevel = 3
+Tier = 1
+ArmorWeight = 2
