@@ -45,6 +45,44 @@ public sealed class WorldStreamingPolicyTests
     }
 
     [Fact]
+    public void QualityScaleOfOne_LeavesTheAuthoredRadiiUntouched()
+    {
+        Assert.Equal(Limits, WorldStreamingPolicy.ScaleForQuality(Limits, 1f));
+    }
+
+    [Fact]
+    public void QualityScale_MovesOnlyFar_AndKeepsItBetweenMidAndBackdrop()
+    {
+        WorldStreamingLimits low = WorldStreamingPolicy.ScaleForQuality(Limits, 0.7f);
+        Assert.Equal(Limits with { FarDistance = 210f }, low);
+
+        Assert.Equal(Limits.MidDistance, WorldStreamingPolicy.ScaleForQuality(Limits, 0.4f).FarDistance);
+        Assert.Equal(Limits.BackdropDistance, WorldStreamingPolicy.ScaleForQuality(Limits, 2f).FarDistance);
+    }
+
+    [Fact]
+    public void QualityScale_ClampsAndRaisesChangedOnlyOnAChange()
+    {
+        int raised = 0;
+        void OnChanged() => raised++;
+        WorldQualityScale.Changed += OnChanged;
+        try
+        {
+            WorldQualityScale.Set(0.1f, 2f, -5f);
+            Assert.Equal(WorldQualityScale.MinimumDrawDistance, WorldQualityScale.DrawDistance);
+            Assert.Equal(1f, WorldQualityScale.ScatterDensity);
+            Assert.Equal(0f, WorldQualityScale.ActorShadowDistance);
+            WorldQualityScale.Set(0.1f, 2f, -5f);
+            Assert.Equal(1, raised);
+        }
+        finally
+        {
+            WorldQualityScale.Changed -= OnChanged;
+            WorldQualityScale.Set(1f, 1f, 60f);
+        }
+    }
+
+    [Fact]
     public void RequiredLanding_IsAlwaysNear()
     {
         Assert.Equal(WorldStreamingTier.Near, WorldStreamingPolicy.DesiredTier(
