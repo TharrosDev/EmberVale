@@ -49,6 +49,71 @@ script = ExtResource("3_tier")
 Cost = 800
 PurseBonus = 200
 
+[sub_resource type="Resource" id="Stock_ics_1"]
+script = ExtResource("2_entry")
+ItemId = "item.weapon.oak_staff"
+Quantity = 1
+
+[sub_resource type="Resource" id="Stock_ics_2"]
+script = ExtResource("2_entry")
+ItemId = "item.weapon.frostpine_bow"
+Quantity = 1
+RequiredFlagId = "flag.iron_king_defeated"
+
+[sub_resource type="Resource" id="Stock_ics_3"]
+script = ExtResource("2_entry")
+ItemId = "item.weapon.frostpine_staff"
+Quantity = 1
+RequiredFlagId = "flag.iron_king_defeated"
+
+[sub_resource type="Resource" id="Stock_ics_4"]
+script = ExtResource("2_entry")
+ItemId = "item.recipe_scroll.cinderwood_bow"
+Quantity = 1
+RequiredFlagId = "flag.storm_tyrant_defeated"
+
+[sub_resource type="Resource" id="Stock_ics_5"]
+script = ExtResource("2_entry")
+ItemId = "item.recipe_scroll.cinderwood_staff"
+Quantity = 1
+RequiredFlagId = "flag.storm_tyrant_defeated"
+
+[sub_resource type="Resource" id="Stock_ics_6"]
+script = ExtResource("2_entry")
+ItemId = "item.recipe_scroll.goldenpalm_bow"
+Quantity = 1
+RequiredFlagId = "flag.beast_lord_defeated"
+
+[sub_resource type="Resource" id="Stock_ics_7"]
+script = ExtResource("2_entry")
+ItemId = "item.recipe_scroll.goldenpalm_staff"
+Quantity = 1
+RequiredFlagId = "flag.beast_lord_defeated"
+
+[sub_resource type="Resource" id="Stock_ics_8"]
+script = ExtResource("2_entry")
+ItemId = "item.recipe_scroll.gloamwood_bow"
+Quantity = 1
+RequiredFlagId = "flag.crimson_prophet_defeated"
+
+[sub_resource type="Resource" id="Stock_ics_9"]
+script = ExtResource("2_entry")
+ItemId = "item.recipe_scroll.gloamwood_staff"
+Quantity = 1
+RequiredFlagId = "flag.crimson_prophet_defeated"
+
+[sub_resource type="Resource" id="Stock_ics_10"]
+script = ExtResource("2_entry")
+ItemId = "item.recipe_scroll.starwood_bow"
+Quantity = 1
+RequiredFlagId = "flag.hollow_queen_defeated"
+
+[sub_resource type="Resource" id="Stock_ics_11"]
+script = ExtResource("2_entry")
+ItemId = "item.recipe_scroll.starwood_staff"
+Quantity = 1
+RequiredFlagId = "flag.hollow_queen_defeated"
+
 [resource]
 script = ExtResource("1_shop")
 Id = "shop.embermarket.joiner"
@@ -56,7 +121,7 @@ NameKey = "shop.embermarket.joiner.name"
 FactionId = "faction.villagers"
 AcceptedTags = Array[String](["furnishing", "tool"])
 Specialties = Array[String](["furnishing"])
-Stock = Array[Resource]([SubResource("Stock_plank"), SubResource("Stock_crate"), SubResource("Stock_stand"), SubResource("Stock_banner"), SubResource("Stock_brazier"), SubResource("Stock_bench")])
+Stock = Array[Resource]([SubResource("Stock_plank"), SubResource("Stock_crate"), SubResource("Stock_stand"), SubResource("Stock_banner"), SubResource("Stock_brazier"), SubResource("Stock_bench"), SubResource("Stock_ics_1"), SubResource("Stock_ics_2"), SubResource("Stock_ics_3"), SubResource("Stock_ics_4"), SubResource("Stock_ics_5"), SubResource("Stock_ics_6"), SubResource("Stock_ics_7"), SubResource("Stock_ics_8"), SubResource("Stock_ics_9"), SubResource("Stock_ics_10"), SubResource("Stock_ics_11")])
 RestockDays = 2
 BuyMarkup = 1.5
 SellFraction = 0.4

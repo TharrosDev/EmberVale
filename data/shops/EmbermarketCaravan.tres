@@ -49,6 +49,16 @@ script = ExtResource("2_entry")
 ItemId = "item.gem.sapphire"
 Quantity = 1
 
+[sub_resource type="Resource" id="Stock_ics_1"]
+script = ExtResource("2_entry")
+ItemId = "item.food.spiced_roast"
+Quantity = 2
+
+[sub_resource type="Resource" id="Stock_ics_2"]
+script = ExtResource("2_entry")
+ItemId = "item.food.frostfang_broth"
+Quantity = 2
+
 [resource]
 script = ExtResource("1_shop")
 Id = "shop.embermarket.caravan"
@@ -56,7 +66,7 @@ NameKey = "shop.embermarket.caravan.name"
 FactionId = ""
 AcceptedTags = Array[String]([])
 Specialties = Array[String](["luxury", "food", "textile"])
-Stock = Array[Resource]([SubResource("Stock_spice"), SubResource("Stock_pelt"), SubResource("Stock_wool"), SubResource("Stock_sapphire")])
+Stock = Array[Resource]([SubResource("Stock_spice"), SubResource("Stock_pelt"), SubResource("Stock_wool"), SubResource("Stock_sapphire"), SubResource("Stock_ics_1"), SubResource("Stock_ics_2")])
 RestockDays = 5
 LeveledTable = ExtResource("4_pool")
 BuyMarkup = 1.7

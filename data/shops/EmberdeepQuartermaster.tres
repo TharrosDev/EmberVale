@@ -38,6 +38,16 @@ script = ExtResource("2_entry")
 ItemId = "item.kit.forge"
 Quantity = 1
 
+[sub_resource type="Resource" id="Stock_ics_1"]
+script = ExtResource("2_entry")
+ItemId = "item.food.hearth_stew"
+Quantity = 6
+
+[sub_resource type="Resource" id="Stock_ics_2"]
+script = ExtResource("2_entry")
+ItemId = "item.food.oatcake"
+Quantity = 8
+
 [resource]
 script = ExtResource("1_shop")
 Id = "shop.emberdeep.quartermaster"
@@ -46,7 +56,7 @@ NameKey = "shop.emberdeep.quartermaster.name"
 FactionId = "faction.villagers"
 AcceptedTags = Array[String](["food", "fuel", "textile"])
 Specialties = Array[String](["food"])
-Stock = Array[Resource]([SubResource("Stock_ration"), SubResource("Stock_pick")])
+Stock = Array[Resource]([SubResource("Stock_ration"), SubResource("Stock_pick"), SubResource("Stock_ics_1"), SubResource("Stock_ics_2")])
 RestockDays = 2
 BuyMarkup = 1.7
 SellFraction = 0.62

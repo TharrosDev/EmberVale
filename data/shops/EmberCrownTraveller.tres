@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" path="res://src/Economy/ShopResource.cs" id="1_shop"]
 [ext_resource type="Script" path="res://src/Economy/ShopStockEntry.cs" id="2_entry"]
-[ext_resource type="Resource" path="res://data/loot/ShopLeveledGear.tres" id="3_leveled"]
+[ext_resource type="Resource" path="res://data/loot/TravellerLeveledGear.tres" id="3_leveled"]
 
 ; Hesk the Wayfarer (Phase 38J) — the first merchant in the game who is not always there.
 ;
@@ -40,6 +40,30 @@ script = ExtResource("2_entry")
 ItemId = "item.material.grave_dust"
 Quantity = 4
 
+[sub_resource type="Resource" id="Stock_ics_1"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.windrunner_treads"
+Quantity = 1
+RequiredFlagId = "flag.iron_king_defeated"
+
+[sub_resource type="Resource" id="Stock_ics_2"]
+script = ExtResource("2_entry")
+ItemId = "item.amulet.wildheart_totem"
+Quantity = 1
+RequiredFlagId = "flag.beast_lord_defeated"
+
+[sub_resource type="Resource" id="Stock_ics_3"]
+script = ExtResource("2_entry")
+ItemId = "item.ring.wildheart_band"
+Quantity = 1
+RequiredFlagId = "flag.beast_lord_defeated"
+
+[sub_resource type="Resource" id="Stock_ics_4"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.wildheart_gloves"
+Quantity = 1
+RequiredFlagId = "flag.beast_lord_defeated"
+
 [resource]
 script = ExtResource("1_shop")
 Id = "shop.ember_crown.traveller"
@@ -47,7 +71,7 @@ NameKey = "shop.ember_crown.traveller.name"
 FactionId = ""
 AcceptedTags = Array[String]([])
 Specialties = Array[String](["pelt", "trophy", "gem", "luxury"])
-Stock = Array[Resource]([SubResource("Stock_scale"), SubResource("Stock_dust")])
+Stock = Array[Resource]([SubResource("Stock_scale"), SubResource("Stock_dust"), SubResource("Stock_ics_1"), SubResource("Stock_ics_2"), SubResource("Stock_ics_3"), SubResource("Stock_ics_4")])
 RestockDays = 4
 LeveledTable = ExtResource("3_leveled")
 BuyMarkup = 1.7

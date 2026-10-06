@@ -36,6 +36,84 @@ script = ExtResource("2_entry")
 ItemId = "item.material.elemental_mote"
 Quantity = 0
 
+[sub_resource type="Resource" id="Stock_ics_1"]
+script = ExtResource("2_entry")
+ItemId = "item.potion.resist_fire_superior"
+Quantity = 1
+RequiredFlagId = "flag.crimson_prophet_defeated"
+
+[sub_resource type="Resource" id="Stock_ics_2"]
+script = ExtResource("2_entry")
+ItemId = "item.potion.resist_frost_superior"
+Quantity = 1
+RequiredFlagId = "flag.crimson_prophet_defeated"
+
+[sub_resource type="Resource" id="Stock_ics_3"]
+script = ExtResource("2_entry")
+ItemId = "item.potion.resist_lightning_superior"
+Quantity = 1
+RequiredFlagId = "flag.crimson_prophet_defeated"
+
+[sub_resource type="Resource" id="Stock_ics_4"]
+script = ExtResource("2_entry")
+ItemId = "item.potion.resist_arcane_superior"
+Quantity = 1
+RequiredFlagId = "flag.crimson_prophet_defeated"
+
+[sub_resource type="Resource" id="Stock_ics_5"]
+script = ExtResource("2_entry")
+ItemId = "item.potion.resist_nature_superior"
+Quantity = 1
+RequiredFlagId = "flag.crimson_prophet_defeated"
+
+[sub_resource type="Resource" id="Stock_ics_6"]
+script = ExtResource("2_entry")
+ItemId = "item.potion.resist_necrotic_superior"
+Quantity = 1
+RequiredFlagId = "flag.crimson_prophet_defeated"
+
+[sub_resource type="Resource" id="Stock_ics_7"]
+script = ExtResource("2_entry")
+ItemId = "item.recipe_scroll.health_superior"
+Quantity = 1
+RequiredFlagId = "flag.crimson_prophet_defeated"
+
+[sub_resource type="Resource" id="Stock_ics_8"]
+script = ExtResource("2_entry")
+ItemId = "item.recipe_scroll.stamina_superior"
+Quantity = 1
+RequiredFlagId = "flag.crimson_prophet_defeated"
+
+[sub_resource type="Resource" id="Stock_ics_9"]
+script = ExtResource("2_entry")
+ItemId = "item.recipe_scroll.mana_superior"
+Quantity = 1
+RequiredFlagId = "flag.crimson_prophet_defeated"
+
+[sub_resource type="Resource" id="Stock_ics_10"]
+script = ExtResource("2_entry")
+ItemId = "item.recipe_scroll.cure_superior"
+Quantity = 1
+RequiredFlagId = "flag.crimson_prophet_defeated"
+
+[sub_resource type="Resource" id="Stock_ics_11"]
+script = ExtResource("2_entry")
+ItemId = "item.material.celestial_dust"
+Quantity = 2
+RequiredFlagId = "flag.hollow_queen_defeated"
+
+[sub_resource type="Resource" id="Stock_ics_12"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.gravetenders_grips"
+Quantity = 1
+RequiredFlagId = "flag.beast_lord_defeated"
+
+[sub_resource type="Resource" id="Stock_ics_13"]
+script = ExtResource("2_entry")
+ItemId = "item.weapon.emberpike"
+Quantity = 1
+RequiredFlagId = "flag.emberbound.verdict_given"
+
 [resource]
 script = ExtResource("1_shop")
 Id = "shop.embermarket.curios"
@@ -43,7 +121,7 @@ NameKey = "shop.embermarket.curios.name"
 FactionId = ""
 AcceptedTags = Array[String](["arcane", "relic", "gem", "trophy"])
 Specialties = Array[String](["arcane", "relic"])
-Stock = Array[Resource]([SubResource("Stock_shard"), SubResource("Stock_chalk"), SubResource("Stock_tome"), SubResource("Stock_mote")])
+Stock = Array[Resource]([SubResource("Stock_shard"), SubResource("Stock_chalk"), SubResource("Stock_tome"), SubResource("Stock_mote"), SubResource("Stock_ics_1"), SubResource("Stock_ics_2"), SubResource("Stock_ics_3"), SubResource("Stock_ics_4"), SubResource("Stock_ics_5"), SubResource("Stock_ics_6"), SubResource("Stock_ics_7"), SubResource("Stock_ics_8"), SubResource("Stock_ics_9"), SubResource("Stock_ics_10"), SubResource("Stock_ics_11"), SubResource("Stock_ics_12"), SubResource("Stock_ics_13")])
 RestockDays = 3
 BuyMarkup = 1.7
 SellFraction = 0.45
