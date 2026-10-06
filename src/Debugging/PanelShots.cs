@@ -5,6 +5,7 @@ using Embervale.Core.Events;
 using Embervale.Corruption;
 using Embervale.Dialogue;
 using Embervale.Economy;
+using Embervale.Enemies;
 using Embervale.Factions;
 using Embervale.Items;
 using Embervale.Localization;
@@ -56,10 +57,106 @@ public sealed partial class PanelShots : ShotHarness
 
     public DialoguePanel? Dialogue { get; set; }
 
+    /// <summary>The two hub screens the bootstrap does not hand over, reached the way a hub step
+    /// reaches them: through the node that holds all five.</summary>
+    private BestiaryPanel? Bestiary => (Map?.GetParent() as IHubHost)?.HubPanel(HubTab.Bestiary) as BestiaryPanel;
+
+    private SpellbookPanel? Spellbook => (Map?.GetParent() as IHubHost)?.HubPanel(HubTab.Spellbook) as SpellbookPanel;
+
+    // --- Window guard ----------------------------------------------------------------------------
+
+    /// <summary>Consecutive frames the window must hold the capture size before the loop moves on:
+    /// enough for a resize to be laid out and drawn, so a frame is never read mid-change.</summary>
+    private const int SteadyFrames = 8;
+
+    /// <summary>Frames this harness will spend putting the window back before it lets the base report
+    /// the wrong size instead of waiting for ever.</summary>
+    private const int MaxRestoreFrames = 240;
+
+    private int _steadyFrames;
+    private int _restoreFrames;
+    private bool _reportedWindow;
+
+    /// <summary>
+    /// Holds the capture loop while the window is not the size the run asked for.
+    ///
+    /// ⚠️ At <c>EMBERVALE_RES=1280x800</c> with <c>EMBERVALE_SHOT_UISCALE=1.5</c> this harness returned
+    /// 2880x1659 frames for its first three shots and a flat one for the fourth, then captured
+    /// correctly. The viewport texture is the window's size, so the WINDOW was not 1280x800 for the
+    /// first seconds of the run and was put right part-way through: the flat frame is the one read as
+    /// the resize landed. Nothing in the map draws to a second viewport or sizes the window, and the
+    /// base sets the size once, in <c>_Ready</c>, where a window that is maximized or still being
+    /// placed ignores it.
+    ///
+    /// So the size is asserted for as long as the run lasts rather than once: every frame, before the
+    /// loop may drive or capture, the window must be windowed and at the capture size, and have been
+    /// for <see cref="SteadyFrames"/>. When it is not, this says what it found (mode, size, screen and
+    /// screen scale, which is the evidence the cause needs) and restores it.
+    /// </summary>
+    public override void _Process(double delta)
+    {
+        if (WindowHoldsCaptureSize())
+        {
+            base._Process(delta);
+        }
+    }
+
+    private bool WindowHoldsCaptureSize()
+    {
+        if (DisplayServer.GetName() == "headless" || _restoreFrames > MaxRestoreFrames)
+        {
+            return true;
+        }
+
+        Vector2I want = RequestedSize();
+        DisplayServer.WindowMode mode = DisplayServer.WindowGetMode();
+        Vector2I size = DisplayServer.WindowGetSize();
+        if (mode == DisplayServer.WindowMode.Windowed && size == want)
+        {
+            if (_steadyFrames < SteadyFrames)
+            {
+                _steadyFrames++;
+                return false;
+            }
+
+            return true;
+        }
+
+        if (!_reportedWindow)
+        {
+            _reportedWindow = true;
+            Core.Diagnostics.Log.Warn($"{Flag}: window is {mode} {size.X}x{size.Y}, capture size is {want.X}x{want.Y} " +
+                     $"(screen {DisplayServer.ScreenGetSize().X}x{DisplayServer.ScreenGetSize().Y}, " +
+                     $"scale {DisplayServer.ScreenGetScale():0.##}); restoring before the next shot.");
+        }
+
+        _steadyFrames = 0;
+        _restoreFrames++;
+        if (mode != DisplayServer.WindowMode.Windowed)
+        {
+            DisplayServer.WindowSetMode(DisplayServer.WindowMode.Windowed);
+        }
+
+        DisplayServer.WindowSetSize(want);
+        return false;
+    }
+
+    /// <summary>The size the run asked for, read the way <see cref="ShotHarness"/> reads it.</summary>
+    private static Vector2I RequestedSize()
+    {
+        string size = OS.GetEnvironment("EMBERVALE_RES");
+        string[] parts = (size.Length > 0 ? size : OS.GetEnvironment("EMBERVALE_SHOT_SIZE")).Split('x');
+        return parts.Length == 2 && int.TryParse(parts[0], out int w) && int.TryParse(parts[1], out int h) && w >= 640 && h >= 360
+            ? new Vector2I(w, h)
+            : new Vector2I(1280, 720);
+    }
+
     protected override string? ValidateShotState(string name)
     {
         if (Map is null || Journal is null || Character is null || Vendor is null || Dialogue is null)
             return "bootstrap did not provide every required panel";
+        if (ValidateKnowledgeShot(name) is { } knowledge)
+            return knowledge;
         if ((name.StartsWith("00-") || name.StartsWith("01-") || name.StartsWith("02-") ||
              name.StartsWith("03-") || name.StartsWith("04-") || name.StartsWith("05-")) && !Map.IsOpen)
             return "map did not open";
@@ -106,6 +203,60 @@ public sealed partial class PanelShots : ShotHarness
             return "a panel expected to be closed remains open";
         return null;
     }
+
+    /// <summary>The 2026-10 knowledge-panel states. Each proves the state it names was reached, since
+    /// a rail left on the wrong tab or a page left sealed would still be a valid-looking PNG.</summary>
+    private string? ValidateKnowledgeShot(string name)
+    {
+        switch (name)
+        {
+            case "05c-map-legend-collapsed":
+                return Map!.LegendOpen && !Map.LegendExpanded ? null : "map rail is not on its folded legend";
+            case "05d-map-legend-expanded":
+                return Map!.LegendOpen && Map.LegendExpanded ? null : "map rail is not on its unfolded legend";
+            case "05e-map-pin-snap":
+                return Map!.SnappedId is null ? "the map cursor did not snap to a pin"
+                    : Map.SelectedLocationId != SnapTarget ? "the map is not focused on the snap target"
+                    : null;
+            case "05f-map-travel-confirm":
+                return Map!.PendingTravelId is null ? "no fast-travel confirmation is showing" : null;
+            case "12f-journal-show-on-map":
+                return !Map!.IsOpen ? "show on map did not open the map"
+                    : Journal!.IsOpen ? "show on map left the journal open"
+                    : Map.SelectedLocationId is null ? "the map opened without the quest's place selected"
+                    : null;
+            case "16c-dialogue-typing":
+                // Reduced motion writes the line at once, and that run photographs exactly that.
+                return !Dialogue!.IsOpen ? "dialogue panel did not open"
+                    : UI.UiTheme.MotionEnabled && !Dialogue.IsTyping ? "the line is not being written out"
+                    : UI.UiTheme.MotionEnabled && Dialogue.OptionCount != 0 ? "options are showing before the line has finished"
+                    : null;
+            case "16d-dialogue-complete":
+                return !Dialogue!.IsOpen ? "dialogue panel did not open"
+                    : Dialogue.IsTyping ? "the line is still being written out"
+                    : Dialogue.OptionCount == 0 ? "the finished line has no options"
+                    : null;
+            case "26-bestiary-unknown":
+                return BestiaryAt(BestiaryStage.Unseen);
+            case "27-bestiary-sighted":
+                return BestiaryAt(BestiaryStage.Sighted);
+            case "28-bestiary-known":
+                return BestiaryAt(BestiaryStage.Known);
+            case "29-hub-spellbook":
+                return Spellbook is { IsOpen: true } ? null : "spellbook did not open";
+            case "30-knowledge-closed":
+                return Bestiary is { IsOpen: true } || Spellbook is { IsOpen: true } ? "a hub screen is still open" : null;
+            default:
+                return null;
+        }
+    }
+
+    private string? BestiaryAt(BestiaryStage stage) =>
+        Bestiary is not { IsOpen: true } bestiary ? "bestiary did not open"
+        : bestiary.SelectedStage != stage ? $"the open bestiary page is {bestiary.SelectedStage}, expected {stage}"
+        : null;
+
+    private const string SnapTarget = "location.embermarket.jeweller";
 
     protected override void BuildShotList()
     {
@@ -160,6 +311,28 @@ public sealed partial class PanelShots : ShotHarness
             {
                 rail.ScrollVertical = 100000;
             }
+        });
+
+        // The rail's legend, which is also the filter: folded to one switch per group of marks, then
+        // unfolded to a switch per category.
+        Shot("05c-map-legend-collapsed", () => Map?.ShowLegendForCapture(expanded: false));
+
+        Shot("05d-map-legend-expanded", () => Map?.ShowLegendForCapture(expanded: true));
+
+        // The gamepad cursor, shown without a gamepad: the reticle at the centre of the plot, the pin it
+        // has snapped to ringed, and that pin's name on a plate.
+        Shot("05e-map-pin-snap", () =>
+        {
+            Map?.ShowPlaceForCapture();
+            Map?.SnapForCapture(SnapTarget);
+            Map?.SetZoom(MapTiers.DetailZoom);
+        });
+
+        // Fast travel asks before it goes: the destination and the fee, in place of the rail.
+        Shot("05f-map-travel-confirm", () =>
+        {
+            AttuneAWaystone();
+            Map?.RequestTravelForCapture();
         });
 
         Shot("06-map-closed", () => Map?.SetOpen(false));
@@ -249,7 +422,19 @@ public sealed partial class PanelShots : ShotHarness
 
         Shot("12e-journal-errands", () => Journal?.Select(QuestShotFixtures.Errand));
 
-        Shot("13-journal-closed", () => Journal?.SetOpen(false));
+        // "Show on map" from the open card: the journal hands over to the map, which opens centred on the
+        // live objective's place with its details in the rail.
+        Shot("12f-journal-show-on-map", () =>
+        {
+            Journal?.Select(QuestShotFixtures.AshWind);
+            Journal?.ShowSelectedOnMapForCapture();
+        });
+
+        Shot("13-journal-closed", () =>
+        {
+            Map?.SetOpen(false);
+            Journal?.SetOpen(false);
+        });
 
         Shot("14-inventory-full", () =>
         {
@@ -304,7 +489,27 @@ public sealed partial class PanelShots : ShotHarness
             }
         });
 
-        Shot("17-dialogue-closed", () => Dialogue?.SetOpen(false));
+        // A line writing itself out, with no options yet. The typewriter is off in a capture run, so it is
+        // turned on for these two frames: this one is taken part-way through the longest authored line.
+        Shot("16c-dialogue-typing", () =>
+        {
+            Dialogue?.EndConversation();
+            Dialogue?.TypewriterForCapture(true);
+            if (Player() is { } player && DialogueFixture() is { } dialogue)
+            {
+                EventBus.Instance?.Publish(new DialogueStartedEvent(player, player, dialogue));
+            }
+        });
+
+        // The same line finished the way an accept press finishes it, and its options arrived.
+        Shot("16d-dialogue-complete", () => Dialogue?.FinishLineForCapture());
+
+        Shot("17-dialogue-closed", () =>
+        {
+            Dialogue?.TypewriterForCapture(false);
+            Dialogue?.EndConversation();
+            Dialogue?.SetOpen(false);
+        });
 
         // ⚠️ 42A, AND THE STATES ARE THE POINT — a Guilds tab where all five read "Unaffiliated" is
         // what the panel draws before anything happens, so it proves the tab exists and nothing
@@ -392,6 +597,87 @@ public sealed partial class PanelShots : ShotHarness
         });
 
         Shot("25-perks-closed", () => Character?.SetOpen(false));
+
+        // The bestiary's three stages on one category: a sealed page, a part-written one and a written
+        // one with its wards. Tallies are staged through the service's own Load, since a kill cannot be.
+        Shot("26-bestiary-unknown", () =>
+        {
+            StageBestiary();
+            Bestiary?.SetOpen(true);
+            Bestiary?.SelectForCapture(_bestiaryUnseen);
+        });
+
+        Shot("27-bestiary-sighted", () => Bestiary?.SelectForCapture(_bestiarySighted));
+
+        Shot("28-bestiary-known", () => Bestiary?.SelectForCapture(_bestiaryKnown));
+
+        // The spellbook under the same hub strip and legend as the other four.
+        Shot("29-hub-spellbook", () =>
+        {
+            Bestiary?.SetOpen(false);
+            Spellbook?.SetOpen(true);
+        });
+
+        Shot("30-knowledge-closed", () => Spellbook?.SetOpen(false));
+    }
+
+    private string _bestiaryUnseen = string.Empty;
+    private string _bestiarySighted = string.Empty;
+    private string _bestiaryKnown = string.Empty;
+
+    /// <summary>
+    /// Writes three tallies into the bestiary: one creature hunted to its threshold (and one of those
+    /// kills Ashen), one seen once, and one never met. All three are taken from the category with the
+    /// most pages that can show every stage, so the three frames share an index.
+    /// </summary>
+    private void StageBestiary()
+    {
+        if (ServiceLocator.Instance is not { } locator || !locator.TryGet(out BestiaryService service))
+        {
+            return;
+        }
+
+        foreach (BestiaryCategory category in System.Enum.GetValues<BestiaryCategory>())
+        {
+            var pages = BestiaryDatabase.All.Where(e => e.Category == category).ToList();
+
+            // A written page shows wards only for a creature with an archetype; a part-written one
+            // needs a threshold above one kill.
+            BestiaryEntryResource? known = pages.FirstOrDefault(e => EnemyArchetypeDatabase.Get(e.Id) is { AttributesPath.Length: > 0 });
+            BestiaryEntryResource? sighted = pages.FirstOrDefault(e => e != known && e.KillsToKnow > 1);
+            BestiaryEntryResource? unseen = pages.FirstOrDefault(e => e != known && e != sighted);
+            if (known is null || sighted is null || unseen is null)
+            {
+                continue;
+            }
+
+            _bestiaryKnown = known.Id;
+            _bestiarySighted = sighted.Id;
+            _bestiaryUnseen = unseen.Id;
+            int enough = Mathf.Max(1, known.KillsToKnow);
+            service.Load(new Godot.Collections.Dictionary
+            {
+                ["kills"] = new Godot.Collections.Dictionary { [known.Id] = enough, [sighted.Id] = 1 },
+                ["ashen"] = new Godot.Collections.Dictionary { [known.Id] = 1 },
+            });
+            return;
+        }
+    }
+
+    /// <summary>Makes sure one waystone is attuned, so the map has a journey to ask about. A save that
+    /// has attuned none gets the Embermarket's, in the region the player is standing in.</summary>
+    private static void AttuneAWaystone()
+    {
+        if (ServiceLocator.Instance is not { } locator || !locator.TryGet(out FastTravelService travel) ||
+            travel.Nodes.Any())
+        {
+            return;
+        }
+
+        string region = locator.TryGet(out RegionStreamer streamer) ? streamer.ActiveRegionId ?? string.Empty : string.Empty;
+        travel.Discover(
+            "travel.ember_crown.embermarket", Loc.T("travel.ember_crown.embermarket.name"), region,
+            Player()?.GlobalPosition ?? Vector3.Zero);
     }
 
     private string? ValidatePerkShot(string name)
