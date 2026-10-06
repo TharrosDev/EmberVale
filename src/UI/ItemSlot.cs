@@ -87,9 +87,10 @@ public static class ItemSlot
 
         slot.TooltipText = Tooltip(instance, quantity);
 
-        // Authored item art wins. Data without bespoke art still uses the shared Embervale vector
-        // family rather than platform-dependent Unicode symbols.
-        if (instance.Template.Icon is { } icon)
+        // Authored item art wins, then the item's archetype on the painted atlas (ItemIcons). Data
+        // with neither still uses the shared Embervale vector family rather than platform-dependent
+        // Unicode symbols.
+        if (ItemIcons.For(instance.Template) is { } icon)
         {
             var art = new TextureRect
             {
