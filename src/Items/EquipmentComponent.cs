@@ -525,7 +525,7 @@ public partial class EquipmentComponent : EntityComponent, ISaveable
             var slots = slotsVariant.AsGodotDictionary();
             foreach (Variant key in slots.Keys)
             {
-                ItemInstance? instance = ItemInstance.FromSave(slots[key].AsGodotDictionary());
+                ItemInstance? instance = ItemInstance.FromSave(SaveRead.AsSection(slots[key]));
                 if (instance?.Equippable is { } equippable && equippable.Slot != EquipmentSlot.None)
                 {
                     if (_equipped.TryGetValue(equippable.Slot, out ItemInstance? doubled))

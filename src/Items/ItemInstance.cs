@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Text;
+using Embervale.Save;
 using Embervale.Stats;
 using Godot;
 
@@ -247,39 +248,44 @@ public sealed class ItemInstance
     }
 
     /// <summary>Rebuilds an instance from saved state, resolving the template via
-    /// the <see cref="ItemDatabase"/>. Returns null if the template is gone.</summary>
-    public static ItemInstance? FromSave(Godot.Collections.Dictionary data)
+    /// the <see cref="ItemDatabase"/>. Returns null if the template is gone or the entry has no id.
+    /// Every read is tolerant (<see cref="SaveRead"/>): an absent or mistyped key takes its default
+    /// and an unreadable affix is dropped, so one bad item never fails the load around it.</summary>
+    public static ItemInstance? FromSave(Godot.Collections.Dictionary? data)
     {
-        string id = data["id"].AsString();
-        ItemResource? template = ItemDatabase.Get(id);
-        if (template == null)
+        string id = SaveRead.Text(data, "id");
+        ItemResource? template = string.IsNullOrEmpty(id) ? null : ItemDatabase.Get(id);
+        if (data == null || template == null)
         {
             return null;
         }
 
-        var rarity = data.TryGetValue("rarity", out Variant rarityVar)
-            ? (ItemRarity)rarityVar.AsInt32()
+        int savedRarity = SaveRead.Int(data, "rarity", (int)template.Rarity);
+        ItemRarity rarity = System.Enum.IsDefined(typeof(ItemRarity), savedRarity)
+            ? (ItemRarity)savedRarity
             : template.Rarity;
-        string? name = data.TryGetValue("name", out Variant nameVar) ? nameVar.AsString() : null;
+        string? name = data.ContainsKey("name") ? SaveRead.Text(data, "name") : null;
+        if (string.IsNullOrEmpty(name))
+        {
+            name = null;
+        }
 
         var affixes = new List<ItemAffix>();
-        if (data.TryGetValue("affixes", out Variant affixVar))
+        foreach (Variant entry in SaveRead.List(data, "affixes"))
         {
-            foreach (Variant entry in affixVar.AsGodotArray())
+            if (SaveRead.AsSection(entry) is { } affixData && ItemAffix.FromSave(affixData) is { } affix)
             {
-                affixes.Add(ItemAffix.FromSave(entry.AsGodotDictionary()));
+                affixes.Add(affix);
             }
         }
 
         return new ItemInstance(template, rarity, affixes, name)
         {
-            Quality = data.TryGetValue(QualityKey, out Variant quality)
-                ? CraftQualities.FromOrdinal(quality.AsInt32())
-                : CraftQuality.Standard,
-            UpgradeLevel = data.TryGetValue(UpgradeKey, out Variant upgrade) ? upgrade.AsInt32() : 0,
-            ItemLevel = data.TryGetValue(ItemLevelKey, out Variant level) ? System.Math.Max(0, level.AsInt32()) : 0,
-            Locked = data.TryGetValue(LockedKey, out Variant locked) && locked.AsBool(),
-            Junk = data.TryGetValue(JunkKey, out Variant junk) && junk.AsBool(),
+            Quality = CraftQualities.FromOrdinal(SaveRead.Int(data, QualityKey)),
+            UpgradeLevel = SaveRead.Int(data, UpgradeKey),
+            ItemLevel = System.Math.Max(0, SaveRead.Int(data, ItemLevelKey)),
+            Locked = SaveRead.Flag(data, LockedKey),
+            Junk = SaveRead.Flag(data, JunkKey),
         };
     }
 }

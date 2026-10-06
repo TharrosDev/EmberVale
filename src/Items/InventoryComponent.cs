@@ -742,17 +742,18 @@ public partial class InventoryComponent : EntityComponent, ISaveable
 
     private void RestoreStacks(Godot.Collections.Dictionary data, string key)
     {
-        if (!data.TryGetValue(key, out Variant stacksVariant))
+        // Tolerant by rule (SaveRead): a malformed entry is skipped, never thrown on, because one
+        // throwing Load fails the whole save.
+        foreach (Variant entry in SaveRead.List(data, key))
         {
-            return;
-        }
+            if (SaveRead.AsSection(entry) is not { } dict)
+            {
+                continue;
+            }
 
-        foreach (Variant entry in stacksVariant.AsGodotArray())
-        {
-            var dict = entry.AsGodotDictionary();
-            int qty = dict["qty"].AsInt32();
-            ItemInstance? instance = ItemInstance.FromSave(dict["instance"].AsGodotDictionary());
-            if (instance != null)
+            int qty = SaveRead.Int(dict, "qty", 1);
+            ItemInstance? instance = ItemInstance.FromSave(SaveRead.Section(dict, "instance"));
+            if (instance != null && qty > 0)
             {
                 AddInstance(instance, qty);
             }

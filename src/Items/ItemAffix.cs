@@ -1,4 +1,5 @@
 using Embervale.Localization;
+using Embervale.Save;
 using Embervale.Stats;
 using Godot;
 
@@ -110,22 +111,31 @@ public sealed class ItemAffix
         return data;
     }
 
-    public static ItemAffix FromSave(Godot.Collections.Dictionary data)
+    /// <summary>Rebuilds a saved affix. Null when the entry has no id or names an enum member this
+    /// build does not have: one unreadable affix is dropped, it never fails the load of the item
+    /// (or of the whole save) around it.</summary>
+    public static ItemAffix? FromSave(Godot.Collections.Dictionary data)
     {
-        AffixEffect effect = AffixEffect.Stat;
-        if (data.TryGetValue(EffectKey, out Variant saved) &&
-            System.Enum.IsDefined(typeof(AffixEffect), saved.AsInt32()))
+        string id = SaveRead.Text(data, "id");
+        int kind = SaveRead.Int(data, "kind");
+        int stat = SaveRead.Int(data, "stat");
+        int mod = SaveRead.Int(data, "mod");
+        int effect = SaveRead.Int(data, EffectKey, (int)AffixEffect.Stat);
+        if (string.IsNullOrEmpty(id) ||
+            !System.Enum.IsDefined(typeof(AffixKind), kind) ||
+            !System.Enum.IsDefined(typeof(StatType), stat) ||
+            !System.Enum.IsDefined(typeof(ModifierType), mod))
         {
-            effect = (AffixEffect)saved.AsInt32();
+            return null;
         }
 
         return new ItemAffix(
-            data["id"].AsString(),
-            data["label"].AsString(),
-            (AffixKind)data["kind"].AsInt32(),
-            (StatType)data["stat"].AsInt32(),
-            data["value"].AsSingle(),
-            (ModifierType)data["mod"].AsInt32(),
-            effect);
+            id,
+            SaveRead.Text(data, "label", id),
+            (AffixKind)kind,
+            (StatType)stat,
+            SaveRead.Float(data, "value"),
+            (ModifierType)mod,
+            System.Enum.IsDefined(typeof(AffixEffect), effect) ? (AffixEffect)effect : AffixEffect.Stat);
     }
 }
