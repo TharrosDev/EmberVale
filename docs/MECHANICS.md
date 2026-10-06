@@ -544,8 +544,15 @@ caps the first two at 25%).
   `WorldRegionBackdrop`.
 - **Practical lights and particles** — distance-faded lights with a shadow budget; ambient particles.
   `EnvironmentEmitters`.
-- **Quality tiers** — Low / Medium / High / Ultra (shadows, SSAO, SSIL, volumetric fog, SSR, particle
-  scale, render scale). `RenderQualityResource` (`data/rendering`).
+- **Quality tiers** — Performance / Low / Medium / High / Ultra. A tier sets render scale, sun shadow
+  distance, cascades and filter, shadow atlases, SSAO, SSIL, volumetric fog, SSR, glow, particle
+  scale and mesh LOD; the two lowest also shorten draw distance, thin ground cover and stop enemy
+  shadows at range. `RenderQualityResource` (`data/rendering`), `WorldQualityScale`;
+  [`RENDERING.md`](RENDERING.md) has the table.
+- **Distance level of detail for actors** — past 40 m a body's animation steps every third frame
+  (never during an action clip); a standing townsperson and an actor with full pools and no status
+  stop ticking until something changes. `CharacterAnimationComponent`, `ScheduleComponent`,
+  `StatsComponent`, `StatusEffectsComponent`.
 - **Corruption appearance** — the player's body shifts with corruption tier (ash, skin wash, ember glow via the body shader).
   `CorruptionAppearanceController`.
 - **Magic colour** — one hue per school for every spell effect. `SpellSchools.Color`.
@@ -587,9 +594,17 @@ caps the first two at 25%).
   crosshair, minimap, compass, party, boss bar. `GameHud`, `BossFrame`.
 - **Panels** — inventory, spellbook, journal, map, bestiary, dialogue, vendor, crafting, storage,
   appraisal, contract board, save slots, settings, pause. `UiPanel`, `UiTheme` (`src/UI`).
-- **Settings** — window mode, vsync, FPS cap, quality tier, volumes, mouse sensitivity, invert Y,
-  camera mode and shoulder, tutorials, reduced motion, subtitles, colour-vision modes, high contrast.
-  `Settings`, `SettingsService`. *Partial:* a difficulty setting is stored but no gameplay system reads
+- **Settings** — window mode, vsync, FPS cap (uncapped, 30, 40, 60, 120, 144), quality preset,
+  volumes, mouse sensitivity, invert Y, camera mode and shoulder, tutorials, reduced motion,
+  subtitles, colour-vision modes, high contrast. `Settings`, `SettingsService`.
+- **Advanced graphics** — render scale, upscaling (bilinear, FSR 1.0, FSR 2.2), anti-aliasing (off,
+  FXAA, MSAA 2x/4x, TAA), shadow quality, ambient occlusion, volumetric fog and glow, each starting
+  from the preset; a moved control makes the preset read Custom. `SettingsPanel`, `GraphicsMath`.
+- **First-run graphics detection** — a fresh install (no settings file, no saves) starts on the
+  preset its adapter, memory and thread count earn; never re-run over a saved file.
+  `GraphicsAutoDetect`.
+- **Menu frame pacing** — with V-Sync off and no cap, the title and pause screens hold 60 FPS.
+  `SettingsService.ApplyFrameCap`. *Partial (settings):* a difficulty setting is stored but no gameplay system reads
   it; there is no key remapping.
 - **Gamepad** — plays the whole game; prompt glyphs follow the active device. `GameInput`,
   `InputDevice`.
@@ -633,6 +648,11 @@ caps the first two at 25%).
 
 - **Dev console** (`F1`), debug HUD (`F3`), profiler (`F4`), seeded repro replays, integrity checker.
   `DevConsole`, `DevCommands`, `ProfilerOverlay`, `ReproHarness`, `WorldIntegrityChecker`.
+- **Profiler overlay** (`F4`) — FPS, median and worst frame of the last 120, script and physics
+  time, draw calls, primitives, nodes, orphans, static memory, video memory (textures, buffers),
+  managed heap, allocation rate, collections per generation, then world nodes and scatter, world
+  frame p50/p95/p99, active and resident cells, and the sky's tier and weather state. Refreshed
+  four times a second; not processed while hidden. `ProfilerOverlay`, `WorldPerformanceMonitor`.
 - **Headless gates** (any build) — `--validate`, `--lifecycle`, `--story`, `--state`, `--economy`,
   `--worldgen`, `--world-bake`, `--worldmap`. `src/Bootstrap/Headless*.cs`.
 - **Render harnesses** — HUD, panel, guild, shrine, enemy and shell shots; world shots. `*Shots.cs`,

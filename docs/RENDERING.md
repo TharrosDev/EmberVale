@@ -99,6 +99,32 @@ that matter on a GPU whose video memory is system memory:
 - **Already half resolution.** SSAO and SSIL use the engine's default half-size buffers; there is
   no project override to add.
 
+### What scales with quality
+
+Everything in the two tables, and nothing else. In the world it reaches four consumers through
+`WorldQualityScale` (a static holding the three world dials, with a `Changed` event), and none of
+them reads or writes anything while the scale is 1 / 1 / uncut, which is Medium and up:
+
+- **Draw distance** multiplies the streamer's **Far** radius only
+  (`WorldStreamingPolicy.ScaleForQuality`), every scatter tile's visibility ranges (detail end,
+  HLOD begin and end) and the biome cull distance. Near and Mid are where collision, navigation and
+  gameplay exist and Backdrop decides which cells are resident, so those three never move: a lower
+  tier draws props and buildings less far and plays on the same world.
+- **Scatter density** thins ground cover only (grass, flowers, pebbles, ferns: the layers with a
+  short detail range) through `MultiMesh.VisibleInstanceCount`. Trees, rocks and scrub are the
+  silhouette and keep every instance. No buffer is rewritten.
+- **Enemy shadows** stop past `ActorShadowDistance` (`EnemyAIComponent`, checked four times a
+  second, restoring each mesh to what it cast before).
+- **Particles and local lights** take `ParticleScale` and `LocalLightDistance` in
+  `EnvironmentEmitters`, as before.
+
+Three costs were cut on every tier and are not dials. Ground cover casts no shadow (set in the
+region specs). The distant scatter tier takes a mesh LOD bias of 0.5. Both are built into the
+prepared cells, so they reach the game only through the master bake. A body further than 40 m
+from the player, outside an action clip, has its animation stepped every third frame by the
+skipped time (`CharacterAnimationComponent`). All three change what Medium, High and Ultra show,
+none has been looked at in a render, and the reference captures predate them.
+
 ### Adjusting a preset
 
 The options menu has an Advanced Graphics section: render scale, upscaling (bilinear, FSR 1.0,
@@ -114,14 +140,25 @@ the three, and it replaces TAA rather than stacking on it.
 
 ### First run
 
-On a fresh install (no settings file and no save slots), `SettingsService` picks a preset from the adapter name, vendor and device
-type plus installed memory and thread count (`GraphicsAutoDetect`, pure and unit-tested), then
-saves it. Integrated or software adapters start on Performance or Low with a 60 FPS cap; discrete
-adapters start on Medium or High. A saved file is never re-detected over, and an install that has
-saves but no settings file keeps Medium uncapped (what it was already running) and writes that
-down. Headless runs and
-automation (`EMBERVALE_USER_DIR` set) skip detection and keep Medium, so captures and probes do
-not move with the machine that runs them.
+On a fresh install (no settings file and no save slots), `SettingsService` picks a preset from
+the adapter name, vendor and device type plus installed memory and thread count
+(`GraphicsAutoDetect`, pure and unit-tested), then saves it:
+
+| Adapter | Preset | Frame cap |
+| --- | --- | ---: |
+| Software renderer or CPU device | Performance | 30 |
+| Steam Deck APU | Low | 60 |
+| Integrated, at least 15 GB installed and 8 threads | Low | 60 |
+| Integrated, anything less | Performance | 60 |
+| Discrete, at least 15 GB and 8 threads, not a known modest part | High | none |
+| Discrete, otherwise | Medium | none |
+| Unidentified | Medium | none |
+
+A saved file is never re-detected over, and an install that has saves but no settings file keeps
+Medium uncapped (what it was already running) and writes that down. Headless runs and automation
+(`EMBERVALE_USER_DIR` set) skip detection and keep Medium, so captures and probes do not move with
+the machine that runs them. By the table, a fresh install on the development laptop (Iris Xe,
+14 GB) starts on Performance at 60.
 
 ### Frame pacing
 
@@ -161,8 +198,10 @@ measurement on their intended hardware and are not assumed to achieve 60 FPS her
 
 ## Validation and debugging
 
-F4 includes the active tier, fog density, wetness, snow and shelter alongside the existing frame,
-streaming, draw-call and resource diagnostics. `EnvironmentVisualStateEvent` exposes resolved time,
+F4 includes the active tier, fog density, wetness, snow and shelter alongside the frame,
+streaming, draw-call and resource diagnostics, and now primitives, video memory split into
+textures and buffers, the managed heap, allocation rate and garbage collections per generation.
+It refreshes four times a second and does not process while hidden. `EnvironmentVisualStateEvent` exposes resolved time,
 rain, snow, wind, wetness and shelter for environmental audio/effect consumers.
 
 `python tools/embervale.py tool environment_route --render --timeout 300` boots the actual game

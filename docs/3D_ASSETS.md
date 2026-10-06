@@ -552,7 +552,12 @@ that png's `.import`, not by the model. A Meshy body's atlas is extracted to
 python tools/assets.py audit-weight           # MB per class, and everything off its budget
 python tools/assets.py audit-weight --check   # the same, exit 1 when anything is off budget
 python tools/assets.py audit-weight --fix     # write the budget, then run a Godot import pass
+python tools/assets.py audit-weight -v        # every texture, heaviest first
 ```
+
+`--check` and the plain report read `.import` text and never start the engine; `--fix` edits
+the `.import` files and the import pass that follows is what makes the caps real. A changed model
+texture is also a shared world-bake input, so a `--fix` is followed by the master bake.
 
 The budget is `data/rendering/VisualContract.json`'s three caps by class and map role, written as
 `process/size_limit` (longest edge). The table lives in `tools/audit_3d.py` (`TEXTURE_BUDGET`):

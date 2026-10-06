@@ -59,8 +59,18 @@ EventBus.Instance.Unsubscribe<EntityDiedEvent>(OnEntityDied); // always pair
 ```
 
 Events are immutable, past-tense `readonly record struct`s implementing `IGameEvent`. Always
-unsubscribe in `OnTeardown`/`_ExitTree`. `Publish` snapshots handlers (safe to (un)subscribe during
-dispatch) and catches/logs handler exceptions. Handlers run synchronously, even while paused.
+unsubscribe in `OnTeardown`/`_ExitTree`. `Publish` catches/logs handler exceptions. Handlers run
+synchronously, even while paused.
+
+Each event type has its own channel, found through a generic static (`Slot<T>`) instead of a
+dictionary probe, holding a typed `List<Action<T>>` and a `HashSet` mirror that makes the duplicate
+check O(1). `Publish` iterates the live list in place and allocates nothing: it marks the list as
+being read, and a subscribe or unsubscribe that arrives during a dispatch swaps in a copy
+(`Channel.Writable`) instead of editing it. So a dispatch still walks exactly the handlers that
+were registered when it began, and (un)subscribing from a handler is still safe; the copy is paid
+on that rare reentrant change rather than on every event. Subscribing the same delegate twice is
+still a no-op. The channels are process-wide statics; `Clear` and the bus leaving the tree empty
+them.
 
 ### 1.5 Entities are compositions of components
 
@@ -74,6 +84,14 @@ never `_Ready`/`_ExitTree`**. Identity is assigned in `_EnterTree` (top-down); c
 from `_Ready` (bottom-up), so the host exists but a sibling may not have initialized.
 `GetComponent<T>` searches **direct children only** and returns the **first** match. `Hitbox`/
 `Hurtbox` are `Area3D`s that use `FindOwner` directly.
+
+**A component with nothing to do does not tick.** `StatsComponent` (every pool full and both idle
+clocks saturated), `StatusEffectsComponent` (no status, no control immunity), `CombatComponent`,
+`HitReactionComponent`, `WeaponTrailComponent`, `TelegraphRing` and `ScheduleComponent` (standing at
+its target) call `SetProcess(false)` at rest and wake through one method each (`WakeTick` in
+`StatsComponent`). ⚠️ The component that switches its tick off owns every path that switches it
+back on: a pool, max or regen change, a new status, a new target, **and `Load`**, which replaces
+state without passing through any of the ordinary setters (`NOW.md` invariant 45).
 
 ---
 
@@ -205,6 +223,14 @@ above the older ones' current height (`DamageNumberMath.LiftAbove`).
   bone-masked upper-body layer. The shared full-body library is `anim_meshy.res`; the older
   `anim_library.res` still owns `ride`, `sitting`, `interact`, `swim`. A rigged body with no clips gets a
   created `AnimationPlayer`.
+- **The component steps the mixer.** The `AnimationTree` (or the fallback `AnimationPlayer`) is in
+  manual callback mode for its whole life and `CharacterAnimationComponent._Process` advances it
+  after the state tick: every frame at full rate, every third frame beyond 40 m from the player,
+  by the whole skipped time so clips keep their speed. An action clip always runs at full rate,
+  because the clip is that action's clock (`ActionProgress`). ⚠️ The callback mode is set once
+  before the tree is active and never written again: changing it on an active tree restarts the
+  state machine, and a corpse stands back up. Tree parameters are written on change and the
+  machine's state is polled only for a few ticks after a travel request.
 - `FootIkComponent` plants feet on terrain. `EquipmentSockets` + `EquipmentPresentationComponent` are
   the one socket contract (weapon, shield on the forearm, ammo).
 
@@ -503,6 +529,8 @@ never stored), `PerksComponent` (`ISaveable`, modifiers re-applied on load).
   only after wind-up, and resume authored recovery on release. Interrupted wind-ups refund half the
   mana; silence, stagger and death cancel appropriately. Blink commits direction/distance and refunds
   a newly obstructed portion. Load replaces the spell list and cancels transient casts/cooldowns.
+- `SpellFlash` (the cosmetic burst) is pooled per session: `CombatFeedbackDirector` opens and
+  closes the pool, one sphere mesh is shared, and with no pool open a flash is built and freed.
 - `SpellProjectile` (pooled), `SpellGround`, `SpellBarrier` and `SpellResolver` share targeting,
   damage outcomes and deduplication. Projectile sweeps intercept a barrier's physical volume before
   ordinary geometry; its health and school interaction determine whether it ends. Sunfall breaks guard
@@ -566,11 +594,27 @@ no live-generation fallback: missing data fails the region and the loading gate 
 (static visuals/HLOD), **Backdrop** (terrain/landmark continuity); beyond, unload. A two-second
 projection preloads ahead, hysteresis prevents thrash, activation is staged under
 `ActivationBudgetMilliseconds`, loads go queued → `LoadThreadedRequest` → resident → tier activation
-with `MaxConcurrentLoadRequests` (drops to one under memory pressure). Only one region is active; a
+with `MaxConcurrentLoadRequests` (drops to one under memory pressure). The per-cell reconcile sweep
+runs when a tier decision, a failed load or a cleared load stage marks it dirty, not every frame
+(every decision tick marks it, so a missed trigger costs a quarter second). The activation
+deadline goes into the cell: `WorldCellActivation.Advance(deadline)` checks the clock every 24
+nodes inside its presentation and collision passes and resumes by index on the next frame, and a
+cell's visuals are classified once at capture. While the player is playing, a frame either
+instantiates a cell or advances activations, never both; behind a loading screen or a tool focus
+both run. The loaded `PackedScene` is released as soon as its cell is instantiated (it is loaded
+with `CacheMode.Ignore`, which is load-bearing: a reused scene would be instantiated around
+resources the old cell disposed), and `WorldBiomeScatter.ShareSources` points every cell's scatter
+tiles at one copy of each source mesh per realm instead of one embedded copy per cell. A quality
+tier's draw distance scales the **Far** radius only (`WorldStreamingPolicy.ScaleForQuality`); Near,
+Mid and Backdrop never move. Only one region is active; a
 realm transition is a session-world boundary. `RequirePosition` pins a landing Near; `IsPositionReady`
 waits for real collision. `LoadingCoordinator` + `SafePlacementService` (ground, slope, capsule
-clearance, optional nav) gate player loading and actor materialization. Exhausted player placement
-aborts to title. Hazard recovery retains a last-resort analytic landing; its pending-placement
+clearance, optional nav) gate player loading and actor materialization. Once the landing is
+standable the gate holds the loading screen up to `RealmSettleSeconds` (10) for the rest of the
+realm to stream in (`RegionStreamer.IsSettled`), so those cells are not instantiated one per frame
+through the first seconds of play. That wait is soft: it is clamped under `MaxSeconds` less the
+placement retries' reserve, reported as `LoadingWait.Realm`, and can shorten or skip but never
+abort a load. Exhausted player placement aborts to title. Hazard recovery retains a last-resort analytic landing; its pending-placement
 boundary is recorded in `RUNTIME_AUDIT.md`. Cell loaded/unloaded events describe
 gameplay ownership.
 
@@ -857,7 +901,10 @@ never reaches into the registry for gameplay. `UI_STYLE.md` is the visual langua
 
 - `DevConsole` (`F1`) with `DevCommands.RegisterAll` (commands go through the real choke points);
   `Invariant` + `WorldIntegrityChecker` (timer; subtracts pooled nodes from the orphan count);
-  `ContentValidator` (`validate`, `validate-all`, `--validate`); `ProfilerOverlay` (`F4`);
+  `ContentValidator` (`validate`, `validate-all`, `--validate`); `ProfilerOverlay` (`F4`: frame,
+  render, memory and garbage-collector readings at 4 Hz, not processed while hidden; the
+  `WorldPerformanceMonitor` behind its world lines samples every session into a fixed ring so the
+  sustained-overrun warning still reaches the log);
   `ReproHarness` (seeded command replays); the analytics sink (dev builds only, a log, not state).
 - `DeveloperToolsHost` is constructed only in dev builds (`BuildProfile`; `--capture` or an export
   hides dev tools and sandbox props). Quick save/load stay in every build.
@@ -871,8 +918,20 @@ never reaches into the registry for gameplay. `UI_STYLE.md` is the visual langua
   `assets/models/manifest.json` and `data/world_bake/manifest.json` (non-resource files the game
   reads). `data/locale/strings.csv.import` uses `importer="keep"` so the raw CSV ships and `Loc` reads
   it directly (a translation import silently dropped it: raw keys on screen). `ApplicationRoot` runs
-  the boot-time `ContentValidator` only when `OS.IsDebugBuild()` — several arms read `.tscn` text,
-  which an export ships binary. `--story` runs inside the export as its smoke test.
+  the boot-time `ContentValidator` only on a **headless debug boot** — several arms read `.tscn`
+  text, which an export ships binary, and the pass loads every cell scene of every region plus its
+  prepared twin and pins all six prepared region packages, which a windowed boot paid before the
+  title screen. `--lifecycle` and `--story` still get it (they read `Invariant.Violations`); a
+  windowed session uses the `validate` console command. `--story` runs inside the export as its
+  smoke test.
+- **Code generation.** The editor binary always loads the Debug assembly, and Godot's SDK builds
+  Debug unoptimized, so `Embervale.csproj` sets `Optimize=true` for Debug
+  (`-p:EmbervaleOptimizeDebug=false` restores stepping through locals). Concurrent GC and tiered
+  PGO are pinned in the runtimeconfig, which only an exported game honours; `ApplicationRoot` logs
+  the runtime's actual GC mode at boot.
+- `Loc.T` keeps resolved strings for the active locale in managed memory (hits only; cleared when
+  the catalogue loads or the locale changes), so a repeat lookup does not cross into the
+  `TranslationServer`.
 
 **Layer rules** (dependencies point down, never in a cycle): Application (no session/world/player
 knowledge) → Session (never outlives quit-to-title) → World (never outlives its session) →
@@ -917,7 +976,7 @@ Health = 100.0
 
 ### 4.1 Cross-reference validation
 
-`ContentValidator` resolves every cross-reference at boot (debug builds only), via `validate`, and headless with
+`ContentValidator` resolves every cross-reference at boot (headless debug boots only), via `validate`, and headless with
 `--validate` (exit 0/1), feeding the `Invariant` counter. It covers item, quest, enemy template,
 faction, region, status-effect, shop, service, recipe, property, dialogue-node and locale references
 across loot tables, recipes, quests, dialogue, spells, factions, encounters, world events, shops,
