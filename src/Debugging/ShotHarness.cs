@@ -428,7 +428,9 @@ public abstract partial class ShotHarness : Node
 
         if (busy)
         {
-            Log.Warn($"{Flag}: the session was still loading after {MaxSessionHoldFrames} frames; starting anyway.");
+            // The states are still driven (so the run ends), but a picture of a loading screen is not
+            // evidence of the state it was asked for: the run is failed, never ok.
+            Fail($"the session was still loading after {MaxSessionHoldFrames} frames; the images of this run are not evidence");
         }
 
         PressInteract(false);
@@ -640,6 +642,14 @@ public abstract partial class ShotHarness : Node
             .Fact("focus_lost", manifest.FocusLost)
             .Fact("dir", ProjectSettings.GlobalizePath(CaptureDirectory))
             .Fact("manifest", ProjectSettings.GlobalizePath(path));
+        List<string> shortFilms = manifest.Shots.FindAll(shot => shot.FilmShort != null)
+            .ConvertAll(shot => $"{shot.Name}: {shot.FilmShort}");
+        if (shortFilms.Count > 0)
+        {
+            report.Fact("short_films", shortFilms);
+            report.Warn($"{shortFilms.Count} film(s) hold fewer frames than asked: {string.Join("; ", shortFilms)}");
+        }
+
         foreach (string failure in _failures)
         {
             report.Fail(failure);
@@ -663,9 +673,8 @@ public abstract partial class ShotHarness : Node
         _shots.Clear();
         Fail(message);
         HeadlessReport report = new HeadlessReport("shots").Fact("suite", Flag);
-        report.Fail(message);
-        report.Finish();
-        GetTree().Quit(2);
+        report.Refuse(message);
+        report.FinishAndQuit(GetTree());
     }
 
     private void FailShot(ShotRecord record, string message)

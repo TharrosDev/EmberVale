@@ -482,11 +482,13 @@ public abstract partial class TimedShots : ShotHarness
         }
 
         record.Film = record.Name + ".film.png";
+        record.FilmShort = FilmLayout.Shortfall(frames.Length, _filmFrames);
         using FileAccess? file = FileAccess.Open(stem + ".json", FileAccess.ModeFlags.Write);
         file?.StoreString(System.Text.Json.JsonSerializer.Serialize(new Dictionary<string, object?>
         {
             ["name"] = record.Name,
             ["frames"] = frames.Length,
+            ["asked"] = _filmFrames,
             ["stride"] = _filmStride,
             ["columns"] = layout.Columns,
             ["rows"] = layout.Rows,

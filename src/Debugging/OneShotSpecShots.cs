@@ -109,9 +109,18 @@ public sealed class OneShotSpec
         return (-x * Distance, -y * Distance, -z * Distance);
     }
 
+    // The first thing the request said that could not be understood: an unknown key, a number
+    // that is not one. Validate reports it, so a typo never becomes an 'ok' picture of the default.
+    private string? _unreadable;
+
     /// <summary>What is wrong with this request, or null.</summary>
     public string? Validate()
     {
+        if (_unreadable != null)
+        {
+            return _unreadable;
+        }
+
         if (Name.Length == 0 || Name.IndexOfAny(new[] { '/', '\\', ':', '*', '?', '"', '<', '>', '|' }) >= 0)
         {
             return $"name '{Name}' is not usable as a file name";
@@ -297,13 +306,13 @@ public sealed class OneShotSpec
             case "cell": Cell = Text(value); break;
             case "location": Location = Text(value); break;
             case "at": At = Numbers(value); break;
-            case "yaw": Yaw = Number(value, Yaw); break;
-            case "pitch": Pitch = Number(value, Pitch); break;
-            case "distance": Distance = Number(value, Distance); break;
-            case "height": Height = Number(value, Height); break;
-            case "fov": Fov = Number(value, Fov); break;
+            case "yaw": Yaw = Number(key, value, Yaw); break;
+            case "pitch": Pitch = Number(key, value, Pitch); break;
+            case "distance": Distance = Number(key, value, Distance); break;
+            case "height": Height = Number(key, value, Height); break;
+            case "fov": Fov = Number(key, value, Fov); break;
             case "hour":
-                float hour = Number(value, float.NaN);
+                float hour = Number(key, value, float.NaN);
                 Hour = float.IsNaN(hour) ? null : hour;
                 break;
             case "weather": Weather = Text(value); break;
@@ -311,12 +320,26 @@ public sealed class OneShotSpec
             case "hud": Hud = Truth(value); break;
             case "hidehud": Hud = !Truth(value); break;
             case "showplayer": ShowPlayer = Truth(value); break;
-            case "settle": Settle = (int)Number(value, Settle); break;
-            case "timeout": Timeout = Number(value, Timeout); break;
+            case "settle": Settle = (int)Number(key, value, Settle); break;
+            case "timeout": Timeout = Number(key, value, Timeout); break;
             case "ui": Ui = Text(value); break;
             case "spell": Spell = Text(value); break;
             case "phase": Phase = value.Trim().ToLowerInvariant(); break;
+            default:
+                _unreadable ??= $"unknown key '{key}' (known: {string.Join(", ", Keys)}, hide-hud)";
+                break;
         }
+    }
+
+    private float Number(string key, string value, float fallback)
+    {
+        if (float.TryParse(value.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out float parsed) && float.IsFinite(parsed))
+        {
+            return parsed;
+        }
+
+        _unreadable ??= $"{key} '{value.Trim()}' is not a number";
+        return fallback;
     }
 
     private static string? Text(string value) => value.Trim().Length == 0 ? null : value.Trim();
