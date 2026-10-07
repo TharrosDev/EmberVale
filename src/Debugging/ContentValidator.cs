@@ -90,60 +90,125 @@ public static class ContentValidator
         return issues.Count == 0;
     }
 
-    private static void CollectCoreIssues(List<string> issues)
+    /// <summary>One arm of the battery: a named check that appends its issues to a list.
+    /// <paramref name="Graph"/> arms are the reachability battery only <see cref="RunAll()"/> runs.</summary>
+    public readonly record struct Arm(string Name, string Group, bool Graph, System.Action<List<string>> Check);
+
+    /// <summary>
+    /// Every arm, in the order it runs: the core pass first, then the graph battery. Adding a check is
+    /// one row here. The group is what <c>--validate --only=</c> and <c>--skip=</c> select by; it says
+    /// where an arm lives, not everything it reads (several arms outside <c>locale</c> resolve display
+    /// keys, so <c>--only=locale</c> is not a full key audit).
+    /// </summary>
+    public static readonly Arm[] Arms =
     {
-        ValidateDuplicateIds(issues);
-        EnvironmentValidation.Validate(issues);
-        ValidateLootTables(issues);
-        ItemValidator.Collect(issues);
-        ValidateRecipes(issues);
-        ValidateRecipeReachability(issues);
-        ValidateQuests(issues);
-        ValidateQuestStringsAreKeys(issues);
-        ValidateInteractIdsArePlaced(issues);
-        ValidateDialogue(issues);
-        ValidateSpells(issues);
-        SpellRouteValidator.Validate(issues);
-        ValidateFactions(issues);
-        ValidateEncounters(issues);
-        ValidateWorldEvents(issues);
-        ValidateRegions(issues);
-        ValidateRaces(issues);
-        ValidatePlayerGrowth(issues);
-        ValidatePerks(issues);
-        ValidatePerkCatalogue(issues);
-        ValidatePerkTree(issues);
-        BackgroundValidator.Validate(issues);
-        AppearanceValidator.Validate(issues);
-        ValidateShrines(issues);
-        ValidateGuilds(issues);
-        ValidateGuildHubs(issues);
-        ValidateLocale(issues);
-        ValidateBreakdownKeys(issues);
-        ValidateCompanions(issues);
-        ValidateAIProfiles(issues);
-        ValidateEnemyArchetypes(issues);
-        ValidateBosses(issues);
-        ValidateProperties(issues);
-        ValidateItemTags(issues);
-        ValidateShops(issues);
-        ValidateCellTrade(issues);
-        ValidateContrabandReachability(issues);
-        ValidateEssentialsAreResident(issues);
-        ValidateServices(issues);
-        ValidateMount(issues);
-        ValidateStepUp(issues);
-        ValidateTolls(issues);
-        ValidatePlaceables(issues);
-        ValidateMapLocations(issues);
-        ValidateSceneAuthoredIds(issues);
-        ValidateShrineWorldBodies(issues);
-        ValidateBestiary(issues);
-        ValidateResourcePaths(issues);
-        ValidateUiAssets(issues);
-        ValidateModelAssets(issues);
-        ValidateAttackDefinitions(issues);
-        ValidateAnimationLibraries(issues);
+        new("DuplicateIds", "ids", false, ValidateDuplicateIds),
+        new("Environment", "env", false, EnvironmentValidation.Validate),
+        new("LootTables", "items", false, ValidateLootTables),
+        new("Items", "items", false, ItemValidator.Collect),
+        new("Recipes", "crafting", false, ValidateRecipes),
+        new("RecipeReachability", "crafting", false, ValidateRecipeReachability),
+        new("Quests", "quests", false, ValidateQuests),
+        new("QuestStringsAreKeys", "quests", false, ValidateQuestStringsAreKeys),
+        new("InteractIdsArePlaced", "quests", false, ValidateInteractIdsArePlaced),
+        new("Dialogue", "dialogue", false, ValidateDialogue),
+        new("Spells", "magic", false, ValidateSpells),
+        new("SpellRoutes", "magic", false, SpellRouteValidator.Validate),
+        new("Factions", "actors", false, ValidateFactions),
+        new("Encounters", "world", false, ValidateEncounters),
+        new("WorldEvents", "world", false, ValidateWorldEvents),
+        new("Regions", "world", false, ValidateRegions),
+        new("Races", "progression", false, ValidateRaces),
+        new("PlayerGrowth", "progression", false, ValidatePlayerGrowth),
+        new("Perks", "progression", false, ValidatePerks),
+        new("PerkCatalogue", "progression", false, ValidatePerkCatalogue),
+        new("PerkTree", "progression", false, ValidatePerkTree),
+        new("Backgrounds", "progression", false, BackgroundValidator.Validate),
+        new("Appearance", "progression", false, AppearanceValidator.Validate),
+        new("Shrines", "progression", false, ValidateShrines),
+        new("Guilds", "progression", false, ValidateGuilds),
+        new("GuildHubs", "progression", false, ValidateGuildHubs),
+        new("Locale", "locale", false, ValidateLocale),
+        new("BreakdownKeys", "locale", false, ValidateBreakdownKeys),
+        new("Companions", "actors", false, ValidateCompanions),
+        new("AIProfiles", "actors", false, ValidateAIProfiles),
+        new("EnemyArchetypes", "actors", false, ValidateEnemyArchetypes),
+        new("Bosses", "actors", false, ValidateBosses),
+        new("Properties", "economy", false, ValidateProperties),
+        new("ItemTags", "items", false, ValidateItemTags),
+        new("Shops", "economy", false, ValidateShops),
+        new("CellTrade", "economy", false, ValidateCellTrade),
+        new("ContrabandReachability", "economy", false, ValidateContrabandReachability),
+        new("EssentialsAreResident", "world", false, ValidateEssentialsAreResident),
+        new("Services", "economy", false, ValidateServices),
+        new("Mount", "world", false, ValidateMount),
+        new("StepUp", "world", false, ValidateStepUp),
+        new("Tolls", "world", false, ValidateTolls),
+        new("Placeables", "economy", false, ValidatePlaceables),
+        new("MapLocations", "world", false, ValidateMapLocations),
+        new("SceneAuthoredIds", "world", false, ValidateSceneAuthoredIds),
+        new("ShrineWorldBodies", "world", false, ValidateShrineWorldBodies),
+        new("Bestiary", "actors", false, ValidateBestiary),
+        new("ResourcePaths", "assets", false, ValidateResourcePaths),
+        new("UiAssets", "assets", false, ValidateUiAssets),
+        new("ModelAssets", "assets", false, ValidateModelAssets),
+        new("AttackDefinitions", "assets", false, ValidateAttackDefinitions),
+        new("AnimationLibraries", "assets", false, ValidateAnimationLibraries),
+        new("DialogueReachability", "dialogue", true, ValidateDialogueReachability),
+        new("StoryFlags", "quests", true, ValidateStoryFlags),
+        new("QuestCompletability", "quests", true, ValidateQuestCompletability),
+        new("QuestCompletionFlagsDoNotSelfGate", "quests", true, ValidateQuestCompletionFlagsDoNotSelfGate),
+        new("PrerequisiteCycles", "quests", true, ValidatePrerequisiteCycles),
+    };
+
+    /// <summary>The arms as plain names, for <see cref="ValidatorArmFilter"/>.</summary>
+    public static List<ValidatorArmInfo> ArmInfos()
+    {
+        var infos = new List<ValidatorArmInfo>(Arms.Length);
+        foreach (Arm arm in Arms)
+        {
+            infos.Add(new ValidatorArmInfo(arm.Name, arm.Group, arm.Graph));
+        }
+
+        return infos;
+    }
+
+    /// <summary>
+    /// Runs the arms <paramref name="selected"/> marks (all of them when it is null), each timed and
+    /// with its own issue list. Unlike <see cref="Run"/> it does not feed <see cref="Invariant"/>: the
+    /// caller decides how a result is reported, so the headless gate prints an issue once.
+    /// </summary>
+    public static List<ValidatorArmResult> RunArms(bool[]? selected = null)
+    {
+        var results = new List<ValidatorArmResult>(Arms.Length);
+        for (int i = 0; i < Arms.Length; i++)
+        {
+            if (selected != null && !selected[i])
+            {
+                continue;
+            }
+
+            Arm arm = Arms[i];
+            var issues = new List<string>();
+            var clock = System.Diagnostics.Stopwatch.StartNew();
+            arm.Check(issues);
+            results.Add(new ValidatorArmResult(arm.Name, arm.Group, clock.ElapsedMilliseconds, issues));
+        }
+
+        return results;
+    }
+
+    private static void CollectCoreIssues(List<string> issues) => Collect(issues, graph: false);
+
+    private static void Collect(List<string> issues, bool graph)
+    {
+        foreach (Arm arm in Arms)
+        {
+            if (arm.Graph == graph)
+            {
+                arm.Check(issues);
+            }
+        }
     }
 
 
@@ -3154,14 +3219,7 @@ public static class ContentValidator
         }
     }
 
-    private static void CollectGraphIssues(List<string> issues)
-    {
-        ValidateDialogueReachability(issues);
-        ValidateStoryFlags(issues);
-        ValidateQuestCompletability(issues);
-        ValidateQuestCompletionFlagsDoNotSelfGate(issues);
-        ValidatePrerequisiteCycles(issues);
-    }
+    private static void CollectGraphIssues(List<string> issues) => Collect(issues, graph: true);
 
     private static string Report(List<string> issues, string okSummary)
     {

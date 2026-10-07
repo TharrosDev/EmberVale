@@ -352,7 +352,7 @@ internal sealed class StoryPlaythrough
                 return false;
             }
 
-            Core.Diagnostics.Log.Info($"story: [{_plan.Name}] {questId} done in {(Time.GetTicksMsec() - began) / 1000.0:0.0} s");
+            HeadlessStory.Played(_plan.Name, questId, (Time.GetTicksMsec() - began) / 1000.0);
 
             Completed.Add(questId);
             await HeadlessLifecycle.Frames(_root, 3);

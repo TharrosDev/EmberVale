@@ -54,6 +54,13 @@ public readonly record struct ConsignQuote(string Shop, int Net, int Days)
     public bool Has => !string.IsNullOrEmpty(Shop);
 }
 
+/// <summary>One line of the arbitrage table: buy <see cref="Item"/> at <see cref="From"/>, sell it at
+/// <see cref="To"/>.</summary>
+public readonly record struct ArbitrageRow(string Item, string From, int Buy, string To, int Sell)
+{
+    public int Margin => Sell - Buy;
+}
+
 public static class EconomyReport
 {
     /// <summary>How many routes the table prints. Anything past this is noise: the tail is the same
@@ -90,6 +97,25 @@ public static class EconomyReport
     /// </summary>
     public static string Arbitrage(int limit = DefaultLimit)
     {
+        List<Route> routes = SortedRoutes();
+        return ArbitrageText(routes, limit);
+    }
+
+    /// <summary>The rows behind <see cref="Arbitrage"/>, best margin first: the same table as data,
+    /// for <c>--economy --json</c> and a before/after diff of a tuning change.</summary>
+    public static List<ArbitrageRow> ArbitrageRows()
+    {
+        var rows = new List<ArbitrageRow>();
+        foreach (Route route in SortedRoutes())
+        {
+            rows.Add(new ArbitrageRow(route.ItemName, route.From, route.Buy, route.To, route.Sell));
+        }
+
+        return rows;
+    }
+
+    private static List<Route> SortedRoutes()
+    {
         var routes = new List<Route>();
 
         foreach (KeyValuePair<string, ItemResource> pair in ItemDatabase.All)
@@ -108,7 +134,11 @@ public static class EconomyReport
         }
 
         routes.Sort((a, b) => b.Margin.CompareTo(a.Margin));
+        return routes;
+    }
 
+    private static string ArbitrageText(List<Route> routes, int limit)
+    {
         var text = new StringBuilder();
         text.AppendLine("=== Embervale arbitrage — buy low, sell high ===");
         text.AppendLine($"{routes.Count} tradeable goods across {ShopDatabase.All.Count} shops. " +
