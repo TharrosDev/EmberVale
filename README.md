@@ -66,10 +66,12 @@ The export needs Godot's 4.7.1 .NET export templates installed; `Embervale.exe -
 smoke-tests the result.
 
 Controls: `WASD` move · mouse look · `Shift` sprint · `Space` jump · `Ctrl` dodge · `LMB` attack ·
-`RMB` block · `Q` cast · `F` cycle spell · middle mouse lock-on · `E` interact · `V` swap view ·
-`I` inventory · `J` journal · `M` map · `B` bestiary · `C` party order · `Y` mount · `1`–`5` hotbar ·
-`F5`/`F9` quick save/load · `Esc` pause. A gamepad plays the whole game. Developer builds add `F1`
-(console), `F3` (debug overlay) and `F4` (profiler).
+`RMB` block · `Q` cast · hold `F` spell wheel, tap `F` previous spell · middle mouse lock-on ·
+`E` interact · `V` swap view · `T` spellbook · `I` inventory · `J` journal · `M` map · `B` bestiary ·
+`C` party order · `Y` mount · `1`–`5` hotbar · `F5`/`F9` quick save/load · `Esc` pause. A gamepad
+plays the whole game: `RB` casts, holding `LB` opens the spell wheel on the right stick and a tap of
+`LB` swaps back to the previous spell. Developer builds add `F1` (console), `F3` (debug overlay) and
+`F4` (profiler).
 
 ## Documentation
 

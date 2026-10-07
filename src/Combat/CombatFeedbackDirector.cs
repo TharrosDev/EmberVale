@@ -16,7 +16,8 @@ namespace Embervale.Combat;
 /// target, and at the end of the frame — once every event of that resolution has arrived, in whatever
 /// order — publishes a single <see cref="HitConfirmedEvent"/> that hit-stop, the screen flash, floating
 /// numbers, the mesh lurch and the damage-direction arcs all read. It then spawns the spark and
-/// publishes the positional sound for that outcome (<see cref="CombatFx"/>).
+/// publishes the positional sound for that outcome (<see cref="CombatFx"/>), except for a spell
+/// that landed, whose sound is the audio director's.
 ///
 /// <para>Presentation only: nothing here feeds back into a rule. Owns the effect pool for its
 /// lifetime.</para>
@@ -53,9 +54,6 @@ public partial class CombatFeedbackDirector : Node
     {
         _pool = new NodePool<ImpactEffect>(() => new ImpactEffect { Released = Reclaim }, prewarm: 6);
 
-        // The spell flashes share this director's lifetime: it is the session's one owner of
-        // short-lived combat effects, so their pool opens and closes with it.
-        Magic.SpellFlash.OpenPool();
         EventBus? bus = EventBus.Instance;
         bus?.Subscribe<DamageDealtEvent>(OnDamage);
         bus?.Subscribe<EntityStaggeredEvent>(OnStaggered);
@@ -80,7 +78,6 @@ public partial class CombatFeedbackDirector : Node
         bus?.Unsubscribe<Magic.SpellImpactEvent>(OnSpellHit);
         _pending.Clear();
         _pool?.Clear();
-        Magic.SpellFlash.ClosePool();
     }
 
     private void Reclaim(ImpactEffect effect) => _pool.Return(effect);
@@ -249,6 +246,14 @@ public partial class CombatFeedbackDirector : Node
         (GetTree().CurrentScene ?? (Node)GetTree().Root).AddChild(effect);
         effect.GlobalPosition = point;
         effect.Launch(new Color(spark.R, spark.G, spark.B), spark.Scale, spark.Ring);
+
+        // A landed spell already has its school's impact cue (the audio director plays it off
+        // SpellImpactEvent); the melee hit on top of it would be two sounds for one blow. Asked of
+        // the event, not of the kind: the kind is also inferred from the attacker's last action.
+        if (!CombatFx.PlaysHitCue(outcome, spellImpact: p.SpellWeight >= 0f))
+        {
+            return;
+        }
 
         CuePlan cue = CombatFx.Plan(outcome, kind);
         EventBus.Instance?.Publish(new SoundCueRequestedEvent(cue.CueId, point, cue.VolumeDb, cue.PitchScale));

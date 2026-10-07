@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Embervale.Appearance;
 using Embervale.Combat;
 using Embervale.Core;
 using Embervale.Core.Events;
@@ -21,9 +22,11 @@ namespace Embervale.Player;
 /// only things that differ are where the camera sits and that third person aims from the camera
 /// rather than the head so the crosshair still means something.</para>
 ///
-/// <para><b>First person is TRUE first person.</b> The camera rides the body's own head bone and the
-/// body stays visible; you see its arms, its weapon and its equipment because they are the same arms,
-/// weapon and equipment the world sees.</para>
+/// <para><b>First person is TRUE first person.</b> The body stays visible; you see its arms, its
+/// weapon and its equipment because they are the same arms, weapon and equipment the world sees. The
+/// eye sits where the head RESTS, on a neck that pitches with the look, and takes only a little of
+/// the head's animated travel (<see cref="CameraRigMath.EyeLocal"/>); the head itself is cut out of
+/// the body by its shader while the camera is inside it, and still casts its shadow.</para>
 ///
 /// <para><b>This component is the only writer of the camera's position, rotation and field of view.</b>
 /// Each frame it composes: the mode blend (a spring, so a toggle pressed mid-swap turns around
@@ -67,21 +70,20 @@ public partial class PlayerCameraRig : EntityComponent
     private const float PunchRiseSeconds = 0.05f;
     private const float PunchFallSeconds = 0.3f;
 
-    /// <summary>Seconds of smoothing on the eye anchor. The head bone is animated, so following it
-    /// raw hands the player every footfall and every swing as camera shake.</summary>
-    private const float EyeSmoothSeconds = 0.06f;
+    /// <summary>Seconds of smoothing on the head's animated travel before the eye takes its share
+    /// of it. The head bone is animated, so following it raw hands the player every footfall and
+    /// every swing as camera shake.</summary>
+    private const float EyeSmoothSeconds = 0.1f;
 
-    /// <summary>How far the eye sits in front of the head bone's origin, in metres. Big enough that
-    /// the skull falls behind the camera's near plane and clips away on its own — which is why there
-    /// is no head-hiding code anywhere in this file.</summary>
-    private const float EyeForward = 0.14f;
+    /// <summary>Seconds of smoothing on the eye's rest anchor.</summary>
+    private const float RestSmoothSeconds = 0.06f;
 
-    /// <summary>How far above the head bone's origin the eye sits.</summary>
-    private const float EyeRise = 0.04f;
+    /// <summary>Seconds the eye takes to settle into (and out of) the seated pose on a mount.</summary>
+    private const float MountedEyeSeconds = 0.25f;
 
-    /// <summary>The furthest the eye may be dragged from the fixed pivot. A clip that throws the
-    /// head — a knockdown, a death — must not throw the camera with it.</summary>
-    private const float MaxEyeOffset = 0.45f;
+    /// <summary>How often, while the head is cut out, the head socket is looked over again for a
+    /// helm put on since (seconds).</summary>
+    private const double HeadAttachmentRescanSeconds = 0.5d;
 
     /// <summary>0 = first person, 1 = third person, sprung toward <see cref="_modeTarget"/>.</summary>
     private float _modeBlend;
@@ -135,8 +137,43 @@ public partial class PlayerCameraRig : EntityComponent
 
     private Skeleton3D? _skeleton;
     private int _headBone = -1;
+    private Vector3 _headRest;
+    private Vector3 _restHead;
     private Vector3 _eyeLocal;
+    private Vector3 _eyeDelta;
+    private float _mountedEye;
     private bool _eyeSeeded;
+
+    /// <summary>The third-person seat and the layers' nudge from the last <see cref="Tick"/>, kept so
+    /// the per-frame eye update can rewrite the camera between ticks.</summary>
+    private Vector3 _third;
+    private CameraNudge _nudge = CameraNudge.Identity;
+
+    /// <summary>True while <see cref="_Process"/> is advancing the eye every drawn frame, which is
+    /// the normal case in play. <see cref="Tick"/> then leaves the eye's smoothing alone, so it is
+    /// stepped exactly once per frame rather than once per frame and again per physics tick.</summary>
+    private bool _frameDriven;
+
+    /// <summary>The body's own surfaces (the ones drawn with the player-body shader), the pieces
+    /// hung on the head socket with the shadow setting each had, and whether the head is currently
+    /// cut out.</summary>
+    private readonly List<MeshInstance3D> _bodySurfaces = new();
+    private readonly Dictionary<GeometryInstance3D, GeometryInstance3D.ShadowCastingSetting> _headPieces = new();
+    private bool _headHidden;
+    private double _headRescan;
+
+    // Seconds since the player last attacked, guarded or held a lock, and whether what the hands
+    // hold is drawn in first person because of it (CameraRigMath.WeaponUp). Starts lowered.
+    private float _sinceFighting = float.PositiveInfinity;
+    private bool _weaponUp;
+    private Combat.Actions.CharacterActionComponent? _actions;
+
+    // The body shader's view_fade as last written to the surfaces; NaN until the first write, and
+    // again whenever the surfaces are collected afresh, so new ones are always given it.
+    private static readonly StringName ViewFadeParameter = "view_fade";
+    private Vector4 _viewFade = new(float.NaN, 0f, 0f, 0f);
+    private int _leftHandBone = -1;
+    private int _rightHandBone = -1;
     private Vector3 _cameraRest = Vector3.Zero;
     private float _pitch;
     private PlayerPhysicsQueries? _queries;
@@ -194,7 +231,31 @@ public partial class PlayerCameraRig : EntityComponent
         EventBus.Instance?.Unsubscribe<SettingsAppliedEvent>(OnSettingsApplied);
         EventBus.Instance?.Unsubscribe<DialogueStartedEvent>(OnDialogueStarted);
         EventBus.Instance?.Unsubscribe<DialogueEndedEvent>(OnDialogueEnded);
+        RestoreHeadPieces();
+        _bodySurfaces.Clear();
+        _skeleton = null;
     }
+
+    /// <summary>The look's pitch in radians, positive up. Read by the camera probe.</summary>
+    public float Pitch => _pitch;
+
+    /// <summary>Whether the player's own head is currently cut out of the body (and the pieces on
+    /// its head socket drawn as shadows only). Read by the camera probe.</summary>
+    public bool HeadHidden => _headHidden;
+
+    /// <summary>World-space centre and radius of the head cut-out as last computed. Read by the
+    /// camera probe.</summary>
+    public Vector3 HeadSphereCentre { get; private set; }
+
+    public float HeadSphereRadius => CameraRigMath.HeadSphereRadius;
+
+    /// <summary>Radius of the cut-out round the camera itself as last set, zero while the head is
+    /// drawn. Read by the camera probe.</summary>
+    public float EyeSphereRadius { get; private set; }
+
+    /// <summary>How far out to third person the camera is: 0 at the first-person eye, 1 at the
+    /// over-the-shoulder seat. Read by what only belongs to one view (the first-person arm).</summary>
+    public float ThirdPersonBlend => _modeBlend;
 
     /// <summary>True from a conversation opening to it closing. Set by the dialogue events rather
     /// than read off the panel, so the rig does not know the UI exists. Public so the camera probe
@@ -223,20 +284,47 @@ public partial class PlayerCameraRig : EntityComponent
     /// Fed <see cref="CameraInputs.Idle"/> because the router is not reading the player: the last
     /// frame's sprint or fight would otherwise keep framing and bobbing the camera through a
     /// conversation, and the profile eases back to exploration instead.
+    ///
+    /// <para>In ordinary play it does the other per-frame job: the first-person eye. The router ticks
+    /// the rig at the physics rate, but the body is animated and the look is turned every drawn
+    /// frame, so an eye placed only on physics ticks stepped against both. The eye's share of the
+    /// head's travel, the camera's seat for the current pitch and the head cut-out are redone here
+    /// each frame; the sweeps, the profile and the mode blend stay on the tick.</para>
     /// </summary>
     public override void _Process(double delta)
     {
-        if (!CameraRigMath.TicksWhilePaused(
-                DialogueOpen,
-                GetTree().Paused,
-                GameManager.Instance is { IsPlaying: true }) ||
-            !GodotObject.IsInstanceValid(Camera) || !GodotObject.IsInstanceValid(CameraPivot))
+        bool playing = GameManager.Instance is { IsPlaying: true };
+        bool paused = GetTree().Paused;
+        if (!GodotObject.IsInstanceValid(Camera) || !GodotObject.IsInstanceValid(CameraPivot))
         {
+            _frameDriven = false;
             return;
         }
 
-        Feed(CameraInputs.Idle);
-        Tick(delta);
+        if (CameraRigMath.TicksWhilePaused(DialogueOpen, paused, playing))
+        {
+            _frameDriven = false;
+            Feed(CameraInputs.Idle);
+            Tick(delta);
+            return;
+        }
+
+        // The same condition the input router ticks under. Outside it the injected nodes may be on
+        // their way out (a world teardown, a save/load rebuild) and are not touched.
+        if (!playing || paused)
+        {
+            _frameDriven = false;
+            return;
+        }
+
+        _frameDriven = true;
+        if (_modeBlend < 1f)
+        {
+            Vector3 eye = EyeOffset((float)delta, advance: true) * _eyeGuard;
+            ApplyCameraRest(CameraRigMath.Blend(eye, _third, _modeBlend), _nudge);
+        }
+
+        UpdateHeadCutout(delta);
     }
 
     /// <summary>What the input router read off the player this frame. Stored, not acted on: the rig
@@ -326,6 +414,7 @@ public partial class PlayerCameraRig : EntityComponent
         _profile = CameraProfile.Blend(_profile, target, CameraRigMath.Damp(dt, _profileSeconds));
 
         CameraNudge nudge = SampleLayers(dt);
+        UpdateWeaponUp(dt);
 
         Vector3 third = UpdateSeat(dt, nudge.DistanceScale);
 
@@ -343,10 +432,35 @@ public partial class PlayerCameraRig : EntityComponent
         UpdatePitch(dt);
         UpdateFieldOfView(dt, nudge.FovOffset);
 
-        // The eye anchor crossfade: the head-bone seat at blend 0, the fixed-pivot seat at 1. Both ends
-        // are continuous in the blend, so a swap in either direction, or reversed halfway, has
-        // nothing to pop.
-        ApplyCameraRest(CameraRigMath.Blend(EyeOffset(dt), third, _modeBlend), nudge);
+        // The eye anchor crossfade: the first-person eye at blend 0, the fixed-pivot seat at 1. Both
+        // ends are continuous in the blend, so a swap in either direction, or reversed halfway, has
+        // nothing to pop. The eye's smoothing is stepped here only when no drawn frame is doing it
+        // (a dialogue's paused tick, a probe driving the rig by hand).
+        _third = third;
+        _nudge = nudge;
+        Vector3 eye = EyeOffset(dt, advance: !_frameDriven);
+        ApplyCameraRest(CameraRigMath.Blend(eye * GuardEye(dt), third, _modeBlend), nudge);
+        if (!_frameDriven)
+        {
+            UpdateHeadCutout(delta);
+        }
+    }
+
+    /// <summary>Tracks whether what the hands hold is up for a fight. A change asks the head cut-out
+    /// to look at the held pieces again at once, so a swing never starts without its blade.</summary>
+    private void UpdateWeaponUp(float dt)
+    {
+        // Any action at all, and a held charge before it becomes one: the camera's own "in combat"
+        // ends when a swing can be cancelled, which is before the blade has stopped moving.
+        _actions ??= Entity?.GetComponent<Combat.Actions.CharacterActionComponent>();
+        bool acting = _inputs.InCombat || _actions is { Current: not null } || _actions is { IsCharging: true };
+        _sinceFighting = acting || _inputs.LockedOn ? 0f : _sinceFighting + dt;
+        bool up = CameraRigMath.WeaponUp(acting, _inputs.LockedOn, _sinceFighting);
+        if (up != _weaponUp)
+        {
+            _weaponUp = up;
+            _headRescan = 0d;
+        }
     }
 
     /// <summary>Finds the entity's camera layers, re-finding them when the component set changes.
@@ -499,6 +613,14 @@ public partial class PlayerCameraRig : EntityComponent
     {
         _pitchLimit = CameraRigMath.PitchLimit(_profile.PitchLimit, _modeBlend);
         float eased = CameraRigMath.EasePitchInto(_pitch, _pitchLimit, dt);
+
+        // Up is held shorter than down in third person; eased the same way, from wherever it is.
+        float up = CameraRigMath.LookUpLimit(_pitchLimit, _modeBlend);
+        if (eased > up)
+        {
+            float toward = Mathf.Lerp(eased, up, CameraRigMath.Damp(dt, 0.15f));
+            eased = toward - up < 0.001f ? up : toward;
+        }
         if (eased != _pitch)
         {
             _pitch = eased;
@@ -524,58 +646,76 @@ public partial class PlayerCameraRig : EntityComponent
     }
 
     /// <summary>
-    /// Where the eye sits relative to the pivot, in pivot space — the head bone, smoothed, clamped,
-    /// and kept out of walls.
+    /// Where the eye sits relative to the pivot, in the pivot's own (pitched) space.
     ///
-    /// ⚠️ <b>Position only. The head's ROTATION is deliberately ignored.</b> Taking it would hand
+    /// <para>⚠️ <b>The eye is anchored to where the head RESTS, not to where the animation has put
+    /// it.</b> It used to ride the animated head bone, smoothed, and that was two of the owner's
+    /// reports at once: a sprint leans the head forward and bobs it, so the view bobbed and lurched
+    /// with every stride, and the smoothing let the skull run ahead of the camera and into frame.
+    /// Now the anchor is the head's rest position in the body's frame, the look's pitch swings the
+    /// eye about the neck, and only a fraction of the head's animated travel is followed
+    /// (<see cref="CameraRigMath.EyeFollow"/>): none of it under Reduced Motion, all of it in the
+    /// saddle, where the seated pose is where the head is.</para>
+    ///
+    /// <para>⚠️ <b>Position only. The head's ROTATION is deliberately ignored.</b> Taking it would hand
     /// the player every head turn in every clip as an involuntary camera movement, which is the
     /// single fastest way to make a first-person game unplayable. Aim stays exactly where the player
-    /// pointed it; only the viewpoint rides the body.
+    /// pointed it.</para>
+    ///
+    /// <paramref name="advance"/> steps the smoothing by <paramref name="dt"/>; without it the eye
+    /// is re-seated for the current pitch from the smoothing as it stands.
     /// </summary>
-    private Vector3 EyeOffset(float dt)
+    private Vector3 EyeOffset(float dt, bool advance)
     {
-        if (_skeleton == null || _headBone < 0 || CameraPivot == null || _modeBlend >= 1f)
+        if (_skeleton == null || _headBone < 0 || CameraPivot == null || _modeBlend >= 1f ||
+            !GodotObject.IsInstanceValid(_skeleton) || !_skeleton.IsInsideTree())
         {
             _eyeSeeded = false;
             return Vector3.Zero;
         }
 
-        Transform3D head = _skeleton.GlobalTransform * _skeleton.GetBoneGlobalPose(_headBone);
-        Vector3 forward = -CameraPivot.GlobalBasis.Z;
-        Vector3 world = head.Origin + (forward * EyeForward) + (Vector3.Up * EyeRise);
-        Vector3 target = CameraPivot.ToLocal(world);
-
-        if (target.Length() > MaxEyeOffset)
-        {
-            target = target.Normalized() * MaxEyeOffset;
-        }
+        // Into the body's frame, which is the pivot's parent's. The smoother offsets the skeleton
+        // and the pivot by the same residual between physics ticks, so it cancels out of both.
+        Transform3D toBody = Entity!.Body.GlobalTransform.AffineInverse() * _skeleton.GlobalTransform;
+        Vector3 restHead = (toBody * _headRest) - CameraPivot.Position;
+        Vector3 animated = toBody.Basis * (_skeleton.GetBoneGlobalPose(_headBone).Origin - _headRest);
 
         // Seeded rather than lerped from zero, so entering first person does not swoop from the
-        // pivot up to the head over the first few frames.
+        // rest pose to wherever the clip has the head over the first few frames.
         if (!_eyeSeeded)
         {
-            _eyeLocal = target;
+            _restHead = restHead;
+            _eyeDelta = animated;
+            _mountedEye = _inputs.Mounted ? 1f : 0f;
             _eyeGuard = 1f;
             _eyeClear = 0f;
             _eyeSeeded = true;
         }
-        else
+        else if (advance)
         {
-            _eyeLocal = _eyeLocal.Lerp(target, CameraRigMath.Damp(dt, EyeSmoothSeconds));
+            // The rest anchor only moves when something moves the whole mesh under the pivot (a hit's
+            // lurch, the step up into a saddle), and that is eased rather than taken in one frame.
+            _restHead = _restHead.Lerp(restHead, CameraRigMath.Damp(dt, RestSmoothSeconds));
+            _eyeDelta = _eyeDelta.Lerp(animated, CameraRigMath.Damp(dt, EyeSmoothSeconds));
+            _mountedEye = Mathf.Lerp(
+                _mountedEye, _inputs.Mounted ? 1f : 0f, CameraRigMath.Damp(dt, MountedEyeSeconds));
         }
 
-        return _eyeLocal * GuardEye(dt);
+        Vector2 follow = CameraRigMath.EyeFollow(_settings?.Current.ReducedMotion ?? false, _mountedEye);
+        _eyeLocal = CameraRigMath.EyeLocal(_restHead, _pitch, CameraRigMath.FollowDelta(_eyeDelta, follow));
+        return _eyeLocal;
     }
 
     /// <summary>
     /// The first-person near-plane guard: how much of the eye's offset from the pivot the way to it
     /// leaves clear. A head that leans into a wall (a lunge, a stagger against a corner) would put the
     /// near plane through it, so the eye is held back — pulled in at once, eased out again — exactly
-    /// as the third-person seat is.
+    /// as the third-person seat is. It sweeps, so it runs on the physics tick only; the per-frame eye
+    /// update reuses the fraction it left.
     /// </summary>
     private float GuardEye(float dt)
     {
-        if (_queries == null || CameraPivot == null || _eyeLocal.LengthSquared() < 0.0004f)
+        if (_queries == null || CameraPivot == null || !_eyeSeeded || _eyeLocal.LengthSquared() < 0.0004f)
         {
             _eyeGuard = 1f;
             return 1f;
@@ -601,7 +741,182 @@ public partial class PlayerCameraRig : EntityComponent
         if (_skeleton != null)
         {
             _headBone = Animation.EquipmentSockets.Resolve(_skeleton, Animation.EquipmentSocket.Head);
+            if (_headBone >= 0)
+            {
+                _headRest = _skeleton.GetBoneGlobalRest(_headBone).Origin;
+            }
         }
+
+        _leftHandBone = HandBone(right: false);
+        _rightHandBone = HandBone(right: true);
+
+        _bodySurfaces.Clear();
+        PlayerAppearance.CollectBodySurfaces(visual, _bodySurfaces);
+        _viewFade = new Vector4(float.NaN, 0f, 0f, 0f);
+    }
+
+    private int HandBone(bool right)
+    {
+        if (_skeleton == null)
+        {
+            return -1;
+        }
+
+        string name = Animation.HumanoidBones.FindHand(_skeleton, right);
+        return name.Length > 0 ? _skeleton.FindBone(name) : -1;
+    }
+
+    /// <summary>Tells the body shader how to thin the body out near the camera
+    /// (<see cref="CameraRigMath.ViewFade"/>). Written only when it changes.</summary>
+    private void ApplyViewFade()
+    {
+        Vector4 fade = CameraRigMath.ViewFade(_headHidden, _modeBlend);
+        if (fade == _viewFade)
+        {
+            return;
+        }
+
+        _viewFade = fade;
+        for (int i = 0; i < _bodySurfaces.Count; i++)
+        {
+            if (GodotObject.IsInstanceValid(_bodySurfaces[i]))
+            {
+                _bodySurfaces[i].SetInstanceShaderParameter(ViewFadeParameter, fade);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Cuts the player's own head out of the body while the camera is inside it, and puts it back
+    /// when the camera leaves.
+    ///
+    /// <para>The body shader discards every fragment inside a sphere round the animated head, in
+    /// every pass but the shadow pass, so the head is gone from the view and its shadow is still on
+    /// the ground. The sphere follows the head bone rather than the eye: at a sprint the head leans
+    /// well ahead of where the eye is anchored, and a cut-out left behind at the eye is exactly how
+    /// the skull got into frame. Pieces on the head socket (a helm) are not drawn with that shader,
+    /// so they are switched to shadows-only for the same span and given their own setting back
+    /// after.</para>
+    ///
+    /// <para>It goes by the camera's distance from the head (<see cref="CameraRigMath.HeadHidden"/>),
+    /// not by the view mode, so a swap shows the head as the camera leaves it and a third-person
+    /// camera a wall has squeezed into the skull hides it. Fully in first person it stays hidden
+    /// further out, because looking down leans the eye out ahead of the head.</para>
+    ///
+    /// <para>A second sphere goes round the camera itself, sized from its near plane and field of
+    /// view (<see cref="CameraRigMath.EyeSphereRadius"/>). The head's sphere follows the head and the
+    /// eye is anchored to where the head rests, so the two part company in every clip that moves the
+    /// head; the eye's own sphere is what guarantees nothing of the body is ever nearer the camera
+    /// than its near plane, wherever a clip has put the collar or a shoulder.</para>
+    /// </summary>
+    private void UpdateHeadCutout(double delta)
+    {
+        if (_skeleton == null || _headBone < 0 || Camera == null ||
+            !GodotObject.IsInstanceValid(_skeleton) || !_skeleton.IsInsideTree())
+        {
+            return;
+        }
+
+        ApplyViewFade();
+
+        // Well out behind the body and not hiding anything: nothing to measure.
+        if (!_headHidden && _modeBlend >= 1f && _cameraRest.LengthSquared() > 1f)
+        {
+            return;
+        }
+
+        Basis body = Entity!.Body.GlobalBasis;
+        Vector3 head = (_skeleton.GlobalTransform * _skeleton.GetBoneGlobalPose(_headBone)).Origin;
+        HeadSphereCentre = CameraRigMath.HeadSphereCentre(head, body.Y.Normalized(), -body.Z.Normalized());
+
+        Vector3 eye = Camera.GlobalPosition;
+        bool hidden = CameraRigMath.HeadHidden(_headHidden, eye.DistanceTo(HeadSphereCentre), _modeBlend);
+        if (hidden || _headHidden)
+        {
+            EyeSphereRadius = hidden
+                ? CameraRigMath.EyeSphereRadius(Camera.Near, Camera.Fov, ViewAspect(), Pitch)
+                : 0f;
+            PlayerAppearance.SetHeadCutout(
+                _bodySurfaces, HeadSphereCentre, hidden ? CameraRigMath.HeadSphereRadius : 0f);
+            PlayerAppearance.SetEyeCutout(_bodySurfaces, eye, EyeSphereRadius);
+        }
+
+        _headRescan -= delta;
+        if (hidden != _headHidden || (hidden && _headRescan <= 0d))
+        {
+            _headHidden = hidden;
+            _headRescan = HeadAttachmentRescanSeconds;
+            RestoreHeadPieces();
+            if (hidden)
+            {
+                HideHeadPieces();
+            }
+        }
+    }
+
+    /// <summary>Width over height of what the camera draws into, or 16:9 where there is no window
+    /// to measure (a headless probe).</summary>
+    private float ViewAspect()
+    {
+        Vector2 size = Camera?.GetViewport()?.GetVisibleRect().Size ?? Vector2.Zero;
+        return size.X > 1f && size.Y > 1f ? size.X / size.Y : 16f / 9f;
+    }
+
+    /// <summary>Switches everything hung on the skeleton that is not in a hand to shadows-only, and
+    /// what the hands hold too while it is not up for a fight, remembering what each piece was set
+    /// to (<see cref="CameraRigMath.HiddenInFirstPerson(int, int, int, bool)"/>). A
+    /// piece is on a bone when its mount (the node <c>EquipmentPresentationComponent</c> parents to
+    /// the skeleton) follows that bone.</summary>
+    private void HideHeadPieces()
+    {
+        if (_skeleton == null || !GodotObject.IsInstanceValid(_skeleton))
+        {
+            return;
+        }
+
+        foreach (Node child in _skeleton.GetChildren())
+        {
+            // -2 for what is not a mount at all (the mesh, a modifier): left alone.
+            int bone = child switch
+            {
+                BoneAttachment3D attachment => _skeleton.FindBone(attachment.BoneName),
+                Animation.SocketFollower follower => follower.BoneIndex,
+                _ => -2,
+            };
+
+            if (bone != -2 && CameraRigMath.HiddenInFirstPerson(bone, _leftHandBone, _rightHandBone, _weaponUp))
+            {
+                HidePieces(child);
+            }
+        }
+    }
+
+    private void HidePieces(Node node)
+    {
+        if (node is GeometryInstance3D geometry &&
+            geometry.CastShadow != GeometryInstance3D.ShadowCastingSetting.ShadowsOnly)
+        {
+            _headPieces[geometry] = geometry.CastShadow;
+            geometry.CastShadow = GeometryInstance3D.ShadowCastingSetting.ShadowsOnly;
+        }
+
+        foreach (Node child in node.GetChildren())
+        {
+            HidePieces(child);
+        }
+    }
+
+    private void RestoreHeadPieces()
+    {
+        foreach ((GeometryInstance3D geometry, GeometryInstance3D.ShadowCastingSetting setting) in _headPieces)
+        {
+            if (GodotObject.IsInstanceValid(geometry))
+            {
+                geometry.CastShadow = setting;
+            }
+        }
+
+        _headPieces.Clear();
     }
 
     private static Skeleton3D? FindSkeleton(Node node)
@@ -627,7 +942,17 @@ public partial class PlayerCameraRig : EntityComponent
     /// far the current context lets the player look up and down.</summary>
     public void ApplyPitchStep(float step, bool invertY)
     {
+        float before = _pitch;
         _pitch = SettingsMath.ApplyPitch(_pitch, step, invertY, _pitchLimit);
+
+        // The one-sided limit on looking up: a step may not carry the look past it, and a look
+        // already past it (the swap out to third person is still easing it down) may not go higher.
+        float up = CameraRigMath.LookUpLimit(_pitchLimit, _modeBlend);
+        if (_pitch > up)
+        {
+            _pitch = Mathf.Max(up, Mathf.Min(_pitch, before));
+        }
+
         if (CameraPivot != null)
         {
             CameraPivot.Rotation = new Vector3(_pitch, 0f, 0f);
@@ -674,7 +999,28 @@ public partial class PlayerCameraRig : EntityComponent
         if (Camera != null)
         {
             Camera.Position = rest + nudge.Offset;
-            Camera.Rotation = nudge.Euler;
+            Camera.Rotation = nudge.Euler + new Vector3(-FramingTilt() * _modeBlend, 0f, 0f);
         }
+    }
+
+    /// <summary>
+    /// The third-person seat's downward tilt (<see cref="CameraRigMath.FramingTilt"/>), from the
+    /// player's field of view and distance settings as the fight framing shapes them: that is the
+    /// closest ordinary framing on foot, so feet that clear the hotbar there clear it walking and
+    /// sprinting too. Fades out with the view blend, so first person is untouched.
+    /// </summary>
+    private float FramingTilt()
+    {
+        if (_modeBlend <= 0f || CameraPivot == null)
+        {
+            return 0f;
+        }
+
+        Settings.Settings? s = _settings?.Current;
+        CameraProfile fight = CameraProfile.For(CameraContext.Combat);
+        return CameraRigMath.FramingTilt(
+            (s?.FieldOfView ?? 75f) + fight.FovOffset,
+            (s?.ThirdPersonDistance ?? PlayerFactory.ThirdPersonBackDistance) * fight.DistanceScale,
+            CameraPivot.Position.Y + PlayerFactory.ThirdPersonRise + fight.RiseOffset);
     }
 }

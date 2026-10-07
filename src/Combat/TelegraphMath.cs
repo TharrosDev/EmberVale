@@ -34,6 +34,37 @@ public static class TelegraphMath
         return 0.25f + (0.55f * x);
     }
 
+    /// <summary>Opacity of the warning's see-through body at <paramref name="t"/>: about a third at the
+    /// cast moment, so the ground and whoever stands on it stay readable through it. Under High
+    /// Contrast it is a flat, much more solid wash.</summary>
+    public static float FillAlpha(float t, bool highContrast)
+    {
+        float x = Math.Clamp(t, 0f, 1f);
+        return highContrast ? 0.62f : 0.24f + (0.14f * x);
+    }
+
+    /// <summary>Opacity of the warning's rim at <paramref name="t"/>: always well above the body, and
+    /// solid by the blow. Solid throughout under High Contrast.</summary>
+    public static float RimAlpha(float t, bool highContrast) =>
+        highContrast ? 1f : Math.Min(1f, RingAlpha(t) + 0.2f);
+
+    /// <summary>Width of the bright rim on the ground, in metres, where the band has room for it.</summary>
+    public const float RimMetres = 0.3f;
+
+    /// <summary>The share of a warning's band (inner edge to outer, <paramref name="bandMetres"/> wide
+    /// at full size) that is drawn as bright rim: <see cref="RimMetres"/> of it, never more than
+    /// <paramref name="most"/> (what a man-sized warning has always had) and never less than a fifth
+    /// of that, so the rim of the largest shape is still a line and not a hair.</summary>
+    public static float RimShare(float bandMetres, float most)
+    {
+        if (!(bandMetres > 0f) || !(most > 0f))
+        {
+            return Math.Max(most, 0f);
+        }
+
+        return Math.Clamp(RimMetres / bandMetres, most * 0.2f, most);
+    }
+
     /// <summary>A beat added to a parry window so the cue lights just before the guard has to go up,
     /// not at the last instant: roughly a fast human reaction.</summary>
     public const float ParryReactionLead = 0.08f;
@@ -66,10 +97,11 @@ public static class TelegraphMath
     public static float TimingRingScale(float t) => 1f - (0.75f * Math.Clamp(t, 0f, 1f));
 
     /// <summary>Opacity multiplier a class adds on top of <see cref="RingAlpha"/>: an unblockable pulses
-    /// (a warning that will not sit still), everything else is steady.</summary>
-    public static float ClassPulse(TelegraphClass cls, float seconds)
+    /// (a warning that will not sit still), everything else is steady, and so is an unblockable under
+    /// Reduced Motion (its thick filled shape still says what it is).</summary>
+    public static float ClassPulse(TelegraphClass cls, float seconds, bool motion = true)
     {
-        if (cls != TelegraphClass.Unblockable)
+        if (cls != TelegraphClass.Unblockable || !motion)
         {
             return 1f;
         }

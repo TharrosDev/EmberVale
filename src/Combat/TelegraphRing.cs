@@ -1,10 +1,13 @@
 using System.Collections.Generic;
+using Embervale.Core.Diagnostics;
+using Embervale.Core.Services;
+using Embervale.Settings;
 using Godot;
 
 namespace Embervale.Combat;
 
 /// <summary>
-/// The ground marking that warns a wind-up is coming (Phase 36C, with telegraph classes): a flat disc
+/// The ground marking that warns a wind-up is coming (Phase 36C, with telegraph classes): a flat shape
 /// at the attacker's feet that grows from nothing to full over the wind-up and vanishes when the
 /// window closes. Built the way <see cref="ImpactEffect"/> is — mesh and material once, re-armed per
 /// use — but it lives for as long as it is told to rather than a fixed lifetime, because the thing it
@@ -15,6 +18,14 @@ namespace Embervale.Combat;
 /// a parryable strike, and it whitens for the last beat when the guard should go up; a thick filled,
 /// pulsing ring is "do not guard, get out"; a fan is a wide sweep and shows which arc is dangerous.</para>
 ///
+/// <para><b>How it is inked.</b> Each shape is a flat mesh (<see cref="Arc"/>) drawn by
+/// <c>assets/shaders/fx/telegraph.gdshader</c>: a see-through body at about a third opacity, a brighter
+/// rim that shimmers, a lit part that sweeps to the outer edge as the blow arrives, and edges that fade
+/// out. The rim carries the class colour (what to do); the body carries the school of the spell being
+/// wound up when the owner knows it (<see cref="Tint"/>). High Contrast draws a flat solid body with a
+/// hard rim, and Reduced Motion holds the shimmer and the unblockable pulse still. The footprint and
+/// the timing are the mesh and <see cref="TelegraphMath"/>, exactly as before: only the ink changed.</para>
+///
 /// <b>Model-independent by construction.</b> The other telegraph in the game is an emissive flare
 /// on the body's material, which only exists if a creature has an authored model; the three dragons
 /// greybox from their hit zones and so flashed nothing at all. A ring is drawn from geometry this
@@ -23,23 +34,51 @@ namespace Embervale.Combat;
 /// </summary>
 public partial class TelegraphRing : Node3D
 {
-    /// <summary>How far above the feet the disc sits, so it does not z-fight with the ground.</summary>
+    /// <summary>How far above the feet the shape sits, so it does not z-fight with the ground.</summary>
     private const float Lift = 0.05f;
+
+    /// <summary>How far above the feet a ring sits. A little higher than a fan, because a ring is a
+    /// thin band and a rut can swallow it; no higher, because a flat shape that floats reads as a
+    /// footprint nearer the camera than the real one (0.14 m moved it a quarter of a metre at a
+    /// first-person eye three metres off).</summary>
+    private const float RingLift = 0.08f;
+
+    /// <summary>Inner radius of an ordinary ring, as a fraction of the outer.</summary>
+    private const float StandardInner = 0.78f;
+
+    /// <summary>Inner radius of a fan, as a fraction of the outer.</summary>
+    private const float FanInner = 0.25f;
+
+    /// <summary>Where the thick rim of an unblockable starts, as a fraction of the radius.</summary>
+    private const float UnblockableInner = 0.55f;
+
+    private const string ShaderPath = "res://assets/shaders/fx/telegraph.gdshader";
 
     private static readonly Color TimingColor = new(1.0f, 0.82f, 0.35f);
     private static readonly Color CueColor = new(1.0f, 0.97f, 0.85f);
     private static readonly Color DodgeColor = new(1.0f, 0.15f, 0.05f);
 
-    private static readonly Dictionary<int, ArrayMesh> SectorCache = new();
+    private static readonly StringName FillColorParam = "fill_color";
+    private static readonly StringName RimColorParam = "rim_color";
+    private static readonly StringName FillAlphaParam = "fill_alpha";
+    private static readonly StringName RimAlphaParam = "rim_alpha";
+    private static readonly StringName RimWidthParam = "rim_width";
+    private static readonly StringName ProgressParam = "progress";
+    private static readonly StringName InnerEdgeParam = "inner_edge";
+    private static readonly StringName SideEdgeParam = "side_edge";
+    private static readonly StringName MotionParam = "motion";
+    private static readonly StringName PlainParam = "plain";
 
-    private readonly MeshInstance3D _mesh;
-    private readonly StandardMaterial3D _material;
+    // The shape meshes and the shader, built once and shared by every ring. Arm used to allocate a
+    // new mesh, and so generate and upload its geometry, on every telegraphed wind-up.
+    private static readonly Dictionary<int, ArrayMesh> ArcCache = new();
+    private static Shader? _shader;
+    private static bool _shaderTried;
+
+    private readonly MeshInstance3D _shape;
+    private readonly Material _shapeMaterial;
     private readonly MeshInstance3D _timing;
-    private readonly StandardMaterial3D _timingMaterial;
-    private readonly MeshInstance3D _fill;
-    private readonly StandardMaterial3D _fillMaterial;
-    private readonly MeshInstance3D _fan;
-    private readonly StandardMaterial3D _fanMaterial;
+    private readonly Material _timingMaterial;
     private float _radius = 1f;
     private double _duration;
     private double _age;
@@ -47,6 +86,9 @@ public partial class TelegraphRing : Node3D
     private TelegraphClass _class;
     private float _parryWindow = 0.2f;
     private Color _base = Colors.White;
+    private Color _tint = Colors.White;
+    private bool _highContrast;
+    private bool _motion = true;
 
     /// <summary>
     /// Builds the geometry in the constructor rather than in <c>_Ready</c>, so the ring is usable the
@@ -61,44 +103,26 @@ public partial class TelegraphRing : Node3D
     /// </summary>
     public TelegraphRing()
     {
-        _material = MakeMaterial();
-        _mesh = new MeshInstance3D
+        // The one shape of the warning: a ring, a filled disc with a thick rim, or a fan. A band
+        // reads as a ring rather than a puddle, and leaves the creature visible inside it.
+        _shapeMaterial = MakeMaterial();
+        _shape = new MeshInstance3D
         {
-            // A torus reads as a ring rather than a puddle, and leaves the creature visible inside it.
-            Mesh = Torus(unblockable: false),
-            MaterialOverride = _material,
-            Position = new Vector3(0f, Lift, 0f),
+            Mesh = Arc(360f, StandardInner),
+            MaterialOverride = _shapeMaterial,
+            Position = new Vector3(0f, RingLift, 0f),
             Visible = false,
             CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
         };
 
         // Parryable: a thin gold ring that closes on the outer one, so contact is when it reaches the
-        // middle. Unblockable: a filled disc under a thick ring. Sweep: a fan in place of the ring.
+        // middle.
         _timingMaterial = MakeMaterial();
         _timing = new MeshInstance3D
         {
-            Mesh = new TorusMesh { InnerRadius = 0.9f, OuterRadius = 1f, RingSegments = 32 },
+            Mesh = Arc(360f, 0.9f),
             MaterialOverride = _timingMaterial,
-            Position = new Vector3(0f, Lift + 0.01f, 0f),
-            Visible = false,
-            CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
-        };
-
-        _fillMaterial = MakeMaterial();
-        _fill = new MeshInstance3D
-        {
-            Mesh = new CylinderMesh { TopRadius = 1f, BottomRadius = 1f, Height = 0.01f, RadialSegments = 32 },
-            MaterialOverride = _fillMaterial,
-            Position = new Vector3(0f, Lift - 0.01f, 0f),
-            Visible = false,
-            CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
-        };
-
-        _fanMaterial = MakeMaterial();
-        _fan = new MeshInstance3D
-        {
-            MaterialOverride = _fanMaterial,
-            Position = new Vector3(0f, Lift, 0f),
+            Position = new Vector3(0f, RingLift + 0.01f, 0f),
             Visible = false,
             CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
         };
@@ -114,88 +138,99 @@ public partial class TelegraphRing : Node3D
     /// ring that is already running for the same swing.</summary>
     public bool IsActive => _active;
 
-    private static StandardMaterial3D MakeMaterial() => new()
+    /// <summary>The telegraph shader's material, or (should the shader ever fail to load) a plain
+    /// see-through one on the same mesh: a hard-edged warning is still a warning.</summary>
+    private static Material MakeMaterial()
     {
-        // Drawn on top of the ground rather than fighting it for depth, and visible from either
-        // side so a camera below the disc still sees the warning.
-        Transparency = BaseMaterial3D.TransparencyEnum.Alpha,
-        ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
-        EmissionEnabled = true,
-        CullMode = BaseMaterial3D.CullModeEnum.Disabled,
-    };
+        if (!_shaderTried)
+        {
+            _shaderTried = true;
+            _shader = ResourceLoader.Exists(ShaderPath) ? GD.Load<Shader>(ShaderPath) : null;
+        }
+
+        // A shader that failed to compile still loads, as a resource that draws nothing, and the one
+        // sign of it is that it exposes no uniforms (ContentValidator.ValidateShaders reads the same
+        // sign). An invisible warning is the worst outcome there is, so that counts as no shader.
+        if (_shader != null && IsInstanceValid(_shader) && _shader.GetShaderUniformList().Count == 0)
+        {
+            Log.Warn("Telegraphs: telegraph.gdshader did not compile; warnings are drawn plain.");
+            _shader = null;
+        }
+
+        if (_shader != null && IsInstanceValid(_shader))
+        {
+            return new ShaderMaterial { Shader = _shader };
+        }
+
+        return new StandardMaterial3D
+        {
+            // Drawn on top of the ground rather than fighting it for depth, and visible from either
+            // side so a camera below the shape still sees the warning.
+            Transparency = BaseMaterial3D.TransparencyEnum.Alpha,
+            ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
+            CullMode = BaseMaterial3D.CullModeEnum.Disabled,
+        };
+    }
 
     /// <summary>A flat annular sector spanning <paramref name="degrees"/> centred on forward (-Z),
-    /// from a quarter of the radius out to the full radius. Cached per angle.</summary>
-    public static ArrayMesh Sector(float degrees)
+    /// from <paramref name="inner"/> of the radius out to the full radius (360 is a closed ring, an
+    /// inner radius of 0 a disc). UV.x runs 0 at the inner edge to 1 at the outer and UV.y 0..1 along
+    /// the arc, which is all the shader reads. Cached per angle and inner radius.</summary>
+    public static ArrayMesh Arc(float degrees, float inner)
     {
-        int key = (int)Mathf.Clamp(Mathf.Round(degrees), 10f, 360f);
-        if (SectorCache.TryGetValue(key, out ArrayMesh? cached) && GodotObject.IsInstanceValid(cached))
+        int angle = (int)Mathf.Clamp(Mathf.Round(degrees), 10f, 360f);
+        int hole = (int)Mathf.Clamp(Mathf.Round(inner * 100f), 0f, 95f);
+        int key = (angle * 100) + hole;
+        if (ArcCache.TryGetValue(key, out ArrayMesh? cached) && IsInstanceValid(cached))
         {
             return cached;
         }
 
-        int segments = Mathf.Max(6, key / 8);
-        float half = Mathf.DegToRad(key) * 0.5f;
+        int segments = Mathf.Clamp(angle / 5, 12, 72);
+        float half = Mathf.DegToRad(angle) * 0.5f;
+        float innerRadius = hole / 100f;
         var st = new SurfaceTool();
         st.Begin(Mesh.PrimitiveType.Triangles);
         st.SetNormal(Vector3.Up);
         for (int i = 0; i < segments; i++)
         {
-            float a0 = -half + (half * 2f * i / segments);
-            float a1 = -half + (half * 2f * (i + 1) / segments);
-            Vector3 i0 = new(Mathf.Sin(a0) * 0.25f, 0f, -Mathf.Cos(a0) * 0.25f);
-            Vector3 i1 = new(Mathf.Sin(a1) * 0.25f, 0f, -Mathf.Cos(a1) * 0.25f);
-            Vector3 o0 = new(Mathf.Sin(a0), 0f, -Mathf.Cos(a0));
-            Vector3 o1 = new(Mathf.Sin(a1), 0f, -Mathf.Cos(a1));
-            st.AddVertex(i0);
-            st.AddVertex(o0);
-            st.AddVertex(o1);
-            st.AddVertex(i0);
-            st.AddVertex(o1);
-            st.AddVertex(i1);
+            float u0 = (float)i / segments;
+            float u1 = (float)(i + 1) / segments;
+            float a0 = -half + (half * 2f * u0);
+            float a1 = -half + (half * 2f * u1);
+            Vector3 d0 = new(Mathf.Sin(a0), 0f, -Mathf.Cos(a0));
+            Vector3 d1 = new(Mathf.Sin(a1), 0f, -Mathf.Cos(a1));
+            st.SetUV(new Vector2(0f, u0));
+            st.AddVertex(d0 * innerRadius);
+            st.SetUV(new Vector2(1f, u0));
+            st.AddVertex(d0);
+            st.SetUV(new Vector2(1f, u1));
+            st.AddVertex(d1);
+            if (hole > 0)
+            {
+                st.SetUV(new Vector2(0f, u0));
+                st.AddVertex(d0 * innerRadius);
+                st.SetUV(new Vector2(1f, u1));
+                st.AddVertex(d1);
+                st.SetUV(new Vector2(0f, u1));
+                st.AddVertex(d1 * innerRadius);
+            }
         }
 
         ArrayMesh mesh = st.Commit();
-        SectorCache[key] = mesh;
+        ArcCache[key] = mesh;
         return mesh;
     }
 
     public override void _Ready()
     {
-        AddChild(_mesh);
+        AddChild(_shape);
         AddChild(_timing);
-        AddChild(_fill);
-        AddChild(_fan);
 
         // Every actor that can telegraph carries one of these for its whole life and it is idle
         // between wind-ups, so it is only called while armed. The ring can be armed before it
         // reaches the tree (see the constructor), hence _active rather than a flat false.
         SetProcess(_active);
-    }
-
-    // The two ring profiles, built once and shared by every ring. Arm used to allocate a new
-    // TorusMesh, and so generate and upload its geometry, on every telegraphed wind-up.
-    private static TorusMesh? _standardTorus;
-    private static TorusMesh? _unblockableTorus;
-
-    private static TorusMesh Torus(bool unblockable)
-    {
-        if (unblockable)
-        {
-            if (_unblockableTorus == null || !IsInstanceValid(_unblockableTorus))
-            {
-                _unblockableTorus = new TorusMesh { InnerRadius = 0.55f, OuterRadius = 1f, RingSegments = 32 };
-            }
-
-            return _unblockableTorus;
-        }
-
-        if (_standardTorus == null || !IsInstanceValid(_standardTorus))
-        {
-            _standardTorus = new TorusMesh { InnerRadius = 0.78f, OuterRadius = 1f, RingSegments = 32 };
-        }
-
-        return _standardTorus;
     }
 
     /// <summary>
@@ -227,21 +262,62 @@ public partial class TelegraphRing : Node3D
         _class = cls;
         _parryWindow = parryWindow;
         _base = cls == TelegraphClass.Unblockable ? DodgeColor : color;
+        _tint = color;
         CueLit = false;
 
-        bool fan = cls == TelegraphClass.Sweep;
-        _mesh.Visible = !fan;
-        _mesh.Mesh = Torus(cls == TelegraphClass.Unblockable);
-        _timing.Visible = cls == TelegraphClass.Parryable;
-        _fill.Visible = cls == TelegraphClass.Unblockable;
-        _fan.Visible = fan;
-        if (fan)
+        // Read once per warning: the two accessibility switches that change how it is inked.
+        _highContrast = false;
+        _motion = true;
+        if (ServiceLocator.Instance is { } locator && locator.TryGet(out SettingsService settings))
         {
-            _fan.Mesh = Sector(sweepDegrees);
+            _highContrast = settings.Current.HighContrast;
+            _motion = !settings.Current.ReducedMotion;
+        }
+
+        bool fan = cls == TelegraphClass.Sweep;
+        bool disc = cls == TelegraphClass.Unblockable;
+        _shape.Mesh = fan ? Arc(sweepDegrees, FanInner) : Arc(360f, disc ? 0f : StandardInner);
+        _shape.Position = new Vector3(0f, fan ? Lift : RingLift, 0f);
+        _shape.Visible = true;
+        _timing.Visible = cls == TelegraphClass.Parryable;
+
+        // What does not change over the wind-up. An unblockable is a filled disc whose thick rim is
+        // the thick ring; a fan has lit sides; a plain ring is mostly rim.
+        if (_shapeMaterial is ShaderMaterial shape)
+        {
+            // The rim is a line of about the same width on the ground whatever the creature's size:
+            // a share of the band on a man-sized ring, a sliver of it round a dragon, whose band
+            // would otherwise be a metre of solid colour across a first-person view.
+            float band = _radius * (1f - (fan ? FanInner : StandardInner));
+            shape.SetShaderParameter(RimWidthParam, disc
+                ? 1f - UnblockableInner
+                : TelegraphMath.RimShare(band, fan ? 0.1f : 0.55f));
+            shape.SetShaderParameter(InnerEdgeParam, disc ? 0f : 1f);
+            shape.SetShaderParameter(SideEdgeParam, fan && sweepDegrees < 359f ? 1f : 0f);
+            shape.SetShaderParameter(MotionParam, _motion ? 1f : 0f);
+            shape.SetShaderParameter(PlainParam, _highContrast ? 1f : 0f);
+        }
+
+        if (_timingMaterial is ShaderMaterial timing)
+        {
+            timing.SetShaderParameter(RimWidthParam, 1f);
+            timing.SetShaderParameter(MotionParam, 0f);
+            timing.SetShaderParameter(PlainParam, _highContrast ? 1f : 0f);
         }
 
         Apply(0f);
         SetProcess(true);
+    }
+
+    /// <summary>Tints the body of the warning on screen with the school of what is being wound up
+    /// (fire, frost, ash, arcane). The rim keeps the colour that says what to do about it. No effect
+    /// when nothing is armed; the next <see cref="Arm"/> starts from its own colour again.</summary>
+    public void Tint(Color school)
+    {
+        if (_active)
+        {
+            _tint = school;
+        }
     }
 
     /// <summary>Ends the warning now — the window closed, or the wind-up was interrupted. Hiding it
@@ -251,10 +327,8 @@ public partial class TelegraphRing : Node3D
         _active = false;
         SetProcess(false);
         CueLit = false;
-        _mesh.Visible = false;
+        _shape.Visible = false;
         _timing.Visible = false;
-        _fill.Visible = false;
-        _fan.Visible = false;
     }
 
     public override void _Process(double delta)
@@ -275,55 +349,54 @@ public partial class TelegraphRing : Node3D
         Apply(t);
     }
 
-    /// <summary>Grows the ring and brightens it as the blow approaches, so how far along the wind-up
-    /// is can be read off the ring itself rather than only from its presence.</summary>
+    /// <summary>Grows the shape and brightens it as the blow approaches, so how far along the wind-up
+    /// is can be read off the warning itself rather than only from its presence.</summary>
     private void Apply(float t)
     {
         float scale = TelegraphMath.RingScale(t) * _radius;
-        float pulse = TelegraphMath.ClassPulse(_class, (float)_age);
-        float alpha = TelegraphMath.RingAlpha(t) * pulse;
+        float pulse = TelegraphMath.ClassPulse(_class, (float)_age, _motion);
+        float fillAlpha = TelegraphMath.FillAlpha(t, _highContrast) * pulse;
+        float rimAlpha = TelegraphMath.RimAlpha(t, _highContrast) * pulse;
 
         // The cue: in the last beat before a parryable blow the ring whitens and goes solid, which is
         // the "guard now" flash. Timed off this wind-up's own length and the defender's parry window.
         bool cue = _class == TelegraphClass.Parryable &&
                    TelegraphMath.InParryCue(t, (float)_duration, _parryWindow);
         CueLit = cue;
-        Color ring = cue ? CueColor : _base;
+        Color rim = cue ? CueColor : _base;
+        Color fill = cue ? CueColor : _tint;
         if (cue)
         {
-            alpha = 1f;
+            fillAlpha = 0.75f;
+            rimAlpha = 1f;
         }
 
-        _material.Emission = ring;
-        _material.AlbedoColor = new Color(ring.R, ring.G, ring.B, alpha);
+        _shape.Scale = new Vector3(scale, 1f, scale);
+        Ink(_shapeMaterial, fill, rim, fillAlpha, rimAlpha, t);
 
-        switch (_class)
+        if (_class == TelegraphClass.Parryable)
         {
-            case TelegraphClass.Sweep:
-                _fan.Scale = new Vector3(scale, 1f, scale);
-                _fanMaterial.Emission = _base;
-                _fanMaterial.AlbedoColor = new Color(_base.R, _base.G, _base.B, alpha * 0.7f);
-                break;
+            float inner = scale * TelegraphMath.TimingRingScale(t);
+            _timing.Scale = new Vector3(inner, 1f, inner);
+            Color timing = cue ? CueColor : TimingColor;
+            float alpha = cue ? 1f : 0.85f;
+            Ink(_timingMaterial, timing, timing, alpha, alpha, 1f);
+        }
+    }
 
-            case TelegraphClass.Unblockable:
-                _mesh.Scale = new Vector3(scale, 1f, scale);
-                _fill.Scale = new Vector3(scale, 1f, scale);
-                _fillMaterial.Emission = _base;
-                _fillMaterial.AlbedoColor = new Color(_base.R, _base.G, _base.B, 0.16f + (0.24f * t));
-                break;
-
-            case TelegraphClass.Parryable:
-                _mesh.Scale = new Vector3(scale, 1f, scale);
-                float inner = scale * TelegraphMath.TimingRingScale(t);
-                _timing.Scale = new Vector3(inner, 1f, inner);
-                Color timing = cue ? CueColor : TimingColor;
-                _timingMaterial.Emission = timing;
-                _timingMaterial.AlbedoColor = new Color(timing.R, timing.G, timing.B, cue ? 1f : 0.85f);
-                break;
-
-            default:
-                _mesh.Scale = new Vector3(scale, 1f, scale);
-                break;
+    private static void Ink(Material material, Color fill, Color rim, float fillAlpha, float rimAlpha, float progress)
+    {
+        if (material is ShaderMaterial shader)
+        {
+            shader.SetShaderParameter(FillColorParam, fill);
+            shader.SetShaderParameter(RimColorParam, rim);
+            shader.SetShaderParameter(FillAlphaParam, fillAlpha);
+            shader.SetShaderParameter(RimAlphaParam, rimAlpha);
+            shader.SetShaderParameter(ProgressParam, progress);
+        }
+        else if (material is StandardMaterial3D plain)
+        {
+            plain.AlbedoColor = new Color(rim.R, rim.G, rim.B, (fillAlpha + rimAlpha) * 0.5f);
         }
     }
 }

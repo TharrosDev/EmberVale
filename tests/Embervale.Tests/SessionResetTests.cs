@@ -34,7 +34,9 @@ public class SessionResetTests
         "PersistentActorRegistry",  // template factories, re-registered by the next session's build
         "SafeZones",                // per-region sanctuary set
         "SpellActions",             // cast timelines derived per spell id; the database is rebuilt on a new game
+        "SpellVfx",                 // the session's effect director; a stale one is a freed node
         "UiState",                  // open panels and world pausers; a stale pauser locks the title
+        "VfxQuality",               // the spell-effect tier; the next session's director sets it again
         "Weave",                    // the active region's magic potency
     };
 

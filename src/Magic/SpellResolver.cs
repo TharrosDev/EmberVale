@@ -2,6 +2,7 @@ using Embervale.Combat;
 using Embervale.Core.Diagnostics;
 using Embervale.Core.Events;
 using Embervale.Entities;
+using Embervale.Magic.Vfx;
 using Embervale.Stats;
 using Godot;
 
@@ -83,6 +84,9 @@ public static class SpellResolver
 
         bool targetWasMarked = statuses?.Has(StatusIds.GraveMark) == true;
         Vector3 hitPosition = hurtbox.GlobalPosition;
+
+        // Read before the blow: a kill can free the body the volume hangs on.
+        Vector3 impactPoint = VolumeCentre(hurtbox);
         DamageResult result = dealDamage ? hurtbox.Receive(packet) : default;
 
         // A guard stopped it: chip damage only, and none of the rider effects. Never parried (a spell is
@@ -93,6 +97,9 @@ public static class SpellResolver
             {
                 EventBus.Instance?.Publish(new SpellBlockedEvent(caster, spell.Id, target));
             }
+
+            SpellVfx.Impact(spell, caster, new SpellImpactInfo(
+                impactPoint, ImpactNormal(context, impactPoint), target, SpellImpactKind.Blocked, packet.Charge));
             return SpellHitResult.Blocked;
         }
 
@@ -105,7 +112,8 @@ public static class SpellResolver
         if (lifetime.Check())
         {
             SchoolIdentity.OnSpellHit(context, spell, packet, caster, casterTeam, hurtbox, resolvedDamage,
-                targetWasMarked, result.Killed, dealDamage ? result.HealthFraction : -1f, hitPosition, lifetime);
+                targetWasMarked, result.Killed, dealDamage ? result.HealthFraction : -1f, hitPosition, lifetime,
+                impactPoint);
         }
         bool killed = result.Killed;
         if (!killed && lifetime.Check())
@@ -133,7 +141,23 @@ public static class SpellResolver
             EventBus.Instance?.Publish(new SpellImpactEvent(caster, target, spell.Id, spell.ImpactWeight, packet.Charge));
         }
 
+        SpellVfx.Impact(spell, caster, new SpellImpactInfo(
+            impactPoint, ImpactNormal(context, impactPoint), target, SpellImpactKind.Target, packet.Charge,
+            resolvedDamage, result.IsCrit || packet.IsCrit, result.Killed, consumed));
         return SpellHitResult.Landed;
+    }
+
+    /// <summary>The way a spell came from, for its impact effect: from the point struck back toward
+    /// whatever delivered it (the bolt, the zone, the caster's body). Up when the two coincide.</summary>
+    private static Vector3 ImpactNormal(Node3D context, Vector3 point)
+    {
+        if (!GodotObject.IsInstanceValid(context) || !context.IsInsideTree())
+        {
+            return Vector3.Up;
+        }
+
+        Vector3 back = context.GlobalPosition - point;
+        return back.LengthSquared() < 0.0001f ? Vector3.Up : back.Normalized();
     }
 
     /// <summary>
@@ -158,13 +182,25 @@ public static class SpellResolver
             return;
         }
 
-        SpawnFlash(context, center, radius, SpellSchools.Color(spell.School));
+        SpellBurstSource source = BurstSourceOf(context);
+        EventBus.Instance?.Publish(new SpellBurstEvent(
+            caster, spell.Id, center, radius, source, spell.ImpactWeight, packet.Charge));
+        SpellVfx.Burst(spell, caster, center, radius, source, packet.Charge);
         Resolve(context, spell, packet, caster, casterTeam, center, radius, coneDirection: null, lifetime);
         if (lifetime.Check())
         {
             CatchCaster(spell, caster, center, radius);
         }
     }
+
+    /// <summary>What a burst came from, read off the node that delivered it. Presentation only.</summary>
+    private static SpellBurstSource BurstSourceOf(Node3D context) => context switch
+    {
+        SpellProjectile => SpellBurstSource.Projectile,
+        SpellGround => SpellBurstSource.Ground,
+        SpellZone => SpellBurstSource.Zone,
+        _ => SpellBurstSource.Caster,
+    };
 
     /// <summary>A zone or burst that <see cref="SpellResource.AffectsCaster"/> afflicts a caster standing
     /// in it with the spell's status (Blizzard: you can be caught in your own). Status only, never damage.</summary>
@@ -205,7 +241,7 @@ public static class SpellResolver
             return;
         }
 
-        SpawnConeFlash(context, origin, direction, length, angleDegrees, SpellSchools.Color(spell.School));
+        SpellVfx.Cone(spell, caster, origin, direction, length, angleDegrees);
         Resolve(context, spell, packet, caster, casterTeam, origin, length, (direction, angleDegrees), lifetime);
     }
 
@@ -356,48 +392,6 @@ public static class SpellResolver
         StatusEffectResource? definition = StatusEffectDatabase.Get(spell.StatusEffectId);
         target.GetComponent<StatusEffectsComponent>()?.Apply(definition, caster,
             SpellRules.StatusDurationMultiplier(charge, spell.StatusDurationChargeBonus));
-    }
-
-    private static void SpawnFlash(Node3D context, Vector3 center, float radius, Color color) =>
-        SpawnFlashAt(context, center, radius, color);
-
-    /// <summary>A cast or impact flare at a point, from the spell's school. Presentation only.</summary>
-    public static void SpawnFlashAt(Node3D context, Vector3 center, float radius, Color color)
-    {
-        SceneTree? tree = context.GetTree();
-        Node? parent = tree == null ? null : SpellLifetime.HostFor(null, context);
-        if (parent == null)
-        {
-            return;
-        }
-
-        SpellFlash.Spawn(parent, center, radius, color);
-    }
-
-    /// <summary>
-    /// Greyboxes the cone as a line of widening flashes along its axis — enough to read the shape and
-    /// its reach, which an invisible attack does not have. Reuses <see cref="SpellFlash"/> rather than
-    /// growing a mesh: a real particle cone is an art pass, and this is the same standard as the
-    /// dragon's own placeholder body.
-    /// </summary>
-    private static void SpawnConeFlash(
-        Node3D context, Vector3 origin, Vector3 direction, float length, float angleDegrees, Color color)
-    {
-        if (direction.LengthSquared() < 0.0001f || length <= 0f)
-        {
-            return;
-        }
-
-        const int Puffs = 4;
-        Vector3 axis = direction.Normalized();
-        float halfAngle = Mathf.DegToRad(angleDegrees * 0.5f);
-
-        for (int i = 1; i <= Puffs; i++)
-        {
-            float travelled = length * i / Puffs;
-            // The cone's radius at this distance — so the flashes trace the actual damaged volume.
-            SpawnFlash(context, origin + (axis * travelled), travelled * Mathf.Tan(halfAngle), color);
-        }
     }
 
     /// <summary>

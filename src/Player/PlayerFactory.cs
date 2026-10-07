@@ -122,7 +122,9 @@ public static class PlayerFactory
             Name = "Camera",
             Current = true,
             Position = Vector3.Zero,
-            Near = 0.08f, // tight near plane so world geometry hugs the eye without clipping weirdness
+            // Tight near plane so world geometry hugs the eye without clipping weirdness. The head is
+            // not clipped by it: the body shader cuts the head out in first person (PlayerCameraRig).
+            Near = 0.08f,
         };
         cameraPivot.AddChild(camera);
         // Shake is a camera layer on the player, not a child of the camera: it returns a nudge and the
@@ -156,6 +158,15 @@ public static class PlayerFactory
             Hitbox = hitbox,
         });
         player.AddChild(new HitReactionComponent { Name = "HitReaction" });
+        // Smooths the camera and the body mesh between physics ticks, and trails the mesh's yaw
+        // behind a third-person camera turn. Before the animation component and foot IK, which read
+        // the rig it offsets.
+        player.AddChild(new PlayerVisualSmoother
+        {
+            Name = "VisualSmoother",
+            CameraPivot = cameraPivot,
+            BodyMesh = player.GetNodeOrNull<Node3D>("BodyMesh"),
+        });
         // 30C: plays the rig's idle/run/block/attack/hit/death clips off combat/locomotion state.
         player.AddChild(new Embervale.Animation.CharacterAnimationComponent { Name = "Animation" });
         // The player's visible loadout: the drawn sword in the right hand, and Session 2's
@@ -296,6 +307,11 @@ public static class PlayerFactory
             CameraPivot = cameraPivot,
             Camera = camera,
         });
+
+        // Swings the casting arm into the first-person view while a spell is wound up, charged or
+        // channelled. After the rig, which it reads; its skeleton modifier is added after the foot
+        // IK's, so it poses the arm on a body that already stands where it will be drawn.
+        player.AddChild(new FirstPersonArmComponent { Name = "FirstPersonArm", Camera = camera });
 
         player.AddChild(new PlayerLookInput { Name = "LookInput" });
         player.AddChild(new InteractionSensor { Name = "Interaction" });

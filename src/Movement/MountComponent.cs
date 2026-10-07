@@ -254,6 +254,10 @@ public partial class MountComponent : EntityComponent, ISaveable
         _animation = owner.GetComponent<CharacterAnimationComponent>();
         _locomotion = owner.GetComponent<LocomotionComponent>();
         _bodyMesh = owner.Body.GetNodeOrNull<Node3D>("BodyMesh");
+
+        // The mesh is built facing away from the camera. Seat(false) runs on every load, before any
+        // mount, so the yaw it restores has to start as the mesh's own, not zero.
+        _riderBaseYaw = _bodyMesh?.Rotation.Y ?? 0f;
         _cameraPivot = owner.Body.GetNodeOrNull<Node3D>("CameraPivot");
         if (owner.Body is CollisionObject3D body)
         {

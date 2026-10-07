@@ -146,7 +146,62 @@
     "placement": "Authored locally at physical causes; never blanket coverage"
   },
   "vfx": {
-    "magic": "SpellSchools.Color remains canonical; no ordinary-world magical glow",
+    "magic": "SpellSchools.Color remains canonical; no ordinary-world magical glow. Spell effects are the stated exception: a cast, its travel, its impact and what it leaves behind may glow, with hue from SpellSchools.Color through VfxPalette",
+    "spell_effects": {
+      "authority": "SpellVfx facade, SpellVfxDirector and VfxBudgetRules; quality from Settings.SpellEffects (-1 follows the preset)",
+      "tiers": [
+        "Performance",
+        "Low",
+        "Medium",
+        "High",
+        "Ultra"
+      ],
+      "particle_multiplier": [
+        0.25,
+        0.45,
+        0.7,
+        1,
+        1.5
+      ],
+      "max_lights": [
+        2,
+        3,
+        5,
+        8,
+        12
+      ],
+      "max_shadowed_lights": [
+        0,
+        0,
+        0,
+        0,
+        1
+      ],
+      "ground_marks": [
+        0,
+        0,
+        6,
+        12,
+        24
+      ],
+      "live_effects": [
+        12,
+        20,
+        32,
+        48,
+        64
+      ],
+      "full_detail_distance_m": [
+        25,
+        35,
+        50,
+        70,
+        90
+      ],
+      "distortion_from": "High",
+      "emission_energy": "Core 4 to 8 so effects bloom past the 1.2 glow threshold; must read hot with glow off",
+      "lifetime": "Children of the session VfxRoot, never of an actor; cleared when a load begins"
+    },
     "fire": "Authored flames and warm practical light; EnvironmentEmitters applies shared wind, distance and quality budgets",
     "particle_shadow_casting": false
   },

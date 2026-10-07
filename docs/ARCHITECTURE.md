@@ -209,7 +209,26 @@ inside the target's own capsule, so a World mask made every actor unlockable. Lo
 `godot --path . --fixed-fps 60 -- --combat-shots` (`CombatShots`, PNGs under the user data
 `combat_shots/`); it needs a real window and a save, and a live event banner or boss bar hides the
 nameplate by design (`EMBERVALE_SLOT=<slot>` picks a save without one). A new number on a target starts
-above the older ones' current height (`DamageNumberMath.LiftAbove`).
+above the older ones' current height (`DamageNumberMath.LiftAbove`). Those lanes are per target, so
+`DamageNumberLayer` also lays its labels out every frame, oldest first: a later one that would print
+over an earlier one (a second target standing behind the first, an area spell on a pack) or over the
+state word is lifted clear above it and keeps the lift (`DamageNumberMath.LiftToClear`, stopping at
+`MaxLift`, past which it may overlap rather than climb off the screen). `CombatFeedbackOverlay` sets
+the layer's `Keepout` to the state word's rectangle while the word shows, so POISE BROKEN holds its
+place and the numbers step up out of it.
+
+**How a telegraph is inked.** `TelegraphRing` owns the shape as a flat mesh (ring, disc or fan) and
+`assets/shaders/fx/telegraph.gdshader` inks it: a see-through body, a brighter rim, a lit part that
+sweeps outward over the wind-up and soft edges (the look is in
+[`RENDERING.md`](RENDERING.md#spell-effects)). The rim carries the colour that says what to do: the
+owner's `RingColor`, which a `BossController` sets per phase, or the dodge red of an unblockable.
+The body starts the same colour and takes a school's when the wind-up turns out to be a spell:
+`TelegraphComponent` also subscribes to `CastWindupStartedEvent` and calls `TelegraphRing.Tint` with
+`SpellSchools.Color` of the caster's `PendingSpell` (a second event because the caster names its
+spell just after the action starts). Look only: shape, size and timing were set by the attack event
+and `TelegraphMath`, whose `FillAlpha`, `RimAlpha` and `RimShare` are the new pure parts. The
+settings are read once per warning: High Contrast draws it flat and solid, Reduced Motion holds the
+shimmer and the unblockable pulse still.
 
 ### 2.3 Movement and animation (`src/Movement`, `src/Animation`)
 
@@ -219,10 +238,33 @@ above the older ones' current height (`DamageNumberMath.LiftAbove`).
 - `FlightComponent` (`src/Enemies`): take-off/land cycle from the AI profile (`TakeoffRange = 0` ⇒
   never flies); pure `FlightDecision`. Airborne, the AI holds its swing, skips the navmesh, and grounds
   on leaving combat.
-- `CharacterAnimationComponent` + `LocomotionTree`: blend space over signed speed, state machine, a
+- `CharacterAnimationComponent` + `LocomotionTree`: a 2D gait blend space, state machine, a
   bone-masked upper-body layer. The shared full-body library is `anim_meshy.res`; the older
   `anim_library.res` still owns `ride`, `sitting`, `interact`, `swim`. A rigged body with no clips gets a
   created `AnimationPlayer`.
+- **The gait blend is normalised by run speed.** `LocomotionBlend` (pure) defines the space: X is
+  sideways speed and Y forward speed, each over the actor's OWN run speed (`MoveSpeed` stat, else
+  the motor's `BaseSpeed`, else 3.6 for a body with no motor). Points: idle (0, 0), walk (0, 0.45),
+  run (0, 1), sprint (0, 1.6), walk_back (0, -0.45), strafes (±1, 0), which are the motor's own
+  walk and sprint multipliers. A body with no strafe clip borrows its walk there, because a space
+  with every point on one line blends nothing. `LocomotionBlend.Gait` puts a diagonal on the line
+  from the strafe to the gait for its speed, and the triangles are written out
+  (`LocomotionBlend.Triangles`), not auto-generated. `LocomotionTree.SpeedParam` is therefore a
+  `Vector2`. It replaces a 1D space in raw metres per second whose points matched nobody's speeds.
+  This reaches every Meshy humanoid, not only the player.
+- A `fall` state takes over after 0.18 s off the floor with vertical speed over 0.5 m/s, on a body
+  that has the clip, and blends back on landing.
+- **The upper-body layer carries more than the guard.** It shows the channel clip while charging
+  or channelling and the guard only while guarding; a cast thrust and any `lib/` action clip play
+  on it as a one-shot through `UpperScale` (rate) and `UpperSeek` (restart from frame 0), with the
+  legs left in locomotion and the action still on its own timer, so hit windows do not move.
+  `StartAction` releases the layer before choosing a route and a dead body eases it out; without
+  those a combo link or a corpse kept the last swing's arms.
+- ⚠️ **The library's clips are processed at build, not at runtime.**
+  `tools/build_meshy_anim_library.gd` removes root travel, calms and re-faces the idle, squares the
+  strafe and mirrors it ([`3D_ASSETS.md`](3D_ASSETS.md#the-library-build)). A clip that slides,
+  faces the wrong way or runs out from under its capsule is fixed there and the library rebuilt;
+  never compensate in the component.
 - **The component steps the mixer.** The `AnimationTree` (or the fallback `AnimationPlayer`) is in
   manual callback mode for its whole life and `CharacterAnimationComponent._Process` advances it
   after the state tick: every frame at full rate, every third frame beyond 40 m from the player,
@@ -241,19 +283,88 @@ Six components, added last and in order by `PlayerFactory`:
 | Component | Owns |
 | --- | --- |
 | `PlayerPhysicsQueries` | the pooled ray/sweep/overlap queries and the exclusion list (shared by three readers) |
-| `PlayerCameraRig` | camera, view modes, blend, wall spring, FOV, layer summing |
-| `PlayerLookInput` | mouse/stick turning, mouse capture |
+| `PlayerCameraRig` | camera, view modes, blend, wall spring, FOV, layer summing, the first-person eye and its two cut-outs |
+| `PlayerLookInput` | mouse/stick turning, mouse capture; lends the mouse to the spell wheel while it is open |
 | `InteractionSensor` | what `E` acts on, the HUD prompt, the hold-`E` pickup sweep |
 | `AimController` | the `AimPoint` |
-| `PlayerInputRouter` | input → sibling calls in one documented order |
+| `PlayerInputRouter` | input → sibling calls in one documented order, the spell-wheel button included |
+
+Two presentation components sit beside them. `PlayerVisualSmoother` is added before the animation
+component and foot IK so it has run before they read the rig; `FirstPersonArmComponent` hangs a
+`SkeletonModifier3D` on the skeleton.
 
 - ⚠️ **The router keeps one `_PhysicsProcess`**; order is load-bearing: the camera rig runs inside
   the not-playing guard (it touches nodes a teardown frees), focus resolves before lock-on, the mount
   answers sprint before locomotion, dodge is refused mid-swing.
-- **True first person**: the camera rides the head bone (position only) and the body stays visible.
-  Third person is over-the-shoulder; body yaw equals camera yaw in both. The mode is
-  `Settings.ThirdPersonCamera` (settings toggle and `V` flip the same value). Distance (2–6 m),
+- **True first person**: the eye is anchored to the head and the body stays visible. Third person
+  is over-the-shoulder, behind the character's back; body yaw equals camera yaw in both. The mode
+  is `Settings.ThirdPersonCamera` (settings toggle and `V` flip the same value). Distance (2–6 m),
   shoulder and FOV are live settings applied by the rig.
+- **The first-person eye is maths, not a bone read** (`CameraRigMath`, pure, pinned by
+  `FirstPersonEyeMathTests`). `EyeLocal` is the head's REST position in pivot space, plus a neck
+  pivot (`NeckOffset`, `EyeArm`) rotated by pitch, plus `FollowDelta`: 30% of the smoothed animated
+  head's vertical travel and 10% of its horizontal (`EyeFollowVertical`, `EyeFollowHorizontal`;
+  zero under Reduced Motion, and the seated head is followed fully when mounted). `LookDownReach`
+  carries the eye up to 0.24 m forward and 0.10 m up as pitch goes to 85 degrees down, which is
+  what keeps it clear of the chest (`TorsoClearance` is tested for every degree against a torso
+  profile measured on `chr_player_base.glb`). The 0.45 m clamp (`MaxEyeOffset`) and the wall guard
+  stay. The eye is updated every drawn frame from the rig's `_Process`, inside the same playing
+  and instance-valid guards, not only on the physics tick. The near plane is 0.08 m.
+- **Two cut-outs keep the player's own head out of frame.** `player_body.gdshader` discards, in
+  every pass but the shadow pass, what is inside `fp_head` (a 0.22 m sphere round the animated
+  head) or `fp_eye` (a sphere round the camera sized from its near plane, FOV and aspect, between
+  0.12 and 0.20 m and narrowing to 0.12 m looking down so it cannot bite the chest). Both are
+  per-instance uniforms, so the corruption controller's material copies carry them and the
+  creator's preview, which shares the mesh, is untouched. The head is hidden by camera distance
+  with hysteresis (`HeadHidden`: in under 0.4 m, out past 0.5 m, held to 0.8 m when fully in first
+  person), not by view mode, so a camera pushed into the head by a wall is covered too.
+  `PlayerAppearance.SetHeadCutout` / `SetEyeCutout` are the only writers; head-socket pieces go
+  shadows-only while the head is hidden.
+- **`PlayerVisualSmoother`** offsets the camera pivot and the visible body each drawn frame by the
+  interpolation residual between the last two physics positions (`VisualSmoothing.Residual`) and
+  takes the offset off at physics priority -1000, before anything in a tick reads a position.
+  There is no project-wide physics interpolation. ⚠️ The body's offset and the third-person yaw
+  lag (0.1 s, at most 30 degrees) go on the `Skeleton3D` under `BodyMesh`, never on `BodyMesh`:
+  `HitReactionComponent` and `MountComponent` write that node's transform outright and sample it
+  as rest.
+- ⚠️ **A rider's base yaw starts as the mesh's own.** `PlayerFactory` builds the body mesh with a
+  half turn so a glTF model faces the way the capsule does. `MountComponent.Load` strips rider
+  state on every load and restores `_riderBaseYaw`, which used to be captured only on mounting and
+  was therefore 0 for a player who had never ridden: every load turned the player to face the
+  camera, which put the first-person eye inside the model's back and the casting arm behind the
+  view. It is now read from the mesh in `OnInitialize`, and `PlayerVisualSmoother.HoldMeshYaw`
+  holds the factory's yaw whenever nobody is riding. The probes never saw it because they build a
+  body with no mount component; `--camshots` now fails a shot whose body is more than 30 degrees
+  off its capsule.
+- **The third-person seat tilts down so the feet clear the hotbar.** At a level look the feet are a
+  fixed angle below the camera's level line, and a narrow field of view put them behind the hotbar.
+  `CameraRigMath.FramingTilt` is the downward tilt that brings them back to `FramingFeetAtMost` of
+  the half height below the centre line: nothing at a wide view or a far seat, capped at
+  `MaxFramingTilt`. `PlayerCameraRig` adds it to the camera's own rotation, scaled by the view
+  blend, so first person is untouched. ⚠️ It is fed the player's SETTINGS (field of view and
+  distance, as the combat profile shapes them: the closest ordinary framing on foot), never the
+  live profile, because a tilt that moved as a cast or a fight began would swing the crosshair off
+  what the player was pointing at. The crosshair is the camera's own centre ray, so the shot still
+  goes where it is. `--camshots` logs `view_pitch` and `feet_down_frame` per third-person shot.
+- **What the hands hold is drawn in first person only while it is up for a fight.** The body's
+  clips were authored for a camera behind the character, and at a jog, a sprint or a strafe the arm
+  pump swung the blade straight across the view. `CameraRigMath.WeaponUp` is true during any action
+  or held charge, a raised guard or a lock, and for `WeaponLowerSeconds` after; the rest of the
+  time the hand-socket pieces go shadows-only with everything else hung on the skeleton
+  (`HiddenInFirstPerson`). ⚠️ An action in progress always shows it: a swing with no blade would be
+  worse than a blade across the view. A change rescans the held pieces at once.
+- `FirstPersonArmComponent` (with `FirstPersonArmModifier`, `FirstPersonArmRules`) swings the
+  casting arm at the shoulder while a spell is wound up, charged or channelled, first person only,
+  and reports the drawn hand in skeleton space so hand-anchored effects follow it. Gameplay reads
+  none of it.
+- **The spell wheel is not a menu.** `PlayGate.WheelOpen` (`src/Core`) lends the look inputs to
+  the wheel: `PlayerLookInput` and `LockOnComponent` stop reading the mouse and the right stick,
+  and the router holds back attack, block, cast and the lock toggle, while move, jump, dodge and
+  sprint stay live and the mouse stays captured. `SpellWheelInput` is its one writer and the seam
+  to the HUD's control (`ISpellWheelView`); `UiState.Open`, `UiState.ClearAll` and
+  `GameManager.ChangeState` (on leaving play) clear the gate, and the router cancels on a stagger
+  or death. The press, hold and release decision is the pure `SpellWheelHold`
+  (§2.13).
 - `CameraProfile` (exploration, sprint, combat, target-lock, aim, mounted) multiplies the player's
   settings, never replaces them. The spring sweeps `CameraBlocker` only, so actors never yank the
   camera. `CameraRigMath` is pure.
@@ -325,8 +436,9 @@ names one via `BossId`; `EnemyArchetypeFactory` attaches `BossController` to any
   Pure cores: `BossPhases`, `BossAdds`, `BossDefeat`.
 - **The enrage clock starts on the first damage traded.** `BeginEncounter()` is idempotent and
   publishes `BossEncounterStartedEvent` once (the brazier calls it; otherwise first damage does).
-- `TelegraphComponent` + `TelegraphRing` draw a model-independent ground ring for the reported
-  wind-up, tinted by phase; both cues end early on `AttackInterruptedEvent`.
+- `TelegraphComponent` + `TelegraphRing` draw a model-independent ground shape for the reported
+  wind-up: soft and see-through, its rim in the phase's colour and its body in the school of the
+  spell being wound up when there is one (§2.2); both cues end early on `AttackInterruptedEvent`.
 - Add waves spawn on phase entry, repeat on their interval under `MaxAlive`, and die with the boss
   through the damage path (loot and XP land). Spawn points are `Marker3D`s in group `boss_add_spawn`
   under the boss's parent; none → a ring. `ArenaHookComponent` reveals arena nodes by phase, scoped to
@@ -529,8 +641,24 @@ never stored), `PerksComponent` (`ISaveable`, modifiers re-applied on load).
   only after wind-up, and resume authored recovery on release. Interrupted wind-ups refund half the
   mana; silence, stagger and death cancel appropriately. Blink commits direction/distance and refunds
   a newly obstructed portion. Load replaces the spell list and cancels transient casts/cooldowns.
+- **Selection, favourites and the wheel.** `SpellcastingComponent.Select(id)` and
+  `SelectPrevious()` publish `SpellSelectedEvent` and refuse while a cast is pending, charging or
+  channelling (`SelectionLocked`; `Cycle` has the same guard). `Favourites` is eight slots (id or
+  empty) set by `SetFavourite`; `Learn` pins into the first free slot and `Forget` clears the slot
+  and the previous spell. The slot arithmetic is the pure `SpellFavouritesRules`, and the save
+  keys are in [`SAVE_FORMAT.md`](SAVE_FORMAT.md). `SpellWheelRules` (pure) is the wheel's
+  geometry in wheel units, where the rim is 1: a dead zone inside 0.18, eight favourite wedges
+  from the top out to 0.58, six school wedges to the rim, and the hovered school's fan out to
+  1.35, widened so each spell gets at least 20 degrees and latched while the cursor is past 0.58.
+  A press under 0.16 s is a tap. The stick maps under 0.25 to the dead zone, to 0.7 the inner
+  ring, past it the schools and fan; the mouse is 150 px to the rim. `SpellWheelHold` (pure) turns
+  press, hold and release into an intent (open, confirm, cancel, previous, fallback), in held and
+  toggled modes. The control is `src/UI/SpellWheel.cs` ([`UI_STYLE.md`](UI_STYLE.md) §13); the
+  input gate is in §2.4. The action id is still `cycle_spell`, so saved bindings and
+  `KnowledgeInput` are untouched.
 - `SpellFlash` (the cosmetic burst) is pooled per session: `CombatFeedbackDirector` opens and
   closes the pool, one sphere mesh is shared, and with no pool open a flash is built and freed.
+  While the effect layer is drawing, `SpellFlash.Spawn` forwards to a `VfxFlare` instead.
 - `SpellProjectile` (pooled), `SpellGround`, `SpellBarrier` and `SpellResolver` share targeting,
   damage outcomes and deduplication. Projectile sweeps intercept a barrier's physical volume before
   ordinary geometry; its health and school interaction determine whether it ends. Sunfall breaks guard
@@ -557,6 +685,73 @@ never stored), `PerksComponent` (`ISaveable`, modifiers re-applied on load).
   learning requires its tier and explicit embrace. `SpellAliases` migrates retired ids on restore.
   The magic probes cover core, status, learning/HUD, delivery lifetime and content, including real prepared tomes;
   probe drivers are excluded from shipping assemblies.
+
+**Spell effects (`src/Magic/Vfx`, namespace `Embervale.Magic.Vfx`).** Tiers, shaders, the render
+layer and the coverage governor are in [`RENDERING.md`](RENDERING.md#spell-effects); this is who
+owns what.
+
+- **`SpellVfx` is the one door.** A static facade, one partial file per concern (`SpellVfx.Cast`,
+  `.Projectile`, `.Impact`, `.Ground`, `.Structures`, `.Movement`, `.Status`, `.StatusAura`,
+  `.Special`, `.Kit`). Gameplay says what happened (`Windup`, `Release`, `AttachProjectile`,
+  `Impact`, `Burst`, `Cone`, `Arc`, `Beam`, `GroundTelegraph`, `AttachZone`, the barrier and totem
+  calls, `Dash`, `Blink`, `StatusProc`) and never how it looks. Every method is a no-op with no
+  director or on a headless display, so probes and the headless gates build no effect node; an
+  `Attach…` call that returns false tells its caller to build the plain shape it always did.
+  Nothing reads back into a rule, and a call may be dropped (over budget, too far) with no other
+  consequence. Read the header of `SpellVfx.cs` before adding a look.
+- **`SpellVfxDirector`** is a session node (`GameSession` adds it after `CombatFeedbackDirector`).
+  It owns `VfxRoot`, one `NodePool` per block and per particle preset, the `VfxLedger` budget, the
+  ground-mark queue, the per-frame camera read, `VfxScreen`, and the shader warm-up. It keeps
+  `VfxQuality` in step with `SettingsAppliedEvent` and frees every live effect on
+  `GameLoadingEvent`; those are its only two subscriptions and both drop in `_ExitTree`, where the
+  pools are cleared and the shared shaders, textures and meshes released.
+- **Blocks** are pooled `VfxEffect` nodes: `VfxFlare` (core, halo, rays, shock ring, a budgeted
+  light), `VfxBurst` (particle presets, one-shot or continuous), `VfxBolt` (lightning, beam,
+  tether, trail; the path is the pure `VfxBoltPath`), `VfxShell` (fire body, ward and ice shells,
+  wall sheets, the totem post), `VfxDisc` (telegraph, zone floor, sigil), `VfxGroundMark` (a
+  fading decal), `VfxDistortion` (a pressure wave, or heat haze with `Shimmer`), and `VfxMotif`
+  (a handful of shaped sprites moving in a pattern, one `MultiMesh` and one draw call; poses are
+  the pure `VfxMotifRules`). `VfxScreen` is the one screen flash and the edge shimmer. They age in
+  `_Process`: no tweens, no scene-tree timers. A follower copies its target's position each frame
+  behind `IsInstanceValid`.
+- **The kit** (`SpellVfx.Kit.cs`; its header is the API, kept verbatim for the recipe lanes) is
+  what a school's blast is made of beyond its recipe's flags, and the pieces a special calls. It
+  needs no new `VfxStage` flag: the generic interpreter adds a school's signature, its wind-up
+  motif at the hand and its shaped bolt head (`WindupMotif`, `ProjectileHead`) to every recipe.
+  Helpers a hook may call: `BodyFit` (a body's collision shape, for anything worn on it),
+  `ResidualCrackle` / `CrackleOver` (arcs over a struck body for a time), `TetherScatter` (motes
+  torn off one end of a line and drawn in at the other), `MouthAnchor` / `MouthGlow` /
+  `BreathPuffs` (a breath starts at the jaw, mouth or snout bone, else the head, else a fixed
+  height), `Snowfall`, `AshFall`, and `SelfCastInView` (the edge shimmer that stands in for a
+  self-cast's floor ring in first person). The pure rules beside them are `VfxMotifRules`,
+  `VfxTextureRules`, `VfxScreenRules`, `VfxElementalRules` and `VfxArcanaRules`, the last two
+  holding what the per-spell specials are sized to and what the lean tiers leave out.
+- **Hooks.** `SpellVfxSpecial` gained an optional `TotemPulse` (`TotemPulseHook`): it runs at the
+  top of `SpellVfx.TotemPulse` and returning true replaces the generic ring, beat and heal line.
+  `SpellVfx.StatusExtras` puts two statuses' extra pictures on the status aura's own rig, so they
+  end with the status: a swarm circling the swarmed and a sigil on the ground under the
+  grave-marked. ⚠️ `SpellVfx.Release` is not told a target, so a self-buff cast on an ally draws
+  on the caster; fixing it is a facade signature change in `src/Magic`, not a kit change.
+- **Three ways to give a spell a look, cheapest first.** A recipe: a `SpellVfxRecipe` per spell
+  id in `SpellVfxCatalog.Elemental.cs` (fire, frost, lightning) or `SpellVfxCatalog.Arcana.cs`
+  (arcane, nature, necrotic and the enemy spells), whose `VfxStage` flags switch blocks on per
+  beat; an authored recipe is drawn exactly as written and only an unauthored spell gets
+  `VfxRecipeRules.Enrich`. A special: a `SpellVfxSpecial` hook in `SpellVfx.Special.Elemental.cs`
+  or `.Arcana.cs` that builds blocks through `cast.Fx` (`VfxSpawner`) and returns true to replace
+  the generic effect or false to add to it; every sustained block goes into the hook's `VfxRig`
+  or it never ends. A new block: only when the look cannot be built from the ones there are.
+  `SpellVfxCatalogTests` reads `data/spells` and fails a spell with no recipe.
+- **Statuses** keep their `StatusVfx*` body nodes exactly as `magic_status_probe` asserts them;
+  while the layer is drawing, `StatusEffectVfxComponent` also opens an aura from the blocks
+  (`SpellVfx.StatusAura.cs`). The local player's is drawn only while the camera is outside the
+  head.
+- `ImpactEffect` (`src/Combat`) is now a soft additive spark, half size on a spell hit, for melee
+  and spells alike. For the player's own ground spells and walls the telegraph torus stays armed
+  (the probe reads it) and is hidden while the layer draws its own telegraph; enemy casts keep it.
+- ⚠️ **Four rules the layer depends on** (`docs/NOW.md` invariants 53 to 56): effects are children
+  of `VfxRoot` only; a `Node`-derived effect class is `partial` and lives in a file of its own
+  name; no public static under `src/Magic/Vfx` exposes a parameterless `Clear` or `Reset` unless
+  it is on the session reset list; a pooled effect resets its transform in `Begin`.
 
 ### 2.14 World systems: sky, weather, encounters, events (`src/World`)
 
@@ -857,6 +1052,42 @@ belong to `SettingsService`. `AudioCueRouting` maps a cue id to bus and position
 `PlayCue`. `MusicDirector` + `MusicStateMachine` (Boss > Combat > Safe > Explore, crossfaded);
 `AmbienceDirector` (weather > town > day/night); `FootstepComponent` reads a floor's `surface` metadata.
 
+**Spell audio.** `tools/gen_spell_sfx.py` synthesises 25 cues with numpy from fixed seeds
+(44.1 kHz mono 16-bit, peak -3 dBFS), encodes them with ffmpeg (`libvorbis -q:a 5`) into
+`assets/audio/sfx/spell/` and writes `manifest.json` with each cue's PCM hash; `--check`
+resynthesises and compares, `--keep-wav DIR` leaves the wavs for listening. The ids are
+`sfx.spell.<fire|frost|lightning|arcane|nature|necrotic>.<cast|impact|blast>` plus
+`sfx.spell.windup`, `.fizzle`, `.ward_break`, `.freeze`, `.heal`, `.blink` and `.thunder`; a file
+is the id after the prefix with dots as underscores. `AudioLibrary` registers each with a
+`ProceduralAudio` fallback and `SpellAudioTests` pins manifest, files and ids together. If the
+riser's length changes, `SpellAudio.WindupCueSeconds` changes with it.
+
+`SpellAudio` (pure) decides the cue, pitch (±4%) and level: against a cast at 0 dB an impact is
++2, a blast +5, the riser -6; an enemy's cast is 3 dB down; weight and charge move the level
+inside -12 to +9 dB; identical cues within 40 ms fold into one. `AudioDirector` routes:
+
+| On | Plays |
+| --- | --- |
+| `SpellCastEvent` | the school's cast cue, held until the caster's `ActionReleasedEvent` (the event fires at the START of the wind-up). A caster with no action timeline, a channel tick and a support cast play at once; an unknown spell falls back to `sfx.cast`. Blink and heals play their own cue instead |
+| `CastWindupStartedEvent` | the riser, for a wind-up of 0.3 s or more, pitched 0.75 to 1.6 so it ends at release; stopped and pooled on interrupt or load |
+| `SpellImpactEvent` | the school's impact. Channelled impacts are 4 dB down and at most one per 0.3 s per caster |
+| `SpellBurstEvent` | the school's blast. Zone pulses are 7 dB down and at most one per 1.9 s per caster |
+| `SpellInterruptedEvent`, `WardBrokenEvent`, `status.frozen` applied | fizzle, ward break, freeze |
+| a lightning hit of weight 0.55 or more | thunder, at most one per 0.9 s |
+
+Spell cues are muted while a load restores state. `SpellBurstEvent` is raised by the resolver on
+every display, headless included, and is the only thing the blast keys off: the effect layer does
+not raise `SoundCueRequestedEvent` for bursts or impacts, which would double them.
+`CombatFx.PlaysHitCue(outcome, spellImpact)` makes `CombatFeedbackDirector` skip the melee cue only
+for a blow a `SpellImpactEvent` was actually raised for, so a burn tick or a Kindle detonation
+shortly after a cast keeps its sound; blocked, parried and guard-broken blows keep theirs.
+
+**The SFX limiter.** The loudest cues play up to 9 dB over a -3 dBFS master and on top of one
+another, which sums past full scale. `AudioBusLayout.EnsureSfxLimiter` puts one
+`AudioEffectHardLimiter` on the SFX bus at -1 dB, once. The menu-duck low-pass is found by type
+and inserted ahead of it, so the limiter stays last; nothing else may index a bus effect by
+position.
+
 ### 2.24 Composition roots and UI (`src/Bootstrap`, `src/UI`)
 
 `scenes/Main.tscn` is one node with `ApplicationRoot`; everything else is built in C#.
@@ -910,7 +1141,9 @@ never reaches into the registry for gameplay. `UI_STYLE.md` is the visual langua
   hides dev tools and sandbox props). Quick save/load stay in every build.
 - ⚠️ **Godot compiles every `.cs` into ONE assembly**, so the separation is per configuration:
   `EmbervaleTooling` (false under `ExportRelease`) excludes `addons/godot_mcp/**` and its NuGet
-  packages, `src/Debugging/*Shots.cs`, `ShotHarness`, `ReproHarness`, and the `CS0618` suppression.
+  packages, `src/Debugging/*Shots.cs`, `ShotHarness`, `ReproHarness`, `VfxPerfScenario`, and the
+  `CS0618` suppression (which is why `LocomotionTree` sets `SyncMode` and not the obsolete `Sync`
+  flag: the flag compiles in the tooling build and fails the shipping one).
   `TreatWarningsAsErrors` is always on. `ContentValidator`, `Invariant`, the console and overlays stay
   (runtime-gated). `tools/check_shipping_assembly.py` scans the `ExportRelease` assembly.
 - **Windows export** (2026-09-28): `export_presets.cfg` ("Windows Desktop", tracked, no credentials)

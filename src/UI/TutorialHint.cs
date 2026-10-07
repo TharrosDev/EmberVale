@@ -53,12 +53,14 @@ public partial class TutorialHint : VBoxContainer
         bus?.Subscribe<InputBindingsChangedEvent>(OnBindingsChanged);
         SubtitleLayer.CaptioningChanged += ApplyVisible;
         ChapterBanner.PresentingChanged += ApplyVisible;
+        SpellWheel.ShowingChanged += ApplyVisible;
     }
 
     public override void _ExitTree()
     {
         SubtitleLayer.CaptioningChanged -= ApplyVisible;
         ChapterBanner.PresentingChanged -= ApplyVisible;
+        SpellWheel.ShowingChanged -= ApplyVisible;
 
         EventBus? bus = EventBus.Instance;
         if (bus == null)
@@ -98,11 +100,12 @@ public partial class TutorialHint : VBoxContainer
         }
     }
 
-    /// <summary>Up while a verb is being taught and neither a chapter card nor a caption has the
-    /// lower middle of the screen. Both say when that changes, so this is not polled.</summary>
+    /// <summary>Up while a verb is being taught and neither a chapter card, a caption nor the spell
+    /// wheel has the lower middle of the screen. Each says when that changes, so this is not polled.</summary>
     private void ApplyVisible()
     {
-        bool visible = _step != TutorialStep.None && !SubtitleLayer.Captioning && !ChapterBanner.Presenting;
+        bool visible = _step != TutorialStep.None && !SubtitleLayer.Captioning && !ChapterBanner.Presenting
+            && !SpellWheel.Showing;
         if (visible != Visible)
         {
             Visible = visible;
@@ -141,7 +144,7 @@ public partial class TutorialHint : VBoxContainer
 
     private static string HintText(TutorialStep step)
     {
-        string key = TutorialScript.HintKey(step);
+        string key = TutorialScript.HintKey(step, UiFx.HoldsToPresses);
         if (key.Length == 0)
         {
             return string.Empty;

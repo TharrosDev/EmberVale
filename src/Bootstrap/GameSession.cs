@@ -198,6 +198,7 @@ public sealed partial class GameSession : Node3D, IServiceScopeHost
         AddChild(new Embervale.Enemies.BossEncounterDirector { Name = "BossEncounter" });
         AddChild(new Embervale.Combat.HitStopDirector { Name = "HitStop" });
         AddChild(new Embervale.Combat.CombatFeedbackDirector { Name = "CombatFeedback" });
+        AddChild(new Embervale.Magic.Vfx.SpellVfxDirector { Name = "SpellVfx" });
 
         // 14. Audio. The music director reuses the library the audio director registers, so order.
         var audio = new Embervale.Audio.AudioDirector { Name = "Audio" };

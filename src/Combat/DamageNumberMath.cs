@@ -129,6 +129,28 @@ public static class DamageNumberMath
     public static float LiftAbove(float highestRecentTop) =>
         highestRecentTop < 0f ? 0f : Math.Min(highestRecentTop, 240f) + 34f;
 
+    /// <summary>The most a number is ever lifted off its spot, in pixels: past this it is allowed to
+    /// overlap rather than climb off the screen.</summary>
+    public const float MaxLift = 320f;
+
+    /// <summary>How far a label centred on (<paramref name="x"/>, <paramref name="y"/>) has to move up
+    /// to sit clear above another one, in pixels, or 0 when the two do not touch. Screen space, y down.
+    /// This is what keeps numbers on two targets that stand behind one another, and a number and the
+    /// state word (POISE BROKEN, CRITICAL), from printing over each other: the per-target lanes of
+    /// <see cref="LiftAbove"/> cannot see either case.</summary>
+    public static float LiftToClear(
+        float x, float y, float width, float height,
+        float otherX, float otherY, float otherWidth, float otherHeight, float gap = 4f)
+    {
+        if (Math.Abs(x - otherX) >= (width + otherWidth) * 0.5f ||
+            Math.Abs(y - otherY) >= (height + otherHeight) * 0.5f)
+        {
+            return 0f;
+        }
+
+        return y - otherY + ((height + otherHeight) * 0.5f) + gap;
+    }
+
     /// <summary>Whether a new number should fold into the one already on screen for the same
     /// target.</summary>
     public static bool ShouldMerge(float existingAgeSeconds, bool sameTarget, HitOutcome existing, HitOutcome incoming) =>

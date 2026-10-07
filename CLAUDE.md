@@ -123,7 +123,8 @@ in `Embervale.csproj` — see the comments there before touching either.
 
 ⚠️ **IT IS EXCLUDED FROM A SHIPPING BUILD (2026-09-03).** `Embervale.csproj` has an
 `EmbervaleTooling` property — true by default, false under `ExportRelease` — and when it is false
-the addon, its two NuGet packages and the `src/Debugging/*Shots.cs` harnesses are not compiled, and
+the addon, its two NuGet packages, the `src/Debugging/*Shots.cs` harnesses and `VfxPerfScenario.cs`
+are not compiled, and
 neither is the assembly-wide `CS0618` suppression the addon required. `TreatWarningsAsErrors` is on
 unconditionally. Check it with `dotnet build Embervale.csproj -c ExportRelease && python
 tools/check_shipping_assembly.py`. Godot compiles every `.cs` under the project into ONE assembly,
@@ -389,10 +390,12 @@ the save left off, which for the Ember Crown is usually the town hub *inside* th
 spawn or fight. Say which of the two you got; don't let one stand in for the other.
 
 **Sandbox controls:** `WASD` move · mouse look · `Shift` sprint · `Caps Lock` walk · `Space` jump ·
-`LMB` attack · `RMB` block · `E` interact · `V` swap first/third person ·
+`LMB` attack · `RMB` block · `Q` cast · hold `F` spell wheel, tap `F` previous spell ·
+`E` interact · `V` swap first/third person ·
 `I` inventory · `T` spellbook · `B` bestiary · `C` party order ·
 `H` heal dummy · `R` respawn dummy · `F5`/`F9` quick save/load · `Esc` pause (frees the cursor).
-Hotbar is `1`–`5`. Gamepad plays the whole game (sticks move/look, RT/LT attack/guard, A/B jump/dodge).
+Hotbar is `1`–`5`. Gamepad plays the whole game (sticks move/look, RT/LT attack/guard, A/B jump/dodge,
+RB cast, hold LB for the spell wheel on the right stick, tap LB for the previous spell).
 **Any blocking menu pauses the scene tree**; a cinematic lock (boss intro, prologue) does not —
 see `UiState.Open(owner, pausesWorld:)`.
 
@@ -492,6 +495,15 @@ all five also belong to the engine/full world suite. The content probe checks pr
 interactions; the lifetime probe checks cancellation before live load and session/caster ownership.
 The integrated contract and probe coverage are in [`docs/playbook/magic.md`](docs/playbook/magic.md);
 system ownership is in [`ARCHITECTURE.md`](docs/ARCHITECTURE.md#213-magic-srcmagic).
+
+Spell effects are one layer behind one door: gameplay calls the `SpellVfx` facade
+(`src/Magic/Vfx`) and never builds an effect node itself. Before adding or changing a spell's look
+read the header of `src/Magic/Vfx/SpellVfx.cs` and of `SpellVfx.Kit.cs` (the kit's API: shaped
+particles, motifs, the helpers a special calls), then the *Spell effects* part of
+[`ARCHITECTURE.md`](docs/ARCHITECTURE.md#213-magic-srcmagic) and
+[`RENDERING.md`](docs/RENDERING.md#spell-effects). Their rules are `docs/NOW.md` invariants 53 to 56,
+and the harnesses that render them (`--spellshots`, `--camshots`, `--vfxperf`) are in NOW's command
+list. ⚠️ No agent has ever seen these effects move: they were judged from still frames.
 
 ---
 

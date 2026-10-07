@@ -5203,7 +5203,7 @@ settings.bind.action.dodge,Dodge
 settings.bind.action.attack,Attack
 settings.bind.action.block,Block
 settings.bind.action.cast,Cast spell
-settings.bind.action.cycle_spell,Next spell
+settings.bind.action.cycle_spell,Spell wheel (hold) / previous (tap)
 settings.bind.action.lock_on,Lock on
 settings.bind.action.lock_cycle_next,Next target
 settings.bind.action.lock_cycle_prev,Previous target
@@ -5225,7 +5225,7 @@ settings.bind.action.hotbar_4,Hotbar slot 4
 settings.bind.action.hotbar_5,Hotbar slot 5
 settings.bind.desc.walk_toggle,Switches walking on and off. A stick already walks when it is pushed part way.
 settings.bind.desc.interact,Tap to interact. Hold to sweep up loot.
-settings.bind.desc.cycle_spell,Steps through your prepared spells.
+settings.bind.desc.cycle_spell,Hold to open the spell wheel and let go over a spell to prepare it. Tap to swap back to the spell you had before.
 settings.bind.desc.companion_command,"Cycles the party's standing order: follow, hold, engage."
 settings.bind.desc.toggle_camera,Swaps between first and third person.
 settings.bind.desc.mount,"Whistles your mount up, or steps off it."
@@ -5275,6 +5275,7 @@ settings.hud_element.prompts,Interaction prompts
 settings.hud_element.crosshair,Crosshair
 settings.hud_element.toasts,Notifications
 settings.hud_element.subtitles,Subtitles
+settings.hud_element.spell_wheel,Spell wheel
 settings.hud_dynamic.vitals,"Dynamic shows it in combat, while anything is below full, and in menus. Hidden removes it."
 settings.hud_dynamic.hotbar,"Dynamic shows it in combat, when a slot changes, and in menus. Hidden removes it."
 settings.hud_dynamic.party,"Dynamic shows it in combat, while someone is hurt, and when it changes. Hidden removes it."
@@ -5592,3 +5593,40 @@ craft.reforge.line.rerolls.label,Reworked {0} times before
 craft.reforge.line.gain.label,The value it adds
 # Panel polish (2026-10): the cue under a dialogue line that runs past the window's foot.
 kn.dialogue.more,More below
+# Spell effects (2026-10): the graphics option for how rich spell effects are drawn.
+settings.spell_effects,Spell effects
+settings.spell_effects.follow,Follow preset
+settings.spell_effects.desc,"How rich spell effects are: particles, lights and marks left on the ground. Follow preset uses the graphics quality above."
+# Spell wheel, HUD spellbook, spell audio and spell effects (2026-10). Each lane adds its rows inside its own block, below its marker and above the next.
+# --- lane: wheel ---
+wheel.legend.release,Release to select
+wheel.legend.select,Select
+wheel.legend.cancel,Cancel
+wheel.legend.centre_cancel,Centre to cancel
+wheel.legend.centre_previous,Centre for the previous spell
+wheel.previous,Previous
+wheel.state.locked,needs {0}
+wheel.school.known,Spells known: {0}
+wheel.school.none,No spells known
+wheel.slot.empty,Empty slot
+wheel.slot.hint,Pin a spell here from the spellbook
+wheel.centre.cancel,Cancel
+wheel.centre.no_previous,No previous spell
+wheel.centre.keeps,Keeps {0}
+# --- lane: hud-spellbook ---
+hud.spell.wheel_hold,Hold: wheel
+hud.spell.wheel_press,Press: wheel
+hud.spell.wheel_tap,Tap:
+spellbook.pins,"Wheel favourites. Slots run clockwise from the top of the wheel, as the dial shows: 1 is straight up. Choose a slot to replace it, or pin a spell to the first free one."
+spellbook.pins_dial,"Where each slot sits on the spell wheel. Slot 1 is at the top and the rest run clockwise."
+spellbook.pins_chosen,"Slot {0} chosen. Pin a spell to put it there."
+spellbook.pins_full,"All eight slots are full. Choose a slot to replace."
+spellbook.pin,Pin
+spellbook.pin_to,Pin to slot {0}
+spellbook.unpin,Unpin
+spellbook.prepare,Prepare
+spellbook.legend.pin,Prepare or pin
+tutorial.spell_wheel_hold,"Hold {0} for the spell wheel. Tap it to swap back to your last spell."
+tutorial.spell_wheel_press,"Press {0} for the spell wheel."
+# --- lane: audio ---
+# --- lane: vfx ---

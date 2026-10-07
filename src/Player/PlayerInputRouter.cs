@@ -1,9 +1,12 @@
 using Embervale.Combat.Actions;
 using Embervale.Combat;
 using Embervale.Core;
+using Embervale.Core.Services;
 using Embervale.Entities;
 using Embervale.Magic;
 using Embervale.Movement;
+using Embervale.Settings;
+using Embervale.Stats;
 using Godot;
 
 namespace Embervale.Player;
@@ -36,8 +39,11 @@ public partial class PlayerInputRouter : EntityComponent
     private LockOnComponent? _lockOn;
     private MountComponent? _mount;
     private SpellcastingComponent? _spellcasting;
+    private StatsComponent? _stats;
     private BowDrawComponent? _bowDraw;
     private AttackInputState _attackInput;
+    private SpellWheelHold _wheelHold;
+    private SettingsService? _settings;
 
     protected override void OnInitialize()
     {
@@ -54,7 +60,18 @@ public partial class PlayerInputRouter : EntityComponent
         _lockOn = owner.GetComponent<LockOnComponent>();
         _mount = owner.GetComponent<MountComponent>();
         _spellcasting = owner.GetComponent<SpellcastingComponent>();
+        _stats = owner.GetComponent<StatsComponent>();
         _bowDraw = owner.GetComponent<BowDrawComponent>();
+        _settings = ServiceLocator.Instance is { } locator && locator.TryGet(out SettingsService settings)
+            ? settings
+            : null;
+    }
+
+    protected override void OnTeardown()
+    {
+        // The player is going; a wheel left open would keep the look inputs gated for nobody.
+        SpellWheelInput.Cancel();
+        _wheelHold.Reset();
     }
 
     public override void _PhysicsProcess(double delta)
@@ -138,9 +155,14 @@ public partial class PlayerInputRouter : EntityComponent
             _dodge?.TryDodge(wishDir);
         }
 
+        // The spell wheel, before everything it holds back: while it is open (and on the tick it
+        // closes, so the click that picked a spell is not also a swing) attack, block, cast and the
+        // lock toggle are not read. Move, jump, dodge and sprint above stay live.
+        bool wheel = TickSpellWheel(delta);
+
         // Lock-on: toggle/cycle the target, drop it if dead/out of range, and face it.
         _lockOn?.Tick();
-        if (Godot.Input.IsActionJustPressed(InputActions.LockOn))
+        if (!wheel && Godot.Input.IsActionJustPressed(InputActions.LockOn))
         {
             _lockOn?.Toggle(_interaction?.FocusedEntity);
         }
@@ -174,7 +196,7 @@ public partial class PlayerInputRouter : EntityComponent
             Vector3 velocity = (_yaw as CharacterBody3D)?.Velocity ?? Vector3.Zero;
             float sprintSpeed = _locomotion != null ? _locomotion.BaseSpeed * _locomotion.SprintMultiplier : 0f;
             _rig.Feed(new CameraInputs(
-                Aiming: Godot.Input.IsActionPressed(InputActions.Cast) ||
+                Aiming: (!wheel && Godot.Input.IsActionPressed(InputActions.Cast)) ||
                         _weapon is { Weapon.IsRanged: true, IsCommitted: true },
                 LockedOn: _lockOn?.Target != null,
                 InCombat: _combat is { IsBlocking: true } || _weapon is { IsCommitted: true },
@@ -201,35 +223,43 @@ public partial class PlayerInputRouter : EntityComponent
 
         if (_combat != null)
         {
-            _combat.IsBlocking = Godot.Input.IsActionPressed(InputActions.Block);
+            _combat.IsBlocking = !wheel && Godot.Input.IsActionPressed(InputActions.Block);
         }
 
-        TickAttack(delta, input);
+        if (wheel)
+        {
+            // A heavy being wound when the wheel opened is let go, as it is when a menu opens.
+            _weapon?.CancelCharge();
+            _attackInput.Reset();
+        }
+        else
+        {
+            TickAttack(delta, input);
+        }
 
         // region combat-ranged
         // The bow's draw is how long attack stays held through the shot's startup; the arrow still
         // leaves on the action's release frame, this only sets how strong it is.
-        _bowDraw?.Tick(delta, Godot.Input.IsActionPressed(InputActions.Attack));
+        _bowDraw?.Tick(delta, !wheel && Godot.Input.IsActionPressed(InputActions.Attack));
         // endregion
 
-        // Cast: press begins (instant fires now; charged/channeled hold), release ends.
-        if (Godot.Input.IsActionJustPressed(InputActions.Cast))
+        // Cast: press begins (instant fires now; charged/channeled hold), release ends. The wheel
+        // never opens over a cast in progress, so nothing is left held when these are skipped.
+        if (!wheel)
         {
-            _spellcasting?.BeginCast();
-        }
-        else if (Godot.Input.IsActionPressed(InputActions.Cast))
-        {
-            _spellcasting?.UpdateCast(delta);
-        }
+            if (Godot.Input.IsActionJustPressed(InputActions.Cast))
+            {
+                _spellcasting?.BeginCast();
+            }
+            else if (Godot.Input.IsActionPressed(InputActions.Cast))
+            {
+                _spellcasting?.UpdateCast(delta);
+            }
 
-        if (Godot.Input.IsActionJustReleased(InputActions.Cast))
-        {
-            _spellcasting?.EndCast();
-        }
-
-        if (Godot.Input.IsActionJustPressed(InputActions.CycleSpell))
-        {
-            _spellcasting?.Cycle(1);
+            if (Godot.Input.IsActionJustReleased(InputActions.Cast))
+            {
+                _spellcasting?.EndCast();
+            }
         }
 
         if (Godot.Input.IsActionJustPressed(InputActions.Interact))
@@ -319,6 +349,95 @@ public partial class PlayerInputRouter : EntityComponent
         }
     }
 
+    /// <summary>
+    /// The spell-wheel button (<c>cycle_spell</c>: F, or LB). A tap swaps back to the previous spell;
+    /// a hold opens the wheel through <see cref="SpellWheelInput"/>, lends it the right stick while it
+    /// is open and selects on release (<see cref="SpellWheelHold"/>). With presses in place of holds
+    /// the press opens it, and a second press or the attack button selects. Block dismisses it.
+    ///
+    /// <para>When the wheel cannot open (none registered, it refused, or a cast is in progress) the
+    /// press steps to the next spell, which is what the button did before there was a wheel. A tap
+    /// with no previous spell to go back to does the same.</para>
+    /// </summary>
+    /// <returns>True while the wheel has the look inputs, and on the tick it closes.</returns>
+    private bool TickSpellWheel(double delta)
+    {
+        if (_spellcasting == null)
+        {
+            return false;
+        }
+
+        bool held = Godot.Input.IsActionPressed(InputActions.CycleSpell);
+        bool pressed = Godot.Input.IsActionJustPressed(InputActions.CycleSpell);
+        bool released = Godot.Input.IsActionJustReleased(InputActions.CycleSpell);
+
+        // The gate was cleared from outside (a menu opened over the wheel, play was left, or it closed
+        // itself), or the player can no longer choose: a stagger, a stun and death all close it
+        // without selecting.
+        if (_wheelHold.IsOpen &&
+            (!SpellWheelInput.IsOpen || _combat is { IsStaggered: true } || _stats is { IsAlive: false }))
+        {
+            SpellWheelInput.Cancel();
+            _wheelHold.Closed(held);
+        }
+
+        // The button is up and this tick saw no edge: it was let go while this node was not ticking
+        // (the pause menu). That release is not a tap, a fallback or a confirm; the hold is forgotten.
+        if (!held && !pressed && !released && !_wheelHold.IsToggled)
+        {
+            SpellWheelInput.Cancel();
+            _wheelHold.Reset();
+        }
+
+        bool wasOpen = _wheelHold.IsOpen;
+
+        // Cursor travel is zero here: until the wheel is open the mouse and the stick are the
+        // camera's, so only time decides between a tap and a hold.
+        SpellWheelIntent intent = _wheelHold.Step(
+            pressed,
+            held,
+            released,
+            (float)delta,
+            cursorTravel: 0f,
+            toggle: _settings?.Current.HoldsToPresses ?? false,
+            confirm: wasOpen && Godot.Input.IsActionJustPressed(InputActions.Attack),
+            cancel: wasOpen && Godot.Input.IsActionJustPressed(InputActions.Block));
+
+        if (intent == SpellWheelIntent.Open &&
+            (_spellcasting.SelectionLocked || !SpellWheelInput.Open(_spellcasting, _wheelHold.IsToggled)))
+        {
+            intent = _wheelHold.Refuse();
+        }
+
+        switch (intent)
+        {
+            case SpellWheelIntent.Confirm:
+                SpellWheelInput.Close(confirm: true);
+                break;
+            case SpellWheelIntent.Cancel:
+                SpellWheelInput.Cancel();
+                break;
+            case SpellWheelIntent.Previous:
+                if (!_spellcasting.SelectPrevious())
+                {
+                    _spellcasting.Cycle(1);
+                }
+
+                break;
+            case SpellWheelIntent.Fallback:
+                _spellcasting.Cycle(1);
+                break;
+        }
+
+        if (SpellWheelInput.IsOpen)
+        {
+            SpellWheelInput.Stick(Godot.Input.GetVector(
+                InputActions.LookLeft, InputActions.LookRight, InputActions.LookUp, InputActions.LookDown));
+        }
+
+        return wasOpen || SpellWheelInput.IsOpen;
+    }
+
     /// <summary>Releases continuous input state when control is suspended (menu open / not playing),
     /// so a guard held when the menu opened can't strand as "blocking" — the live input is re-read on
     /// the first frame back in control.</summary>
@@ -332,5 +451,7 @@ public partial class PlayerInputRouter : EntityComponent
         _weapon?.CancelCharge();
         _attackInput.Reset();
         _spellcasting?.CancelCast(); // drop any charge/channel so it doesn't fire after a menu/pause
+        SpellWheelInput.Cancel();    // and close the wheel without selecting
+        _wheelHold.Reset();
     }
 }

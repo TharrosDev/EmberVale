@@ -243,8 +243,10 @@ public partial class LockOnComponent : EntityComponent
         // same from _Input). Only with the assist on; the cycle keys always work.
         if (Assist && InputMap.HasAction(InputActions.LookLeft) && InputMap.HasAction(InputActions.LookRight))
         {
+            // Fed even while the spell wheel has the stick, so a push made for the wheel is already
+            // "held" when the wheel closes and is not then read as a flick. Its result is dropped.
             int flick = _flick.FeedStick(Input.GetAxis(InputActions.LookLeft, InputActions.LookRight), dt);
-            if (flick != 0)
+            if (flick != 0 && !PlayGate.WheelOpen)
             {
                 Cycle(flick);
                 return;
@@ -291,7 +293,7 @@ public partial class LockOnComponent : EntityComponent
     {
         if (@event is not InputEventMouseMotion motion || Target == null || !Framing || !Assist ||
             Input.MouseMode != Input.MouseModeEnum.Captured ||
-            GameManager.Instance is { IsPlaying: false } || UiState.MenuOpen)
+            GameManager.Instance is { IsPlaying: false } || UiState.MenuOpen || PlayGate.WheelOpen)
         {
             return;
         }

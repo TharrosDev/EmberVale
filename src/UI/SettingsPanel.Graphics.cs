@@ -165,6 +165,19 @@ public partial class SettingsPanel
             preset => GraphicsMath.Resolve(s.Glow, preset.Glow),
             (value, preset) => s.Glow = GraphicsMath.Override(value, preset.Glow));
 
+        // Not one of the preset's own controls: it has its own "follow the preset" entry, so picking
+        // a preset leaves it alone and moving it never makes the preset read Custom.
+        body.AddChild(DropdownRow(
+            Info(Loc.T("settings.spell_effects"), Loc.T("settings.spell_effects.desc"), nameof(S.SpellEffects)),
+            new[]
+            {
+                Loc.T("settings.spell_effects.follow"), Loc.T("settings.render_quality.performance"),
+                Loc.T("settings.render_quality.low"), Loc.T("settings.render_quality.medium"),
+                Loc.T("settings.render_quality.high"), Loc.T("settings.render_quality.ultra"),
+            },
+            Magic.Vfx.VfxBudgetRules.DropdownIndex(s.SpellEffects),
+            i => { s.SpellEffects = Magic.Vfx.VfxBudgetRules.FromDropdownIndex(i); Persist(); }));
+
         RefreshGraphics();
     }
 

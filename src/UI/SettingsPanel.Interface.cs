@@ -142,6 +142,7 @@ public partial class SettingsPanel
         HudElement.Crosshair => Loc.T("settings.hud_element.crosshair"),
         HudElement.Toasts => Loc.T("settings.hud_element.toasts"),
         HudElement.Subtitles => Loc.T("settings.hud_element.subtitles"),
+        HudElement.SpellWheel => Loc.T("settings.hud_element.spell_wheel"),
         _ => element.ToString(),
     };
 

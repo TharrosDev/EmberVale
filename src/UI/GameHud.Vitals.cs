@@ -38,7 +38,7 @@ public partial class GameHud
     private int _corruptionTierShown = -1;
 
     private Control _spellGlyph = null!;
-    private VBoxContainer _spellGroup = null!;
+    private Control _spellGroup = null!;
     private float _staTickShown = float.NaN;
     private float _mpTickShown = float.NaN;
 
@@ -98,6 +98,21 @@ public partial class GameHud
     private Label _spellCost = null!;
     private ProgressBar _cooldownBar = null!;
 
+    // The spell's own mark (the wheel's glyph on its school disc) heads the row, and a line over it
+    // says the wheel exists: the cycle key with "hold", then the spell a tap swaps back to as a ghost.
+    private const float SpellDiscSize = 32f;
+    private const float SpellGhostSize = 22f;
+    private SpellDisc _spellDisc = null!;
+    private HBoxContainer _spellWheelRow = null!;
+    private Control _spellHoldGlyph = null!;
+    private Label _spellHoldLabel = null!;
+
+    // With "presses in place of holds" on, the key opens the wheel on a press and there is no tap.
+    private bool _spellPresses;
+    private HBoxContainer _spellTap = null!;
+    private SpellDisc _spellGhost = null!;
+    private Label _spellGhostName = null!;
+
     // Status-effect chips (30.5C): one tinted chip per active effect. The row is rebuilt only
     // when the effect set changes (signature compare); timers update in place per frame.
     private HFlowContainer _statusRow = null!;
@@ -146,6 +161,8 @@ public partial class GameHud
     private int _spellStateShown = -1;
     private float _spellStateValueShown = float.NaN;
     private int _spellStateColorShown = -1;
+    private int _spellWheelShown = -1;
+    private string? _spellGhostShown;
 
     private int _controlKey = int.MinValue;
     private bool _statusStale;
@@ -193,7 +210,18 @@ public partial class GameHud
         _spellStateShown = -1;
         _spellStateValueShown = float.NaN;
         _spellStateColorShown = -1;
+        _spellWheelShown = -1;
+        _spellGhostShown = null;
     }
+
+    /// <summary>The spell whose glyph heads the spell row, or empty (the screenshot harness).</summary>
+    public string SpellRowGlyphForCapture => _spellRow.Visible ? _spellDisc.SpellId : string.Empty;
+
+    /// <summary>Whether the row's "hold for the wheel" line is up (the screenshot harness).</summary>
+    public bool SpellWheelHintForCapture => _spellGroup.Visible && _spellWheelRow.Visible;
+
+    /// <summary>The spell ghosted as the tap target, or empty (the screenshot harness).</summary>
+    public string SpellGhostForCapture => SpellWheelHintForCapture && _spellTap.Visible ? _spellGhost.SpellId : string.Empty;
 
     private void BuildVitals()
     {
@@ -226,17 +254,55 @@ public partial class GameHud
         _controlRow.AddThemeConstantOverride("v_separation", UiTheme.SpaceXs);
         col.AddChild(_controlRow);
 
-        // Prepared spell: its key, its name in the school's colour, what it costs, the state readout,
+        // Prepared spell: its glyph, its key, its name in the school's colour, what it costs, the state readout,
         // and a thin recovery bar that fills while the spell cools down (hidden when ready).
         // The glyph resolves from the InputMap like the interaction prompt's does, so a rebind or a
         // pad flip keeps it honest (§44, §45), and affordability has a number to be shown with (§12).
         // Hidden with nothing prepared, so an empty group does not hold a gap open in the column.
-        VBoxContainer spell = _spellGroup = new VBoxContainer { Visible = false };
+        // On a shade of its own, unlike the bars: the bars are solid colour and read on anything,
+        // but this is a line of small coloured text, and school orange on sunlit sand was not there.
+        PanelContainer shade = UiTheme.HudShade();
+        shade.Visible = false;
+        _spellGroup = shade;
+        col.AddChild(shade);
+        var spell = new VBoxContainer();
         spell.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
-        col.AddChild(spell);
+        shade.AddChild(spell);
+
+        // Over the row, so it grows upward like everything else here and the name stays on its bar.
+        _spellWheelRow = new HBoxContainer { Visible = false, MouseFilter = Control.MouseFilterEnum.Ignore };
+        _spellWheelRow.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
+        _spellHoldGlyph = new CenterContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
+        _spellWheelRow.AddChild(_spellHoldGlyph);
+        _spellHoldLabel = UiTheme.HudInk(UiTheme.Caption(Loc.T("hud.spell.wheel_hold"), UiTheme.Text));
+        _spellHoldLabel.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
+        _spellWheelRow.AddChild(_spellHoldLabel);
+
+        _spellTap = new HBoxContainer
+        {
+            Visible = false,
+            MouseFilter = Control.MouseFilterEnum.Ignore,
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+        };
+        _spellTap.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
+        Label tap = UiTheme.HudInk(UiTheme.Caption(Loc.T("hud.spell.wheel_tap"), UiTheme.Text));
+        tap.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
+        _spellTap.AddChild(tap);
+        _spellGhost = SpellDisc.Create(SpellGhostSize, keylined: true);
+        _spellTap.AddChild(_spellGhost);
+        _spellGhostName = UiTheme.HudInk(UiTheme.Caption("", UiTheme.Text));
+        _spellGhostName.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        _spellGhostName.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
+        _spellGhostName.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
+        _spellTap.AddChild(_spellGhostName);
+        _spellWheelRow.AddChild(_spellTap);
+        spell.AddChild(_spellWheelRow);
 
         _spellRow = new HBoxContainer { Visible = false };
         _spellRow.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
+
+        _spellDisc = SpellDisc.Create(SpellDiscSize, keylined: true);
+        _spellRow.AddChild(_spellDisc);
 
         _spellGlyph = new CenterContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
         _spellRow.AddChild(_spellGlyph);
@@ -646,6 +712,10 @@ public partial class GameHud
         _hpPulsed = true;
     }
 
+    /// <summary>The prepared spell's name on the HUD: its school's colour lifted toward white, so
+    /// the dark schools (frost teal, necrotic mauve) read as text and not as a smudge.</summary>
+    private static Color SpellRowInk(Combat.DamageType school) => UiTheme.SchoolColor(school).Lightened(0.22f);
+
     /// <summary>The prepared-spell widget (30.5C): school-tinted name, state readout, and the
     /// cooldown recovery bar (visible only while cooling down).</summary>
     private void UpdateSpellWidget(StatsComponent stats)
@@ -658,18 +728,53 @@ public partial class GameHud
             if (!ReferenceEquals(spell, _spellShown))
             {
                 _spellShown = spell;
-                _spellName.Text = spell.DisplayName;
+                _spellName.Text = SpellText.Name(spell);
 
                 // Font colour, not Modulate: modulate would tint the ink round the letters as well.
-                UiLive.FontColor(_spellName, UiTheme.SchoolColor(spell.School));
+                UiLive.FontColor(_spellName, SpellRowInk(spell.School));
                 InvalidateSpellShown();
+
+                // Every settings change lands here (the invalidation clears _spellShown), so the
+                // accessibility setting is read on those ticks and not on every one.
+                _spellPresses = UiFx.HoldsToPresses;
                 NoteVitalsChanged();
+
+                // A settings change comes through here too, and the discs' colours follow the
+                // colour-vision and contrast settings.
+                _spellDisc.QueueRedraw();
+                _spellGhost.QueueRedraw();
             }
 
             if (_spellGlyphStale || _spellGlyph.GetChildCount() == 0)
             {
                 _spellGlyphStale = false;
                 SetGlyph(_spellGlyph, GameInput.Cast);
+                SetGlyph(_spellHoldGlyph, GameInput.CycleSpell);
+            }
+
+            // The wheel line: only for a caster with a second spell to hold the key for, and the
+            // ghost only once there is a spell to swap back to.
+            int wheel = !SpellPinRules.ShowsWheelHint(spells.SpellCount) ? 0 : _spellPresses ? 2 : 1;
+            if (wheel != _spellWheelShown)
+            {
+                _spellWheelShown = wheel;
+                _spellWheelRow.Visible = wheel != 0;
+                _spellHoldLabel.Text = Loc.T(wheel == 2 ? "hud.spell.wheel_press" : "hud.spell.wheel_hold");
+                NoteVitalsChanged();
+            }
+
+            string ghost = _spellPresses ? SpellFavouritesRules.None : SpellPinRules.Ghost(spells.PreviousSpellId, spell.Id);
+            if (ghost != _spellGhostShown)
+            {
+                _spellGhostShown = ghost;
+                SpellResource? previous = ghost.Length > 0 ? SpellDatabase.Get(ghost) : null;
+                _spellTap.Visible = previous != null;
+                _spellGhost.Display(previous);
+                _spellGhost.Modulate = new Color(1f, 1f, 1f, UiTheme.HighContrast ? 1f : 0.72f);
+                if (previous != null)
+                {
+                    _spellGhostName.Text = SpellText.Name(previous);
+                }
             }
 
             float cd = spells.CooldownOf(spell);
@@ -691,6 +796,10 @@ public partial class GameHud
                 ? Mathf.Round(cost / maxMana * 200f) / 200f
                 : -1f;
             bool silenced = _player.GetComponent<StatusEffectsComponent>() is { IsSilenced: true };
+
+            // Lit while the cast would go through; the wheel's unlit look (a dark disc) while it would
+            // not, so the red number beside it is not the only thing saying so.
+            _spellDisc.Display(spell, !silenced && affordable);
             _spellCost.Visible = cost > 0f || spell.HealthCost > 0f;
 
             // The reading is whole mana, so it is reformatted when the whole number moves.
@@ -708,7 +817,7 @@ public partial class GameHud
             if (afford != _spellAffordShown)
             {
                 _spellAffordShown = afford;
-                UiLive.FontColor(_spellCost, affordable ? UiTheme.Mana : UiTheme.Bad);
+                UiLive.FontColor(_spellCost, affordable ? UiTheme.Mana.Lightened(0.25f) : UiTheme.WheelBad);
             }
 
             // Which line the state readout is on, and the one number two of them carry. The text is
@@ -746,7 +855,7 @@ public partial class GameHud
             {
                 _spellStateColorShown = stateColor;
                 UiLive.FontColor(
-                    _spellState, stateColor == 0 ? UiTheme.Bad : stateColor == 1 ? UiTheme.Dim : UiTheme.Accent);
+                    _spellState, stateColor == 0 ? UiTheme.WheelBad : stateColor == 1 ? UiTheme.Text : UiTheme.Accent);
             }
 
             _spellRow.Visible = true;
@@ -779,6 +888,9 @@ public partial class GameHud
 
             _spellShown = null;
             _spellRow.Visible = false;
+            _spellWheelRow.Visible = false;
+            _spellWheelShown = -1;
+            _spellGhostShown = null;
             _cooldownBar.Visible = false;
         }
 

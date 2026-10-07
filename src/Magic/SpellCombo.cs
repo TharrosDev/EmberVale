@@ -4,6 +4,7 @@ using Embervale.Combat;
 using Embervale.Core.Diagnostics;
 using Embervale.Core.Events;
 using Embervale.Entities;
+using Embervale.Magic.Vfx;
 using Godot;
 
 namespace Embervale.Magic;
@@ -104,6 +105,8 @@ public static class SpellCombo
             return false;
         }
 
+        // Read before the blow: a kill can free the body the volume hangs on.
+        Vector3 at = SpellResolver.VolumeCentre(primary);
         DamageResult result = primary.Receive(new DamagePacket(rule.BonusDamage, spell.School, caster, false, ComboPoise,
             HitKind.Spell, 0f, !spell.Blockable));
         if (rule.ConsumeStatus && lifetime?.Check() != false)
@@ -114,6 +117,7 @@ public static class SpellCombo
         if (primary.OwnerEntity is { } target)
         {
             EventBus.Instance?.Publish(new SpellComboEvent(caster ?? target, target, rule.Id));
+            SpellVfx.Combo(rule.Id, spell, caster, target, at);
         }
 
         Log.Info($"Spell combo triggered: {rule.Name}");

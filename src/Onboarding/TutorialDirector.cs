@@ -80,6 +80,7 @@ public partial class TutorialDirector : Node, ISaveable
             bus.Unsubscribe<InteractionPerformedEvent>(OnInteracted);
             bus.Unsubscribe<UiPanelToggledEvent>(OnPanelToggled);
             bus.Unsubscribe<SpellCastEvent>(OnSpellCast);
+            bus.Unsubscribe<SpellSelectedEvent>(OnSpellSelected);
         }
 
         SaveManager.Instance?.Unregister(this);
@@ -92,6 +93,7 @@ public partial class TutorialDirector : Node, ISaveable
         bus?.Subscribe<InteractionPerformedEvent>(OnInteracted);
         bus?.Subscribe<UiPanelToggledEvent>(OnPanelToggled);
         bus?.Subscribe<SpellCastEvent>(OnSpellCast);
+        bus?.Subscribe<SpellSelectedEvent>(OnSpellSelected);
 
         // Settings win outright: a player who turned tutorials off gets none, and no saved progress
         // can turn them back on.
@@ -244,6 +246,16 @@ public partial class TutorialDirector : Node, ISaveable
         if (e.Caster is PlayerCharacter)
         {
             Complete(TutorialStep.Cast);
+        }
+    }
+
+    private void OnSpellSelected(SpellSelectedEvent e)
+    {
+        // Any deliberate selection counts: the wheel, a tap back to the previous spell, or the
+        // spellbook. An enemy choosing its spell does not publish this.
+        if (e.Caster is PlayerCharacter)
+        {
+            Complete(TutorialStep.SpellWheel);
         }
     }
 

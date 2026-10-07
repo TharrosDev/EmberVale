@@ -553,13 +553,30 @@ public static class ContentValidator
             "res://assets/shaders/ui/sigil_drift.gdshader",
             "res://assets/shaders/ui/ink_shimmer.gdshader",
             "res://assets/shaders/world/world_surface.gdshader",
+
+            // The player's body. A parse error here leaves the player drawn with nothing at all.
+            "res://assets/shaders/player_body.gdshader",
+
+            // The spell effects. A missing one does not stop the game (VfxMaterials falls back to
+            // plain shapes and logs it), which is exactly why it has to fail here: every spell would
+            // quietly be drawn as a sphere.
+            "res://assets/shaders/vfx/vfx_sprite.gdshader",
+            "res://assets/shaders/vfx/vfx_flow.gdshader",
+            "res://assets/shaders/vfx/vfx_ring.gdshader",
+            "res://assets/shaders/vfx/vfx_ribbon.gdshader",
+            "res://assets/shaders/vfx/vfx_distort.gdshader",
+            "res://assets/shaders/vfx/vfx_ground.gdshader",
+            "res://assets/shaders/vfx/vfx_ice.gdshader",
+
+            // The wind-up telegraph. TelegraphRing falls back to a plain hard-edged shape without it.
+            "res://assets/shaders/fx/telegraph.gdshader",
         };
 
         foreach (string path in shaders)
         {
             if (!ResourceLoader.Exists(path) || GD.Load<Shader>(path) is not { } shader)
             {
-                issues.Add($"UI shader '{path}' is missing.");
+                issues.Add($"Shader '{path}' is missing.");
                 continue;
             }
 
@@ -575,7 +592,7 @@ public static class ContentValidator
             // here explicitly rather than being allowed to weaken the check for the others.
             if (shader.GetShaderUniformList().Count == 0)
             {
-                issues.Add($"UI shader '{path}' failed to compile (it exposes no uniforms).");
+                issues.Add($"Shader '{path}' failed to compile (it exposes no uniforms).");
             }
         }
     }

@@ -6,6 +6,7 @@ using Embervale.Core.Events;
 using Embervale.Core.Pooling;
 using Embervale.Corruption;
 using Embervale.Entities;
+using Embervale.Magic.Vfx;
 using Embervale.Progression;
 using Embervale.Save;
 using Embervale.Stats;
@@ -68,6 +69,11 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
     private Progression.ProgressionComponent? _progression;
     private SchoolMasteryComponent? _mastery;
     private int _selected;
+
+    // The spell wheel's bookkeeping (SpellFavouritesRules): eight pinned ids and the spell selected
+    // before this one. Every caster carries them; only the player's are ever read.
+    private string[] _favourites = SpellFavouritesRules.Empty();
+    private string _previous = SpellFavouritesRules.None;
 
     // Active charged/channeled cast (Phase 29.5A); null for instant casts and when idle.
     private SpellResource? _activeCast;
@@ -138,6 +144,18 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
     public SpellResource? Selected =>
         _spells.Count == 0 ? null : _spells[Mathf.Clamp(_selected, 0, _spells.Count - 1)];
 
+    /// <summary>The eight favourite slots, each a known spell's id or empty. Always
+    /// <see cref="SpellFavouritesRules.SlotCount"/> long; a spell sits in at most one slot.</summary>
+    public IReadOnlyList<string> Favourites => _favourites;
+
+    /// <summary>The id of the spell selected before the current one, or empty when there is none.</summary>
+    public string PreviousSpellId => _previous;
+
+    /// <summary>True while a cast is wound up, charging or channelling: the prepared spell cannot be
+    /// changed under it, so <see cref="Select"/>, <see cref="SelectPrevious"/> and <see cref="Cycle"/>
+    /// all refuse.</summary>
+    public bool SelectionLocked => _pending != null || _activeCast != null;
+
     private StatusEffectsComponent? Statuses =>
         _statuses != null && IsInstanceValid(_statuses)
             ? _statuses
@@ -164,6 +182,8 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
         _projectilePool = new NodePool<SpellProjectile>(
             () => new SpellProjectile { Released = ReturnProjectile }, prewarm: 4);
         RebuildSpells();
+        _favourites = SpellFavouritesRules.Default(KnownIds());
+        _previous = SpellFavouritesRules.None;
         RegisterSaveable();
     }
 
@@ -174,6 +194,9 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
         EventBus.Instance?.Unsubscribe<DamageDealtEvent>(OnDamageDealt);
         EventBus.Instance?.Unsubscribe<EntityDiedEvent>(OnEntityDied);
         EventBus.Instance?.Unsubscribe<GameLoadingEvent>(OnGameLoading);
+
+        // A caster freed mid wind-up, charge or channel (despawned, streamed out) still ends its aura.
+        EndWindupVfx(SpellWindupEnd.Stopped);
         DropChannelSlow();
         _worldRay?.Dispose();
         _worldRay = null;
@@ -187,7 +210,7 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
     {
         if (ReferenceEquals(e.Entity, Entity))
         {
-            CancelCast();
+            CancelCastAs(SpellWindupEnd.Interrupted);
         }
     }
 
@@ -261,7 +284,7 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
         else if (_activeCast is { } held && (InterruptsNow(held) ||
                  (_channelReleased && _actions is { Current: null })))
         {
-            CancelCast();
+            CancelCastAs(SpellWindupEnd.Interrupted);
             if (Entity != null)
             {
                 if (_actions == null)
@@ -290,6 +313,7 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
         _activeCast = null;
         _channelReleased = false;
         DropChannelSlow();
+        EndWindupVfx(SpellWindupEnd.Interrupted);
         _actions?.Cancel();
         if (spent > 0f && _stats is { IsAlive: true })
         {
@@ -348,20 +372,104 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
     public float CooldownOf(SpellResource spell) =>
         _cooldowns.TryGetValue(spell.Id, out double cd) ? (float)Mathf.Max(0d, cd) : 0f;
 
-    /// <summary>Moves the prepared-spell selection by <paramref name="direction"/> (wrapping).</summary>
+    /// <summary>Moves the prepared-spell selection by <paramref name="direction"/> (wrapping). Refused
+    /// while <see cref="SelectionLocked"/>.</summary>
     public void Cycle(int direction)
     {
-        if (_spells.Count == 0)
+        if (_spells.Count == 0 || SelectionLocked)
         {
             return;
         }
 
         int count = _spells.Count;
-        _selected = (((_selected + direction) % count) + count) % count;
+        SelectIndex((((_selected + direction) % count) + count) % count);
+    }
+
+    /// <summary>
+    /// Prepares the known spell <paramref name="spellId"/> (a retired id resolves to its replacement)
+    /// and publishes <see cref="SpellSelectedEvent"/>. False when the spell is not known, or while
+    /// <see cref="SelectionLocked"/>: a cast in flight keeps the spell it began with.
+    /// </summary>
+    public bool Select(string spellId)
+    {
+        if (SelectionLocked)
+        {
+            return false;
+        }
+
+        string id = ResolveId(spellId);
+        int index = _spells.FindIndex(s => s.Id == id);
+        if (index < 0)
+        {
+            return false;
+        }
+
+        SelectIndex(index);
+        return true;
+    }
+
+    /// <summary>Swaps back to the spell selected before this one. False when there is none, it has
+    /// since been forgotten, or while <see cref="SelectionLocked"/>.</summary>
+    public bool SelectPrevious() => _previous.Length > 0 && Select(_previous);
+
+    /// <summary>
+    /// Pins <paramref name="spellId"/> to favourite <paramref name="slot"/> (0-based); an empty id
+    /// clears the slot. A spell already pinned elsewhere moves and the two slots trade contents.
+    /// False when the slot does not exist, the spell is not known, or nothing changed.
+    /// </summary>
+    public bool SetFavourite(int slot, string spellId)
+    {
+        string id = string.IsNullOrEmpty(spellId) ? SpellFavouritesRules.None : ResolveId(spellId);
+        if ((id.Length > 0 && !_spells.Exists(s => s.Id == id)) || !SpellFavouritesRules.Set(_favourites, slot, id))
+        {
+            return false;
+        }
+
+        if (Entity != null)
+        {
+            EventBus.Instance?.Publish(new SpellsChangedEvent(Entity));
+        }
+
+        return true;
+    }
+
+    /// <summary>The one writer of a deliberate selection: moves the index, remembers the spell it
+    /// left as the previous one, and says so. An AI's cast-by-id sets the index directly and leaves
+    /// "previous" alone, because nothing swaps back for it.</summary>
+    private void SelectIndex(int index)
+    {
+        string before = Selected?.Id ?? SpellFavouritesRules.None;
+        _selected = index;
+        string now = Selected?.Id ?? SpellFavouritesRules.None;
+        _previous = SpellFavouritesRules.PreviousAfterSelect(_previous, before, now);
         if (Entity != null && Selected != null)
         {
             EventBus.Instance?.Publish(new SpellSelectedEvent(Entity, Selected.Id));
         }
+    }
+
+    /// <summary>Adds a spell to the spellbook and pins it to the first free favourite slot.</summary>
+    private void AddKnown(SpellResource spell)
+    {
+        _spells.Add(spell);
+        if (!KnownSpellIds.Contains(spell.Id))
+        {
+            KnownSpellIds.Add(spell.Id);
+        }
+
+        SpellFavouritesRules.Pin(_favourites, spell.Id);
+    }
+
+    /// <summary>The known spell ids, in the order they are known.</summary>
+    private List<string> KnownIds()
+    {
+        var ids = new List<string>(_spells.Count);
+        foreach (SpellResource spell in _spells)
+        {
+            ids.Add(spell.Id);
+        }
+
+        return ids;
     }
 
     /// <summary>The caster's current corruption tier (Untainted when it has no
@@ -393,11 +501,7 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
             return;
         }
 
-        _spells.Add(spell);
-        if (!KnownSpellIds.Contains(spell.Id))
-        {
-            KnownSpellIds.Add(spell.Id);
-        }
+        AddKnown(spell);
     }
 
     /// <summary>Adds a spell resource to the spellbook directly, without the database lookup. For a
@@ -410,11 +514,7 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
             return;
         }
 
-        _spells.Add(spell);
-        if (!KnownSpellIds.Contains(spell.Id))
-        {
-            KnownSpellIds.Add(spell.Id);
-        }
+        AddKnown(spell);
     }
 
     /// <summary>Whether the spell is already in this caster's spellbook.</summary>
@@ -436,12 +536,7 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
             return false;
         }
 
-        _spells.Add(spell);
-        if (!KnownSpellIds.Contains(spell.Id))
-        {
-            KnownSpellIds.Add(spell.Id);
-        }
-
+        AddKnown(spell);
         _ranks[spell.Id] = 1;
         if (Entity != null)
         {
@@ -474,6 +569,8 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
         _ranks.Remove(id);
         _cooldowns.Remove(id);
         _selected = Mathf.Clamp(_selected, 0, Mathf.Max(0, _spells.Count - 1));
+        SpellFavouritesRules.Clear(_favourites, id);
+        _previous = SpellFavouritesRules.RestorePrevious(_previous, Selected?.Id ?? SpellFavouritesRules.None, KnownIds());
         if (Entity != null)
         {
             EventBus.Instance?.Publish(new SpellsChangedEvent(Entity));
@@ -601,6 +698,7 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
             if (Entity != null)
             {
                 EventBus.Instance?.Publish(new CastWindupStartedEvent(Entity, spell.Id, LastWindupSeconds));
+                SpellVfx.Windup(Entity, spell, SpellWindupKind.Cast, LastWindupSeconds, charge);
             }
         }
         else
@@ -668,10 +766,12 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
         {
             _channelReleased = true;
             ApplyChannelSlow(spell);
+            BeginChannelVfx(spell);
             TickChannel(0d);
         }
         else
         {
+            EndWindupVfx(SpellWindupEnd.Released);
             Deliver(spell, _pendingPower, _pendingCharge);
         }
     }
@@ -696,6 +796,11 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
             case CastMode.Charged when CanCast(spell):
                 _activeCast = spell;
                 _chargeElapsed = 0f;
+                if (Entity != null)
+                {
+                    SpellVfx.Windup(Entity, spell, SpellWindupKind.Charge, spell.ChargeTime);
+                }
+
                 return true;
             case CastMode.Channeled when CanCast(spell):
                 _channelReleased = false;
@@ -708,6 +813,7 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
                 if (_channelReleased)
                 {
                     ApplyChannelSlow(spell);
+                    BeginChannelVfx(spell);
                     TickChannel(0d);
                 }
                 return true;
@@ -724,6 +830,11 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
         {
             case CastMode.Charged:
                 _chargeElapsed += (float)delta;
+                if (Entity != null)
+                {
+                    SpellVfx.WindupProgress(Entity, ChargeProgress);
+                }
+
                 break;
             case CastMode.Channeled when _channelReleased:
                 TickChannel(delta);
@@ -751,8 +862,13 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
             float power = SpellCharge.PowerMultiplier(_chargeElapsed, spell.ChargeTime, spell.MaxChargeMultiplier);
 
             // The release of a charged spell is the same beat as an instant one: the charge decided how
-            // strong it is, the action decides when it leaves.
-            StartCast(spell, power, held);
+            // strong it is, the action decides when it leaves. A cast that began replaced the charge's
+            // aura with its own wind-up; one that delivered at once, or was refused, ends it here.
+            bool began = StartCast(spell, power, held);
+            if (!began || _pending == null)
+            {
+                EndWindupVfx(began ? SpellWindupEnd.Released : SpellWindupEnd.Stopped);
+            }
         }
         else if (spell.CastMode == CastMode.Channeled)
         {
@@ -763,6 +879,7 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
             else
             {
                 _actions?.ReleaseHold();
+                EndWindupVfx(SpellWindupEnd.Stopped);
             }
             _channelReleased = false;
             _cooldowns[spell.Id] = CooldownFor(spell);
@@ -771,12 +888,20 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
 
     /// <summary>Abandons an in-progress cast without a release (e.g. a menu opens). A channel starts its
     /// cooldown, and a committed cast retains the cost and cooldown it already paid.</summary>
-    public void CancelCast()
+    public void CancelCast() => CancelCastAs(SpellWindupEnd.Stopped);
+
+    private void CancelCastAs(SpellWindupEnd how)
     {
         if (_activeCast is { CastMode: CastMode.Channeled } channel)
         {
             _cooldowns[channel.Id] = CooldownFor(channel);
         }
+
+        if (SelectionLocked)
+        {
+            EndWindupVfx(how);
+        }
+
         _activeCast = null;
         _channelReleased = false;
         DropChannelSlow();
@@ -809,6 +934,26 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
         {
             _stats?.GetStat(StatType.MoveSpeed).RemoveModifiersFromSource(this);
             _channelSlow = null;
+        }
+    }
+
+    // --- presentation: every effect goes through SpellVfx, which draws nothing headless ----------
+
+    /// <summary>The wind-up, charge or channel aura on this caster ends.</summary>
+    private void EndWindupVfx(SpellWindupEnd how)
+    {
+        if (Entity != null)
+        {
+            SpellVfx.WindupEnd(Entity, how);
+        }
+    }
+
+    /// <summary>A channel has released and is sustaining: its aura replaces the wind-up's.</summary>
+    private void BeginChannelVfx(SpellResource spell)
+    {
+        if (Entity != null)
+        {
+            SpellVfx.Windup(Entity, spell, SpellWindupKind.Channel, 0f);
         }
     }
 
@@ -848,6 +993,11 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
     private void Deliver(SpellResource spell, float power, float charge)
     {
         int team = _combat?.Team ?? 0;
+        if (Entity != null)
+        {
+            (Vector3 from, Vector3 along) = Aim();
+            SpellVfx.Release(Entity, spell, from, along, charge);
+        }
 
         switch (spell.Delivery)
         {
@@ -1003,7 +1153,15 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
         // Add to the tree (so its visual children build on first use) then position + arm it.
         SpellLifetime.HostFor(Entity, this).AddChild(projectile);
         projectile.GlobalPosition = origin;
+
+        // The bolt is drawn leaving the casting hand; it flies, and hits, from the aim origin.
+        Vector3 hand = SpellVfx.CastOrigin(Entity, origin);
+        projectile.VisualOrigin = hand;
         projectile.Launch(spell, BuildPacket(spell, power, charge), Entity, team, direction);
+        if (spell.CastMode == CastMode.Channeled && Entity != null)
+        {
+            SpellVfx.Beam(Entity, spell, hand, origin + (direction * spell.Range));
+        }
     }
 
     private void CastArea(SpellResource spell, int team, float power, float charge)
@@ -1152,13 +1310,7 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
             }
         }
 
-        // Presentation: a streak of flashes along the line the caster travelled.
-        int puffs = Mathf.Max(1, Mathf.CeilToInt(travel / 2f));
-        for (int i = 0; i <= puffs; i++)
-        {
-            SpellResolver.SpawnFlashAt(
-                body, start + (direction * (travel * i / puffs)) + (Vector3.Up * 1f), 0.9f, SpellSchools.Color(spell.School));
-        }
+        SpellVfx.Dash(spell, Entity, start, end);
 
         body.GlobalPosition = end;
         body.Velocity = Vector3.Zero;
@@ -1282,20 +1434,20 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
         float travel = TravelInDirection(_blinkTravel, WallMargin, _blinkDirection);
         float actualCost = SpellRules.BlinkCost(_blinkFullCost, travel, spell.BlinkDistance);
         _stats?.ModifyCurrent(StatType.Mana, Mathf.Max(0f, _blinkPaid - actualCost));
-        Color colour = SpellSchools.Color(spell.School);
-        SpellResolver.SpawnFlashAt(body, body.GlobalPosition + (Vector3.Up * 1f), 0.9f, colour);
+        Vector3 from = body.GlobalPosition;
         body.GlobalPosition += _blinkDirection * travel;
         body.Velocity = Vector3.Zero;
-        SpellResolver.SpawnFlashAt(body, body.GlobalPosition + (Vector3.Up * 1f), 0.9f, colour);
+        SpellVfx.Blink(spell, Entity, from, body.GlobalPosition);
     }
 
     /// <summary>Applies a Self-delivery spell's heal and/or beneficial status to <paramref name="target"/>
     /// (the caster for a normal Self cast; an ally for an enemy support caster, Phase 29.5F).</summary>
-    private void ApplySupport(IEntity? target, SpellResource spell, float power)
+    /// <returns>The stacks of the spell's <c>ConsumesStatusId</c> it ate off the target.</returns>
+    private int ApplySupport(IEntity? target, SpellResource spell, float power)
     {
         if (target == null)
         {
-            return;
+            return 0;
         }
 
         StatusEffectsComponent? statuses = target.GetComponent<StatusEffectsComponent>();
@@ -1316,6 +1468,8 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
             target.GetComponent<StatusEffectsComponent>()?
                 .Apply(StatusEffectDatabase.Get(spell.StatusEffectId), Entity);
         }
+
+        return consumed;
     }
 
     /// <summary>Selects a known spell by id and casts it. The lever enemy AI uses to choose a spell (the
@@ -1369,9 +1523,26 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
 
         _stats!.ModifyCurrent(StatType.Mana, -EffectiveManaCost(spell));
         _cooldowns[spell.Id] = CooldownFor(spell);
-        ApplySupport(ally, spell, 1f);
+
+        // The spell leaves this caster and lands on the ally: the one cast whose target is not its caster.
+        Vector3? landing = ally.Body is { } allyBody && IsInstanceValid(allyBody) && allyBody.IsInsideTree()
+            ? allyBody.GlobalPosition + Vector3.Up
+            : null;
         if (Entity != null)
         {
+            (Vector3 from, Vector3 along) = Aim();
+            SpellVfx.Release(Entity, spell, from, along, 0f);
+        }
+
+        int consumed = ApplySupport(ally, spell, 1f);
+        if (Entity != null)
+        {
+            if (landing is { } at)
+            {
+                SpellVfx.Impact(spell, Entity, new SpellImpactInfo(
+                    at, Vector3.Up, ally, SpellImpactKind.Target, Consumed: consumed));
+            }
+
             EventBus.Instance?.Publish(new SpellCastEvent(Entity, spell.Id));
         }
 
@@ -1436,12 +1607,20 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
             cooldowns[pair.Key] = pair.Value;
         }
 
+        var favourites = new Godot.Collections.Array();
+        foreach (string id in _favourites)
+        {
+            favourites.Add(id);
+        }
+
         return new Godot.Collections.Dictionary
         {
             ["spells"] = ids,
             ["selected"] = _selected,
             ["ranks"] = ranks,
             ["cooldowns"] = cooldowns,
+            ["favourites"] = favourites,
+            ["previous"] = _previous,
         };
     }
 
@@ -1492,9 +1671,29 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
             }
         }
 
-        if (data.TryGetValue("selected", out Variant selectedVar))
+        // Absent means the first spell, never whatever the abandoned timeline had prepared.
+        _selected = Mathf.Clamp(SaveRead.Int(data, "selected"), 0, Mathf.Max(0, _spells.Count - 1));
+
+        // Favourites and the previous spell are replaced outright. A save from before they existed
+        // has neither key: the favourites are then the first eight known spells and there is no
+        // previous one. A saved id is resolved first, so a retired spell keeps its slot under its
+        // replacement, and an id this caster does not know leaves its slot empty.
+        List<string> known = KnownIds();
+        List<string>? saved = null;
+        if (data.TryGetValue("favourites", out Variant favouritesVar) && favouritesVar.VariantType == Variant.Type.Array)
         {
-            _selected = Mathf.Clamp(selectedVar.AsInt32(), 0, Mathf.Max(0, _spells.Count - 1));
+            saved = new List<string>();
+            foreach (Variant entry in SaveRead.List(data, "favourites"))
+            {
+                saved.Add(entry.VariantType is Variant.Type.String or Variant.Type.StringName && entry.AsString().Length > 0
+                    ? ResolveId(entry.AsString())
+                    : SpellFavouritesRules.None);
+            }
         }
+
+        _favourites = SpellFavouritesRules.Restore(saved, known);
+        string previous = SaveRead.Text(data, "previous");
+        _previous = SpellFavouritesRules.RestorePrevious(
+            previous.Length > 0 ? ResolveId(previous) : previous, Selected?.Id ?? SpellFavouritesRules.None, known);
     }
 }

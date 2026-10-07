@@ -56,6 +56,112 @@ public static class CameraRigMath
     /// camera ends up looking at its own feet through the floor.</summary>
     public const float ThirdPersonPitchLimit = 1.3f;
 
+    /// <summary>Looking UP in third person stops sooner still. The seat swings down as the look goes
+    /// up, the ground stops it, and the wall guard slides the camera in along the ground toward the
+    /// body: past about sixty degrees it was a metre and a half from the player's back, looking up at
+    /// a torso that filled the bottom half of the frame with its head out of shot. Looking down has no
+    /// such trouble (the seat rises), so the limit is one-sided.</summary>
+    public const float ThirdPersonLookUpLimit = 1.0f;
+
+    /// <summary>How low the character's feet may sit in the third-person frame at a level look, as a
+    /// fraction of the half height below the centre line. 0.7 is 612 px down a 720 px screen, clear
+    /// of the hotbar, which starts at about 640.</summary>
+    public const float FramingFeetAtMost = 0.7f;
+
+    /// <summary>The most the third-person camera is ever tilted down for framing (8 degrees).</summary>
+    public const float MaxFramingTilt = 0.14f;
+
+    /// <summary>
+    /// How far the third-person camera is tilted DOWN about its own seat, in radians, so that at a
+    /// level look the character's feet are on screen above the hotbar instead of behind it. The seat
+    /// is <paramref name="cameraHeight"/> above the ground and <paramref name="distance"/> behind the
+    /// character, so the feet are a fixed angle below the camera's level line; a narrow field of view
+    /// puts that angle off the bottom of the frame. The tilt is exactly what brings the feet back to
+    /// <see cref="FramingFeetAtMost"/>: nothing at a wide view or a far seat, capped at
+    /// <see cref="MaxFramingTilt"/>.
+    ///
+    /// <para>⚠️ The rig feeds this the player's SETTINGS (field of view, distance) through the closest
+    /// ordinary framing, never the live profile: a tilt that moved as a cast or a fight began would
+    /// swing the crosshair off what the player was pointing at. It is a property of the seat, like the
+    /// rise. The crosshair is the camera's own centre ray (<c>AimController</c> reads the camera's
+    /// forward), so the shot still goes where the crosshair is.</para>
+    /// </summary>
+    public static float FramingTilt(float fovDegrees, float distance, float cameraHeight)
+    {
+        if (!float.IsFinite(fovDegrees) || !float.IsFinite(distance) || !float.IsFinite(cameraHeight) || cameraHeight <= 0f)
+        {
+            return 0f;
+        }
+
+        float halfFov = Math.Clamp(fovDegrees, MinFov, MaxFov) * (MathF.PI / 360f);
+        float feet = MathF.Atan2(cameraHeight, Math.Clamp(distance, MinDistance, MaxDistance));
+        float lowest = MathF.Atan(FramingFeetAtMost * MathF.Tan(halfFov));
+        return Math.Clamp(feet - lowest, 0f, MaxFramingTilt);
+    }
+
+    /// <summary>The player's own arms in first person: body further than <see cref="LimbCoreRadius"/>
+    /// from the vertical line through the head (so not the chest, belly or legs the player sees when
+    /// looking down) is thinned out as it comes inside <see cref="LimbFadeRadius"/> of the eye and
+    /// gone at <see cref="LimbFadeGone"/> of that. A sprint's arm pump brings a forearm past the eye
+    /// at a hand's width; without this, looking down at a run, it was a sleeve the height of the
+    /// screen. The eye's own sphere cannot be widened to take it, because it would take the chest.</summary>
+    public const float LimbFadeRadius = 0.36f;
+    public const float LimbFadeGone = 0.68f;
+    public const float LimbCoreRadius = 0.24f;
+
+    /// <summary>In third person, body nearer the camera than this is thinned out the same way: a
+    /// wall or the ground has squeezed the camera onto the player's back, and a mesh that fills the
+    /// frame from inside its own silhouette is worse than one that is half there.</summary>
+    public const float NearBodyFade = 0.8f;
+
+    /// <summary>
+    /// What the body shader's <c>view_fade</c> is set to: x the radius round the eye inside which
+    /// limbs thin out and y the core they are measured against (first person, while the head is cut
+    /// out), z the distance from the camera inside which the whole body thins out (once the camera
+    /// is out behind it). All zero in between, while the camera travels through the head.
+    /// </summary>
+    public static Vector4 ViewFade(bool headHidden, float thirdBlend) =>
+        headHidden ? new Vector4(LimbFadeRadius, LimbCoreRadius, 0f, 0f)
+        : thirdBlend >= 0.5f ? new Vector4(0f, 0f, NearBodyFade, 0f)
+        : Vector4.Zero;
+
+    /// <summary>How far up the look may go: <paramref name="limit"/> (the limit in force either
+    /// way) in first person, capped toward <see cref="ThirdPersonLookUpLimit"/> on the way out to
+    /// third.</summary>
+    public static float LookUpLimit(float limit, float thirdBlend) =>
+        Mathf.Lerp(limit, Math.Min(limit, ThirdPersonLookUpLimit), Math.Clamp(thirdBlend, 0f, 1f));
+
+    /// <summary>
+    /// Whether a piece hung on the player's skeleton is drawn as a shadow only in first person:
+    /// everything that is not in a hand. What is on the head would be in the camera; what is on
+    /// the hips, back or chest (a satchel, a sheathed blade) hangs off a torso the eye's cut-out
+    /// has opened, so it was a box floating beside one boot. What the hands hold stays: it is what
+    /// the player swings.
+    /// </summary>
+    public static bool HiddenInFirstPerson(int bone, int leftHand, int rightHand) =>
+        bone < 0 || (bone != leftHand && bone != rightHand);
+
+    /// <summary>How long what the hands hold stays in the first-person view after the last moment of
+    /// fighting, so a blade does not blink out between two swings or as a guard drops.</summary>
+    public const float WeaponLowerSeconds = 2.5f;
+
+    /// <summary>
+    /// Whether what the hands hold is drawn in first person. The body's clips were authored for a
+    /// camera behind the character: at a jog, a sprint or a strafe the arm pump swings the blade
+    /// straight across the view, at arm's length from the eye and the height of the screen. So it is
+    /// drawn while it is up for a fight (an attack, a cast or a draw in progress, a raised guard, a
+    /// lock) and for <see cref="WeaponLowerSeconds"/> after, and is a shadow on the ground the rest
+    /// of the time. ⚠️ An action in progress always shows it: a swing with no blade would be worse
+    /// than a blade across the view.
+    /// </summary>
+    public static bool WeaponUp(bool acting, bool lockedOn, float secondsSinceFighting) =>
+        acting || lockedOn || (float.IsFinite(secondsSinceFighting) && secondsSinceFighting < WeaponLowerSeconds);
+
+    /// <summary>As <see cref="HiddenInFirstPerson(int, int, int)"/>, with the hands' pieces hidden too
+    /// while <paramref name="weaponUp"/> is false (<see cref="WeaponUp"/>).</summary>
+    public static bool HiddenInFirstPerson(int bone, int leftHand, int rightHand, bool weaponUp) =>
+        !weaponUp || HiddenInFirstPerson(bone, leftHand, rightHand);
+
     /// <summary>How the wall spring's push-out is shaped: a pause before anything moves, a ramp up to
     /// full speed, and a slowing approach so it does not stop dead at full extension.</summary>
     public const float PushRampSeconds = 0.3f;
@@ -69,6 +175,86 @@ public static class CameraRigMath
     public const int ProbeCount = 5;
     public const float ProbeSpreadX = 0.3f;
     public const float ProbeSpreadY = 0.2f;
+
+    /// <summary>The furthest the first-person eye may sit from the fixed pivot (metres). A clip that
+    /// throws the head — a knockdown, a death — must not throw the camera with it.</summary>
+    public const float MaxEyeOffset = 0.45f;
+
+    /// <summary>How much of the head's animated travel the first-person eye takes on foot: a little
+    /// of the rise and fall, almost none of the sway and lean. The eye is anchored to where the head
+    /// RESTS, so a sprint that leans the head forward leaves the camera behind it instead of dragging
+    /// the view through every footfall.</summary>
+    public const float EyeFollowVertical = 0.3f;
+    public const float EyeFollowHorizontal = 0.1f;
+
+    /// <summary>Where the neck pivots, measured from the head bone's rest position (pivot space:
+    /// +Y up, -Z forward), and the arm from that pivot out to the eye. Pitch swings the arm, so
+    /// looking down carries the eye forward and down over the chest the way a tilted head does.</summary>
+    public static readonly Vector3 NeckOffset = new(0f, -0.03f, 0f);
+    public static readonly Vector3 EyeArm = new(0f, 0.10f, -0.09f);
+
+    /// <summary>How much further the eye is carried as the look goes down: forward, out over the
+    /// chest, and back up by about what the swung arm drops it, reaching the full amount at
+    /// <see cref="LookDownFullPitch"/> (<see cref="LookDownReach"/>). The arm alone left the eye
+    /// 11 cm in front of the neck and 10 cm below the head bone at a straight-down look, which on
+    /// the player's body is three centimetres from the collar with the chest standing 14 cm proud
+    /// just beneath it: the frame was the player's own torso. The body does not bend at the waist
+    /// when the player looks down, so the eye leans out instead, the way the head would.</summary>
+    public const float LookDownForward = 0.24f;
+    public const float LookDownRise = 0.10f;
+    public const float LookDownFullPitch = 1.4835f;
+
+    /// <summary>The front of the player's torso in the sagittal plane, measured on
+    /// <c>chr_player_base</c> at rest from its head bone (up, forward, metres): the collar and neck
+    /// base come out to <see cref="CollarFront"/> and start <see cref="CollarTop"/> below the bone,
+    /// the chest to <see cref="ChestFront"/> from <see cref="ChestTop"/> down. Everything above the
+    /// collar is the head, which is cut out. <see cref="TorsoClearance"/> measures the eye against
+    /// these, and the eye's path must keep <see cref="SafeEyeClearance"/> (more than the 0.08 m near
+    /// plane) from them at every pitch.</summary>
+    public const float CollarTop = -0.04f;
+    public const float CollarFront = 0.09f;
+    public const float ChestTop = -0.17f;
+    public const float ChestFront = 0.16f;
+    public const float SafeEyeClearance = 0.09f;
+
+    /// <summary>The sphere the body shader cuts out of the player's own mesh in first person:
+    /// its centre measured from the animated head bone (up, forward) and its radius. Sized to take
+    /// the skull and hair and leave the shoulders, so the body is still there when looking down.</summary>
+    public const float HeadSphereRise = 0.05f;
+    public const float HeadSphereForward = 0.03f;
+    public const float HeadSphereRadius = 0.22f;
+
+    /// <summary>The head is cut out while the camera is nearer its centre than
+    /// <see cref="HeadHideWithin"/> and drawn again once it is past <see cref="HeadShowBeyond"/>.
+    /// Distance rather than the view mode, so the swap out to third person shows the head as the
+    /// camera leaves it and a third-person camera a wall has pushed into the skull hides it.</summary>
+    public const float HeadHideWithin = 0.4f;
+    public const float HeadShowBeyond = 0.5f;
+
+    /// <summary>Fully in first person the head stays cut out to this distance instead. Looking down
+    /// leans the eye out ahead of the body, and a clip can have the head a quarter of a metre behind
+    /// where it rests, so the eye is routinely further from the head than
+    /// <see cref="HeadShowBeyond"/>; a head that came back then would come back in the player's
+    /// face. Past this the head has been thrown clear of the eye (a knockdown, a roll) and is drawn,
+    /// so the player does not look at their own headless body.</summary>
+    public const float FirstPersonHeadShowBeyond = 0.8f;
+
+    /// <summary>The second cut-out, a sphere round the eye itself: nothing of the player's own body
+    /// is drawn nearer the camera than the far corners of its near plane, plus
+    /// <see cref="EyeSphereMargin"/>, so a collar or a shoulder a clip swings past the eye is opened
+    /// cleanly instead of being sliced by the near plane and filling the frame. Held between the two
+    /// limits: never so small it does nothing, and never so wide it reaches the chest the player is
+    /// looking down at (about 0.18 m from the eye at a stand), which at the widest fields of view
+    /// means the far corners of the near plane are left to the near plane.
+    ///
+    /// <para>The upper limit itself comes down to the lower one as the look goes down
+    /// (<see cref="EyeSphereLimit"/>). Looking down, what is nearest the eye is the chest the player
+    /// is looking at, standing a hand's width behind the view's axis: a wide sphere takes a round
+    /// bite out of it at the bottom of the frame, where the near plane by itself reaches nothing
+    /// that is in view.</para></summary>
+    public const float EyeSphereMargin = 0.02f;
+    public const float MinEyeSphereRadius = 0.12f;
+    public const float MaxEyeSphereRadius = 0.2f;
 
     /// <summary>Critical damping reaches 95% of the way in this many time constants.</summary>
     private const float SettleOmega = 4.75f;
@@ -151,6 +337,122 @@ public static class CameraRigMath
     /// Also the eye-anchor crossfade: the head-bone seat at 0, the fixed-pivot seat at 1.</summary>
     public static Vector3 Blend(Vector3 from, Vector3 to, float t) =>
         from.Lerp(to, Math.Clamp(t, 0f, 1f));
+
+    /// <summary>
+    /// How much of the head's animated travel the eye follows, as (vertical, horizontal) fractions.
+    /// On foot it is <see cref="EyeFollowVertical"/> and <see cref="EyeFollowHorizontal"/>, and
+    /// nothing at all under Reduced Motion. In the saddle the seated pose is where the head IS, not a
+    /// motion to damp, so the eye goes with it fully as <paramref name="mountedBlend"/> reaches 1.
+    /// </summary>
+    public static Vector2 EyeFollow(bool reducedMotion, float mountedBlend)
+    {
+        float onFootVertical = reducedMotion ? 0f : EyeFollowVertical;
+        float onFootHorizontal = reducedMotion ? 0f : EyeFollowHorizontal;
+        float t = Math.Clamp(mountedBlend, 0f, 1f);
+        return new Vector2(Mathf.Lerp(onFootVertical, 1f, t), Mathf.Lerp(onFootHorizontal, 1f, t));
+    }
+
+    /// <summary>The part of the head's animated offset from its rest position the eye takes:
+    /// <paramref name="follow"/>.X of the rise and fall, <paramref name="follow"/>.Y of the rest.</summary>
+    public static Vector3 FollowDelta(Vector3 animatedDelta, Vector2 follow) => new(
+        Finite(animatedDelta.X) * follow.Y,
+        Finite(animatedDelta.Y) * follow.X,
+        Finite(animatedDelta.Z) * follow.Y);
+
+    /// <summary>
+    /// Where the first-person eye is, in the pivot's own frame before pitch (the body's axes, origin
+    /// on the pivot): the head's rest position, down to the neck, out along the pitched
+    /// <see cref="EyeArm"/>, plus whatever of the animated travel is being followed.
+    /// </summary>
+    public static Vector3 EyeUnpitched(Vector3 restHead, float pitch, Vector3 followedDelta) =>
+        restHead + NeckOffset + EyeArm.Rotated(Vector3.Right, pitch) + LookDownReach(pitch) + followedDelta;
+
+    /// <summary>
+    /// The lean the eye takes on top of the swung <see cref="EyeArm"/> as the look goes below level,
+    /// in the pivot's unpitched frame: nothing at or above level, easing to
+    /// <see cref="LookDownForward"/> ahead and <see cref="LookDownRise"/> up at
+    /// <see cref="LookDownFullPitch"/>. Eased at both ends, so the eye does not change speed as the
+    /// look crosses level or arrives at the limit.
+    /// </summary>
+    public static Vector3 LookDownReach(float pitch)
+    {
+        float t = Ease(-Finite(pitch) / LookDownFullPitch);
+        return new Vector3(0f, LookDownRise * t, -LookDownForward * t);
+    }
+
+    /// <summary>
+    /// How far a point is from the front of the torso (<see cref="CollarTop"/> and the constants
+    /// beside it), given its offset from the head bone in the body's axes (+Y up, -Z forward).
+    /// Positive is clear air in front of or above the body; negative is inside it.
+    /// </summary>
+    public static float TorsoClearance(Vector3 fromHead) => Math.Min(
+        SlabClearance(fromHead.Y - CollarTop, -fromHead.Z - CollarFront),
+        SlabClearance(fromHead.Y - ChestTop, -fromHead.Z - ChestFront));
+
+    /// <summary>Distance to a block that fills everything below a top and behind a front, given how
+    /// far the point is above the one and ahead of the other.</summary>
+    private static float SlabClearance(float above, float ahead) =>
+        above >= 0f && ahead >= 0f
+            ? Mathf.Sqrt((above * above) + (ahead * ahead))
+            : Math.Max(above, ahead);
+
+    /// <summary>
+    /// The camera's position under the pitched pivot that puts it on <see cref="EyeUnpitched"/>,
+    /// held within <see cref="MaxEyeOffset"/> of the pivot. The camera is the pivot's child and the
+    /// pivot carries the pitch, so the eye is turned back by the pitch to find its local seat.
+    /// </summary>
+    public static Vector3 EyeLocal(Vector3 restHead, float pitch, Vector3 followedDelta)
+    {
+        Vector3 local = EyeUnpitched(restHead, pitch, followedDelta).Rotated(Vector3.Right, -pitch);
+        float length = local.Length();
+        return length > MaxEyeOffset ? local * (MaxEyeOffset / length) : local;
+    }
+
+    /// <summary>Centre of the first-person head cut-out, from the animated head bone's position and
+    /// the body's up and forward.</summary>
+    public static Vector3 HeadSphereCentre(Vector3 head, Vector3 up, Vector3 forward) =>
+        head + (up * HeadSphereRise) + (forward * HeadSphereForward);
+
+    /// <summary>Whether the head is cut out this frame, given whether it was and how far the camera
+    /// is from the cut-out's centre. The gap between the two distances stops it flickering.</summary>
+    public static bool HeadHidden(bool hidden, float cameraDistance) =>
+        hidden ? cameraDistance < HeadShowBeyond : cameraDistance < HeadHideWithin;
+
+    /// <summary>The same, for a rig that knows how far out to third person it is
+    /// (<paramref name="thirdBlend"/>, 0 in first person). Fully in first person the head is cut out
+    /// all the way to <see cref="FirstPersonHeadShowBeyond"/>.</summary>
+    public static bool HeadHidden(bool hidden, float cameraDistance, float thirdBlend) =>
+        thirdBlend <= 0f ? cameraDistance < FirstPersonHeadShowBeyond : HeadHidden(hidden, cameraDistance);
+
+    /// <summary>
+    /// Radius of the cut-out round the eye for a camera with this near plane, vertical field of view
+    /// (degrees) and aspect (width over height): the distance from the eye to a corner of the near
+    /// plane, plus <see cref="EyeSphereMargin"/>. Derived from the camera rather than fixed, because
+    /// a wide view pushes those corners out and a fixed sphere would let the near plane slice
+    /// whatever sat between the two. <paramref name="pitch"/> (radians, negative down) narrows it
+    /// as the look goes down, so it never reaches the chest.
+    /// </summary>
+    public static float EyeSphereRadius(float near, float fovDegrees, float aspect, float pitch = 0f)
+    {
+        float tan = Mathf.Tan(Mathf.DegToRad(Math.Clamp(Finite(fovDegrees), 1f, 170f)) * 0.5f);
+        float wide = float.IsFinite(aspect) && aspect > 0f ? aspect : 16f / 9f;
+        float corner = Math.Max(Finite(near), 0f) * Mathf.Sqrt(1f + (tan * tan * (1f + (wide * wide))));
+        return Math.Clamp(corner + EyeSphereMargin, MinEyeSphereRadius, EyeSphereLimit(pitch));
+    }
+
+    /// <summary>The widest the cut-out round the eye may be at a pitch:
+    /// <see cref="MaxEyeSphereRadius"/> at or above level, easing down to
+    /// <see cref="MinEyeSphereRadius"/> at <see cref="LookDownFullPitch"/>, in step with the lean
+    /// that carries the eye out over the chest (<see cref="LookDownReach"/>).</summary>
+    public static float EyeSphereLimit(float pitch) => Mathf.Lerp(
+        MaxEyeSphereRadius, MinEyeSphereRadius, Ease(-Finite(pitch) / LookDownFullPitch));
+
+    /// <summary>Whether the body shader discards a point: inside the sphere round the head or the
+    /// one round the eye. The same test the shader runs, for the tests and the probe.</summary>
+    public static bool InCutout(Vector3 point, Vector3 headCentre, float headRadius, Vector3 eye, float eyeRadius) =>
+        point.DistanceTo(headCentre) < headRadius || point.DistanceTo(eye) < eyeRadius;
+
+    private static float Finite(float value) => float.IsFinite(value) ? value : 0f;
 
     /// <summary>The third-person seat at full extension, in pivot space, with every input clamped to a
     /// sane range: the player's distance setting scaled by the profile and by the summed layers, the

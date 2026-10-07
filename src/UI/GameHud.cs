@@ -153,6 +153,8 @@ public partial class GameHud : CanvasLayer
         _layout.Overlay.AddChild(_crosshair);
         _damageDirection = new DamageDirectionOverlay { Name = "DamageDirection" };
         _layout.Overlay.AddChild(_damageDirection);
+        // The spell wheel registers itself with SpellWheelInput as it enters the tree.
+        _layout.Overlay.AddChild(new SpellWheel());
         BuildParty();
         BuildVitals();
         BuildTutorialHint();

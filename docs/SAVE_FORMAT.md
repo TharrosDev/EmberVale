@@ -226,6 +226,14 @@ exist:
 | `loot_ledger` | `dry`, `claimed`, `salt`, `chests` | the dry-roll streak, once-per-save drops claimed, the per-save roll salt, reward chests stood | 0, none, a new salt, 0 |
 | `container_loot:<pid>` | `table` | the loot table path a reward chest rolls on first open. Written only when it differs from the authored one | the authored table |
 | `container_loot:<pid>` | `spilled` | `[{qty, instance}]`: loot this chest put on the ground that nobody has collected. Written only when non-empty | nothing owed; `Load` also removes the live floor pickups it was tracking |
+| `spells:<pid>` | `favourites` | the eight spell-wheel slots: 8 strings, each a spell id or `""` for an empty slot | the first eight known spells, in the order they are known |
+| `spells:<pid>` | `previous` | the id of the spell selected before the current one (the wheel's tap) | none |
+
+`spells` `Load` replaces both. Each saved id goes through `ResolveId`, so a retired spell keeps its
+slot under its replacement; an id the caster does not know, or a second copy of one, leaves the slot
+empty, and a `previous` that is unknown or is the selected spell reads as none
+(`SpellFavouritesRules.Restore` / `RestorePrevious`). `selected` stays the index into `spells`, and
+an absent one is 0. Every caster writes these keys; only the player's are ever read.
 
 `perks` `Load` strips what it applied, replaces everything from the save and never re-checks
 prerequisites. A quickload replays a craft's outcome from `crafts` instead of rerolling it, and a

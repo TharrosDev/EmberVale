@@ -16,11 +16,13 @@ namespace Embervale.Animation;
 /// <code>
 /// root (BlendTree)
 ///   ├─ StateMachine
-///   │    ├─ locomotion  BlendSpace1D over SIGNED forward speed
+///   │    ├─ locomotion  BlendSpace2D over the GAIT (strafe, forward), each over the actor's run speed
+///   │    ├─ fall        Animation   (airborne)
 ///   │    ├─ action      BlendTree: TimeScale -> Animation   (driven by CharacterActionComponent)
 ///   │    ├─ hit         Animation
 ///   │    └─ death       Animation
-///   ├─ UpperBody        Animation  (block / cast pose)
+///   ├─ UpperBody        Animation -> UpperScale (TimeScale) -> UpperSeek (TimeSeek)
+///   │                   (guard, channel and cast poses, and a rider's swing)
 ///   └─ Layer            Blend2 with a BONE FILTER on the upper body
 /// </code>
 ///
@@ -38,6 +40,7 @@ public static class LocomotionTree
     // nothing, and the character simply never moves.
     public const string StateMachineNode = "StateMachine";
     public const string LocomotionState = "locomotion";
+    public const string FallState = "fall";
     public const string ActionState = "action";
     public const string HitState = "hit";
     public const string DeathState = "death";
@@ -47,27 +50,22 @@ public static class LocomotionTree
     public const string ActionScaleParam = "parameters/StateMachine/action/TimeScale/scale";
     public const string UpperBodyBlendParam = "parameters/Layer/blend_amount";
 
-    private const string ActionAnimNode = "Anim";
+    /// <summary>The upper-body clip's own rate, and the request that restarts it from a time
+    /// (seconds; the engine clears it back to -1 once taken). A clip swapped onto the layer would
+    /// otherwise carry on from wherever the last one had got to.</summary>
+    public const string UpperBodyScaleParam = "parameters/UpperScale/scale";
+    public const string UpperBodySeekParam = "parameters/UpperSeek/seek_request";
+
+    public const string ActionAnimNode = "Anim";
+    public const string UpperBodyNode = "UpperBody";
+
     private const string ActionScaleNode = "TimeScale";
-    private const string UpperBodyNode = "UpperBody";
+    private const string UpperScaleNode = "UpperScale";
+    private const string UpperSeekNode = "UpperSeek";
     private const string LayerNode = "Layer";
 
-    /// <summary>
-    /// The blend space, in signed metres per second along the character's facing. Negative is
-    /// walking backwards.
-    ///
-    /// ⚠️ <b>Speed is the blend axis rather than a threshold</b>, which is the point. The ladder
-    /// switched clips when <c>HorizontalSpeed() > 0.6</c>, so a character accelerating from a stand
-    /// popped from idle straight into a run at whatever phase that clip happened to be in.
-    /// </summary>
-    private static readonly (string Slot, float Speed)[] LocomotionPoints =
-    {
-        ("walk_back", -1.6f),
-        ("idle", 0f),
-        ("walk", 1.6f),
-        ("run", 4.2f),
-        ("sprint", 6.8f),
-    };
+    /// <summary>Seconds the fall pose takes to blend in off the ground and back out on landing.</summary>
+    private const float FallBlendSeconds = 0.15f;
 
     /// <summary>
     /// The bones the upper-body layer takes over when it is blended in.
@@ -101,27 +99,74 @@ public static class LocomotionTree
 
         var machine = new AnimationNodeStateMachine();
 
-        var locomotion = new AnimationNodeBlendSpace1D { MinSpace = -2f, MaxSpace = 7f };
-        int points = 0;
-        foreach ((string slot, float speed) in LocomotionPoints)
+        // ⚠️ The axes are GAITS, not metres per second: sideways and forward speed over the actor's
+        // own run speed (LocomotionBlend). A blend axis rather than a threshold is the point — the
+        // ladder switched clips when HorizontalSpeed() > 0.6, so a character accelerating from a
+        // stand popped from idle straight into a run at whatever phase that clip happened to be in.
+        // Sync keeps every clip in the space advancing together, so the feet of the one blending in
+        // are not starting from frame zero.
+        var locomotion = new AnimationNodeBlendSpace2D
+        {
+            MinSpace = new Vector2(LocomotionBlend.MinStrafe, LocomotionBlend.MinForward),
+            MaxSpace = new Vector2(LocomotionBlend.MaxStrafe, LocomotionBlend.MaxForward),
+            // The mode the retired Sync flag stood for; the flag itself is obsolete and fails a
+            // shipping build, which does not carry the tooling build's CS0618 suppression.
+            SyncMode = AnimationNodeBlendSpace2D.SyncModeEnum.Independent,
+            // The triangles are written out below; see LocomotionBlend.Triangles for why.
+            AutoTriangles = false,
+        };
+
+        var placed = new List<(float X, float Y)>();
+        int gaits = 0;
+        foreach (LocomotionBlend.Point point in LocomotionBlend.Points)
         {
             // A slot the body has no clip for is simply not a point in the space. The space
             // interpolates across the gap, so a body without a sprint clip runs faster rather than
-            // freezing — which is the correct degradation and needs no branch anywhere else.
-            if (clips.TryGetValue(slot, out string? clip) && clip.Length > 0)
+            // freezing — which is the correct degradation and needs no branch anywhere else. The
+            // strafes are the exception: they borrow the walk, because without a point off the
+            // forward axis the space has no area and the engine blends nothing at all.
+            string clip = Clip(clips, point.Slot, string.Empty);
+            if (clip.Length == 0 && point.Fallback.Length > 0)
             {
-                locomotion.AddBlendPoint(new AnimationNodeAnimation { Animation = clip }, speed,
-                    name: slot);
-                points++;
+                clip = Clip(clips, point.Fallback, Clip(clips, "run", idle));
             }
+
+            if (clip.Length == 0)
+            {
+                continue;
+            }
+
+            if (point.X == 0f)
+            {
+                gaits++;
+            }
+
+            locomotion.AddBlendPoint(
+                new AnimationNodeAnimation { Animation = clip }, new Vector2(point.X, point.Y),
+                name: point.Slot);
+            placed.Add((point.X, point.Y));
         }
 
-        if (points < 2)
+        // Idle and one way of moving forward or back, at the least.
+        if (gaits < 2)
         {
             return null;
         }
 
+        foreach ((int a, int b, int c) in LocomotionBlend.Triangles(placed))
+        {
+            locomotion.AddTriangle(a, b, c);
+        }
+
         machine.AddNode(LocomotionState, locomotion, new Vector2(200, 100));
+
+        // Airborne. Only a body with a fall clip gets the state; the component asks first (HasFall),
+        // so a body without one simply keeps its locomotion in the air.
+        string fall = Clip(clips, FallState, string.Empty);
+        if (fall.Length > 0)
+        {
+            machine.AddNode(FallState, new AnimationNodeAnimation { Animation = fall }, new Vector2(200, 250));
+        }
 
         // The action state is a small blend tree only so its clip can be time-scaled. That scale is
         // how CharacterActionComponent makes a clip span exactly the action's authored duration.
@@ -145,6 +190,16 @@ public static class LocomotionTree
         Connect(machine, HitState, LocomotionState, 0.15f);
         Connect(machine, ActionState, HitState, 0.08f);
 
+        if (fall.Length > 0)
+        {
+            // Enabled, not Disabled: these two are there to be WALKED by Travel, so the pose eases in
+            // off a ledge and back out on landing.
+            Blend(machine, LocomotionState, FallState, FallBlendSeconds);
+            Blend(machine, FallState, LocomotionState, FallBlendSeconds);
+            Connect(machine, FallState, ActionState, 0.12f);
+            Connect(machine, FallState, HitState, 0.08f);
+        }
+
         // Death is reachable from anywhere and is never left; a respawn rebuilds the state rather
         // than transitioning out, so there is no path back to fall through by accident.
         var toDeath = new AnimationNodeStateMachineTransition
@@ -167,16 +222,28 @@ public static class LocomotionTree
         machine.AddTransition(LocomotionState, DeathState, toDeath);
         machine.AddTransition(ActionState, DeathState, toDeath);
         machine.AddTransition(HitState, DeathState, toDeath);
+        if (fall.Length > 0)
+        {
+            machine.AddTransition(FallState, DeathState, toDeath);
+        }
 
         var root = new AnimationNodeBlendTree();
         root.AddNode(StateMachineNode, machine, new Vector2(0, 0));
         root.AddNode(UpperBodyNode,
             new AnimationNodeAnimation { Animation = Clip(clips, "block", idle) }, new Vector2(0, 220));
 
+        // The upper-body clip is swapped while the tree runs (guard, channel, cast, a rider's swing),
+        // so it gets its own rate and a seek: a one-shot has to start from its first frame and span
+        // the time its action asked for, not carry on from wherever the guard pose had got to.
+        root.AddNode(UpperScaleNode, new AnimationNodeTimeScale(), new Vector2(160, 220));
+        root.AddNode(UpperSeekNode, new AnimationNodeTimeSeek(), new Vector2(320, 220));
+        root.ConnectNode(UpperScaleNode, 0, UpperBodyNode);
+        root.ConnectNode(UpperSeekNode, 0, UpperScaleNode);
+
         var layer = new AnimationNodeBlend2 { FilterEnabled = true };
-        root.AddNode(LayerNode, layer, new Vector2(320, 80));
+        root.AddNode(LayerNode, layer, new Vector2(480, 80));
         root.ConnectNode(LayerNode, 0, StateMachineNode);
-        root.ConnectNode(LayerNode, 1, UpperBodyNode);
+        root.ConnectNode(LayerNode, 1, UpperSeekNode);
         root.ConnectNode("output", 0, LayerNode);
 
         ApplyUpperBodyFilter(layer, skeleton);
@@ -218,6 +285,22 @@ public static class LocomotionTree
             AdvanceMode = AnimationNodeStateMachineTransition.AdvanceModeEnum.Disabled,
         });
     }
+
+    /// <summary>A transition <c>Travel</c> walks, crossfading over <paramref name="xfade"/> seconds.</summary>
+    private static void Blend(
+        AnimationNodeStateMachine machine, string from, string to, float xfade)
+    {
+        machine.AddTransition(from, to, new AnimationNodeStateMachineTransition
+        {
+            XfadeTime = xfade,
+            SwitchMode = AnimationNodeStateMachineTransition.SwitchModeEnum.Immediate,
+            AdvanceMode = AnimationNodeStateMachineTransition.AdvanceModeEnum.Enabled,
+        });
+    }
+
+    /// <summary>Whether a tree built from these clips has the airborne state.</summary>
+    public static bool HasFall(IReadOnlyDictionary<string, string> clips) =>
+        Clip(clips, FallState, string.Empty).Length > 0;
 
     private static string Clip(IReadOnlyDictionary<string, string> clips, string slot, string fallback) =>
         clips.TryGetValue(slot, out string? clip) && clip.Length > 0 ? clip : fallback;

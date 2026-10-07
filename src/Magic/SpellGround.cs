@@ -1,5 +1,6 @@
 using Embervale.Combat;
 using Embervale.Entities;
+using Embervale.Magic.Vfx;
 using Godot;
 
 namespace Embervale.Magic;
@@ -49,6 +50,12 @@ public partial class SpellGround : Node3D
         Ring.Position = new Vector3(0f, 0.06f, 0f);
         TelegraphClass cls = Spell.Blockable ? TelegraphClass.Standard : TelegraphClass.Unblockable;
         Ring.Arm(Delay, Radius, SpellSchools.Color(Spell.School), cls);
+
+        // Where the effect layer draws the landing, the plain ring under the player's own spell is a
+        // second, thicker ring round the same spot. It stays armed (a probe reads that) but unseen.
+        // Anyone else's keeps its ring: its shape is the warning of what kind of blow is coming.
+        Ring.Visible = !(SpellVfx.Active && CombatPerspective.IsPlayer(Caster));
+        SpellVfx.GroundTelegraph(this, Spell, Caster, Radius, Delay);
     }
 
     public override void _Process(double delta)
@@ -84,6 +91,7 @@ public partial class SpellGround : Node3D
     {
         Landed = true;
         Ring.Clear();
+        SpellVfx.GroundEnd(this, landed: true);
         Vector3 centre = GlobalPosition + (Vector3.Up * 0.3f);
 
         if (Spell.ZoneDuration > 0f)
@@ -123,6 +131,7 @@ public partial class SpellGround : Node3D
 
     public override void _ExitTree()
     {
+        SpellVfx.GroundEnd(this, landed: false);
         _lifetime?.Dispose();
         _cancelled = true;
         Caster = null;
@@ -138,6 +147,7 @@ public partial class SpellGround : Node3D
         SetProcess(false);
         SetPhysicsProcess(false);
         Ring.Clear();
+        SpellVfx.GroundEnd(this, landed: false);
         Hide();
         QueueFree();
     }

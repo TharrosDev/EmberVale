@@ -245,6 +245,11 @@ public partial class Settings : Resource
     /// 3 crits and kills only. Read through <see cref="SettingsMath.DamageNumberMode"/>.</summary>
     [Export(PropertyHint.Range, "-1,3,1")] public int DamageNumberMode { get; set; } = -1;
 
+    /// <summary>How rich spell effects are drawn. -1 follows <see cref="RenderQuality"/>; 0..4 are
+    /// Performance, Low, Medium, High, Ultra in that visual order (not <see cref="RenderQuality"/>'s
+    /// saved order). Read through <c>Magic.Vfx.VfxBudgetRules.Resolve</c>.</summary>
+    [Export(PropertyHint.Range, "-1,4,1")] public int SpellEffects { get; set; } = -1;
+
     /// <summary>Pairs each audio setting with its mixer bus name (Phase 31 creates these buses; the
     /// default <c>Master</c> bus always exists, so master volume applies immediately).</summary>
     public (string Bus, float Linear)[] BusVolumes() => new[]

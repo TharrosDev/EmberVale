@@ -16,6 +16,15 @@ const WEAPON := "res://data/weapons/IronSword.tres"
 const HEALTH := 0
 const STEP := 1.0 / 60.0
 
+# The blend space's position: x is the strafe, y the forward gait, each the body's speed over its own
+# run speed (LocomotionBlend). It was a single float in m/s before the gait rework.
+const GAIT := "parameters/StateMachine/locomotion/blend_position"
+
+# The walker built here has no LocomotionComponent, so its gaits are measured against
+# LocomotionBlend.FallbackRunSpeed. Mirrors that constant; if a gait check fails by a constant factor,
+# compare the two before believing it.
+const RUN_SPEED := 3.6
+
 var _failures: Array[String] = []
 
 
@@ -36,7 +45,9 @@ func _initialize() -> void:
 		_failures.append("no AnimationTree was built on chr_player_base — it fell back to the ladder")
 	else:
 		print("tree built and active: %s" % tree.active)
+		_check_shape(tree)
 		await _check_blend(tree, body)
+		await _check_strafe(tree, body)
 		await _check_upper_body_layer(tree)
 		await _check_action_clock(tree, animation, action)
 
@@ -100,19 +111,57 @@ func _build() -> Array:
 	return [animation, action, body]
 
 
+# The tree has the states and nodes the animation component drives by name. A missing one does not
+# throw: Travel and Set quietly do nothing, and the body simply never falls or never restarts a cast.
+func _check_shape(tree: AnimationTree) -> void:
+	var blend_tree := tree.tree_root as AnimationNodeBlendTree
+	if blend_tree == null:
+		_failures.append("the tree's root is not a blend tree")
+		return
+	for node_name in ["StateMachine", "UpperBody", "UpperScale", "UpperSeek", "Layer"]:
+		if not blend_tree.has_node(node_name):
+			_failures.append("the tree has no '%s' node" % node_name)
+	var machine := blend_tree.get_node("StateMachine") as AnimationNodeStateMachine
+	if machine == null:
+		_failures.append("the tree has no state machine")
+		return
+	for state in ["locomotion", "fall", "action", "hit", "death"]:
+		if not machine.has_node(state):
+			_failures.append("the state machine has no '%s' state" % state)
+	var space := machine.get_node("locomotion") as AnimationNodeBlendSpace2D
+	if space == null:
+		_failures.append("locomotion is not a 2D blend space; strafing cannot blend")
+		return
+	print("locomotion space: %d points, %d triangles, sync %s"
+		% [space.get_blend_point_count(), space.get_triangle_count(), space.sync])
+	if space.get_blend_point_count() < 7:
+		_failures.append("the locomotion space holds %d points, not the 7 gaits (idle, walk, run, sprint, walk back, two strafes)"
+			% space.get_blend_point_count())
+	if space.get_triangle_count() == 0:
+		_failures.append("the locomotion space has no triangles — the engine blends nothing and the body holds one pose")
+
+
 # Walking is a BLEND now, not a threshold. Sampling a leg bone across a speed ramp: if the space is
 # interpolating, the pose changes continuously; if something is still switching clips at a threshold,
 # it jumps once and sits still either side of it.
+#
+# The component is what turns the body's velocity into the blend position, so the ramp is driven
+# through the velocity and the position it sent is read back: a gait that does not land where the
+# clip sits (walk 0.45, run 1, sprint 1.6) plays every clip at the wrong speed.
 func _check_blend(tree: AnimationTree, body: CharacterBody3D) -> void:
 	var sk: Skeleton3D = body.find_children("*", "Skeleton3D", true, false)[0]
 	var bone := sk.find_bone("LeftUpperLeg")
 	var poses := []
-	for speed in [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.5]:
-		body.velocity = Vector3(0, 0, -speed)
-		tree.set("parameters/StateMachine/locomotion/blend_position", speed)
+	for gait in [0.0, 0.2, 0.45, 0.7, 1.0, 1.3, 1.6]:
+		# -Z is the body's forward.
+		body.velocity = Vector3(0, 0, -gait * RUN_SPEED)
 		for i in 6:
 			await process_frame
 		poses.append(sk.get_bone_pose_rotation(bone))
+		var sent: Vector2 = tree.get(GAIT)
+		if absf(sent.y - gait) > 0.02 or absf(sent.x) > 0.02:
+			_failures.append("moving forward at %.2f of run speed put the blend at (%.2f, %.2f), not (0.00, %.2f)"
+				% [gait, sent.x, sent.y, gait])
 
 	var moved := 0
 	for i in range(1, poses.size()):
@@ -123,7 +172,49 @@ func _check_blend(tree: AnimationTree, body: CharacterBody3D) -> void:
 		_failures.append("the blend space is not interpolating — the pose only changed at %d of %d steps"
 			% [moved, poses.size() - 1])
 
+	# Backing up is the walk-back clip, not the forward walk played at a negative speed.
+	body.velocity = Vector3(0, 0, 0.45 * RUN_SPEED)
+	for i in 6:
+		await process_frame
+	var backing: Vector2 = tree.get(GAIT)
+	print("backing up puts the blend at (%.2f, %.2f)" % [backing.x, backing.y])
+	if absf(backing.y + 0.45) > 0.02:
+		_failures.append("backing up put the forward gait at %.2f, not -0.45" % backing.y)
+
 	body.velocity = Vector3.ZERO
+
+
+# Sideways movement reaches the strafe points, each on its own side, and poses the legs differently
+# from standing. Before the 2D space a strafing body played its forward run while sliding sideways.
+func _check_strafe(tree: AnimationTree, body: CharacterBody3D) -> void:
+	var sk: Skeleton3D = body.find_children("*", "Skeleton3D", true, false)[0]
+	var bone := sk.find_bone("LeftUpperLeg")
+	body.velocity = Vector3.ZERO
+	for i in 8:
+		await process_frame
+	var standing: Quaternion = sk.get_bone_pose_rotation(bone)
+
+	# +X is the body's right.
+	for side in [-1.0, 1.0]:
+		body.velocity = Vector3(side * RUN_SPEED, 0, 0)
+		var swing := 0.0
+		var started := Time.get_ticks_usec()
+		while (Time.get_ticks_usec() - started) / 1000000.0 < 0.4:
+			await process_frame
+			swing = maxf(swing, standing.angle_to(sk.get_bone_pose_rotation(bone)))
+		var sent: Vector2 = tree.get(GAIT)
+		print("strafing %s puts the blend at (%.2f, %.2f) and swings the leg %.1f deg"
+			% ["left" if side < 0.0 else "right", sent.x, sent.y, rad_to_deg(swing)])
+		if absf(sent.x - side) > 0.02 or absf(sent.y) > 0.02:
+			_failures.append("strafing %s put the blend at (%.2f, %.2f), not (%.0f, 0)"
+				% ["left" if side < 0.0 else "right", sent.x, sent.y, side])
+		if rad_to_deg(swing) < 3.0:
+			_failures.append("strafing %s barely moves the legs (%.1f deg) — the strafe point holds no moving clip"
+				% ["left" if side < 0.0 else "right", rad_to_deg(swing)])
+
+	body.velocity = Vector3.ZERO
+	for i in 8:
+		await process_frame
 
 
 # The layer must move the ARMS and leave the LEGS to locomotion. A filter that matched nothing would
@@ -136,7 +227,7 @@ func _check_upper_body_layer(tree: AnimationTree) -> void:
 		_failures.append("no arm/leg bone to test the layer against")
 		return
 
-	tree.set("parameters/StateMachine/locomotion/blend_position", 1.6)
+	tree.set(GAIT, Vector2(0.0, 0.45))
 	tree.set("parameters/Layer/blend_amount", 0.0)
 	for i in 8:
 		await process_frame

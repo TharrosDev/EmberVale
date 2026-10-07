@@ -19,6 +19,7 @@ DLL = pathlib.Path(".godot/mono/temp/bin/ExportRelease/Embervale.dll")
 FORBIDDEN = [
     "ShellShots", "HudShots", "PanelShots", "UiAuditShots", "ShrineShots", "GuildShots",
     "EnemyShots", "CombatShots", "MetaShots", "TradeShots", "ShotHarness", "ReproHarness",
+    "SpellShots", "CamShots", "VfxPerfScenario",
     "MagicCoreProbeDriver", "MagicStatusProbeSeam", "MagicLearningProbeDriver",
     "MagicContentProbeDriver",
     "MagicLifetimeProbeDriver",
