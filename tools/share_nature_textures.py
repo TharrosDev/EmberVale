@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """Give the nature/rock prop family ONE copy of each texture it shares.
 
-⚠️ THE NATURE PROPS' FILE SIZE IS TEXTURE, NOT GEOMETRY, AND THE SAME TEXTURE IS IN THE
-BUILD SIX TIMES OVER. `prp_clover.glb` is 2.5 MB of which 2.47 MB is a 2048x2048 leaf
-atlas and 379 triangles is the rest; `prp_fern`, `prp_flowers_a` and `prp_flowers_b`
-each embed a byte-identical copy of that same atlas. Godot then imports four separate
-ImageTextures, so the duplication is paid twice: once on disk and once in VRAM.
+⚠️ A PROP'S FILE SIZE IS TEXTURE, NOT GEOMETRY, AND THE SAME TEXTURE CAN BE IN THE BUILD
+SEVERAL TIMES OVER. The clover model this was written for was 2.5 MB, of which 2.47 MB was a
+2048x2048 leaf atlas and 379 triangles was the rest; three more props each embedded a
+byte-identical copy of that atlas. Godot then imports separate ImageTextures, so the duplication
+is paid twice: once on disk and once in VRAM. (That family was retired with the generated world
+set; the tables below now hold only what is still shared.)
 
 Worse, each of those props ALSO left a decoded sidecar `.png` beside it that nothing
 references (the GLB is self-contained), which Godot imports and exports anyway.
@@ -36,95 +37,23 @@ PROPS = ROOT / "assets" / "models" / "props"
 # Only families with TWO OR MORE users are here. Externalising a single-user texture adds a
 # file and saves nothing, so prp_boulder, prp_rock_cluster, prp_mushrooms and the two barks
 # stay embedded on purpose.
+#
+# The nature and rock families that used to be listed here (leaves, flowers, grass, path rocks, the
+# broadleaf atlas, the barks, the stone atlas) belonged to models the generated world set replaced.
+# Their rows are gone so this tool no longer opens a .glb that has been retired. What is left of
+# them on disk needs nothing: `T_Nature_Grass.png` is referenced by URI from the two procedural
+# ground-cover meshes (tools/gen_ground_cover.py writes them that way), and every other
+# `T_Nature_*.png` is removed by the unreferenced-texture sweep at the end of a normal run once
+# the last .glb naming it has been deleted.
 FAMILIES: dict[str, tuple[str, list[tuple[str, str]]]] = {
-    "T_Nature_Leaves.png": ("prp_clover_Leaves.png", [
-        ("prp_clover.glb", "Leaves"),
-        ("prp_fern.glb", "Leaves"),
-        ("prp_flowers_a.glb", "Leaves"),
-        ("prp_flowers_b.glb", "Leaves"),
-    ]),
-    "T_Nature_Flowers.png": ("prp_flowers_a_Flowers.png", [
-        ("prp_flowers_a.glb", "Flowers"),
-        ("prp_flowers_b.glb", "Flowers"),
-    ]),
-    "T_Nature_Grass.png": ("prp_grass_short_Grass.png", [
-        ("prp_grass_short.glb", "Grass"),
-        ("prp_grass_tall.glb", "Grass"),
-        ("prp_grass_wispy.glb", "Grass"),
-    ]),
-    "T_Nature_PathRocks.png": ("prp_pebble_a_PathRocks_Diffuse.png", [
-        ("prp_pebble_a.glb", "PathRocks_Diffuse"),
-        ("prp_pebble_b.glb", "PathRocks_Diffuse"),
-        ("prp_rockpath_small.glb", "PathRocks_Diffuse"),
-        ("prp_rockpath_wide.glb", "PathRocks_Diffuse"),
-    ]),
-    "T_Nature_LeafBroadleaf.png": ("prp_tree_broadleaf_Leaves_NormalTree_C.png", [
-        ("prp_tree_broadleaf.glb", "Leaves_NormalTree_C.png"),
-        ("prp_bush_flowering.glb", "Leaves_NormalTree_C.png"),
-    ]),
-    # ⚠️ THE SINGLE-USER IMAGES BELOW ARE HERE FOR A DIFFERENT REASON AND IT IS THE BIGGER ONE.
-    # Every prop `.import` carries `gltf/embedded_image_handling=1`, so Godot EXTRACTS each
-    # embedded image to a sidecar `.png` beside the GLB on every import. An embedded texture is
-    # therefore stored TWICE on disk — once compressed inside the GLB, once as the extracted
-    # file — and deleting the sidecar does nothing, because the next import writes it back.
-    # Externalising the image is what actually ends the duplication: the sidecar becomes the
-    # only copy and the importer has nothing left to extract.
-    "T_Nature_Rocks.png": ("prp_rock_cluster_Rocks_Diffuse.png", [
-        ("prp_rock_cluster.glb", "Rocks_Diffuse"),
-    ]),
-    "T_Nature_Mushrooms.png": ("prp_mushrooms_Mushrooms.png", [
-        ("prp_mushrooms.glb", "Mushrooms"),
-    ]),
-    "T_Nature_BarkDead.png": ("prp_pine_dead_Bark_DeadTree.png", [
-        ("prp_pine_dead.glb", "Bark_DeadTree"),
-    ]),
-    "T_Nature_BarkDead_Normal.png": ("prp_pine_dead_Bark_DeadTree_Normal.png", [
-        ("prp_pine_dead.glb", "Bark_DeadTree_Normal"),
-    ]),
-    "T_Nature_BarkBroadleaf.png": ("prp_tree_broadleaf_Bark_NormalTree.png", [
-        ("prp_tree_broadleaf.glb", "Bark_NormalTree.png"),
-    ]),
-    "T_Nature_BarkBroadleaf_Normal.png": ("prp_tree_broadleaf_Bark_NormalTree_Normal.png", [
-        ("prp_tree_broadleaf.glb", "Bark_NormalTree_Normal.png"),
-    ]),
-    "T_Nature_BushFlowers.png": ("prp_bush_flowering_Flowers.png", [
-        ("prp_bush_flowering.glb", "Flowers.png"),
-    ]),
     "T_Prop_Colormap.png": ("prp_station_forge_colormap.png", [
         ("prp_station_forge.glb", "colormap"),
     ]),
 }
 
-# ⚠️ THE STONE FAMILY SHIPPED THE SAME IMAGE AT TWO RESOLUTIONS AND NEITHER FILE SAID SO.
-# `prp_boulder` and the pack rocks embed the megakit's 2048x2048 `Rocks_Diffuse`; `prp_rock_cluster`
-# was adapted at some point and embeds a 1024 downsample of it (verified: max channel delta 8/255
-# against a Lanczos reduction, so it is the same art, not different art). Two files meant two
-# imported textures for one material family and four times the VRAM on the boulder.
-#
-# These members are REPOINTED at the family's canonical file and their own payload is discarded,
-# which the byte-identity assertion above correctly refuses to do on its own — a different
-# resolution is exactly the case where "the bytes differ" is not evidence of a mistake.
-# 1024 is the right size: these are 78-to-522-triangle rocks in a hand-painted world, and the
-# cluster has shipped at 1024 since it was adopted.
-REPOINTED: dict[str, list[tuple[str, str]]] = {
-    # The composed boulders, clusters and cliffs from tools/build_environment_assets.py.
-    # Blender's exporter re-embeds the atlas on every export, so this repoint is not a one-off
-    # cleanup — it is the step that has to run after every rebuild, and rerunning it is cheap.
-    "T_Nature_Rocks.png": [
-        ("prp_boulder.glb", "Rocks_Diffuse"),
-        ("prp_rock_medium.glb", "Rocks_Diffuse"),
-        ("prp_boulder_large.glb", "Rocks_Diffuse"),
-        ("prp_rock_cluster_a.glb", "Rocks_Diffuse"),
-        ("prp_rock_scree.glb", "Rocks_Diffuse"),
-        ("prp_rock_edging.glb", "Rocks_Diffuse"),
-        ("prp_cliff_face.glb", "Rocks_Diffuse"),
-        ("prp_cliff_face_tall.glb", "Rocks_Diffuse"),
-    ],
-    "T_Nature_PathRocks.png": [
-        ("prp_pebble_c.glb", "PathRocks_Diffuse"),
-        ("prp_pebble_d.glb", "PathRocks_Diffuse"),
-    ],
-}
+# Members that embed a different-resolution copy of a family's image are repointed at the
+# canonical file and their own payload is discarded. Empty since the stone family was retired.
+REPOINTED: dict[str, list[tuple[str, str]]] = {}
 
 JSON_CHUNK = 0x4E4F534A
 BIN_CHUNK = 0x004E4942

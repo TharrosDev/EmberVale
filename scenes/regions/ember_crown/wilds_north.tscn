@@ -7,13 +7,9 @@
 [ext_resource type="Resource" path="res://data/items/RubyGem.tres" id="5_gem"]
 [ext_resource type="Resource" path="res://data/items/HealthPotion.tres" id="6_potion"]
 [ext_resource type="Resource" path="res://data/items/IronOre.tres" id="7_ore"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_pine_dead.glb" id="8_pine"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_rock_cluster.glb" id="9_rocks"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_ruin_pillar.glb" id="10_pillar"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_ruin_wall.glb" id="11_ruinwall"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_crate.glb" id="12_crate"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_rockpath_wide.glb" id="23_rockpath_wide"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_rockpath_small.glb" id="24_rockpath_small"]
 [ext_resource type="Script" path="res://src/World/MapLocationComponent.cs" id="maploc_39_5a"]
 [ext_resource type="PackedScene" path="res://scenes/props/bld_deadfall_lodge.tscn" id="42b_bld_deadfall_lodge"]
 [ext_resource type="Script" path="res://src/Animation/CharacterAnimationComponent.cs" id="42b_characteranimationcomponent"]
@@ -25,6 +21,10 @@
 [ext_resource type="Script" path="res://src/World/FlagVisibilityComponent.cs" id="wa_FlagVisibilityComponent"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_smith.glb" id="rp_npc_smith"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_ranger_f.glb" id="rp_npc_ranger_f"]
+[ext_resource type="PackedScene" path="res://scenes/props/lm_pine_fir_a.tscn" id="rp_lm_pine_fir_a"]
+[ext_resource type="PackedScene" path="res://scenes/props/lm_tree_dead_a.tscn" id="rp_lm_tree_dead_a"]
+[ext_resource type="PackedScene" path="res://scenes/props/lm_rock_boulder_a.tscn" id="rp_lm_rock_boulder_a"]
+[ext_resource type="PackedScene" path="res://scenes/props/lm_tree_oak_a.tscn" id="rp_lm_tree_oak_a"]
 
 ; THE NORTHERN WILDS (the 2026-08-28 layout rebuild) — the frontier between the Crossway gate and the arena, and
 ; the cell the EncounterDirector uses more than any other.
@@ -75,9 +75,6 @@ agent_max_slope = 42.0
 [sub_resource type="BoxShape3D" id="Shape_ruin"]
 size = Vector3(4, 5, 1)
 
-[sub_resource type="BoxShape3D" id="Shape_rock"]
-size = Vector3(3, 2.5, 3)
-
 [sub_resource type="BoxShape3D" id="Shape_pillar"]
 size = Vector3(3.5, 0.7, 0.7)
 
@@ -113,12 +110,6 @@ albedo_color = Color(0.45, 0.42, 0.38, 1)
 emission_enabled = true
 emission = Color(0.35, 0.32, 0.3, 1)
 emission_energy_multiplier = 0.3
-
-[sub_resource type="BoxShape3D" id="Shape_pine_trunk"]
-size = Vector3(0.55, 4.9, 0.55)
-
-[sub_resource type="BoxShape3D" id="Shape_rock_cluster"]
-size = Vector3(2.26, 1.41, 1.84)
 
 [sub_resource type="BoxShape3D" id="Shape_ruin_pillar"]
 size = Vector3(1.0, 3.13, 1.0)
@@ -192,18 +183,8 @@ shape = SubResource("Shape_ruin")
 [node name="RockE" type="MeshInstance3D" parent="Nav"]
 transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, 24, 1.25, 19)
 
-[node name="RockECol" type="StaticBody3D" parent="Nav/RockE"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/RockE/RockECol"]
-shape = SubResource("Shape_rock")
-
 [node name="RockW" type="MeshInstance3D" parent="Nav"]
 transform = Transform3D(-0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, -0.9397, -11, 1.25, 38)
-
-[node name="RockWCol" type="StaticBody3D" parent="Nav/RockW"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/RockW/RockWCol"]
-shape = SubResource("Shape_rock")
 
 [node name="FallenPillar" type="MeshInstance3D" parent="Nav"]
 transform = Transform3D(0.9397, 0, 0.342, 0, 1, 0, -0.342, 0, 0.9397, 12, 0.35, 34)
@@ -309,50 +290,20 @@ script = ExtResource("3_pickup")
 Item = ExtResource("7_ore")
 Quantity = 3
 
-[node name="Pine1" parent="Nav" instance=ExtResource("8_pine")]
-transform = Transform3D(0.9397, 0, 0.342, 0, 1, 0, -0.342, 0, 0.9397, -4, 0, 25)
+[node name="Pine1" parent="Nav" instance=ExtResource("rp_lm_pine_fir_a")]
+transform = Transform3D(0.6127, 0, 0.223, 0, 0.652, 0, -0.223, 0, 0.6127, -4, 0, 25)
 
-[node name="Col" type="StaticBody3D" parent="Nav/Pine1"]
+[node name="Pine2" parent="Nav" instance=ExtResource("rp_lm_tree_dead_a")]
+transform = Transform3D(-1.1229, 0, -0.4087, 0, 1.195, 0, 0.4087, 0, -1.1229, 26, 0, 21)
 
-[node name="Shape" type="CollisionShape3D" parent="Nav/Pine1/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.45, 0)
-shape = SubResource("Shape_pine_trunk")
+[node name="Pine3" parent="Nav" instance=ExtResource("rp_lm_tree_dead_a")]
+transform = Transform3D(0, 0, 1.175, 0, 1.175, 0, -1.175, 0, 0, -8, 0, 41)
 
-[node name="Pine2" parent="Nav" instance=ExtResource("8_pine")]
-transform = Transform3D(-0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, -0.9397, 26, 0, 21)
+[node name="Rocks1" parent="Nav" instance=ExtResource("rp_lm_rock_boulder_a")]
+transform = Transform3D(0.2353, 0, 0.2804, 0, 0.366, 0, -0.2804, 0, 0.2353, -8, -0.12, 17)
 
-[node name="Col" type="StaticBody3D" parent="Nav/Pine2"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/Pine2/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.45, 0)
-shape = SubResource("Shape_pine_trunk")
-
-[node name="Pine3" parent="Nav" instance=ExtResource("8_pine")]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -8, 0, 41)
-
-[node name="Col" type="StaticBody3D" parent="Nav/Pine3"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/Pine3/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.45, 0)
-shape = SubResource("Shape_pine_trunk")
-
-[node name="Rocks1" parent="Nav" instance=ExtResource("9_rocks")]
-transform = Transform3D(0.6428, 0, 0.766, 0, 1, 0, -0.766, 0, 0.6428, -8, 0, 17)
-
-[node name="Col" type="StaticBody3D" parent="Nav/Rocks1"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/Rocks1/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.705, 0)
-shape = SubResource("Shape_rock_cluster")
-
-[node name="Rocks2" parent="Nav" instance=ExtResource("9_rocks")]
-transform = Transform3D(-0.342, 0, -0.9397, 0, 1, 0, 0.9397, 0, -0.342, -10, 0, 47)
-
-[node name="Col" type="StaticBody3D" parent="Nav/Rocks2"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/Rocks2/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.705, 0)
-shape = SubResource("Shape_rock_cluster")
+[node name="Rocks2" parent="Nav" instance=ExtResource("rp_lm_rock_boulder_a")]
+transform = Transform3D(-0.1252, 0, -0.3439, 0, 0.366, 0, 0.3439, 0, -0.1252, -10, -0.12, 47)
 
 [node name="RuinPillar1" parent="." instance=ExtResource("10_pillar")]
 transform = Transform3D(-0.9848, 0, 0.1736, 0, 1, 0, -0.1736, 0, -0.9848, 5, 0, 29)
@@ -369,11 +320,11 @@ shape = SubResource("Shape_ruin_pillar")
 [node name="Model" parent="Nav/RuinWall" instance=ExtResource("11_ruinwall")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -2.5, 0)
 
-[node name="Model" parent="Nav/RockE" instance=ExtResource("9_rocks")]
-transform = Transform3D(2.6, 0, 0, 0, 2.6, 0, 0, 0, 2.6, 0, -1.25, 0)
+[node name="Model" parent="Nav/RockE" instance=ExtResource("rp_lm_rock_boulder_a")]
+transform = Transform3D(0.952, 0, 0, 0, 0.952, 0, 0, 0, 0.952, 0, -1.25, 0)
 
-[node name="Model" parent="Nav/RockW" instance=ExtResource("9_rocks")]
-transform = Transform3D(-2.4, 0, 1.0, 0, 2.6, 0, -1.0, 0, -2.4, 0, -1.25, 0)
+[node name="Model" parent="Nav/RockW" instance=ExtResource("rp_lm_rock_boulder_a")]
+transform = Transform3D(-0.8788, 0, 0.3662, 0, 0.952, 0, -0.3662, 0, -0.8788, 0, -1.25, 0)
 
 [node name="Model" parent="Nav/FallenPillar" instance=ExtResource("10_pillar")]
 transform = Transform3D(0, 1, 0, -1, 0, 0, 0, 0, 1, -1.6, 0, 0)
@@ -386,77 +337,29 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
 ; --- places the forked road exists to serve: the Hollow Bowl in the west (encounter ground with a
 ; --- rock rim), the Deadfall in the east (a pine thicket to be ambushed in), and Cairn Rise in the
 ; --- north-west, the one landmark visible from anywhere in the cell.
-[node name="Pine5" parent="Nav" instance=ExtResource("8_pine")]
-transform = Transform3D(0.94, 0, 0.34, 0, 1.1, 0, -0.34, 0, 0.94, 32, 0, 39)
+[node name="Pine5" parent="Nav" instance=ExtResource("rp_lm_pine_fir_a")]
+transform = Transform3D(0.6874, 0, 0.2486, 0, 0.805, 0, -0.2486, 0, 0.6874, 32, 0, 39)
 
-[node name="Col" type="StaticBody3D" parent="Nav/Pine5"]
+[node name="Pine6" parent="Nav" instance=ExtResource("rp_lm_pine_fir_a")]
+transform = Transform3D(-0.3632, 0, 0.6321, 0, 0.69, 0, -0.6321, 0, -0.3632, 2, 0, 55)
 
-[node name="Shape" type="CollisionShape3D" parent="Nav/Pine5/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.45, 0)
-shape = SubResource("Shape_pine_trunk")
+[node name="Pine7" parent="Nav" instance=ExtResource("rp_lm_pine_fir_a")]
+transform = Transform3D(0.5699, 0, -0.5699, 0, 0.963, 0, 0.5699, 0, 0.5699, 19, 0, 56)
 
-[node name="Pine6" parent="Nav" instance=ExtResource("8_pine")]
-transform = Transform3D(-0.5, 0, 0.87, 0, 0.95, 0, -0.87, 0, -0.5, 2, 0, 55)
+[node name="Pine8" parent="Nav" instance=ExtResource("rp_lm_pine_fir_a")]
+transform = Transform3D(-0.5774, 0, -0.3319, 0, 0.697, 0, 0.3319, 0, -0.5774, -12, 0, 27)
 
-[node name="Col" type="StaticBody3D" parent="Nav/Pine6"]
+[node name="Rocks4" parent="Nav" instance=ExtResource("rp_lm_rock_boulder_a")]
+transform = Transform3D(-0.4388, 0, 0.256, 0, 0.476, 0, -0.256, 0, -0.4388, 16, 0, 13)
 
-[node name="Shape" type="CollisionShape3D" parent="Nav/Pine6/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.45, 0)
-shape = SubResource("Shape_pine_trunk")
+[node name="Rocks5" parent="Nav" instance=ExtResource("rp_lm_rock_boulder_a")]
+transform = Transform3D(0.5487, 0, -0.2195, 0, 0.439, 0, 0.2195, 0, 0.5487, 28, 0, 49)
 
-[node name="Pine7" parent="Nav" instance=ExtResource("8_pine")]
-transform = Transform3D(0.71, 0, -0.71, 0, 1.2, 0, 0.71, 0, 0.71, 19, 0, 56)
+[node name="Rocks6" parent="Nav" instance=ExtResource("rp_lm_rock_boulder_a")]
+transform = Transform3D(-0.4761, 0, -0.293, 0, 0.559, 0, 0.293, 0, -0.4761, -6, -0.18, 53)
 
-[node name="Col" type="StaticBody3D" parent="Nav/Pine7"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/Pine7/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.45, 0)
-shape = SubResource("Shape_pine_trunk")
-
-[node name="Pine8" parent="Nav" instance=ExtResource("8_pine")]
-transform = Transform3D(-0.87, 0, -0.5, 0, 1.05, 0, 0.5, 0, -0.87, -12, 0, 27)
-
-[node name="Col" type="StaticBody3D" parent="Nav/Pine8"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/Pine8/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.45, 0)
-shape = SubResource("Shape_pine_trunk")
-
-[node name="Rocks4" parent="Nav" instance=ExtResource("9_rocks")]
-transform = Transform3D(-1.2, 0, 0.7, 0, 1.3, 0, -0.7, 0, -1.2, 16, 0, 13)
-
-[node name="Col" type="StaticBody3D" parent="Nav/Rocks4"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/Rocks4/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.705, 0)
-shape = SubResource("Shape_rock_cluster")
-
-[node name="Rocks5" parent="Nav" instance=ExtResource("9_rocks")]
-transform = Transform3D(1.5, 0, -0.6, 0, 1.2, 0, 0.6, 0, 1.5, 28, 0, 49)
-
-[node name="Col" type="StaticBody3D" parent="Nav/Rocks5"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/Rocks5/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.705, 0)
-shape = SubResource("Shape_rock_cluster")
-
-[node name="Rocks6" parent="Nav" instance=ExtResource("9_rocks")]
-transform = Transform3D(-1.3, 0, -0.8, 0, 1.5, 0, 0.8, 0, -1.3, -6, 0, 53)
-
-[node name="Col" type="StaticBody3D" parent="Nav/Rocks6"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/Rocks6/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.705, 0)
-shape = SubResource("Shape_rock_cluster")
-
-[node name="CairnRise" parent="Nav" instance=ExtResource("9_rocks")]
-transform = Transform3D(2.8, 0, 0, 0, 3.4, 0, 0, 0, 2.8, -9, 0, 15)
-
-[node name="Col" type="StaticBody3D" parent="Nav/CairnRise"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/CairnRise/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.705, 0)
-shape = SubResource("Shape_rock_cluster")
+[node name="CairnRise" parent="Nav" instance=ExtResource("rp_lm_rock_boulder_a")]
+transform = Transform3D(1.025, 0, 0, 0, 1.244, 0, 0, 0, 1.025, -9, 0, 15)
 
 [node name="RuinPillar3" parent="Nav" instance=ExtResource("10_pillar")]
 transform = Transform3D(0.87, 0.06, 0.5, -0.06, 1, 0, -0.5, 0.03, 0.87, 7, 0, 38)
@@ -512,51 +415,6 @@ shape = SubResource("Shape_ruin_pillar")
 ; cost, the upgrade is a MultiMeshInstance3D per species with the mesh extracted through the
 ; importer's _subresources save_to_file - one node and one draw call instead of ~150.
 ; ====================================================================================================
-
-[node name="Path1" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, 59)
-
-[node name="Model" parent="Path1" instance=ExtResource("23_rockpath_wide")]
-
-[node name="Path2" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10.5, 0, 56)
-
-[node name="Model" parent="Path2" instance=ExtResource("24_rockpath_small")]
-
-[node name="Path3" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, 53)
-
-[node name="Model" parent="Path3" instance=ExtResource("23_rockpath_wide")]
-
-[node name="Path4" type="Node3D" parent="."]
-transform = Transform3D(0.9397, 0, 0.342, 0, 1, 0, -0.342, 0, 0.9397, 7.5, 0, 50)
-
-[node name="Model" parent="Path4" instance=ExtResource("24_rockpath_small")]
-
-[node name="Path5" type="Node3D" parent="."]
-transform = Transform3D(0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, 0.9397, 12.5, 0, 50)
-
-[node name="Model" parent="Path5" instance=ExtResource("23_rockpath_wide")]
-
-[node name="Path6" type="Node3D" parent="."]
-transform = Transform3D(0.766, 0, 0.6428, 0, 1, 0, -0.6428, 0, 0.766, 4, 0, 45)
-
-[node name="Model" parent="Path6" instance=ExtResource("24_rockpath_small")]
-
-[node name="Path7" type="Node3D" parent="."]
-transform = Transform3D(0.766, 0, -0.6428, 0, 1, 0, 0.6428, 0, 0.766, 17, 0, 46)
-
-[node name="Model" parent="Path7" instance=ExtResource("23_rockpath_wide")]
-
-[node name="Path8" type="Node3D" parent="."]
-transform = Transform3D(0.9848, 0, 0.1736, 0, 1, 0, -0.1736, 0, 0.9848, -1, 0, 35)
-
-[node name="Model" parent="Path8" instance=ExtResource("24_rockpath_small")]
-
-[node name="Path9" type="Node3D" parent="."]
-transform = Transform3D(0.9848, 0, -0.1736, 0, 1, 0, 0.1736, 0, 0.9848, 22, 0, 36)
-
-[node name="Model" parent="Path9" instance=ExtResource("23_rockpath_wide")]
 
 
 
@@ -686,14 +544,8 @@ LocationId = "location.wilds.lodge"
 ; a den, south-east of the lodge and off the branch, so finding them is a real search rather than a
 ; prompt on the path.
 
-[node name="ScrapedPine" parent="Nav" instance=ExtResource("8_pine")]
-transform = Transform3D(0.985, 0, 0.174, 0, 1, 0, -0.174, 0, 0.985, 14, 0, -6)
-
-[node name="Col" type="StaticBody3D" parent="Nav/ScrapedPine"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/ScrapedPine/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.45, 0)
-shape = SubResource("Shape_pine_trunk")
+[node name="ScrapedPine" parent="Nav" instance=ExtResource("rp_lm_tree_dead_a")]
+transform = Transform3D(1.1384, 0, 0.2011, 0, 1.156, 0, -0.2011, 0, 1.1384, 14, 0, -6)
 
 [node name="ClueScrape" type="Node3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14.6, 0, -6.4)
@@ -712,14 +564,8 @@ script = ExtResource("42b_dialoguecomponent")
 DialogueId = "dialogue.grimtusk_clue_scrape"
 InteractId = "interact.wilds_north.grimtusk_scrape"
 
-[node name="WallowRocks" parent="Nav" instance=ExtResource("9_rocks")]
-transform = Transform3D(1.3, 0, -0.5, 0, 1.4, 0, 0.5, 0, 1.3, 22, 0, -14)
-
-[node name="Col" type="StaticBody3D" parent="Nav/WallowRocks"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/WallowRocks/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.705, 0)
-shape = SubResource("Shape_rock_cluster")
+[node name="WallowRocks" parent="Nav" instance=ExtResource("rp_lm_rock_boulder_a")]
+transform = Transform3D(0.476, 0, -0.1831, 0, 0.51, 0, 0.1831, 0, 0.476, 22, -0.16, -14)
 
 [node name="ClueMire" type="Node3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 21.5, 0, -13.2)
@@ -803,3 +649,6 @@ mesh = SubResource("wa_cm_pole_char")
 [node name="Visibility" type="Node" parent="WarbandBannerCharred"]
 script = ExtResource("wa_FlagVisibilityComponent")
 VisibleWhenFlagId = "flag.beat.banner_burned"
+
+[node name="ElderOak" parent="Nav" instance=ExtResource("rp_lm_tree_oak_a") groups=["world_landmark"]]
+transform = Transform3D(-2.1651, 0, 1.25, 0, 2.5, 0, -1.25, 0, -2.1651, 68, -0.6, 46)

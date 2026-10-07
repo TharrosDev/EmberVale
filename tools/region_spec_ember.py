@@ -172,10 +172,10 @@ BackdropDistance = 1700.0
 
 SCATTER = '''[sub_resource type="Resource" id="Layer_grass"]
 script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_grass_tall.glb"
-Count = 620
-MinimumScale = 0.7
-MaximumScale = 1.35
+ScenePath = "res://assets/models/props/prp_grass_clump_a.glb"
+Count = 760
+MinimumScale = 0.9
+MaximumScale = 1.6
 MinimumSpacing = 1.6
 Clumping = 0.32
 ClumpScale = 22.0
@@ -188,10 +188,10 @@ CastShadows = false
 
 [sub_resource type="Resource" id="Layer_grass_short"]
 script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_grass_short.glb"
-Count = 430
-MinimumScale = 0.75
-MaximumScale = 1.3
+ScenePath = "res://assets/models/props/prp_grass_clump_a.glb"
+Count = 520
+MinimumScale = 0.45
+MaximumScale = 0.8
 MinimumSpacing = 1.4
 MaxSlope = 0.6
 Tint = Color(0.78, 0.80, 0.62, 1)
@@ -200,91 +200,17 @@ VisibilityRangeEnd = 48.0
 VisibilityFadeMargin = 10.0
 CastShadows = false
 
-[sub_resource type="Resource" id="Layer_clover"]
-script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_clover.glb"
-Count = 150
-MinimumScale = 0.7
-MaximumScale = 1.15
-MinimumSpacing = 2.4
-Clumping = 0.45
-ClumpScale = 18.0
-MaxSlope = 0.5
-Tint = Color(0.70, 0.78, 0.58, 1)
-TintVariation = 0.18
-VisibilityRangeEnd = 40.0
-VisibilityFadeMargin = 8.0
-CastShadows = false
-
-; ⚠️ FLOWERS ARE THE ONE LAYER THAT MUST STAY SPARSE. `prp_flowers_a` and `prp_flowers_b` were
-; adopted and never scattered, and the reflex on finding that is to give them a clover-sized count —
-; which turns a dying realm's pasture into a meadow postcard. Fifty-odd per 100 x 100 m, heavily
-; clumped, reads as flowers having come up where the ground was left alone. `Layer_clover` gives up
-; 90 of its 240 to pay for both, so the settled and pasture profiles carry no more instances than
-; they did (docs/ART_STYLE.md: worn, lived-in, restrained).
-[sub_resource type="Resource" id="Layer_flowers"]
-script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_flowers_a.glb"
-Count = 52
-MinimumScale = 0.72
-MaximumScale = 1.2
-MinimumSpacing = 3.6
-Clumping = 0.72
-ClumpScale = 14.0
-MaxSlope = 0.45
-Tint = Color(0.80, 0.78, 0.66, 1)
-TintVariation = 0.22
-VisibilityRangeEnd = 38.0
-VisibilityFadeMargin = 8.0
-CastShadows = false
-
-[sub_resource type="Resource" id="Layer_flowers_b"]
-script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_flowers_b.glb"
-Count = 40
-MinimumScale = 0.7
-MaximumScale = 1.15
-MinimumSpacing = 3.9
-Clumping = 0.76
-ClumpScale = 12.0
-MaxSlope = 0.45
-Tint = Color(0.78, 0.76, 0.64, 1)
-TintVariation = 0.24
-VisibilityRangeEnd = 38.0
-VisibilityFadeMargin = 8.0
-CastShadows = false
-
-; Forest floor, and the most heavily clumped layer in the realm on purpose: mushrooms grow in rings
-; and drifts against deadfall, never evenly. Wilds only — a mushroom in a pasture or on a shore is
-; the kind of detail that reads as scatter having been switched on rather than authored.
-; `Layer_bracken` gives up 15 of its 300 to pay for it.
-[sub_resource type="Resource" id="Layer_mushrooms"]
-script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_mushrooms.glb"
-Count = 18
-MinimumScale = 0.65
-MaximumScale = 1.25
-MinimumSpacing = 5.5
-Clumping = 0.85
-ClumpScale = 9.0
-MaxSlope = 0.5
-Tint = Color(0.72, 0.68, 0.60, 1)
-TintVariation = 0.20
-VisibilityRangeEnd = 34.0
-VisibilityFadeMargin = 8.0
-CastShadows = false
-
-; The thin, dry grass of a shore and a waste, where the short turf has no business growing. It
-; splits `Layer_grass_short` (520 -> 430) rather than thickening the ground: those two profiles are
-; meant to read as sparse, and the point of this layer is a second silhouette in the sparseness, not
-; more of it.
+; The thin, dry grass of a shore and a waste, where the short turf has no business growing: the one
+; grass clump again, drained to straw by Saturation and a dry tint. Sparse on purpose - those
+; profiles are meant to read as thin, and this is a second colour in the thinness, not more of it.
 [sub_resource type="Resource" id="Layer_grass_wispy"]
 script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_grass_wispy.glb"
+ScenePath = "res://assets/models/props/prp_grass_clump_a.glb"
 Count = 90
 MinimumScale = 0.7
-MaximumScale = 1.4
+MaximumScale = 1.3
 MinimumSpacing = 2.2
+Saturation = 0.55
 Clumping = 0.55
 ClumpScale = 20.0
 MaxSlope = 0.7
@@ -296,10 +222,10 @@ CastShadows = false
 
 [sub_resource type="Resource" id="Layer_bracken"]
 script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_fern.glb"
+ScenePath = "res://assets/models/props/prp_fern_clump_a.glb"
 Count = 285
-MinimumScale = 0.65
-MaximumScale = 1.25
+MinimumScale = 1.0
+MaximumScale = 1.7
 MinimumSpacing = 3.0
 Clumping = 0.5
 ClumpScale = 26.0
@@ -310,79 +236,15 @@ VisibilityRangeEnd = 70.0
 VisibilityFadeMargin = 14.0
 CastShadows = false
 
-; ⚠️ THE REALM'S ENTIRE STONE COVER WAS ONE PEBBLE. `Layer_stone` scattered `prp_pebble_a` at 210
-; instances per 100 x 100 m across FIVE of the six biome profiles, and a MultiMesh varies only yaw,
-; uniform scale and tint — so every stone in the Ember Crown was the same 136-triangle silhouette
-; seen from a different angle. That is the "obvious repetition" the visual-QA checklist names, and
-; at 3.4 m spacing there is always another one of them in frame.
-;
-; ⚠️ THE FIX SPLITS THE EXISTING DENSITY, IT DOES NOT ADD TO IT. `MaxScatterInstancesPerCell` is
-; 2400 and the seven layers already sat near it; four species at 90 + 70 + 26 + 5 = 191 is LESS
-; ground cover than the 210 it replaces, and four distinct silhouettes instead of one. Read the
-; instance budget as the memory limit it is (see BUDGET above) and the draw budget as the tight
-; one: this is four MultiMeshInstance3Ds where there was one, which is three extra draws per cell.
-[sub_resource type="Resource" id="Layer_stone"]
-script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_pebble_a.glb"
-Count = 60
-MinimumScale = 0.8
-MaximumScale = 1.9
-MinimumSpacing = 3.4
-Clumping = 0.4
-ClumpScale = 24.0
-MaxSlope = 1.1
-Tint = Color(0.68, 0.65, 0.60, 1)
-TintVariation = 0.16
-VisibilityRangeEnd = 55.0
-VisibilityFadeMargin = 12.0
-CastShadows = false
-
-[sub_resource type="Resource" id="Layer_stone_b"]
-script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_pebble_c.glb"
-Count = 52
-MinimumScale = 0.85
-MaximumScale = 2.05
-MinimumSpacing = 3.1
-Clumping = 0.46
-ClumpScale = 21.0
-MaxSlope = 1.1
-Tint = Color(0.66, 0.64, 0.61, 1)
-TintVariation = 0.18
-VisibilityRangeEnd = 55.0
-VisibilityFadeMargin = 12.0
-CastShadows = false
-
-; ⚠️ THE THIRD PEBBLE SPECIES, AND IT SPLITS THE DENSITY RATHER THAN ADDING TO IT — the same rule
-; the two-species fix above was made under. `prp_pebble_b` was adopted with the rest of the nature
-; set and then scattered nowhere: it sat in `assets/models/props` sharing the nature atlas, costing
-; disk and carrying zero instances, while the ground cover it belongs to ran on two silhouettes.
-; 90 + 70 becomes 60 + 52 + 48 — the same 160 stones per 100 x 100 m, one more outline in the mix.
-[sub_resource type="Resource" id="Layer_stone_c"]
-script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_pebble_b.glb"
-Count = 48
-MinimumScale = 0.82
-MaximumScale = 1.95
-MinimumSpacing = 3.2
-Clumping = 0.43
-ClumpScale = 23.0
-MaxSlope = 1.1
-Tint = Color(0.67, 0.65, 0.61, 1)
-TintVariation = 0.17
-VisibilityRangeEnd = 55.0
-VisibilityFadeMargin = 12.0
-CastShadows = false
-
-; The knee-to-waist tier the realm had nothing in: `prp_pebble_a` tops out around 0.9 m even at
-; MaximumScale, and the next thing up was an authored boulder placed by hand. Sparse and widely
-; spaced, so it reads as an outcrop breaking the turf rather than as litter.
+; The knee-to-head tier: the one boulder at a quarter to half size (1.5-3.4 m across), sparse and
+; widely spaced, so it reads as an outcrop breaking the turf rather than as litter. 14 of a
+; 626-triangle mesh is the same triangle load as the 26 of the 342-triangle rock it replaces.
 [sub_resource type="Resource" id="Layer_rock_medium"]
 script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_rock_medium.glb"
-Count = 26
-MinimumScale = 0.42
-MaximumScale = 0.86
+ScenePath = "res://assets/models/world/prp_rock_boulder_a.glb"
+Count = 14
+MinimumScale = 0.25
+MaximumScale = 0.55
 MinimumSpacing = 9.5
 Clumping = 0.58
 ClumpScale = 34.0
@@ -394,14 +256,14 @@ VisibilityFadeMargin = 18.0
 CastShadows = true
 
 ; ⚠️ A BOULDER LAYER IS AN HLOD LAYER FOR THE SAME REASON A TREE LAYER IS, and it needs one more
-; than a tree does: at five per 100 x 100 m the detailed tier is nearly free, but a 5.6 m mass
+; than a tree does: at six per 100 x 100 m the detailed tier is nearly free, but a 4-8 m mass
 ; that pops out of existence at its visibility range is the most obvious cull in the realm.
 [sub_resource type="Resource" id="Layer_boulder"]
 script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_boulder_large.glb"
-Count = 5
-MinimumScale = 0.55
-MaximumScale = 1.05
+ScenePath = "res://assets/models/world/prp_rock_boulder_a.glb"
+Count = 6
+MinimumScale = 0.7
+MaximumScale = 1.3
 MinimumSpacing = 26.0
 Clumping = 0.5
 ClumpScale = 60.0
@@ -415,22 +277,54 @@ HlodShape = 1
 HlodReduction = 2
 HlodRangeBegin = 145.0
 HlodRangeEnd = 340.0
-HlodColor = Color(0.88, 0.9, 0.92, 1)
+HlodColor = Color(0.71, 0.68, 0.63, 1)
+HlodScale = Vector3(1.1, 1.1, 1.1)
+
+; ⚠️ THE TOR IS THE SAME BOULDER AT 2.5-4 TIMES ITS SIZE: a 10-16 m mass, 15-25 m across, one per
+; 100 x 100 m at most. It is what makes open upland read as big country from a road. Scatter has
+; NO COLLISION, so the player can walk into one; keep the count at 1 and place a wrapper scene
+; (scenes/props/lm_rock_boulder_a.tscn) by hand wherever a tor has to be solid.
+[sub_resource type="Resource" id="Layer_tor"]
+script = ExtResource("10_layer")
+ScenePath = "res://assets/models/world/prp_rock_boulder_a.glb"
+Count = 1
+MinimumScale = 2.5
+MaximumScale = 4.0
+MinimumSpacing = 60.0
+Clumping = 0.6
+ClumpScale = 90.0
+MaxSlope = 0.5
+Tint = Color(0.66, 0.63, 0.59, 1)
+TintVariation = 0.1
+VisibilityRangeEnd = 220.0
+VisibilityFadeMargin = 26.0
+CastShadows = true
+HlodShape = 1
+HlodReduction = 2
+HlodRangeBegin = 200.0
+HlodRangeEnd = 420.0
+HlodColor = Color(0.66, 0.63, 0.59, 1)
 HlodScale = Vector3(1.1, 1.1, 1.1)
 
 ; ⚠️ A TREE LAYER IS AN HLOD LAYER OR IT IS A DRAW CALL STORM AT DISTANCE. The proxy cone carries the
 ; silhouette past 130 m; the detailed instance fades out before it.
+;
+; ⚠️ THE OAK IS 12 m AT SCALE 1 AND ITS CROWN IS 8.5 m ACROSS, so this layer stands 8-18 m: the
+; hero is meant to feel small under it. That crown is 2.6 times the width of the tree it replaced,
+; which is why the count went from 260 to 150 and the spacing from 6.5 to 9 - the stand closes
+; over at this density, and the layer costs half the triangles it did. Scatter has NO COLLISION:
+; a trunk here is walked through, as it always was.
 [sub_resource type="Resource" id="Layer_pine"]
 script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_tree_broadleaf.glb"
-Count = 260
-MinimumScale = 0.75
-MaximumScale = 1.6
-MinimumSpacing = 6.5
+ScenePath = "res://assets/models/world/prp_tree_oak_a.glb"
+Count = 150
+MinimumScale = 0.7
+MaximumScale = 1.5
+MinimumSpacing = 9.0
 Clumping = 0.78
 ClumpScale = 46.0
 MaxSlope = 0.42
-Tint = Color(0.72, 0.78, 0.66, 1)
+Tint = Color(0.94, 0.96, 0.86, 1)
 TintVariation = 0.18
 VisibilityRangeEnd = 150.0
 VisibilityFadeMargin = 22.0
@@ -442,26 +336,75 @@ HlodRangeEnd = 320.0
 HlodColor = Color(0.88, 0.9, 0.92, 1)
 HlodScale = Vector3(1.15, 1.15, 1.15)
 
+; The second silhouette in the wood: a 10-20 m fir, a quarter of the oak's count, on the same stand
+; field (same ClumpScale) so the two species share copses instead of each drawing its own.
+[sub_resource type="Resource" id="Layer_fir"]
+script = ExtResource("10_layer")
+ScenePath = "res://assets/models/world/prp_pine_fir_a.glb"
+Count = 36
+MinimumScale = 0.7
+MaximumScale = 1.4
+MinimumSpacing = 10.0
+Clumping = 0.78
+ClumpScale = 46.0
+MaxSlope = 0.42
+Tint = Color(1.0, 0.98, 0.86, 1)
+TintVariation = 0.14
+VisibilityRangeEnd = 150.0
+VisibilityFadeMargin = 22.0
+CastShadows = true
+HlodShape = 1
+HlodReduction = 3
+HlodRangeBegin = 130.0
+HlodRangeEnd = 320.0
+HlodColor = Color(0.88, 0.9, 0.92, 1)
+HlodScale = Vector3(1.15, 1.15, 1.15)
+
+; ⚠️ ELDER OAKS: the same oak at 1.8-2.4, so 22-29 m with a 15-20 m crown, four per 100 x 100 m.
+; Clumping is HIGHER than Layer_pine's on the SAME ClumpScale, which is what keeps them in the
+; interior of a stand: the stand field has to be stronger for an elder than for an ordinary tree.
+; That matters because scatter has no collision - an elder on a road verge is a 2 m trunk the
+; player walks through, and one deep in a copse is a crown over the canopy.
+[sub_resource type="Resource" id="Layer_elder"]
+script = ExtResource("10_layer")
+ScenePath = "res://assets/models/world/prp_tree_oak_a.glb"
+Count = 4
+MinimumScale = 1.8
+MaximumScale = 2.4
+MinimumSpacing = 28.0
+Clumping = 0.92
+ClumpScale = 46.0
+MaxSlope = 0.36
+Tint = Color(0.88, 0.9, 0.8, 1)
+TintVariation = 0.1
+VisibilityRangeEnd = 220.0
+VisibilityFadeMargin = 26.0
+CastShadows = true
+HlodShape = 1
+HlodReduction = 2
+HlodRangeBegin = 200.0
+HlodRangeEnd = 420.0
+HlodColor = Color(0.88, 0.9, 0.92, 1)
+HlodScale = Vector3(1.1, 1.1, 1.1)
+
+; Scrub is the fern rosette again, large (1.9-2.6 m across) and dark: no bush was adopted, and a
+; second use of one mesh at another size and tint is the rule for this set. No HLOD - a
+; knee-high rosette is gone long before the range where a proxy would earn its draw call.
 [sub_resource type="Resource" id="Layer_scrub"]
 script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_bush_flowering.glb"
-Count = 200
-MinimumScale = 0.7
-MaximumScale = 1.5
+ScenePath = "res://assets/models/props/prp_fern_clump_a.glb"
+Count = 110
+MinimumScale = 1.3
+MaximumScale = 1.8
 MinimumSpacing = 5.0
 Clumping = 0.55
 ClumpScale = 30.0
 MaxSlope = 0.62
-Tint = Color(0.66, 0.70, 0.56, 1)
+Tint = Color(0.46, 0.52, 0.38, 1)
 TintVariation = 0.20
-VisibilityRangeEnd = 105.0
-VisibilityFadeMargin = 18.0
-HlodShape = 2
-HlodReduction = 4
-HlodRangeBegin = 92.0
-HlodRangeEnd = 230.0
-HlodColor = Color(0.88, 0.9, 0.92, 1)
-HlodScale = Vector3(1.15, 1.15, 1.15)
+VisibilityRangeEnd = 90.0
+VisibilityFadeMargin = 16.0
+CastShadows = false
 
 ; Settlement ecology: the verges and back lots of an inhabited place, and nothing tall enough to hide
 ; a doorway. EdgePadding 1 because a settlement's outskirts should thin INTO the next cell's country,
@@ -470,37 +413,37 @@ HlodScale = Vector3(1.15, 1.15, 1.15)
 script = ExtResource("9_scatter")
 Seed = 5101
 EdgePadding = 1.0
-Layers = Array[ExtResource("10_layer")]([SubResource("Layer_grass_short"), SubResource("Layer_clover"), SubResource("Layer_stone"), SubResource("Layer_stone_b"), SubResource("Layer_flowers"), SubResource("Layer_flowers_b"), SubResource("Layer_stone_c")])
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_grass_short"), SubResource("Layer_grass_wispy")])
 
 [sub_resource type="Resource" id="Scatter_pasture"]
 script = ExtResource("9_scatter")
 Seed = 5102
 EdgePadding = 1.0
-Layers = Array[ExtResource("10_layer")]([SubResource("Layer_grass"), SubResource("Layer_grass_short"), SubResource("Layer_clover"), SubResource("Layer_scrub"), SubResource("Layer_flowers"), SubResource("Layer_flowers_b")])
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_grass"), SubResource("Layer_grass_short"), SubResource("Layer_scrub")])
 
 [sub_resource type="Resource" id="Scatter_wilds"]
 script = ExtResource("9_scatter")
 Seed = 5103
 EdgePadding = 1.0
-Layers = Array[ExtResource("10_layer")]([SubResource("Layer_grass"), SubResource("Layer_bracken"), SubResource("Layer_pine"), SubResource("Layer_scrub"), SubResource("Layer_stone"), SubResource("Layer_stone_b"), SubResource("Layer_rock_medium"), SubResource("Layer_mushrooms"), SubResource("Layer_stone_c")])
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_grass"), SubResource("Layer_bracken"), SubResource("Layer_pine"), SubResource("Layer_fir"), SubResource("Layer_elder"), SubResource("Layer_scrub"), SubResource("Layer_rock_medium")])
 
 [sub_resource type="Resource" id="Scatter_upland"]
 script = ExtResource("9_scatter")
 Seed = 5104
 EdgePadding = 1.0
-Layers = Array[ExtResource("10_layer")]([SubResource("Layer_grass"), SubResource("Layer_bracken"), SubResource("Layer_stone"), SubResource("Layer_stone_b"), SubResource("Layer_rock_medium"), SubResource("Layer_boulder"), SubResource("Layer_scrub"), SubResource("Layer_stone_c")])
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_grass"), SubResource("Layer_bracken"), SubResource("Layer_rock_medium"), SubResource("Layer_boulder"), SubResource("Layer_tor"), SubResource("Layer_scrub")])
 
 [sub_resource type="Resource" id="Scatter_waste"]
 script = ExtResource("9_scatter")
 Seed = 5105
 EdgePadding = 1.0
-Layers = Array[ExtResource("10_layer")]([SubResource("Layer_stone"), SubResource("Layer_stone_b"), SubResource("Layer_rock_medium"), SubResource("Layer_boulder"), SubResource("Layer_bracken"), SubResource("Layer_grass_short"), SubResource("Layer_scrub"), SubResource("Layer_stone_c"), SubResource("Layer_grass_wispy")])
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_rock_medium"), SubResource("Layer_boulder"), SubResource("Layer_tor"), SubResource("Layer_bracken"), SubResource("Layer_grass_short"), SubResource("Layer_scrub"), SubResource("Layer_grass_wispy")])
 
 [sub_resource type="Resource" id="Scatter_shore"]
 script = ExtResource("9_scatter")
 Seed = 5106
 EdgePadding = 1.0
-Layers = Array[ExtResource("10_layer")]([SubResource("Layer_grass_short"), SubResource("Layer_stone"), SubResource("Layer_stone_b"), SubResource("Layer_scrub"), SubResource("Layer_stone_c"), SubResource("Layer_grass_wispy")])
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_grass_short"), SubResource("Layer_scrub"), SubResource("Layer_grass_wispy")])
 
 '''
 

@@ -19,8 +19,6 @@
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_sacks.glb" id="18_sacks"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_fence.glb" id="19_fence"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_cart.glb" id="20_cart"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_rock_cluster.glb" id="21_rocks"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_pine_dead.glb" id="22_pine"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_ruin_wall.glb" id="23_ruinwall"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_ruin_pillar.glb" id="24_pillar"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_watch_tower.glb" id="25_tower"]
@@ -41,6 +39,9 @@
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_townsman.glb" id="42b_npc_townsman"]
 [ext_resource type="Script" path="res://src/Enemies/LairSpawnComponent.cs" id="49_lairspawn"]
 [ext_resource type="PackedScene" path="res://scenes/props/bld_ruin_tower.tscn" id="dx_ruin_tower"]
+[ext_resource type="PackedScene" path="res://scenes/props/lm_pine_fir_a.tscn" id="rp_lm_pine_fir_a"]
+[ext_resource type="PackedScene" path="res://scenes/props/lm_tree_dead_a.tscn" id="rp_lm_tree_dead_a"]
+[ext_resource type="PackedScene" path="res://scenes/props/lm_rock_boulder_a.tscn" id="rp_lm_rock_boulder_a"]
 
 ; HOLLOWREACH (Phase 38O) — the wharf down the water from Tarn's Landing, and the realm's FOURTH
 ; market. It is the only place in Embervale that will buy contraband, and that is the whole of its
@@ -175,13 +176,6 @@ radius = 0.3
 [sub_resource type="CylinderShape3D" id="Shape_waystone"]
 height = 3.0
 radius = 0.8
-
-[sub_resource type="BoxShape3D" id="Shape_rocks"]
-size = Vector3(2.3, 1.4, 1.9)
-
-[sub_resource type="CylinderShape3D" id="Shape_pine"]
-height = 6.0
-radius = 0.4
 
 [sub_resource type="BoxShape3D" id="Shape_ruin"]
 size = Vector3(4, 5, 1)
@@ -405,81 +399,39 @@ surface_material_override/0 = SubResource("Mat_ember")
 ; --- size is the model's measured bounding box, carried over from the cell that first measured it.
 
 [node name="PineA" type="Node3D" parent="Nav"]
-transform = Transform3D(0.9397, 0, 0.342, 0, 1, 0, -0.342, 0, 0.9397, -17, 0, -30)
+transform = Transform3D(0.7161, 0, 0.2606, 0, 0.762, 0, -0.2606, 0, 0.7161, -17, 0, -30)
 
-[node name="Model" parent="Nav/PineA" instance=ExtResource("22_pine")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/PineA"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/PineA/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.0, 0)
-shape = SubResource("Shape_pine")
+[node name="Model" parent="Nav/PineA" instance=ExtResource("rp_lm_pine_fir_a")]
 
 [node name="PineB" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, -0.9397, -24, 0, -32)
+transform = Transform3D(-0.7574, 0, -0.2757, 0, 0.806, 0, 0.2757, 0, -0.7574, -24, 0, -32)
 
-[node name="Model" parent="Nav/PineB" instance=ExtResource("22_pine")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/PineB"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/PineB/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.0, 0)
-shape = SubResource("Shape_pine")
+[node name="Model" parent="Nav/PineB" instance=ExtResource("rp_lm_pine_fir_a")]
 
 [node name="PineC" type="Node3D" parent="Nav"]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -15, 0, -14)
+transform = Transform3D(0, 0, 0.708, 0, 0.708, 0, -0.708, 0, 0, -15, 0, -14)
 
-[node name="Model" parent="Nav/PineC" instance=ExtResource("22_pine")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/PineC"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/PineC/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.0, 0)
-shape = SubResource("Shape_pine")
+[node name="Model" parent="Nav/PineC" instance=ExtResource("rp_lm_pine_fir_a")]
 
 [node name="PineD" type="Node3D" parent="Nav"]
-transform = Transform3D(0.5, 0, -0.866, 0, 1, 0, 0.866, 0, 0.5, -30, 0, -30)
+transform = Transform3D(0.3395, 0, -0.588, 0, 0.679, 0, 0.588, 0, 0.3395, -30, 0, -30)
 
-[node name="Model" parent="Nav/PineD" instance=ExtResource("22_pine")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/PineD"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/PineD/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.0, 0)
-shape = SubResource("Shape_pine")
+[node name="Model" parent="Nav/PineD" instance=ExtResource("rp_lm_pine_fir_a")]
 
 [node name="PineE" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.766, 0, 0.6428, 0, 1, 0, -0.6428, 0, -0.766, -38, 0, -32)
+transform = Transform3D(-0.8947, 0, 0.7508, 0, 1.168, 0, -0.7508, 0, -0.8947, -38, 0, -32)
 
-[node name="Model" parent="Nav/PineE" instance=ExtResource("22_pine")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/PineE"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/PineE/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.0, 0)
-shape = SubResource("Shape_pine")
+[node name="Model" parent="Nav/PineE" instance=ExtResource("rp_lm_tree_dead_a")]
 
 [node name="RocksA" type="Node3D" parent="Nav"]
-transform = Transform3D(0.6428, 0, 0.766, 0, 1, 0, -0.766, 0, 0.6428, -15, 0, -22)
+transform = Transform3D(0.2353, 0, 0.2804, 0, 0.366, 0, -0.2804, 0, 0.2353, -15, -0.12, -22)
 
-[node name="Model" parent="Nav/RocksA" instance=ExtResource("21_rocks")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/RocksA"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/RocksA/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
-shape = SubResource("Shape_rocks")
+[node name="Model" parent="Nav/RocksA" instance=ExtResource("rp_lm_rock_boulder_a")]
 
 [node name="RocksB" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.342, 0, -0.9397, 0, 1, 0, 0.9397, 0, -0.342, -21, 0, -12)
+transform = Transform3D(-0.1252, 0, -0.3439, 0, 0.366, 0, 0.3439, 0, -0.1252, -21, -0.12, -12)
 
-[node name="Model" parent="Nav/RocksB" instance=ExtResource("21_rocks")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/RocksB"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/RocksB/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
-shape = SubResource("Shape_rocks")
+[node name="Model" parent="Nav/RocksB" instance=ExtResource("rp_lm_rock_boulder_a")]
 
 [node name="PillarA" type="Node3D" parent="Nav"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -53, 0, -4)
@@ -806,26 +758,14 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.0, 0)
 shape = SubResource("Shape_pillar")
 
 [node name="RocksC" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.9848, 0, 0.1736, 0, 1, 0, -0.1736, 0, -0.9848, -46, 0, -32)
+transform = Transform3D(-0.3604, 0, 0.0635, 0, 0.366, 0, -0.0635, 0, -0.3604, -46, -0.12, -32)
 
-[node name="Model" parent="Nav/RocksC" instance=ExtResource("21_rocks")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/RocksC"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/RocksC/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
-shape = SubResource("Shape_rocks")
+[node name="Model" parent="Nav/RocksC" instance=ExtResource("rp_lm_rock_boulder_a")]
 
 [node name="RocksD" type="Node3D" parent="Nav"]
-transform = Transform3D(0.1736, 0, 0.9848, 0, 1, 0, -0.9848, 0, 0.1736, -53, 0, 14)
+transform = Transform3D(0.0635, 0, 0.3604, 0, 0.366, 0, -0.3604, 0, 0.0635, -53, -0.12, 14)
 
-[node name="Model" parent="Nav/RocksD" instance=ExtResource("21_rocks")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/RocksD"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/RocksD/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
-shape = SubResource("Shape_rocks")
+[node name="Model" parent="Nav/RocksD" instance=ExtResource("rp_lm_rock_boulder_a")]
 
 ; --- Second pass (38O). Budgeted rather than discovered: three cells in a row have needed one, so
 ; --- 38N2's retrospective named it the second half of the job. The first render put a wharf in the
@@ -944,37 +884,19 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.42, 0)
 shape = SubResource("Shape_bench")
 
 [node name="PineF" type="Node3D" parent="Nav"]
-transform = Transform3D(0.5, 0, 0.866, 0, 1, 0, -0.866, 0, 0.5, -13, 0, 17)
+transform = Transform3D(0.5665, 0, 0.9812, 0, 1.133, 0, -0.9812, 0, 0.5665, -13, 0, 17)
 
-[node name="Model" parent="Nav/PineF" instance=ExtResource("22_pine")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/PineF"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/PineF/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.0, 0)
-shape = SubResource("Shape_pine")
+[node name="Model" parent="Nav/PineF" instance=ExtResource("rp_lm_tree_dead_a")]
 
 [node name="PineG" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.5, 0, -0.866, 0, 1, 0, 0.866, 0, -0.5, -28, 0, 12)
+transform = Transform3D(-0.6245, 0, -1.0817, 0, 1.249, 0, 1.0817, 0, -0.6245, -28, 0, 12)
 
-[node name="Model" parent="Nav/PineG" instance=ExtResource("22_pine")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/PineG"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/PineG/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.0, 0)
-shape = SubResource("Shape_pine")
+[node name="Model" parent="Nav/PineG" instance=ExtResource("rp_lm_tree_dead_a")]
 
 [node name="RocksE" type="Node3D" parent="Nav"]
-transform = Transform3D(0.766, 0, -0.6428, 0, 1, 0, 0.6428, 0, 0.766, -16, 0, 10)
+transform = Transform3D(0.2804, 0, -0.2353, 0, 0.366, 0, 0.2353, 0, 0.2804, -16, -0.12, 10)
 
-[node name="Model" parent="Nav/RocksE" instance=ExtResource("21_rocks")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/RocksE"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/RocksE/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
-shape = SubResource("Shape_rocks")
+[node name="Model" parent="Nav/RocksE" instance=ExtResource("rp_lm_rock_boulder_a")]
 
 [node name="StandC" type="Node3D" parent="Nav"]
 transform = Transform3D(-0.342, 0, 0.9397, 0, 1, 0, -0.9397, 0, -0.342, -28, 0, 6)
@@ -1043,26 +965,14 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.8, 0)
 shape = SubResource("Shape_lamp")
 
 [node name="PineI" type="Node3D" parent="Nav"]
-transform = Transform3D(0.866, 0, -0.5, 0, 1, 0, 0.5, 0, 0.866, -54, 0, 10)
+transform = Transform3D(1.0115, 0, -0.584, 0, 1.168, 0, 0.584, 0, 1.0115, -54, 0, 10)
 
-[node name="Model" parent="Nav/PineI" instance=ExtResource("22_pine")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/PineI"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/PineI/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.0, 0)
-shape = SubResource("Shape_pine")
+[node name="Model" parent="Nav/PineI" instance=ExtResource("rp_lm_tree_dead_a")]
 
 [node name="RocksG" type="Node3D" parent="Nav"]
-transform = Transform3D(0.766, 0, 0.6428, 0, 1, 0, -0.6428, 0, 0.766, -44, 0, -26)
+transform = Transform3D(0.2804, 0, 0.2353, 0, 0.366, 0, -0.2353, 0, 0.2804, -44, -0.12, -26)
 
-[node name="Model" parent="Nav/RocksG" instance=ExtResource("21_rocks")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/RocksG"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/RocksG/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
-shape = SubResource("Shape_rocks")
+[node name="Model" parent="Nav/RocksG" instance=ExtResource("rp_lm_rock_boulder_a")]
 
 [node name="PillarD" type="Node3D" parent="Nav"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -16, 0, 4)
@@ -1087,26 +997,14 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.45, 0)
 shape = SubResource("Shape_hay")
 
 [node name="PineK" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.866, 0, -0.5, 0, 1, 0, 0.5, 0, -0.866, -42, 0, -29)
+transform = Transform3D(-0.9985, 0, -0.5765, 0, 1.153, 0, 0.5765, 0, -0.9985, -42, 0, -29)
 
-[node name="Model" parent="Nav/PineK" instance=ExtResource("22_pine")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/PineK"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/PineK/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.0, 0)
-shape = SubResource("Shape_pine")
+[node name="Model" parent="Nav/PineK" instance=ExtResource("rp_lm_tree_dead_a")]
 
 [node name="RocksH" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.342, 0, 0.9397, 0, 1, 0, -0.9397, 0, -0.342, -24, 0, -7)
+transform = Transform3D(-0.1252, 0, 0.3439, 0, 0.366, 0, -0.3439, 0, -0.1252, -24, -0.12, -7)
 
-[node name="Model" parent="Nav/RocksH" instance=ExtResource("21_rocks")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/RocksH"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/RocksH/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
-shape = SubResource("Shape_rocks")
+[node name="Model" parent="Nav/RocksH" instance=ExtResource("rp_lm_rock_boulder_a")]
 
 ; ====================================================================================================
 ; --- 38R2: the dockside bones ----------------------------------------------------------------

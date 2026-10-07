@@ -12,37 +12,16 @@
 [gd_scene load_steps=6 format=3 uid="uid://crgndrgnroost"]
 
 [ext_resource type="PackedScene" path="res://scenes/regions/roost.tscn" id="1_roost"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_rock_cluster.glb" id="10_rock"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_pine_dead.glb" id="11_pine"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_glacier_wall.glb" id="12_glacier"]
 [ext_resource type="Script" path="res://src/World/MapLocationComponent.cs" id="maploc_39_5a"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_ruin_pillar.glb" id="dx_ruin_pillar"]
+[ext_resource type="PackedScene" path="res://scenes/props/lm_rock_crag_a.tscn" id="rp_lm_rock_crag_a"]
+[ext_resource type="PackedScene" path="res://scenes/props/lm_ice_wall_a.tscn" id="rp_lm_ice_wall_a"]
+[ext_resource type="PackedScene" path="res://scenes/props/lm_tree_dead_a.tscn" id="rp_lm_tree_dead_a"]
+[ext_resource type="PackedScene" path="res://scenes/props/lm_rock_boulder_a.tscn" id="rp_lm_rock_boulder_a"]
+[ext_resource type="PackedScene" path="res://scenes/props/lm_rock_rubble_a.tscn" id="rp_lm_rock_rubble_a"]
 
 [sub_resource type="BoxShape3D" id="DxShape_ruin_pillar"]
 size = Vector3(1.2, 4, 1.2)
-
-[sub_resource type="CylinderShape3D" id="Shape_rock"]
-radius = 1.5
-height = 1.6
-
-[sub_resource type="CylinderShape3D" id="Shape_pine"]
-radius = 0.4
-height = 5.0
-
-[sub_resource type="BoxShape3D" id="Shape_ice_GlacierNW"]
-size = Vector3(8.000, 6.400, 3.200)
-
-[sub_resource type="BoxShape3D" id="Shape_ice_GlacierNE"]
-size = Vector3(8.000, 6.400, 3.200)
-
-[sub_resource type="BoxShape3D" id="Shape_ice_GlacierWallA"]
-size = Vector3(8.000, 6.400, 3.200)
-
-[sub_resource type="BoxShape3D" id="Shape_ice_GlacierWallB"]
-size = Vector3(8.000, 6.400, 3.200)
-
-[sub_resource type="BoxShape3D" id="Shape_ice_GlacierWallD"]
-size = Vector3(8.000, 6.400, 3.200)
 
 [node name="DragonRoostCell" instance=ExtResource("1_roost")]
 metadata/content_offset = Vector2(15, -20)
@@ -50,101 +29,39 @@ metadata/content_offset = Vector2(15, -20)
 ; The splinter field: tilted cover in the EAST, where the player enters, thinning westward toward
 ; the nest. Cover is what breaks a 55 degree breath cone and it is the only counterplay a grounded
 ; player has, so where it runs out is where the fight is. The 2026-08-28 layout rebuild stopped distributing it evenly.
-[node name="CragN" parent="Nav" index="3" instance=ExtResource("10_rock")]
-transform = Transform3D(1.6853, 0, 1.4141, 0, 2.8, 0, -1.4141, 0, 1.6853, 33, 0, -26)
+[node name="CragN" parent="Nav" index="3" instance=ExtResource("rp_lm_rock_crag_a")]
+transform = Transform3D(0.8764, 0, 0.7353, 0, 1.456, 0, -0.7353, 0, 0.8764, 33, 0, -26)
 
-[node name="CragNCol" type="StaticBody3D" parent="Nav/CragN"]
+[node name="CragE" parent="Nav" index="4" instance=ExtResource("rp_lm_rock_crag_a")]
+transform = Transform3D(-0.4624, 0, 1.2705, 0, 1.664, 0, -1.2705, 0, -0.4624, 45, 0, -10)
 
-[node name="Shape" type="CollisionShape3D" parent="Nav/CragN/CragNCol"]
-shape = SubResource("Shape_rock")
+[node name="CragW" parent="Nav" index="5" instance=ExtResource("rp_lm_rock_crag_a")]
+transform = Transform3D(-0.4268, 0, -1.1727, 0, 1.56, 0, 1.1727, 0, -0.4268, 39, 0, -30)
 
-[node name="CragE" parent="Nav" index="4" instance=ExtResource("10_rock")]
-transform = Transform3D(-0.8893, 0, 2.4432, 0, 3.2, 0, -2.4432, 0, -0.8893, 45, 0, -10)
+[node name="CragS" parent="Nav" index="6" instance=ExtResource("rp_lm_rock_crag_a")]
+transform = Transform3D(-1.0242, 0, -0.1806, 0, 1.248, 0, 0.1806, 0, -1.0242, 49, 0, -12)
 
-[node name="CragECol" type="StaticBody3D" parent="Nav/CragE"]
+[node name="GlacierNW" parent="Nav" index="7" instance=ExtResource("rp_lm_ice_wall_a")]
+transform = Transform3D(0.9551, 0, 0.1777, 0, 0.87, 0, -0.3551, 0, 0.478, 21, 0, -34)
 
-[node name="Shape" type="CollisionShape3D" parent="Nav/CragE/CragECol"]
-shape = SubResource("Shape_rock")
+[node name="GlacierNE" parent="Nav" index="8" instance=ExtResource("rp_lm_ice_wall_a")]
+transform = Transform3D(-1.2208, 0, -0.2862, 0, 1.151, 0, 0.5715, 0, -0.6113, 21, 0, -12)
 
-[node name="CragW" parent="Nav" index="5" instance=ExtResource("10_rock")]
-transform = Transform3D(-0.8208, 0, -2.2553, 0, 3, 0, 2.2553, 0, -0.8208, 39, 0, -30)
+[node name="PineW" parent="Nav" index="9" instance=ExtResource("rp_lm_tree_dead_a")]
+transform = Transform3D(1.0747, 0, 0.6205, 0, 1.49, 0, -0.6205, 0, 1.0747, -15, 0, -8)
 
-[node name="CragWCol" type="StaticBody3D" parent="Nav/CragW"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/CragW/CragWCol"]
-shape = SubResource("Shape_rock")
-
-[node name="CragS" parent="Nav" index="6" instance=ExtResource("10_rock")]
-transform = Transform3D(-1.9696, 0, -0.3473, 0, 2.4, 0, 0.3473, 0, -1.9696, 49, 0, -12)
-
-[node name="CragSCol" type="StaticBody3D" parent="Nav/CragS"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/CragS/CragSCol"]
-shape = SubResource("Shape_rock")
-
-[node name="GlacierNW" parent="Nav" index="7" instance=ExtResource("12_glacier")]
-transform = Transform3D(0.9825, 0, 0.3653, 0, 1.0482, 0, -0.3653, 0, 0.9825, 21, 0, -34)
-
-[node name="Col" type="StaticBody3D" parent="Nav/GlacierNW"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/GlacierNW/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.200, 0)
-shape = SubResource("Shape_ice_GlacierNW")
-
-[node name="GlacierNE" parent="Nav" index="8" instance=ExtResource("12_glacier")]
-transform = Transform3D(-1.2556, 0, -0.5878, 0, 1.3863, 0, 0.5878, 0, -1.2556, 21, 0, -12)
-
-[node name="Col" type="StaticBody3D" parent="Nav/GlacierNE"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/GlacierNE/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.200, 0)
-shape = SubResource("Shape_ice_GlacierNE")
-
-[node name="PineW" parent="Nav" index="9" instance=ExtResource("11_pine")]
-transform = Transform3D(0.866, 0, 0.5, 0, 1.2, 0, -0.5, 0, 0.866, -15, 0, -8)
-
-[node name="PineWCol" type="StaticBody3D" parent="Nav/PineW"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/PineW/PineWCol"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
-shape = SubResource("Shape_pine")
-
-[node name="PineE" parent="Nav" index="10" instance=ExtResource("11_pine")]
-transform = Transform3D(-0.866, 0, -0.5, 0, 1.1, 0, 0.5, 0, -0.866, -1, 0, -2)
-
-[node name="PineECol" type="StaticBody3D" parent="Nav/PineE"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/PineE/PineECol"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
-shape = SubResource("Shape_pine")
+[node name="PineE" parent="Nav" index="10" instance=ExtResource("rp_lm_tree_dead_a")]
+transform = Transform3D(-0.9673, 0, -0.5585, 0, 1.229, 0, 0.5585, 0, -0.9673, -1, 0, -2)
 
 ; Sparse windbreak at the territory edge: a clustered ecology rather than isolated identical trees.
-[node name="PineSW" parent="Nav" instance=ExtResource("11_pine")]
-transform = Transform3D(-0.3078, 0, 0.8457, 0, 1.4, 0, -0.8457, 0, -0.3078, -23, 0, 2)
-[node name="Col" type="StaticBody3D" parent="Nav/PineSW"]
-[node name="Shape" type="CollisionShape3D" parent="Nav/PineSW/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
-shape = SubResource("Shape_pine")
-
-[node name="PineSE" parent="Nav" instance=ExtResource("11_pine")]
-transform = Transform3D(0.5, 0, 0.866, 0, 1.25, 0, -0.866, 0, 0.5, 9, 0, 4)
-[node name="Col" type="StaticBody3D" parent="Nav/PineSE"]
-[node name="Shape" type="CollisionShape3D" parent="Nav/PineSE/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
-shape = SubResource("Shape_pine")
-
-[node name="RockShelfSW" parent="Nav" instance=ExtResource("10_rock")]
-transform = Transform3D(0.7182, 0, 1.9734, 0, 1.5, 0, -1.9734, 0, 0.7182, 29, 0, -10)
-[node name="Col" type="StaticBody3D" parent="Nav/RockShelfSW"]
-[node name="Shape" type="CollisionShape3D" parent="Nav/RockShelfSW/Col"]
-shape = SubResource("Shape_rock")
-
-[node name="RockShelfSE" parent="Nav" instance=ExtResource("10_rock")]
-transform = Transform3D(0.95, 0, -1.6454, 0, 1.4, 0, 1.6454, 0, 0.95, 41, 0, -6)
-[node name="Col" type="StaticBody3D" parent="Nav/RockShelfSE"]
-[node name="Shape" type="CollisionShape3D" parent="Nav/RockShelfSE/Col"]
-shape = SubResource("Shape_rock")
-
+[node name="PineSW" parent="Nav" instance=ExtResource("rp_lm_tree_dead_a")]
+transform = Transform3D(-0.3444, 0, 0.9463, 0, 1.567, 0, -0.9463, 0, -0.3444, -23, 0, 2)
+[node name="PineSE" parent="Nav" instance=ExtResource("rp_lm_tree_dead_a")]
+transform = Transform3D(0.5935, 0, 1.028, 0, 1.483, 0, -1.028, 0, 0.5935, 9, 0, 4)
+[node name="RockShelfSW" parent="Nav" instance=ExtResource("rp_lm_rock_boulder_a")]
+transform = Transform3D(0.263, 0, 0.7226, 0, 0.549, 0, -0.7226, 0, 0.263, 29, 0, -10)
+[node name="RockShelfSE" parent="Nav" instance=ExtResource("rp_lm_rock_boulder_a")]
+transform = Transform3D(0.3475, 0, -0.6019, 0, 0.512, 0, 0.6019, 0, 0.3475, 41, 0, -6)
 ; --- The 2026-08-28 layout rebuild: the north ice wall and the splinter field. The roost used to be four crags in a ring
 ; --- around a nest at the exact centre of a 90 m plate, which is the same shape as the other two
 ; --- roosts and reads identically from the ground. It is now a SHELF: a glacier wall along the north
@@ -152,56 +69,23 @@ shape = SubResource("Shape_rock")
 ; --- narrows at x = 6 between two ice masses, and open ground beyond it with the nest hard against
 ; --- the north wall at (-14, -20). Cover thins as you advance, so the fight pushes you forward.
 
-[node name="GlacierWallA" parent="Nav" instance=ExtResource("12_glacier")]
-transform = Transform3D(1.4809, 0, 0.4149, 0, 1.5379, 0, -0.4149, 0, 1.4809, -15, 0, -52)
+[node name="GlacierWallA" parent="Nav" instance=ExtResource("rp_lm_ice_wall_a")]
+transform = Transform3D(1.4396, 0, 0.2021, 0, 1.276, 0, -0.4033, 0, 0.7212, -15, 0, -52)
 
-[node name="Col" type="StaticBody3D" parent="Nav/GlacierWallA"]
+[node name="GlacierWallB" parent="Nav" instance=ExtResource("rp_lm_ice_wall_a")]
+transform = Transform3D(-1.1713, 0, -0.1541, 0, 1.034, 0, 0.3073, 0, -0.5871, -3, 0, -53)
 
-[node name="Shape" type="CollisionShape3D" parent="Nav/GlacierWallA/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.200, 0)
-shape = SubResource("Shape_ice_GlacierWallA")
+[node name="GlacierWallD" parent="Nav" instance=ExtResource("rp_lm_ice_wall_a")]
+transform = Transform3D(0.6075, 0, 0.6012, 0, 1.148, 0, -1.1989, 0, 0.3046, -23, 0, -48)
 
-[node name="GlacierWallB" parent="Nav" instance=ExtResource("12_glacier")]
-transform = Transform3D(-1.2051, 0, -0.3162, 0, 1.2459, 0, 0.3162, 0, -1.2051, -3, 0, -53)
+[node name="CragSplA" parent="Nav" instance=ExtResource("rp_lm_rock_crag_a")]
+transform = Transform3D(0.7688, 0, 0.9162, 0, 1.508, 0, -0.9162, 0, 0.7688, 35, 0, -38)
 
-[node name="Col" type="StaticBody3D" parent="Nav/GlacierWallB"]
+[node name="CragSplC" parent="Nav" instance=ExtResource("rp_lm_rock_crag_a")]
+transform = Transform3D(-0.717, 0, 0.6016, 0, 1.144, 0, -0.6016, 0, -0.717, 25, 0, -13)
 
-[node name="Shape" type="CollisionShape3D" parent="Nav/GlacierWallB/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.200, 0)
-shape = SubResource("Shape_ice_GlacierWallB")
-
-[node name="GlacierWallD" parent="Nav" instance=ExtResource("12_glacier")]
-transform = Transform3D(0.6251, 0, 1.2337, 0, 1.3830, 0, -1.2337, 0, 0.6251, -23, 0, -48)
-
-[node name="Col" type="StaticBody3D" parent="Nav/GlacierWallD"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/GlacierWallD/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.200, 0)
-shape = SubResource("Shape_ice_GlacierWallD")
-
-[node name="CragSplA" parent="Nav" instance=ExtResource("10_rock")]
-transform = Transform3D(1.4784, 0, 1.7619, 0, 2.9, 0, -1.7619, 0, 1.4784, 35, 0, -38)
-
-[node name="Col" type="StaticBody3D" parent="Nav/CragSplA"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/CragSplA/Col"]
-shape = SubResource("Shape_rock")
-
-[node name="CragSplC" parent="Nav" instance=ExtResource("10_rock")]
-transform = Transform3D(-1.3789, 0, 1.157, 0, 2.2, 0, -1.157, 0, -1.3789, 25, 0, -13)
-
-[node name="Col" type="StaticBody3D" parent="Nav/CragSplC"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/CragSplC/Col"]
-shape = SubResource("Shape_rock")
-
-[node name="ScreeB" parent="Nav" instance=ExtResource("10_rock")]
-transform = Transform3D(-0.3299, 0, -1.8711, 0, 1.4, 0, 1.8711, 0, -0.3299, -19, 0, -16)
-
-[node name="Col" type="StaticBody3D" parent="Nav/ScreeB"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/ScreeB/Col"]
-shape = SubResource("Shape_rock")
+[node name="ScreeB" parent="Nav" instance=ExtResource("rp_lm_rock_rubble_a")]
+transform = Transform3D(-0.1617, 0, -0.9169, 0, 0.686, 0, 0.9169, 0, -0.1617, -19, 0, -16)
 
 ; The nest marker persists, not the dragon — it is authored in the scene, so the cell persistence
 ; director is guaranteed to find it, and it simply does not repopulate the lair once Defeated is set.

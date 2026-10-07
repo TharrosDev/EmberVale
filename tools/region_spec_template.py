@@ -175,14 +175,14 @@ MaxCellInstantiationsPerFrame = 1
 #               as two regions' worth of material — a tint multiplies, it cannot desaturate.
 SCATTER = '''[sub_resource type="Resource" id="Layer_grass"]
 script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_grass_tall.glb"
+ScenePath = "res://assets/models/props/prp_grass_clump_a.glb"
 Count = 520
-MinimumScale = 0.7
-MaximumScale = 1.35
+MinimumScale = 0.9
+MaximumScale = 1.6
 MinimumSpacing = 1.6
-MaxSlope = 0.55
 Clumping = 0.32
 ClumpScale = 22.0
+MaxSlope = 0.55
 Tint = Color(0.82, 0.84, 0.66, 1)
 TintVariation = 0.22
 VisibilityRangeEnd = 62.0
@@ -191,17 +191,23 @@ CastShadows = false
 
 ; A tree layer is an HLOD layer or it is a draw-call storm at distance. The proxy tier is the SAME
 ; mesh at a fraction of the density, faded in as the detailed tier fades out.
+;
+; The oak is 12 m tall with an 8.5 m crown at scale 1, so this stands 8-18 m. Scatter has NO
+; COLLISION. The whole nature set is three trees (prp_tree_oak_a, prp_tree_dead_a, prp_pine_fir_a),
+; three rocks (prp_rock_boulder_a, prp_rock_rubble_a, prp_rock_crag_a), prp_ice_spire_a, and two
+; ground-cover meshes (prp_grass_clump_a, prp_fern_clump_a). A second species is the same mesh at
+; another scale, Tint and Saturation - see the elder and tor layers in region_spec_ember.py.
 [sub_resource type="Resource" id="Layer_tree"]
 script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_tree_broadleaf.glb"
-Count = 220
-MinimumScale = 0.75
-MaximumScale = 1.6
-MinimumSpacing = 6.5
-MaxSlope = 0.42
+ScenePath = "res://assets/models/world/prp_tree_oak_a.glb"
+Count = 130
+MinimumScale = 0.7
+MaximumScale = 1.5
+MinimumSpacing = 9.0
 Clumping = 0.78
 ClumpScale = 46.0
-Tint = Color(0.72, 0.78, 0.66, 1)
+MaxSlope = 0.42
+Tint = Color(0.94, 0.96, 0.86, 1)
 TintVariation = 0.18
 VisibilityRangeEnd = 150.0
 VisibilityFadeMargin = 22.0

@@ -16,29 +16,14 @@ extends SceneTree
 ##       --output reports/3d/session-06-environment-handoff/visual-qa
 
 const SUBJECTS := [
-	# Composed from nature-megakit rocks; these are the new large end of the family.
-	"res://assets/models/props/prp_boulder_large.glb",
-	"res://assets/models/props/prp_rock_cluster_a.glb",
-	"res://assets/models/props/prp_rock_scree.glb",
-	"res://assets/models/props/prp_rock_edging.glb",
-	"res://assets/models/props/prp_cliff_face.glb",
-	"res://assets/models/props/prp_cliff_face_tall.glb",
-	# Adopted straight from the pack, unchanged: rendered because their SCALE is the open
-	# question, not their geometry.
-	"res://assets/models/props/prp_rock_medium.glb",
-	"res://assets/models/props/prp_pebble_c.glb",
-	"res://assets/models/props/prp_pebble_d.glb",
-	# Authored ice.
-	"res://assets/models/props/prp_ice_chunk.glb",
-	"res://assets/models/props/prp_ice_shard.glb",
-	"res://assets/models/props/prp_ice_slab.glb",
-	"res://assets/models/props/prp_glacier_wall.glb",
-	"res://assets/models/props/prp_glacier_face.glb",
-	# The incumbents, in the same frames and the same light, so "is the new one better" is a
-	# comparison rather than an assertion.
-	"res://assets/models/props/prp_glacier.glb",
-	"res://assets/models/props/prp_boulder.glb",
-	"res://assets/models/props/prp_rock_cluster.glb",
+	# The generated rock set. The outcrop is a placed 12 m piece, not scatter.
+	"res://assets/models/world/prp_rock_boulder_a.glb",
+	"res://assets/models/world/prp_rock_rubble_a.glb",
+	"res://assets/models/world/prp_rock_crag_a.glb",
+	"res://assets/models/world/prp_rock_outcrop_a.glb",
+	# The generated ice.
+	"res://assets/models/world/prp_ice_spire_a.glb",
+	"res://assets/models/world/prp_ice_wall_a.glb",
 	# The two hero props this session was asked to judge rather than assume. Both were RETAINED
 	# and both had their material response corrected by repair_architecture_materials.py — the
 	# relic's gold and the brazier's ironwork sat at 0.4 metallic, which reads as painted plastic

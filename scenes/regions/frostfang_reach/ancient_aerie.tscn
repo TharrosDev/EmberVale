@@ -3,34 +3,17 @@
 [ext_resource type="PackedScene" path="res://scenes/regions/roost.tscn" id="1_roost"]
 [ext_resource type="Script" path="res://src/Entities/Entity.cs" id="2_entity"]
 [ext_resource type="Script" path="res://src/Magic/SpellTomeComponent.cs" id="3_tome"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_rock_cluster.glb" id="10_rock"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_glacier_face.glb" id="12_glacier"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_glacier_wall.glb" id="12_ice_wall"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_tome_stand.glb" id="13_tome"]
 [ext_resource type="Script" path="res://src/World/MapLocationComponent.cs" id="maploc_39_5a"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_ruin_pillar.glb" id="14_pillar"]
-
-[sub_resource type="CylinderShape3D" id="Shape_rock"]
-radius = 1.5
-height = 1.6
+[ext_resource type="PackedScene" path="res://scenes/props/lm_rock_boulder_a.tscn" id="rp_lm_rock_boulder_a"]
+[ext_resource type="PackedScene" path="res://scenes/props/lm_ice_wall_a.tscn" id="rp_lm_ice_wall_a"]
 
 ; ⚠️ Re-measured in 38P2. prp_tome_stand's POSITION accessors read 1.743 x 2.315 x 1.743, but its
 ; single node carries scale 0.527, so the real prop is 0.919 x 1.220 x 0.919. The old (0.5, 0.7, 0.4)
 ; left roughly half a metre of solid-looking plinth with no collider at all - NOW.md invariant 14.
 [sub_resource type="BoxShape3D" id="Shape_tome"]
 size = Vector3(0.919, 1.220, 0.919)
-
-[sub_resource type="BoxShape3D" id="Shape_ice_GlacierNW"]
-size = Vector3(12.240, 9.490, 7.410)
-
-[sub_resource type="BoxShape3D" id="Shape_ice_GlacierNE"]
-size = Vector3(8.000, 6.400, 3.200)
-
-[sub_resource type="BoxShape3D" id="Shape_ice_GlacierE"]
-size = Vector3(8.000, 6.400, 3.200)
-
-[sub_resource type="BoxShape3D" id="Shape_ice_GlacierW"]
-size = Vector3(12.240, 9.490, 7.410)
 
 [sub_resource type="CylinderShape3D" id="Shape_pillar"]
 radius = 0.75
@@ -42,47 +25,20 @@ metadata/content_offset = Vector2(20, 20)
 ; Standing stones rather than crags - cover, but arranged, because something that thinks has lived
 ; here for eight hundred years. The 2026-08-28 layout rebuild arranged them into a CRESCENT open to the west rather than
 ; a ring: a perfect circle is a diagram, and it was also the same plan the other two roosts had.
-[node name="StoneN" parent="Nav" index="3" instance=ExtResource("10_rock")]
-transform = Transform3D(-1.5588, 0, -0.9, 0, 4.2, 0, 0.9, 0, -1.5588, 28, 0, -2)
+[node name="StoneN" parent="Nav" index="3" instance=ExtResource("rp_lm_rock_boulder_a")]
+transform = Transform3D(-0.5707, 0, -0.3295, 0, 1.537, 0, 0.3295, 0, -0.5707, 28, 0, -2)
 
-[node name="StoneNCol" type="StaticBody3D" parent="Nav/StoneN"]
+[node name="StoneE" parent="Nav" index="4" instance=ExtResource("rp_lm_rock_boulder_a")]
+transform = Transform3D(0.5707, 0, 0.3295, 0, 1.464, 0, -0.3295, 0, 0.5707, 38, 0, 8)
 
-[node name="Shape" type="CollisionShape3D" parent="Nav/StoneN/StoneNCol"]
-shape = SubResource("Shape_rock")
+[node name="StoneW" parent="Nav" index="5" instance=ExtResource("rp_lm_rock_boulder_a")]
+transform = Transform3D(-0.2254, 0, 0.6193, 0, 1.61, 0, -0.6193, 0, -0.2254, 18, 0, -8)
 
-[node name="StoneE" parent="Nav" index="4" instance=ExtResource("10_rock")]
-transform = Transform3D(1.5588, 0, 0.9, 0, 4, 0, -0.9, 0, 1.5588, 38, 0, 8)
+[node name="GlacierNW" parent="Nav" index="6" instance=ExtResource("rp_lm_ice_wall_a")]
+transform = Transform3D(1.2364, 0, 0.4523, 0, 1.136, 0, -0.5971, 0, 0.9365, -14, 0, -10)
 
-[node name="StoneECol" type="StaticBody3D" parent="Nav/StoneE"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/StoneE/StoneECol"]
-shape = SubResource("Shape_rock")
-
-[node name="StoneW" parent="Nav" index="5" instance=ExtResource("10_rock")]
-transform = Transform3D(-0.6156, 0, 1.6914, 0, 4.4, 0, -1.6914, 0, -0.6156, 18, 0, -8)
-
-[node name="StoneWCol" type="StaticBody3D" parent="Nav/StoneW"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/StoneW/StoneWCol"]
-shape = SubResource("Shape_rock")
-
-[node name="GlacierNW" parent="Nav" index="6" instance=ExtResource("12_glacier")]
-transform = Transform3D(0.8313, 0, 0.4015, 0, 0.9232, 0, -0.4015, 0, 0.8313, -14, 0, -10)
-
-[node name="Col" type="StaticBody3D" parent="Nav/GlacierNW"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/GlacierNW/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.745, 0)
-shape = SubResource("Shape_ice_GlacierNW")
-
-[node name="GlacierNE" parent="Nav" index="7" instance=ExtResource("12_ice_wall")]
-transform = Transform3D(-1.1472, 0, -0.4616, 0, 1.2365, 0, 0.4616, 0, -1.1472, 50, 0, -8)
-
-[node name="Col" type="StaticBody3D" parent="Nav/GlacierNE"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/GlacierNE/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.200, 0)
-shape = SubResource("Shape_ice_GlacierNE")
+[node name="GlacierNE" parent="Nav" index="7" instance=ExtResource("rp_lm_ice_wall_a")]
+transform = Transform3D(-1.1151, 0, -0.2247, 0, 1.026, 0, 0.4487, 0, -0.5585, 50, 0, -8)
 
 ; The avenue: seven broken markers in an irregular double file running north from the southern seam,
 ; turning north-west at (0, 6). They were six markers on a 28 m circle, which read as a ring around
@@ -127,47 +83,20 @@ transform = Transform3D(0.165, 0, 0.9356, 0, 1.7, 0, -0.9356, 0, 0.165, 9, 0, 16
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
 shape = SubResource("Shape_pillar")
 
-[node name="StoneNW" parent="Nav" instance=ExtResource("10_rock")]
-transform = Transform3D(0.9, 0, 1.5588, 0, 4.1, 0, -1.5588, 0, 0.9, 6, 0, -6)
+[node name="StoneNW" parent="Nav" instance=ExtResource("rp_lm_rock_boulder_a")]
+transform = Transform3D(0.3295, 0, 0.5707, 0, 1.501, 0, -0.5707, 0, 0.3295, 6, 0, -6)
 
-[node name="Col" type="StaticBody3D" parent="Nav/StoneNW"]
+[node name="StoneWW" parent="Nav" instance=ExtResource("rp_lm_rock_boulder_a")]
+transform = Transform3D(-0.311, 0, -0.5387, 0, 1.318, 0, 0.5387, 0, -0.311, 0, 0, 2)
 
-[node name="Shape" type="CollisionShape3D" parent="Nav/StoneNW/Col"]
-shape = SubResource("Shape_rock")
+[node name="HoardStoneA" parent="Nav" instance=ExtResource("rp_lm_rock_boulder_a")]
+transform = Transform3D(-0.3767, 0, 0.4489, 0, 1.171, 0, -0.4489, 0, -0.3767, 36, 0, 4)
 
-[node name="StoneWW" parent="Nav" instance=ExtResource("10_rock")]
-transform = Transform3D(-0.85, 0, -1.4722, 0, 3.6, 0, 1.4722, 0, -0.85, 0, 0, 2)
+[node name="GlacierE" parent="Nav" instance=ExtResource("rp_lm_ice_wall_a")]
+transform = Transform3D(-1.3229, 0, 0.4452, 0, 1.361, 0, -0.8892, 0, -0.6623, 46, 0, 14)
 
-[node name="Col" type="StaticBody3D" parent="Nav/StoneWW"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/StoneWW/Col"]
-shape = SubResource("Shape_rock")
-
-[node name="HoardStoneA" parent="Nav" instance=ExtResource("10_rock")]
-transform = Transform3D(-1.0285, 0, 1.2257, 0, 3.2, 0, -1.2257, 0, -1.0285, 36, 0, 4)
-
-[node name="Col" type="StaticBody3D" parent="Nav/HoardStoneA"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/HoardStoneA/Col"]
-shape = SubResource("Shape_rock")
-
-[node name="GlacierE" parent="Nav" instance=ExtResource("12_ice_wall")]
-transform = Transform3D(-1.3607, 0, 0.9146, 0, 1.6396, 0, -0.9146, 0, -1.3607, 46, 0, 14)
-
-[node name="Col" type="StaticBody3D" parent="Nav/GlacierE"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/GlacierE/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.200, 0)
-shape = SubResource("Shape_ice_GlacierE")
-
-[node name="GlacierW" parent="Nav" instance=ExtResource("12_glacier")]
-transform = Transform3D(0.5097, 0, -0.2445, 0, 0.5653, 0, 0.2445, 0, 0.5097, -10, 0, 26)
-
-[node name="Col" type="StaticBody3D" parent="Nav/GlacierW"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/GlacierW/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.745, 0)
-shape = SubResource("Shape_ice_GlacierW")
+[node name="GlacierW" parent="Nav" instance=ExtResource("rp_lm_ice_wall_a")]
+transform = Transform3D(0.7583, 0, -0.2755, 0, 0.695, 0, 0.3637, 0, 0.5743, -10, 0, 26)
 
 ; The hoard. An Ancient's treasure is one word on a stand, and the tome will not open until the thing
 ; that has been keeping it is dead — RequiredFlagId is raised by the lair below on the kill. That is

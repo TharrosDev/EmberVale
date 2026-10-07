@@ -21,8 +21,6 @@
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_fence.glb" id="20_fence"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_cart.glb" id="21_cart"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_bench.glb" id="22_bench"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_rock_cluster.glb" id="23_rocks"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_pine_dead.glb" id="24_pine"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_hay.glb" id="25_hay"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_woman_dress.glb" id="30_wenna"]
 [ext_resource type="PackedScene" path="res://scenes/props/bld_cottage_shuttered.tscn" id="42_cottage_modular"]
@@ -30,6 +28,9 @@
 [ext_resource type="PackedScene" path="res://scenes/props/shrine_waystone.tscn" id="shrine_body_41_5b"]
 [ext_resource type="Script" path="res://src/Shrines/ShrineComponent.cs" id="shrine_41_5b"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_smith.glb" id="rp_npc_smith"]
+[ext_resource type="PackedScene" path="res://scenes/props/lm_pine_fir_a.tscn" id="rp_lm_pine_fir_a"]
+[ext_resource type="PackedScene" path="res://scenes/props/lm_tree_dead_a.tscn" id="rp_lm_tree_dead_a"]
+[ext_resource type="PackedScene" path="res://scenes/props/lm_rock_boulder_a.tscn" id="rp_lm_rock_boulder_a"]
 
 ; TARN'S LANDING (Phase 38N2) — the fishing hamlet on the western water, and the realm's THIRD market.
 ;
@@ -154,13 +155,6 @@ radius = 0.3
 [sub_resource type="CylinderShape3D" id="Shape_waystone"]
 height = 3.0
 radius = 0.8
-
-[sub_resource type="BoxShape3D" id="Shape_rocks"]
-size = Vector3(2.3, 1.4, 1.9)
-
-[sub_resource type="CylinderShape3D" id="Shape_pine"]
-height = 6.0
-radius = 0.4
 
 [sub_resource type="CapsuleShape3D" id="Shape_npc"]
 radius = 0.4
@@ -401,81 +395,39 @@ omni_range = 10.0
 
 ; --- The verges ------------------------------------------------------------------
 [node name="PineA" type="Node3D" parent="Nav"]
-transform = Transform3D(0.9397, 0, 0.342, 0, 1, 0, -0.342, 0, 0.9397, 47, 0, -45)
+transform = Transform3D(0.78, 0, 0.2839, 0, 0.83, 0, -0.2839, 0, 0.78, 47, 0, -45)
 
-[node name="Model" parent="Nav/PineA" instance=ExtResource("24_pine")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/PineA"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/PineA/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 0)
-shape = SubResource("Shape_pine")
+[node name="Model" parent="Nav/PineA" instance=ExtResource("rp_lm_pine_fir_a")]
 
 [node name="PineB" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, -0.9397, 49, 0, -21)
+transform = Transform3D(-0.7283, 0, -0.265, 0, 0.775, 0, 0.265, 0, -0.7283, 49, 0, -21)
 
-[node name="Model" parent="Nav/PineB" instance=ExtResource("24_pine")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/PineB"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/PineB/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 0)
-shape = SubResource("Shape_pine")
+[node name="Model" parent="Nav/PineB" instance=ExtResource("rp_lm_pine_fir_a")]
 
 [node name="PineC" type="Node3D" parent="Nav"]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 43, 0, -27)
+transform = Transform3D(0, 0, 0.727, 0, 0.727, 0, -0.727, 0, 0, 43, 0, -27)
 
-[node name="Model" parent="Nav/PineC" instance=ExtResource("24_pine")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/PineC"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/PineC/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 0)
-shape = SubResource("Shape_pine")
+[node name="Model" parent="Nav/PineC" instance=ExtResource("rp_lm_pine_fir_a")]
 
 [node name="PineD" type="Node3D" parent="Nav"]
-transform = Transform3D(0.5, 0, -0.866, 0, 1, 0, 0.866, 0, 0.5, 51, 0, -13)
+transform = Transform3D(0.567, 0, -0.9821, 0, 1.134, 0, 0.9821, 0, 0.567, 51, 0, -13)
 
-[node name="Model" parent="Nav/PineD" instance=ExtResource("24_pine")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/PineD"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/PineD/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 0)
-shape = SubResource("Shape_pine")
+[node name="Model" parent="Nav/PineD" instance=ExtResource("rp_lm_tree_dead_a")]
 
 [node name="RocksA" type="Node3D" parent="Nav"]
-transform = Transform3D(0.6428, 0, 0.766, 0, 1, 0, -0.766, 0, 0.6428, 5, 0, -39)
+transform = Transform3D(0.2353, 0, 0.2804, 0, 0.366, 0, -0.2804, 0, 0.2353, 5, -0.12, -39)
 
-[node name="Model" parent="Nav/RocksA" instance=ExtResource("23_rocks")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/RocksA"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/RocksA/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
-shape = SubResource("Shape_rocks")
+[node name="Model" parent="Nav/RocksA" instance=ExtResource("rp_lm_rock_boulder_a")]
 
 [node name="RocksB" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.342, 0, -0.9397, 0, 1, 0, 0.9397, 0, -0.342, 1, 0, -45)
+transform = Transform3D(-0.1252, 0, -0.3439, 0, 0.366, 0, 0.3439, 0, -0.1252, 1, -0.12, -45)
 
-[node name="Model" parent="Nav/RocksB" instance=ExtResource("23_rocks")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/RocksB"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/RocksB/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
-shape = SubResource("Shape_rocks")
+[node name="Model" parent="Nav/RocksB" instance=ExtResource("rp_lm_rock_boulder_a")]
 
 [node name="RocksC" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.9848, 0, 0.1736, 0, 1, 0, -0.1736, 0, -0.9848, 48, 0, -15)
+transform = Transform3D(-0.3604, 0, 0.0635, 0, 0.366, 0, -0.0635, 0, -0.3604, 48, -0.12, -15)
 
-[node name="Model" parent="Nav/RocksC" instance=ExtResource("23_rocks")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/RocksC"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/RocksC/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
-shape = SubResource("Shape_rocks")
+[node name="Model" parent="Nav/RocksC" instance=ExtResource("rp_lm_rock_boulder_a")]
 
 ; --- The waystone. ⚠️ TravelName is a LOCALE KEY, not prose (38K).
 [node name="LandingWaystone" type="Node3D" parent="."]
@@ -652,70 +604,34 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.42, 0)
 shape = SubResource("Shape_bench")
 
 [node name="PineF" type="Node3D" parent="Nav"]
-transform = Transform3D(0.5, 0, 0.866, 0, 1, 0, -0.866, 0, 0.5, 49, 0, -37)
+transform = Transform3D(0.3325, 0, 0.5759, 0, 0.665, 0, -0.5759, 0, 0.3325, 49, 0, -37)
 
-[node name="Model" parent="Nav/PineF" instance=ExtResource("24_pine")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/PineF"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/PineF/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.0, 0)
-shape = SubResource("Shape_pine")
+[node name="Model" parent="Nav/PineF" instance=ExtResource("rp_lm_pine_fir_a")]
 
 [node name="PineG" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.5, 0, -0.866, 0, 1, 0, 0.866, 0, -0.5, 31, 0, -5)
+transform = Transform3D(-0.3275, 0, -0.5672, 0, 0.655, 0, 0.5672, 0, -0.3275, 31, 0, -5)
 
-[node name="Model" parent="Nav/PineG" instance=ExtResource("24_pine")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/PineG"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/PineG/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.0, 0)
-shape = SubResource("Shape_pine")
+[node name="Model" parent="Nav/PineG" instance=ExtResource("rp_lm_pine_fir_a")]
 
 [node name="PineH" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.5, 0, 0.866, 0, 1, 0, -0.866, 0, -0.5, 41, 0, -3)
+transform = Transform3D(-0.3495, 0, 0.6053, 0, 0.699, 0, -0.6053, 0, -0.3495, 41, 0, -3)
 
-[node name="Model" parent="Nav/PineH" instance=ExtResource("24_pine")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/PineH"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/PineH/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.0, 0)
-shape = SubResource("Shape_pine")
+[node name="Model" parent="Nav/PineH" instance=ExtResource("rp_lm_pine_fir_a")]
 
 [node name="RocksD" type="Node3D" parent="Nav"]
-transform = Transform3D(0.1736, 0, 0.9848, 0, 1, 0, -0.9848, 0, 0.1736, 27, 0, -45)
+transform = Transform3D(0.0635, 0, 0.3604, 0, 0.366, 0, -0.3604, 0, 0.0635, 27, -0.12, -45)
 
-[node name="Model" parent="Nav/RocksD" instance=ExtResource("23_rocks")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/RocksD"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/RocksD/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
-shape = SubResource("Shape_rocks")
+[node name="Model" parent="Nav/RocksD" instance=ExtResource("rp_lm_rock_boulder_a")]
 
 [node name="RocksE" type="Node3D" parent="Nav"]
-transform = Transform3D(0.766, 0, -0.6428, 0, 1, 0, 0.6428, 0, 0.766, 23, 0, -3)
+transform = Transform3D(0.2804, 0, -0.2353, 0, 0.366, 0, 0.2353, 0, 0.2804, 23, -0.12, -3)
 
-[node name="Model" parent="Nav/RocksE" instance=ExtResource("23_rocks")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/RocksE"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/RocksE/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
-shape = SubResource("Shape_rocks")
+[node name="Model" parent="Nav/RocksE" instance=ExtResource("rp_lm_rock_boulder_a")]
 
 [node name="RocksG" type="Node3D" parent="Nav"]
-transform = Transform3D(0.766, 0, 0.6428, 0, 1, 0, -0.6428, 0, 0.766, 15, 0, -41)
+transform = Transform3D(0.2804, 0, 0.2353, 0, 0.366, 0, -0.2353, 0, 0.2804, 15, -0.12, -41)
 
-[node name="Model" parent="Nav/RocksG" instance=ExtResource("23_rocks")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/RocksG"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/RocksG/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
-shape = SubResource("Shape_rocks")
+[node name="Model" parent="Nav/RocksG" instance=ExtResource("rp_lm_rock_boulder_a")]
 
 ; ====================================================================================================
 ; GROUND COVER (38B) - wispy grass toward the water, pebbles on the strand, ferns inland under the pines.

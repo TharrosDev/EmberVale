@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://cmbrvlaerasc001"]
 
 [ext_resource type="Script" path="res://src/World/CellNavBaker.cs" id="1_navbaker"]
+[ext_resource type="PackedScene" path="res://scenes/props/lm_rock_crag_a.tscn" id="rp_lm_rock_crag_a"]
 
 ; THE AERIE ASCENT — a transitional cell (the 2026-08-29 geography overhaul).
 ;
@@ -41,3 +42,7 @@ navigation_mesh = SubResource("NavMesh_aerie_ascent")
 
 [node name="NavBaker" type="Node" parent="Nav"]
 script = ExtResource("1_navbaker")
+
+[node name="CragSpire" parent="Nav" instance=ExtResource("rp_lm_rock_crag_a") groups=["world_landmark"]]
+transform = Transform3D(4.9847, 0, 2.3244, 0, 5.5, 0, -2.3244, 0, 4.9847, 30, -2.5, 45)
+albedo_tint = Color(0.8, 0.85, 0.92, 1)
