@@ -55,6 +55,33 @@ def merge_report(result, target, data):
     return 2 if data.get("exit_code") == 2 else None
 
 
+BRIEF_LIMIT = 1500
+
+
+def matchup_line(row):
+    """One arena matchup as a line an agent can compare by eye."""
+    ttk = row.get("ttk_s") or {}
+    flags = ",".join(row.get("flags") or []) or "-"
+    return (f"  {row.get('enemy')}: win {row.get('wins')}/{row.get('trials')} loss {row.get('losses')} "
+            f"timeout {row.get('timeouts')} | ttk p50 {ttk.get('p50')}s | dealt {row.get('dealt')} taken {row.get('taken')} "
+            f"| dps {row.get('dps')} vs {row.get('enemy_dps')} | hp_left_min {row.get('hp_left_min')} "
+            f"| swings {row.get('swings')} hits {row.get('hits')} | enemy attacks {row.get('enemy_attacks')} "
+            f"hits {row.get('enemy_hits')} blocked {row.get('blocked')} | flags {flags}")
+
+
+def brief_lines(target, facts, report_name):
+    """The mode's facts as the lines the compact output shows: the verdict alone would send every
+    caller to the report file for the one thing they ran the mode for."""
+    rows = facts.get("matchups")
+    if target == "arena" and isinstance(rows, list):
+        head = {k: v for k, v in facts.items() if k != "matchups"}
+        return [f"{target}: " + json.dumps(head, ensure_ascii=False)] + [matchup_line(row) for row in rows]
+    text = json.dumps(facts, ensure_ascii=False)
+    if len(text) > BRIEF_LIMIT:
+        text = text[:BRIEF_LIMIT] + f"... (cut; whole facts in {report_name})"
+    return [f"{target}: {text}"]
+
+
 def run(run, args, passthrough):
     target = args.target
     if target not in MODES:
@@ -66,5 +93,7 @@ def run(run, args, passthrough):
             run.issue("gate.no_report", f"{target} exited 0 but wrote no report; is the binary older than the gate?")
         return
     code = merge_report(run.result, target, json.loads(report.read_text(encoding="utf-8")))
+    for line in brief_lines(target, run.result["metrics"][target], report.name):
+        run.brief(line)
     if code is not None:
         run.result["steps"][-1]["exit_code"] = code

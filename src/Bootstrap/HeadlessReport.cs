@@ -114,7 +114,10 @@ public sealed partial class HeadlessReport
     public string ToJson(long elapsedMs)
     {
         using var stream = new MemoryStream();
-        using (var json = new Utf8JsonWriter(stream))
+        // Relaxed escaping: the line is read by tools and agents, never pasted into HTML, and the
+        // default encoder writes every + ' < > as a six-character escape.
+        var options = new JsonWriterOptions { Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
+        using (var json = new Utf8JsonWriter(stream, options))
         {
             json.WriteStartObject();
             json.WriteNumber("schema", Schema);

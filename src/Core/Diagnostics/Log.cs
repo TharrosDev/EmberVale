@@ -21,6 +21,11 @@ public static class Log
 	/// <summary>Messages below this level are suppressed.</summary>
 	public static Level MinimumLevel { get; set; } = Level.Trace;
 
+	/// <summary>Whether a warning is also pushed to the engine's own log, which prints it a second
+	/// time with a C# backtrace under it (ten lines per warning). A headless gate turns it off: its
+	/// output is read by a tool, and the one <c>[WARN]</c> line names the caller already.</summary>
+	public static bool MirrorWarningsToEngine { get; set; } = true;
+
 	private static int _warnCount;
 	private static int _errorCount;
 
@@ -62,7 +67,11 @@ public static class Log
 			return;
 		}
 
-		GD.PushWarning($"[WARN]  ({caller}) {message}");
+		if (MirrorWarningsToEngine)
+		{
+			GD.PushWarning($"[WARN]  ({caller}) {message}");
+		}
+
 		GD.Print($"[WARN]  ({caller}) {message}");
 		System.Threading.Interlocked.Increment(ref _warnCount);
 		Written?.Invoke(Level.Warn, message);

@@ -136,9 +136,20 @@ internal static class ArenaRunner
             if (await session.StartNewGameAsync() && await session.OpeningAsync() &&
                 lifecycle.Session?.Players.Player is { } player && Prepare(lifecycle.Session, player, report))
             {
-                await HeadlessLifecycle.Frames(root, 4);
+                await HeadlessLifecycle.Frames(root, 30);
                 Vector3 origin = player.GlobalPosition;
                 Basis facing = player.GlobalBasis;
+                if (FindDuelGround(player, options.Distance) is { } ground)
+                {
+                    origin = ground.Origin;
+                    facing = Basis.LookingAt(ground.Forward, Vector3.Up);
+                    report.Fact("ground", $"{origin.X:0.#},{origin.Y:0.#},{origin.Z:0.#}");
+                }
+                else
+                {
+                    report.Warn("no walkable, open ground for a duel was found near the New Game spot; " +
+                                "an enemy that has to walk to the player may never arrive.");
+                }
 
                 // Every step stays 1/60 s of game time; there are just more of them per frame.
                 Engine.PhysicsTicksPerSecond = ticksBefore * options.Speed;
@@ -367,6 +378,71 @@ internal static class ArenaRunner
         return true;
     }
 
+    // --- the ground ----------------------------------------------------------------------
+
+    /// <summary>
+    /// Where the fight is staged: the nearest spot to the New Game landing from which an enemy
+    /// <paramref name="distance"/> metres away has a straight walk to the player and a clear line
+    /// to them. The landing spot itself fails that: the navigation mesh there has no path across
+    /// the six metres in front of the player, so a spawned enemy saw them, entered combat and stood
+    /// still for the whole fight. Null when nothing within reach qualifies.
+    /// </summary>
+    private static (Vector3 Origin, Vector3 Forward)? FindDuelGround(PlayerCharacter player, float distance)
+    {
+        Rid map = player.GetWorld3D().NavigationMap;
+        PhysicsDirectSpaceState3D space = player.GetWorld3D().DirectSpaceState;
+        var exclude = new Godot.Collections.Array<Rid> { player.GetRid() };
+        Vector3 landing = player.GlobalPosition;
+        Vector3 eye = Vector3.Up * 1.2f;
+
+        for (int ring = 0; ring <= 12; ring++)
+        {
+            int spots = ring == 0 ? 1 : 8;
+            for (int spot = 0; spot < spots; spot++)
+            {
+                Vector3 offset = Vector3.Forward.Rotated(Vector3.Up, Mathf.Tau * spot / spots) * (ring * 4f);
+                Vector3 origin = NavigationServer3D.MapGetClosestPoint(map, landing + offset);
+                if (origin.DistanceTo(landing + offset) > 2f)
+                {
+                    continue;
+                }
+
+                for (int turn = 0; turn < 8; turn++)
+                {
+                    Vector3 forward = Vector3.Forward.Rotated(Vector3.Up, Mathf.Tau * turn / 8);
+                    Vector3 far = NavigationServer3D.MapGetClosestPoint(map, origin + (forward * distance));
+
+                    // Level, on the mesh, and a walk that is the straight line and not a detour.
+                    if (Mathf.Abs(far.Y - origin.Y) > 1f || far.DistanceTo(origin + (forward * distance)) > 1f)
+                    {
+                        continue;
+                    }
+
+                    Vector3[] path = NavigationServer3D.MapGetPath(map, far, origin, true);
+                    float walked = 0f;
+                    for (int i = 1; i < path.Length; i++)
+                    {
+                        walked += path[i - 1].DistanceTo(path[i]);
+                    }
+
+                    if (path.Length < 2 || path[^1].DistanceTo(origin) > 0.75f || walked > (distance * 1.15f) + 0.5f)
+                    {
+                        continue;
+                    }
+
+                    var ray = PhysicsRayQueryParameters3D.Create(origin + eye, far + eye);
+                    ray.Exclude = exclude;
+                    if (space.IntersectRay(ray).Count == 0)
+                    {
+                        return (origin, forward);
+                    }
+                }
+            }
+        }
+
+        return null;
+    }
+
     // --- one fight -----------------------------------------------------------------------
 
     /// <summary>Spawns the matchup, plays it to its end and returns what happened. Null when the
@@ -410,6 +486,11 @@ internal static class ArenaRunner
             Vector3 at = origin + (forward.Rotated(Vector3.Up, angle) * options.Distance) + new Vector3(0f, 0.5f, 0f);
             EnemyEntity enemy = EnemyTemplateRegistry.Create(matchup.Template, at);
             world.AddChild(enemy);
+
+            // Facing the player. A spawn keeps the identity rotation, which here is the enemy's back:
+            // outside its proximity bubble it never saw a player who stood still, and it only ever
+            // fought because the bot walked into it.
+            enemy.LookAt(new Vector3(origin.X, enemy.GlobalPosition.Y, origin.Z), Vector3.Up);
             enemies.Add(enemy);
         }
 
@@ -637,6 +718,13 @@ internal static class ArenaRunner
         }
 
         double healthLeft = outcome == ArenaMath.Loss ? 0d : stats.GetNormalized(StatType.Health);
+
+        // Let go of the lock before its target is freed: a timed-out enemy is still alive, and the
+        // camera would follow a disposed body for the frames until the lock noticed.
+        if (lockOn?.Target != null)
+        {
+            lockOn.ToggleNearest();
+        }
 
         foreach (EnemyEntity enemy in enemies)
         {

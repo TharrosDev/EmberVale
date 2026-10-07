@@ -245,19 +245,7 @@ public static class HeadlessState
                     continue;
                 }
 
-                var properties = new Dictionary<string, object?>();
-                foreach (Godot.Collections.Dictionary property in resource.GetPropertyList())
-                {
-                    var usage = (PropertyUsageFlags)property["usage"].AsInt64();
-                    if ((usage & PropertyUsageFlags.ScriptVariable) == 0 || (usage & PropertyUsageFlags.Storage) == 0)
-                    {
-                        continue;
-                    }
-
-                    string name = property["name"].AsString();
-                    string value = resource.Get(name).ToString();
-                    properties[name] = value.Length > ValueLimit ? value[..ValueLimit] + "..." : value;
-                }
+                Dictionary<string, object?> properties = Properties(resource, 0);
 
                 report.Fact("kind", kind).Fact("id", id).Fact("path", resource.ResourcePath)
                     .Fact("properties", properties);
@@ -266,6 +254,86 @@ public static class HeadlessState
         }
 
         report.Refuse($"--get={id}: no resource of any kind has that id (kinds: --state --ids=list).");
+    }
+
+    /// <summary>A resource's stored script properties. Nested resources and arrays are expanded
+    /// (to <see cref="NestLimit"/> levels) because a quest is mostly its objectives and an item its
+    /// effects: printed flat they were only <c>&lt;Resource#-92233...&gt;</c> handles.</summary>
+    private static Dictionary<string, object?> Properties(Resource resource, int depth)
+    {
+        var properties = new Dictionary<string, object?>();
+        foreach (Godot.Collections.Dictionary property in resource.GetPropertyList())
+        {
+            var usage = (PropertyUsageFlags)property["usage"].AsInt64();
+            if ((usage & PropertyUsageFlags.ScriptVariable) == 0 || (usage & PropertyUsageFlags.Storage) == 0)
+            {
+                continue;
+            }
+
+            string name = property["name"].AsString();
+            Variant value = resource.Get(name);
+            bool isEnum = property["hint"].AsInt64() == (long)PropertyHint.Enum && value.VariantType == Variant.Type.Int;
+            properties[name] = isEnum
+                ? EnumName(property["hint_string"].AsString(), value.AsInt64())
+                : Describe(value, depth);
+        }
+
+        return properties;
+    }
+
+    /// <summary>The member name behind an exported enum's stored number. The hint string is
+    /// <c>"Kill,Collect"</c> (values by position) or <c>"Kill:0,Talk:3"</c>.</summary>
+    private static object EnumName(string hint, long value)
+    {
+        string[] members = hint.Split(',');
+        for (int i = 0; i < members.Length; i++)
+        {
+            string[] pair = members[i].Split(':');
+            long number = pair.Length > 1 && long.TryParse(pair[1], out long parsed) ? parsed : i;
+            if (number == value)
+            {
+                return pair[0].Trim();
+            }
+        }
+
+        return value;
+    }
+
+    private const int NestLimit = 3;
+
+    private static object? Describe(Variant value, int depth)
+    {
+        switch (value.VariantType)
+        {
+            case Variant.Type.Nil:
+                return null;
+            case Variant.Type.Bool:
+                return value.AsBool();
+            case Variant.Type.Int:
+                return value.AsInt64();
+            case Variant.Type.Float:
+                // Stored as 32-bit: 0.18 would otherwise print as 0.18000000715255737.
+                return Math.Round(value.AsDouble(), 5);
+            case Variant.Type.Object when value.AsGodotObject() is Resource nested:
+                // An external file (a scene, a texture, another database row) is named, not opened.
+                if (depth >= NestLimit || nested.GetScript().VariantType == Variant.Type.Nil)
+                {
+                    return nested.ResourcePath.Length > 0 ? nested.ResourcePath : nested.GetClass();
+                }
+
+                return Properties(nested, depth + 1);
+            case Variant.Type.Array when depth < NestLimit:
+                var items = new List<object?>();
+                foreach (Variant item in value.AsGodotArray())
+                {
+                    items.Add(Describe(item, depth + 1));
+                }
+
+                return items;
+            default:
+                string text = value.ToString();
+                return text.Length > ValueLimit ? text[..ValueLimit] + "..." : text;
+        }
     }
 
     private static IEnumerable<(string Id, Resource Resource)> Rows<T>(IEnumerable<T> all, Func<T, string> id)

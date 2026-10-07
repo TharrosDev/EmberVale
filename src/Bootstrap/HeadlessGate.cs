@@ -45,7 +45,13 @@ public static class HeadlessGate
 
     /// <summary>True when the boot content pass was switched off for this run. The run is then
     /// partial: a session gate reads <c>Invariant.Violations</c>, which that pass feeds.</summary>
-    public static bool SkipBootValidate => HeadlessArgs.Has(NoBootValidateArgument);
+    public static bool SkipBootValidate => HeadlessArgs.Has(NoBootValidateArgument) || !ReadsBootValidation;
+
+    /// <summary>False for the modes that do not read <c>Invariant.Violations</c> and so have no use
+    /// for the boot content pass: the arena measures a fight, and the two listings start no session.
+    /// It costs about 35 s of every launch, more than the fight it would precede.</summary>
+    private static bool ReadsBootValidation =>
+        !HeadlessArgs.Has(HeadlessArena.FlagArgument) && !HeadlessArgs.Has("--story-list");
 
     /// <summary>The mode this command line asks for, or null.</summary>
     public static HeadlessMode? RequestedMode()
@@ -108,6 +114,7 @@ public static class HeadlessGate
         {
             _levelBefore = Log.MinimumLevel;
             Log.MinimumLevel = Log.Level.Warn;
+            Log.MirrorWarningsToEngine = false;
             _quiet = true;
         }
 
@@ -139,7 +146,7 @@ public static class HeadlessGate
             report.Fact("seed", seed);
         }
 
-        if (SkipBootValidate)
+        if (HeadlessArgs.Has(NoBootValidateArgument) && ReadsBootValidation)
         {
             report.Fact("boot_validate", false).Fact("partial", true);
         }
