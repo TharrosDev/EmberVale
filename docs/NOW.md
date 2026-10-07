@@ -987,16 +987,18 @@ integrator, one at a time, on the merged tree.
 | Godot import, `--validate`, `--lifecycle`, `--story`, probes, shot harnesses, melee and combat gates per scaled boss, traversal, the one master bake, the export, the negative battery | not run by the lanes |
 | A human play-through, a fight with any scaled boss or dragon, weak-laptop frame times | not run; see Unverified above |
 
-GATE RESULTS (integrated branch, 2026-10-07): `dotnet build` 0 warnings; 6567 unit tests pass; Godot
-import exit 0 with no import, script or shader error; `assets.py validate` PASS on 230 models;
-`audit-weight --check` within budget; every engine-free world checker PASS. ⚠️ **THE WORLD BAKE HAS
-NOT RUN ON THIS BRANCH.** The one full bake was stopped by the low-memory guard before it wrote
-anything, so `data/world_bake/` still describes the old world and the game will not load its cells
-correctly until `python tools/world_bake.py --bake --full` completes (about 30 min, nothing else
-running). `--validate` was run once before the bake: its only failures were the stale prepared cells
-and 14 landmarks on uneven ground, since re-sited; it has not been re-run. `--lifecycle`, `--story`,
-every probe, every boss and dragon render, traversal, the visual and performance modes and the
-negative battery have not run. Do not merge before the bake and `--validate`, `--lifecycle`, `--story`.
+GATE RESULTS (integrated branch, 2026-10-07, after the master bake): \dotnet build\ 0 warnings; 6567 unit
+tests pass; Godot import clean; \ssets.py validate\ PASS on 230 models; \world_bake.py --check\ current
+(151 artifacts); \--validate\, \--lifecycle\ and \--story\ PASS; \world_quality_check.py --mode fast\ PASS;
+\world_quality_check.py --mode engine\ PASS, all 70 steps (content, lifecycle, save-reload, scenes, probes,
+combat gates, building collision, traversal with the real capsule, world audit). The first engine run failed
+six steps: a nested mesh packed twice by \WorldArchitectureBatcher.OwnSubtree\ (the Sunspire library table,
+leaking at exit; the code predates this branch), the scene audit's buried rule against sunk landmark feet (now
+allowed to 20% of placed height for \lm_*\ wrappers only), a 5% crit in the ranged probe, and two route snags
+(an arena rampart corner and a mine clutter pile), all fixed. Rendered and looked at: stage shots of eight
+world models, enemy shots of the four dragons, wolf, boar, elk, Iron King and Morthul, seven Ember Crown
+vistas. NOT run: the visual, performance and full (negative battery) modes, vistas of the other five realms,
+any fight. Measured run times: full bake 6-8 min, engine suite 9-17 min, fast gate 50 s.
 
 ### Spell effects, spell wheel and camera (`claude/magic-vfx`)
 
