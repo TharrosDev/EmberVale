@@ -11,14 +11,15 @@ AttributesPath = "res://data/attributes/StormTyrantAttributes.tres"
 WeaponPath = "res://data/weapons/StormTyrantAxe.tres"
 LootTablePath = "res://data/loot/bosses/StormTyrantBossLoot.tres"
 ModelPath = "res://assets/models/creatures/boss_storm_tyrant.glb"
+ModelScale = 1.6
 PlaceholderTint = Color(0.35, 0.45, 0.6, 1)
 AiProfileId = "ai.boss"
 FactionId = "faction.fallen"
 KnownSpellIds = Array[String](["spell.ball_lightning"])
 BreathSpellId = ""
 DialogueId = ""
-CapsuleRadius = 0.7
-CapsuleHeight = 2.5
+CapsuleRadius = 0.89
+CapsuleHeight = 3.16
 IsBoss = true
 BossId = "boss.storm_tyrant"
 DirectionalMelee = false
@@ -26,3 +27,9 @@ MaxPoise = 150.0
 Reaction = 4
 StaminaRegen = 16.0
 XpValue = 800
+; Look and reach are separate (EnemyArchetypeResource.VisualHeight). The model is drawn at
+; ModelScale 1.6 (2.5 m -> 4 m); the capsule grew by sqrt(1.6) only
+; (0.7 x 2.5 -> 0.89 x 3.16), because the melee hitbox, the telegraph ring and the nav
+; agent all derive from the capsule and AttackRange is not changed. VisualHeight is what the
+; hurtbox, the plate, status marks, the cast origin and the lock camera read.
+VisualHeight = 4.0

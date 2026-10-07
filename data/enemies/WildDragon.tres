@@ -9,33 +9,59 @@
 script = ExtResource("2_zone")
 Id = "head"
 DamageMultiplier = 2.0
-Offset = Vector3(0, 3.4, -3.2)
-Radius = 0.9
+Offset = Vector3(0, 5.45, -3.2)
+Radius = 1.2
 Height = 0.0
 
+; The neck and the torso are the old body zone's multiplier on the parts of a long body an upright
+; capsule cannot reach: an arrow that passed through the dragon's neck used to hit nothing.
+[sub_resource type="Resource" id="Zone_neck"]
+script = ExtResource("2_zone")
+Id = "neck"
+DamageMultiplier = 1.0
+Offset = Vector3(0, 4.7, -1.9)
+Radius = 0.8
+Height = 3.01
+RotationDegrees = Vector3(-45, 0, 0)
+
+; One capsule across both wings at the height they are carried.
 [sub_resource type="Resource" id="Zone_wings"]
 script = ExtResource("2_zone")
 Id = "wings"
 DamageMultiplier = 1.4
-Offset = Vector3(0, 3.2, 0)
-Radius = 1.1
-Height = 0.0
+Offset = Vector3(0, 4.9, 0.2)
+Radius = 1.6
+Height = 8.6
+RotationDegrees = Vector3(0, 0, 90)
 
+[sub_resource type="Resource" id="Zone_torso"]
+script = ExtResource("2_zone")
+Id = "torso"
+DamageMultiplier = 1.0
+Offset = Vector3(0, 3.2, -0.2)
+Radius = 1.35
+Height = 5.53
+RotationDegrees = Vector3(-81.9, 0, 0)
+
+; The legs and belly: the only part of it a sword reaches. It lies along the stance, not upright.
 [sub_resource type="Resource" id="Zone_body"]
 script = ExtResource("2_zone")
 Id = "body"
 DamageMultiplier = 1.0
-Offset = Vector3(0, 2.0, -0.6)
-Radius = 1.6
-Height = 4.4
+Offset = Vector3(0, 1.2, -0.75)
+Radius = 1.4
+Height = 5.3
+RotationDegrees = Vector3(-90, 0, 0)
 
+; Along the ground behind it, root to tip.
 [sub_resource type="Resource" id="Zone_tail"]
 script = ExtResource("2_zone")
 Id = "tail"
 DamageMultiplier = 0.6
-Offset = Vector3(0, 1.4, 3.0)
-Radius = 0.7
-Height = 0.0
+Offset = Vector3(0, 1.4, 4.05)
+Radius = 0.8
+Height = 6.34
+RotationDegrees = Vector3(114.9, 0, 0)
 
 [resource]
 script = ExtResource("1_archetype")
@@ -51,9 +77,11 @@ FactionId = "faction.beasts"
 KnownSpellIds = Array[String](["spell.dragon_breath"])
 BreathSpellId = "spell.dragon_breath"
 BreathDuration = 1.6
-CapsuleRadius = 1.6
-CapsuleHeight = 4.0
-HitZones = Array[Resource]([SubResource("Zone_head"), SubResource("Zone_wings"), SubResource("Zone_body"), SubResource("Zone_tail")])
+CapsuleRadius = 1.7
+CapsuleHeight = 4.25
+; The mouth, measured on the model: breath leaves the jaws, not the chest the capsule implies.
+CastOrigin = Vector3(0, 4.95, -4.2)
+HitZones = Array[Resource]([SubResource("Zone_head"), SubResource("Zone_neck"), SubResource("Zone_wings"), SubResource("Zone_torso"), SubResource("Zone_body"), SubResource("Zone_tail")])
 IsBoss = true
 BossId = "boss.wild_dragon"
 DirectionalMelee = true

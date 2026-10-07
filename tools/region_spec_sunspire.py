@@ -78,7 +78,7 @@ BackdropColor = Color(0.46, 0.36, 0.26, 1)
 Relief = 1.8
 DetailScale = 2.5
 BackdropRadius = 340.0
-BackdropHeight = 90.0
+BackdropHeight = 135.0
 TerrainSeed = 4400
 SurfaceRoughness = 0.95
 DetailRoughness = 0.88
@@ -90,7 +90,7 @@ HeightBlendEnd = 34.0
 SunTint = Color(1.0, 0.9, 0.74, 1)
 SunEnergyScale = 1.12
 HazeColor = Color(0.86, 0.75, 0.58, 1)
-HazeScale = 1.7
+HazeScale = 1.2
 
 '''
 
@@ -127,10 +127,10 @@ BackdropDistance = 1300.0
 # --------------------------------------------------------------------------------------------------
 SCATTER = '''[sub_resource type="Resource" id="Layer_desert_rock"]
 script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_rock_cluster_a.glb"
-Count = 38
-MinimumScale = 0.4
-MaximumScale = 1.1
+ScenePath = "res://assets/models/world/prp_rock_rubble_a.glb"
+Count = 32
+MinimumScale = 0.45
+MaximumScale = 1.2
 MinimumSpacing = 6.0
 Saturation = 0.55
 Clumping = 0.55
@@ -148,26 +148,9 @@ HlodRangeEnd = 290.0
 HlodColor = Color(0.88, 0.8, 0.7, 1)
 HlodScale = Vector3(1.15, 1.15, 1.15)
 
-[sub_resource type="Resource" id="Layer_desert_pebble"]
-script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_pebble_b.glb"
-Count = 90
-MinimumScale = 0.6
-MaximumScale = 1.3
-MinimumSpacing = 3.5
-Saturation = 0.5
-Clumping = 0.45
-ClumpScale = 24.0
-MaxSlope = 0.9
-Tint = Color(0.95, 0.82, 0.64, 1)
-TintVariation = 0.14
-VisibilityRangeEnd = 60.0
-VisibilityFadeMargin = 12.0
-CastShadows = false
-
 [sub_resource type="Resource" id="Layer_dry_grass"]
 script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_grass_wispy.glb"
+ScenePath = "res://assets/models/props/prp_grass_clump_a.glb"
 Count = 150
 MinimumScale = 0.55
 MaximumScale = 1.0
@@ -185,10 +168,10 @@ CastShadows = false
 ; Wind-killed trunks in the open basins: few, far apart and bleached.
 [sub_resource type="Resource" id="Layer_dead_tree"]
 script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_pine_dead.glb"
+ScenePath = "res://assets/models/world/prp_tree_dead_a.glb"
 Count = 6
-MinimumScale = 0.5
-MaximumScale = 0.85
+MinimumScale = 0.7
+MaximumScale = 1.3
 MinimumSpacing = 18.0
 Saturation = 0.3
 Clumping = 0.5
@@ -199,18 +182,69 @@ TintVariation = 0.08
 VisibilityRangeEnd = 150.0
 VisibilityFadeMargin = 20.0
 
+; Sandstone spires: the jagged rock at 1.0-2.2 (6-13 m), three per 100 x 100 m of open desert.
+; The desert had nothing taller than a man in it. No collision, like every scatter layer.
+[sub_resource type="Resource" id="Layer_desert_crag"]
+script = ExtResource("10_layer")
+ScenePath = "res://assets/models/world/prp_rock_crag_a.glb"
+Count = 3
+MinimumScale = 1.0
+MaximumScale = 2.2
+MinimumSpacing = 26.0
+Saturation = 0.45
+Clumping = 0.6
+ClumpScale = 80.0
+MaxSlope = 0.6
+Tint = Color(1.5, 1.2, 0.86, 1)
+TintVariation = 0.1
+VisibilityRangeEnd = 190.0
+VisibilityFadeMargin = 24.0
+CastShadows = true
+HlodShape = 1
+HlodReduction = 2
+HlodRangeBegin = 170.0
+HlodRangeEnd = 380.0
+HlodColor = Color(1.5, 1.2, 0.86, 1)
+HlodScale = Vector3(1.1, 1.1, 1.1)
+
+; The tor: the boulder at 2.5-4, a 10-16 m sandstone mass, one per 100 x 100 m of open desert.
+[sub_resource type="Resource" id="Layer_desert_tor"]
+script = ExtResource("10_layer")
+ScenePath = "res://assets/models/world/prp_rock_boulder_a.glb"
+Count = 1
+MinimumScale = 2.5
+MaximumScale = 4.0
+MinimumSpacing = 60.0
+Saturation = 0.55
+Clumping = 0.6
+ClumpScale = 90.0
+MaxSlope = 0.5
+Tint = Color(1.2, 1.0, 0.76, 1)
+TintVariation = 0.08
+VisibilityRangeEnd = 220.0
+VisibilityFadeMargin = 26.0
+CastShadows = true
+HlodShape = 1
+HlodReduction = 2
+HlodRangeBegin = 200.0
+HlodRangeEnd = 420.0
+HlodColor = Color(1.2, 1.0, 0.76, 1)
+HlodScale = Vector3(1.1, 1.1, 1.1)
+
+; The jungle belt is the Ember Crown's oak under a warm yellow-green tint: there is no palm in the
+; set. 10-18 m with an 8.5 m crown at scale 1, so 90 where the old 3 m-wide tree needed 150.
 [sub_resource type="Resource" id="Layer_jungle_tree"]
 script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_tree_broadleaf.glb"
-Count = 150
-MinimumScale = 0.85
-MaximumScale = 1.7
-MinimumSpacing = 5.5
+ScenePath = "res://assets/models/world/prp_tree_oak_a.glb"
+Count = 90
+MinimumScale = 0.8
+MaximumScale = 1.5
+MinimumSpacing = 8.5
 Saturation = 1.0
 Clumping = 0.7
 ClumpScale = 40.0
 MaxSlope = 0.42
-Tint = Color(0.78, 0.9, 0.62, 1)
+Tint = Color(1.05, 1.0, 0.72, 1)
 TintVariation = 0.18
 VisibilityRangeEnd = 150.0
 VisibilityFadeMargin = 22.0
@@ -219,15 +253,40 @@ HlodShape = 1
 HlodReduction = 3
 HlodRangeBegin = 130.0
 HlodRangeEnd = 320.0
-HlodColor = Color(0.8, 0.9, 0.75, 1)
+HlodColor = Color(1.05, 1.0, 0.72, 1)
 HlodScale = Vector3(1.15, 1.15, 1.15)
+
+; Elder trees of the jungle belt: the oak at 1.8-2.4 (22-29 m), three per 100 x 100 m, held to the
+; interior of a stand by a Clumping above Layer_jungle_tree's on the same ClumpScale. Not in the
+; Wells profile: a town does not get a walk-through trunk.
+[sub_resource type="Resource" id="Layer_jungle_elder"]
+script = ExtResource("10_layer")
+ScenePath = "res://assets/models/world/prp_tree_oak_a.glb"
+Count = 3
+MinimumScale = 1.8
+MaximumScale = 2.4
+MinimumSpacing = 28.0
+Clumping = 0.9
+ClumpScale = 40.0
+MaxSlope = 0.36
+Tint = Color(1.0, 0.96, 0.7, 1)
+TintVariation = 0.1
+VisibilityRangeEnd = 220.0
+VisibilityFadeMargin = 26.0
+CastShadows = true
+HlodShape = 1
+HlodReduction = 2
+HlodRangeBegin = 200.0
+HlodRangeEnd = 420.0
+HlodColor = Color(0.8, 0.9, 0.75, 1)
+HlodScale = Vector3(1.1, 1.1, 1.1)
 
 [sub_resource type="Resource" id="Layer_fern"]
 script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_fern.glb"
+ScenePath = "res://assets/models/props/prp_fern_clump_a.glb"
 Count = 260
-MinimumScale = 0.7
-MaximumScale = 1.4
+MinimumScale = 1.0
+MaximumScale = 1.8
 MinimumSpacing = 2.2
 Clumping = 0.55
 ClumpScale = 22.0
@@ -240,14 +299,14 @@ CastShadows = false
 
 [sub_resource type="Resource" id="Layer_jungle_grass"]
 script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_grass_tall.glb"
-Count = 420
-MinimumScale = 0.8
-MaximumScale = 1.45
+ScenePath = "res://assets/models/props/prp_grass_clump_a.glb"
+Count = 520
+MinimumScale = 1.0
+MaximumScale = 1.7
 MinimumSpacing = 1.6
-MaxSlope = 0.55
 Clumping = 0.35
 ClumpScale = 20.0
+MaxSlope = 0.55
 Tint = Color(0.82, 0.92, 0.6, 1)
 TintVariation = 0.2
 VisibilityRangeEnd = 60.0
@@ -256,18 +315,19 @@ CastShadows = false
 
 [sub_resource type="Resource" id="Layer_bush"]
 script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_bush_flowering.glb"
-Count = 60
-MinimumScale = 0.7
-MaximumScale = 1.3
+ScenePath = "res://assets/models/props/prp_fern_clump_a.glb"
+Count = 36
+MinimumScale = 1.3
+MaximumScale = 1.8
 MinimumSpacing = 4.0
 Clumping = 0.6
 ClumpScale = 28.0
 MaxSlope = 0.6
-Tint = Color(0.85, 0.92, 0.7, 1)
+Tint = Color(0.5, 0.6, 0.36, 1)
 TintVariation = 0.16
 VisibilityRangeEnd = 90.0
 VisibilityFadeMargin = 14.0
+CastShadows = false
 
 ; The mission's sanctum and the library forecourt stay bare: a fight floor and a place two story
 ; portals will stand. Centres are in each cell's CONTENT frame and move with it (see EXCLUSION_OWNERS).
@@ -290,13 +350,13 @@ Radius = 20.0
 script = ExtResource("9_scatter")
 Seed = 6401
 EdgePadding = 1.0
-Layers = Array[ExtResource("10_layer")]([SubResource("Layer_desert_rock"), SubResource("Layer_desert_pebble"), SubResource("Layer_dry_grass"), SubResource("Layer_dead_tree")])
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_desert_rock"), SubResource("Layer_dry_grass"), SubResource("Layer_dead_tree"), SubResource("Layer_desert_crag"), SubResource("Layer_desert_tor")])
 
 [sub_resource type="Resource" id="Scatter_jungle"]
 script = ExtResource("9_scatter")
 Seed = 6402
 EdgePadding = 1.0
-Layers = Array[ExtResource("10_layer")]([SubResource("Layer_jungle_tree"), SubResource("Layer_fern"), SubResource("Layer_jungle_grass"), SubResource("Layer_bush")])
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_jungle_tree"), SubResource("Layer_jungle_elder"), SubResource("Layer_fern"), SubResource("Layer_jungle_grass"), SubResource("Layer_bush")])
 
 [sub_resource type="Resource" id="Scatter_wells"]
 script = ExtResource("9_scatter")
@@ -309,14 +369,14 @@ Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_wells_pl
 script = ExtResource("9_scatter")
 Seed = 6404
 EdgePadding = 1.0
-Layers = Array[ExtResource("10_layer")]([SubResource("Layer_desert_rock"), SubResource("Layer_desert_pebble"), SubResource("Layer_dry_grass")])
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_desert_rock"), SubResource("Layer_dry_grass")])
 Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_library_court")])
 
 [sub_resource type="Resource" id="Scatter_temple"]
 script = ExtResource("9_scatter")
 Seed = 6405
 EdgePadding = 1.0
-Layers = Array[ExtResource("10_layer")]([SubResource("Layer_desert_rock"), SubResource("Layer_desert_pebble"), SubResource("Layer_dry_grass")])
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_desert_rock"), SubResource("Layer_dry_grass")])
 Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_temple_court")])
 
 '''
@@ -558,6 +618,9 @@ def build_sunspire() -> tuple[str, list[str]]:
     scatter = re.sub(r'\[sub_resource type="Resource" id="(Exclusion_[a-z_]+)"\]\n'
                      r'script = ExtResource\("11_exclusion"\)\nCenter = Vector2\(([-\d.]+), ([-\d.]+)\)',
                      shift_exclusion, SCATTER)
+    # Trees and rocks stay out from under the monuments and the boss rings (gen_regions.py).
+    from gen_regions import monument_exclusions
+    spec, scatter = monument_exclusions(spec, scatter)
     return emit("sunspire", HEADER, spec, [], ENVIRONMENT, BUDGET, RESOURCE, scatter, "Desert"), issues
 
 

@@ -30,4 +30,21 @@ public static class CasterDecision
 
         return distance > castRange ? CasterMove.Approach : CasterMove.Hold;
     }
+
+    /// <summary>
+    /// The pitch, in radians, that points a cast origin at a target <paramref name="rise"/> metres
+    /// above it (negative below) and <paramref name="flat"/> metres away on the level, held within
+    /// <paramref name="maxPitch"/> either way. Positive tilts up. A target directly above or below
+    /// (no level distance to speak of) gets a level aim rather than a vertical one.
+    /// </summary>
+    public static float AimPitch(float rise, float flat, float maxPitch)
+    {
+        if (flat < 0.25f || !float.IsFinite(rise) || !float.IsFinite(flat))
+        {
+            return 0f;
+        }
+
+        float limit = System.Math.Abs(maxPitch);
+        return System.Math.Clamp(System.MathF.Atan2(rise, flat), -limit, limit);
+    }
 }

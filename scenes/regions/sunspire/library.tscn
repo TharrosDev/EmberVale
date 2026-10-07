@@ -25,6 +25,8 @@
 [ext_resource type="PackedScene" path="res://scenes/props/prp_plinth_ring_cracked.tscn" id="wb_prp_plinth_ring_cracked"]
 [ext_resource type="PackedScene" path="res://assets/models/creatures/boss_ashen_knight.glb" id="wb_boss_ashen_knight"]
 [ext_resource type="Script" path="res://src/Enemies/SetPieceSpawnComponent.cs" id="wb_setpiecespawncomponent"]
+[ext_resource type="PackedScene" path="res://scenes/props/lm_monolith_a.tscn" id="rp_lm_monolith_a"]
+[ext_resource type="PackedScene" path="res://scenes/props/lm_wall_ruin.tscn" id="rp_lm_wall_ruin"]
 
 ; THE GREAT LIBRARY (sunspire.library) - the Veiled Archive's great library, the Act III/IV story hub.
 ; Authored in the cell's CONTENT frame and moved to Cell.origin by tools/shift_cell_content.py.
@@ -80,8 +82,8 @@ radius = 0.7
 height = 1.5
 
 [sub_resource type="CapsuleShape3D" id="WB_Shape_npc_AshenKnight"]
-radius = 0.4
-height = 1.8
+radius = 0.66
+height = 2.51
 
 [node name="LibraryCell" type="Node3D"]
 metadata/content_offset = Vector2(45, -50)
@@ -160,92 +162,52 @@ light_energy = 1.8
 omni_range = 9.0
 
 [node name="Pillar0" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, -0, 0, 1, 0, 0, 0, 1, 32, 0, -54)
+transform = Transform3D(0.4, 0, 0, 0, 0.4, 0, 0, 0, 0.4, 32, 0, -54)
 
-[node name="Model" parent="Nav/Pillar0" instance=ExtResource("e8")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/Pillar0"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/Pillar0/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.55, 0)
-shape = SubResource("Shape_pillar")
+[node name="Model" parent="Nav/Pillar0" instance=ExtResource("rp_lm_monolith_a")]
+albedo_tint = Color(1.18, 1.04, 0.82, 1)
 
 [node name="Pillar1" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, -0, 0, 1, 0, 0, 0, 1, 33, 0, -41)
+transform = Transform3D(0.3, 0, 0, 0, 0.3, 0, 0, 0, 0.3, 33, 0, -41)
 
-[node name="Model" parent="Nav/Pillar1" instance=ExtResource("e8")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/Pillar1"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/Pillar1/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.55, 0)
-shape = SubResource("Shape_pillar")
+[node name="Model" parent="Nav/Pillar1" instance=ExtResource("rp_lm_monolith_a")]
+albedo_tint = Color(1.18, 1.04, 0.82, 1)
 
 [node name="Pillar2" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, -0, 0, 1, 0, 0, 0, 1, 58, 0, -55)
+transform = Transform3D(0.4, 0, 0, 0, 0.4, 0, 0, 0, 0.4, 58, 0, -55)
 
-[node name="Model" parent="Nav/Pillar2" instance=ExtResource("e8")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/Pillar2"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/Pillar2/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.55, 0)
-shape = SubResource("Shape_pillar")
+[node name="Model" parent="Nav/Pillar2" instance=ExtResource("rp_lm_monolith_a")]
+albedo_tint = Color(1.18, 1.04, 0.82, 1)
 
 [node name="Pillar3" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, -0, 0, 1, 0, 0, 0, 1, 57, 0, -40)
+transform = Transform3D(0.3, 0, 0, 0, 0.3, 0, 0, 0, 0.3, 57, 0, -40)
 
-[node name="Model" parent="Nav/Pillar3" instance=ExtResource("e8")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/Pillar3"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/Pillar3/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.55, 0)
-shape = SubResource("Shape_pillar")
+[node name="Model" parent="Nav/Pillar3" instance=ExtResource("rp_lm_monolith_a")]
+albedo_tint = Color(1.18, 1.04, 0.82, 1)
 
 [node name="Pillar4" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, -0, 0, 1, 0, 0, 0, 1, 39, 0, -36)
+transform = Transform3D(0.3, 0, 0, 0, 0.3, 0, 0, 0, 0.3, 39, 0, -36)
 
-[node name="Model" parent="Nav/Pillar4" instance=ExtResource("e8")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/Pillar4"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/Pillar4/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.55, 0)
-shape = SubResource("Shape_pillar")
+[node name="Model" parent="Nav/Pillar4" instance=ExtResource("rp_lm_monolith_a")]
+albedo_tint = Color(1.18, 1.04, 0.82, 1)
 
 [node name="Pillar5" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, -0, 0, 1, 0, 0, 0, 1, 51, 0, -36)
+transform = Transform3D(0.3, 0, 0, 0, 0.3, 0, 0, 0, 0.3, 51, 0, -36)
 
-[node name="Model" parent="Nav/Pillar5" instance=ExtResource("e8")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/Pillar5"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/Pillar5/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.55, 0)
-shape = SubResource("Shape_pillar")
+[node name="Model" parent="Nav/Pillar5" instance=ExtResource("rp_lm_monolith_a")]
+albedo_tint = Color(1.18, 1.04, 0.82, 1)
 
 [node name="RuinWallW" type="Node3D" parent="Nav"]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 30, 0, -47)
+transform = Transform3D(0, 0, -0.5, 0, 0.5, 0, 0.5, 0, 0, 30, 0, -47)
 
-[node name="Model" parent="Nav/RuinWallW" instance=ExtResource("e9")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/RuinWallW"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/RuinWallW/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.0, 0)
-shape = SubResource("Shape_ruinwall")
+[node name="Model" parent="Nav/RuinWallW" instance=ExtResource("rp_lm_wall_ruin")]
+albedo_tint = Color(0.802, 0.707, 0.558, 1)
 
 [node name="RuinWallE" type="Node3D" parent="Nav"]
-transform = Transform3D(0.1736, 0, 0.9848, 0, 1, 0, -0.9848, 0, 0.1736, 60.5, 0, -48)
+transform = Transform3D(0.0868, 0, 0.4924, 0, 0.5, 0, -0.4924, 0, 0.0868, 60.5, 0, -48)
 
-[node name="Model" parent="Nav/RuinWallE" instance=ExtResource("e9")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/RuinWallE"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/RuinWallE/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.0, 0)
-shape = SubResource("Shape_ruinwall")
+[node name="Model" parent="Nav/RuinWallE" instance=ExtResource("rp_lm_wall_ruin")]
+albedo_tint = Color(0.802, 0.707, 0.558, 1)
 
 [node name="TomeStand" type="Node3D" parent="Nav"]
 transform = Transform3D(-1, 0, -0, 0, 1, 0, 0, 0, -1, 41, 0, -48.5)
@@ -756,7 +718,9 @@ script = ExtResource("e11")
 DisplayName = "The Ashen Knight"
 PersistentId = "sunspire.library.ashen_knight"
 
+; The Ashen Knight is drawn at 1.43 here as in the fight (data/enemies/AshenKnight.tres ModelScale): 3.0 m tall.
 [node name="Model" parent="AshenKnight" instance=ExtResource("wb_boss_ashen_knight")]
+transform = Transform3D(1.43, 0, 0, 0, 1.43, 0, 0, 0, 1.43, 0, 0, 0)
 
 [node name="Animation" type="Node" parent="AshenKnight"]
 script = ExtResource("e12")
@@ -765,7 +729,7 @@ BodyMeshPath = "Model"
 [node name="Collider" type="StaticBody3D" parent="AshenKnight"]
 
 [node name="Shape" type="CollisionShape3D" parent="AshenKnight/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.255, 0)
 shape = SubResource("WB_Shape_npc_AshenKnight")
 
 [node name="Dialogue" type="Node" parent="AshenKnight"]

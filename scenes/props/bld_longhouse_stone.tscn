@@ -1,12 +1,6 @@
 [gd_scene load_steps=25 format=3]
 
-[ext_resource type="PackedScene" path="res://assets/models/architecture/mod_wall_plain.gltf" id="1_wall_plain"]
-[ext_resource type="PackedScene" path="res://assets/models/architecture/mod_wall_timber.gltf" id="2_wall_timber"]
-[ext_resource type="PackedScene" path="res://assets/models/architecture/mod_wall_door.gltf" id="3_wall_door"]
-[ext_resource type="PackedScene" path="res://assets/models/architecture/mod_wall_window.gltf" id="4_wall_window"]
-[ext_resource type="PackedScene" path="res://assets/models/architecture/mod_wall_window_thin.gltf" id="5_wall_window_thin"]
 [ext_resource type="PackedScene" path="res://assets/models/architecture/mod_window_wide.gltf" id="6_window_wide"]
-[ext_resource type="PackedScene" path="res://assets/models/architecture/mod_window_thin.gltf" id="7_window_thin"]
 [ext_resource type="PackedScene" path="res://assets/models/architecture/mod_corner.gltf" id="8_corner"]
 [ext_resource type="PackedScene" path="res://assets/models/architecture/mod_roof_6x8.gltf" id="9_roof_6x8"]
 [ext_resource type="PackedScene" path="res://assets/models/architecture/mod_gable_6.gltf" id="10_gable_6"]
@@ -16,9 +10,7 @@
 [ext_resource type="PackedScene" path="res://assets/models/architecture/mod_wall_stone.gltf" id="14_wall_stone"]
 [ext_resource type="PackedScene" path="res://assets/models/architecture/mod_wall_stone_door.gltf" id="15_wall_stone_door"]
 [ext_resource type="PackedScene" path="res://assets/models/architecture/mod_wall_stone_window.gltf" id="16_wall_stone_window"]
-[ext_resource type="PackedScene" path="res://assets/models/architecture/mod_wall_stone_window_thin.gltf" id="17_wall_stone_window_thin"]
 [ext_resource type="PackedScene" path="res://assets/models/architecture/mod_shutters_wide_open.gltf" id="18_shutters_wide_open"]
-[ext_resource type="PackedScene" path="res://assets/models/architecture/mod_shutters_thin_closed.gltf" id="19_shutters_thin_closed"]
 [ext_resource type="PackedScene" path="res://assets/models/architecture/mod_roof_awning.gltf" id="20_roof_awning"]
 [ext_resource type="PackedScene" path="res://assets/models/architecture/mod_roof_supports.gltf" id="21_roof_supports"]
 

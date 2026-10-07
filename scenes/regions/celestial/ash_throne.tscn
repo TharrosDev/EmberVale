@@ -5,10 +5,11 @@
 [ext_resource type="Script" path="res://src/Enemies/BossSummonComponent.cs" id="3_summon"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_ruin_wall.glb" id="4_wall"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_brazier.glb" id="5_brazier"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_relic.glb" id="6_relic"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_ruin_pillar.glb" id="7_pillar"]
 [ext_resource type="Script" path="res://src/World/MapLocationComponent.cs" id="maploc_39_5a"]
 [ext_resource type="Script" path="res://src/Dialogue/DialogueComponent.cs" id="throne_dialogue"]
+[ext_resource type="PackedScene" path="res://scenes/props/lm_column_broken.tscn" id="rp_lm_column_broken"]
+[ext_resource type="PackedScene" path="res://scenes/props/lm_monolith_a.tscn" id="rp_lm_monolith_a"]
+[ext_resource type="PackedScene" path="res://scenes/props/lm_ash_throne.tscn" id="rp_lm_ash_throne"]
 
 ; ====================================================================================================
 ; THE ASH THRONE (the finish run, Act IV) — where Morthul is fought and the world's future is chosen.
@@ -37,17 +38,8 @@ agent_radius = 0.8
 agent_max_climb = 0.3
 agent_max_slope = 40.0
 
-[sub_resource type="BoxShape3D" id="Shape_wall"]
-size = Vector3(4, 4, 0.88)
-
-[sub_resource type="BoxShape3D" id="Shape_pillar"]
-size = Vector3(1, 3.13, 1)
-
 [sub_resource type="BoxShape3D" id="Shape_brazier"]
 size = Vector3(1, 1.4, 1)
-
-[sub_resource type="BoxShape3D" id="Shape_relic"]
-size = Vector3(1.2, 1.2, 1.2)
 
 [sub_resource type="BoxShape3D" id="WC_Box_2p2_2p6_1"]
 size = Vector3(2.2, 2.6, 1)
@@ -61,23 +53,13 @@ navigation_mesh = SubResource("NavMesh_ash_throne")
 script = ExtResource("1_navbaker")
 
 ; The throne: a broken wall of the gods' hall at twice a man's reach, the ember relic at its foot.
-[node name="ThroneBack" parent="Nav" instance=ExtResource("4_wall")]
-transform = Transform3D(1.6, 0, 0, 0, 1.8, 0, 0, 0, 1.6, -29, 0, -56)
+[node name="ThroneBack" parent="Nav" instance=ExtResource("rp_lm_monolith_a")]
+transform = Transform3D(1.3, 0, 0, 0, 1.3, 0, 0, 0, 1.3, -29, 0, -59.5)
+albedo_tint = Color(0.95, 0.88, 0.9, 1)
 
-[node name="Col" type="StaticBody3D" parent="Nav/ThroneBack"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/ThroneBack/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
-shape = SubResource("Shape_wall")
-
-[node name="ThroneSeat" parent="Nav" instance=ExtResource("6_relic")]
-transform = Transform3D(1.8, 0, 0, 0, 1.8, 0, 0, 0, 1.8, -29, 0, -53)
-
-[node name="Col" type="StaticBody3D" parent="Nav/ThroneSeat"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/ThroneSeat/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
-shape = SubResource("Shape_relic")
+[node name="ThroneSeat" parent="Nav" instance=ExtResource("rp_lm_ash_throne")]
+transform = Transform3D(1.2, 0, 0, 0, 1.2, 0, 0, 0, 1.2, -29, 0, -53)
+albedo_tint = Color(0.95, 0.88, 0.9, 1)
 
 [node name="ThroneFireW" parent="Nav" instance=ExtResource("5_brazier")]
 transform = Transform3D(1.3, 0, 0, 0, 1.3, 0, 0, 0, 1.3, -36, 0, -52)
@@ -110,59 +92,29 @@ light_energy = 2.6
 omni_range = 10.0
 
 ; The dais pillars — six survivors of a colonnade, uneven, on the rim.
-[node name="PillarW1" parent="Nav" instance=ExtResource("7_pillar")]
-transform = Transform3D(1.5, 0, 0, 0, 2, 0, 0, 0, 1.5, -48, 0, -44)
+[node name="PillarW1" parent="Nav" instance=ExtResource("rp_lm_column_broken")]
+transform = Transform3D(0.7, 0, 0, 0, 0.7, 0, 0, 0, 0.7, -48, 0, -44)
+albedo_tint = Color(0.665, 0.634, 0.666, 1)
 
-[node name="Col" type="StaticBody3D" parent="Nav/PillarW1"]
+[node name="PillarW2" parent="Nav" instance=ExtResource("rp_lm_column_broken")]
+transform = Transform3D(0.6, 0, 0, 0, 0.6, 0, 0, 0, 0.6, -49, 0, -28)
+albedo_tint = Color(0.665, 0.634, 0.666, 1)
 
-[node name="Shape" type="CollisionShape3D" parent="Nav/PillarW1/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.56, 0)
-shape = SubResource("Shape_pillar")
+[node name="PillarE1" parent="Nav" instance=ExtResource("rp_lm_column_broken")]
+transform = Transform3D(0.7, 0, 0, 0, 0.7, 0, 0, 0, 0.7, -10, 0, -45)
+albedo_tint = Color(0.665, 0.634, 0.666, 1)
 
-[node name="PillarW2" parent="Nav" instance=ExtResource("7_pillar")]
-transform = Transform3D(1.5, 0, 0, 0, 1.4, 0, 0, 0, 1.5, -49, 0, -28)
+[node name="PillarE2" parent="Nav" instance=ExtResource("rp_lm_column_broken")]
+transform = Transform3D(0.55, 0, 0, 0, 0.55, 0, 0, 0, 0.55, -9, 0, -26)
+albedo_tint = Color(0.665, 0.634, 0.666, 1)
 
-[node name="Col" type="StaticBody3D" parent="Nav/PillarW2"]
+[node name="PillarSW" parent="Nav" instance=ExtResource("rp_lm_monolith_a")]
+transform = Transform3D(0.6, 0, 0, 0, 0.6, 0, 0, 0, 0.6, -35, 0, -18)
+albedo_tint = Color(0.95, 0.88, 0.9, 1)
 
-[node name="Shape" type="CollisionShape3D" parent="Nav/PillarW2/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.56, 0)
-shape = SubResource("Shape_pillar")
-
-[node name="PillarE1" parent="Nav" instance=ExtResource("7_pillar")]
-transform = Transform3D(1.5, 0, 0, 0, 2, 0, 0, 0, 1.5, -10, 0, -45)
-
-[node name="Col" type="StaticBody3D" parent="Nav/PillarE1"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/PillarE1/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.56, 0)
-shape = SubResource("Shape_pillar")
-
-[node name="PillarE2" parent="Nav" instance=ExtResource("7_pillar")]
-transform = Transform3D(1.5, 0, 0, 0, 1.2, 0, 0, 0, 1.5, -9, 0, -26)
-
-[node name="Col" type="StaticBody3D" parent="Nav/PillarE2"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/PillarE2/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.56, 0)
-shape = SubResource("Shape_pillar")
-
-[node name="PillarSW" parent="Nav" instance=ExtResource("7_pillar")]
-transform = Transform3D(1.5, 0, 0, 0, 1.7, 0, 0, 0, 1.5, -35, 0, -18)
-
-[node name="Col" type="StaticBody3D" parent="Nav/PillarSW"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/PillarSW/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.56, 0)
-shape = SubResource("Shape_pillar")
-
-[node name="PillarSE" parent="Nav" instance=ExtResource("7_pillar")]
-transform = Transform3D(1.5, 0, 0, 0, 1.7, 0, 0, 0, 1.5, -23, 0, -18)
-
-[node name="Col" type="StaticBody3D" parent="Nav/PillarSE"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/PillarSE/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.56, 0)
-shape = SubResource("Shape_pillar")
+[node name="PillarSE" parent="Nav" instance=ExtResource("rp_lm_monolith_a")]
+transform = Transform3D(0.6, 0, 0, 0, 0.6, 0, 0, 0, 0.6, -23, 0, -18)
+albedo_tint = Color(0.95, 0.88, 0.9, 1)
 
 [node name="Brazier" type="Node3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -29, 0, -21)

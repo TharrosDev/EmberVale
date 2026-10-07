@@ -237,20 +237,10 @@ public sealed partial class EnemyPlateLayer : Control
         return plate;
     }
 
-    /// <summary>The top of the body's capsule above its origin. Read once, when the plate is claimed.</summary>
-    private static float MeasureHeight(Node3D body)
-    {
-        int children = body.GetChildCount();
-        for (int i = 0; i < children; i++)
-        {
-            if (body.GetChild(i) is CollisionShape3D { Shape: CapsuleShape3D capsule } shape)
-            {
-                return shape.Position.Y + (capsule.Height * 0.5f);
-            }
-        }
-
-        return DefaultHeight;
-    }
+    /// <summary>The top of what is drawn above the body's origin: its declared visual height, else
+    /// the top of its capsule. A large enemy's model stands taller than its capsule, and a plate
+    /// measured off the capsule would float in its chest. Read once, when the plate is claimed.</summary>
+    private static float MeasureHeight(Node3D body) => BodyMetrics.VisualHeight(body, DefaultHeight);
 
     private void Release(Plate plate)
     {

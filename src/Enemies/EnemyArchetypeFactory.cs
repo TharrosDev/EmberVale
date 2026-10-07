@@ -26,10 +26,19 @@ public static class EnemyArchetypeFactory
     /// <summary>Body height the melee hitbox offsets below were authored against.</summary>
     private const float HumanoidReferenceHeight = 1.8f;
 
+    /// <summary>Node name of an archetype's <see cref="EnemyArchetypeResource.HeldWeaponPath"/>
+    /// under the equipment presentation component.</summary>
+    internal const string HeldWeaponName = "MainHand";
+
     public static EnemyEntity Create(EnemyArchetypeResource archetype, Vector3 position)
     {
         float radius = archetype.CapsuleRadius;
         float height = archetype.CapsuleHeight;
+
+        // Look and reach are separate (EnemyArchetypeResource.VisualHeight): everything that decides
+        // how far this body hits or where it can walk is built from the capsule, and only what has
+        // to cover or clear the model as drawn uses the taller figure.
+        float visualHeight = Mathf.Max(height, archetype.VisualHeight);
 
         // A boss-flagged archetype is a BossEntity so the Phase 28C healthbar and the 28D
         // corruption-on-kill loop can resolve it by type through the ServiceLocator. Everything
@@ -39,6 +48,11 @@ public static class EnemyArchetypeFactory
         enemy.DisplayName = archetype.NameKey.Length > 0 ? Loc.T(archetype.NameKey) : archetype.Id;
         enemy.TemplateId = archetype.Id;
         enemy.Position = position;
+        if (visualHeight > height)
+        {
+            // Read back by BodyMetrics.VisualHeight: the plate, status marks and the lock camera.
+            enemy.SetMeta(BodyMetrics.VisualHeightMeta, visualHeight);
+        }
 
         enemy.AddChild(new CollisionShape3D
         {
@@ -77,7 +91,17 @@ public static class EnemyArchetypeFactory
         enemy.AddChild(new LocomotionComponent { Name = "Locomotion" });
         enemy.AddChild(new HitReactionComponent { Name = "HitReaction" });
         enemy.AddChild(new Animation.CharacterAnimationComponent { Name = "Animation", BodyMeshPath = "Mesh" });
-        enemy.AddChild(new Embervale.Animation.EquipmentPresentationComponent { Name = "EquipmentVisuals", BodyMeshPath = "Mesh" });
+        var presentation = new Embervale.Animation.EquipmentPresentationComponent { Name = "EquipmentVisuals", BodyMeshPath = "Mesh" };
+        // Queued like the player's sword: the body is built detached, so there is no rig to hang
+        // the weapon on until the presentation component initialises.
+        if (archetype.HeldWeaponPath.Length > 0)
+        {
+            presentation.Pending.Add(new(
+                Embervale.Animation.EquipmentSocket.HandR, archetype.HeldWeaponPath, HeldWeaponName,
+                RotationDegrees: Embervale.Animation.WeaponGrip.HandRotationDegrees,
+                Scale: Vector3.One * archetype.HeldWeaponScale));
+        }
+        enemy.AddChild(presentation);
         enemy.AddChild(new Embervale.Animation.FootIkComponent { Name = "FootIk" });
         // Footsteps at distance: quieter than the player's own and silent past 20 m, where the
         // component skips its bone reads and raycasts entirely.
@@ -86,7 +110,9 @@ public static class EnemyArchetypeFactory
             Name = "Footsteps", MaxAudibleDistance = 20f, VolumeOffsetDb = -5f,
         });
         enemy.AddChild(new WeaponTrailComponent { Name = "WeaponTrail" });
-        AddHurtboxes(enemy, archetype, radius, height);
+        // The whole-body hurtbox covers the model as drawn, so a blow or an arrow that lands on a
+        // towering body's chest or head connects; its width stays the capsule's.
+        AddHurtboxes(enemy, archetype, radius, visualHeight);
 
         // The reach and the box scale with the body: these numbers were authored against a 1.8 m
         // humanoid's sword arc, and bolting that arc onto a 0.9 m wolf would have it biting a metre
@@ -124,7 +150,13 @@ public static class EnemyArchetypeFactory
         // profile it kites and casts exactly like the Ashen Acolyte does.
         if (archetype.KnownSpellIds.Count > 0)
         {
-            var castOrigin = new Node3D { Name = "CastOrigin", Position = new Vector3(0f, height * 0.75f, -0.4f) };
+            var castOrigin = new Node3D
+            {
+                Name = "CastOrigin",
+                Position = archetype.CastOrigin != Vector3.Zero
+                    ? archetype.CastOrigin
+                    : new Vector3(0f, visualHeight * 0.75f, -0.4f),
+            };
             enemy.AddChild(castOrigin);
             enemy.AddChild(new SpellcastingComponent
             {
@@ -214,6 +246,10 @@ public static class EnemyArchetypeFactory
             visual.Name = "Mesh";
             visual.RotateY(Mathf.Pi);
             visual.Scale = Vector3.One * archetype.ModelScale;
+            if (archetype.BodyTint.A > 0f)
+            {
+                TintBody(visual, archetype.BodyTint);
+            }
             enemy.AddChild(visual);
             return;
         }
@@ -238,6 +274,7 @@ public static class EnemyArchetypeFactory
                         ? new CapsuleMesh { Radius = zone.Radius, Height = zone.Height }
                         : new SphereMesh { Radius = zone.Radius, Height = zone.Radius * 2f },
                     Position = zone.Offset,
+                    RotationDegrees = zone.RotationDegrees,
                     MaterialOverride = new StandardMaterial3D
                     {
                         AlbedoColor = zone.DamageMultiplier >= 1f
@@ -258,6 +295,22 @@ public static class EnemyArchetypeFactory
             Position = new Vector3(0f, height * 0.5f, 0f),
             MaterialOverride = new StandardMaterial3D { AlbedoColor = archetype.PlaceholderTint },
         });
+    }
+
+    /// <summary>Lays <see cref="EnemyArchetypeResource.BodyTint"/> over every surface of the model.
+    /// The response numbers are the ones the dragons have always been drawn with.</summary>
+    private static void TintBody(Node node, Color tint)
+    {
+        var material = new StandardMaterial3D { AlbedoColor = tint, Roughness = 0.82f, Metallic = 0.08f };
+        if (node is MeshInstance3D root)
+        {
+            root.MaterialOverride = material;
+        }
+
+        foreach (Node child in node.FindChildren("*", nameof(MeshInstance3D), recursive: true, owned: false))
+        {
+            ((MeshInstance3D)child).MaterialOverride = material;
+        }
     }
 
     /// <summary>
@@ -284,7 +337,7 @@ public static class EnemyArchetypeFactory
 
             enemy.AddChild(BuildHurtbox(
                 $"Hurtbox_{zone.Id}", zone.Id, zone.DamageMultiplier, zone.Offset, zone.Radius, zone.Height,
-                zone.PoiseMultiplier));
+                zone.PoiseMultiplier, zone.RotationDegrees));
         }
     }
 
@@ -293,7 +346,7 @@ public static class EnemyArchetypeFactory
     /// inflate a small zone's volume.</summary>
     private static Hurtbox BuildHurtbox(
         string name, string zoneId, float multiplier, Vector3 offset, float radius, float height,
-        float poiseMultiplier = 1f)
+        float poiseMultiplier = 1f, Vector3 rotationDegrees = default)
     {
         var hurtbox = new Hurtbox
         {
@@ -302,7 +355,10 @@ public static class EnemyArchetypeFactory
         Shape3D shape = height > radius * 2f
             ? new CapsuleShape3D { Radius = radius, Height = height }
             : new SphereShape3D { Radius = radius };
-        hurtbox.AddChild(new CollisionShape3D { Shape = shape, Position = offset });
+        hurtbox.AddChild(new CollisionShape3D
+        {
+            Shape = shape, Position = offset, RotationDegrees = rotationDegrees,
+        });
         return hurtbox;
     }
 }

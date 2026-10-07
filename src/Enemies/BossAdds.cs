@@ -9,6 +9,30 @@ namespace Embervale.Enemies;
 /// </summary>
 public static class BossAdds
 {
+    /// <summary>The ring a boss of <see cref="ReferenceBossRadius"/> summons onto, metres: outside
+    /// its body, inside its reach. No boss gets a tighter one.</summary>
+    public const float BaseRingRadius = 4.5f;
+
+    /// <summary>The body radius <see cref="BaseRingRadius"/> was chosen for (the Iron King as first
+    /// authored).</summary>
+    public const float ReferenceBossRadius = 0.7f;
+
+    /// <summary>
+    /// The fallback ring for a boss whose body is <paramref name="bossRadius"/> metres across the
+    /// half-width: the base ring, pushed out by two metres for every metre the body is wider than
+    /// the reference, so an add neither spawns inside a wide body nor is shoved by it on arrival.
+    /// A dragon two metres in radius gets about seven metres; nothing gets less than the base.
+    /// </summary>
+    public static float RingRadius(float bossRadius)
+    {
+        if (!float.IsFinite(bossRadius) || bossRadius <= ReferenceBossRadius)
+        {
+            return BaseRingRadius;
+        }
+
+        return BaseRingRadius + ((bossRadius - ReferenceBossRadius) * 2f);
+    }
+
     /// <summary>
     /// Offset from the boss for the add at <paramref name="index"/> of <paramref name="count"/>,
     /// spread evenly around a ring of <paramref name="radius"/> metres. Used only when the arena

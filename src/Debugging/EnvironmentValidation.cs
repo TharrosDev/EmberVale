@@ -29,6 +29,11 @@ public static class EnvironmentValidation
         }
         Range(issues, "transition seconds", cycle.TransitionSeconds, .1f, 30);
         Range(issues, "clear fog", cycle.ClearFogDensity, 0, .008f);
+        Range(issues, "aerial perspective", cycle.AerialPerspective, 0, 1);
+        // Height fog is by depth below the viewer, not by distance: 0.05 a metre is opaque within
+        // a storey, and a drop under 5 m would put it on the ground the player stands on.
+        Range(issues, "height fog density", cycle.HeightFogDensity, 0, .05f);
+        Range(issues, "height fog drop", cycle.HeightFogDrop, 5, 120);
         Range(issues, "contrast", cycle.Contrast, .8f, 1.2f);
         Range(issues, "saturation", cycle.Saturation, .7f, 1.1f);
         Range(issues, "glow", cycle.GlowIntensity, 0, .5f);

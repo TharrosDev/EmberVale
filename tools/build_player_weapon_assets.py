@@ -7,7 +7,7 @@ Run with Blender, not CPython:
 The script deliberately does not round-trip the skinned player GLB.  The normalized
 62-bone rig and its bone-parented children have been damaged by Blender round-trips in
 the past.  Player material factors are patched in-place at the glTF JSON layer, while
-new first-person arms and rigid equipment are exported as independent GLBs.
+new first-person arms are exported as independent GLBs.
 """
 
 from __future__ import annotations
@@ -25,7 +25,6 @@ from mathutils import Matrix, Vector
 ROOT = Path(sys.argv[sys.argv.index("--") + 1]).resolve()
 CHARACTERS = ROOT / "assets" / "models" / "characters"
 WEAPONS = ROOT / "assets" / "models" / "weapons"
-EQUIPMENT = ROOT / "assets" / "models" / "equipment"
 
 
 def patch_glb_materials(path: Path, factors: dict[str, tuple[float, float]]) -> None:
@@ -134,16 +133,6 @@ def export_selected(path: Path, objects: list[bpy.types.Object]) -> None:
         export_apply=True, export_yup=True, export_materials="EXPORT")
 
 
-def equipment_to_godot_y(objects: list[bpy.types.Object]) -> None:
-    """The exporter maps Blender (X,Y,Z) to Godot (X,Z,-Y); make authored +Y become Godot +Y."""
-    bpy.ops.object.select_all(action="DESELECT")
-    for obj in objects:
-        obj.select_set(True)
-        obj.rotation_euler.x = math.pi / 2
-    bpy.context.view_layer.objects.active = objects[0]
-    bpy.ops.object.transform_apply(location=False, rotation=True, scale=False)
-
-
 def add_arm_clothing(prefix: str) -> list[bpy.types.Object]:
     cloth = material(prefix + "_GambesonCloth", (0.11, 0.12, 0.075, 1), 0.0, 0.9)
     leather = material(prefix + "_WornLeather", (0.16, 0.095, 0.055, 1), 0.0, 0.66)
@@ -186,43 +175,6 @@ def build_first_person_arms() -> None:
     export_selected(CHARACTERS / "fp_arm_left.glb", left)
 
 
-def bevelled_cube(name: str, dimensions: tuple[float, float, float], location, mat, bevel=0.02):
-    bpy.ops.mesh.primitive_cube_add(size=1, location=location)
-    obj = bpy.context.object
-    obj.name = name
-    obj.dimensions = dimensions
-    bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
-    modifier = obj.modifiers.new("EdgeBevel", "BEVEL")
-    modifier.width = bevel
-    modifier.segments = 1
-    bpy.context.view_layer.objects.active = obj
-    bpy.ops.object.modifier_apply(modifier=modifier.name)
-    obj.data.materials.append(mat)
-    return obj
-
-
-def build_equipment() -> None:
-    reset()
-    leather = material("WornLeather", (0.15, 0.085, 0.045, 1), 0.0, 0.68)
-    iron = material("ColdIron", (0.24, 0.28, 0.32, 1), 0.84, 0.44)
-    cloth = material("FadedGambeson", (0.10, 0.11, 0.065, 1), 0.0, 0.9)
-
-    plate = bevelled_cube("PauldronPlate", (0.16, 0.15, 0.08), (0, 0.065, 0), leather, 0.025)
-    ridge = bevelled_cube("PauldronRidge", (0.035, 0.17, 0.092), (0, 0.065, 0), iron, 0.01)
-    plate.scale = ridge.scale = Vector((0.78, 0.78, 0.78))
-    bpy.context.view_layer.objects.active = plate
-    equipment_to_godot_y([plate, ridge])
-    export_selected(EQUIPMENT / "eqp_pauldron_embervale.glb", [plate, ridge])
-
-    reset()
-    leather = material("WornLeather", (0.13, 0.065, 0.035, 1), 0.0, 0.7)
-    iron = material("ColdIron", (0.22, 0.26, 0.30, 1), 0.86, 0.42)
-    pouch = bevelled_cube("UtilityPouch", (0.20, 0.22, 0.09), (0, -0.11, 0), leather, 0.025)
-    flap = bevelled_cube("PouchFlap", (0.205, 0.085, 0.102), (0, -0.07, -0.008), leather, 0.018)
-    clasp = bevelled_cube("PouchClasp", (0.035, 0.055, 0.014), (0, -0.095, -0.062), iron, 0.005)
-    equipment_to_godot_y([pouch, flap, clasp])
-    export_selected(EQUIPMENT / "eqp_pouch_embervale.glb", [pouch, flap, clasp])
-
 def main() -> None:
     patch_glb_materials(CHARACTERS / "chr_player_base.glb", {
         "Green": (0.0, 0.90), "LightGreen": (0.0, 0.88), "Skin": (0.0, 0.72),
@@ -230,13 +182,10 @@ def main() -> None:
         "Eye": (0.0, 0.52), "Hair": (0.0, 0.78), "Brown2": (0.0, 0.68),
         "Brown": (0.0, 0.64), "Gold": (0.78, 0.46),
     })
-    patch_glb_materials(WEAPONS / "wpn_sword_iron.glb", {
-        "DarkSteel": (0.82, 0.46), "LightSteel": (0.90, 0.32), "Steel": (0.88, 0.38),
-        "DarkWood": (0.0, 0.72), "LightWood": (0.0, 0.64),
-    })
+    # The iron sword is no longer patched here: it is a generated, textured model written by
+    # tools/meshy_prep_static.py (one atlas material), not the five flat steels this used to tune.
     build_first_person_arms()
-    build_equipment()
-    print("Built player viewmodel/equipment assets and patched player/sword material factors.")
+    print("Built player viewmodel assets and patched player material factors.")
 
 
 if __name__ == "__main__":

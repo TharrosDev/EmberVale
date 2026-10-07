@@ -18,15 +18,22 @@ AttributesPath = "res://data/attributes/AshenKnightAttributes.tres"
 WeaponPath = "res://data/weapons/AshenKnightBlade.tres"
 LootTablePath = "res://data/loot/bosses/AshenKnightBossLoot.tres"
 ModelPath = "res://assets/models/creatures/boss_ashen_knight.glb"
+ModelScale = 1.43
 PlaceholderTint = Color(0.3, 0.26, 0.24, 1)
 AiProfileId = "ai.boss"
 FactionId = "faction.fallen"
 KnownSpellIds = Array[String]([])
-CapsuleRadius = 0.55
-CapsuleHeight = 2.1
+CapsuleRadius = 0.66
+CapsuleHeight = 2.51
 IsBoss = true
 BossId = "boss.ashen_knight"
 MaxPoise = 180.0
 Reaction = 4
 StaminaRegen = 22.0
 XpValue = 1500
+; Look and reach are separate (EnemyArchetypeResource.VisualHeight). The model is drawn at
+; ModelScale 1.43 (2.1 m -> 3 m); the capsule grew by sqrt(1.43) only
+; (0.55 x 2.1 -> 0.66 x 2.51), because the melee hitbox, the telegraph ring and the nav
+; agent all derive from the capsule and AttackRange is not changed. VisualHeight is what the
+; hurtbox, the plate, status marks, the cast origin and the lock camera read.
+VisualHeight = 3.0

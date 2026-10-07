@@ -164,14 +164,11 @@ def main() -> None:
     # that shipped with the ranged system, and the round shield, all stood at 0.4 metallic on their
     # wood and their cloth alike -- the exact defect this tool exists for, one folder over.
     #
-    # ⚠️ THE FIVE GENERATED FILES ARE SKIPPED AND MUST STAY SKIPPED. They are `assets.py build`
-    # outputs whose materials are art-directed by their build scripts -- RimeCrystal at 0.26
-    # roughness, EmberRune at 0.42, ShadeGlass at 0.36, WornLeather at three different values on
-    # purpose. `response()` has no branch for any of them, so sweeping these would not correct
-    # them, it would flatten them: the frost enemies' crystal and the runes would come out as
-    # matte stone.
-    generated = {"npc_kit_embervale.glb", "enemy_identity_kit.glb", "eqp_pauldron_embervale.glb",
-                 "eqp_pouch_embervale.glb", "wpn_sword_iron.glb"}
+    # ⚠️ THE GENERATED SWORD AND DAGGER ARE SKIPPED AND MUST STAY SKIPPED. Each is one textured
+    # atlas written by tools/meshy_prep_static.py (metallic 0, roughness 0.6: the steel is painted),
+    # and its material is named after the file. `response()` would read the "iron" in that name
+    # and turn the whole atlas, leather grip included, into 0.86 metal.
+    generated = {"wpn_sword_iron.glb", "wpn_dagger_iron.glb"}
     total = 0
     for folder in ("weapons", "equipment"):
         for path in sorted((models / folder).glob("*.glb")):

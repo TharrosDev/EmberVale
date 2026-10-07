@@ -8,7 +8,7 @@ adaptive
 
 ## Users
 
-Embervale is played by PC and Steam Deck players who explore a seamless open-world fantasy action RPG in either first- or third-person. Their core job is to read the physical world, choose routes, discover locations, fight, loot, and return changed by progression and corruption.
+Embervale is played by PC and laptop players who explore a seamless open-world fantasy action RPG in either first- or third-person. Their core job is to read the physical world, choose routes, discover locations, fight, loot, and return changed by progression and corruption.
 
 ## Product Purpose
 
@@ -26,7 +26,7 @@ The game runs in Godot 4.7.1 with C#/.NET 8. World content is authored as region
 
 - Preserve the existing region, terrain, streaming, map, quest, travel, save, encounter, and navigation authorities.
 - Every reachable shop, service, settlement, dungeon, landmark, quest destination, and POI remains represented through the existing `MapLocationResource` and placed `MapLocationComponent` system.
-- Use existing Quaternius-based assets first and keep the established low-poly, grounded-proportion art direction.
+- Three art lanes (2026-10-06): a generated cast, a generated outdoor world, and the Quaternius housing and architecture kit kept on purpose. Keep grounded proportions and the dying-world palette; the outdoor world is stylised-realistic, the housing kit stays faceted low-poly. Target platforms are PC and laptop only.
 - Static collision and navigation carving remain aligned; terrain and cell seams must remain continuous.
 - The repository must remain buildable and playable at every commit.
 - Inferred from the supplied overhaul brief: all currently implemented POIs and their connecting world space are in scope; no new competing world system is desired.

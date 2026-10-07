@@ -76,7 +76,7 @@ Relief = 1.4
 DetailScale = 2.75
 BackdropCenter = Vector3(-25, 0, -90)
 BackdropRadius = 340.0
-BackdropHeight = 78.0
+BackdropHeight = 125.0
 BackdropCount = 26
 TerrainSeed = 3800
 SurfaceRoughness = 0.96
@@ -141,10 +141,10 @@ BackdropDistance = 1700.0
 
 [sub_resource type="Resource" id="Layer_grass"]
 script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_grass_tall.glb"
-Count = 620
-MinimumScale = 0.7
-MaximumScale = 1.35
+ScenePath = "res://assets/models/props/prp_grass_clump_a.glb"
+Count = 760
+MinimumScale = 0.9
+MaximumScale = 1.6
 MinimumSpacing = 1.6
 Clumping = 0.32
 ClumpScale = 22.0
@@ -157,10 +157,10 @@ CastShadows = false
 
 [sub_resource type="Resource" id="Layer_grass_short"]
 script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_grass_short.glb"
-Count = 430
-MinimumScale = 0.75
-MaximumScale = 1.3
+ScenePath = "res://assets/models/props/prp_grass_clump_a.glb"
+Count = 520
+MinimumScale = 0.45
+MaximumScale = 0.8
 MinimumSpacing = 1.4
 MaxSlope = 0.6
 Tint = Color(0.78, 0.80, 0.62, 1)
@@ -169,91 +169,17 @@ VisibilityRangeEnd = 48.0
 VisibilityFadeMargin = 10.0
 CastShadows = false
 
-[sub_resource type="Resource" id="Layer_clover"]
-script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_clover.glb"
-Count = 150
-MinimumScale = 0.7
-MaximumScale = 1.15
-MinimumSpacing = 2.4
-Clumping = 0.45
-ClumpScale = 18.0
-MaxSlope = 0.5
-Tint = Color(0.70, 0.78, 0.58, 1)
-TintVariation = 0.18
-VisibilityRangeEnd = 40.0
-VisibilityFadeMargin = 8.0
-CastShadows = false
-
-; ⚠️ FLOWERS ARE THE ONE LAYER THAT MUST STAY SPARSE. `prp_flowers_a` and `prp_flowers_b` were
-; adopted and never scattered, and the reflex on finding that is to give them a clover-sized count —
-; which turns a dying realm's pasture into a meadow postcard. Fifty-odd per 100 x 100 m, heavily
-; clumped, reads as flowers having come up where the ground was left alone. `Layer_clover` gives up
-; 90 of its 240 to pay for both, so the settled and pasture profiles carry no more instances than
-; they did (docs/ART_STYLE.md: worn, lived-in, restrained).
-[sub_resource type="Resource" id="Layer_flowers"]
-script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_flowers_a.glb"
-Count = 52
-MinimumScale = 0.72
-MaximumScale = 1.2
-MinimumSpacing = 3.6
-Clumping = 0.72
-ClumpScale = 14.0
-MaxSlope = 0.45
-Tint = Color(0.80, 0.78, 0.66, 1)
-TintVariation = 0.22
-VisibilityRangeEnd = 38.0
-VisibilityFadeMargin = 8.0
-CastShadows = false
-
-[sub_resource type="Resource" id="Layer_flowers_b"]
-script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_flowers_b.glb"
-Count = 40
-MinimumScale = 0.7
-MaximumScale = 1.15
-MinimumSpacing = 3.9
-Clumping = 0.76
-ClumpScale = 12.0
-MaxSlope = 0.45
-Tint = Color(0.78, 0.76, 0.64, 1)
-TintVariation = 0.24
-VisibilityRangeEnd = 38.0
-VisibilityFadeMargin = 8.0
-CastShadows = false
-
-; Forest floor, and the most heavily clumped layer in the realm on purpose: mushrooms grow in rings
-; and drifts against deadfall, never evenly. Wilds only — a mushroom in a pasture or on a shore is
-; the kind of detail that reads as scatter having been switched on rather than authored.
-; `Layer_bracken` gives up 15 of its 300 to pay for it.
-[sub_resource type="Resource" id="Layer_mushrooms"]
-script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_mushrooms.glb"
-Count = 18
-MinimumScale = 0.65
-MaximumScale = 1.25
-MinimumSpacing = 5.5
-Clumping = 0.85
-ClumpScale = 9.0
-MaxSlope = 0.5
-Tint = Color(0.72, 0.68, 0.60, 1)
-TintVariation = 0.20
-VisibilityRangeEnd = 34.0
-VisibilityFadeMargin = 8.0
-CastShadows = false
-
-; The thin, dry grass of a shore and a waste, where the short turf has no business growing. It
-; splits `Layer_grass_short` (520 -> 430) rather than thickening the ground: those two profiles are
-; meant to read as sparse, and the point of this layer is a second silhouette in the sparseness, not
-; more of it.
+; The thin, dry grass of a shore and a waste, where the short turf has no business growing: the one
+; grass clump again, drained to straw by Saturation and a dry tint. Sparse on purpose - those
+; profiles are meant to read as thin, and this is a second colour in the thinness, not more of it.
 [sub_resource type="Resource" id="Layer_grass_wispy"]
 script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_grass_wispy.glb"
+ScenePath = "res://assets/models/props/prp_grass_clump_a.glb"
 Count = 90
 MinimumScale = 0.7
-MaximumScale = 1.4
+MaximumScale = 1.3
 MinimumSpacing = 2.2
+Saturation = 0.55
 Clumping = 0.55
 ClumpScale = 20.0
 MaxSlope = 0.7
@@ -265,10 +191,10 @@ CastShadows = false
 
 [sub_resource type="Resource" id="Layer_bracken"]
 script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_fern.glb"
+ScenePath = "res://assets/models/props/prp_fern_clump_a.glb"
 Count = 285
-MinimumScale = 0.65
-MaximumScale = 1.25
+MinimumScale = 1.0
+MaximumScale = 1.7
 MinimumSpacing = 3.0
 Clumping = 0.5
 ClumpScale = 26.0
@@ -279,79 +205,15 @@ VisibilityRangeEnd = 70.0
 VisibilityFadeMargin = 14.0
 CastShadows = false
 
-; ⚠️ THE REALM'S ENTIRE STONE COVER WAS ONE PEBBLE. `Layer_stone` scattered `prp_pebble_a` at 210
-; instances per 100 x 100 m across FIVE of the six biome profiles, and a MultiMesh varies only yaw,
-; uniform scale and tint — so every stone in the Ember Crown was the same 136-triangle silhouette
-; seen from a different angle. That is the "obvious repetition" the visual-QA checklist names, and
-; at 3.4 m spacing there is always another one of them in frame.
-;
-; ⚠️ THE FIX SPLITS THE EXISTING DENSITY, IT DOES NOT ADD TO IT. `MaxScatterInstancesPerCell` is
-; 2400 and the seven layers already sat near it; four species at 90 + 70 + 26 + 5 = 191 is LESS
-; ground cover than the 210 it replaces, and four distinct silhouettes instead of one. Read the
-; instance budget as the memory limit it is (see BUDGET above) and the draw budget as the tight
-; one: this is four MultiMeshInstance3Ds where there was one, which is three extra draws per cell.
-[sub_resource type="Resource" id="Layer_stone"]
-script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_pebble_a.glb"
-Count = 60
-MinimumScale = 0.8
-MaximumScale = 1.9
-MinimumSpacing = 3.4
-Clumping = 0.4
-ClumpScale = 24.0
-MaxSlope = 1.1
-Tint = Color(0.68, 0.65, 0.60, 1)
-TintVariation = 0.16
-VisibilityRangeEnd = 55.0
-VisibilityFadeMargin = 12.0
-CastShadows = false
-
-[sub_resource type="Resource" id="Layer_stone_b"]
-script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_pebble_c.glb"
-Count = 52
-MinimumScale = 0.85
-MaximumScale = 2.05
-MinimumSpacing = 3.1
-Clumping = 0.46
-ClumpScale = 21.0
-MaxSlope = 1.1
-Tint = Color(0.66, 0.64, 0.61, 1)
-TintVariation = 0.18
-VisibilityRangeEnd = 55.0
-VisibilityFadeMargin = 12.0
-CastShadows = false
-
-; ⚠️ THE THIRD PEBBLE SPECIES, AND IT SPLITS THE DENSITY RATHER THAN ADDING TO IT — the same rule
-; the two-species fix above was made under. `prp_pebble_b` was adopted with the rest of the nature
-; set and then scattered nowhere: it sat in `assets/models/props` sharing the nature atlas, costing
-; disk and carrying zero instances, while the ground cover it belongs to ran on two silhouettes.
-; 90 + 70 becomes 60 + 52 + 48 — the same 160 stones per 100 x 100 m, one more outline in the mix.
-[sub_resource type="Resource" id="Layer_stone_c"]
-script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_pebble_b.glb"
-Count = 48
-MinimumScale = 0.82
-MaximumScale = 1.95
-MinimumSpacing = 3.2
-Clumping = 0.43
-ClumpScale = 23.0
-MaxSlope = 1.1
-Tint = Color(0.67, 0.65, 0.61, 1)
-TintVariation = 0.17
-VisibilityRangeEnd = 55.0
-VisibilityFadeMargin = 12.0
-CastShadows = false
-
-; The knee-to-waist tier the realm had nothing in: `prp_pebble_a` tops out around 0.9 m even at
-; MaximumScale, and the next thing up was an authored boulder placed by hand. Sparse and widely
-; spaced, so it reads as an outcrop breaking the turf rather than as litter.
+; The knee-to-head tier: the one boulder at a quarter to half size (1.5-3.4 m across), sparse and
+; widely spaced, so it reads as an outcrop breaking the turf rather than as litter. 14 of a
+; 626-triangle mesh is the same triangle load as the 26 of the 342-triangle rock it replaces.
 [sub_resource type="Resource" id="Layer_rock_medium"]
 script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_rock_medium.glb"
-Count = 26
-MinimumScale = 0.42
-MaximumScale = 0.86
+ScenePath = "res://assets/models/world/prp_rock_boulder_a.glb"
+Count = 14
+MinimumScale = 0.25
+MaximumScale = 0.55
 MinimumSpacing = 9.5
 Clumping = 0.58
 ClumpScale = 34.0
@@ -363,14 +225,14 @@ VisibilityFadeMargin = 18.0
 CastShadows = true
 
 ; ⚠️ A BOULDER LAYER IS AN HLOD LAYER FOR THE SAME REASON A TREE LAYER IS, and it needs one more
-; than a tree does: at five per 100 x 100 m the detailed tier is nearly free, but a 5.6 m mass
+; than a tree does: at six per 100 x 100 m the detailed tier is nearly free, but a 4-8 m mass
 ; that pops out of existence at its visibility range is the most obvious cull in the realm.
 [sub_resource type="Resource" id="Layer_boulder"]
 script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_boulder_large.glb"
-Count = 5
-MinimumScale = 0.55
-MaximumScale = 1.05
+ScenePath = "res://assets/models/world/prp_rock_boulder_a.glb"
+Count = 6
+MinimumScale = 0.7
+MaximumScale = 1.3
 MinimumSpacing = 26.0
 Clumping = 0.5
 ClumpScale = 60.0
@@ -384,22 +246,54 @@ HlodShape = 1
 HlodReduction = 2
 HlodRangeBegin = 145.0
 HlodRangeEnd = 340.0
-HlodColor = Color(0.88, 0.9, 0.92, 1)
+HlodColor = Color(0.71, 0.68, 0.63, 1)
+HlodScale = Vector3(1.1, 1.1, 1.1)
+
+; ⚠️ THE TOR IS THE SAME BOULDER AT 2.5-4 TIMES ITS SIZE: a 10-16 m mass, 15-25 m across, one per
+; 100 x 100 m at most. It is what makes open upland read as big country from a road. Scatter has
+; NO COLLISION, so the player can walk into one; keep the count at 1 and place a wrapper scene
+; (scenes/props/lm_rock_boulder_a.tscn) by hand wherever a tor has to be solid.
+[sub_resource type="Resource" id="Layer_tor"]
+script = ExtResource("10_layer")
+ScenePath = "res://assets/models/world/prp_rock_boulder_a.glb"
+Count = 1
+MinimumScale = 2.5
+MaximumScale = 4.0
+MinimumSpacing = 60.0
+Clumping = 0.6
+ClumpScale = 90.0
+MaxSlope = 0.5
+Tint = Color(0.66, 0.63, 0.59, 1)
+TintVariation = 0.1
+VisibilityRangeEnd = 220.0
+VisibilityFadeMargin = 26.0
+CastShadows = true
+HlodShape = 1
+HlodReduction = 2
+HlodRangeBegin = 200.0
+HlodRangeEnd = 420.0
+HlodColor = Color(0.66, 0.63, 0.59, 1)
 HlodScale = Vector3(1.1, 1.1, 1.1)
 
 ; ⚠️ A TREE LAYER IS AN HLOD LAYER OR IT IS A DRAW CALL STORM AT DISTANCE. The proxy cone carries the
 ; silhouette past 130 m; the detailed instance fades out before it.
+;
+; ⚠️ THE OAK IS 12 m AT SCALE 1 AND ITS CROWN IS 8.5 m ACROSS, so this layer stands 8-18 m: the
+; hero is meant to feel small under it. That crown is 2.6 times the width of the tree it replaced,
+; which is why the count went from 260 to 150 and the spacing from 6.5 to 9 - the stand closes
+; over at this density, and the layer costs half the triangles it did. Scatter has NO COLLISION:
+; a trunk here is walked through, as it always was.
 [sub_resource type="Resource" id="Layer_pine"]
 script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_tree_broadleaf.glb"
-Count = 260
-MinimumScale = 0.75
-MaximumScale = 1.6
-MinimumSpacing = 6.5
+ScenePath = "res://assets/models/world/prp_tree_oak_a.glb"
+Count = 150
+MinimumScale = 0.7
+MaximumScale = 1.5
+MinimumSpacing = 9.0
 Clumping = 0.78
 ClumpScale = 46.0
 MaxSlope = 0.42
-Tint = Color(0.72, 0.78, 0.66, 1)
+Tint = Color(0.94, 0.96, 0.86, 1)
 TintVariation = 0.18
 VisibilityRangeEnd = 150.0
 VisibilityFadeMargin = 22.0
@@ -411,26 +305,75 @@ HlodRangeEnd = 320.0
 HlodColor = Color(0.88, 0.9, 0.92, 1)
 HlodScale = Vector3(1.15, 1.15, 1.15)
 
+; The second silhouette in the wood: a 10-20 m fir, a quarter of the oak's count, on the same stand
+; field (same ClumpScale) so the two species share copses instead of each drawing its own.
+[sub_resource type="Resource" id="Layer_fir"]
+script = ExtResource("10_layer")
+ScenePath = "res://assets/models/world/prp_pine_fir_a.glb"
+Count = 36
+MinimumScale = 0.7
+MaximumScale = 1.4
+MinimumSpacing = 10.0
+Clumping = 0.78
+ClumpScale = 46.0
+MaxSlope = 0.42
+Tint = Color(1.0, 0.98, 0.86, 1)
+TintVariation = 0.14
+VisibilityRangeEnd = 150.0
+VisibilityFadeMargin = 22.0
+CastShadows = true
+HlodShape = 1
+HlodReduction = 3
+HlodRangeBegin = 130.0
+HlodRangeEnd = 320.0
+HlodColor = Color(0.88, 0.9, 0.92, 1)
+HlodScale = Vector3(1.15, 1.15, 1.15)
+
+; ⚠️ ELDER OAKS: the same oak at 1.8-2.4, so 22-29 m with a 15-20 m crown, four per 100 x 100 m.
+; Clumping is HIGHER than Layer_pine's on the SAME ClumpScale, which is what keeps them in the
+; interior of a stand: the stand field has to be stronger for an elder than for an ordinary tree.
+; That matters because scatter has no collision - an elder on a road verge is a 2 m trunk the
+; player walks through, and one deep in a copse is a crown over the canopy.
+[sub_resource type="Resource" id="Layer_elder"]
+script = ExtResource("10_layer")
+ScenePath = "res://assets/models/world/prp_tree_oak_a.glb"
+Count = 4
+MinimumScale = 1.8
+MaximumScale = 2.4
+MinimumSpacing = 28.0
+Clumping = 0.92
+ClumpScale = 46.0
+MaxSlope = 0.36
+Tint = Color(0.88, 0.9, 0.8, 1)
+TintVariation = 0.1
+VisibilityRangeEnd = 220.0
+VisibilityFadeMargin = 26.0
+CastShadows = true
+HlodShape = 1
+HlodReduction = 2
+HlodRangeBegin = 200.0
+HlodRangeEnd = 420.0
+HlodColor = Color(0.88, 0.9, 0.92, 1)
+HlodScale = Vector3(1.1, 1.1, 1.1)
+
+; Scrub is the fern rosette again, large (1.9-2.6 m across) and dark: no bush was adopted, and a
+; second use of one mesh at another size and tint is the rule for this set. No HLOD - a
+; knee-high rosette is gone long before the range where a proxy would earn its draw call.
 [sub_resource type="Resource" id="Layer_scrub"]
 script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_bush_flowering.glb"
-Count = 200
-MinimumScale = 0.7
-MaximumScale = 1.5
+ScenePath = "res://assets/models/props/prp_fern_clump_a.glb"
+Count = 110
+MinimumScale = 1.3
+MaximumScale = 1.8
 MinimumSpacing = 5.0
 Clumping = 0.55
 ClumpScale = 30.0
 MaxSlope = 0.62
-Tint = Color(0.66, 0.70, 0.56, 1)
+Tint = Color(0.46, 0.52, 0.38, 1)
 TintVariation = 0.20
-VisibilityRangeEnd = 105.0
-VisibilityFadeMargin = 18.0
-HlodShape = 2
-HlodReduction = 4
-HlodRangeBegin = 92.0
-HlodRangeEnd = 230.0
-HlodColor = Color(0.88, 0.9, 0.92, 1)
-HlodScale = Vector3(1.15, 1.15, 1.15)
+VisibilityRangeEnd = 90.0
+VisibilityFadeMargin = 16.0
+CastShadows = false
 
 ; Settlement ecology: the verges and back lots of an inhabited place, and nothing tall enough to hide
 ; a doorway. EdgePadding 1 because a settlement's outskirts should thin INTO the next cell's country,
@@ -439,38 +382,777 @@ HlodScale = Vector3(1.15, 1.15, 1.15)
 script = ExtResource("9_scatter")
 Seed = 5101
 EdgePadding = 1.0
-Layers = Array[ExtResource("10_layer")]([SubResource("Layer_grass_short"), SubResource("Layer_clover"), SubResource("Layer_stone"), SubResource("Layer_stone_b"), SubResource("Layer_flowers"), SubResource("Layer_flowers_b"), SubResource("Layer_stone_c")])
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_grass_short"), SubResource("Layer_grass_wispy")])
 
 [sub_resource type="Resource" id="Scatter_pasture"]
 script = ExtResource("9_scatter")
 Seed = 5102
 EdgePadding = 1.0
-Layers = Array[ExtResource("10_layer")]([SubResource("Layer_grass"), SubResource("Layer_grass_short"), SubResource("Layer_clover"), SubResource("Layer_scrub"), SubResource("Layer_flowers"), SubResource("Layer_flowers_b")])
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_grass"), SubResource("Layer_grass_short"), SubResource("Layer_scrub")])
 
 [sub_resource type="Resource" id="Scatter_wilds"]
 script = ExtResource("9_scatter")
 Seed = 5103
 EdgePadding = 1.0
-Layers = Array[ExtResource("10_layer")]([SubResource("Layer_grass"), SubResource("Layer_bracken"), SubResource("Layer_pine"), SubResource("Layer_scrub"), SubResource("Layer_stone"), SubResource("Layer_stone_b"), SubResource("Layer_rock_medium"), SubResource("Layer_mushrooms"), SubResource("Layer_stone_c")])
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_grass"), SubResource("Layer_bracken"), SubResource("Layer_pine"), SubResource("Layer_fir"), SubResource("Layer_elder"), SubResource("Layer_scrub"), SubResource("Layer_rock_medium")])
 
 [sub_resource type="Resource" id="Scatter_upland"]
 script = ExtResource("9_scatter")
 Seed = 5104
 EdgePadding = 1.0
-Layers = Array[ExtResource("10_layer")]([SubResource("Layer_grass"), SubResource("Layer_bracken"), SubResource("Layer_stone"), SubResource("Layer_stone_b"), SubResource("Layer_rock_medium"), SubResource("Layer_boulder"), SubResource("Layer_scrub"), SubResource("Layer_stone_c")])
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_grass"), SubResource("Layer_bracken"), SubResource("Layer_rock_medium"), SubResource("Layer_boulder"), SubResource("Layer_tor"), SubResource("Layer_scrub")])
 
 [sub_resource type="Resource" id="Scatter_waste"]
 script = ExtResource("9_scatter")
 Seed = 5105
 EdgePadding = 1.0
-Layers = Array[ExtResource("10_layer")]([SubResource("Layer_stone"), SubResource("Layer_stone_b"), SubResource("Layer_rock_medium"), SubResource("Layer_boulder"), SubResource("Layer_bracken"), SubResource("Layer_grass_short"), SubResource("Layer_scrub"), SubResource("Layer_stone_c"), SubResource("Layer_grass_wispy")])
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_rock_medium"), SubResource("Layer_boulder"), SubResource("Layer_tor"), SubResource("Layer_bracken"), SubResource("Layer_grass_short"), SubResource("Layer_scrub"), SubResource("Layer_grass_wispy")])
 
 [sub_resource type="Resource" id="Scatter_shore"]
 script = ExtResource("9_scatter")
 Seed = 5106
 EdgePadding = 1.0
-Layers = Array[ExtResource("10_layer")]([SubResource("Layer_grass_short"), SubResource("Layer_stone"), SubResource("Layer_stone_b"), SubResource("Layer_scrub"), SubResource("Layer_stone_c"), SubResource("Layer_grass_wispy")])
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_grass_short"), SubResource("Layer_scrub"), SubResource("Layer_grass_wispy")])
 
+; Clearings under the monumental layer: derived by gen_regions.monument_exclusions from
+; tools/district_layouts.py and the hand-placed monuments in the cell scenes. Never edit them here.
+[sub_resource type="Resource" id="Exclusion_auto_crown_pass_0"]
+script = ExtResource("11_exclusion")
+Center = Vector2(-1.0, 48.0)
+Radius = 4.8
+
+[sub_resource type="Resource" id="Exclusion_auto_crown_pass_1"]
+script = ExtResource("11_exclusion")
+Center = Vector2(3.0, 19.0)
+Radius = 6.5
+
+[sub_resource type="Resource" id="Exclusion_auto_crown_pass_2"]
+script = ExtResource("11_exclusion")
+Center = Vector2(5.0, 37.0)
+Radius = 10.5
+
+[sub_resource type="Resource" id="Exclusion_auto_crown_pass_3"]
+script = ExtResource("11_exclusion")
+Center = Vector2(28.0, 22.0)
+Radius = 5.7
+
+[sub_resource type="Resource" id="Exclusion_auto_crown_pass_4"]
+script = ExtResource("11_exclusion")
+Center = Vector2(34.5, 35.0)
+Radius = 9.8
+
+[sub_resource type="Resource" id="Exclusion_auto_crown_pass_5"]
+script = ExtResource("11_exclusion")
+Center = Vector2(39.0, 46.0)
+Radius = 4.6
+
+[sub_resource type="Resource" id="Scatter_waste_at_crown_pass"]
+script = ExtResource("9_scatter")
+Seed = 5105
+EdgePadding = 1.0
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_rock_medium"), SubResource("Layer_boulder"), SubResource("Layer_tor"), SubResource("Layer_bracken"), SubResource("Layer_grass_short"), SubResource("Layer_scrub"), SubResource("Layer_grass_wispy")])
+Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_auto_crown_pass_0"), SubResource("Exclusion_auto_crown_pass_1"), SubResource("Exclusion_auto_crown_pass_2"), SubResource("Exclusion_auto_crown_pass_3"), SubResource("Exclusion_auto_crown_pass_4"), SubResource("Exclusion_auto_crown_pass_5")])
+
+[sub_resource type="Resource" id="Exclusion_auto_crossway_post_0"]
+script = ExtResource("11_exclusion")
+Center = Vector2(12.8, 25.0)
+Radius = 8.1
+
+[sub_resource type="Resource" id="Exclusion_auto_crossway_post_1"]
+script = ExtResource("11_exclusion")
+Center = Vector2(21.5, 18.0)
+Radius = 3.2
+
+[sub_resource type="Resource" id="Exclusion_auto_crossway_post_2"]
+script = ExtResource("11_exclusion")
+Center = Vector2(30.4, 6.0)
+Radius = 7.5
+
+[sub_resource type="Resource" id="Exclusion_auto_crossway_post_3"]
+script = ExtResource("11_exclusion")
+Center = Vector2(44.6, 6.0)
+Radius = 7.5
+
+[sub_resource type="Resource" id="Scatter_upland_at_crossway_post"]
+script = ExtResource("9_scatter")
+Seed = 5104
+EdgePadding = 1.0
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_grass"), SubResource("Layer_bracken"), SubResource("Layer_rock_medium"), SubResource("Layer_boulder"), SubResource("Layer_tor"), SubResource("Layer_scrub")])
+Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_auto_crossway_post_0"), SubResource("Exclusion_auto_crossway_post_1"), SubResource("Exclusion_auto_crossway_post_2"), SubResource("Exclusion_auto_crossway_post_3")])
+
+[sub_resource type="Resource" id="Exclusion_auto_arena_0"]
+script = ExtResource("11_exclusion")
+Center = Vector2(0.65, -18.39)
+Radius = 11.4
+
+[sub_resource type="Resource" id="Exclusion_auto_arena_1"]
+script = ExtResource("11_exclusion")
+Center = Vector2(0.65, -1.61)
+Radius = 11.6
+
+[sub_resource type="Resource" id="Exclusion_auto_arena_2"]
+script = ExtResource("11_exclusion")
+Center = Vector2(1.2, -28.8)
+Radius = 4.8
+
+[sub_resource type="Resource" id="Exclusion_auto_arena_3"]
+script = ExtResource("11_exclusion")
+Center = Vector2(1.2, 8.8)
+Radius = 4.8
+
+[sub_resource type="Resource" id="Exclusion_auto_arena_4"]
+script = ExtResource("11_exclusion")
+Center = Vector2(2.5, -16.0)
+Radius = 3.3
+
+[sub_resource type="Resource" id="Exclusion_auto_arena_5"]
+script = ExtResource("11_exclusion")
+Center = Vector2(8.17, 8.8)
+Radius = 9.4
+
+[sub_resource type="Resource" id="Exclusion_auto_arena_6"]
+script = ExtResource("11_exclusion")
+Center = Vector2(11.0, -27.5)
+Radius = 3.3
+
+[sub_resource type="Resource" id="Exclusion_auto_arena_7"]
+script = ExtResource("11_exclusion")
+Center = Vector2(13.0, -29.45)
+Radius = 12.5
+
+[sub_resource type="Resource" id="Exclusion_auto_arena_8"]
+script = ExtResource("11_exclusion")
+Center = Vector2(15.4, 7.6)
+Radius = 3.8
+
+[sub_resource type="Resource" id="Exclusion_auto_arena_9"]
+script = ExtResource("11_exclusion")
+Center = Vector2(22.0, -27.5)
+Radius = 3.3
+
+[sub_resource type="Resource" id="Exclusion_auto_arena_10"]
+script = ExtResource("11_exclusion")
+Center = Vector2(22.0, 57.0)
+Radius = 23.9
+
+[sub_resource type="Resource" id="Exclusion_auto_arena_11"]
+script = ExtResource("11_exclusion")
+Center = Vector2(24.6, 7.6)
+Radius = 3.8
+
+[sub_resource type="Resource" id="Exclusion_auto_arena_12"]
+script = ExtResource("11_exclusion")
+Center = Vector2(32.17, 8.8)
+Radius = 9.7
+
+[sub_resource type="Resource" id="Exclusion_auto_arena_13"]
+script = ExtResource("11_exclusion")
+Center = Vector2(35.3, -29.5)
+Radius = 6.9
+
+[sub_resource type="Resource" id="Exclusion_auto_arena_14"]
+script = ExtResource("11_exclusion")
+Center = Vector2(37.5, -19.0)
+Radius = 3.3
+
+[sub_resource type="Resource" id="Exclusion_auto_arena_15"]
+script = ExtResource("11_exclusion")
+Center = Vector2(37.5, -7.0)
+Radius = 3.3
+
+[sub_resource type="Resource" id="Exclusion_auto_arena_16"]
+script = ExtResource("11_exclusion")
+Center = Vector2(37.5, 3.0)
+Radius = 3.3
+
+[sub_resource type="Resource" id="Exclusion_auto_arena_17"]
+script = ExtResource("11_exclusion")
+Center = Vector2(38.8, -28.8)
+Radius = 4.8
+
+[sub_resource type="Resource" id="Exclusion_auto_arena_18"]
+script = ExtResource("11_exclusion")
+Center = Vector2(38.8, 8.8)
+Radius = 4.8
+
+[sub_resource type="Resource" id="Exclusion_auto_arena_19"]
+script = ExtResource("11_exclusion")
+Center = Vector2(39.35, -18.39)
+Radius = 11.6
+
+[sub_resource type="Resource" id="Exclusion_auto_arena_20"]
+script = ExtResource("11_exclusion")
+Center = Vector2(39.35, -1.61)
+Radius = 11.4
+
+[sub_resource type="Resource" id="Scatter_waste_at_arena"]
+script = ExtResource("9_scatter")
+Seed = 5105
+EdgePadding = 1.0
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_rock_medium"), SubResource("Layer_boulder"), SubResource("Layer_tor"), SubResource("Layer_bracken"), SubResource("Layer_grass_short"), SubResource("Layer_scrub"), SubResource("Layer_grass_wispy")])
+Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_auto_arena_0"), SubResource("Exclusion_auto_arena_1"), SubResource("Exclusion_auto_arena_2"), SubResource("Exclusion_auto_arena_3"), SubResource("Exclusion_auto_arena_4"), SubResource("Exclusion_auto_arena_5"), SubResource("Exclusion_auto_arena_6"), SubResource("Exclusion_auto_arena_7"), SubResource("Exclusion_auto_arena_8"), SubResource("Exclusion_auto_arena_9"), SubResource("Exclusion_auto_arena_10"), SubResource("Exclusion_auto_arena_11"), SubResource("Exclusion_auto_arena_12"), SubResource("Exclusion_auto_arena_13"), SubResource("Exclusion_auto_arena_14"), SubResource("Exclusion_auto_arena_15"), SubResource("Exclusion_auto_arena_16"), SubResource("Exclusion_auto_arena_17"), SubResource("Exclusion_auto_arena_18"), SubResource("Exclusion_auto_arena_19"), SubResource("Exclusion_auto_arena_20")])
+
+[sub_resource type="Resource" id="Exclusion_auto_wilds_north_0"]
+script = ExtResource("11_exclusion")
+Center = Vector2(5.0, 29.0)
+Radius = 4.5
+
+[sub_resource type="Resource" id="Exclusion_auto_wilds_north_1"]
+script = ExtResource("11_exclusion")
+Center = Vector2(7.0, 38.0)
+Radius = 4.5
+
+[sub_resource type="Resource" id="Exclusion_auto_wilds_north_2"]
+script = ExtResource("11_exclusion")
+Center = Vector2(10.0, 25.7)
+Radius = 5.9
+
+[sub_resource type="Resource" id="Exclusion_auto_wilds_north_3"]
+script = ExtResource("11_exclusion")
+Center = Vector2(12.0, 34.0)
+Radius = 3.7
+
+[sub_resource type="Resource" id="Exclusion_auto_wilds_north_4"]
+script = ExtResource("11_exclusion")
+Center = Vector2(14.0, 23.0)
+Radius = 4.0
+
+[sub_resource type="Resource" id="Exclusion_auto_wilds_north_5"]
+script = ExtResource("11_exclusion")
+Center = Vector2(15.0, 30.0)
+Radius = 4.2
+
+[sub_resource type="Resource" id="Exclusion_auto_wilds_north_6"]
+script = ExtResource("11_exclusion")
+Center = Vector2(68.0, 46.0)
+Radius = 4.4
+
+[sub_resource type="Resource" id="Scatter_wilds_at_wilds_north"]
+script = ExtResource("9_scatter")
+Seed = 5103
+EdgePadding = 1.0
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_grass"), SubResource("Layer_bracken"), SubResource("Layer_pine"), SubResource("Layer_fir"), SubResource("Layer_elder"), SubResource("Layer_scrub"), SubResource("Layer_rock_medium")])
+Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_auto_wilds_north_0"), SubResource("Exclusion_auto_wilds_north_1"), SubResource("Exclusion_auto_wilds_north_2"), SubResource("Exclusion_auto_wilds_north_3"), SubResource("Exclusion_auto_wilds_north_4"), SubResource("Exclusion_auto_wilds_north_5"), SubResource("Exclusion_auto_wilds_north_6")])
+
+[sub_resource type="Resource" id="Exclusion_auto_emberwash_head_0"]
+script = ExtResource("11_exclusion")
+Center = Vector2(-45.0, 47.0)
+Radius = 3.9
+
+[sub_resource type="Resource" id="Exclusion_auto_emberwash_head_1"]
+script = ExtResource("11_exclusion")
+Center = Vector2(25.0, -45.0)
+Radius = 4.4
+
+[sub_resource type="Resource" id="Scatter_wilds_at_emberwash_head"]
+script = ExtResource("9_scatter")
+Seed = 5103
+EdgePadding = 1.0
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_grass"), SubResource("Layer_bracken"), SubResource("Layer_pine"), SubResource("Layer_fir"), SubResource("Layer_elder"), SubResource("Layer_scrub"), SubResource("Layer_rock_medium")])
+Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_auto_emberwash_head_0"), SubResource("Exclusion_auto_emberwash_head_1")])
+
+[sub_resource type="Resource" id="Exclusion_auto_heath_south_0"]
+script = ExtResource("11_exclusion")
+Center = Vector2(-25.0, -5.0)
+Radius = 22.1
+
+[sub_resource type="Resource" id="Exclusion_auto_heath_south_1"]
+script = ExtResource("11_exclusion")
+Center = Vector2(-10.0, -51.0)
+Radius = 9.8
+
+[sub_resource type="Resource" id="Scatter_upland_at_heath_south"]
+script = ExtResource("9_scatter")
+Seed = 5104
+EdgePadding = 1.0
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_grass"), SubResource("Layer_bracken"), SubResource("Layer_rock_medium"), SubResource("Layer_boulder"), SubResource("Layer_tor"), SubResource("Layer_scrub")])
+Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_auto_heath_south_0"), SubResource("Exclusion_auto_heath_south_1")])
+
+[sub_resource type="Resource" id="Exclusion_auto_east_uplands_0"]
+script = ExtResource("11_exclusion")
+Center = Vector2(-33.0, -73.0)
+Radius = 23.9
+
+[sub_resource type="Resource" id="Exclusion_auto_east_uplands_1"]
+script = ExtResource("11_exclusion")
+Center = Vector2(40.0, 3.0)
+Radius = 20.9
+
+[sub_resource type="Resource" id="Scatter_upland_at_east_uplands"]
+script = ExtResource("9_scatter")
+Seed = 5104
+EdgePadding = 1.0
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_grass"), SubResource("Layer_bracken"), SubResource("Layer_rock_medium"), SubResource("Layer_boulder"), SubResource("Layer_tor"), SubResource("Layer_scrub")])
+Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_auto_east_uplands_0"), SubResource("Exclusion_auto_east_uplands_1")])
+
+[sub_resource type="Resource" id="Exclusion_auto_wildwood_edge_0"]
+script = ExtResource("11_exclusion")
+Center = Vector2(-10.0, -15.0)
+Radius = 4.4
+
+[sub_resource type="Resource" id="Scatter_wilds_at_wildwood_edge"]
+script = ExtResource("9_scatter")
+Seed = 5103
+EdgePadding = 1.0
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_grass"), SubResource("Layer_bracken"), SubResource("Layer_pine"), SubResource("Layer_fir"), SubResource("Layer_elder"), SubResource("Layer_scrub"), SubResource("Layer_rock_medium")])
+Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_auto_wildwood_edge_0")])
+
+[sub_resource type="Resource" id="Exclusion_auto_north_moor_0"]
+script = ExtResource("11_exclusion")
+Center = Vector2(1.1, 41.8)
+Radius = 6.3
+
+[sub_resource type="Resource" id="Exclusion_auto_north_moor_1"]
+script = ExtResource("11_exclusion")
+Center = Vector2(5.0, -18.0)
+Radius = 5.9
+
+[sub_resource type="Resource" id="Exclusion_auto_north_moor_2"]
+script = ExtResource("11_exclusion")
+Center = Vector2(23.0, -14.0)
+Radius = 9.8
+
+[sub_resource type="Resource" id="Exclusion_auto_north_moor_3"]
+script = ExtResource("11_exclusion")
+Center = Vector2(25.0, 3.0)
+Radius = 3.4
+
+[sub_resource type="Resource" id="Exclusion_auto_north_moor_4"]
+script = ExtResource("11_exclusion")
+Center = Vector2(39.0, -4.0)
+Radius = 5.9
+
+[sub_resource type="Resource" id="Scatter_upland_at_north_moor"]
+script = ExtResource("9_scatter")
+Seed = 5104
+EdgePadding = 1.0
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_grass"), SubResource("Layer_bracken"), SubResource("Layer_rock_medium"), SubResource("Layer_boulder"), SubResource("Layer_tor"), SubResource("Layer_scrub")])
+Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_auto_north_moor_0"), SubResource("Exclusion_auto_north_moor_1"), SubResource("Exclusion_auto_north_moor_2"), SubResource("Exclusion_auto_north_moor_3"), SubResource("Exclusion_auto_north_moor_4")])
+
+[sub_resource type="Resource" id="Exclusion_auto_crown_fields_north_0"]
+script = ExtResource("11_exclusion")
+Center = Vector2(-8.0, -18.0)
+Radius = 6.5
+
+[sub_resource type="Resource" id="Exclusion_auto_crown_fields_north_1"]
+script = ExtResource("11_exclusion")
+Center = Vector2(1.0, -24.0)
+Radius = 5.7
+
+[sub_resource type="Resource" id="Exclusion_auto_crown_fields_north_2"]
+script = ExtResource("11_exclusion")
+Center = Vector2(11.0, -26.0)
+Radius = 7.6
+
+[sub_resource type="Resource" id="Exclusion_auto_crown_fields_north_3"]
+script = ExtResource("11_exclusion")
+Center = Vector2(20.0, -21.0)
+Radius = 5.3
+
+[sub_resource type="Resource" id="Exclusion_auto_crown_fields_north_4"]
+script = ExtResource("11_exclusion")
+Center = Vector2(28.0, -10.0)
+Radius = 3.2
+
+[sub_resource type="Resource" id="Scatter_pasture_at_crown_fields_north"]
+script = ExtResource("9_scatter")
+Seed = 5102
+EdgePadding = 1.0
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_grass"), SubResource("Layer_grass_short"), SubResource("Layer_scrub")])
+Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_auto_crown_fields_north_0"), SubResource("Exclusion_auto_crown_fields_north_1"), SubResource("Exclusion_auto_crown_fields_north_2"), SubResource("Exclusion_auto_crown_fields_north_3"), SubResource("Exclusion_auto_crown_fields_north_4")])
+
+[sub_resource type="Resource" id="Exclusion_auto_ashen_breach_0"]
+script = ExtResource("11_exclusion")
+Center = Vector2(88.0, 6.0)
+Radius = 3.2
+
+[sub_resource type="Resource" id="Exclusion_auto_ashen_breach_1"]
+script = ExtResource("11_exclusion")
+Center = Vector2(91.0, -5.0)
+Radius = 5.7
+
+[sub_resource type="Resource" id="Exclusion_auto_ashen_breach_2"]
+script = ExtResource("11_exclusion")
+Center = Vector2(102.0, 32.0)
+Radius = 7.8
+
+[sub_resource type="Resource" id="Exclusion_auto_ashen_breach_3"]
+script = ExtResource("11_exclusion")
+Center = Vector2(106.0, 6.0)
+Radius = 7.2
+
+[sub_resource type="Resource" id="Scatter_waste_at_ashen_breach"]
+script = ExtResource("9_scatter")
+Seed = 5105
+EdgePadding = 1.0
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_rock_medium"), SubResource("Layer_boulder"), SubResource("Layer_tor"), SubResource("Layer_bracken"), SubResource("Layer_grass_short"), SubResource("Layer_scrub"), SubResource("Layer_grass_wispy")])
+Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_auto_ashen_breach_0"), SubResource("Exclusion_auto_ashen_breach_1"), SubResource("Exclusion_auto_ashen_breach_2"), SubResource("Exclusion_auto_ashen_breach_3")])
+
+[sub_resource type="Resource" id="Exclusion_auto_wilds_west_0"]
+script = ExtResource("11_exclusion")
+Center = Vector2(17.0, -52.5)
+Radius = 4.5
+
+[sub_resource type="Resource" id="Scatter_wilds_at_wilds_west"]
+script = ExtResource("9_scatter")
+Seed = 5103
+EdgePadding = 1.0
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_grass"), SubResource("Layer_bracken"), SubResource("Layer_pine"), SubResource("Layer_fir"), SubResource("Layer_elder"), SubResource("Layer_scrub"), SubResource("Layer_rock_medium")])
+Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_auto_wilds_west_0")])
+
+[sub_resource type="Resource" id="Exclusion_auto_emberwash_valley_0"]
+script = ExtResource("11_exclusion")
+Center = Vector2(-10.0, 47.5)
+Radius = 4.4
+
+[sub_resource type="Resource" id="Exclusion_auto_emberwash_valley_1"]
+script = ExtResource("11_exclusion")
+Center = Vector2(64.0, 82.5)
+Radius = 5.7
+
+[sub_resource type="Resource" id="Exclusion_auto_emberwash_valley_2"]
+script = ExtResource("11_exclusion")
+Center = Vector2(71.0, 77.5)
+Radius = 5.2
+
+[sub_resource type="Resource" id="Exclusion_auto_emberwash_valley_3"]
+script = ExtResource("11_exclusion")
+Center = Vector2(82.0, 67.5)
+Radius = 7.2
+
+[sub_resource type="Resource" id="Scatter_wilds_at_emberwash_valley"]
+script = ExtResource("9_scatter")
+Seed = 5103
+EdgePadding = 1.0
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_grass"), SubResource("Layer_bracken"), SubResource("Layer_pine"), SubResource("Layer_fir"), SubResource("Layer_elder"), SubResource("Layer_scrub"), SubResource("Layer_rock_medium")])
+Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_auto_emberwash_valley_0"), SubResource("Exclusion_auto_emberwash_valley_1"), SubResource("Exclusion_auto_emberwash_valley_2"), SubResource("Exclusion_auto_emberwash_valley_3")])
+
+[sub_resource type="Resource" id="Exclusion_auto_kings_approach_0"]
+script = ExtResource("11_exclusion")
+Center = Vector2(18.6, -42.1)
+Radius = 6.8
+
+[sub_resource type="Resource" id="Exclusion_auto_kings_approach_1"]
+script = ExtResource("11_exclusion")
+Center = Vector2(56.6, 20.7)
+Radius = 6.6
+
+[sub_resource type="Resource" id="Exclusion_auto_kings_approach_2"]
+script = ExtResource("11_exclusion")
+Center = Vector2(59.6, -27.2)
+Radius = 5.7
+
+[sub_resource type="Resource" id="Exclusion_auto_kings_approach_3"]
+script = ExtResource("11_exclusion")
+Center = Vector2(84.0, 78.5)
+Radius = 7.7
+
+[sub_resource type="Resource" id="Scatter_pasture_at_kings_approach"]
+script = ExtResource("9_scatter")
+Seed = 5102
+EdgePadding = 1.0
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_grass"), SubResource("Layer_grass_short"), SubResource("Layer_scrub")])
+Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_auto_kings_approach_0"), SubResource("Exclusion_auto_kings_approach_1"), SubResource("Exclusion_auto_kings_approach_2"), SubResource("Exclusion_auto_kings_approach_3")])
+
+[sub_resource type="Resource" id="Exclusion_auto_citadel_0"]
+script = ExtResource("11_exclusion")
+Center = Vector2(-91.0, 78.5)
+Radius = 7.7
+
+[sub_resource type="Resource" id="Exclusion_auto_citadel_1"]
+script = ExtResource("11_exclusion")
+Center = Vector2(-81.8, 35.9)
+Radius = 6.1
+
+[sub_resource type="Resource" id="Exclusion_auto_citadel_2"]
+script = ExtResource("11_exclusion")
+Center = Vector2(-69.0, 75.5)
+Radius = 7.7
+
+[sub_resource type="Resource" id="Exclusion_auto_citadel_3"]
+script = ExtResource("11_exclusion")
+Center = Vector2(0.0, 2.5)
+Radius = 41.8
+
+[sub_resource type="Resource" id="Scatter_settled_at_citadel"]
+script = ExtResource("9_scatter")
+Seed = 5101
+EdgePadding = 1.0
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_grass_short"), SubResource("Layer_grass_wispy")])
+Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_auto_citadel_0"), SubResource("Exclusion_auto_citadel_1"), SubResource("Exclusion_auto_citadel_2"), SubResource("Exclusion_auto_citadel_3")])
+
+[sub_resource type="Resource" id="Exclusion_auto_emberdeep_mine_0"]
+script = ExtResource("11_exclusion")
+Center = Vector2(-52.0, 14.5)
+Radius = 3.2
+
+[sub_resource type="Resource" id="Scatter_upland_at_emberdeep_mine"]
+script = ExtResource("9_scatter")
+Seed = 5104
+EdgePadding = 1.0
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_grass"), SubResource("Layer_bracken"), SubResource("Layer_rock_medium"), SubResource("Layer_boulder"), SubResource("Layer_tor"), SubResource("Layer_scrub")])
+Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_auto_emberdeep_mine_0")])
+
+[sub_resource type="Resource" id="Exclusion_auto_tarn_north_0"]
+script = ExtResource("11_exclusion")
+Center = Vector2(20.0, 22.5)
+Radius = 4.5
+
+[sub_resource type="Resource" id="Scatter_wilds_at_tarn_north"]
+script = ExtResource("9_scatter")
+Seed = 5103
+EdgePadding = 1.0
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_grass"), SubResource("Layer_bracken"), SubResource("Layer_pine"), SubResource("Layer_fir"), SubResource("Layer_elder"), SubResource("Layer_scrub"), SubResource("Layer_rock_medium")])
+Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_auto_tarn_north_0")])
+
+[sub_resource type="Resource" id="Exclusion_auto_tarn_road_0"]
+script = ExtResource("11_exclusion")
+Center = Vector2(-60.0, -17.5)
+Radius = 4.3
+
+[sub_resource type="Resource" id="Scatter_pasture_at_tarn_road"]
+script = ExtResource("9_scatter")
+Seed = 5102
+EdgePadding = 1.0
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_grass"), SubResource("Layer_grass_short"), SubResource("Layer_scrub")])
+Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_auto_tarn_road_0")])
+
+[sub_resource type="Resource" id="Exclusion_auto_bridgeward_0"]
+script = ExtResource("11_exclusion")
+Center = Vector2(-21.0, -52.5)
+Radius = 5.7
+
+[sub_resource type="Resource" id="Exclusion_auto_bridgeward_1"]
+script = ExtResource("11_exclusion")
+Center = Vector2(-14.0, -57.5)
+Radius = 5.2
+
+[sub_resource type="Resource" id="Exclusion_auto_bridgeward_2"]
+script = ExtResource("11_exclusion")
+Center = Vector2(39.6, -21.7)
+Radius = 6.1
+
+[sub_resource type="Resource" id="Exclusion_auto_bridgeward_3"]
+script = ExtResource("11_exclusion")
+Center = Vector2(45.2, -36.7)
+Radius = 6.1
+
+[sub_resource type="Resource" id="Scatter_settled_at_bridgeward"]
+script = ExtResource("9_scatter")
+Seed = 5101
+EdgePadding = 1.0
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_grass_short"), SubResource("Layer_grass_wispy")])
+Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_auto_bridgeward_0"), SubResource("Exclusion_auto_bridgeward_1"), SubResource("Exclusion_auto_bridgeward_2"), SubResource("Exclusion_auto_bridgeward_3")])
+
+[sub_resource type="Resource" id="Exclusion_auto_town_hub_0"]
+script = ExtResource("11_exclusion")
+Center = Vector2(9.0, -56.5)
+Radius = 7.7
+
+[sub_resource type="Resource" id="Exclusion_auto_town_hub_1"]
+script = ExtResource("11_exclusion")
+Center = Vector2(9.5, 3.5)
+Radius = 3.5
+
+[sub_resource type="Resource" id="Exclusion_auto_town_hub_2"]
+script = ExtResource("11_exclusion")
+Center = Vector2(11.0, 6.5)
+Radius = 3.2
+
+[sub_resource type="Resource" id="Exclusion_auto_town_hub_3"]
+script = ExtResource("11_exclusion")
+Center = Vector2(31.0, -59.5)
+Radius = 7.7
+
+[sub_resource type="Resource" id="Exclusion_auto_town_hub_4"]
+script = ExtResource("11_exclusion")
+Center = Vector2(51.0, 27.5)
+Radius = 2.7
+
+[sub_resource type="Resource" id="Scatter_settled_at_town_hub"]
+script = ExtResource("9_scatter")
+Seed = 5101
+EdgePadding = 1.0
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_grass_short"), SubResource("Layer_grass_wispy")])
+Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_auto_town_hub_0"), SubResource("Exclusion_auto_town_hub_1"), SubResource("Exclusion_auto_town_hub_2"), SubResource("Exclusion_auto_town_hub_3"), SubResource("Exclusion_auto_town_hub_4")])
+
+[sub_resource type="Resource" id="Exclusion_auto_east_gate_0"]
+script = ExtResource("11_exclusion")
+Center = Vector2(-55.0, -28.5)
+Radius = 6.7
+
+[sub_resource type="Resource" id="Exclusion_auto_east_gate_1"]
+script = ExtResource("11_exclusion")
+Center = Vector2(-45.0, -8.5)
+Radius = 7.2
+
+[sub_resource type="Resource" id="Scatter_settled_at_east_gate"]
+script = ExtResource("9_scatter")
+Seed = 5101
+EdgePadding = 1.0
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_grass_short"), SubResource("Layer_grass_wispy")])
+Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_auto_east_gate_0"), SubResource("Exclusion_auto_east_gate_1")])
+
+[sub_resource type="Resource" id="Exclusion_auto_tarn_landing_0"]
+script = ExtResource("11_exclusion")
+Center = Vector2(41.0, -37.0)
+Radius = 3.2
+
+[sub_resource type="Resource" id="Scatter_shore_at_tarn_landing"]
+script = ExtResource("9_scatter")
+Seed = 5106
+EdgePadding = 1.0
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_grass_short"), SubResource("Layer_scrub"), SubResource("Layer_grass_wispy")])
+Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_auto_tarn_landing_0")])
+
+[sub_resource type="Resource" id="Exclusion_auto_lakeshore_east_0"]
+script = ExtResource("11_exclusion")
+Center = Vector2(-14.0, 58.0)
+Radius = 5.9
+
+[sub_resource type="Resource" id="Scatter_pasture_at_lakeshore_east"]
+script = ExtResource("9_scatter")
+Seed = 5102
+EdgePadding = 1.0
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_grass"), SubResource("Layer_grass_short"), SubResource("Layer_scrub")])
+Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_auto_lakeshore_east_0")])
+
+[sub_resource type="Resource" id="Exclusion_auto_embermarket_0"]
+script = ExtResource("11_exclusion")
+Center = Vector2(-47.5, -26.0)
+Radius = 3.2
+
+[sub_resource type="Resource" id="Exclusion_auto_embermarket_1"]
+script = ExtResource("11_exclusion")
+Center = Vector2(-28.5, -6.0)
+Radius = 6.0
+
+[sub_resource type="Resource" id="Scatter_settled_at_embermarket"]
+script = ExtResource("9_scatter")
+Seed = 5101
+EdgePadding = 1.0
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_grass_short"), SubResource("Layer_grass_wispy")])
+Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_auto_embermarket_0"), SubResource("Exclusion_auto_embermarket_1")])
+
+[sub_resource type="Resource" id="Exclusion_auto_west_downs_0"]
+script = ExtResource("11_exclusion")
+Center = Vector2(-20.0, -2.0)
+Radius = 2.9
+
+[sub_resource type="Resource" id="Scatter_pasture_at_west_downs"]
+script = ExtResource("9_scatter")
+Seed = 5102
+EdgePadding = 1.0
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_grass"), SubResource("Layer_grass_short"), SubResource("Layer_scrub")])
+Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_auto_west_downs_0")])
+
+[sub_resource type="Resource" id="Exclusion_auto_fen_edge_0"]
+script = ExtResource("11_exclusion")
+Center = Vector2(-27.5, 17.5)
+Radius = 4.9
+
+[sub_resource type="Resource" id="Exclusion_auto_fen_edge_1"]
+script = ExtResource("11_exclusion")
+Center = Vector2(-25.0, 21.0)
+Radius = 4.2
+
+[sub_resource type="Resource" id="Exclusion_auto_fen_edge_2"]
+script = ExtResource("11_exclusion")
+Center = Vector2(-21.5, 24.5)
+Radius = 3.8
+
+[sub_resource type="Resource" id="Exclusion_auto_fen_edge_3"]
+script = ExtResource("11_exclusion")
+Center = Vector2(58.0, -20.0)
+Radius = 9.8
+
+[sub_resource type="Resource" id="Scatter_shore_at_fen_edge"]
+script = ExtResource("9_scatter")
+Seed = 5106
+EdgePadding = 1.0
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_grass_short"), SubResource("Layer_scrub"), SubResource("Layer_grass_wispy")])
+Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_auto_fen_edge_0"), SubResource("Exclusion_auto_fen_edge_1"), SubResource("Exclusion_auto_fen_edge_2"), SubResource("Exclusion_auto_fen_edge_3")])
+
+[sub_resource type="Resource" id="Exclusion_auto_hollowreach_0"]
+script = ExtResource("11_exclusion")
+Center = Vector2(-102.0, -20.0)
+Radius = 9.8
+
+[sub_resource type="Resource" id="Exclusion_auto_hollowreach_1"]
+script = ExtResource("11_exclusion")
+Center = Vector2(-86.0, 4.0)
+Radius = 8.2
+
+[sub_resource type="Resource" id="Exclusion_auto_hollowreach_2"]
+script = ExtResource("11_exclusion")
+Center = Vector2(-30.0, -12.0)
+Radius = 5.8
+
+[sub_resource type="Resource" id="Exclusion_auto_hollowreach_3"]
+script = ExtResource("11_exclusion")
+Center = Vector2(-20.0, 0.0)
+Radius = 3.5
+
+[sub_resource type="Resource" id="Exclusion_auto_hollowreach_4"]
+script = ExtResource("11_exclusion")
+Center = Vector2(-18.0, 6.0)
+Radius = 3.2
+
+[sub_resource type="Resource" id="Exclusion_auto_hollowreach_5"]
+script = ExtResource("11_exclusion")
+Center = Vector2(-16.0, 4.0)
+Radius = 3.1
+
+[sub_resource type="Resource" id="Scatter_shore_at_hollowreach"]
+script = ExtResource("9_scatter")
+Seed = 5106
+EdgePadding = 1.0
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_grass_short"), SubResource("Layer_scrub"), SubResource("Layer_grass_wispy")])
+Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_auto_hollowreach_0"), SubResource("Exclusion_auto_hollowreach_1"), SubResource("Exclusion_auto_hollowreach_2"), SubResource("Exclusion_auto_hollowreach_3"), SubResource("Exclusion_auto_hollowreach_4"), SubResource("Exclusion_auto_hollowreach_5")])
+
+[sub_resource type="Resource" id="Exclusion_auto_southern_fens_0"]
+script = ExtResource("11_exclusion")
+Center = Vector2(-10.0, -15.0)
+Radius = 17.2
+
+[sub_resource type="Resource" id="Scatter_shore_at_southern_fens"]
+script = ExtResource("9_scatter")
+Seed = 5106
+EdgePadding = 1.0
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_grass_short"), SubResource("Layer_scrub"), SubResource("Layer_grass_wispy")])
+Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_auto_southern_fens_0")])
+
+[sub_resource type="Resource" id="Exclusion_auto_south_gate_0"]
+script = ExtResource("11_exclusion")
+Center = Vector2(-55.0, 50.0)
+Radius = 7.2
+
+[sub_resource type="Resource" id="Exclusion_auto_south_gate_1"]
+script = ExtResource("11_exclusion")
+Center = Vector2(-42.0, 52.0)
+Radius = 8.2
+
+[sub_resource type="Resource" id="Exclusion_auto_south_gate_2"]
+script = ExtResource("11_exclusion")
+Center = Vector2(-27.0, 65.0)
+Radius = 11.6
+
+[sub_resource type="Resource" id="Exclusion_auto_south_gate_3"]
+script = ExtResource("11_exclusion")
+Center = Vector2(-12.0, 54.0)
+Radius = 7.4
+
+[sub_resource type="Resource" id="Exclusion_auto_south_gate_4"]
+script = ExtResource("11_exclusion")
+Center = Vector2(-1.0, 50.0)
+Radius = 6.5
+
+[sub_resource type="Resource" id="Scatter_pasture_at_south_gate"]
+script = ExtResource("9_scatter")
+Seed = 5102
+EdgePadding = 1.0
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_grass"), SubResource("Layer_grass_short"), SubResource("Layer_scrub")])
+Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_auto_south_gate_0"), SubResource("Exclusion_auto_south_gate_1"), SubResource("Exclusion_auto_south_gate_2"), SubResource("Exclusion_auto_south_gate_3"), SubResource("Exclusion_auto_south_gate_4")])
 
 ; ---------------------------------------------------------------------------------
 ; ember_crown.range_west   centre (-405.0, -665.0)   230 x 110   x -520..-290  z -720..-610
@@ -569,7 +1251,7 @@ Id = "ember_crown.crown_pass"
 ScenePath = "res://scenes/regions/ember_crown/crown_pass.tscn"
 Center = Vector3(-165.0, 0, -665.0)
 Presentation = SubResource("Presentation_crown_pass")
-BiomeScatter = SubResource("Scatter_waste")
+BiomeScatter = SubResource("Scatter_waste_at_crown_pass")
 
 ; ---------------------------------------------------------------------------------
 ; ember_crown.range_mid   centre (75.0, -665.0)   230 x 110   x -40..190  z -720..-610
@@ -855,7 +1537,7 @@ Id = "ember_crown.crossway_post"
 ScenePath = "res://scenes/regions/ember_crown/crossway_post.tscn"
 Center = Vector3(-165.0, 0, -555.0)
 Presentation = SubResource("Presentation_crossway_post")
-BiomeScatter = SubResource("Scatter_upland")
+BiomeScatter = SubResource("Scatter_upland_at_crossway_post")
 SafeRadius = 26.0
 
 ; ---------------------------------------------------------------------------------
@@ -1093,7 +1775,7 @@ Id = "ember_crown.arena"
 ScenePath = "res://scenes/regions/ember_crown/arena.tscn"
 Center = Vector3(345.0, 0, -555.0)
 Presentation = SubResource("Presentation_arena")
-BiomeScatter = SubResource("Scatter_waste")
+BiomeScatter = SubResource("Scatter_waste_at_arena")
 
 ; ---------------------------------------------------------------------------------
 ; ember_crown.range_foot_east   centre (470.0, -555.0)   100 x 110   x 420..520  z -610..-500
@@ -1297,9 +1979,9 @@ Shoulder = 2.0
 [sub_resource type="Resource" id="Area_wilds_north_ruin"]
 script = ExtResource("7_area")
 Center = Vector2(10.0, 30.0)
-Radius = Vector2(7, 7)
+Radius = Vector2(7.5, 7.5)
 Feather = 3.5
-SurfaceBlend = 0.42
+SurfaceBlend = 0.9
 ElevationMode = 1
 Elevation = -0.3
 
@@ -1347,7 +2029,7 @@ Id = "ember_crown.wilds_north"
 ScenePath = "res://scenes/regions/ember_crown/wilds_north.tscn"
 Center = Vector3(-295.0, 0, -425.0)
 Presentation = SubResource("Presentation_wilds_north")
-BiomeScatter = SubResource("Scatter_wilds")
+BiomeScatter = SubResource("Scatter_wilds_at_wilds_north")
 
 ; ---------------------------------------------------------------------------------
 ; ember_crown.emberwash_head   centre (-65.0, -425.0)   210 x 150   x -170..40  z -500..-350
@@ -1443,7 +2125,7 @@ Id = "ember_crown.emberwash_head"
 ScenePath = "res://scenes/regions/ember_crown/emberwash_head.tscn"
 Center = Vector3(-65.0, 0, -425.0)
 Presentation = SubResource("Presentation_emberwash_head")
-BiomeScatter = SubResource("Scatter_wilds")
+BiomeScatter = SubResource("Scatter_wilds_at_emberwash_head")
 
 ; ---------------------------------------------------------------------------------
 ; ember_crown.heath_south   centre (160.0, -425.0)   240 x 150   x 40..280  z -500..-350
@@ -1484,7 +2166,7 @@ Id = "ember_crown.heath_south"
 ScenePath = "res://scenes/regions/ember_crown/heath_south.tscn"
 Center = Vector3(160.0, 0, -425.0)
 Presentation = SubResource("Presentation_heath_south")
-BiomeScatter = SubResource("Scatter_upland")
+BiomeScatter = SubResource("Scatter_upland_at_heath_south")
 
 ; ---------------------------------------------------------------------------------
 ; ember_crown.east_uplands   centre (400.0, -425.0)   240 x 150   x 280..520  z -500..-350
@@ -1561,7 +2243,7 @@ Id = "ember_crown.east_uplands"
 ScenePath = "res://scenes/regions/ember_crown/east_uplands.tscn"
 Center = Vector3(400.0, 0, -425.0)
 Presentation = SubResource("Presentation_east_uplands")
-BiomeScatter = SubResource("Scatter_upland")
+BiomeScatter = SubResource("Scatter_upland_at_east_uplands")
 
 ; ---------------------------------------------------------------------------------
 ; ember_crown.western_ridge   centre (-425.0, -300.0)   190 x 100   x -520..-330  z -350..-250
@@ -1631,7 +2313,7 @@ Id = "ember_crown.wildwood_edge"
 ScenePath = "res://scenes/regions/ember_crown/wildwood_edge.tscn"
 Center = Vector3(-240.0, 0, -300.0)
 Presentation = SubResource("Presentation_wildwood_edge")
-BiomeScatter = SubResource("Scatter_wilds")
+BiomeScatter = SubResource("Scatter_wilds_at_wildwood_edge")
 
 ; ---------------------------------------------------------------------------------
 ; ember_crown.north_moor   centre (-45.0, -300.0)   210 x 100   x -150..60  z -350..-250
@@ -1716,7 +2398,7 @@ Id = "ember_crown.north_moor"
 ScenePath = "res://scenes/regions/ember_crown/north_moor.tscn"
 Center = Vector3(-45.0, 0, -300.0)
 Presentation = SubResource("Presentation_north_moor")
-BiomeScatter = SubResource("Scatter_upland")
+BiomeScatter = SubResource("Scatter_upland_at_north_moor")
 
 ; ---------------------------------------------------------------------------------
 ; ember_crown.crown_fields_north   centre (170.0, -300.0)   220 x 100   x 60..280  z -350..-250
@@ -1735,7 +2417,7 @@ Id = "ember_crown.crown_fields_north"
 ScenePath = "res://scenes/regions/ember_crown/crown_fields_north.tscn"
 Center = Vector3(170.0, 0, -300.0)
 Presentation = SubResource("Presentation_crown_fields_north")
-BiomeScatter = SubResource("Scatter_pasture")
+BiomeScatter = SubResource("Scatter_pasture_at_crown_fields_north")
 
 ; ---------------------------------------------------------------------------------
 ; ember_crown.ashen_breach   centre (400.0, -300.0)   240 x 100   x 280..520  z -350..-250
@@ -1826,7 +2508,7 @@ Id = "ember_crown.ashen_breach"
 ScenePath = "res://scenes/regions/ember_crown/ashen_breach.tscn"
 Center = Vector3(400.0, 0, -300.0)
 Presentation = SubResource("Presentation_ashen_breach")
-BiomeScatter = SubResource("Scatter_waste")
+BiomeScatter = SubResource("Scatter_waste_at_ashen_breach")
 
 ; ---------------------------------------------------------------------------------
 ; ember_crown.wilds_west   centre (-425.0, -172.5)   190 x 155   x -520..-330  z -250..-95
@@ -1981,7 +2663,7 @@ Id = "ember_crown.wilds_west"
 ScenePath = "res://scenes/regions/ember_crown/wilds_west.tscn"
 Center = Vector3(-425.0, 0, -172.5)
 Presentation = SubResource("Presentation_wilds_west")
-BiomeScatter = SubResource("Scatter_wilds")
+BiomeScatter = SubResource("Scatter_wilds_at_wilds_west")
 
 ; ---------------------------------------------------------------------------------
 ; ember_crown.emberwash_valley   centre (-240.0, -172.5)   180 x 155   x -330..-150  z -250..-95
@@ -2011,7 +2693,7 @@ Id = "ember_crown.emberwash_valley"
 ScenePath = "res://scenes/regions/ember_crown/emberwash_valley.tscn"
 Center = Vector3(-240.0, 0, -172.5)
 Presentation = SubResource("Presentation_emberwash_valley")
-BiomeScatter = SubResource("Scatter_wilds")
+BiomeScatter = SubResource("Scatter_wilds_at_emberwash_valley")
 
 ; ---------------------------------------------------------------------------------
 ; ember_crown.kings_approach   centre (-65.0, -172.5)   170 x 155   x -150..20  z -250..-95
@@ -2068,7 +2750,7 @@ Id = "ember_crown.kings_approach"
 ScenePath = "res://scenes/regions/ember_crown/kings_approach.tscn"
 Center = Vector3(-65.0, 0, -172.5)
 Presentation = SubResource("Presentation_kings_approach")
-BiomeScatter = SubResource("Scatter_pasture")
+BiomeScatter = SubResource("Scatter_pasture_at_kings_approach")
 
 ; ---------------------------------------------------------------------------------
 ; ember_crown.citadel   centre (110.0, -172.5)   180 x 155   x 20..200  z -250..-95
@@ -2147,7 +2829,7 @@ Id = "ember_crown.citadel"
 ScenePath = "res://scenes/regions/ember_crown/citadel.tscn"
 Center = Vector3(110.0, 0, -172.5)
 Presentation = SubResource("Presentation_citadel")
-BiomeScatter = SubResource("Scatter_settled")
+BiomeScatter = SubResource("Scatter_settled_at_citadel")
 
 ; ---------------------------------------------------------------------------------
 ; ember_crown.mine_road   centre (275.0, -172.5)   150 x 155   x 200..350  z -250..-95
@@ -2400,7 +3082,7 @@ Id = "ember_crown.emberdeep_mine"
 ScenePath = "res://scenes/regions/ember_crown/emberdeep_mine.tscn"
 Center = Vector3(435.0, 0, -172.5)
 Presentation = SubResource("Presentation_emberdeep_mine")
-BiomeScatter = SubResource("Scatter_upland")
+BiomeScatter = SubResource("Scatter_upland_at_emberdeep_mine")
 SafeRadius = 24.0
 Surplus = Array[String](["ore", "metal", "fuel"])
 Demand = Array[String](["food", "fish", "textile"])
@@ -2445,7 +3127,7 @@ Id = "ember_crown.tarn_north"
 ScenePath = "res://scenes/regions/ember_crown/tarn_north.tscn"
 Center = Vector3(-460.0, 0, -37.5)
 Presentation = SubResource("Presentation_tarn_north")
-BiomeScatter = SubResource("Scatter_wilds")
+BiomeScatter = SubResource("Scatter_wilds_at_tarn_north")
 
 ; ---------------------------------------------------------------------------------
 ; ember_crown.tarn_road   centre (-310.0, -37.5)   180 x 115   x -400..-220  z -95..20
@@ -2523,7 +3205,7 @@ Id = "ember_crown.tarn_road"
 ScenePath = "res://scenes/regions/ember_crown/tarn_road.tscn"
 Center = Vector3(-310.0, 0, -37.5)
 Presentation = SubResource("Presentation_tarn_road")
-BiomeScatter = SubResource("Scatter_pasture")
+BiomeScatter = SubResource("Scatter_pasture_at_tarn_road")
 
 ; ---------------------------------------------------------------------------------
 ; ember_crown.bridgeward   centre (-155.0, -37.5)   130 x 115   x -220..-90  z -95..20
@@ -2621,7 +3303,7 @@ Id = "ember_crown.bridgeward"
 ScenePath = "res://scenes/regions/ember_crown/bridgeward.tscn"
 Center = Vector3(-155.0, 0, -37.5)
 Presentation = SubResource("Presentation_bridgeward")
-BiomeScatter = SubResource("Scatter_settled")
+BiomeScatter = SubResource("Scatter_settled_at_bridgeward")
 
 ; ---------------------------------------------------------------------------------
 ; ember_crown.town_hub   centre (10.0, -37.5)   200 x 115   x -90..110  z -95..20
@@ -3050,7 +3732,7 @@ Id = "ember_crown.town_hub"
 ScenePath = "res://scenes/regions/ember_crown/town_hub.tscn"
 Center = Vector3(10.0, 0, -37.5)
 Presentation = SubResource("Presentation_town_hub")
-BiomeScatter = SubResource("Scatter_settled")
+BiomeScatter = SubResource("Scatter_settled_at_town_hub")
 
 ; ---------------------------------------------------------------------------------
 ; ember_crown.east_gate   centre (205.0, -37.5)   190 x 115   x 110..300  z -95..20
@@ -3161,7 +3843,7 @@ Id = "ember_crown.east_gate"
 ScenePath = "res://scenes/regions/ember_crown/east_gate.tscn"
 Center = Vector3(205.0, 0, -37.5)
 Presentation = SubResource("Presentation_east_gate")
-BiomeScatter = SubResource("Scatter_settled")
+BiomeScatter = SubResource("Scatter_settled_at_east_gate")
 
 ; ---------------------------------------------------------------------------------
 ; ember_crown.emberdeep_slopes   centre (410.0, -37.5)   220 x 115   x 300..520  z -95..20
@@ -3388,7 +4070,7 @@ Id = "ember_crown.tarn_landing"
 ScenePath = "res://scenes/regions/ember_crown/tarn_landing.tscn"
 Center = Vector3(-325.0, 0, 90.0)
 Presentation = SubResource("Presentation_tarn_landing")
-BiomeScatter = SubResource("Scatter_shore")
+BiomeScatter = SubResource("Scatter_shore_at_tarn_landing")
 SafeRadius = 22.0
 Surplus = Array[String](["fish"])
 Demand = Array[String](["ore", "metal", "fuel"])
@@ -3457,7 +4139,7 @@ Id = "ember_crown.lakeshore_east"
 ScenePath = "res://scenes/regions/ember_crown/lakeshore_east.tscn"
 Center = Vector3(-170.0, 0, 90.0)
 Presentation = SubResource("Presentation_lakeshore_east")
-BiomeScatter = SubResource("Scatter_pasture")
+BiomeScatter = SubResource("Scatter_pasture_at_lakeshore_east")
 
 ; ---------------------------------------------------------------------------------
 ; ember_crown.embermarket   centre (-15.0, 90.0)   190 x 140   x -110..80  z 20..160
@@ -3699,7 +4381,7 @@ Id = "ember_crown.embermarket"
 ScenePath = "res://scenes/regions/ember_crown/embermarket.tscn"
 Center = Vector3(-15.0, 0, 90.0)
 Presentation = SubResource("Presentation_embermarket")
-BiomeScatter = SubResource("Scatter_settled")
+BiomeScatter = SubResource("Scatter_settled_at_embermarket")
 SafeRadius = 32.0
 
 ; ---------------------------------------------------------------------------------
@@ -3951,7 +4633,7 @@ Id = "ember_crown.west_downs"
 ScenePath = "res://scenes/regions/ember_crown/west_downs.tscn"
 Center = Vector3(-150.0, 0, 220.0)
 Presentation = SubResource("Presentation_west_downs")
-BiomeScatter = SubResource("Scatter_pasture")
+BiomeScatter = SubResource("Scatter_pasture_at_west_downs")
 
 ; ---------------------------------------------------------------------------------
 ; ember_crown.caravan_road   centre (40.0, 220.0)   200 x 120   x -60..140  z 160..280
@@ -4255,7 +4937,7 @@ Id = "ember_crown.fen_edge"
 ScenePath = "res://scenes/regions/ember_crown/fen_edge.tscn"
 Center = Vector3(-460.0, 0, 360.0)
 Presentation = SubResource("Presentation_fen_edge")
-BiomeScatter = SubResource("Scatter_shore")
+BiomeScatter = SubResource("Scatter_shore_at_fen_edge")
 
 ; ---------------------------------------------------------------------------------
 ; ember_crown.hollowreach   centre (-300.0, 360.0)   200 x 160   x -400..-200  z 280..440
@@ -4483,7 +5165,7 @@ Id = "ember_crown.hollowreach"
 ScenePath = "res://scenes/regions/ember_crown/hollowreach.tscn"
 Center = Vector3(-300.0, 0, 360.0)
 Presentation = SubResource("Presentation_hollowreach")
-BiomeScatter = SubResource("Scatter_shore")
+BiomeScatter = SubResource("Scatter_shore_at_hollowreach")
 
 ; ---------------------------------------------------------------------------------
 ; ember_crown.southern_fens   centre (-100.0, 360.0)   200 x 160   x -200..0  z 280..440
@@ -4513,7 +5195,7 @@ Id = "ember_crown.southern_fens"
 ScenePath = "res://scenes/regions/ember_crown/southern_fens.tscn"
 Center = Vector3(-100.0, 0, 360.0)
 Presentation = SubResource("Presentation_southern_fens")
-BiomeScatter = SubResource("Scatter_shore")
+BiomeScatter = SubResource("Scatter_shore_at_southern_fens")
 
 ; ---------------------------------------------------------------------------------
 ; ember_crown.south_gate   centre (100.0, 360.0)   200 x 160   x 0..200  z 280..440
@@ -4600,7 +5282,7 @@ Id = "ember_crown.south_gate"
 ScenePath = "res://scenes/regions/ember_crown/south_gate.tscn"
 Center = Vector3(100.0, 0, 360.0)
 Presentation = SubResource("Presentation_south_gate")
-BiomeScatter = SubResource("Scatter_pasture")
+BiomeScatter = SubResource("Scatter_pasture_at_south_gate")
 
 ; ---------------------------------------------------------------------------------
 ; ember_crown.border_hills   centre (290.0, 360.0)   180 x 160   x 200..380  z 280..440

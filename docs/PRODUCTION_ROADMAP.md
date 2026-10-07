@@ -61,7 +61,7 @@ personal and never published.
 | 32 | Companions | ✅ | 51 | Itemization pass | ◐ built 2026-10-06 (catalogue, sets, loot tiers); unplayed |
 | 33 | Slice assembly | ✅ (G1 unsigned) | 51.5 | Enchanting | ◐ scoped to reforging; sockets ❌ struck |
 | 34 | Enemy roster | ✅ | 52 | Audio production | ⬜ |
-| 34.5 | Frostfang clans | ✅ | 53 | Art complete | ◐ (all Meshy bosses adopted; no final pass) |
+| 34.5 | Frostfang clans | ✅ | 53 | Art complete | ◐ (all Meshy bosses adopted; the outdoor world generated 2026-10-06, unplayed; no final pass) |
 | 35 | Dragons | ✅ | 53.5 | Photo mode | ⬜ |
 | 36 | Boss framework | ✅ | 54 | Accessibility | ◐ remapping, captions and a real difficulty setting built 2026-10-06; unplayed, no audit |
 | 37 | Housing | ✅ | 55 | G3 acceptance | ◐ (`--story` + play-through) |
@@ -100,9 +100,17 @@ skies, and a Windows export that passes `--story` inside itself. What remains:
    Every screen and the HUD were rebuilt on `claude/ui-upgrade`, with key and gamepad remapping,
    HUD options, subtitles, a death screen, a credits screen and a difficulty setting that scales
    damage taken. What it needs: a played session with a keyboard and a real gamepad, the
-   high-contrast and reduced-motion renders, a HUD cost measurement, and a look on Steam Deck
-   hardware. [`NOW.md`](NOW.md) has the verification record and the unverified list;
+   high-contrast and reduced-motion renders, and a HUD cost measurement (Steam Deck is no longer a
+   target; PC and laptop only). [`NOW.md`](NOW.md) has the verification record and the unverified list;
    [`UI_STYLE.md`](UI_STYLE.md) §13 maps the code.
+
+8. **The Meshy world overhaul is built and has not been played, fought, walked or measured.** The outdoor
+   world, six NPC bodies, four dragons, three beasts and the iron sword are generated, the cosmetic kits
+   are gone, ten bosses are drawn larger than they fight and the haze was reworked, on
+   `claude/meshy-world-overhaul`. What it needs: the integrator's gates, one master bake, a fight with
+   every scaled boss and dragon, a walk of the narrowed spots, a render of every monument and every
+   realm vista, scatter exclusions around the 57 monuments, the delete of the retired Quaternius files,
+   and weak-laptop frame times. [`NOW.md`](NOW.md) has the leftover list and the unverified list.
 
 Not planned unless the maintainer asks: 42.5, 43, 50.5, 52, 53.5, 59, and the formal certification
 half of 57 (a target-hardware matrix and a signed 16.67 ms budget; the pass above is not that).

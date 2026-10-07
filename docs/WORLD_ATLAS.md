@@ -178,6 +178,24 @@ Three levels:
   when a story flag is set.
 - Concealed places keep `RequiredFlagId` semantics (the Emberbound Undercroft).
 
+**The monumental layer (2026-10-06).** 26 `Landmark` locations (104 to 130 of 130) mark the dead gods and
+the dragons in stone and bone, one pin per site on its tallest piece, none revealed on arrival and none a
+quest destination, shop or travel node; road stones and tors are terrain and take no pin.
+
+| Realm | Pins |
+| --- | --- |
+| Ember Crown | The Pass Colossi, The Emberspire Bones, The Drowned Face (fens), The Frontier Watch |
+| Frostfang Reach | The Hold Pass Colossus, The Roost Bones, The Burnt Col Bones, The Aerie Bones, The Broken Spire |
+| Ashen Wilds | The Ash Plateau Colossus, The Crater Bones, The Fallen Face, The Scar Arch |
+| Sunspire | The Library Colossi, The Sand Sea Colossus, The Salt Basin Bones, The Caravan Arch, The Pilgrim Stones |
+| Pale Concord (gated on the reveal flag) | The Processional Colossi, The Fallen Hall, The Canal Arch |
+| Celestial | The Godfall Hall, The Choir Hall, The Rim Colossus, The Void Edge Face, The Sundered Arch |
+
+Two near-duplicate names exist beside quest locations ("The Godfall Hall" next to "Godfall", "The Choir
+Hall" next to "The Fallen Choir"); the quest targets are unaffected and the names are a decision for the
+maintainer. Reachability of the Sand Sea butte and the Celestial side terraces is unknown. About 45
+monumental placements (20 m and up) are always drawn to the Backdrop radius.
+
 **Map hierarchy.** Tier culling by zoom (`MapTiers`): settlements and major places at realm zoom,
 waystones/dungeons/landmarks at regional zoom, shops and services at settlement zoom. The land layer is
 the region's shaded relief from the bake (`MapCartography.Relief`), not per-cell rectangles.

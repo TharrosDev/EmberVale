@@ -20,3 +20,5 @@ MaxPoise = 25.0
 StaminaRegen = 10.0
 ManaRegen = 7.0
 XpValue = 80
+; The totem staff the shaman casts with. Visual only.
+HeldWeaponPath = "res://assets/models/weapons/wpn_staff_oak.glb"

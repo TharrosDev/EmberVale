@@ -19,7 +19,7 @@ python tools/assets.py status      # what exists, in which rig family, and what 
 python tools/assets.py validate    # every hard gate, in the order they have to run
 ```
 
-`tools/assets.py` is the only entry point you need. It wraps twenty scripts and encodes the order
+`tools/assets.py` is the only entry point you need. It wraps about twenty scripts and encodes the order
 they run in; you should not have to know which is which.
 
 | Command | What it is for |
@@ -27,6 +27,7 @@ they run in; you should not have to know which is which.
 | `status` | The production inventory and manifest drift. No engine, no Blender, about two seconds. |
 | `validate` | The hard gates. Run before every commit that touches a model. |
 | `adopt SRC DEST` | A source model becomes a validated production asset. One command. |
+| `adopt-batch` | Many generated static models at once: prep, write, one import pass, the texture budget, the manifest (outdoor world, [below](#outdoor-world-generated)). |
 | `audit` | Full Blender + Godot inspection and the report set. Slow; run it for a broad pass. |
 | `audit-weight` | Estimated texture video memory by class, and anything off its budget. Pure python, one second. |
 | `build TARGET` | A Blender rebuild plus the follow-up steps it must not skip. |
@@ -99,12 +100,19 @@ allowlist; it still reports a genuinely dead file, and that was negative-tested.
 
 ## Where models come from
 
-**Two lanes. Which lane depends on what you are making.**
+**Three lanes (owner direction 2026-10-06, which supersedes "the four packs first, do not mix kits" for
+the outdoor world). Which lane depends on what you are making.**
+
+| Lane | What | Source |
+| --- | --- | --- |
+| Cast | characters, creatures, dragons, weapons | Meshy, semi-realistic (this section) |
+| Outdoor world | trees, rocks, ice, landmarks, ruins, outdoor props | Meshy text-to-3D into `assets/models/world/`, plus two procedural ground-cover meshes ([below](#outdoor-world-generated)) |
+| Kept kit | modular housing and architecture kit, enterable buildings, interiors, a listed set of small interactive props | Quaternius CC0 under `assets/library/`, on purpose: Meshy cannot make hollow, enterable buildings |
 
 **Characters and creatures — generate with Meshy.** The cast is custom Meshy generations and the
 direction is **semi-realistic**, matching the player, Kael, the goblin and the Iron King. This is a
-deliberate departure from `docs/ART_STYLE.md` §1's faceted low-poly direction, which still governs
-everything else. A faceted character will not sit beside the existing cast as one world.
+deliberate departure from `docs/ART_STYLE.md` §1's faceted low-poly direction, which now governs only
+the kept housing kit. A faceted character will not sit beside the existing cast as one world.
 
 The prompt is this stem plus a per-entity clause naming role, faction and region. Under 600
 characters (the API limit), `pose_mode: "t-pose"`, `aspect_ratio: "3:4"`:
@@ -128,8 +136,8 @@ character.**
 **The cast is already generated, adopted and in the game**: 32 characters and creatures by
 2026-09-06, then the finish run's seven (the Storm Tyrant, Beast Lord, Crimson Prophet, Hollow
 Queen, Ashen Knight, Morthul and the Archivist); `assets.py status` has the live count. Before spending a
-credit on a living actor, read `reports/3d/archive/meshy-migration/manifest.csv` — 56 rows, each
-carrying the `meshy_task_id` and `rig_task_id` it came from — and `python tools/assets.py status`.
+credit on a living actor or a world model, read `reports/3d/archive/meshy-migration/manifest.csv` —
+one row per generation, each carrying the task ids it came from — and `python tools/assets.py status`.
 The player, Kael, the goblin and the Iron King are `chr_player_base`, `npc_kael`, `enm_goblin` and
 `boss_iron_king`; they do not need making again.
 
@@ -160,14 +168,20 @@ and set the environment variable to match. Confirm with the balance call above (
 instead. A subagent asked to run Meshy may be denied the tools by permissions, so run generation from
 the main session or check the subagent's permissions first.
 
-**Props, architecture and nature — the four packs first.** `assets/library/` holds 1,136 vendored
-CC0 models behind a `.gdignore`; the medieval megakit, interiors, nature megakit and the animation
-library cover almost everything. `ls` the pack and read `manifest.json` before concluding it lacks
-something — the library has been declared empty from memory twice and was wrong both times. Only
-then the other vendored bundles, then the open web (CC0/MIT only), then Blender.
+**Outdoor world — generate, in `assets/models/world/`.** Text-to-3D with `meshy-5`, never the image
+route; the full pipeline, texture classes, wrappers and the list of what is kept is in
+[OUTDOOR WORLD](#outdoor-world-generated).
 
-⚠️ **Do not mix kits.** Four kits by one author read as one world; a model from a fifth source
-reads as a mistake even when it is better made.
+**Kept kit — the vendored packs.** `assets/library/` holds 1,136 vendored CC0 models behind a
+`.gdignore`. The medieval megakit, interiors and animation library still supply the housing and
+architecture kit, enterable buildings, interiors and the kept small props. `ls` the pack and read
+`manifest.json` before concluding it lacks something — the library has been declared empty from
+memory twice and was wrong both times. Then the other vendored bundles, then the open web (CC0/MIT
+only), then Blender.
+
+⚠️ **Do not mix kits inside the kept kit.** A model from a fifth source next to the housing kit reads
+as a mistake even when it is better made. The generated outdoor world is the deliberate exception and
+is bounded by the variety rule (two or three models per type).
 
 **Crediting is not required.** The build is personal, never published, never sold, and everything
 in it is CC0. `assets/CREDITS.md` is frozen as history — do not add to it, and do not treat a
@@ -225,7 +239,7 @@ A skinned mesh's raw AABB is bind-space and can be hundreds of metres.
 
 ## HUMANOID
 
-People and people-shaped enemies. 31 of them, and they are uniform: a bone map in the `.import`
+People and people-shaped enemies (`assets.py status` has the live count, 44 on 2026-10-07), and they are uniform: a bone map in the `.import`
 retargets each onto `SkeletonProfileHumanoid`, and the importer's bone renamer unifies every
 skeleton as **`GeneralSkeleton`**.
 
@@ -358,16 +372,21 @@ setting.
 armature and the root bone. ⚠️ The animation keyframes have to move with the rest pose, and
 **several animations share one output accessor**, so each must be rewritten exactly once.
 
-### The NPC outfit kit
+### NPC bodies, and no cosmetic layer
 
-Human NPCs get their identity from a cosmetic layer over the shared bodies, not from recolouring:
-`assets/models/equipment/npc_kit_embervale.glb` (22 rigid pieces) and the profile table in
-`src/Npc/NpcVisualKit.cs`, keyed by `Entity.TemplateId`.
-
-The source body, `Skeleton3D`, `BoneMap`, skin, animation library and collision remain
-authoritative. Kit pieces are rigid followers of `Chest` or `Hips` using the animated bone delta
-while preserving the model's world axes — required because the retargeted bodies do not share
-identical bone-local axes.
+⚠️ **There are no bolt-on kits any more** (2026-10-06). `EnemyVisualKit`, `NpcVisualKit`,
+`enemy_identity_kit.glb`, `npc_kit_embervale.glb` and the player's pauldrons and utility pouch were
+deleted: the boar's boxes, the crowns and masks, the 70 NPC outfit profiles. A body's identity is now
+its own mesh. An NPC's look comes from the body assigned to its scene node (`Model` instances
+`res://assets/models/characters/npc_*.glb`; there is no data table), so **two NPCs differ by body,
+and body reuse is visible**. Six generated bodies were added to break it up and assigned by role
+(`tools/repoint_models.py`, 28 nodes in ten scenes): `npc_dawnwarden` (guards, marshals, wardens),
+`npc_clansman` (Frostfang clansfolk, the chief), `npc_elder` (village elders, the clockkeeper),
+`npc_scholar_f` (Veiled Archive keepers), `npc_smith` (smiths, trainers, labourers) and `npc_ranger_f`
+(Ash Hunters). Women stay on women's bodies: the female-only scholar and ranger were not given to men.
+What is still worn is `eqp_armor_leather`, `eqp_armor_mail` and `eqp_shield_round`, through the
+sockets below. The six bodies came from `meshy_text_to_3d` with T-pose spelled out strictly, then the
+Meshy rig (20 credits each, [recipe](RECIPES.md)).
 
 **Attachment is one system now** (2026-09-04, the combat/animation overhaul). `EquipmentSockets`
 is the contract — a socket vocabulary (`HandR`, `HandL`, `BackPrimary`, `Shield`, `Bow`, `Quiver`,
@@ -385,34 +404,38 @@ behaviours were correct and genuinely different, which is why one could not simp
 | `BoneLocal` | the bone's own — a native `BoneAttachment3D`, no per-frame script | held things: a sword rolls with the wrist |
 | `BodyAligned` | `pose · rest⁻¹` applied to the character's axes | worn things: the retargeted bodies do not share bone-local axes, so a pauldron authored upright on one chest lies on its side on the next |
 
-Every kit piece passes `BodyAligned` **explicitly** and names its authored bone as the *preferred*
-one, so nothing moved in the migration — the socket's own candidate list is only the fallback for a
-rig that lacks that exact bone. Several kit pieces sit on quadruped rigs carrying both a `Spine` and
-a `Torso`, and resolving those purely through the humanoid preference order would walk a carapace up
-the animal's back.
+A piece may name its authored bone as the *preferred* one; the socket's candidate list is only the
+fallback for a rig that lacks that exact bone. Quadruped rigs carry both a `Spine` and a `Torso`, and
+resolving those purely through the humanoid preference order would walk a piece up the animal's back.
+
+⚠️ **A `BoneAttachment3D` OVERWRITES ITS OWN TRANSFORM with the bone pose, at bind and on every skeleton
+update. Put the authored transform on the CHILD, never on the mount** (2026-10-06, from the engine
+source and the commit history, not from a frame). Every grip rotation and weapon scale in the game had
+been written onto the mount and discarded: the original `PlayerFactory.AttachWeaponVisual` did it.
+`EquipmentPresentationComponent` now leaves the mount untransformed and the piece carries
+`WeaponGrip.Local(offset, rotationDegrees, scale)`, the same TRS a `Node3D` would have. Shields and
+helms pass none and get identity. If a weapon sits wrong, tune `WeaponGrip.Hand`; never move the
+transform back onto the attachment. ⚠️ Every held weapon changed orientation the day this landed, on a
+grip basis nobody has seen applied.
 
 `WeaponGrip.Hand` holds the one grip correction, derived from the basis that used to live privately
 inside `PlayerFactory` — which is why every companion, NPC and enemy that carried a weapon carried it
 unrotated.
 
 Two gates keep it honest: `EquipmentSocketTests` pins the alias table without an engine, and
-`tools/equipment_socket_probe.gd` proves it against **all 32 humanoid rigs on disk** plus one real
+`tools/equipment_socket_probe.gd` proves it against **every humanoid rig on disk** (manifest-driven, so the six new bodies are included) plus one real
 attachment that has to end up on the hand bone. A bone-name miss used to be completely silent — the
 player's visual sword was `QueueFree`d on every spawn for an entire phase — and it now warns.
 
-`Build.Slim/Standard/Broad` alter cosmetic width only — they never scale a skeleton or move
-vertices in a skinned body. Profiles are deterministic, authored from profession, wealth, faction,
-location and story importance, never a random roll. **Keep the four-piece ceiling.** A missing kit,
-profile or bone degrades to the plain body and must not affect gameplay.
-
-Existing human GLBs receive **JSON material corrections only** — geometry, skins, inverse binds,
-animations, nodes and accessors are never re-exported.
+Human bodies were once given JSON material corrections only (geometry, skins, inverse binds and
+animations never re-exported); `tools/patch_human_materials.py` is that legacy tool. It is called by
+nothing and its hard-coded body list does not include the six 2026-10 bodies.
 
 ---
 
 ## QUADRUPED
 
-Beasts, mounts and dragons. 15 of them, and **they do not go through the humanoid system.**
+Beasts, mounts and dragons. 15 of them (`assets.py status` has the live count), and **they do not go through the humanoid system.**
 
 No bone map, no retarget, no shared animation library — by design. A quadruped keeps its own rig
 and its own clips, and `AnimationClips` carries the aliases that map gameplay slots onto their
@@ -420,15 +443,66 @@ vocabulary (`Bite_Front`, `Flying_Idle`, `Jog_Fwd`, `gallop`). `HumanoidBones.Fi
 empty for them, which is correct: a wolf has no hand.
 
 **Do not try to force a quadruped onto `SkeletonProfileHumanoid`.** It was attempted and closed as
-not migratable. Their identity comes from bolt-on pieces from
-`assets/models/equipment/enemy_identity_kit.glb` via `src/Enemies/EnemyVisualKit.cs`, attached to
-body bones (`Torso`, `Head`, `Back`) rather than `Chest`/`Hips`, plus an optional body tint.
+not migratable. The old identity kit that dressed the shared animal meshes is gone (2026-10-06): each
+beast and dragon is now a generated mesh with its own look. An archetype sharing one mesh can still
+set `EnemyArchetypeResource.BodyTint` (a flat colour over every surface), but **no archetype uses it
+now** and it would paint over a generated texture.
 
-**Keep the working legacy quadrupeds.** They are sound vendored animal rigs and there is no
-superior safe replacement.
+### Generated beasts and dragons (2026-10-06)
 
-Multi-hit-zone bodies (dragons) come from `EnemyArchetypeResource.HitZones` + `HitZoneResource`,
-with a zone-blob greybox fallback.
+Meshy text-to-3D makes the mesh and texture (15 credits, no Meshy rig); `tools/rebind_creature.py`
+(headless Blender 5.1, one at a time) puts it on a skeleton and renders a contact sheet so the result
+is judged without Godot.
+
+- **Dragons** (`enm_ancient_dragon` 22 m, `enm_ash_dragon` 14 m, `enm_wild_dragon` 11 m,
+  `enm_frost_drake` 5 m) are real **four-legged winged** dragons at real size. `--mode dragon` fits a
+  **new 20-bone armature** to the mesh from per-asset landmarks in `tools/rebind_creature_landmarks.json`
+  (the source file's glTF axes, left side only): `Root`, `Torso`, `Neck`, `Head`, `Body1..4` (tail),
+  `Wing1..4.L/R`, four single leg bones. Weights are distances smoothed over the mesh graph (no bone-heat
+  solve); the **eight clips are authored procedurally under the old names** (`Flying_Idle`,
+  `Fast_Flying`, `Punch`, `Headbutt`, `HitReact`, `Death`, `Yes`, `No`), so `AnimationClips` and the
+  `Head` breath anchor resolve unchanged. Fallback rungs: A smooth weights, B rigid segments, C a
+  six-bone rig; the old Quaternius dragon is never a fallback. The old rig was an upright hovering body
+  and no scale maps it onto a horizontal dragon.
+- **Beasts** (`enm_wolf`, `enm_thornback_boar`, `enm_ashfall_elk`) keep their existing rigs and clips;
+  `--mode beast` keeps the rigged `.glb` byte for byte, warps the new mesh to the rig (body fit, then each
+  leg column until the paw sits on the old foot) and weights from the nearest old vertex. A static
+  `.glb` can **not** be rescaled without its skeleton, so size lives on the scene root.
+  `enm_dire_wolf.glb` and `enm_frost_stalker.glb` are the wolf recoloured by `meshy_prep_static.py`
+  (`--tint`, `--lighten`, `--desaturate`, `--root-scale`) on the wolf's 51-bone rig and 24 clip names.
+  **Size is on the file's root node, not `ModelScale`**, because two Ashen scenes instance the dire wolf
+  file directly (`tools/audit_3d.py` `RECOLOURED_COPIES` declares the family so duplicate geometry is
+  info, not critical). Antlers are part of the elk mesh, so every elk and the 0.55 calf carry them.
+- **Data that must follow a new body** (a model swap inherits no collision): capsule, hit zones, hover.
+  Dragon capsules are 2.4x5.9, 2.1x5.0, 1.7x4.25 and 1.0x2.5; hover and takeoff 24, 20 and 18 m with
+  `ClimbSpeed` scaled to keep climb seconds. Three append-only fields were added.
+  `HitZoneResource.RotationDegrees` turns a zone capsule off the vertical (X -90 lays it along the
+  body's forward axis, Z 90 across it), so a tail, neck and wings each get a zone that lies along them;
+  each boss dragon has six zones (`head`, `neck`, `torso`, `wings`, `body`, `tail`) and `body` is the
+  capsule along legs and belly, the only part a sword reaches. `EnemyArchetypeResource.CastOrigin`
+  is where spells and breath leave the body from its feet (zero keeps the chest point); the four dragons
+  set it to the measured snout, because the capsule no longer says where the head is.
+  `python tools/check_hit_zones.py [--check]` reports how much of each part's rest-pose vertices sit in
+  a zone (Ancient 77%, Ash 79%, Wild 94%).
+- **Bite and wing arcs** in `DragonMeleeComponent.BuildArcs` now reach the ground at any capsule height
+  (the old box sat above the 1.8 m player hurtbox, so no frontal bite could land): a difficulty change
+  to confirm in a fight. Dragons still hover when "grounded" and their legs tuck, they do not walk.
+- **Look versus reach for scaled bosses.** Reach (melee hitbox and its offset, telegraph ring, nav
+  agent) derives from `CapsuleHeight / 1.8`; `ModelScale` scales the picture only. A boss meant to tower
+  without out-reaching its fight is authored `ModelScale` x f with `CapsuleHeight` and `CapsuleRadius`
+  x sqrt(f), no `AttackRange` change, and `VisualHeight` set to the height the model really stands at.
+  The whole-body hurtbox, floating plate, status marks, cast origin, spell body fit and lock-on
+  framing read `VisualHeight` (via `BodyMetrics`); collision, nav and reach read the capsule. The ten
+  scaled bodies (Morthul 1.58, Beast Lord 1.5, Storm Tyrant 1.6, Stone Sentinel 1.58, Ward Golem 1.62,
+  Hollow Queen 1.39, Iron King 1.23, Ashen Knight 1.43, Crimson Prophet 1.25, Grimtusk 1.7) have never
+  been fought. `ContentValidator` rejects `ModelScale <= 0` and a `VisualHeight` below the capsule.
+- **Held weapons are archetype data:** `EnemyArchetypeResource.HeldWeaponPath` and `HeldWeaponScale`
+  hang a model on the hand socket (visual only; the blow still comes from `WeaponPath`).
+  `HeldWeaponScale` multiplies on top of `ModelScale`. The Iron King holds `wpn_mace_iron` at 1.5 and
+  the clan shaman `wpn_staff_oak`.
+- **Not yet true:** an airborne breath cannot reach the ground (cones 12, 11 and 14 m from a mouth
+  23-33 m up), and the Wild dragon lost a hit it used to land. Decide: longer cones, lower hover, or a
+  cosmetic air phase.
 
 **A mount is a state of the rider, not a second body.** `MountComponent` parents the horse GLB
 under the player body as `MountVisual`, rotates it π for the glTF `+Z` → Godot `-Z` convention, and
@@ -440,8 +514,8 @@ derivable from the file** — if you replace the horse, re-measure them.
 
 ## STATIC PROP
 
-Furniture, containers, nature, everything a scene places and nothing animates. The largest family
-(108) and the simplest.
+Furniture, containers, generated world models, everything a scene places and nothing animates. The
+largest family (`assets.py status` has the count) and the simplest.
 
 - Adopt as a **container change only** — the buffer is copied byte for byte. `--kit` handles this,
   and `--kit` now takes a **`.glb` as well as a `.gltf`**. ⚠️ It used to take only a `.gltf`, which
@@ -460,13 +534,98 @@ Furniture, containers, nature, everything a scene places and nothing animates. T
 - Scale corrections go in the `.import` as `nodes/root_scale`, never in one cell's node transform —
   the `.import` reaches every placement. ⚠️ The `rts` pack is roughly **1/6 scale** and nothing in
   the files says so. Measure any candidate against a 1.8 m reference.
-- **Shared textures stay shared.** Nature families resolve to one `T_Nature_*.png` each. `assets.py
-  validate` checks this both statically and in the engine, because embedding them per-model is how
-  twelve wall modules once cost 204 MB of the same textures twelve times over.
+- **Shared textures stay shared (kept kit).** Wall modules and the remaining Quaternius props resolve to
+  one shared texture each. `assets.py validate` checks this both statically and in the engine, because
+  embedding them per-model is how twelve wall modules once cost 204 MB of the same textures twelve times
+  over. The opposite holds for generated world models: each owns one atlas ([below](#outdoor-world-generated)),
+  and **two world models must not share one** (`audit_3d.py` fails duplicate world textures; a
+  recoloured copy re-encodes its own image).
 
 ⚠️ **There are no ground textures and there must not be.** The terrain is six painted noise layers
 from `data/terrain_layers/`. A CC0 PBR ground pack is the reflex here and it would make the terrain
 the only photographed thing in a hand-painted world.
+
+---
+
+## OUTDOOR WORLD (generated)
+
+Since 2026-10-06 the outdoor world is Meshy text-to-3D in `assets/models/world/` (`prp_tree_*`,
+`prp_pine_*`, `prp_rock_*`, `prp_ice_*`, `prp_lm_*` landmarks, and the props `prp_tent_a`,
+`prp_lamp_post_a`, `prp_fence_a`, `prp_campfire_a`, `prp_clutter_pile_a`, `prp_cart_a`, `prp_well_a`,
+`prp_banner_a`), plus two **procedural** meshes in `assets/models/props/` from `tools/gen_ground_cover.py`
+(pure Python, no Meshy, no Blender): `prp_grass_clump_a` (126 triangles, 0.70 m) and `prp_fern_clump_a`
+(216 triangles, 0.80 m). **Variety rule (owner): two or three models per type**; variety comes from the
+scatter transform and tint, so there are three trees (`oak_a`, `dead_a`, `fir_a`), four rocks
+(`boulder_a`, `rubble_a`, `crag_a`, `outcrop_a`), two ice pieces and one of each prop. The elder tree is
+`oak_a` at x2.4-2.7, the blasted spires `crag_a` at x5-6 with a dark tint, ice chunks `rubble_a` with an
+ice tint. **Look:** stylised-realistic, muted and matte (`docs/ART_STYLE.md` §1). **Landmarks are solid,
+walk-around set pieces: nothing generated is roofed or enterable.** The authoring recipes are in
+[`RECIPES.md`](RECIPES.md): *a new generated world model* and *a new landmark*.
+
+**The pipeline** (every tool resumes, nothing is paid twice):
+
+| Step | Tool | Does |
+| --- | --- | --- |
+| Generate | `tools/meshy_batch.py PLAN.json OUT --cap 1300` | preview (5), refine (10), optional rig (5), `meshy-5`; `state.json` records each task id the instant it exists; stops at the credit cap; per-item `pbr` flag |
+| Prep | `tools/meshy_prep_static.py` | one mesh, uniform scale to `--height`, base-centre origin baked into the vertices, emission and specular dropped, metallic 0 and roughness set, PNG re-encoded at the class cap and named by role; `--roll --widen --squash-above --tint --lighten --root-scale` for weapons and recolours |
+| Adopt | `python tools/assets.py adopt-batch --plan P --source-dir D [--import]` | prep and write a tier, one import, the texture budget once, a second import, one manifest write; refuses an existing model without `--replace` |
+| Wrap | `tools/make_landmark_wrapper.py` | `scenes/props/lm_<id>.tscn` (below) |
+| Place | `tools/repoint_models.py` | per node, never per file path; dry-run diff; `delete` refuses while a referrer remains |
+| See it | `tools/asset_stage_shots.gd` | one asset at 3, 10, 30 and 100 m, front and back, with a 1.8 m reference, at the game's 75 degree FOV |
+
+**Prompts are short.** Subject and shape in a sentence or two, then `Single isolated object, no ground,
+no base, game asset.` The texture prompt names colours and carries `muted ash-grey and earth-brown
+palette, weathered, matte, flat even overcast lighting, no baked shadows`, because `meshy-5` bakes
+lighting into the albedo and has no `remove_lighting`. Ask for chunky leaf clumps with gaps and thick
+geometry: nothing hair-thin (the bow is unstrung, the lamp is a thick post with a block lantern, the tent
+has no guy ropes), nothing hollow, no stooped pose on a rigged body. Cost: 15 credits for a static model
+or a beast or dragon mesh, 20 for a rigged NPC body. `target_polycount` is set at preview; there is no
+remesh.
+
+**Textures.** Scatter models (trees, rocks, ice spire, small props) are refined with `pbr: false`, so one
+base-colour atlas, which is what the scatter shader needs for wind, wetness, snow and `Tint`. Landmarks
+are `pbr: true` and carry BaseColor, Normal and ORM. `tools/audit_3d.py` classes: `world_hero` (iron
+citadel, colossus, god hall) 2048 / 1024 / 1024; `world_landmark` (`prp_lm_*`, trees, outcrop, ice wall)
+1024 / 1024 / 512; other world props 512. Dragons are in the `player_boss` class at 2048 whatever the file
+is called.
+
+**Wrappers.** A cell instances `scenes/props/lm_<id>.tscn`, not the bare `.glb`: a `Node3D` carrying
+`assets/shaders/world/landmark_detail.gd`, the `Model`, and a `StaticBody3D` whose shapes are **primitive
+boxes and cylinders only** (never a trimesh, never `-convcol`), written from the `SHAPES` table in
+normalised bounds coordinates so a re-rolled model keeps its fit (`--slices ID` prints the numbers). The
+script builds one shared material per source material and setting from the imported albedo, normal and
+ORM, so sixty monoliths are one material. It exposes `albedo_tint`, `detail_scale` (0.8 m) and
+`detail_strength`; the shader adds a world-space triplanar grain overlay that fades out by about 25 m,
+because one atlas over a 20-36 m piece is only 20-40 texels per metre at the base. A scripted root also
+keeps the wrapper out of `WorldArchitectureBatcher`, so rock and ice wrappers are one draw each. The small
+props (fence, lamp post, tent, banner, campfire, cart, well, clutter pile) are placed as bare `.glb` files
+with their existing colliders.
+
+**Landmark scale and draw.** Placed heights run monolith 8-18 m, gate tower 14-20 m, bell tower 16-20 m,
+ruin tower 17-34 m, arch 20 m, god hall 21-45 m, colossus 29-36 m, elder oak 29-32 m, iron citadel 21 m.
+Only placements of about 20 m and up join the `world_landmark` group, which is **always drawn to the
+Backdrop radius** (about 45 nodes); monoliths and columns use the normal visibility tier. Giants sit on
+flat ground and are sunk 0.3-2.5 m rather than padded, so terrain and the lattice are untouched. None of
+the new monuments has a scatter exclusion yet (open item in `docs/NOW.md`).
+
+**Scatter.** Every layer in the six realm specs names one of nine meshes. Trees scatter at 0.7-1.5 of
+their 9-14 m, with low-count `Layer_elder` (1.8-2.4) and `Layer_tor` (2.5-4.0) layers that have HLOD and
+**no collision** (a player walks through an elder, tor or crag). Each profile's triangle load is at or
+below what it replaced; real counts are dead tree 2,851, fir 3,010, rubble 1,350, crag 804, ice spire
+518. Gravel, pebble, flower, clover and mushroom layers are deleted. Wind follows the scene path: a path
+containing `tree`, `pine`, `grass`, `bush`, `flower` or `fern` sways, a rock never does. `HlodColor` must
+equal `Tint` or the far tier pops in colour.
+
+**Kept on purpose (Quaternius):** the 36 `mod_*` modules, the five enterable buildings and 19 composed
+`bld_*` buildings (including `bld_ruin_house`; `bld_ruin_tower` stays on disk but is no longer
+instanced), 22 interior props, `prp_tome_stand`, `prp_relic` (the town hub Relic), the three crafting
+stations, `prp_bench`, `prp_cauldron`, `prp_timber_stack`, the cache chest, the training dummy, the dock,
+jetty, fishing hut, gazebo and mine head, and the housing decor named by file name in
+`src/Housing/PlaceableTemplates.cs` (`prp_ruin_pillar`, `prp_brazier`, `prp_banner_guild`, `prp_crate`):
+those files stay on disk so a saved decor piece never falls back to a box. **Retired** Quaternius outdoor
+files (`prp_tree_broadleaf`, `prp_pine_dead`, `prp_boulder*`, `prp_rock_*`, `prp_glacier*`, the cliff
+faces, `prp_pebble_*`) go only through `repoint_models.py delete`, which refuses while any scene, spec,
+C# file or tool names them; `assets.py status` lists what is left.
 
 ---
 
@@ -571,8 +730,16 @@ mesh.
   the wielder's right.
 - The origin sits **on the centreline of the grip**, at the point the hand should own. Not the mesh
   centroid, not the point.
-- Reference size, the iron sword: `0.223 × 0.960 × 0.051 m`, wrapped grip centre at local
-  `Y = 0.03 m`. One-handed grips 28–36 mm in diameter.
+- Reference size, the iron sword (regenerated 2026-10-06): `0.209 × 0.960 × 0.104 m`, Y from -0.09 to
+  +0.87, wrapped grip centre at local `Y ≈ 0.035 m`, guard at 0.12-0.15, blade 49 mm wide (the old sword's
+  was about 104 mm, so it is a much slimmer sword). Written by `meshy_prep_static.py --roll 180 --height
+  0.96 --widen 1.25 --offset 0,-0.09,0 --roughness 0.6` (the Meshy source is point-down). One-handed
+  grips should be 28–36 mm in diameter; **this one is 26-33 mm by 20-24 mm, a contract gap** that has
+  not been looked at in a hand. The dagger is cut from it: 0.7x about the hand point, then the blade
+  alone compressed to 0.45 m total, so the hilt stays hand-sized. Its grip is only 18-23 mm by 14-16 mm,
+  about half the contract, so the hand may swallow it; `git checkout 2815e335 -- assets/models/weapons/wpn_dagger_iron.glb`
+  restores the old curved knife. Both are non-metal (like the other generated weapons), so the blade
+  reads painted rather than polished.
 
 ⚠️ **Do not add a second compensating transform inside a weapon GLB.** The correction belongs at the
 socket, in `WeaponGrip`, where one value serves every wielder in the game.
@@ -609,11 +776,12 @@ does not contain the substring `"metal"`: a blade reaching `response()` fell thr
 branch to the non-metal default and came out **matte**. There is now a `steel|iron|brass|bronze`
 branch at 0.86 / 0.40, matching the hand-authored `wpn_sword_iron`.
 
-⚠️ **FIVE FILES ARE SKIPPED BY THAT SWEEP AND MUST STAY SKIPPED** — `npc_kit_embervale`,
-`enemy_identity_kit`, `eqp_pauldron_embervale`, `eqp_pouch_embervale`, `wpn_sword_iron`. They are
-`assets.py build` outputs whose materials are art-directed by their build scripts: `RimeCrystal` at
-0.26 roughness, `EmberRune` at 0.42, `ShadeGlass` at 0.36. `response()` has no branch for any of
-them, so sweeping these would not correct them, it would **flatten** them.
+⚠️ **TWO FILES ARE SKIPPED BY THAT SWEEP AND MUST STAY SKIPPED** — `wpn_sword_iron` and
+`wpn_dagger_iron`. Each is one textured atlas written by `meshy_prep_static.py` (metallic 0, roughness
+0.6: the steel is painted) and its material is named after the file, so `response()` would read the
+`iron` in the name and turn the whole atlas, leather grip included, into 0.86 metal. (The other
+art-directed build outputs the sweep once skipped, the two kit models and the pauldron and pouch, are
+deleted.)
 
 **A colour cast baked into a TEXTURE is not a material defect and the material lever cannot reach
 it.** `npc_hooded`'s green-teal cloak was one: the body has a single material with a base-colour
@@ -646,12 +814,14 @@ The budget is `data/rendering/VisualContract.json`'s three caps by class and map
 
 | Class | Which textures | BaseColor | Normal | ORM / Roughness |
 | --- | --- | ---: | ---: | ---: |
-| `player_boss` | `chr_player*`, `boss_*` | 2048 | 2048 | 1024 |
+| `player_boss` | `chr_player*`, `boss_*` and the four dragons | 2048 | 2048 | 1024 |
 | `character` | every other body in `characters/` and `creatures/` | 1024 | 1024 | 512 |
 | `architecture_trim` | the BaseColor/Normal/ORM sets in `architecture/` | 1024 | 1024 | 512 |
 | `prop_trim` | `T_Trim_*` | 1024 | 512 | 512 |
-| `nature_hero` | leaves, bark and rock faces | 1024 | 512 | 512 |
-| `prop` | everything else | 512 | 512 | 512 |
+| `nature_hero` | legacy `T_Nature_*` leaves, bark and rock faces (go with the retired models) | 1024 | 512 | 512 |
+| `world_hero` | `prp_lm_iron_citadel`, `prp_lm_colossus*`, `prp_lm_godhall*` | 2048 | 1024 | 1024 |
+| `world_landmark` | the rest of `assets/models/world/`: `prp_lm_*`, `prp_tree_*`, `prp_pine_*`, `prp_rock_outcrop`, `prp_ice_wall` | 1024 | 1024 | 512 |
+| `prop` | everything else, including the small generated world props | 512 | 512 | 512 |
 
 A trim sheet tiles across a whole building and is read at arm's length, so it is a hero surface
 and not a prop. Every budgeted texture is also `compress/mode=2`, `mipmaps/generate=true` and
@@ -725,8 +895,13 @@ GPU-less CI runner under xvfb, which is not the renderer its baselines were capt
 ## Rebuilding derived assets
 
 ```powershell
-python tools/assets.py build npc-kit | enemy-identity | environment | player-weapons | anim-library
+python tools/assets.py build primitive-creatures | environment | player-weapons | anim-library
 ```
+
+`primitive-creatures` (`build_enemy_identity_assets.py`) now builds only the four primitive creatures and
+holds `build_replacement`, the rigid-skin-on-a-3-bone-rig path; the kit halves of that script and of
+`build_player_weapon_assets.py` are gone. `environment` (`build_environment_assets.py`) writes the retired
+Quaternius-derived nature models and is to be retired with them.
 
 ⚠️ **Use this rather than calling the `build_*` scripts directly.** Blender's glTF exporter
 re-embeds the shared rock atlas and resets material factors on every write, so an export must be

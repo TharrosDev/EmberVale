@@ -38,7 +38,7 @@ TEXT_EXTENSIONS = {".cs", ".gd", ".tscn", ".tres", ".godot", ".md", ".json", ".p
 IGNORED_PARTS = {".git", ".godot", "bin", "obj", "artifacts", "reports", "__pycache__"}
 EXPECTED_PREFIX = {
     "animations": "anim_", "architecture": ("bld_", "mod_"), "characters": ("chr_", "npc_", "fp_"),
-    "creatures": ("enm_", "boss_", "mnt_"), "props": "prp_", "weapons": "wpn_",
+    "creatures": ("enm_", "boss_", "mnt_"), "props": "prp_", "weapons": "wpn_", "world": "prp_",
 }
 
 
@@ -228,12 +228,23 @@ def parse_import(path: Path) -> dict[str, Any]:
 #
 # The numbers are longest-edge caps written as process/size_limit. A trim sheet tiles across a whole
 # building and is read at arm's length, so it is a hero surface (1024), not a prop.
+# Creatures that are DELIBERATELY one mesh in another coat: copy -> the model it was written from
+# (tools/meshy_prep_static.py --tint / --lighten). Identical geometry between two creatures is
+# otherwise a critical flag, because it has always meant a stand-in that was never replaced. A
+# family listed here is reported as info instead; anything else that matches still fails loudly.
+RECOLOURED_COPIES: dict[str, str] = {
+    "assets/models/creatures/enm_dire_wolf.glb": "assets/models/creatures/enm_wolf.glb",
+    "assets/models/creatures/enm_frost_stalker.glb": "assets/models/creatures/enm_wolf.glb",
+}
+
 TEXTURE_BUDGET: dict[str, dict[str, int]] = {
     "player_boss":       {"base": 2048, "normal": 2048, "orm": 1024},
     "character":         {"base": 1024, "normal": 1024, "orm": 512},
     "architecture_trim": {"base": 1024, "normal": 1024, "orm": 512},
     "prop_trim":         {"base": 1024, "normal": 512, "orm": 512},
     "nature_hero":       {"base": 1024, "normal": 512, "orm": 512},
+    "world_hero":        {"base": 2048, "normal": 1024, "orm": 1024},
+    "world_landmark":    {"base": 1024, "normal": 1024, "orm": 512},
     "prop":              {"base": 512, "normal": 512, "orm": 512},
 }
 # Trees and rock faces the player walks up to; every other nature texture is a small prop.
@@ -244,6 +255,14 @@ NATURE_HERO = ("T_Nature_Leaves", "T_Nature_LeafBroadleaf", "T_Nature_BarkBroadl
 # swatch with its neighbour (the grass strip goes orange at distance). The player region mask is
 # read with filter_linear by player_body.gdshader, and a blurred mask smears hair over clothing.
 LOSSLESS = ("T_Prop_Colormap", "T_Nature_Grass")
+# assets/models/world/ is the generated outdoor set: one model, one atlas per map role, extracted to
+# <model>_BaseColor/_Normal/_ORM.png (tools/meshy_prep_static.py names the images), so the class is
+# read from the MODEL's name. Three giants the player stands under get a 2048 albedo; every other
+# landmark, the trees and the two placed 10 m+ rock and ice pieces get 1024; scatter is a prop.
+WORLD_HERO = ("prp_lm_iron_citadel", "prp_lm_colossus", "prp_lm_godhall")
+WORLD_LANDMARK = ("prp_lm_", "prp_tree_", "prp_pine_", "prp_rock_outcrop", "prp_ice_wall")
+# A dragon fills the screen the way a boss does, whatever its file is called.
+DRAGONS = ("enm_ancient_dragon", "enm_ash_dragon", "enm_wild_dragon", "enm_frost_drake")
 VRAM_COMPRESSED = "2"
 
 
@@ -262,7 +281,11 @@ def texture_group(path: Path) -> str:
     if stem in LOSSLESS or stem.endswith("_mask") or "colormap" in stem.lower():
         return "lossless"
     if folder in ("characters", "creatures"):
-        return "player_boss" if stem.startswith(("chr_player", "boss_")) else "character"
+        return "player_boss" if stem.startswith(("chr_player", "boss_") + DRAGONS) else "character"
+    if folder == "world":
+        if stem.startswith(WORLD_HERO):
+            return "world_hero"
+        return "world_landmark" if stem.startswith(WORLD_LANDMARK) else "prop"
     if stem.startswith(NATURE_HERO):
         return "nature_hero"
     if stem.startswith("T_Trim_"):
@@ -359,6 +382,29 @@ def texture_weight() -> list[dict[str, Any]]:
             "targets": targets,
         })
     return records
+
+
+def world_texture_duplicates(records: list[dict[str, Any]]) -> dict[str, list[str]]:
+    """World models that embed an image another world model also embeds, byte for byte.
+
+    ⚠️ THIS IS THE SHARED-TEXTURE RULE FOR assets/models/world/, AND IT ACCEPTS AN EMBEDDED ATLAS
+    ON PURPOSE. share_nature_textures.py externalises the kit's images because many kit props use
+    one pack texture. A generated world model is the opposite case: its atlas is unwrapped for that
+    mesh alone, so embedding it is the single copy and there is no family to share with. What must
+    still never ship is the SAME atlas inside two files (a rescaled or retinted copy written as a
+    second model): that is two imported textures for one image, so it fails here and the fix is an
+    instance scale or a scatter Tint on the one model.
+    """
+    owners: dict[str, list[str]] = defaultdict(list)
+    for record in records:
+        if record.get("category") == "world":
+            for digest in sorted({item["sha256"] for item in record.get("textures", []) if item.get("sha256")}):
+                owners[digest].append(record["path"])
+    result: dict[str, list[str]] = defaultdict(list)
+    for paths in owners.values():
+        for path in paths:
+            result[path] += [other for other in paths if other != path and other not in result[path]]
+    return {path: others for path, others in result.items() if others}
 
 
 def patch_texture_import(text: str, targets: dict[str, str]) -> str:
@@ -667,6 +713,19 @@ def main() -> int:
         assert texture_group(models / "props" / "T_Trim_Metal_ORM.png") == "prop_trim"
         assert texture_group(models / "props" / "T_Nature_BarkDead_Normal.png") == "nature_hero"
         assert texture_group(models / "props" / "T_Nature_Mushrooms.png") == "prop"
+        assert texture_group(models / "world" / "prp_lm_iron_citadel_BaseColor.png") == "world_hero"
+        assert texture_group(models / "world" / "prp_lm_colossus_head_Normal.png") == "world_hero"
+        assert texture_group(models / "world" / "prp_lm_monolith_a_ORM.png") == "world_landmark"
+        assert texture_group(models / "world" / "prp_tree_oak_a_BaseColor.png") == "world_landmark"
+        assert texture_group(models / "world" / "prp_rock_boulder_a_BaseColor.png") == "prop"
+        assert texture_group(models / "creatures" / "enm_ancient_dragon_BaseColor.png") == "player_boss"
+        assert texture_role("prp_lm_monolith_a_ORM") == "orm" and texture_role("prp_lm_monolith_a_Normal") == "normal"
+        assert "process/size_limit" not in texture_targets(models / "world" / "prp_lm_godhall_fragment_BaseColor.png", 2048, 2048)
+        assert texture_targets(models / "world" / "prp_lm_arch_BaseColor.png", 2048, 2048)["process/size_limit"] == "1024"
+        own = [{"path": name, "category": "world", "textures": [{"sha256": digest}]}
+               for name, digest in (("a", "1"), ("b", "2"), ("c", "1"))]
+        assert world_texture_duplicates(own) == {"a": ["c"], "c": ["a"]}
+        assert not world_texture_duplicates([{**item, "category": "props"} for item in own])
         compressed = {"compress/mode": "2", "mipmaps/generate": "true", "process/size_limit": "1024", "compress/normal_map": "0"}
         assert texture_vram_bytes(2048, 2048, compressed, False) == 1024 * 1024 * 2 // 3
         assert texture_vram_bytes(1024, 512, {"compress/mode": "0", "mipmaps/generate": "false"}, False) == 1024 * 512 * 4
@@ -721,12 +780,21 @@ def main() -> int:
         geometry_hash=record.get("blender",{}).get("geometry_sha256")
         duplicates=geometry_groups.get(geometry_hash, [])
         if geometry_hash and len(duplicates)>1 and len(hash_groups[record["file_sha256"]])==1:
+            if {RECOLOURED_COPIES.get(p, p) for p in duplicates} == {RECOLOURED_COPIES.get(record["path"], record["path"])}:
+                record["flags"].append({"code":"duplicate-geometry","severity":"info","detail":"declared recolour family: " + ", ".join(p for p in duplicates if p != record["path"])})
+                continue
             severity="critical" if record["category"]=="creatures" else "high"
             record["flags"].append({"code":"duplicate-geometry","severity":severity,"detail":"evaluated geometry is identical to " + ", ".join(p for p in duplicates if p != record["path"])})
             record["recommendation"]="IMPROVE"
+    duplicated = world_texture_duplicates(records)
+    for record in records:
+        if record["path"] in duplicated:
+            record["flags"].append({"code":"duplicate-world-texture","severity":"critical","detail":"embeds an image byte-identical to one in " + ", ".join(duplicated[record["path"]])})
+            record["recommendation"]="IMPROVE"
     write_reports(records, output, metadata)
     print(f"3D audit complete: {len(records)} assets, {sum(len(r['flags']) for r in records)} findings -> {output}")
-    return 0 if all(not r["errors"] for r in records) else 1
+    for path, others in sorted(duplicated.items()): print(f"FAIL {path}: embeds the same texture as {', '.join(others)}; keep one model and scale or tint the instance")
+    return 0 if all(not r["errors"] for r in records) and not duplicated else 1
 
 
 if __name__ == "__main__":

@@ -189,7 +189,7 @@ public static class EquipmentSockets
 
         // Last resort: the same name with punctuation and case thrown away, which is what catches
         // "Hand_R" against "hand.r" and the handful of packs that agree on the word but not the
-        // spelling. Absorbed from EnemyVisualKit.FindBone, which was the only place that had it.
+        // spelling.
         var loose = new List<string>(BoneNames(socket));
         if (preferredBone.Length > 0)
         {

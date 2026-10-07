@@ -53,7 +53,7 @@ Relief = 2.2
 DetailScale = 3.5
 BackdropCenter = Vector3(430, 0, -120)
 BackdropRadius = 330.0
-BackdropHeight = 128.0
+BackdropHeight = 180.0
 BackdropCount = 28
 TerrainSeed = 3800
 SurfaceRoughness = 0.93
@@ -72,7 +72,7 @@ HeightBlendEnd = 34.0
 SunTint = Color(0.74, 0.82, 0.96, 1)
 SunEnergyScale = 0.86
 HazeColor = Color(0.72, 0.79, 0.87, 1)
-HazeScale = 1.55
+HazeScale = 1.15
 
 
 [sub_resource type="Resource" id="Budget_frostfang"]
@@ -104,11 +104,11 @@ BackdropDistance = 1500.0
 
 [sub_resource type="Resource" id="Layer_dead_pine"]
 script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_pine_dead.glb"
+ScenePath = "res://assets/models/world/prp_tree_dead_a.glb"
 Count = 85
-MinimumScale = 0.68
-MaximumScale = 1.08
-MinimumSpacing = 6.5
+MinimumScale = 0.8
+MaximumScale = 1.5
+MinimumSpacing = 7.5
 Saturation = 0.42
 Clumping = 0.72
 ClumpScale = 44.0
@@ -125,21 +125,68 @@ HlodRangeEnd = 320.0
 HlodColor = Color(0.88, 0.9, 0.92, 1)
 HlodScale = Vector3(1.15, 1.15, 1.15)
 
-; ⚠️ `prp_rock_cluster` IS ONE 244-TRIANGLE ROCK UNDER A PLURAL NAME, and both of Frostfang's stone
-; layers scattered it — 120 and 95 instances per 100 x 100 m of the same silhouette. The name is why
-; nobody looked: a layer called "cluster" reads as though it already carries variety.
-;
-; ⚠️ THE DENSITY IS SPLIT, NOT ADDED TO. 70 + 40 here against the 120 it replaces, and the ice tier
-; below is genuinely new cover rather than a substitution — Frostfang is a glacial realm whose only
-; ice was twelve hand-placed copies of one prop, so the ground between them had nothing frozen on it
-; at all.
+; Living conifers below the tree line: a 10-20 m fir, snow-dusted by a cold tint. Open country
+; only - the roosts and the hold keep their dead-wood profiles, where a wall of green would hand
+; the player cover a dragon fight is designed not to offer.
+[sub_resource type="Resource" id="Layer_frost_fir"]
+script = ExtResource("10_layer")
+ScenePath = "res://assets/models/world/prp_pine_fir_a.glb"
+Count = 30
+MinimumScale = 0.7
+MaximumScale = 1.4
+MinimumSpacing = 10.0
+Saturation = 0.6
+Clumping = 0.72
+ClumpScale = 44.0
+MaxSlope = 0.4
+HeightRange = Vector2(-9999, 34)
+Tint = Color(0.9, 0.96, 1.0, 1)
+TintVariation = 0.1
+VisibilityRangeEnd = 155.0
+VisibilityFadeMargin = 20.0
+CastShadows = true
+HlodShape = 1
+HlodReduction = 3
+HlodRangeBegin = 130.0
+HlodRangeEnd = 320.0
+HlodColor = Color(0.88, 0.9, 0.92, 1)
+HlodScale = Vector3(1.15, 1.15, 1.15)
+
+; The tor: the boulder at 2.5-4, a 10-16 m frost-split mass, one per 100 x 100 m. No collision
+; (scatter never has any), so it stays out of the roost, hold, heights and Stormcrown profiles.
+[sub_resource type="Resource" id="Layer_frost_tor"]
+script = ExtResource("10_layer")
+ScenePath = "res://assets/models/world/prp_rock_boulder_a.glb"
+Count = 1
+MinimumScale = 2.5
+MaximumScale = 4.0
+MinimumSpacing = 60.0
+Saturation = 0.3
+Clumping = 0.6
+ClumpScale = 90.0
+MaxSlope = 0.5
+Tint = Color(0.72, 0.79, 0.86, 1)
+TintVariation = 0.08
+VisibilityRangeEnd = 220.0
+VisibilityFadeMargin = 26.0
+CastShadows = true
+HlodShape = 1
+HlodReduction = 2
+HlodRangeBegin = 200.0
+HlodRangeEnd = 420.0
+HlodColor = Color(0.88, 0.9, 0.92, 1)
+HlodScale = Vector3(1.1, 1.1, 1.1)
+
+; Frost-shattered stone: the one boulder at a quarter to two thirds size, drained and tinted cold
+; (Saturation is what makes a warm grey rock read as frozen; a Tint alone only darkens it).
+; 24 of a 626-triangle mesh is under the triangle load of the 70 small rocks it replaces.
 [sub_resource type="Resource" id="Layer_frost_rock"]
 script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_rock_cluster.glb"
-Count = 70
-MinimumScale = 0.55
-MaximumScale = 1.15
-MinimumSpacing = 3.2
+ScenePath = "res://assets/models/world/prp_rock_boulder_a.glb"
+Count = 24
+MinimumScale = 0.25
+MaximumScale = 0.7
+MinimumSpacing = 6.0
 Saturation = 0.3
 Clumping = 0.52
 ClumpScale = 28.0
@@ -157,10 +204,10 @@ HlodScale = Vector3(1.15, 1.15, 1.15)
 
 [sub_resource type="Resource" id="Layer_snow_tuft"]
 script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_grass_short.glb"
+ScenePath = "res://assets/models/props/prp_grass_clump_a.glb"
 Count = 420
-MinimumScale = 0.6
-MaximumScale = 1.1
+MinimumScale = 0.4
+MaximumScale = 0.7
 MinimumSpacing = 2.6
 Saturation = 0.35
 Clumping = 0.4
@@ -174,10 +221,10 @@ CastShadows = false
 
 [sub_resource type="Resource" id="Layer_frost_rock_b"]
 script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_rock_cluster_a.glb"
-Count = 40
-MinimumScale = 0.34
-MaximumScale = 0.72
+ScenePath = "res://assets/models/world/prp_rock_rubble_a.glb"
+Count = 34
+MinimumScale = 0.4
+MaximumScale = 0.85
 MinimumSpacing = 7.0
 Saturation = 0.3
 Clumping = 0.55
@@ -189,34 +236,37 @@ VisibilityRangeEnd = 135.0
 VisibilityFadeMargin = 18.0
 CastShadows = true
 
-; Shed ice. Small, common and low, so it dresses the ground a glacier has ground over rather than
-; competing with the authored ice masses. No HLOD: at 1.3 m it is gone well before the range where
-; a proxy would earn its draw call.
+; Shed ice. There is no ice-block model in the set: this is the rubble pile, drained to grey by
+; Saturation and pushed to a pale blue by a Tint ABOVE 1 (an instance colour is a multiply, and
+; the rubble atlas is mid grey, so only an over-bright tint can lift it to ice). Low and squat, so
+; it dresses the ground a glacier has ground over rather than competing with the authored ice
+; masses. ⚠️ 8, not 55: the pile is 1,350 triangles where the old chunk was 30.
 [sub_resource type="Resource" id="Layer_ice_chunk"]
 script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_ice_chunk.glb"
-Count = 55
-MinimumScale = 0.55
-MaximumScale = 1.5
+ScenePath = "res://assets/models/world/prp_rock_rubble_a.glb"
+Count = 8
+MinimumScale = 0.3
+MaximumScale = 0.7
 MinimumSpacing = 5.2
+Saturation = 0.05
 Clumping = 0.62
 ClumpScale = 26.0
 MaxSlope = 0.7
-Tint = Color(0.88, 0.93, 0.98, 1)
+Tint = Color(1.15, 1.45, 1.6, 1)
 TintVariation = 0.09
 VisibilityRangeEnd = 78.0
 VisibilityFadeMargin = 14.0
 CastShadows = false
 
-; ⚠️ THE SHARD STANDS 2.5 m AND IT IS THE ONE THAT NEEDS A SLOPE GATE. Ice that has been shoved
+; ⚠️ THE SPIRE STANDS 3-6 m AND IT IS THE ONE THAT NEEDS A SLOPE GATE. Ice that has been shoved
 ; upright belongs on the flat of a snowfield, not canted out of a 40-degree corrie wall — which is
 ; exactly the failure the terrain gate was added for (see WorldBiomeScatter's MaxSlope comment).
 [sub_resource type="Resource" id="Layer_ice_shard"]
 script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_ice_shard.glb"
-Count = 12
-MinimumScale = 0.6
-MaximumScale = 1.35
+ScenePath = "res://assets/models/world/prp_ice_spire_a.glb"
+Count = 6
+MinimumScale = 0.7
+MaximumScale = 1.6
 MinimumSpacing = 13.0
 Clumping = 0.66
 ClumpScale = 40.0
@@ -237,7 +287,7 @@ Radius = 15.0
 [sub_resource type="Resource" id="Exclusion_ash_roost"]
 script = ExtResource("11_exclusion")
 Center = Vector2(-45.0, 26.0)
-Radius = 15.0
+Radius = 16.0
 
 ; The ash roost causeway: a 34 m exposed approach, and a line of trees across it would hand the
 ; player cover the fight is designed not to offer.
@@ -246,10 +296,12 @@ script = ExtResource("11_exclusion")
 Center = Vector2(-87.0, 21.0)
 Radius = 12.0
 
+; Widened with the dragons (2026-10): the Ancient sweeps 12 m about its nest (22 m long, 17.7 m
+; across the wings), the Ash 8.1 m and the Wild 6.7 m. Each clearing is about twice its sweep.
 [sub_resource type="Resource" id="Exclusion_aerie"]
 script = ExtResource("11_exclusion")
 Center = Vector2(14.0, 2.0)
-Radius = 18.0
+Radius = 23.0
 
 [sub_resource type="Resource" id="Exclusion_aerie_hoard"]
 script = ExtResource("11_exclusion")
@@ -260,7 +312,7 @@ Radius = 7.0
 script = ExtResource("9_scatter")
 Seed = 5205
 EdgePadding = 1.0
-Layers = Array[ExtResource("10_layer")]([SubResource("Layer_frost_rock"), SubResource("Layer_frost_rock_b"), SubResource("Layer_ice_chunk"), SubResource("Layer_ice_shard"), SubResource("Layer_snow_tuft")])
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_frost_rock"), SubResource("Layer_frost_rock_b"), SubResource("Layer_ice_chunk"), SubResource("Layer_ice_shard"), SubResource("Layer_snow_tuft"), SubResource("Layer_frost_tor")])
 
 [sub_resource type="Resource" id="Scatter_dragon_roost"]
 script = ExtResource("9_scatter")
@@ -285,11 +337,11 @@ Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_aerie"),
 
 [sub_resource type="Resource" id="Layer_high_rock"]
 script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_rock_cluster.glb"
-Count = 55
+ScenePath = "res://assets/models/world/prp_rock_crag_a.glb"
+Count = 16
 MinimumScale = 0.5
-MaximumScale = 1.45
-MinimumSpacing = 4.0
+MaximumScale = 1.3
+MinimumSpacing = 8.0
 Saturation = 0.28
 Clumping = 0.58
 ClumpScale = 32.0
@@ -307,10 +359,10 @@ HlodScale = Vector3(1.15, 1.15, 1.15)
 
 [sub_resource type="Resource" id="Layer_high_pine"]
 script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_pine_dead.glb"
+ScenePath = "res://assets/models/world/prp_tree_dead_a.glb"
 Count = 16
-MinimumScale = 0.55
-MaximumScale = 0.9
+MinimumScale = 0.7
+MaximumScale = 1.2
 MinimumSpacing = 14.0
 Saturation = 0.4
 Clumping = 0.6
@@ -348,13 +400,13 @@ Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_stormcro
 script = ExtResource("9_scatter")
 Seed = 5206
 EdgePadding = 1.0
-Layers = Array[ExtResource("10_layer")]([SubResource("Layer_snow_tuft"), SubResource("Layer_frost_rock"), SubResource("Layer_frost_rock_b"), SubResource("Layer_ice_chunk"), SubResource("Layer_dead_pine")])
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_snow_tuft"), SubResource("Layer_frost_rock"), SubResource("Layer_frost_rock_b"), SubResource("Layer_ice_chunk"), SubResource("Layer_dead_pine"), SubResource("Layer_frost_fir"), SubResource("Layer_frost_tor")])
 
 [sub_resource type="Resource" id="Scatter_march"]
 script = ExtResource("9_scatter")
 Seed = 5207
 EdgePadding = 1.0
-Layers = Array[ExtResource("10_layer")]([SubResource("Layer_snow_tuft"), SubResource("Layer_dead_pine"), SubResource("Layer_frost_rock"), SubResource("Layer_frost_rock_b"), SubResource("Layer_ice_chunk")])
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_snow_tuft"), SubResource("Layer_dead_pine"), SubResource("Layer_frost_fir"), SubResource("Layer_frost_rock"), SubResource("Layer_frost_rock_b"), SubResource("Layer_ice_chunk"), SubResource("Layer_frost_tor")])
 
 [sub_resource type="Resource" id="Scatter_hold"]
 script = ExtResource("9_scatter")
@@ -362,6 +414,422 @@ Seed = 5208
 EdgePadding = 1.0
 Layers = Array[ExtResource("10_layer")]([SubResource("Layer_snow_tuft"), SubResource("Layer_frost_rock"), SubResource("Layer_frost_rock_b"), SubResource("Layer_ice_chunk")])
 
+; Clearings under the monumental layer: derived by gen_regions.monument_exclusions from
+; tools/district_layouts.py and the hand-placed monuments in the cell scenes. Never edit them here.
+[sub_resource type="Resource" id="Exclusion_auto_ancient_aerie_0"]
+script = ExtResource("11_exclusion")
+Center = Vector2(-20.0, -4.0)
+Radius = 9.5
+
+[sub_resource type="Resource" id="Exclusion_auto_ancient_aerie_1"]
+script = ExtResource("11_exclusion")
+Center = Vector2(9.0, 16.0)
+Radius = 5.7
+
+[sub_resource type="Resource" id="Exclusion_auto_ancient_aerie_2"]
+script = ExtResource("11_exclusion")
+Center = Vector2(13.0, 23.0)
+Radius = 6.6
+
+[sub_resource type="Resource" id="Exclusion_auto_ancient_aerie_3"]
+script = ExtResource("11_exclusion")
+Center = Vector2(14.0, 37.0)
+Radius = 6.1
+
+[sub_resource type="Resource" id="Exclusion_auto_ancient_aerie_4"]
+script = ExtResource("11_exclusion")
+Center = Vector2(15.0, 50.0)
+Radius = 6.8
+
+[sub_resource type="Resource" id="Exclusion_auto_ancient_aerie_5"]
+script = ExtResource("11_exclusion")
+Center = Vector2(46.0, 14.0)
+Radius = 9.9
+
+[sub_resource type="Resource" id="Exclusion_auto_ancient_aerie_6"]
+script = ExtResource("11_exclusion")
+Center = Vector2(50.0, -8.0)
+Radius = 8.0
+
+[sub_resource type="Resource" id="Exclusion_auto_ancient_aerie_7"]
+script = ExtResource("11_exclusion")
+Center = Vector2(58.0, 70.0)
+Radius = 17.3
+
+[sub_resource type="Resource" id="Scatter_heights_at_ancient_aerie"]
+script = ExtResource("9_scatter")
+Seed = 5209
+EdgePadding = 1.0
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_high_rock"), SubResource("Layer_frost_rock_b"), SubResource("Layer_ice_shard"), SubResource("Layer_high_pine")])
+Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_aerie"), SubResource("Exclusion_aerie_hoard"), SubResource("Exclusion_auto_ancient_aerie_0"), SubResource("Exclusion_auto_ancient_aerie_1"), SubResource("Exclusion_auto_ancient_aerie_2"), SubResource("Exclusion_auto_ancient_aerie_3"), SubResource("Exclusion_auto_ancient_aerie_4"), SubResource("Exclusion_auto_ancient_aerie_5"), SubResource("Exclusion_auto_ancient_aerie_6"), SubResource("Exclusion_auto_ancient_aerie_7")])
+
+[sub_resource type="Resource" id="Exclusion_auto_aerie_ascent_0"]
+script = ExtResource("11_exclusion")
+Center = Vector2(30.0, 45.0)
+Radius = 17.0
+
+[sub_resource type="Resource" id="Scatter_heights_at_aerie_ascent"]
+script = ExtResource("9_scatter")
+Seed = 5209
+EdgePadding = 1.0
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_high_rock"), SubResource("Layer_frost_rock_b"), SubResource("Layer_ice_shard"), SubResource("Layer_high_pine")])
+Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_aerie"), SubResource("Exclusion_aerie_hoard"), SubResource("Exclusion_auto_aerie_ascent_0")])
+
+[sub_resource type="Resource" id="Exclusion_auto_stormfall_0"]
+script = ExtResource("11_exclusion")
+Center = Vector2(5.0, 5.0)
+Radius = 18.4
+
+[sub_resource type="Resource" id="Exclusion_auto_stormfall_1"]
+script = ExtResource("11_exclusion")
+Center = Vector2(57.0, 43.0)
+Radius = 4.0
+
+[sub_resource type="Resource" id="Exclusion_auto_stormfall_2"]
+script = ExtResource("11_exclusion")
+Center = Vector2(61.0, 79.0)
+Radius = 7.6
+
+[sub_resource type="Resource" id="Scatter_heights_at_stormfall"]
+script = ExtResource("9_scatter")
+Seed = 5209
+EdgePadding = 1.0
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_high_rock"), SubResource("Layer_frost_rock_b"), SubResource("Layer_ice_shard"), SubResource("Layer_high_pine")])
+Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_aerie"), SubResource("Exclusion_aerie_hoard"), SubResource("Exclusion_auto_stormfall_0"), SubResource("Exclusion_auto_stormfall_1"), SubResource("Exclusion_auto_stormfall_2")])
+
+[sub_resource type="Resource" id="Exclusion_auto_stormcrown_0"]
+script = ExtResource("11_exclusion")
+Center = Vector2(-89.0, 79.0)
+Radius = 7.6
+
+[sub_resource type="Resource" id="Exclusion_auto_stormcrown_1"]
+script = ExtResource("11_exclusion")
+Center = Vector2(-67.0, 51.0)
+Radius = 6.5
+
+[sub_resource type="Resource" id="Exclusion_auto_stormcrown_2"]
+script = ExtResource("11_exclusion")
+Center = Vector2(7.0, 58.0)
+Radius = 4.6
+
+[sub_resource type="Resource" id="Exclusion_auto_stormcrown_3"]
+script = ExtResource("11_exclusion")
+Center = Vector2(8.0, 33.0)
+Radius = 4.6
+
+[sub_resource type="Resource" id="Exclusion_auto_stormcrown_4"]
+script = ExtResource("11_exclusion")
+Center = Vector2(20.0, 29.0)
+Radius = 4.6
+
+[sub_resource type="Resource" id="Exclusion_auto_stormcrown_5"]
+script = ExtResource("11_exclusion")
+Center = Vector2(20.0, 62.0)
+Radius = 4.6
+
+[sub_resource type="Resource" id="Exclusion_auto_stormcrown_6"]
+script = ExtResource("11_exclusion")
+Center = Vector2(21.0, 1.0)
+Radius = 12.8
+
+[sub_resource type="Resource" id="Exclusion_auto_stormcrown_7"]
+script = ExtResource("11_exclusion")
+Center = Vector2(33.0, 34.0)
+Radius = 4.6
+
+[sub_resource type="Resource" id="Exclusion_auto_stormcrown_8"]
+script = ExtResource("11_exclusion")
+Center = Vector2(35.0, 57.0)
+Radius = 4.6
+
+[sub_resource type="Resource" id="Scatter_stormcrown_at_stormcrown"]
+script = ExtResource("9_scatter")
+Seed = 5210
+EdgePadding = 1.0
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_high_rock"), SubResource("Layer_frost_rock_b"), SubResource("Layer_ice_shard"), SubResource("Layer_high_pine")])
+Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_stormcrown_arena"), SubResource("Exclusion_auto_stormcrown_0"), SubResource("Exclusion_auto_stormcrown_1"), SubResource("Exclusion_auto_stormcrown_2"), SubResource("Exclusion_auto_stormcrown_3"), SubResource("Exclusion_auto_stormcrown_4"), SubResource("Exclusion_auto_stormcrown_5"), SubResource("Exclusion_auto_stormcrown_6"), SubResource("Exclusion_auto_stormcrown_7"), SubResource("Exclusion_auto_stormcrown_8")])
+
+[sub_resource type="Resource" id="Exclusion_auto_north_snowfield_0"]
+script = ExtResource("11_exclusion")
+Center = Vector2(117.0, 64.0)
+Radius = 3.4
+
+[sub_resource type="Resource" id="Scatter_snowfield_at_north_snowfield"]
+script = ExtResource("9_scatter")
+Seed = 5206
+EdgePadding = 1.0
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_snow_tuft"), SubResource("Layer_frost_rock"), SubResource("Layer_frost_rock_b"), SubResource("Layer_ice_chunk"), SubResource("Layer_dead_pine"), SubResource("Layer_frost_fir"), SubResource("Layer_frost_tor")])
+Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_auto_north_snowfield_0")])
+
+[sub_resource type="Resource" id="Exclusion_auto_high_traverse_0"]
+script = ExtResource("11_exclusion")
+Center = Vector2(-93.0, 64.0)
+Radius = 3.4
+
+[sub_resource type="Resource" id="Exclusion_auto_high_traverse_1"]
+script = ExtResource("11_exclusion")
+Center = Vector2(63.0, -85.0)
+Radius = 17.3
+
+[sub_resource type="Resource" id="Scatter_heights_at_high_traverse"]
+script = ExtResource("9_scatter")
+Seed = 5209
+EdgePadding = 1.0
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_high_rock"), SubResource("Layer_frost_rock_b"), SubResource("Layer_ice_shard"), SubResource("Layer_high_pine")])
+Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_aerie"), SubResource("Exclusion_aerie_hoard"), SubResource("Exclusion_auto_high_traverse_0"), SubResource("Exclusion_auto_high_traverse_1")])
+
+[sub_resource type="Resource" id="Exclusion_auto_ice_shelf_0"]
+script = ExtResource("11_exclusion")
+Center = Vector2(76.0, -76.0)
+Radius = 7.6
+
+[sub_resource type="Resource" id="Scatter_glacier_at_ice_shelf"]
+script = ExtResource("9_scatter")
+Seed = 5205
+EdgePadding = 1.0
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_frost_rock"), SubResource("Layer_frost_rock_b"), SubResource("Layer_ice_chunk"), SubResource("Layer_ice_shard"), SubResource("Layer_snow_tuft"), SubResource("Layer_frost_tor")])
+Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_auto_ice_shelf_0")])
+
+[sub_resource type="Resource" id="Exclusion_auto_ash_approach_0"]
+script = ExtResource("11_exclusion")
+Center = Vector2(-89.0, -76.0)
+Radius = 7.6
+
+[sub_resource type="Resource" id="Scatter_ash_roost_at_ash_approach"]
+script = ExtResource("9_scatter")
+Seed = 5203
+EdgePadding = 1.0
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_dead_pine"), SubResource("Layer_frost_rock"), SubResource("Layer_frost_rock_b"), SubResource("Layer_ice_chunk")])
+Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_ash_roost"), SubResource("Exclusion_ash_causeway"), SubResource("Exclusion_auto_ash_approach_0")])
+
+[sub_resource type="Resource" id="Exclusion_auto_glacier_0"]
+script = ExtResource("11_exclusion")
+Center = Vector2(-12.0, 2.0)
+Radius = 3.2
+
+[sub_resource type="Resource" id="Exclusion_auto_glacier_1"]
+script = ExtResource("11_exclusion")
+Center = Vector2(12.0, 41.0)
+Radius = 3.2
+
+[sub_resource type="Resource" id="Scatter_glacier_at_glacier"]
+script = ExtResource("9_scatter")
+Seed = 5205
+EdgePadding = 1.0
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_frost_rock"), SubResource("Layer_frost_rock_b"), SubResource("Layer_ice_chunk"), SubResource("Layer_ice_shard"), SubResource("Layer_snow_tuft"), SubResource("Layer_frost_tor")])
+Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_auto_glacier_0"), SubResource("Exclusion_auto_glacier_1")])
+
+[sub_resource type="Resource" id="Exclusion_auto_dragon_roost_0"]
+script = ExtResource("11_exclusion")
+Center = Vector2(-23.0, -48.0)
+Radius = 8.7
+
+[sub_resource type="Resource" id="Exclusion_auto_dragon_roost_1"]
+script = ExtResource("11_exclusion")
+Center = Vector2(-15.0, -52.0)
+Radius = 9.4
+
+[sub_resource type="Resource" id="Exclusion_auto_dragon_roost_2"]
+script = ExtResource("11_exclusion")
+Center = Vector2(-3.0, -53.0)
+Radius = 8.0
+
+[sub_resource type="Resource" id="Exclusion_auto_dragon_roost_3"]
+script = ExtResource("11_exclusion")
+Center = Vector2(21.0, -12.0)
+Radius = 8.7
+
+[sub_resource type="Resource" id="Exclusion_auto_dragon_roost_4"]
+script = ExtResource("11_exclusion")
+Center = Vector2(53.0, 14.0)
+Radius = 19.5
+
+[sub_resource type="Resource" id="Exclusion_auto_dragon_roost_5"]
+script = ExtResource("11_exclusion")
+Center = Vector2(83.0, 10.0)
+Radius = 6.5
+
+[sub_resource type="Resource" id="Exclusion_auto_dragon_roost_6"]
+script = ExtResource("11_exclusion")
+Center = Vector2(97.0, -10.0)
+Radius = 5.3
+
+[sub_resource type="Resource" id="Scatter_dragon_roost_at_dragon_roost"]
+script = ExtResource("9_scatter")
+Seed = 5202
+EdgePadding = 1.0
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_dead_pine"), SubResource("Layer_frost_rock"), SubResource("Layer_frost_rock_b"), SubResource("Layer_ice_chunk"), SubResource("Layer_snow_tuft")])
+Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_dragon_roost"), SubResource("Exclusion_auto_dragon_roost_0"), SubResource("Exclusion_auto_dragon_roost_1"), SubResource("Exclusion_auto_dragon_roost_2"), SubResource("Exclusion_auto_dragon_roost_3"), SubResource("Exclusion_auto_dragon_roost_4"), SubResource("Exclusion_auto_dragon_roost_5"), SubResource("Exclusion_auto_dragon_roost_6")])
+
+[sub_resource type="Resource" id="Exclusion_auto_vale_head_0"]
+script = ExtResource("11_exclusion")
+Center = Vector2(-102.0, 68.0)
+Radius = 3.6
+
+[sub_resource type="Resource" id="Exclusion_auto_vale_head_1"]
+script = ExtResource("11_exclusion")
+Center = Vector2(42.0, 53.0)
+Radius = 11.4
+
+[sub_resource type="Resource" id="Exclusion_auto_vale_head_2"]
+script = ExtResource("11_exclusion")
+Center = Vector2(58.0, 60.0)
+Radius = 10.5
+
+[sub_resource type="Resource" id="Exclusion_auto_vale_head_3"]
+script = ExtResource("11_exclusion")
+Center = Vector2(78.0, 28.0)
+Radius = 3.5
+
+[sub_resource type="Resource" id="Scatter_snowfield_at_vale_head"]
+script = ExtResource("9_scatter")
+Seed = 5206
+EdgePadding = 1.0
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_snow_tuft"), SubResource("Layer_frost_rock"), SubResource("Layer_frost_rock_b"), SubResource("Layer_ice_chunk"), SubResource("Layer_dead_pine"), SubResource("Layer_frost_fir"), SubResource("Layer_frost_tor")])
+Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_auto_vale_head_0"), SubResource("Exclusion_auto_vale_head_1"), SubResource("Exclusion_auto_vale_head_2"), SubResource("Exclusion_auto_vale_head_3")])
+
+[sub_resource type="Resource" id="Exclusion_auto_burnt_col_0"]
+script = ExtResource("11_exclusion")
+Center = Vector2(-30.0, 42.0)
+Radius = 3.6
+
+[sub_resource type="Resource" id="Exclusion_auto_burnt_col_1"]
+script = ExtResource("11_exclusion")
+Center = Vector2(-1.0, 5.0)
+Radius = 18.4
+
+[sub_resource type="Resource" id="Exclusion_auto_burnt_col_2"]
+script = ExtResource("11_exclusion")
+Center = Vector2(26.5, 41.0)
+Radius = 6.5
+
+[sub_resource type="Resource" id="Scatter_ash_roost_at_burnt_col"]
+script = ExtResource("9_scatter")
+Seed = 5203
+EdgePadding = 1.0
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_dead_pine"), SubResource("Layer_frost_rock"), SubResource("Layer_frost_rock_b"), SubResource("Layer_ice_chunk")])
+Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_ash_roost"), SubResource("Exclusion_ash_causeway"), SubResource("Exclusion_auto_burnt_col_0"), SubResource("Exclusion_auto_burnt_col_1"), SubResource("Exclusion_auto_burnt_col_2")])
+
+[sub_resource type="Resource" id="Exclusion_auto_ash_roost_0"]
+script = ExtResource("11_exclusion")
+Center = Vector2(-47.0, 2.0)
+Radius = 5.7
+
+[sub_resource type="Resource" id="Exclusion_auto_ash_roost_1"]
+script = ExtResource("11_exclusion")
+Center = Vector2(-23.0, 24.0)
+Radius = 6.0
+
+[sub_resource type="Resource" id="Scatter_ash_roost_at_ash_roost"]
+script = ExtResource("9_scatter")
+Seed = 5203
+EdgePadding = 1.0
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_dead_pine"), SubResource("Layer_frost_rock"), SubResource("Layer_frost_rock_b"), SubResource("Layer_ice_chunk")])
+Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_ash_roost"), SubResource("Exclusion_ash_causeway"), SubResource("Exclusion_auto_ash_roost_0"), SubResource("Exclusion_auto_ash_roost_1")])
+
+[sub_resource type="Resource" id="Exclusion_auto_roost_trail_0"]
+script = ExtResource("11_exclusion")
+Center = Vector2(3.0, -72.0)
+Radius = 3.6
+
+[sub_resource type="Resource" id="Scatter_march_at_roost_trail"]
+script = ExtResource("9_scatter")
+Seed = 5207
+EdgePadding = 1.0
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_snow_tuft"), SubResource("Layer_dead_pine"), SubResource("Layer_frost_fir"), SubResource("Layer_frost_rock"), SubResource("Layer_frost_rock_b"), SubResource("Layer_ice_chunk"), SubResource("Layer_frost_tor")])
+Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_auto_roost_trail_0")])
+
+[sub_resource type="Resource" id="Exclusion_auto_clan_hold_0"]
+script = ExtResource("11_exclusion")
+Center = Vector2(-7.0, -80.0)
+Radius = 10.5
+
+[sub_resource type="Resource" id="Exclusion_auto_clan_hold_1"]
+script = ExtResource("11_exclusion")
+Center = Vector2(21.0, -2.0)
+Radius = 3.2
+
+[sub_resource type="Resource" id="Exclusion_auto_clan_hold_2"]
+script = ExtResource("11_exclusion")
+Center = Vector2(28.6, 49.8)
+Radius = 5.9
+
+[sub_resource type="Resource" id="Exclusion_auto_clan_hold_3"]
+script = ExtResource("11_exclusion")
+Center = Vector2(70.4, 62.2)
+Radius = 6.5
+
+[sub_resource type="Resource" id="Scatter_hold_at_clan_hold"]
+script = ExtResource("9_scatter")
+Seed = 5208
+EdgePadding = 1.0
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_snow_tuft"), SubResource("Layer_frost_rock"), SubResource("Layer_frost_rock_b"), SubResource("Layer_ice_chunk")])
+Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_auto_clan_hold_0"), SubResource("Exclusion_auto_clan_hold_1"), SubResource("Exclusion_auto_clan_hold_2"), SubResource("Exclusion_auto_clan_hold_3")])
+
+[sub_resource type="Resource" id="Exclusion_auto_ravenspur_0"]
+script = ExtResource("11_exclusion")
+Center = Vector2(29.0, 22.0)
+Radius = 8.6
+
+[sub_resource type="Resource" id="Scatter_march_at_ravenspur"]
+script = ExtResource("9_scatter")
+Seed = 5207
+EdgePadding = 1.0
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_snow_tuft"), SubResource("Layer_dead_pine"), SubResource("Layer_frost_fir"), SubResource("Layer_frost_rock"), SubResource("Layer_frost_rock_b"), SubResource("Layer_ice_chunk"), SubResource("Layer_frost_tor")])
+Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_auto_ravenspur_0")])
+
+[sub_resource type="Resource" id="Exclusion_auto_hunting_grounds_0"]
+script = ExtResource("11_exclusion")
+Center = Vector2(-18.0, -34.0)
+Radius = 5.9
+
+[sub_resource type="Resource" id="Scatter_march_at_hunting_grounds"]
+script = ExtResource("9_scatter")
+Seed = 5207
+EdgePadding = 1.0
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_snow_tuft"), SubResource("Layer_dead_pine"), SubResource("Layer_frost_fir"), SubResource("Layer_frost_rock"), SubResource("Layer_frost_rock_b"), SubResource("Layer_ice_chunk"), SubResource("Layer_frost_tor")])
+Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_auto_hunting_grounds_0")])
+
+[sub_resource type="Resource" id="Exclusion_auto_stormbound_vale_0"]
+script = ExtResource("11_exclusion")
+Center = Vector2(83.0, 29.0)
+Radius = 3.8
+
+[sub_resource type="Resource" id="Scatter_march_at_stormbound_vale"]
+script = ExtResource("9_scatter")
+Seed = 5207
+EdgePadding = 1.0
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_snow_tuft"), SubResource("Layer_dead_pine"), SubResource("Layer_frost_fir"), SubResource("Layer_frost_rock"), SubResource("Layer_frost_rock_b"), SubResource("Layer_ice_chunk"), SubResource("Layer_frost_tor")])
+Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_auto_stormbound_vale_0")])
+
+[sub_resource type="Resource" id="Exclusion_auto_stonewatch_0"]
+script = ExtResource("11_exclusion")
+Center = Vector2(-107.0, 29.0)
+Radius = 3.8
+
+[sub_resource type="Resource" id="Exclusion_auto_stonewatch_1"]
+script = ExtResource("11_exclusion")
+Center = Vector2(-82.9, -27.8)
+Radius = 5.7
+
+[sub_resource type="Resource" id="Scatter_march_at_stonewatch"]
+script = ExtResource("9_scatter")
+Seed = 5207
+EdgePadding = 1.0
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_snow_tuft"), SubResource("Layer_dead_pine"), SubResource("Layer_frost_fir"), SubResource("Layer_frost_rock"), SubResource("Layer_frost_rock_b"), SubResource("Layer_ice_chunk"), SubResource("Layer_frost_tor")])
+Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_auto_stonewatch_0"), SubResource("Exclusion_auto_stonewatch_1")])
+
+[sub_resource type="Resource" id="Exclusion_auto_frost_march_w_0"]
+script = ExtResource("11_exclusion")
+Center = Vector2(71.0, -19.0)
+Radius = 3.5
+
+[sub_resource type="Resource" id="Scatter_march_at_frost_march_w"]
+script = ExtResource("9_scatter")
+Seed = 5207
+EdgePadding = 1.0
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_snow_tuft"), SubResource("Layer_dead_pine"), SubResource("Layer_frost_fir"), SubResource("Layer_frost_rock"), SubResource("Layer_frost_rock_b"), SubResource("Layer_ice_chunk"), SubResource("Layer_frost_tor")])
+Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_auto_frost_march_w_0")])
 
 ; ---------------------------------------------------------------------------------
 ; frostfang_reach.aerie_west   centre (-355.0, -2235.0)   210 x 170   x -460..-250  z -2320..-2150
@@ -546,6 +1014,15 @@ SurfaceBlend = 0.72
 ElevationMode = 1
 Elevation = 0.0
 
+[sub_resource type="Resource" id="Area_ancient_aerie_y0"]
+script = ExtResource("7_area")
+Center = Vector2(58.0, 70.0)
+Radius = Vector2(9.0, 9.0)
+Feather = 2.5
+SurfaceBlend = 0.9
+Elevation = 0.0
+ElevationMode = 1
+
 [sub_resource type="Resource" id="Presentation_ancient_aerie"]
 script = ExtResource("4_presentation")
 Width = 240.0
@@ -557,7 +1034,7 @@ TintStrength = 0.16
 TopologyResolution = 80
 Landforms = Array[ExtResource("8_landform")]([SubResource("Land_ancient_aerie_0"), SubResource("Land_ancient_aerie_1"), SubResource("Land_ancient_aerie_2"), SubResource("Land_ancient_aerie_3"), SubResource("Land_ancient_aerie_4"), SubResource("Land_ancient_aerie_5"), SubResource("Land_ancient_aerie_6")])
 Paths = Array[ExtResource("6_path")]([SubResource("Path_aerie_crescent"), SubResource("Path_aerie_hoard"), SubResource("Path_ancient_aerie_ap0"), SubResource("Path_ancient_aerie_ap1"), SubResource("Path_ancient_aerie_ap2"), SubResource("Path_ancient_aerie_ap3"), SubResource("Path_ancient_aerie_ap4"), SubResource("Path_ancient_aerie_ap5"), SubResource("Path_ancient_aerie_ap6")])
-GroundAreas = Array[ExtResource("7_area")]([SubResource("Area_aerie_court"), SubResource("Area_aerie_hoard")])
+GroundAreas = Array[ExtResource("7_area")]([SubResource("Area_aerie_court"), SubResource("Area_aerie_hoard"), SubResource("Area_ancient_aerie_y0")])
 
 [sub_resource type="Resource" id="Cell_ancient_aerie"]
 script = ExtResource("2_cell")
@@ -565,7 +1042,7 @@ Id = "frostfang_reach.ancient_aerie"
 ScenePath = "res://scenes/regions/frostfang_reach/ancient_aerie.tscn"
 Center = Vector3(-130.0, 0, -2235.0)
 Presentation = SubResource("Presentation_ancient_aerie")
-BiomeScatter = SubResource("Scatter_heights")
+BiomeScatter = SubResource("Scatter_heights_at_ancient_aerie")
 
 ; ---------------------------------------------------------------------------------
 ; frostfang_reach.aerie_ascent   centre (95.0, -2235.0)   210 x 170   x -10..200  z -2320..-2150
@@ -594,7 +1071,7 @@ Id = "frostfang_reach.aerie_ascent"
 ScenePath = "res://scenes/regions/frostfang_reach/aerie_ascent.tscn"
 Center = Vector3(95.0, 0, -2235.0)
 Presentation = SubResource("Presentation_aerie_ascent")
-BiomeScatter = SubResource("Scatter_heights")
+BiomeScatter = SubResource("Scatter_heights_at_aerie_ascent")
 
 ; ---------------------------------------------------------------------------------
 ; frostfang_reach.stormfall   centre (265.0, -2235.0)   130 x 170   x 200..330  z -2320..-2150
@@ -660,7 +1137,7 @@ Id = "frostfang_reach.stormfall"
 ScenePath = "res://scenes/regions/frostfang_reach/stormfall.tscn"
 Center = Vector3(265.0, 0, -2235.0)
 Presentation = SubResource("Presentation_stormfall")
-BiomeScatter = SubResource("Scatter_heights")
+BiomeScatter = SubResource("Scatter_heights_at_stormfall")
 
 ; ---------------------------------------------------------------------------------
 ; frostfang_reach.stormcrown   centre (415.0, -2235.0)   170 x 170   x 330..500  z -2320..-2150
@@ -717,7 +1194,7 @@ Id = "frostfang_reach.stormcrown"
 ScenePath = "res://scenes/regions/frostfang_reach/stormcrown.tscn"
 Center = Vector3(415.0, 0, -2235.0)
 Presentation = SubResource("Presentation_stormcrown")
-BiomeScatter = SubResource("Scatter_stormcrown")
+BiomeScatter = SubResource("Scatter_stormcrown_at_stormcrown")
 
 ; ---------------------------------------------------------------------------------
 ; frostfang_reach.north_snowfield   centre (-345.0, -2080.0)   230 x 140   x -460..-230  z -2150..-2010
@@ -738,7 +1215,7 @@ Id = "frostfang_reach.north_snowfield"
 ScenePath = "res://scenes/regions/frostfang_reach/north_snowfield.tscn"
 Center = Vector3(-345.0, 0, -2080.0)
 Presentation = SubResource("Presentation_north_snowfield")
-BiomeScatter = SubResource("Scatter_snowfield")
+BiomeScatter = SubResource("Scatter_snowfield_at_north_snowfield")
 
 ; ---------------------------------------------------------------------------------
 ; frostfang_reach.high_traverse   centre (-135.0, -2080.0)   190 x 140   x -230..-40  z -2150..-2010
@@ -821,7 +1298,7 @@ Id = "frostfang_reach.high_traverse"
 ScenePath = "res://scenes/regions/frostfang_reach/high_traverse.tscn"
 Center = Vector3(-135.0, 0, -2080.0)
 Presentation = SubResource("Presentation_high_traverse")
-BiomeScatter = SubResource("Scatter_heights")
+BiomeScatter = SubResource("Scatter_heights_at_high_traverse")
 
 ; ---------------------------------------------------------------------------------
 ; frostfang_reach.glacier_head   centre (65.0, -2080.0)   210 x 140   x -40..170  z -2150..-2010
@@ -947,7 +1424,7 @@ Id = "frostfang_reach.ice_shelf"
 ScenePath = "res://scenes/regions/frostfang_reach/ice_shelf.tscn"
 Center = Vector3(250.0, 0, -2080.0)
 Presentation = SubResource("Presentation_ice_shelf")
-BiomeScatter = SubResource("Scatter_glacier")
+BiomeScatter = SubResource("Scatter_glacier_at_ice_shelf")
 
 ; ---------------------------------------------------------------------------------
 ; frostfang_reach.ash_approach   centre (415.0, -2080.0)   170 x 140   x 330..500  z -2150..-2010
@@ -967,7 +1444,7 @@ Id = "frostfang_reach.ash_approach"
 ScenePath = "res://scenes/regions/frostfang_reach/ash_approach.tscn"
 Center = Vector3(415.0, 0, -2080.0)
 Presentation = SubResource("Presentation_ash_approach")
-BiomeScatter = SubResource("Scatter_ash_roost")
+BiomeScatter = SubResource("Scatter_ash_roost_at_ash_approach")
 
 ; ---------------------------------------------------------------------------------
 ; frostfang_reach.roost_heights   centre (-365.0, -1945.0)   190 x 130   x -460..-270  z -2010..-1880
@@ -1281,7 +1758,7 @@ Id = "frostfang_reach.glacier"
 ScenePath = "res://scenes/regions/frostfang_reach/glacier.tscn"
 Center = Vector3(40.0, 0, -1945.0)
 Presentation = SubResource("Presentation_glacier")
-BiomeScatter = SubResource("Scatter_glacier")
+BiomeScatter = SubResource("Scatter_glacier_at_glacier")
 
 ; ---------------------------------------------------------------------------------
 ; frostfang_reach.east_crags   centre (220.0, -1945.0)   160 x 130   x 140..300  z -2010..-1880
@@ -1482,6 +1959,15 @@ SurfaceBlend = 0.3
 ElevationMode = 1
 Elevation = -5.16
 
+[sub_resource type="Resource" id="Area_dragon_roost_y0"]
+script = ExtResource("7_area")
+Center = Vector2(53.0, 14.0)
+Radius = Vector2(9.0, 9.0)
+Feather = 2.5
+SurfaceBlend = 0.9
+Elevation = 0.0
+ElevationMode = 1
+
 [sub_resource type="Resource" id="Presentation_dragon_roost"]
 script = ExtResource("4_presentation")
 Width = 230.0
@@ -1491,7 +1977,7 @@ Biome = ExtResource("21_biome_snowfield")
 TopologyResolution = 80
 Landforms = Array[ExtResource("8_landform")]([SubResource("Land_dragon_roost_0"), SubResource("Land_dragon_roost_1"), SubResource("Land_dragon_roost_2"), SubResource("Land_dragon_roost_3"), SubResource("Land_dragon_roost_4"), SubResource("Land_dragon_roost_5"), SubResource("Land_dragon_roost_6"), SubResource("Land_dragon_roost_7")])
 Paths = Array[ExtResource("6_path")]([SubResource("Path_dragon_approach"), SubResource("Path_dragon_narrows"), SubResource("Path_dragon_shelf"), SubResource("Path_dragon_roost_ap0"), SubResource("Path_dragon_roost_ap1")])
-GroundAreas = Array[ExtResource("7_area")]([SubResource("Area_dragon_bowl"), SubResource("Area_dragon_splinter")])
+GroundAreas = Array[ExtResource("7_area")]([SubResource("Area_dragon_bowl"), SubResource("Area_dragon_splinter"), SubResource("Area_dragon_roost_y0")])
 
 [sub_resource type="Resource" id="Cell_dragon_roost"]
 script = ExtResource("2_cell")
@@ -1499,7 +1985,7 @@ Id = "frostfang_reach.dragon_roost"
 ScenePath = "res://scenes/regions/frostfang_reach/dragon_roost.tscn"
 Center = Vector3(-345.0, 0, -1810.0)
 Presentation = SubResource("Presentation_dragon_roost")
-BiomeScatter = SubResource("Scatter_dragon_roost")
+BiomeScatter = SubResource("Scatter_dragon_roost_at_dragon_roost")
 
 ; ---------------------------------------------------------------------------------
 ; frostfang_reach.vale_head   centre (-120.0, -1810.0)   220 x 140   x -230..-10  z -1880..-1740
@@ -1589,7 +2075,7 @@ Id = "frostfang_reach.vale_head"
 ScenePath = "res://scenes/regions/frostfang_reach/vale_head.tscn"
 Center = Vector3(-120.0, 0, -1810.0)
 Presentation = SubResource("Presentation_vale_head")
-BiomeScatter = SubResource("Scatter_snowfield")
+BiomeScatter = SubResource("Scatter_snowfield_at_vale_head")
 
 ; ---------------------------------------------------------------------------------
 ; frostfang_reach.hold_pass   centre (75.0, -1810.0)   170 x 140   x -10..160  z -1880..-1740
@@ -1674,7 +2160,7 @@ Id = "frostfang_reach.burnt_col"
 ScenePath = "res://scenes/regions/frostfang_reach/burnt_col.tscn"
 Center = Vector3(220.0, 0, -1810.0)
 Presentation = SubResource("Presentation_burnt_col")
-BiomeScatter = SubResource("Scatter_ash_roost")
+BiomeScatter = SubResource("Scatter_ash_roost_at_burnt_col")
 
 ; ---------------------------------------------------------------------------------
 ; frostfang_reach.ash_roost   centre (390.0, -1810.0)   220 x 140   x 280..500  z -1880..-1740
@@ -1805,7 +2291,7 @@ Id = "frostfang_reach.ash_roost"
 ScenePath = "res://scenes/regions/frostfang_reach/ash_roost.tscn"
 Center = Vector3(390.0, 0, -1810.0)
 Presentation = SubResource("Presentation_ash_roost")
-BiomeScatter = SubResource("Scatter_ash_roost")
+BiomeScatter = SubResource("Scatter_ash_roost_at_ash_roost")
 
 ; ---------------------------------------------------------------------------------
 ; frostfang_reach.west_scree   centre (-380.0, -1670.0)   160 x 140   x -460..-300  z -1740..-1600
@@ -1869,7 +2355,7 @@ Id = "frostfang_reach.roost_trail"
 ScenePath = "res://scenes/regions/frostfang_reach/roost_trail.tscn"
 Center = Vector3(-225.0, 0, -1670.0)
 Presentation = SubResource("Presentation_roost_trail")
-BiomeScatter = SubResource("Scatter_march")
+BiomeScatter = SubResource("Scatter_march_at_roost_trail")
 
 ; ---------------------------------------------------------------------------------
 ; frostfang_reach.clan_hold   centre (-55.0, -1670.0)   190 x 140   x -150..40  z -1740..-1600
@@ -2079,7 +2565,7 @@ Id = "frostfang_reach.clan_hold"
 ScenePath = "res://scenes/regions/frostfang_reach/clan_hold.tscn"
 Center = Vector3(-55.0, 0, -1670.0)
 Presentation = SubResource("Presentation_clan_hold")
-BiomeScatter = SubResource("Scatter_hold")
+BiomeScatter = SubResource("Scatter_hold_at_clan_hold")
 SafeRadius = 30.0
 
 ; ---------------------------------------------------------------------------------
@@ -2182,7 +2668,7 @@ Id = "frostfang_reach.ravenspur"
 ScenePath = "res://scenes/regions/frostfang_reach/ravenspur.tscn"
 Center = Vector3(145.0, 0, -1670.0)
 Presentation = SubResource("Presentation_ravenspur")
-BiomeScatter = SubResource("Scatter_march")
+BiomeScatter = SubResource("Scatter_march_at_ravenspur")
 
 ; ---------------------------------------------------------------------------------
 ; frostfang_reach.eastern_marches   centre (375.0, -1670.0)   250 x 140   x 250..500  z -1740..-1600
@@ -2280,7 +2766,7 @@ Id = "frostfang_reach.hunting_grounds"
 ScenePath = "res://scenes/regions/frostfang_reach/hunting_grounds.tscn"
 Center = Vector3(-235.0, 0, -1525.0)
 Presentation = SubResource("Presentation_hunting_grounds")
-BiomeScatter = SubResource("Scatter_march")
+BiomeScatter = SubResource("Scatter_march_at_hunting_grounds")
 
 ; ---------------------------------------------------------------------------------
 ; frostfang_reach.stormbound_vale   centre (-55.0, -1525.0)   170 x 150   x -140..30  z -1600..-1450
@@ -2351,7 +2837,7 @@ Id = "frostfang_reach.stormbound_vale"
 ScenePath = "res://scenes/regions/frostfang_reach/stormbound_vale.tscn"
 Center = Vector3(-55.0, 0, -1525.0)
 Presentation = SubResource("Presentation_stormbound_vale")
-BiomeScatter = SubResource("Scatter_march")
+BiomeScatter = SubResource("Scatter_march_at_stormbound_vale")
 
 ; ---------------------------------------------------------------------------------
 ; frostfang_reach.stonewatch   centre (135.0, -1525.0)   210 x 150   x 30..240  z -1600..-1450
@@ -2411,7 +2897,7 @@ Id = "frostfang_reach.stonewatch"
 ScenePath = "res://scenes/regions/frostfang_reach/stonewatch.tscn"
 Center = Vector3(135.0, 0, -1525.0)
 Presentation = SubResource("Presentation_stonewatch")
-BiomeScatter = SubResource("Scatter_march")
+BiomeScatter = SubResource("Scatter_march_at_stonewatch")
 
 ; ---------------------------------------------------------------------------------
 ; frostfang_reach.frost_march_e   centre (310.0, -1525.0)   140 x 150   x 240..380  z -1600..-1450
@@ -2606,7 +3092,7 @@ Id = "frostfang_reach.frost_march_w"
 ScenePath = "res://scenes/regions/frostfang_reach/frost_march_w.tscn"
 Center = Vector3(-125.0, 0, -1375.0)
 Presentation = SubResource("Presentation_frost_march_w")
-BiomeScatter = SubResource("Scatter_march")
+BiomeScatter = SubResource("Scatter_march_at_frost_march_w")
 
 ; ---------------------------------------------------------------------------------
 ; frostfang_reach.vale_foot   centre (95.0, -1375.0)   230 x 150   x -20..210  z -1450..-1300

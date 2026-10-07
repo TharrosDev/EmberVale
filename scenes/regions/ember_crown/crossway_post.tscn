@@ -8,23 +8,11 @@
 [ext_resource type="Script" path="res://src/Factions/FactionComponent.cs" id="5_faction"]
 [ext_resource type="Script" path="res://src/Economy/ServiceComponent.cs" id="6_service"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_gate_palisade.glb" id="10_gate"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_watch_tower.glb" id="11_tower"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_warden_post.glb" id="12_post"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_waystone.glb" id="13_waystone"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_brazier.glb" id="14_brazier"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_cart.glb" id="15_cart"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_crate.glb" id="16_crate"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_barrel.glb" id="17_barrel"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_hay.glb" id="18_hay"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_sacks.glb" id="19_sacks"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_fence.glb" id="20_fence"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_bench.glb" id="21_bench"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_well.glb" id="22_well"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_campfire.glb" id="23_campfire"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_pine_dead.glb" id="24_pine"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_rock_cluster.glb" id="25_rocks"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_banner_guild.glb" id="26_banner"]
-[ext_resource type="PackedScene" path="res://assets/models/characters/npc_guild_rep.glb" id="30_guild_rep"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_hooded.glb" id="31_hooded"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_townswoman.glb" id="32_townswoman"]
 [ext_resource type="Script" path="res://src/Dialogue/DialogueComponent.cs" id="43_dialogue"]
@@ -35,8 +23,19 @@
 [ext_resource type="Script" path="res://src/Shrines/ShrineComponent.cs" id="shrine_41_5b"]
 [ext_resource type="PackedScene" path="res://scenes/props/bld_wardens_watch.tscn" id="42b_bld_wardens_watch"]
 [ext_resource type="Script" path="res://src/Npc/ScheduleComponent.cs" id="42b_schedulecomponent"]
-[ext_resource type="PackedScene" path="res://assets/models/characters/npc_townsman.glb" id="42b_npc_townsman"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_table_large.gltf" id="wa_prp_table_large"]
+[ext_resource type="PackedScene" path="res://assets/models/characters/npc_dawnwarden.glb" id="rp_npc_dawnwarden"]
+[ext_resource type="PackedScene" path="res://scenes/props/lm_tree_dead_a.tscn" id="rp_lm_tree_dead_a"]
+[ext_resource type="PackedScene" path="res://scenes/props/lm_pine_fir_a.tscn" id="rp_lm_pine_fir_a"]
+[ext_resource type="PackedScene" path="res://scenes/props/lm_rock_boulder_a.tscn" id="rp_lm_rock_boulder_a"]
+[ext_resource type="PackedScene" path="res://scenes/props/lm_waystone.tscn" id="rp_lm_waystone"]
+[ext_resource type="PackedScene" path="res://scenes/props/lm_gate_tower.tscn" id="rp_lm_gate_tower"]
+[ext_resource type="PackedScene" path="res://assets/models/world/prp_fence_a.glb" id="rp_prp_fence_a"]
+[ext_resource type="PackedScene" path="res://assets/models/world/prp_campfire_a.glb" id="rp_prp_campfire_a"]
+[ext_resource type="PackedScene" path="res://assets/models/world/prp_cart_a.glb" id="rp_prp_cart_a"]
+[ext_resource type="PackedScene" path="res://assets/models/world/prp_well_a.glb" id="rp_prp_well_a"]
+[ext_resource type="PackedScene" path="res://assets/models/world/prp_banner_a.glb" id="rp_prp_banner_a"]
+[ext_resource type="PackedScene" path="res://assets/models/world/prp_clutter_pile_a.glb" id="rp_prp_clutter_pile_a"]
 
 ; THE CROSSWAY POST (Phase 38M2) — the wardens' gate on the road north, and the place 38M's toll is
 ; actually about. 38M built the toll, the permit and the bribe and left them standing in the town
@@ -145,12 +144,6 @@ size = Vector3(1.7, 1.9, 0.35)
 [sub_resource type="BoxShape3D" id="Shape_gate"]
 size = Vector3(15.93, 5.51, 2.57)
 
-[sub_resource type="BoxShape3D" id="Shape_tower"]
-size = Vector3(2.77, 8.01, 2.85)
-
-[sub_resource type="BoxShape3D" id="Shape_post"]
-size = Vector3(8.22, 4.0, 7.29)
-
 [sub_resource type="BoxShape3D" id="Shape_crate"]
 size = Vector3(1.24, 1.24, 1.24)
 
@@ -158,43 +151,20 @@ size = Vector3(1.24, 1.24, 1.24)
 height = 0.85
 radius = 0.34
 
-[sub_resource type="BoxShape3D" id="Shape_sacks"]
-size = Vector3(1.15, 0.45, 1.05)
-
 [sub_resource type="BoxShape3D" id="Shape_hay"]
 size = Vector3(0.62, 0.9, 0.64)
 
-[sub_resource type="BoxShape3D" id="Shape_cart"]
-size = Vector3(0.95, 1.6, 1.9)
-
 [sub_resource type="BoxShape3D" id="Shape_bench"]
 size = Vector3(1.8, 0.85, 0.66)
-
-[sub_resource type="BoxShape3D" id="Shape_well"]
-size = Vector3(1.5, 2.75, 2.25)
-
-[sub_resource type="BoxShape3D" id="Shape_fence"]
-size = Vector3(2.95, 1.2, 0.16)
 
 [sub_resource type="CylinderShape3D" id="Shape_brazier"]
 height = 1.2
 radius = 0.3
 
-[sub_resource type="CylinderShape3D" id="Shape_waystone"]
-height = 3.0
-radius = 0.8
-
 [sub_resource type="BoxShape3D" id="Shape_banner"]
 size = Vector3(1.0, 3.4, 0.7)
 
-[sub_resource type="BoxShape3D" id="Shape_rocks"]
-size = Vector3(2.3, 1.4, 1.9)
-
 ; Trunk only: a canopy collider would make a dead pine a pillar the player cannot walk past.
-[sub_resource type="CylinderShape3D" id="Shape_pine"]
-height = 6.0
-radius = 0.4
-
 [sub_resource type="CapsuleShape3D" id="Shape_npc"]
 radius = 0.4
 height = 1.8
@@ -249,6 +219,24 @@ size = Vector3(0.34, 0.03, 0.23)
 [sub_resource type="BoxShape3D" id="wa_box_0p5_0p2_0p4"]
 size = Vector3(0.5, 0.2, 0.4)
 
+[sub_resource type="BoxShape3D" id="RpShape_FenceA"]
+size = Vector3(2.14, 1.2, 0.3)
+
+[sub_resource type="BoxShape3D" id="RpShape_FenceB"]
+size = Vector3(2.14, 1.2, 0.3)
+
+[sub_resource type="BoxShape3D" id="RpShape_FenceC"]
+size = Vector3(2.14, 1.2, 0.3)
+
+[sub_resource type="BoxShape3D" id="RpShape_CartA"]
+size = Vector3(3.4, 1.5, 1.9)
+
+[sub_resource type="BoxShape3D" id="RpShape_Well"]
+size = Vector3(2.6, 2.6, 2.8)
+
+[sub_resource type="BoxShape3D" id="RpShape_SacksA"]
+size = Vector3(2.3, 1.3, 1.5)
+
 [node name="CrosswayPost" type="Node3D"]
 metadata/content_offset = Vector2(30, 5)
 
@@ -296,32 +284,20 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.76, 0)
 shape = SubResource("Shape_gate")
 
 [node name="TowerWest" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 32.5, 0, 6.8)
+transform = Transform3D(0.8, 0, 0, 0, 0.8, 0, 0, 0, 0.8, 30.4, -0.3, 6)
 
-[node name="Model" parent="Nav/TowerWest" instance=ExtResource("11_tower")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/TowerWest"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/TowerWest/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4, 0)
-shape = SubResource("Shape_tower")
+[node name="Model" parent="Nav/TowerWest" instance=ExtResource("rp_lm_gate_tower")]
 
 [node name="TowerEast" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 42.5, 0, 6.8)
+transform = Transform3D(0.8, 0, 0, 0, 0.8, 0, 0, 0, 0.8, 44.6, -0.3, 6)
 
-[node name="Model" parent="Nav/TowerEast" instance=ExtResource("11_tower")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/TowerEast"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/TowerEast/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4, 0)
-shape = SubResource("Shape_tower")
+[node name="Model" parent="Nav/TowerEast" instance=ExtResource("rp_lm_gate_tower")]
 
 ; The realm's banner on the gate — the only thing in the cell that says whose road this is.
 [node name="GateBanner" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 29, 0, 7.2)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 30.4, 0, 2.1)
 
-[node name="Model" parent="Nav/GateBanner" instance=ExtResource("26_banner")]
+[node name="Model" parent="Nav/GateBanner" instance=ExtResource("rp_prp_banner_a")]
 
 [node name="Collider" type="StaticBody3D" parent="Nav/GateBanner"]
 
@@ -331,26 +307,20 @@ shape = SubResource("Shape_banner")
 
 ; --- The wardens' compound, west of the road ------------------------------------
 [node name="WardenPost" type="Node3D" parent="Nav"]
-transform = Transform3D(0.0872, 0, 0.9962, 0, 1, 0, -0.9962, 0, 0.0872, 12, 0, 25)
+transform = Transform3D(0.0785, 0, 0.8966, 0, 0.9, 0, -0.8966, 0, 0.0785, 12.8, -0.3, 25)
 
-[node name="Model" parent="Nav/WardenPost" instance=ExtResource("12_post")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/WardenPost"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/WardenPost/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
-shape = SubResource("Shape_post")
+[node name="Model" parent="Nav/WardenPost" instance=ExtResource("rp_lm_gate_tower")]
 
 [node name="Well" type="Node3D" parent="Nav"]
-transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, 18, 0, 16)
+transform = Transform3D(0.7361, 0, 0.425, 0, 0.85, 0, -0.425, 0, 0.7361, 18, 0, 16)
 
-[node name="Model" parent="Nav/Well" instance=ExtResource("22_well")]
+[node name="Model" parent="Nav/Well" instance=ExtResource("rp_prp_well_a")]
 
 [node name="Collider" type="StaticBody3D" parent="Nav/Well"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/Well/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.37, 0)
-shape = SubResource("Shape_well")
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.3, 0)
+shape = SubResource("RpShape_Well")
 
 [node name="BenchA" type="Node3D" parent="Nav"]
 transform = Transform3D(0.9397, 0, 0.342, 0, 1, 0, -0.342, 0, 0.9397, 16, 0, 14)
@@ -364,15 +334,15 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.42, 0)
 shape = SubResource("Shape_bench")
 
 [node name="CartA" type="Node3D" parent="Nav"]
-transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, 30, 0, 11.5)
+transform = Transform3D(-0.35, 0, 0.6062, 0, 0.7, 0, -0.6062, 0, -0.35, 30, 0, 11.5)
 
-[node name="Model" parent="Nav/CartA" instance=ExtResource("15_cart")]
+[node name="Model" parent="Nav/CartA" instance=ExtResource("rp_prp_cart_a")]
 
 [node name="Collider" type="StaticBody3D" parent="Nav/CartA"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/CartA/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
-shape = SubResource("Shape_cart")
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.75, 0)
+shape = SubResource("RpShape_CartA")
 
 [node name="CrateA" type="Node3D" parent="Nav"]
 transform = Transform3D(0.9659, 0, 0.2588, 0, 1, 0, -0.2588, 0, 0.9659, 41, 0, 10.5)
@@ -397,15 +367,15 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.42, 0)
 shape = SubResource("Shape_barrel")
 
 [node name="SacksA" type="Node3D" parent="Nav"]
-transform = Transform3D(0.342, 0, 0.9397, 0, 1, 0, -0.9397, 0, 0.342, 36.5, 0, 18.5)
+transform = Transform3D(0.2736, 0, 0.7518, 0, 0.8, 0, -0.7518, 0, 0.2736, 36.5, 0, 18.5)
 
-[node name="Model" parent="Nav/SacksA" instance=ExtResource("19_sacks")]
+[node name="Model" parent="Nav/SacksA" instance=ExtResource("rp_prp_clutter_pile_a")]
 
 [node name="Collider" type="StaticBody3D" parent="Nav/SacksA"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/SacksA/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.22, 0)
-shape = SubResource("Shape_sacks")
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.65, 0)
+shape = SubResource("RpShape_SacksA")
 
 [node name="HayA" type="Node3D" parent="Nav"]
 transform = Transform3D(-0.342, 0, 0.9397, 0, 1, 0, -0.9397, 0, -0.342, 39, 0, 10.2)
@@ -451,7 +421,8 @@ ServiceId = "service.crossway.contracts"
 [node name="YardFire" type="Node3D" parent="Nav"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 36, 0, 15)
 
-[node name="Model" parent="Nav/YardFire" instance=ExtResource("23_campfire")]
+[node name="Model" parent="Nav/YardFire" instance=ExtResource("rp_prp_campfire_a")]
+transform = Transform3D(0.6, 0, 0, 0, 0.6, 0, 0, 0, 0.6, 0, 0, 0)
 
 [node name="Coals" type="MeshInstance3D" parent="Nav/YardFire"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.2, 0)
@@ -467,37 +438,37 @@ omni_range = 9.0
 ; Fence line closing the yard's east side so the caravan ground reads as enclosed rather than as
 ; clutter dropped on open dirt.
 [node name="FenceA" type="Node3D" parent="Nav"]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 46, 0, 11)
+transform = Transform3D(0, 0, -1.45, 0, 1.45, 0, 1.45, 0, 0, 46, 0, 11)
 
-[node name="Model" parent="Nav/FenceA" instance=ExtResource("20_fence")]
+[node name="Model" parent="Nav/FenceA" instance=ExtResource("rp_prp_fence_a")]
 
 [node name="Collider" type="StaticBody3D" parent="Nav/FenceA"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/FenceA/Collider"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
-shape = SubResource("Shape_fence")
+shape = SubResource("RpShape_FenceA")
 
 [node name="FenceB" type="Node3D" parent="Nav"]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 46, 0, 14)
+transform = Transform3D(0, 0, 1.45, 0, 1.45, 0, -1.45, 0, 0, 46, 0, 14)
 
-[node name="Model" parent="Nav/FenceB" instance=ExtResource("20_fence")]
+[node name="Model" parent="Nav/FenceB" instance=ExtResource("rp_prp_fence_a")]
 
 [node name="Collider" type="StaticBody3D" parent="Nav/FenceB"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/FenceB/Collider"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
-shape = SubResource("Shape_fence")
+shape = SubResource("RpShape_FenceB")
 
 [node name="FenceC" type="Node3D" parent="Nav"]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 46, 0, 23)
+transform = Transform3D(0, 0, -1.45, 0, 1.45, 0, 1.45, 0, 0, 46, 0, 23)
 
-[node name="Model" parent="Nav/FenceC" instance=ExtResource("20_fence")]
+[node name="Model" parent="Nav/FenceC" instance=ExtResource("rp_prp_fence_a")]
 
 [node name="Collider" type="StaticBody3D" parent="Nav/FenceC"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/FenceC/Collider"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
-shape = SubResource("Shape_fence")
+shape = SubResource("RpShape_FenceC")
 
 ; --- Braziers along the road ----------------------------------------------------
 [node name="BrazierSW" type="Node3D" parent="Nav"]
@@ -568,103 +539,49 @@ omni_range = 11.0
 
 ; --- The verges: dead pines and rock, closing both sides down to the road -------
 [node name="PineA" type="Node3D" parent="Nav"]
-transform = Transform3D(0.9397, 0, 0.342, 0, 1, 0, -0.342, 0, 0.9397, 8, 0, 27)
+transform = Transform3D(1.0121, 0, 0.3683, 0, 1.077, 0, -0.3683, 0, 1.0121, 4, 0, 28.7)
 
-[node name="Model" parent="Nav/PineA" instance=ExtResource("24_pine")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/PineA"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/PineA/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 0)
-shape = SubResource("Shape_pine")
+[node name="Model" parent="Nav/PineA" instance=ExtResource("rp_lm_tree_dead_a")]
 
 [node name="PineB" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, -0.9397, 44, 0, 27)
+transform = Transform3D(-1.1182, 0, -0.407, 0, 1.19, 0, 0.407, 0, -1.1182, 44, 0, 27)
 
-[node name="Model" parent="Nav/PineB" instance=ExtResource("24_pine")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/PineB"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/PineB/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 0)
-shape = SubResource("Shape_pine")
+[node name="Model" parent="Nav/PineB" instance=ExtResource("rp_lm_tree_dead_a")]
 
 [node name="PineC" type="Node3D" parent="Nav"]
-transform = Transform3D(0.1736, 0, 0.9848, 0, 1, 0, -0.9848, 0, 0.1736, 52, 0, 22)
+transform = Transform3D(0.2059, 0, 1.168, 0, 1.186, 0, -1.168, 0, 0.2059, 52, 0, 22)
 
-[node name="Model" parent="Nav/PineC" instance=ExtResource("24_pine")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/PineC"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/PineC/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 0)
-shape = SubResource("Shape_pine")
+[node name="Model" parent="Nav/PineC" instance=ExtResource("rp_lm_tree_dead_a")]
 
 [node name="PineD" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.766, 0, 0.6428, 0, 1, 0, -0.6428, 0, -0.766, 46, 0, -3)
+transform = Transform3D(-0.6197, 0, 0.52, 0, 0.809, 0, -0.52, 0, -0.6197, 46, 0, -3)
 
-[node name="Model" parent="Nav/PineD" instance=ExtResource("24_pine")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/PineD"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/PineD/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 0)
-shape = SubResource("Shape_pine")
+[node name="Model" parent="Nav/PineD" instance=ExtResource("rp_lm_pine_fir_a")]
 
 [node name="PineE" type="Node3D" parent="Nav"]
-transform = Transform3D(0.5, 0, -0.866, 0, 1, 0, 0.866, 0, 0.5, 10, 0, -5)
+transform = Transform3D(0.404, 0, -0.6997, 0, 0.808, 0, 0.6997, 0, 0.404, 10, 0, -5)
 
-[node name="Model" parent="Nav/PineE" instance=ExtResource("24_pine")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/PineE"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/PineE/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 0)
-shape = SubResource("Shape_pine")
+[node name="Model" parent="Nav/PineE" instance=ExtResource("rp_lm_pine_fir_a")]
 
 [node name="PineF" type="Node3D" parent="Nav"]
-transform = Transform3D(0.766, 0, 0.6428, 0, 1, 0, -0.6428, 0, 0.766, 37, 0, -15)
+transform = Transform3D(0.6098, 0, 0.5117, 0, 0.796, 0, -0.5117, 0, 0.6098, 37, 0, -15)
 
-[node name="Model" parent="Nav/PineF" instance=ExtResource("24_pine")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/PineF"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/PineF/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 0)
-shape = SubResource("Shape_pine")
+[node name="Model" parent="Nav/PineF" instance=ExtResource("rp_lm_pine_fir_a")]
 
 [node name="RocksA" type="Node3D" parent="Nav"]
-transform = Transform3D(0.6428, 0, 0.766, 0, 1, 0, -0.766, 0, 0.6428, 6, 0, 9)
+transform = Transform3D(0.2353, 0, 0.2804, 0, 0.366, 0, -0.2804, 0, 0.2353, 6, -0.12, 9)
 
-[node name="Model" parent="Nav/RocksA" instance=ExtResource("25_rocks")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/RocksA"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/RocksA/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
-shape = SubResource("Shape_rocks")
+[node name="Model" parent="Nav/RocksA" instance=ExtResource("rp_lm_rock_boulder_a")]
 
 [node name="RocksB" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.342, 0, -0.9397, 0, 1, 0, 0.9397, 0, -0.342, 56, 0, 24)
+transform = Transform3D(-0.1252, 0, -0.3439, 0, 0.366, 0, 0.3439, 0, -0.1252, 56, -0.12, 24)
 
-[node name="Model" parent="Nav/RocksB" instance=ExtResource("25_rocks")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/RocksB"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/RocksB/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
-shape = SubResource("Shape_rocks")
+[node name="Model" parent="Nav/RocksB" instance=ExtResource("rp_lm_rock_boulder_a")]
 
 [node name="RocksC" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.9848, 0, 0.1736, 0, 1, 0, -0.1736, 0, -0.9848, 17, 0, -13)
+transform = Transform3D(-0.3604, 0, 0.0635, 0, 0.366, 0, -0.0635, 0, -0.3604, 17, -0.12, -13)
 
-[node name="Model" parent="Nav/RocksC" instance=ExtResource("25_rocks")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/RocksC"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/RocksC/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
-shape = SubResource("Shape_rocks")
+[node name="Model" parent="Nav/RocksC" instance=ExtResource("rp_lm_rock_boulder_a")]
 
 ; --- The waystone. TravelName is a LOCALE KEY, not prose (38K): TravelNodeComponent resolves it
 ; --- through Loc.T, and Loc.T returns an unknown string unchanged, so a mistyped key renders as the
@@ -674,13 +591,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 21.5, 0, 18)
 script = ExtResource("2_entity")
 DisplayName = "Crossway Waystone"
 
-[node name="Model" parent="CrosswayWaystone" instance=ExtResource("13_waystone")]
-
-[node name="Collider" type="StaticBody3D" parent="CrosswayWaystone"]
-
-[node name="Shape" type="CollisionShape3D" parent="CrosswayWaystone/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
-shape = SubResource("Shape_waystone")
+[node name="Model" parent="CrosswayWaystone" instance=ExtResource("rp_lm_waystone")]
 
 [node name="Travel" type="Node" parent="CrosswayWaystone"]
 script = ExtResource("3_travel")
@@ -724,7 +635,7 @@ FactionId = "faction.villagers"
 script = ExtResource("6_service")
 ServiceId = "service.crossway.permit"
 
-[node name="Model" parent="RoadWarden" instance=ExtResource("30_guild_rep")]
+[node name="Model" parent="RoadWarden" instance=ExtResource("rp_npc_dawnwarden")]
 
 [node name="GateHand" type="Node3D" parent="."]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 37.5, 0, 8)
@@ -800,7 +711,7 @@ FactionId = "faction.villagers"
 script = ExtResource("6_service")
 ServiceId = "service.crossway.search"
 
-[node name="Model" parent="SearchWarden" instance=ExtResource("30_guild_rep")]
+[node name="Model" parent="SearchWarden" instance=ExtResource("rp_npc_dawnwarden")]
 
 [node name="ImpoundClerk" type="Node3D" parent="."]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 43.5, 0, 14)
@@ -1012,7 +923,7 @@ DialogueId = "dialogue.dawnwarden_captain"
 script = ExtResource("42b_schedulecomponent")
 ScheduleId = "schedule.dawnwarden_captain"
 
-[node name="Model" parent="DawnwardenCaptain" instance=ExtResource("30_guild_rep")]
+[node name="Model" parent="DawnwardenCaptain" instance=ExtResource("rp_npc_dawnwarden")]
 
 [node name="DawnwardenArmourer" type="Node3D" parent="."]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 14.5, 0, 7.5)
@@ -1072,7 +983,7 @@ FactionId = "faction.dawnwardens"
 script = ExtResource("43_dialogue")
 DialogueId = "dialogue.dawnwarden_serjeant"
 
-[node name="Model" parent="DawnwardenSerjeant" instance=ExtResource("42b_npc_townsman")]
+[node name="Model" parent="DawnwardenSerjeant" instance=ExtResource("rp_npc_dawnwarden")]
 
 ; Phase 42C — the rank peer FactionResource.RankPeerNpcId has been waiting for since 42B: "a peer
 ; only means anything once there is a rank to be a peer of." He made rank one himself two seasons
@@ -1105,7 +1016,7 @@ FactionId = "faction.dawnwardens"
 script = ExtResource("43_dialogue")
 DialogueId = "dialogue.dawnwarden_partner"
 
-[node name="Model" parent="DawnwardenPartner" instance=ExtResource("30_guild_rep")]
+[node name="Model" parent="DawnwardenPartner" instance=ExtResource("rp_npc_dawnwarden")]
 
 [node name="MapPin" type="Node3D" parent="Nav/WardensWatch"]
 script = ExtResource("maploc_39_5a")

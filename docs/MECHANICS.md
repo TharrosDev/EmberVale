@@ -209,7 +209,15 @@ caps the first two at 25%).
 - **Hit zones** — an actor can carry several hurtboxes with their own damage and poise multipliers
   (dragon heads, boss bodies); a zone of x1.5 or more is a weak point, an arrow lands on the
   highest-multiplier zone it reaches, and a tall single-zone body takes a headshot on its top 18%
-  (x1.5). `Hurtbox`, `HitZoneResource`, `HitZoneRouting`.
+  (x1.5). A zone capsule can be turned off the vertical (`HitZoneResource.RotationDegrees`), so a dragon's
+  tail, neck and wings each get one that lies along them. `Hurtbox`, `HitZoneResource`, `HitZoneRouting`.
+- **Look versus reach** — a boss can be drawn larger than it fights: `ModelScale` x f with the capsule x
+  sqrt(f) keeps melee reach, telegraph ring and nav unchanged, while `EnemyArchetypeResource.VisualHeight`
+  sizes the whole-body hurtbox, plate, status marks, cast origin and lock-on framing (a locked target taller
+  than 2.8 m pulls the camera back, up and tilts it). The lock-on point is the middle of the body's
+  collision shape. `BodyMetrics`, `BossAdds.RingRadius`, `FramingMath.Lock`.
+- **Held weapons on enemies** — `HeldWeaponPath` and `HeldWeaponScale` hang a model on the hand socket
+  (the Iron King's mace, the clan shaman's staff); visual only. `EquipmentPresentationComponent`.
 - **Damage and resistances** — Physical (armour), Fire, Frost, Lightning, Arcane, Nature, Necrotic
   (own resistances), True; one mitigation curve; resistance never immunity, and a negative resistance
   is a vulnerability (bounded below x2). An unblocked hit does at least 1 damage; crit chance is capped
@@ -549,10 +557,12 @@ caps the first two at 25%).
   `EnemySenses`, `EnemyPerception`.
 - **Tactics** — pack flanking, guard cycles, territory leash, AI LOD clock. `PackFlank`, `GuardCycle`,
   `TerritoryLeash`, `AiLodClock`.
-- **Casters** — standoff banding, kiting, heal, attack, ward priority. `EnemyCasterTactics`.
+- **Casters** — standoff banding, kiting, heal, attack, ward priority; the cast origin pitches onto the target, so a tall caster's bolt does not pass over a 1.8 m player. `EnemyCasterTactics`.
 - **Ashen variants** — corrupted versions rolled at spawn. `AshenAffliction`.
-- **Dragons** — flight with take-off and landing, breath channels aimed from the air, hit zones, lairs
-  (`LairSpawnComponent`), world-event dragon hoards. `FlightComponent`, `BreathComponent`.
+- **Dragons** — real four-legged winged bodies of 5 to 22 m with six-zone hit boxes; flight with take-off
+  and landing, breath channels leaving the snout (`CastOrigin`), lairs (`LairSpawnComponent`), world-event
+  dragon hoards. Bite and wing arcs reach the ground at any capsule height. An airborne breath cannot
+  reach the ground at the current hover heights. `FlightComponent`, `BreathComponent`, `DragonMeleeComponent`.
 - **Encounters** — 46 groups (`data/encounters`) spawned around the player by region, day phase and
   weather, never in safe zones. `EncounterDirector`.
 - **Scaling** — champions and adds get a tagged stat bonus. `EnemyScaling`.
@@ -606,7 +616,7 @@ caps the first two at 25%).
 - **World events** — one at a time: raids, caches, champion hunts (`data/world_events`).
   `WorldEventDirector`.
 - **NPC routines** — 41 schedules (`data/schedules`); NPCs walk routines, flee alerts, face you in
-  conversation; outfits by profession and faction. `ScheduleComponent`, `NpcVisualKit`.
+  conversation. An NPC's look is the generated body its scene node instances (assigned by role; the old outfit kit is gone). `ScheduleComponent`.
 - **Actors that leave** — a placed actor disappears once a story flag is set. `FlagVisibilityComponent`.
 - **Safe zones** — region and cell bubbles where encounters never spawn. `SafeZones`.
 

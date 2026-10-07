@@ -36,7 +36,7 @@ BackdropColor = Color(0.30, 0.28, 0.32, 1)
 Relief = 1.0
 DetailScale = 2.5
 BackdropRadius = 340.0
-BackdropHeight = 60.0
+BackdropHeight = 102.0
 TerrainSeed = 4400
 SurfaceRoughness = 0.95
 DetailRoughness = 0.88
@@ -48,7 +48,7 @@ HeightBlendEnd = 26.0
 SunTint = Color(1.0, 0.80, 0.74, 1)
 SunEnergyScale = 1.3
 HazeColor = Color(0.66, 0.60, 0.70, 1)
-HazeScale = 1.35
+HazeScale = 1.1
 FixedSkyHour = 17.4
 
 
@@ -78,15 +78,15 @@ BackdropDistance = 1100.0
 
 [sub_resource type="Resource" id="Layer_still_grass"]
 script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_grass_tall.glb"
+ScenePath = "res://assets/models/props/prp_grass_clump_a.glb"
 Count = 480
-MinimumScale = 0.75
-MaximumScale = 1.2
+MinimumScale = 0.9
+MaximumScale = 1.4
 MinimumSpacing = 1.6
 Saturation = 0.45
-MaxSlope = 0.55
 Clumping = 0.3
 ClumpScale = 24.0
+MaxSlope = 0.55
 Tint = Color(0.86, 0.84, 0.70, 1)
 TintVariation = 0.08
 VisibilityRangeEnd = 62.0
@@ -95,33 +95,37 @@ CastShadows = false
 
 [sub_resource type="Resource" id="Layer_wheat"]
 script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_grass_wispy.glb"
+ScenePath = "res://assets/models/props/prp_grass_clump_a.glb"
 Count = 360
-MinimumScale = 0.8
-MaximumScale = 1.1
+MinimumScale = 0.9
+MaximumScale = 1.3
 MinimumSpacing = 1.8
 Saturation = 0.5
-MaxSlope = 0.35
 Clumping = 0.7
 ClumpScale = 40.0
+MaxSlope = 0.35
 Tint = Color(0.92, 0.86, 0.62, 1)
 TintVariation = 0.05
 VisibilityRangeEnd = 58.0
 VisibilityFadeMargin = 10.0
 CastShadows = false
 
+; ⚠️ THE TINT IS ABOVE 1 ON PURPOSE. The oak's atlas is dark (mean about 0.25); drained by Saturation it
+; is a dark grey, and an instance colour only multiplies. A pale, bloodless tree in the held dusk
+; needs the grey LIFTED, which only an over-bright tint does. Fewer and wider apart than before:
+; the crown is 8.5 m across at scale 1.
 [sub_resource type="Resource" id="Layer_pale_tree"]
 script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_tree_broadleaf.glb"
-Count = 38
+ScenePath = "res://assets/models/world/prp_tree_oak_a.glb"
+Count = 30
 MinimumScale = 0.8
-MaximumScale = 1.3
-MinimumSpacing = 9.0
-Saturation = 0.35
-MaxSlope = 0.42
+MaximumScale = 1.4
+MinimumSpacing = 11.0
+Saturation = 0.3
 Clumping = 0.8
 ClumpScale = 50.0
-Tint = Color(0.82, 0.80, 0.74, 1)
+MaxSlope = 0.42
+Tint = Color(1.35, 1.3, 1.2, 1)
 TintVariation = 0.08
 VisibilityRangeEnd = 150.0
 VisibilityFadeMargin = 22.0
@@ -130,20 +134,20 @@ HlodShape = 1
 HlodReduction = 3
 HlodRangeBegin = 130.0
 HlodRangeEnd = 320.0
-HlodColor = Color(0.88, 0.9, 0.92, 1)
+HlodColor = Color(1.35, 1.3, 1.2, 1)
 HlodScale = Vector3(1.15, 1.15, 1.15)
 
 [sub_resource type="Resource" id="Layer_stone"]
 script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_rock_cluster_a.glb"
-Count = 10
-MinimumScale = 0.3
-MaximumScale = 0.6
+ScenePath = "res://assets/models/world/prp_rock_rubble_a.glb"
+Count = 8
+MinimumScale = 0.35
+MaximumScale = 0.7
 MinimumSpacing = 12.0
 Saturation = 0.3
-MaxSlope = 0.9
 Clumping = 0.5
 ClumpScale = 30.0
+MaxSlope = 0.9
 Tint = Color(0.80, 0.78, 0.76, 1)
 TintVariation = 0.08
 VisibilityRangeEnd = 110.0
@@ -173,6 +177,90 @@ EdgePadding = 1.0
 Layers = Array[ExtResource("10_layer")]([SubResource("Layer_still_grass"), SubResource("Layer_stone")])
 Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_arena")])
 
+; Clearings under the monumental layer: derived by gen_regions.monument_exclusions from
+; tools/district_layouts.py and the hand-placed monuments in the cell scenes. Never edit them here.
+[sub_resource type="Resource" id="Exclusion_auto_palace_0"]
+script = ExtResource("11_exclusion")
+Center = Vector2(-47.0, 27.0)
+Radius = 3.8
+
+[sub_resource type="Resource" id="Exclusion_auto_palace_1"]
+script = ExtResource("11_exclusion")
+Center = Vector2(-47.0, 45.0)
+Radius = 3.8
+
+[sub_resource type="Resource" id="Exclusion_auto_palace_2"]
+script = ExtResource("11_exclusion")
+Center = Vector2(-35.0, -5.0)
+Radius = 29.9
+
+[sub_resource type="Resource" id="Exclusion_auto_palace_3"]
+script = ExtResource("11_exclusion")
+Center = Vector2(-23.0, 27.0)
+Radius = 3.8
+
+[sub_resource type="Resource" id="Exclusion_auto_palace_4"]
+script = ExtResource("11_exclusion")
+Center = Vector2(-23.0, 45.0)
+Radius = 3.8
+
+[sub_resource type="Resource" id="Scatter_palace_at_palace"]
+script = ExtResource("9_scatter")
+Seed = 7303
+EdgePadding = 1.0
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_still_grass"), SubResource("Layer_stone")])
+Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_arena"), SubResource("Exclusion_auto_palace_0"), SubResource("Exclusion_auto_palace_1"), SubResource("Exclusion_auto_palace_2"), SubResource("Exclusion_auto_palace_3"), SubResource("Exclusion_auto_palace_4")])
+
+[sub_resource type="Resource" id="Exclusion_auto_processional_0"]
+script = ExtResource("11_exclusion")
+Center = Vector2(-3.0, -71.0)
+Radius = 3.2
+
+[sub_resource type="Resource" id="Exclusion_auto_processional_1"]
+script = ExtResource("11_exclusion")
+Center = Vector2(0.0, 19.0)
+Radius = 9.7
+
+[sub_resource type="Resource" id="Exclusion_auto_processional_2"]
+script = ExtResource("11_exclusion")
+Center = Vector2(52.0, 31.0)
+Radius = 9.7
+
+[sub_resource type="Resource" id="Exclusion_auto_processional_3"]
+script = ExtResource("11_exclusion")
+Center = Vector2(88.0, -19.0)
+Radius = 22.8
+
+[sub_resource type="Resource" id="Scatter_fields_at_processional"]
+script = ExtResource("9_scatter")
+Seed = 7301
+EdgePadding = 1.0
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_still_grass"), SubResource("Layer_wheat"), SubResource("Layer_pale_tree"), SubResource("Layer_stone")])
+Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_auto_processional_0"), SubResource("Exclusion_auto_processional_1"), SubResource("Exclusion_auto_processional_2"), SubResource("Exclusion_auto_processional_3")])
+
+[sub_resource type="Resource" id="Exclusion_auto_city_0"]
+script = ExtResource("11_exclusion")
+Center = Vector2(17.0, -34.0)
+Radius = 5.5
+
+[sub_resource type="Resource" id="Scatter_city_at_city"]
+script = ExtResource("9_scatter")
+Seed = 7302
+EdgePadding = 1.0
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_still_grass"), SubResource("Layer_pale_tree")])
+Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_auto_city_0")])
+
+[sub_resource type="Resource" id="Exclusion_auto_east_canal_0"]
+script = ExtResource("11_exclusion")
+Center = Vector2(-6.0, 33.0)
+Radius = 11.6
+
+[sub_resource type="Resource" id="Scatter_fields_at_east_canal"]
+script = ExtResource("9_scatter")
+Seed = 7301
+EdgePadding = 1.0
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_still_grass"), SubResource("Layer_wheat"), SubResource("Layer_pale_tree"), SubResource("Layer_stone")])
+Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_auto_east_canal_0")])
 
 ; ---------------------------------------------------------------------------------
 ; pale_concord.west_mere   centre (-2265.0, -65.0)   190 x 190   x -2360..-2170  z -160..30
@@ -308,7 +396,7 @@ Id = "pale_concord.palace"
 ScenePath = "res://scenes/regions/pale_concord/palace.tscn"
 Center = Vector3(-2075.0, 0, -65.0)
 Presentation = SubResource("Presentation_palace")
-BiomeScatter = SubResource("Scatter_palace")
+BiomeScatter = SubResource("Scatter_palace_at_palace")
 
 ; ---------------------------------------------------------------------------------
 ; pale_concord.north_fields   centre (-1870.0, -65.0)   220 x 190   x -1980..-1760  z -160..30
@@ -420,7 +508,7 @@ Id = "pale_concord.processional"
 ScenePath = "res://scenes/regions/pale_concord/processional.tscn"
 Center = Vector3(-2080.0, 0, 115.0)
 Presentation = SubResource("Presentation_processional")
-BiomeScatter = SubResource("Scatter_fields")
+BiomeScatter = SubResource("Scatter_fields_at_processional")
 
 ; ---------------------------------------------------------------------------------
 ; pale_concord.east_orchard   centre (-1860.0, 115.0)   200 x 170   x -1960..-1760  z 30..200
@@ -657,7 +745,7 @@ Id = "pale_concord.city"
 ScenePath = "res://scenes/regions/pale_concord/city.tscn"
 Center = Vector3(-2045.0, 0, 305.0)
 Presentation = SubResource("Presentation_city")
-BiomeScatter = SubResource("Scatter_city")
+BiomeScatter = SubResource("Scatter_city_at_city")
 SafeRadius = 40.0
 
 ; ---------------------------------------------------------------------------------
@@ -735,7 +823,7 @@ Id = "pale_concord.east_canal"
 ScenePath = "res://scenes/regions/pale_concord/east_canal.tscn"
 Center = Vector3(-1840.0, 0, 305.0)
 Presentation = SubResource("Presentation_east_canal")
-BiomeScatter = SubResource("Scatter_fields")
+BiomeScatter = SubResource("Scatter_fields_at_east_canal")
 
 ; ---------------------------------------------------------------------------------
 ; pale_concord.southwest_fields   centre (-2250.0, 525.0)   220 x 230   x -2360..-2140  z 410..640

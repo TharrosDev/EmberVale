@@ -169,9 +169,34 @@ public sealed partial class EnemyShots : ShotHarness
 
         // Imported skinned AABBs include bind-space extremes for several source packs, so gameplay
         // capsule dimensions are the stable framing contract (and the collision scale being tested).
-        float height = archetype.CapsuleHeight;
-        float width = archetype.CapsuleRadius * 2f;
-        float distance = Mathf.Max(4.8f, Mathf.Max(height * 2.10f, archetype.CapsuleRadius * 5.0f));
+        //
+        // A multi-zone body is the exception: its capsule is only what the ground collides with (a
+        // 22 m dragon stands on a 4.8 m one), and its hit zones are authored to the silhouette. So
+        // the frame grows to hold the zones, or the shot is of a pair of legs.
+        // A body drawn taller than its capsule (VisualHeight) is framed by what is drawn.
+        float height = Mathf.Max(archetype.CapsuleHeight, archetype.VisualHeight);
+        float radius = archetype.CapsuleRadius * (height / Mathf.Max(0.01f, archetype.CapsuleHeight));
+        float reach = radius;
+        foreach (HitZoneResource zone in archetype.HitZones)
+        {
+            if (zone == null)
+            {
+                continue;
+            }
+
+            // Half the capsule's straight section, turned the way the zone is turned.
+            Vector3 radians = zone.RotationDegrees * (Mathf.Pi / 180f);
+            Vector3 spine = Basis.FromEuler(radians) * Vector3.Up *
+                Mathf.Max(0f, (zone.Height * 0.5f) - zone.Radius);
+            height = Mathf.Max(height, zone.Offset.Y + Mathf.Abs(spine.Y) + zone.Radius);
+            reach = Mathf.Max(reach,
+                new Vector2(zone.Offset.X, zone.Offset.Z).Length() +
+                new Vector2(spine.X, spine.Z).Length() + zone.Radius);
+        }
+
+        float width = radius * 2f;
+        float distance = Mathf.Max(
+            4.8f, Mathf.Max(height * 2.10f, Mathf.Max(radius * 5.0f, reach * 2.6f)));
         float angle = Mathf.DegToRad(angleDegrees);
         Vector3 target = ground + new Vector3(0f, height * 0.52f, 0f);
         // Enemy factories orient the body toward local -Z. A zero angle must therefore face its
@@ -271,20 +296,13 @@ public sealed partial class EnemyShots : ShotHarness
         {
             return $"requested '{_slot}' pose is advancing instead of paused at the capture sample";
         }
-        if (EnemyVisualKit.Resolve(_subject.TemplateId) is { } profile)
+        // A held weapon the archetype authors must actually be in the hand: a bone-name miss
+        // leaves the piece out silently, which looks exactly like a body that never had one.
+        if (EnemyArchetypeDatabase.Get(_subject.TemplateId) is { HeldWeaponPath.Length: > 0 } &&
+            _subject.GetNodeOrNull<Embervale.Animation.EquipmentPresentationComponent>("EquipmentVisuals")
+                ?.IsAttached(EnemyArchetypeFactory.HeldWeaponName) != true)
         {
-            Skeleton3D? skeleton = FindSkeleton(_subject);
-            if (skeleton == null)
-            {
-                return $"identity profile '{profile.Id}' has no skeleton";
-            }
-            foreach (EnemyVisualKit.Piece piece in profile.Pieces)
-            {
-                if (skeleton.FindChild($"Identity_{piece.Name}", recursive: true, owned: false) == null)
-                {
-                    return $"identity piece '{piece.Name}' did not attach";
-                }
-            }
+            return "the archetype's held weapon did not attach";
         }
         return null;
     }
@@ -298,22 +316,6 @@ public sealed partial class EnemyShots : ShotHarness
         foreach (Node child in node.GetChildren())
         {
             if (FindAnimationPlayer(child) is { } found)
-            {
-                return found;
-            }
-        }
-        return null;
-    }
-
-    private static Skeleton3D? FindSkeleton(Node node)
-    {
-        if (node is Skeleton3D skeleton)
-        {
-            return skeleton;
-        }
-        foreach (Node child in node.GetChildren())
-        {
-            if (FindSkeleton(child) is { } found)
             {
                 return found;
             }

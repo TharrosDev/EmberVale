@@ -800,6 +800,15 @@ public static partial class SpellVfx
             }
         }
 
+        // A body drawn taller than its capsule (BodyMetrics.VisualHeight) fills the taller space,
+        // and is wider by the same proportion, so an effect sized to it wraps what is on screen.
+        float drawn = Embervale.Combat.BodyMetrics.DeclaredVisualHeight(body) - foot;
+        if (drawn > height)
+        {
+            width *= drawn / height;
+            height = drawn;
+        }
+
         centre = new Vector3(0f, foot + (height * 0.5f), 0f);
         size = new Vector3(width, height, width);
     }

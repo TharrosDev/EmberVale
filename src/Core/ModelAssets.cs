@@ -44,17 +44,8 @@ public static class ModelAssets
 
     // FIRST-PERSON / VIEWMODEL — cosmetic, no collision, motion is procedural not baked.
 
-    // Equipment and weapons — rigid followers and hand-socket meshes.
+    // Weapons — hand-socket meshes.
     public const string IronSword = "res://assets/models/weapons/wpn_sword_iron.glb";
-    public const string Pauldron = "res://assets/models/equipment/eqp_pauldron_embervale.glb";
-    public const string Pouch = "res://assets/models/equipment/eqp_pouch_embervale.glb";
-
-    /// <summary>The modular outfit kit every human NPC's profile draws its pieces from.</summary>
-    public const string NpcKit = "res://assets/models/equipment/npc_kit_embervale.glb";
-
-    /// <summary>Bolt-on identity pieces that give non-humanoid enemies their silhouette without
-    /// forcing them through the humanoid rig.</summary>
-    public const string EnemyIdentityKit = "res://assets/models/equipment/enemy_identity_kit.glb";
 
     // STATIC PROP — the ones gameplay code spawns directly rather than a scene placing.
     public const string TrainingDummy = "res://assets/models/props/prp_training_dummy.glb";
@@ -88,7 +79,7 @@ public static class ModelAssets
     public static readonly string[] All =
     {
         PlayerBody, Goblin, AshenAcolyte, Horse,
-        IronSword, Pauldron, Pouch, NpcKit, EnemyIdentityKit,
+        IronSword,
         TrainingDummy, CacheChest, CacheChestOpen, TomeStand,
     };
 }

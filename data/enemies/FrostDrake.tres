@@ -26,8 +26,10 @@ FactionId = "faction.beasts"
 KnownSpellIds = Array[String](["spell.drake_breath"])
 BreathSpellId = "spell.drake_breath"
 BreathDuration = 1.2
-CapsuleRadius = 0.9
-CapsuleHeight = 2.2
+CapsuleRadius = 1.0
+CapsuleHeight = 2.5
+; The mouth, measured on the model: breath leaves the jaws, not the chest the capsule implies.
+CastOrigin = Vector3(0, 2.4, -1.75)
 MaxPoise = 90.0
 Reaction = 3
 StaminaRegen = 14.0

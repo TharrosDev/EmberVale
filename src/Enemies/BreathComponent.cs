@@ -155,9 +155,13 @@ public partial class BreathComponent : EntityComponent
 
         // LookAt throws on a degenerate direction; a target standing exactly on the muzzle is not a
         // case worth aiming at anyway.
-        if (_aim.GlobalPosition.DistanceSquaredTo(targetPos) > 0.01f)
+        Vector3 to = targetPos - _aim.GlobalPosition;
+        if (to.LengthSquared() > 0.01f)
         {
-            _aim.LookAt(targetPos, Vector3.Up);
+            // A mouth that overhangs its target (a long neck, a target under the jaw) aims straight
+            // down, and LookAt refuses an up-vector parallel to the direction: any level axis will do.
+            bool plumb = Mathf.Abs(to.Normalized().Dot(Vector3.Up)) > 0.999f;
+            _aim.LookAt(targetPos, plumb ? Vector3.Forward : Vector3.Up);
         }
     }
 

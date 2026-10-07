@@ -522,6 +522,10 @@ public partial class BossController : EntityComponent
         }
 
         List<Node3D> markers = SpawnMarkers(arena);
+
+        // The fallback ring stands off the boss's own body: a fixed ring that cleared a 0.7 m
+        // Iron King put adds inside a dragon.
+        float ring = BossAdds.RingRadius(BodyMetrics.CapsuleRadius(body, BossAdds.ReferenceBossRadius));
         for (int i = 0; i < count; i++)
         {
             // Create at zero, add, THEN place (CLAUDE.md): a cell root has already been moved to the
@@ -531,7 +535,7 @@ public partial class BossController : EntityComponent
             arena.AddChild(add);
             add.GlobalPosition = markers.Count > 0
                 ? markers[(live.Count + i) % markers.Count].GlobalPosition
-                : body.GlobalPosition + BossAdds.SpawnSlot(i, count, RingRadius);
+                : body.GlobalPosition + BossAdds.SpawnSlot(i, count, ring);
 
             EnemyScaling.ApplyHealthMultiplier(add, wave.HealthMultiplier, "boss.add");
             live.Add(add);
@@ -539,9 +543,6 @@ public partial class BossController : EntityComponent
 
         Log.Info($"{Entity!.DisplayName} calls {count}x {wave.TemplateId}.");
     }
-
-    /// <summary>Radius of the fallback ring — outside the boss's own body, inside its reach.</summary>
-    private const float RingRadius = 4.5f;
 
     /// <summary>This wave's still-living adds, pruned of anything freed or dead.</summary>
     private List<EnemyEntity> LiveAdds(BossAddWaveResource wave)

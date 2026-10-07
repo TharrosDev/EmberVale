@@ -50,10 +50,17 @@ public partial class DragonMeleeComponent : EntityComponent
         // Reach multipliers on the body's own radius: the jaws lead, the tail sweeps furthest back,
         // and the wing is the widest but shallowest — it covers both flanks at once, which is what a
         // sweep is.
-        enemy.AddChild(BuildArc(BiteNode, new Vector3(0f, height * 0.7f, -radius * 1.1f),
-            new Vector3(radius * 1.2f, height * 0.5f, radius * 1.4f)));
-        enemy.AddChild(BuildArc(WingNode, new Vector3(0f, height * 0.5f, 0f),
-            new Vector3(radius * 3f, height * 0.4f, radius * 1.6f)));
+        //
+        // ⚠️ EVERY ARC REACHES DOWN TO THE GROUND, WHATEVER THE BODY'S HEIGHT. The target is 1.8 m
+        // tall no matter how big the dragon is, and these boxes are sized from the capsule. The bite
+        // used to sit at 0.45-0.95 of the height, which on a 4 m capsule is 1.8-3.8 m: it could only
+        // touch a player in mid-jump, and every centimetre the capsule grew lifted it further off.
+        // The wing was a hand's width from the same failure at 5.9 m. The tops are where they were;
+        // only the floors moved.
+        enemy.AddChild(BuildArc(BiteNode, new Vector3(0f, height * 0.475f, -radius * 1.1f),
+            new Vector3(radius * 1.2f, height * 0.95f, radius * 1.4f)));
+        enemy.AddChild(BuildArc(WingNode, new Vector3(0f, height * 0.4f, 0f),
+            new Vector3(radius * 3f, height * 0.6f, radius * 1.6f)));
         enemy.AddChild(BuildArc(TailNode, new Vector3(0f, height * 0.3f, radius * 1.3f),
             new Vector3(radius * 1.6f, height * 0.4f, radius * 2f)));
 

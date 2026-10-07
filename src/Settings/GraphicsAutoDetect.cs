@@ -31,9 +31,6 @@ public static class GraphicsAutoDetect
         "radeon(tm) graphics", "adreno", "mali", "apple m",
     };
 
-    // The Steam Deck reports its APU by codename or as a custom part rather than by a retail name.
-    private static readonly string[] SteamDeckNames = { "vangogh", "van gogh", "galileo", "sephiroth", "custom gpu 0405", "custom gpu 0932" };
-
     private static readonly string[] SoftwareNames = { "llvmpipe", "swiftshader", "lavapipe", "softpipe", "basic render" };
 
     // Discrete parts that are real GPUs but not High-tier ones at native resolution.
@@ -51,11 +48,6 @@ public static class GraphicsAutoDetect
         if (deviceType == DeviceCpu || ContainsAny(name, SoftwareNames))
         {
             return new GraphicsRecommendation(GraphicsMath.Performance, 30);
-        }
-
-        if (ContainsAny(name, SteamDeckNames))
-        {
-            return new GraphicsRecommendation(GraphicsMath.Low, 60);
         }
 
         bool namedIntegrated = ContainsAny(name, IntegratedNames);

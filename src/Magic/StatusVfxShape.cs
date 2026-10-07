@@ -60,4 +60,22 @@ public static class StatusVfxShapes
 
         return (controls & StatusControl.Mark) != 0 ? StatusVfxShape.MarkRing : StatusVfxShape.Swirl;
     }
+
+    /// <summary>
+    /// How much larger than the <paramref name="referenceHeight"/> body the marks were authored for
+    /// a body of <paramref name="bodyHeight"/> is. Never below 1: a person and anything smaller keep
+    /// the authored marks, because a shell shrunk to a wolf's height would not cover its length.
+    /// </summary>
+    public static float BodyFit(float bodyHeight, float referenceHeight) =>
+        referenceHeight > 0f && float.IsFinite(bodyHeight) && bodyHeight > referenceHeight
+            ? bodyHeight / referenceHeight
+            : 1f;
+
+    /// <summary>
+    /// Where a mark authored to float at <paramref name="authoredHead"/> over a
+    /// <paramref name="referenceHeight"/> body floats over one <paramref name="fit"/> times as tall:
+    /// the same clearance above the taller head, not the clearance scaled up with it.
+    /// </summary>
+    public static float HeadHeight(float authoredHead, float referenceHeight, float fit) =>
+        (referenceHeight * fit) + (authoredHead - referenceHeight);
 }

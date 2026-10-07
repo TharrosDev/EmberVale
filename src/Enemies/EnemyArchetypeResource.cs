@@ -33,7 +33,8 @@ public partial class EnemyArchetypeResource : Resource
 
     /// <summary>Capsule colour used for that fallback, so the four read apart before art lands.</summary>
     /// <summary>Uniform scale on the authored model — lets a boss reuse a humanoid body at its own size.
-    /// Match <see cref="CapsuleHeight"/> to the scaled model.</summary>
+    /// Match <see cref="CapsuleHeight"/> to the scaled model, or, for a body meant to tower without
+    /// out-reaching its fight, see <see cref="VisualHeight"/>.</summary>
     [Export] public float ModelScale { get; set; } = 1f;
 
     [Export] public Color PlaceholderTint { get; set; } = new(0.45f, 0.45f, 0.48f);
@@ -72,6 +73,13 @@ public partial class EnemyArchetypeResource : Resource
     /// one whole-body capsule hurtbox instead, so this costs existing content nothing.</summary>
     [Export] public Godot.Collections.Array<HitZoneResource> HitZones { get; set; } = new();
 
+    /// <summary>Where spells and a breath leave this body, from its feet in metres (negative Z is
+    /// forward). Zero, the default, is the chest point every archetype has always cast from: three
+    /// quarters of the capsule height, just ahead of the axis. A long-necked body sets it to the
+    /// mouth, because the capsule no longer says where the head is: a 22 m dragon breathing from
+    /// its chest is breathing from eight metres behind its own jaws.</summary>
+    [Export] public Vector3 CastOrigin { get; set; } = Vector3.Zero;
+
     /// <summary>Build this archetype as a <see cref="BossEntity"/> rather than a plain
     /// <see cref="EnemyEntity"/>, so the Phase 28C boss healthbar and the 28D corruption-on-kill loop
     /// resolve it through the <c>ServiceLocator</c>. World bosses and the dragons set it.</summary>
@@ -99,4 +107,35 @@ public partial class EnemyArchetypeResource : Resource
     /// matches <see cref="Stats.StatsComponent"/>'s, so a non-caster never needs to set it.</summary>
     [Export] public float ManaRegen { get; set; } = 4f;
     [Export] public int XpValue { get; set; } = 30;
+
+    [ExportGroup("Presentation")]
+    /// <summary>A weapon model drawn in the right hand, hung on the hand socket through
+    /// <see cref="Animation.EquipmentPresentationComponent"/> like the player's sword. Visual only:
+    /// the blow still comes from <see cref="WeaponPath"/>. Empty (the default) holds nothing, and a
+    /// rig with no hand bone holds nothing either.</summary>
+    [Export] public string HeldWeaponPath { get; set; } = string.Empty;
+
+    /// <summary>Uniform scale on <see cref="HeldWeaponPath"/>, on top of <see cref="ModelScale"/>:
+    /// the weapon hangs under the body's rig, so it already grows with the body. This is for a
+    /// body authored large at <c>ModelScale</c> 1, or a weapon meant to be oversized for its
+    /// wielder.</summary>
+    [Export] public float HeldWeaponScale { get; set; } = 1f;
+
+    /// <summary>A flat colour laid over every surface of the authored model. Transparent (the
+    /// default) leaves the model's own materials alone. Only for archetypes that share one mesh and
+    /// would otherwise be the same creature at two sizes.</summary>
+    [Export] public Color BodyTint { get; set; } = new(0f, 0f, 0f, 0f);
+
+    /// <summary>
+    /// Metres from the feet to the top of the model as drawn, when that is taller than
+    /// <see cref="CapsuleHeight"/>. 0 (the default) means the capsule is the body.
+    ///
+    /// <para><b>Look and reach are separate.</b> The melee hitbox, its forward offset, the telegraph
+    /// ring and the nav agent all derive from the capsule, so growing the capsule with the model
+    /// grows how far the enemy hits. A body made to tower is therefore authored as
+    /// <see cref="ModelScale"/> x f with the capsule x sqrt(f), and the height the model really
+    /// stands at is written here. The whole-body hurtbox, the floating plate, status marks, the cast
+    /// origin and the lock-on camera read this; reach does not.</para>
+    /// </summary>
+    [Export] public float VisualHeight { get; set; }
 }

@@ -1,23 +1,11 @@
 [gd_scene load_steps=22 format=3]
 
-[ext_resource type="PackedScene" path="res://assets/models/architecture/mod_wall_plain.gltf" id="1_wall_plain"]
-[ext_resource type="PackedScene" path="res://assets/models/architecture/mod_wall_timber.gltf" id="2_wall_timber"]
-[ext_resource type="PackedScene" path="res://assets/models/architecture/mod_wall_door.gltf" id="3_wall_door"]
-[ext_resource type="PackedScene" path="res://assets/models/architecture/mod_wall_window.gltf" id="4_wall_window"]
-[ext_resource type="PackedScene" path="res://assets/models/architecture/mod_wall_window_thin.gltf" id="5_wall_window_thin"]
-[ext_resource type="PackedScene" path="res://assets/models/architecture/mod_window_wide.gltf" id="6_window_wide"]
-[ext_resource type="PackedScene" path="res://assets/models/architecture/mod_window_thin.gltf" id="7_window_thin"]
 [ext_resource type="PackedScene" path="res://assets/models/architecture/mod_corner.gltf" id="8_corner"]
-[ext_resource type="PackedScene" path="res://assets/models/architecture/mod_roof_4x4.gltf" id="9_roof_4x4"]
-[ext_resource type="PackedScene" path="res://assets/models/architecture/mod_gable_4.gltf" id="10_gable_4"]
 [ext_resource type="PackedScene" path="res://assets/models/architecture/mod_door.gltf" id="11_door"]
-[ext_resource type="PackedScene" path="res://assets/models/architecture/mod_chimney.gltf" id="12_chimney"]
 [ext_resource type="PackedScene" path="res://assets/models/architecture/mod_wall_base.gltf" id="13_wall_base"]
 [ext_resource type="PackedScene" path="res://assets/models/architecture/mod_wall_stone.gltf" id="14_wall_stone"]
 [ext_resource type="PackedScene" path="res://assets/models/architecture/mod_wall_stone_door.gltf" id="15_wall_stone_door"]
 [ext_resource type="PackedScene" path="res://assets/models/architecture/mod_wall_stone_window.gltf" id="16_wall_stone_window"]
-[ext_resource type="PackedScene" path="res://assets/models/architecture/mod_wall_stone_window_thin.gltf" id="17_wall_stone_window_thin"]
-[ext_resource type="PackedScene" path="res://assets/models/architecture/mod_vine.gltf" id="18_vine"]
 
 [sub_resource type="BoxShape3D" id="Shape_wall_x"]
 size = Vector3(2.0, 3.12, 0.41)

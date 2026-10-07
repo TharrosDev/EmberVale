@@ -16,13 +16,20 @@ AttributesPath = "res://data/attributes/BoarAttributes.tres"
 WeaponPath = "res://data/weapons/BoarTusks.tres"
 LootTablePath = "res://data/loot/BeastLoot.tres"
 ModelPath = "res://assets/models/creatures/enm_thornback_boar.glb"
+ModelScale = 1.7
 PlaceholderTint = Color(0.3, 0.24, 0.2, 1)
 AiProfileId = "ai.territorial"
 FactionId = "faction.beasts"
 KnownSpellIds = Array[String]([])
-CapsuleRadius = 0.55
-CapsuleHeight = 1.0
+CapsuleRadius = 0.72
+CapsuleHeight = 1.3
 MaxPoise = 80.0
 Reaction = 3
 StaminaRegen = 10.0
 XpValue = 60
+; Look and reach are separate (EnemyArchetypeResource.VisualHeight). The model is drawn at
+; ModelScale 1.7 (1 m -> 1.7 m at the shoulder, about 3 m long); the capsule grew by sqrt(1.7) only
+; (0.55 x 1 -> 0.72 x 1.3), because the melee hitbox, the telegraph ring and the nav
+; agent all derive from the capsule and AttackRange is not changed. VisualHeight is what the
+; hurtbox, the plate, status marks, the cast origin and the lock camera read.
+VisualHeight = 1.7

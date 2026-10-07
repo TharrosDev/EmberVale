@@ -479,7 +479,7 @@ vision again in first-run setup.
 | `HoldsToPresses` | A hold to confirm completes on one press; the destructive ones then ask through a prompt instead. |
 
 ⚠️ **`FontSize` floors at `CaptionFontSize` regardless of the setting.** The 12 px floor exists
-because of a real min-spec/Steam Deck readability audit, and a *text size* control that can make
+because of a real min-spec readability audit, and a *text size* control that can make
 text unreadable is not an accessibility feature.
 
 ### Colour vision
@@ -512,7 +512,7 @@ boss-phase rank are pips as well as numbers.
 ## 9. Responsiveness
 
 ⚠️ **Measure the viewport, never the window.** `GetViewportRect()` is already in *logical* pixels
-- the content-scale factor `UiScale` drives has been applied - so a Steam Deck at 1280x800 with
+- the content-scale factor `UiScale` drives has been applied - so a 1280x800 window with
 UI scale 1.5 reports **853x533**, not 1280x800.
 
 Use `UiTheme.ApplyScreenInset(shell)` for a full-screen panel (the gutter shrinks below 1100 px),

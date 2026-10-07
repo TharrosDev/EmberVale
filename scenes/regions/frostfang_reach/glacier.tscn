@@ -14,21 +14,19 @@
 
 [gd_scene load_steps=2 format=3 uid="uid://crgnfrostcell0"]
 
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_glacier_face.glb" id="1_glacier"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_glacier_wall.glb" id="1_ice_wall"]
 [ext_resource type="Script" path="res://src/World/MapLocationComponent.cs" id="maploc_39_5a"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_rock_cluster.glb" id="3_rock"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_pine_dead.glb" id="4_pine"]
 [ext_resource type="Script" path="res://src/World/CellNavBaker.cs" id="5_navbaker"]
 [ext_resource type="Script" path="res://src/Entities/Entity.cs" id="wr_entity"]
 [ext_resource type="Script" path="res://src/World/TravelNodeComponent.cs" id="wr_travel"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_waystone.glb" id="wr_waystone"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_rock_cluster.glb" id="dx_rock_cluster"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_tent.glb" id="dx_tent"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_brazier.glb" id="wa_prp_brazier"]
 [ext_resource type="Script" path="res://src/Dialogue/DialogueComponent.cs" id="wa_DialogueComponent"]
 [ext_resource type="Script" path="res://src/World/FlagVisibilityComponent.cs" id="wa_FlagVisibilityComponent"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_ice_chunk.glb" id="wa_prp_ice_chunk"]
+[ext_resource type="PackedScene" path="res://scenes/props/lm_ice_wall_a.tscn" id="rp_lm_ice_wall_a"]
+[ext_resource type="PackedScene" path="res://scenes/props/lm_rock_boulder_a.tscn" id="rp_lm_rock_boulder_a"]
+[ext_resource type="PackedScene" path="res://scenes/props/lm_tree_dead_a.tscn" id="rp_lm_tree_dead_a"]
+[ext_resource type="PackedScene" path="res://scenes/props/lm_waystone.tscn" id="rp_lm_waystone"]
+[ext_resource type="PackedScene" path="res://scenes/props/lm_rock_rubble_a.tscn" id="dx_rock_rubble"]
+[ext_resource type="PackedScene" path="res://assets/models/world/prp_tent_a.glb" id="dx_tent"]
 
 ; ⚠️ THE NAV VOXEL GRID COARSENED WITH THE WORLD (the 2026-08-29 geography overhaul). Cells
 ; went from 52 m squares on a flat slab to 90-200 m of real terrain, and a 0.25 m voxel over
@@ -38,15 +36,8 @@
 ; values below are the QUANTISED ones, so the file now says what the bake does: agent_height and
 ; agent_radius CEIL to a voxel (cell_height / cell_size), agent_max_climb FLOORS to cell_height.
 ; ⚠️ They encode this grid — change cell_size or cell_height and recompute all three with it.
-[sub_resource type="BoxShape3D" id="DxShape_rock_cluster"]
-size = Vector3(2.2, 1.4, 1.8)
-
 [sub_resource type="BoxShape3D" id="DxShape_tent"]
-size = Vector3(3, 2.4, 3)
-
-[sub_resource type="CylinderShape3D" id="Shape_glacier_waystone"]
-radius = 0.7
-height = 3.0
+size = Vector3(3.6, 2.6, 3.6)
 
 [sub_resource type="NavigationMesh" id="NavMesh_glacier"]
 geometry_parsed_geometry_type = 1
@@ -56,35 +47,6 @@ agent_height = 2.0
 agent_radius = 0.5
 agent_max_climb = 0.4
 agent_max_slope = 42.0
-
-[sub_resource type="BoxShape3D" id="Shape_ice_Ice"]
-size = Vector3(12.240, 9.490, 7.410)
-
-[sub_resource type="BoxShape3D" id="Shape_ice_Ice2"]
-size = Vector3(8.000, 6.400, 3.200)
-
-[sub_resource type="BoxShape3D" id="Shape_ice_IceWestN"]
-size = Vector3(8.000, 6.400, 3.200)
-
-[sub_resource type="BoxShape3D" id="Shape_ice_IceWestS"]
-size = Vector3(12.240, 9.490, 7.410)
-
-[sub_resource type="BoxShape3D" id="Shape_ice_IceEastN"]
-size = Vector3(12.240, 9.490, 7.410)
-
-[sub_resource type="BoxShape3D" id="Shape_ice_IceEastS"]
-size = Vector3(8.000, 6.400, 3.200)
-
-[sub_resource type="CylinderShape3D" id="Shape_rock"]
-radius = 1.5
-height = 1.6
-
-[sub_resource type="CylinderShape3D" id="Shape_pine"]
-radius = 0.4
-height = 5.0
-
-[sub_resource type="BoxShape3D" id="wa_box_1p695_1p4161_1p38"]
-size = Vector3(1.695, 1.4161, 1.38)
 
 [sub_resource type="StandardMaterial3D" id="wa_mat_leather"]
 albedo_color = Color(0.2, 0.1, 0.05, 1)
@@ -110,9 +72,6 @@ height = 0.26
 radial_segments = 10
 rings = 6
 
-[sub_resource type="BoxShape3D" id="wa_box_2_1p6_1p8"]
-size = Vector3(2, 1.6, 1.8)
-
 [sub_resource type="StandardMaterial3D" id="wa_mat_frostflame"]
 albedo_color = Color(0.7, 0.85, 1, 1)
 metallic = 0
@@ -137,74 +96,29 @@ navigation_mesh = SubResource("NavMesh_glacier")
 [node name="NavBaker" type="Node" parent="Nav"]
 script = ExtResource("5_navbaker")
 
-[node name="Ice" parent="Nav" instance=ExtResource("1_glacier")]
-transform = Transform3D(0.4536, 0, 0.2991, 0, 0.5433, 0, -0.2991, 0, 0.4536, -26, 0, -21)
+[node name="Ice" parent="Nav" instance=ExtResource("rp_lm_ice_wall_a")]
+transform = Transform3D(0.6746, 0, 0.3369, 0, 0.668, 0, -0.4448, 0, 0.5109, -26, 0, -21)
 
-[node name="Col" type="StaticBody3D" parent="Nav/Ice"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/Ice/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.745, 0)
-shape = SubResource("Shape_ice_Ice")
-
-[node name="Ice2" parent="Nav" instance=ExtResource("1_ice_wall")]
-transform = Transform3D(-0.7150, 0, -0.3306, 0, 0.7877, 0, 0.3306, 0, -0.7150, -16, 0, -9)
-
-[node name="Col" type="StaticBody3D" parent="Nav/Ice2"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/Ice2/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.200, 0)
-shape = SubResource("Shape_ice_Ice2")
+[node name="Ice2" parent="Nav" instance=ExtResource("rp_lm_ice_wall_a")]
+transform = Transform3D(-0.6953, 0, -0.1612, 0, 0.654, 0, 0.3215, 0, -0.3485, -16, 0, -9)
 
 ; The far shards, and they are the OUTER pair of the chicane rather than a frame either side of a
 ; straight lane (the 2026-08-28 layout rebuild). Read the block at the top of this file before moving one: the route is
 ; the gaps BETWEEN these, not a corridor with these beside it.
-[node name="IceWestN" parent="Nav" instance=ExtResource("1_ice_wall")]
-transform = Transform3D(0.6047, 0, 0.4422, 0, 0.7492, 0, -0.4422, 0, 0.6047, -44, 0, -10)
-[node name="Col" type="StaticBody3D" parent="Nav/IceWestN"]
-[node name="Shape" type="CollisionShape3D" parent="Nav/IceWestN/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.200, 0)
-shape = SubResource("Shape_ice_IceWestN")
-
-[node name="IceWestS" parent="Nav" instance=ExtResource("1_glacier")]
-transform = Transform3D(-0.2468, 0, -0.1869, 0, 0.3096, 0, 0.1869, 0, -0.2468, -37, 0, -29)
-[node name="Col" type="StaticBody3D" parent="Nav/IceWestS"]
-[node name="Shape" type="CollisionShape3D" parent="Nav/IceWestS/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.745, 0)
-shape = SubResource("Shape_ice_IceWestS")
-
-[node name="IceEastN" parent="Nav" instance=ExtResource("1_glacier")]
-transform = Transform3D(-0.2702, 0, 0.3045, 0, 0.4071, 0, -0.3045, 0, -0.2702, -4, 0, -9)
-[node name="Col" type="StaticBody3D" parent="Nav/IceEastN"]
-[node name="Shape" type="CollisionShape3D" parent="Nav/IceEastN/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.745, 0)
-shape = SubResource("Shape_ice_IceEastN")
-
-[node name="IceEastS" parent="Nav" instance=ExtResource("1_ice_wall")]
-transform = Transform3D(0.5806, 0, -0.4187, 0, 0.7159, 0, 0.4187, 0, 0.5806, 4, 0, -20)
-[node name="Col" type="StaticBody3D" parent="Nav/IceEastS"]
-[node name="Shape" type="CollisionShape3D" parent="Nav/IceEastS/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.200, 0)
-shape = SubResource("Shape_ice_IceEastS")
-
-[node name="RockNorth" parent="Nav" instance=ExtResource("3_rock")]
-transform = Transform3D(0.4788, 0, 1.3156, 0, 1.1, 0, -1.3156, 0, 0.4788, -31, 0, -8)
-[node name="Col" type="StaticBody3D" parent="Nav/RockNorth"]
-[node name="Shape" type="CollisionShape3D" parent="Nav/RockNorth/Col"]
-shape = SubResource("Shape_rock")
-
-[node name="RockSouth" parent="Nav" instance=ExtResource("3_rock")]
-transform = Transform3D(-0.4104, 0, -1.1276, 0, 0.9, 0, 1.1276, 0, -0.4104, -9, 0, -22)
-[node name="Col" type="StaticBody3D" parent="Nav/RockSouth"]
-[node name="Shape" type="CollisionShape3D" parent="Nav/RockSouth/Col"]
-shape = SubResource("Shape_rock")
-
-[node name="PineWest" parent="Nav" instance=ExtResource("4_pine")]
-transform = Transform3D(-0.342, 0, 0.9397, 0, 1.3, 0, -0.9397, 0, -0.342, -48, 0, -21)
-[node name="Col" type="StaticBody3D" parent="Nav/PineWest"]
-[node name="Shape" type="CollisionShape3D" parent="Nav/PineWest/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
-shape = SubResource("Shape_pine")
-
+[node name="IceWestN" parent="Nav" instance=ExtResource("rp_lm_ice_wall_a")]
+transform = Transform3D(0.5876, 0, 0.2155, 0, 0.622, 0, -0.4297, 0, 0.2946, -44, 0, -10)
+[node name="IceWestS" parent="Nav" instance=ExtResource("rp_lm_ice_wall_a")]
+transform = Transform3D(-0.3667, 0, -0.2107, 0, 0.381, 0, 0.2777, 0, -0.2782, -37, 0, -29)
+[node name="IceEastN" parent="Nav" instance=ExtResource("rp_lm_ice_wall_a")]
+transform = Transform3D(-0.4016, 0, 0.3433, 0, 0.501, 0, -0.4525, 0, -0.3046, -4, 0, -9)
+[node name="IceEastS" parent="Nav" instance=ExtResource("rp_lm_ice_wall_a")]
+transform = Transform3D(0.5645, 0, -0.2041, 0, 0.594, 0, 0.4071, 0, 0.2831, 4, 0, -20)
+[node name="RockNorth" parent="Nav" instance=ExtResource("rp_lm_rock_boulder_a")]
+transform = Transform3D(0.1751, 0, 0.4811, 0, 0.403, 0, -0.4811, 0, 0.1751, -31, 0, -8)
+[node name="RockSouth" parent="Nav" instance=ExtResource("rp_lm_rock_boulder_a")]
+transform = Transform3D(-0.1501, 0, -0.4125, 0, 0.329, 0, 0.4125, 0, -0.1501, -9, 0, -22)
+[node name="PineWest" parent="Nav" instance=ExtResource("rp_lm_tree_dead_a")]
+transform = Transform3D(-0.3916, 0, 1.076, 0, 1.488, 0, -1.076, 0, -0.3916, -48, 0, -21)
 [node name="MapPin" type="Node3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -20, 0, -15)
 script = ExtResource("maploc_39_5a")
@@ -215,13 +129,7 @@ transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, -12, 0, 2)
 script = ExtResource("wr_entity")
 DisplayName = "Glacier Pass Waystone"
 
-[node name="Model" parent="GlacierWaystone" instance=ExtResource("wr_waystone")]
-
-[node name="Collider" type="StaticBody3D" parent="GlacierWaystone"]
-
-[node name="Shape" type="CollisionShape3D" parent="GlacierWaystone/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
-shape = SubResource("Shape_glacier_waystone")
+[node name="Model" parent="GlacierWaystone" instance=ExtResource("rp_lm_waystone")]
 
 [node name="Travel" type="Node" parent="GlacierWaystone"]
 script = ExtResource("wr_travel")
@@ -233,28 +141,6 @@ RegionId = "region.frostfang_reach"
 script = ExtResource("maploc_39_5a")
 LocationId = "location.frostfang.glacier_waystone"
 
-[node name="Dx_GlacierOldCampTent" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.5, 0, -0.866, 0, 1, 0, 0.866, 0, -0.5, 20, 0, 31)
-
-[node name="Model" parent="Nav/Dx_GlacierOldCampTent" instance=ExtResource("dx_tent")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/Dx_GlacierOldCampTent"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/Dx_GlacierOldCampTent/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
-shape = SubResource("DxShape_tent")
-
-[node name="Dx_GlacierOldCampRing" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 0, 41)
-
-[node name="Model" parent="Nav/Dx_GlacierOldCampRing" instance=ExtResource("dx_rock_cluster")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/Dx_GlacierOldCampRing"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/Dx_GlacierOldCampRing/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
-shape = SubResource("DxShape_rock_cluster")
-
 ; WR-spec1-06 (campaign): the middle scout cairn on the saddle yard, clear of the east arm's shoulder.
 [node name="ScoutCairnMid" type="Node3D" parent="."]
 transform = Transform3D(0.9659, 0, -0.2588, 0, 1, 0, 0.2588, 0, 0.9659, -14.5, 0, -21)
@@ -262,14 +148,8 @@ script = ExtResource("wr_entity")
 DisplayName = "The Middle Scout Cairn"
 PersistentId = "frostfang_reach.glacier.scout_cairn_mid"
 
-[node name="Model" parent="ScoutCairnMid" instance=ExtResource("3_rock")]
-transform = Transform3D(0.75, 0, 0, 0, 0.8625, 0, 0, 0, 0.75, 0, 0, 0)
-
-[node name="Collider" type="StaticBody3D" parent="ScoutCairnMid"]
-
-[node name="Shape" type="CollisionShape3D" parent="ScoutCairnMid/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7081, 0)
-shape = SubResource("wa_box_1p695_1p4161_1p38")
+[node name="Model" parent="ScoutCairnMid" instance=ExtResource("rp_lm_rock_boulder_a")]
+transform = Transform3D(0.274, 0, 0, 0, 0.316, 0, 0, 0, 0.274, 0, 0, 0)
 
 [node name="LanternBowl" parent="ScoutCairnMid" instance=ExtResource("wa_prp_brazier")]
 transform = Transform3D(0.55, 0, 0, 0, 0.55, 0, 0, 0, 0.55, 0, 1.085, 0)
@@ -310,14 +190,8 @@ script = ExtResource("wr_entity")
 DisplayName = "The North Scout Cairn"
 PersistentId = "frostfang_reach.glacier.scout_cairn_north"
 
-[node name="Model" parent="ScoutCairnNorth" instance=ExtResource("wa_prp_ice_chunk")]
-transform = Transform3D(1.6, 0, 0, 0, 1.7, 0, 0, 0, 1.6, 0, 0, 0)
-
-[node name="Collider" type="StaticBody3D" parent="ScoutCairnNorth"]
-
-[node name="Shape" type="CollisionShape3D" parent="ScoutCairnNorth/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
-shape = SubResource("wa_box_2_1p6_1p8")
+[node name="Model" parent="ScoutCairnNorth" instance=ExtResource("rp_lm_rock_boulder_a")]
+transform = Transform3D(0.336, 0, 0, 0, 0.357, 0, 0, 0, 0.336, 0, 0, 0)
 
 [node name="LanternBowl" parent="ScoutCairnNorth" instance=ExtResource("wa_prp_brazier")]
 transform = Transform3D(0.55, 0, 0, 0, 0.55, 0, 0, 0, 0.55, 0, 1.25, 0)
@@ -346,3 +220,18 @@ omni_range = 9.0
 [node name="Visibility" type="Node" parent="ScoutCairnNorthLight"]
 script = ExtResource("wa_FlagVisibilityComponent")
 VisibleWhenFlagId = "flag.beat.scout_cairn_north_seen"
+
+[node name="Dx_GlacierOldCampTent" type="Node3D" parent="Nav"]
+transform = Transform3D(-0.425, 0, -0.7361, 0, 0.85, 0, 0.7361, 0, -0.425, 20, 0, 31)
+
+[node name="Model" parent="Nav/Dx_GlacierOldCampTent" instance=ExtResource("dx_tent")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/Dx_GlacierOldCampTent"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/Dx_GlacierOldCampTent/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.3, 0)
+shape = SubResource("DxShape_tent")
+
+[node name="Dx_GlacierOldCampRing" parent="Nav" instance=ExtResource("dx_rock_rubble")]
+transform = Transform3D(0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 12, 0, 41)
+albedo_tint = Color(0.86, 0.92, 1, 1)

@@ -1,22 +1,15 @@
 [gd_scene format=3]
 
 [ext_resource type="Script" path="res://src/Entities/Entity.cs" id="1_entity"]
-[ext_resource type="Script" path="res://src/Factions/FactionComponent.cs" id="2_faction"]
-[ext_resource type="Script" path="res://src/Dialogue/DialogueComponent.cs" id="3_dialogue"]
-[ext_resource type="Script" path="res://src/Npc/ScheduleComponent.cs" id="4_schedule"]
-[ext_resource type="Script" path="res://src/Animation/CharacterAnimationComponent.cs" id="5_charanim"]
-[ext_resource type="Script" path="res://src/Animation/EquipmentPresentationComponent.cs" id="6_equipment"]
 [ext_resource type="Script" path="res://src/World/CellNavBaker.cs" id="7_navbaker"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_tent.glb" id="p_tent"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_campfire.glb" id="p_campfire"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_brazier.glb" id="p_brazier"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_crate.glb" id="p_crate"]
 [ext_resource type="Script" path="res://src/Enemies/BossSummonComponent.cs" id="8_summon"]
 [ext_resource type="Script" path="res://src/Enemies/ArenaHookComponent.cs" id="9_arenahook"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_ruin_pillar.glb" id="p_pillar"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_rock_cluster.glb" id="p_rocks"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_pine_dead.glb" id="p_pine"]
 [ext_resource type="Script" path="res://src/World/MapLocationComponent.cs" id="maploc_39_5a"]
+[ext_resource type="PackedScene" path="res://scenes/props/lm_rock_boulder_a.tscn" id="rp_lm_rock_boulder_a"]
+[ext_resource type="PackedScene" path="res://scenes/props/lm_tree_dead_a.tscn" id="rp_lm_tree_dead_a"]
+[ext_resource type="PackedScene" path="res://scenes/props/lm_monolith_a.tscn" id="rp_lm_monolith_a"]
+[ext_resource type="PackedScene" path="res://scenes/props/lm_bone_arch.tscn" id="dx_bone_arch"]
 
 ; THE BEAST LORD'S PLATEAU (location.ashen.beast_lair) - the Fourth Flamebearer's ground.
 ;
@@ -76,114 +69,59 @@ navigation_mesh = SubResource("NavMesh_beast_lair")
 script = ExtResource("7_navbaker")
 
 [node name="PillarNE" type="Node3D" parent="Nav"]
-transform = Transform3D(0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, 0.9397, 32, 0, -24)
+transform = Transform3D(0.8457, 0, -0.3078, 0, 0.9, 0, 0.3078, 0, 0.8457, 32, 0, -24)
 
-[node name="Model" parent="Nav/PillarNE" instance=ExtResource("p_pillar")]
-
-[node name="Col" type="StaticBody3D" parent="Nav/PillarNE"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/PillarNE/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.57, 0)
-shape = SubResource("Shape_pillar")
+[node name="Model" parent="Nav/PillarNE" instance=ExtResource("rp_lm_monolith_a")]
+albedo_tint = Color(0.6, 0.57, 0.56, 1)
 
 [node name="PillarNW" type="Node3D" parent="Nav"]
-transform = Transform3D(0.8192, 0, 0.5736, 0, 1, 0, -0.5736, 0, 0.8192, -1, 0, -26)
+transform = Transform3D(0.9011, 0, 0.6309, 0, 1.1, 0, -0.6309, 0, 0.9011, -1, 0, -26)
 
-[node name="Model" parent="Nav/PillarNW" instance=ExtResource("p_pillar")]
-
-[node name="Col" type="StaticBody3D" parent="Nav/PillarNW"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/PillarNW/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.57, 0)
-shape = SubResource("Shape_pillar")
+[node name="Model" parent="Nav/PillarNW" instance=ExtResource("rp_lm_monolith_a")]
+albedo_tint = Color(0.6, 0.57, 0.56, 1)
 
 [node name="PillarN" type="Node3D" parent="Nav"]
 transform = Transform3D(0.9962, 0, -0.0872, 0, 1, 0, 0.0872, 0, 0.9962, 12, 0, -34)
 
-[node name="Model" parent="Nav/PillarN" instance=ExtResource("p_pillar")]
-
-[node name="Col" type="StaticBody3D" parent="Nav/PillarN"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/PillarN/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.57, 0)
-shape = SubResource("Shape_pillar")
+[node name="Model" parent="Nav/PillarN" instance=ExtResource("rp_lm_monolith_a")]
+albedo_tint = Color(0.6, 0.57, 0.56, 1)
 
 [node name="PillarGateW" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, -0, 0, 1, 0, 0, 0, 1, 8, 0, 3)
+transform = Transform3D(0.7, 0, 0, 0, 0.7, 0, 0, 0, 0.7, 8, 0, 3)
 
-[node name="Model" parent="Nav/PillarGateW" instance=ExtResource("p_pillar")]
-
-[node name="Col" type="StaticBody3D" parent="Nav/PillarGateW"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/PillarGateW/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.57, 0)
-shape = SubResource("Shape_pillar")
+[node name="Model" parent="Nav/PillarGateW" instance=ExtResource("rp_lm_monolith_a")]
+albedo_tint = Color(0.6, 0.57, 0.56, 1)
 
 [node name="PillarGateE" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, -0, 0, 1, 0, 0, 0, 1, 22, 0, 3)
+transform = Transform3D(0.7, 0, 0, 0, 0.7, 0, 0, 0, 0.7, 22, 0, 3)
 
-[node name="Model" parent="Nav/PillarGateE" instance=ExtResource("p_pillar")]
-
-[node name="Col" type="StaticBody3D" parent="Nav/PillarGateE"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/PillarGateE/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.57, 0)
-shape = SubResource("Shape_pillar")
+[node name="Model" parent="Nav/PillarGateE" instance=ExtResource("rp_lm_monolith_a")]
+albedo_tint = Color(0.6, 0.57, 0.56, 1)
 
 [node name="RocksE" type="Node3D" parent="Nav"]
-transform = Transform3D(0.5, 0, -0.866, 0, 1, 0, 0.866, 0, 0.5, 35, 0, -10)
+transform = Transform3D(0.183, 0, -0.317, 0, 0.366, 0, 0.317, 0, 0.183, 35, -0.12, -10)
 
-[node name="Model" parent="Nav/RocksE" instance=ExtResource("p_rocks")]
-
-[node name="Col" type="StaticBody3D" parent="Nav/RocksE"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/RocksE/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
-shape = SubResource("Shape_rocks")
+[node name="Model" parent="Nav/RocksE" instance=ExtResource("rp_lm_rock_boulder_a")]
 
 [node name="RocksW" type="Node3D" parent="Nav"]
-transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, -5, 0, -12)
+transform = Transform3D(0.317, 0, 0.183, 0, 0.366, 0, -0.183, 0, 0.317, -5, -0.12, -12)
 
-[node name="Model" parent="Nav/RocksW" instance=ExtResource("p_rocks")]
-
-[node name="Col" type="StaticBody3D" parent="Nav/RocksW"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/RocksW/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
-shape = SubResource("Shape_rocks")
+[node name="Model" parent="Nav/RocksW" instance=ExtResource("rp_lm_rock_boulder_a")]
 
 [node name="RocksNE" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.342, 0, -0.9397, 0, 1, 0, 0.9397, 0, -0.342, 26, 0, -32)
+transform = Transform3D(-0.1252, 0, -0.3439, 0, 0.366, 0, 0.3439, 0, -0.1252, 26, -0.12, -32)
 
-[node name="Model" parent="Nav/RocksNE" instance=ExtResource("p_rocks")]
-
-[node name="Col" type="StaticBody3D" parent="Nav/RocksNE"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/RocksNE/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
-shape = SubResource("Shape_rocks")
+[node name="Model" parent="Nav/RocksNE" instance=ExtResource("rp_lm_rock_boulder_a")]
 
 [node name="PineW" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, -0, 0, 1, 0, 0, 0, 1, -6, 0, -19)
+transform = Transform3D(1.151, 0, 0, 0, 1.151, 0, 0, 0, 1.151, -6, 0, -19)
 
-[node name="Model" parent="Nav/PineW" instance=ExtResource("p_pine")]
-
-[node name="Col" type="StaticBody3D" parent="Nav/PineW"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/PineW/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.45, 0)
-shape = SubResource("Shape_pine")
+[node name="Model" parent="Nav/PineW" instance=ExtResource("rp_lm_tree_dead_a")]
 
 [node name="PineE" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, -0, 0, 1, 0, 0, 0, 1, 37, 0, -18)
+transform = Transform3D(1.172, 0, 0, 0, 1.172, 0, 0, 0, 1.172, 37, 0, -18)
 
-[node name="Model" parent="Nav/PineE" instance=ExtResource("p_pine")]
-
-[node name="Col" type="StaticBody3D" parent="Nav/PineE"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/PineE/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.45, 0)
-shape = SubResource("Shape_pine")
+[node name="Model" parent="Nav/PineE" instance=ExtResource("rp_lm_tree_dead_a")]
 
 [node name="Brazier" type="Node3D" parent="."]
 transform = Transform3D(1, 0, -0, 0, 1, 0, 0, 0, 1, 15, 0, -2)
@@ -274,3 +212,9 @@ Reveals = Array[NodePath]([NodePath("../BlightVents/VentC"), NodePath("../Blight
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15, 0, -15)
 script = ExtResource("maploc_39_5a")
 LocationId = "location.ashen.beast_lair"
+
+[node name="Dx_LairBoneArchN" parent="Nav" instance=ExtResource("dx_bone_arch")]
+transform = Transform3D(0, 0, -1.4, 0, 1.4, 0, 1.4, 0, 0, -17, -0.3, -2)
+
+[node name="Dx_LairBoneArchS" parent="Nav" instance=ExtResource("dx_bone_arch")]
+transform = Transform3D(0, 0, -1.25, 0, 1.25, 0, 1.25, 0, 0, -17, -0.3, 22)

@@ -39,6 +39,7 @@ one body leave the second silent.
   [fence](#a-fence-and-contraband) · [gold sink](#a-new-gold-sink)
 - Housing: [property](#a-new-claimable-property) · [stash](#giving-a-property-a-stash) ·
   [placeable / yard](#a-new-placeable-prop-or-a-buildable-yard) · [trophy stand](#giving-a-property-a-trophy-stand)
+- Assets: [generated world model](#a-new-generated-world-model) · [landmark](#a-new-landmark)
 - Code: [stat](#a-new-stat) · [event](#a-new-event) · [persistent system](#a-new-persistent-system) ·
   [input action](#a-new-input-action) · [sound cue](#a-new-sound-cue) · [dev command](#a-new-dev-console-command) ·
   [pooling](#pooling-a-high-churn-node) · [UI panel](#a-new-ui-panel--hud-widget) · [generators](#generators)
@@ -61,6 +62,12 @@ one body leave the second silent.
    in `PlaceholderTint`), `ModelScale` (default 1), `AiProfileId`, `FactionId`, `XpValue`.
    `CapsuleRadius`/`CapsuleHeight` size the body **and** the melee reach (scaled against a 1.8 m
    humanoid). `EnemyArchetypeFactory` builds it and `spawn <id>` works with no code.
+   ⚠️ **To make a body look bigger without out-reaching its fight** (a scaled boss): `ModelScale` x f,
+   `CapsuleHeight` and `CapsuleRadius` x sqrt(f), no `AttackRange` change, and `VisualHeight` set to the
+   height the model really stands at (a float: `3.0`, not `3`). Reach (melee box, telegraph ring, nav)
+   follows the capsule; the whole-body hurtbox, plate, status marks, cast origin and lock framing follow
+   `VisualHeight`. A held weapon is data: `HeldWeaponPath` and `HeldWeaponScale` (multiplies on top of
+   `ModelScale`), visual only. The old cosmetic kits are gone, so a look is the mesh.
 2. **Do not write a factory** unless the actor is *structurally* different (the goblin's
    `EnemyFactory`, the Ashen Acolyte). A bespoke factory is a worse copy of the shared one — the Iron
    King's silently skipped the hit reaction, weapon trail and quest enemy group until it was deleted.
@@ -99,6 +106,10 @@ material before tinting or the tint writes through to every instance.
 1. `HitZones` on the archetype: `HitZoneResource`s (`Id`, `DamageMultiplier`, `Offset`, `Radius`,
    `Height`; height ≤ 2×radius is a sphere). Non-empty **replaces** the capsule hurtbox and is the
    greybox silhouette; the multiplier scales poise damage too.
+   A zone can lie down: `HitZoneResource.RotationDegrees` turns its capsule off the vertical (X -90 along
+   the body's forward axis, Z 90 across it), which a tail, neck or wing pair needs. Check the fit with
+   `python tools/check_hit_zones.py` (per-part vertex coverage from the committed `.tres` and `.glb`).
+   Set `EnemyArchetypeResource.CastOrigin` to the snout for a breath or caster that is not chest-high.
 2. `IsBoss = true` makes a `BossEntity` (healthbar, corruption-on-kill). `DirectionalMelee = true`
    swaps the hitbox between jaws/wing/tail by the target's bearing.
 3. ⚠️ **Give its AI profile a `TurnSpeedDegrees`.** The default 0 snaps, so flank and rear attacks
@@ -107,7 +118,9 @@ material before tinting or the tint writes through to every instance.
 ### Making a creature fly
 
 Set `TakeoffRange > 0` on its **AI profile**, plus `HoverAltitude`, `ClimbSpeed`, `AirborneDuration`,
-`GroundedDuration` (all 0 = no flight). The factory adds `FlightComponent`. **Keep the airborne window
+`GroundedDuration` (all 0 = no flight). The factory adds `FlightComponent`. ⚠️ A taller body needs a
+higher `HoverAltitude`, and `ClimbSpeed` raised in the same ratio to keep the climb seconds; a breath
+cone shorter than the mouth's height cannot reach the ground. **Keep the airborne window
 short** — the cycle is Grounded → TakingOff → Airborne → Landing, never open-ended. The validator
 rejects half-authored flight either way round.
 
@@ -867,6 +880,91 @@ An `Entity` with a collider, an `InventoryComponent` of **`Capacity = 1`**, and
 `PersistentId`. Accepts `TrophyDisplay.MinimumRarity` (Epic); taking is never gated.
 
 ---
+
+## Assets
+
+Sourcing policy is `docs/ASSET_POLICY.md`; the contract and the pipeline table are `docs/3D_ASSETS.md`
+→ OUTDOOR WORLD. These two recipes are the working order for the outdoor-world lane (2026-10-06). The
+plan JSON and `state.json` of that run live under `artifacts/`, which is **gitignored**, so the ledger
+`reports/3d/archive/meshy-migration/manifest.csv` is the only copy of a prompt and its task ids.
+
+### A new generated world model
+
+1. **Inventory first** — `python tools/assets.py status`, `ls assets/models/world/`, and the ledger. The
+   owner rule is **two or three models per type**: a fourth tree or rock needs a reason a different scale,
+   yaw and tint cannot give. Tasks expire, so what is not in `assets/models/` or the ledger costs credits again.
+2. **Write the plan item** (a JSON list; fields `id`, `kind`, `prompt`, `texturePrompt`,
+   `targetPolycount`, `heightMetres`, `pbr`, `folder`). Prompt: subject and shape in a sentence or two,
+   then `Single isolated object, no ground, no base, game asset.` Texture prompt: colours, then `muted
+   ash-grey and earth-brown palette, weathered, matte, flat even overcast lighting, no baked shadows`.
+   `pbr: false` for scatter and small props (one base-colour atlas, which the scatter shader's wind, wet,
+   snow and `Tint` need), `true` for landmarks. Short prompts, and **never the image route**.
+3. **Preview, look, then refine.** `python tools/meshy_batch.py PLAN OUT --only ID --stage preview`
+   (`MESHY_API_KEY` in the environment; text-to-3D, `meshy-5`, 5 credits, `target_polycount` set here).
+   Look at the preview before the 10-credit refine. One geometry retry and one texture retry at most; a
+   rejected preview costs 5, a rejected texture only shows after the refine and costs 10 more.
+4. ⚠️ **Traps that cost credits:**
+   - **A low `target_polycount` (under about 1,500) comes back faceted and with holes.** Raise it, or
+     decimate a higher-poly preview offline in Blender (0 credits); there is no remesh step.
+   - **Text-to-3D ignores "T-pose" unless it is spelled out strictly** (arms straight out, in the prompt
+     and as `poseMode`); a stooped or robed body also fails the Meshy rig.
+   - **`adopt` can classify a fresh Meshy rig (an NPC body) as QUADRUPED on its first run**, so the rig
+     probe is skipped and the body would T-pose. Re-run `assets.py adopt` for that one file; it reads
+     HUMANOID the second time. Check the family and run `meshy_rig_probe.gd` before committing.
+   - **Stone atlases come back near-white**: tint them in the wrapper (`albedo_tint`), not in the file.
+   - **`meshy-5` bakes lighting into the albedo**: the palette and "flat even overcast lighting" in the
+     texture prompt is the only control.
+5. **Adopt** with `python tools/assets.py adopt-batch --plan PLAN --source-dir OUT --only ID --dry-run`,
+   then without `--dry-run` and with `--import`. Prep bakes the scale and base origin into the vertices;
+   an existing model is refused without `--replace` (a replacement also needs its collider and the scenes
+   that scale it checked).
+6. ⚠️ **Engine traps while importing:**
+   - **A scratch folder inside the project without a `.gdignore` is imported by Godot** (every stray PNG
+     becomes a texture). Keep generation output in a folder that has one (`artifacts/meshy-overhaul/`).
+   - **Never run Godot on a stale C# assembly before the import:** `dotnet build Embervale.sln` first.
+   - **Two world models must not share one atlas.** A recoloured copy re-encodes its own image.
+7. **Judge it** with `tools/asset_stage_shots.gd` (3, 10, 30 and 100 m, front and back, 1.8 m reference)
+   before it goes anywhere. Then wrap it if it needs a collider ([a new landmark](#a-new-landmark)) or
+   name it as a scatter `ScenePath`.
+8. **Gates:** `python tools/assets.py status --write`, `validate`, `audit-weight --check`. **Append the
+   ledger row** (`id`, prompt, preview and refine and rig task ids from `state.json`, date, credits) in the
+   same commit, and put a rejected attempt in a short note, not a row.
+9. **One bake at the end.** Any change to a model or `.import` stales the bake of all six regions.
+
+### A new landmark
+
+A landmark is a **solid, walk-around** generated piece: nothing roofed, nothing enterable (hollow
+buildings stay the Quaternius kit).
+
+1. Generate it as above with `pbr: true`, one big simple form and a plinth or rubble foot; judge it at
+   3 m in the stage harness first, because one atlas over a 20-36 m piece is 20-40 texels per metre. Look
+   from behind.
+2. **Measure and fit the collider.** `python tools/make_landmark_wrapper.py --slices prp_lm_x` prints
+   the model in normalised units; add an entry to `SHAPES` in that tool (boxes and cylinders only, x and
+   z as fractions of the bounds from the centre, y from the base, cylinder radius as a fraction of the
+   smaller of width and depth) and a `tint` for near-white stone. Then `python tools/make_landmark_wrapper.py
+   prp_lm_x` (or `--all --check` to find a stale wrapper). It writes `scenes/props/lm_x.tscn`.
+3. **Place it.**
+   - *Replacing a hand-placed node:* a row in a rows JSON `{scene, node, new_path, scale, collider:
+     "remove"}` (the wrapper brings its own collider), `python tools/repoint_models.py apply rows.json
+     --dry-run`, then for real. Per node, never per file path: one old `.glb` is a landmark in one
+     cell and a tome stand in the next.
+   - *A new piece:* a `P(...)` row in `tools/district_layouts.py` (`MONUMENTS` or `RINGS`) with a
+     `COMPOSED` kind in `tools/compose_district.py`; set `y` (sink 0.3-2.0 m), `tint`, and
+     `landmark=True` for 20 m and up. Flat ground only, off every road, no `pad=True` inside the walkable
+     lattice. ⚠️ `compose_district.basis()` turns by minus the yaw: use `toward()` for facing.
+4. **A reachable piece inside the lattice is on the map in the same change** (`CLAUDE.md` §1): a
+   `gen_map_locations.py` row with a new id and no quest. A skyline piece beyond the lattice gets no
+   pin and no collider.
+5. **Add a scatter exclusion** circle for it in each affected region spec, or trees and rocks grow
+   through it (none of the 57 monuments has one yet).
+6. **Checks** (on Windows set `PYTHONIOENCODING=utf-8` and pass each `data/regions/*.tres`):
+   `python tools/compose_district.py --check`, `python tools/gen_map_locations.py --check`,
+   `python tools/check_architecture_kit.py`, `python tools/check_cell_layout.py <region>.tres`,
+   `python tools/check_world_composition.py <region>.tres`, `python tools/gen_regions.py --check`. Run
+   `compose_district.py`, `gen_map_locations.py`, `compose_district.py` in that order after merging; all
+   three must then be no-ops. Then a render at eye level with the reference, because floating or buried
+   bases and a model facing away are invisible to every one of those.
 
 ## Code
 

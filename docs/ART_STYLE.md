@@ -14,12 +14,16 @@
 **Low-poly but detailed — Skyrim's grounded, weathered fantasy realism rendered in
 clean, faceted geometry.** (Maintainer-pinned direction, 2026-07-01.)
 
-⚠️ **This governs the WORLD, not the cast** (maintainer direction, 2026-09-03). **Characters and
-creatures are semi-realistic** and deliberately depart from the faceted clause — they are generated
-against the stem in [`docs/3D_ASSETS.md`](3D_ASSETS.md), matching the player, Kael, the goblin and
-the Iron King. A faceted body will not sit beside them as one world; the first pilot was generated
-per this section and was rejected for exactly that. Everything below still governs environment,
-architecture, props and nature, where it is unchanged.
+⚠️ **This governs the HOUSING AND ARCHITECTURE KIT, not the cast and not the outdoor world** (maintainer
+direction, 2026-09-03, narrowed 2026-10-06). **Characters and creatures are semi-realistic** and
+deliberately depart from the faceted clause — they are generated against the stem in
+[`docs/3D_ASSETS.md`](3D_ASSETS.md), matching the player, Kael, the goblin and the Iron King. **Since
+2026-10-06 the outdoor world is generated too** — trees, rocks, ice, landmarks, ruins and outdoor props
+are **stylised-realistic** Meshy sculpts (solid forms, muted painted textures), the same register as the
+cast and not faceted low-poly. The faceted rule, "carved, not sculpted" and the one-author-kit idea now
+govern only what stayed Quaternius on purpose: the modular housing and architecture kit, enterable
+buildings, interiors and the small interactive props listed in `docs/3D_ASSETS.md`. **The terrain rule
+is unchanged:** no ground textures (§4), the terrain stays six painted noise layers.
 
 Two references triangulate it:
 
@@ -35,7 +39,7 @@ The synthesis: **"carved, not sculpted."** An Embervale asset should read like a
 careful woodcut of a Skyrim asset — the same object, the same weight and wear,
 expressed in fewer, more deliberate planes.
 
-### 1.1 What "low-poly but detailed" means in practice
+### 1.1 What "low-poly but detailed" means in practice (the kept kit)
 
 - **Realistic-ish, never blocky.** (Maintainer-pinned, 2026-07-01.) Organic
   subjects — bodies, faces, creatures, foliage — are **connected, smooth-shaded
@@ -133,8 +137,11 @@ Arcane geometric glyphs, Nature growth curls, Necrotic sinks/drips).
 For reference, the whole shipped model set was ~21.7k triangles before the migration, and the
 Kenney props that replaced 16 of them run 44–305 each. That is the order of magnitude "not
 super intensive" means in this project — it is not a licence to drop in a 100k-triangle hero
-prop. Everything should still sit comfortably inside the Steam-Deck/min-spec target
-(Phase 19/57), which is the real constraint the old numbers were standing in for.
+prop. Everything should still sit comfortably inside the weak-laptop target (the Performance
+preset, Phase 19/57), which is the real constraint the old numbers were standing in for. Platforms are
+PC and laptop only. Generated world models are budgeted by what they replace, not by this table:
+scatter trees 3,000-3,500 triangles, boulder 600, rubble 400, crag 800, placed landmarks 1,000-12,000
+(`docs/3D_ASSETS.md`).
 
 | Class | LOD0 budget | Notes |
 | ----- | ----------- | ----- |
@@ -235,7 +242,10 @@ runtime-parsed visual-mesh collision, per the navmesh rule in docs/RECIPES.md).
 
 **Sourcing is now the default, not the fallback** — see
 [`ASSET_POLICY.md`](ASSET_POLICY.md), which governs acquisition and supersedes the
-old "model clean" preference below.
+old "model clean" preference below. ⚠️ **The outdoor world is no longer sourced from the packs**
+(2026-10-06): it is Meshy text-to-3D with the §1 look above, so "no mixed kits" and the flat-shaded
+match requirement apply to the housing kit only. A generated world model is held to the palette in
+§2 through its texture prompt, not by repainting.
 
 Open-license sources are adapted, not authored from scratch. **What adaptation means was
 narrowed in the Phase 35 migration:** scale, origin, orientation and mesh cleanup are

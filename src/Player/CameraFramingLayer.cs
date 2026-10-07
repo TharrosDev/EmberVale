@@ -45,6 +45,9 @@ public partial class CameraFramingLayer : EntityComponent, ICameraLayer
     private float _aimWeight;
     private float _distance;
     private float _heightDelta;
+    private float _targetHeight;
+    private IEntity? _measured;
+    private float _measuredHeight;
     private bool _seeded;
 
     protected override void OnInitialize()
@@ -84,7 +87,8 @@ public partial class CameraFramingLayer : EntityComponent, ICameraLayer
         CameraNudge nudge = CameraNudge.Identity;
         if (_lockWeight > 0f && _seeded)
         {
-            LockFraming lockFraming = FramingMath.Lock(_distance, _heightDelta, FramingMath.ShoulderSign(shoulder));
+            LockFraming lockFraming = FramingMath.Lock(
+                _distance, _heightDelta, FramingMath.ShoulderSign(shoulder), _targetHeight);
             nudge = FramingMath.ToNudge(lockFraming, CameraRigMath.Ease(_lockWeight), snapshot.ModeBlend);
         }
 
@@ -97,13 +101,14 @@ public partial class CameraFramingLayer : EntityComponent, ICameraLayer
         return nudge;
     }
 
-    /// <summary>Follows the locked target's distance and height. The first sample after a lock seeds
-    /// the values outright; a cycle to another target eases onto the new ones.</summary>
+    /// <summary>Follows the locked target's distance, height and stature. The first sample after a
+    /// lock seeds the values outright; a cycle to another target eases onto the new ones.</summary>
     private void TrackTarget(IEntity? target, float dt)
     {
         if (target?.Body is not Node3D targetBody || Entity?.Body is not Node3D body)
         {
             _tracked = null;
+            _measured = null;
             return;
         }
 
@@ -112,10 +117,21 @@ public partial class CameraFramingLayer : EntityComponent, ICameraLayer
         to.Y = 0f;
         float distance = to.Length();
 
+        // How tall the target stands as drawn, which is what has to fit the frame. A body does not
+        // change size, so it is measured once per target rather than every frame.
+        if (!ReferenceEquals(target, _measured))
+        {
+            _measured = target;
+            _measuredHeight = BodyMetrics.VisualHeight(targetBody, 0f);
+        }
+
+        float stature = _measuredHeight;
+
         if (!_seeded)
         {
             _distance = distance;
             _heightDelta = height;
+            _targetHeight = stature;
             _seeded = true;
         }
         else if (ReferenceEquals(target, _tracked))
@@ -123,11 +139,13 @@ public partial class CameraFramingLayer : EntityComponent, ICameraLayer
             // The same target moving: follow it directly, the weight is already smoothing the look.
             _distance = distance;
             _heightDelta = height;
+            _targetHeight = stature;
         }
         else
         {
             _distance = FramingMath.Approach(_distance, distance, dt, SettleSeconds);
             _heightDelta = FramingMath.Approach(_heightDelta, height, dt, SettleSeconds);
+            _targetHeight = FramingMath.Approach(_targetHeight, stature, dt, SettleSeconds);
             if (Mathf.Abs(_distance - distance) < 0.05f && Mathf.Abs(_heightDelta - height) < 0.05f)
             {
                 _tracked = target;
