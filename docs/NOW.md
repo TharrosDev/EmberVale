@@ -881,6 +881,24 @@ Numbers are stable references (other docs cite them); gaps are retired invariant
 ```text
 dotnet build Embervale.sln
 dotnet test tests/Embervale.Tests
+python tools/embervale.py verify [--plan]  # the gates for the current git diff; --plan lists them with cost and runs nothing
+python tools/embervale.py console "tp out; spawn enemy.goblin 3; frames 30; assert enemies.count ge 3"
+                                           # any F1 command from a shell, in an isolated new game (raw: -- --new-game --exec "...")
+python tools/embervale.py gate validate -- --only=items   # one headless mode with options; also state, economy, worldgen,
+                                           # lifecycle, story, arena (-- --arena=enemy.goblin --trials=5), gates
+python tools/embervale.py run story | run hudshots        # a headless mode or harness flag with the SDK's guards
+python tools/embervale.py shots <suite> [--only "a*"] [--film] | shots shot --cell ID --hour 19.5 | shots shot --ui suite/shot
+python tools/embervale.py perf-report --render [--update-baseline] | vfxperf [--tiers performance,ultra]
+python tools/embervale.py job start world --mode engine   # then: job status | job wait --max 540 | job tail | job cancel
+python tools/embervale.py logs | last | doctor | clean    # triage a log, reprint the last verdict, check the machine, prune runs
+python tools/content.py refs <id> | census | diff <rev> | balance enemies|loot|recipes|xp   # no engine
+python tools/regen.py --check | --fix | --list            # every generator, in dependency order
+python tools/world_bake.py --plan | --status | --bake --resume   # what would bake and why; progress; keep finished regions
+python tools/perf_compare.py CUR.json [--update]          # any perf JSON against this machine's baseline; exit 5 on a regression
+python tools/shot_analyze.py stats|diff|sheet|thumbs DIR  # flags, changed boxes, contact sheets
+python tools/analytics.py summary [--latest]              # the dev analytics logs in a few lines
+godot --headless --path . -- --gates       # every headless mode and its options; a misspelt mode flag exits 2
+godot --headless --path . -- --console-help   # every console command, runner verb and get key
 python tools/gen_regions.py [--check]      # data/regions/*.tres is GENERATED from region_spec_*.py
 python tools/gen_main_story.py             # main-story quests + ArchivistTruth/AshThrone dialogue
 python tools/gen_items.py [--check]        # items, sets, unique effects, shop gear from tools/items/catalogue.py

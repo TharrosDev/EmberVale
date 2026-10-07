@@ -883,31 +883,212 @@ maps the code.
 
 ## Developer tooling (dev builds only unless noted)
 
-- **Dev console** (`F1`), debug HUD (`F3`), profiler (`F4`), seeded repro replays, integrity checker.
-  `DevConsole`, `DevCommands`, `ProfilerOverlay`, `ReproHarness`, `WorldIntegrityChecker`.
+What exists, one tool per entry; [`TOOLING.md`](TOOLING.md) has the invocations, flags and output
+shapes. "Tooling build" is the Debug assembly: `ExportRelease` compiles none of the harnesses
+(`tools/check_shipping_assembly.py`). Session flags (`--play`, `--new-game`, every harness flag) go
+after `--`. A machine-readable tool ends with one line of a name and a JSON object:
+`EMBERVALE_RESULT` from the game, `PROBE`, `REGEN`, `WORLD_BAKE`, `WORLD_STATIC`, `MESHY`.
+
+### In-game overlays and the dev console
+
+- **Dev console** (`F1`) — 71 commands; `help [prefix]` lists them. A command returns a typed result
+  (ok, text, optional JSON data), and `--json` on a line makes the reply the JSON. `DevConsole`,
+  `ConsoleCommand`, `ConsoleText`, `DevCommands` (partials `.Movement`, `.Combat`, `.World`, `.Query`).
+- **Movement and spawn commands** — `pos`, `tp <x> <z>|cell|loc|region|out` (`tp out` lands outside
+  every safe zone), `face`, and `spawn <templateId> [n]` through the encounter director's placement
+  rules, with `spawn list`. `DevCommands.Movement.cs`.
+- **Combat commands** — `enemies`, `killall`, `hurt`, `god` (a health multiplier; hits still land).
+  `DevCommands.Combat.cs`.
+- **World commands** — `time`, `timescale`, `weather`, `event`, `inv`, `take`, `save`, `load`, `log`.
+  `DevCommands.World.cs`.
+- **Query commands** — `get <key>...` (state, world, time, enemy and player keys, and the families
+  `flag.` `quest.` `item.` `spell.` `rep.` `stat.`), `dump player|enemies|entity|world|saveables`,
+  `hud` (the debug HUD as text). `DevCommands.Query.cs`.
+- **Console reference** — `--console-help[=md|json]` prints every command, runner verb and `get` key
+  from the binary, with no session. `ConsoleHelp`.
+- **Debug HUD** (`F3`) — diagnostics with region, active and resident cells, position and SAFE/WILD;
+  `Snapshot()` is the same text for the console. Single-key cheats `H`, `R`, `X`, `P`, `K`. `DebugHud`.
 - **Profiler overlay** (`F4`) — FPS, median and worst frame of the last 120, script and physics
   time, draw calls, primitives, nodes, orphans, static memory, video memory (textures, buffers),
   managed heap, allocation rate, collections per generation, then world nodes and scatter, world
   frame p50/p95/p99, active and resident cells, and the sky's tier and weather state. Refreshed
-  four times a second; not processed while hidden. `ProfilerOverlay`, `WorldPerformanceMonitor`.
-- **Headless gates** (any build) — `--validate`, `--lifecycle`, `--story`, `--state`, `--economy`,
-  `--worldgen`, `--world-bake`, `--worldmap`. `src/Bootstrap/Headless*.cs`.
+  four times a second; not processed while hidden. `ProfilerOverlay` formats one `ProfilerReading`,
+  the reading `--perf-report` also writes; `WorldPerformanceMonitor`.
+- **Overlay host** — the console, HUD, profiler and integrity checker are children of the session's
+  `DeveloperTools` node; a `--capture` run or an export has none of them. `DeveloperToolsHost`.
+
+### Shell-driven console
+
+- **`--exec` / `--exec-file`** — runs a console script against a live session and quits: statements
+  split on `;` and newlines, checked before the first runs, one a frame, each waiting for a usable
+  world. Writes `console/result.ndjson` and an `EMBERVALE_RESULT` line (gate `exec`); exit 0 or 1.
+  Tooling builds. `ConsoleScript`.
+- **Runner verbs** — `wait <seconds>` (game time), `frames <n>`, `wait-until`, `assert` (ops
+  `eq ne gt ge lt le contains` over the `get` keys), `expect`, `shot`, `input`, `quit`.
+  `ConsoleScript`, `ConsoleHelp.RunnerVerbs`.
+- **Command families** — movement, combat, world and query above, plus the older state commands
+  (`give`, `xp`, `flag`, `quest`, `story`, `guild`, `perk`, `learn`, `companion`, `shop`, `economy`,
+  `settings`, `validate-all`, `invariants`, `repro`). `DevCommands.cs`.
+- **Scenario `console` op** — one console line from an SDK scenario plan, through
+  `DevConsole.ExecuteJson`. `tools/headless/driver.gd`.
+- **Session entry flags** — `--play`, `--slot=<name>`, and in tooling builds `--new-game` (refused
+  without an absolute `EMBERVALE_USER_DIR`) and `--quit-after=<seconds>`. `GameShellController`,
+  `SessionEntryRules`; the harness table is `SessionHarnesses`.
+- **Stale-build guard** — a run on the engine binary whose `Embervale.dll` is older than
+  `src/**/*.cs` or the csproj warns `STALE_BINARY`; `--strict-build` makes it exit 1.
+  `BuildFreshness`.
+
+### Headless gates (any build unless noted)
+
+- **Gate contract** — quiet unless `--verbose`; each failure once as `[ERROR] <gate>: <message>`,
+  the `<gate>: PASS|FAIL` line, then one `EMBERVALE_RESULT {json}` line, also written to
+  `--report=<path>`. Exit 0 pass, 1 failed, 2 refused. `HeadlessGate`, `HeadlessReport`.
+- **Flag check and `--gates`** — a misspelt or contradictory mode flag exits 2 with the flag it
+  probably meant; `--gates` lists every mode and its options. `HeadlessFlags`, `HeadlessArgs`,
+  `CommandLineArgs`.
+- **`--validate`** — the content gate, 57 arms in one table; `--list`, `--only=<group|arm>`,
+  `--skip=`, `--slowest=N`. A filtered run is marked partial. `HeadlessValidation`,
+  `ContentValidator.Arms`, `ValidatorArmFilter`.
+- **`--state`** — the census; `--ids=<kind> [--match=]` lists ids, `--get=<id>` prints one resource.
+  `HeadlessState`.
+- **`--economy`**, **`--worldgen`** — the arbitrage table (`--top=N`) and the generator report
+  (`--region=<id>`); reports, not gates. `HeadlessEconomy`, `HeadlessWorldGen`.
+- **`--lifecycle`**, **`--save-reload`** — New Game, save, destroy, load round trips failing on a
+  leak (`--cycles=N`), and the quick-load audit (needs an absolute `EMBERVALE_USER_DIR`).
+  `HeadlessLifecycle`.
+- **`--story`** — plays the 30 missions in runs A, B and C on isolated saves; `--story-only=`,
+  `--story-list`, and `--story-mission=<n|id|a..b>` for one stretch from a fixture (partial).
+  `HeadlessStory`, `StoryPlaythrough`, `StoryMissionRange`, `LegacyFixtures`, `StoryDriver`.
+- **`--world-bake`**, **`--worldmap`** — the engine halves of the bake and the map renderer; they
+  parse their own arguments and print no result line. `HeadlessWorldBake`, `HeadlessWorldMap`.
+
+### The arena (tooling builds)
+
+- **`--arena=<roster>`** — a bot plays the player against enemy templates through the real input
+  actions and damage pipeline, and reports wins, time to kill, damage both ways, swings, hits, blocks
+  and flags per matchup. Rosters: ids, `id*3`, `encounter.*`, `all`, `bosses`; `--arena --list`.
+  `HeadlessArena`, `ArenaRunner`, `ArenaMath`.
+- **Arena options** — `--trials`, `--seed`, `--level`, `--weapon`, `--equip`, `--setup`, `--policy`
+  (aggressive, guard, passive), `--count`, `--distance`, `--max-fight-s`, `--speed`, `--budget-s`.
+  Its numbers compare builds with each other; they are not a difficulty verdict. `ArenaRunner`.
+
+### Render harnesses, one-off shots, filmstrips and image analysis
+
 - **Render harnesses** — shell, meta, HUD, combat, panel, UI-audit and trade shots
   (`--shellshots`, `--metashots`, `--hudshots`, `--combat-shots`, `--panelshots`, `--uishots`,
-  `--tradeshots`), each checking the state it photographs; guild, shrine, enemy and look shots;
-  world shots. `*Shots.cs`, `tools/world_shots.gd`.
+  `--tradeshots`), each checking the state it photographs; guild, shrine, enemy and look shots.
+  `*Shots.cs`, `ShotHarness`.
+- **Shared harness options** — `--only=<names, wildcards>`, `--list`, `--no-thumbs`,
+  `--shots-verbose`; every run writes `manifest.json`, a thumbnail per shot and one
+  `EMBERVALE_RESULT` line (gate `shots`), with notes for flat, black, magenta and duplicate frames.
+  `ShotHarness`, `ShotCoreShots.cs` (`ShotFilter`, `ShotManifest`).
 - **Spell and camera harnesses** — `--spellshots` casts every spell through the real cast button
   and photographs wind-up, release, impact and linger in both views, and has a humanoid enemy cast
   three of the player's own spells at the first-person player (`efp`); `--camshots` photographs both
   views at every gait, a charge, a channel and looking down and up, and logs where the feet sit
-  down the frame; `--enemy-shots` adds idle, walk and run phases for the humanoid enemies;
-  `--vfxperf` runs eight casters on a loop and writes frame times. `SpellShots`, `CamShots`,
-  `EnemyShots`, `VfxPerfScenario`, `TimedShots`.
-- **SDK** — `python tools/embervale.py` (doctor, build, validate, test, scenario, screenshot, perf,
-  world gates, assets). [`TOOLING.md`](TOOLING.md).
+  down the frame; `--enemy-shots` adds idle, walk and run phases for the humanoid enemies.
+  `SpellShots`, `CamShots`, `EnemyShots`, `TimedShots`.
+- **One-off shot** — `--shot` photographs one world view (place, camera, hour, weather), one UI
+  state (`--ui=<suite>/<shot>`) or one spell phase (`--spell= --phase=`); a JSON spec holds many.
+  `OneShots`, `OneShotSpecShots.cs`.
+- **Filmstrip** — `--film[=FRAMESxSTRIDE]` on the timed harnesses and `--shot` writes the frames
+  before a capture as one `<shot>.film.png`, for judging motion. `--direct-input` casts without the
+  button, and a focus loss is recorded per shot. `TimedShots`.
+- **World shots** — the approach shots per cell against the approved baseline, with `--region`,
+  `--cell`, `--pass`, `--view`, `--res`, `--list`. `tools/world_shots.gd`.
+- **Image analysis** — `stats`, `diff` (changed boxes and a before, after, heatmap triptych),
+  `sheet` (labelled contact sheets) and `thumbs`. `tools/shot_analyze.py`;
+  `tools/make_contact_sheet.py` forwards to it.
+
+### Profiling, the perf report and baselines
+
+- **Session perf report** — `--perf-report[=seconds]` samples every frame of a live session and
+  ends with one verdict: frame percentiles and hitches, script and physics time, draw calls, memory,
+  GC, world budget, integrity, invariant and log counts. `SessionPerfReport`, `FrameStats`,
+  `ProfilerReading`.
+- **`--vfxperf[=tiers]`** — eight casters on a loop, one `vfxperf_<tier>.json` per effect tier in
+  one boot, plus a summary and a result line. `VfxPerfScenario`.
+- **Perf comparer and baselines** — one comparer for every perf JSON against a machine-keyed
+  baseline, `tests/performance_baselines/<suite>/<key>.<machine>.json`; exit 5 on a regression.
+  `tools/perf_compare.py`.
+- **Per-cell and streaming probes** — render cost per cell (`--region`, `--cell`, `--top`,
+  `--json-file`); streaming activation times and growth per realm. `tools/world_perf_probe.gd`,
+  `tools/world_streaming_stress_probe.gd`.
+- **Mesh census** — meshes and multimesh instances per cell, diffable against a baseline
+  (`--baseline`, `--strict`). `tools/cell_mesh_census.gd`.
+
+### Integrity, flight recorder and repro files
+
+- **Integrity checker** — every 5 s, from the `invariants` command and from `--perf-report`; issues
+  carry codes (`player.fell`, `player.gold`, `enemy.position`, `streaming.failed_cells`,
+  `pause.tree_running`, `orphans.leaked` and others). `WorldIntegrityChecker`, `IntegrityReport`.
+- **Flight recorder** — a 256-entry ring of recent events, written as `flight_<stamp>.jsonl` beside
+  the analytics log on a session's first invariant violation. `FlightRecorder`, `AnalyticsSink`.
+- **Repro files** — six console scripts in `tools/repro/` (swarm, rich, duskstorm, raid, party,
+  shopping), run by `repro <name>` in the console or `--repro=<name>` from a shell. They stage a
+  situation; they are not replays. `ReproHarness`, `ReproRun`.
+
+### Analytics
+
+- **Analytics sink** — a dev-only event log, not state: `session_<stamp>.jsonl` under
+  `<EMBERVALE_ARTIFACTS>/analytics/` or the user directory, with session start and end, deaths,
+  kills, gold by source and quest times; damage is totalled, never written per hit.
+  `src/Analytics` (`AnalyticsSink`, `AnalyticsAggregate`).
+- **Analytics summary** — `python tools/analytics.py summary` reads those logs into a few lines.
+  `tools/analytics.py`.
+
+### The Python SDK (`python tools/embervale.py`)
+
+- **SDK** — one entry point for build, import, validate, test, scenario, screenshot, perf, world
+  gates, assets and the commands below; every run has a run directory, an isolated user directory
+  and a one-line verdict. A subcommand is a module in `tools/embervale_sdk/commands/`.
+- **`verify`** — maps the git diff to the smallest gate set; `--plan` prints it with cost estimates
+  and runs nothing. `commands/verify.py`.
+- **`gate`** — runs one headless mode and folds its result line into the run. `commands/gate.py`.
+- **`run`** — runs a headless mode or any session harness flag with the SDK's guards.
+  `commands/run.py`.
+- **`console`** — runs a console script in an isolated new game or a copied save slot.
+  `commands/console.py`.
+- **`shots`** — runs a render suite or one `--shot` under a fixed step, then contact sheets and a
+  comparison with the previous run. `commands/shots.py`.
+- **`perf-report`**, **`vfxperf`** — the two measurements above with a baseline verdict.
+  `commands/perf_report.py`, `commands/vfxperf.py`.
+- **`job`** — detached background runs with status, ETA, wait, tail and cancel. `commands/job.py`,
+  `jobs.py`.
+- **`logs`** — groups a log's errors and warnings with counts and first location, known noise
+  removed. `commands/logs.py`, `triage.py`, `tools/headless/known_noise.json`.
+- **`doctor`** — versions, stale binary, free memory, stray processes, the heavy lock, the import
+  cache, an interrupted negative battery. `cli.py`.
+- **`last`**, **`clean`** — reprint the newest run's verdict; prune old run directories.
+  `commands/last.py`, `commands/clean.py`.
+- **Gate cache** — a gate that passed on exactly these inputs is recorded as `cached`, not run.
+  `cache.py`, `artifacts/.gate-cache.json`.
+- **Heavy-run lock** — one engine run at a time across every checkout and worktree; a second
+  exits 2, or waits with `--wait-lock`. `heavy.py`.
+- **SDK stale-build guard** — rebuilds a stale `Embervale.dll` before an engine launch (step
+  `auto-build`); `--no-build` opts out. `freshness.py`.
+
+### Generators, content tools and probes
+
 - **Generators** — regions, map locations, the campaign, guild dialogue, perks, appearance, buildings,
   the world bake, and the item catalogue (`gen_items.py`, `gen_recipes.py`, `items/gen_loot.py`).
-- **Analytics sink** — a dev-only event log, not state. `src/Analytics`.
+- **`regen.py`** — checks or regenerates every generator in dependency order (`--check`, `--fix`,
+  `--stale`, `--list`, `--only`), with a cache. `tools/regen.py`; world gate `generators`.
+- **Content tools** — `refs` (who defines and uses an id, path or model), `census`, `diff` (content
+  changes between two revisions) and `balance` (estimate tables with outlier flags), with no engine.
+  `tools/content.py`, `tools/tres_reader.py`.
+- **World bake and its progress file** — incremental per region; `--plan` says what would bake and
+  why, `--status` reads `artifacts/world_bake/status.json`, `--resume` keeps finished regions.
+  `tools/world_bake.py`.
+- **Static world checks** — seams, layout and composition for every region in one process.
+  `tools/check_world_static.py`.
+- **Meshy batch** — `--status`, `--dry-run`, a polling limit, and finished items appended to the
+  ledger. `tools/meshy_batch.py`.
+- **Probes** — GDScript probes under `tools/*.gd`, run with `--script`; the shared base gives
+  arguments, checks, metrics and a `PROBE {json}` line (`magic_lifetime_probe.gd`,
+  `region_transition_probe.gd` and the mesh census use it). `tools/probe_base.gd`.
+- **Negative battery** — breaks the content rules on purpose and expects each refusal; it journals
+  the files it mutates so an interrupted run can be restored. `tools/negative_tests.py`.
 
 ## Deliberately absent
 
