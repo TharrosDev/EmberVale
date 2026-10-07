@@ -44,6 +44,132 @@ public static class VfxArcanaRules
     /// <summary>The floor reach of a spell on oneself.</summary>
     public static float FloorReach(bool inside) => inside ? FloorReachInside : FloorReachOutside;
 
+    /// <summary>
+    /// The radius of a disc that follows the first-person caster's own feet (a ward's circle, a
+    /// bloom, a greened floor). Under the radius at which a ring about the camera stops being cut
+    /// (<see cref="VfxScreenRules.SelfRing"/>), so it stays a faint floor and never a lit band
+    /// through the hotbar: at four fifths of <see cref="FloorReachInside"/> it was half bright and
+    /// filled the bottom of the view for as long as it lasted.
+    /// </summary>
+    public const float SelfDiscInside = 2.6f;
+
+    /// <summary>The radius of a disc at a self-caster's feet: <paramref name="outside"/> seen from
+    /// outside, <see cref="SelfDiscInside"/> from inside their head.</summary>
+    public static float SelfDisc(bool inside, float outside) => inside ? SelfDiscInside : outside;
+
+    /// <summary>How many stinging darts circle a swarmed body. None on the leanest tier, where the
+    /// status keeps its drift of specks and nothing is added to it.</summary>
+    public static int SwarmInsects(VfxTier tier) => tier switch
+    {
+        VfxTier.Performance => 0,
+        VfxTier.Low => 6,
+        VfxTier.Medium => 8,
+        VfxTier.High => 10,
+        _ => 12,
+    };
+
+    /// <summary>How many pieces are drawn in to an implosion (a lance landing, bone knitting).</summary>
+    public static int ImplosionStreaks(VfxTier tier) => tier switch
+    {
+        VfxTier.Performance => 5,
+        VfxTier.Low => 6,
+        VfxTier.Medium => 8,
+        VfxTier.High => 10,
+        _ => 12,
+    };
+
+    /// <summary>One tick in this many of an ash breath lets flakes go. They hang for three or four
+    /// seconds and a breath ticks three times a second, so the lean tiers space them out and no
+    /// more emitters are alive at once than the embers they replace.</summary>
+    public static int AshEvery(VfxTier tier) => tier switch
+    {
+        VfxTier.Performance => 3,
+        VfxTier.Low => 2,
+        _ => 1,
+    };
+
+    /// <summary>One tick in this many of a fire breath leaves its scorch burning; 0 = never (the
+    /// tiers with no scorch to burn on).</summary>
+    public static int BurnEvery(VfxTier tier) => tier switch
+    {
+        VfxTier.Performance or VfxTier.Low => 0,
+        VfxTier.Medium => 2,
+        _ => 1,
+    };
+
+    /// <summary>Whether a one-in-<paramref name="every"/> thing happens on the tick that drew
+    /// <paramref name="roll"/>. Never for 0 or less.</summary>
+    public static bool Falls(int every, int roll) => every > 0 && (roll & 0x7FFFFFFF) % every == 0;
+
+    /// <summary>How far along a breath (0..1 of its reach) the tick that drew <paramref name="roll"/>
+    /// lights the ground: from a fifth of the way to nine tenths.</summary>
+    public static float PatchAlong(int roll) => 0.2f + (0.7f * (((roll >> 12) & 0xFFF) / 4095f));
+
+    /// <summary>The widest the lit patch under a breath was on the leanest tier before it was sized
+    /// to the wedge (metres of radius): what that tier is still held to.</summary>
+    public const float PatchLeanRadius = 1.8f;
+
+    /// <summary>
+    /// The radius of the patch one tick of a breath lights on the ground, for a wedge
+    /// <paramref name="wide"/> metres across there. Three or four of them are alive at once and each
+    /// is a blended disc on the floor, so the leanest tier keeps the size it always had (a disc
+    /// nearly twice as wide is three times the pixels, on the tier that is short of them).
+    /// </summary>
+    public static float PatchRadius(VfxTier tier, float wide) =>
+        Math.Clamp(wide, 0.9f, tier == VfxTier.Performance ? PatchLeanRadius : 3.2f);
+
+    /// <summary>How far above the ground a breather's feet are before it counts as in the air.</summary>
+    public const float AirborneClearance = 2.5f;
+
+    /// <summary>
+    /// The height of the floor a breath lights and burns. A breather standing on it gives the
+    /// height itself (<paramref name="casterY"/>: right on a bridge, a roof or a dungeon floor,
+    /// where the terrain is somewhere else). One hovering well above the terrain does not: its
+    /// patches were drawn in the air under it. Then it is the terrain under the patch
+    /// (<paramref name="groundAtPatch"/>). <paramref name="hasGround"/> is false where there is no
+    /// terrain to ask (the sandbox).
+    /// </summary>
+    public static float BreathFloor(float casterY, float groundUnderCaster, float groundAtPatch, bool hasGround) =>
+        hasGround && casterY - groundUnderCaster > AirborneClearance ? groundAtPatch : casterY;
+
+    /// <summary>
+    /// How far along the ground (metres from under the mouth) a breath reaches when it is asked for
+    /// <paramref name="along"/> metres down its axis. <paramref name="level"/> is the length of the
+    /// axis laid flat (1 = a level breath, less when it is pitched), and a breath pitched down
+    /// (<paramref name="fall"/> = how steeply, 0..1) from <paramref name="height"/> metres up stops
+    /// where it meets the floor.
+    /// </summary>
+    public static float GroundReach(float along, float level, float fall, float height)
+    {
+        float reach = Math.Max(0f, along);
+        if (fall > 0.05f && height > 0f)
+        {
+            reach = Math.Min(reach, height / fall);
+        }
+
+        return reach * Math.Clamp(level, 0f, 1f);
+    }
+
+    /// <summary>
+    /// Whether a point stands in a breath: <paramref name="along"/> metres down its axis and
+    /// <paramref name="off"/> metres to the side of it, for a wedge <paramref name="range"/> long
+    /// that opens at <paramref name="slope"/>. Asked of the camera, with a metre of margin: when it
+    /// is in the breath's path everything thrown down it is thinned.
+    /// </summary>
+    public static bool InBreath(float along, float off, float range, float slope) =>
+        along > 1f && along < range * 1.15f && off < (along * Math.Max(0f, slope)) + 1f;
+
+    /// <summary>
+    /// Whether a breath may be drawn from the breather's mouth bone instead of the rule's own
+    /// origin: the mouth is within a few metres of that origin (a bone found on some other part of
+    /// a strange rig is not a mouth) and the far end of the wedge is still well ahead of it.
+    /// </summary>
+    public static bool MouthIsUsable(float mouthToOrigin, float mouthToEnd, float range) =>
+        range > 0f && mouthToOrigin <= Math.Max(3f, range * 0.5f) && mouthToEnd >= range * 0.5f;
+
+    /// <summary>The radius of the sigil under a marked body <paramref name="width"/> metres wide.</summary>
+    public static float MarkSigilRadius(float width) => Math.Clamp((width * 0.5f) + 0.75f, 0.9f, 2.2f);
+
     /// <summary>Length of a breath's body: the near part of the wedge, never all of it.</summary>
     public static float GoutLength(float range) => Math.Clamp(range * 0.4f, 1.5f, GoutMaxLength);
 
