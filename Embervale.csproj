@@ -141,5 +141,7 @@
     <Compile Remove="src/Debugging/*AuditProbeDriver.cs" />
     <Compile Remove="src/Debugging/SaveAuditProbe.cs" />
     <Compile Remove="src/Magic/MagicStatusProbeSeam.cs" />
+    <Compile Remove="src/Bootstrap/BuildFreshness.cs" />
+    <Compile Remove="src/Bootstrap/SessionEntryRules.cs" />
   </ItemGroup>
 </Project>

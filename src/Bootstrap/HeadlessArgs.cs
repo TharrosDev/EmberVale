@@ -6,6 +6,8 @@ namespace Embervale.Bootstrap;
 /// <summary>
 /// The process's command line, parsed once. Every gate, harness and session flag reads it through
 /// here, so a flag spelt <c>--key=value</c> or <c>--key value</c> works the same way for all of them.
+/// The session flags (<c>GameShellController</c>, <c>SessionHarnesses</c>) read <see cref="User"/>
+/// only: they were always user arguments, and the engine owns a <c>--quit-after</c> of its own.
 ///
 /// <para>User arguments (after <c>--</c>) are asked first, then the raw engine arguments, which is
 /// the fallback <c>HeadlessValidation.HasFlag</c> always had. The two lists are parsed separately so

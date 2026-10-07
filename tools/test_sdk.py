@@ -330,6 +330,14 @@ class FreshnessTests(unittest.TestCase):
                 run.godot("only", [])
             self.assertEqual(["only"], [c.args[0] for c in run.process.call_args_list])
 
+    def test_world_engine_gate_builds_a_stale_binary_first(self):
+        from embervale_sdk.cli import parser
+        run, stale = self.guarded_run([], "src/A.cs is newer")
+        run.args = parser().parse_args(["world", "--mode", "engine", "--gate", "generation", "--gate", "content"])
+        with stale:
+            run.world()
+        self.assertEqual(["generation", "auto-build", "content"], [c.args[0] for c in run.process.call_args_list])
+
     def test_failed_build_does_not_launch_the_engine(self):
         from embervale_sdk.cli import BuildFailed
         run, stale = self.guarded_run([], "src/A.cs is newer", build_exit=1)

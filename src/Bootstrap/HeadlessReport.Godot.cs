@@ -13,11 +13,13 @@ public sealed partial class HeadlessReport
     /// when given, and returns the exit code. Call once, as the gate's last act.</summary>
     public int Finish()
     {
+#if EMBERVALE_TOOLING
         if (BuildFreshness.IsStale)
         {
             Fact("stale_binary", true);
             Warn(BuildFreshness.Detail);
         }
+#endif
 
         // GD.Print rather than Log: the line is a protocol, and a level prefix would break it.
         return Emit(line => GD.Print(line), HeadlessArgs.Value(ReportArgument));

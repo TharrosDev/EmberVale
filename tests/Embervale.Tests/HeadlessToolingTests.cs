@@ -224,12 +224,13 @@ public class HeadlessToolingTests
     }
 
     [Fact]
-    public void NewGame_IsRefusedOutsideIsolationUnlessTheSlotIsAutomations()
+    public void NewGame_IsRefusedOutsideIsolationWhateverTheSlot()
     {
-        Assert.Null(SessionEntryRules.NewGameRefusal("automation", isolated: false));
-        Assert.Null(SessionEntryRules.NewGameRefusal("automation_combat-2", isolated: false));
-        Assert.NotNull(SessionEntryRules.NewGameRefusal("auto1", isolated: false));
+        Assert.NotNull(SessionEntryRules.NewGameRefusal("automation", isolated: false));
+        Assert.NotNull(SessionEntryRules.NewGameRefusal("automation_combat-2", isolated: false));
         Assert.NotNull(SessionEntryRules.NewGameRefusal("quick", isolated: false));
+        Assert.Null(SessionEntryRules.NewGameRefusal("automation", isolated: true));
+        Assert.Null(SessionEntryRules.NewGameRefusal("automation_combat-2", isolated: true));
         Assert.Null(SessionEntryRules.NewGameRefusal("quick", isolated: true));
     }
 
@@ -243,14 +244,11 @@ public class HeadlessToolingTests
     }
 
     [Fact]
-    public void Isolation_NeedsAToolingBuildAndAnAbsoluteDirectory()
+    public void Isolation_NeedsAnAbsoluteDirectory()
     {
-        string absolute = Path.GetTempPath();
-
-        Assert.True(SessionEntryRules.IsIsolated(absolute, toolingBuild: true));
-        Assert.False(SessionEntryRules.IsIsolated(absolute, toolingBuild: false));
-        Assert.False(SessionEntryRules.IsIsolated("relative/dir", toolingBuild: true));
-        Assert.False(SessionEntryRules.IsIsolated("", toolingBuild: true));
-        Assert.False(SessionEntryRules.IsIsolated(null, toolingBuild: true));
+        Assert.True(SessionEntryRules.IsIsolated(Path.GetTempPath()));
+        Assert.False(SessionEntryRules.IsIsolated("relative/dir"));
+        Assert.False(SessionEntryRules.IsIsolated(""));
+        Assert.False(SessionEntryRules.IsIsolated(null));
     }
 }

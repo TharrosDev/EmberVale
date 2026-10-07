@@ -370,6 +370,10 @@ class Run:
                 continue
             if not self.engine and any("godot" in p.lower() for p in gate.command[:1]):
                 raise ValueError("This world mode needs Godot .NET")
+            if self.engine and gate.command[:1] == [str(self.engine)]:
+                # These gates launch the engine themselves, not through Run.godot. After the
+                # `build` gate this finds nothing to do.
+                self.ensure_fresh()
             regions = [self.args.region] if self.args.region else sorted(REGIONS)
             for region in regions if gate.per_region else [None]:
                 command = [str(ROOT / REGIONS[region]) if p == "@REGION@" else

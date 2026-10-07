@@ -42,12 +42,12 @@ internal static class SessionHarnesses
             Vendor = session.Ui.Vendor,
             Dialogue = session.Ui.Dialogue,
         }),
+        new("--uishots", _ => new Debugging.UiAuditShots { Name = "UiAuditShots" }),
         new("--shrine-shots", _ => new Debugging.ShrineShots { Name = "ShrineShots" }),
         new("--guild-shots", session => new Debugging.GuildShots { Name = "GuildShots", Dialogue = session.Ui.Dialogue }),
         new("--enemy-shots", _ => new Debugging.EnemyShots { Name = "EnemyShots" }),
         new("--combat-shots", _ => new Debugging.CombatShots { Name = "CombatShots" }, Alias: "--combatshots"),
         new("--look-shots", _ => new Debugging.LookShots { Name = "LookShots" }),
-        new("--uishots", _ => new Debugging.UiAuditShots { Name = "UiAuditShots" }),
         new("--metashots", _ => new Debugging.MetaShots { Name = "MetaShots" }),
         new("--tradeshots", _ => new Debugging.TradeShots { Name = "TradeShots" }),
         new("--spellshots", _ => new Debugging.SpellShots { Name = "SpellShots" }),
@@ -58,18 +58,18 @@ internal static class SessionHarnesses
 #endif
     };
 
-    /// <summary>The harnesses named on the command line, in table order, each with the spelling
+    /// <summary>The harnesses named in the user arguments (after <c>--</c>), in table order, each with the spelling
     /// that was used.</summary>
     public static List<(SessionHarness Harness, string Flag)> Requested()
     {
         var requested = new List<(SessionHarness, string)>();
         foreach (SessionHarness harness in All)
         {
-            if (harness.Alias != null && HeadlessArgs.Has(harness.Alias))
+            if (harness.Alias != null && HeadlessArgs.User.Has(harness.Alias))
             {
                 requested.Add((harness, harness.Alias));
             }
-            else if (HeadlessArgs.Has(harness.Flag))
+            else if (HeadlessArgs.User.Has(harness.Flag))
             {
                 requested.Add((harness, harness.Flag));
             }
