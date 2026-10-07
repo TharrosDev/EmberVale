@@ -96,10 +96,7 @@ public static partial class DevCommands
         {
             if (TryQuery(key, out string value))
             {
-                // Typed in the JSON reply: a boolean, a number, or the text.
-                data[key] = value is "true" or "false"
-                    ? Variant.From(value == "true")
-                    : ConsoleText.TryNumber(value, out double number) ? Variant.From(number) : Variant.From(value);
+                data[key] = Typed(value);
                 lines.Add($"{key}={value}");
             }
             else
@@ -114,6 +111,13 @@ public static partial class DevCommands
             ? console.Fail(text + $"\nunknown or unavailable: {string.Join(" ", unknown)} (`get` lists the keys)")
             : console.Reply(text, data);
     }
+
+    /// <summary>A queried value as it goes into a JSON reply (<c>get</c>, <c>dump world</c>): a
+    /// boolean, a number, or the text.</summary>
+    private static Variant Typed(string value) =>
+        value is "true" or "false"
+            ? Variant.From(value == "true")
+            : ConsoleText.TryNumber(value, out double number) ? Variant.From(number) : Variant.From(value);
 
     private static object? Query(string key)
     {
@@ -413,7 +417,7 @@ public static partial class DevCommands
         {
             if (TryQuery(key, out string value))
             {
-                dump[key] = value;
+                dump[key] = Typed(value);
             }
         }
 
