@@ -91,6 +91,8 @@ public static partial class DevCommands
                 return console.Fail("usage: timescale [<0.05..20>]");
             }
 
+            // Both: the clock now, and the value hit-stop and the boss defeat beat hand it back at.
+            Embervale.Combat.HitStopDirector.BaseTimeScale = scale;
             Engine.TimeScale = scale;
         }
 
