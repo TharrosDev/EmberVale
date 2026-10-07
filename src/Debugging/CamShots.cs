@@ -1,10 +1,14 @@
 using System;
 using System.Globalization;
 using Embervale.Animation;
+using Embervale.Core;
 using Embervale.Core.Diagnostics;
+using Embervale.Core.Events;
+using Embervale.Core.Services;
 using Embervale.Magic;
 using Embervale.Movement;
 using Embervale.Player;
+using Embervale.Settings;
 using Godot;
 
 namespace Embervale.Debugging;
@@ -14,7 +18,9 @@ namespace Embervale.Debugging;
 /// strip of ground near where the save stands and photographed in both views (<c>tp</c>, <c>fp</c>)
 /// at idle (three frames across three seconds, for sway), walking, jogging, sprinting (the shot and
 /// the three frames drawn before it, <c>_f1.._f3</c>, for surge), strafing each way, backpedalling,
-/// charging a spell, channelling one, and looking straight down and up. Two more shots look at the
+/// charging a spell, channelling one, and looking straight down and up. Third person also runs on a
+/// diagonal (forward and right together). First person also looks straight down at the widest field
+/// of view the settings allow and while sprinting. Two more shots look at the
 /// third-person body from the side through a camera of the harness's own, at idle and at a sprint,
 /// with the collision capsule drawn and an arrow along the way the capsule faces.
 /// Run WITHOUT <c>--headless</c>.
@@ -24,9 +30,11 @@ namespace Embervale.Debugging;
 ///
 /// <para>Each shot logs, for the frame the PNG shows: the camera's position relative to the head
 /// bone, the heading of the visible body and of the chest against the capsule's, the camera's heading
-/// against it, and how far the hips are from the capsule's centre. A body that faces the wrong way, a
-/// clip that carries the hips off the capsule and a camera that leaves the head are all provable from
-/// the log.</para>
+/// against it, how far the hips are from the capsule's centre, the camera's position relative to the
+/// chest bone, the field of view, and where the casting hand is on screen. A body that faces the
+/// wrong way, a clip that carries the hips off the capsule, a camera that leaves the head or sits in
+/// the chest and a casting hand that is out of frame are all provable from the log; a body drawn back
+/// to front, an eye in the chest and a hand out of frame fail the run.</para>
 /// </summary>
 public sealed partial class CamShots : TimedShots
 {
@@ -38,12 +46,25 @@ public sealed partial class CamShots : TimedShots
     private const double SettleSeconds = 0.9;
     private const float SideDistance = 6f;
 
+    /// <summary>The widest field of view the settings slider allows (degrees).</summary>
+    private const float WidestFov = 110f;
+
+    /// <summary>How far the visible body may be turned from the capsule's facing before the shot is
+    /// failed (degrees). Generous: this is for a body drawn back to front, not for a clip's lean.</summary>
+    private const float MaxMeshTurn = 30f;
+
+    /// <summary>Looking straight down at a stand, the eye must be at least this far ahead of the
+    /// chest bone (metres): the chest's surface is about 0.14 m ahead of that bone, and the near
+    /// plane is 0.08 m.</summary>
+    private const float MinEyeAheadOfChest = 0.2f;
+
     /// <summary>Seconds the cast button is given to start a cast before the cast is begun directly.</summary>
     private const double InputGrace = 0.4;
 
     private enum Gait
     {
         Idle, Walk, Jog, Sprint, StrafeLeft, StrafeRight, Backpedal, Charge, Channel, LookDown, LookUp,
+        Diagonal, LookDownWide, SprintLookDown,
     }
 
     /// <summary>The player on the frame about to be drawn, which is what a capture on the next frame shows.</summary>
@@ -51,7 +72,8 @@ public sealed partial class CamShots : TimedShots
         bool Valid, bool FirstPerson, Vector3 Body, Vector3 BodyForward, Vector3 MeshForward,
         Vector3 Camera, Vector3 CameraForward, Vector3 CapsuleCentre, Vector3? Head, Vector3? Hips,
         Vector3? ChestForward, Vector3 Velocity, float Pitch, bool Sprinting, bool Charging, bool Channeling,
-        double FrameSeconds);
+        double FrameSeconds, float Fov, Vector3? Chest, Vector3? Hand, bool HandInFrame, Vector2 HandOnScreen,
+        Vector2 Screen, float ArmRaise);
 
     private ShotLane _lane;
     private bool _prepared;
@@ -72,6 +94,8 @@ public sealed partial class CamShots : TimedShots
     private int _hips = -1;
     private int _shoulderLeft = -1;
     private int _shoulderRight = -1;
+    private int _chest = -1;
+    private float _baseFov = -1f;
 
     protected override string Flag => "--camshots";
 
@@ -116,6 +140,19 @@ public sealed partial class CamShots : TimedShots
 
         Pose("look_down", Gait.LookDown, 0.7);
         Pose("look_up", Gait.LookUp, 0.7);
+
+        if (firstPerson)
+        {
+            // The two looks down that put the most of the body nearest the camera: the widest view
+            // the slider allows, and a sprint, where the torso leans out under the eye.
+            Pose("look_down_maxfov", Gait.LookDownWide, 0.7);
+            Pose("sprint_look_down", Gait.SprintLookDown, 1.2);
+        }
+        else
+        {
+            // Forward and right together: the blend between the run and the strafe.
+            Pose("diagonal", Gait.Diagonal, 1.0);
+        }
     }
 
     /// <summary>True once the gait has been running for <paramref name="seconds"/>.</summary>
@@ -173,6 +210,7 @@ public sealed partial class CamShots : TimedShots
         ShotStage.SetHour(ShotHour);
         ShotStage.ClearWeather();
         ShotStage.SetView(player, firstPerson);
+        SetFov(gait == Gait.LookDownWide ? WidestFov : _baseFov);
         locomotion.Walking = gait == Gait.Walk;
 
         // Every gait travels up the lane, so the body is turned to suit: a left strafe faces the
@@ -182,6 +220,7 @@ public sealed partial class CamShots : TimedShots
             Gait.StrafeLeft => _lane.Right,
             Gait.StrafeRight => -_lane.Right,
             Gait.Backpedal => -_lane.Forward,
+            Gait.Diagonal => (_lane.Forward - _lane.Right).Normalized(),
             _ => _lane.Forward,
         };
         ShotStage.Place(player, ShotStage.OnGround(player, _lane.At(2f)), facing);
@@ -224,9 +263,27 @@ public sealed partial class CamShots : TimedShots
         _stagedAt = Clock;
     }
 
+    /// <summary>Sets the field of view setting on the live settings (never saved) and announces it,
+    /// which is how the rig picks it up. A negative value means the setting was never read.</summary>
+    private static void SetFov(float degrees)
+    {
+        if (degrees <= 0f || LiveSettings() is not { } settings ||
+            Mathf.IsEqualApprox(settings.Current.FieldOfView, degrees))
+        {
+            return;
+        }
+
+        settings.Current.FieldOfView = degrees;
+        EventBus.Instance?.Publish(new SettingsAppliedEvent(settings.Current));
+    }
+
+    private static SettingsService? LiveSettings() =>
+        ServiceLocator.Instance is { } locator && locator.TryGet(out SettingsService settings) ? settings : null;
+
     private void Prepare(PlayerCharacter player)
     {
         _prepared = true;
+        _baseFov = LiveSettings()?.Current.FieldOfView ?? -1f;
         ShotStage.PreparePlayer(player);
         _lane = ShotStage.FindLane(player, LaneLength, LaneHalfWidth);
         string ground = $"ground at {_lane.Start:0.0} heading {_lane.Forward:0.00}, level within {_lane.Spread:0.00} m";
@@ -331,6 +388,13 @@ public sealed partial class CamShots : TimedShots
             case Gait.Sprint:
                 _held = new[] { InputActions.MoveForward, InputActions.Sprint };
                 break;
+            case Gait.Diagonal:
+                _held = new[] { InputActions.MoveForward, InputActions.MoveRight };
+                break;
+            case Gait.SprintLookDown:
+                _held = new[] { InputActions.MoveForward, InputActions.Sprint };
+                ShotStage.SetPitch(player, -Mathf.Pi * 0.5f);
+                break;
             case Gait.StrafeLeft:
                 _held = new[] { InputActions.MoveLeft };
                 break;
@@ -345,6 +409,7 @@ public sealed partial class CamShots : TimedShots
                 Godot.Input.ActionPress(InputActions.Cast);
                 break;
             case Gait.LookDown:
+            case Gait.LookDownWide:
                 ShotStage.SetPitch(player, -Mathf.Pi * 0.5f);
                 break;
             case Gait.LookUp:
@@ -425,6 +490,23 @@ public sealed partial class CamShots : TimedShots
             ? Vector3.Up.Cross(r - l)
             : null;
         SpellcastingComponent? casting = player.GetComponent<SpellcastingComponent>();
+
+        // The casting hand as it is drawn: the animation component answers with the first-person
+        // arm's hand while that is up, and with the bone otherwise.
+        Vector3? hand = null;
+        bool handInFrame = false;
+        Vector2 handOnScreen = Vector2.Zero;
+        if (player.GetComponent<CharacterAnimationComponent>() is { } animation &&
+            animation.TryGetCastingHand(out Vector3 handAt))
+        {
+            hand = handAt;
+            if (camera.Current && camera.IsInsideTree())
+            {
+                handInFrame = camera.IsPositionInFrustum(handAt);
+                handOnScreen = camera.UnprojectPosition(handAt);
+            }
+        }
+
         _sample = new Sample(
             Valid: true,
             FirstPerson: rig.IsFirstPerson,
@@ -442,7 +524,14 @@ public sealed partial class CamShots : TimedShots
             Sprinting: player.GetComponent<LocomotionComponent>() is { IsSprinting: true },
             Charging: casting is { IsCharging: true },
             Channeling: casting is { IsChanneling: true },
-            FrameSeconds: GetProcessDeltaTime());
+            FrameSeconds: GetProcessDeltaTime(),
+            Fov: camera.Fov,
+            Chest: Bone(_chest),
+            Hand: hand,
+            HandInFrame: handInFrame,
+            HandOnScreen: handOnScreen,
+            Screen: camera.GetViewport()?.GetVisibleRect().Size ?? Vector2.Zero,
+            ArmRaise: player.GetComponent<FirstPersonArmComponent>()?.Raise ?? 0f);
     }
 
     private void ResolveBones(PlayerCharacter player)
@@ -454,9 +543,15 @@ public sealed partial class CamShots : TimedShots
         }
 
         _skeleton = skeleton;
-        _head = _hips = _shoulderLeft = _shoulderRight = -1;
+        _head = _hips = _shoulderLeft = _shoulderRight = _chest = -1;
         if (skeleton != null)
         {
+            _chest = skeleton.FindBone("UpperChest");
+            if (_chest < 0)
+            {
+                _chest = skeleton.FindBone("Chest");
+            }
+
             _head = EquipmentSockets.Resolve(skeleton, EquipmentSocket.Head);
             _hips = EquipmentSockets.Resolve(skeleton, EquipmentSocket.Hips);
             _shoulderLeft = EquipmentSockets.Resolve(skeleton, EquipmentSocket.ShoulderL);
@@ -494,12 +589,16 @@ public sealed partial class CamShots : TimedShots
         float speed = new Vector2(s.Velocity.X, s.Velocity.Z).Length();
         string? wrong = gait switch
         {
-            Gait.Walk or Gait.Jog or Gait.StrafeLeft or Gait.StrafeRight or Gait.Backpedal when speed < 0.5f =>
+            Gait.Walk or Gait.Jog or Gait.StrafeLeft or Gait.StrafeRight or Gait.Backpedal or Gait.Diagonal when speed < 0.5f =>
                 $"the body is not moving (speed {speed:0.00} m/s; {ShotStage.ControlState()})",
-            Gait.Sprint when !s.Sprinting => $"the body is not sprinting (speed {speed:0.00} m/s; {ShotStage.ControlState()})",
+            Gait.Sprint or Gait.SprintLookDown when !s.Sprinting =>
+                $"the body is not sprinting (speed {speed:0.00} m/s; {ShotStage.ControlState()})",
             Gait.Charge when !s.Charging => $"no spell is being charged ({ShotStage.ControlState()})",
             Gait.Channel when !s.Channeling => $"no spell is being channelled ({ShotStage.ControlState()})",
-            Gait.LookDown when s.Pitch > -0.5f => $"the view is pitched {Mathf.RadToDeg(s.Pitch):0} degrees, not down",
+            Gait.LookDown or Gait.LookDownWide or Gait.SprintLookDown when s.Pitch > -0.5f =>
+                $"the view is pitched {Mathf.RadToDeg(s.Pitch):0} degrees, not down",
+            Gait.LookDownWide when s.Fov < WidestFov - 1f =>
+                $"the field of view is {s.Fov:0} degrees, not the widest ({WidestFov:0})",
             Gait.LookUp when s.Pitch < 0.5f => $"the view is pitched {Mathf.RadToDeg(s.Pitch):0} degrees, not up",
             _ => null,
         };
@@ -507,6 +606,49 @@ public sealed partial class CamShots : TimedShots
         {
             Problem($"'{CurrentShot}': {wrong}.");
         }
+
+        // The visible body against the capsule. Half a turn out is a body drawn back to front: it
+        // faces the third-person camera, and in first person its back is where its chest should be
+        // and its arms are behind the eye.
+        float meshTurn = Mathf.RadToDeg(Flatten(s.BodyForward).SignedAngleTo(Flatten(s.MeshForward), Vector3.Up));
+        if (Mathf.Abs(meshTurn) > MaxMeshTurn)
+        {
+            Problem($"'{CurrentShot}': the visible body is turned {meshTurn:0} degrees from the way the capsule faces " +
+                    "(drawn back to front).");
+        }
+
+        // Standing and looking straight down, the eye has to be out in front of the chest, or the
+        // frame is the player's own torso.
+        if (firstPerson && gait is Gait.LookDown or Gait.LookDownWide && EyeAheadOfChest(s) is { } ahead &&
+            ahead < MinEyeAheadOfChest)
+        {
+            Problem($"'{CurrentShot}': looking down, the eye is {ahead:0.00} m ahead of the chest bone " +
+                    $"(at least {MinEyeAheadOfChest:0.00} m is needed to clear the chest).");
+        }
+
+        // A spell held in first person is held where the player can see it.
+        if (firstPerson && gait is Gait.Charge or Gait.Channel && !s.HandInFrame)
+        {
+            Problem($"'{CurrentShot}': the casting hand is not in the first-person frame ({HandText(s)}).");
+        }
+    }
+
+    /// <summary>How far the camera is ahead of the chest bone along the capsule's facing, in metres.</summary>
+    private static float? EyeAheadOfChest(Sample s) =>
+        s.Chest is { } chest ? (s.Camera - chest).Dot(Flatten(s.BodyForward)) : null;
+
+    private static string HandText(Sample s)
+    {
+        if (s.Hand is not { } hand)
+        {
+            return "no hand bone";
+        }
+
+        string where = s.Screen.X > 1f && s.Screen.Y > 1f
+            ? $"at {N(s.HandOnScreen.X / s.Screen.X, "0.00")},{N(s.HandOnScreen.Y / s.Screen.Y, "0.00")} of the frame"
+            : "frame size unknown";
+        return $"{(s.HandInFrame ? "in frame" : "OUT of frame")} {where}, {N(hand.DistanceTo(s.Camera), "0.00")} m from the camera, " +
+               $"arm_raise={N(s.ArmRaise, "0.00")}";
     }
 
     /// <summary>The three frames before a sprint shot: how far the camera and the body each moved since
@@ -551,8 +693,17 @@ public sealed partial class CamShots : TimedShots
                    $"horiz={N(new Vector2(offset.X, offset.Z).Length(), "0.00")} dy={Signed(offset.Y)}";
         }
 
+        string cameraFromChest = "no chest bone";
+        if (s.Chest is { } chestAt)
+        {
+            Vector3 offset = s.Camera - chestAt;
+            cameraFromChest = $"({Signed(offset.Dot(right))},{Signed(offset.Y)},{Signed(offset.Dot(forward))})";
+        }
+
         float speed = new Vector2(s.Velocity.X, s.Velocity.Z).Length();
         return $"camera_from_head(right,up,forward)={cameraFromHead} " +
+               $"camera_from_chest(right,up,forward)={cameraFromChest} " +
+               $"fov={N(s.Fov, "0.0")} casting_hand=[{HandText(s)}] " +
                $"body_heading={N(Mathf.RadToDeg(Mathf.Atan2(-forward.X, -forward.Z)), "0.0")} " +
                $"mesh_vs_body={Turn(forward, s.MeshForward)} " +
                $"chest_vs_body={(s.ChestForward is { } chest ? Turn(forward, chest) : "no shoulder bones")} " +

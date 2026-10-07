@@ -308,6 +308,11 @@ public static class PlayerFactory
             Camera = camera,
         });
 
+        // Swings the casting arm into the first-person view while a spell is wound up, charged or
+        // channelled. After the rig, which it reads; its skeleton modifier is added after the foot
+        // IK's, so it poses the arm on a body that already stands where it will be drawn.
+        player.AddChild(new FirstPersonArmComponent { Name = "FirstPersonArm", Camera = camera });
+
         player.AddChild(new PlayerLookInput { Name = "LookInput" });
         player.AddChild(new InteractionSensor { Name = "Interaction" });
         player.AddChild(new AimController { Name = "Aim", AimNode = aimNode });

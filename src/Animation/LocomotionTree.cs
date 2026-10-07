@@ -109,7 +109,9 @@ public static class LocomotionTree
         {
             MinSpace = new Vector2(LocomotionBlend.MinStrafe, LocomotionBlend.MinForward),
             MaxSpace = new Vector2(LocomotionBlend.MaxStrafe, LocomotionBlend.MaxForward),
-            Sync = true,
+            // The mode the retired Sync flag stood for; the flag itself is obsolete and fails a
+            // shipping build, which does not carry the tooling build's CS0618 suppression.
+            SyncMode = AnimationNodeBlendSpace2D.SyncModeEnum.Independent,
             // The triangles are written out below; see LocomotionBlend.Triangles for why.
             AutoTriangles = false,
         };

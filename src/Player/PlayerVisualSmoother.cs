@@ -65,6 +65,15 @@ public partial class PlayerVisualSmoother : EntityComponent
     private float _lastYaw;
     private bool _hasYaw;
 
+    /// <summary>The yaw the factory gave the visible body (the half turn that faces a glTF model
+    /// the way the capsule faces), and whether there is a body to hold to it.</summary>
+    private float _meshYaw;
+    private bool _hasMeshYaw;
+
+    /// <summary>How far the body's yaw may be from <see cref="_meshYaw"/> before it is put back
+    /// (radians). Wide: a hit's lean reads back as a degree or two of yaw and is not this.</summary>
+    private const float MeshYawTolerance = 0.5f;
+
     private PlayerCameraRig? _rig;
     private LockOnComponent? _lockOn;
     private CharacterActionComponent? _weapon;
@@ -86,6 +95,12 @@ public partial class PlayerVisualSmoother : EntityComponent
         _settings = ServiceLocator.Instance is { } locator && locator.TryGet(out SettingsService settings)
             ? settings
             : null;
+
+        if (BodyMesh != null && GodotObject.IsInstanceValid(BodyMesh))
+        {
+            _meshYaw = BodyMesh.Rotation.Y;
+            _hasMeshYaw = true;
+        }
 
         // Ahead of every other physics callback in the tree, not just the siblings': an enemy's
         // hitbox that lands a blow this tick has to find the player's rig where it really is.
@@ -137,6 +152,7 @@ public partial class PlayerVisualSmoother : EntityComponent
         }
 
         ResolveVisual();
+        HoldMeshYaw();
 
         Vector3 residual = _hasFrom
             ? VisualSmoothing.Residual(
@@ -147,6 +163,33 @@ public partial class PlayerVisualSmoother : EntityComponent
         ApplyPivot(residual);
         ApplyVisual(residual);
         AppliedOffset = residual;
+    }
+
+    /// <summary>
+    /// Puts the visible body back on the yaw the factory gave it whenever nobody is riding.
+    ///
+    /// <para>⚠️ <b>This is a guard for a defect in <c>MountComponent</c>, and it goes when that is
+    /// fixed.</b> <c>MountComponent.Load</c> strips the rider state on every load, mounted or not,
+    /// and stripping "restores" the mesh's yaw to a base it only ever captured on mounting, which
+    /// is zero for a player who has not ridden this session. Zero is the model's own +Z, the
+    /// capsule's BACK: every loaded save drew the player facing the camera in third person, with
+    /// its casting arm behind the first-person eye and its back where its chest should be when
+    /// looking down. Nothing logged it and no probe saw it, because the probes build a body with
+    /// no mount component. While mounted the yaw is the mount's and is left alone.</para>
+    /// </summary>
+    private void HoldMeshYaw()
+    {
+        if (!_hasMeshYaw || BodyMesh == null || !GodotObject.IsInstanceValid(BodyMesh) ||
+            _mount is { IsMounted: true })
+        {
+            return;
+        }
+
+        Vector3 rotation = BodyMesh.Rotation;
+        if (Mathf.Abs(VisualSmoothing.WrapAngle(rotation.Y - _meshYaw)) > MeshYawTolerance)
+        {
+            BodyMesh.Rotation = new Vector3(rotation.X, _meshYaw, rotation.Z);
+        }
     }
 
     /// <summary>The visible body trails a turn of the camera in third person and nowhere else: in
