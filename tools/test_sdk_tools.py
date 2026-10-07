@@ -30,6 +30,7 @@ def make_run(folder, arguments=("world",), engine=None):
     run.history = {}
     run.cache = cache.GateCache(Path(folder))
     run.tree = dict(entries={"src": "1"}, changed={})
+    run.read_tree = lambda: run.tree   # the temp folder is not a checkout; the fake tree never changes
     return run
 
 
@@ -1025,6 +1026,112 @@ class ListAndRegistryTests(unittest.TestCase):
             self.assertEqual(7, main(["sample-light"]))
         finally:
             del commands.REGISTRY["sample-light"]
+
+
+
+class CacheHonestyTests(unittest.TestCase):
+    def test_a_pass_whose_inputs_changed_while_it_ran_is_not_cached(self):
+        with tempfile.TemporaryDirectory() as folder:
+            run = make_run(folder)
+            states = iter([dict(entries={"src": "1"}, changed={}),                     # before the gate
+                           dict(entries={"src": "1"}, changed={"src/a.cs": "edited"})])  # after it
+            run.tree = None
+            run.read_tree = lambda: next(states)
+            run.run_gates([(python_gate("slow"), None)])
+            self.assertTrue(run.result["steps"][-1]["success"])
+            self.assertEqual({}, cache.GateCache(Path(folder)).entries)   # the pass proved another tree
+            steady = make_run(folder)
+            steady.run_gates([(python_gate("slow"), None)])
+            self.assertIn("slow", cache.GateCache(Path(folder)).entries)
+
+    def test_a_cached_pass_brings_its_warnings_back_so_strict_still_fails(self):
+        with tempfile.TemporaryDirectory() as folder:
+            noisy = python_gate("noisy", "print('WARNING: mesh has no LOD')")
+            first = make_run(folder)
+            first.run_gates([(noisy, None)])
+            self.assertEqual(0, finish(first)[0])
+            strict = make_run(folder, ["world", "--strict"])
+            strict.run_gates([(noisy, None)])
+            self.assertTrue(strict.result["steps"][-1]["cached"])
+            self.assertEqual(["WARNING: mesh has no LOD"],
+                             [d["message"] for d in strict.result["diagnostics"] if d["severity"] == "warning"])
+            self.assertNotEqual(0, finish(strict)[0])
+
+
+class OwnerIdentityTests(unittest.TestCase):
+    def test_a_recycled_pid_is_not_the_owner(self):
+        from quality_common import process_started, same_process
+        born = process_started(os.getpid())
+        self.assertIsNotNone(born)
+        self.assertEqual(born, process_started(os.getpid()))
+        self.assertTrue(same_process(os.getpid(), born))
+        self.assertTrue(same_process(os.getpid(), None))       # an older record: the id alone decides
+        self.assertFalse(same_process(os.getpid(), born + 1))  # alive, but some other process's record
+        self.assertFalse(same_process(0, None))
+
+    def test_a_lock_left_by_a_process_whose_pid_was_reused_is_taken_over(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / "heavy.lock"
+            # This pid is alive, but the record says its owner was born at another time: a hard-killed
+            # holder whose id the system handed to someone else.
+            path.write_text(json.dumps(dict(pid=os.getpid(), born=1, what="killed long ago", since=0)))
+            self.assertIsNone(heavy.holder(path))
+            self.assertIsNone(heavy.acquire("next", path))
+            self.assertEqual("next", heavy.holder(path)["what"])
+
+    def test_clearing_a_stale_lock_never_removes_a_fresh_one(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / "heavy.lock"
+            # Another waiter already replaced the stale file this one judged; its lock must survive.
+            self.assertIsNone(heavy.acquire("the faster waiter", path))
+            heavy.clear_stale(path, json.dumps(dict(pid=1, what="the stale one")))
+            self.assertEqual("the faster waiter", heavy.holder(path)["what"])
+            self.assertEqual([path.name], [item.name for item in Path(folder).iterdir()])
+
+    def test_cancel_does_not_kill_a_stranger_that_reused_the_pid(self):
+        with tempfile.TemporaryDirectory() as folder:
+            directory = Path(folder)
+            write_json(directory / "job.json", dict(id="J", argv=["x"]))
+            write_json(directory / "state.json", dict(state="running", pid=os.getpid(), born=1, child=os.getpid(), child_born=1))
+            with patch("embervale_sdk.jobs.kill_tree") as kill:
+                self.assertEqual("dead", jobs.view(directory)["state"])   # its supervisor is gone
+                self.assertFalse(jobs.cancel(directory))
+                kill.assert_not_called()
+
+
+class EngineOnlyWhenNeededTests(unittest.TestCase):
+    def test_a_pure_python_run_starts_no_engine_and_takes_no_lock(self):
+        with tempfile.TemporaryDirectory() as folder, patch.dict(os.environ, EMBERVALE_HEAVY_LOCK=str(Path(folder) / "l")):
+            os.environ.pop(heavy.HELD, None)
+            run = make_run(folder, ["world", "--no-build"], engine=Path("godot-test.exe"))
+            run.env.pop(heavy.HELD, None)
+            heavy.acquire("an engine run in another checkout")
+            run.run_gates([(python_gate("pure"), None)])     # not refused, although the lock is held
+            self.assertEqual(["pure"], [step["name"] for step in run.result["steps"]])
+            self.assertIsNone(run.result["godot_version"])
+            heavy.release()
+            run.process = Mock(return_value=Mock(stdout="4.7.1.stable.mono\n", returncode=0))
+            run.godot("launch", [])
+            self.assertEqual("godot-version", run.process.call_args_list[0].args[0])
+            self.assertEqual("4.7.1.stable.mono", run.result["godot_version"])
+            run.godot("again", [])
+            self.assertEqual(3, run.process.call_count)       # the version is read once
+            finish(run)
+
+    def test_an_sdk_job_leaves_the_heavy_lock_to_the_command_inside_it(self):
+        with tempfile.TemporaryDirectory() as folder, patch.dict(os.environ, EMBERVALE_HEAVY_LOCK=str(Path(folder) / "l")):
+            os.environ.pop(heavy.HELD, None)
+            directory = Path(folder) / "job"
+            directory.mkdir()
+            show = "import os; print(os.environ.get('EMBERVALE_HEAVY_HELD'), os.environ.get('EMBERVALE_HEAVY_WAIT'))"
+            write_json(directory / "job.json", dict(id="J", argv=["test", "--only", "tool"], sdk=True,
+                                                    command=[PY, "-c", show], cwd=folder))
+            heavy.acquire("an engine run")        # a pure-Python SDK job neither waits for it nor holds it
+            with patch("embervale_sdk.jobs.costs.save"):
+                self.assertEqual(0, jobs.supervise(directory))
+            self.assertEqual([f"None {jobs.QUEUE_SECONDS}"], jobs.tail(directory / "output.log", 5))
+            self.assertEqual("an engine run", heavy.holder()["what"])
+            heavy.release()
 
 
 if __name__ == "__main__":
