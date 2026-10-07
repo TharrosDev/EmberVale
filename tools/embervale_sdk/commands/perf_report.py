@@ -85,7 +85,7 @@ def run(run, args, passthrough):
                                     tolerance=args.tolerance, median=True)[0]
     run.result["metrics"]["perf_report"]["compare"] = verdict
     for line in perf_compare.render(verdict):
-        run.brief(line)
+        run.brief(line.replace("--update", "--update-baseline"))  # this command's spelling of the flag
     if verdict["status"] == "refused":
         run.issue("perf_report.baseline", f"baseline not updated: {verdict['reason']}")
     elif verdict["status"] in ("regress", "ok"):
