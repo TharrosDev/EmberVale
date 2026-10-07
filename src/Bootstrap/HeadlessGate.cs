@@ -115,6 +115,10 @@ public static class HeadlessGate
             _levelBefore = Log.MinimumLevel;
             Log.MinimumLevel = Log.Level.Warn;
             Log.MirrorWarningsToEngine = false;
+
+            // The engine prints seven lines for each navigation region whose baked edges overlap,
+            // on every session load: most of a quiet lifecycle run's output. --verbose keeps it.
+            ProjectSettings.SetSetting("navigation/3d/warnings/navmesh_edge_merge_errors", false);
             _quiet = true;
         }
 
