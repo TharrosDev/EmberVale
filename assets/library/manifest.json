@@ -4860,49 +4860,19 @@
    "file": "assets/models/characters/fp_arm_left.glb",
    "source": "Quaternius Ultimate Animated Character Pack / existing fp_arm.glb",
    "note": "True applied mirror with corrected winding and normals; no negative runtime scale."
-  },
-  {
-   "title": "eqp_pauldron_embervale",
-   "pack": "Embervale repository-authored equipment",
-   "licence": "CC0 1.0",
-   "file": "assets/models/equipment/eqp_pauldron_embervale.glb",
-   "source": "tools/build_player_weapon_assets.py"
-  },
-  {
-   "title": "eqp_pouch_embervale",
-   "pack": "Embervale repository-authored equipment",
-   "licence": "CC0 1.0",
-   "file": "assets/models/equipment/eqp_pouch_embervale.glb",
-   "source": "tools/build_player_weapon_assets.py"
   }
  ],
  "session_03_npc_kit": [
-  {
-   "title": "npc_kit_embervale",
-   "pack": "Embervale Session 3 modular human kit",
-   "licence": "CC0 1.0",
-   "file": "assets/models/equipment/npc_kit_embervale.glb",
-   "source": "tools/build_npc_kit.py",
-   "note": "Repository-authored shared rigid clothing and profession accessories; 22 reusable pieces, one common material library, deterministic attachment profiles."
-  },
   {
    "title": "Session 3 production human material repair",
    "pack": "Quaternius-derived Embervale production humans",
    "licence": "CC0 1.0",
    "file": "assets/models/characters/npc_*.glb",
-   "source": "Quaternius Ultimate Animated Character Pack / tools/build_npc_kit.py",
+   "source": "Quaternius Ultimate Animated Character Pack / tools/patch_human_materials.py",
    "note": "Material-only glTF JSON repair across 11 existing NPC GLBs. Binary mesh, skin, inverse-bind and animation payloads are preserved; original source assets remain in their canonical library locations."
   }
  ],
  "session_04_enemy_identity": [
-  {
-   "title": "enemy_identity_kit",
-   "pack": "Embervale Session 4 enemy identity kit",
-   "licence": "CC0 1.0",
-   "file": "assets/models/equipment/enemy_identity_kit.glb",
-   "source": "tools/build_enemy_identity_assets.py",
-   "note": "Repository-authored burial armour, spectral forms, faction equipment, animal anatomy, dragon variation, construct details and Iron King hero-boss pieces; deterministic per-enemy profiles."
-  },
   {
    "title": "Grounded elemental and construct replacements",
    "pack": "Embervale Session 4 repository-authored creatures",

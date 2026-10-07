@@ -164,14 +164,10 @@ def main() -> None:
     # that shipped with the ranged system, and the round shield, all stood at 0.4 metallic on their
     # wood and their cloth alike -- the exact defect this tool exists for, one folder over.
     #
-    # ⚠️ THE FIVE GENERATED FILES ARE SKIPPED AND MUST STAY SKIPPED. They are `assets.py build`
-    # outputs whose materials are art-directed by their build scripts -- RimeCrystal at 0.26
-    # roughness, EmberRune at 0.42, ShadeGlass at 0.36, WornLeather at three different values on
-    # purpose. `response()` has no branch for any of them, so sweeping these would not correct
-    # them, it would flatten them: the frost enemies' crystal and the runes would come out as
-    # matte stone.
-    generated = {"npc_kit_embervale.glb", "enemy_identity_kit.glb", "eqp_pauldron_embervale.glb",
-                 "eqp_pouch_embervale.glb", "wpn_sword_iron.glb"}
+    # ⚠️ THE GENERATED SWORD IS SKIPPED AND MUST STAY SKIPPED. It is an `assets.py build` output
+    # whose materials are art-directed by its build script -- three steels at three roughnesses
+    # on purpose. `response()` has no branch for them, so sweeping it would flatten the blade.
+    generated = {"wpn_sword_iron.glb"}
     total = 0
     for folder in ("weapons", "equipment"):
         for path in sorted((models / folder).glob("*.glb")):

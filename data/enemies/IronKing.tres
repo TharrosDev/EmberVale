@@ -35,3 +35,6 @@ MaxPoise = 150.0
 Reaction = 4
 StaminaRegen = 16.0
 XpValue = 500
+; His maul: the iron mace drawn at half again its size, in the right hand. Visual only.
+HeldWeaponPath = "res://assets/models/weapons/wpn_mace_iron.glb"
+HeldWeaponScale = 1.5

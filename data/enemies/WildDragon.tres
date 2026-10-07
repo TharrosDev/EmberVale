@@ -61,3 +61,6 @@ MaxPoise = 200.0
 Reaction = 3
 StaminaRegen = 18.0
 XpValue = 900
+; The wild dragon, the ash dragon and the frost drake are one mesh at three sizes; this flat
+; colour is what tells them apart. Remove it when this archetype gets a body of its own.
+BodyTint = Color(0.349, 0.3804, 0.2627, 1)

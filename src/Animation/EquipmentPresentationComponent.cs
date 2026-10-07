@@ -1,16 +1,13 @@
 using System.Collections.Generic;
-using Embervale.Enemies;
 using Embervale.Entities;
 using Embervale.Items;
-using Embervale.Npc;
 using Godot;
 
 namespace Embervale.Animation;
 
 /// <summary>
-/// The one place anything is hung on a body. Weapons, shields, bows, quivers, helms, pauldrons,
-/// pouches, NPC outfit pieces and enemy identity pieces — player, NPC, enemy, companion and boss all
-/// go through this.
+/// The one place anything is hung on a body. Weapons, shields, bows, quivers, helms and worn
+/// armour — player, NPC, enemy, companion and boss all go through this.
 ///
 /// <para><b>What it replaced.</b> Five implementations of nearly the same thing:
 /// <c>PlayerFactory.AttachWeaponVisual</c> (a <see cref="BoneAttachment3D"/> with a hand-derived
@@ -46,8 +43,8 @@ public partial class EquipmentPresentationComponent : EntityComponent
     /// A factory builds an actor detached and adds it to the tree afterwards, so there is no
     /// skeleton to attach to at build time — the repo's own convention is to set component
     /// properties before <c>AddChild</c> and let <see cref="OnInitialize"/> act on them (CLAUDE.md
-    /// §6). This is that: the player's factory queues its sword and its pauldrons, and they land
-    /// when the body does.
+    /// §6). This is that: the player's factory queues its sword, an enemy archetype queues its
+    /// held weapon, and they land when the body does.
     /// </summary>
     public List<PendingPiece> Pending { get; } = new();
 
@@ -125,13 +122,6 @@ public partial class EquipmentPresentationComponent : EntityComponent
             Skeleton = FindSkeleton(bodyRoot);
         }
 
-        // The identity kits attach here rather than from CharacterAnimationComponent, which is
-        // where they used to live. An outfit is not an animation concern, and the coupling is what
-        // made "the component that plays clips" also the component that owned five bone-name
-        // heuristics. Both kits no-op for an actor whose TemplateId has no profile.
-        NpcVisualKit.Attach(Entity, this);
-        EnemyVisualKit.Attach(Entity, this);
-
         foreach (PendingPiece piece in Pending)
         {
             Attach(piece.Socket, piece.ScenePath, piece.Name, piece.Offset, piece.RotationDegrees,
@@ -192,8 +182,8 @@ public partial class EquipmentPresentationComponent : EntityComponent
         return mounted;
     }
 
-    /// <summary>The already-instantiated overload — the kits pull their pieces out of one shared
-    /// scene, so they have a node rather than a path.</summary>
+    /// <summary>The already-instantiated overload, for a caller that has a node rather than a
+    /// path.</summary>
     public Node3D? Attach(
         EquipmentSocket socket,
         Node3D visual,
@@ -247,8 +237,8 @@ public partial class EquipmentPresentationComponent : EntityComponent
 
         skeleton.AddChild(mount);
 
-        // Reparent rather than AddChild: the kits hand us a node that is already in a scene they
-        // are about to free, and keepGlobalTransform would drag that scene's placement along.
+        // Reparent rather than AddChild: a caller may hand us a node that is already in a scene it
+        // is about to free, and keepGlobalTransform would drag that scene's placement along.
         if (visual.GetParent() is { } existing)
         {
             visual.Owner = null;

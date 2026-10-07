@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""Build Embervale enemy identity meshes and repair creature material response.
+"""Build Embervale's primitive creatures and repair creature material response.
 
 Run with Blender so all geometry is reproducible:
   blender --background --factory-startup --python tools/build_enemy_identity_assets.py -- C:/path/to/Embervale
 
 The source rigs that remain useful are never round-tripped. Their glTF JSON material factors are
-patched byte-safely, while the modular kit and the seven inappropriate blob/construct replacements
-are authored as new Blender geometry. The replacements ship idle, locomotion, attack, hit and death
-clips so the shared gameplay animation resolver remains authoritative.
+patched byte-safely, while the four primitive creatures (cinder wisp, storm mote, ruin crawler, ash
+maw) are authored as new Blender geometry on a 3-bone rig. They ship idle, locomotion, attack, hit
+and death clips so the shared gameplay animation resolver remains authoritative.
 """
 
 from __future__ import annotations
@@ -79,7 +79,7 @@ def patch_creature_materials(root: Path) -> None:
     for path in sorted(folder.glob("*.glb")):
         if not (path.name.startswith("enm_") or path.name.startswith("boss_")):
             continue
-        # These five are rebuilt below and need no source-payload preservation check.
+        # Rebuilt below, or generated bodies whose materials are not this script's to set.
         if path.name in {"enm_cinder_wisp.glb", "enm_storm_mote.glb", "enm_rime_shard.glb",
                           "enm_ruin_crawler.glb", "enm_ward_golem.glb", "enm_stone_sentinel.glb",
                           "enm_ash_maw.glb"}:
@@ -151,13 +151,6 @@ def cube(name, location, scale, mat, rotation=(0, 0, 0), bevel=0.02):
     return finish(obj, mat, name, bevel)
 
 
-def sphere(name, location, scale, mat, segments=12, rings=8):
-    bpy.ops.mesh.primitive_uv_sphere_add(segments=segments, ring_count=rings, location=location)
-    obj = bpy.context.object
-    obj.scale = scale
-    return finish(obj, mat, name)
-
-
 def ico(name, location, scale, mat, subdivision=1):
     bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=subdivision, location=location)
     obj = bpy.context.object
@@ -181,162 +174,6 @@ def torus(name, location, major, minor, mat, rotation=(0, 0, 0)):
     bpy.ops.mesh.primitive_torus_add(major_radius=major, minor_radius=minor, major_segments=16,
                                     minor_segments=6, location=location, rotation=rotation)
     return finish(bpy.context.object, mat, name)
-
-
-def tube(name, points, radius, mat):
-    curve = bpy.data.curves.new(name, "CURVE")
-    curve.dimensions, curve.resolution_u, curve.bevel_depth, curve.bevel_resolution = "3D", 1, radius, 1
-    spline = curve.splines.new("POLY")
-    spline.points.add(len(points) - 1)
-    for target, point in zip(spline.points, points):
-        target.co = (*point, 1.0)
-    obj = bpy.data.objects.new(name, curve)
-    bpy.context.collection.objects.link(obj)
-    obj.data.materials.append(mat)
-    bpy.context.view_layer.objects.active = obj
-    obj.select_set(True)
-    bpy.ops.object.convert(target="MESH")
-    return bpy.context.object
-
-
-def join_piece(name, objects):
-    bpy.ops.object.select_all(action="DESELECT")
-    for obj in objects:
-        obj.select_set(True)
-    bpy.context.view_layer.objects.active = objects[0]
-    bpy.ops.object.join()
-    result = bpy.context.object
-    result.name = name
-    bpy.context.scene.cursor.location = (0, 0, 0)
-    bpy.ops.object.origin_set(type="ORIGIN_CURSOR")
-    return result
-
-
-def spike_fan(prefix, positions, mat, radius=0.06, depth=0.32):
-    return [cone(f"{prefix}_{i}", pos, radius, 0.008, depth, mat) for i, pos in enumerate(positions)]
-
-
-def build_kit(root: Path) -> None:
-    reset_scene()
-    iron = material("ColdIron", (0.10, 0.12, 0.14), 0.84, 0.46)
-    rust = material("BurialIron", (0.20, 0.12, 0.07), 0.62, 0.68)
-    leather = material("WornLeather", (0.12, 0.055, 0.025), 0.0, 0.82)
-    cloth = material("FadedCloth", (0.10, 0.085, 0.07), 0.0, 0.94)
-    clan = material("ClanHide", (0.22, 0.18, 0.12), 0.0, 0.95)
-    bone = material("OldBone", (0.50, 0.44, 0.32), 0.0, 0.88)
-    spectral = material("ShadeGlass", (0.15, 0.23, 0.31), 0.0, 0.36, (0.10, 0.28, 0.42, 0.7), 0.78)
-    ember = material("EmberRune", (0.36, 0.08, 0.025), 0.0, 0.42, (0.95, 0.16, 0.025, 1.8))
-    frost = material("RimeCrystal", (0.32, 0.55, 0.68), 0.0, 0.26, (0.10, 0.30, 0.48, 0.65))
-    ash = material("AshStone", (0.095, 0.075, 0.065), 0.0, 0.92)
-    dragon = material("DragonHorn", (0.20, 0.16, 0.11), 0.0, 0.82)
-    moss = material("OldMoss", (0.15, 0.20, 0.095), 0.0, 0.98)
-
-    # Thornback: the retained cattle rig gains a low snout, paired tusks and a thorned back ridge.
-    join_piece("BoarHead", [sphere("snout", (0, -0.24, -0.03), (0.22, 0.30, 0.16), leather),
-        cone("tusk_l", (-0.17, -0.38, -0.07), 0.045, 0.008, 0.30, bone, (math.pi/2, 0, -0.20)),
-        cone("tusk_r", (0.17, -0.38, -0.07), 0.045, 0.008, 0.30, bone, (math.pi/2, 0, 0.20)),
-        cube("brow", (0, -0.08, 0.12), (0.27, 0.09, 0.07), ash, bevel=0.035)])
-    join_piece("BoarThornback", spike_fan("thorn", [(-0.14, y, 0.20 + 0.05*i) for i, y in enumerate((-0.42,-0.18,0.06,0.30))],
-        dragon, 0.07, 0.38) + spike_fan("thorn_r", [(0.14, y, 0.20 + 0.05*i) for i, y in enumerate((-0.42,-0.18,0.06,0.30))], dragon, 0.07, 0.38))
-
-    # Human factions and undead: model-specific silhouettes, not palette swaps.
-    join_piece("WightBurialArmor", [cube("breast", (0,-0.03,-0.05), (0.30,0.10,0.34), rust, bevel=0.05),
-        cube("shoulder_l", (-0.34,0,0.13), (0.16,0.16,0.10), rust, rotation=(0,0,0.22), bevel=0.04),
-        cube("shoulder_r", (0.34,0,0.13), (0.16,0.16,0.10), rust, rotation=(0,0,-0.22), bevel=0.04),
-        cube("gravecloth", (0,0.07,-0.46), (0.24,0.04,0.28), cloth, rotation=(0.08,0,0), bevel=0.01)])
-    join_piece("WightCrown", spike_fan("crown", [(-0.18,0,0.13),(0,0,0.20),(0.18,0,0.13)], rust, 0.035, 0.26))
-    join_piece("ShadeVeil", [torus("broken_halo", (0,0,0.08), 0.42, 0.025, spectral, (math.pi/2,0,0)),
-        *[cone(f"veil_{i}", (x,0,-0.30), 0.10, 0.015, 0.62, spectral) for i,x in enumerate((-0.28,0,0.28))]])
-    join_piece("ShadeHalo", [torus("halo", (0,0,0.04), 0.26, 0.022, spectral, (math.pi/2,0,0)),
-        *spike_fan("shade", [(-0.16,0,0.18),(0.16,0,0.18)], spectral, 0.04, 0.30)])
-    join_piece("ShamanFurs", [cube("hide", (0,0,-0.08), (0.34,0.12,0.38), clan, bevel=0.06),
-        cylinder("collar", (0,0,0.22), 0.34, 0.12, clan, (math.pi/2,0,0), 12)])
-    join_piece("ShamanMask", [cube("mask", (0,-0.12,0), (0.18,0.08,0.24), bone, bevel=0.04),
-        *spike_fan("antler", [(-0.16,0,0.20),(0.16,0,0.20)], bone, 0.04, 0.36)])
-    join_piece("ShamanTotem", [tube("staff", [(0,-0.55,-0.65),(0,-0.55,0.65)], 0.035, leather),
-        torus("totem", (0,-0.55,0.48), 0.18, 0.035, bone), cone("fang", (0,-0.55,0.16),0.07,0.01,0.26,bone)])
-    join_piece("NecroRibs", [*[tube(f"rib_{i}", [(-0.25,0,z),(0, -0.08,z-0.05),(0.25,0,z)], 0.025, bone) for i,z in enumerate((0.18,0.03,-0.12))],
-        cube("sash", (0,0.08,-0.35), (0.20,0.04,0.32), cloth, rotation=(0,0,0.16), bevel=0.01)])
-    join_piece("NecroCowl", [torus("cowl", (0,0,-0.02), 0.28, 0.07, cloth),
-        cone("occult_horn", (0.20,0,0.18),0.045,0.01,0.30,bone,rotation=(0,0,-0.35))])
-    join_piece("NecroFocus", [sphere("focus", (0,0,0), (0.15,0.15,0.15), spectral),
-        torus("focus_ring", (0,0,0),0.22,0.025,bone,(math.pi/2,0,0))])
-
-    join_piece("SoldierHarness", [cube("surcoat", (0,0,-0.08),(0.29,0.09,0.40),cloth,bevel=0.02),
-        cube("brigandine", (0,-0.04,0.02),(0.31,0.08,0.29),iron,bevel=0.035),
-        cylinder("belt", (0,0,-0.30),0.31,0.08,leather,(math.pi/2,0,0),12)])
-    join_piece("SoldierKettle", [cylinder("helm", (0,0,0.04),0.25,0.24,iron,vertices=12),
-        cylinder("brim", (0,0,-0.05),0.34,0.05,iron,vertices=14)])
-    join_piece("BanditMantle", [cube("mantle", (0,0,-0.02),(0.33,0.12,0.32),leather,rotation=(0,0,0.06),bevel=0.05),
-        tube("rope", [(-0.31,-0.12,0.18),(0,-0.18,-0.08),(0.31,-0.12,0.18)],0.025,clan)])
-    join_piece("BanditMask", [cube("mask", (0,-0.16,-0.04),(0.22,0.05,0.11),cloth,bevel=0.025)])
-    join_piece("EnforcerArmor", [cube("coat", (0,0,-0.05),(0.31,0.10,0.40),cloth,bevel=0.03),
-        cube("pauldron_l", (-0.37,0,0.16),(0.18,0.18,0.11),iron,rotation=(0,0,0.30),bevel=0.05),
-        cube("pauldron_r", (0.37,0,0.16),(0.18,0.18,0.11),iron,rotation=(0,0,-0.30),bevel=0.05),
-        cylinder("seal", (0,-0.13,-0.18),0.08,0.035,rust,(math.pi/2,0,0),12)])
-    join_piece("EnforcerMask", [cube("visor", (0,-0.18,0.02),(0.24,0.06,0.12),iron,bevel=0.025),
-        cube("crest", (0,0,0.20),(0.04,0.13,0.20),rust,bevel=0.015)])
-
-    # Animals.
-    join_piece("DireWolfMane", [*[cone(f"mane_{i}", (x,0.0,z),0.08,0.015,0.34,ash,rotation=(0,0,ang))
-        for i,(x,z,ang) in enumerate(((-0.28,0.12,-0.75),(-0.14,0.30,-0.35),(0,0.38,0),(0.14,0.30,0.35),(0.28,0.12,0.75)))],
-        cube("shoulders", (0,0,-0.03),(0.38,0.22,0.28),ash,bevel=0.10)])
-    join_piece("DireWolfFangs", [cone("fang_l",(-0.10,-0.19,-0.08),0.035,0.005,0.20,bone,(math.pi/2,0,0)),
-        cone("fang_r",(0.10,-0.19,-0.08),0.035,0.005,0.20,bone,(math.pi/2,0,0)),cube("brow",(0,-0.05,0.10),(0.22,0.09,0.07),ash,bevel=0.04)])
-    join_piece("FrostStalkerRidge", spike_fan("rime", [(0,y,0.12+0.06*i) for i,y in enumerate((-0.32,-0.10,0.12,0.34))],frost,0.055,0.34))
-    join_piece("FrostStalkerMask", [cube("ice_brow",(0,-0.08,0.08),(0.20,0.08,0.06),frost,bevel=0.03),
-        cone("chin",(0,-0.16,-0.12),0.06,0.01,0.22,frost,(math.pi/2,0,0))])
-    join_piece("AshMawCarapace", [cube("basalt",(0,0,0),(0.42,0.30,0.30),ash,bevel=0.12),
-        *spike_fan("maw", [(-0.24,-0.02,0.18),(0,0,0.28),(0.24,-0.02,0.18)],ember,0.06,0.34)])
-    join_piece("AshMawJaws", [torus("jaw_ring",(0,-0.18,-0.03),0.22,0.045,rust,(math.pi/2,0,0)),
-        *spike_fan("teeth", [(x,-0.24,-0.06) for x in (-0.15,-0.05,0.05,0.15)],bone,0.025,0.15)])
-
-    # Dragons: one reliable foundation, four unmistakable age/element silhouettes.
-    join_piece("WildDragonCrown", [*spike_fan("antler_l", [(-0.28,0,0.05),(-0.36,0,0.25)],dragon,0.07,0.50),
-        *spike_fan("antler_r", [(0.28,0,0.05),(0.36,0,0.25)],dragon,0.07,0.50)])
-    join_piece("WildDragonDorsal", spike_fan("wild_spine", [(0,y,0.26+0.05*i) for i,y in enumerate((-0.55,-0.25,0.05,0.35,0.60))],dragon,0.10,0.60))
-    join_piece("AshDragonCrown", [*spike_fan("ash_horn", [(-0.34,0,0.10),(0,0,0.35),(0.34,0,0.10)],ember,0.10,0.62),
-        torus("iron_halo",(0,0,0.08),0.45,0.05,iron,(math.pi/2,0,0))])
-    join_piece("AshDragonChains", [tube("chain_l",[(-0.65,0,0.25),(-0.25,-0.10,-0.25),(0,-0.08,-0.42)],0.045,iron),
-        tube("chain_r",[(0.65,0,0.25),(0.25,-0.10,-0.25),(0,-0.08,-0.42)],0.045,iron)])
-    join_piece("FrostDragonCrest", [*spike_fan("frost_horn", [(-0.30,0,0.10),(0,0,0.34),(0.30,0,0.10)],frost,0.09,0.55),
-        cube("ice_brow",(0,-0.10,0.02),(0.32,0.10,0.10),frost,bevel=0.04)])
-    join_piece("FrostDragonDorsal", spike_fan("frost_spine", [(0,y,0.25+0.06*i) for i,y in enumerate((-0.5,-0.2,0.1,0.4))],frost,0.10,0.60))
-    join_piece("AncientDragonCrown", [torus("elder_halo",(0,0,0.08),0.48,0.04,rust,(math.pi/2,0,0)),
-        *spike_fan("elder_horn", [(-0.38,0,0.10),(0.38,0,0.10)],bone,0.11,0.72)])
-
-    # Hero boss.
-    join_piece("IronKingPlate", [cube("king_breast",(0,-0.02,-0.02),(0.37,0.12,0.43),iron,bevel=0.06),
-        cube("king_should_l",(-0.46,0,0.20),(0.24,0.22,0.15),rust,rotation=(0,0,0.34),bevel=0.06),
-        cube("king_should_r",(0.46,0,0.20),(0.24,0.22,0.15),rust,rotation=(0,0,-0.34),bevel=0.06),
-        cylinder("heart",(0,-0.16,-0.02),0.11,0.04,ember,(math.pi/2,0,0),12)])
-    join_piece("IronKingCrown", [cylinder("crown_band",(0,0,-0.02),0.27,0.10,rust,vertices=12),
-        *spike_fan("crown_spike", [(-0.20,0,0.16),(0,0,0.25),(0.20,0,0.16)],iron,0.055,0.38)])
-    join_piece("IronKingChains", [tube("king_chain_l",[(-0.42,0,0.15),(-0.22,0.12,-0.30),(0,-0.02,-0.50)],0.04,iron),
-        tube("king_chain_r",[(0.42,0,0.15),(0.22,0.12,-0.30),(0,-0.02,-0.50)],0.04,iron),
-        torus("broken_link",(0,0,-0.55),0.12,0.035,rust,(math.pi/2,0,0))])
-    join_piece("IronKingBack", [cube("back_banner",(0,0.10,-0.08),(0.28,0.04,0.52),cloth,bevel=0.01),
-        *spike_fan("back_blade", [(-0.24,0.08,0.28),(0.24,0.08,0.28)],rust,0.07,0.55)])
-    join_piece("IronKingWeapon", [tube("king_haft",[(0,0,-0.62),(0,0,0.62)],0.055,leather),
-        cube("king_axe",(0,0,0.58),(0.34,0.08,0.18),iron,rotation=(0,0,0.12),bevel=0.04),
-        cone("king_axe_tip",(0.38,0,0.63),0.16,0.015,0.34,rust,rotation=(0,math.pi/2,0))])
-
-    # Additional roster foundations that share the same grounded human family.
-    join_piece("BoneKnightArmor", [cube("boneplate",(0,-0.04,-0.02),(0.32,0.10,0.40),rust,bevel=0.05),
-        *[tube(f"bone_{i}",[(-0.26,0,z),(0.26,0,z)],0.025,bone) for i,z in enumerate((0.20,0.05,-0.10))]])
-    join_piece("ClanRaiderArmor", [cube("raider_hide",(0,0,-0.04),(0.34,0.12,0.39),clan,bevel=0.06),
-        cube("raider_iron",(0,-0.08,0.05),(0.28,0.06,0.22),iron,bevel=0.04)])
-    join_piece("CultAshMark", [torus("ash_mark",(0,-0.15,0),0.18,0.025,ember,(math.pi/2,0,0)),
-        cube("ash_sash",(0.05,0,-0.25),(0.18,0.04,0.34),cloth,rotation=(0,0,-0.18),bevel=0.01)])
-    join_piece("ArcaneEchoRings", [torus("echo_a",(0,0,0),0.40,0.025,spectral,(math.pi/2,0,0)),
-        torus("echo_b",(0,0,0),0.30,0.025,spectral,(0,math.pi/2,0))])
-
-    output = root / "assets" / "models" / "equipment" / "enemy_identity_kit.glb"
-    output.parent.mkdir(parents=True, exist_ok=True)
-    bpy.ops.object.select_all(action="SELECT")
-    bpy.ops.export_scene.gltf(filepath=str(output), export_format="GLB", use_selection=True,
-        export_yup=True, export_materials="EXPORT", export_animations=False, export_apply=True)
-    print(f"exported enemy identity kit: {output.name}")
 
 
 def armature(name, bones):
@@ -474,13 +311,13 @@ def build_replacement(root, filename, kind):
 def main():
     root = root_path()
     patch_creature_materials(root)
-    build_kit(root)
+    # Only the four creatures that are still this script's geometry. `build_replacement` also knows
+    # "rime", "ward" and "sentinel", but those three files are generated bodies now and building
+    # them here would overwrite them.
     for filename, kind in (("enm_cinder_wisp.glb","cinder"),("enm_storm_mote.glb","storm"),
-                           ("enm_rime_shard.glb","rime"),("enm_ruin_crawler.glb","crawler"),
-                           ("enm_ward_golem.glb","ward"),("enm_stone_sentinel.glb","sentinel"),
-                           ("enm_ash_maw.glb","ashmaw")):
+                           ("enm_ruin_crawler.glb","crawler"),("enm_ash_maw.glb","ashmaw")):
         build_replacement(root, filename, kind)
-    print("Enemy identity assets complete.")
+    print("Primitive creatures complete.")
 
 
 if __name__ == "__main__":

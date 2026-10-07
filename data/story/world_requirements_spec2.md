@@ -34,13 +34,13 @@ All three steles must be reachable and legible before the player lights the Mort
 
 ## (b) New NPC and talkable placements
 
-Dialogue-only placements need a `DialogueComponent`; NPCs use an existing `TemplateId` (the visual kit in `src/Npc/NpcVisualKit.cs` is keyed by template id, so reuse is the cheap path). All are idle (no schedule).
+Dialogue-only placements need a `DialogueComponent`; NPCs use an existing `TemplateId`. All are idle (no schedule).
 
 | WR | DialogueId | Cell | TemplateId / model | Visibility | Why |
 | --- | --- | --- | --- | --- | --- |
 | WR-spec2-22 | `dialogue.pale_count_stone` | `pale_concord.processional` (empty cell) | a standing-stone prop (black, ringed with carved names) at the palace end of the processional, within `location.pale.court_approach`; DisplayName "The Count-Stone" | always | Mission 21 fork F5. The dialogue sets `flag.fork.queen_released`/`flag.fork.queen_kept` and `flag.pale.court_open` |
 | WR-spec2-23 | `dialogue.hollow_queen_parley` | `pale_concord.palace` | an empty carved chair prop with a `DialogueComponent` (no NPC), at about (-31, 47), beside `Brazier` (-28.5, 49); DisplayName "The Hollow Queen" | always | Pre-fight: the truce offer at corruption >= 60 and the F5 variants. Post-fight: the Talk objective of `quest.main.hidden` (variant `after`, sets `flag.testimony.queen`). Do not hide it after her death |
-| WR-spec2-24 | `dialogue.rival_library` | `sunspire.library` | the Ashen Knight: `npc.mercenary` with the heaviest armour model available (a `npc.ashen_knight` preset in `NpcVisualKit` is welcome; any unique look is fine), helm under his arm, standing at the vault's far end beyond the plinths | `VisibleWhenFlagId = flag.beat.library_defended` | A7 parley, mission 24 Talk objective. Stays after the talk (its `after_trust` / `after_defy` variants) |
+| WR-spec2-24 | `dialogue.rival_library` | `sunspire.library` | the Ashen Knight: `npc.mercenary` with the heaviest armour model available (any unique look is fine), helm under his arm, standing at the vault's far end beyond the plinths | `VisibleWhenFlagId = flag.beat.library_defended` | A7 parley, mission 24 Talk objective. Stays after the talk (its `after_trust` / `after_defy` variants) |
 | WR-spec2-25 | `dialogue.assembly_marshal` | `celestial.landing` | `npc.dawnwarden_captain` (Marshal Iselle Hearne, plate armour) near the arrival pillars at about (38, 56) | `VisibleWhenFlagId = flag.beat.landing_held` | Mission 26 Talk objective; later variant `later` |
 | WR-spec2-26 | `dialogue.choir_echo` | `celestial.fallen_choir` (empty cell) | a pale stone singer statue/figure in the nave, DisplayName "The Choir's Echo" | always (it is also hidden by the set-piece: see (d)) | Corruption >= 40 route of mission 27: answering sets `flag.beat.choir_answered` |
 | WR-spec2-27 | `dialogue.rival_concourse` | `celestial.sundered_stair` (empty cell) | the Ashen Knight's echo: same body as WR-spec2-24 but grey-ember tinted, no face, at the head of the last flight | `VisibleWhenFlagId = flag.beat.stair_held`, `HiddenWhenFlagId = flag.beat.stair_echo` | A9; the quest's Talk objective raises `flag.beat.stair_echo` |

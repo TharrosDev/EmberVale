@@ -774,8 +774,8 @@ public partial class EnemyAIComponent : EntityComponent
             return;
         }
 
-        // Walked at the moment of the cut, not cached at init: equipment and the identity kit attach
-        // their meshes under the body later, and runtime-added nodes have no owner.
+        // Walked at the moment of the cut, not cached at init: equipment attaches
+        // its meshes under the body later, and runtime-added nodes have no owner.
         _shadowCut.Clear();
         CutShadow(_visual);
         foreach (Node node in _visual.FindChildren("*", nameof(GeometryInstance3D), recursive: true, owned: false))
