@@ -174,6 +174,16 @@ public class HeadlessToolingTests
     }
 
     [Fact]
+    public void Report_Emit_WritesTheElapsedTimeItIsGiven()
+    {
+        // A gate builds its report on its last frame; the caller supplies the run's real length.
+        var lines = new List<string>();
+        new HeadlessReport("state").Emit(lines.Add, null, elapsedMs: 61234);
+
+        Assert.Contains("\"elapsed_ms\":61234", Assert.Single(lines));
+    }
+
+    [Fact]
     public void BuildFreshness_IsStaleOnlyWhenASourceIsNewerThanTheAssembly()
     {
         string root = Path.Combine(Path.GetTempPath(), "embervale-tests-" + Guid.NewGuid().ToString("N"));

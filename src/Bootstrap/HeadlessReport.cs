@@ -164,10 +164,12 @@ public sealed partial class HeadlessReport
     /// <summary>Prints the machine line through <paramref name="writeLine"/>, writes the JSON to
     /// <paramref name="reportPath"/> when one is given, and returns the exit code. A report file
     /// that cannot be written is a failure: the caller asked for it and would otherwise read a
-    /// stale one.</summary>
-    public int Emit(Action<string> writeLine, string? reportPath)
+    /// stale one. <paramref name="elapsedMs"/> is how long the run took; the engine half passes the
+    /// process uptime, because a gate builds its report when it has something to say, which can be
+    /// its last frame. Left null it is the age of this object.</summary>
+    public int Emit(Action<string> writeLine, string? reportPath, long? elapsedMs = null)
     {
-        long elapsed = _clock.ElapsedMilliseconds;
+        long elapsed = elapsedMs ?? _clock.ElapsedMilliseconds;
         if (!string.IsNullOrEmpty(reportPath))
         {
             try

@@ -22,7 +22,7 @@ public sealed partial class HeadlessReport
 #endif
 
         // GD.Print rather than Log: the line is a protocol, and a level prefix would break it.
-        return Emit(line => GD.Print(line), HeadlessArgs.Value(ReportArgument));
+        return Emit(line => GD.Print(line), HeadlessArgs.Value(ReportArgument), (long)Time.GetTicksMsec());
     }
 
     /// <summary><see cref="Finish"/>, then quits the tree with the exit code.</summary>
