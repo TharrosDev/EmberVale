@@ -878,7 +878,6 @@ tutorial.interact,"Look at someone and press {0} to speak or use"
 tutorial.inventory,"Press {0} to open your character screen"
 tutorial.journal,"Press {0} to read your quest journal"
 tutorial.cast,"Press {0} to cast your prepared spell"
-tutorial.spell_wheel,"Hold {0} to choose a spell, or tap it for your last one"
 # --- Phase 33D: the slice stitch ---
 boss.challenge_locked,"The brazier is cold. The warband still holds the north."
 closing.absorbed,"The Iron King is ash, and his ember burns behind your ribs. It is warm. That is what frightens you. Far away, on a throne of ash, something older turns its attention towards you."

@@ -70,11 +70,11 @@ public partial class CombatFeedbackOverlay : CanvasLayer
         CombatFeedback? state = CombatFeedbackFx.ForOutcome(e.Outcome, e.Kind, e.Staggered, e.ByPlayer, e.OnPlayer);
         if (state is { } s)
         {
-            Flash(s);
+            Flash(s, e.Kind == HitKind.Spell);
         }
     }
 
-    private void Flash(CombatFeedback state)
+    private void Flash(CombatFeedback state, bool spell)
     {
         if (!_gate.Allow(Time.GetTicksMsec() / 1000.0, state))
         {
@@ -86,7 +86,8 @@ public partial class CombatFeedbackOverlay : CanvasLayer
 
         // The flash is the part that can hurt: it follows the combat flash slider (Reduced Motion has
         // capped it) and the global motion switch. The word alone still communicates the state.
-        _peak = UiTheme.MotionEnabled
+        // A spell hit lights the scene with its own effect; a full-screen tint over it muddies it.
+        _peak = UiTheme.MotionEnabled && !spell
             ? CombatFeedbackFx.FlashAlpha(state, LiveComfort.Get().ScreenFlash)
             : 0f;
         _hold = CombatFeedbackFx.Hold(state);

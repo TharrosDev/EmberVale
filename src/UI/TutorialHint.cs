@@ -141,7 +141,7 @@ public partial class TutorialHint : VBoxContainer
 
     private static string HintText(TutorialStep step)
     {
-        string key = TutorialScript.HintKey(step);
+        string key = TutorialScript.HintKey(step, UiFx.HoldsToPresses);
         if (key.Length == 0)
         {
             return string.Empty;
