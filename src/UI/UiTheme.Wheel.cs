@@ -44,12 +44,38 @@ public static partial class UiTheme
 
     /// <summary>The ground of a school's wedge: the school's colour, banked down until the emblem on
     /// it reads, and raised when it is the one hovered or the one whose fan is open.</summary>
+    /// <remarks>At rest it keeps half the school's colour, which is what tells six wedges apart
+    /// (banked further they were all one dark grey); lit, it is the colour itself and the emblem
+    /// goes to dark ink, the way a spell's disc carries its glyph.</remarks>
     public static Color WheelSchoolGround(DamageType school, bool lit) =>
-        SchoolColor(school).Darkened(lit ? 0.52f : 0.74f) with { A = HighContrast ? 1f : lit ? 0.94f : 0.84f };
+        SchoolColor(school).Darkened(lit ? 0.08f : 0.50f) with { A = HighContrast ? 1f : lit ? 0.97f : 0.92f };
 
-    /// <summary>The ground of a spell's wedge in a school's fan: the well, warmed by the school.</summary>
+    /// <summary>The emblem and name on a school's wedge: dark ink on the lit colour, the colour
+    /// lifted toward white on the banked one.</summary>
+    public static Color WheelSchoolInk(DamageType school, bool lit) =>
+        lit ? WheelGlyphInk : SchoolColor(school).Lightened(HighContrast ? 0.7f : 0.5f);
+
+    /// <summary>The ground of a spell's wedge in a school's fan: the well, warmed by the school,
+    /// and the school's colour under the cursor.</summary>
     public static Color WheelFanGround(DamageType school, bool lit) =>
-        lit ? WheelSchoolGround(school, true) : WellBg.Lerp(SchoolColor(school), 0.10f) with { A = HighContrast ? 1f : 0.86f };
+        lit
+            ? SchoolColor(school).Darkened(0.30f) with { A = HighContrast ? 1f : 0.97f }
+            : WellBg.Lerp(SchoolColor(school), 0.22f) with { A = HighContrast ? 1f : 0.92f };
+
+    /// <summary>The ground of the favourite wedge under the cursor: its spell's school, banked so
+    /// the disc on it still stands out.</summary>
+    public static Color WheelFavouriteLit(DamageType school) =>
+        SchoolColor(school).Darkened(0.48f) with { A = HighContrast ? 1f : 0.96f };
+
+    /// <summary>The dark wash over the world and the rest of the HUD while the wheel is up, so it
+    /// reads as the one thing being used and not as another widget.</summary>
+    public static Color WheelScrim => new(0f, 0f, 0f, HighContrast ? 0.60f : 0.36f);
+
+    /// <summary>"Not enough" on the wheel: the HUD's bad red lifted, so it reads on a dark plate.</summary>
+    public static Color WheelBad => Bad.Lightened(0.28f);
+
+    /// <summary>The plate behind the legend line.</summary>
+    public static Color WheelLegendGround => ScrimBg with { A = HighContrast ? 1f : 0.94f };
 
     /// <summary>The outline of an empty favourite slot: a socket, faint on purpose.</summary>
     public static Color WheelSocket => IronLit with { A = HighContrast ? 0.95f : 0.38f };
@@ -77,7 +103,8 @@ public static partial class UiTheme
     /// </summary>
     public static void StyleWheelReadout(StyleBoxFlat box, Color edge)
     {
-        box.BgColor = HudPlateBg;
+        // Nearer opaque than a HUD plate: it is read over whatever the camera happens to face.
+        box.BgColor = HudPlateBg with { A = HighContrast ? 1f : 0.94f };
         box.BorderColor = edge;
         box.SetBorderWidthAll(0);
         box.BorderWidthLeft = HudPlateEdge;

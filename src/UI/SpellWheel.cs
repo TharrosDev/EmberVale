@@ -24,10 +24,12 @@ namespace Embervale.UI;
 ///
 /// <para>From the centre out: the dead zone (letting go there selects nothing), the favourites, the
 /// schools, and past the rim the fan of the hovered school's known spells. A spell's wedge carries
-/// its glyph on a disc in its school's colour, a dark pie over the disc while it cools, its price
-/// when the mana is not there and a padlock when the caster's corruption is too shallow for it. The
-/// prepared spell wears a ring and the one a tap goes back to wears a bracket. Under the wheel a
-/// plate names what the cursor is over, and a legend line says what the buttons do.</para>
+/// its glyph on a disc in its school's colour, a dark pie and the seconds over the disc while it
+/// cools, a struck-out mana drop when the mana is not there and a padlock when the caster's
+/// corruption is too shallow for it. The prepared spell wears a ring and the one a tap goes back to
+/// wears a bracket. The hub shows the glyph of what the cursor is over, a plate close under the
+/// wheel names it, a fan's spells carry their names past its edge, and a legend line over the
+/// wheel says what the buttons do. The world and the rest of the HUD are washed dark behind it.</para>
 ///
 /// <para>With presses in place of holds the button toggles the wheel and a click selects. There is
 /// no tap then, so the centre holds the previous spell and a click there goes back to it.</para>
@@ -66,12 +68,14 @@ public partial class SpellWheel : Control, ISpellWheelView
     }
 
     private const int ArcPoints = 64;
+    private const int LegendFontSize = 15;
 
     private readonly Dictionary<string, Cell> _cells = new(StringComparer.Ordinal);
     private readonly string[] _favourites = SpellFavouritesRules.Empty();
     private readonly List<string>[] _schoolSpells = new List<string>[SpellWheelRules.Schools.Count];
     private readonly SpellWheelLayout _layout;
     private readonly Vector2[] _triangle = new Vector2[3];
+    private readonly Vector2[] _needle = new Vector2[4];
     private readonly StyleBoxFlat _readoutBox = new();
     private readonly StyleBoxFlat _legendBox = new();
     private readonly HBoxContainer _legend;
@@ -118,7 +122,7 @@ public partial class SpellWheel : Control, ISpellWheelView
 
         _layout = new SpellWheelLayout(_favourites, _schoolSpells);
 
-        // The legend: a centred row on a dark ground of its own, placed under the readout.
+        // The legend: a centred row on a dark ground of its own, placed over the wheel.
         _legend = new HBoxContainer
         {
             Name = "Legend",
@@ -142,6 +146,15 @@ public partial class SpellWheel : Control, ISpellWheelView
         Resized += OnResized;
     }
 
+    /// <summary>True while a wheel is on screen, however it was opened (the button or a capture).
+    /// The chapter card and the tutorial hint stand down for it: both would otherwise be drawn
+    /// through the wheel or over it. Cleared when the wheel closes or leaves the tree, so it needs
+    /// no session reset.</summary>
+    public static bool Showing { get; private set; }
+
+    /// <summary>Raised when <see cref="Showing"/> changes.</summary>
+    public static event Action? ShowingChanged;
+
     /// <summary>True while the wheel is up and taking input.</summary>
     public bool IsOpen => _open;
 
@@ -164,6 +177,7 @@ public partial class SpellWheel : Control, ISpellWheelView
         _caster = null;
         _hud = null;
         SetProcess(false);
+        SetShowing(false);
     }
 
     // --- The seam -----------------------------------------------------------------------------
@@ -340,7 +354,17 @@ public partial class SpellWheel : Control, ISpellWheelView
         BuildLegend();
         PlaceLegend();
         SetProcess(true);
+        SetShowing(true);
         QueueRedraw();
+    }
+
+    private static void SetShowing(bool showing)
+    {
+        if (Showing != showing)
+        {
+            Showing = showing;
+            ShowingChanged?.Invoke();
+        }
     }
 
     /// <summary>Stops the wheel taking input and ticking. What it last showed stays drawable, so a
@@ -351,6 +375,7 @@ public partial class SpellWheel : Control, ISpellWheelView
         _capture = false;
         _caster = null;
         SetProcess(false);
+        SetShowing(false);
     }
 
     /// <summary>Rebuilds what the wheel holds from the caster: its known spells by school, and the
@@ -516,7 +541,7 @@ public partial class SpellWheel : Control, ISpellWheelView
     /// middle of a toggled wheel takes without waiting for the next open.</summary>
     private void StyleLegendGround()
     {
-        Color ground = UiTheme.ScrimBg with { A = UiTheme.HighContrast ? 1f : 0.80f };
+        Color ground = UiTheme.WheelLegendGround;
         if (_legendBox.BgColor != ground)
         {
             _legendBox.BgColor = ground;
@@ -530,7 +555,9 @@ public partial class SpellWheel : Control, ISpellWheelView
         glyph.SizeFlagsVertical = SizeFlags.ShrinkCenter;
         pair.AddChild(glyph);
 
+        // A size up from a caption: the legend is read at a glance, over the world.
         Label label = UiTheme.Caption(verb, UiTheme.Text);
+        label.AddThemeFontSizeOverride("font_size", UiTheme.FontSize(LegendFontSize));
         label.MouseFilter = MouseFilterEnum.Ignore;
         label.VerticalAlignment = VerticalAlignment.Center;
         pair.AddChild(label);
@@ -652,20 +679,31 @@ public partial class SpellWheel : Control, ISpellWheelView
         int hoverFavourite = _pick.Kind == SpellWheelPickKind.Favourite ? _pick.Index : -1;
         int hoverSchool = _pick.Kind == SpellWheelPickKind.School ? _pick.Index : -1;
         int hoverSpell = _pick.Kind == SpellWheelPickKind.Spell ? _pick.Index : -1;
-        int fanSchool = _latched >= 0 && _latched < schools && _schoolSpells[_latched].Count > 0 ? _latched : -1;
-        int fanCount = fanSchool >= 0 ? _schoolSpells[fanSchool].Count : 0;
+        int fanSchool = OpenFan(out int fanCount);
         float fanSpan = SpellWheelRules.FanSpanDegrees(fanCount);
         float fanStart = (fanSchool * schoolStep) - (fanSpan * 0.5f);
         float fanStep = fanCount > 0 ? fanSpan / fanCount : 0f;
+
+        // 0. The wash over the world and the rest of the HUD: the wheel is the one thing in use.
+        DrawRect(new Rect2(Vector2.Zero, Size), UiTheme.WheelScrim);
 
         // 1. Grounds. A soft disc first, so the wheel has something darker than the scene to sit on.
         DrawCircle(centre, (outer + fanFrom) * 0.5f, UiTheme.WheelBackdrop, true, -1f, true);
         for (int i = 0; i < favourites; i++)
         {
+            // The wedge under the cursor lights whole, in its spell's school, as a school's does.
+            Color ground = UiTheme.WheelWell;
+            if (i == hoverFavourite)
+            {
+                ground = _cells.TryGetValue(_favourites[i], out Cell? held)
+                    ? UiTheme.WheelFavouriteLit(held.Spell.School)
+                    : UiTheme.WheelWellHover;
+            }
+
             float mid = i * favouriteStep;
             DrawColoredPolygon(
                 SpellWheelMetrics.Sector(centre, dead, inner, mid - (favouriteStep * 0.5f), mid + (favouriteStep * 0.5f)),
-                i == hoverFavourite ? UiTheme.WheelWellHover : UiTheme.WheelWell);
+                ground);
         }
 
         for (int i = 0; i < schools; i++)
@@ -717,7 +755,7 @@ public partial class SpellWheel : Control, ISpellWheelView
             DrawArc(centre, fanTo - line, from, to, points, UiTheme.HudInnerEdge, 1f, true);
         }
 
-        // 3. The one lit edge: on the wedge under the cursor, and in the school's own colour on the
+        // 3. The lit edge: on the wedge under the cursor, and in the school's own colour on the
         // school whose fan is open while the cursor is out in it.
         if (hoverFavourite >= 0)
         {
@@ -742,40 +780,57 @@ public partial class SpellWheel : Control, ISpellWheelView
                 UiTheme.WheelLit, lit);
         }
 
-        // 4. What the wedges hold.
+        // 4. What the wedges hold. The spell under the cursor is drawn last and larger, so it sits
+        // over its neighbours rather than under them.
         Font numerals = UiTheme.WheelTextFont ?? GetThemeDefaultFont();
+        int textSize = SpellWheelMetrics.TextSize(rim);
         float favouriteSide = SpellWheelMetrics.GlyphSide(
             r * SpellWheelMetrics.FavouriteRadius, favouriteStep, inner - dead);
-        for (int i = 0; i < favourites; i++)
+        for (int pass = 0; pass < 2; pass++)
         {
-            Vector2 at = centre + (SpellWheelMetrics.Direction(i * favouriteStep) * r * SpellWheelMetrics.FavouriteRadius);
-            if (_cells.TryGetValue(_favourites[i], out Cell? cell))
+            for (int i = 0; i < favourites; i++)
             {
-                DrawSpell(cell, at, favouriteSide, numerals, i * favouriteStep);
-            }
-            else
-            {
-                DrawSocket(at, favouriteSide);
+                bool hovered = i == hoverFavourite;
+                if (hovered != (pass == 1))
+                {
+                    continue;
+                }
+
+                Vector2 at = centre + (SpellWheelMetrics.Direction(i * favouriteStep) * r * SpellWheelMetrics.FavouriteRadius);
+                if (_cells.TryGetValue(_favourites[i], out Cell? cell))
+                {
+                    DrawSpell(cell, at, favouriteSide, numerals, i * favouriteStep, hovered);
+                }
+                else
+                {
+                    DrawSocket(at, favouriteSide);
+                }
             }
         }
 
-        float emblemSide = SpellWheelMetrics.GlyphSide(r * SpellWheelMetrics.SchoolRadius, schoolStep, outer - inner);
+        float emblemSide = SpellWheelMetrics.GlyphSide(r * SpellWheelMetrics.SchoolRadius, schoolStep, outer - inner) * 0.76f;
         for (int i = 0; i < schools; i++)
         {
-            DrawSchool(centre, r, i, emblemSide, i == hoverSchool || i == fanSchool);
+            DrawSchool(centre, r, i, emblemSide, i == hoverSchool || i == fanSchool, numerals, textSize);
         }
 
         if (fanCount > 0)
         {
             float fanSide = SpellWheelMetrics.GlyphSide(r * SpellWheelMetrics.FanRadius, fanStep, fanTo - fanFrom);
-            for (int i = 0; i < fanCount; i++)
+            for (int pass = 0; pass < 2; pass++)
             {
-                if (_cells.TryGetValue(_schoolSpells[fanSchool][i], out Cell? cell))
+                for (int i = 0; i < fanCount; i++)
                 {
+                    bool hovered = i == hoverSpell;
+                    if (hovered != (pass == 1) || !_cells.TryGetValue(_schoolSpells[fanSchool][i], out Cell? cell))
+                    {
+                        continue;
+                    }
+
                     float angle = SpellWheelMetrics.FanCentre(fanSchool, i, fanCount);
-                    DrawSpell(
-                        cell, centre + (SpellWheelMetrics.Direction(angle) * r * SpellWheelMetrics.FanRadius), fanSide, numerals,
-                        angle);
+                    Vector2 direction = SpellWheelMetrics.Direction(angle);
+                    DrawSpell(cell, centre + (direction * r * SpellWheelMetrics.FanRadius), fanSide, numerals, angle, hovered);
+                    DrawFanName(cell, centre + (direction * (fanTo + 5f)), direction, numerals, textSize, hovered);
                 }
             }
         }
@@ -784,10 +839,18 @@ public partial class SpellWheel : Control, ISpellWheelView
         DrawCentre(centre, dead, line, lit);
         if (_open)
         {
-            DrawPointer(centre + (_cursor * r));
+            DrawPointer(centre, dead, r);
         }
 
-        DrawReadout(centre, rim, view);
+        DrawReadout(centre, rim, view, fanSchool, fanCount);
+    }
+
+    /// <summary>The school whose fan is open, or -1, and how many spells it holds.</summary>
+    private int OpenFan(out int count)
+    {
+        int school = _latched >= 0 && _latched < _schoolSpells.Length && _schoolSpells[_latched].Count > 0 ? _latched : -1;
+        count = school >= 0 ? _schoolSpells[school].Count : 0;
+        return school;
     }
 
     /// <summary>An arc along a wedge's outer edge, a little short of its spokes.</summary>
@@ -809,49 +872,56 @@ public partial class SpellWheel : Control, ISpellWheelView
         DrawCircle(at, 1.5f, socket);
     }
 
-    /// <summary>A school's wedge: its emblem, and a pip on the rim for each spell known in it, which
-    /// is also the hint that there is a fan past the rim.</summary>
-    private void DrawSchool(Vector2 centre, float r, int index, float side, bool lit)
+    /// <summary>A school's wedge: its emblem with its name under it. A school the caster knows
+    /// nothing in is drawn faint; how many it knows is on the readout.</summary>
+    private void DrawSchool(Vector2 centre, float r, int index, float side, bool lit, Font font, int textSize)
     {
         DamageType school = SpellWheelRules.Schools[index];
         int known = _schoolSpells[index].Count;
         float mid = index * SpellWheelRules.SchoolWedgeDegrees;
         Vector2 at = centre + (SpellWheelMetrics.Direction(mid) * r * SpellWheelMetrics.SchoolRadius);
 
-        Color ink = UiTheme.SchoolColor(school).Lightened(lit ? 0.35f : 0.12f);
+        Color ink = UiTheme.WheelSchoolInk(school, lit);
         if (known == 0)
         {
-            // Nothing to pick here. Under high contrast it stays readable and the missing pips say it.
+            // Nothing to pick here. Under high contrast it stays readable.
             ink = ink with { A = UiTheme.HighContrast ? 0.75f : UiTheme.WheelDimmed };
         }
 
-        var rect = new Rect2(at - new Vector2(side * 0.5f, side * 0.5f), new Vector2(side, side));
-        SpellGlyphs.DrawStrokes(
-            this, SpellGlyphs.Emblem(school), rect, Colors.Transparent, UiTheme.Keyline with { A = ink.A }, 2.1f);
+        // The emblem rides a little high so the name has the foot of the wedge.
+        float lift = textSize * 0.55f;
+        var rect = new Rect2(at - new Vector2(side * 0.5f, (side * 0.5f) + lift), new Vector2(side, side));
+        if (!lit)
+        {
+            SpellGlyphs.DrawStrokes(
+                this, SpellGlyphs.Emblem(school), rect, Colors.Transparent, UiTheme.Keyline with { A = ink.A }, 2.1f);
+        }
+
         SpellGlyphs.DrawStrokes(this, SpellGlyphs.Emblem(school), rect, Colors.Transparent, ink);
 
-        float pipRadius = Mathf.Max(1.6f, r * 0.014f);
-        float pipAt = r * (SpellWheelRules.OuterEdge - 0.07f);
-        for (int i = 0; i < known; i++)
-        {
-            float angle = mid + ((i - ((known - 1) * 0.5f)) * 5f);
-            Vector2 pip = centre + (SpellWheelMetrics.Direction(angle) * pipAt);
-            DrawCircle(pip, pipRadius + 1f, UiTheme.Keyline);
-            DrawCircle(pip, pipRadius, ink);
-        }
+        var baseline = new Vector2(at.X, rect.End.Y + 2f + font.GetAscent(textSize));
+        DrawLabel(font, Loc.T(SchoolNameKey(school)), baseline, HorizontalAlignment.Center, textSize, ink, inked: !lit);
     }
 
     /// <summary>
     /// A spell: its glyph on a disc in its school's colour, with what stands in the way of casting it
-    /// drawn as a shape (a pie while it cools, a padlock when locked, its price when the mana is
-    /// short) and which spell it is to the caster (a ring on the prepared one, a bracket on the
-    /// previous one). <paramref name="radialDegrees"/> is the wedge's own direction: the bracket sits
-    /// along it, where a wedge has room, and not across it, where the neighbours are.
+    /// drawn as a shape (a pie and the seconds while it cools, a padlock when locked, a struck-out
+    /// mana drop when the mana is short) and which spell it is to the caster (a ring on the prepared
+    /// one, a bracket on the previous one). Under the cursor it is larger and wears the pointer's
+    /// ring. Every mark sits on the disc's rim or outside it, never across the glyph.
+    /// <paramref name="radialDegrees"/> is the wedge's own direction: the bracket sits along it,
+    /// where a wedge has room, and not across it, where the neighbours are.
     /// </summary>
-    private void DrawSpell(Cell cell, Vector2 at, float side, Font numerals, float radialDegrees)
+    private void DrawSpell(Cell cell, Vector2 at, float side, Font numerals, float radialDegrees, bool hovered)
     {
         SpellResource spell = cell.Spell;
+        if (hovered)
+        {
+            side *= SpellWheelMetrics.HoverGrow;
+        }
+
         float half = side * 0.5f;
+        bool cooling = cell.Fraction >= 0.01f;
         bool dimmed = cell.Locked || !cell.Affordable;
 
         // A spell that cannot be cast now is drawn unlit: its glyph in the school's colour on a dark
@@ -863,40 +933,96 @@ public partial class SpellWheel : Control, ISpellWheelView
         DrawCircle(at, half + 1.5f, UiTheme.Keyline, true, -1f, true);
         SpellGlyphs.Draw(this, spell.Id, new Rect2(at - new Vector2(half, half), new Vector2(side, side)), disc, ink);
 
-        if (cell.Fraction >= 0.01f)
+        if (cooling)
         {
             DrawWipe(at, half, cell.Fraction);
         }
 
+        float mark = half + 3f;
         if (spell.Id == _selectedId)
         {
-            DrawArc(at, half + 2.5f, 0f, Mathf.Tau, 32, UiTheme.Keyline, UiTheme.WheelLitLine + 2f, true);
-            DrawArc(at, half + 2.5f, 0f, Mathf.Tau, 32, UiTheme.WheelLit, UiTheme.WheelLitLine, true);
+            DrawArc(at, mark, 0f, Mathf.Tau, 40, UiTheme.Keyline, UiTheme.WheelLitLine + 2f, true);
+            DrawArc(at, mark, 0f, Mathf.Tau, 40, UiTheme.WheelLit, UiTheme.WheelLitLine, true);
+            mark += UiTheme.WheelLitLine + 2f;
         }
         else if (spell.Id == _previousId)
         {
-            DrawBracket(at, half + 3f, radialDegrees);
-            DrawBracket(at, half + 3f, radialDegrees + 180f);
+            DrawBracket(at, mark, radialDegrees);
+            DrawBracket(at, mark, radialDegrees + 180f);
+            mark += UiTheme.WheelLitLine + 2f;
         }
 
-        int size = Mathf.Clamp(Mathf.RoundToInt(side * 0.36f), 12, 18); // UI_STYLE's 12 px floor
+        if (hovered)
+        {
+            DrawArc(at, mark, 0f, Mathf.Tau, 40, UiTheme.Keyline, 4f, true);
+            DrawArc(at, mark, 0f, Mathf.Tau, 40, UiTheme.WheelPointer, 2f, true);
+        }
+
         if (cell.Locked)
         {
             DrawPadlock(at, side * 0.42f, UiTheme.CorruptionText);
+            return;
         }
-        else
+
+        if (cooling)
         {
+            // The seconds, over the wipe: with it, what tells waiting from too dear.
             int numeral = SpellWheelMetrics.Numeral(cell.Remaining);
             if (numeral > 0)
             {
-                DrawInked(numerals, numeral.ToString(), new Vector2(at.X, at.Y + (size * 0.36f)), size, UiTheme.Text);
+                int size = Mathf.Clamp(Mathf.RoundToInt(side * 0.42f), 12, 28); // UI_STYLE's 12 px floor
+                var baseline = new Vector2(at.X, at.Y + (size * 0.36f));
+                DrawLabel(numerals, numeral.ToString(), baseline, HorizontalAlignment.Center, size, UiTheme.Text, inked: true);
             }
+        }
 
-            if (!cell.Affordable)
-            {
-                // Across the foot of the disc, so it never covers a cooldown numeral.
-                DrawInked(numerals, cell.Cost.ToString("0"), new Vector2(at.X, at.Y + half + (size * 0.30f)), size, UiTheme.Bad);
-            }
+        if (!cell.Affordable)
+        {
+            // On the rim, low and to the right, clear of the glyph and of a cooldown's numeral.
+            DrawManaShort(at + (new Vector2(0.70f, 0.70f) * half), Mathf.Max(5f, side * 0.17f));
+        }
+    }
+
+    /// <summary>The mark of a spell the mana will not cover: a mana-blue drop struck through.</summary>
+    private void DrawManaShort(Vector2 at, float radius)
+    {
+        DrawCircle(at, radius + 2f, UiTheme.Keyline with { A = 1f }, true, -1f, true);
+        DrawCircle(at, radius, UiTheme.Mana, true, -1f, true);
+        Vector2 arm = new Vector2(radius, -radius) * 0.95f;
+        DrawLine(at - arm, at + arm, UiTheme.Keyline with { A = 1f }, Mathf.Max(4f, radius * 0.7f), true);
+        DrawLine(at - arm, at + arm, UiTheme.WheelBad, Mathf.Max(2f, radius * 0.36f), true);
+    }
+
+    /// <summary>
+    /// A fan spell's name, past the fan's edge on the side its wedge points: over a wedge at the
+    /// top, beside one at the side, under one at the bottom. One or two short lines
+    /// (<see cref="SpellWheelMetrics.NameLines"/>), so neighbours do not run into each other.
+    /// </summary>
+    private void DrawFanName(Cell cell, Vector2 anchor, Vector2 direction, Font font, int size, bool hovered)
+    {
+        (string first, string second) = SpellWheelMetrics.NameLines(SpellText.Name(cell.Spell));
+        if (first.Length == 0)
+        {
+            return;
+        }
+
+        int lines = second.Length > 0 ? 2 : 1;
+        float lineHeight = size + 1f;
+        float block = lines * lineHeight;
+        HorizontalAlignment align = direction.X > 0.35f ? HorizontalAlignment.Left
+            : direction.X < -0.35f ? HorizontalAlignment.Right
+            : HorizontalAlignment.Center;
+        float top = direction.Y < -0.35f ? anchor.Y - block
+            : direction.Y > 0.35f ? anchor.Y
+            : anchor.Y - (block * 0.5f);
+
+        bool castable = !cell.Locked && cell.Affordable && cell.Fraction < 0.01f;
+        Color color = hovered ? UiTheme.WheelPointer : castable ? UiTheme.Text : UiTheme.Dim;
+        float baseline = top + font.GetAscent(size) - 1f;
+        DrawLabel(font, first, new Vector2(anchor.X, baseline), align, size, color, inked: true);
+        if (lines == 2)
+        {
+            DrawLabel(font, second, new Vector2(anchor.X, baseline + lineHeight), align, size, color, inked: true);
         }
     }
 
@@ -948,7 +1074,9 @@ public partial class SpellWheel : Control, ISpellWheelView
     }
 
     /// <summary>
-    /// The dead zone. Held, letting go here selects nothing, so it carries a cancel mark. Toggled,
+    /// The hub. Over a spell it shows that spell's glyph, and over a school its emblem, so what is
+    /// about to be chosen is in the middle of the wheel as well as on the plate. Over nothing it is
+    /// the dead zone: held, letting go here selects nothing, so it carries a cancel mark; toggled,
     /// it is the previous spell (there is no tap to reach it by), and it lights under the cursor.
     /// </summary>
     private void DrawCentre(Vector2 centre, float dead, float line, float lit)
@@ -960,14 +1088,32 @@ public partial class SpellWheel : Control, ISpellWheelView
         DrawCircle(centre, dead, offersPrevious && hovered ? UiTheme.WheelWellHover : UiTheme.WheelWell, true, -1f, true);
         DrawArc(centre, dead, 0f, Mathf.Tau, ArcPoints / 2, UiTheme.Keyline, line, true);
 
+        float side = dead * 1.44f;
+        float half = side * 0.5f;
+        var rect = new Rect2(centre - new Vector2(half, half), new Vector2(side, side));
+
+        if (_pick.Kind is SpellWheelPickKind.Favourite or SpellWheelPickKind.Spell &&
+            _cells.TryGetValue(_pick.SpellId, out Cell? over))
+        {
+            bool dimmed = over.Locked || !over.Affordable;
+            SpellGlyphs.Draw(
+                this, over.Spell.Id, rect,
+                dimmed ? UiTheme.WheelUnlitDisc(over.Spell.School) : UiTheme.SchoolColor(over.Spell.School),
+                dimmed ? UiTheme.WheelUnlitInk(over.Spell.School) : UiTheme.WheelGlyphInk);
+            DrawArc(centre, dead - (lit * 0.5f) - 1f, 0f, Mathf.Tau, ArcPoints / 2, UiTheme.WheelLit, lit, true);
+            return;
+        }
+
+        if (_pick.Kind == SpellWheelPickKind.School && _pick.Index >= 0 && _pick.Index < SpellWheelRules.Schools.Count)
+        {
+            DamageType school = SpellWheelRules.Schools[_pick.Index];
+            SpellGlyphs.DrawEmblem(this, school, rect, UiTheme.SchoolColor(school), UiTheme.WheelGlyphInk);
+            return;
+        }
+
         if (offersPrevious && previous != null)
         {
-            float side = dead * 1.36f;
-            float half = side * 0.5f;
-            Color school = UiTheme.SchoolColor(previous.Spell.School);
-            SpellGlyphs.Draw(
-                this, previous.Spell.Id, new Rect2(centre - new Vector2(half, half), new Vector2(side, side)),
-                school, UiTheme.WheelGlyphInk);
+            SpellGlyphs.Draw(this, previous.Spell.Id, rect, UiTheme.SchoolColor(previous.Spell.School), UiTheme.WheelGlyphInk);
             if (previous.Fraction >= 0.01f)
             {
                 DrawWipe(centre, half, previous.Fraction);
@@ -983,24 +1129,48 @@ public partial class SpellWheel : Control, ISpellWheelView
 
         float arm = dead * 0.30f;
         Color mark = hovered ? UiTheme.Text : UiTheme.Dim;
-        DrawLine(centre + new Vector2(-arm, -arm), centre + new Vector2(arm, arm), mark, line, true);
-        DrawLine(centre + new Vector2(-arm, arm), centre + new Vector2(arm, -arm), mark, line, true);
+        DrawLine(centre + new Vector2(-arm, -arm), centre + new Vector2(arm, arm), mark, line + 1f, true);
+        DrawLine(centre + new Vector2(-arm, arm), centre + new Vector2(arm, -arm), mark, line + 1f, true);
     }
 
-    /// <summary>The pointer tick: where the virtual cursor is. The mouse is captured, so this is the
-    /// only cursor there is.</summary>
-    private void DrawPointer(Vector2 at)
+    /// <summary>
+    /// Where the virtual cursor points: a needle on the hub's rim, aimed the way the cursor has
+    /// gone. The mouse is captured, so this is the only cursor there is. It is a direction and not
+    /// a ring at the cursor's own place, which sat on top of the glyph the player was reading.
+    /// Still inside the hub, the cursor is a dot there.
+    /// </summary>
+    private void DrawPointer(Vector2 centre, float dead, float r)
     {
-        DrawArc(at, 5.5f, 0f, Mathf.Tau, 20, UiTheme.Keyline, 5f, true);
-        DrawArc(at, 5.5f, 0f, Mathf.Tau, 20, UiTheme.WheelPointer, 2f, true);
-        DrawCircle(at, 1.6f, UiTheme.WheelPointer);
+        float length = _cursor.Length();
+        if (length < SpellWheelRules.DeadZone)
+        {
+            DrawCircle(centre + (_cursor * r), 4.5f, UiTheme.Keyline with { A = 1f }, true, -1f, true);
+            DrawCircle(centre + (_cursor * r), 3f, UiTheme.WheelPointer, true, -1f, true);
+            return;
+        }
+
+        Vector2 direction = _cursor / length;
+        var across = new Vector2(-direction.Y, direction.X);
+        float reach = Mathf.Max(8f, r * 0.085f);
+        float wide = reach * 0.62f;
+        Vector2 foot = centre + (direction * (dead - 1f));
+        _needle[0] = foot + (direction * reach);
+        _needle[1] = foot + (across * wide);
+        _needle[2] = foot - (across * wide);
+        _needle[3] = _needle[0];
+        _triangle[0] = _needle[0];
+        _triangle[1] = _needle[1];
+        _triangle[2] = _needle[2];
+        DrawColoredPolygon(_triangle, UiTheme.WheelPointer);
+        DrawPolyline(_needle, UiTheme.Keyline with { A = 1f }, 1.5f, true);
     }
 
     // --- Readout ------------------------------------------------------------------------------
 
     /// <summary>The plate under the wheel: the name of what the cursor is over, then what it costs
-    /// and whether it can be cast, each in the colour the HUD's spell row gives it.</summary>
-    private void DrawReadout(Vector2 centre, float rim, Vector2 view)
+    /// and whether it can be cast, each in the colour the HUD's spell row gives it. It sits close
+    /// under the rim, and under the fan when the open fan hangs lower than the rim.</summary>
+    private void DrawReadout(Vector2 centre, float rim, Vector2 view, int fanSchool, int fanCount)
     {
         string title;
         Color titleColor = UiTheme.Text;
@@ -1025,13 +1195,13 @@ public partial class SpellWheel : Control, ISpellWheelView
         if (cell != null)
         {
             SpellResource spell = cell.Spell;
-            title = spell.DisplayName;
-            titleColor = UiTheme.SchoolColor(spell.School);
-            edge = titleColor;
+            title = SpellText.Name(spell);
+            titleColor = UiTheme.SchoolColor(spell.School).Lightened(0.18f);
+            edge = UiTheme.SchoolColor(spell.School);
             cost = spell.HealthCost > 0f
                 ? $"{Loc.TF("spellbook.mana", cell.Cost.ToString("0"))} + {Loc.TF("magic.book.hud_health_cost", spell.HealthCost.ToString("0"))}"
                 : Loc.TF("spellbook.mana", cell.Cost.ToString("0"));
-            costColor = cell.Affordable ? UiTheme.Mana : UiTheme.Bad;
+            costColor = cell.Affordable ? UiTheme.Mana.Lightened(0.2f) : UiTheme.WheelBad;
 
             switch (SpellWheelMetrics.State(true, cell.Locked, cell.Remaining, _mana, cell.Cost))
             {
@@ -1041,11 +1211,11 @@ public partial class SpellWheel : Control, ISpellWheelView
                     break;
                 case SpellWheelCellState.Cooling:
                     state = Loc.TF("spellbook.cooldown", cell.Remaining.ToString("0.0"));
-                    stateColor = UiTheme.Dim;
+                    stateColor = UiTheme.Text;
                     break;
                 case SpellWheelCellState.Unaffordable:
                     state = Loc.TF("magic.book.hud_mana_short", Mathf.Ceil(cell.Cost - _mana).ToString("0"));
-                    stateColor = UiTheme.Bad;
+                    stateColor = UiTheme.WheelBad;
                     break;
                 default:
                     state = Loc.T("hud.ready");
@@ -1062,9 +1232,10 @@ public partial class SpellWheel : Control, ISpellWheelView
             DamageType school = SpellWheelRules.Schools[_pick.Index];
             int known = _schoolSpells[_pick.Index].Count;
             title = Loc.T(SchoolNameKey(school));
-            titleColor = UiTheme.SchoolColor(school);
-            edge = titleColor;
+            titleColor = UiTheme.SchoolColor(school).Lightened(0.18f);
+            edge = UiTheme.SchoolColor(school);
             state = known > 0 ? Loc.TF("wheel.school.known", known) : Loc.T("wheel.school.none");
+            stateColor = UiTheme.Text;
         }
         else if (_pick.Kind == SpellWheelPickKind.Favourite)
         {
@@ -1078,21 +1249,22 @@ public partial class SpellWheel : Control, ISpellWheelView
             titleColor = UiTheme.Dim;
             if (_cells.TryGetValue(_selectedId, out Cell? kept))
             {
-                state = Loc.TF("wheel.centre.keeps", kept.Spell.DisplayName);
+                state = Loc.TF("wheel.centre.keeps", SpellText.Name(kept.Spell));
             }
         }
 
         float width = SpellWheelMetrics.ReadoutWidth(view, rim);
         var plate = new Rect2(
-            centre.X - (width * 0.5f), SpellWheelMetrics.ReadoutTop(centre, rim), width, SpellWheelMetrics.ReadoutHeight);
+            centre.X - (width * 0.5f), SpellWheelMetrics.ReadoutTop(centre, rim, fanSchool, fanCount), width,
+            SpellWheelMetrics.ReadoutHeight);
         UiTheme.StyleWheelReadout(_readoutBox, edge);
         DrawStyleBox(_readoutBox, plate);
 
         // The plate does not grow with the text-scale setting, so its two lines stop where it ends.
         Font nameFont = UiTheme.WheelNameFont ?? GetThemeDefaultFont();
         Font textFont = UiTheme.WheelTextFont ?? GetThemeDefaultFont();
-        int nameSize = Mathf.Min(UiTheme.FontSize(UiTheme.HeaderFontSize), 20);
-        int textSize = Mathf.Min(UiTheme.FontSize(UiTheme.CaptionFontSize) + 1, 15);
+        int nameSize = Mathf.Min(UiTheme.FontSize(SpellWheelMetrics.NameSize(rim)), 24);
+        int textSize = Mathf.Min(UiTheme.FontSize(SpellWheelMetrics.TextSize(rim)), 16);
         float pad = UiTheme.SpaceSm;
         float inside = width - (pad * 2f);
 
@@ -1134,14 +1306,25 @@ public partial class SpellWheel : Control, ISpellWheelView
         return x + width + gap;
     }
 
-    /// <summary>Inked text centred on <paramref name="at"/> (its baseline): the HUD's keyline, for a
-    /// number that sits on a disc rather than a plate.</summary>
-    private void DrawInked(Font font, string text, Vector2 at, int size, Color color)
+    /// <summary>
+    /// One line of text set from <paramref name="at"/> (its baseline): centred on it, starting at
+    /// it or ending at it, by <paramref name="align"/>. <paramref name="inked"/> gives it the HUD's
+    /// keyline, for text that sits on a disc or on the world rather than on a plate.
+    /// </summary>
+    private void DrawLabel(Font font, string text, Vector2 at, HorizontalAlignment align, int size, Color color, bool inked)
     {
         float width = font.GetStringSize(text, HorizontalAlignment.Left, -1f, size).X;
-        var position = new Vector2(at.X - (width * 0.5f), at.Y);
-        DrawStringOutline(
-            font, position, text, HorizontalAlignment.Left, -1f, size, UiTheme.HudInkSize + 1, UiTheme.Keyline with { A = 1f });
+        float x = align == HorizontalAlignment.Left ? at.X
+            : align == HorizontalAlignment.Right ? at.X - width
+            : at.X - (width * 0.5f);
+        var position = new Vector2(x, at.Y);
+        if (inked)
+        {
+            DrawStringOutline(
+                font, position, text, HorizontalAlignment.Left, -1f, size, UiTheme.HudInkSize + 1,
+                UiTheme.Keyline with { A = color.A });
+        }
+
         DrawString(font, position, text, HorizontalAlignment.Left, -1f, size, color);
     }
 }

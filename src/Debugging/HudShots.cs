@@ -184,6 +184,15 @@ public sealed partial class HudShots : ShotHarness
         // A school fanned out, the cursor on one of its spells: straight up is Fire.
         Shot("01c-wheel-school-fan", () => Wheel()?.HoverForCapture(new Vector2(0f, -1.2f)));
 
+        // The two fans that have the least room: straight down (Arcane), where the fan and its
+        // names push the readout plate lower, and down to the right (Lightning), toward the minimap.
+        Shot("01c2-wheel-fan-bottom", () => Wheel()?.HoverForCapture(new Vector2(0f, 1.2f)));
+        Shot("01c3-wheel-fan-side", () => Wheel()?.HoverForCapture(SpellWheelMetrics.Direction(120f) * 1.2f));
+
+        // A school's own wedge under the cursor: lit whole, its emblem in the hub.
+        Shot("01c4-wheel-school", () => Wheel()?.HoverForCapture(
+            SpellWheelMetrics.Direction(60f) * SpellWheelMetrics.SchoolRadius));
+
         // A favourite part-way through its cooldown, under the cursor so the readout names it.
         Shot("01d-wheel-cooling", () =>
         {
@@ -381,7 +390,11 @@ public sealed partial class HudShots : ShotHarness
             case "01b-wheel-favourite":
                 return pick.Kind == SpellWheelPickKind.Favourite && pick.SpellId.Length > 0
                     ? null : $"the cursor is on {pick.Kind}, expected a pinned favourite";
+            case "01c4-wheel-school":
+                return pick.Kind == SpellWheelPickKind.School ? null : $"the cursor is on {pick.Kind}, expected a school's wedge";
             case "01c-wheel-school-fan":
+            case "01c2-wheel-fan-bottom":
+            case "01c3-wheel-fan-side":
                 return pick.Kind == SpellWheelPickKind.Spell ? null : $"the cursor is on {pick.Kind}, expected a spell in a school's fan";
             case "01d-wheel-cooling":
                 return _coolingSlot < 0 ? "no favourite has a cooldown"

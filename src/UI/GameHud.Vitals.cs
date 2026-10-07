@@ -38,7 +38,7 @@ public partial class GameHud
     private int _corruptionTierShown = -1;
 
     private Control _spellGlyph = null!;
-    private VBoxContainer _spellGroup = null!;
+    private Control _spellGroup = null!;
     private float _staTickShown = float.NaN;
     private float _mpTickShown = float.NaN;
 
@@ -100,8 +100,8 @@ public partial class GameHud
 
     // The spell's own mark (the wheel's glyph on its school disc) heads the row, and a line over it
     // says the wheel exists: the cycle key with "hold", then the spell a tap swaps back to as a ghost.
-    private const float SpellDiscSize = 26f;
-    private const float SpellGhostSize = 18f;
+    private const float SpellDiscSize = 32f;
+    private const float SpellGhostSize = 22f;
     private SpellDisc _spellDisc = null!;
     private HBoxContainer _spellWheelRow = null!;
     private Control _spellHoldGlyph = null!;
@@ -259,9 +259,15 @@ public partial class GameHud
         // The glyph resolves from the InputMap like the interaction prompt's does, so a rebind or a
         // pad flip keeps it honest (§44, §45), and affordability has a number to be shown with (§12).
         // Hidden with nothing prepared, so an empty group does not hold a gap open in the column.
-        VBoxContainer spell = _spellGroup = new VBoxContainer { Visible = false };
+        // On a shade of its own, unlike the bars: the bars are solid colour and read on anything,
+        // but this is a line of small coloured text, and school orange on sunlit sand was not there.
+        PanelContainer shade = UiTheme.HudShade();
+        shade.Visible = false;
+        _spellGroup = shade;
+        col.AddChild(shade);
+        var spell = new VBoxContainer();
         spell.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
-        col.AddChild(spell);
+        shade.AddChild(spell);
 
         // Over the row, so it grows upward like everything else here and the name stays on its bar.
         _spellWheelRow = new HBoxContainer { Visible = false, MouseFilter = Control.MouseFilterEnum.Ignore };
@@ -706,6 +712,10 @@ public partial class GameHud
         _hpPulsed = true;
     }
 
+    /// <summary>The prepared spell's name on the HUD: its school's colour lifted toward white, so
+    /// the dark schools (frost teal, necrotic mauve) read as text and not as a smudge.</summary>
+    private static Color SpellRowInk(Combat.DamageType school) => UiTheme.SchoolColor(school).Lightened(0.22f);
+
     /// <summary>The prepared-spell widget (30.5C): school-tinted name, state readout, and the
     /// cooldown recovery bar (visible only while cooling down).</summary>
     private void UpdateSpellWidget(StatsComponent stats)
@@ -721,7 +731,7 @@ public partial class GameHud
                 _spellName.Text = SpellText.Name(spell);
 
                 // Font colour, not Modulate: modulate would tint the ink round the letters as well.
-                UiLive.FontColor(_spellName, UiTheme.SchoolColor(spell.School));
+                UiLive.FontColor(_spellName, SpellRowInk(spell.School));
                 InvalidateSpellShown();
 
                 // Every settings change lands here (the invalidation clears _spellShown), so the
@@ -807,7 +817,7 @@ public partial class GameHud
             if (afford != _spellAffordShown)
             {
                 _spellAffordShown = afford;
-                UiLive.FontColor(_spellCost, affordable ? UiTheme.Mana : UiTheme.Bad);
+                UiLive.FontColor(_spellCost, affordable ? UiTheme.Mana.Lightened(0.25f) : UiTheme.WheelBad);
             }
 
             // Which line the state readout is on, and the one number two of them carry. The text is
@@ -845,7 +855,7 @@ public partial class GameHud
             {
                 _spellStateColorShown = stateColor;
                 UiLive.FontColor(
-                    _spellState, stateColor == 0 ? UiTheme.Bad : stateColor == 1 ? UiTheme.Dim : UiTheme.Accent);
+                    _spellState, stateColor == 0 ? UiTheme.WheelBad : stateColor == 1 ? UiTheme.Text : UiTheme.Accent);
             }
 
             _spellRow.Visible = true;
