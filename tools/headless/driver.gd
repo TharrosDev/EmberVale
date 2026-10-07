@@ -14,6 +14,7 @@ var frame_times: Array[float] = []
 ## perf only: one [process ms, physics ms, draw calls, primitives] row per frame, beside frame_times.
 var monitor_samples: Array = []
 var frame_number := 0
+var console_calls := 0  # console ops can share a frame: their files are numbered by call
 var stopped := false
 var failed := false
 
@@ -337,7 +338,8 @@ func _step(step: Dictionary) -> void:
 			if not (reply is Dictionary):
 				_error("scenario.console", "Console returned no result for: " + String(step.line))
 				return
-			_write("console-%d" % frame_number, {"line": step.line, "reply": reply})
+			console_calls += 1
+			_write("console-%02d" % console_calls, {"line": step.line, "frame": frame_number, "reply": reply})
 			if not reply.get("ok", false) and not step.get("allow_failure", false):
 				_error("scenario.console", "%s -> %s" % [step.line, String(reply.get("out", "")).left(300)])
 		"scene_tree", "dump_state": _dump("state-%d" % frame_number)
