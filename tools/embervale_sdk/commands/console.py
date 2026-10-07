@@ -138,6 +138,8 @@ def run(run, args, passthrough):
         reference(run, args.reference)
         return
     text = script_text(args)
+    if not args.render and re.search(r"(?m)(^|;)[ 	]*shot[ 	]", text):
+        raise ValueError("this script has a `shot` statement: add --render (a headless run draws nothing)")
     script_path = Path(run.artifacts) / "console-script.txt"
     script_path.write_text(text, encoding="utf-8")
     report_path = Path(run.artifacts) / "console-report.json"
@@ -154,12 +156,12 @@ def run(run, args, passthrough):
         except ValueError:
             pass
     failures = report.get("failures", ())
-    if summary is not None and failures and all(str(f).startswith("statement ") for f in failures):
-        # The game exits 1 because statements failed. Those are listed one per line and set the
-        # exit code (5), so the step itself is not a second failure to report.
-        step = run.result["steps"][-1]
-        if step.get("process_exit_code") == 1:
-            step.update(exit_code=0, success=True)
-            run.result["diagnostics"] = [d for d in run.result["diagnostics"] if d.get("code") != "process.failed"]
+    step = run.result["steps"][-1]
+    if failures and step.get("process_exit_code") == 1:
+        # The runner said why it exited 1 (failed statements, or a script it refused), and that is
+        # reported below; "exit 1; see the log" would be a second line saying less.
+        run.result["diagnostics"] = [d for d in run.result["diagnostics"] if d.get("code") != "process.failed"]
+        if summary is not None and all(str(f).startswith("statement ") for f in failures):
+            step.update(exit_code=0, success=True)   # the failed statements set the exit code (5)
     fold(run, statements, summary, quiet=args.quiet, reasons=failures)
     run.result["metrics"]["console"]["facts"] = report.get("facts", {})
