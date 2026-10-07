@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Embervale.Bootstrap;
 using Embervale.Core.Diagnostics;
 using Godot;
 
@@ -20,10 +21,27 @@ namespace Embervale.Debugging;
 /// <para>A shot that did not reach its state still gets its PNG, because the picture of what went
 /// wrong is the evidence. The problem is recorded, and a last shot (<c>zz-summary</c>) fails the run
 /// with every problem listed.</para>
+///
+/// <para><b>Film.</b> <c>--film[=FRAMESxSTRIDE]</c> (default 12x4) keeps, for every selected shot, the
+/// last FRAMES drawn frames taken STRIDE apart between its drive and its capture, and writes them as
+/// ONE image, <c>&lt;shot&gt;.film.png</c>, left to right and top to bottom, with
+/// <c>&lt;shot&gt;.film.json</c> giving the spacing. It is how motion is read from a still: the
+/// frames that led up to the moment the shot captures. Run at a fixed frame rate
+/// (<c>--fixed-fps 60</c>, which the SDK's <c>shots</c> command passes) and the spacing is exact.</para>
+///
+/// <para><b>Focus.</b> The engine lets go of every held action when the window loses focus. That is
+/// recorded per shot (the manifest's <c>focus_lost</c>), and it fails the run when the harness says
+/// the shot depended on a held input (<see cref="FocusLossSpoils"/>). <c>--direct-input</c>, or a
+/// window that is not focused, makes <see cref="DirectInput"/> true so a harness can drive the
+/// component itself instead of a button.</para>
 /// </summary>
 public abstract partial class TimedShots : ShotHarness
 {
+    public const string FilmArgument = "--film";
+    public const string DirectInputArgument = "--direct-input";
+
     private const string SummaryShot = "zz-summary";
+    private const int FilmCellWidth = 320;
     private const double StepTimeout = 6.0;
 
     private readonly Dictionary<string, Action> _inspections = new();
@@ -31,6 +49,11 @@ public abstract partial class TimedShots : ShotHarness
     private readonly List<(Func<bool> When, Action Do)> _steps = new();
     private readonly List<(string Name, Image Image)> _burst = new();
     private readonly List<Action> _nextFrame = new();
+    private readonly List<(Image Image, double Clock)> _film = new();
+    private readonly List<string> _focusLost = new();
+    private int _filmFrames;
+    private int _filmStride = FilmLayout.DefaultStride;
+    private bool _focused = true;
 
     private Func<bool>? _until;
     private double _deadline;
@@ -79,6 +102,24 @@ public abstract partial class TimedShots : ShotHarness
 
     /// <summary>A reason no picture of this shot can mean anything (no player, no camera), or null.</summary>
     protected virtual string? Fatal(string name) => null;
+
+    /// <summary>True when the shot in progress is being driven by an input the harness holds down,
+    /// so the window losing focus now (the engine releases held actions) makes its frames wrong.</summary>
+    protected virtual bool FocusLossSpoils() => false;
+
+    /// <summary>True when a harness should act on the component directly rather than press a
+    /// button: <c>--direct-input</c> was passed, or the window does not have focus.</summary>
+    protected bool DirectInput =>
+        HeadlessArgs.User.Has(DirectInputArgument) || !_focused || !DisplayServer.WindowIsFocused();
+
+    /// <summary>The summary shot checks the run; it is always part of it.</summary>
+    protected override bool IsSelected(string name) => name == SummaryShot || base.IsSelected(name);
+
+    /// <summary>The summary shot has nothing to show; it is only written when the whole suite runs,
+    /// as it always was.</summary>
+    protected override bool WritesImage(string name) => name != SummaryShot || !Filtering;
+
+    protected override void Summarize(ShotManifest manifest) => manifest.FocusLost.AddRange(_focusLost);
 
     protected sealed override void BuildShotList()
     {
@@ -152,6 +193,50 @@ public abstract partial class TimedShots : ShotHarness
     {
         base._Ready();
         RenderingServer.FramePreDraw += OnFramePreDraw;
+        if (HeadlessArgs.User.Has(FilmArgument))
+        {
+            if (FilmLayout.TryParse(HeadlessArgs.User.Value(FilmArgument), out int frames, out int stride))
+            {
+                _filmFrames = frames;
+                _filmStride = stride;
+            }
+            else
+            {
+                Problem($"{FilmArgument}='{HeadlessArgs.User.Value(FilmArgument)}' is not FRAMESxSTRIDE (e.g. 12x4); no film was recorded.");
+            }
+        }
+
+        if (DisplayServer.GetName() != "headless")
+        {
+            DisplayServer.WindowMoveToForeground();
+        }
+    }
+
+    /// <summary>Records the window losing focus: the engine releases every held action when it does.</summary>
+    public override void _Notification(int what)
+    {
+        if (what == NotificationApplicationFocusIn || what == NotificationWMWindowFocusIn)
+        {
+            _focused = true;
+        }
+        else if ((what == NotificationApplicationFocusOut || what == NotificationWMWindowFocusOut) && _focused)
+        {
+            _focused = false;
+            string shot = CurrentShot.Length > 0 ? CurrentShot : "(before the first shot)";
+            if (!_focusLost.Contains(shot))
+            {
+                _focusLost.Add(shot);
+            }
+
+            bool spoils = false;
+            Guard(() => spoils = FocusLossSpoils(), "the focus check");
+            if (spoils)
+            {
+                Problem($"the window lost focus during '{shot}' while a held input was driving it; the engine " +
+                        "released the input, so this shot is not evidence. Keep the window focused, or pass " +
+                        $"{DirectInputArgument}.");
+            }
+        }
     }
 
     public override void _ExitTree()
@@ -219,6 +304,11 @@ public abstract partial class TimedShots : ShotHarness
         }
 
         _frames++;
+        if (_filmFrames > 0 && _frames % _filmStride == 0 && CurrentShot != SummaryShot && CurrentRecord is { Selected: true })
+        {
+            GrabFilmFrame();
+        }
+
         if (!_gateOpen)
         {
             bool ready = false;
@@ -256,7 +346,15 @@ public abstract partial class TimedShots : ShotHarness
             _burstFrames = _burst.Count;
         }
 
+        // The base will not capture into a window that is the wrong size; wait for it here, because
+        // the loop below would otherwise spin on a base that returns at once.
+        if (!WindowReady())
+        {
+            return;
+        }
+
         // Run the base's hold out in this one frame; it captures when the hold ends.
+        ShotRecord? record = CurrentRecord;
         _captured = false;
         for (int i = 0; i < 10_000 && !_captured; i++)
         {
@@ -265,6 +363,7 @@ public abstract partial class TimedShots : ShotHarness
 
         _armed = false;
         WriteBurst();
+        WriteFilm(record);
     }
 
     protected sealed override string? ValidateShotState(string name)
@@ -305,10 +404,7 @@ public abstract partial class TimedShots : ShotHarness
             return;
         }
 
-        string artifacts = OS.GetEnvironment("EMBERVALE_ARTIFACTS");
-        string directory = string.IsNullOrEmpty(artifacts)
-            ? OutputDir
-            : System.IO.Path.Combine(artifacts, Flag.TrimStart('-'));
+        string directory = CaptureDirectory;
         foreach ((string name, Image image) in _burst)
         {
             string path = $"{directory}/{name}.png";
@@ -317,13 +413,87 @@ public abstract partial class TimedShots : ShotHarness
             {
                 Problem($"could not write burst frame '{path}' ({error})");
             }
-            else
+            else if (Verbose)
             {
                 Log.Info($"{Flag}: wrote {ProjectSettings.GlobalizePath(path)} (burst frame)");
             }
         }
 
         _burst.Clear();
+    }
+
+    /// <summary>Keeps one drawn frame for the film, already shrunk to a cell so a strip costs a
+    /// megabyte and not forty.</summary>
+    private void GrabFilmFrame()
+    {
+        if (GetViewport()?.GetTexture()?.GetImage() is not { } image || image.IsEmpty())
+        {
+            return;
+        }
+
+        if (image.GetWidth() > FilmCellWidth)
+        {
+            image.Resize(FilmCellWidth, Math.Max(1, image.GetHeight() * FilmCellWidth / image.GetWidth()), Image.Interpolation.Bilinear);
+        }
+
+        image.Convert(Image.Format.Rgb8);
+        _film.Add((image, Clock));
+        if (_film.Count > _filmFrames)
+        {
+            _film.RemoveAt(0);
+        }
+    }
+
+    /// <summary>Writes the frames kept for the shot just captured as one sheet and its timing.</summary>
+    private void WriteFilm(ShotRecord? record)
+    {
+        if (_film.Count == 0)
+        {
+            return;
+        }
+
+        (Image Image, double Clock)[] frames = _film.ToArray();
+        _film.Clear();
+        if (record is not { File: not null })
+        {
+            return;
+        }
+
+        Image first = frames[0].Image;
+        FilmLayout layout = FilmLayout.For(frames.Length, first.GetWidth(), first.GetHeight(), first.GetWidth());
+        Image sheet = Image.CreateEmpty(layout.Width, layout.Height, false, Image.Format.Rgb8);
+        sheet.Fill(new Color(0.07f, 0.08f, 0.10f));
+        var cell = new Rect2I(0, 0, layout.CellWidth, layout.CellHeight);
+        var times = new double[frames.Length];
+        for (int i = 0; i < frames.Length; i++)
+        {
+            (int x, int y) = layout.Cell(i);
+            sheet.BlitRect(frames[i].Image, cell, new Vector2I(x, y));
+            sheet.FillRect(new Rect2I(x, y, layout.BarWidth(i), FilmLayout.BarHeight), new Color(1f, 0.85f, 0.2f));
+            times[i] = Math.Round(frames[i].Clock - frames[^1].Clock, 4);
+        }
+
+        string stem = $"{CaptureDirectory}/{record.Name}.film";
+        Error error = sheet.SavePng(stem + ".png");
+        if (error != Error.Ok)
+        {
+            Problem($"could not write film '{stem}.png' ({error})");
+            return;
+        }
+
+        record.Film = record.Name + ".film.png";
+        using FileAccess? file = FileAccess.Open(stem + ".json", FileAccess.ModeFlags.Write);
+        file?.StoreString(System.Text.Json.JsonSerializer.Serialize(new Dictionary<string, object?>
+        {
+            ["name"] = record.Name,
+            ["frames"] = frames.Length,
+            ["stride"] = _filmStride,
+            ["columns"] = layout.Columns,
+            ["rows"] = layout.Rows,
+            ["cell"] = new[] { layout.CellWidth, layout.CellHeight },
+            ["order"] = "left to right, top to bottom; the bar on each cell fills as the strip advances",
+            ["seconds_before_capture"] = times,
+        }));
     }
 
     /// <summary>Runs harness code so that a throw is a recorded problem and not a stalled run.</summary>

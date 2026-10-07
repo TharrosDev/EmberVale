@@ -739,6 +739,10 @@ public sealed partial class CamShots : TimedShots
 
     private static string N(double value, string format) => value.ToString(format, CultureInfo.InvariantCulture);
 
+    /// <summary>Movement is pressed again every frame (<see cref="Frame"/>), so only the two casting
+    /// poses depend on a button staying down: pressing the cast button again would be a new cast.</summary>
+    protected override bool FocusLossSpoils() => _started >= 0 && _gait is Gait.Charge or Gait.Channel;
+
     public override void _ExitTree()
     {
         base._ExitTree();
