@@ -1,8 +1,5 @@
 [gd_scene format=3]
 
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_arena_wall.glb" id="e1"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_ruin_pillar.glb" id="e2"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_banner_guild.glb" id="e3"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_brazier.glb" id="e4"]
 [ext_resource type="PackedScene" path="res://scenes/props/bld_mission_chapel.tscn" id="e5"]
 [ext_resource type="Script" path="res://src/Entities/Entity.cs" id="e6"]
@@ -19,6 +16,10 @@
 [ext_resource type="Script" path="res://src/Factions/FactionComponent.cs" id="wb_factioncomponent"]
 [ext_resource type="PackedScene" path="res://scenes/props/prp_ladle.tscn" id="wb_prp_ladle"]
 [ext_resource type="Script" path="res://src/Enemies/SetPieceSpawnComponent.cs" id="wb_setpiecespawncomponent"]
+[ext_resource type="PackedScene" path="res://scenes/props/lm_monolith_a.tscn" id="rp_lm_monolith_a"]
+[ext_resource type="PackedScene" path="res://assets/models/world/prp_banner_a.glb" id="rp_prp_banner_a"]
+[ext_resource type="PackedScene" path="res://scenes/props/lm_monolith_a.tscn" id="dx_monolith"]
+[ext_resource type="PackedScene" path="res://scenes/props/lm_wall_rampart.tscn" id="dx_wall_rampart"]
 
 ; THE CRIMSON MISSION (sunspire.temple) - the Crimson Prophet's seat and arena. Content frame,
 ; moved to Cell.origin by tools/shift_cell_content.py.
@@ -44,10 +45,6 @@ agent_max_slope = 40.0
 [sub_resource type="CapsuleShape3D" id="Shape_npc"]
 radius = 0.4
 height = 1.8
-
-[sub_resource type="CylinderShape3D" id="Shape_pillar"]
-radius = 0.5
-height = 3.1
 
 [sub_resource type="BoxShape3D" id="Shape_ruinwall"]
 size = Vector3(4, 4, 0.88)
@@ -117,80 +114,28 @@ transform = Transform3D(1, 0, -0, 0, 1, 0, 0, 0, 1, 55.8, 2, -34.4)
 [node name="Shape" type="CollisionShape3D" parent="Nav/WallNE"]
 shape = SubResource("Shape_wall_gate")
 
-[node name="Ring0" parent="Nav" instance=ExtResource("e1")]
-transform = Transform3D(1, 0, -0, 0, 1, 0, 0, 0, 1, 34.2, 0, -6)
-
-[node name="Ring1" parent="Nav" instance=ExtResource("e1")]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 31, 0, -30.8)
-
-[node name="Ring2" parent="Nav" instance=ExtResource("e1")]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 59, 0, -30.8)
-
-[node name="Ring3" parent="Nav" instance=ExtResource("e1")]
-transform = Transform3D(1, 0, -0, 0, 1, 0, 0, 0, 1, 41.4, 0, -6)
-
-[node name="Ring4" parent="Nav" instance=ExtResource("e1")]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 31, 0, -23.6)
-
-[node name="Ring5" parent="Nav" instance=ExtResource("e1")]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 59, 0, -23.6)
-
-[node name="Ring6" parent="Nav" instance=ExtResource("e1")]
-transform = Transform3D(1, 0, -0, 0, 1, 0, 0, 0, 1, 48.6, 0, -6)
-
-[node name="Ring7" parent="Nav" instance=ExtResource("e1")]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 31, 0, -16.4)
-
-[node name="Ring8" parent="Nav" instance=ExtResource("e1")]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 59, 0, -16.4)
-
-[node name="Ring9" parent="Nav" instance=ExtResource("e1")]
-transform = Transform3D(1, 0, -0, 0, 1, 0, 0, 0, 1, 55.8, 0, -6)
-
-[node name="Ring10" parent="Nav" instance=ExtResource("e1")]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 31, 0, -9.2)
-
-[node name="Ring11" parent="Nav" instance=ExtResource("e1")]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 59, 0, -9.2)
-
-[node name="Ring12" parent="Nav" instance=ExtResource("e1")]
-transform = Transform3D(1, 0, -0, 0, 1, 0, 0, 0, 1, 34.2, 0, -34)
-
-[node name="Ring13" parent="Nav" instance=ExtResource("e1")]
-transform = Transform3D(1, 0, -0, 0, 1, 0, 0, 0, 1, 55.8, 0, -34)
-
 [node name="GatePillarW" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, -0, 0, 1, 0, 0, 0, 1, 37.4, 0, -34.4)
+transform = Transform3D(0.8, 0, 0, 0, 0.8, 0, 0, 0, 0.8, 37.4, 0, -34.4)
 
-[node name="Model" parent="Nav/GatePillarW" instance=ExtResource("e2")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/GatePillarW"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/GatePillarW/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.55, 0)
-shape = SubResource("Shape_pillar")
+[node name="Model" parent="Nav/GatePillarW" instance=ExtResource("rp_lm_monolith_a")]
+albedo_tint = Color(1.18, 1.04, 0.82, 1)
 
 [node name="GatePillarE" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, -0, 0, 1, 0, 0, 0, 1, 52.6, 0, -34.4)
+transform = Transform3D(0.8, 0, 0, 0, 0.8, 0, 0, 0, 0.8, 52.6, 0, -34.4)
 
-[node name="Model" parent="Nav/GatePillarE" instance=ExtResource("e2")]
+[node name="Model" parent="Nav/GatePillarE" instance=ExtResource("rp_lm_monolith_a")]
+albedo_tint = Color(1.18, 1.04, 0.82, 1)
 
-[node name="Collider" type="StaticBody3D" parent="Nav/GatePillarE"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/GatePillarE/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.55, 0)
-shape = SubResource("Shape_pillar")
-
-[node name="Banner0" parent="Nav" instance=ExtResource("e3")]
+[node name="Banner0" parent="Nav" instance=ExtResource("rp_prp_banner_a")]
 transform = Transform3D(-1, 0, -0, 0, 1, 0, 0, 0, -1, 40, 0, -6.5)
 
-[node name="Banner1" parent="Nav" instance=ExtResource("e3")]
+[node name="Banner1" parent="Nav" instance=ExtResource("rp_prp_banner_a")]
 transform = Transform3D(-1, 0, -0, 0, 1, 0, 0, 0, -1, 50, 0, -6.5)
 
-[node name="Banner2" parent="Nav" instance=ExtResource("e3")]
+[node name="Banner2" parent="Nav" instance=ExtResource("rp_prp_banner_a")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 31.5, 0, -25)
 
-[node name="Banner3" parent="Nav" instance=ExtResource("e3")]
+[node name="Banner3" parent="Nav" instance=ExtResource("rp_prp_banner_a")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 58.5, 0, -15)
 
 [node name="RimBrazier0" type="Node3D" parent="Nav"]
@@ -508,3 +453,47 @@ Waves = 1
 WaveDelaySeconds = 15
 SpawnRadius = 6
 ClearedFlagId = "flag.beat.zealots_down"
+
+[node name="Dx_MissionRampartS0" parent="Nav" instance=ExtResource("dx_wall_rampart")]
+transform = Transform3D(1.15, 0, 0, 0, 1.15, 0, 0, 0, 0.4025, 37.48, -0.5, -4.39)
+albedo_tint = Color(1.18, 1.04, 0.82, 1)
+
+[node name="Dx_MissionRampartS1" parent="Nav" instance=ExtResource("dx_wall_rampart")]
+transform = Transform3D(-1.18, 0, 0, 0, 1.18, 0, 0, 0, -0.413, 52.52, -0.5, -4.39)
+albedo_tint = Color(1.18, 1.04, 0.82, 1)
+
+[node name="Dx_MissionRampartW1" parent="Nav" instance=ExtResource("dx_wall_rampart")]
+transform = Transform3D(0, 0, 0.4104, 0, 1.08, 0, -1.08, 0, 0, 29.4, -0.5, -26.76)
+albedo_tint = Color(1.18, 1.04, 0.82, 1)
+
+[node name="Dx_MissionRampartW2" parent="Nav" instance=ExtResource("dx_wall_rampart")]
+transform = Transform3D(0, 0, -0.399, 0, 1.05, 0, 1.05, 0, 0, 29.4, -0.5, -13.24)
+albedo_tint = Color(1.18, 1.04, 0.82, 1)
+
+[node name="Dx_MissionRampartE0" parent="Nav" instance=ExtResource("dx_wall_rampart")]
+transform = Transform3D(0, 0, -0.399, 0, 1.05, 0, 1.05, 0, 0, 60.6, -0.5, -26.76)
+albedo_tint = Color(1.18, 1.04, 0.82, 1)
+
+[node name="Dx_MissionRampartE1" parent="Nav" instance=ExtResource("dx_wall_rampart")]
+transform = Transform3D(0, 0, 0.4104, 0, 1.08, 0, -1.08, 0, 0, 60.6, -0.5, -13.24)
+albedo_tint = Color(1.18, 1.04, 0.82, 1)
+
+[node name="Dx_MissionRampartNW" parent="Nav" instance=ExtResource("dx_wall_rampart")]
+transform = Transform3D(0.8, 0, 0, 0, 0.8, 0, 0, 0, 0.12, 31.9, -0.3, -34.45)
+albedo_tint = Color(1.18, 1.04, 0.82, 1)
+
+[node name="Dx_MissionRampartNE" parent="Nav" instance=ExtResource("dx_wall_rampart")]
+transform = Transform3D(-0.8, 0, 0, 0, 0.8, 0, 0, 0, -0.12, 58.1, -0.3, -34.45)
+albedo_tint = Color(1.18, 1.04, 0.82, 1)
+
+[node name="Dx_MissionCapSW" parent="Nav" instance=ExtResource("dx_monolith")]
+transform = Transform3D(0.7048, 0, -0.2565, 0, 0.75, 0, 0.2565, 0, 0.7048, 29.8, -0.4, -4.8)
+albedo_tint = Color(1.18, 1.04, 0.82, 1)
+
+[node name="Dx_MissionCapSE" parent="Nav" instance=ExtResource("dx_monolith")]
+transform = Transform3D(-0.2565, 0, -0.7048, 0, 0.75, 0, 0.7048, 0, -0.2565, 60.2, -0.4, -4.8)
+albedo_tint = Color(1.18, 1.04, 0.82, 1)
+
+[node name="Dx_PilgrimStone6" parent="Nav" instance=ExtResource("dx_monolith")]
+transform = Transform3D(1.231, 0, 0.2171, 0, 1.25, 0, -0.2171, 0, 1.231, -66.7, -0.4, -44.8)
+albedo_tint = Color(1.18, 1.04, 0.82, 1)

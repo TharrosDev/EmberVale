@@ -9,9 +9,6 @@
 [ext_resource type="Script" path="res://src/Factions/FactionComponent.cs" id="6_faction"]
 [ext_resource type="Script" path="res://src/Audio/AmbientEmitterComponent.cs" id="7_ambient"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_crate.glb" id="11_crate"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_lamp_post.glb" id="12_lamp"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_waystone.glb" id="13_waystone"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_banner_guild.glb" id="14_banner"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_brazier.glb" id="15_brazier"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_market_stand.glb" id="17_stand_a"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_market_stand_b.glb" id="18_stand_b"]
@@ -20,11 +17,11 @@
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_sacks.glb" id="21_sacks"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_hay.glb" id="22_hay"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_bench.glb" id="23_bench"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_well.glb" id="24_well"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_bell_tower.glb" id="25_belltower"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_gazebo.glb" id="26_gazebo"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_cauldron.glb" id="27_cauldron"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_fence.glb" id="28_fence"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_tree_broadleaf.glb" id="29_tree"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_bush_flowering.glb" id="30_bush"]
 [ext_resource type="PackedScene" path="res://assets/models/architecture/bld_house_a.glb" id="31_house_a"]
 [ext_resource type="PackedScene" path="res://assets/models/architecture/bld_house_b.glb" id="32_house_b"]
 [ext_resource type="PackedScene" path="res://assets/models/architecture/bld_cottage.glb" id="33_cottage"]
@@ -51,6 +48,13 @@
 [ext_resource type="Script" path="res://src/Shrines/ShrineComponent.cs" id="shrine_41_5b"]
 [ext_resource type="PackedScene" path="res://scenes/props/bld_archive_annexe.tscn" id="42b_bld_archive_annexe"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_townsman.glb" id="42b_npc_townsman"]
+[ext_resource type="PackedScene" path="res://scenes/props/lm_waystone.tscn" id="rp_lm_waystone"]
+[ext_resource type="PackedScene" path="res://scenes/props/lm_bell_tower.tscn" id="rp_lm_bell_tower"]
+[ext_resource type="PackedScene" path="res://assets/models/world/prp_lamp_post_a.glb" id="rp_prp_lamp_post_a"]
+[ext_resource type="PackedScene" path="res://assets/models/world/prp_fence_a.glb" id="rp_prp_fence_a"]
+[ext_resource type="PackedScene" path="res://assets/models/world/prp_well_a.glb" id="rp_prp_well_a"]
+[ext_resource type="PackedScene" path="res://assets/models/world/prp_banner_a.glb" id="rp_prp_banner_a"]
+[ext_resource type="PackedScene" path="res://assets/models/world/prp_clutter_pile_a.glb" id="rp_prp_clutter_pile_a"]
 [ext_resource type="PackedScene" path="res://scenes/props/bld_cottage_shuttered.tscn" id="dx_cottage_shuttered"]
 [ext_resource type="PackedScene" path="res://assets/models/architecture/bld_house_b.glb" id="dx_house_b"]
 [ext_resource type="PackedScene" path="res://scenes/props/bld_townhouse_balcony.tscn" id="dx_townhouse_balcony"]
@@ -229,12 +233,6 @@ size = Vector3(1.8, 0.85, 0.66)
 [sub_resource type="BoxShape3D" id="Shape_salt_steps"]
 size = Vector3(11, 0.3, 10)
 
-[sub_resource type="BoxShape3D" id="Shape_well"]
-size = Vector3(1.5, 2.75, 2.25)
-
-[sub_resource type="BoxShape3D" id="Shape_belltower"]
-size = Vector3(4.4, 11, 5.0)
-
 ; The gazebo is a roof on four posts, so it gets two thin post colliders instead of one solid box —
 ; walking under the pavilion is the whole reason it is the only overhead geometry in the cell.
 [sub_resource type="BoxShape3D" id="Shape_gazebo_post"]
@@ -242,9 +240,6 @@ size = Vector3(0.35, 2.8, 3.3)
 
 [sub_resource type="BoxShape3D" id="Shape_cauldron"]
 size = Vector3(1.15, 0.8, 0.95)
-
-[sub_resource type="BoxShape3D" id="Shape_fence"]
-size = Vector3(2.95, 1.2, 0.16)
 
 ; Trunk only: a canopy collider would stop the player walking under a tree, which is the one thing a
 ; tree in a market square is for.
@@ -255,10 +250,6 @@ radius = 0.22
 [sub_resource type="CylinderShape3D" id="Shape_brazier"]
 height = 1.2
 radius = 0.3
-
-[sub_resource type="CylinderShape3D" id="Shape_waystone"]
-height = 3.0
-radius = 0.8
 
 [sub_resource type="BoxShape3D" id="Shape_banner"]
 size = Vector3(1.0, 3.4, 0.7)
@@ -324,6 +315,24 @@ size = Vector3(2.848, 0.813, 1.097)
 
 [sub_resource type="BoxShape3D" id="Shape_stall_empty"]
 size = Vector3(1.84, 2.63, 0.93)
+
+[sub_resource type="BoxShape3D" id="RpShape_FenceW1"]
+size = Vector3(2.14, 1.2, 0.3)
+
+[sub_resource type="BoxShape3D" id="RpShape_FenceW2"]
+size = Vector3(2.14, 1.2, 0.3)
+
+[sub_resource type="BoxShape3D" id="RpShape_FenceE1"]
+size = Vector3(2.14, 1.2, 0.3)
+
+[sub_resource type="BoxShape3D" id="RpShape_FenceE2"]
+size = Vector3(2.14, 1.2, 0.3)
+
+[sub_resource type="BoxShape3D" id="RpShape_Well"]
+size = Vector3(2.6, 2.6, 2.8)
+
+[sub_resource type="BoxShape3D" id="RpShape_ClutterS1"]
+size = Vector3(2.3, 1.3, 1.5)
 
 ; ⚠️ THE GROUND SKINS ARE GONE (the 2026-08-29 geography overhaul). Every road, yard and court in
 ; this cell used to be a 6 cm BoxMesh slab laid on the floor — forty of them across the realm, and
@@ -615,15 +624,15 @@ shape = SubResource("Shape_hay")
 ; --- The plaza, off the aisle to the west: a well, three benches around it, and a cook-fire ---------
 
 [node name="Well" type="Node3D" parent="Nav"]
-transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, -32.5, 0.3, -8.5)
+transform = Transform3D(0.7361, 0, 0.425, 0, 0.85, 0, -0.425, 0, 0.7361, -32.5, 0.3, -8.5)
 
-[node name="Model" parent="Nav/Well" instance=ExtResource("24_well")]
+[node name="Model" parent="Nav/Well" instance=ExtResource("rp_prp_well_a")]
 
 [node name="Col" type="StaticBody3D" parent="Nav/Well"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/Well/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.375, 0)
-shape = SubResource("Shape_well")
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.3, 0)
+shape = SubResource("RpShape_Well")
 
 [node name="BenchA" type="Node3D" parent="Nav"]
 transform = Transform3D(0.9659, 0, 0.2588, 0, 1, 0, -0.2588, 0, 0.9659, -32, 0.3, -3.5)
@@ -701,16 +710,10 @@ Radius = 12.0
 ; --- silhouette the first pass had nothing of, and the thing that stops the district reading as a
 ; --- field that simply runs out.
 
-[node name="BellTower" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, -0.9397, -28.5, 0.3, -6)
+[node name="BellTower" type="Node3D" parent="Nav" groups=["world_landmark"]]
+transform = Transform3D(-0.8457, 0, -0.3078, 0, 0.9, 0, 0.3078, 0, -0.8457, -28.5, 0.3, -6)
 
-[node name="Model" parent="Nav/BellTower" instance=ExtResource("25_belltower")]
-
-[node name="Col" type="StaticBody3D" parent="Nav/BellTower"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/BellTower/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5.5, 0)
-shape = SubResource("Shape_belltower")
+[node name="Model" parent="Nav/BellTower" instance=ExtResource("rp_lm_bell_tower")]
 
 ; The one piece of overhead geometry in the cell, and the reason it is here: a flat square with nothing
 ; to walk *under* reads as a plane with objects on it. Two post colliders, not one solid box.
@@ -896,48 +899,48 @@ transform = Transform3D(-0.0349, 0, -0.9994, 0, 1, 0, 0.9994, 0, -0.0349, -22, 0
 ; --- Fences and planting, filling the gaps between buildings so the edges close ---------------------
 
 [node name="FenceW1" type="Node3D" parent="Nav"]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -69, 0, -35.5)
+transform = Transform3D(0, 0, -1.45, 0, 1.45, 0, 1.45, 0, 0, -69, 0, -35.5)
 
-[node name="Model" parent="Nav/FenceW1" instance=ExtResource("28_fence")]
+[node name="Model" parent="Nav/FenceW1" instance=ExtResource("rp_prp_fence_a")]
 
 [node name="Col" type="StaticBody3D" parent="Nav/FenceW1"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/FenceW1/Col"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
-shape = SubResource("Shape_fence")
+shape = SubResource("RpShape_FenceW1")
 
 [node name="FenceW2" type="Node3D" parent="Nav"]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -69, 0, -32.5)
+transform = Transform3D(0, 0, 1.45, 0, 1.45, 0, -1.45, 0, 0, -69, 0, -32.5)
 
-[node name="Model" parent="Nav/FenceW2" instance=ExtResource("28_fence")]
+[node name="Model" parent="Nav/FenceW2" instance=ExtResource("rp_prp_fence_a")]
 
 [node name="Col" type="StaticBody3D" parent="Nav/FenceW2"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/FenceW2/Col"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
-shape = SubResource("Shape_fence")
+shape = SubResource("RpShape_FenceW2")
 
 [node name="FenceE1" type="Node3D" parent="Nav"]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -20.5, 0, -22.5)
+transform = Transform3D(0, 0, -1.45, 0, 1.45, 0, 1.45, 0, 0, -20.5, 0, -22.5)
 
-[node name="Model" parent="Nav/FenceE1" instance=ExtResource("28_fence")]
+[node name="Model" parent="Nav/FenceE1" instance=ExtResource("rp_prp_fence_a")]
 
 [node name="Col" type="StaticBody3D" parent="Nav/FenceE1"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/FenceE1/Col"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
-shape = SubResource("Shape_fence")
+shape = SubResource("RpShape_FenceE1")
 
 [node name="FenceE2" type="Node3D" parent="Nav"]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -20.5, 0, -2)
+transform = Transform3D(0, 0, 1.45, 0, 1.45, 0, -1.45, 0, 0, -20.5, 0, -2)
 
-[node name="Model" parent="Nav/FenceE2" instance=ExtResource("28_fence")]
+[node name="Model" parent="Nav/FenceE2" instance=ExtResource("rp_prp_fence_a")]
 
 [node name="Col" type="StaticBody3D" parent="Nav/FenceE2"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/FenceE2/Col"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
-shape = SubResource("Shape_fence")
+shape = SubResource("RpShape_FenceE2")
 
 [node name="TreeW1" type="Node3D" parent="Nav"]
 transform = Transform3D(0.5638, 0, 0.2052, 0, 0.6, 0, -0.2052, 0, 0.5638, -65.5, 0, -3.5)
@@ -1034,15 +1037,15 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.425, 0)
 shape = SubResource("Shape_barrel")
 
 [node name="ClutterS1" type="Node3D" parent="Nav"]
-transform = Transform3D(0.866, 0, -0.5, 0, 1, 0, 0.5, 0, 0.866, -59.6, 0, -6)
+transform = Transform3D(0.6928, 0, -0.4, 0, 0.8, 0, 0.4, 0, 0.6928, -59.6, 0, -6)
 
-[node name="Model" parent="Nav/ClutterS1" instance=ExtResource("11_crate")]
+[node name="Model" parent="Nav/ClutterS1" instance=ExtResource("rp_prp_clutter_pile_a")]
 
 [node name="Col" type="StaticBody3D" parent="Nav/ClutterS1"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/ClutterS1/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.62, 0)
-shape = SubResource("Shape_crate")
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.65, 0)
+shape = SubResource("RpShape_ClutterS1")
 
 [node name="CartE" type="Node3D" parent="Nav"]
 transform = Transform3D(-0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, -0.9397, -21, 0, -13.5)
@@ -1063,7 +1066,8 @@ shape = SubResource("Shape_cart")
 [node name="LampNW" type="Node3D" parent="Nav"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -58.6, 0, -44)
 
-[node name="Model" parent="Nav/LampNW" instance=ExtResource("12_lamp")]
+[node name="Model" parent="Nav/LampNW" instance=ExtResource("rp_prp_lamp_post_a")]
+transform = Transform3D(1.1, 0, 0, 0, 1.1, 0, 0, 0, 1.1, 0, 0, 0)
 
 [node name="Col" type="StaticBody3D" parent="Nav/LampNW"]
 
@@ -1080,7 +1084,8 @@ omni_range = 9.0
 [node name="LampNE" type="Node3D" parent="Nav"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -53.4, 0, -44)
 
-[node name="Model" parent="Nav/LampNE" instance=ExtResource("12_lamp")]
+[node name="Model" parent="Nav/LampNE" instance=ExtResource("rp_prp_lamp_post_a")]
+transform = Transform3D(1.1, 0, 0, 0, 1.1, 0, 0, 0, 1.1, 0, 0, 0)
 
 [node name="Col" type="StaticBody3D" parent="Nav/LampNE"]
 
@@ -1097,7 +1102,8 @@ omni_range = 9.0
 [node name="LampMW" type="Node3D" parent="Nav"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -53, 0, -33.5)
 
-[node name="Model" parent="Nav/LampMW" instance=ExtResource("12_lamp")]
+[node name="Model" parent="Nav/LampMW" instance=ExtResource("rp_prp_lamp_post_a")]
+transform = Transform3D(1.1, 0, 0, 0, 1.1, 0, 0, 0, 1.1, 0, 0, 0)
 
 [node name="Col" type="StaticBody3D" parent="Nav/LampMW"]
 
@@ -1114,7 +1120,8 @@ omni_range = 9.0
 [node name="LampME" type="Node3D" parent="Nav"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -44, 0, -26.5)
 
-[node name="Model" parent="Nav/LampME" instance=ExtResource("12_lamp")]
+[node name="Model" parent="Nav/LampME" instance=ExtResource("rp_prp_lamp_post_a")]
+transform = Transform3D(1.1, 0, 0, 0, 1.1, 0, 0, 0, 1.1, 0, 0, 0)
 
 [node name="Col" type="StaticBody3D" parent="Nav/LampME"]
 
@@ -1131,7 +1138,8 @@ omni_range = 9.0
 [node name="LampSW" type="Node3D" parent="Nav"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -66, 0, -14)
 
-[node name="Model" parent="Nav/LampSW" instance=ExtResource("12_lamp")]
+[node name="Model" parent="Nav/LampSW" instance=ExtResource("rp_prp_lamp_post_a")]
+transform = Transform3D(1.1, 0, 0, 0, 1.1, 0, 0, 0, 1.1, 0, 0, 0)
 
 [node name="Col" type="StaticBody3D" parent="Nav/LampSW"]
 
@@ -1148,7 +1156,8 @@ omni_range = 9.0
 [node name="LampSE" type="Node3D" parent="Nav"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -35, 0, -10.5)
 
-[node name="Model" parent="Nav/LampSE" instance=ExtResource("12_lamp")]
+[node name="Model" parent="Nav/LampSE" instance=ExtResource("rp_prp_lamp_post_a")]
+transform = Transform3D(1.1, 0, 0, 0, 1.1, 0, 0, 0, 1.1, 0, 0, 0)
 
 [node name="Col" type="StaticBody3D" parent="Nav/LampSE"]
 
@@ -1285,17 +1294,17 @@ Radius = 11.0
 [node name="BannerGateW" type="Node3D" parent="Nav"]
 transform = Transform3D(0.9781, 0, 0.2079, 0, 1, 0, -0.2079, 0, 0.9781, -57.6, 0, -40)
 
-[node name="Model" parent="Nav/BannerGateW" instance=ExtResource("14_banner")]
+[node name="Model" parent="Nav/BannerGateW" instance=ExtResource("rp_prp_banner_a")]
 
 [node name="BannerGateE" type="Node3D" parent="Nav"]
 transform = Transform3D(0.9781, 0, -0.2079, 0, 1, 0, 0.2079, 0, 0.9781, -54.4, 0, -40)
 
-[node name="Model" parent="Nav/BannerGateE" instance=ExtResource("14_banner")]
+[node name="Model" parent="Nav/BannerGateE" instance=ExtResource("rp_prp_banner_a")]
 
 [node name="BannerRowW" type="Node3D" parent="Nav"]
 transform = Transform3D(-0.9848, 0, -0.1736, 0, 1, 0, 0.1736, 0, -0.9848, -40, 0, -27.8)
 
-[node name="Model" parent="Nav/BannerRowW" instance=ExtResource("14_banner")]
+[node name="Model" parent="Nav/BannerRowW" instance=ExtResource("rp_prp_banner_a")]
 
 [node name="Col" type="StaticBody3D" parent="Nav/BannerRowW"]
 
@@ -1322,20 +1331,14 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -47.5, 0, -26)
 script = ExtResource("2_entity")
 DisplayName = "Embermarket Waystone"
 
-[node name="Model" parent="MarketWaystone" instance=ExtResource("13_waystone")]
-
-[node name="Collider" type="StaticBody3D" parent="MarketWaystone"]
-
-[node name="Shape" type="CollisionShape3D" parent="MarketWaystone/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
-shape = SubResource("Shape_waystone")
+[node name="Model" parent="MarketWaystone" instance=ExtResource("rp_lm_waystone")]
 
 [node name="MarketNotice" type="Node3D" parent="."]
 transform = Transform3D(-0.342, 0, -0.9397, 0, 1, 0, 0.9397, 0, -0.342, -53.2, 0, -37)
 script = ExtResource("2_entity")
 DisplayName = "Embermarket Notice"
 
-[node name="Model" parent="MarketNotice" instance=ExtResource("14_banner")]
+[node name="Model" parent="MarketNotice" instance=ExtResource("rp_prp_banner_a")]
 
 [node name="Collider" type="StaticBody3D" parent="MarketNotice"]
 
@@ -1904,7 +1907,8 @@ shape = SubResource("Shape_bench")
 [node name="LampConsign" type="Node3D" parent="Nav"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -22, 0, -19.5)
 
-[node name="Model" parent="Nav/LampConsign" instance=ExtResource("12_lamp")]
+[node name="Model" parent="Nav/LampConsign" instance=ExtResource("rp_prp_lamp_post_a")]
+transform = Transform3D(1.1, 0, 0, 0, 1.1, 0, 0, 0, 1.1, 0, 0, 0)
 
 [node name="Collider" type="StaticBody3D" parent="Nav/LampConsign"]
 

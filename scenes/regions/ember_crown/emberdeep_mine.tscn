@@ -12,14 +12,13 @@
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_timber_stack.glb" id="13_timber"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_market_stand_b.glb" id="14_stand"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_gazebo.glb" id="15_gazebo"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_cart.glb" id="16_cart"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_crate.glb" id="17_crate"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_barrel.glb" id="18_barrel"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_sacks.glb" id="19_sacks"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_brazier.glb" id="20_brazier"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_campfire.glb" id="21_campfire"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_fence.glb" id="22_fence"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_waystone.glb" id="25_waystone"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_pine_dead.glb" id="23_pine"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_rock_cluster.glb" id="24_rocks"]
+[ext_resource type="PackedScene" path="res://assets/models/characters/npc_vendor.glb" id="30_vendor"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_townswoman.glb" id="31_townswoman"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_stall_cart.gltf" id="42_stall_cart"]
 [ext_resource type="Script" path="res://src/World/MapLocationComponent.cs" id="maploc_39_5a"]
@@ -33,6 +32,11 @@
 [ext_resource type="PackedScene" path="res://scenes/props/lm_rock_boulder_a.tscn" id="rp_lm_rock_boulder_a"]
 [ext_resource type="PackedScene" path="res://scenes/props/lm_tree_dead_a.tscn" id="rp_lm_tree_dead_a"]
 [ext_resource type="PackedScene" path="res://scenes/props/lm_pine_fir_a.tscn" id="rp_lm_pine_fir_a"]
+[ext_resource type="PackedScene" path="res://scenes/props/lm_waystone.tscn" id="rp_lm_waystone"]
+[ext_resource type="PackedScene" path="res://assets/models/world/prp_fence_a.glb" id="rp_prp_fence_a"]
+[ext_resource type="PackedScene" path="res://assets/models/world/prp_campfire_a.glb" id="rp_prp_campfire_a"]
+[ext_resource type="PackedScene" path="res://assets/models/world/prp_cart_a.glb" id="rp_prp_cart_a"]
+[ext_resource type="PackedScene" path="res://assets/models/world/prp_clutter_pile_a.glb" id="rp_prp_clutter_pile_a"]
 
 ; THE EMBERDEEP MINE (Phase 38N1) — the realm's first PRODUCTION settlement, and the second market the
 ; economy has been waiting for since 38F.
@@ -119,19 +123,6 @@ size = Vector3(5.67, 1.2, 4.08)
 [sub_resource type="BoxShape3D" id="Shape_stand"]
 size = Vector3(2.5, 2.6, 3.0)
 
-[sub_resource type="BoxShape3D" id="Shape_cart"]
-size = Vector3(0.95, 1.6, 1.9)
-
-[sub_resource type="BoxShape3D" id="Shape_crate"]
-size = Vector3(1.24, 1.24, 1.24)
-
-[sub_resource type="CylinderShape3D" id="Shape_barrel"]
-height = 0.85
-radius = 0.34
-
-[sub_resource type="BoxShape3D" id="Shape_sacks"]
-size = Vector3(1.15, 0.45, 1.05)
-
 [sub_resource type="CylinderShape3D" id="Shape_brazier"]
 height = 1.2
 radius = 0.3
@@ -142,6 +133,13 @@ size = Vector3(2.95, 1.2, 0.16)
 [sub_resource type="CylinderShape3D" id="Shape_waystone"]
 height = 3.0
 radius = 0.8
+
+[sub_resource type="CylinderShape3D" id="Shape_pine"]
+height = 6.0
+radius = 0.4
+
+[sub_resource type="BoxShape3D" id="Shape_rocks"]
+size = Vector3(2.3, 1.4, 1.9)
 
 [sub_resource type="CapsuleShape3D" id="Shape_npc"]
 radius = 0.4
@@ -164,6 +162,45 @@ size = Vector3(0.8, 4.0, 0.8)
 
 [sub_resource type="BoxShape3D" id="Shape_ruin_42b"]
 size = Vector3(4, 5, 1)
+[sub_resource type="BoxShape3D" id="RpShape_FenceA"]
+size = Vector3(2.14, 1.2, 0.3)
+
+[sub_resource type="BoxShape3D" id="RpShape_FenceB"]
+size = Vector3(2.14, 1.2, 0.3)
+
+[sub_resource type="BoxShape3D" id="RpShape_FenceC"]
+size = Vector3(2.14, 1.2, 0.3)
+
+[sub_resource type="BoxShape3D" id="RpShape_FenceD"]
+size = Vector3(2.14, 1.2, 0.3)
+
+[sub_resource type="BoxShape3D" id="RpShape_CartA"]
+size = Vector3(3.4, 1.5, 1.9)
+
+[sub_resource type="BoxShape3D" id="RpShape_CartB"]
+size = Vector3(3.4, 1.5, 1.9)
+
+[sub_resource type="BoxShape3D" id="RpShape_CartC"]
+size = Vector3(3.4, 1.5, 1.9)
+
+[sub_resource type="BoxShape3D" id="RpShape_SacksC"]
+size = Vector3(2.3, 1.3, 1.5)
+
+[sub_resource type="BoxShape3D" id="RpShape_BarrelC"]
+size = Vector3(2.3, 1.3, 1.5)
+
+[sub_resource type="BoxShape3D" id="RpShape_CrateE"]
+size = Vector3(2.3, 1.3, 1.5)
+
+[sub_resource type="BoxShape3D" id="RpShape_CrateD"]
+size = Vector3(2.3, 1.3, 1.5)
+
+[sub_resource type="BoxShape3D" id="RpShape_SacksA"]
+size = Vector3(2.3, 1.3, 1.5)
+
+[sub_resource type="BoxShape3D" id="RpShape_CrateA"]
+size = Vector3(2.3, 1.3, 1.5)
+
 [node name="EmberdeepMine" type="Node3D"]
 metadata/content_offset = Vector2(-30, 12.5)
 
@@ -262,64 +299,54 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.315, 0)
 shape = SubResource("Shape_stall_cart")
 
 [node name="CartA" type="Node3D" parent="Nav"]
-transform = Transform3D(0.766, 0, 0.6428, 0, 1, 0, -0.6428, 0, 0.766, -40, 0, 24.5)
+transform = Transform3D(-0.45, 0, 0.5362, 0, 0.7, 0, -0.5362, 0, -0.45, -40, 0, 24.5)
 
-[node name="Model" parent="Nav/CartA" instance=ExtResource("16_cart")]
+[node name="Model" parent="Nav/CartA" instance=ExtResource("rp_prp_cart_a")]
 
 [node name="Collider" type="StaticBody3D" parent="Nav/CartA"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/CartA/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
-shape = SubResource("Shape_cart")
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.75, 0)
+shape = SubResource("RpShape_CartA")
 
 [node name="CartB" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.866, 0, -0.5, 0, 1, 0, 0.5, 0, -0.866, -27.5, 0, 21)
+transform = Transform3D(0.35, 0, -0.6062, 0, 0.7, 0, 0.6062, 0, 0.35, -27.5, 0, 21)
 
-[node name="Model" parent="Nav/CartB" instance=ExtResource("16_cart")]
+[node name="Model" parent="Nav/CartB" instance=ExtResource("rp_prp_cart_a")]
 
 [node name="Collider" type="StaticBody3D" parent="Nav/CartB"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/CartB/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
-shape = SubResource("Shape_cart")
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.75, 0)
+shape = SubResource("RpShape_CartB")
 
 [node name="CrateA" type="Node3D" parent="Nav"]
-transform = Transform3D(0.9063, 0, 0.4226, 0, 1, 0, -0.4226, 0, 0.9063, -45.5, 0, 28.5)
+transform = Transform3D(0.7251, 0, 0.3381, 0, 0.8, 0, -0.3381, 0, 0.7251, -45.5, 0, 28.5)
 
-[node name="Model" parent="Nav/CrateA" instance=ExtResource("17_crate")]
+[node name="Model" parent="Nav/CrateA" instance=ExtResource("rp_prp_clutter_pile_a")]
 
 [node name="Collider" type="StaticBody3D" parent="Nav/CrateA"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/CrateA/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.62, 0)
-shape = SubResource("Shape_crate")
-
-[node name="BarrelA" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -45, 0, 20.5)
-
-[node name="Model" parent="Nav/BarrelA" instance=ExtResource("18_barrel")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/BarrelA"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/BarrelA/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.42, 0)
-shape = SubResource("Shape_barrel")
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.65, 0)
+shape = SubResource("RpShape_CrateA")
 
 [node name="SacksA" type="Node3D" parent="Nav"]
-transform = Transform3D(0.342, 0, 0.9397, 0, 1, 0, -0.9397, 0, 0.342, -38, 0, 29.5)
+transform = Transform3D(0.2736, 0, 0.7518, 0, 0.8, 0, -0.7518, 0, 0.2736, -38, 0, 29.5)
 
-[node name="Model" parent="Nav/SacksA" instance=ExtResource("19_sacks")]
+[node name="Model" parent="Nav/SacksA" instance=ExtResource("rp_prp_clutter_pile_a")]
 
 [node name="Collider" type="StaticBody3D" parent="Nav/SacksA"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/SacksA/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.22, 0)
-shape = SubResource("Shape_sacks")
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.65, 0)
+shape = SubResource("RpShape_SacksA")
 
 [node name="ShiftFire" type="Node3D" parent="Nav"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -49, 0, 27.5)
 
-[node name="Model" parent="Nav/ShiftFire" instance=ExtResource("21_campfire")]
+[node name="Model" parent="Nav/ShiftFire" instance=ExtResource("rp_prp_campfire_a")]
+transform = Transform3D(0.6, 0, 0, 0, 0.6, 0, 0, 0, 0.6, 0, 0, 0)
 
 [node name="Coals" type="MeshInstance3D" parent="Nav/ShiftFire"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.2, 0)
@@ -378,26 +405,26 @@ omni_range = 10.0
 
 ; --- Edges: fence along the yard's south side, dead pines and rock at the approach.
 [node name="FenceA" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -52.5, 0, 23)
+transform = Transform3D(1.45, 0, 0, 0, 1.45, 0, 0, 0, 1.45, -52.5, 0, 23)
 
-[node name="Model" parent="Nav/FenceA" instance=ExtResource("22_fence")]
+[node name="Model" parent="Nav/FenceA" instance=ExtResource("rp_prp_fence_a")]
 
 [node name="Collider" type="StaticBody3D" parent="Nav/FenceA"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/FenceA/Collider"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
-shape = SubResource("Shape_fence")
+shape = SubResource("RpShape_FenceA")
 
 [node name="FenceB" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -49.5, 0, 23)
+transform = Transform3D(-1.45, 0, 0, 0, 1.45, 0, 0, 0, -1.45, -49.5, 0, 23)
 
-[node name="Model" parent="Nav/FenceB" instance=ExtResource("22_fence")]
+[node name="Model" parent="Nav/FenceB" instance=ExtResource("rp_prp_fence_a")]
 
 [node name="Collider" type="StaticBody3D" parent="Nav/FenceB"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/FenceB/Collider"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
-shape = SubResource("Shape_fence")
+shape = SubResource("RpShape_FenceB")
 
 [node name="PineA" type="Node3D" parent="Nav"]
 transform = Transform3D(0.9726, 0, 0.354, 0, 1.035, 0, -0.354, 0, 0.9726, -54, 0, 32.5)
@@ -430,13 +457,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -52, 0, 14.5)
 script = ExtResource("2_entity")
 DisplayName = "Emberdeep Waystone"
 
-[node name="Model" parent="MineWaystone" instance=ExtResource("25_waystone")]
-
-[node name="Collider" type="StaticBody3D" parent="MineWaystone"]
-
-[node name="Shape" type="CollisionShape3D" parent="MineWaystone/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
-shape = SubResource("Shape_waystone")
+[node name="Model" parent="MineWaystone" instance=ExtResource("rp_lm_waystone")]
 
 [node name="Travel" type="Node" parent="MineWaystone"]
 script = ExtResource("3_travel")
@@ -559,81 +580,81 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
 shape = SubResource("Shape_timber")
 
 [node name="CrateD" type="Node3D" parent="Nav"]
-transform = Transform3D(0.9659, 0, 0.2588, 0, 1, 0, -0.2588, 0, 0.9659, -32, 0, 30)
+transform = Transform3D(0.7727, 0, 0.207, 0, 0.8, 0, -0.207, 0, 0.7727, -32, 0, 30)
 
-[node name="Model" parent="Nav/CrateD" instance=ExtResource("17_crate")]
+[node name="Model" parent="Nav/CrateD" instance=ExtResource("rp_prp_clutter_pile_a")]
 
 [node name="Collider" type="StaticBody3D" parent="Nav/CrateD"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/CrateD/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.62, 0)
-shape = SubResource("Shape_crate")
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.65, 0)
+shape = SubResource("RpShape_CrateD")
 
 [node name="CrateE" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.342, 0, -0.9397, 0, 1, 0, 0.9397, 0, -0.342, -18, 0, 10)
+transform = Transform3D(-0.2736, 0, -0.7518, 0, 0.8, 0, 0.7518, 0, -0.2736, -18, 0, 10)
 
-[node name="Model" parent="Nav/CrateE" instance=ExtResource("17_crate")]
+[node name="Model" parent="Nav/CrateE" instance=ExtResource("rp_prp_clutter_pile_a")]
 
 [node name="Collider" type="StaticBody3D" parent="Nav/CrateE"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/CrateE/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.62, 0)
-shape = SubResource("Shape_crate")
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.65, 0)
+shape = SubResource("RpShape_CrateE")
 
 [node name="BarrelC" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -33, 0, 17.5)
+transform = Transform3D(0.8, 0, 0, 0, 0.8, 0, 0, 0, 0.8, -33, 0, 17.5)
 
-[node name="Model" parent="Nav/BarrelC" instance=ExtResource("18_barrel")]
+[node name="Model" parent="Nav/BarrelC" instance=ExtResource("rp_prp_clutter_pile_a")]
 
 [node name="Collider" type="StaticBody3D" parent="Nav/BarrelC"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/BarrelC/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.42, 0)
-shape = SubResource("Shape_barrel")
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.65, 0)
+shape = SubResource("RpShape_BarrelC")
 
 [node name="SacksC" type="Node3D" parent="Nav"]
-transform = Transform3D(0.866, 0, -0.5, 0, 1, 0, 0.5, 0, 0.866, -44, 0, 23.5)
+transform = Transform3D(0.7794, 0, -0.45, 0, 0.9, 0, 0.45, 0, 0.7794, -44, 0, 23.5)
 
-[node name="Model" parent="Nav/SacksC" instance=ExtResource("19_sacks")]
+[node name="Model" parent="Nav/SacksC" instance=ExtResource("rp_prp_clutter_pile_a")]
 
 [node name="Collider" type="StaticBody3D" parent="Nav/SacksC"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/SacksC/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.22, 0)
-shape = SubResource("Shape_sacks")
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.65, 0)
+shape = SubResource("RpShape_SacksC")
 
 [node name="CartC" type="Node3D" parent="Nav"]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -14, 0, 19.5)
+transform = Transform3D(-0.7, 0, 0, 0, 0.7, 0, 0, 0, -0.7, -14, 0, 19.5)
 
-[node name="Model" parent="Nav/CartC" instance=ExtResource("16_cart")]
+[node name="Model" parent="Nav/CartC" instance=ExtResource("rp_prp_cart_a")]
 
 [node name="Collider" type="StaticBody3D" parent="Nav/CartC"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/CartC/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
-shape = SubResource("Shape_cart")
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.75, 0)
+shape = SubResource("RpShape_CartC")
 
 [node name="FenceC" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -46.5, 0, 23)
+transform = Transform3D(1.45, 0, 0, 0, 1.45, 0, 0, 0, 1.45, -46.5, 0, 23)
 
-[node name="Model" parent="Nav/FenceC" instance=ExtResource("22_fence")]
+[node name="Model" parent="Nav/FenceC" instance=ExtResource("rp_prp_fence_a")]
 
 [node name="Collider" type="StaticBody3D" parent="Nav/FenceC"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/FenceC/Collider"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
-shape = SubResource("Shape_fence")
+shape = SubResource("RpShape_FenceC")
 
 [node name="FenceD" type="Node3D" parent="Nav"]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -53.5, 0, 27.5)
+transform = Transform3D(0, 0, -1.45, 0, 1.45, 0, 1.45, 0, 0, -53.5, 0, 27.5)
 
-[node name="Model" parent="Nav/FenceD" instance=ExtResource("22_fence")]
+[node name="Model" parent="Nav/FenceD" instance=ExtResource("rp_prp_fence_a")]
 
 [node name="Collider" type="StaticBody3D" parent="Nav/FenceD"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/FenceD/Collider"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
-shape = SubResource("Shape_fence")
+shape = SubResource("RpShape_FenceD")
 
 [node name="PineD" type="Node3D" parent="Nav"]
 transform = Transform3D(0.6205, 0, -1.0747, 0, 1.241, 0, 1.0747, 0, 0.6205, -54, 0, -3.5)

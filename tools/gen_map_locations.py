@@ -330,6 +330,68 @@ add("celestial/ash_throne", "celestial.ash_throne", "Landmark", "ThroneMark", "T
     desc="The highest dais in the ruined heaven. Someone must always sit upon it.", tier="Primary")
 
 
+# ── The monumental layer (2026-10 world overhaul) ─────────────────────────────────────────────
+# The dead gods and the dragons, in stone and bone: solid pieces 14 to 54 m tall placed by
+# tools/district_layouts.py (the *_monuments() rows) and written into the cells as Dx_* nodes by
+# tools/compose_district.py, which must run before this tool so the anchors exist. Each is a place a
+# player can walk to, so each is on the map: one pin per SITE, on its tallest piece. Nothing here is a
+# quest destination, a shop or a travel node, and nothing is revealed on arrival: they are found by
+# being seen, which is what they are for. Road stones and tors are terrain, not places, and take no pin.
+add("ember_crown/crown_pass", "ember_crown.pass_colossi", "Landmark", "Nav/Dx_CrownPassColossusW", "The Pass Colossi",
+    desc="Two stone gods, one each side of the road where it climbs to the Crown Pass. Nobody living raised them.")
+add("ember_crown/east_uplands", "ember_crown.emberspire_bones", "Landmark", "Nav/Dx_EmberspireBones", "The Emberspire Bones",
+    desc="A dragon's skeleton on the heath under the Emberspire, beside the track to the arena.")
+add("ember_crown/southern_fens", "ember_crown.fen_head", "Landmark", "Nav/Dx_FenColossusHead", "The Drowned Face",
+    desc="The head of a stone god, half sunk in the southern fens.")
+add("ember_crown/heath_south", "ember_crown.frontier_watch", "Landmark", "Nav/Dx_FrontierRuinTower", "The Frontier Watch",
+    desc="A watch tower beside the frontier road, long fallen in.")
+add("frostfang_reach/vale_head", "frostfang.hold_pass_colossus", "Landmark", "Nav/Dx_HoldPassColossus", "The Hold Pass Colossus",
+    desc="A stone god in the gap behind the Clan Hold, taller than the wall it stands beyond.")
+add("frostfang_reach/dragon_roost", "frostfang.roost_bones", "Landmark", "Nav/Dx_RoostBones", "The Roost Bones",
+    desc="What the roost's owner left of the dragon that held it before.")
+add("frostfang_reach/burnt_col", "frostfang.burnt_col_bones", "Landmark", "Nav/Dx_BurntColBones", "The Burnt Col Bones",
+    desc="A dragon's skeleton, black with old ash, below the road to the Ash Roost.")
+add("frostfang_reach/ancient_aerie", "frostfang.aerie_bones", "Landmark", "Nav/Dx_AerieBones", "The Aerie Bones",
+    desc="Bones at the foot of the Aerie's avenue. The clans say they were there before the avenue was.")
+add("frostfang_reach/stormcrown", "frostfang.broken_spire", "Landmark", "Nav/Dx_StormcrownSpire", "The Broken Spire",
+    desc="A storm-blackened tower behind the duelling ground, under Stormcrown itself.")
+add("ashen_wilds/ash_plateau", "ashen.plateau_colossus", "Landmark", "Nav/Dx_AshPlateauColossus", "The Ash Plateau Colossus",
+    desc="A soot-dark god on the flat top of the plateau, facing the Hunters' station.")
+add("ashen_wilds/crater_field", "ashen.crater_bones", "Landmark", "Nav/Dx_CraterBones", "The Crater Bones",
+    desc="A dragon's skeleton at the western lip of the crater.")
+add("ashen_wilds/crater_field", "ashen.crater_head", "Landmark", "Nav/Dx_CraterHead", "The Fallen Face",
+    desc="A god's head on the crater's eastern rim, turned toward the plateau.")
+add("ashen_wilds/breach_scar", "ashen.scar_arch", "Landmark", "Nav/Dx_ScarArch", "The Scar Arch",
+    desc="The gate the old road ran through, north of where the scar road runs now.")
+add("sunspire/sand_sea", "sunspire.library_colossi", "Landmark", "Nav/Dx_LibraryColossusN", "The Library Colossi",
+    desc="Two sandstone gods flanking the road to the Great Library.")
+add("sunspire/sand_sea", "sunspire.sand_sea_colossus", "Landmark", "Nav/Dx_SandSeaHead", "The Sand Sea Colossus",
+    desc="A god stands on the lone butte in the sand sea. The head at its foot belonged to another.")
+add("sunspire/salt_basin", "sunspire.salt_bones", "Landmark", "Nav/Dx_SaltBasinBones", "The Salt Basin Bones",
+    desc="A dragon's skeleton, bleached white, in the middle of the salt basin.")
+add("sunspire/caravan_gap", "sunspire.caravan_arch", "Landmark", "Nav/Dx_CaravanArch", "The Caravan Arch",
+    desc="The old gate of the caravan road, standing alone in the dunes south of the Gap.")
+add("sunspire/pilgrim_track", "sunspire.pilgrim_stones", "Landmark", "Nav/Dx_PilgrimStone3", "The Pilgrim Stones",
+    desc="Standing stones by turns along the track to the Mission.")
+add("pale_concord/processional", "pale.processional_colossi", "Landmark", "Nav/Dx_ProcessionalColossusE",
+    "The Processional Colossi", required_flag=PALE_REVEALED,
+    desc="Two white gods, one each side of the processional way.")
+add("pale_concord/processional", "pale.fallen_hall", "Landmark", "Nav/Dx_ProcessionalHall", "The Fallen Hall",
+    required_flag=PALE_REVEALED, desc="A row of columns still carrying its stone, east of the processional way.")
+add("pale_concord/east_canal", "pale.canal_arch", "Landmark", "Nav/Dx_CanalArch", "The Canal Arch",
+    required_flag=PALE_REVEALED, desc="The arch the city's east road ends under, short of the canal.")
+add("celestial/godfall", "celestial.godfall_hall", "Landmark", "Nav/Dx_GodfallHall", "The Godfall Hall",
+    desc="What is left standing of the hall that came down here.")
+add("celestial/fallen_choir", "celestial.choir_hall", "Landmark", "Nav/Dx_ChoirHall", "The Choir Hall",
+    desc="A second fragment of the gods' hall, on the terrace west of the rift.")
+add("celestial/shattered_rim", "celestial.rim_colossus", "Landmark", "Nav/Dx_RimColossus", "The Rim Colossus",
+    desc="A god on the broken western terrace, facing the throne.")
+add("celestial/void_edge", "celestial.void_face", "Landmark", "Nav/Dx_VoidEdgeHead", "The Void Edge Face",
+    desc="A god's head on the last terrace before the void.")
+add("celestial/sundered_stair", "celestial.sundered_arch", "Landmark", "Nav/Dx_SunderedArch", "The Sundered Arch",
+    desc="An arch on the terrace east of the gate, with nothing behind it.")
+
+
 def _cell_ids():
     """scene stem -> cell id, read from the region specs (2026-09 world rebuild: the hand list of
     fifteen cells here went stale the day the realm grew to fifty-two)."""

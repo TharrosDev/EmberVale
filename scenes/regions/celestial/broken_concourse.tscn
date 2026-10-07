@@ -1,8 +1,8 @@
 [gd_scene format=3]
 
 [ext_resource type="Script" path="res://src/World/CellNavBaker.cs" id="1_navbaker"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_ruin_pillar.glb" id="2_pillar"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_ruin_wall.glb" id="3_wall"]
+[ext_resource type="PackedScene" path="res://scenes/props/lm_column_broken.tscn" id="rp_lm_column_broken"]
+[ext_resource type="PackedScene" path="res://scenes/props/lm_wall_ruin.tscn" id="rp_lm_wall_ruin"]
 
 ; THE BROKEN CONCOURSE (the finish run, Act IV) — the processional terraces between the landing and
 ; the void rift. The road climbs across them; what is left of the colonnade stands off the road on
@@ -17,12 +17,6 @@ agent_radius = 0.8
 agent_max_climb = 0.3
 agent_max_slope = 40.0
 
-[sub_resource type="BoxShape3D" id="Shape_pillar"]
-size = Vector3(1, 3.13, 1)
-
-[sub_resource type="BoxShape3D" id="Shape_wall"]
-size = Vector3(4, 4, 0.88)
-
 [node name="BrokenConcourseCell" type="Node3D"]
 
 [node name="Nav" type="NavigationRegion3D" parent="."]
@@ -31,38 +25,18 @@ navigation_mesh = SubResource("NavMesh_broken_concourse")
 [node name="NavBaker" type="Node" parent="Nav"]
 script = ExtResource("1_navbaker")
 
-[node name="ColonnadeA" parent="Nav" instance=ExtResource("2_pillar")]
-transform = Transform3D(1.5, 0, 0, 0, 2.2, 0, 0, 0, 1.5, 4, 0, -88)
+[node name="ColonnadeA" parent="Nav" instance=ExtResource("rp_lm_column_broken")]
+transform = Transform3D(0.9, 0, 0, 0, 0.9, 0, 0, 0, 0.9, 4, 0, -88)
+albedo_tint = Color(0.665, 0.634, 0.666, 1)
 
-[node name="Col" type="StaticBody3D" parent="Nav/ColonnadeA"]
+[node name="ColonnadeB" parent="Nav" instance=ExtResource("rp_lm_column_broken")]
+transform = Transform3D(0.6, 0, 0, 0, 0.6, 0, 0, 0, 0.6, 12, 0, -86)
+albedo_tint = Color(0.665, 0.634, 0.666, 1)
 
-[node name="Shape" type="CollisionShape3D" parent="Nav/ColonnadeA/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.56, 0)
-shape = SubResource("Shape_pillar")
+[node name="ColonnadeC" parent="Nav" instance=ExtResource("rp_lm_column_broken")]
+transform = Transform3D(0.8, 0, 0, 0, 0.8, 0, 0, 0, 0.8, 20, 0, -90)
+albedo_tint = Color(0.665, 0.634, 0.666, 1)
 
-[node name="ColonnadeB" parent="Nav" instance=ExtResource("2_pillar")]
-transform = Transform3D(1.5, 0, 0, 0, 1.1, 0, 0, 0, 1.5, 12, 0, -86)
-
-[node name="Col" type="StaticBody3D" parent="Nav/ColonnadeB"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/ColonnadeB/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.56, 0)
-shape = SubResource("Shape_pillar")
-
-[node name="ColonnadeC" parent="Nav" instance=ExtResource("2_pillar")]
-transform = Transform3D(1.5, 0, 0, 0, 1.8, 0, 0, 0, 1.5, 20, 0, -90)
-
-[node name="Col" type="StaticBody3D" parent="Nav/ColonnadeC"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/ColonnadeC/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.56, 0)
-shape = SubResource("Shape_pillar")
-
-[node name="FallenWall" parent="Nav" instance=ExtResource("3_wall")]
-transform = Transform3D(0.866, 0, -0.5, 0, 1, 0, 0.5, 0, 0.866, -44, 0, -72)
-
-[node name="Col" type="StaticBody3D" parent="Nav/FallenWall"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/FallenWall/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
-shape = SubResource("Shape_wall")
+[node name="FallenWall" parent="Nav" instance=ExtResource("rp_lm_wall_ruin")]
+transform = Transform3D(0.6928, 0, -0.4, 0, 0.8, 0, 0.4, 0, 0.6928, -44, 0, -72)
+albedo_tint = Color(0.646, 0.598, 0.612, 1)

@@ -9,6 +9,8 @@
 [ext_resource type="Resource" path="res://data/items/IronOre.tres" id="7_ore"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_ruin_pillar.glb" id="10_pillar"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_ruin_wall.glb" id="11_ruinwall"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_pine_dead.glb" id="8_pine"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_rock_cluster.glb" id="9_rocks"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_crate.glb" id="12_crate"]
 [ext_resource type="Script" path="res://src/World/MapLocationComponent.cs" id="maploc_39_5a"]
 [ext_resource type="PackedScene" path="res://scenes/props/bld_deadfall_lodge.tscn" id="42b_bld_deadfall_lodge"]
@@ -25,6 +27,8 @@
 [ext_resource type="PackedScene" path="res://scenes/props/lm_tree_dead_a.tscn" id="rp_lm_tree_dead_a"]
 [ext_resource type="PackedScene" path="res://scenes/props/lm_rock_boulder_a.tscn" id="rp_lm_rock_boulder_a"]
 [ext_resource type="PackedScene" path="res://scenes/props/lm_tree_oak_a.tscn" id="rp_lm_tree_oak_a"]
+[ext_resource type="PackedScene" path="res://scenes/props/lm_column_broken.tscn" id="rp_lm_column_broken"]
+[ext_resource type="PackedScene" path="res://scenes/props/lm_wall_ruin.tscn" id="rp_lm_wall_ruin"]
 
 ; THE NORTHERN WILDS (the 2026-08-28 layout rebuild) — the frontier between the Crossway gate and the arena, and
 ; the cell the EncounterDirector uses more than any other.
@@ -78,6 +82,9 @@ size = Vector3(4, 5, 1)
 [sub_resource type="BoxShape3D" id="Shape_pillar"]
 size = Vector3(3.5, 0.7, 0.7)
 
+[sub_resource type="BoxShape3D" id="Shape_rock"]
+size = Vector3(3, 2.5, 3)
+
 [sub_resource type="BoxShape3D" id="Shape_crate"]
 size = Vector3(1.2, 1, 1.2)
 
@@ -113,6 +120,12 @@ emission_energy_multiplier = 0.3
 
 [sub_resource type="BoxShape3D" id="Shape_ruin_pillar"]
 size = Vector3(1.0, 3.13, 1.0)
+
+[sub_resource type="BoxShape3D" id="Shape_pine_trunk"]
+size = Vector3(0.55, 4.9, 0.55)
+
+[sub_resource type="BoxShape3D" id="Shape_rock_cluster"]
+size = Vector3(2.26, 1.41, 1.84)
 
 
 [sub_resource type="CapsuleShape3D" id="Shape_npc"]
@@ -172,13 +185,10 @@ navigation_mesh = SubResource("NavMesh_wn")
 [node name="NavBaker" type="Node" parent="Nav"]
 script = ExtResource("1_navbaker")
 
+; The generated wall is an L whose long run stands 1 m (at this scale) toward +Z of its origin, so the
+; node sits 1.3 m north of the old panel: the run is back on the old line and the gem lies at its foot.
 [node name="RuinWall" type="MeshInstance3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 2.5, 27)
-
-[node name="RuinCol" type="StaticBody3D" parent="Nav/RuinWall"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/RuinWall/RuinCol"]
-shape = SubResource("Shape_ruin")
+transform = Transform3D(0.6, 0, 0, 0, 0.6, 0, 0, 0, 0.6, 10, 0, 25.7)
 
 [node name="RockE" type="MeshInstance3D" parent="Nav"]
 transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, 24, 1.25, 19)
@@ -187,12 +197,7 @@ transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, 24, 1.25, 19)
 transform = Transform3D(-0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, -0.9397, -11, 1.25, 38)
 
 [node name="FallenPillar" type="MeshInstance3D" parent="Nav"]
-transform = Transform3D(0.9397, 0, 0.342, 0, 1, 0, -0.342, 0, 0.9397, 12, 0.35, 34)
-
-[node name="PillarCol" type="StaticBody3D" parent="Nav/FallenPillar"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/FallenPillar/PillarCol"]
-shape = SubResource("Shape_pillar")
+transform = Transform3D(0.3289, 0, 0.1197, 0, 0.35, 0, -0.1197, 0, 0.3289, 12, 0, 34)
 
 [node name="Crate" type="MeshInstance3D" parent="Nav"]
 transform = Transform3D(0.766, 0, 0.6428, 0, 1, 0, -0.6428, 0, 0.766, 8, 0.5, 31)
@@ -305,20 +310,13 @@ transform = Transform3D(0.2353, 0, 0.2804, 0, 0.366, 0, -0.2804, 0, 0.2353, -8, 
 [node name="Rocks2" parent="Nav" instance=ExtResource("rp_lm_rock_boulder_a")]
 transform = Transform3D(-0.1252, 0, -0.3439, 0, 0.366, 0, 0.3439, 0, -0.1252, -10, -0.12, 47)
 
-[node name="RuinPillar1" parent="." instance=ExtResource("10_pillar")]
-transform = Transform3D(-0.9848, 0, 0.1736, 0, 1, 0, -0.1736, 0, -0.9848, 5, 0, 29)
+[node name="RuinPillar1" parent="." instance=ExtResource("rp_lm_column_broken")]
+transform = Transform3D(-0.4924, 0, 0.0868, 0, 0.5, 0, -0.0868, 0, -0.4924, 5, 0, 29)
 
-[node name="RuinPillar2" parent="Nav" instance=ExtResource("10_pillar")]
-transform = Transform3D(0.1736, 0, 0.9848, 0, 1, 0, -0.9848, 0, 0.1736, 15, 0, 30)
+[node name="RuinPillar2" parent="Nav" instance=ExtResource("rp_lm_column_broken")]
+transform = Transform3D(0.0781, 0, 0.4432, 0, 0.45, 0, -0.4432, 0, 0.0781, 15, 0, 30)
 
-[node name="Col" type="StaticBody3D" parent="Nav/RuinPillar2"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/RuinPillar2/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.565, 0)
-shape = SubResource("Shape_ruin_pillar")
-
-[node name="Model" parent="Nav/RuinWall" instance=ExtResource("11_ruinwall")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -2.5, 0)
+[node name="Model" parent="Nav/RuinWall" instance=ExtResource("rp_lm_wall_ruin")]
 
 [node name="Model" parent="Nav/RockE" instance=ExtResource("rp_lm_rock_boulder_a")]
 transform = Transform3D(0.952, 0, 0, 0, 0.952, 0, 0, 0, 0.952, 0, -1.25, 0)
@@ -326,8 +324,7 @@ transform = Transform3D(0.952, 0, 0, 0, 0.952, 0, 0, 0, 0.952, 0, -1.25, 0)
 [node name="Model" parent="Nav/RockW" instance=ExtResource("rp_lm_rock_boulder_a")]
 transform = Transform3D(-0.8788, 0, 0.3662, 0, 0.952, 0, -0.3662, 0, -0.8788, 0, -1.25, 0)
 
-[node name="Model" parent="Nav/FallenPillar" instance=ExtResource("10_pillar")]
-transform = Transform3D(0, 1, 0, -1, 0, 0, 0, 0, 1, -1.6, 0, 0)
+[node name="Model" parent="Nav/FallenPillar" instance=ExtResource("rp_lm_column_broken")]
 
 [node name="Model" parent="Nav/Crate" instance=ExtResource("12_crate")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
@@ -361,23 +358,11 @@ transform = Transform3D(-0.4761, 0, -0.293, 0, 0.559, 0, 0.293, 0, -0.4761, -6, 
 [node name="CairnRise" parent="Nav" instance=ExtResource("rp_lm_rock_boulder_a")]
 transform = Transform3D(1.025, 0, 0, 0, 1.244, 0, 0, 0, 1.025, -9, 0, 15)
 
-[node name="RuinPillar3" parent="Nav" instance=ExtResource("10_pillar")]
-transform = Transform3D(0.87, 0.06, 0.5, -0.06, 1, 0, -0.5, 0.03, 0.87, 7, 0, 38)
+[node name="RuinPillar3" parent="Nav" instance=ExtResource("rp_lm_column_broken")]
+transform = Transform3D(0.4327, 0.0299, 0.2491, -0.0298, 0.4989, 0, -0.2487, 0.015, 0.4335, 7, 0, 38)
 
-[node name="Col" type="StaticBody3D" parent="Nav/RuinPillar3"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/RuinPillar3/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.565, 0)
-shape = SubResource("Shape_ruin_pillar")
-
-[node name="RuinPillar4" parent="Nav" instance=ExtResource("10_pillar")]
-transform = Transform3D(-0.5, 0, 0.87, 0, 1, 0, -0.87, 0, -0.5, 14, 0, 23)
-
-[node name="Col" type="StaticBody3D" parent="Nav/RuinPillar4"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/RuinPillar4/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.565, 0)
-shape = SubResource("Shape_ruin_pillar")
+[node name="RuinPillar4" parent="Nav" instance=ExtResource("rp_lm_column_broken")]
+transform = Transform3D(-0.1993, 0, 0.3468, 0, 0.4, 0, -0.3468, 0, -0.1993, 14, 0, 23)
 
 ; ====================================================================================================
 ; GROUND COVER (38B) - the layer this cell never had. Bare ground with four dead pines standing on it

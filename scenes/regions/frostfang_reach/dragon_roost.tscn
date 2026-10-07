@@ -22,6 +22,8 @@
 
 [sub_resource type="BoxShape3D" id="DxShape_ruin_pillar"]
 size = Vector3(1.2, 4, 1.2)
+[ext_resource type="PackedScene" path="res://scenes/props/lm_dragon_skeleton.tscn" id="dx_dragon_skeleton"]
+[ext_resource type="PackedScene" path="res://scenes/props/lm_monolith_a.tscn" id="dx_monolith"]
 
 [node name="DragonRoostCell" instance=ExtResource("1_roost")]
 metadata/content_offset = Vector2(15, -20)
@@ -102,24 +104,17 @@ position = Vector3(1, 0, -40)
 script = ExtResource("maploc_39_5a")
 LocationId = "location.frostfang.dragon_roost"
 
-[node name="Dx_RoostMarkerA" type="Node3D" parent="Nav"]
-transform = Transform3D(1.5, 0, 0, 0, 1.5, 0, 0, 0, 1.5, 83, 0, 10)
+[node name="Dx_RoostMarkerA" parent="Nav" instance=ExtResource("dx_monolith")]
+transform = Transform3D(1.2, 0, 0, 0, 1.2, 0, 0, 0, 1.2, 83, -0.4, 10)
+albedo_tint = Color(0.86, 0.92, 1, 1)
 
-[node name="Model" parent="Nav/Dx_RoostMarkerA" instance=ExtResource("dx_ruin_pillar")]
+[node name="Dx_RoostMarkerB" parent="Nav" instance=ExtResource("dx_monolith")]
+transform = Transform3D(0.7794, 0, -0.45, 0, 0.9, 0, 0.45, 0, 0.7794, 97, -0.3, -10)
+albedo_tint = Color(0.86, 0.92, 1, 1)
 
-[node name="Collider" type="StaticBody3D" parent="Nav/Dx_RoostMarkerA"]
+[node name="Dx_RoostBones" parent="Nav" instance=ExtResource("dx_dragon_skeleton")]
+transform = Transform3D(0.8, 0, -1.3856, 0, 1.6, 0, 1.3856, 0, 0.8, 53, -1, 24)
 
-[node name="Shape" type="CollisionShape3D" parent="Nav/Dx_RoostMarkerA/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
-shape = SubResource("DxShape_ruin_pillar")
-
-[node name="Dx_RoostMarkerB" type="Node3D" parent="Nav"]
-transform = Transform3D(1.0392, 0, -0.6, 0, 1.2, 0, 0.6, 0, 1.0392, 97, 0, -10)
-
-[node name="Model" parent="Nav/Dx_RoostMarkerB" instance=ExtResource("dx_ruin_pillar")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/Dx_RoostMarkerB"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/Dx_RoostMarkerB/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
-shape = SubResource("DxShape_ruin_pillar")
+[node name="MapPin" type="Node3D" parent="Nav/Dx_RoostBones"]
+script = ExtResource("maploc_39_5a")
+LocationId = "location.frostfang.roost_bones"

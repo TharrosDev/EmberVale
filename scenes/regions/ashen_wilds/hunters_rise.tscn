@@ -7,15 +7,15 @@
 [ext_resource type="Script" path="res://src/Animation/CharacterAnimationComponent.cs" id="5_charanim"]
 [ext_resource type="Script" path="res://src/Animation/EquipmentPresentationComponent.cs" id="6_equipment"]
 [ext_resource type="Script" path="res://src/World/CellNavBaker.cs" id="7_navbaker"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_tent.glb" id="p_tent"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_campfire.glb" id="p_campfire"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_brazier.glb" id="p_brazier"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_crate.glb" id="p_crate"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_watch_tower.glb" id="p_tower"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_guild_rep.glb" id="c_warden"]
 [ext_resource type="Script" path="res://src/World/MapLocationComponent.cs" id="maploc_39_5a"]
-[ext_resource type="PackedScene" path="res://scenes/props/prp_beast_stake.tscn" id="wb_prp_beast_stake"]
 [ext_resource type="Script" path="res://src/World/FlagVisibilityComponent.cs" id="wb_flagvisibilitycomponent"]
+[ext_resource type="PackedScene" path="res://scenes/props/lm_gate_tower.tscn" id="rp_lm_gate_tower"]
+[ext_resource type="PackedScene" path="res://assets/models/world/prp_lm_bone_arch.glb" id="rp_prp_lm_bone_arch"]
+[ext_resource type="PackedScene" path="res://assets/models/world/prp_tent_a.glb" id="rp_prp_tent_a"]
+[ext_resource type="PackedScene" path="res://assets/models/world/prp_campfire_a.glb" id="rp_prp_campfire_a"]
+[ext_resource type="PackedScene" path="res://assets/models/world/prp_clutter_pile_a.glb" id="rp_prp_clutter_pile_a"]
 
 ; THE HUNTERS' RISE - the Ash Hunters' field station (location.ashen.station), on a low rise above the
 ; scar road where the Hunters can watch both Last Hearth and the Beast Lord's plateau. A watch tower,
@@ -25,19 +25,9 @@
 radius = 0.4
 height = 1.8
 
-[sub_resource type="CylinderShape3D" id="Shape_tent"]
-radius = 1.4
-height = 2.4
-
 [sub_resource type="CylinderShape3D" id="Shape_brazier"]
 radius = 0.5
 height = 1.2
-
-[sub_resource type="BoxShape3D" id="Shape_crate"]
-size = Vector3(1, 1, 1)
-
-[sub_resource type="BoxShape3D" id="Shape_tower"]
-size = Vector3(3, 9, 3)
 
 [sub_resource type="NavigationMesh" id="NavMesh_hunters_rise"]
 geometry_parsed_geometry_type = 1
@@ -56,6 +46,17 @@ height = 1.4
 radius = 0.3
 height = 1.4
 
+[sub_resource type="CylinderShape3D" id="RpShape_TentA"]
+radius = 1.7
+height = 2.6
+
+[sub_resource type="CylinderShape3D" id="RpShape_TentB"]
+radius = 1.7
+height = 2.6
+
+[sub_resource type="BoxShape3D" id="RpShape_CrateA"]
+size = Vector3(2.3, 1.3, 1.5)
+
 [node name="HuntersRiseCell" type="Node3D"]
 metadata/content_offset = Vector2(35, 5)
 
@@ -66,54 +67,49 @@ navigation_mesh = SubResource("NavMesh_hunters_rise")
 script = ExtResource("7_navbaker")
 
 [node name="Tower" type="Node3D" parent="Nav" groups=["world_landmark"]]
-transform = Transform3D(0.9659, 0, -0.2588, 0, 1, 0, 0.2588, 0, 0.9659, 25, 0, -1)
+transform = Transform3D(0.8693, 0, -0.2329, 0, 0.9, 0, 0.2329, 0, 0.8693, 25, -0.3, -1)
 
-[node name="Model" parent="Nav/Tower" instance=ExtResource("p_tower")]
-
-[node name="Col" type="StaticBody3D" parent="Nav/Tower"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/Tower/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.5, 0)
-shape = SubResource("Shape_tower")
+[node name="Model" parent="Nav/Tower" instance=ExtResource("rp_lm_gate_tower")]
+albedo_tint = Color(0.54, 0.513, 0.504, 1)
 
 [node name="TentA" type="Node3D" parent="Nav"]
-transform = Transform3D(0.9848, 0, -0.1736, 0, 1, 0, 0.1736, 0, 0.9848, 41, 0, -4)
+transform = Transform3D(0.8371, 0, -0.1476, 0, 0.85, 0, 0.1476, 0, 0.8371, 41, 0, -4)
 
-[node name="Model" parent="Nav/TentA" instance=ExtResource("p_tent")]
+[node name="Model" parent="Nav/TentA" instance=ExtResource("rp_prp_tent_a")]
 
 [node name="Col" type="StaticBody3D" parent="Nav/TentA"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/TentA/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
-shape = SubResource("Shape_tent")
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.3, 0)
+shape = SubResource("RpShape_TentA")
 
 [node name="TentB" type="Node3D" parent="Nav"]
-transform = Transform3D(0.9063, 0, 0.4226, 0, 1, 0, -0.4226, 0, 0.9063, 48, 0, -4)
+transform = Transform3D(0.7704, 0, 0.3592, 0, 0.85, 0, -0.3592, 0, 0.7704, 48, 0, -4)
 
-[node name="Model" parent="Nav/TentB" instance=ExtResource("p_tent")]
+[node name="Model" parent="Nav/TentB" instance=ExtResource("rp_prp_tent_a")]
 
 [node name="Col" type="StaticBody3D" parent="Nav/TentB"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/TentB/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
-shape = SubResource("Shape_tent")
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.3, 0)
+shape = SubResource("RpShape_TentB")
 
 [node name="CrateA" type="Node3D" parent="Nav"]
-transform = Transform3D(0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, 0.9397, 30, 0, -5)
+transform = Transform3D(0.7518, 0, -0.2736, 0, 0.8, 0, 0.2736, 0, 0.7518, 30, 0, -5)
 
-[node name="Model" parent="Nav/CrateA" instance=ExtResource("p_crate")]
+[node name="Model" parent="Nav/CrateA" instance=ExtResource("rp_prp_clutter_pile_a")]
 
 [node name="Col" type="StaticBody3D" parent="Nav/CrateA"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/CrateA/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
-shape = SubResource("Shape_crate")
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.65, 0)
+shape = SubResource("RpShape_CrateA")
 
-[node name="StationFire" parent="." instance=ExtResource("p_campfire")]
-transform = Transform3D(1, 0, -0, 0, 1, 0, 0, 0, 1, 32, 0, 3)
+[node name="StationFire" parent="." instance=ExtResource("rp_prp_campfire_a")]
+transform = Transform3D(0.6, 0, 0, 0, 0.6, 0, 0, 0, 0.6, 32, 0, 3)
 
 [node name="Light" type="OmniLight3D" parent="StationFire"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.3334, 0)
 light_color = Color(1, 0.6, 0.3, 1)
 light_energy = 1.8
 omni_range = 7.0
@@ -162,7 +158,8 @@ script = ExtResource("1_entity")
 DisplayName = "A Staked Track"
 PersistentId = "ashen_wilds.hunters_rise.beast_track_a"
 
-[node name="Model" parent="BeastTrackA" instance=ExtResource("wb_prp_beast_stake")]
+[node name="Model" parent="BeastTrackA" instance=ExtResource("rp_prp_lm_bone_arch")]
+transform = Transform3D(0.3, 0, 0, 0, 0.3, 0, 0, 0, 0.3, 0, 0, 0)
 
 [node name="Collider" type="StaticBody3D" parent="BeastTrackA"]
 
@@ -186,7 +183,8 @@ script = ExtResource("1_entity")
 DisplayName = "A Staked Track"
 PersistentId = "ashen_wilds.hunters_rise.beast_track_b"
 
-[node name="Model" parent="BeastTrackB" instance=ExtResource("wb_prp_beast_stake")]
+[node name="Model" parent="BeastTrackB" instance=ExtResource("rp_prp_lm_bone_arch")]
+transform = Transform3D(0.3, 0, 0, 0, 0.3, 0, 0, 0, 0.3, 0, 0, 0)
 
 [node name="Collider" type="StaticBody3D" parent="BeastTrackB"]
 

@@ -7,16 +7,18 @@
 [ext_resource type="Script" path="res://src/Animation/CharacterAnimationComponent.cs" id="5_charanim"]
 [ext_resource type="Script" path="res://src/Animation/EquipmentPresentationComponent.cs" id="6_equipment"]
 [ext_resource type="Script" path="res://src/World/CellNavBaker.cs" id="7_navbaker"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_tent.glb" id="p_tent"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_campfire.glb" id="p_campfire"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_brazier.glb" id="p_brazier"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_crate.glb" id="p_crate"]
 [ext_resource type="Script" path="res://src/Enemies/BossSummonComponent.cs" id="8_summon"]
 [ext_resource type="Script" path="res://src/Enemies/ArenaHookComponent.cs" id="9_arenahook"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_ruin_pillar.glb" id="p_pillar"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_rock_cluster.glb" id="p_rocks"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_pine_dead.glb" id="p_pine"]
 [ext_resource type="Script" path="res://src/World/MapLocationComponent.cs" id="maploc_39_5a"]
 [ext_resource type="PackedScene" path="res://scenes/props/lm_rock_boulder_a.tscn" id="rp_lm_rock_boulder_a"]
 [ext_resource type="PackedScene" path="res://scenes/props/lm_tree_dead_a.tscn" id="rp_lm_tree_dead_a"]
+[ext_resource type="PackedScene" path="res://scenes/props/lm_monolith_a.tscn" id="rp_lm_monolith_a"]
+[ext_resource type="PackedScene" path="res://scenes/props/lm_bone_arch.tscn" id="dx_bone_arch"]
 
 ; THE BEAST LORD'S PLATEAU (location.ashen.beast_lair) - the Fourth Flamebearer's ground.
 ;
@@ -48,6 +50,12 @@ size = Vector3(1, 1, 1)
 [sub_resource type="BoxShape3D" id="Shape_pillar"]
 size = Vector3(1, 3.13, 1)
 
+[sub_resource type="BoxShape3D" id="Shape_rocks"]
+size = Vector3(2.26, 1.41, 1.84)
+
+[sub_resource type="BoxShape3D" id="Shape_pine"]
+size = Vector3(0.9, 4.9, 0.9)
+
 [sub_resource type="BoxShape3D" id="Shape_challenge"]
 size = Vector3(1, 1.4, 1)
 
@@ -70,59 +78,34 @@ navigation_mesh = SubResource("NavMesh_beast_lair")
 script = ExtResource("7_navbaker")
 
 [node name="PillarNE" type="Node3D" parent="Nav"]
-transform = Transform3D(0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, 0.9397, 32, 0, -24)
+transform = Transform3D(0.8457, 0, -0.3078, 0, 0.9, 0, 0.3078, 0, 0.8457, 32, 0, -24)
 
-[node name="Model" parent="Nav/PillarNE" instance=ExtResource("p_pillar")]
-
-[node name="Col" type="StaticBody3D" parent="Nav/PillarNE"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/PillarNE/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.57, 0)
-shape = SubResource("Shape_pillar")
+[node name="Model" parent="Nav/PillarNE" instance=ExtResource("rp_lm_monolith_a")]
+albedo_tint = Color(0.6, 0.57, 0.56, 1)
 
 [node name="PillarNW" type="Node3D" parent="Nav"]
-transform = Transform3D(0.8192, 0, 0.5736, 0, 1, 0, -0.5736, 0, 0.8192, -1, 0, -26)
+transform = Transform3D(0.9011, 0, 0.6309, 0, 1.1, 0, -0.6309, 0, 0.9011, -1, 0, -26)
 
-[node name="Model" parent="Nav/PillarNW" instance=ExtResource("p_pillar")]
-
-[node name="Col" type="StaticBody3D" parent="Nav/PillarNW"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/PillarNW/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.57, 0)
-shape = SubResource("Shape_pillar")
+[node name="Model" parent="Nav/PillarNW" instance=ExtResource("rp_lm_monolith_a")]
+albedo_tint = Color(0.6, 0.57, 0.56, 1)
 
 [node name="PillarN" type="Node3D" parent="Nav"]
 transform = Transform3D(0.9962, 0, -0.0872, 0, 1, 0, 0.0872, 0, 0.9962, 12, 0, -34)
 
-[node name="Model" parent="Nav/PillarN" instance=ExtResource("p_pillar")]
-
-[node name="Col" type="StaticBody3D" parent="Nav/PillarN"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/PillarN/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.57, 0)
-shape = SubResource("Shape_pillar")
+[node name="Model" parent="Nav/PillarN" instance=ExtResource("rp_lm_monolith_a")]
+albedo_tint = Color(0.6, 0.57, 0.56, 1)
 
 [node name="PillarGateW" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, -0, 0, 1, 0, 0, 0, 1, 8, 0, 3)
+transform = Transform3D(0.7, 0, 0, 0, 0.7, 0, 0, 0, 0.7, 8, 0, 3)
 
-[node name="Model" parent="Nav/PillarGateW" instance=ExtResource("p_pillar")]
-
-[node name="Col" type="StaticBody3D" parent="Nav/PillarGateW"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/PillarGateW/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.57, 0)
-shape = SubResource("Shape_pillar")
+[node name="Model" parent="Nav/PillarGateW" instance=ExtResource("rp_lm_monolith_a")]
+albedo_tint = Color(0.6, 0.57, 0.56, 1)
 
 [node name="PillarGateE" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, -0, 0, 1, 0, 0, 0, 1, 22, 0, 3)
+transform = Transform3D(0.7, 0, 0, 0, 0.7, 0, 0, 0, 0.7, 22, 0, 3)
 
-[node name="Model" parent="Nav/PillarGateE" instance=ExtResource("p_pillar")]
-
-[node name="Col" type="StaticBody3D" parent="Nav/PillarGateE"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/PillarGateE/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.57, 0)
-shape = SubResource("Shape_pillar")
+[node name="Model" parent="Nav/PillarGateE" instance=ExtResource("rp_lm_monolith_a")]
+albedo_tint = Color(0.6, 0.57, 0.56, 1)
 
 [node name="RocksE" type="Node3D" parent="Nav"]
 transform = Transform3D(0.183, 0, -0.317, 0, 0.366, 0, 0.317, 0, 0.183, 35, -0.12, -10)
@@ -238,3 +221,9 @@ Reveals = Array[NodePath]([NodePath("../BlightVents/VentC"), NodePath("../Blight
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15, 0, -15)
 script = ExtResource("maploc_39_5a")
 LocationId = "location.ashen.beast_lair"
+
+[node name="Dx_LairBoneArchN" parent="Nav" instance=ExtResource("dx_bone_arch")]
+transform = Transform3D(0, 0, -1.4, 0, 1.4, 0, 1.4, 0, 0, -17, -0.3, -2)
+
+[node name="Dx_LairBoneArchS" parent="Nav" instance=ExtResource("dx_bone_arch")]
+transform = Transform3D(0, 0, -1.25, 0, 1.25, 0, 1.25, 0, 0, -17, -0.3, 22)

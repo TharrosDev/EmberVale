@@ -12,14 +12,10 @@
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_jetty.glb" id="11_jetty"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_fishing_hut.glb" id="12_hut"]
 [ext_resource type="PackedScene" path="res://assets/models/architecture/bld_house_b.glb" id="13_house"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_waystone.glb" id="14_waystone"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_brazier.glb" id="15_brazier"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_campfire.glb" id="16_campfire"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_barrel.glb" id="17_barrel"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_crate.glb" id="18_crate"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_sacks.glb" id="19_sacks"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_fence.glb" id="20_fence"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_cart.glb" id="21_cart"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_bench.glb" id="22_bench"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_hay.glb" id="25_hay"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_woman_dress.glb" id="30_wenna"]
@@ -31,6 +27,10 @@
 [ext_resource type="PackedScene" path="res://scenes/props/lm_pine_fir_a.tscn" id="rp_lm_pine_fir_a"]
 [ext_resource type="PackedScene" path="res://scenes/props/lm_tree_dead_a.tscn" id="rp_lm_tree_dead_a"]
 [ext_resource type="PackedScene" path="res://scenes/props/lm_rock_boulder_a.tscn" id="rp_lm_rock_boulder_a"]
+[ext_resource type="PackedScene" path="res://scenes/props/lm_waystone.tscn" id="rp_lm_waystone"]
+[ext_resource type="PackedScene" path="res://assets/models/world/prp_fence_a.glb" id="rp_prp_fence_a"]
+[ext_resource type="PackedScene" path="res://assets/models/world/prp_campfire_a.glb" id="rp_prp_campfire_a"]
+[ext_resource type="PackedScene" path="res://assets/models/world/prp_cart_a.glb" id="rp_prp_cart_a"]
 
 ; TARN'S LANDING (Phase 38N2) — the fishing hamlet on the western water, and the realm's THIRD market.
 ;
@@ -139,14 +139,8 @@ size = Vector3(1.15, 0.45, 1.05)
 [sub_resource type="BoxShape3D" id="Shape_hay"]
 size = Vector3(0.62, 0.9, 0.64)
 
-[sub_resource type="BoxShape3D" id="Shape_cart"]
-size = Vector3(0.95, 1.6, 1.9)
-
 [sub_resource type="BoxShape3D" id="Shape_bench"]
 size = Vector3(1.8, 0.85, 0.66)
-
-[sub_resource type="BoxShape3D" id="Shape_fence"]
-size = Vector3(2.95, 1.2, 0.16)
 
 [sub_resource type="CylinderShape3D" id="Shape_brazier"]
 height = 1.2
@@ -156,9 +150,31 @@ radius = 0.3
 height = 3.0
 radius = 0.8
 
+[sub_resource type="BoxShape3D" id="Shape_rocks"]
+size = Vector3(2.3, 1.4, 1.9)
+
+[sub_resource type="CylinderShape3D" id="Shape_pine"]
+height = 6.0
+radius = 0.4
+
 [sub_resource type="CapsuleShape3D" id="Shape_npc"]
 radius = 0.4
 height = 1.8
+
+[sub_resource type="BoxShape3D" id="RpShape_RackA"]
+size = Vector3(2.14, 1.2, 0.3)
+
+[sub_resource type="BoxShape3D" id="RpShape_RackC"]
+size = Vector3(2.14, 1.2, 0.3)
+
+[sub_resource type="BoxShape3D" id="RpShape_RackD"]
+size = Vector3(2.14, 1.2, 0.3)
+
+[sub_resource type="BoxShape3D" id="RpShape_RackF"]
+size = Vector3(2.14, 1.2, 0.3)
+
+[sub_resource type="BoxShape3D" id="RpShape_CartA"]
+size = Vector3(3.4, 1.5, 1.9)
 
 ; ⚠️ THE GROUND SKINS ARE GONE (the 2026-08-29 geography overhaul). Every road, yard and court in
 ; this cell used to be a 6 cm BoxMesh slab laid on the floor — forty of them across the realm, and
@@ -228,26 +244,26 @@ shape = SubResource("Shape_hut")
 ; The drying racks: a fence line is exactly what a rack of split fish looks like from ten feet, and it
 ; is already in the kit. Three of them make the row read as work rather than as a boundary.
 [node name="RackA" type="Node3D" parent="Nav"]
-transform = Transform3D(0.9962, 0, 0.0872, 0, 1, 0, -0.0872, 0, 0.9962, 14, 0, -17)
+transform = Transform3D(-1.4445, 0, -0.1264, 0, 1.45, 0, 0.1264, 0, -1.4445, 14, 0, -17)
 
-[node name="Model" parent="Nav/RackA" instance=ExtResource("20_fence")]
+[node name="Model" parent="Nav/RackA" instance=ExtResource("rp_prp_fence_a")]
 
 [node name="Collider" type="StaticBody3D" parent="Nav/RackA"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/RackA/Collider"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
-shape = SubResource("Shape_fence")
+shape = SubResource("RpShape_RackA")
 
 [node name="RackC" type="Node3D" parent="Nav"]
-transform = Transform3D(0.9903, 0, 0.1392, 0, 1, 0, -0.1392, 0, 0.9903, 16, 0, -15)
+transform = Transform3D(1.4359, 0, 0.2018, 0, 1.45, 0, -0.2018, 0, 1.4359, 16, 0, -15)
 
-[node name="Model" parent="Nav/RackC" instance=ExtResource("20_fence")]
+[node name="Model" parent="Nav/RackC" instance=ExtResource("rp_prp_fence_a")]
 
 [node name="Collider" type="StaticBody3D" parent="Nav/RackC"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/RackC/Collider"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
-shape = SubResource("Shape_fence")
+shape = SubResource("RpShape_RackC")
 
 ; --- Odger's chandlery, north of the track ---------------------------------------
 [node name="Chandlery" type="Node3D" parent="Nav"]
@@ -256,15 +272,15 @@ transform = Transform3D(-0.9848, 0, -0.1736, 0, 1, 0, 0.1736, 0, -0.9848, 36, 0,
 [node name="Model" parent="Nav/Chandlery" instance=ExtResource("42_cottage_modular")]
 
 [node name="CartA" type="Node3D" parent="Nav"]
-transform = Transform3D(0.9397, 0, 0.342, 0, 1, 0, -0.342, 0, 0.9397, 38, 0, -35)
+transform = Transform3D(-0.2052, 0, 0.5638, 0, 0.6, 0, -0.5638, 0, -0.2052, 38, 0, -35)
 
-[node name="Model" parent="Nav/CartA" instance=ExtResource("21_cart")]
+[node name="Model" parent="Nav/CartA" instance=ExtResource("rp_prp_cart_a")]
 
 [node name="Collider" type="StaticBody3D" parent="Nav/CartA"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/CartA/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
-shape = SubResource("Shape_cart")
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.75, 0)
+shape = SubResource("RpShape_CartA")
 
 [node name="BarrelA" type="Node3D" parent="Nav"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 39, 0, -36)
@@ -336,7 +352,8 @@ shape = SubResource("Shape_bench")
 [node name="ShoreFire" type="Node3D" parent="Nav"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 17, 0, -14)
 
-[node name="Model" parent="Nav/ShoreFire" instance=ExtResource("16_campfire")]
+[node name="Model" parent="Nav/ShoreFire" instance=ExtResource("rp_prp_campfire_a")]
+transform = Transform3D(0.6, 0, 0, 0, 0.6, 0, 0, 0, 0.6, 0, 0, 0)
 
 [node name="Coals" type="MeshInstance3D" parent="Nav/ShoreFire"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.2, 0)
@@ -435,13 +452,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 41, 0, -37)
 script = ExtResource("2_entity")
 DisplayName = "Landing Waystone"
 
-[node name="Model" parent="LandingWaystone" instance=ExtResource("14_waystone")]
-
-[node name="Collider" type="StaticBody3D" parent="LandingWaystone"]
-
-[node name="Shape" type="CollisionShape3D" parent="LandingWaystone/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
-shape = SubResource("Shape_waystone")
+[node name="Model" parent="LandingWaystone" instance=ExtResource("rp_lm_waystone")]
 
 [node name="Travel" type="Node" parent="LandingWaystone"]
 script = ExtResource("3_travel")
@@ -527,26 +538,26 @@ ScheduleId = "schedule.tarn.chandler"
 ; --- the boats' gear where the boats land, and the east approach closed in.
 
 [node name="RackD" type="Node3D" parent="Nav"]
-transform = Transform3D(0.9962, 0, -0.0872, 0, 1, 0, 0.0872, 0, 0.9962, 13, 0, -20)
+transform = Transform3D(1.4445, 0, -0.1264, 0, 1.45, 0, 0.1264, 0, 1.4445, 13, 0, -20)
 
-[node name="Model" parent="Nav/RackD" instance=ExtResource("20_fence")]
+[node name="Model" parent="Nav/RackD" instance=ExtResource("rp_prp_fence_a")]
 
 [node name="Collider" type="StaticBody3D" parent="Nav/RackD"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/RackD/Collider"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
-shape = SubResource("Shape_fence")
+shape = SubResource("RpShape_RackD")
 
 [node name="RackF" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.0872, 0, 0.9962, 0, 1, 0, -0.9962, 0, -0.0872, 21, 0, -13)
+transform = Transform3D(0.1264, 0, -1.4445, 0, 1.45, 0, 1.4445, 0, 0.1264, 21, 0, -13)
 
-[node name="Model" parent="Nav/RackF" instance=ExtResource("20_fence")]
+[node name="Model" parent="Nav/RackF" instance=ExtResource("rp_prp_fence_a")]
 
 [node name="Collider" type="StaticBody3D" parent="Nav/RackF"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/RackF/Collider"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
-shape = SubResource("Shape_fence")
+shape = SubResource("RpShape_RackF")
 
 [node name="BarrelE" type="Node3D" parent="Nav"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 25, 0, -16)
