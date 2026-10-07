@@ -416,4 +416,24 @@ public class HeadlessGateTests
         Assert.Equal("win", row.GetProperty("outcome").GetString());
         Assert.Equal(4.13, row.GetProperty("s").GetDouble());
     }
+
+    [Fact]
+    public void LegacyLine_APartialPassIsNeverTheBarePass()
+    {
+        Assert.Equal("validate: PASS", HeadlessGate.LegacyLine("validate", passed: true, failures: 0, partial: false));
+        Assert.Equal("validate: FAIL (2 failure(s))", HeadlessGate.LegacyLine("validate", false, 2, partial: false));
+        Assert.Equal("validate: FAIL (1 failure(s))", HeadlessGate.LegacyLine("validate", false, 1, partial: true));
+
+        string partial = HeadlessGate.LegacyLine("validate", passed: true, failures: 0, partial: true);
+        Assert.DoesNotContain("validate: PASS", partial);
+        Assert.Contains("PARTIAL", partial);
+    }
+
+    [Fact]
+    public void Report_IsPartialOnlyWhenTheFactSaysSo()
+    {
+        Assert.False(new HeadlessReport("validate").IsPartial);
+        Assert.False(new HeadlessReport("validate").Fact("partial", false).IsPartial);
+        Assert.True(new HeadlessReport("validate").Fact("only", "items").Fact("partial", true).IsPartial);
+    }
 }

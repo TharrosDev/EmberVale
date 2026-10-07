@@ -15,7 +15,11 @@ namespace Embervale.Debugging;
 /// <code>godot --headless --fixed-fps 60 --path . -- --new-game --exec "seed 7; tp out; spawn enemy.goblin 3; wait 2; assert enemies.count ge 3"</code>
 /// <c>--exec "a; b"</c> takes the script inline, <c>--exec-file &lt;path&gt;</c> from a file
 /// (statements split on <c>;</c> and newlines, <c>#</c> comments). It attaches like any session
-/// harness, so it works with <c>--play</c>, <c>--slot</c> and <c>--new-game</c>.
+/// harness, so it works with <c>--play</c>, <c>--slot</c> and <c>--new-game</c>. ⚠️ A script
+/// changes the session it runs in, so the shell refuses it (exit 2) unless
+/// <c>EMBERVALE_USER_DIR</c> is an absolute directory; <c>--exec-allow-real-save</c> runs it on the
+/// real save folder with autosaves off and <c>save</c> held to the console slot
+/// (<see cref="SessionEntryRules.ScriptRefusal"/>).
 ///
 /// <para><b>Statements.</b> Anything the F1 console accepts, plus the runner's own verbs
 /// (<see cref="ScriptVerb"/>): <c>wait &lt;seconds&gt;</c>, <c>frames &lt;n&gt;</c>,
@@ -34,7 +38,8 @@ namespace Embervale.Debugging;
 /// <c>{"i","cmd","ok","frame","out","data"?}</c>, then <c>{"event":"result",…}</c>. Stdout gets
 /// one <c>[CON] FAIL</c> line per failed statement (every statement with <c>--exec-verbose</c>)
 /// and the final <c>EMBERVALE_RESULT</c> line (<see cref="HeadlessReport"/>, which also honours
-/// <c>--report</c>). The exit code is 0 when every statement passed, 1 otherwise. A failed
+/// <c>--report</c>). The exit code is 0 when every statement passed and no invariant violation
+/// was recorded, 1 otherwise. The result file is flushed per statement. A failed
 /// statement does not stop the script unless <c>--exec-stop-on-fail</c> is given.
 /// <c>--exec-timeout=&lt;seconds&gt;</c> (real time, default 300) ends a script that hangs.</para>
 ///
@@ -68,6 +73,10 @@ public sealed partial class ConsoleScript : Node
     private ulong _startedMsec;
 
     private int _index;
+
+    /// <summary>Statements that actually ran. Not <see cref="_index"/>: <c>quit</c> and
+    /// <c>--exec-stop-on-fail</c> end a script by moving the index past the last statement.</summary>
+    private int _ran;
     private int _failed;
     private bool _done;
     private bool _started;
@@ -97,7 +106,12 @@ public sealed partial class ConsoleScript : Node
             try
             {
                 _directory = DevCommands.OutputDirectory();
-                _results = new StreamWriter(Path.Combine(_directory, "result.ndjson"), append: false, new UTF8Encoding(false));
+                // Flushed per line: a statement that crashes the engine, or a hung run the caller
+                // kills, is exactly when the lines before it are needed.
+                _results = new StreamWriter(Path.Combine(_directory, "result.ndjson"), append: false, new UTF8Encoding(false))
+                {
+                    AutoFlush = true,
+                };
             }
             catch (IOException error)
             {
@@ -317,7 +331,6 @@ public sealed partial class ConsoleScript : Node
                 }
 
                 ConsoleResult result = console.Run(step.Raw);
-                _lastOut = result.Text;
                 Complete(step, result.Ok, result.Text, result.Json);
                 return;
             }
@@ -497,7 +510,17 @@ public sealed partial class ConsoleScript : Node
             _results?.WriteLine(Encoding.UTF8.GetString(stream.ToArray()));
         }
 
+        // `expect` reads the most recent reply, whichever kind of statement gave it: after
+        // `wait-until` or `assert` it must not compare against some earlier command's text. The
+        // verbs that only pass time or press a key reply nothing and leave it alone, so
+        // `spawn ...; wait 2; expect spawned` still reads the spawn.
+        if (step.Verb is not (ScriptVerb.Expect or ScriptVerb.Wait or ScriptVerb.Frames or ScriptVerb.Input))
+        {
+            _lastOut = output;
+        }
+
         _started = false;
+        _ran++;
         _index++;
         if (!ok && _stopOnFail)
         {
@@ -531,8 +554,19 @@ public sealed partial class ConsoleScript : Node
     private void Finish()
     {
         _done = true;
-        int ran = System.Math.Min(_index, _steps.Count);
+        int ran = _ran;
+
+        // The same rule --quit-after and the lifecycle gate apply: a session that broke an
+        // invariant did not pass, whatever its statements replied.
+        if (Invariant.Violations > 0)
+        {
+            string recent = string.Join(" | ", Invariant.Recent);
+            _report.Fail($"{Invariant.Violations} invariant violation(s) were recorded during the script" +
+                         (recent.Length > 0 ? $": {recent}" : string.Empty));
+        }
+
         _report.Fact("ran", ran)
+            .Fact("stopped_early", ran < _steps.Count)
             .Fact("failed", _failed)
             .Fact("first_failure", _firstFailure)
             .Fact("frames", (long)Engine.GetProcessFrames())

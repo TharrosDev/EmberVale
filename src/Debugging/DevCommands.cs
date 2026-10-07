@@ -243,9 +243,9 @@ public static partial class DevCommands
             int rungs = shop.InvestmentTierList().Count;
             if (!stakes.Invest(shop))
             {
-                return rungs == 0
+                return console.Fail(rungs == 0
                     ? $"{shop.Id} sells no stake"
-                    : $"{shop.Id} stake already full ({rungs}/{rungs})";
+                    : $"{shop.Id} stake already full ({rungs}/{rungs})");
             }
 
             return $"{shop.Id} stake now {stakes.InvestmentOf(shop)}/{rungs}, purse {stakes.PurseFor(shop)}";
@@ -331,7 +331,7 @@ public static partial class DevCommands
             return $"used {service.Id} (prompt was: {(before.Length > 0 ? before : "<silent>")})";
         }
 
-        return $"'{service.Id}' is authored but no ServiceComponent in the loaded world offers it";
+        return console.Fail($"'{service.Id}' is authored but no ServiceComponent in the loaded world offers it");
     }
 
     /// <summary>
@@ -370,12 +370,12 @@ public static partial class DevCommands
         {
             "start" => log.StartQuest(quest)
                 ? $"started {quest.Id}"
-                : $"cannot start {quest.Id} (already active/completed, or prerequisite unfinished)",
+                : console.Fail($"cannot start {quest.Id} (already active/completed, or prerequisite unfinished)"),
             "advance" => AdvanceQuest(log, quest, args),
             "complete" => CompleteQuest(log, quest),
             "reset" => log.Reset(quest.Id)
                 ? $"reset {quest.Id} (persistent story flags and world changes are unchanged)"
-                : $"{quest.Id} is not in the log",
+                : console.Fail($"{quest.Id} is not in the log"),
             _ => "usage: quest <start|advance|complete|reset> <questId> [objectiveIndex] [amount]",
         };
     }
@@ -541,7 +541,7 @@ public static partial class DevCommands
         string id = args[0];
         if (FactionDatabase.Get(id) is not { } guild || !guild.IsGuild)
         {
-            return $"'{id}' is not a guild (try: guild list)";
+            return console.Fail($"'{id}' is not a guild (try: guild list)");
         }
 
         string verb = args.Length > 1 ? args[1].ToLowerInvariant() : "state";
@@ -564,7 +564,7 @@ public static partial class DevCommands
                 GuildStanding before = GuildRules.Resolve(has, guild);
                 if (!GuildRules.CanJoin(before, guild.RejoinAllowed))
                 {
-                    return $"{guild.DisplayName} will not take you back (RejoinAllowed = false)";
+                    return console.Fail($"{guild.DisplayName} will not take you back (RejoinAllowed = false)");
                 }
 
                 flags.Clear(GuildRules.RefusedFlag(id));
@@ -579,7 +579,7 @@ public static partial class DevCommands
                 int rank = ParseInt(args, 2, 1);
                 if (rank < 0 || rank > guild.RankNameKeys.Count)
                 {
-                    return $"rank must be 0..{guild.RankNameKeys.Count}";
+                    return console.Fail($"rank must be 0..{guild.RankNameKeys.Count}");
                 }
 
                 for (int i = 1; i <= GuildRules.MaxRanks; i++)
@@ -738,7 +738,11 @@ public static partial class DevCommands
         }
 
         string? slot = autosave.ForceAutosave();
-        return slot != null ? $"autosaved to '{slot}'" : "skipped (not in active play)";
+        return slot != null
+            ? $"autosaved to '{slot}'"
+            : console.Fail(AutosaveService.Suppressed
+                ? "skipped (autosaves are off for this run)"
+                : "skipped (not in active play)");
     }
 
     private static string SettingsCmd(DevConsole console, string[] args)
@@ -809,7 +813,7 @@ public static partial class DevCommands
         // built panels keep their text until rebuilt.
         return Loc.SetLocale(args[0])
             ? $"locale set to '{args[0]}' (re-open menus to see the change)"
-            : $"locale '{args[0]}' is not loaded";
+            : console.Fail($"locale '{args[0]}' is not loaded");
     }
 
     private static string WeaveCmd(DevConsole console, string[] args)
@@ -909,7 +913,7 @@ public static partial class DevCommands
         string id = SpellDatabase.Get(args[0])?.Id ?? args[0];
         if (SpellDatabase.Get(id) is not { } spell || !casting.IsKnown(spell))
         {
-            return $"{id} is not known";
+            return console.Fail($"{id} is not known");
         }
 
         // No public Forget on the caster, so round-trip its own save: drop the id and Load it back. Load
@@ -1028,7 +1032,7 @@ public static partial class DevCommands
             LearnOutcome outcome = SpellLearning.TryLearn(player, id, LearnRoutes.Trainer);
             return outcome == LearnOutcome.Learned
                 ? $"learned spell {spell.DisplayName} ({spell.Id})"
-                : $"did not learn {spell.Id}: {outcome}";
+                : console.Fail($"did not learn {spell.Id}: {outcome}");
         }
 
         // A perk: gated by corruption tier and skill points.
@@ -1046,7 +1050,7 @@ public static partial class DevCommands
 
             return perks.Learn(perk)
                 ? $"learned perk {perk.DisplayName} (rank {perks.RankOf(perk.Id)})"
-                : $"cannot learn {id}: {perks.WhyNot(perk)}";
+                : console.Fail($"cannot learn {id}: {perks.WhyNot(perk)}");
         }
 
         return $"unknown spell/perk id: {id}";
@@ -1116,7 +1120,7 @@ public static partial class DevCommands
 
         if (!perks.Respec(pack))
         {
-            return $"respec costs {cost}g and you hold {pack.CountOf(GameIds.Currency.Gold)}g (give {GameIds.Currency.Gold} {cost})";
+            return console.Fail($"respec costs {cost}g and you hold {pack.CountOf(GameIds.Currency.Gold)}g (give {GameIds.Currency.Gold} {cost})");
         }
 
         return $"respec: paid {cost}g, refunded {spent} point(s), {progression.SkillPoints} unspent";
@@ -1238,7 +1242,7 @@ public static partial class DevCommands
 
         if (!WorldGenerationDebug.TrySet(args[0]))
         {
-            return $"worldgen: unknown field '{args[0]}'. fields: {WorldGenerationDebug.Modes}";
+            return console.Fail($"worldgen: unknown field '{args[0]}'. fields: {WorldGenerationDebug.Modes}");
         }
 
         return $"worldgen: {WorldGenerationDebug.Mode} — reload the region to repaint the ground.";
@@ -1332,7 +1336,7 @@ public static partial class DevCommands
         {
             if (!System.Enum.TryParse(args[3], ignoreCase: true, out Embervale.Economy.ShockKind kind))
             {
-                return "kind must be shortage, glut or fair";
+                return console.Fail("kind must be shortage, glut or fair");
             }
 
             int days = args.Length >= 5 && int.TryParse(args[4], out int parsed)
@@ -1476,7 +1480,7 @@ public static partial class DevCommands
 
             return roster.SetStance(args[1], stance)
                 ? $"{args[1]} is now {stance}"
-                : $"{args[1]} is not in the party";
+                : console.Fail($"{args[1]} is not in the party");
         }
 
         if (args.Length >= 2 && args[0] == "loyalty")
@@ -1531,7 +1535,7 @@ public static partial class DevCommands
             sb.Append($"\n  {id}");
         }
 
-        return sb.ToString();
+        return console.Fail(sb.ToString());
     }
 
     private static string Seed(DevConsole console, string[] args)
@@ -1556,9 +1560,8 @@ public static partial class DevCommands
         return ReproHarness.Run(args[0], console.Execute);
 #else
         // ReproHarness is development-only source (see Embervale.csproj -> the tooling gate).
-        _ = console;
         _ = args;
-        return "repro is unavailable in a shipping build";
+        return console.Fail("repro is unavailable in a shipping build");
 #endif
     }
 

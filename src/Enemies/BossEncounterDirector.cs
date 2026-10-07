@@ -182,7 +182,7 @@ public partial class BossEncounterDirector : Node
     {
         if (_slowed)
         {
-            Engine.TimeScale = 1f;
+            Engine.TimeScale = Embervale.Combat.HitStopDirector.BaseTimeScale;
             _slowed = false;
         }
     }
