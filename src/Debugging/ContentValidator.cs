@@ -566,6 +566,7 @@ public static class ContentValidator
             "res://assets/shaders/vfx/vfx_ribbon.gdshader",
             "res://assets/shaders/vfx/vfx_distort.gdshader",
             "res://assets/shaders/vfx/vfx_ground.gdshader",
+            "res://assets/shaders/vfx/vfx_ice.gdshader",
         };
 
         foreach (string path in shaders)
