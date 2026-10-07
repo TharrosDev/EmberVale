@@ -15,18 +15,17 @@ run's own save directory; `--save real` continues the newest real save, as a han
 harness can then write to it); `--save DIR` copies a user directory (the folder holding `saves/`)
 into the run first. A rendered harness needs a real, focused window: it cannot run headless.
 """
-import json
 import re
 import shutil
 from pathlib import Path
 
 from quality_common import ROOT
+from ..contract import parse_result, result_brief
 
 HELP = "run a C# gate or session harness flag (story, save-reload, hudshots, spellshots, ...) with SDK guards"
 PASSTHROUGH = True
 HEADLESS = ("validate", "state", "economy", "worldgen", "worldmap", "world-bake", "lifecycle", "save-reload", "story")
 TABLE = "src/Bootstrap/SessionHarnesses.cs"
-RESULT = "EMBERVALE_RESULT"
 
 
 def arguments(parser):
@@ -45,26 +44,6 @@ def harnesses(root=ROOT):
     except OSError:
         return []
     return sorted({name[2:] for name in re.findall(r'(?:new\(|Alias:\s*)"(--[a-z0-9-]+)"', text)})
-
-
-def parse_result(output):
-    """The last EMBERVALE_RESULT line of a gate's output as a dict, or None."""
-    for line in reversed(output.splitlines()):
-        if line.startswith(RESULT):
-            try:
-                return json.loads(line[len(RESULT):])
-            except ValueError:
-                return None
-    return None
-
-
-def result_brief(report):
-    """One line for a gate report: verdict and its facts, lists shown as counts."""
-    facts = []
-    for key, value in (report.get("facts") or {}).items():
-        facts.append(f"{key}={len(value)} items" if isinstance(value, list) else f"{key}={value}")
-    line = f"RESULT {report.get('gate')} {'ok' if report.get('ok') else 'FAILED'}"
-    return line + (" " + " ".join(facts) if facts else "")
 
 
 def environment(pairs):

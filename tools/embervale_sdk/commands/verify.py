@@ -61,12 +61,16 @@ RULES = (
                              "scene-audit-rules", "scenes", "meshes", "building-collision")),
     (("assets/models/*",), ("content", "architecture", "meshes")),
     (("tools/region_spec_template.py",), ("template",)),
+    # regen.py --check for the generators no other gate runs; its own cache makes a no-op cheap.
+    (("data/*", "tools/gen_perks.py", "tools/gen_appearance.py", "tools/gen_campaign.py", "tools/campaign/*",
+      "tools/gen_ground_cover.py", "tools/gen_player_mask.py", "tools/check_hit_zones.py", "assets/models/world/*",
+      "assets/models/characters/chr_player_base*", "assets/models/creatures/*"),
+     ("generators",)),
 )
 # Steps that are not registry gates.
 EXTRA = (
-    (("tools/embervale_sdk/*", "tools/quality_common.py", "tools/process_tree.py", "tools/world_quality_check.py",
-      "tools/test_*.py", "tools/negative_tests.py", "tools/godot_mcp_check.py", "tools/embervale.py",
-      "tools/sdk_engine_tests.py", "tools/headless/*"), "tool-tests"),
+    # Any Python tool: the unit suite is the cheapest thing that imports or exercises it.
+    (("tools/*.py", "tools/headless/*"), "tool-tests"),
     (("*.md",), "docs-lines"),
     (("assets/models/*",), "assets-validate"),
 )

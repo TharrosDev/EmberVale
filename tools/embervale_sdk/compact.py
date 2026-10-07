@@ -54,6 +54,8 @@ def compact(result: dict) -> dict:
     loose = [dict(code=d.get("code"), message=clip(d.get("message", "")),
                   **({"path": d["path"]} if d.get("path") else {}))
              for d in errors if id(d) not in claimed]
+    if loose:   # a pseudo-step with no message and no log (configuration, prerequisites) only repeats the ERROR line
+        failed = [row for row in failed if row["message"] or row.get("log")]
     out = dict(schema=result.get("schema"), run_id=result.get("run_id"), command=result.get("command"),
                success=result.get("success"), exit_code=result.get("exit_code"),
                duration=round(result.get("duration") or 0, 1), steps=len(steps),
