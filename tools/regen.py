@@ -243,6 +243,23 @@ def snapshot(root: Path, patterns: tuple[str, ...]) -> dict[str, bytes]:
     return {path.relative_to(root).as_posix(): path.read_bytes() for path in files_for(root, patterns)}
 
 
+def same_content(name: str, old: bytes | None, new: bytes | None) -> bool:
+    """Whether two versions of a generated file hold the same content. A PNG is compared by its
+    pixels: the encoded bytes differ between Pillow versions and platforms, which read as drift on
+    CI for an image that had not changed."""
+    if old == new or old is None or new is None:
+        return old == new
+    if not name.endswith(".png"):
+        return False
+    try:
+        from PIL import Image
+    except ImportError:
+        return False
+    import io
+    with Image.open(io.BytesIO(old)) as a, Image.open(io.BytesIO(new)) as b:
+        return a.size == b.size and a.mode == b.mode and a.tobytes() == b.tobytes()
+
+
 def run_in_copy(root: Path, entry: Entry, run=execute):
     """Run a writer that has no --check in a temporary folder holding copies of the script, the
     modules it imports and the files it reads and owns. Returns (process result, what it left in
@@ -276,7 +293,8 @@ def run_check(root: Path, entry: Entry, run=execute) -> dict:
     else:
         before = snapshot(root, entry.owns)
         result, after = run_in_copy(root, entry, run)
-        changed = sorted(name for name in set(before) | set(after) if before.get(name) != after.get(name))
+        changed = sorted(name for name in set(before) | set(after)
+                         if not same_content(name, before.get(name), after.get(name)))
         output = result.output
         if result.returncode != 0 or result.timed_out:
             status = "ERROR"

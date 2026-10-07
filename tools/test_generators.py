@@ -444,6 +444,27 @@ class RegenTests(unittest.TestCase):
         self.assertFalse((self.state / ".lock").exists())
 
 
+class RegenPngCompareTests(unittest.TestCase):
+    def test_a_png_is_compared_by_pixels_not_by_encoded_bytes(self):
+        try:
+            from PIL import Image
+        except ImportError:
+            self.skipTest("Pillow is not installed")
+        import io
+
+        def png(colour, level):
+            buffer = io.BytesIO()
+            Image.new("RGB", (4, 4), colour).save(buffer, "PNG", compress_level=level)
+            return buffer.getvalue()
+
+        loose, tight = png((10, 20, 30), 0), png((10, 20, 30), 9)
+        self.assertNotEqual(loose, tight)
+        self.assertTrue(regen.same_content("mask.png", loose, tight))
+        self.assertFalse(regen.same_content("mask.png", loose, png((10, 20, 31), 0)))
+        self.assertFalse(regen.same_content("mask.png", loose, None))
+        self.assertFalse(regen.same_content("data.tres", b"a", b"b"))
+
+
 class WorldBakeTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
