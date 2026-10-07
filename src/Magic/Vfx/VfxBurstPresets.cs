@@ -214,7 +214,7 @@ public static class VfxBurstPresets
     /// <summary>The numbers of an extra emitter preset.</summary>
     public static VfxBurstPreset For(VfxEmitter kind) => kind switch
     {
-        VfxEmitter.Flame => new(16, 0.95f, 0.7f, 3f, 1.5f, 2.4f, 0.55f, 1.15f, 0.9f, VfxSprite.Flame, false, true, false, false, true, 0.55f, VfxRamp.Heat, 0.7f, 0.8f),
+        VfxEmitter.Flame => new(16, 0.95f, 0.7f, 3f, 1.5f, 2.4f, 0.62f, 1.3f, 0.9f, VfxSprite.Flame, false, true, false, false, true, 0.55f, VfxRamp.Heat, 0.7f, 0.8f),
         VfxEmitter.Chunks => new(16, 1.1f, 4f, 10f, -15f, 0.3f, 0.05f, 0.13f, 1f, VfxSprite.Shard, false, true, false, true, false, 1f, VfxRamp.Solid),
         VfxEmitter.Mist => new(12, 2.4f, 0.3f, 1.3f, -0.12f, 1.2f, 0.8f, 1.6f, 0.65f, VfxSprite.Puff, false, true, false, false, true, 0.1f, VfxRamp.Soft, 0.5f),
         VfxEmitter.Crystals => new(22, 0.75f, 5f, 11f, -12f, 0.6f, 0.26f, 0.6f, 0.97f, VfxSprite.Crystal, true, false, false, false, false, 1.15f),

@@ -413,7 +413,8 @@ public partial class VfxFlare : VfxEffect
         {
             // A ring on the floor about the camera itself (the player's own self-cast in first
             // person) is a band across the bottom of the view: it is cut right back while it is close.
-            if (_ringFlat && Director is { HasCamera: true } eye)
+            // Somebody else's ring that holds (a zone to get out of) is never cut.
+            if (_ringFlat && (Own || !_spec.Sustain) && Director is { HasCamera: true } eye)
             {
                 Vector3 toEye = eye.CameraPosition - GlobalPosition;
                 ringAlpha *= VfxScreenRules.SelfRing(new Vector2(toEye.X, toEye.Z).Length(), toEye.Y, ringRadius);

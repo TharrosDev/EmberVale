@@ -154,6 +154,25 @@ public static partial class SpellVfx
                 tongues.Follow(VfxAnchor.To(barrier, Vector3.Up * 0.3f));
                 tongues.OrientLike(barrier);
             }
+
+            if (VfxQuality.Tier == VfxTier.Ultra)
+            {
+                // The air over it wavers: a thin slab of haze the length of the wall, reaching as
+                // far above its top as the flames stand. (Not drawn under Reduced Motion.)
+                VfxHandle<VfxDistortion> haze = rig.Add(cast.Fx.Distortion(new VfxDistortionSpec
+                {
+                    Radius = height,
+                    Stretch = new Vector3(width * 0.55f / height, 1f, Mathf.Min(1f, 0.5f / height)),
+                    Sustain = true,
+                    Shimmer = true,
+                    Strength = 0.012f,
+                }));
+                if (haze.Get is { } air)
+                {
+                    air.Follow(VfxAnchor.To(barrier, Vector3.Up * height));
+                    air.OrientLike(barrier);
+                }
+            }
         }
 
         // What it throws off along its length.

@@ -307,7 +307,7 @@ public partial class SpellVfxDirector : Node
     {
         T effect = pool.Get();
         VfxRoot.AddChild(effect);
-        effect.Begin(this, spawner.Group);
+        effect.Begin(this, spawner.Group, spawner.Player);
         if (spawner.Late)
         {
             effect.Defer();

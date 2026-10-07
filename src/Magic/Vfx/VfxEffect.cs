@@ -198,11 +198,17 @@ public abstract partial class VfxEffect : Node3D
 
     protected double StopAge { get; private set; }
 
+    /// <summary>Whether this block belongs to an effect of the local player's own (their cast, a
+    /// status they wear). What is cut back for the player's own view (a ring about a first-person
+    /// camera) is cut on these; a hostile effect that holds (a zone to get out of) never is.</summary>
+    internal bool Own { get; private set; }
+
     /// <summary>Starts a new life. Called by the spawner after the node is in the tree.</summary>
-    internal void Begin(SpellVfxDirector director, int group)
+    internal void Begin(SpellVfxDirector director, int group, bool own = false)
     {
         Director = director;
         Group = group;
+        Own = own;
         Serial = unchecked(Serial + 1);
         Live = true;
         Age = 0d;

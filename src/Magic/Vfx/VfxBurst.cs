@@ -213,9 +213,13 @@ public partial class VfxBurst : VfxEffect
 
     /// <summary>The quad a preset's particles are drawn on: a comet carries its own shape on a
     /// near-square one, a spark is a thin sliver, a crystal a long one.</summary>
-    private static QuadMesh DrawMesh(in VfxBurstPreset preset) => !preset.AlignVelocity
+    private static QuadMesh DrawMesh(in VfxBurstPreset preset) => DrawMesh(preset.AlignVelocity, preset.Sprite);
+
+    /// <summary>The same, for a sprite standing in on an emitter: a jagged spark or a streak of
+    /// snow on a plain spark's sliver would have no room for its kinks or its head.</summary>
+    private static QuadMesh DrawMesh(bool alignVelocity, VfxSprite sprite) => !alignVelocity
         ? VfxMaterials.Quad
-        : preset.Sprite switch
+        : sprite switch
         {
             VfxSprite.Streak => VfxMaterials.SparkQuad,
             VfxSprite.Comet or VfxSprite.Wisp or VfxSprite.Flame => VfxMaterials.CometQuad,
@@ -248,6 +252,7 @@ public partial class VfxBurst : VfxEffect
         {
             _sprite = sprite;
             _draw.SetShaderParameter(VfxMaterials.Mask, VfxTextures.Sprite(sprite));
+            _particles.DrawPass1 = DrawMesh(_preset.AlignVelocity, sprite);
         }
 
         _continuous = spec.Continuous;

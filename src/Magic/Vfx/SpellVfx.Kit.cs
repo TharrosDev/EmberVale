@@ -58,7 +58,9 @@ namespace Embervale.Magic.Vfx;
 ///   a snowflake (VfxSprite.Flake), for Lightning and Arcane a glint. VfxParticles.Sparks thrown by a
 ///   Lightning cast are jagged (VfxSprite.Spark); thrown by a Frost cast they are streaks of snow
 ///   (VfxSprite.Snow), so a frost recipe that throws slanted Sparks is already a blizzard.
-///   VfxParticles.Wisps are tendrils (VfxSprite.Wisp).
+///   VfxParticles.Wisps are tendrils (VfxSprite.Wisp). A sprite standing in on an emitter that follows
+///   its travel brings its own quad: a jagged spark or a streak of snow is drawn 0.28 wide to its
+///   length, where the plain spark stays the 0.12 sliver.
 ///   The school comes from the VfxCast: cast.Fx knows it (VfxSpawner.School), so this applies to every
 ///   cast.Fx.Burst(VfxParticles.X, spec). Set spec.Sprite to force a shape.
 /// - VfxEmitter.Flame is drawn with tongues of flame standing tip up (VfxSprite.Flame), still cooling
@@ -70,7 +72,9 @@ namespace Embervale.Magic.Vfx;
 ///   casting point: VfxCoverageRules.NearStart/NearEnd are now 1.5 m / 5 m, and its energy and halo are
 ///   cut near the eye. The player's own bolt head is drawn at half size in first person.
 /// - A flat ring or disc on the floor about the camera (a self-cast in first person) is cut to 16% while
-///   its radius is under about 3 m (VfxScreenRules.SelfRing). Telegraphs (VfxDiscSpec.Fills) never are.
+///   its radius is under about 3 m (VfxScreenRules.SelfRing). Telegraphs (VfxDiscSpec.Fills) never are,
+///   and neither is a Sustain ring or disc that is not the player's own (an enemy's zone to get out of):
+///   the cut applies to the player's own effects and to anybody's one-shot rings (a hit landing on them).
 /// - The generic Release calls SelfCastInView for every Self delivery cast by the player in first
 ///   person (not a blink), before the spell's own Release hook.
 ///
@@ -109,6 +113,11 @@ namespace Embervale.Magic.Vfx;
 ///   VfxShellSpec.LayerGap      metres either side of the line a layered sheet's two layers stand (0 = 0.12).
 ///   VfxShellSpec.SettleSeconds / SettleHold / SettleOpacity   a sustained shell holds SettleHold seconds,
 ///                              then fades over SettleSeconds to SettleOpacity of its opacity and stays.
+///   VfxDistortionSpec.Shimmer  heat haze instead of a pressure wave: the image wavers across the whole
+///                              shape, climbing, with no outline. Sustain it; Strength 0.01 is plenty.
+///   VfxDistortionSpec.Stretch  the shape against a sphere of Radius along the block's own axes (turn it
+///                              with OrientLike): (3, 1, 0.3) is a thin slab. Zero = a sphere.
+///                              (Distortion is still High and Ultra only, never under Reduced Motion.)
 ///   VfxSpawner.School, VfxSpawner.ForSchool(school)           set for you by VfxCast.
 ///   VfxSpawner.ScreenEdge(Color school, float strength, float seconds = 0.9f) -&gt; bool
 ///                              a shimmer at the edges of the screen, middle clear; comfort-capped
@@ -126,6 +135,9 @@ namespace Embervale.Magic.Vfx;
 ///       head multiplies its sizes by it (the generic projectile already does).
 ///   VfxHandle&lt;VfxMotif&gt; ResidualCrackle(in VfxCast cast, Node3D body, float seconds, float size = 0f)
 ///       arcs over a body for a status's duration; ends itself.
+///   VfxMotifSpec CrackleOver(Node3D body, in VfxSchoolColors colors, float size, out Vector3 centre)
+///       the same arcs as a spec, for a rig of your own: set Sustain, rig.Add(cast.Fx.Motif(spec)),
+///       Follow(VfxAnchor.To(body, centre)).
 ///   void TetherScatter(in VfxCast cast, Vector3 from, Vector3 to, float amount = 1f)
 ///       motes torn off `from` along the line, motes drawn in to `to`.
 ///   VfxAnchor MouthAnchor(IEntity caster)            // jaw/mouth/snout bone, else head, else 1.6 m up
@@ -144,7 +156,12 @@ namespace Embervale.Magic.Vfx;
 ///
 /// GENERIC LOOKS THAT CHANGED (a hook returning false still gets them)
 ///   Pyre Wall (AttachBarrier, not solid): Tongues = 1, RiseSeconds 0.25, energy 0.45; Medium and up add
-///     a second, lower pair of layers 0.34 m either side and FlameLick particles along the length.
+///     a second, lower pair of layers 0.34 m either side and FlameLick particles along the length;
+///     Ultra adds a slab of heat haze (Shimmer) over it.
+///   A lightning mark (StatusAura MarkRing with a Lightning school: the brand) wears CrackleOver arcs
+///     for as long as the status lasts, above Performance. A recipe need not add its own.
+///   VfxEmitter.Flame particles are 0.62 to 1.3 m (were 0.5 to 1.05 as round puffs): a tongue fills
+///     about half the width of its quad.
 ///   Ward shell (StatusAura WardShell): fitted to the body, bright for 0.35 s, then fades over 0.7 s to
 ///     22%. A WardHit pulses the fitted shell; on the local player in first person it is a ScreenEdge.
 ///   Frozen shell (StatusAura IceShell, the Freeze proc, the frost impact shell): fitted with BodyFit.
@@ -768,6 +785,12 @@ public static partial class SpellVfx
                     continue;
             }
 
+            // A shape laid on its side (a beast's capsule along its spine) is as tall as it is thick.
+            if (shape is CapsuleShape3D or CylinderShape3D && Mathf.Abs(collider.Basis.Y.Normalized().Y) < 0.7f)
+            {
+                (tall, wide) = (wide, tall);
+            }
+
             if (tall > 0.2f && wide > 0.1f)
             {
                 foot = collider.Position.Y - (tall * 0.5f);
@@ -854,20 +877,29 @@ public static partial class SpellVfx
             return default;
         }
 
-        BodyFit(body, out Vector3 centre, out Vector3 fit);
+        VfxMotifSpec spec = CrackleOver(body, cast.Colors, size, out Vector3 centre);
+        spec.Life = seconds;
+        VfxHandle<VfxMotif> crackle = cast.Fx.Motif(spec);
+        crackle.Get?.Follow(VfxAnchor.To(body, centre));
+        return crackle;
+    }
+
+    /// <summary>The arcs of <see cref="ResidualCrackle"/> as a spec, for a caller with a rig of its
+    /// own to hold them (the standing effect of a lightning mark). <paramref name="centre"/> is the
+    /// offset from the body's origin to follow it at.</summary>
+    internal static VfxMotifSpec CrackleOver(Node3D body, in VfxSchoolColors colors, float size, out Vector3 centre)
+    {
+        BodyFit(body, out centre, out Vector3 fit);
         float reach = size > 0f ? size : Mathf.Clamp(Mathf.Max(fit.X, fit.Y * 0.5f) * 0.75f, 0.45f, 1.6f);
         VfxMotifSpec spec = VfxMotifSpec.At(
-            body.GlobalPosition + centre, cast.Colors, VfxSprite.Spark, VfxMotion.Crackle,
+            body.GlobalPosition + centre, colors, VfxSprite.Spark, VfxMotion.Crackle,
             VfxQuality.Tier switch { VfxTier.Performance => 3, VfxTier.Low => 4, VfxTier.Medium => 5, VfxTier.High => 6, _ => 8 },
             reach, reach * 0.9f);
         spec.Aspect = 0.24f;
         spec.Energy = 1.4f;
         spec.Pale = true;
-        spec.Life = seconds;
         spec.TrueSize = true;
-        VfxHandle<VfxMotif> crackle = cast.Fx.Motif(spec);
-        crackle.Get?.Follow(VfxAnchor.To(body, centre));
-        return crackle;
+        return spec;
     }
 
     /// <summary>

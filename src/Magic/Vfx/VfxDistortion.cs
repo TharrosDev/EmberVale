@@ -21,6 +21,16 @@ internal struct VfxDistortionSpec
 
     /// <summary>Holds and breathes until stopped (a gravity well) instead of passing once.</summary>
     public bool Sustain;
+
+    /// <summary>Heat haze instead of a pressure wave: the image wavers across the whole of the
+    /// shape, climbing, and its outline is not seen (<c>shimmer</c> in <c>vfx_distort.gdshader</c>).
+    /// For a sustained one; a <see cref="Strength"/> of 0.01 is plenty.</summary>
+    public bool Shimmer;
+
+    /// <summary>The shape against a sphere of <see cref="Radius"/>, along the block's own axes
+    /// (turn it with <c>OrientLike</c>): (3, 1, 0.3) is a slab three radii to either side and thin
+    /// front to back. Zero = a sphere.</summary>
+    public Vector3 Stretch;
 }
 
 /// <summary>
@@ -55,6 +65,7 @@ public partial class VfxDistortion : VfxEffect
         _spec = spec;
         GlobalPosition = spec.Position;
         _material.SetShaderParameter(VfxMaterials.Strength, spec.Strength > 0f ? spec.Strength : 0.035f);
+        _material.SetShaderParameter(VfxMaterials.Shimmer, spec.Shimmer ? 1f : 0f);
         Apply(spec.Sustain ? 1f : 0f, spec.Sustain ? 0f : 1f);
     }
 
@@ -86,7 +97,8 @@ public partial class VfxDistortion : VfxEffect
 
     private void Apply(float size, float opacity)
     {
-        _sphere.Scale = Vector3.One * (Mathf.Max(0.05f, _spec.Radius) * 2f * size);
+        Vector3 shape = _spec.Stretch.LengthSquared() > 0.0001f ? _spec.Stretch : Vector3.One;
+        _sphere.Scale = shape * (Mathf.Max(0.05f, _spec.Radius) * 2f * size);
         _material.SetShaderParameter(VfxMaterials.Opacity, opacity);
     }
 }

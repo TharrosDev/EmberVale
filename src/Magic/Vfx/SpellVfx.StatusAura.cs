@@ -59,6 +59,15 @@ public static partial class SpellVfx
                     StatusSigil(rig, fx, body, head, 0.3f, 0.8f, colors);
                 }
 
+                // A lightning mark (the brand) leaves arcs crackling over the body for as long as
+                // it lasts. Not on the leanest tier, where a mark stays the one glow it was.
+                if (school == DamageType.Lightning && VfxQuality.Tier != VfxTier.Performance)
+                {
+                    VfxMotifSpec arcs = CrackleOver(body, colors, 0f, out Vector3 centre);
+                    arcs.Sustain = true;
+                    rig.Add(fx.Motif(arcs)).Get?.Follow(VfxAnchor.To(body, centre));
+                }
+
                 break;
             }
 
