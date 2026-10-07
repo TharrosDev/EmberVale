@@ -101,4 +101,20 @@ public class TelegraphTests
 
         Assert.True(pulsed);
     }
+
+    [Fact]
+    public void TheRimIsALineOnTheGroundNotAShareOfTheCreature()
+    {
+        // A man-sized ring (2.2 m, band 0.22 of it) keeps the rim it always had.
+        Assert.Equal(0.55f, TelegraphMath.RimShare(2.2f * 0.22f, 0.55f), 5);
+
+        // Round a dragon the same share would be over a metre of solid colour: it is 0.3 m instead.
+        float band = 10f * 0.22f;
+        Assert.Equal(TelegraphMath.RimMetres, TelegraphMath.RimShare(band, 0.55f) * band, 3);
+
+        // Never a hair, and nonsense in changes nothing.
+        Assert.Equal(0.02f, TelegraphMath.RimShare(40f, 0.1f), 5);
+        Assert.Equal(0.55f, TelegraphMath.RimShare(0f, 0.55f), 5);
+        Assert.Equal(0.55f, TelegraphMath.RimShare(float.NaN, 0.55f), 5);
+    }
 }

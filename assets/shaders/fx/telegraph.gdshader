@@ -50,6 +50,7 @@ void fragment() {
 	body += front * fill_alpha * 0.8 * (1.0 - plain);
 
 	float alpha = mix(body, rim_alpha * shimmer, rim);
-	ALBEDO = mix(fill_color.rgb, rim_color.rgb, max(rim, front * 0.6 * (1.0 - plain)));
+	// The rim is a little over white so it blooms where glow is on; with glow off it is simply solid.
+	ALBEDO = mix(fill_color.rgb, rim_color.rgb * 1.35, max(rim, front * 0.6 * (1.0 - plain)));
 	ALPHA = clamp(alpha, 0.0, 1.0) * mask;
 }

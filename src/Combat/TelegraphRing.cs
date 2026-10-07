@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Embervale.Core.Diagnostics;
 using Embervale.Core.Services;
 using Embervale.Settings;
 using Godot;
@@ -36,10 +37,11 @@ public partial class TelegraphRing : Node3D
     /// <summary>How far above the feet the shape sits, so it does not z-fight with the ground.</summary>
     private const float Lift = 0.05f;
 
-    /// <summary>How far above the feet a ring sits. Higher than a fan: the ring used to be a tube that
-    /// stood this far out of the ground, which is what kept it in sight on a bank or over a rut, and
-    /// a flat band on <see cref="Lift"/> would be half buried there.</summary>
-    private const float RingLift = 0.14f;
+    /// <summary>How far above the feet a ring sits. A little higher than a fan, because a ring is a
+    /// thin band and a rut can swallow it; no higher, because a flat shape that floats reads as a
+    /// footprint nearer the camera than the real one (0.14 m moved it a quarter of a metre at a
+    /// first-person eye three metres off).</summary>
+    private const float RingLift = 0.08f;
 
     /// <summary>Inner radius of an ordinary ring, as a fraction of the outer.</summary>
     private const float StandardInner = 0.78f;
@@ -144,6 +146,15 @@ public partial class TelegraphRing : Node3D
         {
             _shaderTried = true;
             _shader = ResourceLoader.Exists(ShaderPath) ? GD.Load<Shader>(ShaderPath) : null;
+        }
+
+        // A shader that failed to compile still loads, as a resource that draws nothing, and the one
+        // sign of it is that it exposes no uniforms (ContentValidator.ValidateShaders reads the same
+        // sign). An invisible warning is the worst outcome there is, so that counts as no shader.
+        if (_shader != null && IsInstanceValid(_shader) && _shader.GetShaderUniformList().Count == 0)
+        {
+            Log.Warn("Telegraphs: telegraph.gdshader did not compile; warnings are drawn plain.");
+            _shader = null;
         }
 
         if (_shader != null && IsInstanceValid(_shader))
@@ -274,7 +285,13 @@ public partial class TelegraphRing : Node3D
         // the thick ring; a fan has lit sides; a plain ring is mostly rim.
         if (_shapeMaterial is ShaderMaterial shape)
         {
-            shape.SetShaderParameter(RimWidthParam, disc ? 1f - UnblockableInner : fan ? 0.1f : 0.55f);
+            // The rim is a line of about the same width on the ground whatever the creature's size:
+            // a share of the band on a man-sized ring, a sliver of it round a dragon, whose band
+            // would otherwise be a metre of solid colour across a first-person view.
+            float band = _radius * (1f - (fan ? FanInner : StandardInner));
+            shape.SetShaderParameter(RimWidthParam, disc
+                ? 1f - UnblockableInner
+                : TelegraphMath.RimShare(band, fan ? 0.1f : 0.55f));
             shape.SetShaderParameter(InnerEdgeParam, disc ? 0f : 1f);
             shape.SetShaderParameter(SideEdgeParam, fan && sweepDegrees < 359f ? 1f : 0f);
             shape.SetShaderParameter(MotionParam, _motion ? 1f : 0f);

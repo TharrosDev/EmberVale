@@ -48,6 +48,23 @@ public static class TelegraphMath
     public static float RimAlpha(float t, bool highContrast) =>
         highContrast ? 1f : Math.Min(1f, RingAlpha(t) + 0.2f);
 
+    /// <summary>Width of the bright rim on the ground, in metres, where the band has room for it.</summary>
+    public const float RimMetres = 0.3f;
+
+    /// <summary>The share of a warning's band (inner edge to outer, <paramref name="bandMetres"/> wide
+    /// at full size) that is drawn as bright rim: <see cref="RimMetres"/> of it, never more than
+    /// <paramref name="most"/> (what a man-sized warning has always had) and never less than a fifth
+    /// of that, so the rim of the largest shape is still a line and not a hair.</summary>
+    public static float RimShare(float bandMetres, float most)
+    {
+        if (!(bandMetres > 0f) || !(most > 0f))
+        {
+            return Math.Max(most, 0f);
+        }
+
+        return Math.Clamp(RimMetres / bandMetres, most * 0.2f, most);
+    }
+
     /// <summary>A beat added to a parry window so the cue lights just before the guard has to go up,
     /// not at the last instant: roughly a fast human reaction.</summary>
     public const float ParryReactionLead = 0.08f;
