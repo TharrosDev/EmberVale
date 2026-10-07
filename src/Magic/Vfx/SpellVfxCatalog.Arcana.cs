@@ -161,19 +161,21 @@ public static partial class SpellVfxCatalog
             Impact: new VfxStage { Flare = true, Ring = true, Inward = true, Particles = VfxParticles.Motes, Secondary = VfxParticles.Sparks },
             Linger: new VfxStage { Flare = true });
 
-        // A sigil at the hand, a quick dim bolt, and the same sigil stamped on the target and left
-        // hanging over it. Fine motes are drawn in to the hand so the sigil there is not hidden.
+        // A sigil at the hand, a quick dim bolt, and the same sigil stamped on the target. What is
+        // left is on the ground under the marked for as long as the mark lasts (drawn with the
+        // status, SpellVfx.StatusExtras), so the linger stage hangs no second one over the head.
+        // Fine motes are drawn in to the hand so the sigil there is not hidden.
         recipes["spell.grave_mark"] = new SpellVfxRecipe(
             Cast: new VfxStage { Flare = true, Sigil = true, Particles = VfxParticles.Motes, Inward = true, Scale = 0.8f },
             Travel: new VfxStage { Flare = true, Scale = 0.7f },
             Impact: new VfxStage { Flare = true, Ring = true, Sigil = true, Particles = VfxParticles.Wisps, Scale = 0.8f },
-            Linger: new VfxStage { Sigil = true });
+            Linger: VfxStage.None);
 
         // --- enemy-only --------------------------------------------------------------------------
 
         // The three breaths and the word are drawn tick by tick by one routine (ArcanaBreath): a
-        // spray down the wedge, haze behind it, a small hot mouth, and never a flare the width of
-        // the cone.
+        // stream from the mouth down the wedge, a hot mouth, and never a flare the width of the
+        // cone. The stages below are only what the generic interpreter would fall back to.
         recipes["spell.ash_breath"] = new SpellVfxRecipe(
             Cast: new VfxStage { Flare = true, Particles = VfxParticles.Embers },
             Travel: new VfxStage { Flare = true, Particles = VfxParticles.Embers, Secondary = VfxParticles.Smoke },

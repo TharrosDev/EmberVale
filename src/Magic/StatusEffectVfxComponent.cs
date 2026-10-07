@@ -20,7 +20,9 @@ namespace Embervale.Magic;
 /// what exists on every display, and what the headless gates assert. Where the spell effect layer is
 /// live, <see cref="SpellVfx.StatusAura"/> draws the status over it from the same blocks the spells
 /// use (embers, mist, an ice shell, roots, a sigil), and a marker that the richer picture replaces
-/// outright (the swirl, the two shells) is hidden for as long as that picture lasts.</para>
+/// outright (the swirl, the two shells) is hidden for as long as that picture lasts. Two statuses
+/// wear more on the same rig, so it ends with them (<see cref="SpellVfx.StatusExtras"/>): a swarm
+/// circling the swarmed, and a sigil on the ground under the grave-marked.</para>
 ///
 /// <para><b>The local player</b> gets no marker (see <see cref="OnApplied"/>), but does get the
 /// richer picture whenever the camera is outside their head: a ward or a skin of bark is the
@@ -153,6 +155,7 @@ public partial class StatusEffectVfxComponent : EntityComponent
                 Entity!, e.EffectId, shape, effect.School, SwirlHeight, HeadHeight, visual, out bool replaces) is { } rig)
         {
             _auras[e.EffectId] = rig;
+            SpellVfx.StatusExtras(Entity!, e.EffectId, effect.School, rig);
             if (replaces)
             {
                 _concealed.Add(e.EffectId);
@@ -191,6 +194,7 @@ public partial class StatusEffectVfxComponent : EntityComponent
                     bearer, worn.Key, worn.Value.Shape, worn.Value.School, SwirlHeight, HeadHeight, null, out _) is { } rig)
             {
                 _auras[worn.Key] = rig;
+                SpellVfx.StatusExtras(bearer, worn.Key, worn.Value.School, rig);
             }
             else
             {

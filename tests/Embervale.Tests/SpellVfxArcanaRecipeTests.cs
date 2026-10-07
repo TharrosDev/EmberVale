@@ -145,7 +145,11 @@ public class SpellVfxArcanaRecipeTests
         Assert.Equal(VfxMark.Roots, snare.Impact.Mark);
 
         SpellVfxRecipe mark = SpellVfxCatalog.For("spell.grave_mark", DamageType.Necrotic, SpellDelivery.Projectile);
-        Assert.True(mark.Cast.Sigil && mark.Impact.Sigil && mark.Linger.Sigil);
+        Assert.True(mark.Cast.Sigil && mark.Impact.Sigil);
+
+        // What the mark leaves is the sigil under the marked, drawn with the status for as long as
+        // it lasts: the linger stage hangs no second one over the head.
+        Assert.True(mark.Linger.IsEmpty);
 
         SpellVfxRecipe word = SpellVfxCatalog.For("spell.elder_word", DamageType.Arcane, SpellDelivery.Cone);
         Assert.True(word.Travel.Ring);

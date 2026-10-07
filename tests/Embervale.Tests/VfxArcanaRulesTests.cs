@@ -129,6 +129,134 @@ public class VfxArcanaRulesTests
     }
 
     [Fact]
+    public void ADiscAtTheFirstPersonCastersFeetStaysUnderTheRadiusThatIsCutBack()
+    {
+        // Eye 1.6 m over the middle of the disc: it is drawn at the floor of the cut, where the
+        // old four fifths of the ring's reach was more than half bright.
+        float inside = VfxArcanaRules.SelfDisc(inside: true, 1.4f);
+        Assert.Equal(VfxArcanaRules.SelfDiscInside, inside);
+        Assert.Equal(VfxScreenRules.SelfRingFloor, VfxScreenRules.SelfRing(0f, 1.6f, inside), 3);
+        Assert.True(VfxScreenRules.SelfRing(0f, 1.6f, VfxArcanaRules.FloorReachInside * 0.8f) > 0.5f);
+        Assert.Equal(1.4f, VfxArcanaRules.SelfDisc(inside: false, 1.4f));
+    }
+
+    [Fact]
+    public void TheLeanestTierAddsNothingToASwarmAndEveryTierUpAddsNoFewer()
+    {
+        Assert.Equal(0, VfxArcanaRules.SwarmInsects(VfxTier.Performance));
+        int last = 0;
+        foreach (VfxTier tier in Enum.GetValues<VfxTier>())
+        {
+            int insects = VfxArcanaRules.SwarmInsects(tier);
+            int streaks = VfxArcanaRules.ImplosionStreaks(tier);
+            Assert.True(insects >= last, $"{tier} circles fewer insects than the tier below.");
+            Assert.InRange(insects, 0, VfxMotifRules.MaxCount);
+            Assert.InRange(streaks, 3, VfxMotifRules.MaxCount);
+            last = insects;
+        }
+    }
+
+    [Fact]
+    public void TheLeanTiersSpaceOutWhatHangsAndBurnOnlyWhereThereIsAScorch()
+    {
+        Assert.Equal(3, VfxArcanaRules.AshEvery(VfxTier.Performance));
+        Assert.Equal(1, VfxArcanaRules.AshEvery(VfxTier.Ultra));
+        foreach (VfxTier tier in Enum.GetValues<VfxTier>())
+        {
+            // Nothing is left burning on a tier that leaves no scorch for it to burn on.
+            if (VfxBudgetRules.For(tier).GroundMarks <= 0)
+            {
+                Assert.Equal(0, VfxArcanaRules.BurnEvery(tier));
+            }
+        }
+
+        Assert.Equal(1, VfxArcanaRules.BurnEvery(VfxTier.High));
+    }
+
+    [Theory]
+    [InlineData(0, 5, false)]
+    [InlineData(-2, 5, false)]
+    [InlineData(1, int.MinValue, true)]
+    [InlineData(3, 9, true)]
+    [InlineData(3, 10, false)]
+    [InlineData(2, -1, false)] // a negative roll is read without its sign: 0x7FFFFFFF is odd
+    public void OneTickInSoManyFalls(int every, int roll, bool expected)
+    {
+        Assert.Equal(expected, VfxArcanaRules.Falls(every, roll));
+    }
+
+    [Fact]
+    public void OverManyTicksAThirdOfThemFall()
+    {
+        int fell = 0;
+        var random = new Random(12345);
+        for (int i = 0; i < 3000; i++)
+        {
+            if (VfxArcanaRules.Falls(3, random.Next(int.MinValue, int.MaxValue)))
+            {
+                fell++;
+            }
+        }
+
+        Assert.InRange(fell, 850, 1150);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    [InlineData(int.MaxValue)]
+    [InlineData(int.MinValue)]
+    [InlineData(0x00ABC000)]
+    public void TheLitPatchStaysInsideTheWedge(int roll)
+    {
+        Assert.InRange(VfxArcanaRules.PatchAlong(roll), 0.2f, 0.9f);
+    }
+
+    [Fact]
+    public void TheCameraIsInABreathOnlyDownItsWedge()
+    {
+        float slope = Slope(55f);
+
+        // The player a dragon is breathing at, eight metres down the axis.
+        Assert.True(VfxArcanaRules.InBreath(8f, 0.5f, 14f, slope));
+
+        // Behind the mouth, beside the wedge, and past its end.
+        Assert.False(VfxArcanaRules.InBreath(-2f, 0f, 14f, slope));
+        Assert.False(VfxArcanaRules.InBreath(8f, 9f, 14f, slope));
+        Assert.False(VfxArcanaRules.InBreath(20f, 0f, 14f, slope));
+
+        // At the mouth itself nothing has been thrown yet.
+        Assert.False(VfxArcanaRules.InBreath(0.5f, 0f, 14f, slope));
+    }
+
+    [Fact]
+    public void ABreathIsDrawnFromAMouthOnlyWhenTheMouthIsWhereTheBreathStarts()
+    {
+        // A dragon's jaw a metre and a half ahead of its aim origin.
+        Assert.True(VfxArcanaRules.MouthIsUsable(1.5f, 12.6f, 14f));
+
+        // A bone found a long way from where the rule breathes from, or one already at the far end.
+        Assert.False(VfxArcanaRules.MouthIsUsable(9f, 12f, 14f));
+        Assert.False(VfxArcanaRules.MouthIsUsable(1f, 3f, 14f));
+        Assert.False(VfxArcanaRules.MouthIsUsable(0f, 0f, 0f));
+    }
+
+    [Theory]
+    [InlineData(0.1f)]
+    [InlineData(0.8f)]
+    [InlineData(2.5f)]
+    [InlineData(9f)]
+    public void TheSigilUnderAMarkedBodyIsWiderThanTheBodyAndNeverHuge(float width)
+    {
+        float radius = VfxArcanaRules.MarkSigilRadius(width);
+        Assert.InRange(radius, 0.9f, 2.2f);
+        if (width <= 2.5f)
+        {
+            Assert.True(radius > width * 0.5f, "The body hides its own sigil.");
+        }
+    }
+
+    [Fact]
     public void OnlyTheTwoLowestTiersAreLean()
     {
         Assert.True(VfxArcanaRules.IsLean(VfxTier.Performance));
