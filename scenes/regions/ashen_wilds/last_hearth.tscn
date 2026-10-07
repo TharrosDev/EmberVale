@@ -7,12 +7,8 @@
 [ext_resource type="Script" path="res://src/Animation/CharacterAnimationComponent.cs" id="5_charanim"]
 [ext_resource type="Script" path="res://src/Animation/EquipmentPresentationComponent.cs" id="6_equipment"]
 [ext_resource type="Script" path="res://src/World/CellNavBaker.cs" id="7_navbaker"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_tent.glb" id="p_tent"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_campfire.glb" id="p_campfire"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_brazier.glb" id="p_brazier"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_crate.glb" id="p_crate"]
 [ext_resource type="Script" path="res://src/World/TravelNodeComponent.cs" id="8_travel"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_waystone.glb" id="p_waystone"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_market_stand.glb" id="p_stand"]
 [ext_resource type="PackedScene" path="res://scenes/props/bld_ruin_house.tscn" id="b_ruin_house"]
 [ext_resource type="PackedScene" path="res://scenes/props/bld_workshop_open.tscn" id="b_workshop"]
@@ -24,6 +20,10 @@
 [ext_resource type="PackedScene" path="res://assets/models/creatures/enm_dire_wolf.glb" id="wb_enm_dire_wolf"]
 [ext_resource type="PackedScene" path="res://assets/models/creatures/enm_ashfall_elk.glb" id="wb_enm_ashfall_elk"]
 [ext_resource type="Script" path="res://src/World/FlagVisibilityComponent.cs" id="wb_flagvisibilitycomponent"]
+[ext_resource type="PackedScene" path="res://scenes/props/lm_waystone.tscn" id="rp_lm_waystone"]
+[ext_resource type="PackedScene" path="res://assets/models/world/prp_tent_a.glb" id="rp_prp_tent_a"]
+[ext_resource type="PackedScene" path="res://assets/models/world/prp_campfire_a.glb" id="rp_prp_campfire_a"]
+[ext_resource type="PackedScene" path="res://assets/models/world/prp_clutter_pile_a.glb" id="rp_prp_clutter_pile_a"]
 
 ; LAST HEARTH (the Ashen Wilds, 2026-09) - the survivors who came through the Breach and stayed.
 ;
@@ -43,20 +43,9 @@
 radius = 0.4
 height = 1.8
 
-[sub_resource type="CylinderShape3D" id="Shape_tent"]
-radius = 1.4
-height = 2.4
-
 [sub_resource type="CylinderShape3D" id="Shape_brazier"]
 radius = 0.5
 height = 1.2
-
-[sub_resource type="BoxShape3D" id="Shape_crate"]
-size = Vector3(1, 1, 1)
-
-[sub_resource type="CylinderShape3D" id="Shape_waystone"]
-radius = 0.7
-height = 3.0
 
 [sub_resource type="BoxShape3D" id="Shape_stand"]
 size = Vector3(1.4, 2.6, 3.0)
@@ -69,6 +58,24 @@ agent_height = 1.8
 agent_radius = 0.6
 agent_max_climb = 0.3
 agent_max_slope = 42.0
+
+[sub_resource type="CylinderShape3D" id="RpShape_TentA"]
+radius = 1.7
+height = 2.6
+
+[sub_resource type="CylinderShape3D" id="RpShape_TentB"]
+radius = 1.7
+height = 2.6
+
+[sub_resource type="CylinderShape3D" id="RpShape_TentC"]
+radius = 1.7
+height = 2.6
+
+[sub_resource type="BoxShape3D" id="RpShape_CrateB"]
+size = Vector3(2.3, 1.3, 1.5)
+
+[sub_resource type="BoxShape3D" id="RpShape_CrateA"]
+size = Vector3(2.3, 1.3, 1.5)
 
 [node name="LastHearthCell" type="Node3D"]
 metadata/content_offset = Vector2(-20, 25)
@@ -89,37 +96,37 @@ transform = Transform3D(0.9659, 0, 0.2588, 0, 1, 0, -0.2588, 0, 0.9659, -6, 0, 4
 transform = Transform3D(0.9903, 0, -0.1392, 0, 1, 0, 0.1392, 0, 0.9903, -8, 0, 13)
 
 [node name="TentA" type="Node3D" parent="Nav"]
-transform = Transform3D(0.866, 0, -0.5, 0, 1, 0, 0.5, 0, 0.866, -37, 0, 38)
+transform = Transform3D(0.7361, 0, -0.425, 0, 0.85, 0, 0.425, 0, 0.7361, -37, 0, 38)
 
-[node name="Model" parent="Nav/TentA" instance=ExtResource("p_tent")]
+[node name="Model" parent="Nav/TentA" instance=ExtResource("rp_prp_tent_a")]
 
 [node name="Col" type="StaticBody3D" parent="Nav/TentA"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/TentA/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
-shape = SubResource("Shape_tent")
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.3, 0)
+shape = SubResource("RpShape_TentA")
 
 [node name="TentB" type="Node3D" parent="Nav"]
-transform = Transform3D(0.342, 0, -0.9397, 0, 1, 0, 0.9397, 0, 0.342, -43, 0, 43)
+transform = Transform3D(0.2907, 0, -0.7987, 0, 0.85, 0, 0.7987, 0, 0.2907, -43, 0, 43)
 
-[node name="Model" parent="Nav/TentB" instance=ExtResource("p_tent")]
+[node name="Model" parent="Nav/TentB" instance=ExtResource("rp_prp_tent_a")]
 
 [node name="Col" type="StaticBody3D" parent="Nav/TentB"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/TentB/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
-shape = SubResource("Shape_tent")
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.3, 0)
+shape = SubResource("RpShape_TentB")
 
 [node name="TentC" type="Node3D" parent="Nav"]
-transform = Transform3D(0.9397, 0, 0.342, 0, 1, 0, -0.342, 0, 0.9397, -28, 0, 42)
+transform = Transform3D(0.7987, 0, 0.2907, 0, 0.85, 0, -0.2907, 0, 0.7987, -28, 0, 42)
 
-[node name="Model" parent="Nav/TentC" instance=ExtResource("p_tent")]
+[node name="Model" parent="Nav/TentC" instance=ExtResource("rp_prp_tent_a")]
 
 [node name="Col" type="StaticBody3D" parent="Nav/TentC"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/TentC/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
-shape = SubResource("Shape_tent")
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.3, 0)
+shape = SubResource("RpShape_TentC")
 
 [node name="Stall" type="Node3D" parent="Nav"]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -33, 0, 34)
@@ -133,26 +140,26 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.3, 0)
 shape = SubResource("Shape_stand")
 
 [node name="CrateA" type="Node3D" parent="Nav"]
-transform = Transform3D(0.9659, 0, -0.2588, 0, 1, 0, 0.2588, 0, 0.9659, -30, 0, 36)
+transform = Transform3D(0.7727, 0, -0.207, 0, 0.8, 0, 0.207, 0, 0.7727, -30, 0, 36)
 
-[node name="Model" parent="Nav/CrateA" instance=ExtResource("p_crate")]
+[node name="Model" parent="Nav/CrateA" instance=ExtResource("rp_prp_clutter_pile_a")]
 
 [node name="Col" type="StaticBody3D" parent="Nav/CrateA"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/CrateA/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
-shape = SubResource("Shape_crate")
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.65, 0)
+shape = SubResource("RpShape_CrateA")
 
 [node name="CrateB" type="Node3D" parent="Nav"]
-transform = Transform3D(0.766, 0, -0.6428, 0, 1, 0, 0.6428, 0, 0.766, -36, 0, 35)
+transform = Transform3D(0.6128, 0, -0.5143, 0, 0.8, 0, 0.5143, 0, 0.6128, -36, 0, 35)
 
-[node name="Model" parent="Nav/CrateB" instance=ExtResource("p_crate")]
+[node name="Model" parent="Nav/CrateB" instance=ExtResource("rp_prp_clutter_pile_a")]
 
 [node name="Col" type="StaticBody3D" parent="Nav/CrateB"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/CrateB/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
-shape = SubResource("Shape_crate")
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.65, 0)
+shape = SubResource("RpShape_CrateB")
 
 [node name="BrazierN" type="Node3D" parent="Nav"]
 transform = Transform3D(1, 0, -0, 0, 1, 0, 0, 0, 1, -13, 0, 10)
@@ -176,27 +183,21 @@ transform = Transform3D(1, 0, -0, 0, 1, 0, 0, 0, 1, -44, 0, 32)
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
 shape = SubResource("Shape_brazier")
 
-[node name="HearthFire" parent="." instance=ExtResource("p_campfire")]
-transform = Transform3D(1, 0, -0, 0, 1, 0, 0, 0, 1, -14, 0, 34)
+[node name="HearthFire" parent="." instance=ExtResource("rp_prp_campfire_a")]
+transform = Transform3D(0.6, 0, 0, 0, 0.6, 0, 0, 0, 0.6, -14, 0, 34)
 
 [node name="Light" type="OmniLight3D" parent="HearthFire"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.3334, 0)
 light_color = Color(1, 0.6, 0.3, 1)
 light_energy = 1.8
 omni_range = 7.0
 
 [node name="Waystone" type="Node3D" parent="."]
-transform = Transform3D(1, 0, -0, 0, 1, 0, 0, 0, 1, -12, 0, 22)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12, 0, 22)
 script = ExtResource("1_entity")
 DisplayName = "Last Hearth Waystone"
 
-[node name="Model" parent="Waystone" instance=ExtResource("p_waystone")]
-
-[node name="Collider" type="StaticBody3D" parent="Waystone"]
-
-[node name="Shape" type="CollisionShape3D" parent="Waystone/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
-shape = SubResource("Shape_waystone")
+[node name="Model" parent="Waystone" instance=ExtResource("rp_lm_waystone")]
 
 [node name="Travel" type="Node" parent="Waystone"]
 script = ExtResource("8_travel")

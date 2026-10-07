@@ -1,11 +1,11 @@
 [gd_scene format=3]
 
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_lamp_post.glb" id="prp_lamp_post"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_bench.glb" id="prp_bench"]
 [ext_resource type="Script" path="res://src/World/CellNavBaker.cs" id="s_navbaker"]
 [ext_resource type="Script" path="res://src/World/MapLocationComponent.cs" id="maploc_39_5a"]
 [ext_resource type="Script" path="res://src/Entities/Entity.cs" id="wc_entity_cs"]
 [ext_resource type="Script" path="res://src/Dialogue/DialogueComponent.cs" id="wc_dialoguecomponent_cs"]
+[ext_resource type="PackedScene" path="res://assets/models/world/prp_lamp_post_a.glb" id="rp_prp_lamp_post_a"]
 
 ; THE STILL QUAY (hidden realm) — where the way from the Sunspire library lets out. Authored in the
 ; content frame; tools/shift_cell_content.py moves it to the spec's origin. The door home is built by
@@ -33,14 +33,14 @@ navigation_mesh = SubResource("NavMesh_landing")
 [node name="NavBaker" type="Node" parent="Nav"]
 script = ExtResource("s_navbaker")
 
-[node name="QuayLamp0" parent="Nav" instance=ExtResource("prp_lamp_post")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -50, 0, 57)
+[node name="QuayLamp0" parent="Nav" instance=ExtResource("rp_prp_lamp_post_a")]
+transform = Transform3D(1.1, 0, 0, 0, 1.1, 0, 0, 0, 1.1, -50, 0, 57)
 
-[node name="QuayLamp1" parent="Nav" instance=ExtResource("prp_lamp_post")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -40, 0, 57)
+[node name="QuayLamp1" parent="Nav" instance=ExtResource("rp_prp_lamp_post_a")]
+transform = Transform3D(1.1, 0, 0, 0, 1.1, 0, 0, 0, 1.1, -40, 0, 57)
 
-[node name="QuayLamp2" parent="Nav" instance=ExtResource("prp_lamp_post")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -50, 0, 71)
+[node name="QuayLamp2" parent="Nav" instance=ExtResource("rp_prp_lamp_post_a")]
+transform = Transform3D(1.1, 0, 0, 0, 1.1, 0, 0, 0, 1.1, -50, 0, 71)
 
 [node name="QuayLamp3" type="Node3D" parent="Nav"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -40, 0, 71)
@@ -58,7 +58,8 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -45, 0, 65)
 script = ExtResource("maploc_39_5a")
 LocationId = "location.pale.landing"
 
-[node name="Model" parent="Nav/QuayLamp3" instance=ExtResource("prp_lamp_post")]
+[node name="Model" parent="Nav/QuayLamp3" instance=ExtResource("rp_prp_lamp_post_a")]
+transform = Transform3D(1.1, 0, 0, 0, 1.1, 0, 0, 0, 1.1, 0, 0, 0)
 
 [node name="Collider" type="StaticBody3D" parent="Nav/QuayLamp3"]
 

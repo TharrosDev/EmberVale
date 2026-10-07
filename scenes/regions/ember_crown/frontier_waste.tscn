@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://cmbrvlfrntrws01"]
 
 [ext_resource type="Script" path="res://src/World/CellNavBaker.cs" id="1_navbaker"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_cart.glb" id="dx_cart"]
+[ext_resource type="PackedScene" path="res://assets/models/world/prp_cart_a.glb" id="dx_cart"]
 
 ; THE FRONTIER WASTE — a transitional cell (the 2026-08-29 geography overhaul).
 ;
@@ -27,7 +27,7 @@
 ; agent_radius CEIL to a voxel (cell_height / cell_size), agent_max_climb FLOORS to cell_height.
 ; ⚠️ They encode this grid — change cell_size or cell_height and recompute all three with it.
 [sub_resource type="BoxShape3D" id="DxShape_cart"]
-size = Vector3(1.8, 1.6, 3.2)
+size = Vector3(3.4, 1.5, 1.9)
 
 [sub_resource type="NavigationMesh" id="NavMesh_frontier_waste"]
 geometry_parsed_geometry_type = 1
@@ -47,12 +47,12 @@ navigation_mesh = SubResource("NavMesh_frontier_waste")
 script = ExtResource("1_navbaker")
 
 [node name="Dx_FrontierBurntCart" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.766, 0, -0.6428, 0, 1, 0, 0.6428, 0, -0.766, 20, 0, 55)
+transform = Transform3D(-0.6428, 0, 0.766, 0, 1, 0, -0.766, 0, -0.6428, 20, 0, 55)
 
 [node name="Model" parent="Nav/Dx_FrontierBurntCart" instance=ExtResource("dx_cart")]
 
 [node name="Collider" type="StaticBody3D" parent="Nav/Dx_FrontierBurntCart"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/Dx_FrontierBurntCart/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.75, 0)
 shape = SubResource("DxShape_cart")

@@ -4,13 +4,13 @@
 [ext_resource type="Script" path="res://src/Enemies/BossSummonComponent.cs" id="s_summon"]
 [ext_resource type="Script" path="res://src/Enemies/ArenaHookComponent.cs" id="s_hook"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_brazier.glb" id="prp_brazier"]
-[ext_resource type="PackedScene" path="res://assets/models/architecture/bld_castle_fortress.glb" id="castle"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_ruin_pillar.glb" id="prp_ruin_pillar"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_lamp_post.glb" id="prp_lamp_post"]
 [ext_resource type="Script" path="res://src/World/CellNavBaker.cs" id="s_navbaker"]
 [ext_resource type="Script" path="res://src/World/MapLocationComponent.cs" id="maploc_39_5a"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_chair.gltf" id="wc_prp_chair_gltf"]
 [ext_resource type="Script" path="res://src/Dialogue/DialogueComponent.cs" id="wc_dialoguecomponent_cs"]
+[ext_resource type="PackedScene" path="res://scenes/props/lm_monolith_a.tscn" id="rp_lm_monolith_a"]
+[ext_resource type="PackedScene" path="res://scenes/props/lm_iron_citadel.tscn" id="rp_lm_iron_citadel"]
+[ext_resource type="PackedScene" path="res://assets/models/world/prp_lamp_post_a.glb" id="rp_prp_lamp_post_a"]
 
 ; THE HOLLOW COURT (hidden realm) — the Hollow Queen's palace and the ring in its forecourt.
 ; Authored in the content frame; tools/shift_cell_content.py moves it to the spec's origin.
@@ -31,14 +31,8 @@ agent_radius = 0.8
 agent_max_climb = 0.3
 agent_max_slope = 40.0
 
-[sub_resource type="BoxShape3D" id="Shape_hall"]
-size = Vector3(30.4, 19.4, 28)
-
 [sub_resource type="BoxShape3D" id="Shape_brazier"]
 size = Vector3(1, 1.4, 1)
-
-[sub_resource type="BoxShape3D" id="Box_prp_ruin_pillar"]
-size = Vector3(1.2, 4.0, 1.2)
 
 [sub_resource type="BoxShape3D" id="WC_Box_1_1p9_1"]
 size = Vector3(1, 1.9, 1)
@@ -53,66 +47,40 @@ navigation_mesh = SubResource("NavMesh_palace")
 script = ExtResource("s_navbaker")
 
 [node name="Hall" type="Node3D" parent="Nav" groups=["world_landmark"]]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, -35, 0, -5)
+transform = Transform3D(-0.7, 0, 0, 0, 0.7, 0, 0, 0, -0.7, -35, -0.4, -5)
 
-[node name="Model" parent="Nav/Hall" instance=ExtResource("castle")]
-transform = Transform3D(0.55, 0, 0, 0, 0.55, 0, 0, 0, 0.55, 0, 0, 0)
-
-[node name="Collider" type="StaticBody3D" parent="Nav/Hall"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/Hall/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 9.7, 0)
-shape = SubResource("Shape_hall")
+[node name="Model" parent="Nav/Hall" instance=ExtResource("rp_lm_iron_citadel")]
+albedo_tint = Color(1.06, 1.04, 1.1, 1)
 
 [node name="RingPillar0" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -47, 0, 27)
+transform = Transform3D(0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, -47, 0, 27)
 
-[node name="Model" parent="Nav/RingPillar0" instance=ExtResource("prp_ruin_pillar")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/RingPillar0"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/RingPillar0/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
-shape = SubResource("Box_prp_ruin_pillar")
+[node name="Model" parent="Nav/RingPillar0" instance=ExtResource("rp_lm_monolith_a")]
+albedo_tint = Color(1.06, 1.04, 1.1, 1)
 
 [node name="RingPillar1" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -23, 0, 27)
+transform = Transform3D(0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, -23, 0, 27)
 
-[node name="Model" parent="Nav/RingPillar1" instance=ExtResource("prp_ruin_pillar")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/RingPillar1"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/RingPillar1/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
-shape = SubResource("Box_prp_ruin_pillar")
+[node name="Model" parent="Nav/RingPillar1" instance=ExtResource("rp_lm_monolith_a")]
+albedo_tint = Color(1.06, 1.04, 1.1, 1)
 
 [node name="RingPillar2" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -47, 0, 45)
+transform = Transform3D(0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, -47, 0, 45)
 
-[node name="Model" parent="Nav/RingPillar2" instance=ExtResource("prp_ruin_pillar")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/RingPillar2"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/RingPillar2/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
-shape = SubResource("Box_prp_ruin_pillar")
+[node name="Model" parent="Nav/RingPillar2" instance=ExtResource("rp_lm_monolith_a")]
+albedo_tint = Color(1.06, 1.04, 1.1, 1)
 
 [node name="RingPillar3" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -23, 0, 45)
+transform = Transform3D(0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, -23, 0, 45)
 
-[node name="Model" parent="Nav/RingPillar3" instance=ExtResource("prp_ruin_pillar")]
+[node name="Model" parent="Nav/RingPillar3" instance=ExtResource("rp_lm_monolith_a")]
+albedo_tint = Color(1.06, 1.04, 1.1, 1)
 
-[node name="Collider" type="StaticBody3D" parent="Nav/RingPillar3"]
+[node name="GateLamp0" parent="Nav" instance=ExtResource("rp_prp_lamp_post_a")]
+transform = Transform3D(1.1, 0, 0, 0, 1.1, 0, 0, 0, 1.1, -41.5, 0, 55)
 
-[node name="Shape" type="CollisionShape3D" parent="Nav/RingPillar3/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
-shape = SubResource("Box_prp_ruin_pillar")
-
-[node name="GateLamp0" parent="Nav" instance=ExtResource("prp_lamp_post")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -41.5, 0, 55)
-
-[node name="GateLamp1" parent="Nav" instance=ExtResource("prp_lamp_post")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -28.5, 0, 55)
+[node name="GateLamp1" parent="Nav" instance=ExtResource("rp_prp_lamp_post_a")]
+transform = Transform3D(1.1, 0, 0, 0, 1.1, 0, 0, 0, 1.1, -28.5, 0, 55)
 
 [node name="Brazier" type="Node3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -28.5, 0, 49)

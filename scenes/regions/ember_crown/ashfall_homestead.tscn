@@ -1,4 +1,4 @@
-[gd_scene load_steps=47 format=3]
+[gd_scene load_steps=85 format=3]
 
 [ext_resource type="Script" path="res://src/World/EnvironmentVolume.cs" id="environment_volume"]
 [ext_resource type="Resource" path="res://data/rendering/Interior.tres" id="interior_profile"]
@@ -34,17 +34,17 @@
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_station_workbench.glb" id="29_bench"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_station_alchemy.glb" id="30_alchemy"]
 [ext_resource type="Script" path="res://src/Crafting/CraftingStationComponent.cs" id="31_station"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_fence.glb" id="32_fence"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_tree_broadleaf.glb" id="33_tree"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_bush_flowering.glb" id="34_bush"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_well.glb" id="35_well"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_rockpath_wide.glb" id="36_path"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_timber_stack.glb" id="39_timber"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_lamp_post.glb" id="40_lamp"]
 [ext_resource type="Script" path="res://src/World/MapLocationComponent.cs" id="maploc_39_5a"]
 [ext_resource type="PackedScene" path="res://scenes/props/shrine_waystone.tscn" id="shrine_body_41_5b"]
 [ext_resource type="Script" path="res://src/Shrines/ShrineComponent.cs" id="shrine_41_5b"]
 [ext_resource type="Script" path="res://src/World/CellNavBaker.cs" id="navbaker_cleanup"]
+[ext_resource type="PackedScene" path="res://assets/models/world/prp_lamp_post_a.glb" id="rp_prp_lamp_post_a"]
+[ext_resource type="PackedScene" path="res://assets/models/world/prp_fence_a.glb" id="rp_prp_fence_a"]
+[ext_resource type="PackedScene" path="res://assets/models/world/prp_well_a.glb" id="rp_prp_well_a"]
 
 ; THE ASHFALL HOMESTEAD (the 2026-08-28 layout rebuild) — the player's holding, east of the Embermarket.
 ;
@@ -138,17 +138,131 @@ size = Vector3(1.5, 1.32, 1.36)
 [sub_resource type="BoxShape3D" id="Shape_alchemy"]
 size = Vector3(1.45, 1.01, 1.2)
 
-[sub_resource type="BoxShape3D" id="Shape_fence"]
-size = Vector3(2.91, 1.2, 0.14)
-
 [sub_resource type="BoxShape3D" id="Shape_tree"]
 size = Vector3(0.9, 8, 0.9)
 
-[sub_resource type="BoxShape3D" id="Shape_well"]
-size = Vector3(1.47, 2.75, 2.21)
-
 [sub_resource type="BoxShape3D" id="Shape_timber"]
 size = Vector3(5.67, 1.2, 4.08)
+
+[sub_resource type="BoxShape3D" id="RpShape_FenceS0"]
+size = Vector3(2.14, 1.2, 0.3)
+
+[sub_resource type="BoxShape3D" id="RpShape_FenceS1"]
+size = Vector3(2.14, 1.2, 0.3)
+
+[sub_resource type="BoxShape3D" id="RpShape_FenceS2"]
+size = Vector3(2.14, 1.2, 0.3)
+
+[sub_resource type="BoxShape3D" id="RpShape_FenceS3"]
+size = Vector3(2.14, 1.2, 0.3)
+
+[sub_resource type="BoxShape3D" id="RpShape_FenceS4"]
+size = Vector3(2.14, 1.2, 0.3)
+
+[sub_resource type="BoxShape3D" id="RpShape_FenceS5"]
+size = Vector3(2.14, 1.2, 0.3)
+
+[sub_resource type="BoxShape3D" id="RpShape_FenceE0"]
+size = Vector3(2.14, 1.2, 0.3)
+
+[sub_resource type="BoxShape3D" id="RpShape_FenceE1"]
+size = Vector3(2.14, 1.2, 0.3)
+
+[sub_resource type="BoxShape3D" id="RpShape_FenceE2"]
+size = Vector3(2.14, 1.2, 0.3)
+
+[sub_resource type="BoxShape3D" id="RpShape_FenceS6"]
+size = Vector3(2.14, 1.2, 0.3)
+
+[sub_resource type="BoxShape3D" id="RpShape_FenceS7"]
+size = Vector3(2.14, 1.2, 0.3)
+
+[sub_resource type="BoxShape3D" id="RpShape_FenceS8"]
+size = Vector3(2.14, 1.2, 0.3)
+
+[sub_resource type="BoxShape3D" id="RpShape_FenceS9"]
+size = Vector3(2.14, 1.2, 0.3)
+
+[sub_resource type="BoxShape3D" id="RpShape_FenceSW0"]
+size = Vector3(2.14, 1.2, 0.3)
+
+[sub_resource type="BoxShape3D" id="RpShape_FenceSW1"]
+size = Vector3(2.14, 1.2, 0.3)
+
+[sub_resource type="BoxShape3D" id="RpShape_FenceW0"]
+size = Vector3(2.14, 1.2, 0.3)
+
+[sub_resource type="BoxShape3D" id="RpShape_FenceW1"]
+size = Vector3(2.14, 1.2, 0.3)
+
+[sub_resource type="BoxShape3D" id="RpShape_FenceWN0"]
+size = Vector3(2.14, 1.2, 0.3)
+
+[sub_resource type="BoxShape3D" id="RpShape_FenceWN1"]
+size = Vector3(2.14, 1.2, 0.3)
+
+[sub_resource type="BoxShape3D" id="RpShape_FenceWN2"]
+size = Vector3(2.14, 1.2, 0.3)
+
+[sub_resource type="BoxShape3D" id="RpShape_FenceWN3"]
+size = Vector3(2.14, 1.2, 0.3)
+
+[sub_resource type="BoxShape3D" id="RpShape_FenceN0"]
+size = Vector3(2.14, 1.2, 0.3)
+
+[sub_resource type="BoxShape3D" id="RpShape_FenceN1"]
+size = Vector3(2.14, 1.2, 0.3)
+
+[sub_resource type="BoxShape3D" id="RpShape_FenceN2"]
+size = Vector3(2.14, 1.2, 0.3)
+
+[sub_resource type="BoxShape3D" id="RpShape_FenceN3"]
+size = Vector3(2.14, 1.2, 0.3)
+
+[sub_resource type="BoxShape3D" id="RpShape_FenceN4"]
+size = Vector3(2.14, 1.2, 0.3)
+
+[sub_resource type="BoxShape3D" id="RpShape_FenceN5"]
+size = Vector3(2.14, 1.2, 0.3)
+
+[sub_resource type="BoxShape3D" id="RpShape_FenceN6"]
+size = Vector3(2.14, 1.2, 0.3)
+
+[sub_resource type="BoxShape3D" id="RpShape_FenceN7"]
+size = Vector3(2.14, 1.2, 0.3)
+
+[sub_resource type="BoxShape3D" id="RpShape_FenceN8"]
+size = Vector3(2.14, 1.2, 0.3)
+
+[sub_resource type="BoxShape3D" id="RpShape_FenceN9"]
+size = Vector3(2.14, 1.2, 0.3)
+
+[sub_resource type="BoxShape3D" id="RpShape_FenceN10"]
+size = Vector3(2.14, 1.2, 0.3)
+
+[sub_resource type="BoxShape3D" id="RpShape_FenceN11"]
+size = Vector3(2.14, 1.2, 0.3)
+
+[sub_resource type="BoxShape3D" id="RpShape_FenceE3"]
+size = Vector3(2.14, 1.2, 0.3)
+
+[sub_resource type="BoxShape3D" id="RpShape_FenceE4"]
+size = Vector3(2.14, 1.2, 0.3)
+
+[sub_resource type="BoxShape3D" id="RpShape_FenceE5"]
+size = Vector3(2.14, 1.2, 0.3)
+
+[sub_resource type="BoxShape3D" id="RpShape_FenceE6"]
+size = Vector3(2.14, 1.2, 0.3)
+
+[sub_resource type="BoxShape3D" id="RpShape_FenceE7"]
+size = Vector3(2.14, 1.2, 0.3)
+
+[sub_resource type="BoxShape3D" id="RpShape_FenceE8"]
+size = Vector3(2.14, 1.2, 0.3)
+
+[sub_resource type="BoxShape3D" id="RpShape_Well"]
+size = Vector3(2.6, 2.6, 2.8)
 
 ; ====================================================================================================
 ; ASHFALL HOMESTEAD — the player's holding (Phase 37E). Cell Center is (52, 0, 46), so every
@@ -382,15 +496,15 @@ shape = SubResource("Shape_timber")
 ; --- the grounds ------------------------------------------------------------------------------------
 
 [node name="Well" type="Node3D" parent="Nav"]
-transform = Transform3D(0.9397, 0, 0.342, 0, 1, 0, -0.342, 0, 0.9397, 17, 0, 26)
+transform = Transform3D(0.7987, 0, 0.2907, 0, 0.85, 0, -0.2907, 0, 0.7987, 17, 0, 26)
 
-[node name="Model" parent="Nav/Well" instance=ExtResource("35_well")]
+[node name="Model" parent="Nav/Well" instance=ExtResource("rp_prp_well_a")]
 
 [node name="Collider" type="StaticBody3D" parent="Nav/Well"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/Well/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.37, 0)
-shape = SubResource("Shape_well")
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.3, 0)
+shape = SubResource("RpShape_Well")
 
 ; ⚠️ IT BELONGS AT THE GATE AND NOWHERE ELSE. Two placements were tried nearer the house and both
 ; rendered as a grey stone monolith blocking the front door — the model is read at 20 m in the town
@@ -399,7 +513,8 @@ shape = SubResource("Shape_well")
 [node name="LampGate" type="Node3D" parent="Nav"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18.5, 0, 11.8)
 
-[node name="Model" parent="Nav/LampGate" instance=ExtResource("40_lamp")]
+[node name="Model" parent="Nav/LampGate" instance=ExtResource("rp_prp_lamp_post_a")]
+transform = Transform3D(1.1, 0, 0, 0, 1.1, 0, 0, 0, 1.1, 0, 0, 0)
 
 [node name="Glow" type="OmniLight3D" parent="Nav/LampGate"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.2, 0)
@@ -473,103 +588,103 @@ transform = Transform3D(-0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, -0.9397, 35, 0, 1
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 0, 22)
 
 [node name="FenceS0" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 31.2, 0, 32)
+transform = Transform3D(-1.45, 0, 0, 0, 1.45, 0, 0, 0, -1.45, 31.2, 0, 32)
 
-[node name="Model" parent="Nav/FenceS0" instance=ExtResource("32_fence")]
+[node name="Model" parent="Nav/FenceS0" instance=ExtResource("rp_prp_fence_a")]
 
 [node name="Collider" type="StaticBody3D" parent="Nav/FenceS0"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/FenceS0/Collider"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
-shape = SubResource("Shape_fence")
+shape = SubResource("RpShape_FenceS0")
 
 [node name="FenceS1" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 28.3, 0, 32)
+transform = Transform3D(1.45, 0, 0, 0, 1.45, 0, 0, 0, 1.45, 28.3, 0, 32)
 
-[node name="Model" parent="Nav/FenceS1" instance=ExtResource("32_fence")]
+[node name="Model" parent="Nav/FenceS1" instance=ExtResource("rp_prp_fence_a")]
 
 [node name="Collider" type="StaticBody3D" parent="Nav/FenceS1"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/FenceS1/Collider"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
-shape = SubResource("Shape_fence")
+shape = SubResource("RpShape_FenceS1")
 
 [node name="FenceS2" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 25.4, 0, 32)
+transform = Transform3D(-1.45, 0, 0, 0, 1.45, 0, 0, 0, -1.45, 25.4, 0, 32)
 
-[node name="Model" parent="Nav/FenceS2" instance=ExtResource("32_fence")]
+[node name="Model" parent="Nav/FenceS2" instance=ExtResource("rp_prp_fence_a")]
 
 [node name="Collider" type="StaticBody3D" parent="Nav/FenceS2"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/FenceS2/Collider"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
-shape = SubResource("Shape_fence")
+shape = SubResource("RpShape_FenceS2")
 
 [node name="FenceS3" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 22.5, 0, 32)
+transform = Transform3D(1.45, 0, 0, 0, 1.45, 0, 0, 0, 1.45, 22.5, 0, 32)
 
-[node name="Model" parent="Nav/FenceS3" instance=ExtResource("32_fence")]
+[node name="Model" parent="Nav/FenceS3" instance=ExtResource("rp_prp_fence_a")]
 
 [node name="Collider" type="StaticBody3D" parent="Nav/FenceS3"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/FenceS3/Collider"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
-shape = SubResource("Shape_fence")
+shape = SubResource("RpShape_FenceS3")
 
 [node name="FenceS4" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 19.6, 0, 32)
+transform = Transform3D(-1.45, 0, 0, 0, 1.45, 0, 0, 0, -1.45, 19.6, 0, 32)
 
-[node name="Model" parent="Nav/FenceS4" instance=ExtResource("32_fence")]
+[node name="Model" parent="Nav/FenceS4" instance=ExtResource("rp_prp_fence_a")]
 
 [node name="Collider" type="StaticBody3D" parent="Nav/FenceS4"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/FenceS4/Collider"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
-shape = SubResource("Shape_fence")
+shape = SubResource("RpShape_FenceS4")
 
 [node name="FenceS5" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16.7, 0, 32)
+transform = Transform3D(-1.45, 0, 0, 0, 1.45, 0, 0, 0, -1.45, 16.7, 0, 32)
 
-[node name="Model" parent="Nav/FenceS5" instance=ExtResource("32_fence")]
+[node name="Model" parent="Nav/FenceS5" instance=ExtResource("rp_prp_fence_a")]
 
 [node name="Collider" type="StaticBody3D" parent="Nav/FenceS5"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/FenceS5/Collider"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
-shape = SubResource("Shape_fence")
+shape = SubResource("RpShape_FenceS5")
 
 [node name="FenceE0" type="Node3D" parent="Nav"]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 46, 0, 16.1)
+transform = Transform3D(0, 0, -1.45, 0, 1.45, 0, 1.45, 0, 0, 46, 0, 16.1)
 
-[node name="Model" parent="Nav/FenceE0" instance=ExtResource("32_fence")]
+[node name="Model" parent="Nav/FenceE0" instance=ExtResource("rp_prp_fence_a")]
 
 [node name="Collider" type="StaticBody3D" parent="Nav/FenceE0"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/FenceE0/Collider"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
-shape = SubResource("Shape_fence")
+shape = SubResource("RpShape_FenceE0")
 
 [node name="FenceE1" type="Node3D" parent="Nav"]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 46, 0, 19)
+transform = Transform3D(0, 0, 1.45, 0, 1.45, 0, -1.45, 0, 0, 46, 0, 19)
 
-[node name="Model" parent="Nav/FenceE1" instance=ExtResource("32_fence")]
+[node name="Model" parent="Nav/FenceE1" instance=ExtResource("rp_prp_fence_a")]
 
 [node name="Collider" type="StaticBody3D" parent="Nav/FenceE1"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/FenceE1/Collider"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
-shape = SubResource("Shape_fence")
+shape = SubResource("RpShape_FenceE1")
 
 [node name="FenceE2" type="Node3D" parent="Nav"]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 46, 0, 21.9)
+transform = Transform3D(0, 0, -1.45, 0, 1.45, 0, 1.45, 0, 0, 46, 0, 21.9)
 
-[node name="Model" parent="Nav/FenceE2" instance=ExtResource("32_fence")]
+[node name="Model" parent="Nav/FenceE2" instance=ExtResource("rp_prp_fence_a")]
 
 [node name="Collider" type="StaticBody3D" parent="Nav/FenceE2"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/FenceE2/Collider"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
-shape = SubResource("Shape_fence")
+shape = SubResource("RpShape_FenceE2")
 
 ; --- 37A: the deed post -------------------------------------------------------------------------------
 ; ⚠️ It stays OUTSIDE the house, on the path, where a non-owner can walk up to it — a deed nobody can
@@ -712,334 +827,334 @@ PropertyId = "property.ember_crown.cottage"
 ; version looked like a boundary because the coordinates said "boundary".
 
 [node name="FenceS6" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13.8, 0, 32)
+transform = Transform3D(1.45, 0, 0, 0, 1.45, 0, 0, 0, 1.45, 13.8, 0, 32)
 
-[node name="Model" parent="Nav/FenceS6" instance=ExtResource("32_fence")]
+[node name="Model" parent="Nav/FenceS6" instance=ExtResource("rp_prp_fence_a")]
 
 [node name="Collider" type="StaticBody3D" parent="Nav/FenceS6"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/FenceS6/Collider"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
-shape = SubResource("Shape_fence")
+shape = SubResource("RpShape_FenceS6")
 
 [node name="FenceS7" type="Node3D" parent="Nav"]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 12, 0, 30.6)
+transform = Transform3D(0, 0, 1.45, 0, 1.45, 0, -1.45, 0, 0, 12, 0, 30.6)
 
-[node name="Model" parent="Nav/FenceS7" instance=ExtResource("32_fence")]
+[node name="Model" parent="Nav/FenceS7" instance=ExtResource("rp_prp_fence_a")]
 
 [node name="Collider" type="StaticBody3D" parent="Nav/FenceS7"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/FenceS7/Collider"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
-shape = SubResource("Shape_fence")
+shape = SubResource("RpShape_FenceS7")
 
 [node name="FenceS8" type="Node3D" parent="Nav"]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 12, 0, 27.7)
+transform = Transform3D(0, 0, -1.45, 0, 1.45, 0, 1.45, 0, 0, 12, 0, 27.7)
 
-[node name="Model" parent="Nav/FenceS8" instance=ExtResource("32_fence")]
+[node name="Model" parent="Nav/FenceS8" instance=ExtResource("rp_prp_fence_a")]
 
 [node name="Collider" type="StaticBody3D" parent="Nav/FenceS8"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/FenceS8/Collider"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
-shape = SubResource("Shape_fence")
+shape = SubResource("RpShape_FenceS8")
 
 [node name="FenceS9" type="Node3D" parent="Nav"]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 12, 0, 24.8)
+transform = Transform3D(0, 0, 1.45, 0, 1.45, 0, -1.45, 0, 0, 12, 0, 24.8)
 
-[node name="Model" parent="Nav/FenceS9" instance=ExtResource("32_fence")]
+[node name="Model" parent="Nav/FenceS9" instance=ExtResource("rp_prp_fence_a")]
 
 [node name="Collider" type="StaticBody3D" parent="Nav/FenceS9"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/FenceS9/Collider"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
-shape = SubResource("Shape_fence")
+shape = SubResource("RpShape_FenceS9")
 
 [node name="FenceSW0" type="Node3D" parent="Nav"]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 12, 0, 21.9)
+transform = Transform3D(0, 0, -1.45, 0, 1.45, 0, 1.45, 0, 0, 12, 0, 21.9)
 
-[node name="Model" parent="Nav/FenceSW0" instance=ExtResource("32_fence")]
+[node name="Model" parent="Nav/FenceSW0" instance=ExtResource("rp_prp_fence_a")]
 
 [node name="Collider" type="StaticBody3D" parent="Nav/FenceSW0"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/FenceSW0/Collider"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
-shape = SubResource("Shape_fence")
+shape = SubResource("RpShape_FenceSW0")
 
 [node name="FenceSW1" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 22.8, 0, 23)
+transform = Transform3D(1.45, 0, 0, 0, 1.45, 0, 0, 0, 1.45, 22.8, 0, 23)
 
-[node name="Model" parent="Nav/FenceSW1" instance=ExtResource("32_fence")]
+[node name="Model" parent="Nav/FenceSW1" instance=ExtResource("rp_prp_fence_a")]
 
 [node name="Collider" type="StaticBody3D" parent="Nav/FenceSW1"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/FenceSW1/Collider"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
-shape = SubResource("Shape_fence")
+shape = SubResource("RpShape_FenceSW1")
 
 [node name="FenceW0" type="Node3D" parent="Nav"]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 12, 0, 19)
+transform = Transform3D(0, 0, -1.45, 0, 1.45, 0, 1.45, 0, 0, 12, 0, 19)
 
-[node name="Model" parent="Nav/FenceW0" instance=ExtResource("32_fence")]
+[node name="Model" parent="Nav/FenceW0" instance=ExtResource("rp_prp_fence_a")]
 
 [node name="Collider" type="StaticBody3D" parent="Nav/FenceW0"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/FenceW0/Collider"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
-shape = SubResource("Shape_fence")
+shape = SubResource("RpShape_FenceW0")
 
 [node name="FenceW1" type="Node3D" parent="Nav"]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 12, 0, 16.1)
+transform = Transform3D(0, 0, 1.45, 0, 1.45, 0, -1.45, 0, 0, 12, 0, 16.1)
 
-[node name="Model" parent="Nav/FenceW1" instance=ExtResource("32_fence")]
+[node name="Model" parent="Nav/FenceW1" instance=ExtResource("rp_prp_fence_a")]
 
 [node name="Collider" type="StaticBody3D" parent="Nav/FenceW1"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/FenceW1/Collider"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
-shape = SubResource("Shape_fence")
+shape = SubResource("RpShape_FenceW1")
 
 [node name="FenceWN0" type="Node3D" parent="Nav"]
-transform = Transform3D(0.809, 0, -0.5878, 0, 1, 0, 0.5878, 0, 0.809, 20.1, 0, 8.2)
+transform = Transform3D(1.1731, 0, -0.8523, 0, 1.45, 0, 0.8523, 0, 1.1731, 20.1, 0, 8.2)
 
-[node name="Model" parent="Nav/FenceWN0" instance=ExtResource("32_fence")]
+[node name="Model" parent="Nav/FenceWN0" instance=ExtResource("rp_prp_fence_a")]
 
 [node name="Collider" type="StaticBody3D" parent="Nav/FenceWN0"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/FenceWN0/Collider"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
-shape = SubResource("Shape_fence")
+shape = SubResource("RpShape_FenceWN0")
 
 [node name="FenceWN1" type="Node3D" parent="Nav"]
-transform = Transform3D(0.809, 0, -0.5878, 0, 1, 0, 0.5878, 0, 0.809, 21.7, 0, 7)
+transform = Transform3D(1.1731, 0, -0.8523, 0, 1.45, 0, 0.8523, 0, 1.1731, 21.7, 0, 7)
 
-[node name="Model" parent="Nav/FenceWN1" instance=ExtResource("32_fence")]
+[node name="Model" parent="Nav/FenceWN1" instance=ExtResource("rp_prp_fence_a")]
 
 [node name="Collider" type="StaticBody3D" parent="Nav/FenceWN1"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/FenceWN1/Collider"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
-shape = SubResource("Shape_fence")
+shape = SubResource("RpShape_FenceWN1")
 
 [node name="FenceWN2" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 17, 0, 23)
+transform = Transform3D(1.45, 0, 0, 0, 1.45, 0, 0, 0, 1.45, 17, 0, 23)
 
-[node name="Model" parent="Nav/FenceWN2" instance=ExtResource("32_fence")]
+[node name="Model" parent="Nav/FenceWN2" instance=ExtResource("rp_prp_fence_a")]
 
 [node name="Collider" type="StaticBody3D" parent="Nav/FenceWN2"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/FenceWN2/Collider"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
-shape = SubResource("Shape_fence")
+shape = SubResource("RpShape_FenceWN2")
 
 [node name="FenceWN3" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 19.9, 0, 23)
+transform = Transform3D(-1.45, 0, 0, 0, 1.45, 0, 0, 0, -1.45, 19.9, 0, 23)
 
-[node name="Model" parent="Nav/FenceWN3" instance=ExtResource("32_fence")]
+[node name="Model" parent="Nav/FenceWN3" instance=ExtResource("rp_prp_fence_a")]
 
 [node name="Collider" type="StaticBody3D" parent="Nav/FenceWN3"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/FenceWN3/Collider"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
-shape = SubResource("Shape_fence")
+shape = SubResource("RpShape_FenceWN3")
 
 [node name="FenceN0" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 23, 0, 6)
+transform = Transform3D(1.45, 0, 0, 0, 1.45, 0, 0, 0, 1.45, 23, 0, 6)
 
-[node name="Model" parent="Nav/FenceN0" instance=ExtResource("32_fence")]
+[node name="Model" parent="Nav/FenceN0" instance=ExtResource("rp_prp_fence_a")]
 
 [node name="Collider" type="StaticBody3D" parent="Nav/FenceN0"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/FenceN0/Collider"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
-shape = SubResource("Shape_fence")
+shape = SubResource("RpShape_FenceN0")
 
 [node name="FenceN1" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 25.9, 0, 6)
+transform = Transform3D(-1.45, 0, 0, 0, 1.45, 0, 0, 0, -1.45, 25.9, 0, 6)
 
-[node name="Model" parent="Nav/FenceN1" instance=ExtResource("32_fence")]
+[node name="Model" parent="Nav/FenceN1" instance=ExtResource("rp_prp_fence_a")]
 
 [node name="Collider" type="StaticBody3D" parent="Nav/FenceN1"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/FenceN1/Collider"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
-shape = SubResource("Shape_fence")
+shape = SubResource("RpShape_FenceN1")
 
 [node name="FenceN2" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 28.8, 0, 6)
+transform = Transform3D(1.45, 0, 0, 0, 1.45, 0, 0, 0, 1.45, 28.8, 0, 6)
 
-[node name="Model" parent="Nav/FenceN2" instance=ExtResource("32_fence")]
+[node name="Model" parent="Nav/FenceN2" instance=ExtResource("rp_prp_fence_a")]
 
 [node name="Collider" type="StaticBody3D" parent="Nav/FenceN2"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/FenceN2/Collider"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
-shape = SubResource("Shape_fence")
+shape = SubResource("RpShape_FenceN2")
 
 [node name="FenceN3" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 31.7, 0, 6)
+transform = Transform3D(-1.45, 0, 0, 0, 1.45, 0, 0, 0, -1.45, 31.7, 0, 6)
 
-[node name="Model" parent="Nav/FenceN3" instance=ExtResource("32_fence")]
+[node name="Model" parent="Nav/FenceN3" instance=ExtResource("rp_prp_fence_a")]
 
 [node name="Collider" type="StaticBody3D" parent="Nav/FenceN3"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/FenceN3/Collider"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
-shape = SubResource("Shape_fence")
+shape = SubResource("RpShape_FenceN3")
 
 [node name="FenceN4" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 34.6, 0, 6)
+transform = Transform3D(1.45, 0, 0, 0, 1.45, 0, 0, 0, 1.45, 34.6, 0, 6)
 
-[node name="Model" parent="Nav/FenceN4" instance=ExtResource("32_fence")]
+[node name="Model" parent="Nav/FenceN4" instance=ExtResource("rp_prp_fence_a")]
 
 [node name="Collider" type="StaticBody3D" parent="Nav/FenceN4"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/FenceN4/Collider"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
-shape = SubResource("Shape_fence")
+shape = SubResource("RpShape_FenceN4")
 
 [node name="FenceN5" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 37.5, 0, 6)
+transform = Transform3D(-1.45, 0, 0, 0, 1.45, 0, 0, 0, -1.45, 37.5, 0, 6)
 
-[node name="Model" parent="Nav/FenceN5" instance=ExtResource("32_fence")]
+[node name="Model" parent="Nav/FenceN5" instance=ExtResource("rp_prp_fence_a")]
 
 [node name="Collider" type="StaticBody3D" parent="Nav/FenceN5"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/FenceN5/Collider"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
-shape = SubResource("Shape_fence")
+shape = SubResource("RpShape_FenceN5")
 
 [node name="FenceN6" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 40.4, 0, 6)
+transform = Transform3D(1.45, 0, 0, 0, 1.45, 0, 0, 0, 1.45, 40.4, 0, 6)
 
-[node name="Model" parent="Nav/FenceN6" instance=ExtResource("32_fence")]
+[node name="Model" parent="Nav/FenceN6" instance=ExtResource("rp_prp_fence_a")]
 
 [node name="Collider" type="StaticBody3D" parent="Nav/FenceN6"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/FenceN6/Collider"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
-shape = SubResource("Shape_fence")
+shape = SubResource("RpShape_FenceN6")
 
 [node name="FenceN7" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 43.3, 0, 6)
+transform = Transform3D(-1.45, 0, 0, 0, 1.45, 0, 0, 0, -1.45, 43.3, 0, 6)
 
-[node name="Model" parent="Nav/FenceN7" instance=ExtResource("32_fence")]
+[node name="Model" parent="Nav/FenceN7" instance=ExtResource("rp_prp_fence_a")]
 
 [node name="Collider" type="StaticBody3D" parent="Nav/FenceN7"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/FenceN7/Collider"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
-shape = SubResource("Shape_fence")
+shape = SubResource("RpShape_FenceN7")
 
 [node name="FenceN8" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 46.2, 0, 6)
+transform = Transform3D(1.45, 0, 0, 0, 1.45, 0, 0, 0, 1.45, 46.2, 0, 6)
 
-[node name="Model" parent="Nav/FenceN8" instance=ExtResource("32_fence")]
+[node name="Model" parent="Nav/FenceN8" instance=ExtResource("rp_prp_fence_a")]
 
 [node name="Collider" type="StaticBody3D" parent="Nav/FenceN8"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/FenceN8/Collider"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
-shape = SubResource("Shape_fence")
+shape = SubResource("RpShape_FenceN8")
 
 [node name="FenceN9" type="Node3D" parent="Nav"]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 46, 0, 7.4)
+transform = Transform3D(0, 0, 1.45, 0, 1.45, 0, -1.45, 0, 0, 46, 0, 7.4)
 
-[node name="Model" parent="Nav/FenceN9" instance=ExtResource("32_fence")]
+[node name="Model" parent="Nav/FenceN9" instance=ExtResource("rp_prp_fence_a")]
 
 [node name="Collider" type="StaticBody3D" parent="Nav/FenceN9"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/FenceN9/Collider"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
-shape = SubResource("Shape_fence")
+shape = SubResource("RpShape_FenceN9")
 
 [node name="FenceN10" type="Node3D" parent="Nav"]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 46, 0, 10.3)
+transform = Transform3D(0, 0, -1.45, 0, 1.45, 0, 1.45, 0, 0, 46, 0, 10.3)
 
-[node name="Model" parent="Nav/FenceN10" instance=ExtResource("32_fence")]
+[node name="Model" parent="Nav/FenceN10" instance=ExtResource("rp_prp_fence_a")]
 
 [node name="Collider" type="StaticBody3D" parent="Nav/FenceN10"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/FenceN10/Collider"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
-shape = SubResource("Shape_fence")
+shape = SubResource("RpShape_FenceN10")
 
 [node name="FenceN11" type="Node3D" parent="Nav"]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 46, 0, 13.2)
+transform = Transform3D(0, 0, 1.45, 0, 1.45, 0, -1.45, 0, 0, 46, 0, 13.2)
 
-[node name="Model" parent="Nav/FenceN11" instance=ExtResource("32_fence")]
+[node name="Model" parent="Nav/FenceN11" instance=ExtResource("rp_prp_fence_a")]
 
 [node name="Collider" type="StaticBody3D" parent="Nav/FenceN11"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/FenceN11/Collider"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
-shape = SubResource("Shape_fence")
+shape = SubResource("RpShape_FenceN11")
 
 [node name="FenceE3" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.7071, 0, 0.7071, 0, 1, 0, -0.7071, 0, -0.7071, 45.3, 0, 24.7)
+transform = Transform3D(-1.0253, 0, 1.0253, 0, 1.45, 0, -1.0253, 0, -1.0253, 45.3, 0, 24.7)
 
-[node name="Model" parent="Nav/FenceE3" instance=ExtResource("32_fence")]
+[node name="Model" parent="Nav/FenceE3" instance=ExtResource("rp_prp_fence_a")]
 
 [node name="Collider" type="StaticBody3D" parent="Nav/FenceE3"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/FenceE3/Collider"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
-shape = SubResource("Shape_fence")
+shape = SubResource("RpShape_FenceE3")
 
 [node name="FenceE4" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.7071, 0, 0.7071, 0, 1, 0, -0.7071, 0, -0.7071, 43.2, 0, 26.8)
+transform = Transform3D(-1.0253, 0, 1.0253, 0, 1.45, 0, -1.0253, 0, -1.0253, 43.2, 0, 26.8)
 
-[node name="Model" parent="Nav/FenceE4" instance=ExtResource("32_fence")]
+[node name="Model" parent="Nav/FenceE4" instance=ExtResource("rp_prp_fence_a")]
 
 [node name="Collider" type="StaticBody3D" parent="Nav/FenceE4"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/FenceE4/Collider"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
-shape = SubResource("Shape_fence")
+shape = SubResource("RpShape_FenceE4")
 
 [node name="FenceE5" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.7071, 0, 0.7071, 0, 1, 0, -0.7071, 0, -0.7071, 41.1, 0, 28.9)
+transform = Transform3D(-1.0253, 0, 1.0253, 0, 1.45, 0, -1.0253, 0, -1.0253, 41.1, 0, 28.9)
 
-[node name="Model" parent="Nav/FenceE5" instance=ExtResource("32_fence")]
+[node name="Model" parent="Nav/FenceE5" instance=ExtResource("rp_prp_fence_a")]
 
 [node name="Collider" type="StaticBody3D" parent="Nav/FenceE5"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/FenceE5/Collider"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
-shape = SubResource("Shape_fence")
+shape = SubResource("RpShape_FenceE5")
 
 [node name="FenceE6" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.7071, 0, 0.7071, 0, 1, 0, -0.7071, 0, -0.7071, 39, 0, 31)
+transform = Transform3D(-1.0253, 0, 1.0253, 0, 1.45, 0, -1.0253, 0, -1.0253, 39, 0, 31)
 
-[node name="Model" parent="Nav/FenceE6" instance=ExtResource("32_fence")]
+[node name="Model" parent="Nav/FenceE6" instance=ExtResource("rp_prp_fence_a")]
 
 [node name="Collider" type="StaticBody3D" parent="Nav/FenceE6"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/FenceE6/Collider"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
-shape = SubResource("Shape_fence")
+shape = SubResource("RpShape_FenceE6")
 
 [node name="FenceE7" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 37, 0, 32)
+transform = Transform3D(-1.45, 0, 0, 0, 1.45, 0, 0, 0, -1.45, 37, 0, 32)
 
-[node name="Model" parent="Nav/FenceE7" instance=ExtResource("32_fence")]
+[node name="Model" parent="Nav/FenceE7" instance=ExtResource("rp_prp_fence_a")]
 
 [node name="Collider" type="StaticBody3D" parent="Nav/FenceE7"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/FenceE7/Collider"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
-shape = SubResource("Shape_fence")
+shape = SubResource("RpShape_FenceE7")
 
 [node name="FenceE8" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 34.1, 0, 32)
+transform = Transform3D(1.45, 0, 0, 0, 1.45, 0, 0, 0, 1.45, 34.1, 0, 32)
 
-[node name="Model" parent="Nav/FenceE8" instance=ExtResource("32_fence")]
+[node name="Model" parent="Nav/FenceE8" instance=ExtResource("rp_prp_fence_a")]
 
 [node name="Collider" type="StaticBody3D" parent="Nav/FenceE8"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/FenceE8/Collider"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
-shape = SubResource("Shape_fence")
+shape = SubResource("RpShape_FenceE8")
 
 ; --- 37E second pass: planting ---------------------------------------------------------------------
 ; ⚠️ A 52 m plot with three trees and four grass tufts renders as a green plane. Ground cover goes in

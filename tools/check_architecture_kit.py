@@ -35,6 +35,16 @@ LIVE_EXPECTATIONS = {
 }
 RETAINED_GLBS = (
     "bld_blacksmith.glb", "bld_cottage.glb", "bld_house_a.glb", "bld_house_b.glb", "bld_inn.glb")
+# The 2026-10 world overhaul moved the outdoor world's towers, walls and waystones to the generated
+# set (scenes/props/lm_*.tscn). These are the models it replaced everywhere: a cell scene that names
+# one again has been dressed from the old kit. bld_ruin_tower.tscn stays an authored prefab above (it
+# is on disk and still composes); it is the PLACING of it that is retired. Models kept on purpose in a
+# few places (prp_ruin_pillar, prp_ruin_wall, prp_gate_palisade, the yard clutter) are not listed.
+RETIRED_IN_CELLS = (
+    "props/bld_ruin_tower.tscn", "architecture/bld_castle_fortress.glb", "props/prp_watch_tower.glb",
+    "props/prp_warden_post.glb", "props/prp_bell_tower.glb", "props/prp_arena_wall.glb",
+    "props/prp_waystone.glb", "props/prp_beast_antler_ring.tscn", "props/prp_beast_stake.tscn",
+    "props/prp_lamp_post.glb", "props/prp_well.glb")
 
 
 def fail(message: str, failures: list[str]) -> None:
@@ -100,6 +110,35 @@ def main() -> int:
             if metallic > 0.05:
                 fail(f"{filename}: {material.get('name', '<unnamed>')} metallic={metallic}", failures)
 
+    # The generated set: every wrapper a district row can place exists, is solid and names a model
+    # that is on disk; and no cell has gone back to a model the set replaced.
+    import sys
+    sys.path.insert(0, str(ROOT / "tools"))
+    from compose_district import BOXED, COMPOSED, LOOSE
+    wrappers = 0
+    for kind, (scene, _) in sorted(COMPOSED.items()):
+        path = ROOT / scene.replace("res://", "")
+        if not path.is_file():
+            fail(f"district kind '{kind}': {scene} is missing", failures)
+            continue
+        if "/lm_" not in scene:
+            continue
+        wrappers += 1
+        text = path.read_text(encoding="utf-8")
+        if 'type="CollisionShape3D"' not in text:
+            fail(f"{path.name}: a generated landmark with no collider", failures)
+        for resource in re.findall(r'path="res://([^"]+)"', text):
+            if not (ROOT / resource).is_file():
+                fail(f"{path.name}: missing resource {resource}", failures)
+    for kind, model in sorted([(k, v[0]) for k, v in BOXED.items()] + list(LOOSE.items())):
+        if not (ROOT / model.replace("res://", "")).is_file():
+            fail(f"district kind '{kind}': {model} is missing", failures)
+    for scene in sorted((ROOT / "scenes" / "regions").rglob("*.tscn")):
+        text = scene.read_text(encoding="utf-8")
+        for retired in RETIRED_IN_CELLS:
+            if f'/{retired}"' in text:
+                fail(f"{scene.relative_to(ROOT).as_posix()}: places {retired}, which the generated set replaced", failures)
+
     if failures:
         print("architecture kit: FAIL")
         for message in failures:
@@ -107,7 +146,7 @@ def main() -> int:
         return 1
     print(f"architecture kit: PASS ({len(PREFABS)} authored prefabs, "
           f"{len(LIVE_EXPECTATIONS)} integrated settlement scenes, "
-          f"{len(RETAINED_GLBS)} repaired legacy GLBs)")
+          f"{len(RETAINED_GLBS)} repaired legacy GLBs, {wrappers} generated landmark wrappers)")
     return 0
 
 

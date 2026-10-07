@@ -1,5 +1,6 @@
 [gd_scene format=3 uid="uid://crgntownhub01"]
 
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_cart.glb" id="hand_prp_cart"]
 [ext_resource type="Script" path="res://src/Entities/Entity.cs" id="1_entity"]
 [ext_resource type="Script" path="res://src/Items/ItemPickupComponent.cs" id="2_pickup"]
 [ext_resource type="Resource" path="res://data/items/HealthPotion.tres" id="3_item"]
@@ -16,17 +17,14 @@
 [ext_resource type="Script" path="res://src/Crafting/CraftingStationComponent.cs" id="9_station"]
 [ext_resource type="PackedScene" path="res://assets/models/architecture/bld_house_a.glb" id="10_house_a"]
 [ext_resource type="PackedScene" path="res://assets/models/architecture/bld_house_b.glb" id="11_house_b"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_waystone.glb" id="12_waystone"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_station_forge.glb" id="13_forge"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_station_workbench.glb" id="14_workbench"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_station_alchemy.glb" id="15_alchemy"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_banner_guild.glb" id="16_banner"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_guild_rep.glb" id="17_npc_elder"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_vendor.glb" id="18_npc_vendor"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_kael.glb" id="23_npc_kael"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_innkeeper.glb" id="19_npc_inn"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_relic.glb" id="20_relic"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_lamp_post.glb" id="21_lamp"]
 [ext_resource type="Script" path="res://src/Companions/CompanionRecruiterComponent.cs" id="22_recruiter"]
 [ext_resource type="Script" path="res://src/Animation/CharacterAnimationComponent.cs" id="24_charanim"]
 [ext_resource type="Script" path="res://src/Animation/EquipmentPresentationComponent.cs" id="90_equipment"]
@@ -39,13 +37,21 @@
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_anvil_log.gltf" id="52_anvil_log"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_workbench.gltf" id="53_workbench"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_table_large.gltf" id="54_order_bench"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_waystone.glb" id="50_waystone"]
 [ext_resource type="Script" path="res://src/World/MapLocationComponent.cs" id="maploc_39_5a"]
 [ext_resource type="PackedScene" path="res://scenes/props/shrine_waystone.tscn" id="shrine_body_41_5b"]
 [ext_resource type="Script" path="res://src/Shrines/ShrineComponent.cs" id="shrine_41_5b"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_cart.glb" id="dx_cart"]
+[ext_resource type="PackedScene" path="res://assets/models/characters/npc_townsman.glb" id="wa_npc_townsman"]
+[ext_resource type="Script" path="res://src/World/FlagVisibilityComponent.cs" id="wa_FlagVisibilityComponent"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_bench.glb" id="wa_prp_bench"]
+[ext_resource type="Script" path="res://src/Enemies/SetPieceSpawnComponent.cs" id="wa_SetPieceSpawnComponent"]
+[ext_resource type="PackedScene" path="res://scenes/props/lm_waystone.tscn" id="rp_lm_waystone"]
+[ext_resource type="PackedScene" path="res://scenes/props/lm_bell_tower.tscn" id="rp_lm_bell_tower"]
+[ext_resource type="PackedScene" path="res://assets/models/world/prp_lamp_post_a.glb" id="rp_prp_lamp_post_a"]
+[ext_resource type="PackedScene" path="res://assets/models/world/prp_banner_a.glb" id="rp_prp_banner_a"]
+[ext_resource type="PackedScene" path="res://assets/models/world/prp_cart_a.glb" id="dx_cart"]
 [ext_resource type="PackedScene" path="res://scenes/props/bld_cottage_modular.tscn" id="dx_cottage_modular"]
 [ext_resource type="PackedScene" path="res://scenes/props/bld_cottage_shuttered.tscn" id="dx_cottage_shuttered"]
+[ext_resource type="PackedScene" path="res://scenes/props/lm_gate_tower.tscn" id="dx_gate_tower"]
 [ext_resource type="PackedScene" path="res://assets/models/architecture/bld_house_a.glb" id="dx_house_a"]
 [ext_resource type="PackedScene" path="res://assets/models/architecture/bld_house_b.glb" id="dx_house_b"]
 [ext_resource type="PackedScene" path="res://scenes/props/bld_inn_courtyard.tscn" id="dx_inn_courtyard"]
@@ -54,14 +60,8 @@
 [ext_resource type="PackedScene" path="res://scenes/props/bld_townhouse.tscn" id="dx_townhouse"]
 [ext_resource type="PackedScene" path="res://scenes/props/bld_townhouse_balcony.tscn" id="dx_townhouse_balcony"]
 [ext_resource type="PackedScene" path="res://scenes/props/bld_townhouse_wide.tscn" id="dx_townhouse_wide"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_watch_tower.glb" id="dx_watch_tower"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_well.glb" id="dx_well"]
+[ext_resource type="PackedScene" path="res://assets/models/world/prp_well_a.glb" id="dx_well"]
 [ext_resource type="PackedScene" path="res://scenes/props/bld_workshop_open.tscn" id="dx_workshop_open"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_bell_tower.glb" id="wa_prp_bell_tower"]
-[ext_resource type="PackedScene" path="res://assets/models/characters/npc_townsman.glb" id="wa_npc_townsman"]
-[ext_resource type="Script" path="res://src/World/FlagVisibilityComponent.cs" id="wa_FlagVisibilityComponent"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_bench.glb" id="wa_prp_bench"]
-[ext_resource type="Script" path="res://src/Enemies/SetPieceSpawnComponent.cs" id="wa_SetPieceSpawnComponent"]
 
 ; THE EMBER CROWN TOWN HUB (the 2026-08-28 layout rebuild) — the realm's heart, and no longer a plan drawn on a
 ; drawing board.
@@ -119,7 +119,7 @@
 ; agent_radius CEIL to a voxel (cell_height / cell_size), agent_max_climb FLOORS to cell_height.
 ; ⚠️ They encode this grid — change cell_size or cell_height and recompute all three with it.
 [sub_resource type="BoxShape3D" id="DxShape_cart"]
-size = Vector3(1.8, 1.6, 3.2)
+size = Vector3(3.4, 1.5, 1.9)
 
 [sub_resource type="BoxShape3D" id="DxShape_house_a"]
 size = Vector3(4.8, 7.5, 5.9)
@@ -127,11 +127,8 @@ size = Vector3(4.8, 7.5, 5.9)
 [sub_resource type="BoxShape3D" id="DxShape_house_b"]
 size = Vector3(4.3, 6.8, 5.1)
 
-[sub_resource type="BoxShape3D" id="DxShape_watch_tower"]
-size = Vector3(3, 9, 3)
-
 [sub_resource type="BoxShape3D" id="DxShape_well"]
-size = Vector3(2.2, 2.5, 2.2)
+size = Vector3(2.6, 2.6, 2.8)
 
 [sub_resource type="NavigationMesh" id="NavMesh_hub"]
 geometry_parsed_geometry_type = 1
@@ -147,10 +144,6 @@ size = Vector3(4.74, 7.5, 5.88)
 
 [sub_resource type="BoxShape3D" id="Shape_bldgB"]
 size = Vector3(4.26, 6.8, 5.03)
-
-[sub_resource type="CylinderShape3D" id="Shape_waystone"]
-radius = 0.7
-height = 3.0
 
 [sub_resource type="BoxShape3D" id="Shape_relic"]
 size = Vector3(0.5, 0.5, 0.5)
@@ -168,9 +161,6 @@ height = 3.6
 
 [sub_resource type="BoxShape3D" id="Shape_banner"]
 size = Vector3(0.5, 3, 0.12)
-
-[sub_resource type="BoxShape3D" id="Shape_deed"]
-size = Vector3(0.8, 2.0, 0.35)
 
 [sub_resource type="BoxShape3D" id="Shape_chest"]
 size = Vector3(0.8, 0.8, 0.8)
@@ -201,9 +191,6 @@ size = Vector3(0.93, 1.07, 0.82)
 
 [sub_resource type="BoxShape3D" id="Shape_workbench"]
 size = Vector3(2.02, 0.89, 1.02)
-
-[sub_resource type="BoxShape3D" id="wa_box_1p4_3p3_1p6"]
-size = Vector3(1.4, 3.3, 1.6)
 
 [sub_resource type="CapsuleShape3D" id="wa_cap_0p4_1p8"]
 radius = 0.4
@@ -400,12 +387,6 @@ omni_range = 9.0
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11, 0, 6.5)
 script = ExtResource("1_entity")
 DisplayName = "Ember Crown Waystone"
-
-[node name="Collider" type="StaticBody3D" parent="Waystone"]
-
-[node name="Shape" type="CollisionShape3D" parent="Waystone/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
-shape = SubResource("Shape_waystone")
 
 [node name="Travel" type="Node" parent="Waystone"]
 script = ExtResource("4_travel")
@@ -833,7 +814,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -3.4, 0)
 [node name="Model" parent="Nav/BuildingSE" instance=ExtResource("38_smith")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -3.25, 0)
 
-[node name="Model" parent="Waystone" instance=ExtResource("12_waystone")]
+[node name="Model" parent="Waystone" instance=ExtResource("rp_lm_waystone")]
 
 [node name="Model" parent="Elder" instance=ExtResource("17_npc_elder")]
 
@@ -851,7 +832,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -3.25, 0)
 
 [node name="Model" parent="Stablemaster" instance=ExtResource("18_npc_vendor")]
 
-[node name="Model" parent="GuildMarker" instance=ExtResource("16_banner")]
+[node name="Model" parent="GuildMarker" instance=ExtResource("rp_prp_banner_a")]
 
 [node name="Model" parent="StationForge" instance=ExtResource("52_anvil_log")]
 
@@ -863,15 +844,20 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -3.25, 0)
 
 [node name="Model" parent="Relic" instance=ExtResource("20_relic")]
 
-[node name="Model" parent="Nav/LampSW" instance=ExtResource("21_lamp")]
+[node name="Model" parent="Nav/LampSW" instance=ExtResource("rp_prp_lamp_post_a")]
+transform = Transform3D(1.1, 0, 0, 0, 1.1, 0, 0, 0, 1.1, 0, 0, 0)
 
-[node name="Model" parent="Nav/LampSE" instance=ExtResource("21_lamp")]
+[node name="Model" parent="Nav/LampSE" instance=ExtResource("rp_prp_lamp_post_a")]
+transform = Transform3D(1.1, 0, 0, 0, 1.1, 0, 0, 0, 1.1, 0, 0, 0)
 
-[node name="Model" parent="Nav/LampE" instance=ExtResource("21_lamp")]
+[node name="Model" parent="Nav/LampE" instance=ExtResource("rp_prp_lamp_post_a")]
+transform = Transform3D(1.1, 0, 0, 0, 1.1, 0, 0, 0, 1.1, 0, 0, 0)
 
-[node name="Model" parent="Nav/LampNW" instance=ExtResource("21_lamp")]
+[node name="Model" parent="Nav/LampNW" instance=ExtResource("rp_prp_lamp_post_a")]
+transform = Transform3D(1.1, 0, 0, 0, 1.1, 0, 0, 0, 1.1, 0, 0, 0)
 
-[node name="Model" parent="Nav/LampNE" instance=ExtResource("21_lamp")]
+[node name="Model" parent="Nav/LampNE" instance=ExtResource("rp_prp_lamp_post_a")]
+transform = Transform3D(1.1, 0, 0, 0, 1.1, 0, 0, 0, 1.1, 0, 0, 0)
 
 ; --- 37E: the way to the Ashfall Homestead --------------------------------------
 ; The cottage that stood here until 37E was `bld_cottage.glb` -- a sealed 4.8 m mesh you could not
@@ -886,15 +872,9 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -3.25, 0)
 ; BuildingSW keeps bld_cottage_modular: it is a generic town house and always was.
 
 [node name="HomesteadSign" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.342, 0, -0.9397, 0, 1, 0, 0.9397, 0, -0.342, 51, 0, 27.5)
+transform = Transform3D(-0.1881, 0, -0.5168, 0, 0.55, 0, 0.5168, 0, -0.1881, 51, 0, 27.5)
 
-[node name="Model" parent="Nav/HomesteadSign" instance=ExtResource("50_waystone")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/HomesteadSign"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/HomesteadSign/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
-shape = SubResource("Shape_deed")
+[node name="Model" parent="Nav/HomesteadSign" instance=ExtResource("rp_lm_waystone")]
 
 
 ; Hesk the Wayfarer (Phase 38J) — the town's first VendorComponent, and the first merchant who is not
@@ -1035,6 +1015,95 @@ ShrineId = "shrine.solaryn"
 script = ExtResource("maploc_39_5a")
 LocationId = "location.shrine.solaryn"
 
+; WR-spec1-01 (campaign): the bronze alarm bell, a belfry-frame model scaled to a post-height bell. Quest smoke_over_the_square obj bell.
+[node name="AlarmBell" type="Node3D" parent="."]
+transform = Transform3D(0.35, 0, 0, 0, 0.35, 0, 0, 0, 0.35, 9.5, 0, 3.5)
+script = ExtResource("1_entity")
+DisplayName = "The Alarm Bell"
+PersistentId = "ember_crown.town_hub.alarm_bell"
+
+[node name="Model" parent="AlarmBell" instance=ExtResource("rp_lm_bell_tower")]
+
+[node name="Dialogue" type="Node" parent="AlarmBell"]
+script = ExtResource("7_dialogue")
+DialogueId = "dialogue.alarm_bell"
+InteractId = "interact.ember_crown.alarm_bell"
+PromptKey = "prompt.worlda.alarm_bell"
+
+; WR-spec1-20 (campaign): the wounded carter, there from the alarm until he is carried in.
+[node name="CarterJoss" type="Node3D" parent="."]
+transform = Transform3D(0.3714, 0, -0.9285, 0, 1, 0, 0.9285, 0, 0.3714, 19, 0, -5.8)
+script = ExtResource("1_entity")
+DisplayName = "Joss Harrow, Carter"
+PersistentId = "ember_crown.town_hub.carter_joss"
+TemplateId = "npc.traveller"
+
+[node name="Animation" type="Node" parent="CarterJoss"]
+script = ExtResource("24_charanim")
+BodyMeshPath = "Model"
+
+[node name="EquipmentVisuals" type="Node" parent="CarterJoss"]
+script = ExtResource("90_equipment")
+BodyMeshPath = "Model"
+
+[node name="Collider" type="StaticBody3D" parent="CarterJoss"]
+
+[node name="Shape" type="CollisionShape3D" parent="CarterJoss/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("wa_cap_0p4_1p8")
+
+[node name="Dialogue" type="Node" parent="CarterJoss"]
+script = ExtResource("7_dialogue")
+DialogueId = "dialogue.wounded_carter"
+
+[node name="Model" parent="CarterJoss" instance=ExtResource("wa_npc_townsman")]
+
+[node name="Visibility" type="Node" parent="CarterJoss"]
+script = ExtResource("wa_FlagVisibilityComponent")
+HiddenWhenFlagId = "flag.beat.carter_helped"
+VisibleWhenFlagId = "flag.beat.alarm_rung"
+
+[node name="CarterWreck" type="Node3D" parent="."]
+transform = Transform3D(0.866, 0, -0.5, 0, 1, 0, 0.5, 0, 0.866, 21, 0, -3.8)
+script = ExtResource("1_entity")
+DisplayName = "Toppled Cart"
+
+[node name="Model" parent="CarterWreck" instance=ExtResource("hand_prp_cart")]
+transform = Transform3D(0, -1, 0, 1, 0, 0, 0, 0, 1, 0, 0.47, 0)
+
+[node name="Trough" parent="CarterWreck" instance=ExtResource("wa_prp_bench")]
+transform = Transform3D(0.342, 0, 0.9397, 0, 1, 0, -0.9397, 0, 0.342, -2.6, 0, 2.2)
+
+[node name="Visibility" type="Node" parent="CarterWreck"]
+script = ExtResource("wa_FlagVisibilityComponent")
+VisibleWhenFlagId = "flag.beat.alarm_rung"
+
+; WR-spec1-60 (campaign): the square raid, 14 to 18 m north of the Waystone along the Kingsway.
+[node name="SquareRaid" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, -9.5)
+script = ExtResource("wa_SetPieceSpawnComponent")
+TriggerFlagId = "flag.beat.alarm_rung"
+TemplateIds = PackedStringArray("enemy.goblin")
+CountPerWave = 4
+Waves = 3
+WaveDelaySeconds = 14.0
+ClearedFlagId = "flag.beat.square_raid_cleared"
+
+[node name="Spawn0" type="Marker3D" parent="SquareRaid"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 2)
+
+[node name="Spawn1" type="Marker3D" parent="SquareRaid"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+
+[node name="Spawn2" type="Marker3D" parent="SquareRaid"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5, 0, -1)
+
+[node name="Spawn3" type="Marker3D" parent="SquareRaid"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1, 0, -2)
+
+[node name="Spawn4" type="Marker3D" parent="SquareRaid"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 0, 1)
+
 [node name="Dx_BwN0" parent="Nav" instance=ExtResource("dx_townhouse")]
 transform = Transform3D(0.9048, 0, 0.4258, 0, 1, 0, -0.4258, 0, 0.9048, -74.35, 0, -21.49)
 
@@ -1067,25 +1136,25 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.4, 0)
 shape = SubResource("DxShape_house_b")
 
 [node name="Dx_BridgewardWell" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -96, 0, -2.5)
+transform = Transform3D(0.85, 0, 0, 0, 0.85, 0, 0, 0, 0.85, -96, 0, -2.5)
 
 [node name="Model" parent="Nav/Dx_BridgewardWell" instance=ExtResource("dx_well")]
 
 [node name="Collider" type="StaticBody3D" parent="Nav/Dx_BridgewardWell"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/Dx_BridgewardWell/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.25, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.3, 0)
 shape = SubResource("DxShape_well")
 
 [node name="Dx_BridgewardCart" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.342, 0, -0.9397, 0, 1, 0, 0.9397, 0, -0.342, -89, 0, -7)
+transform = Transform3D(-0.9397, 0, 0.342, 0, 1, 0, -0.342, 0, -0.9397, -89, 0, -7)
 
 [node name="Model" parent="Nav/Dx_BridgewardCart" instance=ExtResource("dx_cart")]
 
 [node name="Collider" type="StaticBody3D" parent="Nav/Dx_BridgewardCart"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/Dx_BridgewardCart/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.75, 0)
 shape = SubResource("DxShape_cart")
 
 [node name="Dx_LnE0" parent="Nav" instance=ExtResource("dx_townhouse_wide")]
@@ -1145,16 +1214,8 @@ transform = Transform3D(0.2169, 0, -0.9762, 0, 1, 0, 0.9762, 0, 0.2169, -8, 0, -
 [node name="Dx_Barracks" parent="Nav" instance=ExtResource("dx_longhouse_stone")]
 transform = Transform3D(-0.2747, 0, 0.9615, 0, 1, 0, -0.9615, 0, -0.2747, 48, 0, -46.5)
 
-[node name="Dx_NorthGateW" type="Node3D" parent="Nav" groups=["world_landmark"]]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9, 0, -56.5)
-
-[node name="Model" parent="Nav/Dx_NorthGateW" instance=ExtResource("dx_watch_tower")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/Dx_NorthGateW"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/Dx_NorthGateW/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.5, 0)
-shape = SubResource("DxShape_watch_tower")
+[node name="Dx_NorthGateW" parent="Nav" instance=ExtResource("dx_gate_tower") groups=["world_landmark"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9, -0.4, -56.5)
 
 [node name="Dx_EgN0" parent="Nav" instance=ExtResource("dx_workshop_open")]
 transform = Transform3D(-0.986, 0, 0.1668, 0, 1, 0, -0.1668, 0, -0.986, 70.94, 0, 11.18)
@@ -1178,99 +1239,3 @@ transform = Transform3D(0.9583, 0, -0.2857, 0, 1, 0, 0.2857, 0, 0.9583, 76.12, 0
 
 [node name="Dx_EgS2" parent="Nav" instance=ExtResource("dx_cottage_modular")]
 transform = Transform3D(0.9759, 0, -0.2181, 0, 1, 0, 0.2181, 0, 0.9759, 91.25, 0, -14.04)
-
-; WR-spec1-01 (campaign): the bronze alarm bell, a belfry-frame model scaled to a post-height bell. Quest smoke_over_the_square obj bell.
-[node name="AlarmBell" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9.5, 0, 3.5)
-script = ExtResource("1_entity")
-DisplayName = "The Alarm Bell"
-PersistentId = "ember_crown.town_hub.alarm_bell"
-
-[node name="Model" parent="AlarmBell" instance=ExtResource("wa_prp_bell_tower")]
-transform = Transform3D(0.3, 0, 0, 0, 0.3, 0, 0, 0, 0.3, 0, 0, 0)
-
-[node name="Collider" type="StaticBody3D" parent="AlarmBell"]
-
-[node name="Shape" type="CollisionShape3D" parent="AlarmBell/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.65, 0)
-shape = SubResource("wa_box_1p4_3p3_1p6")
-
-[node name="Dialogue" type="Node" parent="AlarmBell"]
-script = ExtResource("7_dialogue")
-DialogueId = "dialogue.alarm_bell"
-InteractId = "interact.ember_crown.alarm_bell"
-PromptKey = "prompt.worlda.alarm_bell"
-
-; WR-spec1-20 (campaign): the wounded carter, there from the alarm until he is carried in.
-[node name="CarterJoss" type="Node3D" parent="."]
-transform = Transform3D(0.3714, 0, -0.9285, 0, 1, 0, 0.9285, 0, 0.3714, 19, 0, -5.8)
-script = ExtResource("1_entity")
-DisplayName = "Joss Harrow, Carter"
-PersistentId = "ember_crown.town_hub.carter_joss"
-TemplateId = "npc.traveller"
-
-[node name="Animation" type="Node" parent="CarterJoss"]
-script = ExtResource("24_charanim")
-BodyMeshPath = "Model"
-
-[node name="EquipmentVisuals" type="Node" parent="CarterJoss"]
-script = ExtResource("90_equipment")
-BodyMeshPath = "Model"
-
-[node name="Collider" type="StaticBody3D" parent="CarterJoss"]
-
-[node name="Shape" type="CollisionShape3D" parent="CarterJoss/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
-shape = SubResource("wa_cap_0p4_1p8")
-
-[node name="Dialogue" type="Node" parent="CarterJoss"]
-script = ExtResource("7_dialogue")
-DialogueId = "dialogue.wounded_carter"
-
-[node name="Model" parent="CarterJoss" instance=ExtResource("wa_npc_townsman")]
-
-[node name="Visibility" type="Node" parent="CarterJoss"]
-script = ExtResource("wa_FlagVisibilityComponent")
-HiddenWhenFlagId = "flag.beat.carter_helped"
-VisibleWhenFlagId = "flag.beat.alarm_rung"
-
-[node name="CarterWreck" type="Node3D" parent="."]
-transform = Transform3D(0.866, 0, -0.5, 0, 1, 0, 0.5, 0, 0.866, 21, 0, -3.8)
-script = ExtResource("1_entity")
-DisplayName = "Toppled Cart"
-
-[node name="Model" parent="CarterWreck" instance=ExtResource("dx_cart")]
-transform = Transform3D(0, -1, 0, 1, 0, 0, 0, 0, 1, 0, 0.47, 0)
-
-[node name="Trough" parent="CarterWreck" instance=ExtResource("wa_prp_bench")]
-transform = Transform3D(0.342, 0, 0.9397, 0, 1, 0, -0.9397, 0, 0.342, -2.6, 0, 2.2)
-
-[node name="Visibility" type="Node" parent="CarterWreck"]
-script = ExtResource("wa_FlagVisibilityComponent")
-VisibleWhenFlagId = "flag.beat.alarm_rung"
-
-; WR-spec1-60 (campaign): the square raid, 14 to 18 m north of the Waystone along the Kingsway.
-[node name="SquareRaid" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, -9.5)
-script = ExtResource("wa_SetPieceSpawnComponent")
-TriggerFlagId = "flag.beat.alarm_rung"
-TemplateIds = PackedStringArray("enemy.goblin")
-CountPerWave = 4
-Waves = 3
-WaveDelaySeconds = 14.0
-ClearedFlagId = "flag.beat.square_raid_cleared"
-
-[node name="Spawn0" type="Marker3D" parent="SquareRaid"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 2)
-
-[node name="Spawn1" type="Marker3D" parent="SquareRaid"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
-
-[node name="Spawn2" type="Marker3D" parent="SquareRaid"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5, 0, -1)
-
-[node name="Spawn3" type="Marker3D" parent="SquareRaid"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1, 0, -2)
-
-[node name="Spawn4" type="Marker3D" parent="SquareRaid"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 0, 1)

@@ -1665,6 +1665,58 @@ location.celestial.knight_gate.name,The Knight's Gate
 location.celestial.knight_gate.desc,"The last gate before the throne, at the far end of the only bridge over the void."
 location.celestial.ash_throne.name,The Ash Throne
 location.celestial.ash_throne.desc,"The highest dais in the ruined heaven. Someone must always sit upon it."
+location.ember_crown.pass_colossi.name,The Pass Colossi
+location.ember_crown.pass_colossi.desc,"Two stone gods, one each side of the road where it climbs to the Crown Pass. Nobody living raised them."
+location.ember_crown.emberspire_bones.name,The Emberspire Bones
+location.ember_crown.emberspire_bones.desc,"A dragon's skeleton on the heath under the Emberspire, beside the track to the arena."
+location.ember_crown.fen_head.name,The Drowned Face
+location.ember_crown.fen_head.desc,"The head of a stone god, half sunk in the southern fens."
+location.ember_crown.frontier_watch.name,The Frontier Watch
+location.ember_crown.frontier_watch.desc,"A watch tower beside the frontier road, long fallen in."
+location.frostfang.hold_pass_colossus.name,The Hold Pass Colossus
+location.frostfang.hold_pass_colossus.desc,"A stone god in the gap behind the Clan Hold, taller than the wall it stands beyond."
+location.frostfang.roost_bones.name,The Roost Bones
+location.frostfang.roost_bones.desc,"What the roost's owner left of the dragon that held it before."
+location.frostfang.burnt_col_bones.name,The Burnt Col Bones
+location.frostfang.burnt_col_bones.desc,"A dragon's skeleton, black with old ash, below the road to the Ash Roost."
+location.frostfang.aerie_bones.name,The Aerie Bones
+location.frostfang.aerie_bones.desc,"Bones at the foot of the Aerie's avenue. The clans say they were there before the avenue was."
+location.frostfang.broken_spire.name,The Broken Spire
+location.frostfang.broken_spire.desc,"A storm-blackened tower behind the duelling ground, under Stormcrown itself."
+location.ashen.plateau_colossus.name,The Ash Plateau Colossus
+location.ashen.plateau_colossus.desc,"A soot-dark god on the flat top of the plateau, facing the Hunters' station."
+location.ashen.crater_bones.name,The Crater Bones
+location.ashen.crater_bones.desc,"A dragon's skeleton at the western lip of the crater."
+location.ashen.crater_head.name,The Fallen Face
+location.ashen.crater_head.desc,"A god's head on the crater's eastern rim, turned toward the plateau."
+location.ashen.scar_arch.name,The Scar Arch
+location.ashen.scar_arch.desc,"The gate the old road ran through, north of where the scar road runs now."
+location.sunspire.library_colossi.name,The Library Colossi
+location.sunspire.library_colossi.desc,"Two sandstone gods flanking the road to the Great Library."
+location.sunspire.sand_sea_colossus.name,The Sand Sea Colossus
+location.sunspire.sand_sea_colossus.desc,"A god stands on the lone butte in the sand sea. The head at its foot belonged to another."
+location.sunspire.salt_bones.name,The Salt Basin Bones
+location.sunspire.salt_bones.desc,"A dragon's skeleton, bleached white, in the middle of the salt basin."
+location.sunspire.caravan_arch.name,The Caravan Arch
+location.sunspire.caravan_arch.desc,"The old gate of the caravan road, standing alone in the dunes south of the Gap."
+location.sunspire.pilgrim_stones.name,The Pilgrim Stones
+location.sunspire.pilgrim_stones.desc,"Standing stones by turns along the track to the Mission."
+location.pale.processional_colossi.name,The Processional Colossi
+location.pale.processional_colossi.desc,"Two white gods, one each side of the processional way."
+location.pale.fallen_hall.name,The Fallen Hall
+location.pale.fallen_hall.desc,"A row of columns still carrying its stone, east of the processional way."
+location.pale.canal_arch.name,The Canal Arch
+location.pale.canal_arch.desc,"The arch the city's east road ends under, short of the canal."
+location.celestial.godfall_hall.name,The Godfall Hall
+location.celestial.godfall_hall.desc,"What is left standing of the hall that came down here."
+location.celestial.choir_hall.name,The Choir Hall
+location.celestial.choir_hall.desc,"A second fragment of the gods' hall, on the terrace west of the rift."
+location.celestial.rim_colossus.name,The Rim Colossus
+location.celestial.rim_colossus.desc,"A god on the broken western terrace, facing the throne."
+location.celestial.void_face.name,The Void Edge Face
+location.celestial.void_face.desc,"A god's head on the last terrace before the void."
+location.celestial.sundered_arch.name,The Sundered Arch
+location.celestial.sundered_arch.desc,"An arch on the terrace east of the gate, with nothing behind it."
 location.ashen.herd_trail.name,The Herd Trail
 location.ashen.herd_trail.desc,"A road trampled hand-deep by wolf and elk and boar, running to the foot of the plateau ramp."
 location.sunspire.deep_stacks.name,The Deep Stacks

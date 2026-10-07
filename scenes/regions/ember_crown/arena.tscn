@@ -1,14 +1,11 @@
-[gd_scene load_steps=24 format=3]
+[gd_scene load_steps=21 format=3]
 
 [ext_resource type="Script" path="res://src/World/CellNavBaker.cs" id="1_navbaker"]
 [ext_resource type="Script" path="res://src/Entities/Entity.cs" id="2_entity"]
 [ext_resource type="Script" path="res://src/Enemies/BossSummonComponent.cs" id="3_summon"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_arena_wall.glb" id="4_wall"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_brazier.glb" id="5_brazier"]
 [ext_resource type="Script" path="res://src/Enemies/ArenaHookComponent.cs" id="6_arenahook"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_ruin_pillar.glb" id="10_pillar"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_ruin_wall.glb" id="11_ruinwall"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_banner_guild.glb" id="12_banner"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_pine_dead.glb" id="13_pine"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_rock_cluster.glb" id="14_rocks"]
 [ext_resource type="Texture2D" path="res://assets/models/architecture/T_Brick_BaseColor.png" id="17_brick"]
@@ -23,6 +20,11 @@
 [ext_resource type="Script" path="res://src/Dialogue/DialogueComponent.cs" id="wa_DialogueComponent"]
 [ext_resource type="PackedScene" path="res://assets/models/creatures/boss_ashen_knight.glb" id="wa_boss_ashen_knight"]
 [ext_resource type="Script" path="res://src/World/FlagVisibilityComponent.cs" id="wa_FlagVisibilityComponent"]
+[ext_resource type="PackedScene" path="res://scenes/props/lm_monolith_a.tscn" id="rp_lm_monolith_a"]
+[ext_resource type="PackedScene" path="res://assets/models/world/prp_banner_a.glb" id="rp_prp_banner_a"]
+[ext_resource type="PackedScene" path="res://scenes/props/lm_monolith_a.tscn" id="dx_monolith"]
+[ext_resource type="PackedScene" path="res://scenes/props/lm_wall_rampart.tscn" id="dx_wall_rampart"]
+[ext_resource type="PackedScene" path="res://scenes/props/lm_wall_ruin.tscn" id="dx_wall_ruin"]
 
 ; ⚠️ THE NAV VOXEL GRID COARSENED WITH THE WORLD (the 2026-08-29 geography overhaul). Cells
 ; went from 52 m squares on a flat slab to 90-200 m of real terrain, and a 0.25 m voxel over
@@ -55,12 +57,6 @@ size = Vector3(6, 4, 1)
 
 [sub_resource type="BoxShape3D" id="Shape_brazier"]
 size = Vector3(1, 1.4, 1)
-
-[sub_resource type="BoxShape3D" id="Shape_pillar"]
-size = Vector3(1, 3.13, 1)
-
-[sub_resource type="BoxShape3D" id="Shape_ruinwall"]
-size = Vector3(4, 4, 0.88)
 
 [sub_resource type="BoxShape3D" id="Shape_pine"]
 size = Vector3(0.9, 4.9, 0.9)
@@ -192,324 +188,50 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 30.8, 2, 8)
 [node name="Shape" type="CollisionShape3D" parent="Nav/WallSE"]
 shape = SubResource("Shape_wall_south_run")
 
-; Three more stonework segments so the new WEST wall is visible as well as solid.
-[node name="RingW0" parent="Nav" instance=ExtResource("4_wall")]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 2.4, 0, -24.4)
-
-[node name="RingW1" parent="Nav" instance=ExtResource("4_wall")]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 2.4, 0, -17.2)
-
-[node name="RingW2" parent="Nav" instance=ExtResource("4_wall")]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 2.4, 0, -10)
-
-[node name="RingN0" parent="Nav" instance=ExtResource("4_wall")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.6, 0, -27.6)
-
-[node name="RingS0" parent="Nav" instance=ExtResource("4_wall")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.6, 0, 7.6)
-
-[node name="RingE0" parent="Nav" instance=ExtResource("4_wall")]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 37.6, 0, -24.4)
-
-[node name="RingN1" parent="Nav" instance=ExtResource("4_wall")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12.8, 0, -27.6)
-
-[node name="RingS1" parent="Nav" instance=ExtResource("4_wall")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12.8, 0, 7.6)
-
-[node name="RingE1" parent="Nav" instance=ExtResource("4_wall")]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 37.6, 0, -17.2)
-
-[node name="RingN2" parent="Nav" instance=ExtResource("4_wall")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, 0, -27.6)
-
-[node name="RingS2" parent="Nav" instance=ExtResource("4_wall")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 27.2, 0, 7.6)
-
-[node name="RingE2" parent="Nav" instance=ExtResource("4_wall")]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 37.6, 0, -10)
-
-[node name="RingN3" parent="Nav" instance=ExtResource("4_wall")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 35, 0, -27.6)
-
-[node name="RingS3" parent="Nav" instance=ExtResource("4_wall")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 34.4, 0, 7.6)
-
-[node name="RingE3" parent="Nav" instance=ExtResource("4_wall")]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 37.6, 0, -2.8)
-
-[node name="RingN4" parent="Nav" instance=ExtResource("4_wall")]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 2.4, 0, 4.4)
-
-[node name="RingS4" parent="Nav" instance=ExtResource("4_wall")]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 2.4, 0, -2.8)
-
-[node name="RingE4" parent="Nav" instance=ExtResource("4_wall")]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 37.6, 0, 4.4)
-
+; THE RING AND ITS STANDS ARE GENERATED (2026-10 world overhaul): the wall is the rampart run
+; Dx_ArenaRampart* and its four corner stones Dx_ArenaCap*, written by tools/compose_district.py from
+; arena_ring() in tools/district_layouts.py. Their inner face is on the old panel line, so the floor is the
+; size it was, and the Wall* bodies above are still the boundary. The kit panels, the tier fragments behind
+; them and the four inside-corner pillars are gone; the gate stones and rim buttresses below remain.
 [node name="GatePillarN" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15.4, 0, 7.6)
+transform = Transform3D(0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 15.4, 0, 7.6)
 
-[node name="Model" parent="Nav/GatePillarN" instance=ExtResource("10_pillar")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/GatePillarN"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/GatePillarN/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.57, 0)
-shape = SubResource("Shape_pillar")
+[node name="Model" parent="Nav/GatePillarN" instance=ExtResource("rp_lm_monolith_a")]
 
 [node name="GatePillarS" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 24.6, 0, 7.6)
+transform = Transform3D(0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 24.6, 0, 7.6)
 
-[node name="Model" parent="Nav/GatePillarS" instance=ExtResource("10_pillar")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/GatePillarS"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/GatePillarS/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.57, 0)
-shape = SubResource("Shape_pillar")
-
-[node name="TierN0" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, -31)
-
-[node name="Model" parent="Nav/TierN0" instance=ExtResource("11_ruinwall")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/TierN0"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/TierN0/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.0, 0)
-shape = SubResource("Shape_ruinwall")
-
-[node name="TierS0" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -24)
-
-[node name="Model" parent="Nav/TierS0" instance=ExtResource("11_ruinwall")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/TierS0"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/TierS0/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.0, 0)
-shape = SubResource("Shape_ruinwall")
-
-[node name="TierE0" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 41, 0, -20)
-
-[node name="Model" parent="Nav/TierE0" instance=ExtResource("11_ruinwall")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/TierE0"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/TierE0/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.0, 0)
-shape = SubResource("Shape_ruinwall")
-
-[node name="TierN1" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 0, -31)
-
-[node name="Model" parent="Nav/TierN1" instance=ExtResource("11_ruinwall")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/TierN1"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/TierN1/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.0, 0)
-shape = SubResource("Shape_ruinwall")
-
-[node name="TierS1" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -14)
-
-[node name="Model" parent="Nav/TierS1" instance=ExtResource("11_ruinwall")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/TierS1"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/TierS1/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.0, 0)
-shape = SubResource("Shape_ruinwall")
-
-[node name="TierE1" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 41, 0, -16)
-
-[node name="Model" parent="Nav/TierE1" instance=ExtResource("11_ruinwall")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/TierE1"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/TierE1/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.0, 0)
-shape = SubResource("Shape_ruinwall")
-
-[node name="TierN2" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 41, 0, -4)
-
-[node name="Model" parent="Nav/TierN2" instance=ExtResource("11_ruinwall")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/TierN2"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/TierN2/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.0, 0)
-shape = SubResource("Shape_ruinwall")
-
-[node name="TierS2" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1, 0, -7)
-
-[node name="Model" parent="Nav/TierS2" instance=ExtResource("11_ruinwall")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/TierS2"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/TierS2/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.0, 0)
-shape = SubResource("Shape_ruinwall")
-
-[node name="TierE2" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 41, 0, -12)
-
-[node name="Model" parent="Nav/TierE2" instance=ExtResource("11_ruinwall")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/TierE2"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/TierE2/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.0, 0)
-shape = SubResource("Shape_ruinwall")
-
-[node name="TierN3" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 41, 0, 0)
-
-[node name="Model" parent="Nav/TierN3" instance=ExtResource("11_ruinwall")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/TierN3"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/TierN3/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.0, 0)
-shape = SubResource("Shape_ruinwall")
-
-[node name="TierS3" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, -31)
-
-[node name="Model" parent="Nav/TierS3" instance=ExtResource("11_ruinwall")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/TierS3"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/TierS3/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.0, 0)
-shape = SubResource("Shape_ruinwall")
-
-[node name="TierE3" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 41, 0, -8)
-
-[node name="Model" parent="Nav/TierE3" instance=ExtResource("11_ruinwall")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/TierE3"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/TierE3/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.0, 0)
-shape = SubResource("Shape_ruinwall")
-
-[node name="Pillar0" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 0, -27)
-
-[node name="Model" parent="Nav/Pillar0" instance=ExtResource("10_pillar")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/Pillar0"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/Pillar0/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.57, 0)
-shape = SubResource("Shape_pillar")
-
-[node name="Pillar1" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 37, 0, -27)
-
-[node name="Model" parent="Nav/Pillar1" instance=ExtResource("10_pillar")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/Pillar1"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/Pillar1/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.57, 0)
-shape = SubResource("Shape_pillar")
-
-[node name="Pillar2" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 37, 0, 7)
-
-[node name="Model" parent="Nav/Pillar2" instance=ExtResource("10_pillar")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/Pillar2"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/Pillar2/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.57, 0)
-shape = SubResource("Shape_pillar")
-
-[node name="Pillar3" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 0, 7)
-
-[node name="Model" parent="Nav/Pillar3" instance=ExtResource("10_pillar")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/Pillar3"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/Pillar3/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.57, 0)
-shape = SubResource("Shape_pillar")
+[node name="Model" parent="Nav/GatePillarS" instance=ExtResource("rp_lm_monolith_a")]
 
 [node name="Pillar4" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11, 0, -27.5)
+transform = Transform3D(0.35, 0, 0, 0, 0.35, 0, 0, 0, 0.35, 11, 0, -27.5)
 
-[node name="Model" parent="Nav/Pillar4" instance=ExtResource("10_pillar")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/Pillar4"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/Pillar4/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.57, 0)
-shape = SubResource("Shape_pillar")
+[node name="Model" parent="Nav/Pillar4" instance=ExtResource("rp_lm_monolith_a")]
 
 [node name="Pillar5" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 22, 0, -27.5)
+transform = Transform3D(0.35, 0, 0, 0, 0.35, 0, 0, 0, 0.35, 22, 0, -27.5)
 
-[node name="Model" parent="Nav/Pillar5" instance=ExtResource("10_pillar")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/Pillar5"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/Pillar5/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.57, 0)
-shape = SubResource("Shape_pillar")
+[node name="Model" parent="Nav/Pillar5" instance=ExtResource("rp_lm_monolith_a")]
 
 [node name="Pillar6" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 37.5, 0, -19)
+transform = Transform3D(0.35, 0, 0, 0, 0.35, 0, 0, 0, 0.35, 37.5, 0, -19)
 
-[node name="Model" parent="Nav/Pillar6" instance=ExtResource("10_pillar")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/Pillar6"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/Pillar6/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.57, 0)
-shape = SubResource("Shape_pillar")
+[node name="Model" parent="Nav/Pillar6" instance=ExtResource("rp_lm_monolith_a")]
 
 [node name="Pillar7" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 37.5, 0, -7)
+transform = Transform3D(0.35, 0, 0, 0, 0.35, 0, 0, 0, 0.35, 37.5, 0, -7)
 
-[node name="Model" parent="Nav/Pillar7" instance=ExtResource("10_pillar")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/Pillar7"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/Pillar7/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.57, 0)
-shape = SubResource("Shape_pillar")
+[node name="Model" parent="Nav/Pillar7" instance=ExtResource("rp_lm_monolith_a")]
 
 [node name="Pillar8" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 37.5, 0, 3)
+transform = Transform3D(0.35, 0, 0, 0, 0.35, 0, 0, 0, 0.35, 37.5, 0, 3)
 
-[node name="Model" parent="Nav/Pillar8" instance=ExtResource("10_pillar")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/Pillar8"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/Pillar8/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.57, 0)
-shape = SubResource("Shape_pillar")
+[node name="Model" parent="Nav/Pillar8" instance=ExtResource("rp_lm_monolith_a")]
 
 [node name="Pillar9" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.5, 0, -16)
+transform = Transform3D(0.35, 0, 0, 0, 0.35, 0, 0, 0, 0.35, 2.5, 0, -16)
 
-[node name="Model" parent="Nav/Pillar9" instance=ExtResource("10_pillar")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/Pillar9"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/Pillar9/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.57, 0)
-shape = SubResource("Shape_pillar")
+[node name="Model" parent="Nav/Pillar9" instance=ExtResource("rp_lm_monolith_a")]
 
 [node name="RimBrazier0" type="Node3D" parent="Nav"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 0, -26.5)
@@ -555,16 +277,16 @@ light_color = Color(1, 0.55, 0.2, 1)
 light_energy = 2.6
 omni_range = 12.0
 
-[node name="Banner0" parent="Nav" instance=ExtResource("12_banner")]
+[node name="Banner0" parent="Nav" instance=ExtResource("rp_prp_banner_a")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 0, -26.9)
 
-[node name="Banner2" parent="Nav" instance=ExtResource("12_banner")]
+[node name="Banner2" parent="Nav" instance=ExtResource("rp_prp_banner_a")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 9, 0, 6.9)
 
-[node name="Banner3" parent="Nav" instance=ExtResource("12_banner")]
+[node name="Banner3" parent="Nav" instance=ExtResource("rp_prp_banner_a")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 32, 0, 6.9)
 
-[node name="Banner5" parent="Nav" instance=ExtResource("12_banner")]
+[node name="Banner5" parent="Nav" instance=ExtResource("rp_prp_banner_a")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 36.9, 0, -4)
 
 [node name="DeadPine0" type="Node3D" parent="Nav"]
@@ -872,3 +594,39 @@ PromptKey = "prompt.worlda.rival_token"
 [node name="Visibility" type="Node" parent="EmptyBox"]
 script = ExtResource("wa_FlagVisibilityComponent")
 VisibleWhenFlagId = "flag.rival.met1"
+
+[node name="Dx_ArenaRampartW0" parent="Nav" instance=ExtResource("dx_wall_rampart")]
+transform = Transform3D(0, 0, -0.4375, 0, 1.25, 0, 1.25, 0, 0, 0.65, -0.5, -18.39)
+
+[node name="Dx_ArenaRampartW1" parent="Nav" instance=ExtResource("dx_wall_rampart")]
+transform = Transform3D(0, 0, 0.448, 0, 1.28, 0, -1.28, 0, 0, 0.65, -0.5, -1.61)
+
+[node name="Dx_ArenaRampartE1" parent="Nav" instance=ExtResource("dx_wall_rampart")]
+transform = Transform3D(0, 0, 0.448, 0, 1.28, 0, -1.28, 0, 0, 39.35, -0.5, -18.39)
+
+[node name="Dx_ArenaRampartE2" parent="Nav" instance=ExtResource("dx_wall_rampart")]
+transform = Transform3D(0, 0, -0.4375, 0, 1.25, 0, 1.25, 0, 0, 39.35, -0.5, -1.61)
+
+[node name="Dx_ArenaRampartN0" parent="Nav" instance=ExtResource("dx_wall_rampart")]
+transform = Transform3D(1.4, 0, 0, 0, 1.4, 0, 0, 0, 0.462, 13, -0.5, -29.45)
+
+[node name="Dx_ArenaBreachStub" parent="Nav" instance=ExtResource("dx_wall_ruin")]
+transform = Transform3D(0.75, 0, 0, 0, 0.75, 0, 0, 0, 0.75, 35.3, 0, -29.5)
+
+[node name="Dx_ArenaRampartSW0" parent="Nav" instance=ExtResource("dx_wall_rampart")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 0.4, 8.17, -0.5, 9.2)
+
+[node name="Dx_ArenaRampartSE1" parent="Nav" instance=ExtResource("dx_wall_rampart")]
+transform = Transform3D(-1.03, 0, 0, 0, 1.03, 0, 0, 0, -0.412, 32.17, -0.5, 9.2)
+
+[node name="Dx_ArenaCapNW" parent="Nav" instance=ExtResource("dx_monolith")]
+transform = Transform3D(0.7244, 0, -0.1941, 0, 0.75, 0, 0.1941, 0, 0.7244, 1.2, -0.4, -28.8)
+
+[node name="Dx_ArenaCapNE" parent="Nav" instance=ExtResource("dx_monolith")]
+transform = Transform3D(-0.1941, 0, -0.7244, 0, 0.75, 0, 0.7244, 0, -0.1941, 38.8, -0.4, -28.8)
+
+[node name="Dx_ArenaCapSE" parent="Nav" instance=ExtResource("dx_monolith")]
+transform = Transform3D(-0.7244, 0, 0.1941, 0, 0.75, 0, -0.1941, 0, -0.7244, 38.8, -0.4, 8.8)
+
+[node name="Dx_ArenaCapSW" parent="Nav" instance=ExtResource("dx_monolith")]
+transform = Transform3D(0.1941, 0, 0.7244, 0, 0.75, 0, -0.7244, 0, 0.1941, 1.2, -0.4, 8.8)

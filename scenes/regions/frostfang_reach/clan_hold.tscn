@@ -9,18 +9,15 @@
 [ext_resource type="Script" path="res://src/Crafting/CraftingStationComponent.cs" id="7_station"]
 [ext_resource type="PackedScene" path="res://assets/models/architecture/bld_house_a.glb" id="10_house_a"]
 [ext_resource type="PackedScene" path="res://assets/models/architecture/bld_house_b.glb" id="11_house_b"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_waystone.glb" id="12_waystone"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_station_forge.glb" id="13_forge"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_station_workbench.glb" id="14_workbench"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_station_alchemy.glb" id="15_alchemy"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_tent.glb" id="16_tent"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_brazier.glb" id="17_brazier"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_pine_dead.glb" id="18_pine"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_rock_cluster.glb" id="19_rock"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_guild_rep.glb" id="21_npc_chief"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_vendor.glb" id="22_npc_vendor"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_innkeeper.glb" id="23_npc_inn"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_campfire.glb" id="24_campfire"]
 [ext_resource type="Script" path="res://src/Animation/CharacterAnimationComponent.cs" id="25_charanim"]
 [ext_resource type="Script" path="res://src/Animation/EquipmentPresentationComponent.cs" id="90_equipment"]
 [ext_resource type="PackedScene" path="res://scenes/props/bld_townhouse.tscn" id="26_townhouse"]
@@ -30,6 +27,10 @@
 [ext_resource type="Script" path="res://src/World/FlagVisibilityComponent.cs" id="wa_FlagVisibilityComponent"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_rock_medium.glb" id="wa_prp_rock_medium"]
 [ext_resource type="Script" path="res://src/Enemies/SetPieceSpawnComponent.cs" id="wa_SetPieceSpawnComponent"]
+[ext_resource type="PackedScene" path="res://scenes/props/lm_waystone.tscn" id="rp_lm_waystone"]
+[ext_resource type="PackedScene" path="res://assets/models/world/prp_tent_a.glb" id="rp_prp_tent_a"]
+[ext_resource type="PackedScene" path="res://assets/models/world/prp_campfire_a.glb" id="rp_prp_campfire_a"]
+[ext_resource type="PackedScene" path="res://scenes/props/lm_monolith_a.tscn" id="dx_monolith"]
 
 ; THE CLAN HOLD (the 2026-08-28 layout rebuild) - Frostfang Reach's only settlement.
 ;
@@ -93,16 +94,8 @@ agent_max_slope = 42.0
 radius = 0.4
 height = 1.8
 
-[sub_resource type="CylinderShape3D" id="Shape_waystone"]
-radius = 0.7
-height = 3.0
-
 [sub_resource type="BoxShape3D" id="Shape_station"]
 size = Vector3(0.9, 1, 0.9)
-
-[sub_resource type="CylinderShape3D" id="Shape_tent"]
-radius = 1.4
-height = 2.4
 
 [sub_resource type="CylinderShape3D" id="Shape_pine"]
 radius = 0.4
@@ -141,6 +134,30 @@ size = Vector3(1.3, 0.95, 1.2)
 radius = 0.4
 height = 1.8
 
+[sub_resource type="CylinderShape3D" id="RpShape_TentN"]
+radius = 1.7
+height = 2.6
+
+[sub_resource type="CylinderShape3D" id="RpShape_TentE"]
+radius = 1.7
+height = 2.6
+
+[sub_resource type="CylinderShape3D" id="RpShape_TentRun1"]
+radius = 1.7
+height = 2.6
+
+[sub_resource type="CylinderShape3D" id="RpShape_TentRun2"]
+radius = 1.7
+height = 2.6
+
+[sub_resource type="CylinderShape3D" id="RpShape_TentSE"]
+radius = 1.7
+height = 2.6
+
+[sub_resource type="CylinderShape3D" id="RpShape_TentNW"]
+radius = 1.7
+height = 2.6
+
 [node name="ClanHoldCell" type="Node3D"]
 metadata/content_offset = Vector2(15, -10)
 
@@ -160,22 +177,22 @@ transform = Transform3D(-0.4226, 0, 0.9063, 0, 1, 0, -0.9063, 0, -0.4226, 0, 3.7
 transform = Transform3D(-0.9848, 0, -0.1736, 0, 1, 0, 0.1736, 0, -0.9848, 17, 3.4, -22)
 
 [node name="TentSE" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.1736, 0, -0.9848, 0, 1, 0, 0.9848, 0, -0.1736, -9, 0, -2)
+transform = Transform3D(-0.1476, 0, -0.8371, 0, 0.85, 0, 0.8371, 0, -0.1476, -9, 0, -2)
 
 [node name="TentSECol" type="StaticBody3D" parent="Nav/TentSE"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/TentSE/TentSECol"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
-shape = SubResource("Shape_tent")
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.3, 0)
+shape = SubResource("RpShape_TentSE")
 
 [node name="TentNW" type="Node3D" parent="Nav"]
-transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, -7, 0, -24)
+transform = Transform3D(0.7361, 0, 0.425, 0, 0.85, 0, -0.425, 0, 0.7361, -7, 0, -24)
 
 [node name="TentNWCol" type="StaticBody3D" parent="Nav/TentNW"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/TentNW/TentNWCol"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
-shape = SubResource("Shape_tent")
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.3, 0)
+shape = SubResource("RpShape_TentNW")
 
 [node name="BrazierSW" type="Node3D" parent="Nav"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 0, -13)
@@ -295,48 +312,48 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
 shape = SubResource("Shape_rock")
 
 [node name="TentN" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.766, 0, 0.6428, 0, 1.0, 0, -0.6428, 0, -0.766, -5, 0, -16)
+transform = Transform3D(-0.6511, 0, 0.5464, 0, 0.85, 0, -0.5464, 0, -0.6511, -5, 0, -16)
 
-[node name="Model" parent="Nav/TentN" instance=ExtResource("16_tent")]
+[node name="Model" parent="Nav/TentN" instance=ExtResource("rp_prp_tent_a")]
 
 [node name="Col" type="StaticBody3D" parent="Nav/TentN"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/TentN/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
-shape = SubResource("Shape_tent")
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.3, 0)
+shape = SubResource("RpShape_TentN")
 
 [node name="TentE" type="Node3D" parent="Nav"]
-transform = Transform3D(0.9397, 0, 0.342, 0, 1.0, 0, -0.342, 0, 0.9397, 35, 0, 5)
+transform = Transform3D(0.7987, 0, 0.2907, 0, 0.85, 0, -0.2907, 0, 0.7987, 35, 0, 5)
 
-[node name="Model" parent="Nav/TentE" instance=ExtResource("16_tent")]
+[node name="Model" parent="Nav/TentE" instance=ExtResource("rp_prp_tent_a")]
 
 [node name="Col" type="StaticBody3D" parent="Nav/TentE"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/TentE/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
-shape = SubResource("Shape_tent")
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.3, 0)
+shape = SubResource("RpShape_TentE")
 
 [node name="TentRun1" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.342, 0, -0.9397, 0, 1.0, 0, 0.9397, 0, -0.342, 31, 0, -24)
+transform = Transform3D(-0.2907, 0, -0.7987, 0, 0.85, 0, 0.7987, 0, -0.2907, 31, 0, -24)
 
-[node name="Model" parent="Nav/TentRun1" instance=ExtResource("16_tent")]
+[node name="Model" parent="Nav/TentRun1" instance=ExtResource("rp_prp_tent_a")]
 
 [node name="Col" type="StaticBody3D" parent="Nav/TentRun1"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/TentRun1/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
-shape = SubResource("Shape_tent")
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.3, 0)
+shape = SubResource("RpShape_TentRun1")
 
 [node name="TentRun2" type="Node3D" parent="Nav"]
-transform = Transform3D(0.5, 0, 0.866, 0, 1.0, 0, -0.866, 0, 0.5, 9, 0, 10)
+transform = Transform3D(0.425, 0, 0.7361, 0, 0.85, 0, -0.7361, 0, 0.425, 9, 0, 10)
 
-[node name="Model" parent="Nav/TentRun2" instance=ExtResource("16_tent")]
+[node name="Model" parent="Nav/TentRun2" instance=ExtResource("rp_prp_tent_a")]
 
 [node name="Col" type="StaticBody3D" parent="Nav/TentRun2"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/TentRun2/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
-shape = SubResource("Shape_tent")
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.3, 0)
+shape = SubResource("RpShape_TentRun2")
 
 [node name="RockRing1" type="Node3D" parent="Nav"]
 transform = Transform3D(0.866, 0, 0.5, 0, 1.0, 0, -0.5, 0, 0.866, -2, 0, 7)
@@ -386,12 +403,6 @@ shape = SubResource("Shape_pine")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 21, 0, -2)
 script = ExtResource("1_entity")
 DisplayName = "Clan Hold Waystone"
-
-[node name="Collider" type="StaticBody3D" parent="Waystone"]
-
-[node name="Shape" type="CollisionShape3D" parent="Waystone/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
-shape = SubResource("Shape_waystone")
 
 [node name="Travel" type="Node" parent="Waystone"]
 script = ExtResource("2_travel")
@@ -611,9 +622,9 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -3.75, 0)
 [node name="Model" parent="Nav/MootHall" instance=ExtResource("61_workshop_open")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -3.4, 0)
 
-[node name="Model" parent="Nav/TentSE" instance=ExtResource("16_tent")]
+[node name="Model" parent="Nav/TentSE" instance=ExtResource("rp_prp_tent_a")]
 
-[node name="Model" parent="Nav/TentNW" instance=ExtResource("16_tent")]
+[node name="Model" parent="Nav/TentNW" instance=ExtResource("rp_prp_tent_a")]
 
 [node name="Model" parent="Nav/BrazierSW" instance=ExtResource("17_brazier")]
 
@@ -637,7 +648,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -3.4, 0)
 
 [node name="Model" parent="Nav/RockNE" instance=ExtResource("19_rock")]
 
-[node name="Model" parent="Waystone" instance=ExtResource("12_waystone")]
+[node name="Model" parent="Waystone" instance=ExtResource("rp_lm_waystone")]
 
 [node name="Model" parent="ClanChief" instance=ExtResource("21_npc_chief")]
 
@@ -654,7 +665,8 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 35, 0, 14)
 script = ExtResource("1_entity")
 DisplayName = "The Exile's Fire"
 
-[node name="Model" parent="ExileFire" instance=ExtResource("24_campfire")]
+[node name="Model" parent="ExileFire" instance=ExtResource("rp_prp_campfire_a")]
+transform = Transform3D(0.6, 0, 0, 0, 0.6, 0, 0, 0, 0.6, 0, 0, 0)
 
 [node name="LeavesAtStormend" type="Node" parent="ExileFire"]
 script = ExtResource("wa_FlagVisibilityComponent")
@@ -808,3 +820,11 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 0, -2)
 
 [node name="Spawn4" type="Marker3D" parent="HoldRaid"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7, 0, 2)
+
+[node name="Dx_ValeRoadStone2" parent="Nav" instance=ExtResource("dx_monolith")]
+transform = Transform3D(-0.2084, 0, -1.1818, 0, 1.2, 0, 1.1818, 0, -0.2084, 70.4, -0.4, 62.2)
+albedo_tint = Color(0.86, 0.92, 1, 1)
+
+[node name="Dx_ValeRoadStone3" parent="Nav" instance=ExtResource("dx_monolith")]
+transform = Transform3D(-1.034, 0, 0.1823, 0, 1.05, 0, -0.1823, 0, -1.034, 28.6, -0.3, 49.8)
+albedo_tint = Color(0.86, 0.92, 1, 1)
