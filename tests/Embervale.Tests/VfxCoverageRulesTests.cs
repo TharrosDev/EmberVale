@@ -383,7 +383,7 @@ public class VfxCoverageRulesTests
         var position = new Vector3(4f, 1.7f, -2f);
         Vector3 ahead = VfxViewRules.HandPoint(position, Basis.Identity);
         Assert.Equal(position + VfxViewRules.HandOffset, ahead);
-
+        // Turned a quarter turn to the left (looking down -X): "left" is now +Z.
         // Turned a quarter turn to the left (looking down -X): "right" is now -Z.
         var turned = new Basis(Vector3.Up, MathF.PI * 0.5f);
         Vector3 offset = VfxViewRules.HandPoint(position, turned) - position;
