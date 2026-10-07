@@ -1557,7 +1557,8 @@ public static partial class DevCommands
             return "scenarios: " + string.Join(", ", ReproHarness.Names);
         }
 
-        return ReproHarness.Run(args[0], console.Execute);
+        ReproResult result = ReproHarness.Execute(args[0], console.Run);
+        return result.Passed ? result.Transcript : console.Fail(result.Transcript);
 #else
         // ReproHarness is development-only source (see Embervale.csproj -> the tooling gate).
         _ = args;

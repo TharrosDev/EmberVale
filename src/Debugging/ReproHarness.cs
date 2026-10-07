@@ -77,13 +77,10 @@ public static class ReproHarness
         return isPath ? nameOrPath.Replace('\\', '/') : $"{ScriptDirectory}/{nameOrPath}{ScriptExtension}";
     }
 
-    /// <summary>Runs a script through <paramref name="exec"/> (the console's command runner) and
-    /// returns the transcript. The F1 <c>repro</c> command prints this.</summary>
-    public static string Run(string name, Func<string, string> exec) => Execute(name, exec).Transcript;
-
-    /// <summary>Runs a script by name or path, stopping at the first command whose output says it
-    /// did not reach its prerequisite.</summary>
-    public static ReproResult Execute(string name, Func<string, string> exec)
+    /// <summary>Runs a script by name or path through <paramref name="exec"/> (the console's typed
+    /// runner, <see cref="DevConsole.Run"/>), stopping at the first command the console marks as
+    /// failed.</summary>
+    public static ReproResult Execute(string name, Func<string, ConsoleResult> exec)
     {
         string path = PathFor(name);
         if (!FileAccess.FileExists(path))
@@ -96,29 +93,23 @@ public static class ReproHarness
     }
 
     /// <summary>Runs commands already parsed. Pure apart from what <paramref name="exec"/> does.</summary>
-    public static ReproResult Execute(string name, IReadOnlyList<string> commands, Func<string, string> exec)
+    public static ReproResult Execute(string name, IReadOnlyList<string> commands, Func<string, ConsoleResult> exec)
     {
         var sb = new StringBuilder($"repro '{name}' ({commands.Count} command(s)):\n");
         int steps = 0;
         foreach (string command in commands)
         {
             FlightRecorder.Shared.Note("cmd", command);
-            string output = exec(command);
+            ConsoleResult output = exec(command);
             steps++;
-            sb.Append($"  {command} → {output}\n");
-            if (Failed(output))
+            sb.Append($"  {command} → {output.Text}\n");
+            if (!output.Ok)
             {
-                sb.Append("  FAILED: scenario stopped because this step did not reach its prerequisite");
+                sb.Append("  FAILED: scenario stopped because the console marked this step as failed");
                 return new ReproResult(name, steps, command, sb.ToString());
             }
         }
 
         return new ReproResult(name, steps, null, sb.ToString().TrimEnd());
     }
-
-    private static bool Failed(string output) =>
-        string.IsNullOrWhiteSpace(output) || output.StartsWith("error:", StringComparison.OrdinalIgnoreCase) ||
-        output.StartsWith("unknown ", StringComparison.OrdinalIgnoreCase) ||
-        output.StartsWith("no player", StringComparison.OrdinalIgnoreCase) ||
-        output.StartsWith("missing ", StringComparison.OrdinalIgnoreCase);
 }
