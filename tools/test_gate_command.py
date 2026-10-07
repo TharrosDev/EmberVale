@@ -65,8 +65,21 @@ class FakeRun:
     def issue(self, code, message):
         self.issues.append(code)
 
+    def brief(self, line):
+        self.result.setdefault("brief", []).append(line)
+
 
 class GateRunTests(unittest.TestCase):
+    def test_the_compact_output_carries_the_matchup_rows_and_the_report_warnings(self):
+        with tempfile.TemporaryDirectory() as folder:
+            row = dict(enemy="enemy.goblin", trials=1, wins=0, losses=1, ttk_s=dict(p50=None))
+            run = FakeRun(folder, dict(exit_code=0, facts=dict(matchups=[row]), warnings=["no ground"]))
+            gate.run(run, types.SimpleNamespace(target="arena", seed=7), [])
+            brief = run.result["brief"]
+            self.assertIn("enemy.goblin: win 0/1 loss 1", brief[1])
+            self.assertIn("ttk p50 -s", brief[1])
+            self.assertEqual("  warning: no ground", brief[-1])
+
     def test_the_arena_runs_at_a_fixed_frame_rate_and_its_facts_are_merged(self):
         with tempfile.TemporaryDirectory() as folder:
             run = FakeRun(folder, dict(exit_code=0, facts=dict(matchups=[dict(enemy="enemy.goblin", wins=3)]), warnings=[]))
