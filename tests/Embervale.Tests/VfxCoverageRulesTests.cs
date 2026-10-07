@@ -357,11 +357,11 @@ public class VfxCoverageRulesTests
     }
 
     [Fact]
-    public void TheFirstPersonCastingPointIsLowAndRightAndClearOfTheCrosshair()
+    public void TheFirstPersonCastingPointIsLowAndLeftAndClearOfTheCrosshair()
     {
         Vector2 screen = VfxViewRules.Screen(VfxViewRules.HandOffset);
 
-        Assert.InRange(screen.X, 0.2f, 0.6f);   // right of centre, inside the frame
+        Assert.InRange(screen.X, -0.6f, -0.2f); // left of centre (the casting hand), inside the frame
         Assert.InRange(screen.Y, -0.7f, -0.3f); // below centre, above the bottom edge
 
         // Further from the crosshair than an aura's bright heart is wide (about 0.3 m at this depth).

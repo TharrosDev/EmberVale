@@ -8,7 +8,7 @@ namespace Embervale.Magic.Vfx;
 /// there and half a metre from the eye, inside the band every effect shader fades out in, so an aura
 /// anchored to the hand bone is simply not drawn. In first person the player's wind-up, charge and
 /// channel aura, the release flash and the start of a bolt or beam are anchored to a point fixed in
-/// the view instead: low and to the right, far enough out to be past the near fade, and clear of the
+/// the view instead: low and to the left (the casting hand), far enough out to be past the near fade, and clear of the
 /// crosshair. Pure, so where it lands on screen is a test.
 /// </summary>
 public static class VfxViewRules
@@ -21,7 +21,7 @@ public static class VfxViewRules
 
     /// <summary>The view-space offset of the first-person casting point: right, up, and (negative Z)
     /// forward of the camera.</summary>
-    public static readonly Vector3 HandOffset = new(0.52f, -0.4f, -1.3f);
+    public static readonly Vector3 HandOffset = new(-0.52f, -0.4f, -1.3f);
 
     /// <summary>Whether a camera <paramref name="cameraFromEye"/> away from the caster's eye is the
     /// caster's own first-person view.</summary>
