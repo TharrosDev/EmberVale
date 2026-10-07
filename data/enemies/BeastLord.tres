@@ -4,8 +4,8 @@
 
 ; The Beast Lord, the Fourth Flamebearer: "Accepted corruption. Became a monster." (docs/LORE.md)
 ;
-; ⚠️ THE BODY IS A PLACEHOLDER. It is the dire wolf's adopted model at 2.2x through ModelScale, charred by
-; its EnemyVisualKit profile, so the fight is complete and playable now. When a generated boss body
+; ⚠️ THE BODY IS A PLACEHOLDER. It is the dire wolf's adopted model at 2.2x through ModelScale,
+; so the fight is complete and playable now. When a generated boss body
 ; lands, swap ModelPath and ModelScale and re-fit the capsule.
 ;
 ; No LootTablePath: like the Iron King, his reward is the relic his BossResource grants.

@@ -99,4 +99,22 @@ public partial class EnemyArchetypeResource : Resource
     /// matches <see cref="Stats.StatsComponent"/>'s, so a non-caster never needs to set it.</summary>
     [Export] public float ManaRegen { get; set; } = 4f;
     [Export] public int XpValue { get; set; } = 30;
+
+    [ExportGroup("Presentation")]
+    /// <summary>A weapon model drawn in the right hand, hung on the hand socket through
+    /// <see cref="Animation.EquipmentPresentationComponent"/> like the player's sword. Visual only:
+    /// the blow still comes from <see cref="WeaponPath"/>. Empty (the default) holds nothing, and a
+    /// rig with no hand bone holds nothing either.</summary>
+    [Export] public string HeldWeaponPath { get; set; } = string.Empty;
+
+    /// <summary>Uniform scale on <see cref="HeldWeaponPath"/>, on top of <see cref="ModelScale"/>:
+    /// the weapon hangs under the body's rig, so it already grows with the body. This is for a
+    /// body authored large at <c>ModelScale</c> 1, or a weapon meant to be oversized for its
+    /// wielder.</summary>
+    [Export] public float HeldWeaponScale { get; set; } = 1f;
+
+    /// <summary>A flat colour laid over every surface of the authored model. Transparent (the
+    /// default) leaves the model's own materials alone. Only for archetypes that share one mesh and
+    /// would otherwise be the same creature at two sizes.</summary>
+    [Export] public Color BodyTint { get; set; } = new(0f, 0f, 0f, 0f);
 }

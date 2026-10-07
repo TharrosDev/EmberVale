@@ -32,8 +32,6 @@ public static class PlayerFactory
     internal const string ProgressionPath = "res://data/progression/PlayerProgression.tres";
     internal const string PlayerModelPath = ModelAssets.PlayerBody;
     internal const string WeaponModelPath = ModelAssets.IronSword;
-    internal const string PauldronModelPath = ModelAssets.Pauldron;
-    internal const string PouchModelPath = ModelAssets.Pouch;
     private const int PlayerTeam = 0;
     private const float CapsuleRadius = 0.4f;
     private const float CapsuleHeight = 1.8f;
@@ -169,25 +167,13 @@ public static class PlayerFactory
         });
         // 30C: plays the rig's idle/run/block/attack/hit/death clips off combat/locomotion state.
         player.AddChild(new Embervale.Animation.CharacterAnimationComponent { Name = "Animation" });
-        // The player's visible loadout: the drawn sword in the right hand, and Session 2's
-        // protagonist layer — pauldrons on the upper arms and a utility pouch at the hips. Queued
-        // rather than attached because the actor is built detached and has no skeleton yet; the
-        // presentation component drains this the moment it finds the rig.
+        // The player's visible loadout: the drawn sword in the right hand. Queued rather than
+        // attached because the actor is built detached and has no skeleton yet; the presentation
+        // component drains this the moment it finds the rig.
         var presentation = new Embervale.Animation.EquipmentPresentationComponent { Name = "EquipmentVisuals" };
         presentation.Pending.Add(new(
             Embervale.Animation.EquipmentSocket.HandR, WeaponModelPath, "MainHand",
             RotationDegrees: Embervale.Animation.WeaponGrip.HandRotationDegrees));
-        presentation.Pending.Add(new(
-            Embervale.Animation.EquipmentSocket.ShoulderL, PauldronModelPath, "PauldronLeft",
-            Offset: new Vector3(0f, 0.015f, 0f)));
-        presentation.Pending.Add(new(
-            Embervale.Animation.EquipmentSocket.ShoulderR, PauldronModelPath, "PauldronRight",
-            Offset: new Vector3(0f, 0.015f, 0f),
-            RotationDegrees: new Vector3(0f, 180f, 0f)));
-        presentation.Pending.Add(new(
-            Embervale.Animation.EquipmentSocket.Hips, PouchModelPath, "UtilityPouch",
-            Offset: new Vector3(-0.22f, 0.02f, 0.13f),
-            RotationDegrees: new Vector3(5f, -8f, -8f)));
         player.AddChild(presentation);
         player.AddChild(new Embervale.Animation.FootIkComponent { Name = "FootIk" });
         player.AddChild(new WeaponTrailComponent { Name = "WeaponTrail" });

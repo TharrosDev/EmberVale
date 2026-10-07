@@ -26,6 +26,10 @@ public static class EnemyArchetypeFactory
     /// <summary>Body height the melee hitbox offsets below were authored against.</summary>
     private const float HumanoidReferenceHeight = 1.8f;
 
+    /// <summary>Node name of an archetype's <see cref="EnemyArchetypeResource.HeldWeaponPath"/>
+    /// under the equipment presentation component.</summary>
+    internal const string HeldWeaponName = "MainHand";
+
     public static EnemyEntity Create(EnemyArchetypeResource archetype, Vector3 position)
     {
         float radius = archetype.CapsuleRadius;
@@ -77,7 +81,17 @@ public static class EnemyArchetypeFactory
         enemy.AddChild(new LocomotionComponent { Name = "Locomotion" });
         enemy.AddChild(new HitReactionComponent { Name = "HitReaction" });
         enemy.AddChild(new Animation.CharacterAnimationComponent { Name = "Animation", BodyMeshPath = "Mesh" });
-        enemy.AddChild(new Embervale.Animation.EquipmentPresentationComponent { Name = "EquipmentVisuals", BodyMeshPath = "Mesh" });
+        var presentation = new Embervale.Animation.EquipmentPresentationComponent { Name = "EquipmentVisuals", BodyMeshPath = "Mesh" };
+        // Queued like the player's sword: the body is built detached, so there is no rig to hang
+        // the weapon on until the presentation component initialises.
+        if (archetype.HeldWeaponPath.Length > 0)
+        {
+            presentation.Pending.Add(new(
+                Embervale.Animation.EquipmentSocket.HandR, archetype.HeldWeaponPath, HeldWeaponName,
+                RotationDegrees: Embervale.Animation.WeaponGrip.HandRotationDegrees,
+                Scale: Vector3.One * archetype.HeldWeaponScale));
+        }
+        enemy.AddChild(presentation);
         enemy.AddChild(new Embervale.Animation.FootIkComponent { Name = "FootIk" });
         // Footsteps at distance: quieter than the player's own and silent past 20 m, where the
         // component skips its bone reads and raycasts entirely.
@@ -214,6 +228,10 @@ public static class EnemyArchetypeFactory
             visual.Name = "Mesh";
             visual.RotateY(Mathf.Pi);
             visual.Scale = Vector3.One * archetype.ModelScale;
+            if (archetype.BodyTint.A > 0f)
+            {
+                TintBody(visual, archetype.BodyTint);
+            }
             enemy.AddChild(visual);
             return;
         }
@@ -258,6 +276,22 @@ public static class EnemyArchetypeFactory
             Position = new Vector3(0f, height * 0.5f, 0f),
             MaterialOverride = new StandardMaterial3D { AlbedoColor = archetype.PlaceholderTint },
         });
+    }
+
+    /// <summary>Lays <see cref="EnemyArchetypeResource.BodyTint"/> over every surface of the model.
+    /// The response numbers are the ones the dragons have always been drawn with.</summary>
+    private static void TintBody(Node node, Color tint)
+    {
+        var material = new StandardMaterial3D { AlbedoColor = tint, Roughness = 0.82f, Metallic = 0.08f };
+        if (node is MeshInstance3D root)
+        {
+            root.MaterialOverride = material;
+        }
+
+        foreach (Node child in node.FindChildren("*", nameof(MeshInstance3D), recursive: true, owned: false))
+        {
+            ((MeshInstance3D)child).MaterialOverride = material;
+        }
     }
 
     /// <summary>

@@ -676,6 +676,17 @@ public static class ContentValidator
                 issues.Add($"enemy archetype '{id}' model resource missing: {archetype.ModelPath}");
             }
 
+            // Same silence for a held weapon: the presentation component warns once in the log and
+            // the enemy fights empty-handed.
+            if (archetype.HeldWeaponPath.Length > 0 && !ResourceLoader.Exists(archetype.HeldWeaponPath))
+            {
+                issues.Add($"enemy archetype '{id}' held weapon model missing: {archetype.HeldWeaponPath}");
+            }
+            if (archetype.HeldWeaponScale <= 0f)
+            {
+                issues.Add($"enemy archetype '{id}' HeldWeaponScale must be positive: {archetype.HeldWeaponScale}");
+            }
+
             if (!AIProfileDatabase.IsRegistered(archetype.AiProfileId))
             {
                 issues.Add($"enemy archetype '{id}' references unknown AI profile '{archetype.AiProfileId}'");

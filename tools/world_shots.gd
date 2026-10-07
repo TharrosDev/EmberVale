@@ -200,7 +200,7 @@ func _render_cell(cell: Array, region: Resource) -> void:
 			# the baseline — a cell can then "pass" the visual gate forever against evidence of a
 			# different cell. Twelve process_frames looked like more than enough patience, which
 			# is exactly why nobody suspected the wait was the wrong KIND of wait.
-			# architecture_shots.gd, environment_shots.gd and npc_kit_shots.gd all await this.
+			# architecture_shots.gd and environment_shots.gd both await this.
 			await RenderingServer.frame_post_draw
 			var path := "%s/%s_%s.png" % [folder, pass_name, shot[0]]
 			var image := root.get_texture().get_image()

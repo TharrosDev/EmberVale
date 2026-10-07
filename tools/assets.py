@@ -408,8 +408,7 @@ def cmd_audit_weight(args: argparse.Namespace) -> int:
 
 
 BUILD_TARGETS = {
-    "npc-kit": ["tools/build_npc_kit.py"],
-    "enemy-identity": ["tools/build_enemy_identity_assets.py"],
+    "primitive-creatures": ["tools/build_enemy_identity_assets.py"],
     "environment": ["tools/build_environment_assets.py"],
     "player-weapons": ["tools/build_player_weapon_assets.py"],
 }
@@ -706,7 +705,6 @@ def cmd_adopt(args: argparse.Namespace) -> int:
             return 1
     elif not entry["bone_map"] and entry["type"] == QUADRUPED:
         print("      QUADRUPED: keeps its own rig and its own clips - no retarget, by design.")
-        print("      Identity pieces bolt on via EnemyVisualKit; see docs/3D_ASSETS.md.")
 
     print("\nadopted. Commit the .glb, its .import and manifest.json together, then:")
     print("  python tools/assets.py validate")

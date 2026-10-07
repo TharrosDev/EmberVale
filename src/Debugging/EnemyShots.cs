@@ -271,20 +271,13 @@ public sealed partial class EnemyShots : ShotHarness
         {
             return $"requested '{_slot}' pose is advancing instead of paused at the capture sample";
         }
-        if (EnemyVisualKit.Resolve(_subject.TemplateId) is { } profile)
+        // A held weapon the archetype authors must actually be in the hand: a bone-name miss
+        // leaves the piece out silently, which looks exactly like a body that never had one.
+        if (EnemyArchetypeDatabase.Get(_subject.TemplateId) is { HeldWeaponPath.Length: > 0 } &&
+            _subject.GetNodeOrNull<Embervale.Animation.EquipmentPresentationComponent>("EquipmentVisuals")
+                ?.IsAttached(EnemyArchetypeFactory.HeldWeaponName) != true)
         {
-            Skeleton3D? skeleton = FindSkeleton(_subject);
-            if (skeleton == null)
-            {
-                return $"identity profile '{profile.Id}' has no skeleton";
-            }
-            foreach (EnemyVisualKit.Piece piece in profile.Pieces)
-            {
-                if (skeleton.FindChild($"Identity_{piece.Name}", recursive: true, owned: false) == null)
-                {
-                    return $"identity piece '{piece.Name}' did not attach";
-                }
-            }
+            return "the archetype's held weapon did not attach";
         }
         return null;
     }
@@ -298,22 +291,6 @@ public sealed partial class EnemyShots : ShotHarness
         foreach (Node child in node.GetChildren())
         {
             if (FindAnimationPlayer(child) is { } found)
-            {
-                return found;
-            }
-        }
-        return null;
-    }
-
-    private static Skeleton3D? FindSkeleton(Node node)
-    {
-        if (node is Skeleton3D skeleton)
-        {
-            return skeleton;
-        }
-        foreach (Node child in node.GetChildren())
-        {
-            if (FindSkeleton(child) is { } found)
             {
                 return found;
             }
