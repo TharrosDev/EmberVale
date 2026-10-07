@@ -31,6 +31,19 @@ public static class VfxElementalRules
     /// <summary>Seconds arcs are left crackling on a body a bolt of lightning struck.</summary>
     public const float StruckCrackleSeconds = 1.4f;
 
+    /// <summary>Seconds frost takes to creep out under what a Rime Shard struck. The patch holds
+    /// and fades over 2.4 times this, so it is on the floor for about two seconds.</summary>
+    public const float RimeFrostSeconds = 0.85f;
+
+    /// <summary>The largest a puff of a Blizzard's ground mist is drawn against the preset's own
+    /// size (1.6 m at its widest): at this its top stays under the height of a chest.</summary>
+    public const float ZoneMistScale = 1f;
+
+    /// <summary>The size of the thunderclap at the end of a Thunder Step against the reach of its
+    /// hit. A lightning blast's first ring runs to 1.2 times its size, so this lands that ring on
+    /// the reach of the hit.</summary>
+    public const float DashClapScale = 0.85f;
+
     /// <summary>How many crystals a tier stands along the wall. The leanest tier's three take the
     /// place of the two flat spires and the drifting glints it drew before: no draw is added.</summary>
     public static int PrismCount(VfxTier tier) => tier switch

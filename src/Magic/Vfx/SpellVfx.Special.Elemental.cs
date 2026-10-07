@@ -186,6 +186,15 @@ public static partial class SpellVfx
     /// and a decal paints everything inside its box, not only the ground.</summary>
     private static float FloorReach(float radius) => Mathf.Clamp(radius * 0.15f, 0.5f, 0.9f);
 
+    /// <summary>The height of the floor a body stands on. Not its origin: a practice dummy's origin
+    /// is the middle of its capsule, and a blast grounded there left its cracks, its scorch and the
+    /// feet of its forks hanging a metre up, around the dummy's chest.</summary>
+    private static float FloorUnder(Node3D body)
+    {
+        BodyFit(body, out Vector3 centre, out Vector3 fit);
+        return body.GlobalPosition.Y + centre.Y - (fit.Y * 0.5f);
+    }
+
     /// <summary>The school's colours for a body of fire: its heart is the hot body colour, not the
     /// near-white of a flare's core, so a billow is flame all the way through and not a white ball.</summary>
     private static VfxSchoolColors Flame(in VfxSchoolColors colors) => colors with
@@ -393,8 +402,8 @@ public static partial class SpellVfx
         float groundY = float.NaN;
         if (VfxAnchor.BodyOf(hit.Target) is { } body)
         {
-            // Bodies stand on their origin; a hit above head height is on something tall, in the air.
-            groundY = body.GlobalPosition.Y;
+            // A hit above head height is on something tall, in the air (the blast checks).
+            groundY = FloorUnder(body);
         }
         else if (hit.Normal.Y > 0.7f)
         {
@@ -848,8 +857,8 @@ public static partial class SpellVfx
 
     /// <summary>
     /// A Rime Shard shatters on what it strikes and leaves the floor under it frozen. Above the
-    /// leanest tier frost creeps out across the floor at the feet of what was struck and holds for a
-    /// couple of seconds; Medium and up throw the shard's crystals back the way it came with glints
+    /// leanest tier frost creeps out across the floor at the feet of what was struck and is gone in
+    /// about two seconds; Medium and up throw the shard's crystals back the way it came with glints
     /// hanging where it broke, a breath of mist along the floor and the longer mark of frost. (The
     /// leanest tier keeps the generic hit and gains nothing.)
     /// </summary>
@@ -867,17 +876,16 @@ public static partial class SpellVfx
         Node3D? struck = VfxAnchor.BodyOf(hit.Target);
         bool floored = struck != null || (hit.Kind == SpellImpactKind.World && hit.Normal.Y > 0.7f);
         bool onTheEye = hit.Target != null && IsPlayer(hit.Target) && AtTheEye(hit.Position + (Vector3.Up * 0.6f));
-        Vector3 foot = struck?.GlobalPosition ?? hit.Position;
+        Vector3 foot = hit.Position;
         if (struck != null)
         {
             // A body's origin is not always its feet (a practice dummy's is its middle).
-            BodyFit(struck, out Vector3 centre, out Vector3 fit);
-            foot += centre + (Vector3.Down * (fit.Y * 0.5f));
+            foot = struck.GlobalPosition with { Y = FloorUnder(struck) };
         }
 
         if (floored && !onTheEye)
         {
-            FrostSpread(cast, foot + (Vector3.Up * 0.04f), 1.15f + (0.5f * cast.Weight), 0.5f);
+            FrostSpread(cast, foot + (Vector3.Up * 0.04f), 1.15f + (0.5f * cast.Weight), VfxElementalRules.RimeFrostSeconds);
         }
 
         if (!budget.SecondaryDebris)
@@ -1075,7 +1083,10 @@ public static partial class SpellVfx
         mist.Spread = 180f;
         mist.Flatness = 1f;
         mist.SpeedScale = 0.8f;
-        mist.SizeScale = Mathf.Clamp(radius * 0.28f, 0.7f, 1.5f);
+
+        // A puff of mist swells as it ages and is drawn about its middle: any larger than this and
+        // its top is at the height of a face, for the whole of the storm, with the caster in it.
+        mist.SizeScale = Mathf.Clamp(radius * 0.2f, 0.6f, VfxElementalRules.ZoneMistScale);
         rig.Add(cast.Fx.Burst(VfxEmitter.Mist, mist)).Get?.Follow(VfxAnchor.To(zone, Vector3.Up * 0.22f));
 
         if (VfxQuality.Rich.Glints)
@@ -1218,7 +1229,11 @@ public static partial class SpellVfx
                 prism.Occlude = 0.55f;
                 prism.Energy = 0.42f;
                 prism.Tiling = new Vector2(2f + Roll(), 1.4f + Roll());
-                prism.RiseSeconds = 0.16f + (0.2f * Roll());
+
+                // Up in a blink, ahead of the sheet between them. A post is stood on its base at
+                // its full height and grows about its middle, so a slow rise shows its foot in the
+                // air; this fast it is out of the ground before it has faded in.
+                prism.RiseSeconds = 0.1f + (0.1f * Roll());
 
                 // Looking along that heading tipped down by the lean stands the post's own up axis
                 // off upright by the same angle, toward it.
@@ -1373,7 +1388,7 @@ public static partial class SpellVfx
 
         // The orb detonates: a strike's worth of forks into the floor, a clap and sparks, on every
         // tier, in place of the generic flash (which at this size was a soft glow).
-        float groundY = VfxAnchor.BodyOf(hit.Target) is { } body ? body.GlobalPosition.Y : float.NaN;
+        float groundY = VfxAnchor.BodyOf(hit.Target) is { } body ? FloorUnder(body) : float.NaN;
         LightningBlast(cast, hit.Position, 2.4f * (hit.Crit ? 1.15f : 1f), groundY);
         StruckCrackle(cast, hit.Target);
         return true;
@@ -1538,7 +1553,7 @@ public static partial class SpellVfx
             Fork(cast, sky, hit.Position, 0.03f, 0.18f, jitter: 0.14f);
         }
 
-        float groundY = VfxAnchor.BodyOf(hit.Target) is { } body ? body.GlobalPosition.Y : float.NaN;
+        float groundY = VfxAnchor.BodyOf(hit.Target) is { } body ? FloorUnder(body) : float.NaN;
         LightningBlast(cast, hit.Position, 2f, groundY);
         return false;
     }
@@ -1595,7 +1610,11 @@ public static partial class SpellVfx
         depart.Life = 0.14f;
         fx.Flare(depart);
         float reach = Mathf.Max(1f, cast.Spell?.DashHitRadius ?? 1.4f);
-        LightningBlast(cast, end, reach * 1.2f, to.Y);
+
+        // Sized so the clap's first ring runs out to the reach of the hit and no further. The
+        // caster stands at its centre with the camera a few metres behind: any wider and the second
+        // ring of the richer tiers is a band of light across the lower half of the frame.
+        LightningBlast(cast, end, reach * VfxElementalRules.DashClapScale, to.Y);
 
         if (!rich)
         {

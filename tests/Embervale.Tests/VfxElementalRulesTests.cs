@@ -73,4 +73,18 @@ public class VfxElementalRulesTests
         Assert.InRange(VfxElementalRules.MaxPrismLean, 5f, 20f);
         Assert.InRange(VfxElementalRules.StruckCrackleSeconds, 0.8f, 2f);
     }
+
+    [Fact]
+    public void AStrikeIsSizedToItsHitAndFrostAndMistStayLow()
+    {
+        // A lightning blast's first ring runs to 1.2 times its size: it lands on the reach of the
+        // dash's hit, give or take a hand, and never past it by more.
+        Assert.InRange(VfxElementalRules.DashClapScale * 1.2f, 0.9f, 1.1f);
+
+        // The patch of frost under a Rime Shard is there for about two seconds (2.4 times its creep).
+        Assert.InRange(VfxElementalRules.RimeFrostSeconds * 2.4f, 1.8f, 2.4f);
+
+        // Mist a caster stands in is never drawn larger than its preset.
+        Assert.InRange(VfxElementalRules.ZoneMistScale, 0.6f, 1f);
+    }
 }
