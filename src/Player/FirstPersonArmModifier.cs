@@ -60,10 +60,12 @@ internal sealed partial class FirstPersonArmModifier : SkeletonModifier3D
         Transform3D view = camera.GlobalTransform;
         Basis axes = view.Basis.Orthonormalized();
         float side = (shoulder - view.Origin).Dot(axes.X) < 0f ? -1f : 1f;
-        Vector2 size = camera.GetViewport()?.GetVisibleRect().Size ?? Vector2.Zero;
-        float aspect = size.X > 1f && size.Y > 1f ? size.X / size.Y : 16f / 9f;
 
-        Vector3 line = axes * FirstPersonArmRules.ViewDirection(camera.Fov, aspect, side);
+        // The wrist goes on the line of sight to where the spell's effects are drawn in first
+        // person, so the glow sits in the hand at every field of view. A frame-relative place for
+        // the wrist agreed with that point at one field of view only, and at the others the charge
+        // burned in the air a hand's width from the palm.
+        Vector3 line = axes * FirstPersonArmRules.LineToward(Magic.Vfx.VfxViewRules.HandOffset, side);
         Vector3 target = FirstPersonArmRules.HandTarget(view.Origin, line, shoulder, shoulder.DistanceTo(hand));
         Quaternion swing = FirstPersonArmRules.Swing(shoulder, hand, target, Weight);
         if (swing.IsEqualApprox(Quaternion.Identity))

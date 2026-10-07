@@ -29,6 +29,13 @@ render_mode cull_disabled;
 // and no other body sharing this mesh (the creator's preview) is touched. Radius 0, the default, is
 // off.
 //
+// view_fade thins the body out near the camera with a screen-door dither (no blending, so it sorts
+// and shadows like the solid mesh it is). x, y are first person: body further than y from the
+// vertical line through the head sphere (an arm, not the chest or legs) fades as it comes inside x of
+// the eye and is gone at about two thirds of x, so a sprint's arm pump is not a sleeve across the
+// screen. z is third person: the whole body fades as it comes inside z of the camera, for a camera a
+// wall or the ground has squeezed onto the player's back. All zero, the default, is off.
+//
 // EMISSION CARRIES THE COLOUR. Every Meshy body ships one material: the atlas as base colour AND as
 // the emissive texture, with no metallic factor, which glTF reads as metallic 1. The stock material
 // is therefore drawn by its emission; its albedo, on a full metal, takes no diffuse light at all.
@@ -64,6 +71,7 @@ uniform float ember_mix = 0.0;
 
 instance uniform vec4 fp_head = vec4(0.0, 0.0, 0.0, 0.0);
 instance uniform vec4 fp_eye = vec4(0.0, 0.0, 0.0, 0.0);
+instance uniform vec4 view_fade = vec4(0.0, 0.0, 0.0, 0.0);
 
 const vec3 LUMA = vec3(0.2126, 0.7152, 0.0722);
 
@@ -80,6 +88,31 @@ void fragment()
 		// VERTEX is in view space here; the spheres are given in world space.
 		vec3 world_pos = (INV_VIEW_MATRIX * vec4(VERTEX, 1.0)).xyz;
 		if (distance(world_pos, fp_head.xyz) < fp_head.w || distance(world_pos, fp_eye.xyz) < fp_eye.w)
+		{
+			discard;
+		}
+	}
+
+	if (!IN_SHADOW_PASS && (view_fade.x > 0.0 || view_fade.z > 0.0))
+	{
+		// How much of the surface is kept here, 0..1; view space puts the camera at the origin.
+		float from_eye = length(VERTEX);
+		float keep = 1.0;
+		if (view_fade.z > 0.0)
+		{
+			keep = smoothstep(view_fade.z * 0.45, view_fade.z, from_eye);
+		}
+		if (view_fade.x > 0.0 && from_eye < view_fade.x)
+		{
+			vec3 world_pos = (INV_VIEW_MATRIX * vec4(VERTEX, 1.0)).xyz;
+			if (distance(world_pos.xz, fp_head.xz) > view_fade.y)
+			{
+				keep = min(keep, smoothstep(view_fade.x * 0.68, view_fade.x, from_eye));
+			}
+		}
+		// Interleaved gradient noise: a stable per-pixel threshold, finer than a 4x4 Bayer tile.
+		float threshold = fract(52.9829189 * fract(dot(FRAGCOORD.xy, vec2(0.06711056, 0.00583715))));
+		if (keep < 1.0 && keep <= threshold)
 		{
 			discard;
 		}

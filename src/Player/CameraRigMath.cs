@@ -56,6 +56,55 @@ public static class CameraRigMath
     /// camera ends up looking at its own feet through the floor.</summary>
     public const float ThirdPersonPitchLimit = 1.3f;
 
+    /// <summary>Looking UP in third person stops sooner still. The seat swings down as the look goes
+    /// up, the ground stops it, and the wall guard slides the camera in along the ground toward the
+    /// body: past about sixty degrees it was a metre and a half from the player's back, looking up at
+    /// a torso that filled the bottom half of the frame with its head out of shot. Looking down has no
+    /// such trouble (the seat rises), so the limit is one-sided.</summary>
+    public const float ThirdPersonLookUpLimit = 1.0f;
+
+    /// <summary>The player's own arms in first person: body further than <see cref="LimbCoreRadius"/>
+    /// from the vertical line through the head (so not the chest, belly or legs the player sees when
+    /// looking down) is thinned out as it comes inside <see cref="LimbFadeRadius"/> of the eye and
+    /// gone at <see cref="LimbFadeGone"/> of that. A sprint's arm pump brings a forearm past the eye
+    /// at a hand's width; without this, looking down at a run, it was a sleeve the height of the
+    /// screen. The eye's own sphere cannot be widened to take it, because it would take the chest.</summary>
+    public const float LimbFadeRadius = 0.36f;
+    public const float LimbFadeGone = 0.68f;
+    public const float LimbCoreRadius = 0.24f;
+
+    /// <summary>In third person, body nearer the camera than this is thinned out the same way: a
+    /// wall or the ground has squeezed the camera onto the player's back, and a mesh that fills the
+    /// frame from inside its own silhouette is worse than one that is half there.</summary>
+    public const float NearBodyFade = 0.8f;
+
+    /// <summary>
+    /// What the body shader's <c>view_fade</c> is set to: x the radius round the eye inside which
+    /// limbs thin out and y the core they are measured against (first person, while the head is cut
+    /// out), z the distance from the camera inside which the whole body thins out (once the camera
+    /// is out behind it). All zero in between, while the camera travels through the head.
+    /// </summary>
+    public static Vector4 ViewFade(bool headHidden, float thirdBlend) =>
+        headHidden ? new Vector4(LimbFadeRadius, LimbCoreRadius, 0f, 0f)
+        : thirdBlend >= 0.5f ? new Vector4(0f, 0f, NearBodyFade, 0f)
+        : Vector4.Zero;
+
+    /// <summary>How far up the look may go: <paramref name="limit"/> (the limit in force either
+    /// way) in first person, capped toward <see cref="ThirdPersonLookUpLimit"/> on the way out to
+    /// third.</summary>
+    public static float LookUpLimit(float limit, float thirdBlend) =>
+        Mathf.Lerp(limit, Math.Min(limit, ThirdPersonLookUpLimit), Math.Clamp(thirdBlend, 0f, 1f));
+
+    /// <summary>
+    /// Whether a piece hung on the player's skeleton is drawn as a shadow only in first person:
+    /// everything that is not in a hand. What is on the head would be in the camera; what is on
+    /// the hips, back or chest (a satchel, a sheathed blade) hangs off a torso the eye's cut-out
+    /// has opened, so it was a box floating beside one boot. What the hands hold stays: it is what
+    /// the player swings.
+    /// </summary>
+    public static bool HiddenInFirstPerson(int bone, int leftHand, int rightHand) =>
+        bone < 0 || (bone != leftHand && bone != rightHand);
+
     /// <summary>How the wall spring's push-out is shaped: a pause before anything moves, a ramp up to
     /// full speed, and a slowing approach so it does not stop dead at full extension.</summary>
     public const float PushRampSeconds = 0.3f;

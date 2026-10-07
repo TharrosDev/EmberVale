@@ -161,6 +161,13 @@ public partial class PlayerCameraRig : EntityComponent
     private readonly Dictionary<GeometryInstance3D, GeometryInstance3D.ShadowCastingSetting> _headPieces = new();
     private bool _headHidden;
     private double _headRescan;
+
+    // The body shader's view_fade as last written to the surfaces; NaN until the first write, and
+    // again whenever the surfaces are collected afresh, so new ones are always given it.
+    private static readonly StringName ViewFadeParameter = "view_fade";
+    private Vector4 _viewFade = new(float.NaN, 0f, 0f, 0f);
+    private int _leftHandBone = -1;
+    private int _rightHandBone = -1;
     private Vector3 _cameraRest = Vector3.Zero;
     private float _pitch;
     private PlayerPhysicsQueries? _queries;
@@ -582,6 +589,14 @@ public partial class PlayerCameraRig : EntityComponent
     {
         _pitchLimit = CameraRigMath.PitchLimit(_profile.PitchLimit, _modeBlend);
         float eased = CameraRigMath.EasePitchInto(_pitch, _pitchLimit, dt);
+
+        // Up is held shorter than down in third person; eased the same way, from wherever it is.
+        float up = CameraRigMath.LookUpLimit(_pitchLimit, _modeBlend);
+        if (eased > up)
+        {
+            float toward = Mathf.Lerp(eased, up, CameraRigMath.Damp(dt, 0.15f));
+            eased = toward - up < 0.001f ? up : toward;
+        }
         if (eased != _pitch)
         {
             _pitch = eased;
@@ -708,8 +723,43 @@ public partial class PlayerCameraRig : EntityComponent
             }
         }
 
+        _leftHandBone = HandBone(right: false);
+        _rightHandBone = HandBone(right: true);
+
         _bodySurfaces.Clear();
         PlayerAppearance.CollectBodySurfaces(visual, _bodySurfaces);
+        _viewFade = new Vector4(float.NaN, 0f, 0f, 0f);
+    }
+
+    private int HandBone(bool right)
+    {
+        if (_skeleton == null)
+        {
+            return -1;
+        }
+
+        string name = Animation.HumanoidBones.FindHand(_skeleton, right);
+        return name.Length > 0 ? _skeleton.FindBone(name) : -1;
+    }
+
+    /// <summary>Tells the body shader how to thin the body out near the camera
+    /// (<see cref="CameraRigMath.ViewFade"/>). Written only when it changes.</summary>
+    private void ApplyViewFade()
+    {
+        Vector4 fade = CameraRigMath.ViewFade(_headHidden, _modeBlend);
+        if (fade == _viewFade)
+        {
+            return;
+        }
+
+        _viewFade = fade;
+        for (int i = 0; i < _bodySurfaces.Count; i++)
+        {
+            if (GodotObject.IsInstanceValid(_bodySurfaces[i]))
+            {
+                _bodySurfaces[i].SetInstanceShaderParameter(ViewFadeParameter, fade);
+            }
+        }
     }
 
     /// <summary>
@@ -742,6 +792,8 @@ public partial class PlayerCameraRig : EntityComponent
         {
             return;
         }
+
+        ApplyViewFade();
 
         // Well out behind the body and not hiding anything: nothing to measure.
         if (!_headHidden && _modeBlend >= 1f && _cameraRest.LengthSquared() > 1f)
@@ -786,9 +838,10 @@ public partial class PlayerCameraRig : EntityComponent
         return size.X > 1f && size.Y > 1f ? size.X / size.Y : 16f / 9f;
     }
 
-    /// <summary>Switches everything hung on the head bone to shadows-only, remembering what each
-    /// piece was set to. A piece is on the head when its mount (the node
-    /// <c>EquipmentPresentationComponent</c> parents to the skeleton) follows the head bone.</summary>
+    /// <summary>Switches everything hung on the skeleton that is not in a hand to shadows-only,
+    /// remembering what each piece was set to (<see cref="CameraRigMath.HiddenInFirstPerson"/>). A
+    /// piece is on a bone when its mount (the node <c>EquipmentPresentationComponent</c> parents to
+    /// the skeleton) follows that bone.</summary>
     private void HideHeadPieces()
     {
         if (_skeleton == null || !GodotObject.IsInstanceValid(_skeleton))
@@ -796,17 +849,17 @@ public partial class PlayerCameraRig : EntityComponent
             return;
         }
 
-        string headName = _skeleton.GetBoneName(_headBone);
         foreach (Node child in _skeleton.GetChildren())
         {
-            bool onHead = child switch
+            // -2 for what is not a mount at all (the mesh, a modifier): left alone.
+            int bone = child switch
             {
-                BoneAttachment3D attachment => attachment.BoneName == headName,
-                Animation.SocketFollower follower => follower.BoneIndex == _headBone,
-                _ => false,
+                BoneAttachment3D attachment => _skeleton.FindBone(attachment.BoneName),
+                Animation.SocketFollower follower => follower.BoneIndex,
+                _ => -2,
             };
 
-            if (onHead)
+            if (bone != -2 && CameraRigMath.HiddenInFirstPerson(bone, _leftHandBone, _rightHandBone))
             {
                 HidePieces(child);
             }
@@ -864,7 +917,17 @@ public partial class PlayerCameraRig : EntityComponent
     /// far the current context lets the player look up and down.</summary>
     public void ApplyPitchStep(float step, bool invertY)
     {
+        float before = _pitch;
         _pitch = SettingsMath.ApplyPitch(_pitch, step, invertY, _pitchLimit);
+
+        // The one-sided limit on looking up: a step may not carry the look past it, and a look
+        // already past it (the swap out to third person is still easing it down) may not go higher.
+        float up = CameraRigMath.LookUpLimit(_pitchLimit, _modeBlend);
+        if (_pitch > up)
+        {
+            _pitch = Mathf.Max(up, Mathf.Min(_pitch, before));
+        }
+
         if (CameraPivot != null)
         {
             CameraPivot.Rotation = new Vector3(_pitch, 0f, 0f);
