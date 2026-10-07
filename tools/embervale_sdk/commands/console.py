@@ -122,7 +122,7 @@ def fold(run, statements, summary, quiet=False, reasons=()):
 def reference(run, style):
     result = run.godot("console-help", [], [f"--console-help={style}"])
     table = "\n".join(line for line in result.stdout.splitlines()
-                      if not line.startswith(RESULT_PREFIX) and not line.startswith("Godot Engine"))
+                      if not line.startswith((RESULT_PREFIX, "Godot Engine", "[")))  # "[": the game log ("[INFO] ...")
     target = Path(run.artifacts) / f"console-reference.{'md' if style == 'md' else 'json' if style == 'json' else 'txt'}"
     target.write_text(table.strip() + "\n", encoding="utf-8")
     run.result["metrics"]["console_reference"] = str(target)
