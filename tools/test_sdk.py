@@ -130,6 +130,7 @@ class FocusedGateTests(unittest.TestCase):
         run.engine = Path("godot-test.exe")
         run.artifacts = Path("test-artifacts")
         run.process = Mock()
+        run.fresh_checked = True  # these tests are about gate selection, whatever state the assembly is in
         return run
 
     def test_focused_gate_preserves_negative_fixture_error_policy(self):
