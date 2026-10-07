@@ -13,6 +13,7 @@ import sys
 import tempfile
 import time
 import unittest
+import unittest.mock
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -484,6 +485,23 @@ class WorldBakeTests(unittest.TestCase):
         self.assertEqual(world_bake.status_line({"state": "done", "done": 151, "total": 151}, now)[2], 0)
         failed = world_bake.status_line({"state": "failed", "error": "engine exited 1"}, now)
         self.assertEqual((failed[2], failed[0].endswith("engine exited 1")), (1, True))
+
+    def test_watcher_journals_a_settled_region_only_while_the_engine_is_alive(self):
+        expected = {"region.a": self.outputs("a", 2)}
+        for path in expected["region.a"]:
+            path.write_bytes(b"half")
+        journal = {"regions": {}}
+        with unittest.mock.patch.object(world_bake, "ROOT", self.root), \
+                unittest.mock.patch.object(world_bake, "JOURNAL", self.root / "journal.json"), \
+                unittest.mock.patch.object(world_bake, "STATUS", self.root / "status.json"):
+            watcher = world_bake.Watcher(expected, {"region.a": "sig"}, time.time() - 5, {}, 2.0, journal)
+            # The engine was killed mid-save: its files stop changing, which is not "finished".
+            watcher.tick(journal=False)
+            watcher.tick(journal=False)
+            self.assertEqual(journal["regions"], {})
+            watcher.tick()
+            watcher.tick()
+            self.assertEqual(list(journal["regions"]), ["region.a"])
 
     def test_resumable_needs_same_signature_and_same_bytes(self):
         original = world_bake.ROOT

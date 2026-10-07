@@ -394,9 +394,11 @@ class Watcher(threading.Thread):
         self.stop = threading.Event()
         self._settling: dict[str, tuple] = {}
 
-    def tick(self) -> dict:
+    def tick(self, journal: bool = True) -> dict:
+        """`journal=False` once the engine has ended: a file that stops changing because its
+        writer was killed mid-save is not a finished one, and --resume would trust it."""
         snapshot = progress(self.expected, self.started, time.time(), self.rate)
-        for region in snapshot["regions_done"]:
+        for region in snapshot["regions_done"] if journal else ():
             if region in self.journal["regions"]:
                 continue
             # The region resource is written last. Journal the region once its files have stopped
@@ -596,14 +598,14 @@ def bake(full: bool = False, forced: tuple[str, ...] = (), resume: bool = False,
         except BaseException:
             watcher.stop.set()
             watcher.join(timeout=10)
-            watcher.tick()
-            status.update(watcher.tick())
+            status.update(watcher.tick(journal=False))
             finish(status, "interrupted", 130, "interrupted")
             raise
         watcher.stop.set()
         watcher.join(timeout=10)
-        watcher.tick()
-        status.update(watcher.tick())  # twice: the second tick journals a region the first saw settle
+        # Status only. Nothing is journaled after the engine ended: a region the watcher had not
+        # yet seen settle while the engine was alive is baked again by --resume.
+        status.update(watcher.tick(journal=False))
         BAKE_LOG.parent.mkdir(parents=True, exist_ok=True)
         BAKE_LOG.write_text(result.output, encoding="utf-8")
         for line in error_lines(result.output):
