@@ -205,7 +205,48 @@ Other asset capture harnesses retain their composition and honor the shared arti
 The merged combat overhaul retired the separate arm assets and `player_asset_shots.gd`;
 use `gameplay-capture.json` for the real camera modes. The canonical world gate registry
 retains the merged action-clip, equipment socket, animation library/tree, grounding,
-ranged, camera, view-switch, prepared-world bake and streaming stress checks.
+ranged, camera, view-switch, prepared-world bake and streaming stress checks, and since the
+2026-10 camera pass a `facing` gate (`tools/facing_probe.gd`: the chest faces the way the body
+is going and the hips stay inside the capsule at every gait).
+
+Three session harnesses came with the spell-effect work. Each continues the newest save like
+`--play`, needs a real window (never `--headless`) and is excluded from a shipping build.
+
+| Flag | Class | Produces |
+| --- | --- | --- |
+| `--spellshots` | `SpellShots` | every spell cast through the real cast button at practice targets on a level strip found by raycast, at dusk: `<spell>_<tp\|fp\|tpday>_<windup\|release\|impact\|linger>.png`. Enemy-only spells are cast at the player by the creature that owns them. Each shot logs the node, visible, emitter and light counts under `VfxRoot`, and the run fails when a spell with a recipe drew nothing |
+| `--camshots` | `CamShots` | both views at idle, walk, jog, sprint (with the three frames before it), both strafes, backpedal, a charge, a channel, looking down and up, a diagonal run, looking down at FOV 110 and at a sprint, and two side views with the capsule drawn. Each shot logs camera, chest, hips and casting-hand measurements, and the run fails on a body drawn back to front, an eye in the chest or a casting hand out of frame |
+| `--vfxperf` | `VfxPerfScenario` | eight casters in a ring looping the eight heaviest spells: `vfxperf_<tier>.json` with baseline, whole-run, steady and first-pass frame times (p50, p95, worst), the first cast's frame, the worst frame per spell's first use, and peak effect nodes, emitters, particles, lights and draw calls. V-sync and the frame cap are off for the run. Exits 1 if no cast began or nothing drew |
+
+| Variable | Read by | Does |
+| --- | --- | --- |
+| `EMBERVALE_SPELLSHOTS_FILTER` | `--spellshots` | comma list of spell ids or school names; default all |
+| `EMBERVALE_SPELLSHOTS_VIEW` | `--spellshots` | `tp`, `fp` or `both` |
+| `EMBERVALE_SPELLSHOTS_TIER` | `--spellshots`, `--vfxperf` | `performance`, `low`, `medium`, `high` or `ultra`: the spell-effect tier for the run |
+| `EMBERVALE_SPELLSHOTS_REDUCED` | `--spellshots`, `--vfxperf` | `1` turns Reduced Motion on |
+| `EMBERVALE_SPELLSHOTS_HOUR` | `--spellshots` | the dusk hour, default 19.5 |
+| `EMBERVALE_SPELLSHOTS_BACKDROP` | `--spellshots` | `0` removes the dark wall stood behind the targets |
+| `EMBERVALE_VFXPERF_SECONDS` | `--vfxperf` | how long the casters loop, default 20 |
+| `EMBERVALE_VFXPERF_VIEW` | `--vfxperf` | `wide` (default: a raised camera with the whole ring in view), `tp` or `fp` |
+
+The shared `EMBERVALE_RES`, `EMBERVALE_ARTIFACTS`, `EMBERVALE_SLOT`, `EMBERVALE_USER_DIR` and
+`EMBERVALE_FRAMES` apply as for the UI harnesses (`UI_STYLE.md` §13.9). Settings are changed on the
+live object and never saved, and autosaves are off for the run. Prove a harness on a small batch
+before a full run, for example `EMBERVALE_SPELLSHOTS_FILTER=emberlash,sunfall,storm_conduit,wither`
+with `EMBERVALE_SPELLSHOTS_VIEW=tp`.
+
+⚠️ **Keep the window focused during `--spellshots` and `--camshots`.** They drive the real input
+actions, and Godot releases every pressed action when the window loses focus: a held charge fires
+early and a channel ends. A run's problems are repeated at its end under `zz-summary`, and the
+exit code is 1 if there were any. Grep the log for `the cast button did not start` (the input
+route failed and the direct fallback was used) and `ran without its condition being met` (a
+staging wait timed out).
+
+`tools/gen_spell_sfx.py` is plain Python (numpy, with ffmpeg on PATH), not a Godot tool: it writes
+the 25 spell cues and `manifest.json` under `assets/audio/sfx/spell/`, `--check` compares PCM
+hashes with the committed manifest, and `--keep-wav DIR` leaves the wavs for listening. Hashes are
+reproducible on one numpy build and may differ in the last bit on another. After a rewrite, let
+Godot import the `.ogg` files and commit the `.import` files with them.
 
 Generic screenshot diffing compares equally-sized RGB images using normalized mean absolute
 channel error, writes metadata and a highlighted diff on failure, and never updates the baseline.

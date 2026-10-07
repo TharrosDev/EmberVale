@@ -5,14 +5,112 @@
 Developer SDK: [`TOOLING.md`](TOOLING.md) (`python tools/embervale.py`). Every mechanic in the game,
 one line each: [`MECHANICS.md`](MECHANICS.md).
 
-## Where we are (2026-10-06, UI upgrade)
+## Where we are (2026-10-06, spell effects, spell wheel and camera)
 
 The game is complete from New Game to credits. The finish run's contract and id registry are
 [`playbook/finish.md`](playbook/finish.md).
 
+### Spell effects, the spell wheel and the camera (`claude/magic-vfx`)
+
+The newest work is three things asked for together: every spell made spectacular and scalable
+across the graphics tiers, a spell wheel on the hold of `F`, and the first- and third-person
+camera fixed. It was built in two waves of lanes (a foundation, then effects core, wheel, camera
+and animation, audio and harnesses; then a look pass, two recipe lanes, HUD and spellbook, and
+camera fixes), each with a review-fix pass. It changes no gameplay number, hit, aim, cooldown or
+cost. It adds two save keys under the existing `spells` record, one settings field, one HUD
+element and one tutorial step (all append-only), and it changes what the `cycle_spell` action
+does. ⚠️ **The lanes wrote it without launching the engine. The orchestrator then rendered every
+spell, the camera, the HUD and the panels through the harnesses, and the lanes fixed what the
+frames showed. Nobody has played it, and nobody has seen an effect move.** A still frame proves
+what one instant looks like; it proves nothing about motion, timing, sound or feel.
+
+- **Spell effects.** One facade (`SpellVfx`), one session director (`SpellVfxDirector`), pooled
+  blocks (flare, particle burst, lightning ribbon, shell, ground disc, ground mark, distortion,
+  one screen flash), seven shaders in `assets/shaders/vfx` and code-built textures. All 30 spells
+  have an authored recipe and special-case hooks: wind-up at the hand, release, travel, impact and
+  what lingers, plus status auras. Five tiers (`Settings.SpellEffects`, following the graphics
+  preset by default) differ in what a blast is built from, not only in particle counts.
+  [`RENDERING.md`](RENDERING.md#spell-effects) has the table and
+  [`ARCHITECTURE.md`](ARCHITECTURE.md#213-magic-srcmagic) the code map.
+- **What the first renders taught.** The first pass was white-outs: stacked soft additive quads
+  clip to white however faint each is. The coverage governor (`VfxCoverageRules`) came out of
+  that, and so did building every blast from structure. Pale square patches round frost effects
+  were ground-mark decals tinting the effect quads above them, which is why render layer 12 is
+  reserved for effects and decals are masked off it. A muddy orange full-screen tint on spell
+  crits was the combat hit flash, which spell hits now skip.
+- **Spell wheel.** Hold `F` (pad `LB`, right stick): eight favourites on the inner ring, six
+  schools on the outer, the hovered school's spells fanned out past the rim. A tap swaps back to
+  the previous spell. The world keeps running; only look, lock-on, attack, block and cast are lent
+  to the wheel (`PlayGate.WheelOpen`). The HUD spell row gained the spell's glyph, a wheel hint
+  and a ghost of the tap target; the spellbook's prepared row became eight pin slots with Prepare
+  and Pin on every known card. 25 code-drawn spell glyphs and six school emblems (`SpellGlyphs`).
+- **Camera and animation.** The first-person "glitch" was the camera stepping at the physics rate
+  under a view that turned per mouse event (`PlayerVisualSmoother`). The head in frame is cut out
+  by the body shader with two spheres, and the eye is anchored to the resting head with a look-down
+  reach. "Third person shows the character's front" was not the camera: the shared idle rested 40
+  degrees off forward, the loops carried baked root travel, the blend points sat at speeds nobody
+  moves at, and `MountComponent` yawed the body mesh half a turn on every load. The library is
+  rebuilt with travel stripped, a calmed idle, squared and mirrored strafes; the gait blend is 2D
+  and normalised by run speed (this reaches every Meshy humanoid); the mount's base yaw is fixed.
+  The player's body, which had been drawn as bare metal, takes its atlas as emission again.
+- **Spell audio.** 25 synthesised cues from `tools/gen_spell_sfx.py`, routed by `AudioDirector`
+  through the pure `SpellAudio`, and a hard limiter on the SFX bus.
+- **Harnesses.** `--spellshots`, `--camshots`, `--vfxperf`, `tools/facing_probe.gd`, HUD frames
+  `01a` to `01f` and panel frames `29b` and `29c`; see Commands.
+
+**Unverified (spell effects, wheel and camera).** The harness frames exist and were read; see
+Verification. Everything below is what they cannot show.
+
+- **No human has played it.** Not one cast, wheel pick or camera swap has been made by a person
+  in a session.
+- **The wheel's feel with a real mouse and a real pad.** 150 px of mouse travel to the rim at
+  every HUD scale, the right stick's two thresholds, the stick at rest returning the cursor to the
+  centre (which cancels), the 0.16 s tap window, the fan latching, and the presses-in-place-of-holds
+  flow were all reasoned from code. No frame
+  covers that variant, high contrast, or a HUD scale other than 1 for the wheel.
+- **No spell sound has been heard by a person.** The 25 cues pass numeric checks only (length,
+  peak, DC, fades, sub-bass share, tail decay, spectral centroid). The mix, the channel and zone
+  rate limits, the riser ending on the release, the thunder threshold and the SFX limiter are
+  rules under test, not sound anyone listened to. A Kindle detonation has no blast of its own.
+- **The effects were judged from still frames only. There has been no motion review.** How a
+  blast pops and decays, whether lightning flickers or strobes, whether rings and snow travel the
+  right way, whether a trail reads at speed, the 0.25 s settle of a bolt from the hand, the eye
+  smoothing at a sprint, the yaw lag, the casting arm's 0.18 s raise against a 0.25 s wind-up and
+  the wheel's open and close: none has been watched.
+- **Performance was measured in one scenario on one machine.** `--vfxperf`: eight casters looping
+  the eight heaviest spells, Intel Iris Xe, 1280x720. Steady frame time p50 against the same
+  staged scene before any cast:
+
+  | Tier | Baseline p50 ms | Steady p50 ms |
+  | --- | ---: | ---: |
+  | Performance | 8.8 | 13.7 |
+  | Medium | 8.6 | 18.7 |
+  | Ultra | 12.7 | 18.9 |
+
+  Medium and Ultra are over the 16.67 ms frame on this machine in that scenario. Nothing else was
+  measured: not Low or High, not a single caster in ordinary play, not a crowd of afflicted enemies
+  (status auras sit outside the live-effect budget), not first-cast hitch on a cold shader cache,
+  not another GPU. `vfx_sprite` and `vfx_flow` declare a depth-texture sampler on every tier.
+- **Steam Deck hardware is untested**, for the effects' cost and for the wheel at 853x533.
+- **Tuned by eye from stills, or not at all.** Every size, lifetime, density and colour in the
+  recipes; the governor's numbers, which assume a 70 degree vertical field of view at 16:9;
+  whether Performance, with glow off, still reads hot; the live-effect budgets against richer
+  blasts (several casters at once recycle effects mid-life); the first-person eye height and the
+  eye-follow fractions; the strafe's arms after the chest was squared; the 1.12 aim shoulder.
+- **Known limits left as they are.** Ground discs and floor rings are flat quads and clip into
+  slopes. Stormbrand's sky bolt starts 8 m overhead and passes through a ceiling. The first-person
+  casting point is fixed in the view, so a wall the player is hugging can hide it, and first
+  person is detected by camera distance from the head, so a mounted or rolling caster falls back
+  to the hand bone. The eye cut-out is capped at 0.20 m, so past roughly a 100 degree field of
+  view the near plane's far corners are outside it. `vfx_ice` is not in the validator's shader
+  list. The wheel's readout and legend overlap the hotbar at 1280x720 and below. An 18 px ghost
+  disc may read as a coloured dot.
+- **Not part of the run recorded here.** The master world bake check, the export build with
+  `check_shipping_assembly.py` on the merged branch, the negative battery and world quality.
+
 ### The UI, HUD and meta-shell upgrade (`claude/ui-upgrade`)
 
-The newest work is a visual and mechanical upgrade of every screen and of the HUD ("banked
+Before it came a visual and mechanical upgrade of every screen and of the HUD ("banked
 embers"): one foundation, eight lanes in two waves (settings and input, HUD core, items,
 knowledge panels; then shell front, shell session, HUD combat, trade), each with a review-fix
 pass, then three polish lanes driven by reading screenshots. It changes no save format. It adds
@@ -554,6 +652,34 @@ Numbers are stable references (other docs cite them); gaps are retired invariant
     in `CombatComponent.ReceiveDamage`. Scaling anywhere else (inside `ApplyDamage`, per attacker)
     desyncs the kill and damage result computed before it, and a Normal that is not bit-for-bit 1
     moves every measured balance number.
+53. ⚠️ **A SPELL EFFECT IS A CHILD OF `VfxRoot` AND OF NOTHING ELSE.** Never of `Entity.Body`, a
+    projectile or a placed spell node. An effect that follows something copies its position each
+    frame behind `IsInstanceValid`. Effects go through the `SpellVfx` facade, age in `_Process`
+    (no tweens, no scene-tree timers), are freed when a load begins, and never read back into a
+    rule: a call may be dropped with nothing else changing, and headless nothing is built.
+54. ⚠️ **A `Node`-DERIVED EFFECT CLASS IS `partial` AND LIVES IN A FILE OF ITS OWN NAME.**
+    Otherwise Godot does not attach its script, its `_Process` never runs, and the effect is built
+    and never ages. Nothing logs it.
+55. ⚠️ **NO PUBLIC STATIC UNDER `src/Magic/Vfx` EXPOSES A PARAMETERLESS `Clear` OR `Reset`**
+    beyond the two on the session reset list (`SpellVfx.Reset`, `VfxQuality.Reset`).
+    `SessionResetTests` finds such a method by reflection and fails until it is listed and called
+    (invariant 27); a helper that only tidies a table is `internal`.
+56. ⚠️ **A POOLED EFFECT RESETS ITS TRANSFORM IN `Begin`.** `VfxEffect.Begin` sets it to identity,
+    because a wall's emitter is turned with `OrientLike` and the next burst drawn from that pooled
+    node sprayed the wall's way. A block that needs a facing sets it after the spawner call, never
+    from an earlier life. The same goes for any state a pooled node carries: resources are built in
+    the constructor and every per-use value is written on every use.
+57. ⚠️ **RENDER LAYER 12 BELONGS TO SPELL EFFECTS, AND DECALS ARE MASKED OFF IT.** Every effect
+    mesh is on `VfxMaterials.RenderLayer`; every ground-mark decal's cull mask is
+    `VfxMaterials.DecalMask`. A decal tints every surface in its box, additive quads included.
+    Put nothing else on the layer, give a new decal the mask, and a camera that sets a cull mask
+    must include the layer.
+58. ⚠️ **A SHARED CLIP IS FIXED AT THE LIBRARY BUILD, NOT IN THE COMPONENT.** Root travel is
+    stripped, the idle is calmed and faced forward, and the strafe is squared and mirrored by
+    `tools/build_meshy_anim_library.gd`; the committed `anim_meshy.res` is its output. The gait
+    blend's axes are speed over the actor's own run speed, so its points never hold metres per
+    second. A body that faces the wrong way or slides is measured with `facing_probe.gd` and
+    `--camshots` before the camera is touched.
 
 ## Commands
 
@@ -586,7 +712,27 @@ godot --path . -- --shellshots | --metashots | --hudshots | --combat-shots | --p
                                            # one at a time; each checks the state of every shot. EMBERVALE_RES=1280x800
                                            # EMBERVALE_SHOT_UISCALE=1.5 is the handheld view; EMBERVALE_USER_DIR,
                                            # EMBERVALE_SLOT and EMBERVALE_ARTIFACTS pin the save and the output
+                                           # --hudshots includes 01a-01f (spell row and wheel states);
+                                           # --panelshots includes 29b and 29c (spellbook pin row)
+godot --path . -- --spellshots             # every spell cast for real: <spell>_<tp|fp|tpday>_<windup|release|impact|linger>.png.
+                                           # Keep the window focused. EMBERVALE_SPELLSHOTS_FILTER=<ids or schools, comma list>
+                                           # EMBERVALE_SPELLSHOTS_VIEW=tp|fp|both  EMBERVALE_SPELLSHOTS_TIER=performance|low|medium|high|ultra
+                                           # EMBERVALE_SPELLSHOTS_REDUCED=1 (reduced motion)  EMBERVALE_SPELLSHOTS_HOUR=<hour, default 19.5>
+                                           # EMBERVALE_SPELLSHOTS_BACKDROP=0 (no dark wall behind the targets).
+                                           # Fails when a spell with a recipe drew nothing under VfxRoot
+godot --path . -- --camshots               # both views at idle, walk, jog, sprint, strafes, backpedal, diagonal, charge, channel,
+                                           # look down (also at FOV 110 and at a sprint) and up, plus two side views with the capsule.
+                                           # Fails on a body drawn back to front, an eye in the chest or a casting hand out of frame
+godot --path . -- --vfxperf                # eight casters looping the eight heaviest spells; writes vfxperf_<tier>.json.
+                                           # EMBERVALE_VFXPERF_SECONDS=<default 20>  EMBERVALE_VFXPERF_VIEW=wide|tp|fp
+                                           # tier and reduced motion from the two EMBERVALE_SPELLSHOTS_ variables above
 godot --path . -- --guild-shots | --shrine-shots | --enemy-shots | --look-shots
+godot --headless --path . --script res://tools/build_meshy_anim_library.gd   # rebuilds anim_meshy.res; read its detrend, idle, square and mirror lines
+godot --headless --path . --script res://tools/anim_library_probe.gd      # loops stay on the spot, the idle faces forward, the mirror is a mirror
+godot --headless --path . --script res://tools/locomotion_tree_probe.gd   # the 2D gait blend, the upper-body mask, the action clock
+godot --headless --path . --script res://tools/facing_probe.gd            # chest faces the body and hips stay in the capsule at every gait (gate "facing")
+godot --headless --path . --script res://tools/camera_probe.gd            # wall spring, the first-person eye and its two cut-outs
+python tools/gen_spell_sfx.py [--check | --keep-wav DIR]   # the 25 spell cues and manifest.json; needs numpy and ffmpeg on PATH
 godot --headless --path . --script res://tools/magic_learning_probe.gd    # also builds the spellbook and HUD chips
 godot --headless --path . --script res://tools/combat_feedback_probe.gd   # hit stop, feedback, lock-on, telegraphs
 godot --headless --path . --script res://tools/pack_ui_atlas.gd   # item icon atlas from assets/ui/icons/items/src
@@ -611,6 +757,28 @@ Python is Codex's bundled interpreter
 Export templates are in `%APPDATA%\Godot\export_templates\4.7.1.stable.mono`.
 
 ## Verification
+
+### Spell effects, spell wheel and camera (`claude/magic-vfx`)
+
+Run by the orchestrator, one Godot at a time, on 2026-10-06. This table records what was run and
+looked at; where a result is not recorded here, **see the PR.**
+
+| Check | Evidence |
+| --- | --- |
+| Build (`dotnet build Embervale.sln`) | warning-free |
+| Unit suite (`dotnet test tests/Embervale.Tests`) | 6448 passing |
+| Animation library rebuild (`build_meshy_anim_library.gd`) | run; the rebuilt `anim_meshy.res` is committed |
+| `--spellshots`, Ultra, dusk | all 30 spells in both views; the frames were read as contact sheets |
+| `--spellshots`, Performance (glow off) | all spells in third person; read as contact sheets |
+| `--camshots` | run; read as contact sheets |
+| `--hudshots` (with `01a` to `01f`), `--panelshots` (with `29b`, `29c`) | run; read as contact sheets |
+| `--enemy-shots` | run, to look at the new idle and gait blend on the other humanoids |
+| `--vfxperf` at Performance, Medium and Ultra | Iris Xe, 1280x720; steady p50 13.7 / 18.7 / 18.9 ms against baselines 8.8 / 8.6 / 12.7 |
+| `--validate`, `--lifecycle`, `--story`, the magic, animation, facing and camera probes | not recorded here; see the PR |
+| `--vfxperf` at Low and High; any other scene, machine or resolution | not run |
+| The wheel with presses in place of holds, high contrast, reduced motion | not captured |
+| World bake check, export build with the shipping check, negative battery, world quality | not part of this run |
+| A human play-through, a real mouse and pad on the wheel, the spell audio, any motion review, Steam Deck hardware | not run; see Unverified above |
 
 ### UI, HUD and meta-shell upgrade (`claude/ui-upgrade`)
 

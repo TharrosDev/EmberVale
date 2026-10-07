@@ -177,13 +177,120 @@ including each tick of a volume drag.
 
 ### Shader compilation
 
-There is no hand-written warm-up pass. Forward+ compiles a mesh's specialised pipelines in the
+The world has no hand-written warm-up pass. Forward+ compiles a mesh's specialised pipelines in the
 background when its surface is loaded and draws with the ubershader until they are ready, and
 every route into the world holds the loading screen until the landing cells are resident
 (`LoadingCoordinator`). `ApplyQuality` runs when the sky is built, before any cell streams, so
 MSAA, TAA and the scaling mode are fixed before those pipelines are requested. What this does not
-cover is a material first created mid-play, such as a combat effect: on a machine's first ever
-session its shader is compiled once, then served from the on-disk shader cache.
+cover is a material first created mid-play: on a machine's first ever session its shader is
+compiled once, then served from the on-disk shader cache. Spell effects are the one such family
+with a warm-up of their own: on the first frames with a camera `SpellVfxDirector` draws one of
+every block in front of it at scale 0.001 for three frames (`WarmupFrames`, `WarmupScale`), and
+builds the ground pattern textures then too. Whether that removes the first-cast hitch on a cold
+shader cache has not been separated out from the `--vfxperf` numbers.
+
+## Spell effects
+
+Everything a spell draws goes through the `SpellVfx` facade and is owned by the session's
+`SpellVfxDirector` (`src/Magic/Vfx`; the code map is
+[`ARCHITECTURE.md`](ARCHITECTURE.md#213-magic-srcmagic)). It is the stated exception to "no
+ordinary-world magical glow" in `data/rendering/VisualContract.json` (`vfx.magic`,
+`vfx.spell_effects`): a cast, its travel, its impact and what it leaves behind may glow, with hue
+from `SpellSchools.Color` through `VfxPalette`. Nothing else in the world gains glow by it.
+
+**Shaders.** Seven, in `assets/shaders/vfx`, each one shared `Shader` with a `ShaderMaterial` per
+pooled node (every node animates its own colour and fade). There are no texture imports: every
+image is built in code by `VfxTextures`.
+
+| Shader | Draws |
+| --- | --- |
+| `vfx_sprite` | billboards: flares, halos, rays and every particle. Premultiplied alpha, so one shader is additive light and covering smoke. It also thins a puff by its width on screen |
+| `vfx_flow` | scrolling noise bodies: fire balls, wall sheets, shells, breath tongues |
+| `vfx_ring` | shock rings: a thin torn front with a wake, on an annulus mesh |
+| `vfx_ribbon` | lightning, beams, tethers and trails; width is clamped to an angle, so a ribbon beside the first-person camera is a line and not a wedge |
+| `vfx_distort` | screen-texture refraction shells |
+| `vfx_ground` | ground discs: a rim, a school pattern and wisps |
+| `vfx_ice` | ice walls and frozen shells: plates, seams, a lit rim, a jagged crest |
+
+All seven fade in view space between 0.3 m and 1.2 m from the camera. If any fails to load or to
+compile, `VfxMaterials.Load` logs `Spell effects: shader X did not compile; spell effects are off`,
+`SpellVfx.Active` is false for the session and every spell falls back to its plain shape. `--validate`
+checks `vfx_sprite`, `vfx_flow`, `vfx_ring`, `vfx_ribbon`, `vfx_distort`, `vfx_ground` and
+`player_body.gdshader` for a parse failure; ⚠️ `vfx_ice` is not in that list, so only the runtime
+check covers it.
+
+**Render layer 12 is reserved for spell effects.** Every effect mesh is drawn on it
+(`VfxMaterials.RenderLayer`) and every ground-mark decal's cull mask leaves it out
+(`VfxMaterials.DecalMask`). A decal tints every surface in its box, unshaded additive quads
+included, and a pale frost or rune mark drew square patches over the flares and shards above it
+until the two were separated. Put nothing else on layer 12, and give any new decal that can sit
+under an effect the same mask. No camera in the game sets a cull mask, and one that did would have
+to include the layer.
+
+**Tiers.** `Settings.SpellEffects` is -1 (follow the graphics preset) or 0 to 4 in visual order:
+Performance, Low, Medium, High, Ultra. ⚠️ That is not `Settings.RenderQuality`'s saved order, so
+the preset is mapped by `VfxBudgetRules.FromRenderQuality`, never cast. `SpellVfxDirector` writes
+the result into `VfxQuality` at session start and on every `SettingsAppliedEvent`; this is beside
+`SkyController.ApplyQuality`, not through it. The numbers are `VfxBudgetRules` and the contract
+JSON repeats the first table.
+
+| | Performance | Low | Medium | High | Ultra |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Particle multiplier | 0.25 | 0.45 | 0.7 | 1.0 | 1.5 |
+| Spell lights at once | 2 | 3 | 5 | 8 | 12 (1 shadowed) |
+| Longest light range | 5 m | 7 m | 10 m | 14 m | 18 m |
+| Distortion | off | off | off | on | on |
+| Ground marks at once | 0 | 0 | 6 | 12 | 24 |
+| Secondary debris and smoke | off | off | on | on | on, doubled |
+| Bolt segments / branches | 6 / 0 | 8 / 0 | 12 / 1 | 16 / 2 | 24 / 3 |
+| Bolt strands | 1 | 1 | 2 | 2 | 3 |
+| Projectile trail | core and halo | short | normal | long | long with sparks |
+| Live effect budget | 12 | 20 | 32 | 48 | 64 |
+| Full-detail distance | 25 m | 35 m | 50 m | 70 m | 90 m |
+| Rays on a blast | no | yes | yes | yes | yes |
+| Billow, mist, crystals, glints | no | no | yes | yes | yes |
+| Smoke column | no | no | no | yes | yes |
+| Debris layers | 0 | 0 | 1 | 1 | 2 |
+| Soft depth fade on particles | no | no | yes | yes | yes |
+| Standing zone floor | rim only | whole | whole | whole | whole |
+| Largest soft glow quad (frame heights) | 0.45 | 0.55 | 0.7 | 0.85 | 1.0 |
+
+Past the full-detail distance only the flare draws; past 1.5 times it nothing spawns
+(`VfxBudgetRules.DetailAt`). The budget counts effect groups, not nodes. Over budget the oldest
+effect that is not the player's is recycled first. Wind-up auras, telegraphs, zones, walls, totems,
+bolts in flight and status auras are essential: they are never recycled and take no place in the
+budget (`VfxLedger`). Glow is off on the Performance preset, so no effect may rely on bloom to
+read: the layered cores and the halo have to look hot without it.
+
+**The coverage governor** (`VfxCoverageRules`). The first renders were white-outs: a soft additive
+quad costs its pixels however faint it is, and several stacked ones clip to white. Three rules
+came out of that, and every large element obeys them.
+
+- A soft layer's opacity falls with the share of the frame it covers. It is full up to 4.5% of
+  the frame and down to 0.12 at 35% (20% on Performance), with a brief brighter pop in its first
+  0.08 s. Its quad is shrunk to the tier's span in the last table row.
+- A large white core is capped in size and gone in 0.15 s.
+- Each particle puff is thinned by its own width on screen (`SpriteOpacity`, mirrored in
+  `vfx_sprite` as `span_limit` and `span_floor`): thinning starts at 0.42 m of width per metre of
+  distance and stops at 0.12.
+
+The estimate assumes a 70 degree vertical field of view at 16:9. A blast is built from structure
+(rays, a thin ring, an eroding body, particles, debris, smoke), never from a bigger disc.
+
+**Comfort.** The spell layer's own screen flash is one `CanvasLayer` (`VfxScreen`) under
+`VfxScreenRules`: at most 0.14 alpha times the player's screen-flash setting, at most 0.1 for an
+enemy's spell and only when it struck the player, 0.05 under Reduced Motion, never two within
+0.3 s, pulled nearly to warm white, and only for a blast centred on the player. A body-sized
+sphere shell is not drawn while the camera is inside it (`VfxScreenRules.Engulfs`), because from
+inside it is an uncapped full-screen flash. Reduced Motion also removes distortion and holds bolts
+still. A landed spell hit no longer raises `CombatFeedbackOverlay`'s full-screen hit tint; melee
+hits keep it.
+
+**First person.** The player's own wind-up aura, release flash and the start of a bolt or beam are
+anchored to a point fixed in the view on the casting hand's side (`VfxViewRules.HandOffset`), past
+the near fade and clear of the crosshair, because the hand bone itself sits inside the fade band.
+The projectile's picture starts there and settles onto the true path over 0.25 s; the collision
+area, the aim and the muzzle are untouched.
 
 Directional shadows use up to four blended cascades. Outdoor GI uses sky radiance; no streaming cell
 rebuilds voxel GI. SSIL is restrained and optional. Static authored interiors may use lightmaps,

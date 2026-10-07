@@ -239,7 +239,7 @@ broken one.
 | Library | Built by | Holds | Why |
 | --- | --- | --- | --- |
 | `anim_library.res` | `tools/extract_anim_library.gd` | 46 Quaternius clips, **upper body only, rotation only** | Its Rigify source is `root → Hips`; the Quaternius bodies are `Root → Body → Hips`, so hip translation lands on top of a lift the body already has and stands the actor 1.63 m in the air with its legs strung out below. Its extractor therefore strips every position/scale track and all eight leg bones. In practice it buys three slots — `block`, `cast`, `channel`. |
-| `anim_meshy.res` | `tools/build_meshy_anim_library.gd` | 24 Meshy clips, **full body**, named for Embervale's own gameplay slots | Generated on an existing Meshy character rig, which `meshy_adopt.py` fingerprints to the same shape hash (`s3_c188e7a9`) — and therefore the same bone map — as 31 of the 33 humanoid bodies. There is no hierarchy mismatch to compensate for, so **nothing is stripped and it drives legs.** |
+| `anim_meshy.res` | `tools/build_meshy_anim_library.gd` | The Meshy clips plus two derived ones (`idle_alert`, `strafe_right`), **full body**, named for Embervale's own gameplay slots and processed at build ([below](#the-library-build)) | Generated on an existing Meshy character rig, which `meshy_adopt.py` fingerprints to the same shape hash (`s3_c188e7a9`) — and therefore the same bone map — as 31 of the 33 humanoid bodies. There is no hierarchy mismatch to compensate for, so **nothing is stripped and it drives legs.** |
 
 ⚠️ **The old library cannot be made to do what the new one does**, and that is worth knowing before
 anyone tries: its stripping is a fix for a real defect, not tidying. If you need legs, hips, or
@@ -261,16 +261,67 @@ townsman in 24 poses; stripped, it is 1.4 MB.
 it alone can. It strips armature prefixes and a leading `Female_`/`Male_`, and recognises
 `HitReact` and `Idle_HitReact` alongside `HitRecieve`.
 
+### The library build
+
+⚠️ **The clips are not stored as they arrive** (the 2026-10 camera and animation pass).
+`tools/build_meshy_anim_library.gd` does four things to them, each a visible defect before it, and
+prints what it did per clip, so the build log is the check.
+
+1. **Root travel is removed.** Meshy bakes the distance a clip covers into the Hips position
+   track: the sprint carried the hips 3.18 m forward per loop and snapped them back. The game
+   moves the capsule itself, so that travel played on top of the real movement and the body ran
+   out from under the camera every stride. Hips X/Z is detrended linearly, so each clip ends where
+   it starts, for `sprint`, `walk_back`, `strafe_left`, `walk`, `run`, `combat_walk_fwd`,
+   `combat_walk_back`, `dodge`, `hit`, `jump`, `attack3` and `heavy_overhead`. Y is left alone (a
+   jump still rises), and so are `death`, `knockdown` and `getup`, whose travel is the animation.
+   A one-shot does not travel at a steady rate, so a linear detrend leaves some mid-clip excursion
+   there; the log prints it.
+2. **The idle is calmed and turned to face forward.** The source idle is a look-around whose hips
+   rest about 40 degrees off forward and sweep through 90, so a standing character seemed to face
+   the camera. The `idle` slot is the original with every key pulled to 15% of its motion about
+   the clip's mean pose (the Hips position too, so the feet stay under the body), then turned so
+   the mean hips yaw is zero. The untouched original is kept as **`idle_alert`**.
+3. **The strafe's chest is squared to the front.** The source is a sideways walk with a weapon
+   held across the body and the torso turned 28 degrees toward its travel. The upper body is turned
+   back on the hips (half at the Spine, the rest at the Chest) until the chest's mean facing is
+   forward, and the neck so the head's is too. The Hips track is untouched: the legs still step
+   exactly sideways and the crouch is as deep as the source's.
+4. **`strafe_right` is `strafe_left` mirrored**, after the squaring (left and right tracks
+   swapped, quaternions and positions reflected). Meshy shipped only the one.
+
+It fails if any track is compressed, and it writes `anim_meshy.res` and nothing else. Re-run it
+whenever the sources or their `.import` retarget settings change. `AnimationClips.SharedSlots` now
+requires `strafe_left` and `strafe_right`, so `--validate` fails on a library built before this.
+
+⚠️ **A facing or sliding fault is a clip fault first.** "The character faces the camera in third
+person" was reported as a camera bug and was the idle clip, the baked root travel, blend points at
+speeds nobody moves at, and a body mesh yawed half a turn by a load (`ARCHITECTURE.md` §2.4).
+Nothing was wrong with the camera, and none of it shows in a clip list.
+
 ### The gate
 
 ```powershell
 godot --headless --path . --script res://tools/meshy_rig_probe.gd -- --asset res://path.glb
 godot --headless --path . --script res://tools/anim_library_probe.gd
 godot --headless --path . --script res://tools/equipment_socket_probe.gd
+godot --headless --path . --script res://tools/locomotion_tree_probe.gd
+godot --headless --path . --script res://tools/facing_probe.gd
+godot --headless --path . --script res://tools/camera_probe.gd
 ```
 
 **This is a gate, not a spot check**, and `assets.py validate` runs it over every humanoid. It
 proves the skeleton is named `GeneralSkeleton` and carries all 22 required profile bones.
+
+`anim_library_probe.gd` also holds the library to its build, on the real body: every locomotion
+loop ends within 2 cm of where it starts and never strays more than 0.3 m, the idle's mean hips
+yaw is within 8 degrees of forward and turns less than 20, and `strafe_right` puts each hand and
+foot within 5 cm of the reflection of `strafe_left`'s. `facing_probe.gd` (gate `facing` in
+`world_quality_check.py`) builds the body the way `PlayerFactory` does and checks, at idle, walk,
+jog, sprint, both strafes and a backpedal, that the chest faces within 20 degrees of the body on
+average over a stride and the hips stay within 0.3 m of the capsule. `camera_probe.gd` holds the
+first-person eye and its cut-outs to account (below). ⚠️ These probes build a body with no
+`MountComponent` and no save, so they cannot see a fault that a load introduces; `--camshots` is
+the check for that.
 
 ⚠️ **A T-posing NPC is the only symptom an unresolved rig ever has.** A body whose retarget did not
 run imports cleanly, compiles, passes the tests, passes `--validate`, and then stands in the market
@@ -457,7 +508,7 @@ production textures. Do not fork a texture per prefab for cosmetic variation.
 ## FIRST PERSON
 
 **There is no viewmodel, and that is the contract.** First person is TRUE first person: the camera
-rides the player body's own head bone and the body stays visible. You see its arms, its weapon and
+sits at the player body's own head and the body stays visible. You see its arms, its weapon and
 its equipment because they are the same arms, weapon and equipment the world sees.
 
 What this replaced (2026-09-04) was `fp_arm_left.glb` / `fp_arm_right.glb` — two rigless meshes whose
@@ -466,15 +517,46 @@ combo index, a guard blend, cast and interaction beats. It meant a second skelet
 state and a second weapon to keep in step with the first, plus a fake second FOV that rescaled the
 arms by a half-angle-tangent ratio. All of it is deleted, along with the VIEWMODEL rig family.
 
-**The head is not hidden by code.** The eye sits `EyeForward` (0.14 m) in front of the head bone, so
-the skull falls behind the camera's 0.08 m near plane and clips away on its own. If a future body's
-head is large enough to survive that, the fix is the offset, not a new mesh-hiding system.
+**The head is cut out by the body shader, and only there** (the 2026-10 camera pass; before it
+the eye sat 0.14 m in front of the head bone and relied on the near plane, which let the skull
+into frame at a sprint and went black looking down). `player_body.gdshader` takes two per-instance
+spheres and discards what is inside either, in every pass but the shadow pass, so the head still
+casts its shadow:
 
-⚠️ **The eye takes the head bone's POSITION and ignores its ROTATION.** Taking the rotation would
-hand the player every head turn in every clip as an involuntary camera movement, which is the fastest
-way to make a first-person game unplayable. The position is damped
-(`CameraRigMath.Damp`, frame-rate independent) and clamped to 0.45 m from the fixed pivot, so a
-knockdown or a death throws the head without throwing the camera.
+| Uniform | Sphere | Sized by |
+| --- | --- | --- |
+| `fp_head` | round the animated head: 0.22 m, centred 5 cm above and 3 cm ahead of the head bone | `CameraRigMath.HeadSphereRadius`, `HeadSphereCentre` |
+| `fp_eye` | round the camera itself, as wide as its near plane's corners | `CameraRigMath.EyeSphereRadius` from near plane, FOV and aspect: 0.12 to 0.20 m, narrowing to 0.12 m at full look-down so it cannot open the chest |
+
+Radius 0, the default, is off. They are instance uniforms because `CorruptionAppearanceController`
+duplicates the material, and because the creator's preview shares the mesh and must not be cut.
+`PlayerAppearance.SetHeadCutout` and `SetEyeCutout` are the only writers. Anything hung on a head
+socket (a helm, hair) has its own material, so the rig sets it shadows-only while the head is
+hidden; a helm equipped while already in first person can stay visible until the next rescan. If
+a future body's head survives the sphere, change the radius or the centre, not the mechanism.
+
+⚠️ **The eye is anchored to where the head RESTS and takes a fraction of where it goes.** It
+ignores the head bone's rotation entirely: taking it would hand the player every head turn in
+every clip as an involuntary camera movement, which is the fastest way to make a first-person game
+unplayable. Of the animated head's travel from rest it takes 30% vertically and 10% horizontally
+(none under Reduced Motion), damped, and the result is clamped to 0.45 m from the fixed pivot, so
+a knockdown or a death throws the head without throwing the camera. A neck pivot turns the eye
+with pitch, and looking down carries it up to 0.24 m forward so it clears the chest and there is
+still a body to look down at. The numbers are `CameraRigMath` constants measured on
+`chr_player_base.glb`; a player body with different proportions needs them measured again, and
+`camera_probe.gd` and `--camshots` both print what they measure.
+
+**The casting arm is the body's own arm.** `FirstPersonArmComponent` swings it at the shoulder
+with a `SkeletonModifier3D` while a spell is wound up, charged or channelled, so the hand is in
+frame. It is one bone's pose rewritten after the animation, not a second set of arms.
+
+**The player's atlas is drawn as emission.** Every Meshy body ships one material with the atlas
+as both base colour and emissive texture and no metallic factor, which glTF reads as metallic 1:
+the stock material is drawn by its emission. `player_body.gdshader` copied the metallic and had
+dropped the emission, which left the player as bare metal, a near-black silhouette beside the
+NPCs. It now has `emission_amount`, copied from the source material by `PlayerAppearance` and
+applied to the recoloured atlas, so tints, ash and the skin wash all show. A new body shader for
+a Meshy character has to carry the emission the same way.
 
 **Weapons are shared between views.** One `wpn_*` model, one hand socket, one grip correction
 (`WeaponGrip.Hand`). Build a separate hero version only when the world mesh demonstrably fails in
