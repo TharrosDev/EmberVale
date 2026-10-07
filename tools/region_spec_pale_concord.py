@@ -181,7 +181,7 @@ HlodShape = 1
 HlodReduction = 3
 HlodRangeBegin = 130.0
 HlodRangeEnd = 320.0
-HlodColor = Color(0.88, 0.9, 0.92, 1)
+HlodColor = Color(1.35, 1.3, 1.2, 1)
 HlodScale = Vector3(1.15, 1.15, 1.15)
 
 [sub_resource type="Resource" id="Layer_stone"]

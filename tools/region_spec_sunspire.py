@@ -204,7 +204,7 @@ HlodShape = 1
 HlodReduction = 2
 HlodRangeBegin = 170.0
 HlodRangeEnd = 380.0
-HlodColor = Color(0.88, 0.8, 0.7, 1)
+HlodColor = Color(1.5, 1.2, 0.86, 1)
 HlodScale = Vector3(1.1, 1.1, 1.1)
 
 ; The tor: the boulder at 2.5-4, a 10-16 m sandstone mass, one per 100 x 100 m of open desert.
@@ -228,7 +228,7 @@ HlodShape = 1
 HlodReduction = 2
 HlodRangeBegin = 200.0
 HlodRangeEnd = 420.0
-HlodColor = Color(0.88, 0.8, 0.7, 1)
+HlodColor = Color(1.2, 1.0, 0.76, 1)
 HlodScale = Vector3(1.1, 1.1, 1.1)
 
 ; The jungle belt is the Ember Crown's oak under a warm yellow-green tint: there is no palm in the
@@ -253,7 +253,7 @@ HlodShape = 1
 HlodReduction = 3
 HlodRangeBegin = 130.0
 HlodRangeEnd = 320.0
-HlodColor = Color(0.8, 0.9, 0.75, 1)
+HlodColor = Color(1.05, 1.0, 0.72, 1)
 HlodScale = Vector3(1.15, 1.15, 1.15)
 
 ; Elder trees of the jungle belt: the oak at 1.8-2.4 (22-29 m), three per 100 x 100 m, held to the

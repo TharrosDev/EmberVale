@@ -130,7 +130,7 @@ ScenePath = "res://assets/models/world/prp_rock_boulder_a.glb"
 Count = 23
 MinimumScale = 0.25
 MaximumScale = 0.7
-MinimumSpacing = 3.6
+MinimumSpacing = 6.0
 Saturation = 0.2
 Clumping = 0.5
 ClumpScale = 28.0
@@ -143,7 +143,7 @@ HlodShape = 2
 HlodReduction = 5
 HlodRangeBegin = 112.0
 HlodRangeEnd = 280.0
-HlodColor = Color(0.88, 0.9, 0.92, 1)
+HlodColor = Color(0.52, 0.47, 0.44, 1)
 HlodScale = Vector3(1.15, 1.15, 1.15)
 
 [sub_resource type="Resource" id="Layer_ash_stone_b"]
@@ -182,7 +182,7 @@ HlodShape = 1
 HlodReduction = 4
 HlodRangeBegin = 130.0
 HlodRangeEnd = 320.0
-HlodColor = Color(0.88, 0.9, 0.92, 1)
+HlodColor = Color(0.40, 0.35, 0.32, 1)
 HlodScale = Vector3(1.15, 1.15, 1.15)
 
 ; Blasted crags: the jagged rock at 0.8-1.8 (5-11 m), near black, four per 100 x 100 m. Open ash
@@ -207,7 +207,7 @@ HlodShape = 1
 HlodReduction = 2
 HlodRangeBegin = 160.0
 HlodRangeEnd = 360.0
-HlodColor = Color(0.88, 0.9, 0.92, 1)
+HlodColor = Color(0.6, 0.54, 0.52, 1)
 HlodScale = Vector3(1.1, 1.1, 1.1)
 
 ; The tor: the boulder at 2.5-4, a 10-16 m burnt mass, one per 100 x 100 m of open ash.
@@ -231,7 +231,7 @@ HlodShape = 1
 HlodReduction = 2
 HlodRangeBegin = 200.0
 HlodRangeEnd = 420.0
-HlodColor = Color(0.88, 0.9, 0.92, 1)
+HlodColor = Color(0.5, 0.45, 0.42, 1)
 HlodScale = Vector3(1.1, 1.1, 1.1)
 
 ; ⚠️ THE CORRUPTED FOREST IS THE SAME OAK THE EMBER CROWN PLANTS, DRAINED AND BRUISED. Saturation strips
@@ -284,7 +284,7 @@ HlodShape = 1
 HlodReduction = 2
 HlodRangeBegin = 200.0
 HlodRangeEnd = 420.0
-HlodColor = Color(0.88, 0.9, 0.92, 1)
+HlodColor = Color(0.9, 0.7, 0.82, 1)
 HlodScale = Vector3(1.1, 1.1, 1.1)
 
 ; The Beast Lord's floor stays bare: nothing on the plateau top that reads as cover.

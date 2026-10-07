@@ -197,34 +197,34 @@ Quantity = 2
 ; --- reachable from every direction at once, which is not a camp — it is three props on a floor.
 
 [node name="RimNW" parent="Nav" instance=ExtResource("rp_lm_rock_boulder_a")]
-transform = Transform3D(0.4765, 0, 0.3998, 0, 0.732, 0, -0.3998, 0, 0.4765, -50, 0, -45.5)
+transform = Transform3D(0.7845, 0, 0.6582, 0, 1.205, 0, -0.6582, 0, 0.7845, -50, 0, -45.5)
 
 [node name="RimN" parent="Nav" instance=ExtResource("rp_lm_rock_boulder_a")]
-transform = Transform3D(-0.5075, 0, 0.293, 0, 0.695, 0, -0.293, 0, -0.5075, -44, 0, -47)
+transform = Transform3D(-0.8357, 0, 0.4825, 0, 1.144, 0, -0.4825, 0, -0.8357, -44, 0, -47)
 
 [node name="RimNE" parent="Nav" instance=ExtResource("rp_lm_rock_boulder_a")]
-transform = Transform3D(0.293, 0, -0.5075, 0, 0.659, 0, 0.5075, 0, 0.293, -43, 0, -47.5)
+transform = Transform3D(0.4825, 0, -0.8357, 0, 1.085, 0, 0.8357, 0, 0.4825, -43, 0, -47.5)
 
 [node name="RimW" parent="Nav" instance=ExtResource("rp_lm_rock_boulder_a")]
-transform = Transform3D(0.1144, 0, 0.649, 0, 0.805, 0, -0.649, 0, 0.1144, -53.5, 0, -35.5)
+transform = Transform3D(0.1884, 0, 1.0685, 0, 1.325, 0, -1.0685, 0, 0.1884, -53.5, 0, -35.5)
 
 [node name="RimSW" parent="Nav" instance=ExtResource("rp_lm_rock_boulder_a")]
-transform = Transform3D(-0.5845, 0, -0.2127, 0, 0.732, 0, 0.2127, 0, -0.5845, -51, 0, -24.5)
+transform = Transform3D(-0.9623, 0, -0.3502, 0, 1.205, 0, 0.3502, 0, -0.9623, -51, 0, -24.5)
 
 [node name="RimS" parent="Nav" instance=ExtResource("rp_lm_rock_boulder_a")]
-transform = Transform3D(0.5507, 0, 0.2004, 0, 0.695, 0, -0.2004, 0, 0.5507, -45, 0, -20)
+transform = Transform3D(0.9068, 0, 0.33, 0, 1.144, 0, -0.33, 0, 0.9068, -45, 0, -20)
 
 [node name="RimSE" parent="Nav" instance=ExtResource("rp_lm_rock_boulder_a")]
-transform = Transform3D(-0.2004, 0, -0.5507, 0, 0.659, 0, 0.5507, 0, -0.2004, -39, 0, -22.5)
+transform = Transform3D(-0.33, 0, -0.9068, 0, 1.085, 0, 0.9068, 0, -0.33, -39, 0, -22.5)
 
 [node name="ThroatN" parent="Nav" instance=ExtResource("rp_lm_rock_boulder_a")]
-transform = Transform3D(0.2745, 0, 0.4754, 0, 0.878, 0, -0.4754, 0, 0.2745, -35, 0, -37.5)
+transform = Transform3D(0.452, 0, 0.7829, 0, 1.445, 0, -0.7829, 0, 0.452, -35, 0, -37.5)
 
 [node name="ThroatS" parent="Nav" instance=ExtResource("rp_lm_rock_boulder_a")]
-transform = Transform3D(-0.2745, 0, -0.4754, 0, 0.805, 0, 0.4754, 0, -0.2745, -35, 0, -27.5)
+transform = Transform3D(-0.452, 0, -0.7829, 0, 1.325, 0, 0.7829, 0, -0.452, -35, 0, -27.5)
 
 [node name="WatchRock" parent="Nav" instance=ExtResource("rp_lm_rock_boulder_a")]
-transform = Transform3D(0.7209, 0, 0.1271, 0, 1.098, 0, -0.1271, 0, 0.7209, -29, 0, -42.5)
+transform = Transform3D(1.1867, 0, 0.2092, 0, 1.807, 0, -0.2092, 0, 1.1867, -29, 0, -42.5)
 
 [node name="ScreeE" parent="Nav" instance=ExtResource("rp_lm_rock_rubble_a")]
 transform = Transform3D(-0.294, 0, 0.5092, 0, 0.49, 0, -0.5092, 0, -0.294, -12, 0, -38.5)
@@ -233,7 +233,7 @@ transform = Transform3D(-0.294, 0, 0.5092, 0, 0.49, 0, -0.5092, 0, -0.294, -12, 
 transform = Transform3D(0.3185, 0, -0.5517, 0, 0.539, 0, 0.5517, 0, 0.3185, -10, 0, -20.5)
 
 [node name="RimWSW" parent="Nav" instance=ExtResource("rp_lm_rock_boulder_a")]
-transform = Transform3D(0.2127, 0, -0.5845, 0, 0.732, 0, 0.5845, 0, 0.2127, -53, 0, -29.5)
+transform = Transform3D(0.3502, 0, -0.9623, 0, 1.205, 0, 0.9623, 0, 0.3502, -53, 0, -29.5)
 
 [node name="Pine3" parent="Nav" instance=ExtResource("rp_lm_pine_fir_a")]
 transform = Transform3D(0.2674, 0, 0.7348, 0, 0.743, 0, -0.7348, 0, 0.2674, -27, 0, -18.5)

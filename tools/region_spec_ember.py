@@ -277,7 +277,7 @@ HlodShape = 1
 HlodReduction = 2
 HlodRangeBegin = 145.0
 HlodRangeEnd = 340.0
-HlodColor = Color(0.88, 0.9, 0.92, 1)
+HlodColor = Color(0.71, 0.68, 0.63, 1)
 HlodScale = Vector3(1.1, 1.1, 1.1)
 
 ; ⚠️ THE TOR IS THE SAME BOULDER AT 2.5-4 TIMES ITS SIZE: a 10-16 m mass, 15-25 m across, one per
@@ -303,7 +303,7 @@ HlodShape = 1
 HlodReduction = 2
 HlodRangeBegin = 200.0
 HlodRangeEnd = 420.0
-HlodColor = Color(0.88, 0.9, 0.92, 1)
+HlodColor = Color(0.66, 0.63, 0.59, 1)
 HlodScale = Vector3(1.1, 1.1, 1.1)
 
 ; ⚠️ A TREE LAYER IS AN HLOD LAYER OR IT IS A DRAW CALL STORM AT DISTANCE. The proxy cone carries the
