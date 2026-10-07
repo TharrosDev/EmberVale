@@ -1,0 +1,7 @@
+# A levelled restock at a known level and seed. The restock rolls through an RNG seeded from
+# the global one, so the seed line reaches it (loot rolls do not repeat; see ReproHarness).
+seed 6
+xp 400
+give item.currency.gold 500
+shop restock shop.ember_crown.goods
+shop shop.ember_crown.goods

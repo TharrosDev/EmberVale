@@ -12,8 +12,21 @@ namespace Embervale.Core.Diagnostics;
 /// </summary>
 public static class Invariant
 {
+    /// <summary>How many violation messages <see cref="Recent"/> keeps.</summary>
+    public const int RecentCapacity = 16;
+
+    private static readonly System.Collections.Generic.List<string> RecentMessages = new();
+
     /// <summary>Total invariant violations recorded this session.</summary>
     public static int Violations { get; private set; }
+
+    /// <summary>The first <see cref="RecentCapacity"/> distinct violation messages this session, so a
+    /// run report can say what broke without the log.</summary>
+    public static System.Collections.Generic.IReadOnlyList<string> Recent => RecentMessages;
+
+    /// <summary>Raised after a violation is counted and logged, with its message. The flight
+    /// recorder dumps on the first one.</summary>
+    public static event System.Action<string>? Violated;
 
     /// <summary>Returns <paramref name="condition"/>; logs + counts a violation when it is false.</summary>
     public static bool Check(bool condition, string message)
@@ -21,11 +34,21 @@ public static class Invariant
         if (!condition)
         {
             Violations++;
+            if (RecentMessages.Count < RecentCapacity && !RecentMessages.Contains(message))
+            {
+                RecentMessages.Add(message);
+            }
+
             Log.Error($"[invariant] {message}");
+            Violated?.Invoke(message);
         }
 
         return condition;
     }
 
-    public static void Reset() => Violations = 0;
+    public static void Reset()
+    {
+        Violations = 0;
+        RecentMessages.Clear();
+    }
 }

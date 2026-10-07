@@ -55,6 +55,8 @@ internal static class SessionHarnesses
 
         // There to measure frame times, so the world's performance sampling stays on for it.
         new("--vfxperf", _ => new Debugging.VfxPerfScenario { Name = "VfxPerf" }, Capture: false),
+        new("--repro", session => new Debugging.ReproRun { Name = "ReproRun", Console = session.DevTools?.Console }, Capture: false),
+        new("--perf-report", _ => new Debugging.SessionPerfReport { Name = "SessionPerfReport" }, Capture: false),
 #endif
     };
 

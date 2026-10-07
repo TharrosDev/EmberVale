@@ -1,0 +1,3 @@
+# A goblin raid world event.
+seed 4
+event event.goblin_raid

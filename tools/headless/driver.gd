@@ -11,6 +11,8 @@ var logger = preload("res://tools/headless/logger.gd").new()
 var request: Dictionary = {}
 var report := {"diagnostics": [], "assertions": [], "metrics": {}}
 var frame_times: Array[float] = []
+## perf only: one [process ms, physics ms, draw calls, primitives] row per frame, beside frame_times.
+var monitor_samples: Array = []
 var frame_number := 0
 var stopped := false
 var failed := false
@@ -136,6 +138,11 @@ func _frames(count: int) -> void:
 		var before := Time.get_ticks_usec()
 		await process_frame
 		frame_times.append((Time.get_ticks_usec() - before) / 1000.0)
+		if request.command == "perf":
+			monitor_samples.append([Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0,
+				Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS) * 1000.0,
+				Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME),
+				Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME)])
 		frame_number += 1
 		if frame_number % 30 == 0:
 			_write("progress", {"frame": frame_number, "command": request.command, "scene": request.scene,
@@ -357,20 +364,63 @@ func _capture(label: String) -> void:
 		_error("capture.failed", result.message)
 
 
+func _percentile(sorted: Array, fraction: float) -> float:
+	return float(sorted[int((sorted.size() - 1) * fraction)]) if not sorted.is_empty() else 0.0
+
+
+## The median of one column of the per-frame monitor rows that belong to the sampled window, or the
+## monitor's value now when no rows were taken (every command but perf).
+func _window_median(column: int, count: int, monitor: Performance.Monitor, scale: float) -> float:
+	var values: Array = []
+	for row in monitor_samples.slice(maxi(0, monitor_samples.size() - count)):
+		values.append(row[column])
+	if values.is_empty():
+		return Performance.get_monitor(monitor) * scale
+	values.sort()
+	return float(values[values.size() / 2])
+
+
+## The sampled window as a distribution. Frame times are wall-clock tick deltas; under the SDK's
+## --fixed-fps the simulation step is fixed, so they compare with each other, not with a real-time
+## session ("paced": false). Every sample goes to <name>.samples.json, not into the metrics.
 func _metrics() -> void:
 	var sorted := frame_times.duplicate()
 	sorted.sort()
-	var metrics := {"frames": frame_times.size(), "seed": request.seed,
-		"p95_frame_ms": sorted[int((sorted.size() - 1) * 0.95)] if not sorted.is_empty() else 0,
-		"max_frame_ms": sorted.back() if not sorted.is_empty() else 0,
-		"process_ms": Performance.get_monitor(Performance.TIME_PROCESS) * 1000,
-		"physics_ms": Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS) * 1000,
+	var count := sorted.size()
+	var total := 0.0
+	var over33 := 0
+	var over50 := 0
+	var over100 := 0
+	for ms in sorted:
+		total += ms
+		if ms > 1000.0 / 30.0:
+			over33 += 1
+		if ms > 50.0:
+			over50 += 1
+		if ms > 100.0:
+			over100 += 1
+	var metrics := {"suite": "sdk-perf", "command": request.command, "scene": request.scene,
+		"frames": count, "requested_frames": int(request.frames), "seed": request.seed,
+		"resolution": request.get("resolution", []), "paced": false,
+		"headless": DisplayServer.get_name() == "headless",
+		"p50_frame_ms": _percentile(sorted, 0.50),
+		"p95_frame_ms": _percentile(sorted, 0.95),
+		"p99_frame_ms": _percentile(sorted, 0.99),
+		"max_frame_ms": float(sorted.back()) if count > 0 else 0.0,
+		"mean_frame_ms": total / count if count > 0 else 0.0,
+		"hitches_gt33": over33, "hitches_gt50": over50, "hitches_gt100": over100,
+		"process_ms": _window_median(0, count, Performance.TIME_PROCESS, 1000.0),
+		"physics_ms": _window_median(1, count, Performance.TIME_PHYSICS_PROCESS, 1000.0),
+		"draw_calls": _window_median(2, count, Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME, 1.0),
+		"primitives": _window_median(3, count, Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME, 1.0),
 		"nodes": Performance.get_monitor(Performance.OBJECT_NODE_COUNT),
 		"orphan_nodes": Performance.get_monitor(Performance.OBJECT_ORPHAN_NODE_COUNT),
 		"static_memory_bytes": Performance.get_monitor(Performance.MEMORY_STATIC),
-		"draw_calls": Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME),
-		"primitives": Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME),
+		"video_memory_bytes": RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_VIDEO_MEM_USED),
+		"texture_memory_bytes": RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TEXTURE_MEM_USED),
+		"buffer_memory_bytes": RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_BUFFER_MEM_USED),
 		"renderer": RenderingServer.get_current_rendering_method(),
-		"samples_ms": frame_times}
+		"adapter": RenderingServer.get_video_adapter_name()}
 	report.metrics = metrics
 	_write("metrics", metrics)
+	_write("samples", {"samples_ms": frame_times})
