@@ -51,8 +51,11 @@ def regions(root: Path = ROOT, wanted: list[str] | None = None) -> list[Path]:
     chosen = [path for path in paths if slug(path.name) in keys]
     missing = keys - {slug(path.name) for path in chosen}
     if missing:
-        raise SystemExit(f"unknown region(s): {', '.join(sorted(missing))}; "
-                         f"known: {', '.join(path.stem for path in paths)}")
+        # Exit 2, not 1: 1 means a check failed.
+        import sys
+        print(f"unknown region(s): {', '.join(sorted(missing))}; "
+              f"known: {', '.join(path.stem for path in paths)}", file=sys.stderr)
+        raise SystemExit(2)
     return chosen
 
 

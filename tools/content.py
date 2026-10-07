@@ -85,6 +85,8 @@ def kind_of(rel: str) -> str:
         return "code"
     if parts[0] == "tools":
         return "tools"
+    if parts[0] == "tests":
+        return "tests"
     return parts[0]
 
 
@@ -151,9 +153,12 @@ def source_files(root: Path, code: bool) -> list[tuple[str, Path]]:
             if path.suffix in (".tres", ".tscn") and path.is_file() and not rel.startswith("data/_templates/"):
                 found.append((rel, path))
     if code:
-        for folder, pattern in (("src", "*.cs"), ("tools", "*.py")):
+        # tests and GDScript probes name ids too: a rename that misses them breaks the build or a gate.
+        for folder, pattern in (("src", "*.cs"), ("tools", "*.py"), ("tools", "*.gd"), ("tests", "*.cs")):
             for path in sorted((root / folder).rglob(pattern)):
                 rel = path.relative_to(root).as_posix()
+                if "/obj/" in rel or "/bin/" in rel:
+                    continue
                 if "/test_" not in rel and not rel.endswith(("tools/content.py", "tools/tres_reader.py")):
                     found.append((rel, path))
     return found
@@ -265,7 +270,7 @@ def dangling(index: Index) -> list[dict]:
                 if any(not definition.section for definition in definitions)}
     out = []
     for token, uses in sorted(index.uses.items()):
-        content_uses = [use for use in uses if use[0] not in ("code", "tools")]
+        content_uses = [use for use in uses if use[0] not in ("code", "tools", "tests")]
         if not content_uses or "{" in token:
             continue
         if token.startswith("res://"):
@@ -306,8 +311,11 @@ def cmd_refs(args) -> int:
         if args.json:
             print(json.dumps({"defs": [vars(d) for d in rows]}))
         else:
-            for definition in rows:
+            shown_rows = rows if args.limit is None else rows[:args.limit]
+            for definition in shown_rows:
                 print(f"def  {definition.id}  {definition.kind}  {definition.path}")
+            if len(shown_rows) < len(rows):
+                print(f"def  ... {len(rows) - len(shown_rows)} more (raise --limit)")
             print(f"summary defs {len(rows)}")
         return 0
     if not args.id:
@@ -315,6 +323,7 @@ def cmd_refs(args) -> int:
               file=sys.stderr)
         return 2
     result = refs(index, args.id)
+    limit = 25 if args.limit is None else args.limit
     if args.json:
         print(json.dumps(result))
     else:
@@ -326,13 +335,13 @@ def cmd_refs(args) -> int:
         shown: Counter = Counter()
         for use in result["uses"]:
             shown[use["kind"]] += 1
-            if shown[use["kind"]] > args.limit:
+            if shown[use["kind"]] > limit:
                 continue
             via = f"  via {use['via']}" if "via" in use else ""
             print(f"use  {use['kind']}  {use['path']}  {use['where']}{via}")
         for kind, count in sorted(shown.items()):
-            if count > args.limit:
-                print(f"use  {kind}  ... {count - args.limit} more (raise --limit)")
+            if count > limit:
+                print(f"use  {kind}  ... {count - limit} more (raise --limit)")
         if result["locale_keys"]:
             keys = result["locale_keys"]
             print(f"locale  {len(keys)} key(s): {', '.join(keys[:4])}{' ...' if len(keys) > 4 else ''}")
@@ -988,7 +997,8 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--dangling", action="store_true")
     p.add_argument("--prefix")
     p.add_argument("--kind", help="data folder name, e.g. items, recipes, quests")
-    p.add_argument("--limit", type=int, default=25, help="use lines printed per kind")
+    p.add_argument("--limit", type=int, default=None,
+                   help="use lines printed per kind (default 25); with --prefix, def lines printed (default all)")
     p.add_argument("--json", action="store_true")
     p.set_defaults(run=cmd_refs)
 
@@ -1005,7 +1015,18 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--json", action="store_true")
     p.set_defaults(run=cmd_diff)
 
-    p = commands.add_parser("balance", help="estimate tables with outlier flags")
+    p = commands.add_parser(
+        "balance", help="estimate tables with outlier flags",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description=(
+            "Estimates from authored data, mirroring three CombatMath formulas. Left out: perks, hit zones,\n"
+            "blocking, status effects, spells, per-attack multipliers and quest XP.\n"
+            "  enemies  ttk_* = player HITS to kill it, ttd_* = its HITS to kill the player (not seconds);\n"
+            "           lo/hi = at the first level of its lowest tier / last level of its highest, in that\n"
+            "           tier's kit. tiers come from the regions whose encounters or scenes name it.\n"
+            "  loot     value_per_kill = expected gold value of one kill's drops.\n"
+            "  recipes  cost = ingredient value, worth = output value, ratio = worth / cost.\n"
+            "  xp       kills_to_clear_band = XP to leave the band / median non-boss XP (quest XP ignored)."))
     p.add_argument("table", choices=sorted(BALANCE))
     p.add_argument("--flagged", action="store_true", help="only rows with a flag")
     p.add_argument("--save", help="write the rows to this JSON file")

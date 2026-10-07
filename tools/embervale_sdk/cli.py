@@ -803,7 +803,14 @@ def _tool(run, args, passthrough):
     py, gd = ROOT / f"tools/{args.target}.py", ROOT / f"tools/{args.target}.gd"
     if py.is_file():
         run.guard_tool(py, passthrough)
-        run.process(args.target, [sys.executable, str(py), *passthrough])
+        r = run.process(args.target, [sys.executable, str(py), *passthrough])
+        # A question tool (content, regen, world_bake --plan) answers on stdout; a bare PASS line
+        # would hide the answer in a log file. Capped: the whole output stays in the run folder.
+        if not (args.json or args.ndjson or args.json_full):
+            lines = (r.stdout or "").splitlines()
+            if len(lines) > 60:
+                print(f"... {len(lines) - 60} earlier line(s) in the step's stdout log")
+            print("\n".join(lines[-60:]), flush=True) if lines else None
     elif gd.is_file():
         run.godot(args.target, ["--script", f"res://tools/{gd.name}"], passthrough, render=args.render)
     else:

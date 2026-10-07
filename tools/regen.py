@@ -249,6 +249,9 @@ def run_write(root: Path, entry: Entry, run=execute) -> dict:
     before = tree_hashes(root, entry.watch)
     result = run(root, entry.write, entry.timeout)
     _GLOBS.clear()
+    # The memo is keyed by size and mtime; a same-size rewrite inside one clock tick would read as
+    # unchanged, so nothing hashed before a writer ran is trusted after it.
+    _TOKENS.clear()
     after = tree_hashes(root, entry.watch)
     changed = sorted(name for name in set(before) | set(after) if before.get(name) != after.get(name))
     crashed = result.timed_out or any(marker in result.output for marker in CRASH_MARKERS)
@@ -302,7 +305,9 @@ def select(names: list[str] | None, registry: tuple[Entry, ...] = REGISTRY) -> l
     known = {entry.name for entry in registry}
     unknown = [name for name in names if name not in known]
     if unknown:
-        raise SystemExit(f"regen: unknown generator(s): {', '.join(unknown)}; known: {', '.join(sorted(known))}")
+        # Exit 2, not 1: 1 means drift, and a typo in --only must not read as drift.
+        print(f"regen: unknown generator(s): {', '.join(unknown)}; known: {', '.join(sorted(known))}", file=sys.stderr)
+        raise SystemExit(2)
     return [entry for entry in registry if entry.name in names]
 
 
