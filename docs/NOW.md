@@ -826,18 +826,21 @@ looked at; where a result is not recorded here, **see the PR.**
 | Check | Evidence |
 | --- | --- |
 | Build (`dotnet build Embervale.sln`) | warning-free |
-| Unit suite (`dotnet test tests/Embervale.Tests`) | 6448 passing |
+| Unit suite (`dotnet test tests/Embervale.Tests`) | 6559 passing |
 | Animation library rebuild (`build_meshy_anim_library.gd`) | run; the rebuilt `anim_meshy.res` is committed |
 | `--spellshots`, Ultra, dusk | all 30 spells in both views; the frames were read as contact sheets |
 | `--spellshots`, Performance (glow off) | all spells in third person; read as contact sheets |
 | `--camshots` | run; read as contact sheets |
 | `--hudshots` (with `01a` to `01f`), `--panelshots` (with `29b`, `29c`) | run; read as contact sheets |
 | `--enemy-shots` | run, to look at the new idle and gait blend on the other humanoids |
-| `--vfxperf` at Performance, Medium and Ultra | Iris Xe, 1280x720; steady p50 13.7 / 18.7 / 18.9 ms against baselines 8.8 / 8.6 / 12.7 |
-| `--validate`, `--lifecycle`, `--story`, the magic, animation, facing and camera probes | not recorded here; see the PR |
+| `--vfxperf` at Performance, Medium and Ultra | Iris Xe, 1280x720; steady p50 13.7 / 18.7 / 18.9 ms against baselines 8.8 / 8.6 / 12.7 after the second wave; Performance 12.8 against 8.9 after the polish pass. **Not re-measured after the third round** (the run was stopped by the low-memory guard) |
+| `--validate`, `--lifecycle`, `--story` | pass on the final tree |
+| Probes: `magic_core`, `magic_status`, `magic_learning`, `magic_content`, `magic_lifetime`, `combat_feedback`, `anim_library`, `facing`, `camera`, `locomotion_tree`, `view_switch`, `grounding`, `equipment_socket` | pass on the final tree |
 | `--vfxperf` at Low and High; any other scene, machine or resolution | not run |
 | The wheel with presses in place of holds, high contrast, reduced motion | not captured |
-| World bake check, export build with the shipping check, negative battery, world quality | not part of this run |
+| World bake check (`world_bake.py --check`) | current; no bake input was touched |
+| `--spellshots` Performance, `--panelshots` and `--enemy-shots` after the third round | not re-run (same low-memory stop); the Ultra, camera and HUD frames were |
+| Export build with the shipping check, negative battery, world quality | not part of this run |
 | A human play-through, a real mouse and pad on the wheel, the spell audio, any motion review, Steam Deck hardware | not run; see Unverified above |
 
 ### UI, HUD and meta-shell upgrade (`claude/ui-upgrade`)
