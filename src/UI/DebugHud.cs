@@ -6,6 +6,7 @@ using Embervale.Core.Services;
 using Embervale.Corruption;
 using Embervale.Entities;
 using Embervale.Factions;
+using Embervale.Localization;
 using Embervale.Magic;
 using Embervale.Progression;
 using Embervale.Quests;
@@ -365,7 +366,8 @@ public partial class DebugHud : CanvasLayer
                 continue;
             }
 
-            sb.Append($"Quest: {progress.Quest.Title}\n");
+            // Title and ShortLabel() are locale keys, as everywhere else they are drawn.
+            sb.Append($"Quest: {Loc.T(progress.Quest.Title)}\n");
             var objectives = progress.Quest.ObjectiveList();
             for (int i = 0; i < objectives.Count; i++)
             {
@@ -373,7 +375,7 @@ public partial class DebugHud : CanvasLayer
                 // one hides them, so without this there is nowhere at all to see that a branch
                 // exists and which side of it the save is on.
                 string state = progress.IsObjectiveActive(i) ? string.Empty : " [inert]";
-                sb.Append($"  {objectives[i].ShortLabel()} {progress.Counts[i]}/{objectives[i].RequiredCount}{state}\n");
+                sb.Append($"  {Loc.T(objectives[i].ShortLabel())} {progress.Counts[i]}/{objectives[i].RequiredCount}{state}\n");
             }
 
             return; // Track only the first active quest in the HUD.
