@@ -191,15 +191,22 @@ def _write_triptych(actual, expected, deltas, boxes, threshold, path, panel=ANAL
 
 
 def diff_dirs(directory, baseline, out=None, row_normalize=False, threshold=BLOCK_THRESHOLD):
-    """Every image of `directory` against the same name in `baseline`."""
+    """Every image of `directory` against the same name in `baseline`, then one row per baseline
+    image this run did not produce (`missing_current`, counted as changed): a harness that quietly
+    stopped capturing a shot is a difference, not "nothing changed"."""
     out = Path(out) if out else Path(directory) / "diff"
     results = []
-    for path in images_in(directory):
+    current = images_in(directory)
+    for path in current:
         other = Path(baseline) / path.name
         if not other.is_file():
             results.append(dict(image=path.name, missing_baseline=True, changed=False))
             continue
         results.append(diff_images(path, other, row_normalize, threshold, out / (path.stem + ".diff.png")))
+    produced = {path.name for path in current}
+    for path in images_in(baseline):
+        if path.name not in produced:
+            results.append(dict(image=path.name, missing_current=True, changed=True))
     return results
 
 
@@ -303,7 +310,8 @@ def main(argv=None):
             if result.get("changed") or result.get("missing_baseline"):
                 _emit(result)
         _emit(dict(summary=True, directory=str(args.directory), baseline=str(args.baseline), images=len(results),
-                   changed=changed, missing_baseline=[r["image"] for r in results if r.get("missing_baseline")]))
+                   changed=changed, missing_baseline=[r["image"] for r in results if r.get("missing_baseline")],
+                   missing_current=[r["image"] for r in results if r.get("missing_current")]))
         return 1 if args.strict and changed else 0
     if args.command == "sheet":
         paths = [p for p in images_in(args.directory, args.glob) if p.resolve() != args.output.resolve()]

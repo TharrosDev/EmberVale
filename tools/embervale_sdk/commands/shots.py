@@ -157,8 +157,10 @@ def analyze(directory, manifest, baseline=None):
         results = shot_analyze.diff_dirs(directory, baseline, directory / "diff")
         out["baseline"] = str(baseline)
         out["changed"] = {r["image"]: dict(pct=r["changed_pct"], boxes=r["boxes"], triptych=r.get("triptych"))
-                          for r in results if r.get("changed")}
+                          for r in results if r.get("changed") and not r.get("missing_current")}
         out["missing_baseline"] = [r["image"] for r in results if r.get("missing_baseline")]
+        # In the baseline, not captured by this run: expected after --only, a defect otherwise.
+        out["missing_current"] = [r["image"] for r in results if r.get("missing_current")]
     return out
 
 

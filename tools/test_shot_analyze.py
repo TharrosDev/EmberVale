@@ -146,6 +146,16 @@ class DiffTests(unittest.TestCase):
         self.assertTrue((self.new / "diff" / "moved.diff.png").is_file())
         self.assertEqual(0, cli("diff", self.new, "--baseline", self.new)[0])
 
+    def test_a_baseline_shot_this_run_did_not_produce_is_a_change(self):
+        for name in ("kept.png", "dropped.png"):
+            scene(self.old / name)
+        scene(self.new / "kept.png")
+        code, lines = cli("diff", self.new, "--baseline", self.old, "--strict")
+        self.assertEqual(1, code)   # identical pixels, but half the suite did not render
+        self.assertEqual(["dropped.png", None], [line.get("image") for line in lines])
+        self.assertTrue(lines[0]["missing_current"])
+        self.assertEqual((["dropped.png"], ["dropped.png"]), (lines[-1]["changed"], lines[-1]["missing_current"]))
+
     def test_boxes_are_connected_groups_largest_first(self):
         deltas = [[0.0] * 8 for _ in range(6)]
         for x, y in ((0, 0), (1, 0), (1, 1), (6, 4), (3, 3)):
