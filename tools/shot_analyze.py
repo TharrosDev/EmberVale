@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Read screenshots so an agent does not have to open every one.
 
-    python tools/shot_analyze.py stats  DIR [--flagged-only] [--strict]
+    python tools/shot_analyze.py stats  DIR [--flagged-only] [--full] [--strict]
     python tools/shot_analyze.py diff   DIR --baseline DIR2 [--out DIR3] [--row-normalize] [--strict]
     python tools/shot_analyze.py sheet  DIR OUT.png [--columns 4] [--thumb-width 320] [--per-sheet 16] [--only-flagged]
     python tools/shot_analyze.py thumbs DIR [--width 480]
@@ -11,13 +11,16 @@ Every command prints one JSON object per line: one per image (stats, diff), then
 stats   brightness mean/std, percent black, percent missing-material magenta, and flags:
         flat (one colour), black (>= 97 % black), magenta (>= 0.5 %), same_as:<image> (pixel-identical
         to an earlier image of the run: a drive that changed nothing, or a stale capture).
+        An unflagged image is one short line ({"image", "mean"}); a flagged one carries every
+        measurement. --full prints every measurement for every image.
 diff    each image against the same file name in the baseline directory: mean error, percent of an
         80x45 block grid that changed, up to five bounding boxes [x, y, w, h] in image pixels, and for
         a changed image one triptych PNG (before | after | heatmap with the boxes) at 480 px a panel.
         A different resolution is resized, not refused. --row-normalize removes each block row's median
         difference first, so a tone shift between two renderers does not count (the rule
         tools/world_shots.gd uses).
-sheet   labelled contact sheets, 16 images a page, flagged images outlined in red.
+sheet   labelled contact sheets, 16 images a page, flagged images (the same flags stats raises)
+        outlined in red.
 thumbs  a 480 px JPEG beside each PNG.
 
 Exit 0, or 1 with --strict when anything was flagged or changed, or 2 for a usage error.
@@ -261,6 +264,7 @@ def main(argv=None):
     stats = sub.add_parser("stats")
     stats.add_argument("directory", type=Path)
     stats.add_argument("--flagged-only", action="store_true", help="print only the flagged images and the summary")
+    stats.add_argument("--full", action="store_true", help="every measurement for every image, not only the flagged ones")
     stats.add_argument("--strict", action="store_true")
     diff = sub.add_parser("diff")
     diff.add_argument("directory", type=Path)
@@ -289,8 +293,10 @@ def main(argv=None):
         results = analyze(images_in(args.directory))
         flagged = [r["image"] for r in results if r["flags"]]
         for result in results:
-            if result["flags"] or not args.flagged_only:
+            if result["flags"] or args.full:
                 _emit(result)
+            elif not args.flagged_only:
+                _emit(dict(image=result["image"], mean=result["mean"]))
         _emit(dict(summary=True, directory=str(args.directory), images=len(results), flagged=flagged))
         return 1 if args.strict and flagged else 0
     if args.command == "diff":
@@ -307,12 +313,12 @@ def main(argv=None):
         return 1 if args.strict and changed else 0
     if args.command == "sheet":
         paths = [p for p in images_in(args.directory, args.glob) if p.resolve() != args.output.resolve()]
-        results = analyze(paths) if args.only_flagged else []
-        flagged = [r["image"] for r in results if r["flags"]]
+        # Always measured: the outline is the point of the sheet, with or without --only-flagged.
+        flagged = [r["image"] for r in analyze(paths) if r["flags"]]
         if args.only_flagged:
             paths = [p for p in paths if p.name in flagged]
         written = make_sheets(paths, args.output, args.columns, args.thumb_width, args.per_sheet, flagged)
-        _emit(dict(summary=True, images=len(paths), sheets=[str(p) for p in written]))
+        _emit(dict(summary=True, images=len(paths), flagged=flagged, sheets=[str(p) for p in written]))
         return 0
     written = make_thumbs(images_in(args.directory), args.width)
     _emit(dict(summary=True, thumbs=len(written), directory=str(args.directory)))
