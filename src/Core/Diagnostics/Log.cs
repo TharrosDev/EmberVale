@@ -21,6 +21,25 @@ public static class Log
 	/// <summary>Messages below this level are suppressed.</summary>
 	public static Level MinimumLevel { get; set; } = Level.Trace;
 
+	/// <summary>Whether a warning is also pushed to the engine's own log, which prints it a second
+	/// time with a C# backtrace under it (ten lines per warning). A headless gate turns it off: its
+	/// output is read by a tool, and the one <c>[WARN]</c> line names the caller already.</summary>
+	public static bool MirrorWarningsToEngine { get; set; } = true;
+
+	private static int _warnCount;
+	private static int _errorCount;
+
+	/// <summary>Warnings written through <see cref="Warn"/> since the process started.</summary>
+	public static int WarnCount => System.Threading.Volatile.Read(ref _warnCount);
+
+	/// <summary>Errors written through <see cref="Error"/> since the process started. A run report
+	/// reads this instead of scanning the log.</summary>
+	public static int ErrorCount => System.Threading.Volatile.Read(ref _errorCount);
+
+	/// <summary>Raised for every warning and error after it is printed, on the thread that logged
+	/// it. The flight recorder listens; a handler must not log.</summary>
+	public static event System.Action<Level, string>? Written;
+
 	public static void Trace(string message, [CallerMemberName] string caller = "")
 	{
 		if (MinimumLevel > Level.Trace)
@@ -48,13 +67,21 @@ public static class Log
 			return;
 		}
 
-		GD.PushWarning($"[WARN]  ({caller}) {message}");
+		if (MirrorWarningsToEngine)
+		{
+			GD.PushWarning($"[WARN]  ({caller}) {message}");
+		}
+
 		GD.Print($"[WARN]  ({caller}) {message}");
+		System.Threading.Interlocked.Increment(ref _warnCount);
+		Written?.Invoke(Level.Warn, message);
 	}
 
 	public static void Error(string message, [CallerMemberName] string caller = "")
 	{
 		GD.PushError($"[ERROR] ({caller}) {message}");
 		GD.PrintErr($"[ERROR] ({caller}) {message}");
+		System.Threading.Interlocked.Increment(ref _errorCount);
+		Written?.Invoke(Level.Error, message);
 	}
 }

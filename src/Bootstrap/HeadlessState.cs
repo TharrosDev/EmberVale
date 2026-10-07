@@ -1,18 +1,26 @@
+using System;
+using System.Collections.Generic;
 using System.Text;
-using Embervale.Core.Diagnostics;
+using Embervale.Companions;
+using Embervale.Crafting;
 using Embervale.Dialogue;
 using Embervale.Economy;
+using Embervale.Enemies;
+using Embervale.Factions;
 using Embervale.Items;
 using Embervale.Localization;
+using Embervale.Magic;
+using Embervale.Progression;
 using Embervale.Quests;
+using Embervale.Shrines;
 using Embervale.World;
 using Godot;
 
 namespace Embervale.Bootstrap;
 
 /// <summary>
-/// Headless content census (agent-ergonomics pass). <c>--state</c> loads every database and prints
-/// what the world currently contains, then quits:
+/// Headless content census (agent-ergonomics pass). <c>--state</c> loads every database, reports
+/// what the world currently contains, and quits:
 /// <code>godot --headless --path . -- --state</code>
 ///
 /// It exists to replace a handful of greps at the start of every session. An agent picking the repo
@@ -21,7 +29,14 @@ namespace Embervale.Bootstrap;
 /// expensive and one edit away from being wrong. This reads the databases the game itself loads, so
 /// it cannot drift from reality the way a doc can.
 ///
-/// Always exits <b>0</b>: a census is an observation. <c>--validate</c> is the gate.
+/// <para><b>Queries</b> (each answers on the one <c>EMBERVALE_RESULT</c> line):
+/// plain <c>--state</c> gives the counts and region ids; <c>--json</c> adds every region with its
+/// portal gate and cells; <c>--ids=&lt;kind&gt;</c> lists the ids of one kind (<c>--ids=list</c>
+/// names the kinds), narrowed by <c>--match=&lt;substring&gt;</c>; <c>--get=&lt;id&gt;</c> prints one
+/// resource's authored properties. <c>--verbose</c> prints the old prose census as well.</para>
+///
+/// Exits <b>0</b>: a census is an observation and <c>--validate</c> is the gate. A query that names
+/// an unknown kind or id exits 2.
 ///
 /// ⚠️ It deliberately reports **counts and ids, not narrative**. "Where the project is" lives in
 /// <c>docs/NOW.md</c> and is a human decision; this is only what is on disk.
@@ -31,27 +46,118 @@ public static class HeadlessState
     /// <summary>The command-line argument that triggers the census.</summary>
     public const string FlagArgument = "--state";
 
+    /// <summary>Longest property value <c>--get</c> prints before cutting it.</summary>
+    private const int ValueLimit = 240;
+
     /// <summary>True when <see cref="FlagArgument"/> was passed on the command line.</summary>
     public static bool Requested() => HeadlessValidation.HasFlag(FlagArgument);
 
-    /// <summary>Loads the databases, prints the census, and quits 0.</summary>
+    /// <summary>Every kind <c>--ids</c> and <c>--get</c> know, with the resources of that kind.</summary>
+    private static readonly (string Kind, Func<IEnumerable<(string Id, Resource Resource)>> Rows)[] Kinds =
+    {
+        ("regions", () => Rows(RegionDatabase.All, r => r.Id)),
+        ("cells", Cells),
+        ("items", () => Rows(ItemDatabase.All.Values, r => r.Id)),
+        ("shops", () => Rows(ShopDatabase.All, r => r.Id)),
+        ("services", () => Rows(ServiceDatabase.All, r => r.Id)),
+        ("contracts", () => Rows(ContractDatabase.All, r => r.Id)),
+        ("dialogues", () => Rows(DialogueDatabase.All, r => r.Id)),
+        ("quests", () => Rows(QuestDatabase.All, r => r.Id)),
+        ("map_locations", () => Rows(MapLocationDatabase.All, r => r.Id)),
+        ("spells", () => Rows(SpellDatabase.All, r => r.Id)),
+        ("status_effects", () => Rows(StatusEffectDatabase.All(), r => r.Id)),
+        ("enemies", () => Rows(EnemyArchetypeDatabase.All, r => r.Id)),
+        ("bosses", () => Rows(BossDatabase.All, r => r.Id)),
+        ("ai_profiles", () => Rows(AIProfileDatabase.All, r => r.Id)),
+        ("encounters", () => Rows(EncounterDatabase.All, r => r.Id)),
+        ("perks", () => Rows(PerkDatabase.All, r => r.Id)),
+        ("recipes", () => Rows(RecipeDatabase.All, r => r.Id)),
+        ("companions", () => Rows(CompanionDatabase.All, r => r.Id)),
+        ("shrines", () => Rows(ShrineDatabase.All, r => r.Id)),
+        ("factions", () => Rows(FactionDatabase.All, r => r.Id)),
+    };
+
+    /// <summary>Loads the databases, answers the query, and quits.</summary>
     public static void Run(SceneTree tree)
     {
-        Log.Info("=== Embervale content census (--state) ===");
         ContentDatabases.InitializeAll();
         Loc.Initialize();
+
+        HeadlessReport report = HeadlessGate.Begin("state");
+        if (HeadlessArgs.Has("--ids"))
+        {
+            Ids(report, HeadlessArgs.Value("--ids") ?? string.Empty, HeadlessArgs.Value("--match") ?? string.Empty);
+        }
+        else if (HeadlessArgs.Has("--get"))
+        {
+            Get(report, HeadlessArgs.Value("--get") ?? string.Empty);
+        }
+        else
+        {
+            Census(report);
+        }
+
+        HeadlessGate.Finish(tree, report, legacyLine: false);
+    }
+
+    private static void Census(HeadlessReport report)
+    {
+        int cells = 0;
+        var regionIds = new List<string>();
+        foreach (RegionResource region in RegionDatabase.All)
+        {
+            cells += region.Cells.Count;
+            regionIds.Add(region.Id);
+        }
+
+        report.Fact("regions", RegionDatabase.All.Count)
+            .Fact("cells", cells)
+            .Fact("items", ItemDatabase.All.Count)
+            .Fact("shops", ShopDatabase.All.Count)
+            .Fact("services", ServiceDatabase.All.Count)
+            .Fact("contracts", ContractDatabase.All.Count)
+            .Fact("dialogues", DialogueDatabase.All.Count)
+            .Fact("quests", QuestDatabase.All.Count)
+            .Fact("map_locations", MapLocationDatabase.All.Count)
+            .Fact("region_ids", regionIds);
+
+        if (HeadlessGate.Json && !HeadlessArgs.Has("--count"))
+        {
+            var regions = new List<object?>();
+            foreach (RegionResource region in RegionDatabase.All)
+            {
+                var cellRows = new List<object?>();
+                foreach (RegionCellResource cell in region.Cells)
+                {
+                    if (cell != null)
+                    {
+                        cellRows.Add(new Dictionary<string, object?>
+                        {
+                            ["id"] = cell.Id,
+                            ["centre"] = new List<object?> { cell.Center.X, cell.Center.Y, cell.Center.Z },
+                        });
+                    }
+                }
+
+                regions.Add(new Dictionary<string, object?>
+                {
+                    ["id"] = region.Id, ["toll"] = region.TollGold, ["unlock_flag"] = region.UnlockFlagId,
+                    ["cells"] = cellRows,
+                });
+            }
+
+            report.Fact("region_detail", regions);
+        }
+
+        if (!HeadlessGate.Verbose)
+        {
+            return;
+        }
 
         var text = new StringBuilder();
         text.AppendLine("=== Embervale content census ===");
         text.AppendLine("Where the project is: docs/NOW.md. This is only what is on disk.");
         text.AppendLine();
-
-        int cells = 0;
-        foreach (RegionResource region in RegionDatabase.All)
-        {
-            cells += region.Cells.Count;
-        }
-
         text.AppendLine($"regions       {RegionDatabase.All.Count}");
         text.AppendLine($"cells         {cells}  (every cell of the ACTIVE region is resident — 38M2)");
         text.AppendLine($"items         {ItemDatabase.All.Count}");
@@ -61,8 +167,13 @@ public static class HeadlessState
         text.AppendLine($"dialogues     {DialogueDatabase.All.Count}");
         text.AppendLine($"quests        {QuestDatabase.All.Count}");
         text.AppendLine($"map locations {MapLocationDatabase.All.Count}  (39.5A — each placed in a cell scene)");
-        text.AppendLine();
+        if (HeadlessArgs.Has("--count"))
+        {
+            GD.Print(text.ToString());
+            return;
+        }
 
+        text.AppendLine();
         foreach (RegionResource region in RegionDatabase.All)
         {
             // The door, printed with the region rather than reasoned about. RegionSetup feeds
@@ -83,6 +194,171 @@ public static class HeadlessState
         }
 
         GD.Print(text.ToString());
-        tree.Quit(0);
+    }
+
+    private static void Ids(HeadlessReport report, string kind, string match)
+    {
+        Func<IEnumerable<(string Id, Resource Resource)>>? rows = null;
+        var kinds = new List<string>();
+        foreach ((string name, Func<IEnumerable<(string, Resource)>> each) in Kinds)
+        {
+            kinds.Add(name);
+            if (name == kind)
+            {
+                rows = each;
+            }
+        }
+
+        if (kind == "list")
+        {
+            report.Fact("kinds", kinds);
+            return;
+        }
+
+        if (rows == null)
+        {
+            report.Refuse($"--ids={kind} is not a kind. Kinds: {string.Join(", ", kinds)}.");
+            return;
+        }
+
+        var ids = new List<string>();
+        foreach ((string id, Resource _) in rows())
+        {
+            if (match.Length == 0 || id.Contains(match, StringComparison.OrdinalIgnoreCase))
+            {
+                ids.Add(id);
+            }
+        }
+
+        ids.Sort(StringComparer.Ordinal);
+        report.Fact("kind", kind).Fact("match", match).Fact("count", ids.Count).Fact("ids", ids);
+    }
+
+    private static void Get(HeadlessReport report, string id)
+    {
+        foreach ((string kind, Func<IEnumerable<(string Id, Resource Resource)>> rows) in Kinds)
+        {
+            foreach ((string each, Resource resource) in rows())
+            {
+                if (each != id)
+                {
+                    continue;
+                }
+
+                Dictionary<string, object?> properties = Properties(resource, 0);
+
+                report.Fact("kind", kind).Fact("id", id).Fact("path", resource.ResourcePath)
+                    .Fact("properties", properties);
+                return;
+            }
+        }
+
+        report.Refuse($"--get={id}: no resource of any kind has that id (kinds: --state --ids=list).");
+    }
+
+    /// <summary>A resource's stored script properties. Nested resources and arrays are expanded
+    /// (to <see cref="NestLimit"/> levels) because a quest is mostly its objectives and an item its
+    /// effects: printed flat they were only <c>&lt;Resource#-92233...&gt;</c> handles.</summary>
+    private static Dictionary<string, object?> Properties(Resource resource, int depth)
+    {
+        var properties = new Dictionary<string, object?>();
+        foreach (Godot.Collections.Dictionary property in resource.GetPropertyList())
+        {
+            var usage = (PropertyUsageFlags)property["usage"].AsInt64();
+            if ((usage & PropertyUsageFlags.ScriptVariable) == 0 || (usage & PropertyUsageFlags.Storage) == 0)
+            {
+                continue;
+            }
+
+            string name = property["name"].AsString();
+            Variant value = resource.Get(name);
+            bool isEnum = property["hint"].AsInt64() == (long)PropertyHint.Enum && value.VariantType == Variant.Type.Int;
+            properties[name] = isEnum
+                ? EnumName(property["hint_string"].AsString(), value.AsInt64())
+                : Describe(value, depth);
+        }
+
+        return properties;
+    }
+
+    /// <summary>The member name behind an exported enum's stored number. The hint string is
+    /// <c>"Kill,Collect"</c> (values by position) or <c>"Kill:0,Talk:3"</c>.</summary>
+    private static object EnumName(string hint, long value)
+    {
+        string[] members = hint.Split(',');
+        for (int i = 0; i < members.Length; i++)
+        {
+            string[] pair = members[i].Split(':');
+            long number = pair.Length > 1 && long.TryParse(pair[1], out long parsed) ? parsed : i;
+            if (number == value)
+            {
+                return pair[0].Trim();
+            }
+        }
+
+        return value;
+    }
+
+    private const int NestLimit = 3;
+
+    private static object? Describe(Variant value, int depth)
+    {
+        switch (value.VariantType)
+        {
+            case Variant.Type.Nil:
+                return null;
+            case Variant.Type.Bool:
+                return value.AsBool();
+            case Variant.Type.Int:
+                return value.AsInt64();
+            case Variant.Type.Float:
+                // Stored as 32-bit: 0.18 would otherwise print as 0.18000000715255737.
+                return Math.Round(value.AsDouble(), 5);
+            case Variant.Type.Object when value.AsGodotObject() is Resource nested:
+                // An external file (a scene, a texture, another database row) is named, not opened.
+                if (depth >= NestLimit || nested.GetScript().VariantType == Variant.Type.Nil)
+                {
+                    return nested.ResourcePath.Length > 0 ? nested.ResourcePath : nested.GetClass();
+                }
+
+                return Properties(nested, depth + 1);
+            case Variant.Type.Array when depth < NestLimit:
+                var items = new List<object?>();
+                foreach (Variant item in value.AsGodotArray())
+                {
+                    items.Add(Describe(item, depth + 1));
+                }
+
+                return items;
+            default:
+                string text = value.ToString();
+                return text.Length > ValueLimit ? text[..ValueLimit] + "..." : text;
+        }
+    }
+
+    private static IEnumerable<(string Id, Resource Resource)> Rows<T>(IEnumerable<T> all, Func<T, string> id)
+        where T : Resource
+    {
+        foreach (T resource in all)
+        {
+            if (resource != null)
+            {
+                yield return (id(resource), resource);
+            }
+        }
+    }
+
+    private static IEnumerable<(string Id, Resource Resource)> Cells()
+    {
+        foreach (RegionResource region in RegionDatabase.All)
+        {
+            foreach (RegionCellResource cell in region.Cells)
+            {
+                if (cell != null)
+                {
+                    yield return (cell.Id, cell);
+                }
+            }
+        }
     }
 }

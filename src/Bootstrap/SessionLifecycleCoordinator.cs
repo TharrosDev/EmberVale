@@ -145,6 +145,14 @@ public sealed partial class SessionLifecycleCoordinator : Node
     public bool AutosaveBeforeQuit(out string failureKey)
     {
         failureKey = string.Empty;
+
+        // A run that switched the autosave ring off (a gate, a script allowed onto real saves) must
+        // not write into it through this door either: closing the window is still an autosave.
+        if (AutosaveService.Suppressed)
+        {
+            return true;
+        }
+
         if (!HasSession || SaveManager.Instance is not { } saves || SecondsSinceLastSave < QuitAutosaveFloorSeconds)
         {
             return true;

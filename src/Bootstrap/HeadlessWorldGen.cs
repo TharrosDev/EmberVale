@@ -28,7 +28,11 @@ namespace Embervale.Bootstrap;
 /// the running generator rather than recomputed by a second implementation in Python that would
 /// drift from this one by the following week.
 ///
-/// Always exits <b>0</b>. It is a report; <c>--validate</c> is the gate.
+/// <para><b>Output.</b> The <c>EMBERVALE_RESULT</c> line carries one summary string per region;
+/// <c>--json</c> adds the same numbers as objects, <c>--region=&lt;id&gt;</c> computes one realm
+/// instead of all six, and <c>--verbose</c> prints the full prose report.</para>
+///
+/// Exits <b>0</b> (2 for an unknown <c>--region</c>). It is a report; <c>--validate</c> is the gate.
 /// </summary>
 public static class HeadlessWorldGen
 {
@@ -43,11 +47,21 @@ public static class HeadlessWorldGen
     {
         ContentDatabases.InitializeAll();
 
+        HeadlessReport report = HeadlessGate.Begin("worldgen");
+        string? only = HeadlessArgs.Value("--region");
+        var summary = new List<string>();
+        var detail = new List<object?>();
+
         var text = new StringBuilder();
         text.AppendLine("=== Embervale world generation (--worldgen) ===");
 
         foreach (RegionResource region in RegionDatabase.All)
         {
+            if (only != null && region.Id != only)
+            {
+                continue;
+            }
+
             WorldHeightfield field = WorldTerrainMeshBuilder.HeightfieldFor(region);
             WorldGenerationSettings settings = field.Settings;
 
@@ -130,6 +144,22 @@ public static class HeadlessWorldGen
             text.AppendLine($"regimes over {samples} samples: mountain {Share(mountain)}, " +
                             $"valley {Share(valley)}, wetland {Share(wetland)}, alpine {Share(alpine)}, " +
                             $"barren {Share(barren)}, generated water {Share(wet)}");
+
+            summary.Add(FormattableString.Invariant(
+                $"{region.Id} v{settings.Version} seed {settings.Seed}: {lowest:F1}..{highest:F1} m, steepest {steepest:F2}, mountain {Share(mountain)}, valley {Share(valley)}, wetland {Share(wetland)}, water {Share(wet)}"));
+            if (HeadlessGate.Json)
+            {
+                double Percent(int count) => Math.Round(100.0 * count / Math.Max(1, samples), 1);
+                detail.Add(new Dictionary<string, object?>
+                {
+                    ["id"] = region.Id, ["version"] = settings.Version, ["seed"] = settings.Seed.ToString(),
+                    ["signature"] = settings.Signature.ToString(), ["lowest_m"] = Math.Round(lowest, 2),
+                    ["highest_m"] = Math.Round(highest, 2), ["steepest"] = Math.Round(steepest, 3),
+                    ["samples"] = samples, ["mountain_pct"] = Percent(mountain), ["valley_pct"] = Percent(valley),
+                    ["wetland_pct"] = Percent(wetland), ["alpine_pct"] = Percent(alpine),
+                    ["barren_pct"] = Percent(barren), ["water_pct"] = Percent(wet),
+                });
+            }
 
             text.AppendLine(Percentiles("continentalness", continentalness));
             text.AppendLine(Percentiles("mountain", mountains));
@@ -430,9 +460,26 @@ public static class HeadlessWorldGen
             }
         }
 
-        GD.Print(text.ToString());
+        if (only != null && summary.Count == 0)
+        {
+            var ids = new List<string>();
+            foreach (RegionResource region in RegionDatabase.All)
+            {
+                ids.Add(region.Id);
+            }
+
+            report.Refuse($"--region={only} is not a region. Regions: {string.Join(", ", ids)}.");
+        }
+
+        report.Fact("regions", summary.Count).Fact("summary", summary);
+        if (HeadlessGate.Json)
+        {
+            report.Fact("detail", detail);
+        }
+
+        HeadlessGate.Say(text.ToString());
         Log.Info("worldgen: report complete");
-        tree.Quit(0);
+        HeadlessGate.Finish(tree, report, legacyLine: false);
     }
 
     /// <summary>

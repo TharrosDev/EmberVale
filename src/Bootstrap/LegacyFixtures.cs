@@ -146,9 +146,10 @@ internal static class LegacyFixtures
             PlayNext: Array.Empty<string>());
     }
 
-    public static async Task RunAsync(ApplicationRoot root, SessionLifecycleCoordinator lifecycle, string slotBase)
+    /// <summary>Run C's choices: the clean road's picks, no embers, no optional objectives.</summary>
+    private static RunPlan PlanC()
     {
-        RunPlan plan = new()
+        return new RunPlan
         {
             Name = "C",
             Absorb = false,
@@ -168,6 +169,103 @@ internal static class LegacyFixtures
             },
             ExpectedForks = Array.Empty<string>(),
         };
+    }
+
+    /// <summary>The missions each fixture leaves done ("through N"), for <c>--story-mission</c> to
+    /// choose a start from.</summary>
+    public static List<int> Frontiers()
+    {
+        var frontiers = new List<int>();
+        foreach (Fixture fixture in Fixtures())
+        {
+            frontiers.Add(fixture.ThroughMission);
+        }
+
+        return frontiers;
+    }
+
+    /// <summary>
+    /// <c>--story-mission</c>: plays missions <paramref name="first"/> to <paramref name="last"/>
+    /// (1-based, inclusive) without the campaign before them. A New Game is taken through the
+    /// prologue, the fixture with the latest frontier before <paramref name="first"/> is loaded
+    /// over it through the real save path, and every mission from that frontier to
+    /// <paramref name="last"/> is played in campaign order.
+    ///
+    /// <para>⚠️ It enters from a legacy-shaped save, so it exercises the catch-up rather than the
+    /// state run A would carry there (inventory, corruption and fork flags are the clean road's
+    /// defaults). It is for iterating on one mission; the full gate is still the proof.</para>
+    /// </summary>
+    public static async Task PlayMissionsAsync(
+        ApplicationRoot root, SessionLifecycleCoordinator lifecycle, string slotBase, int first, int last)
+    {
+        RunPlan plan = PlanC();
+        var run = new StoryPlaythrough(root, lifecycle, slotBase, plan);
+        if (!await run.StartNewGameAsync() || !await run.OpeningAsync())
+        {
+            return;
+        }
+
+        int frontier = StoryMissionRange.Frontier(first, Frontiers());
+        Fixture? start = null;
+        foreach (Fixture fixture in Fixtures())
+        {
+            if (fixture.ThroughMission == frontier && frontier > 0)
+            {
+                start = fixture;
+            }
+        }
+
+        string slot = $"{slotBase}_mission";
+        string label = $"M{first}..{last}";
+        HeadlessStory.Note($"missions {first}..{last} from {(start == null ? "a new game" : $"'{start.Name}' (through mission {frontier})")}");
+        if (start != null)
+        {
+            if (!await LoadFixtureAsync(run, start, slot, label))
+            {
+                return;
+            }
+
+            foreach ((string item, int count) in start.Held ?? Array.Empty<(string, int)>())
+            {
+                if (Items.ItemDatabase.Get(item) is { } held)
+                {
+                    run.Pack.AddItem(held, count);
+                }
+            }
+
+            AssertLanding(run, start, label);
+        }
+
+        var order = new List<string>();
+        foreach (CampaignCatchUp.Mission mission in CampaignCatchUp.Missions)
+        {
+            if (mission.Index > frontier && mission.Index <= last)
+            {
+                order.Add(mission.QuestId);
+            }
+        }
+
+        var play = new StoryPlaythrough(root, lifecycle, slotBase, new RunPlan
+        {
+            Name = label, Absorb = false, DoOptional = false, OptionalOnly = plan.OptionalOnly,
+            Order = order.ToArray(), Picks = plan.Picks, ExpectedForks = Array.Empty<string>(),
+        });
+        play.Adopt(run);
+        foreach ((string quest, QuestStatus status, int[] _) in start?.Quests ?? Array.Empty<(string, QuestStatus, int[])>())
+        {
+            if (status == QuestStatus.Active)
+            {
+                play.LegacyHeld.Add(quest);
+            }
+        }
+
+        await play.PlayQuestsAsync(order);
+        SaveManager.Instance?.DeleteSlot(slot);
+    }
+
+    public static async Task RunAsync(ApplicationRoot root, SessionLifecycleCoordinator lifecycle, string slotBase)
+    {
+        RunPlan plan = PlanC();
 
         var run = new StoryPlaythrough(root, lifecycle, slotBase, plan);
         lifecycle.DestroySession();

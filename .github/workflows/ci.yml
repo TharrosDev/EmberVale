@@ -51,11 +51,28 @@ jobs:
           key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj') }}
           restore-keys: nuget-${{ runner.os }}-
 
-      - name: Fast deterministic quality gates
-        run: python tools/embervale.py world --mode fast --artifacts artifacts/quality/fast
+      # The `generators` gate names gen_player_mask, which needs Pillow; regen.py fails a named
+      # generator it cannot run instead of skipping it.
+      - name: Python packages the generator checks need
+        run: python -m pip install --quiet pillow
 
+      # The fast mode already runs the C# build and the xUnit suite as gates; --verbose keeps
+      # one line per gate in the job log.
+      - name: Fast deterministic quality gates
+        run: python tools/embervale.py world --mode fast --verbose --artifacts artifacts/quality/fast
+
+      # Only the Python tool suite: the game suite ran as the `tests` gate above.
       - name: SDK regression tests
-        run: python tools/embervale.py test
+        run: python tools/embervale.py test --only tool --artifacts artifacts/quality/tool-tests
+
+      - name: Job summary
+        if: always()
+        run: |
+          {
+            echo '```'
+            cat artifacts/quality/*/*/summary.txt 2>/dev/null || echo 'no summary was written'
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload fast-gate failure evidence
         if: failure()

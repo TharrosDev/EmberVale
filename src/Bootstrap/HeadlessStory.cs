@@ -33,49 +33,48 @@ namespace Embervale.Bootstrap;
 /// variants branch from real saves: the Flock turned, and Kael recruited (the optional Escort advances
 /// and never becomes required). Exit 0 PASS / 1 FAIL with the failing step named.
 /// It proves the wiring and the reachability of the story, not that a fight can be won (needs a player).
+///
+/// <para><b>Options.</b> <c>--story-only=A|B|C</c> plays only those runs. <c>--story-mission=N</c>
+/// (an index, a quest id, or <c>first..last</c>) plays a few missions from the nearest mid-campaign
+/// save instead of replaying the ones before them (<see cref="LegacyFixtures.PlayMissionsAsync"/>).
+/// Both are partial and never replace the gate. <c>--story-list</c> prints the mission table and
+/// quits. The result line carries per-run quest counts and seconds, the slowest quests and the
+/// notes; <c>--json</c> adds every quest's timing. Saves go to an isolated user directory.</para>
 /// </summary>
 public static class HeadlessStory
 {
     public const string FlagArgument = "--story";
     private const string Slot = "story_probe";
 
-    private static readonly string[] Bosses =
+    internal static readonly string[] Bosses =
     {
         "enemy.iron_king", "enemy.storm_tyrant", "enemy.beast_lord", "enemy.crimson_prophet",
         "enemy.hollow_queen", "enemy.ashen_knight", "enemy.morthul",
     };
 
-    private static readonly List<string> Failures = new();
     private static readonly List<string> Report = new();
+    private static readonly List<(string Run, string Quest, double Seconds)> Timeline = new();
+    private static HeadlessReport _report = new("story");
 
     public static bool Requested() => HeadlessValidation.HasFlag(FlagArgument);
+
+    /// <summary>Sends the failures the story harness records to another gate's report: the arena
+    /// borrows <see cref="StoryPlaythrough"/> to reach a playable session.</summary>
+    internal static void UseReport(HeadlessReport report) => _report = report;
 
     /// <summary>A developer filter, <c>-- --story --story-only=C</c> (letters A, B, C; blank runs all):
     /// plays only those runs while debugging one of them. A filtered run never replaces the full gate,
     /// and says so in its report; the cross-run coverage is skipped.</summary>
-    private static string Only()
-    {
-        foreach (string arg in OS.GetCmdlineUserArgs())
-        {
-            if (arg.StartsWith("--story-only=", StringComparison.Ordinal))
-            {
-                return arg["--story-only=".Length..].ToUpperInvariant();
-            }
-        }
-
-        return string.Empty;
-    }
+    private static string Only() => (HeadlessArgs.Value("--story-only") ?? string.Empty).ToUpperInvariant();
 
     private static bool Wants(string run) => Only().Length == 0 || Only().Contains(run, StringComparison.Ordinal);
 
-    /// <summary>Records a failed step. Public to the harness; every message names its run and step.</summary>
+    /// <summary>Records a failed step. Public to the harness; every message names its run and step.
+    /// It is printed once, when the gate ends.</summary>
     internal static void Fail(string message)
     {
-        if (!Failures.Contains(message))
-        {
-            Failures.Add(message);
-            Log.Error($"story FAIL: {message}");
-        }
+        _report.Fail(message);
+        Log.Info($"story FAIL: {message}");
     }
 
     private static void Check(bool ok, string failure)
@@ -92,21 +91,78 @@ public static class HeadlessStory
         Log.Info($"story: {line}");
     }
 
+    /// <summary>Records one quest played to its end, for the timeline in the result.</summary>
+    internal static void Played(string run, string questId, double seconds)
+    {
+        Timeline.Add((run, questId, seconds));
+        Log.Info($"story: [{run}] {questId} done in {seconds:0.0} s");
+    }
+
+    private static List<(int Index, string QuestId)> MissionIds()
+    {
+        var missions = new List<(int, string)>();
+        foreach (CampaignCatchUp.Mission mission in CampaignCatchUp.Missions)
+        {
+            missions.Add((mission.Index, mission.QuestId));
+        }
+
+        return missions;
+    }
+
     public static async void Run(ApplicationRoot root, SessionLifecycleCoordinator lifecycle)
     {
         Log.Info("=== story probe ===");
+        _report = HeadlessGate.Begin("story");
+        Report.Clear();
+        Timeline.Clear();
+
+        if (HeadlessArgs.Has("--story-list"))
+        {
+            var rows = new List<string>();
+            foreach (CampaignCatchUp.Mission mission in CampaignCatchUp.Missions)
+            {
+                rows.Add($"{mission.Index} {mission.QuestId} {mission.DoneFlag}");
+            }
+
+            _report.Fact("missions", rows).Fact("start_points", LegacyFixtures.Frontiers());
+            HeadlessGate.Finish(root.GetTree(), _report, legacyLine: false);
+            return;
+        }
+
+        int first = 0;
+        int last = 0;
+        if (HeadlessArgs.Has("--story-mission"))
+        {
+            string? refusal = StoryMissionRange.Parse(
+                HeadlessArgs.Value("--story-mission") ?? string.Empty, MissionIds(), out first, out last);
+            if (refusal != null)
+            {
+                _report.Refuse(refusal);
+                HeadlessGate.Finish(root.GetTree(), _report);
+                return;
+            }
+        }
 
         // The probe saves and reads back on consecutive lines and builds sessions of its own: no
-        // autosave may land between a session being built and the playthrough taking it over, and
-        // every write has to be on disk when SaveGame returns.
-        AutosaveService.Suppressed = true;
-        SaveWriteQueue.ForceInline = true;
-        Failures.Clear();
-        Report.Clear();
+        // autosave may land between a session being built and the playthrough taking it over, every
+        // write has to be on disk when SaveGame returns, and none of its slots may land in the
+        // developer's save folder (a crashed run used to leave a story_probe save for --play to resume).
+        HeadlessGate.IsolateFromPlayerSaves("story");
         ulong started = Time.GetTicksMsec();
+        HeadlessGate.ArmTimeLimit(root, _report, () => FillFacts(started));
         try
         {
-            await RunAllAsync(root, lifecycle);
+            if (first > 0)
+            {
+                _report.Fact("partial", true).Fact("missions", $"{first}..{last}");
+                _report.Warn($"--story-mission={first}..{last}: a few missions from a mid-campaign save; not the gate.");
+                CheckStatics();
+                await LegacyFixtures.PlayMissionsAsync(root, lifecycle, Slot, first, last);
+            }
+            else
+            {
+                await RunAllAsync(root, lifecycle);
+            }
         }
         catch (Exception ex)
         {
@@ -119,8 +175,62 @@ public static class HeadlessStory
                  string.Join(", ", StoryDriver.Unbaked));
         }
 
-        Note($"total {(Time.GetTicksMsec() - started) / 1000.0:0.0} s");
-        Finish(root);
+        SaveManager.Instance?.DeleteSlot(Slot);
+        FillFacts(started);
+        HeadlessGate.Finish(root.GetTree(), _report);
+    }
+
+    /// <summary>The run as facts: seconds and quests per run, the slowest quests, the notes, and with
+    /// <c>--json</c> every quest's timing.</summary>
+    private static void FillFacts(ulong started)
+    {
+        var runs = new Dictionary<string, object?>();
+        var perRun = new Dictionary<string, (int Quests, double Seconds)>();
+        foreach ((string run, string _, double seconds) in Timeline)
+        {
+            perRun.TryGetValue(run, out (int Quests, double Seconds) sum);
+            perRun[run] = (sum.Quests + 1, sum.Seconds + seconds);
+        }
+
+        foreach (KeyValuePair<string, (int Quests, double Seconds)> pair in perRun)
+        {
+            runs[pair.Key] = new Dictionary<string, object?>
+            {
+                ["quests"] = pair.Value.Quests, ["s"] = Math.Round(pair.Value.Seconds, 1),
+            };
+        }
+
+        var sorted = new List<(string Run, string Quest, double Seconds)>(Timeline);
+        sorted.Sort((a, b) => b.Seconds.CompareTo(a.Seconds));
+        var slowest = new List<string>();
+        for (int i = 0; i < sorted.Count && i < 5; i++)
+        {
+            slowest.Add($"[{sorted[i].Run}] {sorted[i].Quest} {sorted[i].Seconds:0.0}");
+        }
+
+        _report.Fact("seconds", Math.Round((Time.GetTicksMsec() - started) / 1000.0, 1))
+            .Fact("quests_played", Timeline.Count)
+            .Fact("runs", runs)
+            .Fact("slowest", slowest)
+            .Fact("notes", new List<string>(Report));
+        if (Only().Length > 0)
+        {
+            _report.Fact("partial", true);
+        }
+
+        if (HeadlessGate.Json)
+        {
+            var timeline = new List<object?>();
+            foreach ((string run, string quest, double seconds) in Timeline)
+            {
+                timeline.Add(new Dictionary<string, object?>
+                {
+                    ["run"] = run, ["quest"] = quest, ["s"] = Math.Round(seconds, 2),
+                });
+            }
+
+            _report.Fact("timeline", timeline);
+        }
     }
 
     private static async Task RunAllAsync(ApplicationRoot root, SessionLifecycleCoordinator lifecycle)
@@ -135,6 +245,7 @@ public static class HeadlessStory
         if (!full)
         {
             Note($"PARTIAL run (--story-only={Only()}): the cross-run coverage is skipped; this is not the gate");
+            _report.Warn($"--story-only={Only()}: the cross-run coverage is skipped; not the gate.");
         }
 
         // --- Run A: the clean road -----------------------------------------------------
@@ -669,7 +780,7 @@ public static class HeadlessStory
 
     // --- statics ------------------------------------------------------------------------
 
-    private static void CheckStatics()
+    internal static void CheckStatics()
     {
         foreach (string id in Bosses)
         {
@@ -750,22 +861,5 @@ public static class HeadlessStory
         BossResource? final = BossDatabase.Get("boss.ashen_knight");
         Check(final is { WithdrawHealthFraction: 0f, DefeatFlagId: "flag.ashen_knight_defeated" },
             "the Act IV Ashen Knight must fight to the death and set flag.ashen_knight_defeated");
-    }
-
-    private static void Finish(ApplicationRoot root)
-    {
-        SaveManager.Instance?.DeleteSlot(Slot);
-        foreach (string line in Report)
-        {
-            Log.Info($"story report: {line}");
-        }
-
-        foreach (string failure in Failures)
-        {
-            Log.Error($"story: {failure}");
-        }
-
-        Log.Info(Failures.Count == 0 ? "story: PASS" : $"story: FAIL ({Failures.Count} failure(s))");
-        root.GetTree().Quit(Failures.Count == 0 ? 0 : 1);
     }
 }

@@ -38,7 +38,8 @@ public partial class ApplicationRoot : Node3D, IServiceScopeHost
     /// <summary>Finite SDK adapter: uses the real new-game path with an isolated slot.</summary>
     public void AutomationNewGame()
     {
-        if (string.IsNullOrEmpty(OS.GetEnvironment("EMBERVALE_USER_DIR")))
+        // The shared rule: a relative path is not honoured by UserDataPaths, so it isolates nothing.
+        if (!SessionEntryRules.IsIsolated(OS.GetEnvironment("EMBERVALE_USER_DIR")))
         {
             GD.PushError("Automation requires an isolated EMBERVALE_USER_DIR");
             return;
@@ -55,12 +56,23 @@ public partial class ApplicationRoot : Node3D, IServiceScopeHost
 
     public override void _Ready()
     {
+#if EMBERVALE_TOOLING
+        if (StaleBuildEndsRun())
+        {
+            return;
+        }
+#endif
+
         // The tool modes run before anything is built and quit the process: they must be fast and
         // side-effect free, which they can only be if nothing above has assembled a world yet.
         if (RunHeadlessModeIfRequested())
         {
             return;
         }
+
+#if EMBERVALE_TOOLING
+        Debugging.ConsoleScript.QuietStartupIfRequested();
+#endif
 
         Log.Info("=== Embervale starting ===");
 
@@ -87,15 +99,65 @@ public partial class ApplicationRoot : Node3D, IServiceScopeHost
             return;
         }
 
+        if (HeadlessArena.RunIfRequested(this, Lifecycle)) { return; }
+
         Shell = new GameShellController { Name = "Shell", Lifecycle = Lifecycle };
         AddChild(Shell);
     }
+
+#if EMBERVALE_TOOLING
+    /// <summary>
+    /// The stale-binary self-check (<see cref="BuildFreshness"/>): run from the project, with a
+    /// source file newer than the loaded assembly, this logs one <c>STALE_BINARY</c> warning.
+    /// Returns true only when <c>--strict-build</c> turned that into an exit: code 2 with an
+    /// <c>EMBERVALE_RESULT</c> line, a refusal and never a failed check.
+    /// </summary>
+    private bool StaleBuildEndsRun()
+    {
+        // "editor" is the engine binary a checkout is run with; an export is a template build and
+        // has no source tree beside it.
+        if (!OS.HasFeature("editor"))
+        {
+            return false;
+        }
+
+        // The engine may load the assembly from memory, which leaves Location empty; the path
+        // below is where a project build always lands.
+        string root = ProjectSettings.GlobalizePath("res://");
+        string loaded = typeof(ApplicationRoot).Assembly.Location;
+        string assembly = string.IsNullOrEmpty(loaded)
+            ? System.IO.Path.Combine(root, ".godot", "mono", "temp", "bin", "Debug", "Embervale.dll")
+            : loaded;
+        if (!BuildFreshness.Check(root, assembly))
+        {
+            return false;
+        }
+
+        Log.Warn(BuildFreshness.Detail);
+        if (!HeadlessArgs.Has(BuildFreshness.StrictArgument))
+        {
+            return false;
+        }
+
+        // Refused, not failed: nothing was checked, so the exit code is 2 ("could not run") and
+        // there is a result line for a caller that reads only that.
+        var report = new HeadlessReport(HeadlessGate.RequestedMode()?.Flag.TrimStart('-') ?? "build");
+        report.Refuse($"{BuildFreshness.StrictArgument}: refusing to run a stale binary. {BuildFreshness.Detail}");
+        HeadlessGate.Finish(GetTree(), report, legacyLine: false);
+        return true;
+    }
+#endif
 
     private static void OnSettingsApplied(SettingsAppliedEvent e) => Embervale.UI.UiSkin.Install();
 
     public override void _ExitTree()
     {
         EventBus.Instance?.Unsubscribe<SettingsAppliedEvent>(OnSettingsApplied);
+        if (_scope != null && _scope.TryResolveLocal(typeof(SettingsService), out object? settings))
+        {
+            (settings as SettingsService)?.Detach();
+        }
+
         _scope?.Dispose();
         _scope = null;
 
@@ -105,7 +167,8 @@ public partial class ApplicationRoot : Node3D, IServiceScopeHost
         int leaked = EventBus.Instance?.TotalSubscriberCount() ?? 0;
         if (leaked > 0)
         {
-            Log.Warn($"{leaked} event handler(s) survived application teardown (check OnTeardown unsubscribes).");
+            Log.Warn($"{leaked} event handler(s) survived application teardown: " +
+                     $"{EventBus.Instance!.DescribeSubscribers()} (check OnTeardown unsubscribes).");
         }
 
         EventBus.Instance?.Clear();
@@ -119,6 +182,7 @@ public partial class ApplicationRoot : Node3D, IServiceScopeHost
     private bool RunHeadlessModeIfRequested()
     {
         SceneTree tree = GetTree();
+        if (HeadlessGate.Prepare(tree)) { return true; }
 
         if (HeadlessWorldBake.Requested())
         {
@@ -150,6 +214,7 @@ public partial class ApplicationRoot : Node3D, IServiceScopeHost
             return true;
         }
 
+        if (Debugging.ConsoleHelp.Requested()) { Debugging.ConsoleHelp.Run(tree); return true; }
         if (HeadlessState.Requested())
         {
             HeadlessState.Run(tree);
@@ -206,7 +271,7 @@ public partial class ApplicationRoot : Node3D, IServiceScopeHost
         // memory afterwards. The headless session gates (--lifecycle, --story) still run it here
         // because they read Invariant.Violations; a windowed session gets it from the `validate`
         // console command, and `--validate` remains the gate.
-        if (OS.IsDebugBuild() && DisplayServer.GetName() == "headless")
+        if (OS.IsDebugBuild() && DisplayServer.GetName() == "headless" && !HeadlessGate.SkipBootValidate)
         {
             Log.Info(ContentValidator.Run());
         }

@@ -32,15 +32,23 @@ namespace Embervale.Debugging;
 /// Registers the built-in <see cref="DevConsole"/> commands. Each one reaches the gameplay
 /// systems through the <see cref="ServiceLocator"/> (the player and the world directors) and
 /// the databases, so adding a command is a one-liner here — no engine plumbing.
+///
+/// <para>The class is split by group: this file holds the original commands, and
+/// <c>DevCommands.Movement.cs</c>, <c>.Combat.cs</c>, <c>.World.cs</c> and <c>.Query.cs</c> the ones
+/// added for driving the game from a shell. A new group is a new partial file with its own
+/// <c>Register…</c> method called from <see cref="RegisterAll"/>.</para>
+///
+/// <para>A handler reports failure with <c>return console.Fail("…")</c> and structured data with
+/// <c>console.Reply(text, data)</c>; older handlers return plain text, which
+/// <see cref="ConsoleText.LooksFailed"/> classifies.</para>
 /// </summary>
-public static class DevCommands
+public static partial class DevCommands
 {
     public static void RegisterAll(DevConsole console)
     {
-        console.Register(new ConsoleCommand("help", "help", "List commands.", Help));
+        console.Register(new ConsoleCommand("help", "help [prefix]", "List commands (usage only), or the ones starting with a prefix with their summaries.", Help));
         console.Register(new ConsoleCommand("clear", "clear", "Clear the console.", (c, _) => { c.ClearLog(); return string.Empty; }));
 
-        console.Register(new ConsoleCommand("spawn", "spawn [n]", "Spawn n goblins near the player.", Spawn));
         console.Register(new ConsoleCommand("give", "give <itemId> [qty]", "Give the player an item.", Give));
         console.Register(new ConsoleCommand("xp", "xp <n>", "Grant the player XP.", Xp));
         console.Register(new ConsoleCommand("heal", "heal", "Refill the player's resources.", Heal));
@@ -65,9 +73,6 @@ public static class DevCommands
         console.Register(new ConsoleCommand("school", "school <fire|frost|lightning|arcane|nature|necrotic> <points>", "Set a school's banked mastery points (raises the rank event when it climbs).", School));
         console.Register(new ConsoleCommand("status", "status <statusId> [seconds]", "Apply a status effect to the player, optionally for n seconds.", StatusCmd));
 
-        console.Register(new ConsoleCommand("time", "time <hour>", "Set the time of day (0–24).", Time));
-        console.Register(new ConsoleCommand("weather", "weather <id>", "Force a weather state.", Weather));
-        console.Register(new ConsoleCommand("event", "event <id>", "Force a world event.", Event));
         console.Register(new ConsoleCommand("region", "region <list|goto <id>>", "List regions or hard-load into one (Phase 25C).", Region));
         console.Register(new ConsoleCommand("travel", "travel <list|goto <id>>", "List attuned travel nodes or fast-travel to one (Phase 25G).", Travel));
         console.Register(new ConsoleCommand("worldgen", "worldgen [field]", "Paint one generated world field onto the terrain, or 'none' to restore it.", WorldGen));
@@ -79,7 +84,7 @@ public static class DevCommands
         console.Register(new ConsoleCommand("companion", "companion <list|recruit <id>|dismiss <id>|stance <id> <follow|hold|engage>|order|loyalty <id> [delta]>", "Inspect and drive the companion party (Phase 32A).", Companion));
         console.Register(new ConsoleCommand("shop", "shop [id|restock <id>|invest <id>]", "List shops, open one's trade window, force a restock, or buy a stake (Phase 38A/B/I).", Shop));
         console.Register(new ConsoleCommand("service", "service [id]", "List services, or use one on the player (Phase 38D).", Service));
-        console.Register(new ConsoleCommand("quest", "quest <start|advance|complete|reset> <questId> [objectiveIndex] [amount]", "Drive a quest through its real log, reward, event, and world-change paths (Phase 41F).", Quest));
+        console.Register(new ConsoleCommand("quest", "quest <list [active|done|failed]|status <questId>|start|advance|complete|reset <questId> [objectiveIndex] [amount]>", "List or inspect quests, or drive one through its real log, reward, event, and world-change paths (Phase 41F).", Quest));
         console.Register(new ConsoleCommand("savecheck", "savecheck", "Audit registered saveables for volatile (would-orphan) keys (Phase 25.5A).", SaveCheck));
 
         console.Register(new ConsoleCommand("seed", "seed <n>", "Seed the global RNG (for repro).", Seed));
@@ -97,37 +102,38 @@ public static class DevCommands
         console.Register(new ConsoleCommand("plist", "plist", "List tracked persistent actors.", PList));
         console.Register(new ConsoleCommand("stats", "stats", "Frame/object counts.", StatsCmd));
         console.Register(new ConsoleCommand("derived", "derived", "Dump the player's primaries, what each grants, and the derived stats.", Derived));
+
+        RegisterMovement(console);
+        RegisterCombat(console);
+        RegisterWorld(console);
+        RegisterQuery(console);
     }
 
+    /// <summary><c>help</c> is one usage line per command; <c>help &lt;prefix&gt;</c> adds the
+    /// summaries for the commands whose name starts with it. The JSON reply is the table of the
+    /// matching commands.</summary>
     private static string Help(DevConsole console, string[] args)
     {
-        var sb = new StringBuilder("Commands:\n");
+        string prefix = args.Length > 0 ? args[0] : string.Empty;
+        var sb = new StringBuilder();
+        var table = new Godot.Collections.Array();
         foreach (ConsoleCommand cmd in console.Commands.Values)
         {
-            sb.Append($"  {cmd.Usage}  — {cmd.Summary}\n");
+            if (!cmd.Name.StartsWith(prefix, System.StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            sb.Append(prefix.Length > 0 ? $"{cmd.Usage}  — {cmd.Summary}\n" : $"{cmd.Usage}\n");
+            table.Add(new Godot.Collections.Dictionary
+            {
+                ["name"] = cmd.Name, ["usage"] = cmd.Usage, ["summary"] = cmd.Summary,
+            });
         }
 
-        return sb.ToString().TrimEnd();
-    }
-
-    private static string Spawn(DevConsole console, string[] args)
-    {
-        if (!TryPlayer(out PlayerCharacter player))
-        {
-            return "no player";
-        }
-
-        int count = ParseInt(args, 0, 1);
-        // Optional template id (e.g. `spawn 2 enemy.ashen_acolyte`); defaults to the goblin archetype.
-        string templateId = args.Length >= 2 ? args[1] : EnemyTemplateRegistry.FallbackTemplateId;
-        for (int i = 0; i < count; i++)
-        {
-            Vector3 offset = new((GD.Randf() * 2f - 1f) * 4f, 0.5f, (GD.Randf() * 2f - 1f) * 4f);
-            EnemyEntity enemy = EnemyTemplateRegistry.Create(templateId, player.GlobalPosition + offset);
-            player.GetParent()?.AddChild(enemy);
-        }
-
-        return $"spawned {count} x {templateId}";
+        return table.Count == 0
+            ? console.Fail($"unknown command prefix '{prefix}'")
+            : console.Reply(sb.ToString().TrimEnd(), table);
     }
 
     private static string Give(DevConsole console, string[] args)
@@ -147,9 +153,14 @@ public static class DevCommands
             return $"unknown item '{args[0]}'";
         }
 
-        int qty = ParseInt(args, 1, 1);
+        if (!TryInt(args, 1, 1, out int qty) || qty < 1)
+        {
+            return console.Fail($"give: '{args[1]}' is not a quantity");
+        }
+
         int added = inventory.AddItem(item, qty);
-        return $"gave {added}x {item.DisplayName}";
+        string reply = $"gave {added}x {item.DisplayName}";
+        return added == 0 ? console.Fail(reply + " (nothing fit)") : reply;
     }
 
     private static string WorldCells(DevConsole console, string[] args)
@@ -158,7 +169,13 @@ public static class DevCommands
         {
             return "no region streamer";
         }
-        bool enabled = args.Length > 0 && args[0].Equals("on", System.StringComparison.OrdinalIgnoreCase);
+        string wanted = args.Length > 0 ? args[0].ToLowerInvariant() : string.Empty;
+        if (wanted is not ("on" or "off"))
+        {
+            return console.Fail("usage: worldcells <on|off>");
+        }
+
+        bool enabled = wanted == "on";
         streamer.SetDebugVisualization(enabled);
         return $"worldcells: {(enabled ? "on" : "off")} — " +
                $"{streamer.ActiveCellCount()} active, {streamer.ResidentCellCount()} resident";
@@ -226,9 +243,9 @@ public static class DevCommands
             int rungs = shop.InvestmentTierList().Count;
             if (!stakes.Invest(shop))
             {
-                return rungs == 0
+                return console.Fail(rungs == 0
                     ? $"{shop.Id} sells no stake"
-                    : $"{shop.Id} stake already full ({rungs}/{rungs})";
+                    : $"{shop.Id} stake already full ({rungs}/{rungs})");
             }
 
             return $"{shop.Id} stake now {stakes.InvestmentOf(shop)}/{rungs}, purse {stakes.PurseFor(shop)}";
@@ -314,7 +331,7 @@ public static class DevCommands
             return $"used {service.Id} (prompt was: {(before.Length > 0 ? before : "<silent>")})";
         }
 
-        return $"'{service.Id}' is authored but no ServiceComponent in the loaded world offers it";
+        return console.Fail($"'{service.Id}' is authored but no ServiceComponent in the loaded world offers it");
     }
 
     /// <summary>
@@ -326,9 +343,14 @@ public static class DevCommands
     /// </summary>
     private static string Quest(DevConsole console, string[] args)
     {
+        if (args.Length >= 1 && args[0].ToLowerInvariant() is "list" or "status")
+        {
+            return QuestReport(console, args);
+        }
+
         if (args.Length < 2)
         {
-            return "usage: quest <start|advance|complete|reset> <questId> [objectiveIndex] [amount]";
+            return "usage: quest <list [active|done|failed]|status <questId>|start|advance|complete|reset <questId> [objectiveIndex] [amount]>";
         }
 
         if (!TryPlayer(out PlayerCharacter player) || player.GetComponent<QuestLogComponent>() is not { } log)
@@ -348,12 +370,12 @@ public static class DevCommands
         {
             "start" => log.StartQuest(quest)
                 ? $"started {quest.Id}"
-                : $"cannot start {quest.Id} (already active/completed, or prerequisite unfinished)",
+                : console.Fail($"cannot start {quest.Id} (already active/completed, or prerequisite unfinished)"),
             "advance" => AdvanceQuest(log, quest, args),
             "complete" => CompleteQuest(log, quest),
             "reset" => log.Reset(quest.Id)
                 ? $"reset {quest.Id} (persistent story flags and world changes are unchanged)"
-                : $"{quest.Id} is not in the log",
+                : console.Fail($"{quest.Id} is not in the log"),
             _ => "usage: quest <start|advance|complete|reset> <questId> [objectiveIndex] [amount]",
         };
     }
@@ -421,7 +443,11 @@ public static class DevCommands
             return "no progression";
         }
 
-        int amount = ParseInt(args, 0, 50);
+        if (!TryInt(args, 0, 50, out int amount))
+        {
+            return console.Fail($"xp: '{args[0]}' is not a number");
+        }
+
         prog.AddXp(amount);
         return $"granted {amount} XP (level {prog.Level})";
     }
@@ -469,7 +495,11 @@ public static class DevCommands
             return "no reputation";
         }
 
-        int delta = ParseInt(args, 1, 0);
+        if (args.Length < 2 || !TryInt(args, 1, 0, out int delta))
+        {
+            return console.Fail("usage: rep <factionId> <delta> (delta is a whole number)");
+        }
+
         rep.Add(args[0], delta);
         return $"{args[0]}: {rep.Get(args[0])} ({ReputationTiers.Label(rep.TierOf(args[0]))})";
     }
@@ -511,7 +541,7 @@ public static class DevCommands
         string id = args[0];
         if (FactionDatabase.Get(id) is not { } guild || !guild.IsGuild)
         {
-            return $"'{id}' is not a guild (try: guild list)";
+            return console.Fail($"'{id}' is not a guild (try: guild list)");
         }
 
         string verb = args.Length > 1 ? args[1].ToLowerInvariant() : "state";
@@ -534,7 +564,7 @@ public static class DevCommands
                 GuildStanding before = GuildRules.Resolve(has, guild);
                 if (!GuildRules.CanJoin(before, guild.RejoinAllowed))
                 {
-                    return $"{guild.DisplayName} will not take you back (RejoinAllowed = false)";
+                    return console.Fail($"{guild.DisplayName} will not take you back (RejoinAllowed = false)");
                 }
 
                 flags.Clear(GuildRules.RefusedFlag(id));
@@ -549,7 +579,7 @@ public static class DevCommands
                 int rank = ParseInt(args, 2, 1);
                 if (rank < 0 || rank > guild.RankNameKeys.Count)
                 {
-                    return $"rank must be 0..{guild.RankNameKeys.Count}";
+                    return console.Fail($"rank must be 0..{guild.RankNameKeys.Count}");
                 }
 
                 for (int i = 1; i <= GuildRules.MaxRanks; i++)
@@ -708,7 +738,11 @@ public static class DevCommands
         }
 
         string? slot = autosave.ForceAutosave();
-        return slot != null ? $"autosaved to '{slot}'" : "skipped (not in active play)";
+        return slot != null
+            ? $"autosaved to '{slot}'"
+            : console.Fail(AutosaveService.Suppressed
+                ? "skipped (autosaves are off for this run)"
+                : "skipped (not in active play)");
     }
 
     private static string SettingsCmd(DevConsole console, string[] args)
@@ -779,7 +813,7 @@ public static class DevCommands
         // built panels keep their text until rebuilt.
         return Loc.SetLocale(args[0])
             ? $"locale set to '{args[0]}' (re-open menus to see the change)"
-            : $"locale '{args[0]}' is not loaded";
+            : console.Fail($"locale '{args[0]}' is not loaded");
     }
 
     private static string WeaveCmd(DevConsole console, string[] args)
@@ -879,7 +913,7 @@ public static class DevCommands
         string id = SpellDatabase.Get(args[0])?.Id ?? args[0];
         if (SpellDatabase.Get(id) is not { } spell || !casting.IsKnown(spell))
         {
-            return $"{id} is not known";
+            return console.Fail($"{id} is not known");
         }
 
         // No public Forget on the caster, so round-trip its own save: drop the id and Load it back. Load
@@ -998,7 +1032,7 @@ public static class DevCommands
             LearnOutcome outcome = SpellLearning.TryLearn(player, id, LearnRoutes.Trainer);
             return outcome == LearnOutcome.Learned
                 ? $"learned spell {spell.DisplayName} ({spell.Id})"
-                : $"did not learn {spell.Id}: {outcome}";
+                : console.Fail($"did not learn {spell.Id}: {outcome}");
         }
 
         // A perk: gated by corruption tier and skill points.
@@ -1016,7 +1050,7 @@ public static class DevCommands
 
             return perks.Learn(perk)
                 ? $"learned perk {perk.DisplayName} (rank {perks.RankOf(perk.Id)})"
-                : $"cannot learn {id}: {perks.WhyNot(perk)}";
+                : console.Fail($"cannot learn {id}: {perks.WhyNot(perk)}");
         }
 
         return $"unknown spell/perk id: {id}";
@@ -1086,7 +1120,7 @@ public static class DevCommands
 
         if (!perks.Respec(pack))
         {
-            return $"respec costs {cost}g and you hold {pack.CountOf(GameIds.Currency.Gold)}g (give {GameIds.Currency.Gold} {cost})";
+            return console.Fail($"respec costs {cost}g and you hold {pack.CountOf(GameIds.Currency.Gold)}g (give {GameIds.Currency.Gold} {cost})");
         }
 
         return $"respec: paid {cost}g, refunded {spent} point(s), {progression.SkillPoints} unspent";
@@ -1189,48 +1223,6 @@ public static class DevCommands
         return raceComponent.SwapBackgroundForDebug(args[0]);
     }
 
-    private static string Time(DevConsole console, string[] args)
-    {
-        if (!TryService(out WorldClock clock))
-        {
-            return "no clock";
-        }
-
-        float hour = ParseFloat(args, 0, clock.TimeOfDay);
-        clock.SetTimeOfDay(hour);
-        return $"time set to {clock.Clock()}";
-    }
-
-    private static string Weather(DevConsole console, string[] args)
-    {
-        if (args.Length < 1)
-        {
-            return "usage: weather <id>";
-        }
-
-        if (!TryService(out WeatherDirector weather))
-        {
-            return "no weather director";
-        }
-
-        return weather.Force(args[0]) ? $"weather → {args[0]}" : $"unknown weather '{args[0]}'";
-    }
-
-    private static string Event(DevConsole console, string[] args)
-    {
-        if (args.Length < 1)
-        {
-            return "usage: event <id>";
-        }
-
-        if (!TryService(out WorldEventDirector director))
-        {
-            return "no world-event director";
-        }
-
-        return director.ForceStart(args[0]) ? $"started {args[0]}" : $"could not start '{args[0]}' (already active / unknown)";
-    }
-
     /// <summary>
     /// The world-generation visualiser. `worldgen` names the fields, `worldgen mountains` paints one
     /// onto the ground as an unlit ramp, `worldgen none` restores the terrain material.
@@ -1250,7 +1242,7 @@ public static class DevCommands
 
         if (!WorldGenerationDebug.TrySet(args[0]))
         {
-            return $"worldgen: unknown field '{args[0]}'. fields: {WorldGenerationDebug.Modes}";
+            return console.Fail($"worldgen: unknown field '{args[0]}'. fields: {WorldGenerationDebug.Modes}");
         }
 
         return $"worldgen: {WorldGenerationDebug.Mode} — reload the region to repaint the ground.";
@@ -1274,6 +1266,12 @@ public static class DevCommands
             if (RegionDatabase.Get(args[1]) == null)
             {
                 return $"unknown region '{args[1]}'";
+            }
+
+            // The transition handler drops a request for the region the player is already in.
+            if (TryService(out RegionStreamer active) && active.ActiveRegionId == args[1])
+            {
+                return console.Fail($"already in {args[1]} (use 'tp region {args[1]}' to return to its spawn)");
             }
 
             EventBus.Instance?.Publish(new RegionTransitionRequestedEvent(args[1]));
@@ -1338,7 +1336,7 @@ public static class DevCommands
         {
             if (!System.Enum.TryParse(args[3], ignoreCase: true, out Embervale.Economy.ShockKind kind))
             {
-                return "kind must be shortage, glut or fair";
+                return console.Fail("kind must be shortage, glut or fair");
             }
 
             int days = args.Length >= 5 && int.TryParse(args[4], out int parsed)
@@ -1482,7 +1480,7 @@ public static class DevCommands
 
             return roster.SetStance(args[1], stance)
                 ? $"{args[1]} is now {stance}"
-                : $"{args[1]} is not in the party";
+                : console.Fail($"{args[1]} is not in the party");
         }
 
         if (args.Length >= 2 && args[0] == "loyalty")
@@ -1537,12 +1535,16 @@ public static class DevCommands
             sb.Append($"\n  {id}");
         }
 
-        return sb.ToString();
+        return console.Fail(sb.ToString());
     }
 
     private static string Seed(DevConsole console, string[] args)
     {
-        ulong seed = (ulong)ParseInt(args, 0, 0);
+        if (args.Length < 1 || !ulong.TryParse(args[0], NumberStyles.Integer, CultureInfo.InvariantCulture, out ulong seed))
+        {
+            return console.Fail("usage: seed <n> (a non-negative whole number)");
+        }
+
         GD.Seed(seed);
         return $"global RNG seeded with {seed}";
     }
@@ -1555,12 +1557,12 @@ public static class DevCommands
             return "scenarios: " + string.Join(", ", ReproHarness.Names);
         }
 
-        return ReproHarness.Run(args[0], console.Execute);
+        ReproResult result = ReproHarness.Execute(args[0], console.Run);
+        return result.Passed ? result.Transcript : console.Fail(result.Transcript);
 #else
         // ReproHarness is development-only source (see Embervale.csproj -> the tooling gate).
-        _ = console;
         _ = args;
-        return "repro is unavailable in a shipping build";
+        return console.Fail("repro is unavailable in a shipping build");
 #endif
     }
 
@@ -1672,6 +1674,33 @@ public static class DevCommands
         return index < args.Length && int.TryParse(args[index], NumberStyles.Integer, CultureInfo.InvariantCulture, out int v)
             ? v
             : fallback;
+    }
+
+    /// <summary>An optional whole number: <paramref name="fallback"/> when the argument is absent,
+    /// false when it is present and not a number (so a typo is reported, not defaulted).</summary>
+    private static bool TryInt(string[] args, int index, int fallback, out int value)
+    {
+        value = fallback;
+        return index >= args.Length ||
+               int.TryParse(args[index], NumberStyles.Integer, CultureInfo.InvariantCulture, out value);
+    }
+
+    /// <summary>An optional finite number; see <see cref="TryInt"/>.</summary>
+    private static bool TryFloat(string[] args, int index, float fallback, out float value)
+    {
+        value = fallback;
+        return index >= args.Length ||
+               (float.TryParse(args[index], NumberStyles.Float, CultureInfo.InvariantCulture, out value) &&
+                float.IsFinite(value));
+    }
+
+    /// <summary>Rounded for a JSON reply: a float widened to double otherwise prints its noise.</summary>
+    private static double R(float value) => System.Math.Round(value, 2);
+
+    private static bool TrySession(DevConsole console, out Embervale.Bootstrap.GameSession session)
+    {
+        session = console.Session!;
+        return session != null && Node.IsInstanceValid(session);
     }
 
     private static float ParseFloat(string[] args, int index, float fallback)

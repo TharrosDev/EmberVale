@@ -6,17 +6,17 @@
 # that only a run can answer — and because an orphaned cell after a swap is invisible in the log.
 #
 # Run:  Godot_..._console.exe --headless --path . --script res://tools/region_transition_probe.gd
-extends SceneTree
+# Verdict, PROBE result line and result file come from tools/probe_base.gd.
+extends "res://tools/probe_base.gd"
 
 const EMBER := "res://data/regions/EmberCrown.tres"
 const FROST := "res://data/regions/FrostfangReach.tres"
 
 var _streamer: Node3D
-var _failures: Array[String] = []
 
 
 func _initialize() -> void:
-	root.add_child(load("res://src/Bootstrap/ContentDatabaseLoader.cs").new())
+	boot()
 	await process_frame
 	_streamer = load("res://src/World/RegionStreamer.cs").new()
 	root.add_child(_streamer)
@@ -32,16 +32,9 @@ func _initialize() -> void:
 	for _f in 4:
 		await process_frame
 	var left := _cell_children()
-	if not left.is_empty():
-		_failures.append("cells still parented after UnloadAll+Configure(null): %s" % [left])
+	check(left.is_empty(), "cells still parented after UnloadAll+Configure(null): %s" % [left])
 
-	if _failures.is_empty():
-		print("PASS: three region swaps, no orphaned cells, no duplicates, every region settled")
-		quit(0)
-	else:
-		for f in _failures:
-			print("FAIL: %s" % f)
-		quit(1)
+	finish("three region swaps, no orphaned cells, no duplicates, every region settled")
 
 
 func _enter(region_path: String, expected_id: String) -> void:
@@ -53,30 +46,24 @@ func _enter(region_path: String, expected_id: String) -> void:
 	while not _streamer.call("IsSettled") and frames < 900:
 		await process_frame
 		frames += 1
-	if not _streamer.call("IsSettled"):
-		_failures.append("%s never settled (%d frames)" % [expected_id, frames])
+	if not check(bool(_streamer.call("IsSettled")), "%s never settled (%d frames)" % [expected_id, frames]):
 		return
 	# Let the previous region's queue_free()s actually run.
 	for _f in 4:
 		await process_frame
 
-	if not String(_streamer.get("ActiveRegionId")).ends_with(expected_id):
-		_failures.append("ActiveRegionId is '%s', expected '%s'"
-			% [_streamer.get("ActiveRegionId"), expected_id])
+	check(String(_streamer.get("ActiveRegionId")).ends_with(expected_id),
+		"ActiveRegionId is '%s', expected '%s'" % [_streamer.get("ActiveRegionId"), expected_id])
 
 	var got := _cell_children()
-	var sorted_got := got.duplicate()
-	sorted_got.sort()
-	if got.is_empty() or int(_streamer.call("ActiveCellCount")) < 1:
-		_failures.append("%s has no active landing cell" % expected_id)
+	check(not got.is_empty() and int(_streamer.call("ActiveCellCount")) >= 1,
+		"%s has no active landing cell" % expected_id)
 	var unique := {}
 	for cell_name in got:
 		unique[cell_name] = true
-	if unique.size() != got.size():
-		_failures.append("%s has duplicate cell nodes" % expected_id)
+	check(unique.size() == got.size(), "%s has duplicate cell nodes" % expected_id)
 	for cell_name in got:
-		if not cell_name.begins_with(expected_id + "_"):
-			_failures.append("%s retained foreign cell %s" % [expected_id, cell_name])
+		check(cell_name.begins_with(expected_id + "_"), "%s retained foreign cell %s" % [expected_id, cell_name])
 	print("%s: %d cells resident after %d frames" % [expected_id, got.size(), frames])
 
 

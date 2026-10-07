@@ -105,7 +105,8 @@ public partial class CameraFramingLayer : EntityComponent, ICameraLayer
     /// lock seeds the values outright; a cycle to another target eases onto the new ones.</summary>
     private void TrackTarget(IEntity? target, float dt)
     {
-        if (target?.Body is not Node3D targetBody || Entity?.Body is not Node3D body)
+        if (target?.Body is not Node3D targetBody || !GodotObject.IsInstanceValid(targetBody) ||
+            Entity?.Body is not Node3D body)
         {
             _tracked = null;
             _measured = null;

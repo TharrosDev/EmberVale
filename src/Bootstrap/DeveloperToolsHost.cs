@@ -51,6 +51,10 @@ public sealed partial class DeveloperToolsHost : Node
 
     public GameSession Session { get; init; } = null!;
 
+    /// <summary>The dev console, or null when the overlays were not built (a capture or exported
+    /// run). <c>Console.Execute(line)</c> runs a command the way the F1 prompt does.</summary>
+    public DevConsole? Console => _console;
+
     public override void _EnterTree()
     {
         ProcessMode = ProcessModeEnum.Always;
@@ -74,16 +78,17 @@ public sealed partial class DeveloperToolsHost : Node
     /// seconds.</summary>
     public void BuildOverlays()
     {
-        _hud = new DebugHud();
+        // Stable names: automation reaches these by path under the session's DeveloperTools node.
+        _hud = new DebugHud { Name = "DebugHud" };
         AddChild(_hud);
 
-        _console = new DevConsole();
+        _console = new DevConsole { Name = "DevConsole" };
         AddChild(_console);
 
-        _profiler = new ProfilerOverlay();
+        _profiler = new ProfilerOverlay { Name = "ProfilerOverlay" };
         AddChild(_profiler);
 
-        AddChild(new WorldIntegrityChecker());
+        AddChild(new WorldIntegrityChecker { Name = "WorldIntegrityChecker" });
     }
 
     public void SetClock(WorldClock clock) => _hud?.SetClock(clock);

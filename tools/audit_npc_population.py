@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import os
 import re
 from collections import Counter, defaultdict
 from pathlib import Path
@@ -41,9 +42,14 @@ def scene_records(path: Path):
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--output", default="reports/3d/session-03-npc-handoff/npc-population-audit")
+    # The default used to be the archived session-03 handoff folder, so a plain run overwrote the
+    # evidence it was once written as. It now lands with every other run's output.
+    parser.add_argument("--output", default=None,
+                        help="default: $EMBERVALE_ARTIFACTS/npc-population, else artifacts/audit/npc-population")
     args = parser.parse_args()
-    output = ROOT / args.output
+    artifacts = os.environ.get("EMBERVALE_ARTIFACTS")
+    output = ROOT / (args.output or (Path(artifacts) / "npc-population" if artifacts
+                                     else "artifacts/audit/npc-population"))
     output.mkdir(parents=True, exist_ok=True)
     records = []
     for path in sorted((ROOT / "scenes/regions").rglob("*.tscn")):

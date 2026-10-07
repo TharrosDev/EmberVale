@@ -136,10 +136,16 @@
     <Compile Remove="src/Debugging/*Shots.cs" />
     <Compile Remove="src/Debugging/ShotHarness.cs" />
     <Compile Remove="src/Debugging/ReproHarness.cs" />
+    <Compile Remove="src/Debugging/ConsoleScript.cs" />
     <Compile Remove="src/Debugging/VfxPerfScenario.cs" />
+    <Compile Remove="src/Debugging/SessionPerfReport.cs" />
+    <Compile Remove="src/Debugging/ReproRun.cs" />
     <Compile Remove="src/Debugging/Magic*ProbeDriver.cs" />
     <Compile Remove="src/Debugging/*AuditProbeDriver.cs" />
     <Compile Remove="src/Debugging/SaveAuditProbe.cs" />
     <Compile Remove="src/Magic/MagicStatusProbeSeam.cs" />
+    <Compile Remove="src/Bootstrap/BuildFreshness.cs" />
+    <Compile Remove="src/Bootstrap/SessionEntryRules.cs" />
+    <Compile Remove="src/Bootstrap/Arena*.cs" />
   </ItemGroup>
 </Project>

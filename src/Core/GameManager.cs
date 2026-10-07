@@ -62,10 +62,9 @@ public sealed partial class GameManager : Node
         }
     }
 
-    public override void _Ready()
-    {
-        Log.Info("GameManager online.");
-    }
+    // No "online" log line from _Ready: an autoload is ready before the application root has read
+    // the command line, so it printed ahead of every quiet gate's output (and broke a JSON reply).
+    // "=== Embervale starting ===" is the boot line.
 
     // Feed the device tracker (30.5J) from the one node guaranteed alive in every state
     // (ProcessMode Always, exists from boot) so prompt glyphs stay device-correct everywhere.

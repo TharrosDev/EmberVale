@@ -26,6 +26,14 @@ public partial class HitStopDirector : Node
     /// <summary>Time scale during a hard freeze — 0 is a true freeze-frame. A tuning knob.</summary>
     public const float FreezeTimeScale = 0.0f;
 
+    /// <summary>
+    /// The scale the clock runs at when no time effect holds it, and so the value a freeze (or the
+    /// boss defeat beat) hands back when it ends. 1 in play. The <c>timescale</c> dev command sets
+    /// it together with <see cref="Engine.TimeScale"/>: without it the first landed hit put a
+    /// sped-up script back to 1x for the rest of its run.
+    /// </summary>
+    public static float BaseTimeScale { get; set; } = 1f;
+
     private readonly HitStopLimiter _limiter = new();
     private bool _active;
     private ulong _started;
@@ -93,7 +101,7 @@ public partial class HitStopDirector : Node
 
         // Don't hijack another time effect (e.g. the boss defeat slow-mo); they never overlap live
         // combat, but this keeps the two from fighting over Engine.TimeScale.
-        if (!_active && Engine.TimeScale < 0.99f)
+        if (!_active && Engine.TimeScale < BaseTimeScale - 0.01f)
         {
             return;
         }
@@ -156,7 +164,7 @@ public partial class HitStopDirector : Node
         // holding, and the unconditional 1f then wiped the death beat back to full speed.
         if (Mathf.IsEqualApprox((float)Engine.TimeScale, _appliedScale))
         {
-            Engine.TimeScale = 1f;
+            Engine.TimeScale = BaseTimeScale;
         }
     }
 }

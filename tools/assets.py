@@ -285,6 +285,15 @@ def cmd_status(args: argparse.Namespace) -> int:
     families: dict[str, list[dict[str, Any]]] = {}
     for asset in current["assets"]:
         families.setdefault(asset["type"], []).append(asset)
+    if args.json:
+        # One line, the whole drift list: the table below caps drift at 20 lines.
+        problems = drift(current, load_manifest())
+        print(json.dumps({
+            "ok": not problems, "assets": len(current["assets"]),
+            "families": {family: len(assets) for family, assets in sorted(families.items())},
+            "unreferenced": sorted(a["id"] for a in current["assets"] if a["status"] == "unreferenced"),
+            "drift": problems}))
+        return 1 if problems else 0
     print(f"Embervale 3D assets - {len(current['assets'])} production models")
     print("-" * 78)
     for family in (HUMANOID, QUADRUPED, VIEWMODEL, ARCHITECTURE, STATIC_PROP, ANIMATION, "UNREADABLE"):
@@ -719,6 +728,7 @@ def main() -> int:
     status = sub.add_parser("status", help="what exists, what family, what drifted")
     status.add_argument("--write", action="store_true", help="regenerate assets/models/manifest.json")
     status.add_argument("--verbose", "-v", action="store_true", help="list every asset")
+    status.add_argument("--json", action="store_true", help="one JSON line: counts, unreferenced ids, all drift")
     status.set_defaults(func=cmd_status)
 
     validate = sub.add_parser("validate", help="every hard gate, in the required order")

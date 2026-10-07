@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Embervale.Core;
 using Embervale.Core.Diagnostics;
 using Embervale.Save;
@@ -15,7 +16,24 @@ namespace Embervale.Bootstrap;
 /// </summary>
 public sealed partial class GameShellController : Node
 {
+    public const string PlayArgument = "--play";
+    public const string NewGameArgument = "--new-game";
+    public const string SlotArgument = "--slot";
+    public const string QuitAfterArgument = "--quit-after";
+
     private MainMenu? _menu;
+
+#if EMBERVALE_TOOLING
+    /// <summary>True when a command-line session was asked for and did not start.</summary>
+    private bool _sessionEntryFailed;
+
+    /// <summary>True when the session was refused before anything was tried (exit 2), as opposed
+    /// to tried and failed (exit 1).</summary>
+    private bool _entryRefused;
+#endif
+
+    /// <summary>Why the command-line session did not start, for the run's result line.</summary>
+    private string EntryFailure { get; set; } = string.Empty;
 
     public SessionLifecycleCoordinator Lifecycle { get; init; } = null!;
 
@@ -23,7 +41,18 @@ public sealed partial class GameShellController : Node
     {
         Lifecycle.SessionEnded += ShowTitle;
         ShowTitle();
+#if EMBERVALE_TOOLING
+        if (ScheduleQuitIfRequested())
+        {
+            _sessionEntryFailed = !RunCommandLineSessionIfRequested();
+            if (_sessionEntryFailed)
+            {
+                EndHarnessRunThatNeverStarted();
+            }
+        }
+#else
         RunCommandLineSessionIfRequested();
+#endif
     }
 
     public override void _ExitTree()
@@ -53,7 +82,7 @@ public sealed partial class GameShellController : Node
         Log.Info("Main menu ready. New Game to enter the world.");
 
 #if EMBERVALE_TOOLING
-        if (HasFlag("--shellshots"))
+        if (HeadlessArgs.User.Has("--shellshots"))
         {
             AddChild(new Debugging.ShellShots { Name = "ShellShots", Menu = _menu });
         }
@@ -120,185 +149,285 @@ public sealed partial class GameShellController : Node
     /// <summary>
     /// Dev convenience, parallel to <c>--validate</c>: launching with <c>-- --play</c> boots straight
     /// into the most recent save, so gameplay — and the systems that only initialise on a session
-    /// build — can be driven deterministically from the command line. The five capture flags imply
-    /// it, because each harness needs a live session with a real player in it.
+    /// build — can be driven deterministically from the command line. Every flag in
+    /// <see cref="SessionHarnesses"/> implies it, because each harness needs a live session with a
+    /// real player in it.
+    ///
+    /// <para><c>--slot=&lt;name&gt;</c> (or <c>EMBERVALE_SLOT</c>) continues that save instead of the
+    /// newest; a <c>--slot</c> that names no save loads nothing. In a tooling build, a harness whose
+    /// session never started ends the run with a result line (exit 1, or 2 when refused), <c>--new-game</c> starts a fresh game with the default profile
+    /// instead of continuing anything, refused unless the run has an isolated user directory
+    /// (<c>SessionEntryRules</c>), and <c>--quit-after=&lt;seconds&gt;</c> ends the process on its
+    /// own: exit 0, or 1 when invariant violations were recorded or the requested session never
+    /// started. A shipping build reads neither.</para>
+    ///
+    /// <para>These are read from the user arguments (after <c>--</c>) only, as they always were:
+    /// the engine has a <c>--quit-after</c> of its own, counted in frames.</para>
     ///
     /// <para>Runs once, from <c>_Ready</c>. It used to need a consumed-latch, because the method
     /// that held it ran again every time the player quit to the title and would drop them straight
     /// back into the save they had just left. Quitting no longer reloads the scene, so the flag is
     /// read exactly once and the latch is gone with the reload that made it necessary.</para>
     /// </summary>
-    private void RunCommandLineSessionIfRequested()
+    /// <returns>False when a session was asked for and did not start.</returns>
+    private bool RunCommandLineSessionIfRequested()
     {
-        bool hudShots = HasFlag("--hudshots");
-        bool panelShots = HasFlag("--panelshots");
-        bool shrineShots = HasFlag("--shrine-shots");
-        bool guildShots = HasFlag("--guild-shots");
-        bool enemyShots = HasFlag("--enemy-shots");
-        bool combatShots = HasFlag("--combat-shots") || HasFlag("--combatshots");
-        bool metaShots = HasFlag("--metashots");
-        bool tradeShots = HasFlag("--tradeshots");
-        bool lookShots = HasFlag("--look-shots");
-        bool uiShots = HasFlag("--uishots");
-        bool spellShots = HasFlag("--spellshots");
-        bool camShots = HasFlag("--camshots");
-        bool vfxPerf = HasFlag("--vfxperf");
-        bool capture = hudShots || panelShots || shrineShots || guildShots || enemyShots || combatShots || lookShots || uiShots
-            || metaShots || tradeShots || spellShots || camShots;
-
-        // The effect scenario needs a session like the capture harnesses do, but it is there to
-        // measure frame times, so the world's performance sampling stays on for it.
-        bool scenario = capture || vfxPerf;
-
-        if ((!scenario && !HasFlag("--play")) || MostRecentSlot() is not { } slot)
+        List<(SessionHarness Harness, string Flag)> harnesses = SessionHarnesses.Requested();
+#if EMBERVALE_TOOLING
+        bool newGame = HeadlessArgs.User.Has(NewGameArgument);
+#else
+        bool newGame = false;
+#endif
+        if (harnesses.Count == 0 && !newGame && !HeadlessArgs.User.Has(PlayArgument))
         {
-            return;
+            return true;
         }
 
-        string mode = hudShots ? "--hudshots"
-            : panelShots ? "--panelshots"
-            : shrineShots ? "--shrine-shots"
-            : guildShots ? "--guild-shots"
-            : enemyShots ? "--enemy-shots"
-            : combatShots ? (HasFlag("--combatshots") ? "--combatshots" : "--combat-shots")
-            : lookShots ? "--look-shots"
-            : uiShots ? "--uishots"
-            : metaShots ? "--metashots"
-            : tradeShots ? "--tradeshots"
-            : spellShots ? "--spellshots"
-            : camShots ? "--camshots"
-            : vfxPerf ? "--vfxperf"
-            : "--play";
-        Log.Info($"{mode}: continuing most recent save '{slot}'.");
-        StartLoadedGame(slot);
+        string mode = harnesses.Count > 0 ? harnesses[0].Flag : newGame ? NewGameArgument : PlayArgument;
+#if EMBERVALE_TOOLING
+        if (!ScriptMayRun(harnesses))
+        {
+            return false;
+        }
+#endif
+
+        string? slotProblem = null;
+        if (newGame)
+        {
+#if EMBERVALE_TOOLING
+            if (!StartCommandLineNewGame(mode))
+            {
+                return false;
+            }
+#endif
+        }
+        else if (MostRecentSlot(out slotProblem) is { } slot)
+        {
+            Log.Info($"{mode}: continuing most recent save '{slot}'.");
+            StartLoadedGame(slot);
+        }
+        else if (slotProblem != null)
+        {
+            // Never the newest save instead: the caller asked for one world and would get another.
+            EntryFailure = slotProblem;
+            Log.Error($"{mode}: {slotProblem}; nothing was loaded.");
+            return false;
+        }
+        else
+        {
+            // Staying on the title is the documented behaviour; saying so is what keeps an
+            // unattended run from waiting on a harness that was never attached. Info, not a
+            // warning: this used to be silent, and a warning would fail a strict SDK run that
+            // passed before. --quit-after reports it in the exit code.
+            Log.Info($"{mode}: there is no save to continue, so the game stays on the title and nothing " +
+                     $"was attached. Pass {NewGameArgument} to start a fresh game instead.");
+            EntryFailure = $"there is no save to continue (pass {NewGameArgument} to start a fresh game)";
+            return false;
+        }
 
         if (Lifecycle.Session is not { } session)
         {
-            return;
+            EntryFailure = "the session did not start";
+            return false;
         }
 
-        if (capture)
+        foreach ((SessionHarness harness, _) in harnesses)
         {
-            // Synchronous viewport readback and PNG compression dominate capture frames. Keep those
-            // tool costs out of the world's sustained-performance telemetry; an ordinary --play run
-            // continues to sample the exact same budgets.
-            session.WorldDirector.Streamer?.SetPerformanceSamplingEnabled(false);
-        }
-
-#if EMBERVALE_TOOLING
-        if (hudShots)
-        {
-            AddChild(new Debugging.HudShots { Name = "HudShots" });
-        }
-
-        if (panelShots)
-        {
-            AddChild(new Debugging.PanelShots
+            if (harness.Capture)
             {
-                Name = "PanelShots",
-                Map = session.Ui.Map,
-                Journal = session.Ui.QuestLog,
-                Character = session.Ui.Inventory,
-                Vendor = session.Ui.Vendor,
-                Dialogue = session.Ui.Dialogue,
-            });
+                // Synchronous viewport readback and PNG compression dominate capture frames. Keep
+                // those tool costs out of the world's sustained-performance telemetry; an ordinary
+                // --play run continues to sample the exact same budgets.
+                session.WorldDirector.Streamer?.SetPerformanceSamplingEnabled(false);
+            }
+
+            AddChild(harness.Create(session));
         }
 
-        if (uiShots)
-        {
-            AddChild(new Debugging.UiAuditShots { Name = "UiAuditShots" });
-        }
-
-        if (shrineShots)
-        {
-            AddChild(new Debugging.ShrineShots { Name = "ShrineShots" });
-        }
-
-        if (guildShots)
-        {
-            AddChild(new Debugging.GuildShots { Name = "GuildShots", Dialogue = session.Ui.Dialogue });
-        }
-
-        if (enemyShots)
-        {
-            AddChild(new Debugging.EnemyShots { Name = "EnemyShots" });
-        }
-
-        if (combatShots)
-        {
-            AddChild(new Debugging.CombatShots { Name = "CombatShots" });
-        }
-
-        if (lookShots)
-        {
-            AddChild(new Debugging.LookShots { Name = "LookShots" });
-        }
-
-        if (metaShots)
-        {
-            AddChild(new Debugging.MetaShots { Name = "MetaShots" });
-        }
-
-        if (tradeShots)
-        {
-            AddChild(new Debugging.TradeShots { Name = "TradeShots" });
-        }
-
-        if (spellShots)
-        {
-            AddChild(new Debugging.SpellShots { Name = "SpellShots" });
-        }
-
-        if (camShots)
-        {
-            AddChild(new Debugging.CamShots { Name = "CamShots" });
-        }
-
-        if (vfxPerf)
-        {
-            AddChild(new Debugging.VfxPerfScenario { Name = "VfxPerf" });
-        }
-#endif
+        return true;
     }
 
-    /// <summary>True if <paramref name="flag"/> was passed after <c>--</c>.</summary>
-    private static bool HasFlag(string flag)
+#if EMBERVALE_TOOLING
+    /// <summary>
+    /// <c>--new-game</c>: the real New Game path with the default profile, into <c>--slot</c> or
+    /// <see cref="SessionEntryRules.AutomationSlot"/>. Only under an isolated user directory, the
+    /// rule <see cref="ApplicationRoot.AutomationNewGame"/> applies: a session saves through more
+    /// doors than the shell can close (the autosave ring, the pause menu's quit, F5), so the only
+    /// run that cannot write over a player's save is one whose saves live somewhere else.
+    /// </summary>
+    private bool StartCommandLineNewGame(string mode)
     {
-        foreach (string arg in OS.GetCmdlineUserArgs())
+        string slot = RequestedSlot() ?? SessionEntryRules.AutomationSlot;
+        bool isolated = SessionEntryRules.IsIsolated(OS.GetEnvironment("EMBERVALE_USER_DIR"));
+        if (SessionEntryRules.NewGameRefusal(slot, isolated) is { } refusal)
         {
-            if (arg == flag)
+            Log.Error($"{NewGameArgument} refused: {refusal}.");
+            EntryFailure = $"{NewGameArgument} refused: {refusal}";
+            _entryRefused = true;
+            return false;
+        }
+
+        Log.Info($"{mode}: starting a new game in slot '{slot}' (isolated user directory).");
+        StartNewGame(slot, Races.CharacterProfile.Human);
+        return true;
+    }
+
+    /// <summary>
+    /// A console script or a repro changes the session it runs in (xp, quests, travel, <c>save</c>),
+    /// and continuing a save means the developer's own: so one runs only under an isolated user
+    /// directory (<see cref="SessionEntryRules.ScriptRefusal"/>), or with
+    /// <c>--exec-allow-real-save</c>, which turns the autosave ring off for the process and lets
+    /// the <c>save</c> command write the console slot only.
+    /// </summary>
+    private bool ScriptMayRun(List<(SessionHarness Harness, string Flag)> harnesses)
+    {
+        string? script = null;
+        foreach ((_, string flag) in harnesses)
+        {
+            if (flag is Debugging.ConsoleScript.ExecArgument or Debugging.ConsoleScript.ExecFileArgument or "--repro")
             {
-                return true;
+                script = flag;
+                break;
             }
         }
 
-        return false;
+        if (script == null)
+        {
+            return true;
+        }
+
+        bool isolated = SessionEntryRules.IsIsolated(OS.GetEnvironment("EMBERVALE_USER_DIR"));
+        bool allowed = HeadlessArgs.User.Has(SessionEntryRules.AllowRealSaveArgument);
+        if (SessionEntryRules.ScriptRefusal(script, isolated, allowed) is { } refusal)
+        {
+            Log.Error($"{script} refused: {refusal}.");
+            EntryFailure = $"{script} refused: {refusal}";
+            _entryRefused = true;
+            return false;
+        }
+
+        if (!isolated)
+        {
+            AutosaveService.Suppressed = true;
+            Debugging.DevCommands.SaveConsoleSlotOnly = true;
+            Log.Warn($"{script}: running on the real save folder ({SessionEntryRules.AllowRealSaveArgument}); " +
+                     "autosaves are off and `save` writes the console slot only.");
+        }
+
+        return true;
     }
 
-    private static string? MostRecentSlot()
+    /// <summary>
+    /// A harness needs a session, and the one it was promised never started: end the run here with
+    /// a result line (exit 1, or 2 when it was refused) instead of leaving the caller to wait on a
+    /// title screen until its own timeout. <c>--play</c> and <c>--new-game</c> on their own keep the
+    /// title up, and <c>--quit-after</c> reports them.
+    /// </summary>
+    private void EndHarnessRunThatNeverStarted()
     {
+        List<(SessionHarness Harness, string Flag)> harnesses = SessionHarnesses.Requested();
+        if (harnesses.Count == 0)
+        {
+            return;
+        }
+
+        bool script = false;
+        foreach ((_, string flag) in harnesses)
+        {
+            script |= flag is Debugging.ConsoleScript.ExecArgument or Debugging.ConsoleScript.ExecFileArgument;
+        }
+
+        var report = new HeadlessReport(script ? "exec" : "session");
+        report.Fact("mode", harnesses[0].Flag).Fact("session_started", false);
+        string message = EntryFailure.Length > 0 ? EntryFailure : "the requested session never started";
+        if (_entryRefused)
+        {
+            report.Refuse(message);
+        }
+        else
+        {
+            report.Fail(message);
+        }
+
+        report.FinishAndQuit(GetTree());
+    }
+
+    /// <summary><c>--quit-after=&lt;seconds&gt;</c>: real seconds, counted through pause and time
+    /// scale, from the moment the shell is ready. False when the value was unusable and the process
+    /// is already quitting.</summary>
+    private bool ScheduleQuitIfRequested()
+    {
+        if (!HeadlessArgs.User.Has(QuitAfterArgument))
+        {
+            return true;
+        }
+
+        float seconds = HeadlessArgs.User.Float(QuitAfterArgument, -1f);
+        if (seconds < 0f)
+        {
+            Log.Error($"{QuitAfterArgument} needs a number of seconds, e.g. {QuitAfterArgument}=20; quitting now.");
+            GetTree().Quit(1);
+            return false;
+        }
+
+        SceneTreeTimer timer = GetTree().CreateTimer(
+            Mathf.Max(seconds, 0.05f), processAlways: true, processInPhysics: false, ignoreTimeScale: true);
+        timer.Timeout += () =>
+        {
+            if (Debugging.SessionPerfReport.OwnsExit)
+            {
+                // A --perf-report is attached: it measures from the settled world and ends the run.
+                return;
+            }
+
+            int violations = Invariant.Violations;
+            int code = violations > 0 || _sessionEntryFailed ? 1 : 0;
+            Log.Info($"{QuitAfterArgument}: {seconds:0.##}s elapsed, {violations} invariant violation(s)" +
+                     (_sessionEntryFailed ? ", the requested session never started" : string.Empty) +
+                     $"; exit {code}.");
+            GetTree().Quit(code);
+        };
+        return true;
+    }
+#endif
+
+    /// <summary>The slot named by <c>--slot=&lt;name&gt;</c>, else by <c>EMBERVALE_SLOT</c>, else null.</summary>
+    private static string? RequestedSlot()
+    {
+        string? wanted = HeadlessArgs.User.Value(SlotArgument);
+        if (string.IsNullOrEmpty(wanted))
+        {
+            wanted = OS.GetEnvironment("EMBERVALE_SLOT");
+        }
+
+        return string.IsNullOrEmpty(wanted) ? null : wanted;
+    }
+
+    /// <summary>The save to continue (<see cref="SaveSlotChoice"/>): the one <c>--slot</c> names, and
+    /// only that one; else the one <c>EMBERVALE_SLOT</c> names or the newest. Null with a
+    /// <paramref name="problem"/> when <c>--slot</c> names no save.</summary>
+    private static string? MostRecentSlot(out string? problem)
+    {
+        problem = null;
         if (SaveManager.Instance is not { } manager)
         {
             return null;
         }
 
-        // EMBERVALE_SLOT picks a slot by name, for a capture that needs a particular world state (no
-        // live event banner, say). Unknown names fall through to the newest save.
-        string wanted = OS.GetEnvironment("EMBERVALE_SLOT");
-        SaveSlotInfo? latest = null;
+        var slots = new List<KeyValuePair<string, double>>();
         foreach (SaveSlotInfo info in manager.ListSlots())
         {
-            if (wanted.Length > 0 && info.Slot == wanted)
-            {
-                return info.Slot;
-            }
-
-            if (latest == null || info.TimestampUnix > latest.TimestampUnix)
-            {
-                latest = info;
-            }
+            slots.Add(new KeyValuePair<string, double>(info.Slot, info.TimestampUnix));
         }
 
-        return latest?.Slot;
+        string wanted = OS.GetEnvironment("EMBERVALE_SLOT");
+        string? slot = SaveSlotChoice.Pick(
+            slots, HeadlessArgs.User.Value(SlotArgument), wanted, out problem, out bool fellBack);
+        if (fellBack)
+        {
+            Log.Warn($"EMBERVALE_SLOT='{wanted}' names no save; continuing the newest save '{slot}' instead.");
+        }
+
+        return slot;
     }
 }

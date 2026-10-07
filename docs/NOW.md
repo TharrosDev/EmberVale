@@ -5,14 +5,51 @@
 Developer SDK: [`TOOLING.md`](TOOLING.md) (`python tools/embervale.py`). Every mechanic in the game,
 one line each: [`MECHANICS.md`](MECHANICS.md).
 
-## Where we are (2026-10-07, the Meshy world overhaul)
+## Where we are (2026-10-07, the developer tooling upgrade)
 
 The game is complete from New Game to credits. The finish run's contract and id registry are
 [`playbook/finish.md`](playbook/finish.md).
 
+### The developer tooling upgrade (`claude/devtools-upgrade`)
+
+The newest work is a tooling upgrade asked for by the owner on 2026-10-07 and built that day: every tool in
+[`MECHANICS.md`](MECHANICS.md) "Developer tooling" was upgraded and new ones added for an agent working from
+a shell. The reference is [`TOOLING.md`](TOOLING.md), which opens with a task-to-command table. It was built
+by a foundation, six lanes (console, headless gates, shots, SDK, profiler and repro, generators), an engine
+verification of each lane, a read-only review (37 findings) and three fix branches.
+
+- **What an agent gains.** The dev console runs from the shell (`python tools/embervale.py console "..."`,
+  or `--new-game --exec`), with `tp out`, deterministic `spawn`, `god`, `killall`, `get`, `dump`, `assert`
+  and `wait-until`. Every headless gate ends in one `EMBERVALE_RESULT {json}` line and is quiet by default;
+  `--validate --only=` runs a subset. `--arena` fights a real enemy and reports win rate and time to kill.
+  One-off `--shot`, filmstrips and `tools/shot_analyze.py` cover single views, motion and image checks.
+  The SDK adds `verify`, `job`, `logs`, `doctor`, `last`, `run`, `gate`, `clean`, a gate cache and a
+  stale-build guard. `tools/content.py` answers who uses an id, what changed between commits and balance
+  tables; `tools/regen.py --check` checks every generator read-only; the bake writes a progress file.
+- **Save safety.** `--new-game`, `--exec`, `--exec-file` and `--repro` are refused unless
+  `EMBERVALE_USER_DIR` is an absolute path (SDK runs always set it). A `--slot` naming no save fails the run.
+- ⚠️ **What ran in the engine and what did not.** Each lane was engine-verified once (98 checks, 51 defects
+  fixed). The three fix branches after the review were then only compiled and unit-tested, and the final
+  engine pass was cut to six necessities: the `--exec` refusal with the real saves folder unchanged, a
+  missing `--slot`, a console smoke run, full and filtered `--validate`, the auto-build, and the rebake.
+  **Not run in the engine after the fixes:** the GDScript probes moved onto `tools/probe_base.gd` and the
+  edited `world_shots.gd`, `world_perf_probe.gd` and `world_streaming_stress_probe.gd` (Godot has never
+  parsed those edits), `verify`, the heavy-run lock with two engine jobs, the gate cache with the engine,
+  `invariant-test` and the flight recorder dump, `timescale` across a hit, `--strict-build`, the arena after
+  its time-scale change, `--vfxperf` tier refusal, `--shot` spec refusal, filmstrip shortfall, the
+  `shot_analyze` sheet outline, `--repro`, and `perf-report` baselines. Expect defects on first use.
+- **Known open.** The arena bot barely swings against bosses, so boss numbers are unusable. The
+  `world_shots` baseline (2026-09-03) predates the generated outdoor world and fails on the Ember Crown;
+  it needs re-capturing with someone looking at the frames. One headless run stalled six minutes in region
+  streaming and did not reproduce. Single-run perf numbers vary too much to compare; use `--repeat`.
+  `python tools/assets.py status` reports three unreferenced models that predate this work.
+- **Measured (2026-10-07).** Full bake 398 s engine, 7m28s as a job with its build. `dotnet build` 18 s,
+  `dotnet test` 22 s (6,756 tests), Python suite 36 s (267 tests), SDK `validate` 1m48s, SDK `console`
+  new-game run 57 s, filtered raw `--validate` about 6 s.
+
 ### The Meshy world overhaul (`claude/meshy-world-overhaul`)
 
-The newest work is an art overhaul asked for by the owner on 2026-10-06, built the same day and the next
+Before it came an art overhaul asked for by the owner on 2026-10-06, built the same day and the next
 (2026-10-06/07): the outdoor world is generated art instead of the four Quaternius packs, every cosmetic
 bolt-on is gone, the four dragons are real four-legged dragons, and the world was made to feel vast.
 Sourcing is now three lanes (`CLAUDE.md` §1, [`ASSET_POLICY.md`](ASSET_POLICY.md) §0.1): the cast is
@@ -533,8 +570,8 @@ tested behaviour.
   rarity beam, and the five generated weapon models (`wpn_axe_iron`, `wpn_mace_iron`,
   `wpn_spear_iron`, `wpn_staff_oak`, `wpn_greatsword_iron`: checked against the coordinate contract
   and in Blender renders only, never in a hand in the engine) have never been on a screen.
-  Panel-shot baselines will differ. ⚠️ The world bake manifest is stale since those models landed
-  (model imports are shared bake inputs): run `python tools/world_bake.py --bake` once.
+  Panel-shot baselines will differ. The world bake went stale when those models landed (model imports are shared bake
+  inputs); it was rebaked on 2026-10-07 (all six regions, 151 artifacts) and `world_bake.py --check` is current.
 - **Input.** The pad hotbar chord shares `LT` with block; search fields swap input bindings while
   focused. Neither has been held in a hand.
 - **Old saves.** The v3 to v4 step, the material bag migration and the widened trainer lesson are
@@ -881,6 +918,24 @@ Numbers are stable references (other docs cite them); gaps are retired invariant
 ```text
 dotnet build Embervale.sln
 dotnet test tests/Embervale.Tests
+python tools/embervale.py verify [--plan]  # the gates for the current git diff; --plan lists them with cost and runs nothing
+python tools/embervale.py console "tp out; spawn enemy.goblin 3; frames 30; assert enemies.count ge 3"
+                                           # any F1 command from a shell, in an isolated new game (raw: -- --new-game --exec "...")
+python tools/embervale.py gate validate -- --only=items   # one headless mode with options; also state, economy, worldgen,
+                                           # lifecycle, story, arena (-- --arena=enemy.goblin --trials=5), gates
+python tools/embervale.py run story | run hudshots        # a headless mode or harness flag with the SDK's guards
+python tools/embervale.py shots <suite> [--only "a*"] [--film] | shots shot --cell ID --hour 19.5 | shots shot --ui suite/shot
+python tools/embervale.py perf-report --render [--update-baseline] | vfxperf [--tiers performance,ultra]
+python tools/embervale.py job start world --mode engine   # then: job status | job wait --max 540 | job tail | job cancel
+python tools/embervale.py logs | last | doctor | clean    # triage a log, reprint the last verdict, check the machine, prune runs
+python tools/content.py refs <id> | census | diff <rev> | balance enemies|loot|recipes|xp   # no engine
+python tools/regen.py --check | --fix | --list            # every generator, in dependency order
+python tools/world_bake.py --plan | --status | --bake --resume   # what would bake and why; progress; keep finished regions
+python tools/perf_compare.py CUR.json [--update]          # any perf JSON against this machine's baseline; exit 5 on a regression
+python tools/shot_analyze.py stats|diff|sheet|thumbs DIR  # flags, changed boxes, contact sheets
+python tools/analytics.py summary [--latest]              # the dev analytics logs in a few lines
+godot --headless --path . -- --gates       # every headless mode and its options; a misspelt mode flag exits 2
+godot --headless --path . -- --console-help   # every console command, runner verb and get key
 python tools/gen_regions.py [--check]      # data/regions/*.tres is GENERATED from region_spec_*.py
 python tools/gen_main_story.py             # main-story quests + ArchivistTruth/AshThrone dialogue
 python tools/gen_items.py [--check]        # items, sets, unique effects, shop gear from tools/items/catalogue.py

@@ -10,29 +10,51 @@ import os
 import re
 import shutil
 import sys
+import threading
 import time
 import uuid
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 from quality_common import ROOT, discover_godot, run_process, write_json, machine_fingerprint
-from .contract import SCHEMA, diagnostic, diagnostics_from_log, exit_code
+from .contract import SCHEMA, diagnostic, diagnostics_from_log, exit_code, first_words
 from .changed import changed_paths
 from .scenario import validate_plan, resource_path
+from .freshness import stale_reason
+from . import commands, compact, costs, heavy
+from . import cache as gate_cache
+from .commands import REGISTRY
 
-COMMANDS = ("doctor", "import", "build", "validate", "inspect", "smoke", "scenario", "test",
-            "screenshot", "perf", "audit", "all", "world", "assets", "tool", "list", "report", "author")
+# Arguments that mean a specialist tool is only reading: no rebuild and no heavy lock for those.
+READ_ONLY_ARGUMENTS = {"--check", "--list", "--help", "-h", "status"}
+# Gates that launch the engine from inside a Python tool, so the command line does not show it.
+ENGINE_INSIDE = {"negative"}
+# `job start <command line>`: everything after these two words belongs to the job, flags included.
+REST_AFTER = {("job", "start")}
 
 
-def parser():
+class BuildFailed(RuntimeError):
+    """The automatic rebuild of a stale binary failed; its step already carries the diagnostics."""
+
+
+def parser(command=None):
+    """The argument parser. Shared flags are accepted by every command; `command` adds that
+    command's own flags (the ones its registry entry declares) for the real parse."""
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("command", choices=COMMANDS)
+    p.add_argument("command", choices=tuple(REGISTRY))
     p.add_argument("target", nargs="?", help="scenario JSON, tool name, or asset subcommand")
     p.add_argument("--scene", type=resource_path)
     p.add_argument("--timeout", type=float, default=None, help="hard per-process seconds (including descendants)")
     p.add_argument("--frames", type=int, help="runtime frames (default 120); explicitly overrides specialist capture waits")
     p.add_argument("--seed", type=int, default=12345)
-    p.add_argument("--json", action="store_true", help="only the result JSON on stdout")
-    p.add_argument("--ndjson", action="store_true", help="stream step events and a final result")
+    p.add_argument("--json", action="store_true", help="only the compact result JSON on stdout (failures, counts, evidence path)")
+    p.add_argument("--json-full", action="store_true", help="the whole result JSON on stdout (what summary.json holds)")
+    p.add_argument("--ndjson", action="store_true", help="stream step events and a final compact result")
+    p.add_argument("-v", "--verbose", action="store_true", help="print every step as it runs, not only failures")
+    p.add_argument("--no-cache", action="store_true", help="world/verify: run a gate even if it passed on these exact inputs")
+    p.add_argument("--parallel", type=int, default=4, help="world/verify: pure-Python gates run at once (1 = serial)")
+    p.add_argument("--wait-lock", type=float, default=0, metavar="SEC",
+                   help="wait this long for another engine run to finish, instead of exiting 2")
     p.add_argument("--artifacts", type=Path, help="parent directory; a unique run directory is always created")
     p.add_argument("--strict", action="store_true", help="warnings fail the run")
     p.add_argument("--changed-only", action="store_true")
@@ -57,6 +79,10 @@ def parser():
     p.add_argument("--reimport", action="store_true", help="force the editor to scan/reimport all assets")
     p.add_argument("--write", help="author: publish the validated scene/resource to res://scenes/... or res://data/...")
     p.add_argument("--overwrite", action="store_true", help="author: permit replacement, with backup and concurrent-edit check")
+    p.add_argument("--no-build", action="store_true", help="do not rebuild a stale Embervale.dll before launching the engine")
+    entry = REGISTRY.get(command)
+    if entry and entry.arguments:
+        entry.arguments(p.add_argument_group(f"{command} options"))
     return p
 
 
@@ -88,6 +114,23 @@ class Run:
                         PYTHONUNBUFFERED="1", DOTNET_CLI_TELEMETRY_OPTOUT="1")
         if explicit_frames:
             self.env["EMBERVALE_FRAMES"] = str(args.frames)
+        self.fresh_checked = False
+        self.lock = threading.Lock()
+        self.step_index = 0           # the next step's log number
+        self.planned = []             # names of the steps still to run, when the command knows them
+        self.plan_known = False
+        self.engine_steps = set()
+        self.history = costs.load()
+        self.history_changed = False
+        self.cache = gate_cache.GateCache()
+        self.tree = None              # the cache's view of the working tree, re-read after each gate that ran
+        self.read_tree = lambda: gate_cache.tree_state(ROOT)
+        self.step_warnings = {}       # step name -> its warning diagnostics, stored with a cached pass
+        self.version_asked = False
+        self.heavy_held = False
+        job = os.environ.get("EMBERVALE_JOB_DIR")
+        self.job_directory = Path(job) if job and Path(job).is_dir() else None
+        self.env.pop("EMBERVALE_JOB_DIR", None)   # a nested SDK call must not report as the job
         self.result = dict(schema=SCHEMA, run_id=run_id, command=args.command, success=False,
                            duration=0, godot_version=None, diagnostics=[], assertions=[], metrics={},
                            artifacts=[], steps=[], machine=machine_fingerprint(),
@@ -95,27 +138,49 @@ class Run:
                                               changed_only=args.changed_only, strict=args.strict))
 
     def note(self, message):
-        if not self.args.json and not self.args.ndjson:
+        """A progress line. Only with --verbose: by default a run prints its failures and one verdict."""
+        if self.args.verbose and not (self.args.json or self.args.ndjson or self.args.json_full):
             print(message, flush=True)
 
     def issue(self, code, message, severity="error", path=None):
         self.result["diagnostics"].append(diagnostic(severity, code, message, path))
 
+    def brief(self, line):
+        """A line of the command's own product, shown in the compact output above the verdict."""
+        self.result.setdefault("brief", []).append(line)
+
     def process(self, name, command, timeout=None, scan=True, expected_errors=()):
-        self.note(f"  {name} ...")
-        r = run_process(command, cwd=ROOT, timeout=min(timeout or self.timeout, self.timeout), env=self.env)
-        label = f"{len(self.result['steps']):02d}-{name}"
-        (self.artifacts / f"{label}.stdout.log").write_text(r.stdout, encoding="utf-8")
-        (self.artifacts / f"{label}.stderr.log").write_text(r.stderr, encoding="utf-8")
+        label = self.reserve(name)
+        self.progress(name, label)
+        return self.record(self.execute(name, label, command, timeout, scan, expected_errors))
+
+    def reserve(self, name):
+        with self.lock:
+            label = f"{self.step_index:02d}-{name}"
+            self.step_index += 1
+        return label
+
+    def execute(self, name, label, command, timeout=None, scan=True, expected_errors=()):
+        """Runs one step and returns its outcome without touching the result, so pure-Python gates
+        can run side by side; record() files the outcome."""
+        # The step's own limit stands (a gate may need longer than the default); an explicit
+        # --timeout is the only thing that caps it.
+        limit = timeout or self.timeout
+        if self.args.timeout is not None:
+            limit = min(limit, self.args.timeout)
+        r = run_process(command, cwd=ROOT, timeout=limit, env=self.env,
+                        stdout_path=self.artifacts / f"{label}.stdout.log",
+                        stderr_path=self.artifacts / f"{label}.stderr.log")
+        issues = []
         if r.launch_error:
             code = 2
-            self.issue("process.launch", r.launch_error)
+            issues.append(("process.launch", f"{name}: {r.launch_error}"))
         elif r.timed_out:
             code = 3
-            self.issue("process.timeout", f"{name} exceeded deadline; process tree terminated")
+            issues.append(("process.timeout", f"{name} exceeded deadline ({limit:.0f}s); process tree terminated"))
         elif r.returncode < 0 or r.returncode > 128:
             code = 4
-            self.issue("process.crash", f"{name} exited abnormally: {r.returncode}")
+            issues.append(("process.crash", f"{name} exited abnormally: {r.returncode}"))
         else:
             nested_sdk = len(command) > 1 and Path(str(command[1])).name in {"embervale.py", "assets.py", "world_quality_check.py"}
             code = r.returncode if nested_sdk and r.returncode in {0, 1, 2, 3, 4, 5, 130} else (1 if r.returncode else 0)
@@ -124,22 +189,115 @@ class Run:
             for item in found:
                 if any(re.search(pattern, item["message"]) for pattern in expected_errors):
                     item.update(severity="info", code="fixture.expected_error")
-        self.result["diagnostics"].extend(found)
         if code and not found:
-            self.issue("process.failed", f"{name}: exit {r.returncode}; see {label}.stderr.log and stdout log")
+            said = first_words(r.stderr) or first_words(r.stdout) or f"no output; see {label}.stderr.log"
+            issues.append(("process.failed", f"{name}: exit {r.returncode}: {said}"))
         step = dict(name=name, command=[str(c) for c in command], duration=r.elapsed_seconds,
                     exit_code=code, process_exit_code=r.returncode,
                     success=code == 0 and not any(d["severity"] == "error" for d in found),
                     stdout=f"{label}.stdout.log", stderr=f"{label}.stderr.log")
+        return r, step, found, issues
+
+    def record(self, outcome):
+        r, step, found, issues = outcome
+        for code, message in issues:
+            self.issue(code, message)
+        self.result["diagnostics"].extend(found)
+        self.step_warnings[step["name"]] = [d for d in found if d["severity"] == "warning"]
+        self.add_step(step)
+        if step["success"]:
+            costs.record(self.history, step["name"], step["duration"])
+            self.history_changed = True
+        return r
+
+    def add_step(self, step):
         self.result["steps"].append(step)
-        self.note(f"  {name}: {'PASS' if step['success'] else 'FAIL'} ({r.elapsed_seconds:.1f}s)")
+        if step["name"] in self.planned:
+            self.planned.remove(step["name"])
+        verdict = "CACHED" if step.get("cached") else ("PASS" if step.get("success") else "FAIL")
+        self.note(f"  {step['name']}: {verdict} ({step.get('duration', 0):.1f}s)")
         if self.args.ndjson:
             print(json.dumps(dict(event="step", **step)), flush=True)
-        return r
+        self.progress()
+
+    def progress(self, current=None, label=None, done=False):
+        """Writes the pollable progress file (and the job's copy), and between steps a partial
+        summary.json, so a run killed at a time limit still says how far it got."""
+        steps = self.result["steps"]
+        if self.planned:
+            eta = sum(costs.estimate(n, self.history, n in self.engine_steps) for n in self.planned)
+        else:
+            eta = costs.estimate(current, self.history) if current else 0
+        now = time.time()
+        payload = dict(run_id=self.result["run_id"], command=self.result.get("label") or self.args.command,
+                       pid=os.getpid(), step=current, step_started=now if current else None,
+                       log=str(self.artifacts / f"{label}.stdout.log") if label else None,
+                       steps_done=len(steps), steps_total=len(steps) + len(self.planned) if self.plan_known else None,
+                       failed=sum(1 for s in steps if not s.get("success", not s.get("exit_code"))),
+                       eta_seconds=round(eta), updated=now, artifact_directory=str(self.artifacts),
+                       done=done, exit_code=self.result.get("exit_code") if done else None)
+        try:
+            for folder in (self.artifacts, self.job_directory):
+                if folder is not None:
+                    write_json(folder / "progress.json", payload)
+            if current is None and not done:
+                write_json(self.artifacts / "summary.json", dict(
+                    self.result, partial=True, success=None, artifact_directory=str(self.artifacts),
+                    duration=time.monotonic() - self.started))
+        except OSError:
+            pass   # progress is a convenience; a locked file must not fail the run
+
+    def ensure_heavy(self):
+        """One engine run at a time on this machine (see heavy.py). A nested SDK call inherits the
+        lock; anything else waits --wait-lock seconds (a job: as long as a job queues) and then
+        refuses. Every engine launch comes through here, so this is also where the engine's
+        version is read: a run that launches no engine takes no lock and starts no engine."""
+        if not hasattr(self, "env"):
+            return
+        if not (self.heavy_held or self.env.get(heavy.HELD)):
+            what = f"{self.args.command} {self.result['run_id']}"
+            wait = max(self.args.wait_lock, float(self.env.get(heavy.WAIT) or 0))
+            current = heavy.acquire(what)
+            if current and wait > 0:
+                self.progress(f"heavy-lock (held by pid {current.get('pid')}: {current.get('what')})")
+                current = heavy.acquire(what, wait=wait)
+            if current:
+                raise ValueError(f"another engine run holds the heavy lock (pid {current.get('pid')}: {current.get('what')}). "
+                                 "Wait for it (`job wait`), pass --wait-lock SEC, or queue this with `job start`")
+            self.heavy_held = True
+            self.env[heavy.HELD] = "1"
+        self.version()
+
+    def guard_tool(self, script, arguments):
+        """A Python tool that launches the engine itself gets the same stale-build guard and heavy
+        lock as a direct launch, unless its arguments say it is only reading."""
+        try:
+            launches = bool(re.search(r"discover_godot|require_godot", Path(script).read_text(encoding="utf-8", errors="replace")))
+        except OSError:
+            launches = False
+        if launches and not READ_ONLY_ARGUMENTS.intersection(arguments):
+            self.ensure_fresh()
+            self.ensure_heavy()
+
+    def ensure_fresh(self):
+        """Stale-binary guard: once per run, before the first engine launch, rebuild when a source
+        file is newer than the assembly the engine would load, or that assembly has no tooling. --no-build opts out."""
+        if getattr(self, "fresh_checked", False) or getattr(self.args, "no_build", False):
+            return
+        self.fresh_checked = True
+        reason = stale_reason(ROOT)
+        if not reason:
+            return
+        self.note(f"  stale binary ({reason}); building first. --no-build skips this.")
+        self.result["configuration"]["auto_build"] = reason
+        if self.process("auto-build", ["dotnet", "build", "Embervale.sln", "--nologo"]).returncode != 0:
+            raise BuildFailed("the automatic build failed; the engine was not launched on a stale binary")
 
     def godot(self, name, arguments, user=(), render=False, scan=True):
         if not self.engine:
             raise ValueError("Godot .NET not found; set EMBERVALE_GODOT or --godot")
+        self.ensure_fresh()
+        self.ensure_heavy()
         command = [str(self.engine), "--path", str(ROOT), "--log-file", str(self.artifacts / f"{name}.godot.log")]
         if not render:
             command += ["--headless"]
@@ -149,33 +307,105 @@ class Run:
         return self.process(name, command, scan=scan)
 
     def version(self):
-        if self.engine:
+        """Reads the engine's version, once per run, the first time something needs the engine."""
+        if self.engine and not self.version_asked and self.result["godot_version"] is None:
+            self.version_asked = True
             r = self.process("godot-version", [str(self.engine), "--version"], timeout=20)
-            self.result["godot_version"] = r.stdout.strip()
+            self.result["godot_version"] = str(r.stdout or "").strip()
 
     def doctor(self):
+        """The checks that actually bite, one row each: ok, info, warn or fail. A fail is an error
+        diagnostic (exit 2); a warn is advice. Rows land in metrics.doctor and the compact output
+        lists everything that is not ok."""
+        from quality_common import discover_blender, memory_megabytes, process_table
+        self.version()
+        rows = []
+
+        def row(level, key, value, code=None):
+            rows.append(dict(level=level, key=key, value=str(value)))
+            if level == "fail":
+                self.issue(code or f"doctor.{key}", f"{key}: {value}")
+
         version = self.result["godot_version"] or ""
         if not re.match(r"4\.7(?:\.|\b)", version) or "mono" not in version.lower():
-            self.issue("doctor.godot", f"Godot 4.7 .NET/Mono required; discovered {version or 'nothing'}")
+            row("fail", "godot", f"Godot 4.7 .NET/Mono required; discovered {version or 'nothing'} "
+                                 "(set EMBERVALE_GODOT or --godot to the _console.exe)")
+        else:
+            row("ok", "godot", f"{version} {self.engine}")
         sdk = self.process("dotnet-sdk", ["dotnet", "--list-sdks"], timeout=30)
         runtimes = self.process("dotnet-runtime", ["dotnet", "--list-runtimes"], timeout=30)
         if not re.search(r"^8\.0\.", sdk.stdout, re.M):
-            self.issue("doctor.dotnet", ".NET 8 SDK is not installed")
-        if not re.search(r"Microsoft.NETCore.App 8\.0\.", runtimes.stdout):
-            self.issue("doctor.runtime", ".NET 8 runtime is not installed")
-        for name in ("project.godot", "Embervale.csproj"):
-            if not (ROOT / name).is_file():
-                self.issue("doctor.project", "Required project file missing", path=name)
-        project = (ROOT / "Embervale.csproj").read_text()
-        if "net8.0" not in project or "Godot.NET.Sdk/4.7." not in project:
-            self.issue("doctor.project", "Project must target Godot 4.7 and net8.0")
-        self.process("git", ["git", "--version"], timeout=20)
-        from quality_common import discover_blender
+            row("fail", "dotnet", ".NET 8 SDK is not installed")
+        elif not re.search(r"Microsoft.NETCore.App 8\.0\.", runtimes.stdout):
+            row("fail", "dotnet", ".NET 8 runtime is not installed", "doctor.runtime")
+        else:
+            row("ok", "dotnet", re.search(r"^8\.0\.\S+", sdk.stdout, re.M).group(0))
+        missing = [name for name in ("project.godot", "Embervale.csproj") if not (ROOT / name).is_file()]
+        project = (ROOT / "Embervale.csproj").read_text() if not missing else ""
+        if missing:
+            row("fail", "project", f"required project file missing: {', '.join(missing)}")
+        elif "net8.0" not in project or "Godot.NET.Sdk/4.7." not in project:
+            row("fail", "project", "Project must target Godot 4.7 and net8.0")
+        else:
+            row("ok", "project", "net8.0, Godot.NET.Sdk 4.7")
+
+        stale = stale_reason(ROOT)
+        row("warn" if stale else "ok", "binary", f"stale: {stale} (the SDK rebuilds before an engine launch; "
+            "a raw godot launch would not)" if stale else "Embervale.dll is a tooling build newer than every source")
+        memory = memory_megabytes()
+        if memory:
+            free, total = memory
+            row("fail" if free < 1500 else "warn" if free < 4000 else "ok", "memory",
+                f"{free} MB free of {total} MB" + (" (an engine run needs about 3 GB; a bake more)" if free < 4000 else ""))
+        table = process_table()
+        engines = [(n, p, m) for n, p, m in table if n.lower().startswith("godot")]
+        servers = [(n, p, m) for n, p, m in table if re.match(r"(?i)(dotnet|vbcscompiler|msbuild|testhost)", n)]
+        other = [(n, p, m) for n, p, m in table if re.match(r"(?i)(gamedev-mcp-server|blender)", n)]
+        if engines:
+            row("warn", "godot-processes", ", ".join(f"{n} pid {p} {m}MB" for n, p, m in engines)
+                + " (an editor is fine; a leftover headless run is not)")
+        else:
+            row("ok", "godot-processes", "none running")
+        server_mb = sum(m for _, _, m in servers)
+        row("warn" if server_mb > 1500 else "ok", "build-servers",
+            f"{len(servers)} dotnet process(es), {server_mb} MB" + (" (`dotnet build-server shutdown` frees them)" if server_mb > 1500 else ""))
+        if other:
+            row("info", "helpers", ", ".join(f"{n} pid {p} {m}MB" for n, p, m in other))
+        held = heavy.holder()
+        row("warn" if held else "ok", "heavy-lock", f"held by pid {held.get('pid')}: {held.get('what')}" if held else "free")
+        imported = ROOT / ".godot/imported"
+        has_import = imported.is_dir() and next(imported.iterdir(), None) is not None
+        row("ok" if has_import else "warn", "import-cache",
+            "present" if has_import else "missing: run `embervale.py import` before any engine command")
+        journal = ROOT / "artifacts/negative-journal/journal.json"
+        if journal.is_file():
+            row("fail", "negative-journal", "an interrupted negative battery left mutated data: run "
+                                            "`python tools/negative_tests.py --restore`")
+        git = self.process("git", ["git", "status", "--porcelain=v1", "-b"], timeout=30)
+        if git.returncode == 0:
+            lines = git.stdout.splitlines()
+            row("ok", "git", f"{lines[0][3:] if lines else '?'}, {max(0, len(lines) - 1)} changed")
+        run_count = len(compact.runs(ROOT / "artifacts/headless"))
+        row("warn" if run_count > 60 else "ok", "artifacts",
+            f"{run_count} run directories" + (" (`embervale.py clean` prunes them)" if run_count > 60 else ""))
+        try:
+            from godot_mcp_check import check as mcp_check
+            mcp = mcp_check(timeout=15)
+            row("ok" if mcp["status"] == "pass" else "info", "mcp", f"{mcp['status']}: {mcp['detail']}")
+        except Exception as error:   # the MCP is optional tooling; its check must not fail doctor
+            row("info", "mcp", f"not checked: {error}")
+        row("ok", "python", sys.executable)
+
+        self.result["metrics"]["doctor"] = rows
         self.result["metrics"]["external_tools"] = {
             "blender": str(discover_blender() or "not installed (optional)"),
             "godot_cli": shutil.which("godot-cli"),
             "meshy": "existing offline adoption pipeline; no remote generation configured",
             "export_presets": (ROOT / "export_presets.cfg").is_file()}
+        for item in rows:
+            if item["level"] != "ok":
+                self.brief(f"{item['level']} {item['key']}: {item['value']}")
+        self.brief("ok: " + " ".join(item["key"] for item in rows if item["level"] == "ok"))
         if not version or any(d["severity"] == "error" for d in self.result["diagnostics"]):
             self.result["steps"].append(dict(name="prerequisites", exit_code=2))
 
@@ -249,7 +479,13 @@ class Run:
         result = json.loads(report.read_text(encoding="utf-8"))
         self.result["diagnostics"].extend(result.get("diagnostics", []))
         self.result["assertions"].extend(result.get("assertions", []))
-        self.result["metrics"][name] = result.get("metrics", {})
+        metrics = result.get("metrics", {})
+        # The whole-project dependency graph, the scanned path list and the raw frame samples
+        # stay in this step's own result file; the summary carries their sizes.
+        for bulky in ("dependency_graph", "selected_paths", "samples_ms"):
+            if isinstance(metrics.get(bulky), (list, dict)):
+                metrics[bulky + "_count"] = len(metrics.pop(bulky))
+        self.result["metrics"][name] = metrics
         if command == "perf":
             metrics = result["metrics"]
             limit = args.max_frame_ms
@@ -317,12 +553,43 @@ class Run:
         self.godot("content", [], ["--validate"])
 
     def tests(self):
-        self.process("tool-tests", [sys.executable, "-m", "unittest", "discover", "-s", "tools", "-p", "test_*.py"])
-        self.process("game-tests", ["dotnet", "test", "tests/Embervale.Tests", "--nologo", "--logger",
-                                    "trx;LogFileName=game-tests.trx", "--results-directory", str(self.artifacts / "tests")])
+        """Both suites, or a focused part: --only tool|game, --filter EXPR (xUnit), --py PATTERN
+        (unittest -k). A filter for one suite alone runs only that suite. Failed tests are named
+        in the result with their first message line (code test.failed)."""
+        from .testing import python_report, trx_report
+        only, expression, pattern = (getattr(self.args, n, None) for n in ("only", "filter", "py"))
+        tool = only == "tool" or (only is None and not (expression and not pattern))
+        game = only == "game" or (only is None and not (pattern and not expression))
+        counts = {}
+        if tool:
+            command = [sys.executable, "-m", "unittest", "discover", "-s", "tools", "-p", "test_*.py"]
+            # unittest prints failures as `ERROR: name (id)`; they are extracted by name below
+            # rather than scanned as anonymous log errors.
+            r = self.process("tool-tests", command + (["-k", pattern] if pattern else []), scan=False)
+            report = python_report(r.stderr + r.stdout)
+            for test, message in report["failures"]:
+                self.issue("test.failed", f"{test}: {message}", path=test)
+            counts["tool"] = dict(ran=report["ran"], failed=len(report["failures"]))
+        if game:
+            trx = self.artifacts / "tests" / "game-tests.trx"
+            command = ["dotnet", "test", "tests/Embervale.Tests", "--nologo", "--logger",
+                       "trx;LogFileName=game-tests.trx", "--results-directory", str(trx.parent)]
+            self.process("game-tests", command + (["--filter", expression] if expression else []))
+            report = trx_report(trx)
+            if report:
+                for test, message in report["failures"]:
+                    self.issue("test.failed", f"{test}: {message}", path=test)
+                counts["game"] = {k: report[k] for k in ("passed", "failed", "skipped")}
+        self.result["metrics"]["tests"] = counts
+        self.brief("tests " + "; ".join(f"{suite}: " + ", ".join(f"{v} {k}" for k, v in c.items() if v is not None)
+                                        for suite, c in counts.items()))
 
         if self.args.engine_tests:
             self.env["EMBERVALE_RENDER_TESTS"] = "1" if self.args.render else "0"
+            # Every test in there launches the engine through a nested SDK call: build once and
+            # hold the heavy lock here, so those calls inherit both.
+            self.ensure_fresh()
+            self.ensure_heavy()
             self.process("native-protocol-tests", [sys.executable, "tools/sdk_engine_tests.py"])
 
     def world(self, mode=None, skip=()):
@@ -337,18 +604,136 @@ class Run:
             unavailable = selected - available
             if unavailable:
                 raise ValueError(f"Unavailable gates for {mode}: {', '.join(sorted(unavailable))}")
+        items = []
         for gate in registry:
             if selected and gate.name not in selected:
                 continue
             if gate.name in skip or mode not in gate.modes or (mode == "fast" and gate.slow):
                 continue
-            if not self.engine and any("godot" in p.lower() for p in gate.command[:1]):
-                raise ValueError("This world mode needs Godot .NET")
             regions = [self.args.region] if self.args.region else sorted(REGIONS)
-            for region in regions if gate.per_region else [None]:
-                command = [str(ROOT / REGIONS[region]) if p == "@REGION@" else
-                           p.replace("@ARTIFACT@", str(self.artifacts)) for p in gate.command]
-                self.process(gate.name + ("-" + region if region else ""), command, timeout=gate.timeout, expected_errors=gate.expected_errors)
+            items += [(gate, region) for region in (regions if gate.per_region else [None])]
+        if self.args.command == "world" and hasattr(self, "result"):
+            self.result["label"] = f"world/{mode}"
+        self.run_gates(items)
+
+    def run_gates(self, items):
+        """Runs (gate, region) pairs in the given order. Neighbouring pure-Python gates run side by
+        side (--parallel), a gate that already passed on these exact inputs is reused from the
+        cache (--no-cache), and the steps still to come feed the progress file's ETA."""
+        from world_quality_check import REGIONS
+        prepared = []
+        for gate, region in items:
+            command = [str(ROOT / REGIONS[region]) if p == "@REGION@" else
+                       p.replace("@ARTIFACT@", str(self.artifacts)) for p in gate.command]
+            prepared.append((gate, gate.name + ("-" + region if region else ""), command))
+        self.planned = getattr(self, "planned", []) + [name for _, name, _ in prepared]
+        self.plan_known = True
+        self.engine_steps = {name for gate, name, _ in prepared if self.launches_engine(gate)}
+        batch = []
+        for gate, name, command in prepared:
+            if gate.parallel and self.args.parallel > 1:
+                batch.append((gate, name, command))
+                continue
+            self.run_batch(batch)
+            self.run_gate(gate, name, command)
+        self.run_batch(batch)
+
+    def launches_engine(self, gate):
+        return bool(self.engine) and gate.command[:1] == [str(self.engine)]
+
+    def run_gate(self, gate, name, command):
+        if not self.engine and any("godot" in p.lower() for p in gate.command[:1]):
+            raise ValueError("This world mode needs Godot .NET")
+        key = self.gate_key(gate, command)
+        if self.reuse(name, command, key):
+            return
+        if self.launches_engine(gate) or gate.name in ENGINE_INSIDE:
+            # These gates launch the engine themselves, not through Run.godot. After the
+            # `build` gate the freshness check finds nothing to do.
+            self.ensure_fresh()
+            self.ensure_heavy()
+        self.process(name, command, timeout=gate.timeout, expected_errors=gate.expected_errors)
+        self.remember([(gate, name, command, key)])
+
+    def run_batch(self, batch):
+        """A run of neighbouring pure-Python gates: executed together, recorded in registry order."""
+        todo = []
+        for gate, name, command in batch:
+            key = self.gate_key(gate, command)
+            if not self.reuse(name, command, key):
+                todo.append((gate, name, command, key))
+        batch.clear()
+        if len(todo) == 1:
+            gate, name, command, key = todo[0]
+            self.process(name, command, timeout=gate.timeout, expected_errors=gate.expected_errors)
+            self.remember(todo)
+        elif todo:
+            labels = [self.reserve(name) for _, name, _, _ in todo]
+            self.progress(todo[0][1], labels[0])
+            with ThreadPoolExecutor(max_workers=min(self.args.parallel, len(todo))) as pool:
+                futures = [pool.submit(self.execute, name, label, command, gate.timeout, True, gate.expected_errors)
+                           for (gate, name, command, _), label in zip(todo, labels)]
+                for future in futures:
+                    self.record(future.result())
+            self.remember(todo)
+
+    def gate_key(self, gate, command):
+        """The cache key for this gate now, or None when it must simply run: no cache in play, a
+        gate judged by eye, --no-build (the assembly may not match the sources), not a git checkout."""
+        if getattr(self, "cache", None) is None or not gate.cacheable or self.args.no_build:
+            return None
+        if self.tree is None:
+            self.tree = self.read_tree() or False
+        if not self.tree:
+            return None
+        return self.key_for(self.tree, gate, command)
+
+    def key_for(self, tree, gate, command):
+        extra = [*command, self.env.get("EMBERVALE_SEED"), self.env.get("EMBERVALE_FRAMES")]
+        if self.launches_engine(gate) or gate.name in ENGINE_INSIDE:
+            try:   # a different engine binary is a different run; its file identity costs no launch
+                stat = Path(self.engine).stat()
+                extra += [str(self.engine), stat.st_size, stat.st_mtime_ns]
+            except (OSError, TypeError):
+                pass
+        return gate_cache.key(tree, gate.inputs, extra)
+
+    def reuse(self, name, command, key):
+        """Records a cached pass instead of running the gate. False when there is none to reuse.
+        The warnings that pass produced come back with it, so --strict and --max-warnings judge
+        a cached run exactly as they judged the real one."""
+        entry = self.cache.get(name, key) if key and not self.args.no_cache else None
+        if not entry:
+            return False
+        self.result["diagnostics"].extend(dict(item) for item in entry.get("diagnostics") or [])
+        self.add_step(dict(name=name, command=[str(c) for c in command], duration=0.0, exit_code=0,
+                           process_exit_code=0, success=True, cached=True, cached_run=entry.get("run"),
+                           cached_duration=entry.get("duration")))
+        return True
+
+    def remember(self, ran):
+        """Stores the passes among the gates that just ran: (gate, name, command, key) each. A
+        failure is never cached, and neither is a pass whose inputs changed while it ran: the
+        key was taken before the gate started, and a gate that ran for minutes while a file was
+        edited proved some other tree. The tree is read again and the pass kept only if its key
+        still stands."""
+        if not any(key for _, _, _, key in ran):
+            return
+        steps = {step["name"]: step for step in self.result["steps"]}
+        passed = [(gate, name, command, key) for gate, name, command, key in ran
+                  if key and steps.get(name, {}).get("success") and steps[name].get("exit_code") == 0]
+        if not passed:
+            return
+        self.tree = self.read_tree() or False
+        for gate, name, command, key in passed:
+            if not self.tree or self.key_for(self.tree, gate, command) != key:
+                self.note(f"  {name}: inputs changed while it ran; the pass is not cached")
+                continue
+            try:
+                self.cache.put(name, key, steps[name]["duration"], self.result["run_id"],
+                               self.step_warnings.get(name, []))
+            except OSError:
+                pass   # an unwritable cache costs a rerun later; it must not fail a gate that passed
 
     def finish(self):
         grouped = {}
@@ -366,38 +751,173 @@ class Run:
             self.issue("warnings.budget", f"{warning_count} warnings exceed budget {self.args.max_warnings}")
         code = exit_code(self.result, self.args.strict)
         self.result.update(success=code == 0, exit_code=code)
-        self.result["artifacts"] = [str(p.relative_to(self.artifacts)) for p in sorted(self.artifacts.rglob("*")) if p.is_file()]
-        self.result["artifacts"].append("summary.json")
+        if self.heavy_held:
+            heavy.release()
+            self.heavy_held = False
+        if self.history_changed:
+            try:
+                costs.save({**costs.load(), **self.history})
+            except OSError:
+                pass
+        self.planned = []
+        self.result["artifacts"] = sorted({str(p.relative_to(self.artifacts)) for p in self.artifacts.rglob("*") if p.is_file()}
+                                          | {"summary.json", "summary.txt"})
         self.result["artifact_directory"] = str(self.artifacts)
         write_json(self.artifacts / "summary.json", self.result)
-        if self.args.json:
+        summary = compact.text(self.result)
+        (self.artifacts / "summary.txt").write_text(summary + "\n", encoding="utf-8")
+        self.progress(done=True)
+        # Compact by default: failures with their logs and one verdict line. The whole result is
+        # summary.json, or --json-full.
+        if self.args.json_full:
             print(json.dumps(self.result, ensure_ascii=False))
+        elif self.args.json:
+            print(json.dumps(compact.compact(self.result), ensure_ascii=False))
         elif self.args.ndjson:
-            print(json.dumps(dict(event="result", **self.result), ensure_ascii=False))
+            print(json.dumps(dict(event="result", **compact.compact(self.result)), ensure_ascii=False))
         else:
-            errors = [d for d in self.result["diagnostics"] if d["severity"] == "error"]
-            other = [d for d in self.result["diagnostics"] if d["severity"] != "error"]
-            for d in errors + other[-10:]:
-                origin = " ".join(str(d[k]) for k in ("path", "node") if d.get(k))
-                print(f"{d['severity'].upper()} {d['code']}: {d['message']}" + (f" [{origin}]" if origin else ""))
-            print(f"{'PASS' if code == 0 else 'FAIL'} {self.args.command} ({self.result['duration']:.1f}s), exit {code}")
-            print(f"Evidence: {self.artifacts / 'summary.json'}")
+            print(summary)
         return code
+
+
+def _runtime(run, args, passthrough):
+    cmd = args.command
+    plan = json.loads(Path(args.target).read_text(encoding="utf-8")) if args.target else None
+    if cmd == "scenario" and plan is None:
+        raise ValueError("scenario requires a JSON plan")
+    for resolution in args.resolution or ["1280x720"]:
+        run.runtime(cmd, plan, resolution)
+
+
+def _audit(run, args, passthrough):
+    cmd = args.command
+    run.doctor()
+    if exit_code(run.result) == 0:
+        run.build()
+        run.import_assets()
+        run.validate()
+        run.tests()
+        run.world("engine", skip={"build", "tests", "content"})
+        run.guard_tool(ROOT / "tools/assets.py", ["validate"])
+        run.process("assets", [sys.executable, "tools/assets.py", "validate"])
+        run.runtime("scenario", json.loads((ROOT / "tools/headless/scenarios/new-game.json").read_text()))
+        if cmd == "all" and args.render:
+            run.world("visual")
+            run.runtime("perf")
+        elif cmd == "all":
+            run.issue("render.not_requested", "Rendering gates require all --render; headless gates were selected", "info")
+
+
+def _assets(run, args, passthrough):
+    arguments = [args.target or "status", *passthrough]
+    run.guard_tool(ROOT / "tools/assets.py", arguments)
+    run.process("assets", [sys.executable, "tools/assets.py", *arguments])
+
+
+def _list(run, args, passthrough):
+    """What exists. Names only by default; `list --json` is the whole inventory with descriptions."""
+    from world_quality_check import gates
+    from .scenario import OPERATIONS as runtime_operations, METHODS, PROPERTIES
+    from .authoring import OPERATIONS as author_operations, NODE_TYPES, RESOURCE_TYPES
+    registry = gates(None)
+    tools = sorted(p.stem for p in (ROOT / "tools").iterdir() if p.suffix in {".py", ".gd"})
+    if args.json or args.json_full:
+        print(json.dumps(dict(
+            capabilities=dict(commands=tuple(REGISTRY), runtime_operations=sorted(runtime_operations),
+                              methods=sorted(METHODS), mutable_properties=sorted(PROPERTIES),
+                              author_operations=sorted(author_operations), node_types=sorted(NODE_TYPES),
+                              resource_types=sorted(RESOURCE_TYPES), schema=SCHEMA),
+            commands={name: entry.help for name, entry in REGISTRY.items()},
+            gates=[dict(name=g.name, description=g.what, modes=g.modes) for g in registry], tools=tools)))
+        return 0
+    print("commands: " + " ".join(REGISTRY))
+    shown = set()
+    for mode in ("fast", "engine", "visual", "performance", "full"):
+        names = [g.name for g in registry if mode in g.modes and not (mode == "fast" and g.slow) and g.name not in shown]
+        shown.update(names)
+        if names:
+            print(f"gates first reached in {mode}: " + " ".join(names))
+    print(f"tools: {len(tools)} under tools/ (`list --json` names them, with gate descriptions and the scenario protocol)")
+    return 0
+
+
+def _tool(run, args, passthrough):
+    if not args.target or not re.fullmatch(r"[a-z0-9_]+", args.target) or args.target in {"embervale", "world_quality_check", "quality_common"}:
+        raise ValueError("tool requires an existing specialist tool name (see list)")
+    py, gd = ROOT / f"tools/{args.target}.py", ROOT / f"tools/{args.target}.gd"
+    if py.is_file():
+        run.guard_tool(py, passthrough)
+        r = run.process(args.target, [sys.executable, str(py), *passthrough])
+        # A question tool (content, regen, world_bake --plan) answers on stdout; a bare PASS line
+        # would hide the answer in a log file. Capped: the whole output stays in the run folder.
+        if not (args.json or args.ndjson or args.json_full):
+            lines = (r.stdout or "").splitlines()
+            if len(lines) > 60:
+                print(f"... {len(lines) - 60} earlier line(s) in the step's stdout log")
+            print("\n".join(lines[-60:]), flush=True) if lines else None
+    elif gd.is_file():
+        run.godot(args.target, ["--script", f"res://tools/{gd.name}"], passthrough, render=args.render)
+    else:
+        raise ValueError("unknown tool")
+
+
+# The original commands. A new one does not go here: it is a module under commands/ (see its docstring).
+commands.register("doctor", lambda run, args, passthrough: run.doctor())
+commands.register("import", lambda run, args, passthrough: run.import_assets())
+commands.register("build", lambda run, args, passthrough: run.build())
+commands.register("validate", lambda run, args, passthrough: run.validate())
+for _name in ("inspect", "smoke", "scenario", "screenshot", "perf"):
+    commands.register(_name, _runtime)
+def _test_arguments(group):
+    group.add_argument("--only", choices=("tool", "game"), help="run one suite: the Python tool tests or the xUnit game tests")
+    group.add_argument("--filter", help="xUnit filter expression, e.g. FullyQualifiedName~HeadlessTooling (game suite only)")
+    group.add_argument("--py", help="unittest -k pattern, e.g. FreshnessTests (tool suite only)")
+
+
+commands.register("test", lambda run, args, passthrough: run.tests(), version=False, arguments=_test_arguments)
+commands.register("audit", _audit)
+commands.register("all", _audit)
+commands.register("world", lambda run, args, passthrough: run.world())
+commands.register("assets", _assets, version=False, passthrough=True)
+commands.register("tool", _tool, version=False, passthrough=True)
+commands.register("list", _list, version=False, light=True)
+commands.register("author", lambda run, args, passthrough: run.author())
+commands.discover()
+COMMANDS = tuple(REGISTRY)
 
 
 def main(argv=None):
     argv = list(sys.argv[1:] if argv is None else argv)
     passthrough = []
-    if "--" in argv:
+    # A command's own flags are only known once the command is: it is the first registered name.
+    first = next((i for i, a in enumerate(argv) if a in REGISTRY), None)
+    if first is not None and tuple(argv[first:first + 2]) in REST_AFTER:
+        argv, passthrough = argv[:first + 2], argv[first + 2:]
+        if passthrough[:1] == ["--"]:
+            passthrough = passthrough[1:]
+    elif "--" in argv:
         separator = argv.index("--")
         argv, passthrough = argv[:separator], argv[separator + 1:]
-    args = parser().parse_args(argv)
+    args = parser(argv[first] if first is not None and first < len(argv) else None).parse_args(argv)
+    entry = REGISTRY[args.command]
+    if not entry.light:
+        return run_command(args, passthrough, entry)
+    try:
+        return int(entry.run(None, args, passthrough) or 0)
+    except KeyboardInterrupt:
+        return 130
+    except (ValueError, OSError, RuntimeError) as error:
+        print(json.dumps(dict(success=False, command=args.command, exit_code=2, error=str(error))))
+        return 2
+
+
+def run_command(args, passthrough, entry, body=None):
+    """One full run: its directory, the command (or `body` in its place), the summary and the exit
+    code. A light command calls this when it turns out to need a real run."""
     run = None
     try:
         run = Run(args)
         run.note(f"Embervale SDK — {args.command} — {run.artifacts.name}")
-        if args.command not in {"list", "tool", "test", "assets"}:
-            run.version()
         cmd = args.command
         if (args.write or args.overwrite) and cmd != "author":
             raise ValueError("--write/--overwrite apply only to author")
@@ -405,68 +925,18 @@ def main(argv=None):
             raise ValueError("--changed-only is supported by validate/audit/all")
         if args.gate and cmd != "world":
             raise ValueError("--gate applies only to the world command")
-        if passthrough and cmd not in {"assets", "tool"}:
-            raise ValueError("Arguments after -- are supported only by assets/tool")
-        if cmd == "doctor": run.doctor()
-        elif cmd == "build": run.build()
-        elif cmd == "import": run.import_assets()
-        elif cmd == "validate": run.validate()
-        elif cmd == "test": run.tests()
-        elif cmd == "author": run.author()
-        elif cmd in {"inspect", "smoke", "screenshot", "perf", "scenario"}:
-            plan = json.loads(Path(args.target).read_text(encoding="utf-8")) if args.target else None
-            if cmd == "scenario" and plan is None:
-                raise ValueError("scenario requires a JSON plan")
-            for resolution in args.resolution or ["1280x720"]:
-                run.runtime(cmd, plan, resolution)
-        elif cmd == "report":
-            if args.target not in {"state", "economy", "worldgen", "lifecycle"}:
-                raise ValueError("report requires state, economy, worldgen or lifecycle")
-            run.godot(args.target, [], ["--" + args.target])
-        elif cmd == "world": run.world()
-        elif cmd in {"audit", "all"}:
-            run.doctor()
-            if exit_code(run.result) == 0:
-                run.build()
-                run.import_assets()
-                run.validate()
-                run.tests()
-                run.world("engine", skip={"build", "tests", "content"})
-                run.process("assets", [sys.executable, "tools/assets.py", "validate"])
-                run.runtime("scenario", json.loads((ROOT / "tools/headless/scenarios/new-game.json").read_text()))
-                if cmd == "all" and args.render:
-                    run.world("visual")
-                    run.runtime("perf")
-                elif cmd == "all":
-                    run.issue("render.not_requested", "Rendering gates require all --render; headless gates were selected", "info")
-        elif cmd == "assets":
-            run.process("assets", [sys.executable, "tools/assets.py", args.target or "status", *passthrough])
-        elif cmd == "list":
-            from world_quality_check import gates
-            from .scenario import OPERATIONS as runtime_operations, METHODS, PROPERTIES
-            from .authoring import OPERATIONS as author_operations, NODE_TYPES, RESOURCE_TYPES
-            run.result["metrics"]["capabilities"] = dict(commands=COMMANDS, runtime_operations=sorted(runtime_operations),
-                methods=sorted(METHODS), mutable_properties=sorted(PROPERTIES), author_operations=sorted(author_operations),
-                node_types=sorted(NODE_TYPES), resource_types=sorted(RESOURCE_TYPES), schema=SCHEMA)
-            run.result["metrics"]["gates"] = [dict(name=g.name, description=g.what, modes=g.modes) for g in gates(None)]
-            run.result["metrics"]["tools"] = sorted(p.stem for p in (ROOT / "tools").iterdir() if p.suffix in {".py", ".gd"})
-            run.note(json.dumps(run.result["metrics"], indent=2))
-        elif cmd == "tool":
-            if not args.target or not re.fullmatch(r"[a-z0-9_]+", args.target) or args.target in {"embervale", "world_quality_check", "quality_common"}:
-                raise ValueError("tool requires an existing specialist tool name (see list)")
-            py, gd = ROOT / f"tools/{args.target}.py", ROOT / f"tools/{args.target}.gd"
-            if py.is_file():
-                run.process(args.target, [sys.executable, str(py), *passthrough])
-            elif gd.is_file():
-                run.godot(args.target, ["--script", f"res://tools/{gd.name}"], passthrough, render=args.render)
-            else:
-                raise ValueError("unknown tool")
+        if passthrough and not entry.passthrough:
+            raise ValueError("Arguments after -- are supported only by " + "/".join(n for n, c in REGISTRY.items() if c.passthrough))
+        (body or entry.run)(run, args, passthrough)
         return run.finish()
     except KeyboardInterrupt:
         if run:
             run.result["steps"].append(dict(name="interrupted", exit_code=130))
             return run.finish()
         return 130
+    except BuildFailed as error:
+        run.issue("build.stale", str(error))
+        return run.finish()
     except (ValueError, OSError, RuntimeError) as error:
         if run:
             run.issue("configuration.invalid", str(error))

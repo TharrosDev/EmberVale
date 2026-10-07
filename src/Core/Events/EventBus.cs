@@ -34,6 +34,8 @@ public sealed partial class EventBus : Node
         public abstract int Count { get; }
 
         public abstract void Clear();
+
+        public abstract string Name { get; }
     }
 
     /// <summary>
@@ -70,6 +72,8 @@ public sealed partial class EventBus : Node
 
             return Live.Items;
         }
+
+        public override string Name => typeof(T).Name;
 
         public override void Clear()
         {
@@ -215,6 +219,21 @@ public sealed partial class EventBus : Node
         where T : IGameEvent
     {
         return Slot<T>.Value?.Count ?? 0;
+    }
+
+    /// <summary>The event types that still have handlers, as <c>Name x count</c>. For naming a leak.</summary>
+    public string DescribeSubscribers()
+    {
+        var live = new List<string>();
+        foreach (Channel channel in Channels)
+        {
+            if (channel.Count > 0)
+            {
+                live.Add($"{channel.Name} x{channel.Count}");
+            }
+        }
+
+        return string.Join(", ", live);
     }
 
     /// <summary>Total handlers across all event types. A non-zero baseline after a scene

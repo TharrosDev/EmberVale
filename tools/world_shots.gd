@@ -9,6 +9,24 @@
 # It uses RegionStreamer rather than instancing scenes directly, so the same region profile,
 # surface skin and silhouette path exercised in play is what reaches the screenshots. Output is
 # disposable under tools/shots/world/ and intentionally ignored by Godot/import control.
+#
+# All six regions are known to it (every data/regions/*.tres). Selection, as user arguments after `--`:
+#   --region=<id|all>[,..]  a region by id (ember_crown, region.ember_crown) or file name (EmberCrown)
+#   --cell=<cell.id>[,..]   only these cells (their regions are implied)
+#   --pass=day|dusk         one lighting pass
+#   --view=<name>[,..]      only views whose name contains one of these (entry, centre, landmark, exit, overview)
+#   --res=WxH               capture size (default 1280x720; the baseline is 1280x720)
+#   --list                  print every region and cell id and exit; renders nothing, works with --headless
+#   --shots-verbose         one line per frame written
+#   --update-world-baseline write the baseline; with a selection, MERGE the selected frames into it
+#
+# With no selection it photographs the regions the baseline already covers, which is what the
+# `visuals` gate runs, and a frame missing from either side fails. With a selection only the selected
+# frames are compared, and a frame the baseline has never seen is counted as `unbaselined`, not failed:
+# four regions have no approved baseline yet, and `--region=<id>` is how to look at one.
+#
+# It ends with one line, `EMBERVALE_RESULT {json}`, and writes manifest.json beside the frames
+# (name, file and ok per frame). Exit 0 pass, 2 a region or the selection failed, 3 regression, 4 headless.
 extends SceneTree
 
 const BASELINE_PATH := "res://tests/visual_baselines/world_signatures.json"
@@ -23,10 +41,26 @@ const DEFAULT_STRUCTURAL_PEAK_DELTA := 70.0
 # overhaul). It used to be sixteen hand-written centres and envelopes in this file, which is the
 # second copy of a number NOW.md invariant 12 spends a paragraph forbidding — and the copy that
 # would have silently framed every shot at the OLD lattice while the baseline "passed".
-const REGION_PATHS := [
-	"res://data/regions/EmberCrown.tres",
-	"res://data/regions/FrostfangReach.tres",
-]
+const REGION_DIRECTORY := "res://data/regions"
+
+var _only_regions: PackedStringArray = []
+var _only_cells: PackedStringArray = []
+var _only_views: PackedStringArray = []
+var _only_pass := ""
+var _selection := false
+var _verbose := false
+var _started_msec := 0
+var _failures: Array[String] = []
+var _failed_keys: Dictionary = {}
+var _files: Dictionary = {}
+var _unbaselined := 0
+## Frames a selected run took that the baseline does not hold: looked at, never compared.
+var _unbaselined_keys: Dictionary = {}
+## Frames actually compared with the baseline. 0 for a baseline update and for a run that failed first.
+var _compared := 0
+## --region tokens that named a region, so a misspelt one among several is reported.
+var _region_tokens_matched: Dictionary = {}
+var _regions_shot: Array[String] = []
 
 var _output := "res://tools/shots/world"
 var _capture_wait := 12
@@ -41,11 +75,102 @@ var _capture_errors: Array[String] = []
 var _cell_rect := Rect2()
 
 
+## One user argument's value, as `--flag=value` or `--flag value`; "" when it is absent or bare.
+func _arg(flag: String) -> String:
+	var args := OS.get_cmdline_user_args()
+	for index in args.size():
+		if args[index].begins_with(flag + "="):
+			return args[index].substr(flag.length() + 1)
+		if args[index] == flag and index + 1 < args.size() and not args[index + 1].begins_with("--"):
+			return args[index + 1]
+	return ""
+
+
+func _list_arg(flag: String) -> PackedStringArray:
+	var values: PackedStringArray = []
+	for part in _arg(flag).split(",", false):
+		if not part.strip_edges().is_empty():
+			values.append(part.strip_edges().to_lower())
+	return values
+
+
+## Every region resource, in file-name order, so adding a region adds it here with no edit.
+func _region_paths() -> Array[String]:
+	var paths: Array[String] = []
+	for file in DirAccess.get_files_at(REGION_DIRECTORY):
+		# An exported project lists resources as .tres.remap; this tool only runs from source.
+		if file.ends_with(".tres"):
+			paths.append(REGION_DIRECTORY.path_join(file))
+	paths.sort()
+	return paths
+
+
+## Whether a --region token names this region: its id, its id without "region.", or its file name.
+func _region_named(region: Resource, region_path: String, tokens: PackedStringArray) -> bool:
+	var id := String(region.get("Id")).to_lower()
+	return tokens.has("all") or tokens.has(id) or tokens.has(id.trim_prefix("region.")) \
+		or tokens.has(region_path.get_file().get_basename().to_lower())
+
+
+func _region_has_cell(region: Resource, cell_ids: Dictionary) -> bool:
+	for authored_cell in region.get("Cells"):
+		if authored_cell != null and cell_ids.has(String(authored_cell.get("Id")).to_lower()):
+			return true
+	return false
+
+
+## The cell ids the approved baseline holds frames for (empty when there is no baseline yet).
+func _baseline_cells() -> Dictionary:
+	var cells: Dictionary = {}
+	if not FileAccess.file_exists(BASELINE_PATH):
+		return cells
+	var parsed = JSON.parse_string(FileAccess.get_file_as_string(BASELINE_PATH))
+	if parsed is Dictionary and parsed.get("signatures") is Dictionary:
+		for key in parsed["signatures"]:
+			cells[String(key).get_slice("/", 0).to_lower()] = true
+	return cells
+
+
+func _list_and_quit() -> void:
+	var regions: Dictionary = {}
+	for region_path in _region_paths():
+		var region: Resource = load(region_path)
+		if region == null:
+			continue
+		var cells: Array[String] = []
+		for authored_cell in region.get("Cells"):
+			if authored_cell != null:
+				cells.append(String(authored_cell.get("Id")))
+		regions[String(region.get("Id"))] = cells
+	print("EMBERVALE_RESULT " + JSON.stringify({"schema": 1, "gate": "world-shots-list", "ok": true, "exit_code": 0,
+		"elapsed_ms": Time.get_ticks_msec() - _started_msec, "facts": {"regions": regions,
+		"views": ["01_entry", "02_centre", "03_landmark", "04_exit", "05_overview"], "passes": ["day", "dusk"]},
+		"failures": [], "warnings": []}))
+	quit(0)
+
+
 func _initialize() -> void:
+	_started_msec = Time.get_ticks_msec()
+	_only_regions = _list_arg("--region")
+	_only_cells = _list_arg("--cell")
+	_only_views = _list_arg("--view")
+	_only_pass = _arg("--pass").to_lower()
+	_verbose = OS.get_cmdline_user_args().has("--shots-verbose")
+	_selection = not (_only_regions.is_empty() and _only_cells.is_empty() and _only_views.is_empty() and _only_pass.is_empty())
+	if OS.get_cmdline_user_args().has("--list"):
+		_list_and_quit()
+		return
 	if DisplayServer.get_name() == "headless":
 		printerr("world shots: a rendering-capable display is required; run without --headless")
 		quit(4)
 		return
+	if not _only_pass.is_empty() and not ["day", "dusk"].has(_only_pass):
+		printerr("world shots: --pass must be day or dusk")
+		quit(2)
+		return
+	var size_text := _arg("--res").to_lower().split("x")
+	if size_text.size() == 2 and int(size_text[0]) >= 320 and int(size_text[1]) >= 180:
+		_resolution = Vector2i(int(size_text[0]), int(size_text[1]))
 	seed(int(OS.get_environment("EMBERVALE_SEED")) if OS.has_environment("EMBERVALE_SEED") else 0x454d42455256414c)
 	if OS.has_environment("EMBERVALE_ARTIFACTS"):
 		_output = OS.get_environment("EMBERVALE_ARTIFACTS").path_join("world")
@@ -71,11 +196,31 @@ func _initialize() -> void:
 	# Synchronous PNG writes are deliberately frame-blocking and are not performance samples.
 	streamer.call("SetPerformanceSamplingEnabled", false)
 
-	for region_path in REGION_PATHS:
+	var wanted_cells: Dictionary = {}
+	for cell_id in _only_cells:
+		wanted_cells[cell_id] = true
+	var baselined := _baseline_cells()
+	var cells_shot: Dictionary = {}
+	for region_path in _region_paths():
 		var region: Resource = load(region_path)
 		if region == null or region.get("EnvironmentProfile") == null:
 			_capture_errors.append("region or environment profile missing: %s" % region_path)
 			continue
+		# Which regions run: the named ones; else the ones holding a named cell; else the ones the
+		# baseline covers (every region when there is no baseline to say).
+		var wanted := true
+		if not _only_regions.is_empty():
+			wanted = _region_named(region, region_path, _only_regions)
+			for token in _only_regions:
+				if _region_named(region, region_path, PackedStringArray([token])):
+					_region_tokens_matched[token] = true
+		elif not _only_cells.is_empty():
+			wanted = _region_has_cell(region, wanted_cells)
+		elif not baselined.is_empty():
+			wanted = _region_has_cell(region, baselined)
+		if not wanted:
+			continue
+		_regions_shot.append(String(region.get("Id")))
 		streamer.call("Configure", region)
 		var settle_frames := 0
 		while not streamer.call("IsSettled") and settle_frames < 600:
@@ -90,6 +235,9 @@ func _initialize() -> void:
 				_capture_errors.append("region %s has a null cell/presentation" % region_path)
 				continue
 			var presentation: Resource = authored_cell.get("Presentation")
+			if not _only_cells.is_empty() and not wanted_cells.has(String(authored_cell.get("Id")).to_lower()):
+				continue
+			cells_shot[String(authored_cell.get("Id")).to_lower()] = true
 			# A resident staged cell can have collision and detail disabled. The camera is
 			# the probe's focus; bring each photographed cell to Near before ground queries.
 			var centre: Vector3 = authored_cell.get("Center")
@@ -128,13 +276,78 @@ func _initialize() -> void:
 		await process_frame
 		region = null
 
+	# A selection that selected nothing is a typing mistake, not a pass.
+	var selection_missed := false
+	for cell_id in _only_cells:
+		if not cells_shot.has(cell_id):
+			_capture_errors.append("--cell matched no cell: %s (run with --list for the ids)" % cell_id)
+			selection_missed = true
+	# Each --region token answers for itself: one good name must not hide a misspelt one.
+	var region_tokens_missed: PackedStringArray = []
+	for token in _only_regions:
+		if not _region_tokens_matched.has(token):
+			region_tokens_missed.append(token)
+	if not region_tokens_missed.is_empty():
+		_capture_errors.append("--region matched no region: %s (run with --list for the ids)" % ", ".join(region_tokens_missed))
+		selection_missed = true
+	elif _regions_shot.is_empty():
+		_capture_errors.append("--region matched no region: %s (run with --list for the ids)" % ", ".join(_only_regions))
+		selection_missed = true
+	elif _signatures.is_empty() and _capture_errors.is_empty():
+		_capture_errors.append("the selection photographed nothing (--view/--pass matched no frame)")
+		selection_missed = true
+
 	var regression_ok := _capture_errors.is_empty() and _finish_visual_regression()
 	for error in _capture_errors:
 		printerr("world shots: %s" % error)
+		_failures.append(error)
 	_content_loader.call("CollectManagedResources")
 	await process_frame
+	var exit_code := 0 if regression_ok else (2 if selection_missed else 3)
+	# ok means no compared frame regressed. A frame with no baseline was written, not judged, and
+	# the result says so instead of leaving a selected run of unbaselined realms reading as a pass.
+	var warnings: Array[String] = []
+	if _unbaselined > 0:
+		warnings.append("%d of %d frame(s) have no baseline and were not compared (%d compared)" % [
+			_unbaselined, _signatures.size(), _compared])
+	_write_manifest(regression_ok)
 	print("world shots: complete" if regression_ok else "world shots: visual regression failed")
-	quit(0 if regression_ok else 3)
+	print("EMBERVALE_RESULT " + JSON.stringify({"schema": 1, "gate": "world-shots", "ok": regression_ok,
+		"exit_code": exit_code, "elapsed_ms": Time.get_ticks_msec() - _started_msec,
+		"facts": {"regions": _regions_shot, "cells": cells_shot.size(), "frames": _signatures.size(),
+			"failed": _failed_keys.keys(), "compared": _compared, "unbaselined": _unbaselined, "selection": _selection,
+			"dir": ProjectSettings.globalize_path(_output),
+			"manifest": ProjectSettings.globalize_path(_output.path_join("manifest.json")),
+			"diffs": ProjectSettings.globalize_path(_output + "_diffs")},
+		"failures": _failures, "warnings": warnings}))
+	quit(exit_code)
+
+
+## manifest.json beside the frames: one entry per frame with its file and whether it passed, in the
+## same shape the C# harnesses write, so tools/shot_analyze.py and a reader treat both alike.
+func _write_manifest(ok: bool) -> void:
+	var shots: Array = []
+	for key in _files:
+		# "ok" is "did not fail"; "baselined": false marks a frame that was never compared.
+		shots.append({"name": key, "selected": true, "ok": not _failed_keys.has(key),
+			"baselined": not _unbaselined_keys.has(key), "file": _files[key]})
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(_output))
+	var file := FileAccess.open(_output.path_join("manifest.json"), FileAccess.WRITE)
+	if file == null:
+		return
+	file.store_string(JSON.stringify({"schema": 1, "suite": "world_shots", "ok": ok,
+		"seconds": (Time.get_ticks_msec() - _started_msec) / 1000.0,
+		"resolution": [_resolution.x, _resolution.y], "registered": shots.size(), "captured": shots.size(),
+		"failed": _failed_keys.keys(), "compared": _compared, "unbaselined": _unbaselined,
+		"failures": _failures, "shots": shots}, "  "))
+
+
+## Records a regression failure for the result line as well as the log.
+func _fail(key: String, message: String) -> void:
+	printerr("world shots: %s" % message)
+	_failures.append(message)
+	if not key.is_empty():
+		_failed_keys[key] = true
 
 
 ## The ground under a world X/Z, from the real terrain collider the streamer just built. Every
@@ -182,8 +395,12 @@ func _render_cell(cell: Array, region: Resource) -> void:
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(folder))
 
 	for pass_name in ["day", "dusk"]:
+		if not _only_pass.is_empty() and pass_name != _only_pass:
+			continue
 		_set_pass(pass_name, region.get("EnvironmentProfile"))
 		for shot in shots:
+			if not _view_selected(shot[0]):
+				continue
 			_camera.global_position = shot[1]
 			_camera.look_at(shot[2], Vector3.UP)
 			for _frame in range(_capture_wait):
@@ -207,9 +424,9 @@ func _render_cell(cell: Array, region: Resource) -> void:
 			if image == null or image.is_empty():
 				_capture_errors.append("%s: viewport returned no image" % path)
 				continue
-			if image.get_width() != 1280 or image.get_height() != 720:
-				_capture_errors.append("%s: expected 1280x720, got %dx%d" % [
-					path, image.get_width(), image.get_height()])
+			if image.get_width() != _resolution.x or image.get_height() != _resolution.y:
+				_capture_errors.append("%s: expected %dx%d, got %dx%d" % [
+					path, _resolution.x, _resolution.y, image.get_width(), image.get_height()])
 				continue
 			var error := image.save_png(path)
 			var key := "%s/%s_%s" % [cell_id, pass_name, shot[0]]
@@ -227,7 +444,18 @@ func _render_cell(cell: Array, region: Resource) -> void:
 					"resolution": [_resolution.x, _resolution.y], "wait_frames": _capture_wait,
 					"seed": OS.get_environment("EMBERVALE_SEED"), "godot": Engine.get_version_info()}, "  "))
 			_signatures[key] = signature
-			print("%s -> %s" % [path, "ok" if error == OK else str(error)])
+			_files[key] = "%s/%s_%s.png" % [cell_id.replace(".", "_"), pass_name, shot[0]]
+			if _verbose:
+				print("%s -> ok" % path)
+
+
+func _view_selected(view_name: String) -> bool:
+	if _only_views.is_empty():
+		return true
+	for wanted in _only_views:
+		if view_name.to_lower().contains(wanted):
+			return true
+	return false
 
 
 ## First-person shots follow the authored route network, not a generic north/south axis. The old
@@ -319,6 +547,17 @@ func _image_signature(image: Image) -> Array:
 func _finish_visual_regression() -> bool:
 	if OS.get_cmdline_user_args().has("--update-world-baseline"):
 		DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path("res://tests/visual_baselines"))
+		# A selected run replaces only the frames it took; the rest of the approved baseline stays.
+		if _selection and FileAccess.file_exists(BASELINE_PATH):
+			var existing = JSON.parse_string(FileAccess.get_file_as_string(BASELINE_PATH))
+			if existing is Dictionary and existing.get("signatures") is Dictionary and int(existing.get("version", 0)) == 2:
+				var merged: Dictionary = existing["signatures"]
+				for key in _signatures:
+					merged[key] = _signatures[key]
+				_signatures = merged
+			else:
+				printerr("world shots: the existing baseline is unreadable; refusing a partial update over it")
+				return false
 		var file := FileAccess.open(BASELINE_PATH, FileAccess.WRITE)
 		if file == null:
 			printerr("world shots: could not write baseline: %s" % FileAccess.get_open_error())
@@ -359,13 +598,18 @@ func _finish_visual_regression() -> bool:
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(diff_dir))
 	for key in _signatures:
 		if not expected.has(key):
-			printerr("world shots: baseline missing frame %s" % key)
+			if _selection:
+				# Looked at on request, never approved: there is nothing to compare it with.
+				_unbaselined += 1
+				_unbaselined_keys[key] = true
+				continue
+			_fail(key, "baseline missing frame %s" % key)
 			failures += 1
 			continue
 		var actual_values: Array = _signatures[key]
 		var expected_values: Array = expected[key]
 		if actual_values.size() != expected_values.size():
-			printerr("world shots: signature size changed for %s" % key)
+			_fail(key, "signature size changed for %s" % key)
 			failures += 1
 			continue
 		var block_deltas := _row_normalized_deltas(actual_values, expected_values)
@@ -391,14 +635,19 @@ func _finish_visual_regression() -> bool:
 		var p95: float = ranked[int(floor((ranked.size() - 1) * 0.95))]
 		var allowed_blocks := maxi(2, ceili(block_deltas.size() * changed_fraction))
 		if delta > mean_threshold or changed_blocks > allowed_blocks or structural_peak > peak_threshold:
-			printerr("world shots: %s mean %.2f/%.2f, localized blocks %d/%d, p95 %.2f, static peak %.2f/%.2f" % [
+			_fail(key, "%s mean %.2f/%.2f, localized blocks %d/%d, p95 %.2f, static peak %.2f/%.2f" % [
 				key, delta, mean_threshold, changed_blocks, allowed_blocks, p95, structural_peak, peak_threshold])
 			_write_diff(key, block_deltas, local_threshold, diff_dir)
 			failures += 1
-	for key in expected:
-		if not _signatures.has(key):
-			printerr("world shots: capture missing baseline frame %s" % key)
-			failures += 1
+	# A whole run must account for every approved frame; a selected run only answers for its own.
+	if not _selection:
+		for key in expected:
+			if not _signatures.has(key):
+				_fail("", "capture missing baseline frame %s" % key)
+				failures += 1
+	_compared = _signatures.size() - _unbaselined
+	if _unbaselined > 0:
+		print("world shots: %d selected frame(s) have no baseline and were not compared" % _unbaselined)
 	print("world shots: visual regression %s (%d frames; mean<=%.2f, local<=%.2f in %.1f%% blocks)" % [
 		"PASS" if failures == 0 else "FAIL", _signatures.size(), mean_threshold,
 		local_threshold, changed_fraction * 100.0])

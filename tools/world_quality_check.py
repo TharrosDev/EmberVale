@@ -59,6 +59,29 @@ class Gate:
     report_only: bool = False
     expected_errors: tuple[str, ...] = ()  # exact negative-fixture messages; only on a passing gate
 
+    @property
+    def parallel(self) -> bool:
+        """Pure Python, reads the tree and writes nothing: safe to run beside its neighbours."""
+        return self.name in PARALLEL
+
+    @property
+    def cacheable(self) -> bool:
+        """A pass on unchanged inputs may be reused. Not for a report or anything judged by eye."""
+        return not self.report_only and self.name not in UNCACHED
+
+    @property
+    def inputs(self) -> tuple[str, ...]:
+        """Top-level entries this gate reads; empty means the whole tree (see embervale_sdk/cache.py)."""
+        return INPUTS.get(self.name, ())
+
+
+PARALLEL = frozenset({"generation", "world-bake", "item-generation", "recipe-generation", "loot-generation",
+                      "architecture", "template", "seams", "layout", "composition", "cell-content",
+                      "districts", "cell-scenes", "map-locations", "atlas"})
+UNCACHED = frozenset({"visuals", "performance", "environment-route"})
+# Only where the inputs are certain. The unit suite reads data/, docs/ and tools/, so it is not here.
+INPUTS = {"build": ("src", "addons", "tests", "Embervale.csproj", "Embervale.sln", ".editorconfig")}
+
 
 def gates(engine: str | None) -> list[Gate]:
     engine = engine or "godot"
@@ -73,6 +96,7 @@ def gates(engine: str | None) -> list[Gate]:
              [sys.executable, "tools/gen_recipes.py", "--check"]),
         Gate("loot-generation", "generated loot tables and affixes match the catalogue",
              [sys.executable, "tools/items/gen_loot.py", "--check"]),
+        Gate("generators", "the generators no other gate checks: perks, appearance, campaign and its self-test, ground cover, player mask, hit zones", [sys.executable, "tools/regen.py", "--check", "--only", "gen_perks", "gen_appearance", "gen_campaign", "campaign_selftest", "gen_ground_cover", "gen_player_mask", "check_hit_zones"]),
         Gate("build", "the C# compiles",
              ["dotnet", "build", "Embervale.sln", "-v", "q", "--nologo"]),
         Gate("tests", "the pure-logic suite",
@@ -93,6 +117,9 @@ def gates(engine: str | None) -> list[Gate]:
              modes=("engine", "full"), timeout=1200),
         Gate("save-reload", "player quick loads rebuild the session, restore identity and cancel stale requests",
              [engine, "--headless", "--path", ".", "--", "--save-reload", "--capture"],
+             modes=("engine", "full"), timeout=1200),
+        Gate("story", "every act hands to the next, the chain survives save/load, bosses, duels, visions and endings are wired",
+             [engine, "--headless", "--path", ".", "--", "--story"],
              modes=("engine", "full"), timeout=1200),
         Gate("save-audit", "failed snapshots preserve progress, checksums and the backup generation hold, missing content is skipped",
              [engine, "--headless", "--path", ".", "--script", "res://tools/save_audit_probe.gd"],
@@ -284,6 +311,7 @@ def main() -> int:
     command = ["list"] if args.list else ["world", "--mode", "fast" if args.fast else args.mode]
     if args.region: command += ["--region", args.region]
     if args.artifacts: command += ["--artifacts", args.artifacts]
+    if args.verbose: command += ["--verbose"]
     return sdk_main(command)
 
 

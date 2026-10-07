@@ -201,6 +201,10 @@ public abstract partial class NarrationSequence : CanvasLayer
     private static bool Unattended() => _unattended ??= ShellSessionRules.Unattended(
         DisplayServer.GetName(), OS.GetEnvironment("EMBERVALE_USER_DIR"), OS.GetCmdlineUserArgs().Length);
 
+    /// <summary>Ends the sequence as a completed hold-to-skip does, with everything that follows a
+    /// finished sequence. For the dev console's <c>skip</c> and the script runner.</summary>
+    public void SkipNow() => Finish();
+
     private void Finish()
     {
         if (!_running)

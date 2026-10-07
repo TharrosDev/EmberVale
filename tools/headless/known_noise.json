@@ -1,0 +1,14 @@
+{
+  "schema": 1,
+  "about": "Regexes for log lines `embervale.py logs` counts but does not list. Each is diagnosed, harmless and not fixed (docs/NOW.md, Known warnings). Add one only with that evidence.",
+  "patterns": [
+    "\\[McpPlugin\\]",
+    "Navigation region synchronization had \\d+ edge error",
+    "[Nn]avigation map synchronization error",
+    "navigation mesh polygon edge",
+    "ObjectDB instances leaked at exit",
+    "resources? still in use at exit",
+    "Leaked instance:",
+    "Orphan StringName:"
+  ]
+}

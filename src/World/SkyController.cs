@@ -45,6 +45,11 @@ public partial class SkyController : Node3D
     private double _sampleClock;
     private Vector3 _windTarget = new(1.5f, 0f, 0.5f);
     private bool _initialized;
+    private bool _snap;
+
+    /// <summary>Applies the current weather in full on the next frame instead of blending toward it
+    /// over seconds. For capture tools: a forced storm must be a storm in the frame taken a moment later.</summary>
+    public void SnapToCurrent() => _snap = true;
     private (int Tier, GraphicsOverrides Overrides)? _applied;
     private bool _volumetricFog, _weatherCollisionActive, _aerialPerspective = true;
     // The depth-cue values last sent, so an unchanged one is not re-sent (each Environment setter
@@ -274,7 +279,7 @@ public partial class SkyController : Node3D
         _sampleClock -= delta;
         if (_sampleClock <= 0) { SampleContext(); _sampleClock = 0.25; }
         float dt = (float)delta;
-        float blend = _initialized ? EnvironmentMath.BlendWeight(dt, Cycle.TransitionSeconds) : 1f;
+        float blend = _initialized && !_snap ? EnvironmentMath.BlendWeight(dt, Cycle.TransitionSeconds) : 1f;
         WeatherResource? weather = _weather?.Current;
         _light = Mathf.Lerp(_light, weather?.LightEnergyScale ?? 1f, blend);
         _sky = Mathf.Lerp(_sky, weather?.SkyEnergyScale ?? 1f, blend);
@@ -290,8 +295,8 @@ public partial class SkyController : Node3D
         Wind = Wind.Lerp(_windTarget * (weather?.WindStrength ?? 1f), blend);
         float rain = _precipitation * (1f - _cold);
         float snow = _precipitation * _cold;
-        Wetness = Mathf.Lerp(Wetness, rain, EnvironmentMath.BlendWeight(dt, rain > Wetness ? 12f : 90f));
-        SnowCover = Mathf.Lerp(SnowCover, snow, EnvironmentMath.BlendWeight(dt, snow > SnowCover ? 45f : 150f));
+        Wetness = Mathf.Lerp(Wetness, rain, _snap ? 1f : EnvironmentMath.BlendWeight(dt, rain > Wetness ? 12f : 90f));
+        SnowCover = Mathf.Lerp(SnowCover, snow, _snap ? 1f : EnvironmentMath.BlendWeight(dt, snow > SnowCover ? 45f : 150f));
         float hour = RegionAtmosphere is { FixedSkyHour: >= 0f } pinned
             ? pinned.FixedSkyHour
             : _clock?.TimeOfDay ?? 12f;
@@ -364,6 +369,7 @@ public partial class SkyController : Node3D
         // Use the saved world clock, not shader TIME, so regression captures can freeze all motion.
         RenderingServer.GlobalShaderParameterSet(VisualTimeGlobal, (((_clock?.Day ?? 0) * 24f) + (_clock?.TimeOfDay ?? 12f)) * (_clock?.DayLengthSeconds ?? 180f) / 24f);
         _initialized = true;
+        _snap = false;
     }
 
     /// <summary>

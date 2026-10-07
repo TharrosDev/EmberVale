@@ -1,0 +1,3 @@
+# Six enemies spawned around the player.
+seed 1
+spawn 6

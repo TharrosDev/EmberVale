@@ -285,10 +285,16 @@ first or you are exercising a **stale binary** (a silent trap: a behaviour-prese
 "verified" while your edit never ran). The shell here **has `dotnet` 8.0**: rebuild with
 `dotnet build Embervale.sln` (output goes to `.godot/mono/temp/bin/Debug/Embervale.dll`, where the
 game loads it), *then* run. Pure-logic unit suite: `dotnet test tests/Embervale.Tests`.
+**This is now guarded, but only on some routes.** `python tools/embervale.py` rebuilds a stale DLL
+before it launches the engine (step `auto-build`; `--no-build` opts out), and a tooling build run
+on the engine binary logs one `STALE_BINARY` warning, or exits 2 with `-- --strict-build`. A **raw
+`godot ...` run still executes the stale binary** after that warning, the editor's `run_project`
+does too, and `--script` GDScript probes are not checked at all. The table of what is guarded is in
+[`docs/TOOLING.md`](docs/TOOLING.md) (*Stale-build guard*).
 
 A plain launch lands on the **main menu**, not in the world, and the menu's
 buttons need input no tool here can inject — so it verifies boot and database loading, nothing
-in-world. Use `--play` (§3) when you need an actual session. The `WorldIntegrityChecker` (5s) stays
+in-world. Use `--play`, or `--new-game` through the SDK (§3), when you need an actual session. The `WorldIntegrityChecker` (5s) stays
 silent unless an invariant breaks, so give a run several seconds before trusting a clean log. When
 you have **not** built+run something, say it was *reviewed against the Godot 4.7 C# API* — reserve
 "verified/tested running" for output you actually captured.
@@ -358,10 +364,10 @@ no file could show.
 
 **Headless gates that run a real session:** `--lifecycle` (three New Game → save → destroy → Load
 round trips, failing on any leaked session, service, subscription, saveable or node) and `--story`
-(`HeadlessStory`: raises each act's trigger flag the way its boss or conversation would and asserts
-the next act started, the hidden realm revealed, the chain survived save/load, every Flamebearer
-builds a boss, the rival duels are wired, every vision and ending card has text, each ending brings
-its sky, and an ending flag plays the ending). Both exit 0/1. `--story` proves wiring, not that a
+(`HeadlessStory`: plays the whole campaign, New Game to credits, through the real systems three
+ways in one process: run A the clean road to the Dawnfire ending, run B every ember to the Lord of
+Embers, run C legacy-save fixtures; `--story-mission=<n>` plays one stretch from a fixture and is
+partial). Both exit 0/1, or 2 on a bad option. `--story` proves wiring, not that a
 fight can be won. It also runs inside the Windows export as its smoke test (`docs/NOW.md` has the
 export command).
 
@@ -379,23 +385,33 @@ It reads the databases the game loads, so it cannot drift from a doc. Use it ins
 
 **Headless economy report (no gameplay):** `godot --headless --path . -- --economy` loads every
 database, prints the realm's buy-low/sell-high table and exits **0** (an observation, not a gate). It
-is the same `EconomyReport.Arbitrage` the `economy` dev command prints — and it exists because the
-`F1` console cannot be driven from a remote session, so a console-only report would ship unexercised.
+is the same `EconomyReport.Arbitrage` the `economy` dev command prints. Every headless mode now ends
+with one `EMBERVALE_RESULT {json}` line and is quiet unless `--verbose`; `-- --gates` lists the modes
+and their options, and a misspelt mode flag exits 2 instead of idling on the title.
 
 **Launch straight into gameplay (dev):** `godot --path . -- --play` boots past the menu into
 the most recent save, so systems that only init on world build (the audio directors, spawners)
 can be launched deterministically — useful for capturing runtime logs without driving the menu
-(the menu's *Continue* needs input the MCP can't inject). It continues the newest save slot; with
-no saves it stays on the menu. This is the one-command content gate for the maintainer (and
+(the menu's *Continue* needs input the MCP can't inject). It continues the newest save slot
+(`--slot=<name>` picks one, and fails the run when no save has that name); with no saves it stays on the menu, and `--new-game` (tooling builds,
+isolated `EMBERVALE_USER_DIR` only) is the alternative. This is the one-command content gate for the maintainer (and
 later CI). The same battery is also reachable in-game via the `validate-all` dev console
 command (`F1`).
 
-**What `--play` still can't verify:** the **`F1` dev console needs keyboard input**, and there is
-no CLI equivalent — so no `spawn`/`time`/`rep` from a remote session. `--play` also resumes where
-the save left off, which for the Ember Crown is usually the town hub *inside* the region's 34 m
-`SafeZoneRadius`, where the `EncounterDirector` deliberately won't spawn. A quiet log after a
-`--play` run therefore proves boot, database loading and save restore — **not** that new enemies
-spawn or fight. Say which of the two you got; don't let one stand in for the other.
+**The dev console runs from a shell.** `python tools/embervale.py console "tp out; spawn
+enemy.goblin 3; frames 30; assert enemies.count ge 3"` runs any `F1` command, plus `wait`, `frames`,
+`assert`, `wait-until`, `expect`, `shot` and `input`, in an isolated new game and exits non-zero on
+a failed statement (raw form: `-- --new-game --exec "..."` with an absolute `EMBERVALE_USER_DIR`;
+all session flags go after `--`). `--new-game`, `--exec` and `--repro` are refused (exit 2) without
+that isolated directory, so they cannot touch real saves; `--exec-allow-real-save` is the opt-out. [`docs/TOOLING.md`](docs/TOOLING.md) has the verbs, the `get` keys and the
+other one-command routes (`gate`, `shots`, `perf-report`, `verify`).
+
+**What a bare `--play` still doesn't prove:** it resumes where the save left off, which for the
+Ember Crown is usually the town hub *inside* the region's 34 m `SafeZoneRadius`, where the
+`EncounterDirector` deliberately won't spawn. A quiet log after a `--play` run therefore proves
+boot, database loading and save restore — **not** that new enemies spawn or fight. To exercise a
+fight, leave the safe zone with `tp out` in a console script, or measure one with `gate arena`. Say
+which of the two you got; don't let one stand in for the other.
 
 **Sandbox controls:** `WASD` move · mouse look · `Shift` sprint · `Caps Lock` walk · `Space` jump ·
 `LMB` attack · `RMB` block · `Q` cast · hold `F` spell wheel, tap `F` previous spell ·
@@ -430,7 +446,10 @@ src/              One folder per system — §5 maps folder → system
 tests/            Embervale.Tests (xUnit, pure logic only; a Godot Resource cannot be constructed)
 tools/            Generators, gates and harnesses (not shipped): region_spec_*.py + gen_regions.py,
                   world_bake.py, world_atlas.py, gen_map_locations.py, gen_main_story.py,
-                  assets.py, embervale.py (the SDK), *_shots.gd render harnesses
+                  assets.py, embervale.py (the SDK; subcommands in embervale_sdk/commands/),
+                  regen.py (every generator), content.py (refs, census, diff, balance),
+                  perf_compare.py, shot_analyze.py, analytics.py, repro/*.txt console scripts,
+                  *_probe.gd probes (probe_base.gd), *_shots.gd render harnesses
 ```
 
 **`data/` is uniform, so it does not need listing:** the folder name *is* the resource type
