@@ -93,6 +93,12 @@ public partial class VfxBolt : VfxEffect
     private const float StrikeSway = 0.55f;
 
     private const float BeamSway = 0.22f;
+
+    /// <summary>The widest half width a ribbon is drawn with, in metres per metre from the eye
+    /// (<c>max_angle</c> in <c>vfx_ribbon.gdshader</c>): for a line, and for the heaviest trail.</summary>
+    private const float LineAngle = 0.045f;
+
+    private const float TrailAngle = 0.11f;
     private const int MaxSegments = 48;
     private const int MaxTrailPoints = 40;
 
@@ -172,6 +178,13 @@ public partial class VfxBolt : VfxEffect
         _material.SetShaderParameter(VfxMaterials.Opacity, 1f);
         _material.SetShaderParameter(VfxMaterials.WidthScale, 1f);
         bool flows = !_electric && spec.Mode is VfxBoltMode.Tether or VfxBoltMode.Beam;
+
+        // A line (a bolt, a beam, a tether, a small bolt's trail) is held to a narrow angle, so one
+        // that starts beside the first-person camera is not a wedge. A heavy trail (a falling
+        // rock's is over a metre wide) may be broader, in step with the width asked for.
+        _material.SetShaderParameter(
+            VfxMaterials.MaxAngle,
+            spec.Mode == VfxBoltMode.Trail ? Mathf.Clamp(spec.Width * 0.25f, LineAngle, TrailAngle) : LineAngle);
         _material.SetShaderParameter(VfxMaterials.WhiteCore, _electric ? 0.85f : 0f);
         _material.SetShaderParameter(VfxMaterials.CoreWidth, _electric ? 0.5f : 0.28f);
         _material.SetShaderParameter(VfxMaterials.FlowAmount, flows ? 0.75f : spec.Mode == VfxBoltMode.Trail ? 0.45f : 0f);

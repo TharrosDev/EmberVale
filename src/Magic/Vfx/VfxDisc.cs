@@ -45,8 +45,10 @@ internal struct VfxDiscSpec
     /// <summary>What the disc is patterned with (frost, cracks, roots), when it is not a rune.</summary>
     public VfxDiscPattern Pattern;
 
-    /// <summary>A sustained disc's pattern spreads out from the centre over this many seconds
-    /// (frost creeping across the floor). 0 = it is there at once.</summary>
+    /// <summary>The pattern spreads out from the centre over this many seconds (frost creeping
+    /// across the floor): on a sustained disc, or on a one-shot that is not a telegraph
+    /// (<see cref="Fills"/>), which then fades over the rest of its <see cref="Life"/>.
+    /// 0 = it is there at once.</summary>
     public float SpreadSeconds;
 
     /// <summary>Radians a second the rune turns. Held still under Reduced Motion.</summary>
@@ -137,12 +139,12 @@ public partial class VfxDisc : VfxEffect
 
         // Rim only where the tier draws no full floor: a standing, unpatterned disc on the ground.
         bool rimOnly = !VfxQuality.Rich.FullDisc && spec.Sustain && !spec.Fills && !spec.FaceCamera && !lined;
-        _quad.Mesh = rimOnly ? VfxMaterials.Annulus : VfxMaterials.Plane;
+        _quad.Mesh = rimOnly ? VfxMaterials.RimAnnulus : VfxMaterials.Plane;
         _quad.Scale = new Vector3(diameter, 1f, diameter * depth);
         _quad.Position = spec.FaceCamera ? Vector3.Zero : new Vector3(0f, Lift, 0f);
 
         VfxSchoolColors colors = spec.Colors;
-        Texture2D? texture = VfxTextures.Pattern(pattern);
+        Texture2D? texture = rimOnly ? null : VfxTextures.Pattern(pattern);
         _material.SetShaderParameter(VfxMaterials.Tint, colors.Mid);
         _material.SetShaderParameter(VfxMaterials.Energy, colors.MidEnergy * (spec.Energy <= 0f ? 1f : spec.Energy));
         _material.SetShaderParameter(VfxMaterials.Pattern, texture != null ? texture : default(Variant));
@@ -152,9 +154,9 @@ public partial class VfxDisc : VfxEffect
         // the disc: only what is above it shows, and the governor may thin it.
         _material.SetShaderParameter(VfxMaterials.PatternFloor, lined ? 0f : pattern == VfxDiscPattern.Cracks ? 0.25f : 0.5f);
         _material.SetShaderParameter(VfxMaterials.PatternSoft, lined ? 0f : 0.6f);
-        _material.SetShaderParameter(VfxMaterials.Reveal, spec.Sustain && spec.SpreadSeconds > 0f ? 1f : 0f);
+        _material.SetShaderParameter(VfxMaterials.Reveal, spec.SpreadSeconds > 0f && !spec.Fills ? 1f : 0f);
         _material.SetShaderParameter(VfxMaterials.Flow, spec.Flow);
-        _material.SetShaderParameter(VfxMaterials.Disc, spec.Body);
+        _material.SetShaderParameter(VfxMaterials.Disc, rimOnly ? 0f : spec.Body);
         _material.SetShaderParameter(VfxMaterials.Rim, spec.Rim);
         _material.SetShaderParameter(VfxMaterials.Spin, 0f);
         _material.SetShaderParameter(VfxMaterials.Fill, spec.Fills || spec.SpreadSeconds > 0f ? 0f : 1f);
@@ -188,14 +190,14 @@ public partial class VfxDisc : VfxEffect
             return left > 0f;
         }
 
+        if (_spec.SpreadSeconds > 0f && !_spec.Fills)
+        {
+            float spread = Mathf.Clamp((float)Age / _spec.SpreadSeconds, 0f, 1f);
+            _material.SetShaderParameter(VfxMaterials.Fill, 1f - ((1f - spread) * (1f - spread)));
+        }
+
         if (_spec.Sustain)
         {
-            if (_spec.SpreadSeconds > 0f)
-            {
-                float spread = Mathf.Clamp((float)Age / _spec.SpreadSeconds, 0f, 1f);
-                _material.SetShaderParameter(VfxMaterials.Fill, 1f - ((1f - spread) * (1f - spread)));
-            }
-
             _material.SetShaderParameter(VfxMaterials.Opacity, fadeIn);
             return true;
         }

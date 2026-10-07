@@ -392,4 +392,35 @@ public class VfxCoverageRulesTests
         Assert.True(offset.X < -1f);
         Assert.True(offset.Z < 0f);
     }
+
+    [Fact]
+    public void ASmallOrDistantParticleIsNotThinned()
+    {
+        // An ember, and a metre-wide puff ten metres off: both far under the limit.
+        Assert.Equal(1f, VfxCoverageRules.SpriteOpacity(0.2f, 3f));
+        Assert.Equal(1f, VfxCoverageRules.SpriteOpacity(1f, 10f));
+        Assert.Equal(1f, VfxCoverageRules.SpriteOpacity(5f, 2f, limit: 0f)); // ungoverned sprites
+    }
+
+    [Fact]
+    public void APuffThatFillsTheViewIsSeenThrough()
+    {
+        // A breath's puff, two and a half metres wide, one and a half metres from the eye.
+        float near = VfxCoverageRules.SpriteOpacity(2.5f, 1.5f);
+        Assert.InRange(near, VfxCoverageRules.PuffFloor, 0.3f);
+
+        // Thinner the closer and the wider, and never under the floor.
+        Assert.True(VfxCoverageRules.SpriteOpacity(2.5f, 3f) > near);
+        Assert.True(VfxCoverageRules.SpriteOpacity(4f, 1.5f) < near);
+        Assert.Equal(VfxCoverageRules.PuffFloor, VfxCoverageRules.SpriteOpacity(50f, 0.1f));
+    }
+
+    [Fact]
+    public void AThinnedPuffAddsLightWithItsWidthNotItsArea()
+    {
+        // Past the limit, opacity times width on screen is constant.
+        float a = VfxCoverageRules.SpriteOpacity(2f, 2f) * (2f / 2f);
+        float b = VfxCoverageRules.SpriteOpacity(3f, 2f) * (3f / 2f);
+        Assert.Equal(a, b, 4);
+    }
 }

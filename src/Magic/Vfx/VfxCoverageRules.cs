@@ -15,7 +15,9 @@ namespace Embervale.Magic.Vfx;
 /// are over, on any tier, and the lower tiers allow less.</para>
 ///
 /// <para>Who passes through it: a flare's halo, core and rays (<c>VfxFlare</c>), the body of a ball
-/// of fire or a breath (<c>VfxShell</c>), and the soft body of a ground disc (<c>VfxDisc</c>). Thin
+/// of fire or a breath (<c>VfxShell</c>), the soft body of a ground disc (<c>VfxDisc</c>), and every
+/// puff of flame, smoke and mist (<c>VfxBurst</c>, per particle in the shader:
+/// <see cref="SpriteOpacity"/>). Thin
 /// things (a shock ring's front, a rune's lines, a bolt, a rim-lit shell) do not: a line cannot white
 /// out a frame.</para>
 /// </summary>
@@ -103,20 +105,46 @@ public static class VfxCoverageRules
     public static float Opacity(float radius, float distance, VfxTier tier, double age) =>
         Opacity(Share(radius, distance), tier, age);
 
-    /// <summary>The most of the frame's height a soft glow may span at a tier. The quad is shrunk to
-    /// this, because a quad costs its pixels however faint it is drawn.</summary>
+    /// <summary>The most of the frame's height a soft glow's quad may span at a tier. The quad is
+    /// shrunk to this, because a quad costs its pixels however faint it is drawn: at 1 it is a square
+    /// as tall as the frame (56% of a 16:9 frame's pixels), at 0.45 it is 11% of them.</summary>
     public static float MaxSpan(VfxTier tier) => tier switch
     {
         VfxTier.Performance => 0.45f,
-        VfxTier.Low => 0.6f,
-        VfxTier.Medium => 0.8f,
-        VfxTier.High => 1f,
-        _ => 1.2f,
+        VfxTier.Low => 0.55f,
+        VfxTier.Medium => 0.7f,
+        VfxTier.High => 0.85f,
+        _ => 1f,
     };
 
     /// <summary>A soft glow's radius, shrunk so it spans no more of the frame than its tier allows.</summary>
     public static float ClampRadius(float radius, float distance, VfxTier tier) =>
         MathF.Min(MathF.Max(0f, radius), MaxSpan(tier) * MathF.Max(MinDistance, distance) * TanHalfFov);
+
+    /// <summary>The width, in metres per metre of distance from the eye, past which a large soft
+    /// particle (a puff of flame, smoke or mist) is thinned: about 30% of the frame's height.</summary>
+    public const float PuffSpan = 0.42f;
+
+    /// <summary>The least a thinned particle is drawn with.</summary>
+    public const float PuffFloor = 0.12f;
+
+    /// <summary>
+    /// The opacity multiplier of one particle <paramref name="size"/> metres wide,
+    /// <paramref name="depth"/> metres in front of the eye. Particles cannot be governed one by one
+    /// from code, so <c>vfx_sprite.gdshader</c> computes this same rule per particle (its
+    /// <c>span_limit</c> and <c>span_floor</c>): full up to <paramref name="limit"/> metres of width
+    /// per metre of depth, then falling in proportion, so the light a puff adds grows with its width
+    /// on screen and not with its area, and never below <paramref name="floor"/>.
+    /// </summary>
+    public static float SpriteOpacity(float size, float depth, float limit = PuffSpan, float floor = PuffFloor)
+    {
+        if (limit <= 0f)
+        {
+            return 1f;
+        }
+
+        return Math.Clamp(limit * MathF.Max(MinDistance, depth) / MathF.Max(0.0001f, size), floor, 1f);
+    }
 
     /// <summary>
     /// The radius of a flash's white-hot core for a flare of <paramref name="radius"/> metres. A

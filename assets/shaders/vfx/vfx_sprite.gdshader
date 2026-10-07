@@ -44,6 +44,14 @@ uniform float occlude_cool = 0.0;
 uniform sampler2D noise : hint_default_white, repeat_enable, filter_linear;
 uniform float dissolve = 0.0;
 
+// COVERAGE (VfxCoverageRules.SpriteOpacity is this same rule, tested). A particle cannot be governed
+// from code one by one, so a large soft one is governed here: with `span_limit` above 0, a sprite
+// wider than that many metres per metre of distance from the eye is thinned in proportion, down to
+// `span_floor`. A puff of flame or mist that drifts up to the camera is seen through, never a wall.
+uniform float span_limit = 0.0;
+uniform float span_floor = 0.12;
+varying float governed;
+
 void vertex() {
 	float scale_x = length(MODEL_MATRIX[0].xyz);
 	float scale_y = length(MODEL_MATRIX[1].xyz);
@@ -62,6 +70,11 @@ void vertex() {
 		mat4 roll = mat4(vec4(c, -s, 0.0, 0.0), vec4(s, c, 0.0, 0.0), vec4(0.0, 0.0, 1.0, 0.0), vec4(0.0, 0.0, 0.0, 1.0));
 		mat4 size = mat4(vec4(scale_x, 0.0, 0.0, 0.0), vec4(0.0, scale_y, 0.0, 0.0), vec4(0.0, 0.0, 1.0, 0.0), vec4(0.0, 0.0, 0.0, 1.0));
 		world = facing * roll * size;
+	}
+	governed = 1.0;
+	if (span_limit > 0.0) {
+		float depth = max(0.5, -(VIEW_MATRIX * vec4(MODEL_MATRIX[3].xyz, 1.0)).z);
+		governed = clamp(span_limit * depth / max(max(scale_x, scale_y), 0.0001), span_floor, 1.0);
 	}
 	MODELVIEW_MATRIX = VIEW_MATRIX * world;
 	MODELVIEW_NORMAL_MATRIX = mat3(MODELVIEW_MATRIX);
@@ -88,7 +101,7 @@ void fragment() {
 		scene_view.xyz /= scene_view.w;
 		fade *= clamp((VERTEX.z - scene_view.z) / soft_depth, 0.0, 1.0);
 	}
-	float alpha = clamp(shape * tint.a * COLOR.a * opacity, 0.0, 1.0) * fade;
+	float alpha = clamp(shape * tint.a * COLOR.a * opacity, 0.0, 1.0) * fade * governed;
 	vec3 rgb = mix(base, vec3(1.0), clamp(hot_core * shape * shape, 0.0, 1.0)) * energy;
 	ALBEDO = rgb * alpha;
 	ALPHA = alpha * mix(occlude, mix(occlude_cool, occlude, heat), use_heat);

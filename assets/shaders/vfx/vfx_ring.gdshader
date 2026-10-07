@@ -40,7 +40,9 @@ void fragment() {
 	float wake = smoothstep(-thickness, 0.0, edge) * behind;
 	float torn = mix(1.0, smoothstep(0.38, 0.72, n * 0.55 + fine * 0.6), breakup);
 	wake = wake * wake * torn;
-	float ray = fine * fine * fine * fine * streaks * smoothstep(-thickness * 2.5, 0.0, edge) * behind;
+	// The streaks die before the inner edge of the annulus the ring is drawn on (0.42), or a deep
+	// wake would be cut there in a hard circle.
+	float ray = fine * fine * fine * fine * streaks * smoothstep(-thickness * 2.5, 0.0, edge) * behind * smoothstep(0.43, 0.55, r);
 	float glow = inner_glow * (1.0 - smoothstep(0.0, max(radius, 0.001), r)) * (0.5 + 0.5 * n);
 	float border = 1.0 - smoothstep(0.92, 1.0, r);
 	float fade = smoothstep(0.3, 1.2, length(VERTEX));

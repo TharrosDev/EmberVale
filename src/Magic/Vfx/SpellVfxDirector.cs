@@ -473,6 +473,11 @@ public partial class SpellVfxDirector : Node
         VfxSchoolColors colors = VfxPalette.For(Combat.DamageType.Fire).Scaled(0.02f, 0.02f);
         float tiny = WarmupScale;
 
+        // The ground patterns are drawn in code on first use; draw them now, not under a telegraph.
+        _ = VfxTextures.Pattern(VfxDiscPattern.Frost);
+        _ = VfxTextures.Pattern(VfxDiscPattern.Cracks);
+        _ = VfxTextures.Pattern(VfxDiscPattern.Roots);
+
         VfxFlareSpec flare = VfxFlareSpec.At(at, tiny, colors);
         flare.Sustain = true;
         flare.Ring = true;

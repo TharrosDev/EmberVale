@@ -233,10 +233,10 @@ public static partial class SpellVfx
     {
         VfxDiscSpec frost = VfxDiscSpec.At(foot, Mathf.Max(0.5f, radius), cast.Colors);
         frost.Pattern = VfxDiscPattern.Frost;
-        frost.Fills = true;
-        frost.Life = Mathf.Max(0.2f, seconds);
+        frost.SpreadSeconds = Mathf.Max(0.2f, seconds);
+        frost.Life = frost.SpreadSeconds * 2.4f;
         frost.Body = 0.25f;
-        frost.Rim = 0.5f;
+        frost.Rim = 0f;
         frost.Flow = 0.15f;
         return cast.Fx.Disc(frost);
     }

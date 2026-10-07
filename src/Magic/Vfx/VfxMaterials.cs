@@ -94,12 +94,15 @@ internal static class VfxMaterials
     public static readonly StringName PatternFloor = "pattern_floor";
     public static readonly StringName PatternSoft = "pattern_soft";
     public static readonly StringName Reveal = "reveal";
+    public static readonly StringName SpanLimit = "span_limit";
+    public static readonly StringName SpanFloor = "span_floor";
 
     /// <summary>Drawn before every other effect, so the rest of a blast lands on top of the bend.</summary>
     public const int DistortionPriority = -8;
 
     private static readonly Shader?[] Shaders = new Shader?[7];
     private static ArrayMesh? _annulus;
+    private static ArrayMesh? _rimAnnulus;
     private static QuadMesh? _quad;
     private static QuadMesh? _streakQuad;
     private static PlaneMesh? _plane;
@@ -157,6 +160,14 @@ internal static class VfxMaterials
     /// empty middle of a ring metres across is not rasterised at all.
     /// </summary>
     public static ArrayMesh Annulus => _annulus ??= BuildAnnulus(AnnulusInner, 40);
+
+    /// <summary>The inner edge of <see cref="RimAnnulus"/>: just inside where <c>vfx_ground</c>
+    /// draws a disc's rim (0.89 to 0.975 of the radius).</summary>
+    public const float RimAnnulusInner = 0.84f;
+
+    /// <summary>The outer band of a unit disc alone: a standing zone's rim on the leanest tier,
+    /// which is under a third of the pixels of the whole floor.</summary>
+    public static ArrayMesh RimAnnulus => _rimAnnulus ??= BuildAnnulus(RimAnnulusInner, 48);
 
     /// <summary>Puts an effect mesh on <see cref="RenderLayer"/> alone, out of reach of decals.</summary>
     public static void OnLayer(VisualInstance3D instance) => instance.Layers = RenderLayer;
@@ -241,6 +252,7 @@ internal static class VfxMaterials
 
         _quad = null;
         _annulus = null;
+        _rimAnnulus = null;
         _streakQuad = null;
         _plane = null;
         _sphere = null;

@@ -169,6 +169,12 @@ public partial class VfxBurst : VfxEffect
         _draw.SetShaderParameter(VfxMaterials.UseHeat, _ramp == VfxRamp.Heat ? 1f : 0f);
         _draw.SetShaderParameter(VfxMaterials.OccludeCool, _preset.CoolOcclude);
 
+        // Puffs are the only particles large enough to cover a frame: each is thinned by how wide
+        // it stands on screen (the coverage governor, per particle; see vfx_sprite.gdshader).
+        bool large = _preset.Sprite == VfxSprite.Puff;
+        _draw.SetShaderParameter(VfxMaterials.SpanLimit, large ? VfxCoverageRules.PuffSpan : 0f);
+        _draw.SetShaderParameter(VfxMaterials.SpanFloor, VfxCoverageRules.PuffFloor);
+
         _particles = new GpuParticles3D
         {
             Name = "Particles",
