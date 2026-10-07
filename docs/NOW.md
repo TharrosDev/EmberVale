@@ -987,14 +987,14 @@ integrator, one at a time, on the merged tree.
 | Godot import, `--validate`, `--lifecycle`, `--story`, probes, shot harnesses, melee and combat gates per scaled boss, traversal, the one master bake, the export, the negative battery | not run by the lanes |
 | A human play-through, a fight with any scaled boss or dragon, weak-laptop frame times | not run; see Unverified above |
 
-GATE RESULTS (integrated branch, 2026-10-07, after the master bake): \dotnet build\ 0 warnings; 6567 unit
-tests pass; Godot import clean; \ssets.py validate\ PASS on 230 models; \world_bake.py --check\ current
-(151 artifacts); \--validate\, \--lifecycle\ and \--story\ PASS; \world_quality_check.py --mode fast\ PASS;
-\world_quality_check.py --mode engine\ PASS, all 70 steps (content, lifecycle, save-reload, scenes, probes,
+GATE RESULTS (integrated branch, 2026-10-07, after the master bake): `dotnet build` 0 warnings; 6567 unit
+tests pass; Godot import clean; `assets.py validate` PASS on 230 models; `world_bake.py --check` current
+(151 artifacts); `--validate`, `--lifecycle` and `--story` PASS; `world_quality_check.py --mode fast` PASS;
+`world_quality_check.py --mode engine` PASS, all 70 steps (content, lifecycle, save-reload, scenes, probes,
 combat gates, building collision, traversal with the real capsule, world audit). The first engine run failed
-six steps: a nested mesh packed twice by \WorldArchitectureBatcher.OwnSubtree\ (the Sunspire library table,
+six steps: a nested mesh packed twice by `WorldArchitectureBatcher.OwnSubtree` (the Sunspire library table,
 leaking at exit; the code predates this branch), the scene audit's buried rule against sunk landmark feet (now
-allowed to 20% of placed height for \lm_*\ wrappers only), a 5% crit in the ranged probe, and two route snags
+allowed to 20% of placed height for `lm_*` wrappers only), a 5% crit in the ranged probe, and two route snags
 (an arena rampart corner and a mine clutter pile), all fixed. Rendered and looked at: stage shots of eight
 world models, enemy shots of the four dragons, wolf, boar, elk, Iron King and Morthul, seven Ember Crown
 vistas. NOT run: the visual, performance and full (negative battery) modes, vistas of the other five realms,
