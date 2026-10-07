@@ -18,14 +18,20 @@ from quality_common import ROOT, discover_godot, run_process, write_json, machin
 from .contract import SCHEMA, diagnostic, diagnostics_from_log, exit_code
 from .changed import changed_paths
 from .scenario import validate_plan, resource_path
+from .freshness import stale_reason
+from . import commands
+from .commands import REGISTRY
 
-COMMANDS = ("doctor", "import", "build", "validate", "inspect", "smoke", "scenario", "test",
-            "screenshot", "perf", "audit", "all", "world", "assets", "tool", "list", "report", "author")
+
+class BuildFailed(RuntimeError):
+    """The automatic rebuild of a stale binary failed; its step already carries the diagnostics."""
 
 
-def parser():
+def parser(command=None):
+    """The argument parser. Shared flags are accepted by every command; `command` adds that
+    command's own flags (the ones its registry entry declares) for the real parse."""
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("command", choices=COMMANDS)
+    p.add_argument("command", choices=tuple(REGISTRY))
     p.add_argument("target", nargs="?", help="scenario JSON, tool name, or asset subcommand")
     p.add_argument("--scene", type=resource_path)
     p.add_argument("--timeout", type=float, default=None, help="hard per-process seconds (including descendants)")
@@ -57,6 +63,10 @@ def parser():
     p.add_argument("--reimport", action="store_true", help="force the editor to scan/reimport all assets")
     p.add_argument("--write", help="author: publish the validated scene/resource to res://scenes/... or res://data/...")
     p.add_argument("--overwrite", action="store_true", help="author: permit replacement, with backup and concurrent-edit check")
+    p.add_argument("--no-build", action="store_true", help="do not rebuild a stale Embervale.dll before launching the engine")
+    entry = REGISTRY.get(command)
+    if entry and entry.arguments:
+        entry.arguments(p.add_argument_group(f"{command} options"))
     return p
 
 
@@ -88,6 +98,7 @@ class Run:
                         PYTHONUNBUFFERED="1", DOTNET_CLI_TELEMETRY_OPTOUT="1")
         if explicit_frames:
             self.env["EMBERVALE_FRAMES"] = str(args.frames)
+        self.fresh_checked = False
         self.result = dict(schema=SCHEMA, run_id=run_id, command=args.command, success=False,
                            duration=0, godot_version=None, diagnostics=[], assertions=[], metrics={},
                            artifacts=[], steps=[], machine=machine_fingerprint(),
@@ -137,9 +148,24 @@ class Run:
             print(json.dumps(dict(event="step", **step)), flush=True)
         return r
 
+    def ensure_fresh(self):
+        """Stale-binary guard: once per run, before the first engine launch, rebuild when a source
+        file is newer than the assembly the engine would load. --no-build opts out."""
+        if getattr(self, "fresh_checked", False) or getattr(self.args, "no_build", False):
+            return
+        self.fresh_checked = True
+        reason = stale_reason(ROOT)
+        if not reason:
+            return
+        self.note(f"  stale binary ({reason}); building first. --no-build skips this.")
+        self.result["configuration"]["auto_build"] = reason
+        if self.process("auto-build", ["dotnet", "build", "Embervale.sln", "--nologo"]).returncode != 0:
+            raise BuildFailed("the automatic build failed; the engine was not launched on a stale binary")
+
     def godot(self, name, arguments, user=(), render=False, scan=True):
         if not self.engine:
             raise ValueError("Godot .NET not found; set EMBERVALE_GODOT or --godot")
+        self.ensure_fresh()
         command = [str(self.engine), "--path", str(ROOT), "--log-file", str(self.artifacts / f"{name}.godot.log")]
         if not render:
             command += ["--headless"]
@@ -385,18 +411,94 @@ class Run:
         return code
 
 
+def _runtime(run, args, passthrough):
+    cmd = args.command
+    plan = json.loads(Path(args.target).read_text(encoding="utf-8")) if args.target else None
+    if cmd == "scenario" and plan is None:
+        raise ValueError("scenario requires a JSON plan")
+    for resolution in args.resolution or ["1280x720"]:
+        run.runtime(cmd, plan, resolution)
+
+
+def _audit(run, args, passthrough):
+    cmd = args.command
+    run.doctor()
+    if exit_code(run.result) == 0:
+        run.build()
+        run.import_assets()
+        run.validate()
+        run.tests()
+        run.world("engine", skip={"build", "tests", "content"})
+        run.process("assets", [sys.executable, "tools/assets.py", "validate"])
+        run.runtime("scenario", json.loads((ROOT / "tools/headless/scenarios/new-game.json").read_text()))
+        if cmd == "all" and args.render:
+            run.world("visual")
+            run.runtime("perf")
+        elif cmd == "all":
+            run.issue("render.not_requested", "Rendering gates require all --render; headless gates were selected", "info")
+
+
+def _assets(run, args, passthrough):
+    run.process("assets", [sys.executable, "tools/assets.py", args.target or "status", *passthrough])
+
+
+def _list(run, args, passthrough):
+    from world_quality_check import gates
+    from .scenario import OPERATIONS as runtime_operations, METHODS, PROPERTIES
+    from .authoring import OPERATIONS as author_operations, NODE_TYPES, RESOURCE_TYPES
+    run.result["metrics"]["capabilities"] = dict(commands=tuple(REGISTRY), runtime_operations=sorted(runtime_operations),
+        methods=sorted(METHODS), mutable_properties=sorted(PROPERTIES), author_operations=sorted(author_operations),
+        node_types=sorted(NODE_TYPES), resource_types=sorted(RESOURCE_TYPES), schema=SCHEMA)
+    run.result["metrics"]["gates"] = [dict(name=g.name, description=g.what, modes=g.modes) for g in gates(None)]
+    run.result["metrics"]["tools"] = sorted(p.stem for p in (ROOT / "tools").iterdir() if p.suffix in {".py", ".gd"})
+    run.note(json.dumps(run.result["metrics"], indent=2))
+
+
+def _tool(run, args, passthrough):
+    if not args.target or not re.fullmatch(r"[a-z0-9_]+", args.target) or args.target in {"embervale", "world_quality_check", "quality_common"}:
+        raise ValueError("tool requires an existing specialist tool name (see list)")
+    py, gd = ROOT / f"tools/{args.target}.py", ROOT / f"tools/{args.target}.gd"
+    if py.is_file():
+        run.process(args.target, [sys.executable, str(py), *passthrough])
+    elif gd.is_file():
+        run.godot(args.target, ["--script", f"res://tools/{gd.name}"], passthrough, render=args.render)
+    else:
+        raise ValueError("unknown tool")
+
+
+# The original commands. A new one does not go here: it is a module under commands/ (see its docstring).
+commands.register("doctor", lambda run, args, passthrough: run.doctor())
+commands.register("import", lambda run, args, passthrough: run.import_assets())
+commands.register("build", lambda run, args, passthrough: run.build())
+commands.register("validate", lambda run, args, passthrough: run.validate())
+for _name in ("inspect", "smoke", "scenario", "screenshot", "perf"):
+    commands.register(_name, _runtime)
+commands.register("test", lambda run, args, passthrough: run.tests(), version=False)
+commands.register("audit", _audit)
+commands.register("all", _audit)
+commands.register("world", lambda run, args, passthrough: run.world())
+commands.register("assets", _assets, version=False, passthrough=True)
+commands.register("tool", _tool, version=False, passthrough=True)
+commands.register("list", _list, version=False)
+commands.register("author", lambda run, args, passthrough: run.author())
+commands.discover()
+COMMANDS = tuple(REGISTRY)
+
+
 def main(argv=None):
     argv = list(sys.argv[1:] if argv is None else argv)
     passthrough = []
     if "--" in argv:
         separator = argv.index("--")
         argv, passthrough = argv[:separator], argv[separator + 1:]
-    args = parser().parse_args(argv)
+    # A command's own flags are only known once the command is: it is the first registered name.
+    args = parser(next((a for a in argv if a in REGISTRY), None)).parse_args(argv)
     run = None
     try:
         run = Run(args)
         run.note(f"Embervale SDK — {args.command} — {run.artifacts.name}")
-        if args.command not in {"list", "tool", "test", "assets"}:
+        entry = REGISTRY[args.command]
+        if entry.version:
             run.version()
         cmd = args.command
         if (args.write or args.overwrite) and cmd != "author":
@@ -405,68 +507,18 @@ def main(argv=None):
             raise ValueError("--changed-only is supported by validate/audit/all")
         if args.gate and cmd != "world":
             raise ValueError("--gate applies only to the world command")
-        if passthrough and cmd not in {"assets", "tool"}:
-            raise ValueError("Arguments after -- are supported only by assets/tool")
-        if cmd == "doctor": run.doctor()
-        elif cmd == "build": run.build()
-        elif cmd == "import": run.import_assets()
-        elif cmd == "validate": run.validate()
-        elif cmd == "test": run.tests()
-        elif cmd == "author": run.author()
-        elif cmd in {"inspect", "smoke", "screenshot", "perf", "scenario"}:
-            plan = json.loads(Path(args.target).read_text(encoding="utf-8")) if args.target else None
-            if cmd == "scenario" and plan is None:
-                raise ValueError("scenario requires a JSON plan")
-            for resolution in args.resolution or ["1280x720"]:
-                run.runtime(cmd, plan, resolution)
-        elif cmd == "report":
-            if args.target not in {"state", "economy", "worldgen", "lifecycle"}:
-                raise ValueError("report requires state, economy, worldgen or lifecycle")
-            run.godot(args.target, [], ["--" + args.target])
-        elif cmd == "world": run.world()
-        elif cmd in {"audit", "all"}:
-            run.doctor()
-            if exit_code(run.result) == 0:
-                run.build()
-                run.import_assets()
-                run.validate()
-                run.tests()
-                run.world("engine", skip={"build", "tests", "content"})
-                run.process("assets", [sys.executable, "tools/assets.py", "validate"])
-                run.runtime("scenario", json.loads((ROOT / "tools/headless/scenarios/new-game.json").read_text()))
-                if cmd == "all" and args.render:
-                    run.world("visual")
-                    run.runtime("perf")
-                elif cmd == "all":
-                    run.issue("render.not_requested", "Rendering gates require all --render; headless gates were selected", "info")
-        elif cmd == "assets":
-            run.process("assets", [sys.executable, "tools/assets.py", args.target or "status", *passthrough])
-        elif cmd == "list":
-            from world_quality_check import gates
-            from .scenario import OPERATIONS as runtime_operations, METHODS, PROPERTIES
-            from .authoring import OPERATIONS as author_operations, NODE_TYPES, RESOURCE_TYPES
-            run.result["metrics"]["capabilities"] = dict(commands=COMMANDS, runtime_operations=sorted(runtime_operations),
-                methods=sorted(METHODS), mutable_properties=sorted(PROPERTIES), author_operations=sorted(author_operations),
-                node_types=sorted(NODE_TYPES), resource_types=sorted(RESOURCE_TYPES), schema=SCHEMA)
-            run.result["metrics"]["gates"] = [dict(name=g.name, description=g.what, modes=g.modes) for g in gates(None)]
-            run.result["metrics"]["tools"] = sorted(p.stem for p in (ROOT / "tools").iterdir() if p.suffix in {".py", ".gd"})
-            run.note(json.dumps(run.result["metrics"], indent=2))
-        elif cmd == "tool":
-            if not args.target or not re.fullmatch(r"[a-z0-9_]+", args.target) or args.target in {"embervale", "world_quality_check", "quality_common"}:
-                raise ValueError("tool requires an existing specialist tool name (see list)")
-            py, gd = ROOT / f"tools/{args.target}.py", ROOT / f"tools/{args.target}.gd"
-            if py.is_file():
-                run.process(args.target, [sys.executable, str(py), *passthrough])
-            elif gd.is_file():
-                run.godot(args.target, ["--script", f"res://tools/{gd.name}"], passthrough, render=args.render)
-            else:
-                raise ValueError("unknown tool")
+        if passthrough and not entry.passthrough:
+            raise ValueError("Arguments after -- are supported only by " + "/".join(n for n, c in REGISTRY.items() if c.passthrough))
+        entry.run(run, args, passthrough)
         return run.finish()
     except KeyboardInterrupt:
         if run:
             run.result["steps"].append(dict(name="interrupted", exit_code=130))
             return run.finish()
         return 130
+    except BuildFailed as error:
+        run.issue("build.stale", str(error))
+        return run.finish()
     except (ValueError, OSError, RuntimeError) as error:
         if run:
             run.issue("configuration.invalid", str(error))

@@ -55,6 +55,13 @@ public partial class ApplicationRoot : Node3D, IServiceScopeHost
 
     public override void _Ready()
     {
+#if EMBERVALE_TOOLING
+        if (StaleBuildEndsRun())
+        {
+            return;
+        }
+#endif
+
         // The tool modes run before anything is built and quit the process: they must be fast and
         // side-effect free, which they can only be if nothing above has assembled a world yet.
         if (RunHeadlessModeIfRequested())
@@ -90,6 +97,45 @@ public partial class ApplicationRoot : Node3D, IServiceScopeHost
         Shell = new GameShellController { Name = "Shell", Lifecycle = Lifecycle };
         AddChild(Shell);
     }
+
+#if EMBERVALE_TOOLING
+    /// <summary>
+    /// The stale-binary self-check (<see cref="BuildFreshness"/>): run from the project, with a
+    /// source file newer than the loaded assembly, this logs one <c>STALE_BINARY</c> warning.
+    /// Returns true only when <c>--strict-build</c> turned that into an exit.
+    /// </summary>
+    private bool StaleBuildEndsRun()
+    {
+        // "editor" is the engine binary a checkout is run with; an export is a template build and
+        // has no source tree beside it.
+        if (!OS.HasFeature("editor"))
+        {
+            return false;
+        }
+
+        // The engine may load the assembly from memory, which leaves Location empty; the path
+        // below is where a project build always lands.
+        string root = ProjectSettings.GlobalizePath("res://");
+        string loaded = typeof(ApplicationRoot).Assembly.Location;
+        string assembly = string.IsNullOrEmpty(loaded)
+            ? System.IO.Path.Combine(root, ".godot", "mono", "temp", "bin", "Debug", "Embervale.dll")
+            : loaded;
+        if (!BuildFreshness.Check(root, assembly))
+        {
+            return false;
+        }
+
+        Log.Warn(BuildFreshness.Detail);
+        if (!HeadlessArgs.Has(BuildFreshness.StrictArgument))
+        {
+            return false;
+        }
+
+        Log.Error($"{BuildFreshness.StrictArgument}: refusing to run a stale binary.");
+        GetTree().Quit(1);
+        return true;
+    }
+#endif
 
     private static void OnSettingsApplied(SettingsAppliedEvent e) => Embervale.UI.UiSkin.Install();
 

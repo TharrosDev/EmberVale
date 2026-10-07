@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Text;
 using Embervale.Core.Diagnostics;
 using Embervale.Dialogue;
@@ -21,7 +22,8 @@ namespace Embervale.Bootstrap;
 /// expensive and one edit away from being wrong. This reads the databases the game itself loads, so
 /// it cannot drift from reality the way a doc can.
 ///
-/// Always exits <b>0</b>: a census is an observation. <c>--validate</c> is the gate.
+/// Always exits <b>0</b>: a census is an observation. <c>--validate</c> is the gate. The counts are
+/// also printed as one <c>EMBERVALE_RESULT {json}</c> line (<see cref="HeadlessReport"/>).
 ///
 /// ⚠️ It deliberately reports **counts and ids, not narrative**. "Where the project is" lives in
 /// <c>docs/NOW.md</c> and is a human decision; this is only what is on disk.
@@ -83,6 +85,26 @@ public static class HeadlessState
         }
 
         GD.Print(text.ToString());
-        tree.Quit(0);
+
+        // The same census as one machine line (and --report=<path>): the worked example of
+        // HeadlessReport. No failures are ever recorded, so the exit code stays 0.
+        var regionIds = new List<string>();
+        foreach (RegionResource region in RegionDatabase.All)
+        {
+            regionIds.Add(region.Id);
+        }
+
+        new HeadlessReport("state")
+            .Fact("regions", RegionDatabase.All.Count)
+            .Fact("cells", cells)
+            .Fact("items", ItemDatabase.All.Count)
+            .Fact("shops", ShopDatabase.All.Count)
+            .Fact("services", ServiceDatabase.All.Count)
+            .Fact("contracts", ContractDatabase.All.Count)
+            .Fact("dialogues", DialogueDatabase.All.Count)
+            .Fact("quests", QuestDatabase.All.Count)
+            .Fact("map_locations", MapLocationDatabase.All.Count)
+            .Fact("region_ids", regionIds)
+            .FinishAndQuit(tree);
     }
 }

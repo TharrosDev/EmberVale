@@ -264,5 +264,122 @@ class AuthoringTests(unittest.TestCase):
             validate_author_plan(dict(operations=[dict(op="create_node", id="x"), dict(op="create_node", id="x")]))
 
 
+class FreshnessTests(unittest.TestCase):
+    def checkout(self, folder):
+        from embervale_sdk.freshness import ASSEMBLY
+        root = Path(folder)
+        (root / "src/Deep").mkdir(parents=True)
+        source, project, assembly = root / "src/Deep/Thing.cs", root / "Embervale.csproj", root / ASSEMBLY
+        assembly.parent.mkdir(parents=True)
+        for path in (source, project, assembly, root / "src/notes.txt"):
+            path.write_text("x")
+        for path, when in ((source, 900), (project, 800), (assembly, 1000), (root / "src/notes.txt", 5000)):
+            os.utime(path, (when, when))
+        return root, source, project, assembly
+
+    def test_fresh_when_the_assembly_is_newest(self):
+        from embervale_sdk.freshness import stale_reason
+        with tempfile.TemporaryDirectory() as folder:
+            root = self.checkout(folder)[0]
+            self.assertIsNone(stale_reason(root))  # only *.cs and the project file count
+
+    def test_stale_when_a_source_or_the_project_is_newer(self):
+        from embervale_sdk.freshness import stale_reason
+        with tempfile.TemporaryDirectory() as folder:
+            root, source, project, _ = self.checkout(folder)
+            os.utime(source, (1001, 1001))
+            self.assertIn("src/Deep/Thing.cs", stale_reason(root))
+            os.utime(source, (900, 900))
+            os.utime(project, (1001, 1001))
+            self.assertIn("Embervale.csproj", stale_reason(root))
+
+    def test_missing_assembly_is_stale_and_a_non_checkout_is_not(self):
+        from embervale_sdk.freshness import stale_reason
+        with tempfile.TemporaryDirectory() as folder:
+            root, _, _, assembly = self.checkout(folder)
+            assembly.unlink()
+            self.assertIn("has not been built", stale_reason(root))
+        with tempfile.TemporaryDirectory() as folder:
+            self.assertIsNone(stale_reason(Path(folder)))
+
+    def guarded_run(self, arguments, reason, build_exit=0):
+        from embervale_sdk.cli import parser, Run
+        from unittest.mock import Mock
+        run = Run.__new__(Run)
+        run.args = parser().parse_args(["smoke", "--json", *arguments])
+        run.engine = Path("godot-test.exe")
+        run.artifacts = Path("test-artifacts")
+        run.result = dict(configuration={}, steps=[])
+        run.fresh_checked = False
+        run.process = Mock(return_value=Mock(returncode=build_exit))
+        return run, patch("embervale_sdk.cli.stale_reason", return_value=reason)
+
+    def test_engine_launch_builds_a_stale_binary_once(self):
+        run, stale = self.guarded_run([], "src/A.cs is newer")
+        with stale:
+            run.godot("first", [])
+            run.godot("second", [])
+        self.assertEqual(["auto-build", "first", "second"], [c.args[0] for c in run.process.call_args_list])
+        self.assertEqual(["dotnet", "build", "Embervale.sln", "--nologo"], run.process.call_args_list[0].args[1])
+        self.assertEqual("src/A.cs is newer", run.result["configuration"]["auto_build"])
+
+    def test_fresh_binary_and_no_build_launch_directly(self):
+        for arguments, reason in (([], None), (["--no-build"], "src/A.cs is newer")):
+            run, stale = self.guarded_run(arguments, reason)
+            with stale:
+                run.godot("only", [])
+            self.assertEqual(["only"], [c.args[0] for c in run.process.call_args_list])
+
+    def test_failed_build_does_not_launch_the_engine(self):
+        from embervale_sdk.cli import BuildFailed
+        run, stale = self.guarded_run([], "src/A.cs is newer", build_exit=1)
+        with stale, self.assertRaises(BuildFailed):
+            run.godot("never", [])
+        self.assertEqual(["auto-build"], [c.args[0] for c in run.process.call_args_list])
+
+
+class CommandRegistryTests(unittest.TestCase):
+    def test_original_commands_and_shared_flags_still_parse(self):
+        from embervale_sdk.cli import parser, COMMANDS
+        for name in ("doctor", "import", "build", "validate", "inspect", "smoke", "scenario", "test", "screenshot",
+                     "perf", "audit", "all", "world", "assets", "tool", "list", "report", "author"):
+            self.assertIn(name, COMMANDS)
+            self.assertEqual(name, parser().parse_args([name, "--json", "--timeout", "5"]).command)
+        args = parser().parse_args(["--strict", "report", "state", "--seed", "7"])
+        self.assertEqual(("report", "state", 7, True, False), (args.command, args.target, args.seed, args.strict, args.no_build))
+
+    def test_a_module_is_a_command_with_its_own_flags(self):
+        import types
+        from embervale_sdk import commands
+        from embervale_sdk.cli import parser, main
+        seen = {}
+        module = types.ModuleType("embervale_sdk.commands.sample_probe")
+        module.HELP = "fixture"
+        module.VERSION = False
+        module.arguments = lambda p: p.add_argument("--depth", type=int, default=1)
+        module.run = lambda run, args, passthrough: seen.update(depth=args.depth, target=args.target)
+        entry = commands.register_module(module)
+        try:
+            self.assertEqual("sample-probe", entry.name)
+            self.assertEqual(3, parser("sample-probe").parse_args(["sample-probe", "--depth", "3"]).depth)
+            with self.assertRaises(SystemExit):  # another command does not accept it
+                with patch("sys.stderr"):
+                    parser("smoke").parse_args(["smoke", "--depth", "3"])
+            with tempfile.TemporaryDirectory() as folder, patch("embervale_sdk.cli.discover_godot", return_value=None):
+                with patch("sys.stdout"):
+                    self.assertEqual(0, main(["sample-probe", "x", "--depth", "4", "--json", "--artifacts", folder]))
+            self.assertEqual(dict(depth=4, target="x"), seen)
+            with self.assertRaises(ValueError):
+                commands.register_module(module)
+        finally:
+            del commands.REGISTRY["sample-probe"]
+
+    def test_a_module_without_run_is_refused(self):
+        import types
+        from embervale_sdk import commands
+        with self.assertRaises(ValueError):
+            commands.register_module(types.ModuleType("embervale_sdk.commands.broken"))
+
+
 if __name__ == "__main__":
     unittest.main()

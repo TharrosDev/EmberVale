@@ -53,18 +53,7 @@ public static class HeadlessStory
     /// <summary>A developer filter, <c>-- --story --story-only=C</c> (letters A, B, C; blank runs all):
     /// plays only those runs while debugging one of them. A filtered run never replaces the full gate,
     /// and says so in its report; the cross-run coverage is skipped.</summary>
-    private static string Only()
-    {
-        foreach (string arg in OS.GetCmdlineUserArgs())
-        {
-            if (arg.StartsWith("--story-only=", StringComparison.Ordinal))
-            {
-                return arg["--story-only=".Length..].ToUpperInvariant();
-            }
-        }
-
-        return string.Empty;
-    }
+    private static string Only() => (HeadlessArgs.Value("--story-only") ?? string.Empty).ToUpperInvariant();
 
     private static bool Wants(string run) => Only().Length == 0 || Only().Contains(run, StringComparison.Ordinal);
 

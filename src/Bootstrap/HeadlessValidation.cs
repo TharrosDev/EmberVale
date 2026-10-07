@@ -28,26 +28,7 @@ public static class HeadlessValidation
     /// raw engine argument. Shared with <see cref="HeadlessEconomy"/> (38N1) so a second headless
     /// entry point does not mean a second copy of this loop — and so a flag that works one way for
     /// <c>--validate</c> works the same way for every other.</summary>
-    public static bool HasFlag(string flag)
-    {
-        foreach (string arg in OS.GetCmdlineUserArgs())
-        {
-            if (arg == flag)
-            {
-                return true;
-            }
-        }
-
-        foreach (string arg in OS.GetCmdlineArgs())
-        {
-            if (arg == flag)
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
+    public static bool HasFlag(string flag) => HeadlessArgs.Has(flag);
 
     /// <summary>Loads the content databases, runs the full validator, prints the report, and quits
     /// the tree with exit code 0 (OK) or 1 (issues found). Call from a node already in the tree.</summary>
