@@ -94,6 +94,8 @@ public partial class ApplicationRoot : Node3D, IServiceScopeHost
             return;
         }
 
+        if (HeadlessArena.RunIfRequested(this, Lifecycle)) { return; }
+
         Shell = new GameShellController { Name = "Shell", Lifecycle = Lifecycle };
         AddChild(Shell);
     }
@@ -165,6 +167,7 @@ public partial class ApplicationRoot : Node3D, IServiceScopeHost
     private bool RunHeadlessModeIfRequested()
     {
         SceneTree tree = GetTree();
+        if (HeadlessGate.Prepare(tree)) { return true; }
 
         if (HeadlessWorldBake.Requested())
         {
@@ -253,7 +256,7 @@ public partial class ApplicationRoot : Node3D, IServiceScopeHost
         // memory afterwards. The headless session gates (--lifecycle, --story) still run it here
         // because they read Invariant.Violations; a windowed session gets it from the `validate`
         // console command, and `--validate` remains the gate.
-        if (OS.IsDebugBuild() && DisplayServer.GetName() == "headless")
+        if (OS.IsDebugBuild() && DisplayServer.GetName() == "headless" && !HeadlessGate.SkipBootValidate)
         {
             Log.Info(ContentValidator.Run());
         }

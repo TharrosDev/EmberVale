@@ -45,11 +45,25 @@ public sealed partial class HeadlessReport
 
     public bool Passed => _failures.Count == 0;
 
-    /// <summary>0 when nothing failed, 1 otherwise.</summary>
-    public int ExitCode => Passed ? 0 : 1;
+    /// <summary>0 when nothing failed, 1 when a check failed, 2 when the gate could not run at all
+    /// (<see cref="Refuse"/>): "could not check" must never read as "checked and broken".</summary>
+    public int ExitCode => _refused ? RefusedExitCode : Passed ? 0 : 1;
+
+    /// <summary>The exit code of a run that was refused: a bad flag, a missing prerequisite.</summary>
+    public const int RefusedExitCode = 2;
+
+    private bool _refused;
+
+    /// <summary>Records why the gate could not run. It is a failure, and the exit code becomes 2.</summary>
+    public void Refuse(string message)
+    {
+        _refused = true;
+        Fail(message);
+    }
 
     /// <summary>Records one fact. A string, bool or number is written as itself, a sequence of
-    /// strings as an array, anything else through <c>ToString</c>. Setting a key again replaces it
+    /// strings as an array, a dictionary with string keys as an object and any other sequence as an
+    /// array (both nest), anything else through <c>ToString</c>. Setting a key again replaces it
     /// in place.</summary>
     public HeadlessReport Fact(string key, object? value)
     {
@@ -204,6 +218,25 @@ public sealed partial class HeadlessReport
                 foreach (string item in list)
                 {
                     json.WriteStringValue(item);
+                }
+
+                json.WriteEndArray();
+                break;
+            case System.Collections.IDictionary map:
+                json.WriteStartObject();
+                foreach (System.Collections.DictionaryEntry entry in map)
+                {
+                    json.WritePropertyName(entry.Key.ToString() ?? string.Empty);
+                    WriteValue(json, entry.Value);
+                }
+
+                json.WriteEndObject();
+                break;
+            case System.Collections.IEnumerable sequence:
+                json.WriteStartArray();
+                foreach (object? item in sequence)
+                {
+                    WriteValue(json, item);
                 }
 
                 json.WriteEndArray();

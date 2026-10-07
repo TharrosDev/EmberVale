@@ -45,7 +45,12 @@ public static class HeadlessLifecycle
 
     /// <summary>New Game / Load round trips to run. Three, because a leak that only shows on the
     /// second repetition is exactly the shape this is looking for, and one repetition cannot see it.</summary>
-    private const int Cycles = 3;
+    private const int DefaultCycles = 3;
+
+    /// <summary>Overrides <see cref="DefaultCycles"/> for an inner loop: <c>--cycles=1</c> is one quick
+    /// round trip. Anything below the default is marked partial, because the leak this gate looks for
+    /// shows on a repetition.</summary>
+    public const string CyclesArgument = "--cycles";
 
     /// <summary>Frames to give a session to reach <c>Playing</c>. The loading gate's own cap is 30 s;
     /// this is generous against it and fails loudly rather than hanging.</summary>
@@ -55,10 +60,14 @@ public static class HeadlessLifecycle
     /// at end of frame, so an orphan count read on the same frame is meaningless.</summary>
     private const int ReclaimFrames = 8;
 
-    private static readonly List<string> Failures = new();
+    private static HeadlessReport _report = new("lifecycle");
 
-    /// <summary>The temp user directory this run created for itself, removed again at the end.</summary>
-    private static string? _ownedUserDir;
+    /// <summary>The round trips this run asked for, so the clean-up deletes every slot it wrote.</summary>
+    private static int _cycles = DefaultCycles;
+
+    /// <summary>The largest count any teardown left above the baseline (services, subscriptions or
+    /// orphan nodes); zero or less is clean.</summary>
+    private static int _worstLeak = int.MinValue;
 
     public static bool Requested() => HeadlessValidation.HasFlag(FlagArgument) || ReloadAuditRequested();
 
@@ -78,80 +87,71 @@ public static class HeadlessLifecycle
     public static async void Run(ApplicationRoot root, SessionLifecycleCoordinator lifecycle)
     {
         Log.Info("=== lifecycle probe ===");
-        Failures.Clear();
         bool reloadAudit = ReloadAuditRequested();
-        int cycles = reloadAudit ? 2 : Cycles;
+        string label = reloadAudit ? "save-reload" : "lifecycle";
+        _report = HeadlessGate.Begin(label);
+        _cycles = reloadAudit ? 2 : Math.Max(1, HeadlessArgs.Int(CyclesArgument, DefaultCycles));
+        _worstLeak = int.MinValue;
+        _report.Fact("cycles", _cycles);
+        if (!reloadAudit && _cycles < DefaultCycles)
+        {
+            _report.Fact("partial", true);
+            _report.Warn($"{CyclesArgument}={_cycles} is below the gate's {DefaultCycles}: not the gate.");
+        }
+
         if (reloadAudit && !System.IO.Path.IsPathFullyQualified(OS.GetEnvironment("EMBERVALE_USER_DIR")))
         {
-            Log.Error("save-reload requires an absolute isolated EMBERVALE_USER_DIR.");
-            root.GetTree().Quit(1);
+            _report.Refuse("save-reload requires an absolute isolated EMBERVALE_USER_DIR.");
+            HeadlessGate.Finish(root.GetTree(), _report, label: label);
             return;
         }
 
         // After the check above on purpose: the reload audit must be handed its isolation, not
         // have this fallback grant it one.
-        IsolateFromPlayerSaves();
+        HeadlessGate.IsolateFromPlayerSaves("lifecycle");
+        HeadlessGate.ArmTimeLimit(root, _report, label: label);
 
-        await Frames(root, ReclaimFrames);
-
-        int baselineSubscribers = EventBus.Instance?.TotalSubscriberCount() ?? 0;
-        int baselineServices = ServiceLocator.Instance?.RegisteredCount ?? 0;
-        int baselineOrphans = Orphans();
-        Log.Info($"lifecycle: baseline — {baselineServices} service(s), {baselineSubscribers} subscription(s), " +
-                 $"{baselineOrphans} orphan node(s).");
-
-        for (int cycle = 1; cycle <= cycles; cycle++)
+        int baselineOrphans = 0;
+        try
         {
-            string slot = $"lifecycle_probe_{cycle}";
+            await Frames(root, ReclaimFrames);
 
-            await RunNewGame(root, lifecycle, slot, cycle);
-#if EMBERVALE_TOOLING
-            if (reloadAudit)
+            int baselineSubscribers = EventBus.Instance?.TotalSubscriberCount() ?? 0;
+            int baselineServices = ServiceLocator.Instance?.RegisteredCount ?? 0;
+            baselineOrphans = Orphans();
+            Log.Info($"lifecycle: baseline — {baselineServices} service(s), {baselineSubscribers} subscription(s), " +
+                     $"{baselineOrphans} orphan node(s).");
+            _report.Fact("baseline_services", baselineServices).Fact("baseline_subscriptions", baselineSubscribers)
+                .Fact("baseline_orphans", baselineOrphans);
+
+            for (int cycle = 1; cycle <= _cycles; cycle++)
             {
-                await RunReloadAudit(root, lifecycle, slot, cycle);
-                await Teardown(root, lifecycle, $"cycle {cycle} quick reload", baselineSubscribers, baselineServices, baselineOrphans);
-                continue;
-            }
-#endif
-            await Teardown(root, lifecycle, $"cycle {cycle} new-game", baselineSubscribers, baselineServices, baselineOrphans);
+                string slot = $"lifecycle_probe_{cycle}";
 
-            await RunLoad(root, lifecycle, slot, cycle);
-            await Teardown(root, lifecycle, $"cycle {cycle} load", baselineSubscribers, baselineServices, baselineOrphans);
+                await RunNewGame(root, lifecycle, slot, cycle);
+#if EMBERVALE_TOOLING
+                if (reloadAudit)
+                {
+                    await RunReloadAudit(root, lifecycle, slot, cycle);
+                    await Teardown(root, lifecycle, $"cycle {cycle} quick reload", baselineSubscribers, baselineServices, baselineOrphans);
+                    continue;
+                }
+#endif
+                await Teardown(root, lifecycle, $"cycle {cycle} new-game", baselineSubscribers, baselineServices, baselineOrphans);
+
+                await RunLoad(root, lifecycle, slot, cycle);
+                await Teardown(root, lifecycle, $"cycle {cycle} load", baselineSubscribers, baselineServices, baselineOrphans);
+            }
+        }
+        catch (Exception ex)
+        {
+            // Without this an exception after an await never reaches Quit, and the process idles
+            // until the caller's timeout.
+            Fail($"the gate threw: {ex}");
         }
 
         CleanUpProbeSlots();
-        Report(root.GetTree(), baselineOrphans, cycles, reloadAudit);
-    }
-
-    /// <summary>
-    /// Keeps the gate off the developer's own saves. It maxes a character's level and builds and
-    /// destroys sessions, and it used to do that with the real autosave ring live under it: the
-    /// level-up autosaved, and <c>auto1..auto3</c> ended up holding a "Lifecycle Audit" character.
-    ///
-    /// Three independent guards, so that no single one being absent re-opens the hole:
-    ///   * autosaves are off for the whole process (every session this gate builds gets a fresh
-    ///     <see cref="AutosaveService"/>, so removing one node, as <c>StoryPlaythrough</c> does for
-    ///     its single session, would not cover the next);
-    ///   * when no <c>EMBERVALE_USER_DIR</c> isolates the run, it is pointed at a temp directory of
-    ///     its own, so even the probe slots never touch the real save folder (tooling builds; an
-    ///     export build ignores the variable and relies on the other two guards);
-    ///   * save writes are forced inline, because the gate reads its files back on the next line.
-    /// </summary>
-    private static void IsolateFromPlayerSaves()
-    {
-        AutosaveService.Suppressed = true;
-        SaveWriteQueue.ForceInline = true;
-
-        if (System.IO.Path.IsPathFullyQualified(OS.GetEnvironment("EMBERVALE_USER_DIR")))
-        {
-            return;
-        }
-
-        string isolated = System.IO.Path.Combine(
-            System.IO.Path.GetTempPath(), "embervale-lifecycle", System.Environment.ProcessId.ToString());
-        OS.SetEnvironment("EMBERVALE_USER_DIR", isolated);
-        _ownedUserDir = isolated;
-        Log.Info($"lifecycle: no isolated EMBERVALE_USER_DIR was given; saves for this run go to '{isolated}'.");
+        Report(root.GetTree(), baselineOrphans, _cycles, label);
     }
 
     private static async Task RunNewGame(
@@ -161,7 +161,7 @@ public static class HeadlessLifecycle
 
         if (lifecycle.Session is not { } session)
         {
-            Failures.Add($"cycle {cycle} new-game: no session was created.");
+            Fail($"cycle {cycle} new-game: no session was created.");
             return;
         }
 
@@ -171,7 +171,7 @@ public static class HeadlessLifecycle
 
         if (!await WaitForPlaying(root))
         {
-            Failures.Add($"cycle {cycle} new-game: the world never reached Playing within {LoadFrameBudget} frames.");
+            Fail($"cycle {cycle} new-game: the world never reached Playing within {LoadFrameBudget} frames.");
             return;
         }
 
@@ -192,7 +192,7 @@ public static class HeadlessLifecycle
     {
         if (SaveManager.Instance?.SaveExists(slot) != true)
         {
-            Failures.Add($"cycle {cycle} load: the new-game half wrote no save to load.");
+            Fail($"cycle {cycle} load: the new-game half wrote no save to load.");
             return;
         }
 
@@ -200,13 +200,13 @@ public static class HeadlessLifecycle
 
         if (!lifecycle.HasSession)
         {
-            Failures.Add($"cycle {cycle} load: no session was created.");
+            Fail($"cycle {cycle} load: no session was created.");
             return;
         }
 
         if (!await WaitForPlaying(root))
         {
-            Failures.Add($"cycle {cycle} load: the world never reached Playing within {LoadFrameBudget} frames.");
+            Fail($"cycle {cycle} load: the world never reached Playing within {LoadFrameBudget} frames.");
             return;
         }
         CheckLandingReady(lifecycle.Session!, $"cycle {cycle} load");
@@ -226,7 +226,7 @@ public static class HeadlessLifecycle
             player.GetComponent<StatsComponent>() is not { } stats ||
             player.GetComponent<ProgressionComponent>() is not { Curve: { } curve } progression)
         {
-            Failures.Add($"{label}: the player has no stats/progression to derive from.");
+            Fail($"{label}: the player has no stats/progression to derive from.");
             return;
         }
 
@@ -311,7 +311,7 @@ public static class HeadlessLifecycle
         ShaderMaterial? material = body == null ? null : PlayerAppearance.FindMaterial(body);
         if (body == null || material == null)
         {
-            Failures.Add($"{label}: the player body has no appearance shader.");
+            Fail($"{label}: the player body has no appearance shader.");
             return;
         }
 
@@ -338,7 +338,7 @@ public static class HeadlessLifecycle
         RaceResource? race = RaceDatabase.Get("race.umbral");
         if (background == null || race == null || session.Players.Player is not { } player)
         {
-            Failures.Add($"{label}: audit character, race or background is missing.");
+            Fail($"{label}: audit character, race or background is missing.");
             return;
         }
 
@@ -387,7 +387,7 @@ public static class HeadlessLifecycle
     {
         if (lifecycle.Session is not { } original || GameManager.Instance is not { IsPlaying: true })
         {
-            Failures.Add($"reload cycle {cycle}: no playable session to rewind.");
+            Fail($"reload cycle {cycle}: no playable session to rewind.");
             return;
         }
         SaveManager saves = SaveManager.Instance;
@@ -445,7 +445,7 @@ public static class HeadlessLifecycle
         Check(lifecycle.Session != null && !ReferenceEquals(lifecycle.Session, original), $"reload cycle {cycle}: deferred request did not create a fresh session.");
         if (!await WaitForPlaying(root) || lifecycle.Session is not { } restored)
         {
-            Failures.Add($"reload cycle {cycle}: restored session never reached Playing.");
+            Fail($"reload cycle {cycle}: restored session never reached Playing.");
             return;
         }
         CheckLandingReady(restored, $"reload cycle {cycle}");
@@ -542,6 +542,9 @@ public static class HeadlessLifecycle
         Check(saveables == 0, $"{label}: {saveables} ISaveable(s) survived teardown.");
 
         int orphans = Orphans();
+        _worstLeak = Math.Max(_worstLeak, Math.Max(services - baselineServices,
+            Math.Max(subscribers - baselineSubscribers, orphans - baselineOrphans)));
+        _report.Fact("worst_teardown_delta", _worstLeak);
         Check(orphans <= baselineOrphans,
             $"{label}: {orphans - baselineOrphans} node(s) were left detached but not freed.");
     }
@@ -581,56 +584,26 @@ public static class HeadlessLifecycle
             return;
         }
 
-        for (int cycle = 1; cycle <= Cycles; cycle++)
+        for (int cycle = 1; cycle <= _cycles; cycle++)
         {
             saves.DeleteSlot($"lifecycle_probe_{cycle}");
         }
-
-        if (_ownedUserDir != null)
-        {
-            try
-            {
-                System.IO.Directory.Delete(_ownedUserDir, true);
-            }
-            catch (Exception ex) when (ex is System.IO.IOException or UnauthorizedAccessException)
-            {
-                Log.Warn($"lifecycle: could not remove the temp user directory '{_ownedUserDir}': {ex.Message}");
-            }
-        }
     }
 
-    private static void Check(bool condition, string failure)
-    {
-        if (!condition)
-        {
-            Failures.Add(failure);
-        }
-    }
+    private static void Fail(string failure) => _report.Fail(failure);
 
-    private static void Report(SceneTree tree, int baselineOrphans, int cycles, bool reloadAudit)
+    private static void Check(bool condition, string failure) => _report.Check(condition, failure);
+
+    private static void Report(SceneTree tree, int baselineOrphans, int cycles, string label)
     {
-        string label = reloadAudit ? "save-reload" : "lifecycle";
         Log.Info($"{label}: {cycles} new-game + load round trip(s); orphan nodes {Orphans()} " +
                  $"(baseline {baselineOrphans}); invariant violations {Invariant.Violations}.");
-
-        if (Failures.Count == 0 && Invariant.Violations == 0)
-        {
-            Log.Info($"{label}: PASS");
-            tree.Quit(0);
-            return;
-        }
-
-        foreach (string failure in Failures)
-        {
-            Log.Error($"lifecycle: {failure}");
-        }
-
+        _report.Fact("orphans", Orphans()).Fact("invariant_violations", Invariant.Violations);
         if (Invariant.Violations > 0)
         {
-            Log.Error($"lifecycle: {Invariant.Violations} invariant violation(s) were recorded during the run.");
+            Fail($"{Invariant.Violations} invariant violation(s) were recorded during the run.");
         }
 
-        Log.Error("lifecycle: FAIL");
-        tree.Quit(1);
+        HeadlessGate.Finish(tree, _report, label: label);
     }
 }

@@ -144,5 +144,6 @@
     <Compile Remove="src/Magic/MagicStatusProbeSeam.cs" />
     <Compile Remove="src/Bootstrap/BuildFreshness.cs" />
     <Compile Remove="src/Bootstrap/SessionEntryRules.cs" />
+    <Compile Remove="src/Bootstrap/Arena*.cs" />
   </ItemGroup>
 </Project>
