@@ -96,6 +96,7 @@ internal static class VfxMaterials
     public static readonly StringName Reveal = "reveal";
     public static readonly StringName SpanLimit = "span_limit";
     public static readonly StringName SpanFloor = "span_floor";
+    public static readonly StringName Tongues = "tongues";
 
     /// <summary>Drawn before every other effect, so the rest of a blast lands on top of the bend.</summary>
     public const int DistortionPriority = -8;

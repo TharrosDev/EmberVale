@@ -82,6 +82,24 @@ internal struct VfxShellSpec
     /// is behind it. Fire becoming smoke.</summary>
     public bool Cools;
 
+    /// <summary>A sheet of fire is drawn as licks of flame standing on a hot ground line (0..1)
+    /// instead of a lit panel with flame shapes along its top: gaps between the tongues, the body
+    /// in the edge colour, both ends faded right out. See <c>tongues</c> in <c>vfx_flow.gdshader</c>.</summary>
+    public float Tongues;
+
+    /// <summary>How far apart a layered sheet's two layers stand, metres either side of its line.
+    /// 0 = a hand (0.12 m).</summary>
+    public float LayerGap;
+
+    /// <summary>A sustained shell settles: after <see cref="SettleHold"/> seconds at its full
+    /// opacity it fades over this many seconds to <see cref="SettleOpacity"/> of it and stays
+    /// there (a ward that flares as it is cast, then is a faint shimmer). 0 = it never settles.</summary>
+    public float SettleSeconds;
+
+    public float SettleHold;
+
+    public float SettleOpacity;
+
     /// <summary>Drawn as ice (<c>vfx_ice.gdshader</c>): translucent blue plates with bright seams, a
     /// lit rim and, on a sheet, a jagged crystal crest. <see cref="Occlude"/> is how much the ice
     /// covers what is behind it. Set by <see cref="IceWall"/> and <see cref="IceShell"/>.</summary>
@@ -221,10 +239,11 @@ public partial class VfxShell : VfxEffect
 
         // Two sheets a hand apart, so a wall has depth from the side and the flames cross. A post's
         // mesh is centred, so it is lifted to stand on its base.
+        float gap = spec.LayerGap > 0f ? spec.LayerGap : 0.12f;
         _outer.Position = sheet && spec.Layered
-            ? new Vector3(0f, 0f, 0.12f)
+            ? new Vector3(0f, 0f, gap)
             : post ? new Vector3(0f, 0.45f * spec.Size.Y, 0f) : Vector3.Zero;
-        _inner.Position = sheet ? new Vector3(0f, 0f, -0.12f) : Vector3.Zero;
+        _inner.Position = sheet ? new Vector3(0f, 0f, -gap) : Vector3.Zero;
 
         VfxSchoolColors colors = spec.Colors;
         float energy = colors.MidEnergy * (spec.Energy <= 0f ? 1f : spec.Energy);
@@ -290,6 +309,12 @@ public partial class VfxShell : VfxEffect
             if (Stopping)
             {
                 erode = 1f - StopFade(StopFadeSeconds * 2f);
+            }
+
+            if (_spec.SettleSeconds > 0f)
+            {
+                float settled = Mathf.SmoothStep(0f, 1f, ((float)Age - _spec.SettleHold) / _spec.SettleSeconds);
+                opacity *= Mathf.Lerp(1f, Mathf.Clamp(_spec.SettleOpacity, 0f, 1f), settled);
             }
 
             // A standing body of fire (a bolt's, a falling rock's) is torn, never a filled ball.
@@ -393,6 +418,7 @@ public partial class VfxShell : VfxEffect
         // world showing between them and not a lit panel.
         bool flames = spec.Shape == VfxShellShape.Sheet && !spec.Fresnel;
         material.SetShaderParameter(VfxMaterials.Thin, ragged ? 0.7f : flames ? 0.55f : 0f);
+        material.SetShaderParameter(VfxMaterials.Tongues, flames ? Mathf.Clamp(spec.Tongues, 0f, 1f) : 0f);
         material.SetShaderParameter(VfxMaterials.Cool, 0f);
     }
 

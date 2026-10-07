@@ -41,16 +41,34 @@ public static partial class SpellVfx
         {
             case SpellProcKind.WardHit:
             {
-                // The ward shows itself where it took the blow, and holds.
-                VfxShellSpec ripple = VfxShellSpec.Sphere(chest, 1f, cast.Colors);
+                // On the local player in first person the shell is around the camera and is not
+                // drawn: the blow the ward took is a shimmer at the edges of the view instead.
+                if (onPlayer && ViewIsFirstPerson(target))
+                {
+                    cast.Fx.ScreenEdge(SpellSchools.Color(school), 0.8f, 0.45f);
+                    break;
+                }
+
+                // The ward shows itself where it took the blow, and holds: the one time it pulses.
+                Vector3 middle = Vector3.Up;
+                var around = new Vector3(1.5f, 2.25f, 1.5f);
+                if (body != null)
+                {
+                    BodyFit(body, out middle, out Vector3 fit);
+                    around = new Vector3(fit.X + 0.7f, fit.Y + 0.35f, fit.X + 0.7f);
+                }
+
+                VfxShellSpec ripple = VfxShellSpec.Sphere(position + middle, 1f, cast.Colors);
+                ripple.Size = around;
                 ripple.Fresnel = true;
+                ripple.RimPower = 3f;
                 ripple.Life = 0.32f;
                 ripple.StartScale = 0.9f;
                 ripple.Opacity = 0.8f;
                 VfxHandle<VfxShell> shell = cast.Fx.Shell(ripple);
                 if (body != null)
                 {
-                    shell.Get?.Follow(VfxAnchor.To(body, Vector3.Up));
+                    shell.Get?.Follow(VfxAnchor.To(body, middle));
                 }
 
                 VfxFlareSpec glint = VfxFlareSpec.At(chest, 0.3f, cast.Colors);
@@ -62,6 +80,11 @@ public static partial class SpellVfx
             case SpellProcKind.WardBreak:
             {
                 // The shell bursts: a flash, a ring, and its pieces.
+                if (onPlayer && ViewIsFirstPerson(target))
+                {
+                    cast.Fx.ScreenEdge(SpellSchools.Color(school), 1f, 0.7f);
+                }
+
                 var stage = new VfxStage
                 {
                     Flare = true,
@@ -117,9 +140,18 @@ public static partial class SpellVfx
             case SpellProcKind.Freeze:
             {
                 // Ice closes over the bearer and holds for a moment; shards and cold fall off it.
+                // Fitted to the body and standing on its feet, like the shell the status then wears.
                 VfxSchoolColors ice = VfxPalette.For(DamageType.Frost);
-                VfxShellSpec shell = VfxShellSpec.IceShell(chest, 1f, ice);
-                shell.Size = new Vector3(1.5f, 2.1f, 1.5f);
+                Vector3 middle = Vector3.Up;
+                var around = new Vector3(1.5f, 2.1f, 1.5f);
+                if (body != null)
+                {
+                    BodyFit(body, out middle, out Vector3 fit);
+                    around = new Vector3(fit.X + 0.7f, fit.Y + 0.2f, fit.X + 0.7f);
+                }
+
+                VfxShellSpec shell = VfxShellSpec.IceShell(body != null ? body.GlobalPosition + middle : chest, 1f, ice);
+                shell.Size = around;
                 shell.Occlude = 0.35f;
                 shell.Life = 0.9f;
                 shell.BurnsAway = true;
@@ -127,7 +159,7 @@ public static partial class SpellVfx
                 VfxHandle<VfxShell> frozen = cast.Fx.Shell(shell);
                 if (body != null)
                 {
-                    frozen.Get?.Follow(VfxAnchor.To(body, Vector3.Up));
+                    frozen.Get?.Follow(VfxAnchor.To(body, middle));
                 }
 
                 VfxFlareSpec snap = VfxFlareSpec.At(chest, 0.7f, ice);

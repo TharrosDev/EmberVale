@@ -13,6 +13,10 @@ namespace Embervale.Magic.Vfx;
 public partial class VfxScreen : CanvasLayer
 {
     private readonly ColorRect _rect;
+    private readonly TextureRect _edge;
+    private double _edgeAge = 10d;
+    private float _edgePeak;
+    private float _edgeSeconds = 1f;
     private double _clock;
     private double _lastFlash = -10d;
     private double _age = 10d;
@@ -36,6 +40,49 @@ public partial class VfxScreen : CanvasLayer
         };
         _rect.SetAnchorsPreset(Control.LayoutPreset.FullRect);
         AddChild(_rect);
+
+        // The edge shimmer: a tint that is clear across the middle of the frame and gathers at
+        // its edges, for an effect on the local player's own body in first person.
+        _edge = new TextureRect
+        {
+            Name = "Edge",
+            Texture = VfxTextures.Edge,
+            ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
+            StretchMode = TextureRect.StretchModeEnum.Scale,
+            MouseFilter = Control.MouseFilterEnum.Ignore,
+            Modulate = new Color(1f, 1f, 1f, 0f),
+            Visible = false,
+        };
+        _edge.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+        AddChild(_edge);
+    }
+
+    /// <summary>
+    /// Asks for an edge shimmer of <paramref name="strength"/> (0..1) in a school colour, lasting
+    /// <paramref name="seconds"/>. Returns whether it was shown: a fainter one never cuts a stronger
+    /// one short.
+    /// </summary>
+    internal bool Edge(Color school, float strength, float seconds)
+    {
+        float peak = VfxScreenRules.EdgePeak(strength, LiveComfort.Get().ScreenFlash, VfxQuality.ReducedMotion);
+        if (peak <= 0.004f)
+        {
+            return false;
+        }
+
+        if (_edge.Visible && VfxScreenRules.EdgeEnvelope(_edgeAge, _edgePeak, _edgeSeconds) > peak)
+        {
+            return false;
+        }
+
+        // One already showing carries on from its own brightness instead of dipping to nothing.
+        _edgeAge = _edge.Visible ? VfxScreenRules.EdgeAttackSeconds : 0d;
+        _edgePeak = peak;
+        _edgeSeconds = Mathf.Max(0.3f, seconds);
+        Color tint = VfxScreenRules.EdgeTint(school);
+        _edge.Modulate = new Color(tint.R, tint.G, tint.B, _edge.Visible ? peak : 0f);
+        _edge.Visible = true;
+        return true;
     }
 
     /// <summary>The peak alpha of the flash now on screen, for a probe.</summary>
@@ -68,11 +115,30 @@ public partial class VfxScreen : CanvasLayer
         _age = 10d;
         _peak = 0f;
         _rect.Visible = false;
+        _edgeAge = 10d;
+        _edgePeak = 0f;
+        _edge.Visible = false;
     }
 
     public override void _Process(double delta)
     {
         _clock += delta;
+        if (_edge.Visible)
+        {
+            _edgeAge += delta;
+            float shimmer = VfxScreenRules.EdgeEnvelope(_edgeAge, _edgePeak, _edgeSeconds);
+            if (shimmer <= 0f && _edgeAge > VfxScreenRules.EdgeAttackSeconds)
+            {
+                _edge.Visible = false;
+                _edgePeak = 0f;
+            }
+            else
+            {
+                Color tint = _edge.Modulate;
+                _edge.Modulate = new Color(tint.R, tint.G, tint.B, shimmer);
+            }
+        }
+
         if (!_rect.Visible)
         {
             return;

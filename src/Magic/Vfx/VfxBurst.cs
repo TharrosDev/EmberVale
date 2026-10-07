@@ -56,6 +56,12 @@ internal struct VfxBurstSpec
     /// crater), so nothing has to remember to stop it. 0 = it runs until stopped.</summary>
     public float StreamSeconds;
 
+    /// <summary>The sprite to draw the particles with in place of the preset's own. Null = the
+    /// preset's, or its school's shape when the spawner knows the school
+    /// (<see cref="VfxBurstPresets.SchoolSprite"/>). It must be drawn the same way as the preset's
+    /// (<see cref="VfxBurstPresets.Fits"/>), or it is ignored.</summary>
+    public VfxSprite? Sprite;
+
     public static VfxBurstSpec At(Vector3 position, in VfxSchoolColors colors, float density) => new()
     {
         Position = position,
@@ -95,6 +101,7 @@ public partial class VfxBurst : VfxEffect
     private readonly ShaderMaterial _draw;
     private readonly VfxRamp _ramp;
 
+    private VfxSprite _sprite;
     private float _life;
     private bool _continuous;
     private float _streamSeconds;
@@ -147,10 +154,18 @@ public partial class VfxBurst : VfxEffect
             _process.AngleMax = 180f;
         }
 
+        // A tongue of flame stands tip up, leaning a little either way; it is never upside down.
+        bool tongue = _preset.Sprite == VfxSprite.Flame && !_preset.AlignVelocity;
+        if (tongue)
+        {
+            _process.AngleMin = -32f;
+            _process.AngleMax = 32f;
+        }
+
         if (_preset.Spin)
         {
-            // A puff turns slowly; a shard or a chunk tumbles.
-            float spin = _preset.Sprite == VfxSprite.Puff ? 40f : 360f;
+            // A puff turns slowly and a tongue of flame only sways; a shard or a chunk tumbles.
+            float spin = tongue ? 18f : _preset.Sprite == VfxSprite.Puff ? 40f : 360f;
             _process.AngularVelocityMin = -spin;
             _process.AngularVelocityMax = spin;
         }
@@ -164,6 +179,7 @@ public partial class VfxBurst : VfxEffect
             _process.TurbulenceInfluenceMax = 0.22f;
         }
 
+        _sprite = _preset.Sprite;
         _draw = VfxMaterials.Sprite(VfxTextures.Sprite(_preset.Sprite), _preset.AlignVelocity, _preset.Occlude);
         _draw.SetShaderParameter(VfxMaterials.Dissolve, _preset.Dissolve);
         _draw.SetShaderParameter(VfxMaterials.UseHeat, _ramp == VfxRamp.Heat ? 1f : 0f);
@@ -171,7 +187,7 @@ public partial class VfxBurst : VfxEffect
 
         // Puffs are the only particles large enough to cover a frame: each is thinned by how wide
         // it stands on screen (the coverage governor, per particle; see vfx_sprite.gdshader).
-        bool large = _preset.Sprite == VfxSprite.Puff;
+        bool large = Billows(_preset);
         _draw.SetShaderParameter(VfxMaterials.SpanLimit, large ? VfxCoverageRules.PuffSpan : 0f);
         _draw.SetShaderParameter(VfxMaterials.SpanFloor, VfxCoverageRules.PuffFloor);
 
@@ -202,9 +218,14 @@ public partial class VfxBurst : VfxEffect
         : preset.Sprite switch
         {
             VfxSprite.Streak => VfxMaterials.SparkQuad,
-            VfxSprite.Comet => VfxMaterials.CometQuad,
+            VfxSprite.Comet or VfxSprite.Wisp or VfxSprite.Flame => VfxMaterials.CometQuad,
             _ => VfxMaterials.StreakQuad,
         };
+
+    /// <summary>Whether a preset's particles are the large soft ones (a puff of smoke or mist, a
+    /// swelling tongue of flame): the ones big enough to cover a frame or be cut by the floor.</summary>
+    private static bool Billows(in VfxBurstPreset preset) =>
+        preset.Sprite == VfxSprite.Puff || (preset.Sprite == VfxSprite.Flame && !preset.AlignVelocity);
 
     /// <summary>The slot of the pool table this emitter was built for: a <see cref="VfxParticles"/>
     /// or a <see cref="VfxEmitter"/> number.</summary>
@@ -217,6 +238,18 @@ public partial class VfxBurst : VfxEffect
     internal void Arm(in VfxBurstSpec spec)
     {
         GlobalPosition = spec.Position;
+
+        // The picture is a texture on the draw material, never a feature of the emitter, so one
+        // pooled emitter can be a spark for fire and a jagged one for lightning without compiling.
+        VfxSprite sprite = spec.Sprite is { } asked && VfxBurstPresets.Fits(asked, _preset.AlignVelocity)
+            ? asked
+            : _preset.Sprite;
+        if (sprite != _sprite)
+        {
+            _sprite = sprite;
+            _draw.SetShaderParameter(VfxMaterials.Mask, VfxTextures.Sprite(sprite));
+        }
+
         _continuous = spec.Continuous;
         _streamSeconds = spec.Continuous ? Mathf.Max(0f, spec.StreamSeconds) : 0f;
 
@@ -298,7 +331,7 @@ public partial class VfxBurst : VfxEffect
 
         // Puffs are metres across and sit on the floor: without the depth fade each one is cut by the
         // ground in a hard line. Small added particles do without it, and so does the leanest tier.
-        bool puff = _preset.Sprite == VfxSprite.Puff;
+        bool puff = Billows(_preset);
         _draw.SetShaderParameter(
             VfxMaterials.SoftDepth,
             puff && VfxQuality.Rich.SoftParticles ? Mathf.Clamp(0.4f * sizeScale, 0.2f, 1f) : 0f);

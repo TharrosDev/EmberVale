@@ -530,7 +530,9 @@ internal readonly struct VfxCast
         Recipe = recipe;
         Authored = authored;
         Weight = weight;
-        Fx = fx;
+
+        // The spawner is told the school, so a preset thrown through it takes the school's shape.
+        Fx = fx.ForSchool(school);
     }
 
     /// <summary>The spell, or null for an effect that has only a school (a status going off).</summary>
@@ -598,6 +600,9 @@ internal sealed class VfxRig
     public VfxHandle<VfxBurst> Stream { get; set; }
 
     public VfxHandle<VfxBolt> Bolt { get; set; }
+
+    /// <summary>The structured part of an aura (flames, shards, arcs), for a charge that fills it.</summary>
+    public VfxHandle<VfxMotif> Motif { get; set; }
 
     /// <summary>The density a stream was started at, for a charge that thickens it.</summary>
     public float Density { get; set; }

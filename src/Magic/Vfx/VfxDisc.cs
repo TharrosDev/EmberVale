@@ -183,6 +183,15 @@ public partial class VfxDisc : VfxEffect
         }
 
         float fadeIn = Mathf.Clamp((float)Age / 0.15f, 0f, 1f);
+        if (!_spec.FaceCamera && !_spec.Fills && Director is { HasCamera: true } eye)
+        {
+            // A disc on the floor about the camera itself (the player's own self-cast in first
+            // person) is a band across the bottom of the view. A telegraph is a warning and is
+            // never cut.
+            Vector3 toEye = eye.CameraPosition - GlobalPosition;
+            fadeIn *= VfxScreenRules.SelfRing(new Vector2(toEye.X, toEye.Z).Length(), toEye.Y, _spec.Radius);
+        }
+
         if (Stopping)
         {
             float left = StopFade(StopFadeSeconds * 1.5f);

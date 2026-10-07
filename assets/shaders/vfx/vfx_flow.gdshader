@@ -40,6 +40,14 @@ uniform float thin = 0.0;
 uniform float cool = 0.0;
 uniform vec4 color_dark : source_color = vec4(0.03, 0.028, 0.026, 1.0);
 
+// A WALL OF FLAME. `tongues` 0 leaves a sheet exactly as it was: solid from its base to half its
+// height, with flame shapes only along its top edge, which summed to a lit rectangle. At 1 the sheet
+// is licks of flame standing on a hot ground line: how high they reach drifts along the wall, the
+// world shows between them from a little above the base, the heat (and so the pale core colour)
+// falls away with height so the body is the edge colour, and the two ends fade out over a third of
+// the width so no edge of the card is ever seen.
+uniform float tongues = 0.0;
+
 void vertex() {
 	if (billow > 0.0) {
 		float lump = textureLod(noise, UV * tiling * 0.7 + scroll * (TIME + time_offset) * 0.5, 0.0).r;
@@ -61,6 +69,16 @@ void fragment() {
 	float body = smoothstep(threshold, threshold + 0.22, lifted);
 	float burning = body * (1.0 - smoothstep(threshold + 0.22, threshold + 0.42, lifted)) * front;
 	float sides = mix(1.0, smoothstep(0.0, 0.18, UV.x) * smoothstep(0.0, 0.18, 1.0 - UV.x), fade_sides);
+	if (tongues > 0.0) {
+		float crest = textureLod(noise, vec2(UV.x * tiling.x * 0.5, t * 0.11), 0.0).r;
+		float climbed = clamp(height / mix(0.5, 1.0, crest), 0.0, 1.0);
+		float cut = 0.3 + climbed * 0.52 + erode;
+		float licks = smoothstep(cut, cut + 0.2, n + (1.0 - climbed) * 0.22);
+		licks *= 1.0 - smoothstep(0.82, 1.0, climbed);
+		body = mix(body, licks, tongues);
+		float ends = smoothstep(0.0, 0.3, UV.x) * smoothstep(0.0, 0.3, 1.0 - UV.x);
+		sides = mix(sides, ends, tongues * fade_sides);
+	}
 
 	// The shell: a bright rim with the noise crawling over it, eaten away as `erode` rises.
 	float facing = abs(dot(normalize(NORMAL), normalize(VIEW)));
@@ -83,6 +101,7 @@ void fragment() {
 
 	float heat = smoothstep(0.35, 0.95, intensity * (0.6 + 0.6 * n));
 	heat = max(heat * (1.0 - cool), burning * (1.0 - cool * 0.7));
+	heat *= mix(1.0, (1.0 - height) * (1.0 - height), tongues);
 	intensity *= mix(1.0, 0.3 + 0.7 * max(heat, cool), thin);
 	vec3 rgb = mix(color_edge.rgb, color_core.rgb, heat) * energy;
 	rgb = mix(rgb, color_dark.rgb, cool * (1.0 - burning));

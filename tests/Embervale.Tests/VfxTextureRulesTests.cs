@@ -15,7 +15,7 @@ public class VfxTextureRulesTests
     public static readonly TheoryData<string> Masks = new()
     {
         "Dot", "Streak", "Shard", "Leaf", "Puff", "Rune", "Scorch", "ScorchHeat", "Frost", "Roots",
-        "Crystal", "Glint", "Rays", "Comet",
+        "Crystal", "Glint", "Rays", "Comet", "Flame", "Snow", "Flake", "Spark", "Wisp", "Ash", "Mote",
     };
 
     private static Func<float, float, float> Painter(string name) => name switch
@@ -34,6 +34,13 @@ public class VfxTextureRulesTests
         "Glint" => VfxTextureRules.Glint,
         "Rays" => VfxTextureRules.Rays,
         "Comet" => VfxTextureRules.Comet,
+        "Flame" => VfxTextureRules.Flame,
+        "Snow" => VfxTextureRules.Snow,
+        "Flake" => VfxTextureRules.Flake,
+        "Spark" => VfxTextureRules.Spark,
+        "Wisp" => VfxTextureRules.Wisp,
+        "Ash" => VfxTextureRules.Ash,
+        "Mote" => VfxTextureRules.Mote,
         _ => throw new ArgumentOutOfRangeException(nameof(name)),
     };
 

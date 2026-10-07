@@ -55,6 +55,10 @@ internal struct VfxFlareSpec
     /// <summary>Leave the core and halo out: the ring (and the light) alone.</summary>
     public bool NoCore;
 
+    /// <summary>Leave the core out and keep the halo (and the light): the soft glow behind a shaped
+    /// head (<see cref="VfxMotif"/>) that is itself the bright part.</summary>
+    public bool HaloOnly;
+
     public static VfxFlareSpec At(Vector3 position, float radius, in VfxSchoolColors colors) => new()
     {
         Position = position,
@@ -108,6 +112,14 @@ public partial class VfxFlare : VfxEffect
     /// <summary>A held glow's core energy against the school's body energy: past the bloom
     /// threshold, short of clipping every channel (which is what turns any colour white).</summary>
     private const float HeldEnergy = 0.6f;
+
+    /// <summary>A held glow's energy at the first-person casting point against its energy at fight
+    /// distance, and its halo's alpha likewise. A metre and a half from the eye, with a halo laid
+    /// over it, the full value clips every channel and the charge in the hand is a white disc
+    /// whatever its school.</summary>
+    private const float HeldNearEnergy = 0.55f;
+
+    private const float HeldNearHalo = 0.5f;
     private const float FadeInSeconds = 0.1f;
 
     private readonly MeshInstance3D _core;
@@ -124,6 +136,7 @@ public partial class VfxFlare : VfxEffect
 
     private VfxFlareSpec _spec;
     private Basis _ringFacing = Basis.Identity;
+    private bool _ringFlat = true;
     private bool _hasLight;
     private bool _hasShadow;
     private float _lightEnergy;
@@ -168,7 +181,7 @@ public partial class VfxFlare : VfxEffect
         VfxSchoolColors colors = spec.Colors;
         VfxRichness rich = VfxQuality.Rich;
         bool core = !spec.NoCore;
-        _core.Visible = core;
+        _core.Visible = core && !spec.HaloOnly;
         _halo.Visible = core;
         _streak.Visible = core && spec.Streak;
         _rays.Visible = core && spec.Rays && rich.Rays && !spec.Sustain;
@@ -203,6 +216,7 @@ public partial class VfxFlare : VfxEffect
             _ringMaterial.SetShaderParameter(VfxMaterials.Streaks, rich.Rays ? Mathf.Clamp(spec.RingStreaks, 0f, 1f) : 0f);
             _ringMaterial.SetShaderParameter(VfxMaterials.Spin, (Serial * 0.618f) % 1f);
             _ringFacing = Facing(spec.RingNormal);
+            _ringFlat = _ringFacing == Basis.Identity;
         }
 
         _hasLight = false;
@@ -295,6 +309,7 @@ public partial class VfxFlare : VfxEffect
         float ringDepth;
         float light;
         float boost = 1f;
+        float held = 1f;
 
         if (_spec.Sustain)
         {
@@ -312,10 +327,12 @@ public partial class VfxFlare : VfxEffect
             // of a bolt just launched are a metre and a half out, where a 0.3 m glow is a disc over
             // a fifth of the frame. It grows to its full size over the first metres of its flight.
             float near = VfxCoverageRules.NearScale(distance);
+            float share = VfxCoverageRules.NearShare(near);
+            held = Mathf.Lerp(HeldNearEnergy, 1f, share);
             coreSize = radius * (0.45f + (0.55f * _level)) * flicker * near;
             haloSize = coreSize * HaloScale;
             coreAlpha = fade * (0.6f + (0.4f * _level));
-            haloAlpha = fade * halo * (0.55f + (0.45f * _level));
+            haloAlpha = fade * halo * (0.55f + (0.45f * _level)) * Mathf.Lerp(HeldNearHalo, 1f, share);
             ringRadius = Mathf.Max(0.05f, _spec.RingRadius);
             ringAlpha = fade * 0.75f;
             ringDepth = ringRadius * 0.12f;
@@ -370,7 +387,7 @@ public partial class VfxFlare : VfxEffect
             _coreMaterial.SetShaderParameter(VfxMaterials.Opacity, Mathf.Clamp(coreAlpha, 0f, 1f));
             _coreMaterial.SetShaderParameter(
                 VfxMaterials.Energy,
-                _spec.Sustain ? _spec.Colors.MidEnergy * HeldEnergy : _spec.Colors.CoreEnergy * boost);
+                _spec.Sustain ? _spec.Colors.MidEnergy * HeldEnergy * held : _spec.Colors.CoreEnergy * boost);
             _haloMaterial.SetShaderParameter(VfxMaterials.Opacity, Mathf.Clamp(haloAlpha, 0f, 1f));
         }
 
@@ -394,6 +411,14 @@ public partial class VfxFlare : VfxEffect
 
         if (_ring.Visible)
         {
+            // A ring on the floor about the camera itself (the player's own self-cast in first
+            // person) is a band across the bottom of the view: it is cut right back while it is close.
+            if (_ringFlat && Director is { HasCamera: true } eye)
+            {
+                Vector3 toEye = eye.CameraPosition - GlobalPosition;
+                ringAlpha *= VfxScreenRules.SelfRing(new Vector2(toEye.X, toEye.Z).Length(), toEye.Y, ringRadius);
+            }
+
             // The ring is held at one place on its mesh and the mesh is scaled with it.
             float size = ringRadius * 2f / RingAt;
             _ring.Basis = new Basis(_ringFacing.X * size, _ringFacing.Y, _ringFacing.Z * size);

@@ -37,7 +37,8 @@ public static partial class SpellVfx
         // Essential, so the budget never takes a status off a body that still has it; measured, so
         // one too far away to read is left to its plain marker.
         VfxSpawner fx = _director!.Open(
-            body.GlobalPosition + Vector3.Up, IsPlayer(bearer), essential: true, sustained: true, measured: true);
+            body.GlobalPosition + Vector3.Up, IsPlayer(bearer), essential: true, sustained: true, measured: true)
+            .ForSchool(school);
         if (!fx.Full)
         {
             return null;
@@ -130,9 +131,12 @@ public static partial class SpellVfx
             case StatusVfxShape.IceShell:
             {
                 // A block of ice: rim-lit, half covering what is inside it, with cold falling off it.
-                var middle = new Vector3(0f, 1f, 0f);
+                // Fitted to the body it closes over and standing on its feet (a body's origin is
+                // not always at its feet: the practice dummies' is the middle of their capsule).
+                BodyFit(body, out Vector3 middle, out Vector3 fit);
+                var feet = new Vector3(0f, middle.Y - (fit.Y * 0.5f), 0f);
                 VfxShellSpec ice = VfxShellSpec.Sphere(body.GlobalPosition + middle, 1f, colors);
-                ice.Size = new Vector3(1.35f, 2.1f, 1.35f);
+                ice.Size = new Vector3(fit.X + 0.55f, fit.Y + 0.2f, fit.X + 0.55f);
                 ice.Sustain = true;
                 ice.Fresnel = true;
                 ice.RimPower = 3f;
@@ -145,7 +149,7 @@ public static partial class SpellVfx
                 shell.Get?.Follow(VfxAnchor.To(body, middle));
                 replaces = shell.IsLive;
 
-                var low = new Vector3(0f, 0.35f, 0f);
+                Vector3 low = feet + new Vector3(0f, 0.35f, 0f);
                 VfxBurstSpec mist = StatusStream(body, low, colors, ArcanaAmount(0.45f));
                 mist.Extents = new Vector3(0.6f, 0.12f, 0.6f);
                 mist.SpeedScale = 0.4f;
@@ -156,12 +160,12 @@ public static partial class SpellVfx
                     rig.Add(fx.Mark(new VfxGroundMarkSpec
                     {
                         Mark = VfxMark.Frost,
-                        Position = body.GlobalPosition,
+                        Position = body.GlobalPosition + feet,
                         Size = 2.2f,
                         Colors = colors,
                         Sustain = true,
                         Reach = 1f,
-                    })).Get?.Follow(VfxAnchor.To(body));
+                    })).Get?.Follow(VfxAnchor.To(body, feet));
                 }
 
                 break;
@@ -169,17 +173,22 @@ public static partial class SpellVfx
 
             case StatusVfxShape.WardShell:
             {
-                var middle = new Vector3(0f, 1f, 0f);
                 // A shell, not a volume: a thin school-coloured rim hugging the body, clear across its
-                // middle. It is worn for the whole of the ward, so it must never hide its bearer.
+                // middle. It is worn for the whole of the ward, so it must never hide its bearer: it
+                // shows itself as the ward goes up, then settles in a second to a faint shimmer, and
+                // from then on only a blow it absorbs lights it (SpellProcKind.WardHit).
+                BodyFit(body, out Vector3 middle, out Vector3 fit);
                 VfxShellSpec ward = VfxShellSpec.Sphere(
                     body.GlobalPosition + middle, 1f, colors with { Core = colors.Mid });
-                ward.Size = new Vector3(1.5f, 2.25f, 1.5f);
+                ward.Size = new Vector3(fit.X + 0.7f, fit.Y + 0.35f, fit.X + 0.7f);
                 ward.Sustain = true;
                 ward.Fresnel = true;
                 ward.RimPower = 4f;
                 ward.Opacity = 0.5f;
                 ward.Energy = 0.4f;
+                ward.SettleHold = 0.35f;
+                ward.SettleSeconds = 0.7f;
+                ward.SettleOpacity = 0.22f;
                 VfxHandle<VfxShell> shell = rig.Add(fx.Shell(ward));
                 shell.Get?.Follow(VfxAnchor.To(body, middle));
                 replaces = shell.IsLive;

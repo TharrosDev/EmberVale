@@ -81,6 +81,97 @@ public static class VfxScreenRules
         static float Mix(float from, float to) => Math.Clamp(from + ((to - from) * WarmWhiteMix), 0f, 1f);
     }
 
+    // --- the edge shimmer ------------------------------------------------------------------------
+
+    /// <summary>The share of the way from the middle of the frame to its edge that the edge
+    /// shimmer leaves completely clear.</summary>
+    public const float EdgeClear = 0.62f;
+
+    /// <summary>The most the edge shimmer is ever drawn with, at the very edge of the frame.</summary>
+    public const float EdgeMaxPeak = 0.3f;
+
+    /// <summary>The same under Reduced Motion.</summary>
+    public const float EdgeReducedCap = 0.12f;
+
+    /// <summary>Seconds the shimmer takes to come up.</summary>
+    public const float EdgeAttackSeconds = 0.12f;
+
+    /// <summary>How far the school colour of the shimmer is pulled toward white: far less than a
+    /// flash, because it never covers the middle of the frame.</summary>
+    public const float EdgeWhiteMix = 0.3f;
+
+    /// <summary>
+    /// The peak alpha, at the frame's edge, of an edge shimmer of <paramref name="strength"/> (0..1)
+    /// under the player's flash setting. The shimmer is what the local player sees of an effect on
+    /// their own body in first person (a ward taking a blow, a self-cast), so it is always theirs.
+    /// </summary>
+    public static float EdgePeak(float strength, float comfortFlash, bool reducedMotion)
+    {
+        float peak = Math.Clamp(strength, 0f, 1f) * EdgeMaxPeak * Math.Clamp(comfortFlash, 0f, 1f);
+        return reducedMotion ? Math.Min(peak, EdgeReducedCap) : peak;
+    }
+
+    /// <summary>The shimmer's alpha <paramref name="age"/> seconds into one of
+    /// <paramref name="seconds"/>: up quickly, then easing away over the rest.</summary>
+    public static float EdgeEnvelope(double age, float peak, float seconds)
+    {
+        seconds = Math.Max(EdgeAttackSeconds * 2f, seconds);
+        if (age < 0d || age >= seconds)
+        {
+            return 0f;
+        }
+
+        if (age < EdgeAttackSeconds)
+        {
+            return peak * (float)(age / EdgeAttackSeconds);
+        }
+
+        float left = 1f - (float)((age - EdgeAttackSeconds) / (seconds - EdgeAttackSeconds));
+        return peak * left * left;
+    }
+
+    /// <summary>The shimmer's colour for a school colour.</summary>
+    public static Color EdgeTint(Color school) => new(
+        school.R + ((1f - school.R) * EdgeWhiteMix),
+        school.G + ((1f - school.G) * EdgeWhiteMix),
+        school.B + ((1f - school.B) * EdgeWhiteMix));
+
+    // --- a ring around the camera ----------------------------------------------------------------
+
+    /// <summary>The least a ring the camera stands in the middle of is drawn with.</summary>
+    public const float SelfRingFloor = 0.16f;
+
+    /// <summary>
+    /// How strongly a flat ring or disc on the ground is drawn when the camera stands at its centre:
+    /// the player's own self-cast in first person (a bark ring, a mending circle, a ward's sigil).
+    /// Seen from the middle, a ring a couple of metres out is a bright band across the bottom of the
+    /// view, straight through the hotbar. So a ring is cut to <see cref="SelfRingFloor"/> while the
+    /// camera is within a metre of its centre line, 0.6 to 2.8 m above it, and its radius is under
+    /// about three metres; by four and a half metres out (a nova, well up the view and clear of the
+    /// hotbar) it is drawn in full. A camera that is not over the centre (third person, any ring
+    /// about somebody else) always gets 1.
+    /// </summary>
+    /// <param name="horizontal">Metres from the camera to the ring's centre, along the ground.</param>
+    /// <param name="height">Metres the camera is above the ring's plane.</param>
+    /// <param name="radius">The ring's radius now, metres.</param>
+    public static float SelfRing(float horizontal, float height, float radius)
+    {
+        if (height < 0.6f || height > 2.8f)
+        {
+            return 1f;
+        }
+
+        float centred = 1f - Smooth(0.8f, 2f, horizontal);
+        float close = 1f - Smooth(2.8f, 4.5f, radius);
+        return 1f - (centred * close * (1f - SelfRingFloor));
+
+        static float Smooth(float from, float to, float value)
+        {
+            float t = Math.Clamp((value - from) / (to - from), 0f, 1f);
+            return t * t * (3f - (2f * t));
+        }
+    }
+
     /// <summary>The smallest shell (largest half extent, metres) the engulf rule applies to. A bolt's
     /// body in the casting hand is smaller than this and is always drawn.</summary>
     public const float EngulfMinHalfExtent = 0.9f;

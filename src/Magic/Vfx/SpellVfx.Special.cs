@@ -60,6 +60,11 @@ internal sealed class SpellVfxSpecial
     public delegate bool ProcHook(
         in VfxCast cast, SpellProcKind kind, IEntity? target, Vector3 position, float radius);
 
+    /// <summary>A totem healed <paramref name="target"/> (null when there was nobody to heal) this
+    /// tick. Return true to replace the generic pulse (a ring out from the post, a line to the
+    /// healed), false to add to it. Neither node is positioned late: both may be read.</summary>
+    public delegate bool TotemPulseHook(in VfxCast cast, Node3D totem, Node3D? target);
+
     public WindupHook? Windup { get; set; }
 
     public ReleaseHook? Release { get; set; }
@@ -85,6 +90,8 @@ internal sealed class SpellVfxSpecial
     public PlacedHook? Barrier { get; set; }
 
     public PlacedHook? Totem { get; set; }
+
+    public TotemPulseHook? TotemPulse { get; set; }
 
     public MoveHook? Dash { get; set; }
 

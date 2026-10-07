@@ -95,12 +95,17 @@ public static partial class SpellVfx
         }
         else
         {
-            // Flame colours and half the energy: two added layers at the school's full strength, in
-            // its near-white core colour, summed to a white rectangle with flames only on its top
-            // edge. At this the body sits orange to deep red and only its hottest tongues go yellow.
+            // Licks of flame standing on a hot ground line, in flame colours at under half the
+            // energy: the plain sheet is solid to half its height, and two added layers of it at the
+            // school's strength summed to a white rectangle with flames only on its top edge. As
+            // tongues the body sits orange to deep red, yellow only along its base, the world shows
+            // between the licks, and both ends fade right out so no edge of the card is seen. It
+            // erupts from the ground line in a quarter of a second.
             sheet.Colors = Flame(cast.Colors);
             sheet.Size = new Vector3(width, height * 1.15f, 1f);
-            sheet.Energy = 0.6f;
+            sheet.Energy = 0.45f;
+            sheet.Tongues = 1f;
+            sheet.RiseSeconds = 0.25f;
         }
 
         VfxHandle<VfxShell> wall = rig.Add(cast.Fx.Shell(sheet));
@@ -116,6 +121,39 @@ public static partial class SpellVfx
             // Nothing stands: let the barrier build its plain face.
             rig.Stop();
             return false;
+        }
+
+        if (!solid && VfxQuality.Rich.Billow)
+        {
+            // Depth: a second, lower pair of layers a foot further out either side, crossing the
+            // first at another pace, and licks of flame climbing off the whole length.
+            VfxShellSpec behind = sheet;
+            behind.Size = new Vector3(width * 0.94f, height * 0.9f, 1f);
+            behind.LayerGap = 0.34f;
+            behind.Energy = 0.36f;
+            behind.Tiling = new Vector2(Mathf.Max(1f, width * 0.5f), 1.3f);
+            behind.Scroll = new Vector2(-0.04f, 0.72f);
+            behind.RiseSeconds = 0.33f;
+            VfxHandle<VfxShell> deeper = rig.Add(cast.Fx.Shell(behind));
+            if (deeper.Get is { } layer)
+            {
+                layer.Follow(foot);
+                layer.OrientLike(barrier);
+            }
+
+            VfxBurstSpec licks = VfxBurstSpec.At(
+                Vector3.Zero, Flame(cast.Colors), budget.ParticleMultiplier * Mathf.Clamp(width * 0.3f, 0.5f, 2f));
+            licks.Continuous = true;
+            licks.Extents = new Vector3(width * 0.44f, 0.15f, 0.22f);
+            licks.Direction = Vector3.Up;
+            licks.Spread = 14f;
+            licks.SizeScale = Mathf.Clamp(height * 0.45f, 0.8f, 1.6f);
+            VfxHandle<VfxBurst> climbing = rig.Add(cast.Fx.Burst(VfxEmitter.FlameLick, licks));
+            if (climbing.Get is { } tongues)
+            {
+                tongues.Follow(VfxAnchor.To(barrier, Vector3.Up * 0.3f));
+                tongues.OrientLike(barrier);
+            }
         }
 
         // What it throws off along its length.
@@ -336,6 +374,12 @@ public static partial class SpellVfx
 
         Vector3 foot = totem.GlobalPosition;
         if (!BeginTotem(spell, null, foot, out VfxCast cast, sustained: false))
+        {
+            return;
+        }
+
+        Node3D? healed = target != null && GodotObject.IsInstanceValid(target) && target.IsInsideTree() ? target : null;
+        if (SpecialOf(spell)?.TotemPulse is { } special && special(cast, totem, healed))
         {
             return;
         }

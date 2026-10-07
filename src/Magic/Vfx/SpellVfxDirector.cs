@@ -48,6 +48,7 @@ public partial class SpellVfxDirector : Node
     private NodePool<VfxDistortion>? _distortions;
     private NodePool<VfxShell>? _shells;
     private NodePool<VfxDisc>? _discs;
+    private NodePool<VfxMotif>? _motifs;
     private VfxScreen? _screen;
     private int _warmFramesLeft = -1;
     private int _warmGroup;
@@ -221,6 +222,12 @@ public partial class SpellVfxDirector : Node
 
     internal VfxDisc AddDisc(in VfxSpawner spawner) => Add(_discs!, spawner);
 
+    internal VfxMotif AddMotif(in VfxSpawner spawner) => Add(_motifs!, spawner);
+
+    /// <summary>The screen-edge shimmer, within the limits in <see cref="VfxScreenRules"/>.</summary>
+    internal bool ScreenEdge(Color school, float strength, float seconds) =>
+        _screen != null && IsInstanceValid(_screen) && _screen.Edge(school, strength, seconds);
+
     /// <summary>A ground mark: not counted as a live effect, and kept within its own budget by
     /// fading the oldest mark when a new one would exceed it.</summary>
     internal VfxGroundMark? AddMark(in VfxSpawner spawner)
@@ -388,6 +395,10 @@ public partial class SpellVfxDirector : Node
         NodePool<VfxDisc> discs = null!;
         discs = new NodePool<VfxDisc>(() => new VfxDisc { Reclaim = e => discs.Return((VfxDisc)e) }, prewarm: 1, maxRetained: 16);
         _discs = discs;
+
+        NodePool<VfxMotif> motifs = null!;
+        motifs = new NodePool<VfxMotif>(() => new VfxMotif { Reclaim = e => motifs.Return((VfxMotif)e) }, prewarm: 1, maxRetained: 16);
+        _motifs = motifs;
     }
 
     private static VfxBurst NewBurst(int slot, System.Action<VfxEffect> reclaim)
@@ -417,6 +428,8 @@ public partial class SpellVfxDirector : Node
         _shells = null;
         _discs?.Clear();
         _discs = null;
+        _motifs?.Clear();
+        _motifs = null;
     }
 
     // --- shader warm-up ----------------------------------------------------------------------------
@@ -539,6 +552,17 @@ public partial class SpellVfxDirector : Node
         disc.Rune = true;
         spawner.Disc(disc);
 
+        // The instanced sprites of a motif, and the shaped sprites only a motif or a school's
+        // variant of a preset draws (painted in code on first use, like the ground patterns).
+        VfxMotifSpec motif = VfxMotifSpec.At(at, colors, VfxSprite.Crystal, VfxMotion.Orbit, 3, tiny, tiny);
+        motif.Sustain = true;
+        motif.TrueSize = true;
+        spawner.Motif(motif);
+        _ = VfxTextures.Spark;
+        _ = VfxTextures.Flake;
+        _ = VfxTextures.Glint;
+        _ = VfxTextures.Leaf;
+
         if (VfxQuality.Budget.Distortion)
         {
             spawner.Distortion(new VfxDistortionSpec { Position = at, Radius = tiny, Sustain = true, Strength = 0.0001f });
@@ -584,7 +608,7 @@ internal readonly struct VfxSpawner
 
     internal VfxSpawner(
         SpellVfxDirector director, int group, VfxDetail detail, bool byPlayer, bool essential, bool sustained,
-        bool late = false)
+        bool late = false, Combat.DamageType? school = null)
     {
         _director = director;
         Group = group;
@@ -593,7 +617,14 @@ internal readonly struct VfxSpawner
         Essential = essential;
         Sustained = sustained;
         Late = late;
+        School = school;
     }
+
+    /// <summary>The school this effect belongs to, when its opener said (<see cref="ForSchool"/>).
+    /// A recipe preset thrown through a spawner that knows its school is drawn with that school's
+    /// shape (<see cref="VfxBurstPresets.SchoolSprite"/>): thrown lightning is jagged, a mote of
+    /// frost is a snowflake.</summary>
+    public Combat.DamageType? School { get; }
 
     /// <summary>The ledger group of this effect.</summary>
     public int Group { get; }
@@ -620,7 +651,11 @@ internal readonly struct VfxSpawner
     /// <summary>The same effect, with every block from here on held back until its first frame. For
     /// effects that follow a node its caller positions just after telling the effect layer.</summary>
     public VfxSpawner AsLate() =>
-        IsNone ? this : new VfxSpawner(_director!, Group, Detail, Player, Essential, Sustained, late: true);
+        IsNone ? this : new VfxSpawner(_director!, Group, Detail, Player, Essential, Sustained, late: true, School);
+
+    /// <summary>The same effect, knowing which school it belongs to.</summary>
+    public VfxSpawner ForSchool(Combat.DamageType school) =>
+        IsNone ? this : new VfxSpawner(_director!, Group, Detail, Player, Essential, Sustained, Late, school);
 
     public VfxHandle<VfxFlare> Flare(VfxFlareSpec spec)
     {
@@ -659,7 +694,17 @@ internal readonly struct VfxSpawner
             return default;
         }
 
-        burst.Arm(spec);
+        if (spec.Sprite == null && School is { } school)
+        {
+            VfxBurstSpec shaped = spec;
+            shaped.Sprite = VfxBurstPresets.SchoolSprite(kind, school);
+            burst.Arm(shaped);
+        }
+        else
+        {
+            burst.Arm(spec);
+        }
+
         return new VfxHandle<VfxBurst>(burst);
     }
 
@@ -752,6 +797,29 @@ internal readonly struct VfxSpawner
         disc.Arm(spec);
         return new VfxHandle<VfxDisc>(disc);
     }
+
+    /// <summary>A handful of shaped sprites moving in a pattern (<see cref="VfxMotif"/>): flames in
+    /// a hand, orbiting shards, crackling arcs, the shaped head of a bolt. One draw call.</summary>
+    public VfxHandle<VfxMotif> Motif(in VfxMotifSpec spec)
+    {
+        if (!Full || spec.Count <= 0)
+        {
+            return default;
+        }
+
+        VfxMotif motif = _director!.AddMotif(this);
+        motif.Arm(spec);
+        return new VfxHandle<VfxMotif>(motif);
+    }
+
+    /// <summary>
+    /// A shimmer in <paramref name="school"/>'s colour around the edges of the screen for
+    /// <paramref name="seconds"/>, leaving the middle clear: what the local player sees of an effect
+    /// that is on their own body in first person (a ward, a self-cast), where a shell or a ring would
+    /// be a band across the view. Subject to the comfort limits; returns whether it was shown.
+    /// </summary>
+    public bool ScreenEdge(Color school, float strength, float seconds = 0.9f) =>
+        !IsNone && _director!.ScreenEdge(school, strength, seconds);
 
     /// <summary>A screen flash of <paramref name="strength"/> (0..1). Subject to every comfort
     /// limit; returns whether it was shown.</summary>

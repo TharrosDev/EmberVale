@@ -22,6 +22,14 @@ internal static class VfxTextures
     private static ImageTexture? _glint;
     private static ImageTexture? _comet;
     private static ImageTexture? _rays;
+    private static ImageTexture? _flame;
+    private static ImageTexture? _snow;
+    private static ImageTexture? _flake;
+    private static ImageTexture? _spark;
+    private static ImageTexture? _wisp;
+    private static ImageTexture? _ash;
+    private static ImageTexture? _mote;
+    private static GradientTexture2D? _edge;
     private static ImageTexture? _frostPattern;
     private static ImageTexture? _crackPattern;
     private static ImageTexture? _rootPattern;
@@ -39,6 +47,39 @@ internal static class VfxTextures
     public static Texture2D Glint => _glint ??= Mask(64, VfxTextureRules.Glint);
 
     public static Texture2D Comet => _comet ??= Mask(64, VfxTextureRules.Comet);
+
+    public static Texture2D Flame => _flame ??= Mask(64, VfxTextureRules.Flame);
+
+    public static Texture2D Snow => _snow ??= Mask(32, VfxTextureRules.Snow);
+
+    public static Texture2D Flake => _flake ??= Mask(64, VfxTextureRules.Flake);
+
+    public static Texture2D Spark => _spark ??= Mask(64, VfxTextureRules.Spark);
+
+    public static Texture2D Wisp => _wisp ??= Mask(64, VfxTextureRules.Wisp);
+
+    public static Texture2D Ash => _ash ??= Mask(32, VfxTextureRules.Ash);
+
+    public static Texture2D Mote => _mote ??= Mask(32, VfxTextureRules.Mote);
+
+    /// <summary>
+    /// The screen-edge shimmer (<see cref="VfxScreen"/>): clear across the middle of the frame and
+    /// rising to white at its corners, stretched over the whole view. A gradient resource, so there
+    /// is nothing to paint.
+    /// </summary>
+    public static Texture2D Edge => _edge ??= new GradientTexture2D
+    {
+        Width = 128,
+        Height = 128,
+        Fill = GradientTexture2D.FillEnum.Radial,
+        FillFrom = new Vector2(0.5f, 0.5f),
+        FillTo = new Vector2(1f, 0.5f),
+        Gradient = new Gradient
+        {
+            Offsets = new[] { 0f, VfxScreenRules.EdgeClear, 1f },
+            Colors = new[] { new Color(1f, 1f, 1f, 0f), new Color(1f, 1f, 1f, 0f), new Color(1f, 1f, 1f, 1f) },
+        },
+    };
 
     /// <summary>The burst of rays a blast's flare throws.</summary>
     public static Texture2D Rays => _rays ??= Mask(128, VfxTextureRules.Rays);
@@ -72,6 +113,13 @@ internal static class VfxTextures
         VfxSprite.Crystal => Crystal,
         VfxSprite.Glint => Glint,
         VfxSprite.Comet => Comet,
+        VfxSprite.Flame => Flame,
+        VfxSprite.Snow => Snow,
+        VfxSprite.Flake => Flake,
+        VfxSprite.Spark => Spark,
+        VfxSprite.Wisp => Wisp,
+        VfxSprite.Ash => Ash,
+        VfxSprite.Mote => Mote,
         _ => Dot,
     };
 
@@ -125,6 +173,14 @@ internal static class VfxTextures
         _glint = null;
         _comet = null;
         _rays = null;
+        _flame = null;
+        _snow = null;
+        _flake = null;
+        _spark = null;
+        _wisp = null;
+        _ash = null;
+        _mote = null;
+        _edge = null;
         _frostPattern = null;
         _crackPattern = null;
         _rootPattern = null;
