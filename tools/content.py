@@ -77,6 +77,8 @@ class Index:
 
 def kind_of(rel: str) -> str:
     parts = rel.split("/")
+    if rel.endswith(".json"):
+        return "json"
     if parts[0] == "data" and len(parts) > 2:
         return parts[1]
     if parts[0] == "scenes":
@@ -154,10 +156,13 @@ def source_files(root: Path, code: bool) -> list[tuple[str, Path]]:
                 found.append((rel, path))
     if code:
         # tests and GDScript probes name ids too: a rename that misses them breaks the build or a gate.
-        for folder, pattern in (("src", "*.cs"), ("tools", "*.py"), ("tools", "*.gd"), ("tests", "*.cs")):
+        # So does authored JSON under data/ (the campaign graph and its specs name enemies and items).
+        for folder, pattern in (("src", "*.cs"), ("tools", "*.py"), ("tools", "*.gd"), ("tests", "*.cs"),
+                                ("data", "*.json")):
             for path in sorted((root / folder).rglob(pattern)):
                 rel = path.relative_to(root).as_posix()
-                if "/obj/" in rel or "/bin/" in rel:
+                # data/world_bake is a manifest of hashes, not content.
+                if "/obj/" in rel or "/bin/" in rel or rel.startswith("data/world_bake/"):
                     continue
                 if "/test_" not in rel and not rel.endswith(("tools/content.py", "tools/tres_reader.py")):
                     found.append((rel, path))
@@ -270,7 +275,7 @@ def dangling(index: Index) -> list[dict]:
                 if any(not definition.section for definition in definitions)}
     out = []
     for token, uses in sorted(index.uses.items()):
-        content_uses = [use for use in uses if use[0] not in ("code", "tools", "tests")]
+        content_uses = [use for use in uses if use[0] not in ("code", "tools", "tests", "json")]
         if not content_uses or "{" in token:
             continue
         if token.startswith("res://"):

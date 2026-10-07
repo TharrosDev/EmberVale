@@ -152,6 +152,20 @@ class ContentIndexTests(unittest.TestCase):
         self.assertIn(("scenes", "Spawn.TemplateId"), [(u["kind"], u["where"]) for u in scene["uses"]])
         self.assertEqual(scene["locale_keys"], ["enemy.bandit.name"])
 
+    def test_refs_lists_a_use_in_json_under_data(self):
+        graph = self.root / "data/story/campaign_graph.json"
+        graph.parent.mkdir(parents=True)
+        graph.write_text('{"nodes": [\n {"boss": "enemy.bandit", "drop": "item.not_defined"}]}', encoding="utf-8")
+        bake = self.root / "data/world_bake/manifest.json"
+        bake.parent.mkdir(parents=True)
+        bake.write_text('{"x": "enemy.bandit"}', encoding="utf-8")
+        index = content.build_index(self.root)
+        uses = [(u["kind"], u["path"], u["where"]) for u in content.refs(index, "enemy.bandit")["uses"]]
+        self.assertIn(("json", "data/story/campaign_graph.json", "line 2"), uses)
+        self.assertNotIn("data/world_bake/manifest.json", [path for _, path, _ in uses])
+        # Like code, JSON is searched for uses but is not a source of dangling rows.
+        self.assertNotIn("item.not_defined", [row["token"] for row in content.dangling(index)])
+
     def test_unknown_id_has_no_defs_and_no_uses(self):
         result = content.refs(self.index, "item.nothing")
         self.assertFalse(result["defs"] or result["uses"])
