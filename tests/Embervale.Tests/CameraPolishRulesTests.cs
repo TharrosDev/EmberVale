@@ -76,6 +76,58 @@ public class CameraPolishRulesTests
         Assert.True(CameraRigMath.HiddenInFirstPerson(3, -1, -1));
     }
 
+    [Fact]
+    public void WhatTheHandsHold_IsDrawnInFirstPersonOnlyWhileItIsUpForAFight()
+    {
+        const int Left = 7;
+        const int Right = 9;
+
+        // Walking about: the blade the run clips swing across the view is a shadow only.
+        Assert.False(CameraRigMath.WeaponUp(false, false, float.PositiveInfinity));
+        Assert.True(CameraRigMath.HiddenInFirstPerson(Right, Left, Right, weaponUp: false));
+        Assert.True(CameraRigMath.HiddenInFirstPerson(Left, Left, Right, weaponUp: false));
+
+        // An action in progress always shows it, and so does a lock.
+        Assert.True(CameraRigMath.WeaponUp(true, false, float.PositiveInfinity));
+        Assert.True(CameraRigMath.WeaponUp(false, true, float.PositiveInfinity));
+        Assert.False(CameraRigMath.HiddenInFirstPerson(Right, Left, Right, weaponUp: true));
+
+        // It stays up between swings and comes down a while after the last one.
+        Assert.True(CameraRigMath.WeaponUp(false, false, CameraRigMath.WeaponLowerSeconds - 0.1f));
+        Assert.False(CameraRigMath.WeaponUp(false, false, CameraRigMath.WeaponLowerSeconds + 0.1f));
+        Assert.False(CameraRigMath.WeaponUp(false, false, float.NaN));
+
+        // What is not in a hand is hidden either way.
+        Assert.True(CameraRigMath.HiddenInFirstPerson(3, Left, Right, weaponUp: true));
+    }
+
+    [Fact]
+    public void TheThirdPersonSeat_TiltsDownJustEnoughToLiftTheFeetClearOfTheHotbar()
+    {
+        // The seat of a fight at the default distance: 3.8 m x 0.92 back, 1.62 + 0.4 + 0.05 up.
+        const float Distance = 3.8f * 0.92f;
+        const float Height = 2.07f;
+
+        // The narrower the view, the further the feet fall off the bottom and the more tilt it takes.
+        float narrow = CameraRigMath.FramingTilt(58f, Distance, Height);
+        float standard = CameraRigMath.FramingTilt(73f, Distance, Height);
+        float wide = CameraRigMath.FramingTilt(100f, Distance, Height);
+        Assert.True(narrow > standard && standard > wide);
+        Assert.Equal(0f, wide);
+        Assert.True(narrow <= CameraRigMath.MaxFramingTilt);
+
+        // Where it is not capped, the tilt puts the feet exactly on the line: 0.7 of the half height.
+        float feet = System.MathF.Atan2(Height, Distance) - standard;
+        float onScreen = System.MathF.Tan(feet) / System.MathF.Tan(73f * System.MathF.PI / 360f);
+        Assert.Equal(CameraRigMath.FramingFeetAtMost, onScreen, 3);
+
+        // A seat far enough back needs none, and nonsense in gives none out.
+        Assert.Equal(0f, CameraRigMath.FramingTilt(75f, 8f, 2.02f));
+        Assert.Equal(0f, CameraRigMath.FramingTilt(float.NaN, Distance, Height));
+        Assert.Equal(0f, CameraRigMath.FramingTilt(75f, Distance, 0f));
+        Assert.Equal(CameraRigMath.MaxFramingTilt, CameraRigMath.FramingTilt(55f, 1f, 3f));
+    }
+
     [Theory]
     [InlineData(-1f)]
     [InlineData(1f)]

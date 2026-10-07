@@ -26,7 +26,8 @@ namespace Embervale.Debugging;
 /// input router reads, so the camera frames it as it does in play. All of them are taken in third
 /// person (<c>tp</c>), a few per school and every self-cast in first (<c>fp</c>), and a handful again
 /// at midday (<c>tpday</c>). An enemy-only spell is cast at the player by the creature that owns it,
-/// in both views.</para>
+/// in both views. A few of the player's own spells are also cast AT the first-person player by a
+/// humanoid enemy (<c>efp</c>): a bolt, a nova and a channel arriving at the camera.</para>
 ///
 /// <para>Environment: <c>EMBERVALE_SPELLSHOTS_FILTER</c> (comma list of spell ids or school names;
 /// default all), <c>EMBERVALE_SPELLSHOTS_VIEW</c> (<c>tp</c>, <c>fp</c> or <c>both</c>),
@@ -93,11 +94,18 @@ public sealed partial class SpellShots : TimedShots
 
     private const string FallbackCaster = "enemy.hollow_necromancer";
 
-    private sealed record Plan(SpellResource Spell, bool FirstPerson, bool Day)
-    {
-        public bool Enemy => !Spell.PlayerLearnable;
+    /// <summary>The player's own spells a humanoid enemy also casts at the first-person player: a
+    /// charged bolt, a nova around the caster and a channel. What the player's effects look like
+    /// coming the other way had never been photographed.</summary>
+    private static readonly HashSet<string> EnemyCastSet = new() { "flame_lance", "blizzard", "storm_conduit" };
 
-        public string Label => $"{StemOf(Spell)}_{(FirstPerson ? "fp" : "tp")}{(Day ? "day" : string.Empty)}";
+    private sealed record Plan(SpellResource Spell, bool FirstPerson, bool Day, bool ByEnemy = false)
+    {
+        /// <summary>Cast at the player: an enemy-only spell, or one of the player's own in an enemy's hands.</summary>
+        public bool Enemy => !Spell.PlayerLearnable || ByEnemy;
+
+        public string Label =>
+            $"{StemOf(Spell)}_{(ByEnemy ? "efp" : FirstPerson ? "fp" : "tp")}{(Day ? "day" : string.Empty)}";
     }
 
     /// <summary>One cast being photographed: who casts it, and when each beat of it happened.</summary>
@@ -213,6 +221,9 @@ public sealed partial class SpellShots : TimedShots
         if (first)
         {
             plans.AddRange(enemy.Select(s => new Plan(s, FirstPerson: true, Day: false)));
+            plans.AddRange(own
+                .Where(s => EnemyCastSet.Contains(StemOf(s)))
+                .Select(s => new Plan(s, FirstPerson: true, Day: false, ByEnemy: true)));
         }
 
         if (third)
@@ -435,6 +446,7 @@ public sealed partial class SpellShots : TimedShots
     private Run? StageEnemyCast(Plan plan, PlayerCharacter player, Node scene)
     {
         SpellResource spell = plan.Spell;
+        // One of the player's own spells is cast by the humanoid fallback caster.
         string archetypeId = EnemyCasters.GetValueOrDefault(spell.Id, FallbackCaster);
         EnemyArchetypeResource? archetype = EnemyArchetypeDatabase.Get(archetypeId) ?? EnemyArchetypeDatabase.Get(FallbackCaster);
         if (archetype == null)
@@ -445,8 +457,10 @@ public sealed partial class SpellShots : TimedShots
 
         // A breath is a cone as long as its impact radius: stand the creature so the player is well
         // inside it, and never so close that the body fills the view.
+        // A nova or a dash of the player's own is cast from close, as the player casts it.
         float distance = spell.Delivery == SpellDelivery.Cone
             ? Mathf.Clamp((spell.ImpactRadius > 0f ? spell.ImpactRadius : 4f) * 0.6f, archetype.CapsuleRadius + 3f, 12f)
+            : plan.ByEnemy && spell.Delivery is SpellDelivery.Area or SpellDelivery.Dash ? CloseDistance
             : TargetDistance;
         Vector3 feet = ShotStage.OnGround(player, _lane.At(distance));
         EnemyEntity enemy = EnemyArchetypeFactory.Create(archetype, feet + (Vector3.Up * 0.04f));

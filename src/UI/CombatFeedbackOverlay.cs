@@ -26,6 +26,7 @@ public partial class CombatFeedbackOverlay : CanvasLayer
     private readonly FlashGate _gate = new();
     private ColorRect _flash = null!;
     private Label _word = null!;
+    private DamageNumberLayer _numbers = null!;
     private Color _color = Colors.White;
     private float _peak;
     private float _hold = CombatFeedbackFx.HoldSeconds;
@@ -42,7 +43,8 @@ public partial class CombatFeedbackOverlay : CanvasLayer
         _flash.SetAnchorsPreset(Control.LayoutPreset.FullRect);
         AddChild(_flash);
 
-        AddChild(new DamageNumberLayer { Name = "DamageNumbers" });
+        _numbers = new DamageNumberLayer { Name = "DamageNumbers" };
+        AddChild(_numbers);
         AddChild(new LockOnCueLayer { Name = "LockCues" });
         AddChild(new EnemyPlateLayer { Name = "EnemyPlates" });
 
@@ -126,9 +128,13 @@ public partial class CombatFeedbackOverlay : CanvasLayer
             _active = false;
             _flash.Color = new Color(_color.R, _color.G, _color.B, 0f);
             _word.Modulate = new Color(1f, 1f, 1f, 0f);
+            _numbers.Keepout = default;
             return;
         }
 
+        // The word holds its place and the floating numbers step up out of it: a break used to print
+        // POISE BROKEN straight through the damage it had just done.
+        _numbers.Keepout = _word.GetGlobalRect();
         float fade = 1f - t;
         _flash.Color = new Color(_color.R, _color.G, _color.B, _peak * fade);
         _word.Modulate = new Color(1f, 1f, 1f, fade);

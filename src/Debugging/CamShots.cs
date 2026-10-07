@@ -701,7 +701,19 @@ public sealed partial class CamShots : TimedShots
         }
 
         float speed = new Vector2(s.Velocity.X, s.Velocity.Z).Length();
+
+        // Where the feet are down the frame (0 top, 1 bottom) and where the camera itself is looking:
+        // the third-person seat tilts down a little off the look's pitch to keep the feet above the
+        // hotbar, which starts at about 0.89.
+        Vector3 view = s.CameraForward.Normalized();
+        Vector3 viewUp = (Vector3.Up - (view * view.Y)).Normalized();
+        Vector3 toFeet = s.Body - s.Camera;
+        float ahead = toFeet.Dot(view);
+        string feet = s.FirstPerson || ahead < 0.1f
+            ? "n/a"
+            : N(0.5f - (0.5f * toFeet.Dot(viewUp) / (ahead * Mathf.Tan(Mathf.DegToRad(s.Fov) * 0.5f))), "0.00");
         return $"camera_from_head(right,up,forward)={cameraFromHead} " +
+               $"view_pitch={N(Mathf.RadToDeg(Mathf.Asin(Mathf.Clamp(view.Y, -1f, 1f))), "0.0")} feet_down_frame={feet} " +
                $"camera_from_chest(right,up,forward)={cameraFromChest} " +
                $"fov={N(s.Fov, "0.0")} casting_hand=[{HandText(s)}] " +
                $"body_heading={N(Mathf.RadToDeg(Mathf.Atan2(-forward.X, -forward.Z)), "0.0")} " +

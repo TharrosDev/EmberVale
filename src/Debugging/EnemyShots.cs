@@ -33,9 +33,33 @@ public sealed partial class EnemyShots : ShotHarness
         ("hit", -35f, "hit"), ("death", -35f, "death"),
     };
 
+    /// <summary>The enemies on the shared humanoid rig, whose arm carriage is what the gait frames
+    /// are for: they play the same idle, walk and run clips the player and the town do.</summary>
+    private static readonly string[] Humanoids =
+    {
+        "enemy.soldier", "enemy.bandit", "enemy.syndicate_enforcer", "enemy.clan_shaman",
+        "enemy.barrow_wight", "enemy.hollow_necromancer", "enemy.iron_king",
+    };
+
+    /// <summary>Idle, then three phases of the walk and of the run (a fraction of the clip's length),
+    /// from the front three-quarter. One frame of a run cannot say whether the arms swing or hang:
+    /// three a third of a cycle apart can.</summary>
+    private static readonly (string Suffix, string Slot, float Phase)[] GaitViews =
+    {
+        ("gait-idle", "idle", 0.5f),
+        ("gait-walk-1", "walk", 0f), ("gait-walk-2", "walk", 0.33f), ("gait-walk-3", "walk", 0.66f),
+        ("gait-run-1", "run", 0f), ("gait-run-2", "run", 0.33f), ("gait-run-3", "run", 0.66f),
+    };
+
+    private const float GaitAngle = -35f;
+
     private EnemyEntity? _subject;
     private Node3D? _scaleReference;
     private string _slot = "idle";
+
+    // Where in the clip a gait frame is taken, as a fraction of its length; negative for the views
+    // that sample at their own fixed time.
+    private float _phase = -1f;
     private string _resolvedClip = string.Empty;
 
     protected override string Flag => "--enemy-shots";
@@ -62,12 +86,26 @@ public sealed partial class EnemyShots : ShotHarness
                 string capturedSlot = slot;
                 Shot($"{stem}--{suffix}", () => Frame(capturedId, capturedAngle, capturedSlot));
             }
+
+            if (Array.IndexOf(Humanoids, id) < 0)
+            {
+                continue;
+            }
+
+            foreach ((string suffix, string slot, float phase) in GaitViews)
+            {
+                string capturedId = id;
+                string capturedSlot = slot;
+                float capturedPhase = phase;
+                Shot($"{stem}--{suffix}", () => Frame(capturedId, GaitAngle, capturedSlot, capturedPhase));
+            }
         }
     }
 
-    private void Frame(string id, float angleDegrees, string slot)
+    private void Frame(string id, float angleDegrees, string slot, float phase = -1f)
     {
         _slot = slot;
+        _phase = phase;
         _resolvedClip = string.Empty;
         if (ServiceLocator.Instance is not { } locator ||
             !locator.TryGet(out PlayerCharacter player) ||
@@ -181,10 +219,20 @@ public sealed partial class EnemyShots : ShotHarness
             return;
         }
         _resolvedClip = AnimationClips.Resolve(player.GetAnimationList(), _slot);
+        if (_resolvedClip.Length == 0 && _phase >= 0f && _slot == "walk")
+        {
+            // A body with no walk of its own walks on its run in play too; shoot what it would show.
+            _slot = "run";
+            _resolvedClip = AnimationClips.Resolve(player.GetAnimationList(), _slot);
+        }
+
         if (_resolvedClip.Length > 0)
         {
             player.Play(_resolvedClip);
-            player.Seek(_slot == "death" ? 0.55 : _slot is "attack" or "hit" ? 0.32 : 0.15, update: true);
+            double at = _phase >= 0f
+                ? _phase * player.GetAnimation(_resolvedClip).Length
+                : _slot == "death" ? 0.55 : _slot is "attack" or "hit" ? 0.32 : 0.15;
+            player.Seek(at, update: true);
             player.Pause();
         }
     }

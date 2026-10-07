@@ -56,6 +56,9 @@ public partial class SpellbookPanel : UiPanel
     private bool _pinsFull;
 
     private const float PinDiscSize = 22f;
+
+    /// <summary>Side of the miniature wheel beside the pin slots: the height of the two slot rows.</summary>
+    private const float PinDialSize = 92f;
     private const float CardDiscSize = 24f;
 
     // For the screenshot harness: how many slots the last rebuild drew, and a card's pin button.
@@ -352,6 +355,9 @@ public partial class SpellbookPanel : UiPanel
     /// away, and a way to change them. Pressing a slot chooses it as where the next pin goes (and
     /// opens its spell's page); a card's Pin button fills the first free slot when none is chosen.
     ///
+    /// <para>The slots are a grid because a name needs the width, so a miniature of the wheel
+    /// (<see cref="SpellPinDial"/>) sits beside them and shows where each numbered slot is on it.</para>
+    ///
     /// ⚠️ The line over the slots is always there, whatever it says: the panel restores focus by
     /// child index across a rebuild, and a line that came and went would shift every row under it.
     /// </summary>
@@ -388,7 +394,15 @@ public partial class SpellbookPanel : UiPanel
         }
 
         _pinSlotsBuilt = pins.Count;
-        block.AddChild(grid);
+
+        var row = new HBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+        row.AddThemeConstantOverride("separation", UiTheme.SpaceMd);
+        SpellPinDial dial = SpellPinDial.Create(PinDialSize);
+        dial.Display(pins, _pinSlot);
+        dial.TooltipText = Loc.T("spellbook.pins_dial");
+        row.AddChild(dial);
+        row.AddChild(grid);
+        block.AddChild(row);
         return block;
     }
 

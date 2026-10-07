@@ -23,7 +23,10 @@ namespace Embervale.UI;
 /// hidden. A crit is never told apart by colour alone: it is larger and carries a bang.
 /// Under Reduced Motion the numbers hold still and live a little shorter instead of popping and rising.
 /// Rapid same-outcome hits on one target fold into one running total, and a pool of labels caps how
-/// many can be live, so a burn tick or a pack fight cannot carpet the screen.</para>
+/// many can be live, so a burn tick or a pack fight cannot carpet the screen. Every frame the labels
+/// are laid out oldest first and a later one that would print over an earlier one (another target
+/// standing behind the first, an area spell hitting a pack) or over the state word
+/// (<see cref="Keepout"/>) is lifted clear above it and stays lifted.</para>
 /// </summary>
 public sealed partial class DamageNumberLayer : Control
 {
@@ -51,6 +54,11 @@ public sealed partial class DamageNumberLayer : Control
 
     private readonly List<Entry> _live = new();
     private readonly Stack<Label> _free = new();
+    private readonly List<Rect2> _placed = new();
+
+    /// <summary>A rectangle of this layer no number may print over while it has an area: the state
+    /// word of <see cref="CombatFeedbackOverlay"/>, which sets it while the word is showing.</summary>
+    public Rect2 Keepout { get; set; }
 
     public override void _Ready()
     {
@@ -191,6 +199,36 @@ public sealed partial class DamageNumberLayer : Control
         }
     }
 
+    /// <summary>Lifts <paramref name="entry"/> until its label is clear of everything laid out before
+    /// it this frame, and returns how far it moved. The lift is kept on the entry, so a number that
+    /// stepped aside does not drop back onto its neighbour a frame later; it stops at
+    /// <see cref="DamageNumberMath.MaxLift"/>.</summary>
+    private float ClearOfPlaced(Entry entry, Vector2 centre, Vector2 size)
+    {
+        float moved = 0f;
+        for (int pass = 0; pass < 4; pass++)
+        {
+            float step = 0f;
+            foreach (Rect2 other in _placed)
+            {
+                Vector2 otherCentre = other.GetCenter();
+                step = Mathf.Max(step, DamageNumberMath.LiftToClear(
+                    centre.X, centre.Y - moved, size.X, size.Y,
+                    otherCentre.X, otherCentre.Y, other.Size.X, other.Size.Y));
+            }
+
+            if (step <= 0f || entry.Lift + step > DamageNumberMath.MaxLift)
+            {
+                break;
+            }
+
+            entry.Lift += step;
+            moved += step;
+        }
+
+        return moved;
+    }
+
     private void Recycle(Entry entry)
     {
         entry.Label.Visible = false;
@@ -219,8 +257,6 @@ public sealed partial class DamageNumberLayer : Control
             return;
         }
 
-        Camera3D? camera = GetViewport().GetCamera3D();
-        bool motion = UiTheme.MotionEnabled;
         for (int i = _live.Count - 1; i >= 0; i--)
         {
             Entry entry = _live[i];
@@ -229,9 +265,21 @@ public sealed partial class DamageNumberLayer : Control
             {
                 Recycle(entry);
                 _live.RemoveAt(i);
-                continue;
             }
+        }
 
+        // Oldest first, so an older number keeps its spot and a newer one is the one that moves.
+        Camera3D? camera = GetViewport().GetCamera3D();
+        bool motion = UiTheme.MotionEnabled;
+        _placed.Clear();
+        if (Keepout.HasArea())
+        {
+            _placed.Add(Keepout);
+        }
+
+        for (int i = 0; i < _live.Count; i++)
+        {
+            Entry entry = _live[i];
             float t = entry.Age / entry.Life;
             float rise = motion ? DamageNumberMath.Rise(t) * DamageNumberMath.RisePixels : 0f;
             float sway = motion ? entry.Drift * 26f * DamageNumberMath.Rise(t) : entry.Drift * 12f;
@@ -253,7 +301,10 @@ public sealed partial class DamageNumberLayer : Control
             Label label = entry.Label;
             label.Visible = true;
             Vector2 size = label.GetCombinedMinimumSize();
-            label.Position = new Vector2(at.X - (size.X * 0.5f) + sway, at.Y - rise - entry.Lift - (size.Y * 0.5f));
+            var centre = new Vector2(at.X + sway, at.Y - rise - entry.Lift);
+            centre.Y -= ClearOfPlaced(entry, centre, size);
+            _placed.Add(new Rect2(centre - (size * 0.5f), size));
+            label.Position = centre - (size * 0.5f);
             label.PivotOffset = size * 0.5f;
             label.Scale = Vector2.One * (motion ? DamageNumberMath.Pop(t) : 1f);
             float alpha = DamageNumberMath.Alpha(t) * (entry.Style.Italic ? 0.75f : 1f);
