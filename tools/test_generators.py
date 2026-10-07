@@ -490,6 +490,7 @@ class WorldBakeTests(unittest.TestCase):
         self.assertIn("region.pale_concord", result["to_bake"])
         # Editing one region's own scene adds nothing to the shared inputs, whatever the tree's
         # bake state is (a branch that touched src/World already lists that file here).
+        # Compared with the unedited plan, not with []: the committed bake may itself be stale.
         self.assertEqual(result["shared_changed"], world_bake.plan(manifest, sources, rate=2.0)["shared_changed"])
 
 

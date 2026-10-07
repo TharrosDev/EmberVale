@@ -1,7 +1,7 @@
 """Batch Meshy text-to-3D: preview -> refine (texture) -> optional rig, resumable.
 
     python tools/meshy_batch.py PLAN.json OUT_DIR --dry-run        what it would start and cost; no network
-    python tools/meshy_batch.py PLAN.json OUT_DIR --status         where every item stands; no network
+    python tools/meshy_batch.py PLAN.json OUT_DIR --status         unfinished items + counts; no network
     python tools/meshy_batch.py PLAN.json OUT_DIR [--cap 1300] [--only id,id] [--skip id,id]
                                 [--stage preview|refine|rig] [--max-minutes 9] [--sheet] [--no-ledger]
     python tools/meshy_batch.py PLAN.json OUT_DIR --ledger         only append finished items to the ledger
@@ -306,7 +306,7 @@ def main(argv=None):
     ap.add_argument("--stage", choices=STAGES, default="rig", help="last stage to run")
     ap.add_argument("--max-minutes", type=float, default=9.0, help="stop polling after this long and exit 3")
     ap.add_argument("--dry-run", action="store_true", help="print what would start and its cost; no network")
-    ap.add_argument("--status", action="store_true", help="print every item's stage states; no network")
+    ap.add_argument("--status", action="store_true", help="print the stage states of every item that is not done; no network")
     ap.add_argument("--ledger", action="store_true", help="only append finished items to the ledger; no network")
     ap.add_argument("--no-ledger", action="store_true", help="do not append finished items to the ledger")
     ap.add_argument("--sheet", action="store_true", help="write OUT/contact.png from the thumbnails")
@@ -327,6 +327,8 @@ def main(argv=None):
             print(json.dumps({**result, "rows": rows}))
             return code
         for row in rows:
+            if row["state"] == "done":
+                continue  # the MESHY line counts them; --json lists every row
             stages = " ".join(f"{s} {v}" for s, v in row["stages"].items())
             print(f"{row['id']}  {row['state']}  {stages}  {row['credits']}cr" + (f"  {row['error']}" if row.get("error") else ""))
         print("MESHY " + json.dumps(result))
