@@ -4,6 +4,7 @@
     python tools/negative_tests.py                 # the whole battery
     python tools/negative_tests.py --only haggle   # one rule, while authoring
     python tools/negative_tests.py --list          # what is covered, without running anything
+    python tools/negative_tests.py --restore       # undo the mutation an interrupted run left behind
 
 Every sub-phase in the economy arc claimed its new validator rules were "negative-tested both ways".
 Each claim was true when it was written and none of them was ever re-checked. That is the problem
@@ -18,7 +19,10 @@ that *some* rule tripped, and a mutation that trips the wrong rule looks identic
 
 ⚠️ THIS EDITS `data/` AND `scenes/` IN PLACE. Before the first mutation it snapshots the exact bytes
 of every possible target, including uncommitted authoring, and every case restores from that
-snapshot in a `finally`. It also compares the final git state with the initial state. Never replace
+snapshot in a `finally`. A killed process never reaches a `finally`, so each case also writes the
+original bytes of the files it is about to change to `artifacts/negative-journal/` first; the next
+start (or `--restore`, or `embervale.py doctor` noticing it) puts them back. It also compares the
+final git state with the initial state. Never replace
 this with `git checkout --`: that would silently destroy the level work this battery is meant to
 protect while validating it.
 
@@ -30,10 +34,14 @@ named in `docs/playbook/phase-38.md` rather than left implied.
 """
 
 import argparse
+import json
+import os
+import shutil
 import sys
+import time
 from pathlib import Path
 
-from quality_common import discover_godot, run_process
+from quality_common import discover_godot, pid_alive, run_process
 
 REPO = Path(__file__).resolve().parent.parent
 
@@ -830,8 +838,59 @@ Falloff = 1.8""")],
 ]
 
 
+JOURNAL = REPO / "artifacts" / "negative-journal"
+
+
 def run(cmd, timeout=30):
     return run_process(cmd, cwd=REPO, timeout=timeout)
+
+
+def write_journal(saved, paths, journal=None):
+    """Before a mutation touches the tree: the original bytes of exactly the files it will change,
+    on disk. A battery that is killed mid-case (a timeout, a closed shell) never reaches its
+    `finally`, and this is what the next start restores from."""
+    journal = journal or JOURNAL
+    journal.mkdir(parents=True, exist_ok=True)
+    names = {}
+    for index, rel in enumerate(sorted(paths)):
+        names[rel] = f"{index}.bin"
+        (journal / names[rel]).write_bytes(saved[rel])
+    temporary = journal / "journal.json.tmp"
+    temporary.write_text(json.dumps({"pid": os.getpid(), "files": names}), encoding="utf-8")
+    temporary.replace(journal / "journal.json")   # the index appears only once every file it names exists
+
+
+def clear_journal(journal=None):
+    shutil.rmtree(journal or JOURNAL, ignore_errors=True)
+
+
+def recover(journal=None, repo=None):
+    """Puts back what an interrupted battery left mutated. Returns the restored paths."""
+    journal, repo = journal or JOURNAL, repo or REPO
+    try:
+        names = json.loads((journal / "journal.json").read_text(encoding="utf-8"))["files"]
+    except (OSError, ValueError, KeyError, TypeError):
+        clear_journal(journal)   # no index means no mutation had been applied yet
+        return []
+    for rel, name in names.items():
+        (repo / rel).write_bytes((journal / name).read_bytes())
+    clear_journal(journal)
+    return sorted(names)
+
+
+def ensure_fresh_binary():
+    """Nothing that launches the game recompiles C#: a battery against a stale Embervale.dll would
+    be proving the previous validator. Rebuild first, as the SDK does for its own launches."""
+    from embervale_sdk.freshness import stale_reason
+    reason = stale_reason(REPO)
+    if not reason:
+        return True
+    print(f"stale binary ({reason}); building first ... ", end="", flush=True)
+    build = run(["dotnet", "build", "Embervale.sln", "--nologo"], timeout=600)
+    print("built" if build.returncode == 0 else "BUILD FAILED")
+    if build.returncode:
+        print(build.output[-3000:])
+    return build.returncode == 0
 
 
 def tree_state():
@@ -878,7 +937,34 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--only", help="run cases whose name or rule contains this text")
     parser.add_argument("--list", action="store_true", help="print the battery and exit")
+    parser.add_argument("--restore", action="store_true",
+                        help="put back the data an interrupted run left mutated, then exit")
+    parser.add_argument("--no-build", action="store_true", help="do not rebuild a stale Embervale.dll first")
     args = parser.parse_args()
+
+    if args.list:
+        for name, rule, _, expect in CASES:
+            print(f"{name:44} {rule:40} expects: {expect}")
+        print(f"\n{len(CASES)} cases.")
+        return 0
+
+    # An interrupted battery leaves its last mutation in the tree. Undo it before anything else
+    # reads the data, including this run's own snapshot. A journal whose battery is still alive
+    # is not interrupted: restoring under it would un-break the case it is in the middle of.
+    try:
+        owner = int(json.loads((JOURNAL / "journal.json").read_text(encoding="utf-8")).get("pid", 0))
+    except (OSError, ValueError, TypeError, AttributeError):
+        owner = 0
+    if owner and owner != os.getpid() and pid_alive(owner) and not args.restore:
+        print(f"negative_tests: another battery is running (pid {owner}); its data is mutated on purpose. "
+              "If that process is not a battery, `--restore` puts the data back regardless.", file=sys.stderr)
+        return 2
+    restored = recover()
+    if restored:
+        print(f"RESTORED {len(restored)} file(s) from an interrupted run: {', '.join(restored)}")
+    if args.restore:
+        print("nothing to restore" if not restored else "restored")
+        return 0
 
     if GODOT is None:
         print("negative_tests: Godot .NET console executable not found. Set EMBERVALE_GODOT "
@@ -893,11 +979,8 @@ def main():
             print(f"no case matches {args.only!r}")
             return 2
 
-    if args.list:
-        for name, rule, _, expect in CASES:
-            print(f"{name:44} {rule:40} expects: {expect}")
-        print(f"\n{len(CASES)} cases.")
-        return 0
+    if not args.no_build and not ensure_fresh_binary():
+        return 2
 
     all_targets = {rel for _, _, edits, _ in CASES for rel, _, _ in edits}
     initial_state = tree_state()
@@ -911,9 +994,16 @@ def main():
     try:
         for index, (name, rule, edits, expect) in enumerate(cases, start=1):
             print(f"[{index}/{len(cases)}] {name} ({rule}) ... ", end="", flush=True)
+            started = time.monotonic()
+            # On disk BEFORE the mutation: a kill between here and the restore is recoverable.
+            touched = {rel for rel, _, _ in edits}
+            write_journal(saved, touched)
             try:
-                touched = apply_case(edits)
+                apply_case(edits)
             except LookupError as error:
+                restore(saved, touched)   # an earlier edit of this case may have landed
+                touched = set()
+                clear_journal()
                 print(f"MUTATION DID NOT LAND\n    {error}")
                 failures.append(name)
                 continue
@@ -921,18 +1011,21 @@ def main():
             code, output = validate()
             restore(saved, touched)
             touched = set()
+            clear_journal()
+            elapsed = f"({time.monotonic() - started:.0f}s)"
 
             if code == 0:
-                print("NOT CAUGHT — the validator passed on broken data")
+                print(f"NOT CAUGHT — the validator passed on broken data {elapsed}")
                 failures.append(name)
             elif expect not in output:
-                print(f"WRONG RULE FIRED — no {expect!r} in the report")
+                print(f"WRONG RULE FIRED — no {expect!r} in the report {elapsed}")
                 failures.append(name)
             else:
-                print("caught")
+                print(f"caught {elapsed}")
     finally:
         if touched:
             restore(saved, touched)
+            clear_journal()
 
     print("\nrestoring and re-checking the tree ... ", end="", flush=True)
     restore(saved)

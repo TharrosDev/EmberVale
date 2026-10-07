@@ -20,7 +20,7 @@ class NativeProtocolTests(unittest.TestCase):
 
     def sdk(self, command, expected=0):
         result = run_process([sys.executable, str(ROOT / "tools/embervale.py"), *command,
-                              "--json", "--artifacts", str(Path(os.environ.get("EMBERVALE_ARTIFACTS", ROOT / "artifacts/headless")) / "native-tests")], timeout=90)
+                              "--json-full", "--artifacts", str(Path(os.environ.get("EMBERVALE_ARTIFACTS", ROOT / "artifacts/headless")) / "native-tests")], timeout=90)
         self.assertEqual(expected, result.returncode, result.output[-12000:])
         parsed = json.loads(result.stdout)
         self.assertEqual(expected == 0, parsed["success"])

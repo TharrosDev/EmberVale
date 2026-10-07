@@ -21,6 +21,11 @@ the `godot --version` step for a command that never launches the engine, PASSTHR
 arguments after `--`. A command's own flags go AFTER the command name; the shared flags (--json,
 --timeout, --artifacts, ...) work everywhere, and a flag that collides with one of them fails at
 startup rather than shadowing it. Modules whose name starts with `_` are not commands.
+
+LIGHT = True is for a command that launches nothing and wants no run directory (`last`, `logs`,
+`job`, `clean`): its run() is called with run=None, prints its own output and returns its exit code.
+A light command that sometimes does need a full run calls cli.run_command(args, passthrough, entry,
+body) itself, as `verify` does after `--plan`.
 """
 from __future__ import annotations
 
@@ -38,15 +43,16 @@ class Command:
     arguments: Optional[Callable] = None  # arguments(parser) adds this command's own flags
     version: bool = True                  # record `godot --version` before running
     passthrough: bool = False             # accepts arguments after `--`
+    light: bool = False                   # no Run, no run directory: run(None, args, passthrough) -> exit code
 
 
 REGISTRY: dict[str, Command] = {}
 
 
-def register(name, run, help="", arguments=None, version=True, passthrough=False):
+def register(name, run, help="", arguments=None, version=True, passthrough=False, light=False):
     if name in REGISTRY:
         raise ValueError(f"duplicate SDK command: {name}")
-    REGISTRY[name] = Command(name, run, help, arguments, version, passthrough)
+    REGISTRY[name] = Command(name, run, help, arguments, version, passthrough, light)
     return REGISTRY[name]
 
 
@@ -57,7 +63,7 @@ def register_module(module):
     name = getattr(module, "NAME", module.__name__.rsplit(".", 1)[-1].replace("_", "-"))
     return register(name, module.run, getattr(module, "HELP", (module.__doc__ or "").strip().split("\n")[0]),
                     getattr(module, "arguments", None), getattr(module, "VERSION", True),
-                    getattr(module, "PASSTHROUGH", False))
+                    getattr(module, "PASSTHROUGH", False), getattr(module, "LIGHT", False))
 
 
 def discover():
