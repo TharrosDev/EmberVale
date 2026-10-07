@@ -204,20 +204,49 @@ image is built in code by `VfxTextures`.
 
 | Shader | Draws |
 | --- | --- |
-| `vfx_sprite` | billboards: flares, halos, rays and every particle. Premultiplied alpha, so one shader is additive light and covering smoke. It also thins a puff by its width on screen |
-| `vfx_flow` | scrolling noise bodies: fire balls, wall sheets, shells, breath tongues |
+| `vfx_sprite` | billboards: flares, halos, rays, every particle and the pieces of a `VfxMotif`. Premultiplied alpha, so one shader is additive light and covering smoke. It also thins a puff by its width on screen |
+| `vfx_flow` | scrolling noise bodies: fire balls, wall sheets, shells, breath tongues. `tongues` above 0 turns a sheet into licks of flame standing on a hot ground line with faded ends (the Pyre Wall); at 0 a sheet is as it was |
 | `vfx_ring` | shock rings: a thin torn front with a wake, on an annulus mesh |
 | `vfx_ribbon` | lightning, beams, tethers and trails; width is clamped to an angle, so a ribbon beside the first-person camera is a line and not a wedge |
-| `vfx_distort` | screen-texture refraction shells |
+| `vfx_distort` | screen-texture refraction shells. `shimmer` at 1 is heat haze: the image wavers across the whole shape, climbing, with no outline; at 0 it is the pressure wave it was |
 | `vfx_ground` | ground discs: a rim, a school pattern and wisps |
 | `vfx_ice` | ice walls and frozen shells: plates, seams, a lit rim, a jagged crest |
 
 All seven fade in view space between 0.3 m and 1.2 m from the camera. If any fails to load or to
 compile, `VfxMaterials.Load` logs `Spell effects: shader X did not compile; spell effects are off`,
 `SpellVfx.Active` is false for the session and every spell falls back to its plain shape. `--validate`
-checks `vfx_sprite`, `vfx_flow`, `vfx_ring`, `vfx_ribbon`, `vfx_distort`, `vfx_ground` and
-`player_body.gdshader` for a parse failure; ⚠️ `vfx_ice` is not in that list, so only the runtime
-check covers it.
+checks `vfx_sprite`, `vfx_flow`, `vfx_ring`, `vfx_ribbon`, `vfx_distort`, `vfx_ground`,
+`player_body.gdshader` and `fx/telegraph.gdshader` for a parse failure; ⚠️ `vfx_ice` is not in
+that list, so only the runtime check covers it.
+
+**Shaped sprites.** A particle is no longer always a soft dot. `VfxTextures` builds a mask per
+`VfxSprite` from the pure `VfxTextureRules`: `Flame` (a tongue standing tip up), `Snow` (a streak),
+`Flake` (a snowflake), `Spark` (jagged), `Wisp` (a tendril), `Ash` (a tumbling flake), `Mote`
+(small and four-pointed), and the smoke `Puff` now has a lobed, ragged outline. The school picks
+the shape under every recipe with no recipe edit (`VfxSpawner.School`, set by `VfxCast`): motes
+thrown by a Frost cast are snowflakes, sparks thrown by a Lightning cast are jagged and by a Frost
+cast streaks of snow, wisps are tendrils, and `VfxEmitter.Flame` is tongues that still cool to
+smoke. `VfxBurstSpec.Sprite` forces a shape where it suits the preset (`VfxBurstPresets.Fits`); an
+unsuitable one is ignored. Four emitter presets came with them: `VfxEmitter.Snow`, `AshFlake`,
+`FlameLick` and `Flurry`.
+
+**Motifs.** `VfxMotif` is a handful of shaped sprites moving in a pattern (`VfxMotion`: `Lick`,
+`Orbit`, `Crackle`, `Swirl`, `Inward`, `Lance`): the instances of one `MultiMesh` drawn with
+`vfx_sprite`, so one draw call and no particle simulation. Where each piece stands is the pure
+`VfxMotifRules.Pose`, and a motif never has more than `VfxMotifRules.MaxCount` pieces. Every
+wind-up wears its school's motif at the hand and every generic bolt its school's shaped head
+(`VfxMotifRules.Windup` / `Head`). On Performance and Low the wind-up motif takes the place of the
+particle stream, one draw for one, and a bolt's head takes the place of the white core of its
+glow.
+
+**Generic looks that changed.** The Pyre Wall is a `tongues` sheet; Medium and up add a second,
+lower pair of layers and `FlameLick` particles along its length, and Ultra adds a slab of heat
+haze over it (`VfxDistortionSpec.Shimmer`; not under Reduced Motion, and no other tier has it). A
+ward shell is fitted to the body, bright at first, then fades to a faint shimmer and stays
+(`VfxShellSpec.SettleHold` / `SettleSeconds` / `SettleOpacity`). Frozen shells (the ice shell aura,
+the Freeze proc, the frost impact shell) are fitted to the collision shape with `BodyFit`, a
+capsule lying on its side included. A lightning mark wears arcs for as long as the status lasts,
+above Performance. The numbers are in the header of `src/Magic/Vfx/SpellVfx.Kit.cs`.
 
 **Render layer 12 is reserved for spell effects.** Every effect mesh is drawn on it
 (`VfxMaterials.RenderLayer`) and every ground-mark decal's cull mask leaves it out
@@ -284,13 +313,36 @@ enemy's spell and only when it struck the player, 0.05 under Reduced Motion, nev
 sphere shell is not drawn while the camera is inside it (`VfxScreenRules.Engulfs`), because from
 inside it is an uncapped full-screen flash. Reduced Motion also removes distortion and holds bolts
 still. A landed spell hit no longer raises `CombatFeedbackOverlay`'s full-screen hit tint; melee
-hits keep it.
+hits keep it. The same layer draws the **edge shimmer** (`VfxSpawner.ScreenEdge`): school colour at
+the edges of the screen with the middle left clear, capped by `VfxScreenRules.EdgePeak` (0.3 times
+the flash setting, 0.12 under Reduced Motion).
 
 **First person.** The player's own wind-up aura, release flash and the start of a bolt or beam are
-anchored to a point fixed in the view on the casting hand's side (`VfxViewRules.HandOffset`), past
-the near fade and clear of the crosshair, because the hand bone itself sits inside the fade band.
-The projectile's picture starts there and settles onto the true path over 0.25 s; the collision
-area, the aim and the muzzle are untouched.
+anchored to a point fixed in the view at the lower left, where the casting (left) hand is
+(`VfxViewRules.HandOffset`), past the near fade and clear of the crosshair, because the hand bone
+itself sits inside the fade band. The projectile's picture starts there and settles onto the true
+path over 0.25 s; the collision area, the aim and the muzzle are untouched. A held glow there is
+hand-sized and school-coloured (its energy and halo are cut near the eye), and the player's own
+bolt head is drawn at half size (`ProjectileViewScale`).
+
+A flat ring or disc on the floor about the camera, which is what the player's own self-cast is in
+first person, was a bright band across the bottom of the view and through the hotbar. It is cut
+to 16% while its radius is under about 3 m and drawn in full by 4.5 m
+(`VfxScreenRules.SelfRing`); the generic release puts an edge shimmer in its place for every Self
+delivery the player casts in first person (`SelfCastInView`). ⚠️ The cut applies to the player's
+own effects and to anybody's one-shot rings. A telegraph is never cut, and neither is an enemy's
+standing zone: that is the thing to get out of. A ward hit on the local player in first person is
+an edge shimmer too.
+
+**Telegraphs are not part of this layer.** An attacker's wind-up warning is `TelegraphRing`
+(`src/Combat`) drawn by `assets/shaders/fx/telegraph.gdshader`: mix blend, not additive (an
+additive warning vanishes on bright sand at noon), a see-through body at about a third opacity, a
+brighter rim a fixed width on the ground that is a little over white so it blooms where glow is
+on, a lit part that sweeps to the outer edge as the blow arrives, and edges that fade out. The
+shape is the mesh, never the shader, so the footprint is unchanged. High Contrast sets `plain` (a
+flat solid body, a hard rim) and Reduced Motion sets `motion` to 0 (no shimmer, no unblockable
+pulse). If the shader does not load the ring falls back to a plain hard-edged material and logs
+`Telegraphs: telegraph.gdshader did not compile; warnings are drawn plain.`
 
 Directional shadows use up to four blended cascades. Outdoor GI uses sky radiance; no streaming cell
 rebuilds voxel GI. SSIL is restrained and optional. Static authored interiors may use lightmaps,

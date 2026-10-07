@@ -214,8 +214,8 @@ Three session harnesses came with the spell-effect work. Each continues the newe
 
 | Flag | Class | Produces |
 | --- | --- | --- |
-| `--spellshots` | `SpellShots` | every spell cast through the real cast button at practice targets on a level strip found by raycast, at dusk: `<spell>_<tp\|fp\|tpday>_<windup\|release\|impact\|linger>.png`. Enemy-only spells are cast at the player by the creature that owns them. Each shot logs the node, visible, emitter and light counts under `VfxRoot`, and the run fails when a spell with a recipe drew nothing |
-| `--camshots` | `CamShots` | both views at idle, walk, jog, sprint (with the three frames before it), both strafes, backpedal, a charge, a channel, looking down and up, a diagonal run, looking down at FOV 110 and at a sprint, and two side views with the capsule drawn. Each shot logs camera, chest, hips and casting-hand measurements, and the run fails on a body drawn back to front, an eye in the chest or a casting hand out of frame |
+| `--spellshots` | `SpellShots` | every spell cast through the real cast button at practice targets on a level strip found by raycast, at dusk: `<spell>_<tp\|fp\|tpday>_<windup\|release\|impact\|linger>.png`. Enemy-only spells are cast at the player by the creature that owns them. Three of the player's own spells (`flame_lance`, `blizzard`, `storm_conduit`: a charged bolt, a nova and a channel) are also cast AT the first-person player by a humanoid enemy, as `<spell>_efp_<windup\|release\|impact\|linger>.png` ("efp", enemy first person; part of the first-person set, so not in a `tp`-only run). Each shot logs the node, visible, emitter and light counts under `VfxRoot`, and the run fails when a spell with a recipe drew nothing |
+| `--camshots` | `CamShots` | both views at idle, walk, jog, sprint (with the three frames before it), both strafes, backpedal, a charge, a channel, looking down and up, a diagonal run, looking down at FOV 110 and at a sprint, and two side views with the capsule drawn. Each shot logs camera, chest, hips and casting-hand measurements, and in third person `view_pitch` and `feet_down_frame` (0 top, 1 bottom; the hotbar starts at about 0.89), and the run fails on a body drawn back to front, an eye in the chest or a casting hand out of frame |
 | `--vfxperf` | `VfxPerfScenario` | eight casters in a ring looping the eight heaviest spells: `vfxperf_<tier>.json` with baseline, whole-run, steady and first-pass frame times (p50, p95, worst), the first cast's frame, the worst frame per spell's first use, and peak effect nodes, emitters, particles, lights and draw calls. V-sync and the frame cap are off for the run. Exits 1 if no cast began or nothing drew |
 
 | Variable | Read by | Does |
@@ -228,6 +228,14 @@ Three session harnesses came with the spell-effect work. Each continues the newe
 | `EMBERVALE_SPELLSHOTS_BACKDROP` | `--spellshots` | `0` removes the dark wall stood behind the targets |
 | `EMBERVALE_VFXPERF_SECONDS` | `--vfxperf` | how long the casters loop, default 20 |
 | `EMBERVALE_VFXPERF_VIEW` | `--vfxperf` | `wide` (default: a raised camera with the whole ring in view), `tp` or `fp` |
+
+`--enemy-shots` (`EnemyShots`, output under `user://enemy_shots`) gained gait frames with the same
+work. For each enemy in the run that is on the shared humanoid rig (soldier, bandit, syndicate enforcer, clan shaman,
+barrow wight, hollow necromancer, iron king) it adds seven frames from the front three-quarter:
+`<enemy>--gait-idle.png`, `<enemy>--gait-walk-1.png` to `-3` and `<enemy>--gait-run-1.png` to
+`-3`, where `<enemy>` is the id without `enemy.` and with hyphens (`hollow-necromancer`) and the
+three numbered frames are a third of a clip apart. A body with no walk clip is shot on its run, as
+it walks in play. `EMBERVALE_ENEMY_SHOT_ID=enemy.<id>` still limits a run to one enemy.
 
 The shared `EMBERVALE_RES`, `EMBERVALE_ARTIFACTS`, `EMBERVALE_SLOT`, `EMBERVALE_USER_DIR` and
 `EMBERVALE_FRAMES` apply as for the UI harnesses (`UI_STYLE.md` §13.9). Settings are changed on the

@@ -13,7 +13,9 @@ Stun and death cancel even those protected casts. Release and channel ticks rech
 they do not wait for an idle-frame poll. Death cancels even when the player respawns immediately.
 Spells are blockable and never parryable (`Blockable = false` for the few unblockable ones).
 Ground and barrier spells are read from a telegraph
-ring exactly as long as their delay. Presentation never changes a rule: it reads events, and everything
+ring exactly as long as their delay. An enemy's wind-up warning takes the school of the spell it is
+winding up as its body colour (`TelegraphComponent` on `CastWindupStartedEvent`); its shape, size
+and timing do not change. Presentation never changes a rule: it reads events, and everything
 that punctuates a blow for feel scales by `CombatComfort` (Reduced Motion caps hit-stop and flash at 25%).
 The shared combat pipeline owns damage, guard and poise. Magic uses `HitKind.Spell`, `DamagePacket`,
 `CombatComfort`, `TelegraphComponent`, `DamageNumberLayer` and typed combat/magic events.
@@ -155,11 +157,27 @@ recipe, so a new spell needs one in the same change. What a hit, a burst or a zo
 like is decided by the pure `SpellAudio` and played by `AudioDirector` from `SpellCastEvent`,
 `CastWindupStartedEvent`, `SpellImpactEvent` and `SpellBurstEvent`.
 
-Three things a spell author should know:
+A recipe gets its school's look for free: shaped particles, a wind-up motif at the hand and a
+shaped bolt head come from the kit with no recipe edit, and a special reaches for the kit's
+helpers before building anything of its own (`BodyFit`, `ResidualCrackle`, `TetherScatter`,
+`MouthAnchor` / `MouthGlow` / `BreathPuffs`, `Snowfall`, `AshFall`, the optional `TotemPulse`
+hook). The header of `src/Magic/Vfx/SpellVfx.Kit.cs` is the API. What the per-spell specials are
+sized to, and what the lean tiers leave out, is in the pure `VfxElementalRules` and
+`VfxArcanaRules`.
+
+Five things a spell author should know:
 
 - **The picture is not the path.** In first person the player's bolt is drawn starting at a point
-  fixed in the view and settles onto the true path over 0.25 s. The collision area, `Aim()` and
-  the muzzle offset are untouched.
+  fixed in the view, at the lower left where the left hand is, and settles onto the true path over
+  0.25 s. The collision area, `Aim()` and the muzzle offset are untouched.
+- **A ring about the player's own feet is cut in first person.** A flat ring or disc centred on
+  the camera is drawn at a fraction while it is small (`VfxScreenRules.SelfRing`) and a shimmer at
+  the screen's edges stands in for it (`SelfCastInView`, called by the generic release for every
+  Self delivery). A telegraph and an enemy's standing zone are never cut. Lay a self-cast out so
+  first person sees it: reach past the bottom of the frame, do not rely on the floor ring.
+- **A self-buff cast on an ally draws on the caster.** `SpellVfx.Release` is not told a target and
+  both call sites pass only the caster. Changing that is a facade signature change in `src/Magic`,
+  not something a recipe or a hook can do.
 - **A telegraph still runs exactly as long as its delay.** For the player's own ground spells and
   walls the telegraph ring stays armed (the probe reads it) and is hidden while the effect layer
   draws its own; enemy casts keep the ring.
@@ -167,7 +185,8 @@ Three things a spell author should know:
   status auras are drawn beside them, never in their place.
 
 The tier table, the shaders and the comfort caps are in
-[`../RENDERING.md`](../RENDERING.md#spell-effects). `--spellshots` renders every spell and
+[`../RENDERING.md`](../RENDERING.md#spell-effects). `--spellshots` renders every spell, with three
+of the player's own cast back at the first-person player by an enemy (`efp`), and
 `--vfxperf` times eight casters ([`../NOW.md`](../NOW.md) → Commands). ⚠️ The effects were judged
 from still frames and the sounds from numbers: no motion review, and nobody has listened.
 

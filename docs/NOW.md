@@ -58,11 +58,51 @@ what one instant looks like; it proves nothing about motion, timing, sound or fe
 - **Harnesses.** `--spellshots`, `--camshots`, `--vfxperf`, `tools/facing_probe.gd`, HUD frames
   `01a` to `01f` and panel frames `29b` and `29c`; see Commands.
 
+A third round followed the first full renders (a kit lane and two recipe lanes, each with a review
+pass, then four leftovers lanes). It changes no gameplay number, footprint or timing either, and
+adds no save key.
+
+- **The kit grew shapes.** Particles are shaped by school from code-built masks (`VfxSprite`:
+  `Flame`, `Snow`, `Flake`, `Spark`, `Wisp`, `Ash`, `Mote`, and a ragged smoke `Puff`), with four
+  new emitter presets (`VfxEmitter.Snow`, `AshFlake`, `FlameLick`, `Flurry`). A new one-draw block,
+  `VfxMotif` (poses in the pure `VfxMotifRules`), gives every school a structured wind-up at the
+  hand and every bolt a shaped head. The Pyre Wall is drawn with a `tongues` mode in
+  `vfx_flow.gdshader`; a ward shell is fitted to the body and fades to a shimmer; frozen shells
+  are fitted to the collision shape. Helpers for the specials: `ResidualCrackle`, `TetherScatter`,
+  `MouthAnchor` / `MouthGlow` / `BreathPuffs`, and an optional `TotemPulse` hook. The API is the
+  header of `src/Magic/Vfx/SpellVfx.Kit.cs`.
+- **First person.** The casting point is at the lower left, at the left hand
+  (`VfxViewRules.HandOffset`). A floor ring centred on the camera is cut back
+  (`VfxScreenRules.SelfRing`) and a shimmer at the screen's edges stands in for it; telegraphs and
+  an enemy's standing zone are never cut.
+- **Per-spell specials** (`SpellVfx.Special.Elemental.cs`, `SpellVfx.Special.Arcana.cs`, sized by
+  `VfxElementalRules` and `VfxArcanaRules`): breaths stream from the mouth and light the ground
+  under them, the Glacial Bulwark is leaning crystals over plate ice, Rime Shard freezes the floor,
+  Blizzard is driven snow over ground mist, lightning leaves arcs on what it struck, a swarm
+  circles the swarmed and a sigil turns under the grave-marked for as long as the status lasts.
+- **Telegraphs are drawn soft, with a school tint.** A new shader
+  (`assets/shaders/fx/telegraph.gdshader`, in `--validate`'s list) inks `TelegraphRing`'s meshes
+  as a see-through body with a lit rim and a sweep; the rim keeps the phase or class colour and
+  the body takes the school of the spell being wound up. Footprint and timing are unchanged, High
+  Contrast and Reduced Motion each have their own look, and a shader that fails to load falls back
+  to the plain shape.
+- **Combat text.** Floating numbers step clear of each other and of the state word
+  (`DamageNumberMath.LiftToClear`, `DamageNumberLayer.Keepout`).
+- **Spellbook pin dial.** A miniature of the wheel beside the pin slots shows where each numbered
+  slot sits (`SpellPinDial`); one new string, `spellbook.pins_dial`.
+- **Camera.** The third-person seat tilts down so the feet clear the hotbar
+  (`CameraRigMath.FramingTilt`, from settings, never the live profile), and in first person what
+  the hands hold is hidden outside a fight (`CameraRigMath.WeaponUp`).
+- **Harnesses.** `--spellshots` has an enemy cast three of the player's spells at the first-person
+  player (`efp`), `--enemy-shots` adds gait frames for the humanoid enemies, and `--camshots` logs
+  where the feet sit down the frame.
+
 **Unverified (spell effects, wheel and camera).** The harness frames exist and were read; see
 Verification. Everything below is what they cannot show.
 
 - **No human has played it.** Not one cast, wheel pick or camera swap has been made by a person
-  in a session.
+  in a session. That covers the third round as much as the first two: nothing in this work has
+  been played by a person, heard by a person, or reviewed in motion.
 - **The wheel's feel with a real mouse and a real pad.** 150 px of mouse travel to the rim at
   every HUD scale, the right stick's two thresholds, the stick at rest returning the cursor to the
   centre (which cancels), the 0.16 s tap window, the fan latching, and the presses-in-place-of-holds
@@ -105,6 +145,20 @@ Verification. Everything below is what they cannot show.
   view the near plane's far corners are outside it. `vfx_ice` is not in the validator's shader
   list. The wheel's readout and legend overlap the hotbar at 1280x720 and below. An 18 px ghost
   disc may read as a coloured dot.
+- **Leftovers of the third round, left as they are.**
+  - The Lifebloom Totem sits under the caster. That is its gameplay position and it was not moved.
+  - Blink and Thunder Step can land the first-person camera inside the target. Gameplay, not
+    changed.
+  - Self-buffs cast on an ally draw on the caster: `SpellVfx.Release` is not told a target.
+  - The Pyre Wall has heat shimmer on Ultra only, and not under Reduced Motion; no other tier has
+    any.
+  - The Performance tier omits the residual crackle on a struck body, the Rime Shard's frost patch
+    and the swarm cloud, by design.
+  - The first-person weapon carry, the framing tilt, the soft telegraphs, the number layout and
+    the pin dial were reasoned from code and stills like everything else here.
+- **Seen in the enemy shots, not caused by this work.** Black boxes on some humanoid enemy faces,
+  and town NPCs stacking at a shared evening destination. Both are content issues that were there
+  before.
 - **Not part of the run recorded here.** The master world bake check, the export build with
   `check_shipping_assembly.py` on the merged branch, the negative battery and world quality.
 
@@ -719,14 +773,20 @@ godot --path . -- --spellshots             # every spell cast for real: <spell>_
                                            # EMBERVALE_SPELLSHOTS_VIEW=tp|fp|both  EMBERVALE_SPELLSHOTS_TIER=performance|low|medium|high|ultra
                                            # EMBERVALE_SPELLSHOTS_REDUCED=1 (reduced motion)  EMBERVALE_SPELLSHOTS_HOUR=<hour, default 19.5>
                                            # EMBERVALE_SPELLSHOTS_BACKDROP=0 (no dark wall behind the targets).
+                                           # With the first-person set, a humanoid enemy also casts flame_lance, blizzard and
+                                           # storm_conduit AT the player: <spell>_efp_<windup|release|impact|linger>.png.
                                            # Fails when a spell with a recipe drew nothing under VfxRoot
 godot --path . -- --camshots               # both views at idle, walk, jog, sprint, strafes, backpedal, diagonal, charge, channel,
                                            # look down (also at FOV 110 and at a sprint) and up, plus two side views with the capsule.
+                                           # Logs view_pitch and feet_down_frame (0 top, 1 bottom) for third-person shots.
                                            # Fails on a body drawn back to front, an eye in the chest or a casting hand out of frame
 godot --path . -- --vfxperf                # eight casters looping the eight heaviest spells; writes vfxperf_<tier>.json.
                                            # EMBERVALE_VFXPERF_SECONDS=<default 20>  EMBERVALE_VFXPERF_VIEW=wide|tp|fp
                                            # tier and reduced motion from the two EMBERVALE_SPELLSHOTS_ variables above
 godot --path . -- --guild-shots | --shrine-shots | --enemy-shots | --look-shots
+                                           # --enemy-shots adds gait frames for the humanoid enemies:
+                                           # <enemy>--gait-idle.png, <enemy>--gait-walk-1..3.png, <enemy>--gait-run-1..3.png
+                                           # (EMBERVALE_ENEMY_SHOT_ID=enemy.<id> for one enemy)
 godot --headless --path . --script res://tools/build_meshy_anim_library.gd   # rebuilds anim_meshy.res; read its detrend, idle, square and mirror lines
 godot --headless --path . --script res://tools/anim_library_probe.gd      # loops stay on the spot, the idle faces forward, the mirror is a mirror
 godot --headless --path . --script res://tools/locomotion_tree_probe.gd   # the 2D gait blend, the upper-body mask, the action clock

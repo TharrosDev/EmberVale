@@ -209,7 +209,26 @@ inside the target's own capsule, so a World mask made every actor unlockable. Lo
 `godot --path . --fixed-fps 60 -- --combat-shots` (`CombatShots`, PNGs under the user data
 `combat_shots/`); it needs a real window and a save, and a live event banner or boss bar hides the
 nameplate by design (`EMBERVALE_SLOT=<slot>` picks a save without one). A new number on a target starts
-above the older ones' current height (`DamageNumberMath.LiftAbove`).
+above the older ones' current height (`DamageNumberMath.LiftAbove`). Those lanes are per target, so
+`DamageNumberLayer` also lays its labels out every frame, oldest first: a later one that would print
+over an earlier one (a second target standing behind the first, an area spell on a pack) or over the
+state word is lifted clear above it and keeps the lift (`DamageNumberMath.LiftToClear`, stopping at
+`MaxLift`, past which it may overlap rather than climb off the screen). `CombatFeedbackOverlay` sets
+the layer's `Keepout` to the state word's rectangle while the word shows, so POISE BROKEN holds its
+place and the numbers step up out of it.
+
+**How a telegraph is inked.** `TelegraphRing` owns the shape as a flat mesh (ring, disc or fan) and
+`assets/shaders/fx/telegraph.gdshader` inks it: a see-through body, a brighter rim, a lit part that
+sweeps outward over the wind-up and soft edges (the look is in
+[`RENDERING.md`](RENDERING.md#spell-effects)). The rim carries the colour that says what to do: the
+owner's `RingColor`, which a `BossController` sets per phase, or the dodge red of an unblockable.
+The body starts the same colour and takes a school's when the wind-up turns out to be a spell:
+`TelegraphComponent` also subscribes to `CastWindupStartedEvent` and calls `TelegraphRing.Tint` with
+`SpellSchools.Color` of the caster's `PendingSpell` (a second event because the caster names its
+spell just after the action starts). Look only: shape, size and timing were set by the attack event
+and `TelegraphMath`, whose `FillAlpha`, `RimAlpha` and `RimShare` are the new pure parts. The
+settings are read once per warning: High Contrast draws it flat and solid, Reduced Motion holds the
+shimmer and the unblockable pulse still.
 
 ### 2.3 Movement and animation (`src/Movement`, `src/Animation`)
 
@@ -317,6 +336,23 @@ component and foot IK so it has run before they read the rig; `FirstPersonArmCom
   holds the factory's yaw whenever nobody is riding. The probes never saw it because they build a
   body with no mount component; `--camshots` now fails a shot whose body is more than 30 degrees
   off its capsule.
+- **The third-person seat tilts down so the feet clear the hotbar.** At a level look the feet are a
+  fixed angle below the camera's level line, and a narrow field of view put them behind the hotbar.
+  `CameraRigMath.FramingTilt` is the downward tilt that brings them back to `FramingFeetAtMost` of
+  the half height below the centre line: nothing at a wide view or a far seat, capped at
+  `MaxFramingTilt`. `PlayerCameraRig` adds it to the camera's own rotation, scaled by the view
+  blend, so first person is untouched. ⚠️ It is fed the player's SETTINGS (field of view and
+  distance, as the combat profile shapes them: the closest ordinary framing on foot), never the
+  live profile, because a tilt that moved as a cast or a fight began would swing the crosshair off
+  what the player was pointing at. The crosshair is the camera's own centre ray, so the shot still
+  goes where it is. `--camshots` logs `view_pitch` and `feet_down_frame` per third-person shot.
+- **What the hands hold is drawn in first person only while it is up for a fight.** The body's
+  clips were authored for a camera behind the character, and at a jog, a sprint or a strafe the arm
+  pump swung the blade straight across the view. `CameraRigMath.WeaponUp` is true during any action
+  or held charge, a raised guard or a lock, and for `WeaponLowerSeconds` after; the rest of the
+  time the hand-socket pieces go shadows-only with everything else hung on the skeleton
+  (`HiddenInFirstPerson`). ⚠️ An action in progress always shows it: a swing with no blade would be
+  worse than a blade across the view. A change rescans the held pieces at once.
 - `FirstPersonArmComponent` (with `FirstPersonArmModifier`, `FirstPersonArmRules`) swings the
   casting arm at the shoulder while a spell is wound up, charged or channelled, first person only,
   and reports the drawn hand in skeleton space so hand-anchored effects follow it. Gameplay reads
@@ -400,8 +436,9 @@ names one via `BossId`; `EnemyArchetypeFactory` attaches `BossController` to any
   Pure cores: `BossPhases`, `BossAdds`, `BossDefeat`.
 - **The enrage clock starts on the first damage traded.** `BeginEncounter()` is idempotent and
   publishes `BossEncounterStartedEvent` once (the brazier calls it; otherwise first damage does).
-- `TelegraphComponent` + `TelegraphRing` draw a model-independent ground ring for the reported
-  wind-up, tinted by phase; both cues end early on `AttackInterruptedEvent`.
+- `TelegraphComponent` + `TelegraphRing` draw a model-independent ground shape for the reported
+  wind-up: soft and see-through, its rim in the phase's colour and its body in the school of the
+  spell being wound up when there is one (§2.2); both cues end early on `AttackInterruptedEvent`.
 - Add waves spawn on phase entry, repeat on their interval under `MaxAlive`, and die with the boss
   through the damage path (loot and XP land). Spawn points are `Marker3D`s in group `boss_add_spawn`
   under the boss's parent; none → a ring. `ArenaHookComponent` reveals arena nodes by phase, scoped to
@@ -672,9 +709,29 @@ owns what.
   light), `VfxBurst` (particle presets, one-shot or continuous), `VfxBolt` (lightning, beam,
   tether, trail; the path is the pure `VfxBoltPath`), `VfxShell` (fire body, ward and ice shells,
   wall sheets, the totem post), `VfxDisc` (telegraph, zone floor, sigil), `VfxGroundMark` (a
-  fading decal), `VfxDistortion`. `VfxScreen` is the one screen flash. They age in `_Process`:
-  no tweens, no scene-tree timers. A follower copies its target's position each frame behind
-  `IsInstanceValid`.
+  fading decal), `VfxDistortion` (a pressure wave, or heat haze with `Shimmer`), and `VfxMotif`
+  (a handful of shaped sprites moving in a pattern, one `MultiMesh` and one draw call; poses are
+  the pure `VfxMotifRules`). `VfxScreen` is the one screen flash and the edge shimmer. They age in
+  `_Process`: no tweens, no scene-tree timers. A follower copies its target's position each frame
+  behind `IsInstanceValid`.
+- **The kit** (`SpellVfx.Kit.cs`; its header is the API, kept verbatim for the recipe lanes) is
+  what a school's blast is made of beyond its recipe's flags, and the pieces a special calls. It
+  needs no new `VfxStage` flag: the generic interpreter adds a school's signature, its wind-up
+  motif at the hand and its shaped bolt head (`WindupMotif`, `ProjectileHead`) to every recipe.
+  Helpers a hook may call: `BodyFit` (a body's collision shape, for anything worn on it),
+  `ResidualCrackle` / `CrackleOver` (arcs over a struck body for a time), `TetherScatter` (motes
+  torn off one end of a line and drawn in at the other), `MouthAnchor` / `MouthGlow` /
+  `BreathPuffs` (a breath starts at the jaw, mouth or snout bone, else the head, else a fixed
+  height), `Snowfall`, `AshFall`, and `SelfCastInView` (the edge shimmer that stands in for a
+  self-cast's floor ring in first person). The pure rules beside them are `VfxMotifRules`,
+  `VfxTextureRules`, `VfxScreenRules`, `VfxElementalRules` and `VfxArcanaRules`, the last two
+  holding what the per-spell specials are sized to and what the lean tiers leave out.
+- **Hooks.** `SpellVfxSpecial` gained an optional `TotemPulse` (`TotemPulseHook`): it runs at the
+  top of `SpellVfx.TotemPulse` and returning true replaces the generic ring, beat and heal line.
+  `SpellVfx.StatusExtras` puts two statuses' extra pictures on the status aura's own rig, so they
+  end with the status: a swarm circling the swarmed and a sigil on the ground under the
+  grave-marked. ⚠️ `SpellVfx.Release` is not told a target, so a self-buff cast on an ally draws
+  on the caster; fixing it is a facade signature change in `src/Magic`, not a kit change.
 - **Three ways to give a spell a look, cheapest first.** A recipe: a `SpellVfxRecipe` per spell
   id in `SpellVfxCatalog.Elemental.cs` (fire, frost, lightning) or `SpellVfxCatalog.Arcana.cs`
   (arcane, nature, necrotic and the enemy spells), whose `VfxStage` flags switch blocks on per

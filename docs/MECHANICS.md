@@ -82,6 +82,14 @@ rig sums and clamps them (`CameraLayer.cs`, `CameraRigMath.CombineLayers`). Moti
   arm is swung at the shoulder so the hand is in frame, and effects that start at the hand start at
   the hand the player sees. Presentation only: aim and the spell's path do not move.
   `FirstPersonArmComponent`, `FirstPersonArmModifier`, `FirstPersonArmRules`.
+- **Third-person framing tilt** — the seat tilts down a little (at most 8 degrees) so the
+  character's feet sit above the hotbar at a level look; it follows the field of view and distance
+  settings, never the moment's framing, so the crosshair does not move when a fight begins.
+  `CameraRigMath.FramingTilt`, `PlayerCameraRig`.
+- **Weapon carry in first person** — what the hands hold is drawn only while it is up for a fight
+  (an action or held charge, a raised guard, a lock) and for 2.5 s after; outside that it is a
+  shadow on the ground, because the run and strafe clips swing a blade across the view.
+  `CameraRigMath.WeaponUp`, `HiddenInFirstPerson`.
 - **Camera profiles** — exploration, sprint, combat, target-lock, aim and mounted multiply the
   player's settings, never replace them. Sprint and gallop lean with speed; a context blends in and
   releases at different rates (combat framing is sticky, aim snaps in and lets go slowly); each has
@@ -183,8 +191,10 @@ caps the first two at 25%).
   `HitReactionComponent`, `WeaponTrailComponent`, `CombatFeedbackOverlay`, `DamageDirectionOverlay`.
 - **Floating damage numbers** — crits large and gold, blocks small in parentheses, resisted dim with
   a word, parry a word with no number; rapid hits on one target merge. A setting picks all hits,
-  your blows only, crits and kills only, or off; held still under Reduced Motion.
-  `DamageNumberLayer`, `DamageNumberMath`, `DamageNumberRules`.
+  your blows only, crits and kills only, or off; held still under Reduced Motion. Numbers step up
+  clear of each other (two targets one behind the other, an area spell on a pack) and of the state
+  word, so POISE BROKEN no longer prints through the damage that caused it.
+  `DamageNumberLayer`, `DamageNumberMath` (`LiftAbove`, `LiftToClear`), `DamageNumberRules`.
 - **Lock-on** — middle mouse; cycles targets in range, faces the target, and says when it breaks
   (target died, too far, lost sight). With Lock-On Assist it prefers a target mid-swing or nearly dead,
   passes the lock to the next enemy within 10 m on a kill, and steps on a mouse flick or a full stick
@@ -204,11 +214,17 @@ caps the first two at 25%).
   (own resistances), True; one mitigation curve; resistance never immunity, and a negative resistance
   is a vulnerability (bounded below x2). An unblocked hit does at least 1 damage; crit chance is capped
   at 75% and the multiplier at x4. `CombatMath`, `DamageType`, `HitKind`.
-- **Telegraphs** — ground rings sized to the real wind-up, tinted by boss phase, in four classes read
-  by shape as well as colour: standard, parryable (a gold ring closes on the parry moment), unblockable
-  (thick pulsing red) and sweep (a fan by the arc). An action can author its class and fan angle
-  (`ActionDefinitionResource.Telegraph`, `SweepDegrees`); left on Auto it is inferred from the action's
-  id, hitbox and commitment. `TelegraphComponent`, `TelegraphClass`.
+- **Telegraphs** — ground shapes sized to the real wind-up, in four classes read by shape as well as
+  colour: standard, parryable (a gold ring closes on the parry moment), unblockable (thick pulsing
+  red) and sweep (a fan by the arc). They are drawn soft: a see-through body, a brighter rim, a lit
+  part that sweeps to the outer edge as the blow arrives, and edges that fade out. The rim keeps the
+  colour that says what to do (the boss phase's, or the unblockable red) and the body takes the
+  school of the spell being wound up, so a fire breath's fan is ember and an ash breath's
+  violet-grey. Footprint and timing are unchanged. High Contrast draws them flat and solid; Reduced
+  Motion holds the shimmer and the unblockable pulse still. An action can author its class and fan
+  angle (`ActionDefinitionResource.Telegraph`, `SweepDegrees`); left on Auto it is inferred from the
+  action's id, hitbox and commitment. `TelegraphComponent`, `TelegraphRing`, `TelegraphMath`,
+  `TelegraphClass`, `assets/shaders/fx/telegraph.gdshader`.
 
 ## Magic
 
@@ -236,6 +252,21 @@ caps the first two at 25%).
   school's hue. All 30 spells have an authored recipe and special-case hooks. Presentation only:
   a dropped or culled effect changes nothing else. `SpellVfx`, `SpellVfxDirector`,
   `SpellVfxCatalog`, `VfxPalette` (`src/Magic/Vfx`).
+- **School shapes** — particles are shaped by school (tongues of flame, streaks of snow and
+  snowflakes, jagged sparks, tendrils, ash flakes, four-pointed motes, ragged smoke), every wind-up
+  wears its school's motif at the hand and every bolt a shaped head. The Pyre Wall is licks of
+  flame on a hot ground line, a ward shell fits the body and settles to a shimmer, and a frozen
+  shell fits the body it froze. `VfxMotif`, `VfxMotifRules`, `VfxTextureRules`, `SpellVfx.Kit.cs`.
+- **Per-spell pictures** — breaths stream from the creature's mouth and light the ground under
+  them, the Glacial Bulwark is leaning ice crystals over plate ice, a Rime Shard freezes the floor
+  where it shatters, a Blizzard is driven snow over ground mist, lightning leaves arcs on what it
+  struck, a swarm circles the swarmed and a sigil turns under the grave-marked for as long as the
+  status lasts. `SpellVfx.Special.Elemental.cs`, `SpellVfx.Special.Arcana.cs`,
+  `VfxElementalRules`, `VfxArcanaRules`.
+- **Own spells in first person** — the casting point is at the lower left of the view, at the left
+  hand. A floor ring about the player's own feet is cut back and a shimmer at the screen's edges
+  stands in for it; telegraphs and an enemy's standing zone are never cut. `VfxViewRules`,
+  `VfxScreenRules.SelfRing`, `VfxSpawner.ScreenEdge`.
 - **Spell effect quality** — Performance, Low, Medium, High or Ultra, following the graphics
   preset unless the Graphics tab's Spell effects option overrides it. A tier sets particle
   density, lights, ground marks, distortion, lightning strands and how far away an effect is
@@ -712,8 +743,10 @@ maps the code.
   `SpellPinRules`.
 - **Spellbook pins** — the spellbook's top row is the eight wheel favourites, numbered clockwise
   from the top; each known spell's card has Prepare and Pin. Choosing a slot first makes the next
-  pin replace it; with all eight full and none chosen the pin is refused. `SpellbookPanel`,
-  `SpellPinRules`.
+  pin replace it; with all eight full and none chosen the pin is refused. A miniature of the wheel
+  beside the slots shows where each number sits on it (slot 1 straight up, then clockwise), each
+  dot in its spell's school colour or an empty socket, the chosen slot ringed. `SpellbookPanel`,
+  `SpellPinDial`, `SpellPinRules`.
 - **Hotbar cells** — the item's picture, key glyph, count, a cooldown wipe with its last nine
   seconds counted, and ready, unusable, level-locked and run-out states. `HotbarPanel`,
   `HotbarRules`.
@@ -854,9 +887,12 @@ maps the code.
   `--tradeshots`), each checking the state it photographs; guild, shrine, enemy and look shots;
   world shots. `*Shots.cs`, `tools/world_shots.gd`.
 - **Spell and camera harnesses** — `--spellshots` casts every spell through the real cast button
-  and photographs wind-up, release, impact and linger in both views; `--camshots` photographs both
-  views at every gait, a charge, a channel and looking down and up; `--vfxperf` runs eight casters
-  on a loop and writes frame times. `SpellShots`, `CamShots`, `VfxPerfScenario`, `TimedShots`.
+  and photographs wind-up, release, impact and linger in both views, and has a humanoid enemy cast
+  three of the player's own spells at the first-person player (`efp`); `--camshots` photographs both
+  views at every gait, a charge, a channel and looking down and up, and logs where the feet sit
+  down the frame; `--enemy-shots` adds idle, walk and run phases for the humanoid enemies;
+  `--vfxperf` runs eight casters on a loop and writes frame times. `SpellShots`, `CamShots`,
+  `EnemyShots`, `VfxPerfScenario`, `TimedShots`.
 - **SDK** — `python tools/embervale.py` (doctor, build, validate, test, scenario, screenshot, perf,
   world gates, assets). [`TOOLING.md`](TOOLING.md).
 - **Generators** — regions, map locations, the campaign, guild dialogue, perks, appearance, buildings,

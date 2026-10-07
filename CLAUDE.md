@@ -498,7 +498,8 @@ system ownership is in [`ARCHITECTURE.md`](docs/ARCHITECTURE.md#213-magic-srcmag
 
 Spell effects are one layer behind one door: gameplay calls the `SpellVfx` facade
 (`src/Magic/Vfx`) and never builds an effect node itself. Before adding or changing a spell's look
-read the header of `src/Magic/Vfx/SpellVfx.cs`, then the *Spell effects* part of
+read the header of `src/Magic/Vfx/SpellVfx.cs` and of `SpellVfx.Kit.cs` (the kit's API: shaped
+particles, motifs, the helpers a special calls), then the *Spell effects* part of
 [`ARCHITECTURE.md`](docs/ARCHITECTURE.md#213-magic-srcmagic) and
 [`RENDERING.md`](docs/RENDERING.md#spell-effects). Their rules are `docs/NOW.md` invariants 53 to 56,
 and the harnesses that render them (`--spellshots`, `--camshots`, `--vfxperf`) are in NOW's command
