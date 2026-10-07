@@ -287,8 +287,19 @@ public sealed partial class OneShots : TimedShots
 
                 // The same hard load a portal or a fast-travel jump uses: the loading gate holds play
                 // until the ground under the landing exists. No autosave: nothing here is progress.
+                RegionResource region = _region!;
+                if (region.Id != _session.CurrentRegionId)
+                {
+                    // Another region first, at its own spawn, exactly as a portal arrives. The ground
+                    // height of the place asked for can only be read once that region's terrain is
+                    // the live one, so the jump to the place itself is the next pass through here.
+                    _session.WorldDirector.PerformRegionLoad(
+                        region, WorldSessionDirector.RegionSpawn(region), "Shot", autosave: false);
+                    break;
+                }
+
                 _session.WorldDirector.PerformRegionLoad(
-                    _region!, new Vector3(_point.X, WorldGround.HeightAt(_point.X, _point.Z) + 0.1f, _point.Z),
+                    region, new Vector3(_point.X, WorldGround.HeightAt(_point.X, _point.Z) + 0.1f, _point.Z),
                     "Shot", autosave: false);
                 _stage = Stage.Loading;
                 break;
@@ -418,6 +429,12 @@ public sealed partial class OneShots : TimedShots
         if (_resolved.TryGetValue(spec.Name, out Dictionary<string, object?>? facts))
         {
             facts["settled"] = settled;
+        }
+
+        if (!settled && _stage != Stage.Idle)
+        {
+            Problem($"'{spec.Name}': the world did not settle at ({_point.X:0.#}, {_point.Z:0.#}) in " +
+                    $"{_region?.Id} within {spec.Timeout:0}s (stopped while {_stage}); is the place inside the region?");
         }
 
         if (Verbose)
