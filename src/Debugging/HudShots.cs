@@ -55,6 +55,8 @@ public sealed partial class HudShots : ShotHarness
             return "player has no current gameplay camera";
         if (Hud() is null)
             return "GameHud is missing";
+        if (name.StartsWith("01") && name != "01-exploration" && WheelFailure(name) is { } wheelFailure)
+            return wheelFailure;
         if (name == "02-health-low" && stats.GetCurrent(StatType.Health) > stats.GetMax(StatType.Health) * 0.2f)
             return "low-health state was not reached";
         if (name == "03-mana-low" && stats.GetCurrent(StatType.Mana) > stats.GetMax(StatType.Mana) * 0.1f)
@@ -170,6 +172,39 @@ public sealed partial class HudShots : ShotHarness
     protected override void BuildShotList()
     {
         Shot("01-exploration", () => Stats()?.RefillResources());
+
+        // The spell row and the wheel, on a caster that knows every learnable spell. First, here,
+        // while the pools are full and no status is on the player: a silence would unlight the row.
+        // Closed: the glyph on its disc, the hold badge and the ghost of the previous spell.
+        Shot("01a-spell-row", WheelShotFixtures.TeachEverything);
+
+        // Open on a favourite, through the wheel's own capture hooks (no gate, no sound, no fade).
+        Shot("01b-wheel-favourite", () => Wheel()?.OpenForCapture(WheelShotFixtures.FavouritePoint(0)));
+
+        // A school fanned out, the cursor on one of its spells: straight up is Fire.
+        Shot("01c-wheel-school-fan", () => Wheel()?.HoverForCapture(new Vector2(0f, -1.2f)));
+
+        // A favourite part-way through its cooldown, under the cursor so the readout names it.
+        Shot("01d-wheel-cooling", () =>
+        {
+            _coolingSlot = WheelShotFixtures.Cool();
+            Wheel()?.HoverForCapture(WheelShotFixtures.FavouritePoint(Mathf.Max(0, _coolingSlot)));
+        });
+
+        // No mana: every spell that costs any is dimmed and shows its cost, one under the cursor.
+        Shot("01e-wheel-unaffordable", () =>
+        {
+            _unaffordableSlot = WheelShotFixtures.Unaffordable(_coolingSlot);
+            Wheel()?.HoverForCapture(WheelShotFixtures.FavouritePoint(Mathf.Max(0, _unaffordableSlot)));
+        });
+
+        // Shut, and the save's own spells and full pools back for every shot after it.
+        Shot("01f-wheel-closed", () =>
+        {
+            Wheel()?.CloseForCapture();
+            WheelShotFixtures.Restore();
+            Stats()?.RefillResources();
+        });
 
         Shot("02-health-low", () => SetFraction(StatType.Health, 0.18f));
 
@@ -308,6 +343,61 @@ public sealed partial class HudShots : ShotHarness
     private static StatsComponent? Stats() => Player()?.GetComponent<StatsComponent>();
 
     private GameHud? Hud() => QuestShotFixtures.FindFirst<GameHud>(GetTree().Root);
+
+    private SpellWheel? Wheel() => QuestShotFixtures.FindFirst<SpellWheel>(GetTree().Root);
+
+    // The favourite slots the cooling and unaffordable shots put under the cursor.
+    private int _coolingSlot = -1;
+    private int _unaffordableSlot = -1;
+
+    /// <summary>What a spell-row or wheel shot failed to reach, or null. Read back from the HUD row,
+    /// the wheel and the caster, not from what the shot asked for.</summary>
+    private string? WheelFailure(string name)
+    {
+        if (WheelShotFixtures.Caster() is not { } caster)
+            return "player has no SpellcastingComponent";
+        if (name == "01f-wheel-closed")
+            return Wheel() is { IsOpen: true } ? "the wheel is still open" : null;
+        if (caster.SpellCount < WheelShotFixtures.LearnableCount())
+            return $"the caster knows {caster.SpellCount} spell(s), expected all {WheelShotFixtures.LearnableCount()}";
+        if (name == "01a-spell-row")
+        {
+            if (Hud() is not { } hud)
+                return "GameHud is missing";
+            if (caster.Selected is not { } prepared || hud.SpellRowGlyphForCapture != prepared.Id)
+                return "the spell row does not show the prepared spell's glyph";
+            if (!hud.SpellWheelHintForCapture)
+                return "the spell row's hold badge is not showing";
+            if (caster.PreviousSpellId.Length == 0 || hud.SpellGhostForCapture != caster.PreviousSpellId)
+                return "the spell row does not ghost the previous spell";
+            return null;
+        }
+
+        if (Wheel() is not { IsOpen: true } wheel)
+            return "the wheel is not open";
+        SpellWheelPick pick = wheel.Hovered;
+        switch (name)
+        {
+            case "01b-wheel-favourite":
+                return pick.Kind == SpellWheelPickKind.Favourite && pick.SpellId.Length > 0
+                    ? null : $"the cursor is on {pick.Kind}, expected a pinned favourite";
+            case "01c-wheel-school-fan":
+                return pick.Kind == SpellWheelPickKind.Spell ? null : $"the cursor is on {pick.Kind}, expected a spell in a school's fan";
+            case "01d-wheel-cooling":
+                return _coolingSlot < 0 ? "no favourite has a cooldown"
+                    : pick.Kind != SpellWheelPickKind.Favourite || pick.Index != _coolingSlot ? "the cursor is not on the cooling favourite"
+                    : SpellDatabase.Get(pick.SpellId) is { } cooling && caster.CooldownOf(cooling) > 0f ? null
+                    : "the favourite under the cursor is not cooling down";
+            case "01e-wheel-unaffordable":
+                return _unaffordableSlot < 0 ? "no favourite costs mana"
+                    : pick.Kind != SpellWheelPickKind.Favourite || pick.Index != _unaffordableSlot ? "the cursor is not on the unaffordable favourite"
+                    : SpellDatabase.Get(pick.SpellId) is { } dear && Stats() is { } stats &&
+                      stats.GetCurrent(StatType.Mana) < caster.EffectiveManaCost(dear) ? null
+                    : "the favourite under the cursor can be afforded";
+            default:
+                return null;
+        }
+    }
 
     private static void SetFraction(StatType type, float fraction)
     {

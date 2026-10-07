@@ -50,6 +50,22 @@ public partial class SpellbookPanel : UiPanel
 
     private float _shownPotency = -1f;
 
+    // The favourite slot a pin goes to, chosen by pressing it in the pin row; none by default, and
+    // a pin then takes the first free slot. _pinsFull is the refusal: every slot taken, none chosen.
+    private int _pinSlot = SpellPinRules.NoSlot;
+    private bool _pinsFull;
+
+    private const float PinDiscSize = 22f;
+    private const float CardDiscSize = 24f;
+
+    // Below this usable width the eight slots sit in two rows of four, so a name is never cut to a stub.
+    private const float PinRowWidth = 1400f;
+
+    // For the screenshot harness: how many slots the last rebuild drew, and a card's pin button.
+    private int _pinSlotsBuilt;
+    private Button? _pinForCapture;
+    private bool _pinForCapturePins;
+
     protected override string? ToggleAction => GameInput.Spellbook;
 
     protected override HubTab? Hub => HubTab.Spellbook;
@@ -62,6 +78,11 @@ public partial class SpellbookPanel : UiPanel
             {
                 new(GameInput.MenuSubPrev, Loc.T("kn.legend.school"), GameInput.MenuSubNext),
             };
+            if (_spellcasting is { SpellCount: > 0 })
+            {
+                entries.Add(new LegendEntry("ui_accept", Loc.T("spellbook.legend.pin")));
+            }
+
             entries.AddRange(base.Legend);
             return entries;
         }
@@ -120,11 +141,20 @@ public partial class SpellbookPanel : UiPanel
     protected override void OnReady()
     {
         EventBus.Instance?.Subscribe<SpellsChangedEvent>(OnSpellsChanged);
+        EventBus.Instance?.Subscribe<SpellSelectedEvent>(OnSpellSelected);
         EventBus.Instance?.Subscribe<XpGainedEvent>(OnDirty);
         EventBus.Instance?.Subscribe<LeveledUpEvent>(OnLevelled);
         EventBus.Instance?.Subscribe<CorruptionChangedEvent>(OnCorruption);
         EventBus.Instance?.Subscribe<SchoolRankedUpEvent>(OnRanked);
         EventBus.Instance?.Subscribe<SpellLearnedEvent>(OnLearned);
+    }
+
+    /// <summary>A chosen slot and a refusal belong to one visit to the book.</summary>
+    protected override void OnOpenChanged(bool open)
+    {
+        base.OnOpenChanged(open);
+        _pinSlot = SpellPinRules.NoSlot;
+        _pinsFull = false;
     }
 
     public override void _Process(double delta)
@@ -141,6 +171,7 @@ public partial class SpellbookPanel : UiPanel
     public override void _ExitTree()
     {
         EventBus.Instance?.Unsubscribe<SpellsChangedEvent>(OnSpellsChanged);
+        EventBus.Instance?.Unsubscribe<SpellSelectedEvent>(OnSpellSelected);
         EventBus.Instance?.Unsubscribe<XpGainedEvent>(OnDirty);
         EventBus.Instance?.Unsubscribe<LeveledUpEvent>(OnLevelled);
         EventBus.Instance?.Unsubscribe<CorruptionChangedEvent>(OnCorruption);
@@ -153,6 +184,8 @@ public partial class SpellbookPanel : UiPanel
     private void OnLearned(SpellLearnedEvent e) => MarkDirty();
 
     private void OnSpellsChanged(SpellsChangedEvent e) => MarkDirty();
+
+    private void OnSpellSelected(SpellSelectedEvent e) => MarkDirty();
 
     private void OnDirty(XpGainedEvent e) => MarkDirty();
 
@@ -187,6 +220,9 @@ public partial class SpellbookPanel : UiPanel
     {
         UiTheme.ClearChildren(_body);
         UiTheme.ApplyScreenInset(Shell);
+        _pinSlotsBuilt = 0;
+        _pinForCapture = null;
+        _pinForCapturePins = false;
 
         float usable = UiTheme.UsableWidth(Shell);
         float ring = Mathf.Clamp(usable * 0.30f, 190f, 300f);
@@ -205,7 +241,7 @@ public partial class SpellbookPanel : UiPanel
             _body.AddChild(line);
         }
 
-        _body.AddChild(BuildPrepared());
+        _body.AddChild(BuildPins(usable));
 
         // The hairline every hub page has under its title and tabs.
         _body.AddChild(UiTheme.RowRule());
@@ -311,39 +347,98 @@ public partial class SpellbookPanel : UiPanel
     }
 
     /// <summary>
-    /// The prepared row: the known spells in cycle order, the current one lit.
+    /// The pin row: the eight favourite slots the spell wheel's inner ring draws, numbered as the
+    /// wheel lays them out (1 at the top, then clockwise), each with its spell's glyph and name.
     ///
-    /// This exists because <c>Q</c> casts "the selected spell" and <c>F</c> cycles it, and until now
-    /// nothing on any screen said what that order was or where in it you were — the HUD shows only
-    /// the current spell's name. A caster with six spells was cycling blind.
+    /// It replaces the prepared row, which listed every known spell in cycle order. The wheel made
+    /// that order mean nothing; what the player needs here is which eight spells are one flick
+    /// away, and a way to change them. Pressing a slot chooses it as where the next pin goes (and
+    /// opens its spell's page); a card's Pin button fills the first free slot when none is chosen.
+    ///
+    /// ⚠️ The line over the slots is always there, whatever it says: the panel restores focus by
+    /// child index across a rebuild, and a line that came and went would shift every row under it.
     /// </summary>
-    private Control BuildPrepared()
+    private Control BuildPins(float usable)
     {
-        // A flow, not a row: a full roster is up to 25 chips and must wrap rather than run off the page.
-        var row = new HFlowContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
-        row.AddThemeConstantOverride("h_separation", UiTheme.ChipGap);
-        row.AddThemeConstantOverride("v_separation", UiTheme.ChipGap);
-        row.AddChild(Centred(UiTheme.Caption(Loc.T("spellbook.prepared"))));
+        var block = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+        block.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
 
-        IReadOnlyList<SpellResource> known = _spellcasting!.Spells;
-        if (known.Count == 0)
+        IReadOnlyList<string> pins = _spellcasting!.Favourites;
+        if (_pinSlot >= pins.Count)
         {
-            row.AddChild(Centred(UiTheme.Caption(Loc.T("spellbook.prepared_none"), UiTheme.Disabled)));
-            return row;
+            _pinSlot = SpellPinRules.NoSlot;
         }
 
-        for (int i = 0; i < known.Count; i++)
-        {
-            SpellResource spell = known[i];
-            bool current = i == _spellcasting.SelectedIndex;
-            Color tint = SpellSchools.Color(spell.School);
+        block.AddChild(Wrapped(
+            _pinSlot >= 0
+                ? UiTheme.Caption(Loc.TF("spellbook.pins_chosen", SpellPinRules.SlotNumber(_pinSlot)), UiTheme.Accent)
+                : _pinsFull
+                    ? UiTheme.Caption(Loc.T("spellbook.pins_full"), UiTheme.AccentHot)
+                    : UiTheme.Caption(Loc.T("spellbook.pins"))));
 
-            PanelContainer chip = UiTheme.Chip(SpellText.Name(spell), current ? tint : UiTheme.Dim);
-            chip.TooltipText = SpellText.Description(spell);
-            row.AddChild(Centred(chip));
+        var grid = new GridContainer
+        {
+            Columns = usable >= PinRowWidth ? pins.Count : Mathf.Max(1, pins.Count / 2),
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+        };
+        grid.AddThemeConstantOverride("h_separation", UiTheme.ChipGap);
+        grid.AddThemeConstantOverride("v_separation", UiTheme.ChipGap);
+        for (int i = 0; i < pins.Count; i++)
+        {
+            grid.AddChild(BuildPinSlot(i, pins[i]));
         }
 
-        return row;
+        _pinSlotsBuilt = pins.Count;
+        block.AddChild(grid);
+        return block;
+    }
+
+    private Control BuildPinSlot(int slot, string spellId)
+    {
+        SpellResource? spell = spellId.Length > 0 ? SpellDatabase.Get(spellId) : null;
+        bool chosen = slot == _pinSlot;
+        bool prepared = spell != null && _spellcasting!.Selected?.Id == spell.Id;
+        Color tint = spell != null ? SpellSchools.Color(spell.School) : UiTheme.Disabled;
+        Color? edge = chosen ? UiTheme.Accent : spell != null ? tint : null;
+
+        PanelContainer card = UiTheme.CardButton(
+            edge, out Button input, out VBoxContainer col, UiTheme.Compact(UiTheme.CardStyle(edge)));
+        card.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+
+        var row = new HBoxContainer();
+        row.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
+        row.AddChild(Centred(UiTheme.Caption(
+            SpellPinRules.SlotNumber(slot).ToString(), chosen ? UiTheme.Accent : UiTheme.Dim)));
+
+        SpellDisc disc = SpellDisc.Create(PinDiscSize);
+        disc.Display(spell);
+        row.AddChild(disc);
+
+        Label name = UiTheme.Body(
+            spell != null ? SpellText.Name(spell) : Loc.T("wheel.slot.empty"),
+            spell == null ? UiTheme.Disabled : prepared ? tint : UiTheme.Text);
+        name.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        name.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
+        name.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
+        row.AddChild(name);
+        col.AddChild(row);
+
+        input.TooltipText = spell != null ? SpellText.Name(spell) : Loc.T("wheel.slot.hint");
+        input.Pressed += () =>
+        {
+            UiAudio.Play(UiCue.Click);
+            _pinsFull = false;
+            _pinSlot = _pinSlot == slot ? SpellPinRules.NoSlot : slot;
+            if (_pinSlot >= 0 && spell != null)
+            {
+                _school = spell.School;
+                _selected = spell;
+                _armed = null;
+            }
+
+            MarkDirty();
+        };
+        return card;
     }
 
     /// <summary>
@@ -544,6 +639,10 @@ public partial class SpellbookPanel : UiPanel
         var head = new HBoxContainer();
         head.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
 
+        SpellDisc disc = SpellDisc.Create(CardDiscSize);
+        disc.Display(spell, known);
+        head.AddChild(disc);
+
         var pick = new Button { Text = SpellText.Name(spell), Flat = true };
         pick.AddThemeColorOverride("font_color", known ? tint : UiTheme.Dim);
         pick.AddThemeColorOverride("font_hover_color", UiTheme.Text);
@@ -602,6 +701,11 @@ public partial class SpellbookPanel : UiPanel
 
         col.AddChild(chips);
 
+        if (known)
+        {
+            col.AddChild(BuildCardActions(spell));
+        }
+
         if (locked)
         {
             col.AddChild(Wrapped(UiTheme.Caption(LockReason(spell, tierNow), UiTheme.CorruptionText)));
@@ -626,6 +730,116 @@ public partial class SpellbookPanel : UiPanel
         card.AddChild(col);
         return card;
     }
+
+    /// <summary>
+    /// A known spell's two verbs: prepare it (what the cast key casts) and pin it to the wheel.
+    ///
+    /// ⚠️ Both are always buttons, so the row keeps its shape. The prepared spell's first button
+    /// reads "Prepared" and pressing it does nothing: were it a chip, the rebuild after a press
+    /// would find no button where focus had been and drop a pad's focus back to the top of the
+    /// page. It does not select again, because a selection is an event (the tutorial's wheel step
+    /// and the HUD both listen for it) and nothing was selected.
+    /// </summary>
+    private Control BuildCardActions(SpellResource spell)
+    {
+        var row = new HBoxContainer();
+        row.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
+
+        bool prepared = _spellcasting!.Selected?.Id == spell.Id;
+
+        // Refused only while a cast is in flight, which a menu can open over; the menu pauses the
+        // world, so what is true when the row is built is still true when it is pressed.
+        Button prepare = UiTheme.Action(
+            Loc.T(prepared ? "spellbook.prepared" : "spellbook.prepare"),
+            prepared ? UiCue.Click : _spellcasting.SelectionLocked ? UiCue.Denied : UiCue.Confirm);
+        string id = spell.Id;
+        if (prepared)
+        {
+            prepare.AddThemeColorOverride("font_color", UiTheme.Accent);
+        }
+        else
+        {
+            prepare.Pressed += () => _spellcasting!.Select(id);
+        }
+
+        row.AddChild(prepare);
+
+        SpellPinChoice choice = SpellPinRules.Decide(_spellcasting.Favourites, id, _pinSlot);
+        Button pin = UiTheme.Action(
+            choice.Kind == SpellPinKind.Unpin ? Loc.T("spellbook.unpin")
+            : _pinSlot >= 0 ? Loc.TF("spellbook.pin_to", SpellPinRules.SlotNumber(choice.Slot))
+            : Loc.T("spellbook.pin"),
+            choice.Kind == SpellPinKind.Pin ? UiCue.Confirm : choice.Kind == SpellPinKind.Full ? UiCue.Denied : UiCue.Click);
+        pin.Pressed += () => TogglePin(id);
+        row.AddChild(pin);
+
+        if (_pinForCapture == null || (!_pinForCapturePins && choice.Kind == SpellPinKind.Pin))
+        {
+            _pinForCapture = pin;
+            _pinForCapturePins = choice.Kind == SpellPinKind.Pin;
+        }
+
+        return row;
+    }
+
+    /// <summary>Pins or unpins through the caster, which says so with a
+    /// <see cref="SpellsChangedEvent"/>; a refusal (every slot taken, none chosen) is said in the
+    /// line over the pin row.</summary>
+    private void TogglePin(string spellId)
+    {
+        SpellPinChoice choice = SpellPinRules.Decide(_spellcasting!.Favourites, spellId, _pinSlot);
+        _pinsFull = choice.Kind == SpellPinKind.Full;
+        if (choice.Kind != SpellPinKind.Full)
+        {
+            _spellcasting.SetFavourite(
+                choice.Slot, choice.Kind == SpellPinKind.Pin ? spellId : SpellFavouritesRules.None);
+            _pinSlot = SpellPinRules.NoSlot;
+        }
+
+        MarkDirty();
+    }
+
+    /// <summary>Turns to the first school with a known spell that is not pinned, so a card's Pin
+    /// button is on the page (the screenshot harness).</summary>
+    public void ShowUnpinnedForCapture()
+    {
+        if (_spellcasting == null)
+        {
+            return;
+        }
+
+        foreach (DamageType school in Schools)
+        {
+            foreach (SpellResource spell in _spellcasting.Spells)
+            {
+                if (spell.School == school && SpellFavouritesRules.IndexOf(_spellcasting.Favourites, spell.Id) < 0)
+                {
+                    ShowSchool((int)school);
+                    return;
+                }
+            }
+        }
+    }
+
+    /// <summary>How many favourite slots the page drew (the screenshot harness).</summary>
+    public int PinSlotsForCapture => IsOpen ? _pinSlotsBuilt : 0;
+
+    /// <summary>Focuses a card's pin button, one that would pin if the page has one (the
+    /// screenshot harness). False when the page has no known spell.</summary>
+    public bool FocusPinForCapture()
+    {
+        if (_pinForCapture is not { } pin || !IsInstanceValid(pin))
+        {
+            return false;
+        }
+
+        pin.GrabFocus();
+        return true;
+    }
+
+    /// <summary>Whether a card's pin button holds focus (the screenshot harness).</summary>
+    public bool PinFocusedForCapture =>
+        _pinForCapture is { } pin && IsInstanceValid(pin) && pin.HasFocus();
 
     /// <summary>Why a corrupted spell is out of reach: which tier it needs and which the reader is at.</summary>
     private static string LockReason(SpellResource spell, int tierNow) => Loc.TF(
