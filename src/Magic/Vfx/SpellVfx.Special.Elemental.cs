@@ -73,6 +73,7 @@ public static partial class SpellVfx
 
         SpellVfxSpecial thunderStep = table.For("spell.thunder_step");
         thunderStep.Dash = ThunderStepStrike;
+        thunderStep.Impact = ThunderStepHit;
         thunderStep.Arc = LightningArc;
 
         SpellVfxSpecial stormbrand = table.For("spell.stormbrand");
@@ -325,7 +326,10 @@ public static partial class SpellVfx
         }
 
         float full = Mathf.Clamp(charge, 0f, 1f);
-        float size = (0.2f + (0.16f * cast.Weight) + (0.2f * full)) * cast.Plan(VfxRole.Travel).Scale;
+        // Half size for the player's own bolt in first person, as the generic head is: at full size
+        // the body was a ball over the crosshair and whatever it was aimed at.
+        float size = (0.2f + (0.16f * cast.Weight) + (0.2f * full)) * cast.Plan(VfxRole.Travel).Scale *
+                     ProjectileViewScale(cast);
         Vector3 origin = projectile.GlobalPosition + handOffset;
         VfxAnchor anchor = VfxAnchor.To(projectile);
         bool aimed = direction.LengthSquared() > 0.0001f;
@@ -336,6 +340,11 @@ public static partial class SpellVfx
         body.Sustain = true;
         body.Layered = true;
         body.Scroll = new Vector2(0.3f, 1.7f);
+
+        // Torn, not filled: the bolt's head is a shaped flame now, and a whole ball of noise drawn
+        // over it was the round white disc again.
+        body.Ragged = true;
+        body.Opacity = 0.8f;
         if (stretch > 1f && aimed)
         {
             body.Size = new Vector3(size * 1.3f, size * 1.3f, size * 1.3f * stretch);
@@ -435,6 +444,13 @@ public static partial class SpellVfx
         cast.Fx.Burst(VfxParticles.Embers, embers);
         if (budget.SecondaryDebris)
         {
+            // The tongue itself: licks of flame climbing the bearer.
+            VfxBurstSpec licks = VfxBurstSpec.At(position + (Vector3.Up * 0.4f), Flame(cast.Colors), budget.ParticleMultiplier * 0.6f);
+            licks.Direction = Vector3.Up;
+            licks.Spread = 12f;
+            licks.Extents = new Vector3(0.28f, 0.5f, 0.28f);
+            cast.Fx.Burst(VfxEmitter.FlameLick, licks);
+
             VfxBurstSpec smoke = VfxBurstSpec.At(chest + (Vector3.Up * 0.6f), cast.Colors, budget.ParticleMultiplier * 0.4f);
             smoke.SizeScale = 0.5f;
             smoke.LifeScale = 0.6f;
@@ -830,41 +846,68 @@ public static partial class SpellVfx
 
     // --- frost -----------------------------------------------------------------------------------
 
-    /// <summary>Extra splinters off a Rime Shard that landed, a breath of cold mist under it, and
-    /// frost on the floor at the feet of what it struck.</summary>
+    /// <summary>
+    /// A Rime Shard shatters on what it strikes and leaves the floor under it frozen. Above the
+    /// leanest tier frost creeps out across the floor at the feet of what was struck and holds for a
+    /// couple of seconds; Medium and up throw the shard's crystals back the way it came with glints
+    /// hanging where it broke, a breath of mist along the floor and the longer mark of frost. (The
+    /// leanest tier keeps the generic hit and gains nothing.)
+    /// </summary>
     private static bool RimeShardHit(in VfxCast cast, in SpellImpactInfo hit)
     {
         VfxBudget budget = VfxQuality.Budget;
-        if (hit.Kind is SpellImpactKind.Blocked or SpellImpactKind.Expired || !budget.SecondaryDebris)
+        if (hit.Kind is SpellImpactKind.Blocked or SpellImpactKind.Expired || VfxQuality.Tier == VfxTier.Performance)
+        {
+            return false;
+        }
+
+        // At the feet of a body, or where the shard struck a floor; never hung in the air or laid
+        // flat across a wall. Not under the first-person player: a patch of light about the camera
+        // is the frame.
+        Node3D? struck = VfxAnchor.BodyOf(hit.Target);
+        bool floored = struck != null || (hit.Kind == SpellImpactKind.World && hit.Normal.Y > 0.7f);
+        bool onTheEye = hit.Target != null && IsPlayer(hit.Target) && AtTheEye(hit.Position + (Vector3.Up * 0.6f));
+        Vector3 foot = struck?.GlobalPosition ?? hit.Position;
+        if (struck != null)
+        {
+            // A body's origin is not always its feet (a practice dummy's is its middle).
+            BodyFit(struck, out Vector3 centre, out Vector3 fit);
+            foot += centre + (Vector3.Down * (fit.Y * 0.5f));
+        }
+
+        if (floored && !onTheEye)
+        {
+            FrostSpread(cast, foot + (Vector3.Up * 0.04f), 1.15f + (0.5f * cast.Weight), 0.5f);
+        }
+
+        if (!budget.SecondaryDebris)
         {
             return false;
         }
 
         // Thrown back the way the shard came: it shatters against what it struck.
-        VfxBurstSpec splinters = VfxBurstSpec.At(hit.Position, cast.Colors, budget.ParticleMultiplier * 0.8f);
-        splinters.Direction = hit.Normal.LengthSquared() > 0.0001f ? hit.Normal : Vector3.Up;
-        splinters.Spread = 55f;
-        splinters.SpeedScale = 1.2f;
-        splinters.SizeScale = 0.8f;
-        cast.Fx.Burst(VfxParticles.Shards, splinters);
-
-        VfxBurstSpec mist = VfxBurstSpec.At(
-            hit.Position + (Vector3.Down * 0.3f), cast.Colors, budget.ParticleMultiplier * budget.DebrisMultiplier * 0.3f);
-        mist.Tint = MistTint;
-        mist.SizeScale = 0.5f;
-        mist.SpeedScale = 0.5f;
-        mist.GravityScale = -0.3f;
-        mist.LifeScale = 0.7f;
-        cast.Fx.Burst(VfxParticles.Smoke, mist);
-
-        // At the feet of a body, or where the shard struck the world; never hung in the air.
-        Node3D? struck = VfxAnchor.BodyOf(hit.Target);
-        if (struck != null || hit.Kind == SpellImpactKind.World)
+        Vector3 back = hit.Normal.LengthSquared() > 0.0001f ? hit.Normal.Normalized() : Vector3.Up;
+        VfxBurstSpec crystals = VfxBurstSpec.At(hit.Position, cast.Colors, budget.ParticleMultiplier * 0.9f);
+        crystals.Direction = back;
+        crystals.Spread = 62f;
+        crystals.SpeedScale = 1.1f;
+        crystals.SizeScale = 0.9f;
+        cast.Fx.Burst(VfxEmitter.Crystals, crystals);
+        if (VfxQuality.Rich.Glints)
         {
+            VfxBurstSpec glints = VfxBurstSpec.At(hit.Position, cast.Colors, budget.ParticleMultiplier * 0.6f);
+            glints.Extents = Vector3.One * 0.45f;
+            glints.LifeScale = VfxQuality.Rich.LifeScale;
+            cast.Fx.Burst(VfxEmitter.Glints, glints);
+        }
+
+        if (floored && !onTheEye)
+        {
+            GroundMist(cast, foot, 1.6f, 0.5f);
             cast.Fx.Mark(new VfxGroundMarkSpec
             {
                 Mark = VfxMark.Frost,
-                Position = struck?.GlobalPosition ?? hit.Position,
+                Position = foot,
                 Size = 1.7f,
                 Colors = cast.Colors,
                 Life = 7f,
@@ -969,8 +1012,9 @@ public static partial class SpellVfx
     /// <summary>
     /// Blizzard's zone, drawn to be stood in. The generic zone fills its floor with a bright disc,
     /// which from inside is the whole frame; here the floor is only a faint rim at the edge of the
-    /// danger, and the storm is what falls through it: snow coming down across the whole radius,
-    /// (Medium and up) hail in it, mist lying on the floor and frost under that, and a cold light.
+    /// danger, and the storm is what falls through it: fast streaks of snow driven across the whole
+    /// radius on a slant, (Medium and up) mist hugging the floor with frost under it and a few
+    /// fine flakes adrift, and a cold light.
     /// </summary>
     private static bool BlizzardZone(in VfxCast cast, VfxRig rig, Node3D zone, float radius, float duration)
     {
@@ -990,31 +1034,15 @@ public static partial class SpellVfx
         edge.Energy = 0.6f;
         rig.Add(cast.Fx.Disc(edge)).Get?.Follow(floor);
 
-        // Snow: thin pale streaks driven down on a slant, fast, the height of a room. (Slow round
-        // motes at this size were a field of glowing balls.) One emitter holds only so many flakes,
-        // so the richer tiers stack layers of it born at different heights.
-        int layers = VfxQuality.Tier switch
-        {
-            VfxTier.Medium => 2,
-            VfxTier.High => 3,
-            VfxTier.Ultra => 4,
-            _ => 1,
-        };
-        VfxBurstSpec snow = VfxBurstSpec.At(Vector3.Zero, cast.Colors, density * area * 3f);
-        snow.Continuous = true;
-        snow.Extents = new Vector3(radius * 0.85f, 0.3f, radius * 0.85f);
-        snow.Direction = new Vector3(0.32f, -1f, 0.14f);
-        snow.Spread = 7f;
-        snow.Speed = 7.5f;
-        snow.Damping = 0f;
-        snow.GravityScale = 0.2f;
-        snow.SizeScale = 0.42f;
-        snow.LifeScale = 1.15f;
-        snow.Tint = new Color(cast.Colors.Core, 1f);
+        // Snow: many small fast streaks driven across the zone on a slant (the kit's snow), each
+        // layer on a wind of its own so the streaks cross. One emitter holds only so many, so the
+        // richer tiers stack them; the leanest draws the one.
+        int layers = VfxElementalRules.SnowLayers(VfxQuality.Tier);
         for (int i = 0; i < layers; i++)
         {
-            VfxHandle<VfxBurst> falling = rig.Add(cast.Fx.Burst(VfxParticles.Sparks, snow));
-            falling.Get?.Follow(VfxAnchor.To(zone, Vector3.Up * (3.2f - (0.5f * i))));
+            Vector3 wind = new Vector3(0.55f - (0.18f * i), -0.8f, 0.2f + (0.22f * i)).Normalized();
+            VfxHandle<VfxBurst> falling = rig.Add(Snowfall(cast, Vector3.Zero, radius * 0.9f, 0f, wind, i == 0 ? 1.4f : 0.9f));
+            falling.Get?.Follow(VfxAnchor.To(zone, (Vector3.Up * (3f + (0.4f * i))) - (wind * 2f)));
             if (i == 0)
             {
                 rig.Stream = falling;
@@ -1038,25 +1066,29 @@ public static partial class SpellVfx
             return true;
         }
 
-        VfxBurstSpec hail = VfxBurstSpec.At(Vector3.Zero, cast.Colors, density * area * 0.5f);
-        hail.Continuous = true;
-        hail.Extents = new Vector3(radius * 0.8f, 0.3f, radius * 0.8f);
-        hail.Direction = Vector3.Down;
-        hail.Spread = 14f;
-        hail.SpeedScale = 0.7f;
-        hail.SizeScale = 0.6f;
-        rig.Add(cast.Fx.Burst(VfxParticles.Shards, hail)).Get?.Follow(VfxAnchor.To(zone, Vector3.Up * 3.4f));
-
-        // Six seconds of it around the caster: small puffs, and few of them, or it is a bank of fog
-        // between the camera and the fight.
-        VfxBurstSpec mist = VfxBurstSpec.At(Vector3.Zero, cast.Colors, density * area * 0.3f);
+        // Mist hugging the ground: flat banks rolling out across the floor, never rising to the
+        // height of a face. Few of them, or six seconds of it is a bank of fog over the fight.
+        VfxBurstSpec mist = VfxBurstSpec.At(Vector3.Zero, cast.Colors, density * area * 0.45f);
         mist.Continuous = true;
-        mist.Tint = MistTint;
-        mist.Extents = new Vector3(radius * 0.7f, 0.08f, radius * 0.7f);
-        mist.GravityScale = 0.03f;
-        mist.SpeedScale = 0.5f;
-        mist.SizeScale = Mathf.Clamp(radius * 0.15f, 0.5f, 0.85f);
-        rig.Add(cast.Fx.Burst(VfxParticles.Smoke, mist)).Get?.Follow(VfxAnchor.To(zone, Vector3.Up * 0.25f));
+        mist.Extents = new Vector3(radius * 0.7f, 0.06f, radius * 0.7f);
+        mist.Direction = Vector3.Right;
+        mist.Spread = 180f;
+        mist.Flatness = 1f;
+        mist.SpeedScale = 0.8f;
+        mist.SizeScale = Mathf.Clamp(radius * 0.28f, 0.7f, 1.5f);
+        rig.Add(cast.Fx.Burst(VfxEmitter.Mist, mist)).Get?.Follow(VfxAnchor.To(zone, Vector3.Up * 0.22f));
+
+        if (VfxQuality.Rich.Glints)
+        {
+            // A few fine flakes drifting among the streaks. (The hail that fell here was a field of
+            // large bright diamonds between the camera and the fight.)
+            VfxBurstSpec flurry = VfxBurstSpec.At(Vector3.Zero, cast.Colors, density * area * 0.35f);
+            flurry.Continuous = true;
+            flurry.Extents = new Vector3(radius * 0.8f, 1.1f, radius * 0.8f);
+            flurry.Direction = Vector3.Down;
+            flurry.Spread = 40f;
+            rig.Add(cast.Fx.Burst(VfxEmitter.Flurry, flurry)).Get?.Follow(VfxAnchor.To(zone, Vector3.Up * 1.7f));
+        }
 
         VfxHandle<VfxGroundMark> frost = rig.Add(cast.Fx.Mark(new VfxGroundMarkSpec
         {
@@ -1071,7 +1103,8 @@ public static partial class SpellVfx
     }
 
     /// <summary>One pulse of the blizzard: a gust. A thin ring runs out to the edge along the floor
-    /// and a squall of hail comes down with it. No flash: the caster is standing in it.</summary>
+    /// and a squall of small hail is driven down on the slant of the snow with it. No flash: the
+    /// caster is standing in it.</summary>
     private static bool BlizzardPulse(in VfxCast cast, Vector3 position, float radius, SpellBurstSource source, float charge)
     {
         if (source != SpellBurstSource.Zone)
@@ -1083,11 +1116,15 @@ public static partial class SpellVfx
         VfxBudget budget = VfxQuality.Budget;
         ThinRing(cast, position + (Vector3.Up * 0.05f), radius, 0.5f, energy: 0.7f);
 
-        VfxBurstSpec squall = VfxBurstSpec.At(position + (Vector3.Up * 2.6f), cast.Colors, budget.ParticleMultiplier * 0.9f);
+        VfxBurstSpec squall = VfxBurstSpec.At(position + (Vector3.Up * 2.6f), cast.Colors, budget.ParticleMultiplier * 0.6f);
         squall.Extents = new Vector3(radius * 0.7f, 0.3f, radius * 0.7f);
-        squall.Direction = Vector3.Down;
-        squall.Spread = 30f;
-        squall.SpeedScale = 0.9f;
+        squall.Direction = new Vector3(0.45f, -1f, 0.18f);
+        squall.Spread = 16f;
+        squall.SpeedScale = 1.3f;
+
+        // Small: at their own size, seen from inside the storm, these were diamonds a hand across
+        // tumbling past the camera.
+        squall.SizeScale = 0.45f;
         cast.Fx.Burst(VfxParticles.Shards, squall);
 
         if (VfxQuality.Tier >= VfxTier.High)
@@ -1106,11 +1143,14 @@ public static partial class SpellVfx
     }
 
     /// <summary>
-    /// The Glacial Bulwark as ice. One flat sheet is a white rectangle; this is a slab of blue with
-    /// a ragged top, and in front of and behind it a row of narrow spires of uneven height that fade
-    /// at their sides and break up toward their tips, so the wall has a crystalline silhouette and
-    /// its facets overlap. Glints drift off it, shards burst as it rises, and (Medium and up) cold
-    /// mist lies along its foot over a line of frost.
+    /// The Glacial Bulwark as a row of crystals. A flat sheet, however it is textured, is a backlit
+    /// sign; this is jagged prisms of ice standing shoulder to shoulder along the wall's line, each
+    /// with real depth, its own height (tallest in the middle) and its own lean, so the top edge is
+    /// broken and the wall has a silhouette from every side. Between them, well under their tips,
+    /// stands a low web of plate ice that closes the gaps a body cannot pass. Three crystals on the
+    /// leanest tier, seven on the richest (<see cref="VfxElementalRules.PrismCount"/>). Glints drift
+    /// off it, shards burst as it rises, and (Medium and up) cold mist lies along its foot over a
+    /// line of frost. Let go, the ice shatters plate by plate.
     /// </summary>
     private static bool GlacialBulwarkWall(in VfxCast cast, VfxRig rig, Node3D barrier, float width, float height)
     {
@@ -1120,22 +1160,20 @@ public static partial class SpellVfx
         bool rich = budget.SecondaryDebris;
         float density = budget.ParticleMultiplier;
         VfxSchoolColors colors = cast.Colors;
-
-        // Ice is blue to its heart and mostly covers what is behind it. Drawn at the school's full
-        // energy with its near-white core colour, overlapping sheets add up to a white rectangle.
-        VfxSchoolColors deep = colors with { Core = colors.Mid.Lerp(colors.Core, 0.3f), Edge = colors.Edge.Darkened(0.35f) };
         VfxAnchor foot = VfxAnchor.To(barrier);
 
-        VfxShellSpec slab = VfxShellSpec.Sheet(Vector3.Zero, width, height * 0.9f, deep);
-        slab.Occlude = 0.7f;
-        slab.FadeTop = 0.5f;
-        slab.FadeSides = 0.3f;
-        slab.Scroll = new Vector2(0.002f, 0.006f);
-        slab.Tiling = new Vector2(Mathf.Max(1f, width * 0.55f), 1.3f);
-        slab.Energy = 0.26f;
-        slab.RiseSeconds = 0.35f;
-        slab.Layered = rich;
-        VfxHandle<VfxShell> wall = rig.Add(cast.Fx.Shell(slab));
+        // A wall that had a telegraph already stands where it will, so its own axes can be read and
+        // the crystals stood along them. One raised with no delay is placed after this call: it gets
+        // the sheet of plate ice alone, at its full height.
+        bool placed = (cast.Spell?.GroundDelay ?? 0f) > 0f && barrier.IsInsideTree();
+
+        VfxShellSpec web = VfxShellSpec.IceWall(
+            Vector3.Zero, width * (placed ? 0.92f : 1f), height * (placed ? VfxElementalRules.PrismWebHeight : 1f), colors);
+        web.Occlude = placed ? 0.45f : 0.6f;
+        web.Energy = placed ? 0.36f : 0.5f;
+        web.RiseSeconds = 0.35f;
+        web.Layered = rich;
+        VfxHandle<VfxShell> wall = rig.Add(cast.Fx.Shell(web));
         if (wall.Get is { } standing)
         {
             standing.Follow(foot);
@@ -1149,43 +1187,46 @@ public static partial class SpellVfx
             return true;
         }
 
-        // A wall that had a telegraph already stands where it will, so its own axes can be read. One
-        // raised with no delay is placed after this call: it gets the slab alone.
-        bool placed = (cast.Spell?.GroundDelay ?? 0f) > 0f && barrier.IsInsideTree();
         if (placed)
         {
             Basis axes = barrier.GlobalBasis.Orthonormalized();
-            int spires = VfxQuality.Tier switch
+            int prisms = VfxElementalRules.PrismCount(VfxQuality.Tier);
+
+            // The post is 0.9 m tall and 0.26 m across its foot, tapering to under half that: scaled
+            // wide and deep it is a faceted crystal narrowing to a blunt tip.
+            const float PostHeight = 0.9f;
+            const float PostFoot = 0.26f;
+            float girth = Mathf.Clamp(width / prisms * 1.45f, 0.45f, 1.5f);
+            float depth = Mathf.Min(girth * VfxElementalRules.PrismDepthRatio, VfxElementalRules.PrismMaxDepth);
+            for (int i = 0; i < prisms; i++)
             {
-                VfxTier.Performance => 2,
-                VfxTier.Low => 3,
-                VfxTier.Medium => 4,
-                VfxTier.High => 5,
-                _ => 6,
-            };
-            VfxSchoolColors facet = colors with { Core = colors.Mid.Lerp(colors.Core, 0.5f) };
-            for (int i = 0; i < spires; i++)
-            {
-                float across = ((i + 0.25f + (0.5f * Roll())) / spires) - 0.5f;
-                float middle = 1f - Mathf.Abs(across * 2f);
-                float tall = height * (0.8f + (0.25f * middle) + (0.2f * Roll()));
-                VfxShellSpec spire = VfxShellSpec.Sheet(Vector3.Zero, width / spires * 1.7f, tall, facet);
-                spire.Occlude = 0.75f;
-                spire.FadeTop = 1f;
-                spire.FadeSides = 1f;
-                spire.Scroll = new Vector2(0.003f, 0.01f);
-                spire.Tiling = new Vector2(0.5f + (0.4f * Roll()), 0.7f + (0.5f * Roll()));
-                spire.Energy = 0.22f;
-                spire.RiseSeconds = 0.2f + (0.3f * Roll());
-                spire.Layered = false;
-                VfxHandle<VfxShell> raised = rig.Add(cast.Fx.Shell(spire));
-                if (raised.Get is { } shard)
-                {
-                    // Alternately a hand in front of and behind the slab, so the facets overlap.
-                    Vector3 offset = (axes.X * (across * width * 0.9f)) + (axes.Z * ((i % 2 == 0 ? 1f : -1f) * 0.2f));
-                    shard.Follow(VfxAnchor.To(barrier, offset));
-                    shard.OrientLike(barrier);
-                }
+                float across = ((i + 0.3f + (0.4f * Roll())) / prisms) - 0.5f;
+                float tall = height * VfxElementalRules.PrismHeight(across, Roll());
+                float thick = girth * (0.8f + (0.4f * Roll()));
+
+                // Each leans its own way: outward from the middle along the wall, and a little to
+                // the front or the back, turned so no two faces line up.
+                float lean = Mathf.DegToRad(VfxElementalRules.MaxPrismLean * (0.25f + (0.75f * Roll())));
+                float side = i % 2 == 0 ? 1f : -1f;
+                Vector3 toward = ((axes.Z * side) + (axes.X * ((across * 1.2f) + ((Roll() - 0.5f) * 0.5f)))).Normalized();
+
+                VfxShellSpec prism = VfxShellSpec.IceShell(Vector3.Zero, 0.5f, colors);
+                prism.Shape = VfxShellShape.Post;
+                prism.Size = new Vector3(thick / PostFoot, tall / PostHeight, depth / PostFoot);
+                prism.Sustain = true;
+                prism.Fresnel = false;
+                prism.Occlude = 0.55f;
+                prism.Energy = 0.42f;
+                prism.Tiling = new Vector2(2f + Roll(), 1.4f + Roll());
+                prism.RiseSeconds = 0.16f + (0.2f * Roll());
+
+                // Looking along that heading tipped down by the lean stands the post's own up axis
+                // off upright by the same angle, toward it.
+                prism.Forward = (toward * Mathf.Cos(lean)) + (Vector3.Down * Mathf.Sin(lean));
+                VfxHandle<VfxShell> raised = rig.Add(cast.Fx.Shell(prism));
+
+                // Alternately a hand in front of and behind the line, so the crystals overlap.
+                raised.Get?.Follow(VfxAnchor.To(barrier, (axes.X * (across * width * 0.94f)) + (axes.Z * (side * 0.12f))));
             }
         }
 
@@ -1194,7 +1235,10 @@ public static partial class SpellVfx
         glints.Continuous = true;
         glints.Extents = new Vector3(width * 0.5f, height * 0.45f, 0.25f);
         glints.SpeedScale = 0.3f;
-        VfxHandle<VfxBurst> drifting = rig.Add(cast.Fx.Burst(VfxParticles.Motes, glints));
+        // Not on the leanest tier: its third crystal is drawn in their place.
+        VfxHandle<VfxBurst> drifting = VfxQuality.Tier == VfxTier.Performance
+            ? default
+            : rig.Add(cast.Fx.Burst(VfxParticles.Motes, glints));
         if (drifting.Get is { } emitter)
         {
             emitter.Follow(VfxAnchor.To(barrier, Vector3.Up * (height * 0.5f)));
@@ -1207,7 +1251,8 @@ public static partial class SpellVfx
         rise.Direction = Vector3.Up;
         rise.Spread = 30f;
         rise.SpeedScale = 1.4f;
-        VfxHandle<VfxBurst> up = rig.Add(cast.Fx.Burst(VfxParticles.Shards, rise));
+        VfxHandle<VfxBurst> up = rig.Add(
+            rich ? cast.Fx.Burst(VfxEmitter.Crystals, rise) : cast.Fx.Burst(VfxParticles.Shards, rise));
         if (up.Get is { } burst)
         {
             burst.Follow(VfxAnchor.To(barrier, Vector3.Up * 0.2f));
@@ -1231,14 +1276,15 @@ public static partial class SpellVfx
             return true;
         }
 
-        VfxBurstSpec mist = VfxBurstSpec.At(Vector3.Zero, colors, density * budget.DebrisMultiplier * 0.3f);
+        VfxBurstSpec mist = VfxBurstSpec.At(Vector3.Zero, colors, density * budget.DebrisMultiplier * 0.4f);
         mist.Continuous = true;
-        mist.Tint = MistTint;
-        mist.Extents = new Vector3(width * 0.5f, 0.08f, 0.4f);
-        mist.GravityScale = 0.03f;
-        mist.SpeedScale = 0.35f;
-        mist.SizeScale = 0.6f;
-        VfxHandle<VfxBurst> lying = rig.Add(cast.Fx.Burst(VfxParticles.Smoke, mist));
+        mist.Extents = new Vector3(width * 0.5f, 0.06f, 0.4f);
+        mist.Direction = Vector3.Right;
+        mist.Spread = 180f;
+        mist.Flatness = 1f;
+        mist.SpeedScale = 0.5f;
+        mist.SizeScale = 0.7f;
+        VfxHandle<VfxBurst> lying = rig.Add(cast.Fx.Burst(VfxEmitter.Mist, mist));
         if (lying.Get is { } cold)
         {
             cold.Follow(VfxAnchor.To(barrier, Vector3.Up * 0.2f));
@@ -1329,7 +1375,33 @@ public static partial class SpellVfx
         // tier, in place of the generic flash (which at this size was a soft glow).
         float groundY = VfxAnchor.BodyOf(hit.Target) is { } body ? body.GlobalPosition.Y : float.NaN;
         LightningBlast(cast, hit.Position, 2.4f * (hit.Crit ? 1.15f : 1f), groundY);
+        StruckCrackle(cast, hit.Target);
         return true;
+    }
+
+    /// <summary>Arcs left crackling over a body lightning has just struck, for a second or so after
+    /// the flash is gone (not on the leanest tier, and not on the first-person player, whose own
+    /// body is the camera).</summary>
+    private static VfxHandle<VfxMotif> StruckCrackle(in VfxCast cast, IEntity? target)
+    {
+        if (!VfxElementalRules.StruckCrackle(VfxQuality.Tier) || VfxAnchor.BodyOf(target) is not { } struck ||
+            (IsPlayer(target) && AtTheEye(struck.GlobalPosition + (Vector3.Up * 1.6f))))
+        {
+            return default;
+        }
+
+        return ResidualCrackle(cast, struck, VfxElementalRules.StruckCrackleSeconds);
+    }
+
+    /// <summary>What Thunder Step's strike lands on is left crackling, over the generic hit.</summary>
+    private static bool ThunderStepHit(in VfxCast cast, in SpellImpactInfo hit)
+    {
+        if (hit.Kind == SpellImpactKind.Target)
+        {
+            StruckCrackle(cast, hit.Target);
+        }
+
+        return false;
     }
 
     /// <summary>
@@ -1420,10 +1492,23 @@ public static partial class SpellVfx
     }
 
     /// <summary>Where Storm Conduit's beam lands it spits: short forks off the struck point (Medium
-    /// and up) over the generic flicker and sparks.</summary>
+    /// and up) over the generic flicker and sparks, and what it is held on is left crackling. The
+    /// beam ticks several times a second, so the arcs are one set held by the beam and renewed only
+    /// when the last has run out: they outlast the channel by about a second.</summary>
     private static bool StormConduitHit(in VfxCast cast, in SpellImpactInfo hit)
     {
-        if (hit.Kind != SpellImpactKind.Target || !VfxQuality.Budget.SecondaryDebris)
+        if (hit.Kind != SpellImpactKind.Target)
+        {
+            return false;
+        }
+
+        if (cast.Caster is { } caster && Beams.TryGetValue(caster.RuntimeId, out VfxRig? beam) && !beam.Motif.IsLive)
+        {
+            // Held on the rig but not added to it: stopping the beam leaves them to run out.
+            beam.Motif = StruckCrackle(cast, hit.Target);
+        }
+
+        if (!VfxQuality.Budget.SecondaryDebris)
         {
             return false;
         }
