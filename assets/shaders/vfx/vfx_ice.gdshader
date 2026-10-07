@@ -62,7 +62,10 @@ void fragment() {
 	vec3 body = mix(color_deep.rgb, color_body.rgb, lit);
 	vec3 rgb = mix(body, color_core.rgb * energy, bright);
 	float fade = smoothstep(0.3, 1.2, length(VERTEX));
-	float alpha = clamp(cut * shatter * opacity, 0.0, 1.0) * fade;
+	// A shell closed over a body (not a wall) is thick at its rim and seams and thin across its
+	// middle, so whoever is frozen inside it can still be read.
+	float thickness = mix(clamp(0.16 + rim * 0.9 + seam * 0.35 + glint * 0.5, 0.0, 1.0), 1.0, step(0.5, sheet));
+	float alpha = clamp(cut * shatter * opacity * thickness, 0.0, 1.0) * fade;
 
 	ALBEDO = rgb * alpha;
 	ALPHA = alpha * occlude;

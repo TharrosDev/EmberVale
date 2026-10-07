@@ -85,6 +85,20 @@ public static partial class SpellVfx
             {
                 // A stacked status going off: a blast in its own right, over the radius it reached.
                 float reach = Mathf.Max(1.4f, radius);
+                bool atEye = onPlayer && AtTheEye(chest + (Vector3.Up * 0.6f));
+                if (school == DamageType.Fire && !atEye)
+                {
+                    // Kindle going off is a fireball in its own right.
+                    FireBlast(cast, chest, reach * 1.15f, position.Y);
+                    break;
+                }
+
+                if (school == DamageType.Lightning && !atEye)
+                {
+                    LightningBlast(cast, chest, reach, position.Y);
+                    break;
+                }
+
                 var stage = new VfxStage
                 {
                     Flare = true,

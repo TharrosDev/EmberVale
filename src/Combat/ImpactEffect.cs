@@ -30,6 +30,20 @@ public partial class ImpactEffect : Node3D
 
     private const float SparkAlpha = 0.85f;
 
+    /// <summary>The shock ring's outer radius at its widest, metres, for a blow of scale 1. It was
+    /// half as large again and a fifth of its radius thick, opaque: over a crowd of struck targets
+    /// that was a stack of solid yellow discs at head height, covering their damage numbers.</summary>
+    private const float RingRadius = 0.6f;
+
+    /// <summary>The widest the ring is ever drawn, whatever the scale of the blow.</summary>
+    private const float RingRadiusCap = 0.95f;
+
+    private const float RingAlpha = 0.5f;
+
+    /// <summary>A ring this close to the camera is not drawn: edge on beside the lens it is a slab
+    /// across the frame.</summary>
+    private const float RingMinCameraDistance = 1.8f;
+
     private MeshInstance3D _mesh = null!;
     private StandardMaterial3D _material = null!;
     private MeshInstance3D _ring = null!;
@@ -84,16 +98,22 @@ public partial class ImpactEffect : Node3D
 
         // The shock ring of a parry, a guard break or a poise break: a flat torus that races outward
         // faster than the spark swells, so these three read as events rather than as a bigger puff.
+        // Added light with no depth write, fading with distance from the lens: a band, not a solid.
         _ringMaterial = new StandardMaterial3D
         {
             Transparency = BaseMaterial3D.TransparencyEnum.Alpha,
+            BlendMode = BaseMaterial3D.BlendModeEnum.Add,
             ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
-            EmissionEnabled = true,
+            DepthDrawMode = BaseMaterial3D.DepthDrawModeEnum.Disabled,
             CullMode = BaseMaterial3D.CullModeEnum.Disabled,
+            ProximityFadeEnabled = false,
+            DistanceFadeMode = BaseMaterial3D.DistanceFadeModeEnum.PixelAlpha,
+            DistanceFadeMinDistance = 1.2f,
+            DistanceFadeMaxDistance = 2.6f,
         };
         _ring = new MeshInstance3D
         {
-            Mesh = new TorusMesh { InnerRadius = 0.8f, OuterRadius = 1f, RingSegments = 24 },
+            Mesh = new TorusMesh { InnerRadius = 0.93f, OuterRadius = 1f, RingSegments = 48, Rings = 8 },
             MaterialOverride = _ringMaterial,
             Visible = false,
             CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
@@ -124,10 +144,16 @@ public partial class ImpactEffect : Node3D
         _mesh.Visible = true;
         _mesh.Scale = Vector3.One;
         _material.AlbedoColor = new Color(color.R, color.G, color.B, SparkAlpha);
+        if (ring && GetViewport()?.GetCamera3D() is { } camera &&
+            camera.GlobalPosition.DistanceTo(GlobalPosition) < RingMinCameraDistance)
+        {
+            ring = false;
+        }
+
+        _showRing = ring;
         _ring.Visible = ring;
         _ring.Scale = Vector3.One * 0.1f;
-        _ringMaterial.Emission = color;
-        _ringMaterial.AlbedoColor = new Color(color.R, color.G, color.B, 0.9f);
+        _ringMaterial.AlbedoColor = new Color(color.R, color.G, color.B, RingAlpha);
     }
 
     public override void _Process(double delta)
@@ -163,8 +189,9 @@ public partial class ImpactEffect : Node3D
         {
             // Eased out, so it snaps open on the frame of the blow and lingers thin at the edge.
             float open = 1f - ((1f - t) * (1f - t));
-            _ring.Scale = Vector3.One * Mathf.Lerp(0.1f, 1.5f * _scale, open);
-            _ringMaterial.AlbedoColor = new Color(_color.R, _color.G, _color.B, 0.9f * (1f - t));
+            float widest = Mathf.Min(RingRadiusCap, RingRadius * _scale);
+            _ring.Scale = new Vector3(1f, 0.35f, 1f) * Mathf.Lerp(0.1f, widest, open);
+            _ringMaterial.AlbedoColor = new Color(_color.R, _color.G, _color.B, RingAlpha * (1f - t) * (1f - t));
         }
     }
 }

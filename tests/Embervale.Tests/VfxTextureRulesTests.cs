@@ -15,7 +15,7 @@ public class VfxTextureRulesTests
     public static readonly TheoryData<string> Masks = new()
     {
         "Dot", "Streak", "Shard", "Leaf", "Puff", "Rune", "Scorch", "ScorchHeat", "Frost", "Roots",
-        "Crystal", "Glint", "Rays",
+        "Crystal", "Glint", "Rays", "Comet",
     };
 
     private static Func<float, float, float> Painter(string name) => name switch
@@ -33,6 +33,7 @@ public class VfxTextureRulesTests
         "Crystal" => VfxTextureRules.Crystal,
         "Glint" => VfxTextureRules.Glint,
         "Rays" => VfxTextureRules.Rays,
+        "Comet" => VfxTextureRules.Comet,
         _ => throw new ArgumentOutOfRangeException(nameof(name)),
     };
 
@@ -147,5 +148,21 @@ public class VfxTextureRulesTests
 
         // In the open band between the inner ring and the hexagram's points, nothing.
         Assert.True(VfxTextureRules.Rune(0.5f, 0.5f) < 0.05f);
+    }
+
+    [Fact]
+    public void TheCometLeadsWithItsHeadAndTapersBehind()
+    {
+        // The head is at the top of the quad (the end that leads on a particle following its
+        // travel); the tail narrows and dims toward the bottom. Not a round dot.
+        float head = VfxTextureRules.Comet(0.5f, 0.2f);
+        float mid = VfxTextureRules.Comet(0.5f, 0.6f);
+        float tail = VfxTextureRules.Comet(0.5f, 0.95f);
+        Assert.True(head > 0.95f);
+        Assert.True(mid < head && tail < mid);
+
+        // Off the centre line it is lit beside the head and dark beside the tail.
+        Assert.True(VfxTextureRules.Comet(0.65f, 0.2f) > 0.1f);
+        Assert.Equal(0f, VfxTextureRules.Comet(0.65f, 0.85f));
     }
 }

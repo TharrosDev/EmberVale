@@ -92,7 +92,8 @@ void fragment() {
 	vec3 plain = tint.rgb * COLOR.rgb;
 	vec3 heated = mix(tint_cool.rgb, tint.rgb, heat) * bright;
 	vec3 base = mix(plain, heated, use_heat);
-	float fade = smoothstep(0.3, 1.2, length(VERTEX));
+	// A streak thrown past the eye is a bar across the frame, so streaks fade out further off.
+	float fade = smoothstep(0.3 + 0.5 * align_velocity, 1.2 + 0.6 * align_velocity, length(VERTEX));
 	if (soft_depth > 0.0) {
 		// Fade where the quad meets the ground or a wall, so a flare on the floor has no cut line.
 		// View-space Z is negative ahead of the camera: the scene behind the quad is further below 0.

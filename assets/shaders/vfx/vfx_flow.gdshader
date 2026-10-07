@@ -66,7 +66,9 @@ void fragment() {
 	float facing = abs(dot(normalize(NORMAL), normalize(VIEW)));
 	float rim = pow(1.0 - facing, max(fresnel_power, 0.01));
 	float eaten = smoothstep(erode, erode + 0.2, n + 0.2);
-	float shell = clamp(rim * 1.15 + n * (0.18 + rim * 0.6), 0.0, 1.0) * eaten;
+	// The middle of a shell is nearly clear (what it is around has to stay readable through it):
+	// the noise only crawls where the rim already is.
+	float shell = clamp(rim * 1.15 + n * (0.04 + rim * 0.6), 0.0, 1.0) * eaten;
 
 	// A ball of fire has no outline: it thins where the surface turns away from the eye.
 	float turned = mix(1.0, smoothstep(0.0, 0.55, facing), edge_soft);

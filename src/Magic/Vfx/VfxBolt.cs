@@ -377,6 +377,7 @@ public partial class VfxBolt : VfxEffect
             else
             {
                 _followsFrom = false;
+                Orphaned();
             }
         }
 
@@ -390,10 +391,25 @@ public partial class VfxBolt : VfxEffect
             else
             {
                 _followsTo = false;
+                Orphaned();
             }
         }
 
         return moved;
+    }
+
+    /// <summary>
+    /// What an end followed is gone (a bolt in flight freed, a body despawned). A strike is over in
+    /// a fraction of a second either way, but a beam holds until it is stopped: with nothing left
+    /// to stop it, it would hang in the air where its end last was for the rest of the session
+    /// (the arcs under a ball of lightning did exactly that). It winds down instead.
+    /// </summary>
+    private void Orphaned()
+    {
+        if (_spec.Mode == VfxBoltMode.Beam && !Stopping)
+        {
+            Stop();
+        }
     }
 
     private void Rebuild()

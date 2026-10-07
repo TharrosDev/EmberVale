@@ -422,4 +422,35 @@ public class VfxCoverageRulesTests
         float b = VfxCoverageRules.SpriteOpacity(3f, 2f) * (3f / 2f);
         Assert.Equal(a, b, 4);
     }
+
+    [Fact]
+    public void AHeldGlowIsHandSizedAtTheFirstPersonCastingPoint()
+    {
+        // The view-fixed hand is a metre and a half out: a glow held there is drawn at well under
+        // half its size, so the charge sits in the hand and not over a fifth of the frame.
+        float atHand = VfxCoverageRules.NearScale(VfxViewRules.HandOffset.Length());
+        Assert.InRange(atHand, VfxCoverageRules.NearFloor, 0.5f);
+
+        // It never vanishes, never grows past its true size, and only grows with distance.
+        Assert.Equal(VfxCoverageRules.NearFloor, VfxCoverageRules.NearScale(0f), 4);
+        Assert.Equal(1f, VfxCoverageRules.NearScale(VfxCoverageRules.NearEnd), 4);
+        Assert.Equal(1f, VfxCoverageRules.NearScale(40f), 4);
+        float previous = 0f;
+        for (float d = 0f; d <= 4f; d += 0.25f)
+        {
+            float scale = VfxCoverageRules.NearScale(d);
+            Assert.True(scale >= previous);
+            previous = scale;
+        }
+    }
+
+    [Fact]
+    public void TheFirstPersonCastingPointIsOnTheLeftWhereTheCastingHandIs()
+    {
+        // The left hand casts and the first-person arm that rises is the left one. Everything the
+        // player's cast draws in first person starts from this one point.
+        Assert.True(VfxViewRules.HandOffset.X < 0f);
+        Assert.True(VfxViewRules.Screen(VfxViewRules.HandOffset).X < 0f);
+        Assert.True(VfxViewRules.Screen(VfxViewRules.HandOffset).Y < 0f);
+    }
 }

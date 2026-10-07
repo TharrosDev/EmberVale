@@ -49,13 +49,17 @@ public class VfxBurstPresetsTests
     }
 
     [Fact]
-    public void OnlySmokeCoversWhatIsBehindItAndOnlySparksStretch()
+    public void OnlySmokeCoversWhatIsBehindItAndOnlyThrownFireStretches()
     {
         foreach (VfxParticles kind in Enum.GetValues<VfxParticles>())
         {
             VfxBurstPreset preset = VfxBurstPresets.For(kind);
             Assert.Equal(kind == VfxParticles.Smoke, preset.Occlude);
-            Assert.Equal(kind == VfxParticles.Sparks, preset.AlignVelocity);
+            // Sparks, embers and wisps follow their travel (a streak, a comet); nothing else does,
+            // and nothing that stretches is the round soft dot.
+            bool thrown = kind is VfxParticles.Sparks or VfxParticles.Embers or VfxParticles.Wisps;
+            Assert.Equal(thrown, preset.AlignVelocity);
+            Assert.False(preset.AlignVelocity && preset.Sprite == VfxSprite.Dot);
         }
     }
 

@@ -82,6 +82,48 @@ public static class VfxTextureRules
         return Math.Clamp(across * along * MathF.Sqrt(along) * border, 0f, 1f);
     }
 
+    /// <summary>
+    /// A comet: a round bright head at the top of the quad (the end that leads, on a particle that
+    /// follows its travel) and a tail that narrows and dims behind it. A flying ember, a lick of
+    /// flame, a wisp: what the soft dot was drawn for and read as a ball of bokeh.
+    /// </summary>
+    public static float Comet(float u, float v)
+    {
+        const float Head = 0.2f;
+        const float Margin = 0.05f;
+
+        // Clear of the top edge of the quad, so the head is round and not cut flat.
+        v = (v - Margin) / (1f - Margin);
+        if (v <= 0f)
+        {
+            return 0f;
+        }
+
+        float x = MathF.Abs(u - 0.5f) * 2f;
+        float width;
+        float bright;
+        if (v < Head)
+        {
+            float back = (Head - v) / Head;
+            width = 0.5f * MathF.Sqrt(Math.Clamp(1f - (back * back), 0f, 1f));
+            bright = 1f;
+        }
+        else
+        {
+            float along = Math.Clamp(1f - ((v - Head) / (1f - Head)), 0f, 1f);
+            width = 0.5f * along * MathF.Sqrt(along);
+            bright = along;
+        }
+
+        if (width <= 0.001f)
+        {
+            return 0f;
+        }
+
+        float inside = Math.Clamp(1f - (x / width), 0f, 1f);
+        return Math.Clamp(inside * inside * (3f - (2f * inside)) * bright, 0f, 1f);
+    }
+
     /// <summary>A hard-edged splinter: a diamond, longer than it is wide.</summary>
     public static float Shard(float u, float v)
     {

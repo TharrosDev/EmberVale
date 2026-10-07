@@ -20,6 +20,7 @@ internal static class VfxTextures
     private static ImageTexture? _rune;
     private static ImageTexture? _crystal;
     private static ImageTexture? _glint;
+    private static ImageTexture? _comet;
     private static ImageTexture? _rays;
     private static ImageTexture? _frostPattern;
     private static ImageTexture? _crackPattern;
@@ -36,6 +37,8 @@ internal static class VfxTextures
     public static Texture2D Crystal => _crystal ??= Mask(64, VfxTextureRules.Crystal);
 
     public static Texture2D Glint => _glint ??= Mask(64, VfxTextureRules.Glint);
+
+    public static Texture2D Comet => _comet ??= Mask(64, VfxTextureRules.Comet);
 
     /// <summary>The burst of rays a blast's flare throws.</summary>
     public static Texture2D Rays => _rays ??= Mask(128, VfxTextureRules.Rays);
@@ -68,6 +71,7 @@ internal static class VfxTextures
         VfxSprite.Puff => Puff,
         VfxSprite.Crystal => Crystal,
         VfxSprite.Glint => Glint,
+        VfxSprite.Comet => Comet,
         _ => Dot,
     };
 
@@ -119,6 +123,7 @@ internal static class VfxTextures
         _rune = null;
         _crystal = null;
         _glint = null;
+        _comet = null;
         _rays = null;
         _frostPattern = null;
         _crackPattern = null;

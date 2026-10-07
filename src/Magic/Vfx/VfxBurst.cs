@@ -186,7 +186,7 @@ public partial class VfxBurst : VfxEffect
             Randomness = 0.4f,
             LocalCoords = false,
             ProcessMaterial = _process,
-            DrawPass1 = _preset.AlignVelocity ? VfxMaterials.StreakQuad : VfxMaterials.Quad,
+            DrawPass1 = DrawMesh(_preset),
             MaterialOverride = _draw,
             CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
             GIMode = GeometryInstance3D.GIModeEnum.Disabled,
@@ -194,6 +194,17 @@ public partial class VfxBurst : VfxEffect
         VfxMaterials.OnLayer(_particles);
         AddChild(_particles);
     }
+
+    /// <summary>The quad a preset's particles are drawn on: a comet carries its own shape on a
+    /// near-square one, a spark is a thin sliver, a crystal a long one.</summary>
+    private static QuadMesh DrawMesh(in VfxBurstPreset preset) => !preset.AlignVelocity
+        ? VfxMaterials.Quad
+        : preset.Sprite switch
+        {
+            VfxSprite.Streak => VfxMaterials.SparkQuad,
+            VfxSprite.Comet => VfxMaterials.CometQuad,
+            _ => VfxMaterials.StreakQuad,
+        };
 
     /// <summary>The slot of the pool table this emitter was built for: a <see cref="VfxParticles"/>
     /// or a <see cref="VfxEmitter"/> number.</summary>
@@ -262,7 +273,10 @@ public partial class VfxBurst : VfxEffect
         }
         else
         {
-            tint = _preset.AlignVelocity || _ramp is VfxRamp.Twinkle or VfxRamp.Soft ? colors.Core : colors.Mid;
+            // A spark is the school's colour (it is born hotter than it through its ramp); only ice
+            // and glints are drawn in the pale core colour.
+            bool pale = _preset.Sprite == VfxSprite.Crystal || _ramp is VfxRamp.Twinkle or VfxRamp.Soft;
+            tint = pale ? colors.Core : colors.Mid;
             energy = colors.MidEnergy * _preset.Energy;
         }
 

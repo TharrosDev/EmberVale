@@ -12,6 +12,9 @@ public enum VfxSprite
     Puff,
     Crystal,
     Glint,
+
+    /// <summary>A bright head with a tail behind it, for a particle that follows its travel.</summary>
+    Comet,
 }
 
 /// <summary>
@@ -126,13 +129,13 @@ public static class VfxBurstPresets
 
     public static VfxBurstPreset For(VfxParticles kind) => kind switch
     {
-        VfxParticles.Sparks => new(44, 0.45f, 5f, 13f, -9f, 2.2f, 0.2f, 0.5f, 0.96f, VfxSprite.Streak, true, false, false, false, false, 1.5f),
-        VfxParticles.Embers => new(40, 1.15f, 1.4f, 5f, 1.4f, 1.6f, 0.1f, 0.26f, 0.88f, VfxSprite.Dot, false, false, false, false, false, 1.3f),
+        VfxParticles.Sparks => new(44, 0.45f, 5f, 13f, -9f, 2.2f, 0.22f, 0.55f, 0.96f, VfxSprite.Streak, true, false, false, false, false, 1.7f),
+        VfxParticles.Embers => new(40, 1.15f, 1.4f, 5f, 1.4f, 1.6f, 0.1f, 0.24f, 0.88f, VfxSprite.Comet, true, false, false, false, false, 1.5f),
         VfxParticles.Shards => new(26, 0.75f, 3.5f, 8.5f, -11f, 0.8f, 0.12f, 0.3f, 0.95f, VfxSprite.Shard, false, true, false, false, false, 1.1f),
         VfxParticles.Motes => new(34, 1.3f, 0.3f, 1.3f, 0.5f, 0.6f, 0.06f, 0.14f, 0.55f, VfxSprite.Dot, false, false, true, false, false, 1.2f),
         VfxParticles.Smoke => new(14, 1.9f, 0.4f, 1.5f, 0.9f, 0.9f, 0.55f, 1.25f, 0.8f, VfxSprite.Puff, false, true, false, true, true, 0.12f, VfxRamp.Smoke, 0.55f),
         VfxParticles.Leaves => new(24, 1.35f, 1.8f, 4.5f, -2.4f, 1.8f, 0.12f, 0.24f, 0.9f, VfxSprite.Leaf, false, true, false, false, false, 0.8f),
-        VfxParticles.Wisps => new(20, 1.5f, 0.5f, 1.9f, 0.35f, 0.7f, 0.25f, 0.55f, 0.6f, VfxSprite.Dot, false, false, true, false, false, 0.9f),
+        VfxParticles.Wisps => new(20, 1.5f, 0.5f, 1.9f, 0.35f, 0.7f, 0.22f, 0.5f, 0.6f, VfxSprite.Comet, true, false, true, false, false, 0.9f, VfxRamp.Hot, 0.45f),
         _ => default,
     };
 
