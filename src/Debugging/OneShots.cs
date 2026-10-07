@@ -160,6 +160,8 @@ public sealed partial class OneShots : TimedShots
     /// <summary>A one-off has no suite to summarise: the summary frame would be a second copy of the view.</summary>
     protected override bool WritesImage(string name) => name != SummaryShot && base.WritesImage(name);
 
+    protected override bool WaitsForOpeningNotices => false;
+
     protected override string? Fatal(string name) =>
         ShotStage.Player() == null ? "the session has no player" : null;
 

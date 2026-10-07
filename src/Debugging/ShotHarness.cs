@@ -99,6 +99,8 @@ public abstract partial class ShotHarness : Node
     private int _sessionHoldFrames;
     private int _quietFrames;
     private int _openingFrames;
+    private UI.ChapterBanner? _banner;
+    private UI.Notifications? _notices;
     private bool _interactHeld;
     private UI.OpeningSequence? _opening;
 
@@ -410,6 +412,13 @@ public abstract partial class ShotHarness : Node
             }
         }
 
+        if (!busy && newGame && WaitsForOpeningNotices && OpeningNoticesShowing())
+        {
+            // New Game follows the prologue with the act card and the first discovery toasts. A state
+            // photographed under them is not the state that was asked for.
+            busy = true;
+        }
+
         _sessionHoldFrames++;
         _quietFrames = busy ? 0 : _quietFrames + 1;
         if ((busy || _quietFrames < (newGame ? 45 : 1)) && _sessionHoldFrames < MaxSessionHoldFrames)
@@ -425,6 +434,21 @@ public abstract partial class ShotHarness : Node
         PressInteract(false);
         _sessionReady = true;
         return false;
+    }
+
+    /// <summary>False for a harness that hides the interface anyway and need not wait the notices out.</summary>
+    protected virtual bool WaitsForOpeningNotices => true;
+
+    private bool OpeningNoticesShowing()
+    {
+        if (_sessionHoldFrames % 15 == 0)
+        {
+            _banner ??= QuestShotFixtures.FindFirst<UI.ChapterBanner>(GetTree().Root);
+            _notices ??= QuestShotFixtures.FindFirst<UI.Notifications>(GetTree().Root);
+        }
+
+        return (_banner != null && IsInstanceValid(_banner) && _banner.Showing != null) ||
+               (_notices != null && IsInstanceValid(_notices) && _notices.LiveToastsForCapture > 0);
     }
 
     private void PressInteract(bool pressed)
