@@ -107,8 +107,10 @@ public partial class EnemyArchetypeResource : Resource
     /// rig with no hand bone holds nothing either.</summary>
     [Export] public string HeldWeaponPath { get; set; } = string.Empty;
 
-    /// <summary>Uniform scale on <see cref="HeldWeaponPath"/>. The weapon models are sized for a
-    /// 1.8 m hand, so a larger body wants a larger weapon.</summary>
+    /// <summary>Uniform scale on <see cref="HeldWeaponPath"/>, on top of <see cref="ModelScale"/>:
+    /// the weapon hangs under the body's rig, so it already grows with the body. This is for a
+    /// body authored large at <c>ModelScale</c> 1, or a weapon meant to be oversized for its
+    /// wielder.</summary>
     [Export] public float HeldWeaponScale { get; set; } = 1f;
 
     /// <summary>A flat colour laid over every surface of the authored model. Transparent (the
