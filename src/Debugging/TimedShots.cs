@@ -40,7 +40,7 @@ public abstract partial class TimedShots : ShotHarness
     public const string FilmArgument = "--film";
     public const string DirectInputArgument = "--direct-input";
 
-    private const string SummaryShot = "zz-summary";
+    protected const string SummaryShot = "zz-summary";
     private const int FilmCellWidth = 320;
     private const double StepTimeout = 6.0;
 

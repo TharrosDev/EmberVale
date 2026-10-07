@@ -55,6 +55,7 @@ public sealed partial class OneShots : TimedShots
     private RegionResource? _region;
     private int _settled;
     private Camera3D? _camera;
+    private readonly List<CanvasLayer> _hiddenLayers = new();
 
     protected override string Flag => ShotArgument;
 
@@ -155,6 +156,9 @@ public sealed partial class OneShots : TimedShots
                 () => Inspect(captured), timeout: spec.Timeout);
         }
     }
+
+    /// <summary>A one-off has no suite to summarise: the summary frame would be a second copy of the view.</summary>
+    protected override bool WritesImage(string name) => name != SummaryShot && base.WritesImage(name);
 
     protected override string? Fatal(string name) =>
         ShotStage.Player() == null ? "the session has no player" : null;
@@ -278,6 +282,7 @@ public sealed partial class OneShots : TimedShots
             return;
         }
 
+        KeepInterfaceHidden();
         bool playing = GameManager.Instance is { IsPlaying: true };
         switch (_stage)
         {
@@ -344,9 +349,14 @@ public sealed partial class OneShots : TimedShots
             {
                 Problem($"'{spec.Name}': weather '{weatherId}' could not be forced (unknown id, or no weather director).");
             }
+
+            if (ServiceLocator.Instance is { } services && services.TryGet(out SkyController sky))
+            {
+                sky.SnapToCurrent(); // the sky blends toward a new weather over seconds; a still wants it now
+            }
         }
 
-        _session.Ui.Hud.Visible = spec.Hud;
+        ShowInterface(spec.Hud);
 
         Vector3 ground = WorldGround.OnGround(_point, 0f);
         Vector3 target = ground + (Vector3.Up * spec.Height);
@@ -403,9 +413,60 @@ public sealed partial class OneShots : TimedShots
         }
     }
 
+    /// <summary>A world view without <c>--hud</c> is the world alone: every interface layer is hidden,
+    /// not just the HUD, so an act card, a discovery toast or a subtitle cannot sit over the frame.</summary>
+    private void ShowInterface(bool show)
+    {
+        foreach (CanvasLayer layer in _hiddenLayers)
+        {
+            if (IsInstanceValid(layer))
+            {
+                layer.Visible = true;
+            }
+        }
+
+        _hiddenLayers.Clear();
+        if (_session != null)
+        {
+            _session.Ui.Hud.Visible = true;
+        }
+
+        if (!show)
+        {
+            HideLayers(GetTree().Root);
+        }
+    }
+
+    private void HideLayers(Node node)
+    {
+        foreach (Node child in node.GetChildren())
+        {
+            if (child is CanvasLayer { Visible: true } layer)
+            {
+                layer.Visible = false;
+                _hiddenLayers.Add(layer);
+            }
+
+            HideLayers(child);
+        }
+    }
+
+    /// <summary>A layer that shows itself again (a banner starting) is hidden again.</summary>
+    private void KeepInterfaceHidden()
+    {
+        foreach (CanvasLayer layer in _hiddenLayers)
+        {
+            if (IsInstanceValid(layer) && layer.Visible)
+            {
+                layer.Visible = false;
+            }
+        }
+    }
+
     /// <summary>Hands the view back to the player's own camera before the next request.</summary>
     private void RestoreView(PlayerCharacter player)
     {
+        ShowInterface(true);
         if (player.GetComponent<PlayerCameraRig>() is { } rig)
         {
             rig.ProcessMode = ProcessModeEnum.Inherit;
