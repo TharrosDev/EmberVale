@@ -24,6 +24,10 @@ internal struct VfxBurstSpec
     /// <summary>Degrees either side of <see cref="Direction"/>; 180 throws in every direction.</summary>
     public float Spread;
 
+    /// <summary>How flat the spread is (0 = a cone, 1 = a fan in the plane across the emitter's Y):
+    /// mist rolling out along the floor.</summary>
+    public float Flatness;
+
     /// <summary>Launch speed against the preset's.</summary>
     public float SpeedScale;
 
@@ -48,6 +52,10 @@ internal struct VfxBurstSpec
     /// <summary>A steady stream until stopped, instead of one burst.</summary>
     public bool Continuous;
 
+    /// <summary>A continuous stream stops itself after this many seconds (a column of smoke over a
+    /// crater), so nothing has to remember to stop it. 0 = it runs until stopped.</summary>
+    public float StreamSeconds;
+
     public static VfxBurstSpec At(Vector3 position, in VfxSchoolColors colors, float density) => new()
     {
         Position = position,
@@ -64,9 +72,11 @@ internal struct VfxBurstSpec
 }
 
 /// <summary>
-/// A pooled GPU particle emitter for one preset (<see cref="VfxBurstPresets"/>). The pool is per
-/// preset and an emitter is never reshaped into another: everything set per use is a plain number
-/// on the process material (extents, speeds, sizes), never a feature, so reuse compiles nothing.
+/// A pooled GPU particle emitter for one preset (<see cref="VfxBurstPresets"/>): one of the seven a
+/// recipe names (<see cref="VfxParticles"/>) or one of the extra emitters (<see cref="VfxEmitter"/>).
+/// The pool is per preset and an emitter is never reshaped into another: everything set per use is
+/// a plain number on the process material (extents, speeds, sizes), never a feature, so reuse
+/// compiles nothing.
 ///
 /// <para>Density is <c>AmountRatio</c> over a fixed allocated amount, which is how the tier's
 /// particle multiplier is applied without reallocating the emitter.</para>
@@ -76,25 +86,41 @@ internal struct VfxBurstSpec
 /// </summary>
 public partial class VfxBurst : VfxEffect
 {
+    /// <summary>What cold smoke looks like, before a hint of the school is mixed in.</summary>
+    private static readonly Color SmokeColour = new(0.085f, 0.08f, 0.078f);
+
     private readonly VfxBurstPreset _preset;
     private readonly GpuParticles3D _particles;
     private readonly ParticleProcessMaterial _process;
     private readonly ShaderMaterial _draw;
+    private readonly VfxRamp _ramp;
 
     private float _life;
     private bool _continuous;
+    private float _streamSeconds;
 
     /// <summary>The engine may build a script instance with no arguments; a pool never does.</summary>
     public VfxBurst()
-        : this(VfxParticles.Sparks)
+        : this((int)VfxParticles.Sparks)
     {
     }
 
     public VfxBurst(VfxParticles kind)
+        : this((int)kind)
     {
-        Kind = kind;
-        _preset = VfxBurstPresets.For(kind);
+    }
+
+    public VfxBurst(VfxEmitter kind)
+        : this((int)kind)
+    {
+    }
+
+    private VfxBurst(int slot)
+    {
+        Slot = slot;
+        _preset = VfxBurstPresets.ForSlot(slot);
         _life = _preset.Life;
+        _ramp = _preset.Ramp == VfxRamp.Hot && _preset.Occlude ? VfxRamp.Smoke : _preset.Ramp;
 
         _process = new ParticleProcessMaterial
         {
@@ -109,8 +135,8 @@ public partial class VfxBurst : VfxEffect
             DampingMax = _preset.Damping,
             ScaleMin = _preset.SizeMin,
             ScaleMax = _preset.SizeMax,
-            ScaleCurve = SizeOverLife(_preset.Grow),
-            ColorRamp = ColourOverLife(_preset.Occlude),
+            ScaleCurve = SizeOverLife(_preset.Grow, _ramp),
+            ColorRamp = ColourOverLife(_ramp),
             ParticleFlagAlignY = _preset.AlignVelocity,
             LifetimeRandomness = 0.35f,
         };
@@ -123,7 +149,8 @@ public partial class VfxBurst : VfxEffect
 
         if (_preset.Spin)
         {
-            float spin = _preset.Occlude ? 40f : 360f;
+            // A puff turns slowly; a shard or a chunk tumbles.
+            float spin = _preset.Sprite == VfxSprite.Puff ? 40f : 360f;
             _process.AngularVelocityMin = -spin;
             _process.AngularVelocityMax = spin;
         }
@@ -138,6 +165,15 @@ public partial class VfxBurst : VfxEffect
         }
 
         _draw = VfxMaterials.Sprite(VfxTextures.Sprite(_preset.Sprite), _preset.AlignVelocity, _preset.Occlude);
+        _draw.SetShaderParameter(VfxMaterials.Dissolve, _preset.Dissolve);
+        _draw.SetShaderParameter(VfxMaterials.UseHeat, _ramp == VfxRamp.Heat ? 1f : 0f);
+        _draw.SetShaderParameter(VfxMaterials.OccludeCool, _preset.CoolOcclude);
+
+        // Puffs are the only particles large enough to cover a frame: each is thinned by how wide
+        // it stands on screen (the coverage governor, per particle; see vfx_sprite.gdshader).
+        bool large = _preset.Sprite == VfxSprite.Puff;
+        _draw.SetShaderParameter(VfxMaterials.SpanLimit, large ? VfxCoverageRules.PuffSpan : 0f);
+        _draw.SetShaderParameter(VfxMaterials.SpanFloor, VfxCoverageRules.PuffFloor);
 
         _particles = new GpuParticles3D
         {
@@ -155,17 +191,23 @@ public partial class VfxBurst : VfxEffect
             CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
             GIMode = GeometryInstance3D.GIModeEnum.Disabled,
         };
+        VfxMaterials.OnLayer(_particles);
         AddChild(_particles);
     }
 
-    /// <summary>The preset this emitter was built for.</summary>
-    public VfxParticles Kind { get; }
+    /// <summary>The slot of the pool table this emitter was built for: a <see cref="VfxParticles"/>
+    /// or a <see cref="VfxEmitter"/> number.</summary>
+    public int Slot { get; }
+
+    /// <summary>The recipe preset this emitter was built for, or None for an extra emitter.</summary>
+    public VfxParticles Kind => Slot < (int)VfxEmitter.Flame ? (VfxParticles)Slot : VfxParticles.None;
 
     /// <summary>Styles and fires the emitter. Call after <see cref="VfxEffect.Begin"/>.</summary>
     internal void Arm(in VfxBurstSpec spec)
     {
         GlobalPosition = spec.Position;
         _continuous = spec.Continuous;
+        _streamSeconds = spec.Continuous ? Mathf.Max(0f, spec.StreamSeconds) : 0f;
 
         float speedScale = spec.SpeedScale <= 0f ? 1f : spec.SpeedScale;
         float sizeScale = spec.SizeScale <= 0f ? 1f : spec.SizeScale;
@@ -180,6 +222,7 @@ public partial class VfxBurst : VfxEffect
         _process.EmissionBoxExtents = extents;
         _process.Direction = spec.Direction.LengthSquared() < 0.0001f ? Vector3.Up : spec.Direction.Normalized();
         _process.Spread = Mathf.Clamp(spec.Spread, 0f, 180f);
+        _process.Flatness = Mathf.Clamp(spec.Flatness, 0f, 1f);
         _process.ScaleMin = _preset.SizeMin * sizeScale;
         _process.ScaleMax = _preset.SizeMax * sizeScale;
         _process.Gravity = new Vector3(0f, _preset.Gravity * spec.GravityScale, 0f);
@@ -213,13 +256,13 @@ public partial class VfxBurst : VfxEffect
         float energy;
         if (_preset.Occlude)
         {
-            // Smoke is dark and only hinted with the school; it is lit by nothing and blooms never.
-            tint = new Color(0.085f, 0.08f, 0.078f).Lerp(colors.Edge, 0.16f);
+            // Smoke and debris are dark and only hinted with the school; lit by nothing, they never bloom.
+            tint = SmokeColour.Lerp(colors.Edge, 0.16f);
             energy = 1f;
         }
         else
         {
-            tint = _preset.AlignVelocity ? colors.Core : colors.Mid;
+            tint = _preset.AlignVelocity || _ramp is VfxRamp.Twinkle or VfxRamp.Soft ? colors.Core : colors.Mid;
             energy = colors.MidEnergy * _preset.Energy;
         }
 
@@ -231,12 +274,20 @@ public partial class VfxBurst : VfxEffect
         _draw.SetShaderParameter(VfxMaterials.Tint, tint);
         _draw.SetShaderParameter(VfxMaterials.Energy, energy);
         _draw.SetShaderParameter(VfxMaterials.Opacity, 1f);
+        if (_ramp == VfxRamp.Heat)
+        {
+            // What the flame cools into: smoke, at the brightness of smoke whatever the flame's energy.
+            Color cold = SmokeColour.Lerp(colors.Edge, 0.12f);
+            float dim = 1f / Mathf.Max(0.1f, energy);
+            _draw.SetShaderParameter(VfxMaterials.TintCool, new Color(cold.R * dim, cold.G * dim, cold.B * dim));
+        }
 
-        // Smoke puffs are metres across and sit on the floor: without the depth fade each one is cut
-        // by the ground in a hard line. Light particles are small and added, and do without it.
+        // Puffs are metres across and sit on the floor: without the depth fade each one is cut by the
+        // ground in a hard line. Small added particles do without it, and so does the leanest tier.
+        bool puff = _preset.Sprite == VfxSprite.Puff;
         _draw.SetShaderParameter(
             VfxMaterials.SoftDepth,
-            _preset.Occlude && VfxQuality.Tier != VfxTier.Performance ? Mathf.Clamp(0.4f * sizeScale, 0.2f, 1f) : 0f);
+            puff && VfxQuality.Rich.SoftParticles ? Mathf.Clamp(0.4f * sizeScale, 0.2f, 1f) : 0f);
 
         // The engine culls an emitter by this box, not by where its particles are.
         float half = reach + (_preset.SizeMax * sizeScale) + 1f;
@@ -269,6 +320,11 @@ public partial class VfxBurst : VfxEffect
     {
         if (_continuous)
         {
+            if (!Stopping && _streamSeconds > 0f && Age >= _streamSeconds)
+            {
+                Stop();
+            }
+
             // Stopped: emit no more, and stay until the last particle has died.
             return !Stopping || StopAge < _life;
         }
@@ -286,7 +342,7 @@ public partial class VfxBurst : VfxEffect
 
     protected override void OnFinish() => _particles.Emitting = false;
 
-    private static CurveTexture SizeOverLife(bool grow)
+    private static CurveTexture SizeOverLife(bool grow, VfxRamp ramp)
     {
         var curve = new Curve();
         if (grow)
@@ -294,6 +350,12 @@ public partial class VfxBurst : VfxEffect
             curve.AddPoint(new Vector2(0f, 0.35f));
             curve.AddPoint(new Vector2(0.4f, 0.8f));
             curve.AddPoint(new Vector2(1f, 1f));
+        }
+        else if (ramp is VfxRamp.Solid or VfxRamp.Twinkle)
+        {
+            // A chunk of debris and a glint keep their size; they go by fading.
+            curve.AddPoint(new Vector2(0f, 1f));
+            curve.AddPoint(new Vector2(1f, 0.8f));
         }
         else
         {
@@ -305,25 +367,64 @@ public partial class VfxBurst : VfxEffect
         return new CurveTexture { Curve = curve, Width = 32 };
     }
 
-    private static GradientTexture1D ColourOverLife(bool smoke)
+    private static GradientTexture1D ColourOverLife(VfxRamp ramp)
     {
         var gradient = new Gradient();
-        if (smoke)
+        switch (ramp)
         {
-            gradient.Offsets = new[] { 0f, 0.15f, 1f };
-            gradient.Colors = new[]
-            {
-                new Color(1f, 1f, 1f, 0f), new Color(1f, 1f, 1f, 0.7f), new Color(0.7f, 0.7f, 0.7f, 0f),
-            };
-        }
-        else
-        {
-            // Past 1 at birth: a particle starts hotter than its colour and cools into it.
-            gradient.Offsets = new[] { 0f, 0.3f, 1f };
-            gradient.Colors = new[]
-            {
-                new Color(1.7f, 1.7f, 1.7f, 1f), new Color(1f, 1f, 1f, 1f), new Color(0.55f, 0.55f, 0.55f, 0f),
-            };
+            case VfxRamp.Smoke:
+                gradient.Offsets = new[] { 0f, 0.15f, 1f };
+                gradient.Colors = new[]
+                {
+                    new Color(1f, 1f, 1f, 0f), new Color(1f, 1f, 1f, 0.7f), new Color(0.7f, 0.7f, 0.7f, 0f),
+                };
+                break;
+
+            case VfxRamp.Heat:
+                // Not a colour: red is brightness and green is heat (see vfx_sprite's `use_heat`).
+                // White-hot for a moment, flame for the first half, smoke by three quarters.
+                gradient.Offsets = new[] { 0f, 0.1f, 0.4f, 0.72f, 1f };
+                gradient.Colors = new[]
+                {
+                    new Color(2f, 1f, 0f, 0f), new Color(1.6f, 1f, 0f, 1f), new Color(1f, 0.55f, 0f, 0.9f),
+                    new Color(1f, 0f, 0f, 0.55f), new Color(1f, 0f, 0f, 0f),
+                };
+                break;
+
+            case VfxRamp.Solid:
+                gradient.Offsets = new[] { 0f, 0.7f, 1f };
+                gradient.Colors = new[]
+                {
+                    new Color(1f, 1f, 1f, 1f), new Color(1f, 1f, 1f, 1f), new Color(1f, 1f, 1f, 0f),
+                };
+                break;
+
+            case VfxRamp.Soft:
+                gradient.Offsets = new[] { 0f, 0.25f, 1f };
+                gradient.Colors = new[]
+                {
+                    new Color(1f, 1f, 1f, 0f), new Color(1f, 1f, 1f, 0.5f), new Color(1f, 1f, 1f, 0f),
+                };
+                break;
+
+            case VfxRamp.Twinkle:
+                gradient.Offsets = new[] { 0f, 0.12f, 0.3f, 0.45f, 0.62f, 0.8f, 1f };
+                gradient.Colors = new[]
+                {
+                    new Color(1f, 1f, 1f, 0f), new Color(1.6f, 1.6f, 1.6f, 1f), new Color(1f, 1f, 1f, 0.15f),
+                    new Color(1.4f, 1.4f, 1.4f, 1f), new Color(1f, 1f, 1f, 0.1f), new Color(1.2f, 1.2f, 1.2f, 0.8f),
+                    new Color(1f, 1f, 1f, 0f),
+                };
+                break;
+
+            default:
+                // Past 1 at birth: a particle starts hotter than its colour and cools into it.
+                gradient.Offsets = new[] { 0f, 0.3f, 1f };
+                gradient.Colors = new[]
+                {
+                    new Color(1.7f, 1.7f, 1.7f, 1f), new Color(1f, 1f, 1f, 1f), new Color(0.55f, 0.55f, 0.55f, 0f),
+                };
+                break;
         }
 
         return new GradientTexture1D { Gradient = gradient, Width = 32, UseHdr = true };

@@ -91,6 +91,63 @@ public static class VfxTextureRules
         return Math.Clamp(inside * 7f, 0f, 1f);
     }
 
+    /// <summary>
+    /// A crystal of ice, long along V and pointed at both ends: a bright rim, a dimmer body and one
+    /// facet line down its length, so a thrown shard reads as cut ice rather than a flat diamond.
+    /// </summary>
+    public static float Crystal(float u, float v)
+    {
+        float x = (u - 0.5f) * 2f;
+        float y = MathF.Abs(v - 0.5f) * 2f;
+        float width = 0.38f * MathF.Min(1f, (1f - y) * 1.9f);
+        float margin = width - MathF.Abs(x);
+        float inside = Math.Clamp(margin * 14f, 0f, 1f) * Math.Clamp((0.96f - y) * 20f, 0f, 1f);
+        float rim = 1f - Math.Clamp(margin * 6f, 0f, 1f);
+        float facet = x > 0f ? 0.22f : 0f;
+        return Math.Clamp(inside * (0.45f + (0.55f * MathF.Max(rim, facet))), 0f, 1f);
+    }
+
+    /// <summary>A glint: a four-pointed star with a bright heart, for a twinkle of frost or magic.</summary>
+    public static float Glint(float u, float v)
+    {
+        float x = MathF.Abs(u - 0.5f) * 2f;
+        float y = MathF.Abs(v - 0.5f) * 2f;
+        float reachX = Math.Clamp(1f - x, 0f, 1f);
+        float reachY = Math.Clamp(1f - y, 0f, 1f);
+        float horizontal = MathF.Exp(-y * 11f) * reachX * reachX;
+        float vertical = MathF.Exp(-x * 11f) * reachY * reachY;
+        float heart = MathF.Exp(-((x * x) + (y * y)) * 22f);
+        float border = Math.Clamp((1f - MathF.Max(x, y)) * 8f, 0f, 1f);
+        return Math.Clamp((MathF.Max(horizontal, vertical) * 0.9f) + heart, 0f, 1f) * border;
+    }
+
+    /// <summary>
+    /// A burst of rays: thin spikes of uneven length thrown out from a bright heart. The flash of a
+    /// blast is this, turned and swelling, over its core: structure where a bigger disc would be a
+    /// white-out.
+    /// </summary>
+    public static float Rays(float u, float v)
+    {
+        float x = (u - 0.5f) * 2f;
+        float y = (v - 0.5f) * 2f;
+        float r = MathF.Sqrt((x * x) + (y * y));
+        if (r >= 1f)
+        {
+            return 0f;
+        }
+
+        // The angle runs -0.5..0.5 of a turn; the noise below wraps on exactly that period, so there
+        // is no seam where the angle jumps.
+        float turn = MathF.Atan2(y, x) / Tau;
+        float spike = TileNoise(turn * 40f, 0.5f, 40, 71);
+        spike = spike * spike * spike * spike;
+        float length = 0.3f + (0.7f * TileNoise(turn * 20f, 0.5f, 20, 83));
+        float along = Math.Clamp(1f - (r / length), 0f, 1f);
+        float heart = MathF.Exp(-r * r * 38f);
+        float border = Math.Clamp((1f - r) * 6f, 0f, 1f);
+        return Math.Clamp((spike * 2.4f * along * MathF.Sqrt(along)) + heart, 0f, 1f) * border;
+    }
+
     /// <summary>A leaf: a pointed ellipse with a darker midrib.</summary>
     public static float Leaf(float u, float v)
     {

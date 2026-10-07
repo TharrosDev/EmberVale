@@ -66,6 +66,35 @@ public readonly record struct VfxBudget(
     float FullDetailDistance);
 
 /// <summary>
+/// What a tier is allowed to look like, beyond the counts in <see cref="VfxBudget"/>: the difference
+/// between a lean effect (a core, a small halo, a few particles) and a rich one (rays, a billow of
+/// fire that turns to smoke, debris, a smoke column, glints, forked lightning in several strands).
+/// Read by the blocks and the interpreter through <c>VfxQuality.Rich</c>.
+/// </summary>
+/// <param name="BoltStrands">Strands a lightning bolt is drawn with (the main one included).</param>
+/// <param name="Rays">A blast throws a burst of radial rays.</param>
+/// <param name="Billow">A blast has a body of flame puffs that cool to smoke; frost has ground mist
+/// and crystal shards; a fire bolt trails flame.</param>
+/// <param name="SmokeColumn">A large blast leaves a column of smoke rising for a second.</param>
+/// <param name="DebrisLayers">Layers of thrown debris a grounded blast gets (0, 1, or 2 on Ultra).</param>
+/// <param name="LightRange">The longest range, in metres, a spell light may have.</param>
+/// <param name="SoftParticles">Sprites and shells fade where they meet the ground (a depth read).</param>
+/// <param name="LifeScale">How long a blast's flash and body last against the High tier.</param>
+/// <param name="Glints">Twinkling glints hang in frost and arcane effects.</param>
+/// <param name="FullDisc">A standing zone's floor is drawn whole; otherwise only its rim.</param>
+public readonly record struct VfxRichness(
+    int BoltStrands,
+    bool Rays,
+    bool Billow,
+    bool SmokeColumn,
+    int DebrisLayers,
+    float LightRange,
+    bool SoftParticles,
+    float LifeScale,
+    bool Glints,
+    bool FullDisc);
+
+/// <summary>
 /// The spell-effect budget table and the rules that read it. Pure, so the table the design states is
 /// a test: which tier a saved setting means, what each tier may spend, how far away an effect thins
 /// out, and which effect gives way when the budget is full.
@@ -87,6 +116,19 @@ public static class VfxBudgetRules
         new(1.0f, 8, 0, true, 12, true, 1f, 16, 2, VfxTrail.Long, 48, 70f),              // High
         new(1.5f, 12, 1, true, 24, true, 2f, 24, 3, VfxTrail.LongWithSparks, 64, 90f),   // Ultra
     };
+
+    private static readonly VfxRichness[] RichTable =
+    {
+        // strands, rays, billow, smoke column, debris layers, light range, soft, life, glints, full disc
+        new(1, false, false, false, 0, 5f, false, 0.8f, false, false),   // Performance
+        new(1, true, false, false, 0, 7f, false, 0.9f, false, true),     // Low
+        new(2, true, true, false, 1, 10f, true, 1f, true, true),         // Medium
+        new(2, true, true, true, 1, 14f, true, 1.15f, true, true),       // High
+        new(3, true, true, true, 2, 18f, true, 1.35f, true, true),       // Ultra
+    };
+
+    /// <summary>What a tier's effects are built from, beyond the counts in <see cref="For"/>.</summary>
+    public static VfxRichness Richness(VfxTier tier) => RichTable[Math.Clamp((int)tier, 0, RichTable.Length - 1)];
 
     /// <summary>How many tiers there are.</summary>
     public static int TierCount => Table.Length;

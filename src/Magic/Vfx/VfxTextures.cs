@@ -18,6 +18,12 @@ internal static class VfxTextures
     private static ImageTexture? _puff;
     private static ImageTexture? _noise;
     private static ImageTexture? _rune;
+    private static ImageTexture? _crystal;
+    private static ImageTexture? _glint;
+    private static ImageTexture? _rays;
+    private static ImageTexture? _frostPattern;
+    private static ImageTexture? _crackPattern;
+    private static ImageTexture? _rootPattern;
     private static readonly ImageTexture?[] MarkAlbedo = new ImageTexture?[5];
     private static readonly ImageTexture?[] MarkEmission = new ImageTexture?[5];
 
@@ -25,7 +31,24 @@ internal static class VfxTextures
 
     public static Texture2D Streak => _streak ??= Mask(64, VfxTextureRules.Streak);
 
-    public static Texture2D Shard => _shard ??= Mask(32, VfxTextureRules.Shard);
+    public static Texture2D Shard => _shard ??= Mask(64, VfxTextureRules.Shard);
+
+    public static Texture2D Crystal => _crystal ??= Mask(64, VfxTextureRules.Crystal);
+
+    public static Texture2D Glint => _glint ??= Mask(64, VfxTextureRules.Glint);
+
+    /// <summary>The burst of rays a blast's flare throws.</summary>
+    public static Texture2D Rays => _rays ??= Mask(128, VfxTextureRules.Rays);
+
+    /// <summary>What a ground disc can be patterned with, as a mask for <c>vfx_ground</c>.</summary>
+    public static Texture2D? Pattern(VfxDiscPattern pattern) => pattern switch
+    {
+        VfxDiscPattern.Rune => Rune,
+        VfxDiscPattern.Frost => _frostPattern ??= Mask(128, VfxTextureRules.Frost),
+        VfxDiscPattern.Cracks => _crackPattern ??= Mask(128, VfxTextureRules.ScorchHeat),
+        VfxDiscPattern.Roots => _rootPattern ??= Mask(128, VfxTextureRules.Roots),
+        _ => null,
+    };
 
     public static Texture2D Leaf => _leaf ??= Mask(32, VfxTextureRules.Leaf);
 
@@ -43,6 +66,8 @@ internal static class VfxTextures
         VfxSprite.Shard => Shard,
         VfxSprite.Leaf => Leaf,
         VfxSprite.Puff => Puff,
+        VfxSprite.Crystal => Crystal,
+        VfxSprite.Glint => Glint,
         _ => Dot,
     };
 
@@ -92,6 +117,12 @@ internal static class VfxTextures
         _puff = null;
         _noise = null;
         _rune = null;
+        _crystal = null;
+        _glint = null;
+        _rays = null;
+        _frostPattern = null;
+        _crackPattern = null;
+        _rootPattern = null;
         Array.Clear(MarkAlbedo);
         Array.Clear(MarkEmission);
     }

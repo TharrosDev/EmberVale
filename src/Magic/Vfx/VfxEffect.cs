@@ -11,18 +11,25 @@ namespace Embervale.Magic.Vfx;
 /// It copies a position each frame, and only after checking the thing is still alive and in the
 /// tree, so an actor freed mid-cast or a bolt returned to its pool cannot take an effect with it or
 /// be reached through one.
+///
+/// <para>The player's own casting hand is a special case: in first person it is below the frame and
+/// inside the band every effect fades out in, so a hand anchor for the player resolves to a point
+/// fixed in the view instead while the camera is in the player's head (<see cref="VfxViewRules"/>),
+/// and to the hand bone again the moment it is not.</para>
 /// </summary>
 internal readonly struct VfxAnchor
 {
     private readonly Node3D? _node;
     private readonly Vector3 _offset;
     private readonly CharacterAnimationComponent? _hand;
+    private readonly bool _view;
 
-    private VfxAnchor(Node3D? node, Vector3 offset, CharacterAnimationComponent? hand)
+    private VfxAnchor(Node3D? node, Vector3 offset, CharacterAnimationComponent? hand, bool view = false)
     {
         _node = node;
         _offset = offset;
         _hand = hand;
+        _view = view;
     }
 
     /// <summary>Follows <paramref name="node"/>, <paramref name="offset"/> metres from its origin
@@ -35,7 +42,7 @@ internal readonly struct VfxAnchor
     {
         Node3D? body = BodyOf(caster);
         CharacterAnimationComponent? hand = body == null ? null : caster.GetComponent<CharacterAnimationComponent>();
-        return new VfxAnchor(body, fallbackOffset, hand);
+        return new VfxAnchor(body, fallbackOffset, hand, view: body != null && SpellVfx.IsLocalPlayer(caster));
     }
 
     /// <summary>The node followed, when it is still there.</summary>
@@ -44,6 +51,11 @@ internal readonly struct VfxAnchor
     /// <summary>The position to stand at. False when what was followed is gone.</summary>
     public bool TryResolve(out Vector3 position)
     {
+        if (_view && Alive(_node) && SpellVfx.TryFirstPersonHand(_node!, out position))
+        {
+            return true;
+        }
+
         if (_hand != null && GodotObject.IsInstanceValid(_hand) && _hand.IsInsideTree() &&
             _hand.TryGetCastingHand(out position))
         {

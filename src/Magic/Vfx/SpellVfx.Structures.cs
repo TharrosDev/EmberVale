@@ -42,7 +42,7 @@ public static partial class SpellVfx
         line.Life = Mathf.Max(0.1f, delay);
         line.Fills = true;
         line.Depth = Mathf.Clamp(1.2f / Mathf.Max(1f, width), 0.12f, 0.6f);
-        line.Body = 0.8f;
+        line.Body = 0.45f;
         line.Rim = 0.6f;
         VfxHandle<VfxDisc> disc = rig.Add(cast.Fx.Disc(line));
         if (disc.Get is { } drawn)
@@ -89,13 +89,9 @@ public static partial class SpellVfx
         VfxShellSpec sheet = VfxShellSpec.Sheet(Vector3.Zero, width, height, cast.Colors);
         if (solid)
         {
-            sheet.Occlude = 0.78f;
-            sheet.FadeTop = 0.22f;
-            sheet.FadeSides = 0.12f;
-            sheet.Scroll = new Vector2(0.004f, 0.015f);
-            sheet.Tiling = new Vector2(Mathf.Max(1f, width * 0.5f), 1.2f);
-            sheet.Energy = 0.55f;
-            sheet.RiseSeconds = 0.4f;
+            // Ice: translucent plates with bright seams, a lit rim and a jagged crystal crest
+            // (vfx_ice), in two layers a hand apart so it has depth from the side.
+            sheet = VfxShellSpec.IceWall(Vector3.Zero, width, height, cast.Colors);
         }
         else
         {
@@ -147,6 +143,31 @@ public static partial class SpellVfx
         {
             burst.Follow(VfxAnchor.To(barrier, Vector3.Up * 0.2f));
             burst.OrientLike(barrier);
+        }
+
+        if (solid && VfxQuality.Rich.Billow)
+        {
+            // Crystals thrown up as the ice breaks the ground, and cold mist pooling at its foot.
+            VfxHandle<VfxBurst> crystals = rig.Add(cast.Fx.Burst(VfxEmitter.Crystals, rise));
+            if (crystals.Get is { } thrownUp)
+            {
+                thrownUp.Follow(VfxAnchor.To(barrier, Vector3.Up * 0.2f));
+                thrownUp.OrientLike(barrier);
+            }
+
+            VfxBurstSpec mist = VfxBurstSpec.At(Vector3.Zero, cast.Colors, budget.ParticleMultiplier * Mathf.Clamp(width * 0.2f, 0.4f, 1.4f));
+            mist.Continuous = true;
+            mist.Extents = new Vector3(width * 0.5f, 0.08f, 0.5f);
+            mist.Direction = Vector3.Right;
+            mist.Flatness = 1f;
+            mist.SpeedScale = 0.5f;
+            mist.SizeScale = 0.8f;
+            VfxHandle<VfxBurst> pooled = rig.Add(cast.Fx.Burst(VfxEmitter.Mist, mist));
+            if (pooled.Get is { } low)
+            {
+                low.Follow(VfxAnchor.To(barrier, Vector3.Up * 0.25f));
+                low.OrientLike(barrier);
+            }
         }
 
         // Its light, with no flare of its own to compete with the sheet.

@@ -158,7 +158,17 @@ public readonly record struct SpellImpactInfo(
 /// <item><c>SpellVfx.Status.cs</c>: <c>StatusProc</c>.</item>
 /// <item><c>SpellVfx.Special.cs</c>: the per-spell hook table (<see cref="SpellVfxSpecial"/>), filled
 /// by <c>SpellVfx.Special.Elemental.cs</c> and <c>SpellVfx.Special.Arcana.cs</c>.</item>
+/// <item><c>SpellVfx.Kit.cs</c>: what each school's blast is made of beyond its recipe's flags, and
+/// the richer pieces a special can call (<c>Explosion</c>, <c>FireBillow</c>, <c>SmokeColumn</c>,
+/// <c>Debris</c>, <c>ShardBurst</c>, <c>GroundMist</c>, <c>Forks</c>, <c>FrostSpread</c>). Read its
+/// header for the list of block capabilities added after the first renders.</item>
 /// </list>
+///
+/// <para><b>THREE RULES EVERY LARGE ELEMENT OBEYS</b> (the first renders were white-outs):
+/// soft layers pass through <see cref="VfxCoverageRules"/> (opacity falls with the share of the
+/// frame covered; the white core is capped and brief); a blast is built from structure (rays, a thin
+/// shock ring, an eroding ball, particles, debris, smoke), never from a bigger disc; and the tiers
+/// differ in what is built (<see cref="VfxRichness"/>), not only in how many particles.</para>
 ///
 /// <para><b>THE THREE EXTENSION POINTS, cheapest first.</b></para>
 /// <list type="number">
@@ -251,11 +261,45 @@ public static partial class SpellVfx
             return fallback;
         }
 
+        // The player's own hand is off the bottom of the frame in first person: their effects
+        // start from the casting point fixed in the view instead.
+        if (IsPlayer(caster) && TryFirstPersonHand(VfxAnchor.BodyOf(caster)!, out Vector3 inView))
+        {
+            return inView;
+        }
+
         CharacterAnimationComponent? animation = caster.GetComponent<CharacterAnimationComponent>();
         return animation != null && GodotObject.IsInstanceValid(animation) &&
                animation.TryGetCastingHand(out Vector3 hand)
             ? hand
             : fallback;
+    }
+
+    /// <summary>Whether <paramref name="entity"/> is the player (for an anchor deciding whether the
+    /// first-person casting point applies to it).</summary>
+    internal static bool IsLocalPlayer(IEntity? entity) => IsPlayer(entity);
+
+    /// <summary>
+    /// The first-person casting point, when the camera is in <paramref name="body"/>'s head: a point
+    /// low and to the right in the view, past the near fade and clear of the crosshair
+    /// (<see cref="VfxViewRules"/>). False in third person, or with no camera.
+    /// </summary>
+    internal static bool TryFirstPersonHand(Node3D body, out Vector3 position)
+    {
+        position = default;
+        if (_director is not { HasCamera: true } director || !GodotObject.IsInstanceValid(director))
+        {
+            return false;
+        }
+
+        Vector3 eye = body.GlobalPosition + (Vector3.Up * VfxViewRules.EyeHeight);
+        if (!VfxViewRules.IsFirstPerson(director.CameraPosition - eye))
+        {
+            return false;
+        }
+
+        position = VfxViewRules.HandPoint(director.CameraPosition, director.CameraBasis);
+        return true;
     }
 
     /// <summary>
@@ -409,6 +453,18 @@ public static partial class SpellVfx
         }
 
         return (body.GlobalPosition + Vector3.Up).DistanceTo(centre) <= radius;
+    }
+
+    /// <summary>Metres from the player's chest to a point, or a very long way with no player.</summary>
+    private static float PlayerDistance(Vector3 centre)
+    {
+        if (ServiceLocator.Instance is not { } locator || !locator.TryGet(out PlayerCharacter player) ||
+            VfxAnchor.BodyOf(player) is not { } body)
+        {
+            return float.MaxValue;
+        }
+
+        return (body.GlobalPosition + Vector3.Up).DistanceTo(centre);
     }
 
     /// <summary>A node's key in the tracking tables.</summary>

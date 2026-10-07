@@ -44,11 +44,12 @@ public static partial class SpellVfx
         });
 
         // Afterimages along it, each a little later than the last, and what the school throws.
-        int ghosts = cast.Fx.Full ? Mathf.Clamp(Mathf.CeilToInt(length / 2.2f), 1, 6) : 0;
+        // Small ones: the line is the picture, these are where the caster was along it.
+        int ghosts = cast.Fx.Full ? Mathf.Clamp(Mathf.CeilToInt(length / 2.2f), 1, VfxQuality.Rich.Rays ? 6 : 2) : 0;
         for (int i = 0; i < ghosts; i++)
         {
             float along = (i + 0.5f) / ghosts;
-            VfxFlareSpec ghost = VfxFlareSpec.At(start.Lerp(end, along), 0.55f, cast.Colors.Scaled(0.6f, 0.9f));
+            VfxFlareSpec ghost = VfxFlareSpec.At(start.Lerp(end, along), 0.3f, cast.Colors.Scaled(0.6f, 0.8f));
             ghost.Life = 0.22f + (0.16f * along);
             cast.Fx.Flare(ghost);
         }
@@ -64,15 +65,22 @@ public static partial class SpellVfx
         }
 
         // Where it stops.
-        VfxFlareSpec arrive = VfxFlareSpec.At(end, 0.7f, cast.Colors);
+        VfxFlareSpec arrive = VfxFlareSpec.At(end, 0.6f, cast.Colors);
         arrive.Ring = true;
         arrive.RingRadius = 1.4f;
+        arrive.RingStreaks = 0.8f;
+        arrive.Rays = true;
         arrive.Light = plan.Light;
         arrive.LightRange = 5f;
         cast.Fx.Flare(arrive);
-        VfxFlareSpec leave = VfxFlareSpec.At(start, 0.5f, cast.Colors);
+        VfxFlareSpec leave = VfxFlareSpec.At(start, 0.4f, cast.Colors);
         leave.Life = 0.22f;
         cast.Fx.Flare(leave);
+        if (strike)
+        {
+            // Lightning grounding itself where the dash ends.
+            Forks(cast, end, 1.8f, to.Y);
+        }
 
         // A line of marks on the floor it crossed.
         VfxMark mark = cast.Authored ? cast.PlanOf(cast.Recipe.Linger).Mark : SpellVfxCatalog.SchoolMark(cast.School);
@@ -114,7 +122,7 @@ public static partial class SpellVfx
         VfxParticles thrown = SpellVfxCatalog.SchoolParticles(cast.School);
 
         // Where they were: the air folds in on the gap.
-        VfxFlareSpec vanish = VfxFlareSpec.At(gone, 0.75f, cast.Colors);
+        VfxFlareSpec vanish = VfxFlareSpec.At(gone, 0.6f, cast.Colors);
         vanish.Ring = true;
         vanish.RingRadius = 1.3f;
         vanish.Inward = true;
@@ -141,9 +149,11 @@ public static partial class SpellVfx
         });
 
         // Where they are: it bursts back out.
-        VfxFlareSpec appear = VfxFlareSpec.At(here, 0.85f, cast.Colors);
+        VfxFlareSpec appear = VfxFlareSpec.At(here, 0.7f, cast.Colors);
         appear.Ring = true;
         appear.RingRadius = 1.5f;
+        appear.RingStreaks = 0.6f;
+        appear.Rays = true;
         appear.Light = budget.MaxLights > 0;
         appear.LightRange = 5f;
         cast.Fx.Flare(appear);

@@ -67,6 +67,10 @@ public partial class VfxGroundMark : VfxEffect
             DistanceFadeEnabled = true,
             DistanceFadeBegin = 60f,
             DistanceFadeLength = 15f,
+
+            // Not onto the effects themselves: a decal tints every surface in its box, and an
+            // additive quad with a frost mark mixed into it is a pale square in the air.
+            CullMask = VfxMaterials.DecalMask,
         };
         AddChild(_decal);
     }

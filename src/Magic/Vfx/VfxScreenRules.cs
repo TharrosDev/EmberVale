@@ -9,23 +9,25 @@ namespace Embervale.Magic.Vfx;
 /// the peak never exceeds <see cref="MaxPeak"/> times the player's own flash setting, an enemy's
 /// spell flashes only when it struck the player and then no brighter than <see cref="EnemyHitCap"/>,
 /// Reduced Motion caps everything at <see cref="ReducedMotionCap"/>, two flashes are never closer
-/// than <see cref="MinInterval"/> seconds, and the tint is pulled most of the way to a warm white so
-/// a saturated full-screen colour never happens.
+/// than <see cref="MinInterval"/> seconds, and the tint is pulled nearly all the way to white so a
+/// coloured full-screen wash never happens. The flash is deliberately slight and brief (the first
+/// renders showed anything stronger reads as the whole view being dyed), and only a blast centred
+/// on the player earns one (<see cref="PlayerCentred"/>).
 /// </summary>
 public static class VfxScreenRules
 {
-    public const float MaxPeak = 0.35f;
-    public const float EnemyHitCap = 0.2f;
-    public const float ReducedMotionCap = 0.09f;
+    public const float MaxPeak = 0.14f;
+    public const float EnemyHitCap = 0.1f;
+    public const float ReducedMotionCap = 0.05f;
     public const double MinInterval = 0.3d;
 
     /// <summary>Seconds the flash takes to reach its peak, and to fade from it.</summary>
     public const float AttackSeconds = 0.04f;
 
-    public const float DecaySeconds = 0.26f;
+    public const float DecaySeconds = 0.14f;
 
     /// <summary>How far the school colour is pulled toward warm white.</summary>
-    public const float WarmWhiteMix = 0.65f;
+    public const float WarmWhiteMix = 0.88f;
 
     /// <summary>
     /// The peak alpha of a flash of <paramref name="strength"/> (0..1) under the player's flash
@@ -53,13 +55,24 @@ public static class VfxScreenRules
         return peak;
     }
 
+    /// <summary>How far past a blast's radius the player may stand and still have it flash the screen.</summary>
+    public const float CentredMargin = 1.5f;
+
+    /// <summary>
+    /// Whether a blast of <paramref name="radius"/> metres is centred on the player closely enough
+    /// to flash the screen: the player stands <paramref name="distance"/> metres from its centre. A
+    /// screen flash is for the blast the player is inside, not for one across the field.
+    /// </summary>
+    public static bool PlayerCentred(float distance, float radius) =>
+        distance <= Math.Max(0f, radius) + CentredMargin;
+
     /// <summary>Whether enough time has passed since the last flash.</summary>
     public static bool Allowed(double now, double lastFlash) => now - lastFlash >= MinInterval;
 
     /// <summary>The flash colour for a school colour: mostly warm white, a little of the school.</summary>
     public static Color Tint(Color school)
     {
-        var warm = new Color(1f, 0.96f, 0.88f);
+        var warm = new Color(1f, 0.98f, 0.94f);
         return new Color(
             Mix(school.R, warm.R),
             Mix(school.G, warm.G),

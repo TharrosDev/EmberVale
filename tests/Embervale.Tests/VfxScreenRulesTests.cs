@@ -13,12 +13,15 @@ namespace Embervale.Tests;
 public class VfxScreenRulesTests
 {
     [Fact]
-    public void ThePeakNeverExceedsThirtyFivePercentOfTheFlashSetting()
+    public void ThePeakIsSlightAndNeverExceedsItsShareOfTheFlashSetting()
     {
-        Assert.Equal(0.35f, VfxScreenRules.MaxPeak);
-        Assert.Equal(0.35f, VfxScreenRules.Peak(1f, 1f, false, true, false), 4);
-        Assert.Equal(0.35f, VfxScreenRules.Peak(9f, 5f, false, true, false), 4);   // over-range inputs clamp
-        Assert.Equal(0.175f, VfxScreenRules.Peak(1f, 0.5f, false, true, false), 4);
+        // The design allowed 0.35; the first renders showed that much dyes the whole view, so the
+        // layer holds itself well under it.
+        Assert.Equal(0.14f, VfxScreenRules.MaxPeak);
+        Assert.True(VfxScreenRules.MaxPeak <= 0.35f);
+        Assert.Equal(0.14f, VfxScreenRules.Peak(1f, 1f, false, true, false), 4);
+        Assert.Equal(0.14f, VfxScreenRules.Peak(9f, 5f, false, true, false), 4);   // over-range inputs clamp
+        Assert.Equal(0.07f, VfxScreenRules.Peak(1f, 0.5f, false, true, false), 4);
         Assert.Equal(0f, VfxScreenRules.Peak(1f, 0f, false, true, false));          // flashes switched off
     }
 
@@ -27,16 +30,18 @@ public class VfxScreenRulesTests
     {
         Assert.Equal(0f, VfxScreenRules.Peak(1f, 1f, false, byPlayer: false, hitsPlayer: false));
         Assert.Equal(VfxScreenRules.EnemyHitCap, VfxScreenRules.Peak(1f, 1f, false, byPlayer: false, hitsPlayer: true));
-        Assert.Equal(0.2f, VfxScreenRules.EnemyHitCap);
+        Assert.Equal(0.1f, VfxScreenRules.EnemyHitCap);
         Assert.True(VfxScreenRules.Peak(0.2f, 1f, false, false, true) < VfxScreenRules.EnemyHitCap);
+        Assert.True(VfxScreenRules.EnemyHitCap < VfxScreenRules.MaxPeak);
     }
 
     [Fact]
     public void ReducedMotionCapsEveryFlash()
     {
-        Assert.Equal(0.09f, VfxScreenRules.ReducedMotionCap);
-        Assert.Equal(0.09f, VfxScreenRules.Peak(1f, 1f, reducedMotion: true, byPlayer: true, hitsPlayer: false));
-        Assert.Equal(0.09f, VfxScreenRules.Peak(1f, 1f, reducedMotion: true, byPlayer: false, hitsPlayer: true));
+        Assert.Equal(0.05f, VfxScreenRules.ReducedMotionCap);
+        Assert.True(VfxScreenRules.ReducedMotionCap <= 0.09f); // the design's ceiling
+        Assert.Equal(0.05f, VfxScreenRules.Peak(1f, 1f, reducedMotion: true, byPlayer: true, hitsPlayer: false));
+        Assert.Equal(0.05f, VfxScreenRules.Peak(1f, 1f, reducedMotion: true, byPlayer: false, hitsPlayer: true));
     }
 
     [Fact]
@@ -80,6 +85,37 @@ public class VfxScreenRulesTests
         // Warm: red is not the weakest channel of the white it is pulled toward.
         Color white = VfxScreenRules.Tint(Colors.White);
         Assert.True(white.R >= white.G && white.G >= white.B);
+    }
+
+    [Fact]
+    public void TheTintIsNearlyWhiteWhateverTheSchool()
+    {
+        foreach (DamageType school in new[]
+                 {
+                     DamageType.Fire, DamageType.Frost, DamageType.Lightning, DamageType.Arcane, DamageType.Nature,
+                     DamageType.Necrotic,
+                 })
+        {
+            Color tint = VfxScreenRules.Tint(SpellSchools.Color(school));
+            Assert.True(tint.S < 0.16f, $"{school} flash tint is a colour wash ({tint.S})");
+            Assert.True(tint.V > 0.9f, $"{school} flash tint is dim ({tint.V})");
+        }
+    }
+
+    [Fact]
+    public void TheFlashIsBrief()
+    {
+        Assert.True(VfxScreenRules.AttackSeconds + VfxScreenRules.DecaySeconds <= 0.2f);
+    }
+
+    [Fact]
+    public void OnlyABlastThePlayerStandsInFlashesTheScreen()
+    {
+        Assert.True(VfxScreenRules.PlayerCentred(0f, 3f));
+        Assert.True(VfxScreenRules.PlayerCentred(3f + VfxScreenRules.CentredMargin, 3f));
+        Assert.False(VfxScreenRules.PlayerCentred(3.1f + VfxScreenRules.CentredMargin, 3f));
+        Assert.False(VfxScreenRules.PlayerCentred(float.MaxValue, 8f)); // no player at all
+        Assert.False(VfxScreenRules.PlayerCentred(9f, 1.2f));           // a bolt landing across the field
     }
 
     [Fact]

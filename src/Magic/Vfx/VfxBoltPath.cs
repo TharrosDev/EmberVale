@@ -46,6 +46,13 @@ public static class VfxBoltPath
     public static float MaxOffset(float length, float jitter) =>
         MathF.Abs(length * jitter) * FirstAmplitude / (1f - Roughness) * MathF.Sqrt(2f);
 
+    /// <summary>The jitter (a fraction of the length) at which a bolt of <paramref name="length"/>
+    /// metres sways at most <paramref name="sway"/> metres from its line: the inverse of
+    /// <see cref="MaxOffset"/>. A long bolt at a fixed fraction is bent like a tube; held to a sway in
+    /// metres it stays a jagged line.</summary>
+    public static float JitterFor(float length, float sway) =>
+        MathF.Abs(sway) * (1f - Roughness) / (MathF.Max(0.0001f, MathF.Abs(length)) * FirstAmplitude * MathF.Sqrt(2f));
+
     /// <summary>
     /// Fills <paramref name="points"/> (cleared first) with <c>segments + 1</c> points from
     /// <paramref name="from"/> to <paramref name="to"/>. The ends are exact; the points between are

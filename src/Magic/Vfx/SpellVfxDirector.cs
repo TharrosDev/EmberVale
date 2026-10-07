@@ -36,7 +36,8 @@ public partial class SpellVfxDirector : Node
     /// <summary>The scale the warm-up draws at: on screen, and too small to see.</summary>
     public const float WarmupScale = 0.001f;
 
-    private const int ParticleKinds = 8;
+    /// <summary>Slots in the table of emitter pools: the recipe presets, then the extra emitters.</summary>
+    private const int ParticleKinds = VfxBurstPresets.SlotCount;
 
     private readonly List<VfxEffect> _live = new();
     private readonly List<VfxHandle<VfxGroundMark>> _marks = new();
@@ -74,6 +75,9 @@ public partial class SpellVfxDirector : Node
     internal Vector3 CameraPosition { get; private set; }
 
     internal Vector3 CameraForward { get; private set; } = Vector3.Forward;
+
+    /// <summary>The camera's axes, for an effect anchored in the view (the first-person hand).</summary>
+    internal Basis CameraBasis { get; private set; } = Basis.Identity;
 
     /// <summary>Builds <see cref="VfxRoot"/> here rather than in <c>_Ready</c>, so it exists for any
     /// caller that reaches the director before the tree has readied it.</summary>
@@ -137,7 +141,8 @@ public partial class SpellVfxDirector : Node
         if (HasCamera)
         {
             CameraPosition = camera!.GlobalPosition;
-            CameraForward = -camera.GlobalBasis.Z;
+            CameraBasis = camera.GlobalBasis.Orthonormalized();
+            CameraForward = -CameraBasis.Z;
         }
 
         TickWarmup();
@@ -201,11 +206,12 @@ public partial class SpellVfxDirector : Node
 
     internal VfxFlare AddFlare(in VfxSpawner spawner) => Add(_flares!, spawner);
 
-    internal VfxBurst? AddBurst(VfxParticles kind, in VfxSpawner spawner)
-    {
-        int index = (int)kind;
-        return index <= 0 || index >= ParticleKinds || _bursts[index] is not { } pool ? null : Add(pool, spawner);
-    }
+    internal VfxBurst? AddBurst(VfxParticles kind, in VfxSpawner spawner) => AddBurst((int)kind, spawner);
+
+    internal VfxBurst? AddBurst(VfxEmitter kind, in VfxSpawner spawner) => AddBurst((int)kind, spawner);
+
+    private VfxBurst? AddBurst(int slot, in VfxSpawner spawner) =>
+        slot <= 0 || slot >= ParticleKinds || _bursts[slot] is not { } pool ? null : Add(pool, spawner);
 
     internal VfxBolt AddBolt(in VfxSpawner spawner) => Add(_bolts!, spawner);
 
@@ -349,10 +355,15 @@ public partial class SpellVfxDirector : Node
 
         for (int kind = 1; kind < ParticleKinds; kind++)
         {
-            var particles = (VfxParticles)kind;
+            if (VfxBurstPresets.ForSlot(kind).Amount <= 0)
+            {
+                continue;
+            }
+
+            int slot = kind;
             NodePool<VfxBurst> bursts = null!;
             bursts = new NodePool<VfxBurst>(
-                () => new VfxBurst(particles) { Reclaim = e => bursts.Return((VfxBurst)e) }, prewarm: 1, maxRetained: 16);
+                () => NewBurst(slot, e => bursts.Return((VfxBurst)e)), prewarm: 1, maxRetained: 16);
             _bursts[kind] = bursts;
         }
 
@@ -377,6 +388,13 @@ public partial class SpellVfxDirector : Node
         NodePool<VfxDisc> discs = null!;
         discs = new NodePool<VfxDisc>(() => new VfxDisc { Reclaim = e => discs.Return((VfxDisc)e) }, prewarm: 1, maxRetained: 16);
         _discs = discs;
+    }
+
+    private static VfxBurst NewBurst(int slot, System.Action<VfxEffect> reclaim)
+    {
+        VfxBurst burst = slot < (int)VfxEmitter.Flame ? new VfxBurst((VfxParticles)slot) : new VfxBurst((VfxEmitter)slot);
+        burst.Reclaim = reclaim;
+        return burst;
     }
 
     private void ClearPools()
@@ -455,6 +473,11 @@ public partial class SpellVfxDirector : Node
         VfxSchoolColors colors = VfxPalette.For(Combat.DamageType.Fire).Scaled(0.02f, 0.02f);
         float tiny = WarmupScale;
 
+        // The ground patterns are drawn in code on first use; draw them now, not under a telegraph.
+        _ = VfxTextures.Pattern(VfxDiscPattern.Frost);
+        _ = VfxTextures.Pattern(VfxDiscPattern.Cracks);
+        _ = VfxTextures.Pattern(VfxDiscPattern.Roots);
+
         VfxFlareSpec flare = VfxFlareSpec.At(at, tiny, colors);
         flare.Sustain = true;
         flare.Ring = true;
@@ -464,6 +487,12 @@ public partial class SpellVfxDirector : Node
         flare.LightRange = 0.05f;
         spawner.Flare(flare);
 
+        // The rays are a one-shot's: a second, brief flare so their texture reaches the renderer too.
+        VfxFlareSpec rays = VfxFlareSpec.At(at, tiny, colors);
+        rays.Rays = true;
+        rays.Life = 0.2f;
+        spawner.Flare(rays);
+
         for (int kind = 1; kind < ParticleKinds; kind++)
         {
             VfxBurstSpec burst = VfxBurstSpec.At(at, colors, 0.05f);
@@ -471,7 +500,14 @@ public partial class SpellVfxDirector : Node
             burst.SpeedScale = 0.01f;
             burst.Extents = Vector3.One * tiny;
             burst.Continuous = true;
-            spawner.Burst((VfxParticles)kind, burst);
+            if (kind < (int)VfxEmitter.Flame)
+            {
+                spawner.Burst((VfxParticles)kind, burst);
+            }
+            else
+            {
+                spawner.Burst((VfxEmitter)kind, burst);
+            }
         }
 
         spawner.Bolt(new VfxBoltSpec
@@ -490,6 +526,8 @@ public partial class SpellVfxDirector : Node
         spawner.Shell(sphere);
         VfxShellSpec sheet = VfxShellSpec.Sheet(at, tiny, tiny, colors);
         spawner.Shell(sheet);
+        VfxShellSpec ice = VfxShellSpec.IceWall(at, tiny, tiny, colors);
+        spawner.Shell(ice);
         VfxShellSpec post = VfxShellSpec.Sphere(at, tiny, colors);
         post.Shape = VfxShellShape.Post;
         post.Size = Vector3.One * tiny;
@@ -538,7 +576,7 @@ public partial class SpellVfxDirector : Node
 /// or no distortion). The caller never has to ask first: an empty handle ignores every call.</para>
 ///
 /// <para>This is the whole block API. A recipe interpreter, a special case for one spell and the
-/// shader warm-up all build effects through these same eight methods.</para>
+/// shader warm-up all build effects through these same methods.</para>
 /// </summary>
 internal readonly struct VfxSpawner
 {
@@ -611,6 +649,25 @@ internal readonly struct VfxSpawner
     public VfxHandle<VfxBurst> Burst(VfxParticles kind, in VfxBurstSpec spec)
     {
         if (!Full || kind == VfxParticles.None || spec.Density <= 0f)
+        {
+            return default;
+        }
+
+        VfxBurst? burst = _director!.AddBurst(kind, this);
+        if (burst == null)
+        {
+            return default;
+        }
+
+        burst.Arm(spec);
+        return new VfxHandle<VfxBurst>(burst);
+    }
+
+    /// <summary>One of the extra emitters (<see cref="VfxEmitter"/>): flame that cools to smoke,
+    /// debris, ground mist, ice crystals, glints.</summary>
+    public VfxHandle<VfxBurst> Burst(VfxEmitter kind, in VfxBurstSpec spec)
+    {
+        if (!Full || kind == VfxEmitter.None || spec.Density <= 0f)
         {
             return default;
         }
