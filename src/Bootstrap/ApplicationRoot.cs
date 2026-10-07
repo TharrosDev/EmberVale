@@ -196,6 +196,7 @@ public partial class ApplicationRoot : Node3D, IServiceScopeHost
             return true;
         }
 
+        if (Debugging.ConsoleHelp.Requested()) { Debugging.ConsoleHelp.Run(tree); return true; }
         if (HeadlessState.Requested())
         {
             HeadlessState.Run(tree);

@@ -99,6 +99,20 @@ public partial class WorldEventDirector : Node3D, ISaveable
         return _active != null;
     }
 
+    /// <summary>Ends the active event now as a failure (dev console): the same <see cref="Fail"/>
+    /// path a region transition takes, so its actors are despawned and its cooldown is stamped.
+    /// False when nothing is active.</summary>
+    public bool ForceStop()
+    {
+        if (_active == null)
+        {
+            return false;
+        }
+
+        Fail(_active);
+        return true;
+    }
+
     public override void _Process(double delta)
     {
         if (GameManager.Instance is { IsPlaying: false })

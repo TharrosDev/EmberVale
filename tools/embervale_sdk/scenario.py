@@ -6,7 +6,7 @@ import re
 
 OPERATIONS = {"load_scene", "scene_tree", "get_property", "set_property", "call_method",
               "send_action", "wait_frames", "assert", "capture_screenshot", "collect_logs",
-              "collect_metrics", "dump_state", "stop", "new_game", "wait_until", "build"}
+              "collect_metrics", "dump_state", "stop", "new_game", "wait_until", "build", "console"}
 METHODS = {"show", "hide", "make_current", "reset_physics_interpolation"}
 PROPERTIES = {"position", "global_position", "rotation_degrees", "visible", "velocity", "fov"}
 COMPARATORS = {"eq", "ne", "gt", "ge", "lt", "le", "exists"}
@@ -41,6 +41,8 @@ def validate_plan(plan):
             parent = step.get("parent", "")
             if not isinstance(parent, str) or not parent.startswith("/root/") or ".." in parent.split("/"):
                 raise ValueError("build requires an absolute parent within the live scene")
+        if op == "console" and (not isinstance(step.get("line"), str) or not 0 < len(step["line"].strip()) <= 400 or "\n" in step["line"]):
+            raise ValueError("console requires line: one dev-console command of at most 400 characters")
         if op == "load_scene":
             resource_path(step.get("scene"))
         if op in {"get_property", "set_property", "call_method", "assert", "wait_until"}:

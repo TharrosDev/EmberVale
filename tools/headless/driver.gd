@@ -319,6 +319,20 @@ func _step(step: Dictionary) -> void:
 			event.action = action
 			event.pressed = false
 			Input.parse_input_event(event)
+		"console":
+			# One dev-console line through DevConsole.ExecuteJson: {"ok","out","data"?}. The console
+			# exists only in a live session of a tooling build (not under --capture).
+			var console: Node = current_scene.find_child("DevConsole", true, false) if current_scene else null
+			if console == null or not console.has_method("ExecuteJson"):
+				_error("scenario.console", "No dev console: start a session first (new_game, then wait_until)")
+				return
+			var reply = JSON.parse_string(String(console.call("ExecuteJson", String(step.line))))
+			if not (reply is Dictionary):
+				_error("scenario.console", "Console returned no result for: " + String(step.line))
+				return
+			_write("console-%d" % frame_number, {"line": step.line, "reply": reply})
+			if not reply.get("ok", false) and not step.get("allow_failure", false):
+				_error("scenario.console", "%s -> %s" % [step.line, String(reply.get("out", "")).left(300)])
 		"scene_tree", "dump_state": _dump("state-%d" % frame_number)
 		"collect_metrics": _metrics()
 		"collect_logs": _write("logs", {"godot_log": String(request.name) + ".godot.log"})
