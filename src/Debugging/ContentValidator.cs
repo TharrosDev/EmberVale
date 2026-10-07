@@ -554,6 +554,9 @@ public static class ContentValidator
             "res://assets/shaders/ui/ink_shimmer.gdshader",
             "res://assets/shaders/world/world_surface.gdshader",
 
+            // The player's body. A parse error here leaves the player drawn with nothing at all.
+            "res://assets/shaders/player_body.gdshader",
+
             // The spell effects. A missing one does not stop the game (VfxMaterials falls back to
             // plain shapes and logs it), which is exactly why it has to fail here: every spell would
             // quietly be drawn as a sphere.

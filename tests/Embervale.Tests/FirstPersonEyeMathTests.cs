@@ -361,6 +361,32 @@ public class FirstPersonEyeMathTests
     }
 
     [Fact]
+    public void TheEyeCutout_NarrowsAsTheLookGoesDown_AndNeverAboveLevel()
+    {
+        float level = CameraRigMath.EyeSphereRadius(0.08f, 110f, 16f / 9f);
+        Assert.Equal(CameraRigMath.MaxEyeSphereRadius, level, 5);
+        Assert.Equal(level, CameraRigMath.EyeSphereRadius(0.08f, 110f, 16f / 9f, Mathf.DegToRad(85f)), 5);
+        Assert.Equal(level, CameraRigMath.EyeSphereRadius(0.08f, 110f, 16f / 9f, float.NaN), 5);
+
+        float previous = level;
+        for (int degrees = 0; degrees >= -90; degrees -= 5)
+        {
+            float radius = CameraRigMath.EyeSphereRadius(0.08f, 110f, 16f / 9f, Mathf.DegToRad(degrees));
+            Assert.True(radius <= previous + 1e-6f, $"the cut-out widened at {degrees} degrees");
+            Assert.InRange(radius, CameraRigMath.MinEyeSphereRadius, CameraRigMath.MaxEyeSphereRadius);
+            previous = radius;
+        }
+
+        // Straight down it is at its narrowest whatever the view: a chest standing 0.10 m behind
+        // the view's axis is then only inside it less than 0.07 m below the eye, which is further
+        // off the axis than the widest field of view (110 degrees) sees.
+        float down = CameraRigMath.EyeSphereRadius(0.08f, 110f, 16f / 9f, -CameraRigMath.LookDownFullPitch);
+        Assert.Equal(CameraRigMath.MinEyeSphereRadius, down, 5);
+        float below = Mathf.Sqrt((down * down) - (0.10f * 0.10f));
+        Assert.True(Mathf.RadToDeg(Mathf.Atan2(0.10f, below)) > 55f);
+    }
+
+    [Fact]
     public void TheEyeIsAlwaysInsideTheCutout_AndTheBodyBelowIsNot()
     {
         // At every pitch the eye is cut clear (it is the centre of its own sphere), and looking down

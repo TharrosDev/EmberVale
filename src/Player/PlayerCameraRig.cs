@@ -757,7 +757,9 @@ public partial class PlayerCameraRig : EntityComponent
         bool hidden = CameraRigMath.HeadHidden(_headHidden, eye.DistanceTo(HeadSphereCentre), _modeBlend);
         if (hidden || _headHidden)
         {
-            EyeSphereRadius = hidden ? CameraRigMath.EyeSphereRadius(Camera.Near, Camera.Fov, ViewAspect()) : 0f;
+            EyeSphereRadius = hidden
+                ? CameraRigMath.EyeSphereRadius(Camera.Near, Camera.Fov, ViewAspect(), Pitch)
+                : 0f;
             PlayerAppearance.SetHeadCutout(
                 _bodySurfaces, HeadSphereCentre, hidden ? CameraRigMath.HeadSphereRadius : 0f);
             PlayerAppearance.SetEyeCutout(_bodySurfaces, eye, EyeSphereRadius);

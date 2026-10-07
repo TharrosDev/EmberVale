@@ -139,7 +139,13 @@ public static class CameraRigMath
     /// cleanly instead of being sliced by the near plane and filling the frame. Held between the two
     /// limits: never so small it does nothing, and never so wide it reaches the chest the player is
     /// looking down at (about 0.18 m from the eye at a stand), which at the widest fields of view
-    /// means the far corners of the near plane are left to the near plane.</summary>
+    /// means the far corners of the near plane are left to the near plane.
+    ///
+    /// <para>The upper limit itself comes down to the lower one as the look goes down
+    /// (<see cref="EyeSphereLimit"/>). Looking down, what is nearest the eye is the chest the player
+    /// is looking at, standing a hand's width behind the view's axis: a wide sphere takes a round
+    /// bite out of it at the bottom of the frame, where the near plane by itself reaches nothing
+    /// that is in view.</para></summary>
     public const float EyeSphereMargin = 0.02f;
     public const float MinEyeSphereRadius = 0.12f;
     public const float MaxEyeSphereRadius = 0.2f;
@@ -317,15 +323,23 @@ public static class CameraRigMath
     /// (degrees) and aspect (width over height): the distance from the eye to a corner of the near
     /// plane, plus <see cref="EyeSphereMargin"/>. Derived from the camera rather than fixed, because
     /// a wide view pushes those corners out and a fixed sphere would let the near plane slice
-    /// whatever sat between the two.
+    /// whatever sat between the two. <paramref name="pitch"/> (radians, negative down) narrows it
+    /// as the look goes down, so it never reaches the chest.
     /// </summary>
-    public static float EyeSphereRadius(float near, float fovDegrees, float aspect)
+    public static float EyeSphereRadius(float near, float fovDegrees, float aspect, float pitch = 0f)
     {
         float tan = Mathf.Tan(Mathf.DegToRad(Math.Clamp(Finite(fovDegrees), 1f, 170f)) * 0.5f);
         float wide = float.IsFinite(aspect) && aspect > 0f ? aspect : 16f / 9f;
         float corner = Math.Max(Finite(near), 0f) * Mathf.Sqrt(1f + (tan * tan * (1f + (wide * wide))));
-        return Math.Clamp(corner + EyeSphereMargin, MinEyeSphereRadius, MaxEyeSphereRadius);
+        return Math.Clamp(corner + EyeSphereMargin, MinEyeSphereRadius, EyeSphereLimit(pitch));
     }
+
+    /// <summary>The widest the cut-out round the eye may be at a pitch:
+    /// <see cref="MaxEyeSphereRadius"/> at or above level, easing down to
+    /// <see cref="MinEyeSphereRadius"/> at <see cref="LookDownFullPitch"/>, in step with the lean
+    /// that carries the eye out over the chest (<see cref="LookDownReach"/>).</summary>
+    public static float EyeSphereLimit(float pitch) => Mathf.Lerp(
+        MaxEyeSphereRadius, MinEyeSphereRadius, Ease(-Finite(pitch) / LookDownFullPitch));
 
     /// <summary>Whether the body shader discards a point: inside the sphere round the head or the
     /// one round the eye. The same test the shader runs, for the tests and the probe.</summary>

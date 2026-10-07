@@ -486,7 +486,9 @@ func _check_cutouts(body: CharacterBody3D, camera: Camera3D, reached: float, fro
 		if eye.distance_to(eye_centre) > 0.02:
 			_failures.append("looking %+.0f deg the eye cut-out is centred %.3f m from the camera — it is not following the eye"
 				% [reached, eye.distance_to(eye_centre)])
-		if eye_sphere.w < near_corner:
+		# Level and looking up only. Looking down the rig narrows the sphere on purpose
+		# (CameraRigMath.EyeSphereLimit), so it cannot take a bite out of the chest in view.
+		if reached > -45.0 and eye_sphere.w < near_corner:
 			_failures.append("looking %+.0f deg the eye cut-out (%.3f m) is smaller than the near plane's corners (%.3f m) — the near plane can still slice the body"
 				% [reached, eye_sphere.w, near_corner])
 

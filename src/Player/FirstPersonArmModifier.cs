@@ -54,7 +54,8 @@ internal sealed partial class FirstPersonArmModifier : SkeletonModifier3D
         Transform3D toWorld = skeleton.GlobalTransform;
         Transform3D upper = skeleton.GetBoneGlobalPose(_upper);
         Vector3 shoulder = toWorld * upper.Origin;
-        Vector3 hand = toWorld * skeleton.GetBoneGlobalPose(_hand).Origin;
+        Vector3 handInSkeleton = skeleton.GetBoneGlobalPose(_hand).Origin;
+        Vector3 hand = toWorld * handInSkeleton;
 
         Transform3D view = camera.GlobalTransform;
         Basis axes = view.Basis.Orthonormalized();
@@ -67,7 +68,7 @@ internal sealed partial class FirstPersonArmModifier : SkeletonModifier3D
         Quaternion swing = FirstPersonArmRules.Swing(shoulder, hand, target, Weight);
         if (swing.IsEqualApprox(Quaternion.Identity))
         {
-            Arm.Animation?.ReportCastingHand(hand);
+            Arm.Animation?.ReportCastingHand(handInSkeleton);
             return;
         }
 
@@ -81,7 +82,7 @@ internal sealed partial class FirstPersonArmModifier : SkeletonModifier3D
         skeleton.SetBonePoseRotation(_upper, (local * (global.Inverse() * inSkeleton * global)).Normalized());
 
         // Where the hand is drawn this frame, for the effects that sit in it.
-        Arm.Animation?.ReportCastingHand(toWorld * skeleton.GetBoneGlobalPose(_hand).Origin);
+        Arm.Animation?.ReportCastingHand(skeleton.GetBoneGlobalPose(_hand).Origin);
     }
 
     /// <summary>The casting hand (the one <c>CharacterAnimationComponent.TryGetCastingHand</c>

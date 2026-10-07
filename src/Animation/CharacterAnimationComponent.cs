@@ -274,9 +274,10 @@ public partial class CharacterAnimationComponent : EntityComponent
         // Something that poses the arm after the animation (the first-person arm) said where the
         // hand is actually drawn. Only as fresh as the last frame: the moment it stops saying so,
         // the bone is the answer again.
-        if (_hasReportedHand && Engine.GetProcessFrames() - _reportedHandFrame <= 1)
+        if (_hasReportedHand && Engine.GetProcessFrames() - _reportedHandFrame <= 1 &&
+            _skeleton != null && IsInstanceValid(_skeleton) && _skeleton.IsInsideTree())
         {
-            position = _reportedHand;
+            position = _skeleton.GlobalTransform * _reportedHand;
             return true;
         }
 
@@ -296,14 +297,17 @@ public partial class CharacterAnimationComponent : EntityComponent
     private bool _hasReportedHand;
 
     /// <summary>
-    /// Tells the component where the casting hand is drawn this frame, in world space, when a
-    /// skeleton modifier has moved it from where the clip put it. A modifier's pose lasts one frame
-    /// and the bone reads back as the clip's afterwards, so without this an effect anchored to the
-    /// hand would sit where the hand is not. Called every frame it applies; it lapses by itself.
+    /// Tells the component where the casting hand is drawn this frame, in the skeleton's own space
+    /// (a bone's global pose origin), when a skeleton modifier has moved it from where the clip put
+    /// it. A modifier's pose lasts one frame and the bone reads back as the clip's afterwards, so
+    /// without this an effect anchored to the hand would sit where the hand is not. Kept in the
+    /// skeleton's space, like the bone it stands in for: it is read up to a frame later, and a
+    /// world position that old trails a running body by the distance it covered. Called every frame
+    /// it applies; it lapses by itself.
     /// </summary>
-    public void ReportCastingHand(Vector3 world)
+    public void ReportCastingHand(Vector3 inSkeleton)
     {
-        _reportedHand = world;
+        _reportedHand = inSkeleton;
         _reportedHandFrame = Engine.GetProcessFrames();
         _hasReportedHand = true;
     }
