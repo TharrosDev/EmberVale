@@ -488,7 +488,9 @@ class WorldBakeTests(unittest.TestCase):
         self.assertEqual((row["state"], row["own_changed"], row["eta_seconds"]),
                          ("stale", [scene], row["artifacts"] * 2))
         self.assertIn("region.pale_concord", result["to_bake"])
-        self.assertEqual(result["shared_changed"], [])
+        # Editing one region's own scene adds nothing to the shared inputs, whatever the tree's
+        # bake state is (a branch that touched src/World already lists that file here).
+        self.assertEqual(result["shared_changed"], world_bake.plan(manifest, sources, rate=2.0)["shared_changed"])
 
 
 PLAN = [{"id": "tree", "prompt": "an oak", "targetPolycount": 5000},

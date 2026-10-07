@@ -17,7 +17,7 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 from quality_common import ROOT, discover_godot, run_process, write_json, machine_fingerprint
-from .contract import SCHEMA, diagnostic, diagnostics_from_log, exit_code
+from .contract import SCHEMA, diagnostic, diagnostics_from_log, exit_code, first_words
 from .changed import changed_paths
 from .scenario import validate_plan, resource_path
 from .freshness import stale_reason
@@ -187,7 +187,8 @@ class Run:
                 if any(re.search(pattern, item["message"]) for pattern in expected_errors):
                     item.update(severity="info", code="fixture.expected_error")
         if code and not found:
-            issues.append(("process.failed", f"{name}: exit {r.returncode}; see {label}.stderr.log and stdout log"))
+            said = first_words(r.stderr) or first_words(r.stdout) or f"no output; see {label}.stderr.log"
+            issues.append(("process.failed", f"{name}: exit {r.returncode}: {said}"))
         step = dict(name=name, command=[str(c) for c in command], duration=r.elapsed_seconds,
                     exit_code=code, process_exit_code=r.returncode,
                     success=code == 0 and not any(d["severity"] == "error" for d in found),

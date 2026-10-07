@@ -187,6 +187,30 @@ class CompactTests(unittest.TestCase):
             self.assertEqual(dict(dependency_graph_count=2, selected_paths_count=3, samples_ms_count=2, scanned=3), metrics)
 
 
+class ContractResultTests(unittest.TestCase):
+    LINE = 'EMBERVALE_RESULT {"schema":1,"gate":"validate","ok":false,"exit_code":1,"facts":{"issues":2,"ids":["a","b"]},' \
+           '"failures":["shop.x has no stock","quest.y names a missing item"],"warnings":["slow"]}'
+
+    def test_a_quiet_gates_failures_become_error_diagnostics_once(self):
+        from embervale_sdk.contract import parse_result, result_brief
+        self.assertEqual("RESULT validate FAILED issues=2 ids=2 items", result_brief(parse_result("noise\n" + self.LINE)))
+        found = diagnostics_from_log(self.LINE, "content")
+        self.assertEqual([("error", "process.content", "shop.x has no stock"),
+                          ("error", "process.content", "quest.y names a missing item")],
+                         [(d["severity"], d["code"], d["message"]) for d in found])
+        # The same failure already printed as an [ERROR] line is not counted twice.
+        echoed = diagnostics_from_log("[ERROR] validate: shop.x has no stock\n" + self.LINE, "content")
+        self.assertEqual(["[ERROR] validate: shop.x has no stock", "quest.y names a missing item"],
+                         [d["message"] for d in echoed])
+        self.assertIsNone(parse_result("EMBERVALE_RESULT {broken"))
+        self.assertEqual([], diagnostics_from_log('EMBERVALE_RESULT {"gate":"state","ok":true,"failures":[]}', "state"))
+
+    def test_a_failed_tool_is_quoted_not_pointed_at(self):
+        from embervale_sdk.contract import first_words
+        self.assertEqual("bake is stale: | - a.cs | - b.cs | +1 lines", first_words("\nbake is stale:\n  - a.cs\n  - b.cs\nfix it\n"))
+        self.assertEqual("", first_words("\n\n"))
+
+
 class ContractNoiseTests(unittest.TestCase):
     def test_mcp_plugin_lines_are_neither_errors_nor_warnings(self):
         self.assertEqual([], diagnostics_from_log("ERROR: [McpPlugin] relay is down\nWARNING: [McpPlugin] retrying", "editor"))
@@ -568,6 +592,38 @@ class TriageTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 shown([str(Path(folder) / "missing.log")])
 
+    def test_a_log_call_and_its_engine_echo_are_one_group_with_the_callers_origin(self):
+        # Shapes copied from a real environment_route.godot.log and arena.godot.log.
+        log = "\n".join([
+            "WARNING: [WARN]  (_Process) World performance budget exceeded in 'region.ember_crown': frame ms 20.06 > 16.67.",
+            "   at: void Embervale.Core.Diagnostics.Log.Warn(string, string) (res://src/Core/Diagnostics/Log.cs:51)",
+            "   C# backtrace (most recent call first):",
+            "       [0] void Godot.GD.PushWarning(string) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Core/GD.cs:396)",
+            "       [1] void Embervale.Core.Diagnostics.Log.Warn(string, string) (C:\\Users\\x\\src\\Core\\Diagnostics\\Log.cs:51)",
+            "       [2] void Embervale.World.WorldPerformanceMonitor._Process(double) (C:\\Users\\x\\src\\World\\WorldPerformanceMonitor.cs:133)",
+            "       [3] bool Godot.Node.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&) (/root/godot/modules/x/Node.cs:9)",
+            "[WARN]  (_Process) World performance budget exceeded in 'region.ember_crown': frame ms 20.06 > 16.67.",
+            "WARNING: [WARN]  (_Process) World performance budget exceeded in 'region.ember_crown': frame ms 28.49 > 16.67.",
+            "   at: void Embervale.Core.Diagnostics.Log.Warn(string, string) (res://src/Core/Diagnostics/Log.cs:51)",
+            "[WARN]  (_Process) World performance budget exceeded in 'region.ember_crown': frame ms 28.49 > 16.67.",
+            "ERROR: System.ObjectDisposedException: Cannot access a disposed object.",
+            "Object name: 'Embervale.Enemies.EnemyEntity'.",
+            "   at Godot.GodotObject.GetPtr(GodotObject instance) in /root/godot/modules/mono/glue/GodotSharp/GodotSharp/Core/GodotObject.base.cs:line 93",
+            "   at Embervale.Player.CameraFramingLayer.TrackTarget(IEntity target, Single dt) in C:\\Users\\x\\src\\Player\\CameraFramingLayer.cs:line 115",
+            "   at Embervale.Player.PlayerCameraRig.Tick(Double delta) in C:\\Users\\x\\src\\Player\\PlayerCameraRig.cs:line 416",
+            "WARNING: Navigation region synchronization had 2 edge error(s).",
+            'EMBERVALE_RESULT {"schema":1,"gate":"arena","ok":false,"facts":{"trials":1},"failures":["enemy.goblin: nothing fought"]}',
+        ])
+        report = triage.triage(log, triage.known_noise())
+        self.assertEqual([("error", 1, "CameraFramingLayer.TrackTarget CameraFramingLayer.cs:115"),
+                          ("warning", 2, "WorldPerformanceMonitor._Process WorldPerformanceMonitor.cs:133")],
+                         [(g["severity"], g["count"], g["origin"]) for g in report["groups"]])
+        self.assertTrue(report["groups"][1]["message"].startswith("[WARN]"))
+        self.assertEqual(1, report["noise"])   # the documented navigation edge-sync warning
+        self.assertEqual("RESULT arena FAILED trials=1 failures=1: enemy.goblin: nothing fought", report["markers"][0]["text"])
+        # An engine echo whose plain line never reached the log still counts.
+        self.assertEqual(1, triage.triage("WARNING: [WARN] alone")["groups"][0]["count"])
+
     def test_known_noise_file_is_valid_regexes(self):
         import re
         patterns = triage.known_noise()
@@ -624,8 +680,12 @@ class VerifyTests(unittest.TestCase):
         self.assertEqual(["tool-tests"], self.plan("tools/embervale_sdk/cli.py", "tools/quality_common.py")["extra"])
         ignored = self.plan(".github/workflows/ci.yml", "reports/3d/x.csv", "docs/img/shot.png", ".gitignore")
         self.assertEqual(([], [], []), (ignored["gates"], ignored["extra"], ignored["unmapped"]))
-        self.assertEqual(["tools/some_new_generator.py", "strange/file.bin"],
-                         self.plan("tools/some_new_generator.py", "strange/file.bin")["unmapped"])
+        self.assertEqual(["tools/some_new_probe.gd", "strange/file.bin"],
+                         self.plan("tools/some_new_probe.gd", "strange/file.bin")["unmapped"])
+        other = self.plan("tools/some_new_generator.py")   # a Python tool with no rule: the unit suite
+        self.assertEqual((["tool-tests"], []), (other["extra"], other["unmapped"]))
+        self.assertEqual(["generators"], self.plan("tools/gen_perks.py")["gates"])
+        self.assertIn("generators", self.plan("data/perks/x.tres")["gates"])
         self.assertTrue(any("no gate sees pixels" in a for a in self.plan("src/UI/GameHud.cs")["advice"]))
 
     def test_estimates_count_regions_and_use_measured_seeds(self):
@@ -638,14 +698,14 @@ class VerifyTests(unittest.TestCase):
 
     def test_plan_prints_and_runs_nothing(self):
         out = io.StringIO()
-        with patch("embervale_sdk.changed.changed_paths", return_value=(["src/Magic/Spell.cs", "tools/odd.py"], True)), \
+        with patch("embervale_sdk.changed.changed_paths", return_value=(["src/Magic/Spell.cs", "tools/odd.gd"], True)), \
                 patch("embervale_sdk.cli.Run", side_effect=AssertionError("--plan must not create a run")), \
                 patch("embervale_sdk.commands.verify.costs.load", return_value={}), contextlib.redirect_stdout(out):
             self.assertEqual(0, main(["verify", "--plan", "--budget", "15"]))
         lines = out.getvalue().splitlines()
         self.assertTrue(lines[0].startswith("PLAN 8 steps ~1m47s for 2 changed file(s): build 20s, tests 19s, content 18s, magic-core 10s"))
         self.assertEqual("SKIP over --budget 15s: build, tests, content", lines[1])
-        self.assertEqual("UNMAPPED 1: tools/odd.py", lines[2])
+        self.assertEqual("UNMAPPED 1: tools/odd.gd", lines[2])
 
     def test_run_executes_the_selection_and_reports_unmapped_as_a_warning(self):
         with tempfile.TemporaryDirectory() as folder:
@@ -653,14 +713,20 @@ class VerifyTests(unittest.TestCase):
             ran = []
             def fake_gates(self_run, items):
                 ran.extend(gate.name + ("-" + region if region else "") for gate, region in items)
+            def fake_process(self_run, name, command, **_):
+                # Never the real thing: `tool-tests` is this suite, and running it from inside itself
+                # is a process chain that never ends.
+                ran.append(name)
+                self_run.add_step(dict(name=name, command=[], duration=0, exit_code=0, success=True))
             out = io.StringIO()
             with patch("embervale_sdk.changed.changed_paths", return_value=(["tools/world_atlas.py", "long.md", "odd/x.bin"], False)), \
-                    patch("embervale_sdk.cli.Run.run_gates", fake_gates), patch("embervale_sdk.cli.discover_godot", return_value=None), \
+                    patch("embervale_sdk.cli.Run.run_gates", fake_gates), patch("embervale_sdk.cli.Run.process", fake_process), \
+                    patch("embervale_sdk.cli.discover_godot", return_value=None), \
                     patch("embervale_sdk.commands.verify.ROOT", Path(folder)), patch("embervale_sdk.cli.costs.save"), \
                     contextlib.redirect_stdout(out):
                 code = main(["verify", "--json", "--artifacts", folder])
             data = json.loads(out.getvalue())
-            self.assertEqual(["atlas"], ran)
+            self.assertEqual(["atlas", "tool-tests"], ran)
             self.assertEqual((1, "docs-lines", 1), (code, data["failed"][0]["step"], data["warnings"]))
             self.assertIn("long.md:2 is 2001 characters", data["failed"][0]["message"])
             self.assertTrue(any(line.startswith("UNMAPPED 1: odd/x.bin") for line in data["brief"]))

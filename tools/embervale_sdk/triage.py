@@ -11,12 +11,20 @@ import re
 from pathlib import Path
 
 from quality_common import ROOT
+from .contract import parse_result, result_brief
 
 ERROR = re.compile(r"^(?:SCRIPT ERROR:|USER ERROR:|ERROR:|\[ERROR\]|Unhandled exception|Unhandled Exception:|.*System\.[A-Za-z.]+Exception:|.*\berror [A-Z]+\d+:)")
 WARNING = re.compile(r"^(?:USER WARNING:|WARNING:|\[WARN\]|.*\bwarning [A-Z]+\d+:)")
 # Godot's `   at: function (file:line)`, a GDScript `   at: res://x.gd:12` and a .NET stack frame.
 ORIGIN = re.compile(r"^\s+at:?\s+(.*)$")
 FRAME_FILE = re.compile(r"([\w.]+)\(.*?\) in .*?([\w.-]+\.(?:cs|gd)):line (\d+)")
+# One frame of the C# backtrace Godot prints under a pushed error: `[2] void A.B.M(double) (C:\x\B.cs:133)`.
+BACKTRACE = re.compile(r"^\s+\[\d+\]\s+(?:[\w.<>\[\],]+\s+)?([\w.<>]+)\(.*\)\s+\((?:.*[\\/])?([\w.-]+\.cs):(\d+)\)")
+# Frames that say nothing about who logged: the push itself and the Log wrapper.
+PLUMBING = ("GD.cs", "Log.cs")
+# Log.Warn/Log.Error print `[WARN] ...` and also push it to the engine, which logs the same text
+# again as `WARNING: [WARN] ...` with a backtrace. The pair is one event.
+ECHO = re.compile(r"^(?:USER )?(?:WARNING|ERROR): (?=\[(?:WARN|ERROR)\])")
 MARKERS = ("EMBERVALE_RESULT", "STALE_BINARY", "zz-summary", "the cast button did not start",
            "ran without its condition being met")
 NOISE_FILE = "tools/headless/known_noise.json"
@@ -61,32 +69,53 @@ def triage(text: str, noise=()) -> dict:
         stripped = raw.strip()
         if not stripped:
             continue
-        if last is not None and last["origin"] is None and (origin := origin_of(raw)):
-            last["origin"] = origin
-            continue
+        if last is not None and raw[:1].isspace():
+            frame = BACKTRACE.match(raw)
+            if frame and last["weak"] and frame.group(2) not in PLUMBING:
+                last["origin"] = f"{'.'.join(frame.group(1).split('.')[-2:])} {frame.group(2)}:{frame.group(3)}"
+                last["weak"] = False
+                continue
+            if last["weak"] and (origin := origin_of(raw)):
+                # An engine-glue frame is kept only until a project frame turns up below it.
+                engine = "/root/godot/" in raw
+                if last["origin"] is None or not engine:
+                    last["origin"], last["weak"] = origin, engine or "Diagnostics.Log." in origin
+                continue
+            if frame or "backtrace" in stripped:
+                continue
         error, warning = ERROR.search(stripped), WARNING.search(stripped)
         if not error and not warning:
-            if stripped.startswith("EMBERVALE_RESULT"):
-                try:
-                    result = json.loads(stripped[len("EMBERVALE_RESULT"):])
-                except ValueError:
-                    pass
-            if any(m in stripped for m in MARKERS) and len(markers) < 20:
+            parsed = parse_result(stripped) if stripped.startswith("EMBERVALE_RESULT") else None
+            if parsed:   # a gate's result line reads better as its facts than as clipped JSON
+                result = parsed
+                stripped = result_brief(parsed)
+                failures = parsed.get("failures") or []
+                if failures:
+                    stripped += f" failures={len(failures)}: {failures[0]}"
+            if (parsed or any(m in stripped for m in MARKERS)) and len(markers) < 20:
                 markers.append(dict(line=number, text=stripped[:300]))
-            if not raw[:1].isspace():
+            # `Object name: '...'` straight under an exception's first line is still that message.
+            if not raw[:1].isspace() and not (last is not None and number == last["line"] + 1):
                 last = None
             continue
         if any(p.search(stripped) for p in noise):
             suppressed += 1
             last = None
             continue
+        echo = bool(ECHO.match(stripped))
+        stripped = ECHO.sub("", stripped)
         key = ("error" if error else "warning", normalise(stripped))
         if key in groups:
-            groups[key]["count"] += 1
-            last = None   # the origin of the first occurrence is the one reported
+            groups[key]["echoes" if echo else "count"] += 1
+            # The origin of the first occurrence is the one reported; an echo may still supply it.
+            last = groups[key] if echo and groups[key]["weak"] else None
             continue
-        last = groups[key] = dict(severity=key[0], count=1, line=number, message=stripped, origin=None)
+        last = groups[key] = dict(severity=key[0], count=0 if echo else 1, echoes=1 if echo else 0, line=number,
+                                  message=stripped, origin=None, weak=True)
         order.append(key)
+    for group in groups.values():   # an echo whose plain line never came still happened
+        group["count"] = max(group["count"], group.pop("echoes"))
+        del group["weak"]
     ranked = sorted((groups[k] for k in order), key=lambda g: (g["severity"] != "error", -g["count"], g["line"]))
     return dict(groups=ranked, noise=suppressed, markers=markers, lines=len(lines), result=result)
 
