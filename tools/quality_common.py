@@ -252,6 +252,41 @@ def pid_alive(pid: int) -> bool:
     return True
 
 
+def process_started(pid: int) -> int | None:
+    """When this process was created, as an opaque number: a later process that reuses the id has
+    a different one. None when it cannot be read (the process is gone, or the platform cannot say)."""
+    if pid <= 0:
+        return None
+    if os.name == "nt":
+        import ctypes
+        from ctypes import wintypes
+        kernel = ctypes.WinDLL("kernel32")
+        kernel.OpenProcess.restype = ctypes.c_void_p
+        handle = kernel.OpenProcess(0x1000, False, int(pid))  # PROCESS_QUERY_LIMITED_INFORMATION
+        if not handle:
+            return None
+        times = [wintypes.FILETIME() for _ in range(4)]
+        read = kernel.GetProcessTimes(ctypes.c_void_p(handle), *(ctypes.byref(item) for item in times))
+        kernel.CloseHandle(ctypes.c_void_p(handle))
+        return (times[0].dwHighDateTime << 32 | times[0].dwLowDateTime) if read else None
+    try:   # field 22 of /proc/<pid>/stat, counted after the parenthesised command name
+        return int(Path(f"/proc/{pid}/stat").read_text().rsplit(")", 1)[1].split()[19])
+    except (OSError, ValueError, IndexError):
+        return None
+
+
+def same_process(pid: int, born: int | None) -> bool:
+    """Whether `pid` is alive AND is the process that recorded `born` (its process_started).
+    A lock or job record is only as good as this: a bare id is reused by Windows within minutes,
+    and a reused id would read as a live owner, or be killed as one. With no recorded birth time
+    (an older record, or a platform that cannot tell) the id alone decides."""
+    if not pid_alive(pid):
+        return False
+    if born is None:
+        return True
+    return process_started(pid) in (None, born)
+
+
 def write_json(path: Path, payload: object) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_suffix(path.suffix + ".tmp")

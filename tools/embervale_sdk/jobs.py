@@ -5,8 +5,11 @@
     artifacts/jobs/<id>/progress.json  written by the SDK run inside the job: step, counts, ETA
     artifacts/jobs/<id>/output.log     the job's stdout and stderr
 
-`start()` spawns the supervisor (this module run with -m) detached; the supervisor waits for the
-heavy lock, so jobs queue instead of overlapping, runs the command, and records how it ended.
+`start()` spawns the supervisor (this module run with -m) detached; it runs the command and records
+how it ended. Jobs that launch the engine queue on the heavy lock instead of overlapping: an SDK
+command takes the lock itself at its first engine launch (so `job start test --only tool` holds
+nothing), and for any other command the supervisor holds it for the whole run, since it cannot
+know what that command launches.
 A job is sized for the 6-8 minute bake and the 9 minute engine suite: start it, then poll.
 """
 from __future__ import annotations
@@ -20,7 +23,7 @@ import time
 import uuid
 from pathlib import Path
 
-from quality_common import ROOT, pid_alive, write_json
+from quality_common import ROOT, process_started, same_process, write_json
 from . import costs, heavy
 
 JOBS = "artifacts/jobs"
@@ -93,19 +96,26 @@ def supervise(directory: Path) -> int:
     """The detached process: queue on the heavy lock, run the command, record the outcome."""
     directory = Path(directory)
     info = read_json(directory / "job.json")
-    state = dict(state="queued", pid=os.getpid(), queued=time.time())
+    state = dict(state="queued", pid=os.getpid(), born=process_started(os.getpid()), queued=time.time())
     write_state(directory, state)
     what = f"job {info.get('id')}: {' '.join(info.get('argv', []))}"
-    blocker = heavy.acquire(what, wait=QUEUE_SECONDS, poll=3.0)
-    if blocker:
-        state.update(state="done", exit_code=2, ended=time.time(),
-                     error=f"heavy lock still held after {QUEUE_SECONDS}s by pid {blocker.get('pid')}: {blocker.get('what')}")
-        write_state(directory, state)
-        return 2
+    # An SDK command locks for itself, and only if it launches the engine.
+    holds_lock = not info.get("sdk")
+    if holds_lock:
+        blocker = heavy.acquire(what, wait=QUEUE_SECONDS, poll=3.0)
+        if blocker:
+            state.update(state="done", exit_code=2, ended=time.time(),
+                         error=f"heavy lock still held after {QUEUE_SECONDS}s by pid {blocker.get('pid')}: {blocker.get('what')}")
+            write_state(directory, state)
+            return 2
     code = 1
     try:
         environment = dict(os.environ, EMBERVALE_JOB_DIR=str(directory), PYTHONUNBUFFERED="1")
-        environment[heavy.HELD] = "1"
+        if holds_lock:
+            environment[heavy.HELD] = "1"
+        else:
+            environment.pop(heavy.HELD, None)
+            environment[heavy.WAIT] = str(QUEUE_SECONDS)
         state.update(state="running", started=time.time())
         with open(directory / "output.log", "wb") as log:
             try:
@@ -116,7 +126,7 @@ def supervise(directory: Path) -> int:
                 state.update(state="done", exit_code=2, ended=time.time(), error=f"could not launch: {error}")
                 write_state(directory, state)
                 return 2
-            state["child"] = child.pid
+            state.update(child=child.pid, child_born=process_started(child.pid))
             write_state(directory, state)
             try:
                 code = child.wait(timeout=MAX_SECONDS)
@@ -125,7 +135,8 @@ def supervise(directory: Path) -> int:
                 code = 3
                 state["error"] = f"exceeded {MAX_SECONDS}s"
     finally:
-        heavy.release()
+        if holds_lock:
+            heavy.release()
     ended = time.time()
     state.update(state="done", exit_code=code, ended=ended)
     write_state(directory, state)
@@ -157,8 +168,9 @@ def cancel(directory: Path) -> bool:
     current = view(directory)
     if current["state"] not in ACTIVE:
         return False
-    for pid in (current.get("pid"), current.get("child")):
-        if pid:
+    # Only a process that is still the one this job recorded: a recycled id belongs to a stranger.
+    for pid, born in ((current.get("pid"), current.get("born")), (current.get("child"), current.get("child_born"))):
+        if pid and same_process(int(pid), born):
             kill_tree(int(pid))
     if current.get("pid"):
         heavy.release(pid=int(current["pid"]))
@@ -200,7 +212,7 @@ def view(directory: Path) -> dict:
             merged["pid"] = 0
     if merged["state"] == "starting" and not merged["pid"] and time.time() - merged.get("created", 0) < 15:
         return merged   # `job start` is between spawning the supervisor and recording its pid
-    if merged["state"] in ACTIVE and not pid_alive(int(merged.get("pid") or 0)):
+    if merged["state"] in ACTIVE and not same_process(int(merged.get("pid") or 0), merged.get("born")):
         # The supervisor writes `done` as its last act; re-read once before calling it dead.
         state = read_json(directory / "state.json")
         merged.update(state)
