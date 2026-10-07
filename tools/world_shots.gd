@@ -54,6 +54,12 @@ var _failures: Array[String] = []
 var _failed_keys: Dictionary = {}
 var _files: Dictionary = {}
 var _unbaselined := 0
+## Frames a selected run took that the baseline does not hold: looked at, never compared.
+var _unbaselined_keys: Dictionary = {}
+## Frames actually compared with the baseline. 0 for a baseline update and for a run that failed first.
+var _compared := 0
+## --region tokens that named a region, so a misspelt one among several is reported.
+var _region_tokens_matched: Dictionary = {}
 var _regions_shot: Array[String] = []
 
 var _output := "res://tools/shots/world"
@@ -205,6 +211,9 @@ func _initialize() -> void:
 		var wanted := true
 		if not _only_regions.is_empty():
 			wanted = _region_named(region, region_path, _only_regions)
+			for token in _only_regions:
+				if _region_named(region, region_path, PackedStringArray([token])):
+					_region_tokens_matched[token] = true
 		elif not _only_cells.is_empty():
 			wanted = _region_has_cell(region, wanted_cells)
 		elif not baselined.is_empty():
@@ -273,7 +282,15 @@ func _initialize() -> void:
 		if not cells_shot.has(cell_id):
 			_capture_errors.append("--cell matched no cell: %s (run with --list for the ids)" % cell_id)
 			selection_missed = true
-	if _regions_shot.is_empty():
+	# Each --region token answers for itself: one good name must not hide a misspelt one.
+	var region_tokens_missed: PackedStringArray = []
+	for token in _only_regions:
+		if not _region_tokens_matched.has(token):
+			region_tokens_missed.append(token)
+	if not region_tokens_missed.is_empty():
+		_capture_errors.append("--region matched no region: %s (run with --list for the ids)" % ", ".join(region_tokens_missed))
+		selection_missed = true
+	elif _regions_shot.is_empty():
 		_capture_errors.append("--region matched no region: %s (run with --list for the ids)" % ", ".join(_only_regions))
 		selection_missed = true
 	elif _signatures.is_empty() and _capture_errors.is_empty():
@@ -287,16 +304,22 @@ func _initialize() -> void:
 	_content_loader.call("CollectManagedResources")
 	await process_frame
 	var exit_code := 0 if regression_ok else (2 if selection_missed else 3)
+	# ok means no compared frame regressed. A frame with no baseline was written, not judged, and
+	# the result says so instead of leaving a selected run of unbaselined realms reading as a pass.
+	var warnings: Array[String] = []
+	if _unbaselined > 0:
+		warnings.append("%d of %d frame(s) have no baseline and were not compared (%d compared)" % [
+			_unbaselined, _signatures.size(), _compared])
 	_write_manifest(regression_ok)
 	print("world shots: complete" if regression_ok else "world shots: visual regression failed")
 	print("EMBERVALE_RESULT " + JSON.stringify({"schema": 1, "gate": "world-shots", "ok": regression_ok,
 		"exit_code": exit_code, "elapsed_ms": Time.get_ticks_msec() - _started_msec,
 		"facts": {"regions": _regions_shot, "cells": cells_shot.size(), "frames": _signatures.size(),
-			"failed": _failed_keys.keys(), "unbaselined": _unbaselined, "selection": _selection,
+			"failed": _failed_keys.keys(), "compared": _compared, "unbaselined": _unbaselined, "selection": _selection,
 			"dir": ProjectSettings.globalize_path(_output),
 			"manifest": ProjectSettings.globalize_path(_output.path_join("manifest.json")),
 			"diffs": ProjectSettings.globalize_path(_output + "_diffs")},
-		"failures": _failures, "warnings": []}))
+		"failures": _failures, "warnings": warnings}))
 	quit(exit_code)
 
 
@@ -305,7 +328,9 @@ func _initialize() -> void:
 func _write_manifest(ok: bool) -> void:
 	var shots: Array = []
 	for key in _files:
-		shots.append({"name": key, "selected": true, "ok": not _failed_keys.has(key), "file": _files[key]})
+		# "ok" is "did not fail"; "baselined": false marks a frame that was never compared.
+		shots.append({"name": key, "selected": true, "ok": not _failed_keys.has(key),
+			"baselined": not _unbaselined_keys.has(key), "file": _files[key]})
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(_output))
 	var file := FileAccess.open(_output.path_join("manifest.json"), FileAccess.WRITE)
 	if file == null:
@@ -313,7 +338,8 @@ func _write_manifest(ok: bool) -> void:
 	file.store_string(JSON.stringify({"schema": 1, "suite": "world_shots", "ok": ok,
 		"seconds": (Time.get_ticks_msec() - _started_msec) / 1000.0,
 		"resolution": [_resolution.x, _resolution.y], "registered": shots.size(), "captured": shots.size(),
-		"failed": _failed_keys.keys(), "unbaselined": _unbaselined, "failures": _failures, "shots": shots}, "  "))
+		"failed": _failed_keys.keys(), "compared": _compared, "unbaselined": _unbaselined,
+		"failures": _failures, "shots": shots}, "  "))
 
 
 ## Records a regression failure for the result line as well as the log.
@@ -575,6 +601,7 @@ func _finish_visual_regression() -> bool:
 			if _selection:
 				# Looked at on request, never approved: there is nothing to compare it with.
 				_unbaselined += 1
+				_unbaselined_keys[key] = true
 				continue
 			_fail(key, "baseline missing frame %s" % key)
 			failures += 1
@@ -618,6 +645,7 @@ func _finish_visual_regression() -> bool:
 			if not _signatures.has(key):
 				_fail("", "capture missing baseline frame %s" % key)
 				failures += 1
+	_compared = _signatures.size() - _unbaselined
 	if _unbaselined > 0:
 		print("world shots: %d selected frame(s) have no baseline and were not compared" % _unbaselined)
 	print("world shots: visual regression %s (%d frames; mean<=%.2f, local<=%.2f in %.1f%% blocks)" % [
