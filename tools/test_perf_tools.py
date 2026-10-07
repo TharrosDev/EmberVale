@@ -169,6 +169,30 @@ class Baselines(unittest.TestCase):
         self.assertEqual(self.run_main(*runs, "--baseline", old, "--median")[0], 0)   # median 10.4
         self.assertEqual(self.run_main(runs[1], "--baseline", old)[0], 5)
 
+    def test_a_run_with_too_few_frames_is_not_judged(self):
+        # The measured case: one stalled run got 19 frames in 5 s and a p50 of 254 ms against 7 ms.
+        old = write(self.directory.name, "old.json", {"frame_ms_p50": 7.34, "frames": 600})
+        stalled = write(self.directory.name, "stalled.json", {"frame_ms_p50": 254.56, "frames": 19})
+        code, lines = self.run_main(stalled, "--baseline", old)
+        self.assertEqual(code, 0)
+        self.assertIn("INCOMPARABLE: 19 frames", lines[0])
+        self.assertEqual(self.run_main(stalled, "--baseline", old, "--require-baseline")[0], 2)
+        self.assertEqual(self.run_main(stalled, "--baseline", old, "--force")[0], 5)
+        self.assertEqual(self.run_main(stalled, "--baseline", old, "--min-frames", "10")[0], 5)
+
+        # A short baseline is as useless as a short run, and one is never recorded.
+        fine = write(self.directory.name, "fine.json", {"frame_ms_p50": 7.0, "frames": 600})
+        code, lines = self.run_main(fine, "--baseline", stalled)
+        self.assertEqual(code, 0)
+        self.assertIn("INCOMPARABLE: 19 frames (the baseline", lines[0])
+        code, lines = self.run_main(stalled, "--update")
+        self.assertEqual(code, 2)
+        self.assertIn("REFUSED", lines[0])
+
+        # A document that does not say how many frames it sampled is judged as before.
+        self.assertIsNone(perf_compare.too_few_frames({"cell_ms.a": 3.0}))
+        self.assertEqual(perf_compare.frame_count({"frameMs.frames": 240.0, "steadyMs.frames": 12.0}), 240.0)
+
     def test_unreadable_input_is_exit_2(self):
         bad = Path(self.directory.name) / "bad.json"
         bad.write_text("{", encoding="utf-8")
