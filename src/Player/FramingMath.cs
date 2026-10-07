@@ -87,17 +87,57 @@ public static class FramingMath
     /// <param name="distance">Horizontal metres from the player to the target.</param>
     /// <param name="heightDelta">Target's ground height minus the player's, metres.</param>
     /// <param name="shoulderSign">+1 right shoulder, -1 left; see <see cref="ShoulderSign"/>.</param>
-    public static LockFraming Lock(float distance, float heightDelta, float shoulderSign)
+    /// <param name="targetHeight">How tall the target stands as drawn, metres. Anything up to
+    /// <see cref="TallTarget"/> (every ordinary foe, and the default) changes nothing; see
+    /// <see cref="Tallness"/> for what a taller one adds.</param>
+    public static LockFraming Lock(float distance, float heightDelta, float shoulderSign, float targetHeight = 0f)
     {
         float d = Math.Max(distance, 1f);
         float closeness = 1f - Smooth01(CloseTarget, FarTarget, d);
         float lateral = shoulderSign * LockLateral * closeness;
         float rise = LockRise * closeness;
 
+        // A giant: step back, sit higher and look up a little, so its head is in the frame with the
+        // player. It holds further out than the close-range framing, because a five-metre body
+        // fills the screen from much further away than a person does.
+        float tall = Tallness(targetHeight) * (1f - Smooth01(TallNear, TallFar, d));
+        rise += TallRise * tall;
+
         float yaw = Math.Clamp(MathF.Atan2(lateral, d), -MaxLockYaw, MaxLockYaw);
-        float pitch = Math.Clamp(MathF.Atan2(heightDelta, d) * 0.3f, -MaxLockPitch, MaxLockPitch);
-        return new LockFraming(new Vector3(lateral, rise, 0f), pitch, yaw, 1f + (LockPullback * closeness));
+        float pitch = Math.Clamp(MathF.Atan2(heightDelta, d) * 0.3f, -MaxLockPitch, MaxLockPitch) +
+            (TallPitch * tall);
+        return new LockFraming(
+            new Vector3(lateral, rise, 0f), pitch, yaw, 1f + (LockPullback * closeness) + (TallPullback * tall));
     }
+
+    /// <summary>A locked target taller than this is framed as a giant. Just above the tallest
+    /// ordinary body, so nothing the game was tuned around is touched.</summary>
+    public const float TallTarget = 2.8f;
+
+    /// <summary>The height at which the giant framing is at full strength.</summary>
+    public const float TallestTarget = 5.2f;
+
+    /// <summary>Inside this distance the giant framing is at full strength, metres.</summary>
+    public const float TallNear = 9f;
+
+    /// <summary>Beyond this distance the giant fits the frame unaided, metres.</summary>
+    public const float TallFar = 22f;
+
+    /// <summary>Extra rise for the tallest target, metres.</summary>
+    public const float TallRise = 0.45f;
+
+    /// <summary>Extra pull-back for the tallest target (fraction). The TargetLock profile pulls the
+    /// camera in to 0.86; this lets a giant end a little wider than the unlocked camera instead.</summary>
+    public const float TallPullback = 0.22f;
+
+    /// <summary>Extra upward pitch for the tallest target, radians (2 degrees), on top of
+    /// <see cref="MaxLockPitch"/>.</summary>
+    public const float TallPitch = 0.0349f;
+
+    /// <summary>How much of the giant framing a target of <paramref name="targetHeight"/> metres
+    /// earns: 0 up to <see cref="TallTarget"/>, easing to 1 at <see cref="TallestTarget"/>.</summary>
+    public static float Tallness(float targetHeight) =>
+        float.IsFinite(targetHeight) ? Smooth01(TallTarget, TallestTarget, targetHeight) : 0f;
 
     /// <summary>
     /// The framing aiming asks for. The lead and pull-in only exist in third person (scaled by

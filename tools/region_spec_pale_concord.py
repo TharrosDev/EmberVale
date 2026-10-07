@@ -79,7 +79,7 @@ BackdropColor = Color(0.30, 0.28, 0.32, 1)
 Relief = 1.0
 DetailScale = 2.5
 BackdropRadius = 340.0
-BackdropHeight = 60.0
+BackdropHeight = 102.0
 TerrainSeed = 4400
 SurfaceRoughness = 0.95
 DetailRoughness = 0.88
@@ -91,7 +91,7 @@ HeightBlendEnd = 26.0
 SunTint = Color(1.0, 0.80, 0.74, 1)
 SunEnergyScale = 1.3
 HazeColor = Color(0.66, 0.60, 0.70, 1)
-HazeScale = 1.35
+HazeScale = 1.1
 FixedSkyHour = 17.4
 
 '''

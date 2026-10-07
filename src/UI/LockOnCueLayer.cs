@@ -78,7 +78,7 @@ public sealed partial class LockOnCueLayer : Control
         {
             Kind = Kind.Acquire,
             Life = AcquireSeconds,
-            World = body.GlobalPosition + Vector3.Up,
+            World = BodyMetrics.AimPoint(body),
             Follow = e.Target,
         });
     }
@@ -147,7 +147,7 @@ public sealed partial class LockOnCueLayer : Control
             }
             else if (cue.Follow is { Body: { } body } && IsInstanceValid(body))
             {
-                cue.World = body.GlobalPosition + Vector3.Up;
+                cue.World = BodyMetrics.AimPoint(body);
             }
         }
 

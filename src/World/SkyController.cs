@@ -46,7 +46,10 @@ public partial class SkyController : Node3D
     private Vector3 _windTarget = new(1.5f, 0f, 0.5f);
     private bool _initialized;
     private (int Tier, GraphicsOverrides Overrides)? _applied;
-    private bool _volumetricFog, _weatherCollisionActive;
+    private bool _volumetricFog, _weatherCollisionActive, _aerialPerspective = true;
+    // The depth-cue values last sent, so an unchanged one is not re-sent (each Environment setter
+    // re-sends its whole parameter block).
+    private float _sentAerial = float.NaN, _sentHeightFog = float.NaN, _sentFogHeight = float.NaN, _open = 1f;
     private int _localShadowLights;
     private ProceduralSkyMaterial? _skyMaterial;
     private ParticleProcessMaterial _rainProcess = null!, _snowProcess = null!;
@@ -126,6 +129,10 @@ public partial class SkyController : Node3D
         if (_applied is { } done && done.Tier == tier && done.Overrides == overrides) return;
 
         _quality = RenderQualityResource.ForTier(tier);
+        // The sky-tinted fog costs a sky lookup per pixel; the lowest tier goes without it. The
+        // fog amounts themselves (distance and low-ground) are the same on every tier, so a
+        // landmark is as visible on a weak laptop as on a strong one.
+        _aerialPerspective = tier != GraphicsMath.Performance;
         if (_quality == null || Environment == null) return;
         bool shadows = GraphicsMath.ShadowsEnabled(overrides.ShadowQuality);
         RenderQualityResource shadow =
@@ -320,6 +327,7 @@ public partial class SkyController : Node3D
         Environment.FogDensity = (Cycle.ClearFogDensity + _fog * .65f) * _regionHaze * (1f + _humidity * .25f) * outside;
         Environment.FogLightColor = a.HorizonColor.Lerp(b.HorizonColor, t).Lerp(_haze, .18f).Lerp(_weatherFog, _precipitation * .2f) * _spaceFog * _weatherTint;
         Environment.FogLightEnergy = L(a.FogEnergy, b.FogEnergy);
+        ApplyDepthCues(blend);
         if (_volumetricFog)
         {
             // Inert while the effect is off, and each setter re-sends the whole fog-volume block.
@@ -356,6 +364,37 @@ public partial class SkyController : Node3D
         // Use the saved world clock, not shader TIME, so regression captures can freeze all motion.
         RenderingServer.GlobalShaderParameterSet(VisualTimeGlobal, (((_clock?.Day ?? 0) * 24f) + (_clock?.TimeOfDay ?? 12f)) * (_clock?.DayLengthSeconds ?? 180f) / 24f);
         _initialized = true;
+    }
+
+    /// <summary>
+    /// The two cues that make distance read as distance, on top of the plain distance fog: fog that
+    /// takes the colour of the sky behind it, and fog that gathers in ground well below the viewer.
+    /// Both are authored on the cycle (<see cref="EnvironmentCycleResource.AerialPerspective"/>,
+    /// <see cref="EnvironmentCycleResource.HeightFogDensity"/>) and both stand down indoors and
+    /// under water, where there is no sky behind the fog and no valley beneath it.
+    ///
+    /// <para>⚠️ The engine's height fog is by world height alone, not by distance: everything below
+    /// the fog height is fogged by how far below it lies, even at arm's length. So the height is
+    /// kept a fixed drop under the camera. Ground at the player's own level is never touched, and
+    /// what is fogged is only what the player is looking down on. It moves in half-metre steps,
+    /// which at these densities is a change of well under one percent.</para>
+    /// </summary>
+    private void ApplyDepthCues(float blend)
+    {
+        if (Cycle == null || Environment == null) return;
+        // Eased like every other space-driven value, then held to two decimals so a settled value
+        // stops being re-sent.
+        _open = Mathf.Lerp(_open, Mathf.Clamp(1f - _spaceWeight, 0f, 1f), blend);
+        float open = Mathf.Round(_open * 100f) * .01f;
+        float aerial = _aerialPerspective ? Cycle.AerialPerspective * open : 0f;
+        if (aerial != _sentAerial) Environment.FogAerialPerspective = _sentAerial = aerial;
+        float density = Cycle.HeightFogDensity * open;
+        if (density > 0f && GetViewport()?.GetCamera3D() is { } eye)
+        {
+            float height = Mathf.Round((eye.GlobalPosition.Y - Cycle.HeightFogDrop) * 2f) * .5f;
+            if (height != _sentFogHeight) Environment.FogHeight = _sentFogHeight = height;
+        }
+        if (density != _sentHeightFog) Environment.FogHeightDensity = _sentHeightFog = density;
     }
 
     /// <summary>

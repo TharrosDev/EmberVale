@@ -30,7 +30,7 @@ public partial class WorldEnvironmentProfileResource : Resource
     [Export(PropertyHint.Range, "0.25,8,0.25")] public float DetailScale { get; set; } = 2.5f;
     [Export] public Vector3 BackdropCenter { get; set; } = Vector3.Zero;
     [Export(PropertyHint.Range, "100,600,5")] public float BackdropRadius { get; set; } = 240f;
-    [Export(PropertyHint.Range, "20,160,1")] public float BackdropHeight { get; set; } = 65f;
+    [Export(PropertyHint.Range, "20,260,1")] public float BackdropHeight { get; set; } = 65f;
     [Export(PropertyHint.Range, "8,40,1")] public int BackdropCount { get; set; } = 20;
     [Export] public int TerrainSeed { get; set; } = 3800;
     [Export(PropertyHint.Range, "0,1,0.01")] public float SurfaceRoughness { get; set; } = 0.96f;

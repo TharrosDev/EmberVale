@@ -33,7 +33,8 @@ public partial class EnemyArchetypeResource : Resource
 
     /// <summary>Capsule colour used for that fallback, so the four read apart before art lands.</summary>
     /// <summary>Uniform scale on the authored model — lets a boss reuse a humanoid body at its own size.
-    /// Match <see cref="CapsuleHeight"/> to the scaled model.</summary>
+    /// Match <see cref="CapsuleHeight"/> to the scaled model, or, for a body meant to tower without
+    /// out-reaching its fight, see <see cref="VisualHeight"/>.</summary>
     [Export] public float ModelScale { get; set; } = 1f;
 
     [Export] public Color PlaceholderTint { get; set; } = new(0.45f, 0.45f, 0.48f);
@@ -117,4 +118,17 @@ public partial class EnemyArchetypeResource : Resource
     /// default) leaves the model's own materials alone. Only for archetypes that share one mesh and
     /// would otherwise be the same creature at two sizes.</summary>
     [Export] public Color BodyTint { get; set; } = new(0f, 0f, 0f, 0f);
+
+    /// <summary>
+    /// Metres from the feet to the top of the model as drawn, when that is taller than
+    /// <see cref="CapsuleHeight"/>. 0 (the default) means the capsule is the body.
+    ///
+    /// <para><b>Look and reach are separate.</b> The melee hitbox, its forward offset, the telegraph
+    /// ring and the nav agent all derive from the capsule, so growing the capsule with the model
+    /// grows how far the enemy hits. A body made to tower is therefore authored as
+    /// <see cref="ModelScale"/> x f with the capsule x sqrt(f), and the height the model really
+    /// stands at is written here. The whole-body hurtbox, the floating plate, status marks, the cast
+    /// origin and the lock-on camera read this; reach does not.</para>
+    /// </summary>
+    [Export] public float VisualHeight { get; set; }
 }

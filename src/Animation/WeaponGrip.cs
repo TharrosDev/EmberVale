@@ -45,4 +45,18 @@ public static class WeaponGrip
     /// cannot drift from the basis above.
     /// </summary>
     public static Vector3 HandRotationDegrees => Hand.GetEuler() * (180f / Mathf.Pi);
+
+    /// <summary>
+    /// The transform a piece hung on a bone holds, relative to that bone: moved by
+    /// <paramref name="offset"/>, turned by <paramref name="rotationDegrees"/> (YXZ, the
+    /// <see cref="Node3D.RotationDegrees"/> convention) and sized by <paramref name="scale"/> along
+    /// its own axes. It is exactly the transform a <see cref="Node3D"/> given those three properties
+    /// would have, so <c>bone pose x Local(...)</c> is what "an attachment with this offset, rotation
+    /// and scale" was always meant to produce.
+    ///
+    /// <para>⚠️ It goes on the <b>piece</b>, never on the <see cref="BoneAttachment3D"/> above it:
+    /// the engine overwrites that node's transform with the bone's pose on every skeleton update.</para>
+    /// </summary>
+    public static Transform3D Local(Vector3 offset, Vector3 rotationDegrees, Vector3 scale) =>
+        new(Basis.FromEuler(rotationDegrees * (Mathf.Pi / 180f)) * Basis.FromScale(scale), offset);
 }

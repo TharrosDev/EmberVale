@@ -97,4 +97,34 @@ public class BossAddsTests
         Assert.Equal(0, BossAdds.SummonCount(waveCount: -4, alive: 0, maxAlive: 0));
         Assert.Equal(0, BossAdds.SummonCount(waveCount: 0, alive: -3, maxAlive: 2));
     }
+
+    // ----- the ring follows the body -----
+
+    [Fact]
+    public void TheReferenceBossKeepsTheRingItAlwaysHad()
+    {
+        Assert.Equal(4.5f, BossAdds.RingRadius(BossAdds.ReferenceBossRadius), 4);
+    }
+
+    [Theory]
+    [InlineData(0.4f)]
+    [InlineData(0f)]
+    [InlineData(-1f)]
+    [InlineData(float.NaN)]
+    public void NoBossGetsATighterRingThanTheBase(float bossRadius)
+    {
+        Assert.Equal(BossAdds.BaseRingRadius, BossAdds.RingRadius(bossRadius), 4);
+    }
+
+    [Fact]
+    public void AWiderBodyPushesTheRingOutPastItself()
+    {
+        // The failure this prevents: adds summoned inside a dragon two metres in radius.
+        float ring = BossAdds.RingRadius(2f);
+
+        Assert.Equal(7.1f, ring, 3);
+        Assert.True(ring - 2f >= BossAdds.BaseRingRadius - BossAdds.ReferenceBossRadius,
+            "the gap between the body and the ring never shrinks");
+        Assert.True(BossAdds.RingRadius(1.26f) > BossAdds.RingRadius(0.78f));
+    }
 }

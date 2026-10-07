@@ -128,6 +128,86 @@ public class FramingMathTests
         Assert.Equal(f.Pitch, fp.Euler.X, 5);
     }
 
+    // ----- giants -----
+
+    [Theory]
+    [InlineData(0f)]     // unmeasured
+    [InlineData(1.8f)]   // a person
+    [InlineData(2.6f)]   // the tallest ordinary body
+    [InlineData(2.8f)]   // the threshold itself
+    public void AnOrdinaryTargetIsFramedExactlyAsBefore(float targetHeight)
+    {
+        for (float d = 1f; d <= 24f; d += 1.5f)
+        {
+            Assert.Equal(FramingMath.Lock(d, 0.5f, 1f), FramingMath.Lock(d, 0.5f, 1f, targetHeight));
+        }
+    }
+
+    [Fact]
+    public void AGiantIsSeenFromFurtherBackHigherUpAndLookingUp()
+    {
+        LockFraming person = FramingMath.Lock(6f, 0f, 1f);
+        LockFraming giant = FramingMath.Lock(6f, 0f, 1f, FramingMath.TallestTarget);
+
+        Assert.Equal(person.Offset.Y + FramingMath.TallRise, giant.Offset.Y, 4);
+        Assert.Equal(person.DistanceScale + FramingMath.TallPullback, giant.DistanceScale, 4);
+        Assert.Equal(FramingMath.TallPitch, giant.Pitch - person.Pitch, 5);
+
+        // It changes how the target is seen, never where it is: the slide and its cancelling yaw
+        // are the person's.
+        Assert.Equal(person.Offset.X, giant.Offset.X, 5);
+        Assert.Equal(person.Yaw, giant.Yaw, 5);
+    }
+
+    [Fact]
+    public void AGiantUndoesTheLockPullInRatherThanFightingTheCameraSettings()
+    {
+        // The TargetLock profile pulls the camera in to 0.86 of the player's own distance. Against
+        // the tallest target the framing ends a little wider than unlocked, and never by much.
+        float scale = FramingMath.Lock(4f, 0f, 1f, 9f).DistanceScale * 0.86f;
+
+        Assert.InRange(scale, 1.0f, 1.15f);
+    }
+
+    [Fact]
+    public void TheGiantFramingGrowsWithHeightAndStopsAtTheTallest()
+    {
+        float previous = FramingMath.Lock(6f, 0f, 1f).DistanceScale;
+        for (float h = 2.8f; h <= 5.2f; h += 0.2f)
+        {
+            float scale = FramingMath.Lock(6f, 0f, 1f, h).DistanceScale;
+            Assert.True(scale >= previous - 1e-6f, $"pull-back shrank at {h} m");
+            previous = scale;
+        }
+
+        Assert.Equal(FramingMath.Lock(6f, 0f, 1f, 5.2f), FramingMath.Lock(6f, 0f, 1f, 36f));
+        Assert.Equal(0f, FramingMath.Tallness(float.NaN));
+    }
+
+    [Fact]
+    public void AGiantFarEnoughAwayFitsTheFrameUnaided()
+    {
+        Assert.Equal(FramingMath.Lock(24f, 0f, 1f), FramingMath.Lock(24f, 0f, 1f, 9f));
+
+        float previous = float.MaxValue;
+        for (float d = 1f; d <= 24f; d += 1f)
+        {
+            float rise = FramingMath.Lock(d, 0f, 1f, 5.2f).Offset.Y;
+            Assert.True(rise <= previous + 1e-6f, $"rise grew at {d} m");
+            previous = rise;
+        }
+    }
+
+    [Fact]
+    public void TheGiantPitchStaysALeanEvenUphill()
+    {
+        for (float d = 0.5f; d <= 30f; d += 0.5f)
+        {
+            float pitch = FramingMath.Lock(d, 40f, 1f, 9f).Pitch;
+            Assert.InRange(pitch, 0f, FramingMath.MaxLockPitch + FramingMath.TallPitch + 1e-6f);
+        }
+    }
+
     // ----- aim framing -----
 
     [Fact]

@@ -52,15 +52,49 @@ public partial class StatusEffectVfxComponent : EntityComponent
 
     private double _viewCheck;
 
-    /// <summary>Height above the entity origin a mark or glyph floats at.</summary>
+    /// <summary>Height above the entity origin a mark or glyph floats at. Authored for a body of
+    /// <see cref="ReferenceHeight"/>; a taller one lifts it (see <see cref="FitToBody"/>).</summary>
     [Export] public float HeadHeight { get; set; } = 2.25f;
+
+    /// <summary>The body height <see cref="SwirlHeight"/>, <see cref="HeadHeight"/> and the mark
+    /// sizes below were authored against.</summary>
+    private const float ReferenceHeight = 1.8f;
+
+    // How much larger than the reference body this one is drawn; 1 for a person and anything smaller.
+    private float _fit = 1f;
 
     protected override void OnInitialize()
     {
+        FitToBody();
         EventBus.Instance?.Subscribe<StatusEffectAppliedEvent>(OnApplied);
         EventBus.Instance?.Subscribe<StatusEffectRemovedEvent>(OnRemoved);
         EventBus.Instance?.Subscribe<GameLoadingEvent>(OnGameLoading);
         SetProcess(false);
+    }
+
+    /// <summary>
+    /// Lifts and enlarges the marks for a body that stands taller than a person. The heights were
+    /// fixed numbers for a 1.8 m body, so on a five-metre boss a mark meant for over the head hung
+    /// at its waist and a shell meant to enclose it reached its knees. The body's height is its
+    /// visual height (<see cref="BodyMetrics.VisualHeight"/>), which is the model as drawn rather
+    /// than the capsule. A person, and anything smaller, is left exactly as authored.
+    /// </summary>
+    private void FitToBody()
+    {
+        if (Entity?.Body is not { } body)
+        {
+            return;
+        }
+
+        float fit = StatusVfxShapes.BodyFit(BodyMetrics.VisualHeight(body, ReferenceHeight), ReferenceHeight);
+        if (fit <= 1f)
+        {
+            return;
+        }
+
+        _fit = fit;
+        SwirlHeight *= fit;
+        HeadHeight = StatusVfxShapes.HeadHeight(HeadHeight, ReferenceHeight, fit);
     }
 
     protected override void OnTeardown()
@@ -301,6 +335,11 @@ public partial class StatusEffectVfxComponent : EntityComponent
         // Reduced Motion: the marks that orbit hold still instead.
         float spin = UiTheme.MotionEnabled ? 70f : 0f;
         var root = new StatusVfxSpin { Name = "StatusVfx" + shape };
+
+        // One scale on the root sizes every mark to the body. The marks over the head are placed at
+        // head / fit, so the scale lands them on the fitted head height and not above it.
+        root.Scale = Vector3.One * _fit;
+        float head = HeadHeight / _fit;
         switch (shape)
         {
             case StatusVfxShape.MarkRing:
@@ -308,7 +347,7 @@ public partial class StatusEffectVfxComponent : EntityComponent
                 root.AddChild(Mesh(
                     new TorusMesh { InnerRadius = 0.26f, OuterRadius = 0.32f, Rings = 24, RingSegments = 8 },
                     Glow(tint, 0.9f),
-                    new Vector3(0f, HeadHeight, 0f)));
+                    new Vector3(0f, head, 0f)));
                 break;
             case StatusVfxShape.Thorns:
                 const int Thorns = 7;
@@ -333,7 +372,7 @@ public partial class StatusEffectVfxComponent : EntityComponent
                     MeshInstance3D bar = Mesh(
                         new BoxMesh { Size = new Vector3(0.22f, 0.025f, 0.05f) },
                         Glow(tint, 0.95f),
-                        new Vector3(Mathf.Cos(angle) * 0.3f, HeadHeight, Mathf.Sin(angle) * 0.3f));
+                        new Vector3(Mathf.Cos(angle) * 0.3f, head, Mathf.Sin(angle) * 0.3f));
                     bar.Rotation = new Vector3(0f, -angle - (Mathf.Pi / 2f), 0f);
                     root.AddChild(bar);
                 }
@@ -341,7 +380,7 @@ public partial class StatusEffectVfxComponent : EntityComponent
                 MeshInstance3D slash = Mesh(
                     new BoxMesh { Size = new Vector3(0.7f, 0.025f, 0.05f) },
                     Glow(tint, 0.95f),
-                    new Vector3(0f, HeadHeight, 0f));
+                    new Vector3(0f, head, 0f));
                 slash.Rotation = new Vector3(0f, Mathf.Pi / 4f, 0f);
                 root.AddChild(slash);
                 break;
@@ -353,7 +392,7 @@ public partial class StatusEffectVfxComponent : EntityComponent
                     root.AddChild(Mesh(
                         new SphereMesh { Radius = 0.06f, Height = 0.12f, RadialSegments = 8, Rings = 4 },
                         Glow(tint, 1f),
-                        new Vector3(Mathf.Cos(angle) * 0.32f, HeadHeight, Mathf.Sin(angle) * 0.32f)));
+                        new Vector3(Mathf.Cos(angle) * 0.32f, head, Mathf.Sin(angle) * 0.32f)));
                 }
 
                 break;

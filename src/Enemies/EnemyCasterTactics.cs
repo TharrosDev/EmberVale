@@ -63,6 +63,7 @@ public sealed class EnemyCasterTactics
         bool airborne)
     {
         _nav.FaceTowards(targetPos, profile.TurnSpeedDegrees, frameDelta);
+        PitchAim(casting, targetPos);
 
         float distance = AiNavigator.HorizontalDistance(_body.GlobalPosition, targetPos);
         float band = profile.StandoffRange > 0f ? profile.StandoffRange : DefaultCastRange;
@@ -86,6 +87,36 @@ public sealed class EnemyCasterTactics
         }
 
         TryCast(profile, casting, combat);
+    }
+
+    /// <summary>Height above a target's feet a bolt is pitched at: a person's chest.</summary>
+    private const float TargetChest = 1.0f;
+
+    /// <summary>The steepest a cast origin tilts, radians (60 degrees): past that the target is
+    /// under the caster's feet and no bolt is the right answer.</summary>
+    private const float MaxAimPitch = 1.047f;
+
+    /// <summary>
+    /// Tilts the cast origin up or down onto the target. The body's turn supplies the yaw (so a slow
+    /// turner can still be side-stepped); this supplies only the pitch.
+    ///
+    /// <para>A bolt leaves along the cast origin's forward, and that origin sits three quarters up
+    /// the body. Level, it passes over anything shorter than the caster's hands: a caster of
+    /// ordinary height got away with it, one four or five metres tall would throw every bolt over
+    /// the player's head, and any caster missed a target standing downhill.</para>
+    ///
+    /// <para>A breath wielder is left alone: <see cref="BreathComponent"/> aims that origin itself.</para>
+    /// </summary>
+    private void PitchAim(SpellcastingComponent? casting, Vector3 targetPos)
+    {
+        if (casting?.AimNode is not { } aim || !GodotObject.IsInstanceValid(aim) ||
+            _owner.GetComponent<BreathComponent>() != null)
+        {
+            return;
+        }
+
+        Vector3 to = (targetPos + (Vector3.Up * TargetChest)) - aim.GlobalPosition;
+        aim.Rotation = new Vector3(CasterDecision.AimPitch(to.Y, new Vector2(to.X, to.Z).Length(), MaxAimPitch), 0f, 0f);
     }
 
     /// <summary>

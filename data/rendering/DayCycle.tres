@@ -110,4 +110,16 @@ HorizonColor = Color(0.40, 0.47, 0.58, 1)
 [resource]
 script = ExtResource("1")
 Keys = Array[ExtResource("2")]([SubResource("Key0"), SubResource("Key1"), SubResource("Key2"), SubResource("Key3"), SubResource("Key4"), SubResource("Key5"), SubResource("Key6"), SubResource("Key7")])
-ClearFogDensity = 0.003
+; Depth cues for a world of 20-36 m landmarks seen from 400-900 m away. Fog hides 1 - exp(-d * x)
+; of a thing x metres off, where d is this density times the region's HazeScale times
+; (1 + 0.25 * humidity). 0.003 hid 83% of a colossus at 600 m in the Ember Crown and 97% in the
+; Ashen Wilds; 0.0011 with the regions' HazeScale now 1.0-1.25 leaves it at 48-60% everywhere in
+; clear weather, and the near field at 10-14% at 100 m instead of 26-43%.
+; Tune by render (a colossus at 600 m should sit at 30-60%). Weather fog is added on top, unchanged.
+ClearFogDensity = 0.0011
+; Fog takes 30% of its colour from the sky behind it (off on the Performance tier).
+AerialPerspective = 0.3
+; Low-ground fog: begins 25 m below the camera, 0.008 a metre below that. A valley floor 60 m under
+; a ridge is about a quarter fogged; ground at the player's own level is never touched.
+HeightFogDensity = 0.008
+HeightFogDrop = 25.0

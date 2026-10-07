@@ -169,9 +169,12 @@ public sealed partial class EnemyShots : ShotHarness
 
         // Imported skinned AABBs include bind-space extremes for several source packs, so gameplay
         // capsule dimensions are the stable framing contract (and the collision scale being tested).
-        float height = archetype.CapsuleHeight;
-        float width = archetype.CapsuleRadius * 2f;
-        float distance = Mathf.Max(4.8f, Mathf.Max(height * 2.10f, archetype.CapsuleRadius * 5.0f));
+        // A body drawn taller than its capsule (VisualHeight) is framed by what is drawn, and is
+        // wider by the same proportion, or a towering boss would be cropped at the chest.
+        float height = Mathf.Max(archetype.CapsuleHeight, archetype.VisualHeight);
+        float radius = archetype.CapsuleRadius * (height / Mathf.Max(0.01f, archetype.CapsuleHeight));
+        float width = radius * 2f;
+        float distance = Mathf.Max(4.8f, Mathf.Max(height * 2.10f, radius * 5.0f));
         float angle = Mathf.DegToRad(angleDegrees);
         Vector3 target = ground + new Vector3(0f, height * 0.52f, 0f);
         // Enemy factories orient the body toward local -Z. A zero angle must therefore face its
