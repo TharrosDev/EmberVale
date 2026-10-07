@@ -25,11 +25,11 @@
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_pine_dead.glb" id="24_pine"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_hay.glb" id="25_hay"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_woman_dress.glb" id="30_wenna"]
-[ext_resource type="PackedScene" path="res://assets/models/characters/npc_vendor.glb" id="31_odger"]
 [ext_resource type="PackedScene" path="res://scenes/props/bld_cottage_shuttered.tscn" id="42_cottage_modular"]
 [ext_resource type="Script" path="res://src/World/MapLocationComponent.cs" id="maploc_39_5a"]
 [ext_resource type="PackedScene" path="res://scenes/props/shrine_waystone.tscn" id="shrine_body_41_5b"]
 [ext_resource type="Script" path="res://src/Shrines/ShrineComponent.cs" id="shrine_41_5b"]
+[ext_resource type="PackedScene" path="res://assets/models/characters/npc_smith.glb" id="rp_npc_smith"]
 
 ; TARN'S LANDING (Phase 38N2) — the fishing hamlet on the western water, and the realm's THIRD market.
 ;
@@ -567,7 +567,7 @@ DialogueId = "dialogue.odger"
 script = ExtResource("7_schedule")
 ScheduleId = "schedule.tarn.chandler"
 
-[node name="Model" parent="Odger" instance=ExtResource("31_odger")]
+[node name="Model" parent="Odger" instance=ExtResource("rp_npc_smith")]
 
 ; --- Second pass (38N2). The first draft put the whole hamlet in a strip down the middle and left the
 ; --- verges bare — the same critique 38K's first Embermarket and 38N1's first mine both earned, so it

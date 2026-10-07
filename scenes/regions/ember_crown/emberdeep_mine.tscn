@@ -24,7 +24,6 @@
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_pine_dead.glb" id="23_pine"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_rock_cluster.glb" id="24_rocks"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_waystone.glb" id="25_waystone"]
-[ext_resource type="PackedScene" path="res://assets/models/characters/npc_vendor.glb" id="30_vendor"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_townswoman.glb" id="31_townswoman"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_stall_cart.gltf" id="42_stall_cart"]
 [ext_resource type="Script" path="res://src/World/MapLocationComponent.cs" id="maploc_39_5a"]
@@ -33,6 +32,7 @@
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_tome_stand.glb" id="42b_prp_tome_stand"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_hooded.glb" id="42b_npc_hooded"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_townsman.glb" id="42b_npc_townsman"]
+[ext_resource type="PackedScene" path="res://assets/models/characters/npc_smith.glb" id="rp_npc_smith"]
 
 ; THE EMBERDEEP MINE (Phase 38N1) — the realm's first PRODUCTION settlement, and the second market the
 ; economy has been waiting for since 38F.
@@ -562,7 +562,7 @@ DialogueId = "dialogue.bregan"
 script = ExtResource("7_schedule")
 ScheduleId = "schedule.emberdeep.factor"
 
-[node name="Model" parent="Bregan" instance=ExtResource("30_vendor")]
+[node name="Model" parent="Bregan" instance=ExtResource("rp_npc_smith")]
 
 [node name="Marta" type="Node3D" parent="."]
 transform = Transform3D(0.9397, 0, 0.342, 0, 1, 0, -0.342, 0, 0.9397, -36, 0, 26)

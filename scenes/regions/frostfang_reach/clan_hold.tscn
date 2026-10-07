@@ -17,9 +17,7 @@
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_brazier.glb" id="17_brazier"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_pine_dead.glb" id="18_pine"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_rock_cluster.glb" id="19_rock"]
-[ext_resource type="PackedScene" path="res://assets/models/characters/npc_guild_rep.glb" id="21_npc_chief"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_vendor.glb" id="22_npc_vendor"]
-[ext_resource type="PackedScene" path="res://assets/models/characters/npc_innkeeper.glb" id="23_npc_inn"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_campfire.glb" id="24_campfire"]
 [ext_resource type="Script" path="res://src/Animation/CharacterAnimationComponent.cs" id="25_charanim"]
 [ext_resource type="Script" path="res://src/Animation/EquipmentPresentationComponent.cs" id="90_equipment"]
@@ -30,6 +28,8 @@
 [ext_resource type="Script" path="res://src/World/FlagVisibilityComponent.cs" id="wa_FlagVisibilityComponent"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_rock_medium.glb" id="wa_prp_rock_medium"]
 [ext_resource type="Script" path="res://src/Enemies/SetPieceSpawnComponent.cs" id="wa_SetPieceSpawnComponent"]
+[ext_resource type="PackedScene" path="res://assets/models/characters/npc_clansman.glb" id="rp_npc_clansman"]
+[ext_resource type="PackedScene" path="res://assets/models/characters/npc_elder.glb" id="rp_npc_elder"]
 
 ; THE CLAN HOLD (the 2026-08-28 layout rebuild) - Frostfang Reach's only settlement.
 ;
@@ -639,15 +639,15 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -3.4, 0)
 
 [node name="Model" parent="Waystone" instance=ExtResource("12_waystone")]
 
-[node name="Model" parent="ClanChief" instance=ExtResource("21_npc_chief")]
+[node name="Model" parent="ClanChief" instance=ExtResource("rp_npc_clansman")]
 
 [node name="Model" parent="Quartermaster" instance=ExtResource("22_npc_vendor")]
 
 [node name="Model" parent="BeastTamer" instance=ExtResource("22_npc_vendor")]
 
-[node name="Model" parent="Hearthkeeper" instance=ExtResource("23_npc_inn")]
+[node name="Model" parent="Hearthkeeper" instance=ExtResource("rp_npc_elder")]
 
-[node name="Model" parent="Exile" instance=ExtResource("23_npc_inn")]
+[node name="Model" parent="Exile" instance=ExtResource("rp_npc_clansman")]
 
 [node name="ExileFire" type="Node3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 35, 0, 14)
@@ -773,7 +773,7 @@ shape = SubResource("wa_cap_0p4_1p8")
 script = ExtResource("5_dialogue")
 DialogueId = "dialogue.clan_exile"
 
-[node name="Model" parent="HalvarAtStone" instance=ExtResource("23_npc_inn")]
+[node name="Model" parent="HalvarAtStone" instance=ExtResource("rp_npc_clansman")]
 
 [node name="Visibility" type="Node" parent="HalvarAtStone"]
 script = ExtResource("wa_FlagVisibilityComponent")

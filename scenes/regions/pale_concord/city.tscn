@@ -17,10 +17,10 @@
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_woman_dress.glb" id="npc_woman_dress"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_townsman.glb" id="npc_townsman"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_townswoman.glb" id="npc_townswoman"]
-[ext_resource type="PackedScene" path="res://assets/models/characters/npc_merchant_m.glb" id="npc_merchant_m"]
 [ext_resource type="Script" path="res://src/World/CellNavBaker.cs" id="s_navbaker"]
 [ext_resource type="Script" path="res://src/World/MapLocationComponent.cs" id="maploc_39_5a"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_book_stand.gltf" id="wc_prp_book_stand_gltf"]
+[ext_resource type="PackedScene" path="res://assets/models/characters/npc_elder.glb" id="rp_npc_elder"]
 
 ; THE PRESERVED CITY (hidden realm) — Vesperhold. Every house is in perfect repair and nobody has
 ; needed one in four hundred years. Its four residents are UNDYING, not undead: peaceful villagers who
@@ -277,7 +277,7 @@ DialogueId = "dialogue.undying_clockkeeper"
 script = ExtResource("s_schedule")
 ScheduleId = "schedule.undying_clockkeeper"
 
-[node name="Model" parent="Clockkeeper" instance=ExtResource("npc_merchant_m")]
+[node name="Model" parent="Clockkeeper" instance=ExtResource("rp_npc_elder")]
 
 [node name="MapPin" type="Node3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 25, 0, -37)

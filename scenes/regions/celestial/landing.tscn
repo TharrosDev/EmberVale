@@ -15,12 +15,14 @@
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_guild_rep.glb" id="wc_npc_guild_rep_glb"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_townsman.glb" id="wc_npc_townsman_glb"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_townswoman.glb" id="wc_npc_townswoman_glb"]
-[ext_resource type="PackedScene" path="res://assets/models/characters/npc_vendor.glb" id="wc_npc_vendor_glb"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_adventurer_f.glb" id="wc_npc_adventurer_f_glb"]
-[ext_resource type="PackedScene" path="res://assets/models/characters/npc_innkeeper.glb" id="wc_npc_innkeeper_glb"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_hooded.glb" id="wc_npc_hooded_glb"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_woman_dress.glb" id="wc_npc_woman_dress_glb"]
 [ext_resource type="Script" path="res://src/Enemies/SetPieceSpawnComponent.cs" id="wc_setpiecespawncomponent_cs"]
+[ext_resource type="PackedScene" path="res://assets/models/characters/npc_dawnwarden.glb" id="rp_npc_dawnwarden"]
+[ext_resource type="PackedScene" path="res://assets/models/characters/npc_clansman.glb" id="rp_npc_clansman"]
+[ext_resource type="PackedScene" path="res://assets/models/characters/npc_scholar_f.glb" id="rp_npc_scholar_f"]
+[ext_resource type="PackedScene" path="res://assets/models/characters/npc_ranger_f.glb" id="rp_npc_ranger_f"]
 
 ; THE LANDING (the finish run, Act IV) — where the Sunspire library's story gate lets the player out.
 ;
@@ -307,7 +309,7 @@ DialogueId = "dialogue.ally_dray_spared"
 script = ExtResource("wc_flagvisibilitycomponent_cs")
 VisibleWhenFlagId = "flag.fork.dray_spared"
 
-[node name="Model" parent="AllyDraySpared" instance=ExtResource("wc_npc_guild_rep_glb")]
+[node name="Model" parent="AllyDraySpared" instance=ExtResource("rp_npc_dawnwarden")]
 
 [node name="Model2" parent="AllyDraySpared" instance=ExtResource("wc_npc_townsman_glb")]
 transform = Transform3D(0.9063, 0, -0.4226, 0, 1, 0, 0.4226, 0, 0.9063, 1.5, 0, 0.6)
@@ -359,7 +361,7 @@ DialogueId = "dialogue.ally_dray_pressed"
 script = ExtResource("wc_flagvisibilitycomponent_cs")
 VisibleWhenFlagId = "flag.fork.dray_pressed"
 
-[node name="Model" parent="AllyDrayPressed" instance=ExtResource("wc_npc_townsman_glb")]
+[node name="Model" parent="AllyDrayPressed" instance=ExtResource("rp_npc_dawnwarden")]
 
 [node name="Model2" parent="AllyDrayPressed" instance=ExtResource("wc_npc_townswoman_glb")]
 transform = Transform3D(0.9063, 0, -0.4226, 0, 1, 0, 0.4226, 0, 0.9063, 1.5, 0, 0.6)
@@ -411,7 +413,7 @@ DialogueId = "dialogue.ally_hjalvar"
 script = ExtResource("wc_flagvisibilitycomponent_cs")
 VisibleWhenFlagId = "flag.fork.succession_hjalvar"
 
-[node name="Model" parent="AllyHjalvar" instance=ExtResource("wc_npc_vendor_glb")]
+[node name="Model" parent="AllyHjalvar" instance=ExtResource("rp_npc_clansman")]
 
 [node name="Model2" parent="AllyHjalvar" instance=ExtResource("wc_npc_adventurer_f_glb")]
 transform = Transform3D(0.9063, 0, -0.4226, 0, 1, 0, 0.4226, 0, 0.9063, 1.5, 0, 0.6)
@@ -463,7 +465,7 @@ DialogueId = "dialogue.ally_halvar"
 script = ExtResource("wc_flagvisibilitycomponent_cs")
 VisibleWhenFlagId = "flag.fork.succession_halvar"
 
-[node name="Model" parent="AllyHalvar" instance=ExtResource("wc_npc_innkeeper_glb")]
+[node name="Model" parent="AllyHalvar" instance=ExtResource("rp_npc_clansman")]
 
 [node name="Model2" parent="AllyHalvar" instance=ExtResource("wc_npc_hooded_glb")]
 transform = Transform3D(0.9063, 0, -0.4226, 0, 1, 0, 0.4226, 0, 0.9063, 1.5, 0, 0.6)
@@ -515,7 +517,7 @@ DialogueId = "dialogue.ally_herd_slain"
 script = ExtResource("wc_flagvisibilitycomponent_cs")
 VisibleWhenFlagId = "flag.fork.herd_slain"
 
-[node name="Model" parent="AllyHerdSlain" instance=ExtResource("wc_npc_adventurer_f_glb")]
+[node name="Model" parent="AllyHerdSlain" instance=ExtResource("rp_npc_ranger_f")]
 
 [node name="Model2" parent="AllyHerdSlain" instance=ExtResource("wc_npc_townsman_glb")]
 transform = Transform3D(0.9063, 0, -0.4226, 0, 1, 0, 0.4226, 0, 0.9063, 1.5, 0, 0.6)
@@ -673,7 +675,7 @@ VisibleWhenFlagId = "flag.fork.flock_turned"
 
 [node name="Model" parent="AllyFlockTurned" instance=ExtResource("wc_npc_townsman_glb")]
 
-[node name="Model2" parent="AllyFlockTurned" instance=ExtResource("wc_npc_townswoman_glb")]
+[node name="Model2" parent="AllyFlockTurned" instance=ExtResource("rp_npc_scholar_f")]
 transform = Transform3D(0.9063, 0, -0.4226, 0, 1, 0, 0.4226, 0, 0.9063, 1.5, 0, 0.6)
 
 ; WR-spec2 ally cluster (flock_kin): two figures, one speaker, visible on flag.fork.flock_kin.
