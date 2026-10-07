@@ -579,10 +579,10 @@ transform = Transform3D(1.4, 0, 0, 0, 1.4, 0, 0, 0, 0.462, 13, -0.5, -29.45)
 transform = Transform3D(0.75, 0, 0, 0, 0.75, 0, 0, 0, 0.75, 35.3, 0, -29.5)
 
 [node name="Dx_ArenaRampartSW0" parent="Nav" instance=ExtResource("dx_wall_rampart")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 0.4, 8.17, -0.5, 9.2)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 0.3, 8.17, -0.5, 8.8)
 
 [node name="Dx_ArenaRampartSE1" parent="Nav" instance=ExtResource("dx_wall_rampart")]
-transform = Transform3D(-1.03, 0, 0, 0, 1.03, 0, 0, 0, -0.412, 32.17, -0.5, 9.2)
+transform = Transform3D(-1.03, 0, 0, 0, 1.03, 0, 0, 0, -0.309, 32.17, -0.5, 8.8)
 
 [node name="Dx_ArenaCapNW" parent="Nav" instance=ExtResource("dx_monolith")]
 transform = Transform3D(0.7244, 0, -0.1941, 0, 0.75, 0, 0.1941, 0, 0.7244, 1.2, -0.4, -28.8)

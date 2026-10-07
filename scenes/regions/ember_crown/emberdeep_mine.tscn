@@ -595,7 +595,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.65, 0)
 shape = SubResource("RpShape_CrateE")
 
 [node name="BarrelC" type="Node3D" parent="Nav"]
-transform = Transform3D(0.8, 0, 0, 0, 0.8, 0, 0, 0, 0.8, -33, 0, 17.5)
+transform = Transform3D(0.8, 0, 0, 0, 0.8, 0, 0, 0, 0.8, -33.5, 0, 17)
 
 [node name="Model" parent="Nav/BarrelC" instance=ExtResource("rp_prp_clutter_pile_a")]
 

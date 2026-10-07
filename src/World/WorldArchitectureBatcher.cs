@@ -244,7 +244,13 @@ public static class WorldArchitectureBatcher
         foreach (Node child in node.GetChildren())
         {
             child.Owner = root;
-            OwnSubtree(child, root);
+            // A nested scene that is still instanced keeps its own nodes: owning them here as well
+            // packs each one twice, and the copy the instance displaces leaks on every instantiate.
+            // One that holds a merged mesh is flattened by its own pass.
+            if (string.IsNullOrEmpty(child.SceneFilePath))
+            {
+                OwnSubtree(child, root);
+            }
         }
     }
 }

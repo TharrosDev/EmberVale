@@ -507,8 +507,8 @@ Radius = 3.3
 
 [sub_resource type="Resource" id="Exclusion_auto_arena_5"]
 script = ExtResource("11_exclusion")
-Center = Vector2(8.17, 9.2)
-Radius = 9.5
+Center = Vector2(8.17, 8.8)
+Radius = 9.4
 
 [sub_resource type="Resource" id="Exclusion_auto_arena_6"]
 script = ExtResource("11_exclusion")
@@ -542,7 +542,7 @@ Radius = 3.8
 
 [sub_resource type="Resource" id="Exclusion_auto_arena_12"]
 script = ExtResource("11_exclusion")
-Center = Vector2(32.17, 9.2)
+Center = Vector2(32.17, 8.8)
 Radius = 9.7
 
 [sub_resource type="Resource" id="Exclusion_auto_arena_13"]

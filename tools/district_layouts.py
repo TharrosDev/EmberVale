@@ -499,9 +499,11 @@ def arena_ring() -> list[P]:
         # North: one run from the west corner to the breach (x 368.6..376.4), a ruined stub beyond it.
         + rampart_run("ArenaRampartN", (w, n), (368.6, n), (0.0, -1.0), 1, 1.4, 0.33)
         + [P("wall_ruin", "ArenaBreachStub", 380.3, n - 1.9, 0.0, scale=0.75)]
-        # South: lower walls each side of the gate (x 361.4..368.6), under the two gate stones.
-        + rampart_run("ArenaRampartSW", (w - 1.6, s), (360.2, s), (0.0, 1.0), 1, 1.0, 0.4)
-        + rampart_run("ArenaRampartSE", (369.8, s), (e + 1.6, s), (0.0, 1.0), 1, 1.0, 0.4, first=1)
+        # South: lower walls each side of the gate (x 361.4..368.6), under the two gate stones. Thinner
+        # than the other sides: the road from the south-west meets the gate on a diagonal, and at 0.4
+        # the west wall's outer corner stood 10 cm off its centre line (a player capsule is 40 cm).
+        + rampart_run("ArenaRampartSW", (w - 1.6, s), (360.2, s), (0.0, 1.0), 1, 1.0, 0.3)
+        + rampart_run("ArenaRampartSE", (369.8, s), (e + 1.6, s), (0.0, 1.0), 1, 1.0, 0.3, first=1)
         + [P("monolith", "ArenaCapNW", w - 1.2, n - 1.2, 15.0, **cap), P("monolith", "ArenaCapNE", e + 1.2, n - 1.2, 105.0, **cap),
            P("monolith", "ArenaCapSE", e + 1.2, s + 1.2, 195.0, **cap), P("monolith", "ArenaCapSW", w - 1.2, s + 1.2, 285.0, **cap)]
     )

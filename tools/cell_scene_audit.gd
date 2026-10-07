@@ -42,6 +42,13 @@ const MIN_Y := -0.6
 const MAX_Y := 12.0
 const ABSOLUTE_GROUP := "terrain_absolute"
 
+# The one allowance below MIN_Y. A generated landmark wrapper (scenes/props/lm_*.tscn) is a solid
+# piece with no base course, 4 to 54 m tall, and the layouts sink its foot so no daylight shows under
+# it on the downhill side (tools/district_layouts.py, `P.y`). That is a buried foot, not a buried
+# prop, so it is bounded by the piece's own placed height instead of by MIN_Y.
+const LANDMARK_WRAPPER_PREFIX := "res://scenes/props/lm_"
+const LANDMARK_SINK_FRACTION := 0.2
+
 var _findings: Array[String] = []
 
 
@@ -136,12 +143,19 @@ func _check_children(cell_id: String, parent: Node, root: Node, colliders: Array
 		if child.is_in_group(ABSOLUTE_GROUP):
 			continue
 		var y: float = child.position.y
-		if y < MIN_Y:
+		if y < _min_y(child):
 			_findings.append("%s: BURIED %s at authored y=%.2f (an authored Y is a clearance above the ground)"
 				% [cell_id, _path(child, root), y])
 		elif y > MAX_Y:
 			_findings.append("%s: FLOATING %s at authored y=%.2f (join '%s' if that Y is a real world height)"
 				% [cell_id, _path(child, root), y, ABSOLUTE_GROUP])
+
+
+func _min_y(placement: Node3D) -> float:
+	if not placement.scene_file_path.begins_with(LANDMARK_WRAPPER_PREFIX):
+		return MIN_Y
+	var height: float = _visible_aabb(placement).size.y * absf(placement.scale.y)
+	return minf(MIN_Y, -height * LANDMARK_SINK_FRACTION)
 
 
 func _self_test() -> void:
@@ -177,8 +191,21 @@ func _self_test() -> void:
 	wall.add_child(body)
 	_check_authored_heights("fixture", root, _colliders(root))
 	passed = passed and _findings.is_empty()
+	# A landmark wrapper may bury a fifth of its placed height; nothing else may go below MIN_Y.
+	var giant: Node3D = load(LANDMARK_WRAPPER_PREFIX + "colossus_a.tscn").instantiate()
+	giant.name = "Giant"
+	giant.position.y = -1.0
+	nav.add_child(giant)
+	wall.position.y = -1.0
+	_check_authored_heights("fixture", root, _colliders(root))
+	passed = passed and _findings.size() == 1 and _findings[0].contains("BURIED Nav/Wall")
+	_findings.clear()
+	wall.position.y = 0.0
+	giant.position.y = -12.0
+	_check_authored_heights("fixture", root, _colliders(root))
+	passed = passed and _findings.size() == 1 and _findings[0].contains("BURIED Nav/Giant")
 	root.free()
-	print("scene audit rules: %s (decorative container, missing wall collision, solid wall)" % ("PASS" if passed else "FAIL"))
+	print("scene audit rules: %s (decorative container, missing wall collision, solid wall, sunk landmark)" % ("PASS" if passed else "FAIL"))
 	quit(0 if passed else 1)
 
 

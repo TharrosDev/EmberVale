@@ -88,8 +88,13 @@ func _archer(at: Vector3, with_draw: bool, with_aim: bool) -> Array:
 	body.set_script(load("res://src/Entities/CharacterEntity.cs"))
 	body.name = "Archer"
 	body.position = at
+	# Crits are switched off so damage compares exactly: the default 5% roll is a 1.5x arrow, which
+	# is the same number as a head slice and fails the zone ratios whenever it lands.
+	var attrs = load("res://src/Stats/AttributeSet.cs").new()
+	attrs.CritChance = 0.0
 	var stats = load("res://src/Stats/StatsComponent.cs").new()
 	stats.name = "Stats"
+	stats.Attributes = attrs
 	body.add_child(stats)
 	var combat = load("res://src/Combat/CombatComponent.cs").new()
 	combat.name = "Combat"
