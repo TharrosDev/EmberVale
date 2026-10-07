@@ -63,7 +63,7 @@ def matchup_line(row):
     ttk = row.get("ttk_s") or {}
     flags = ",".join(row.get("flags") or []) or "-"
     return (f"  {row.get('enemy')}: win {row.get('wins')}/{row.get('trials')} loss {row.get('losses')} "
-            f"timeout {row.get('timeouts')} | ttk p50 {ttk.get('p50')}s | dealt {row.get('dealt')} taken {row.get('taken')} "
+            f"timeout {row.get('timeouts')} | ttk p50 {ttk.get('p50') if ttk.get('p50') is not None else '-'}s | dealt {row.get('dealt')} taken {row.get('taken')} "
             f"| dps {row.get('dps')} vs {row.get('enemy_dps')} | hp_left_min {row.get('hp_left_min')} "
             f"| swings {row.get('swings')} hits {row.get('hits')} | enemy attacks {row.get('enemy_attacks')} "
             f"hits {row.get('enemy_hits')} blocked {row.get('blocked')} | flags {flags}")
@@ -92,8 +92,11 @@ def run(run, args, passthrough):
         if run.result["steps"][-1]["exit_code"] == 0:
             run.issue("gate.no_report", f"{target} exited 0 but wrote no report; is the binary older than the gate?")
         return
-    code = merge_report(run.result, target, json.loads(report.read_text(encoding="utf-8")))
+    data = json.loads(report.read_text(encoding="utf-8"))
+    code = merge_report(run.result, target, data)
     for line in brief_lines(target, run.result["metrics"][target], report.name):
         run.brief(line)
+    for warning in data.get("warnings", []):
+        run.brief(f"  warning: {warning}")
     if code is not None:
         run.result["steps"][-1]["exit_code"] = code

@@ -139,7 +139,18 @@ internal static class ArenaRunner
                 await HeadlessLifecycle.Frames(root, 30);
                 Vector3 origin = player.GlobalPosition;
                 Basis facing = player.GlobalBasis;
-                if (FindDuelGround(player, options.Distance) is { } ground)
+
+                // The navigation map is synchronised off the main thread and is some real time
+                // behind the session: searched once, a run found ground or not by luck, and two
+                // runs of one seed fought in different places. Wait for it.
+                (Vector3 Origin, Vector3 Forward)? found = FindDuelGround(player, options.Distance);
+                for (int waited = 0; found == null && waited < GroundWaitFrames; waited += 10)
+                {
+                    await HeadlessLifecycle.Frames(root, 10);
+                    found = FindDuelGround(player, options.Distance);
+                }
+
+                if (found is { } ground)
                 {
                     origin = ground.Origin;
                     facing = Basis.LookingAt(ground.Forward, Vector3.Up);
@@ -387,6 +398,8 @@ internal static class ArenaRunner
     /// the six metres in front of the player, so a spawned enemy saw them, entered combat and stood
     /// still for the whole fight. Null when nothing within reach qualifies.
     /// </summary>
+    private const int GroundWaitFrames = 600;
+
     private static (Vector3 Origin, Vector3 Forward)? FindDuelGround(PlayerCharacter player, float distance)
     {
         Rid map = player.GetWorld3D().NavigationMap;

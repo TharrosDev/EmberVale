@@ -236,9 +236,10 @@ public static class ArenaMath
             ["win_rate"] = Math.Round((double)wins / n, 3),
             ["ttk_s"] = new Dictionary<string, object?>
             {
-                ["p50"] = Math.Round(Percentile(kills, 0.5), 2),
-                ["min"] = kills.Count > 0 ? Math.Round(kills[0], 2) : 0d,
-                ["max"] = kills.Count > 0 ? Math.Round(kills[^1], 2) : 0d,
+                // Null, not 0, when the player never won: a zero reads as an instant kill.
+                ["p50"] = kills.Count > 0 ? Math.Round(Percentile(kills, 0.5), 2) : null,
+                ["min"] = kills.Count > 0 ? Math.Round(kills[0], 2) : null,
+                ["max"] = kills.Count > 0 ? Math.Round(kills[^1], 2) : null,
             },
             ["dealt"] = Math.Round(dealt / n, 1),
             ["taken"] = Math.Round(taken / n, 1),
