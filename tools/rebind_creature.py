@@ -17,7 +17,8 @@ SOURCE file's glTF coordinates (x left, y up, z forward); only the left side is 
 Rungs: A smooth weights, B rigid segments on the same armature, C a six-bone minimal rig.
 
 beast: keeps an existing rigged .glb byte for byte (nodes, skin, inverse binds, every animation) and
-replaces only its mesh and material. The new mesh is warped to the rig (body fit, then each leg
+replaces only its mesh and material (an unskinned mesh the old body parented to a bone, such as
+antlers, is dropped: the new mesh brings its own). The new mesh is warped to the rig (body fit, then each leg
 column shifted and scaled until the paw sits on the old paw), and takes its weights from the nearest
 vertex of the old mesh in the same body region. Nothing rigged is round-tripped through Blender.
 
@@ -583,11 +584,15 @@ def beast_warp(points, marks, joint, old):
     3. Legs: each column is sheared so the paw lands on the old paw, nothing moves at the joint."""
     ground = points[:, 1].min()
     old_nose, old_tip = old[old[:, 2].argmax()], old[old[:, 2].argmin()]
-    knots = [(marks[m][2], joint[b][2], joint[b][1] / (marks[m][1] - ground)) for m, b in BEAST_KNOTS]
+    if "rig_tail_tip" in marks:                          # the rig's rearmost vertex is not always its tail
+        old_tip = marks["rig_tail_tip"]
+    bones = {**dict(BEAST_KNOTS), **marks.get("knots", {})}   # a rig with no ears names another head bone
+    knots = [(marks[m][2], joint[b][2], joint[b][1] / (marks[m][1] - ground)) for m, b in bones.items()]
     knots.append((marks["nose"][2], old_nose[2], old_nose[1] / (marks["nose"][1] - ground)))
     knots.sort()
     z_in, z_out, lift = (np.array(column) for column in zip(*knots))
-    widen = np.abs(old[:, 0]).max() / np.abs(points[:, 0]).max()
+    # Antlers make the widest point of a mesh something other than its body: author "widen" then.
+    widen = marks.get("widen") or np.abs(old[:, 0]).max() / np.abs(points[:, 0]).max()
 
     def fit(p):
         p = np.atleast_2d(np.asarray(p, float))
@@ -644,7 +649,7 @@ def vertex_normals(points, triangles, inverse, count, like):
 def run_beast(args):
     rig, rig_bin = read_glb(args.rig)
     src, src_bin = read_glb(args.src)
-    marks = {k: (np.array(v, float) if isinstance(v, list) else v)
+    marks = {k: (np.array(v, float) if isinstance(v, list) and k != "rigid" else v)
              for k, v in json.loads(Path(args.landmarks).read_text())[args.id].items()}
     skin = rig["skins"][0]
     names = [rig["nodes"][j]["name"] for j in skin["joints"]]
@@ -675,7 +680,16 @@ def run_beast(args):
     gap += 1e3 * ((warped[:, None, 0] * old_points[None, :, 0] < 0)
                   & (np.abs(warped[:, None, 0]) > 0.03) & (np.abs(old_points[None, :, 0]) > 0.03))
     first, inverse, edges = weld(warped, triangles, 1e-5)
-    weights = top_four(smooth(old_weights[gap.argmin(1)][first], edges, args.smooth)[inverse])
+    weights = smooth(old_weights[gap.argmin(1)][first], edges, args.smooth)[inverse]
+    # Antlers hang back over the spine, so their nearest old vertex is the back and they would tear
+    # off the skull when the neck moves. Everything above an authored side-view line (source z, y)
+    # follows one bone rigidly instead.
+    for rule in marks.get("rigid", []):
+        (za, ya), (zb, yb) = rule["line"]
+        above = points[:, 1] > ya + (points[:, 2] - za) * (yb - ya) / (zb - za)
+        weights[above] = 0.0
+        weights[above, names.index(rule["bone"])] = 1.0
+    weights = top_four(weights)
     order = np.argsort(-weights, axis=1)[:, :4]
     rows = np.arange(len(weights))[:, None]
     normals = vertex_normals(warped, triangles, inverse, len(first), accessor(src, src_bin, attrs["NORMAL"]))
@@ -732,6 +746,9 @@ def run_beast(args):
     document["materials"][0].setdefault("name", args.id)
     old_mesh = rig["meshes"][node["mesh"]]
     document["meshes"] = [{"name": old_mesh.get("name", args.id), "primitives": [primitive]}]
+    for other in document["nodes"]:                      # a bone-parented extra of the old body (a stag's
+        if "mesh" in other and "skin" not in other:      # antlers) points at a mesh that no longer exists
+            del other["mesh"]
     next(n for n in document["nodes"] if "skin" in n and "mesh" in n)["mesh"] = 0
     document["accessors"], document["bufferViews"] = accessors, views
     document["buffers"] = [{"byteLength": len(binary)}]

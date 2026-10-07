@@ -61,5 +61,35 @@
     "hind_paw": [0.104, -0.6, -0.49],
     "tail_tip": [0, -0.5, -0.93],
     "tail_line": [[-0.63, 0.2], [-0.72, -0.35]]
+  },
+  "enm_thornback_boar": {
+    "note": "cow rig: no ear bones, so the head knot is the Head bone",
+    "knots": {"head": "Head"},
+    "rump": [0, 0.2, -0.8],
+    "hip": [0.17, 0.08, -0.72],
+    "shoulder": [0.16, -0.05, 0.25],
+    "head": [0.1, 0.21, 0.62],
+    "nose": [0, 0.063, 0.94],
+    "front_paw": [0.16, -0.565, 0.37],
+    "hind_paw": [0.165, -0.565, -0.73],
+    "tail_tip": [0, -0.17, -0.93],
+    "tail_line": [[-0.84, 0.25], [-0.86, -0.2]],
+    "tail_blend": 0.03
+  },
+  "enm_ashfall_elk": {
+    "note": "stag rig: no ear bones; antlers set the mesh width, so widen is authored; the stub tail is left to the nearest-vertex weights (tail_line sits behind the whole mesh); antlers ride the Head bone",
+    "knots": {"head": "Head"},
+    "widen": 0.72,
+    "rump": [0, 0.1, -0.9],
+    "hip": [0.12, 0.06, -0.78],
+    "shoulder": [0.12, -0.14, 0.12],
+    "head": [0.08, 0.33, 0.55],
+    "nose": [0, 0.17, 0.93],
+    "front_paw": [0.12, -0.95, 0.3],
+    "hind_paw": [0.12, -0.95, -0.85],
+    "tail_tip": [0, -0.05, -0.93],
+    "rig_tail_tip": [0, 0.77, -0.5],
+    "tail_line": [[-2.0, 1.0], [-2.0, -1.0]],
+    "rigid": [{"bone": "Head", "line": [[-0.3, 0.43], [0.7, 0.45]]}]
   }
 }

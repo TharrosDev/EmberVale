@@ -169,9 +169,32 @@ public sealed partial class EnemyShots : ShotHarness
 
         // Imported skinned AABBs include bind-space extremes for several source packs, so gameplay
         // capsule dimensions are the stable framing contract (and the collision scale being tested).
+        //
+        // A multi-zone body is the exception: its capsule is only what the ground collides with (a
+        // 22 m dragon stands on a 4.8 m one), and its hit zones are authored to the silhouette. So
+        // the frame grows to hold the zones, or the shot is of a pair of legs.
         float height = archetype.CapsuleHeight;
+        float reach = archetype.CapsuleRadius;
+        foreach (HitZoneResource zone in archetype.HitZones)
+        {
+            if (zone == null)
+            {
+                continue;
+            }
+
+            // Half the capsule's straight section, turned the way the zone is turned.
+            Vector3 radians = zone.RotationDegrees * (Mathf.Pi / 180f);
+            Vector3 spine = Basis.FromEuler(radians) * Vector3.Up *
+                Mathf.Max(0f, (zone.Height * 0.5f) - zone.Radius);
+            height = Mathf.Max(height, zone.Offset.Y + Mathf.Abs(spine.Y) + zone.Radius);
+            reach = Mathf.Max(reach,
+                new Vector2(zone.Offset.X, zone.Offset.Z).Length() +
+                new Vector2(spine.X, spine.Z).Length() + zone.Radius);
+        }
+
         float width = archetype.CapsuleRadius * 2f;
-        float distance = Mathf.Max(4.8f, Mathf.Max(height * 2.10f, archetype.CapsuleRadius * 5.0f));
+        float distance = Mathf.Max(
+            4.8f, Mathf.Max(height * 2.10f, Mathf.Max(archetype.CapsuleRadius * 5.0f, reach * 2.6f)));
         float angle = Mathf.DegToRad(angleDegrees);
         Vector3 target = ground + new Vector3(0f, height * 0.52f, 0f);
         // Enemy factories orient the body toward local -Z. A zero angle must therefore face its
