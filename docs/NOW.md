@@ -987,7 +987,16 @@ integrator, one at a time, on the merged tree.
 | Godot import, `--validate`, `--lifecycle`, `--story`, probes, shot harnesses, melee and combat gates per scaled boss, traversal, the one master bake, the export, the negative battery | not run by the lanes |
 | A human play-through, a fight with any scaled boss or dragon, weak-laptop frame times | not run; see Unverified above |
 
-GATE RESULTS: (filled by the integrator)
+GATE RESULTS (integrated branch, 2026-10-07): `dotnet build` 0 warnings; 6567 unit tests pass; Godot
+import exit 0 with no import, script or shader error; `assets.py validate` PASS on 230 models;
+`audit-weight --check` within budget; every engine-free world checker PASS. ⚠️ **THE WORLD BAKE HAS
+NOT RUN ON THIS BRANCH.** The one full bake was stopped by the low-memory guard before it wrote
+anything, so `data/world_bake/` still describes the old world and the game will not load its cells
+correctly until `python tools/world_bake.py --bake --full` completes (about 30 min, nothing else
+running). `--validate` was run once before the bake: its only failures were the stale prepared cells
+and 14 landmarks on uneven ground, since re-sited; it has not been re-run. `--lifecycle`, `--story`,
+every probe, every boss and dragon render, traversal, the visual and performance modes and the
+negative battery have not run. Do not merge before the bake and `--validate`, `--lifecycle`, `--story`.
 
 ### Spell effects, spell wheel and camera (`claude/magic-vfx`)
 
