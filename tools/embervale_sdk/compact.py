@@ -61,7 +61,7 @@ def compact(result: dict) -> dict:
                failed=failed[:MAX_FAILED], errors=loose[:MAX_ERRORS],
                warnings=sum(d.get("count", 1) for d in diagnostics if d.get("severity") == "warning"),
                artifact_directory=short_path(directory) if directory else None)
-    broken = [a for a in result.get("assertions", []) if not a.get("success")]
+    broken = [a for a in result.get("assertions", []) if not a.get("success") and not a.get("shown")]
     if broken:
         out["assertions_failed"] = [dict(name=clip(a.get("name", "?"), 80), expected=clip(a.get("expected"), 80),
                                          actual=clip(a.get("actual"), 80)) for a in broken[:MAX_ERRORS]]

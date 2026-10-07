@@ -23,6 +23,7 @@ HELP = "Run a dev-console script in an isolated new game (or a copied save slot)
 VERSION = False  # one engine launch per run: the session itself
 RESULT_PREFIX = "EMBERVALE_RESULT "
 SLOT = re.compile(r"[A-Za-z0-9_-]{1,64}")
+MAX_LINES = 38  # the compact output shows 40 brief lines
 
 
 def arguments(parser):
@@ -86,11 +87,9 @@ def read_results(path):
 
 
 def line_for(row, width=160):
-    """One statement as one line: status, number, command, first line of its reply."""
-    out = str(row.get("out", ""))
-    first = out.split("\n", 1)[0]
-    more = " …" if "\n" in out else ""
-    text = f"{'ok  ' if row.get('ok') else 'FAIL'} {row.get('i')} {row.get('cmd')}" + (f" -> {first}{more}" if first else "")
+    """One statement as one line: status, number, command, its reply with line breaks as ' | '."""
+    out = " | ".join(part.strip() for part in str(row.get("out", "")).splitlines() if part.strip())
+    text = f"{'ok  ' if row.get('ok') else 'FAIL'} {row.get('i')} {row.get('cmd')}" + (f" -> {out}" if out else "")
     return text if len(text) <= width else text[:width - 1] + "…"
 
 
@@ -98,21 +97,26 @@ def fold(run, statements, summary, quiet=False, reasons=()):
     """Folds the runner's results into the SDK result: metrics, one assertion per failed statement.
     `reasons` are the runner's own failure lines, shown when it never reached its result line."""
     failed = [row for row in statements if not row.get("ok")]
-    run.result["metrics"]["console"] = dict(
+    metrics = run.result["metrics"]["console"] = dict(
         statements=len(statements), failed=len(failed), complete=summary is not None,
         results=str(Path(run.artifacts) / "console" / "result.ndjson"),
         steps=[dict(i=row.get("i"), cmd=row.get("cmd"), ok=bool(row.get("ok")), out=str(row.get("out", ""))[:300],
                     **({"data": row["data"]} if "data" in row else {})) for row in statements])
     for row in failed:
+        # shown: the FAIL line above the verdict already says it, so the compact output adds no ASSERT line.
         run.result["assertions"].append(dict(name=f"console {row.get('i')}: {row.get('cmd')}", success=False,
-                                             expected="ok", actual=str(row.get("out", ""))[:300]))
+                                             expected="ok", actual=str(row.get("out", ""))[:300], shown=True))
     if summary is None:
         run.issue("console.incomplete", "; ".join(reasons) or
                   "the script runner did not finish (no result line): the session did not "
                   "start, the game crashed, or the run was cut off; see the Godot log")
-    for row in statements:
-        if not quiet or not row.get("ok"):
-            run.note(line_for(row))
+    # The statement lines are this command's product, so they go in the compact output. Past
+    # MAX_LINES only the failures are listed; result.ndjson always has every statement.
+    shown = [row for row in statements if not row.get("ok")] if quiet or len(statements) > MAX_LINES else statements
+    for row in shown[:MAX_LINES]:
+        run.brief(line_for(row))
+    if len(shown) < len(statements) and not quiet:
+        run.brief(f"{len(statements) - len(shown)} ok statements not listed: {metrics['results']}")
 
 
 def reference(run, style):
@@ -122,7 +126,11 @@ def reference(run, style):
     target = Path(run.artifacts) / f"console-reference.{'md' if style == 'md' else 'json' if style == 'json' else 'txt'}"
     target.write_text(table.strip() + "\n", encoding="utf-8")
     run.result["metrics"]["console_reference"] = str(target)
-    run.note(table.strip())
+    # The table is what was asked for: print it whole (the compact output caps a run at 40 lines).
+    if run.args.json or run.args.ndjson or run.args.json_full:
+        run.brief(f"reference: {target}")
+    else:
+        print(table.strip(), flush=True)
 
 
 def run(run, args, passthrough):
@@ -145,5 +153,13 @@ def run(run, args, passthrough):
             report = json.loads(report_path.read_text(encoding="utf-8"))
         except ValueError:
             pass
-    fold(run, statements, summary, quiet=args.quiet, reasons=report.get("failures", ()))
+    failures = report.get("failures", ())
+    if summary is not None and failures and all(str(f).startswith("statement ") for f in failures):
+        # The game exits 1 because statements failed. Those are listed one per line and set the
+        # exit code (5), so the step itself is not a second failure to report.
+        step = run.result["steps"][-1]
+        if step.get("process_exit_code") == 1:
+            step.update(exit_code=0, success=True)
+            run.result["diagnostics"] = [d for d in run.result["diagnostics"] if d.get("code") != "process.failed"]
+    fold(run, statements, summary, quiet=args.quiet, reasons=failures)
     run.result["metrics"]["console"]["facts"] = report.get("facts", {})

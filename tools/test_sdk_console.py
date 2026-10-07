@@ -20,7 +20,7 @@ class FakeRun:
         self.result = dict(metrics={}, assertions=[], diagnostics=[])
         self.notes = []
 
-    def note(self, message):
+    def brief(self, message):
         self.notes.append(message)
 
     def issue(self, code, message, severity="error", path=None):
@@ -106,7 +106,7 @@ class ConsoleCommandTests(unittest.TestCase):
             self.assertEqual(dict(x=1.5), metrics["steps"][0]["data"])
             self.assertEqual([False], [a["success"] for a in run.result["assertions"]])
             self.assertEqual("enemies.count=0", run.result["assertions"][0]["actual"])
-            self.assertEqual(["ok   1 pos -> ember_crown / hub …", "FAIL 2 assert enemies.count ge 3 -> enemies.count=0"], run.notes)
+            self.assertEqual(["ok   1 pos -> ember_crown / hub | more", "FAIL 2 assert enemies.count ge 3 -> enemies.count=0"], run.notes)
             self.assertEqual([], run.result["diagnostics"])
 
             quiet = FakeRun(folder)
