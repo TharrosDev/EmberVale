@@ -1017,12 +1017,13 @@ LocationId = "location.shrine.solaryn"
 
 ; WR-spec1-01 (campaign): the bronze alarm bell, a belfry-frame model scaled to a post-height bell. Quest smoke_over_the_square obj bell.
 [node name="AlarmBell" type="Node3D" parent="."]
-transform = Transform3D(0.35, 0, 0, 0, 0.35, 0, 0, 0, 0.35, 9.5, 0, 3.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9.5, 0, 3.5)
 script = ExtResource("1_entity")
 DisplayName = "The Alarm Bell"
 PersistentId = "ember_crown.town_hub.alarm_bell"
 
 [node name="Model" parent="AlarmBell" instance=ExtResource("rp_lm_bell_tower")]
+transform = Transform3D(0.35, 0, 0, 0, 0.35, 0, 0, 0, 0.35, 0, 0, 0)
 
 [node name="Dialogue" type="Node" parent="AlarmBell"]
 script = ExtResource("7_dialogue")

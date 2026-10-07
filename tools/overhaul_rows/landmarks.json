@@ -92,7 +92,7 @@
   {"scene": "scenes/regions/ember_crown/hollowreach.tscn", "node": "Nav/WatchTower", "new_path": "res://scenes/props/lm_gate_tower.tscn", "scale": 0.55, "y_offset": -0.3, "collider": "remove"},
   {"scene": "scenes/regions/pale_concord/city.tscn", "node": "Nav/ClockTower", "new_path": "res://scenes/props/lm_bell_tower.tscn", "scale": 0.8, "y_offset": -0.2, "collider": "remove"},
   {"scene": "scenes/regions/ember_crown/embermarket.tscn", "node": "Nav/BellTower", "new_path": "res://scenes/props/lm_bell_tower.tscn", "scale": 0.9, "collider": "remove"},
-  {"scene": "scenes/regions/ember_crown/town_hub.tscn", "node": "AlarmBell", "new_path": "res://scenes/props/lm_bell_tower.tscn", "scale": 0.35, "collider": "remove"},
+  {"scene": "scenes/regions/ember_crown/town_hub.tscn", "node": "AlarmBell/Model", "new_path": "res://scenes/props/lm_bell_tower.tscn", "scale": 0.35},
   {"scene": "scenes/regions/pale_concord/palace.tscn", "node": "Nav/Hall", "new_path": "res://scenes/props/lm_iron_citadel.tscn", "scale": 0.7, "y_offset": -0.4, "collider": "remove"},
   {"scene": "scenes/regions/celestial/ash_throne.tscn", "node": "Nav/ThroneSeat", "new_path": "res://scenes/props/lm_ash_throne.tscn", "scale": 1.2, "collider": "remove"},
   {"scene": "scenes/regions/ashen_wilds/lair_approach.tscn", "node": "AntlerRing", "new_path": "res://scenes/props/lm_bone_arch.tscn", "scale": 1.0, "collider": "keep"},
