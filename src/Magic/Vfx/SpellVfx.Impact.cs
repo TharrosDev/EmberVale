@@ -111,13 +111,16 @@ public static partial class SpellVfx
         if (plan.Shell && body != null)
         {
             // On a frost spell the shell is ice closing over the struck; on any other, a rim of light.
+            // Fitted to the body and standing on its feet, wherever the body's origin is.
+            BodyFit(body, out Vector3 middle, out Vector3 fit);
             VfxShellSpec shell = cast.School == DamageType.Frost
-                ? VfxShellSpec.IceShell(body.GlobalPosition + Vector3.Up, 0.95f, cast.Colors)
-                : VfxShellSpec.Sphere(body.GlobalPosition + Vector3.Up, 0.95f, cast.Colors);
+                ? VfxShellSpec.IceShell(body.GlobalPosition + middle, 0.95f, cast.Colors)
+                : VfxShellSpec.Sphere(body.GlobalPosition + middle, 0.95f, cast.Colors);
+            shell.Size = new Vector3(fit.X + 0.6f, fit.Y + 0.2f, fit.X + 0.6f);
             shell.Fresnel = true;
             shell.Life = 0.7f;
             shell.BurnsAway = true;
-            cast.Fx.Shell(shell).Get?.Follow(VfxAnchor.To(body, Vector3.Up));
+            cast.Fx.Shell(shell).Get?.Follow(VfxAnchor.To(body, middle));
         }
 
         if (plan.Sigil)

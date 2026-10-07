@@ -201,14 +201,155 @@ public static class VfxTextureRules
         return inside * rib * Math.Clamp((1f - MathF.Abs(y)) * 8f, 0f, 1f);
     }
 
-    /// <summary>A ragged puff of smoke: the soft dot, torn by noise.</summary>
+    /// <summary>A ragged puff of smoke: the soft dot, torn by noise and lobed around its outline,
+    /// so a cloud of them is billows and not a stack of discs.</summary>
     public static float Puff(float u, float v)
     {
         float r = Radius(u, v);
-        float torn = r * (0.75f + (0.6f * Fbm(u, v, 4, 3, 5)));
+        float turn = MathF.Atan2((v - 0.5f) * 2f, (u - 0.5f) * 2f) / Tau;
+        float lobe = 1.1f - (0.22f * TileNoise(turn * 6f, 0.5f, 6, 77));
+        float torn = r * (0.72f + (0.66f * Fbm(u, v, 4, 3, 5))) * lobe;
         float edge = Math.Clamp(1f - torn, 0f, 1f);
         return Math.Clamp(edge * edge * 1.6f, 0f, 1f) * Math.Clamp((1f - r) * 5f, 0f, 1f);
     }
+
+    /// <summary>
+    /// A tongue of flame: a pointed tip at the top of the quad, leaning as it climbs, widest three
+    /// quarters of the way down and rounded in at its base, with a ragged edge and a hotter heart
+    /// low in it. What a puff of fire is drawn with, so a fireball is licks of flame and a trail is
+    /// flame, not orange balls.
+    /// </summary>
+    public static float Flame(float u, float v)
+    {
+        float y = (v - 0.04f) / 0.92f;
+        if (y <= 0f || y >= 1f)
+        {
+            return 0f;
+        }
+
+        float lean = 0.12f * MathF.Sin((1f - y) * 3.4f) * (1f - y);
+        float x = (u - 0.5f - lean) * 2f;
+        float opens = MathF.Pow(y, 0.75f);
+        float closes = MathF.Sqrt(Math.Clamp((1f - y) * 4.5f, 0f, 1f));
+        float width = 0.6f * opens * closes * (0.78f + (0.44f * Fbm(u, v, 4, 2, 53)));
+        if (width <= 0.001f)
+        {
+            return 0f;
+        }
+
+        float inside = Math.Clamp(1f - (MathF.Abs(x) / width), 0f, 1f);
+        float body = inside * inside * (3f - (2f * inside));
+        float heat = 0.55f + (0.45f * y);
+        return Math.Clamp(body * heat * 1.25f, 0f, 1f) * SideBorder(u);
+    }
+
+    /// <summary>A streak of driven snow: a small bright head at the top of the quad (the end that
+    /// leads) and a soft tail behind it. Many, small and fast, on a slant, they are a blizzard.</summary>
+    public static float Snow(float u, float v)
+    {
+        float x = (u - 0.5f) * 2f;
+        float across = MathF.Exp(-(x * x) / 0.09f);
+        float lead = Math.Clamp((v - 0.02f) / 0.12f, 0f, 1f);
+        float tail = Math.Clamp((1f - v) / 0.88f, 0f, 1f);
+        return Math.Clamp(across * lead * tail * tail * 1.15f, 0f, 1f) * SideBorder(u);
+    }
+
+    /// <summary>A snowflake: six thin arms with a barb on each and a bright heart. A mote of frost.</summary>
+    public static float Flake(float u, float v)
+    {
+        float x = (u - 0.5f) * 2f;
+        float y = (v - 0.5f) * 2f;
+        float r = MathF.Sqrt((x * x) + (y * y));
+        if (r >= 1f)
+        {
+            return 0f;
+        }
+
+        float spoke = MathF.Abs(MathF.Cos(MathF.Atan2(y, x) * 3f));
+        float arm = MathF.Pow(spoke, 26f) * MathF.Sqrt(Math.Clamp(1f - (r / 0.9f), 0f, 1f));
+        float barb = MathF.Pow(spoke, 5f) * Line(r, 0.52f, 0.07f) * 0.7f;
+        float heart = MathF.Exp(-r * r * 30f);
+        return Math.Clamp((arm * 0.95f) + barb + heart, 0f, 1f) * Math.Clamp((1f - r) * 8f, 0f, 1f);
+    }
+
+    /// <summary>A jagged spark: a thin line along V that kinks three times on its way, so thrown
+    /// lightning crackles instead of flying as straight needles.</summary>
+    public static float Spark(float u, float v)
+    {
+        float along = Math.Clamp(v, 0f, 0.9999f) * 4f;
+        int knot = (int)MathF.Floor(along);
+        float centre = Lerp(SparkKink(knot), SparkKink(knot + 1), along - knot);
+        float x = ((u - 0.5f) * 2f) - centre;
+        float across = MathF.Exp(-(x * x) / 0.03f);
+        float ends = Math.Clamp((v - 0.02f) * 8f, 0f, 1f) * Math.Clamp((0.98f - v) * 8f, 0f, 1f);
+        return Math.Clamp(across * ends, 0f, 1f) * SideBorder(u);
+    }
+
+    /// <summary>
+    /// A wisp: a soft rounded head at the top of the quad and a tendril behind it that sways wider
+    /// and thins to nothing. A soul being drawn out, a curl of necrotic smoke: what a drain is made
+    /// of in place of a ball.
+    /// </summary>
+    public static float Wisp(float u, float v)
+    {
+        float t = (v - 0.05f) / 0.9f;
+        if (t <= 0f || t >= 1f)
+        {
+            return 0f;
+        }
+
+        float centre = 0.34f * MathF.Sin(t * 5.2f) * t;
+        float x = ((u - 0.5f) * 2f) - centre;
+        float width = 0.36f * MathF.Pow(1f - t, 0.7f) * MathF.Sqrt(Math.Clamp(t * 9f, 0f, 1f));
+        if (width <= 0.001f)
+        {
+            return 0f;
+        }
+
+        float inside = Math.Clamp(1f - (MathF.Abs(x) / width), 0f, 1f);
+        float bright = (0.25f + (0.75f * (1f - t))) * Math.Clamp((1f - t) * 6f, 0f, 1f);
+        return Math.Clamp(inside * inside * (3f - (2f * inside)) * bright * 1.2f, 0f, 1f) * SideBorder(u);
+    }
+
+    /// <summary>A flake of ash: a small uneven scrap with a grainy face, for what a fire leaves
+    /// hanging in the air.</summary>
+    public static float Ash(float u, float v)
+    {
+        float x = (u - 0.5f) * 2f;
+        float y = (v - 0.5f) * 2f;
+        float r = MathF.Sqrt((x * x) + (y * y));
+        float turn = MathF.Atan2(y, x) / Tau;
+        float edge = 0.4f + (0.32f * TileNoise(turn * 5f, 0.5f, 5, 61));
+        float inside = Math.Clamp((edge - r) * 9f, 0f, 1f);
+        return Math.Clamp(inside * (0.62f + (0.38f * Fbm(u, v, 6, 2, 67))), 0f, 1f);
+    }
+
+    /// <summary>A mote: a tight bright heart with four short points. The small drifting light of a
+    /// spell, which the soft dot drew as a ball of bokeh.</summary>
+    public static float Mote(float u, float v)
+    {
+        float x = MathF.Abs(u - 0.5f) * 2f;
+        float y = MathF.Abs(v - 0.5f) * 2f;
+        float reachX = Math.Clamp(1f - x, 0f, 1f);
+        float reachY = Math.Clamp(1f - y, 0f, 1f);
+        float heart = MathF.Exp(-((x * x) + (y * y)) * 14f);
+        float points = MathF.Max(
+            MathF.Exp(-y * 9f) * reachX * reachX * reachX, MathF.Exp(-x * 9f) * reachY * reachY * reachY);
+        return Math.Clamp(heart + (points * 0.55f), 0f, 1f) * Math.Clamp((1f - MathF.Max(x, y)) * 8f, 0f, 1f);
+    }
+
+    /// <summary>How far a jagged spark's line is off its centre at one of its knots: nothing at
+    /// either end, up to half the quad's half width between.</summary>
+    private static float SparkKink(int knot) => knot switch
+    {
+        1 => 0.42f,
+        2 => -0.5f,
+        3 => 0.3f,
+        _ => 0f,
+    };
+
+    /// <summary>1 across a sprite, falling to 0 at its left and right edges.</summary>
+    private static float SideBorder(float u) => Math.Clamp((1f - (MathF.Abs(u - 0.5f) * 2f)) * 6f, 0f, 1f);
 
     /// <summary>A rune circle: two rings with tick marks between them, an inner ring and a hexagram.</summary>
     public static float Rune(float u, float v)

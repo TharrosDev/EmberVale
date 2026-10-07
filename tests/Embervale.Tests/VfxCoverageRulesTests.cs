@@ -253,6 +253,7 @@ public class VfxCoverageRulesTests
     public static readonly TheoryData<VfxEmitter> Emitters = new()
     {
         VfxEmitter.Flame, VfxEmitter.Chunks, VfxEmitter.Mist, VfxEmitter.Crystals, VfxEmitter.Glints,
+        VfxEmitter.Snow, VfxEmitter.AshFlake, VfxEmitter.FlameLick, VfxEmitter.Flurry,
     };
 
     [Theory]

@@ -55,7 +55,10 @@ public static partial class SpellVfx
             ? direction.Normalized() * Mathf.Max(0f, spell.ProjectileSpeed)
             : Vector3.Zero;
         float full = Mathf.Clamp(charge, 0f, 1f);
-        float size = (0.24f + (0.18f * cast.Weight) + (0.2f * full)) * plan.Scale;
+
+        // The player's own bolt in first person flies straight down the crosshair: its head is drawn
+        // at half size there, so the crosshair and what it is aimed at stay readable.
+        float size = (0.24f + (0.18f * cast.Weight) + (0.2f * full)) * plan.Scale * ProjectileViewScale(cast);
         VfxBudget budget = VfxQuality.Budget;
         VfxRichness rich = VfxQuality.Rich;
 
@@ -78,7 +81,12 @@ public static partial class SpellVfx
 
         if (plan.Flare)
         {
-            VfxFlareSpec core = VfxFlareSpec.At(visualOrigin, size, cast.Colors);
+            // The head has its school's shape (a flame, a shard, a jagged bolt, a lance, thorns, a
+            // dark comet); the round glow behind it is smaller, and on the two lean tiers it is the
+            // halo alone, so the shape is drawn in place of the core and not on top of it.
+            bool shaped = ProjectileHead(cast, rig, projectile, handOffset, direction, size).IsLive;
+            VfxFlareSpec core = VfxFlareSpec.At(visualOrigin, shaped ? size * 0.7f : size, cast.Colors);
+            core.HaloOnly = shaped && VfxQuality.Tier <= VfxTier.Low;
             core.Sustain = true;
             core.Light = plan.Light;
             core.LightRange = 4f + (3f * cast.Weight);

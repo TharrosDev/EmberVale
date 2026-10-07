@@ -70,7 +70,14 @@ public static partial class SpellVfx
         rig.Flare = rig.Add(cast.Fx.Flare(glow));
         rig.Flare.Get?.Follow(hand);
 
-        if (plan.Particles != VfxParticles.None)
+        // What makes a school's charge its own: flames licking up off the hand, shards of ice
+        // circling it, arcs crackling around it, leaves on a swirl, wisps drawn in. On the two lean
+        // tiers it stands in for the particle stream (one draw for one, and nothing to simulate).
+        VfxHandle<VfxMotif> motif = WindupMotif(
+            cast, rig, hand, at, size, kind == SpellWindupKind.Charge ? 0.15f : 1f);
+        bool instead = motif.IsLive && VfxQuality.Tier <= VfxTier.Low;
+
+        if (plan.Particles != VfxParticles.None && !instead)
         {
             rig.Density = plan.Density * (kind == SpellWindupKind.Channel ? 0.7f : 0.5f);
             VfxBurstSpec stream = VfxBurstSpec.At(at, cast.Colors, rig.Density);
@@ -118,6 +125,7 @@ public static partial class SpellVfx
 
         float filled = Mathf.Clamp(progress, 0f, 1f);
         rig.Flare.Get?.SetLevel(0.15f + (0.85f * filled));
+        rig.Motif.Get?.SetLevel(0.15f + (0.85f * filled));
         rig.Stream.Get?.SetDensity(rig.Density * (0.6f + (1.4f * filled)));
     }
 
@@ -180,6 +188,14 @@ public static partial class SpellVfx
             return;
         }
 
+        // A spell on the player's own body in first person: its rings and shells are at the feet
+        // or around the camera, so the beat the player sees is at the edges of the view.
+        if (cast.ByPlayer && spell.Delivery == SpellDelivery.Self && spell.BlinkDistance <= 0f &&
+            TryFirstPersonHand(body, out _))
+        {
+            SelfCastInView(cast);
+        }
+
         if (SpecialOf(spell)?.Release is { } special && special(cast, hand, direction, charge))
         {
             return;
@@ -189,9 +205,10 @@ public static partial class SpellVfx
         float full = Mathf.Clamp(charge, 0f, 1f);
         if (plan.Flare)
         {
-            VfxFlareSpec snap = VfxFlareSpec.At(hand, (0.3f + (0.3f * cast.Weight) + (0.3f * full)) * plan.Scale, cast.Colors);
-            // In first person the flash is beside the crosshair: two or three frames of it.
+            // In first person the flash is beside the crosshair: half the size, two or three frames.
             bool atEye = AtTheViewHand(hand);
+            VfxFlareSpec snap = VfxFlareSpec.At(
+                hand, (0.3f + (0.3f * cast.Weight) + (0.3f * full)) * plan.Scale * (atEye ? 0.5f : 1f), cast.Colors);
             snap.Life = atEye ? 0.07f : 0.2f;
             snap.Light = plan.Light;
             snap.LightRange = 4.5f;

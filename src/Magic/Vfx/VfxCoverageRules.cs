@@ -24,10 +24,10 @@ namespace Embervale.Magic.Vfx;
 public static class VfxCoverageRules
 {
     /// <summary>Inside this distance of the eye a held glow is at its smallest.</summary>
-    public const float NearStart = 0.8f;
+    public const float NearStart = 1.5f;
 
     /// <summary>Past this distance of the eye a held glow is its full size.</summary>
-    public const float NearEnd = 3.2f;
+    public const float NearEnd = 5f;
 
     /// <summary>The smallest a held glow is drawn against its size, at the eye.</summary>
     public const float NearFloor = 0.3f;
@@ -44,6 +44,12 @@ public static class VfxCoverageRules
         float t = Math.Clamp((distance - NearStart) / (NearEnd - NearStart), 0f, 1f);
         return NearFloor + ((1f - NearFloor) * t);
     }
+
+    /// <summary>How far from the eye a <see cref="NearScale"/> stands for, as a share: 0 at the
+    /// first-person casting point, 1 where a held glow is its full size. What is dimmed at the eye
+    /// (a held glow's energy, so a bright school keeps its colour in the hand) is dimmed by this.</summary>
+    public static float NearShare(float nearScale) =>
+        Math.Clamp((nearScale - NearFloor) / (1f - NearFloor), 0f, 1f);
 
     /// <summary>The tangent of half the vertical field of view the estimate assumes (70 degrees).</summary>
     public const float TanHalfFov = 0.7f;

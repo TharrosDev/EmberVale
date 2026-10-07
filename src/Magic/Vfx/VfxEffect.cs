@@ -23,13 +23,19 @@ internal readonly struct VfxAnchor
     private readonly Vector3 _offset;
     private readonly CharacterAnimationComponent? _hand;
     private readonly bool _view;
+    private readonly Skeleton3D? _skeleton;
+    private readonly int _bone;
 
-    private VfxAnchor(Node3D? node, Vector3 offset, CharacterAnimationComponent? hand, bool view = false)
+    private VfxAnchor(
+        Node3D? node, Vector3 offset, CharacterAnimationComponent? hand, bool view = false, Skeleton3D? skeleton = null,
+        int bone = -1)
     {
         _node = node;
         _offset = offset;
         _hand = hand;
         _view = view;
+        _skeleton = skeleton;
+        _bone = bone;
     }
 
     /// <summary>Follows <paramref name="node"/>, <paramref name="offset"/> metres from its origin
@@ -43,6 +49,49 @@ internal readonly struct VfxAnchor
         Node3D? body = BodyOf(caster);
         CharacterAnimationComponent? hand = body == null ? null : caster.GetComponent<CharacterAnimationComponent>();
         return new VfxAnchor(body, fallbackOffset, hand, view: body != null && SpellVfx.IsLocalPlayer(caster));
+    }
+
+    /// <summary>
+    /// Follows <paramref name="caster"/>'s mouth: the first bone of its skeleton whose name reads as
+    /// a jaw, a mouth or a snout, failing that its head. A body with no such bone (or no skeleton)
+    /// is followed at <paramref name="fallbackOffset"/> above its origin instead. For a breath: the
+    /// glow that gathers before it and the puffs that leave it.
+    /// </summary>
+    public static VfxAnchor ToMouth(IEntity caster, Vector3 fallbackOffset)
+    {
+        Node3D? body = BodyOf(caster);
+        Skeleton3D? skeleton = body == null ? null : caster.GetComponent<CharacterAnimationComponent>()?.Skeleton;
+        int bone = -1;
+        if (skeleton != null && GodotObject.IsInstanceValid(skeleton))
+        {
+            bone = FindBone(skeleton, "jaw", "mouth", "snout");
+            if (bone < 0)
+            {
+                bone = FindBone(skeleton, "head", "skull");
+            }
+        }
+
+        return new VfxAnchor(body, fallbackOffset, null, view: false, bone >= 0 ? skeleton : null, bone);
+    }
+
+    /// <summary>Whether the anchor found a bone to follow (as opposed to standing at its fallback).</summary>
+    public bool HasBone => _bone >= 0 && _skeleton != null;
+
+    private static int FindBone(Skeleton3D skeleton, params string[] names)
+    {
+        int count = skeleton.GetBoneCount();
+        foreach (string name in names)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                if (skeleton.GetBoneName(i).Contains(name, StringComparison.OrdinalIgnoreCase))
+                {
+                    return i;
+                }
+            }
+        }
+
+        return -1;
     }
 
     /// <summary>The node followed, when it is still there.</summary>
@@ -59,6 +108,13 @@ internal readonly struct VfxAnchor
         if (_hand != null && GodotObject.IsInstanceValid(_hand) && _hand.IsInsideTree() &&
             _hand.TryGetCastingHand(out position))
         {
+            return true;
+        }
+
+        if (_bone >= 0 && _skeleton != null && GodotObject.IsInstanceValid(_skeleton) && _skeleton.IsInsideTree() &&
+            _bone < _skeleton.GetBoneCount())
+        {
+            position = (_skeleton.GlobalTransform * _skeleton.GetBoneGlobalPose(_bone)).Origin;
             return true;
         }
 
@@ -142,11 +198,17 @@ public abstract partial class VfxEffect : Node3D
 
     protected double StopAge { get; private set; }
 
+    /// <summary>Whether this block belongs to an effect of the local player's own (their cast, a
+    /// status they wear). What is cut back for the player's own view (a ring about a first-person
+    /// camera) is cut on these; a hostile effect that holds (a zone to get out of) never is.</summary>
+    internal bool Own { get; private set; }
+
     /// <summary>Starts a new life. Called by the spawner after the node is in the tree.</summary>
-    internal void Begin(SpellVfxDirector director, int group)
+    internal void Begin(SpellVfxDirector director, int group, bool own = false)
     {
         Director = director;
         Group = group;
+        Own = own;
         Serial = unchecked(Serial + 1);
         Live = true;
         Age = 0d;
