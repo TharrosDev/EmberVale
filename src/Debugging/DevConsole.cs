@@ -9,9 +9,15 @@ namespace Embervale.Debugging;
 
 /// <summary>
 /// An in-game developer console (toggled with <c>F1</c>): a scrollback log + an input line
-/// that dispatches text commands to a registry. Commands (spawn, give, xp, time, weather,
-/// event, rep, repro, invariants…) are registered by <see cref="DevCommands"/> and reach the
-/// gameplay systems through the <see cref="Embervale.Core.Services.ServiceLocator"/>.
+/// that dispatches text commands to a registry. The commands are registered by
+/// <see cref="DevCommands"/> (<c>help</c> lists them, <c>--console-help</c> prints them without a
+/// session) and reach the gameplay systems through the
+/// <see cref="Embervale.Core.Services.ServiceLocator"/>.
+///
+/// <para><see cref="Run"/> is the typed entry: it returns whether the command worked and, for the
+/// commands that have one, the reply as JSON. A <c>--json</c> token asks for that JSON as the text
+/// too. <see cref="Execute"/> is the same call returning only the text, which is what the F1 prompt
+/// prints. From a shell the console is driven by <c>--exec</c> (<c>ConsoleScript</c>).</para>
 ///
 /// While open it frees the mouse, grabs keyboard focus and sets <see cref="UiState.MenuOpen"/>
 /// so typing never drives the character. Runs with <see cref="Node.ProcessModeEnum.Always"/>
@@ -54,35 +60,95 @@ public partial class DevConsole : CanvasLayer
     {
         if (!string.IsNullOrEmpty(text))
         {
-            _log.AppendText(text + "\n");
+            _log?.AppendText(text + "\n");
         }
     }
 
-    public void ClearLog() => _log.Clear();
+    public void ClearLog() => _log?.Clear();
+
+    /// <summary>The token that asks a command for its JSON reply as the text.</summary>
+    public const string JsonFlag = "--json";
+
+    private bool _failed;
+    private string? _json;
+
+    /// <summary>True while a handler runs for a line that carried <see cref="JsonFlag"/>.</summary>
+    public bool WantsJson { get; private set; }
+
+    /// <summary>The session this console belongs to, or null (a detached console has none).</summary>
+    public Embervale.Bootstrap.GameSession? Session =>
+        (GetParent() as Embervale.Bootstrap.DeveloperToolsHost)?.Session;
+
+    /// <summary>Marks the running command as failed and returns <paramref name="message"/>, so a
+    /// handler writes <c>return console.Fail("unknown item ...")</c>.</summary>
+    public string Fail(string message)
+    {
+        _failed = true;
+        return message;
+    }
+
+    /// <summary>Attaches a JSON reply to the running command. <paramref name="json"/> is one JSON
+    /// value, already serialised. Returns the JSON when the line asked for it with
+    /// <see cref="JsonFlag"/>, else <paramref name="text"/>.</summary>
+    public string Reply(string text, string json)
+    {
+        _json = json;
+        return WantsJson ? json : text;
+    }
+
+    /// <summary><see cref="Reply(string, string)"/> for a Godot dictionary or array.</summary>
+    public string Reply(string text, Variant data) => Reply(text, Json.Stringify(data));
 
     /// <summary>Parses and runs one command line, returning its output (does not print it).</summary>
-    public string Execute(string line)
+    public string Execute(string line) => Run(line).Text;
+
+    /// <summary><see cref="Run"/> as one JSON object, <c>{"ok":bool,"out":string,"data":any?}</c>,
+    /// for a caller that cannot read a C# struct (the GDScript scenario driver).</summary>
+    public string ExecuteJson(string line)
     {
-        string[] tokens = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        if (tokens.Length == 0)
+        ConsoleResult result = Run(line);
+        var reply = new Godot.Collections.Dictionary { ["ok"] = result.Ok, ["out"] = result.Text };
+        if (result.Json != null)
         {
-            return string.Empty;
+            reply["data"] = Json.ParseString(result.Json);
+        }
+
+        return Json.Stringify(reply);
+    }
+
+    /// <summary>Parses and runs one command line. Double quotes group a token; a <c>--json</c>
+    /// token is removed and sets <see cref="WantsJson"/> for the handler.</summary>
+    public ConsoleResult Run(string line)
+    {
+        var tokens = new List<string>(ConsoleText.Tokenize(line));
+        if (tokens.Count == 0)
+        {
+            return new ConsoleResult(true, string.Empty);
         }
 
         if (!_commands.TryGetValue(tokens[0], out ConsoleCommand? command))
         {
-            return $"unknown command '{tokens[0]}' — try 'help'";
+            return new ConsoleResult(false, $"unknown command '{tokens[0]}' — try 'help'");
         }
 
-        string[] args = tokens.Length > 1 ? tokens[1..] : Array.Empty<string>();
+        // A handler may run other lines (repro does): keep the outer command's state.
+        (bool outerFailed, string? outerJson, bool outerWantsJson) = (_failed, _json, WantsJson);
+        bool wantsJson = tokens.RemoveAll(token => token == JsonFlag) > 0;
+        (_failed, _json, WantsJson) = (false, null, wantsJson);
         try
         {
-            return command.Handler(this, args);
+            string text = command.Handler(this, tokens.GetRange(1, tokens.Count - 1).ToArray());
+            bool ok = !_failed && (_json != null || !ConsoleText.LooksFailed(text));
+            return new ConsoleResult(ok, text, _json);
         }
         catch (Exception e)
         {
             Log.Error($"dev command '{line}' threw: {e}");
-            return $"error: {e.Message}";
+            return new ConsoleResult(false, $"error: {e.Message}");
+        }
+        finally
+        {
+            (_failed, _json, WantsJson) = (outerFailed, outerJson, outerWantsJson);
         }
     }
 

@@ -136,6 +136,7 @@
     <Compile Remove="src/Debugging/*Shots.cs" />
     <Compile Remove="src/Debugging/ShotHarness.cs" />
     <Compile Remove="src/Debugging/ReproHarness.cs" />
+    <Compile Remove="src/Debugging/ConsoleScript.cs" />
     <Compile Remove="src/Debugging/VfxPerfScenario.cs" />
     <Compile Remove="src/Debugging/Magic*ProbeDriver.cs" />
     <Compile Remove="src/Debugging/*AuditProbeDriver.cs" />

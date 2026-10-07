@@ -55,6 +55,7 @@ internal static class SessionHarnesses
 
         // There to measure frame times, so the world's performance sampling stays on for it.
         new("--vfxperf", _ => new Debugging.VfxPerfScenario { Name = "VfxPerf" }, Capture: false),
+        new("--exec", session => new Debugging.ConsoleScript { Name = "ConsoleScript", Lifecycle = session.Lifecycle }, Capture: false, Alias: "--exec-file"),
 #endif
     };
 

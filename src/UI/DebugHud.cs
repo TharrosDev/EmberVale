@@ -2,6 +2,7 @@ using System.Text;
 using Embervale.Combat;
 using Embervale.Core;
 using Embervale.Core.Events;
+using Embervale.Core.Services;
 using Embervale.Corruption;
 using Embervale.Entities;
 using Embervale.Factions;
@@ -60,7 +61,8 @@ public partial class DebugHud : CanvasLayer
     /// <summary>Shows/hides the whole debug overlay (bound to F3 by the bootstrap).</summary>
     public void Toggle() => SetShown(!_shown);
 
-    private void SetShown(bool shown)
+    /// <summary>Shows or hides the overlay outright (the <c>hud on|off</c> dev command).</summary>
+    public void SetShown(bool shown)
     {
         _shown = shown;
         SetProcess(shown); // hidden (the default): no tick at all
@@ -148,9 +150,10 @@ public partial class DebugHud : CanvasLayer
         UiTheme.Compact(_controlsPanel);
 
         Label hint = UiTheme.Body(
-            "WASD move · Mouse look · LMB attack · RMB block · Q cast · F cycle spell\n" +
-            "E interact · I character · J journal · [H] heal · [R] respawn · [X] +XP · [K] +rep\n" +
-            "[F5/F9] save/load · [Esc] pause",
+            "WASD move · Mouse look · LMB attack · RMB block · Q cast · hold F spell wheel\n" +
+            "E interact · I inventory · T spellbook · B bestiary · C party order · V view\n" +
+            "[H] heal dummy · [R] respawn dummy · [X] +level · [P] +corruption · [K] +goblin rep\n" +
+            "[F1] console · [F3] this · [F4] profiler · [F5/F9] save/load · [Esc] pause",
             UiTheme.Dim);
         _controlsPanel.AddChild(hint);
     }
@@ -186,12 +189,38 @@ public partial class DebugHud : CanvasLayer
             return;
         }
 
-        UpdateDiagnostics();
+        _diag.Text = DiagnosticsText();
         UpdatePlayer();
         UpdateTarget();
     }
 
-    private void UpdateDiagnostics()
+    /// <summary>
+    /// Everything the overlay shows, as text, whether or not it is on screen: the diagnostics
+    /// block, the player's vitals and read-out, and the target section when there is a target.
+    /// This is what the <c>hud</c> dev command prints.
+    /// </summary>
+    public string Snapshot()
+    {
+        var sb = new StringBuilder(DiagnosticsText());
+        if (_player is Node node && IsInstanceValid(node) && _player.TryGetComponent(out StatsComponent stats))
+        {
+            sb.Append($"\nHP {Vital(stats, StatType.Health)}   STA {Vital(stats, StatType.Stamina)}   MP {Vital(stats, StatType.Mana)}\n");
+            sb.Append(PlayerText(stats));
+        }
+
+        if (_target is Node targetNode && IsInstanceValid(targetNode) && _target.TryGetComponent(out StatsComponent targetStats))
+        {
+            sb.Append($"\nTarget: {_target.DisplayName} (#{_target.RuntimeId})  HP {Vital(targetStats, StatType.Health)}  ");
+            sb.Append(TargetText(targetStats));
+        }
+
+        return sb.ToString().TrimEnd();
+    }
+
+    private static string Vital(StatsComponent stats, StatType type) =>
+        $"{stats.GetCurrent(type):0}/{stats.GetMax(type):0}";
+
+    private string DiagnosticsText()
     {
         var sb = new StringBuilder();
         sb.Append($"FPS {Engine.GetFramesPerSecond()}    {GameManager.Instance?.State.ToString() ?? "?"}");
@@ -214,7 +243,17 @@ public partial class DebugHud : CanvasLayer
             }
         }
 
-        _diag.Text = sb.ToString();
+        // Where: without it a still frame of the overlay cannot be placed in the world.
+        if (_player is Node3D body && IsInstanceValid(body))
+        {
+            Vector3 p = body.GlobalPosition;
+            string region = ServiceLocator.Instance is { } locator && locator.TryGet(out RegionStreamer streamer)
+                ? $"{streamer.ActiveRegionId}  cells {streamer.ActiveCellCount()}/{streamer.ResidentCellCount()}  "
+                : string.Empty;
+            sb.Append($"\n{region}x {p.X:0.0} y {p.Y:0.0} z {p.Z:0.0}  {(SafeZones.Contains(p) ? "SAFE" : "WILD")}");
+        }
+
+        return sb.ToString();
     }
 
     private void UpdatePlayer()
@@ -228,6 +267,15 @@ public partial class DebugHud : CanvasLayer
         SetVital(_hpBar, _hpText, stats, StatType.Health);
         SetVital(_staBar, _staText, stats, StatType.Stamina);
         SetVital(_mpBar, _mpText, stats, StatType.Mana);
+        _info.Text = PlayerText(stats);
+    }
+
+    private string PlayerText(StatsComponent stats)
+    {
+        if (_player == null)
+        {
+            return string.Empty;
+        }
 
         var sb = new StringBuilder();
         if (_player.TryGetComponent(out ProgressionComponent prog))
@@ -262,7 +310,7 @@ public partial class DebugHud : CanvasLayer
         }
 
         sb.Append($"Last hit: {_lastHit}");
-        _info.Text = sb.ToString();
+        return sb.ToString();
     }
 
     private void UpdateTarget()
@@ -277,17 +325,21 @@ public partial class DebugHud : CanvasLayer
         _targetSection.Visible = true;
         _targetTitle.Text = $"{_target.DisplayName}  (#{_target.RuntimeId})";
         SetVital(_targetHpBar, _targetHpText, stats, StatType.Health);
+        _targetInfo.Text = TargetText(stats);
+    }
 
+    private string TargetText(StatsComponent stats)
+    {
         var sb = new StringBuilder();
         sb.Append($"PWR {stats.GetValue(StatType.PhysicalPower):0}   ARM {stats.GetValue(StatType.Armor):0}   ");
         sb.Append(stats.IsAlive ? "ALIVE" : "DEAD");
 
-        if (_target.TryGetComponent(out StatusEffectsComponent effects))
+        if (_target != null && _target.TryGetComponent(out StatusEffectsComponent effects))
         {
             AppendEffects(sb, effects);
         }
 
-        _targetInfo.Text = sb.ToString();
+        return sb.ToString();
     }
 
     private static void SetVital(ProgressBar bar, Label value, StatsComponent stats, StatType type)
