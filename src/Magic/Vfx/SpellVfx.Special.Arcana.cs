@@ -1,5 +1,6 @@
 using Embervale.Combat;
 using Embervale.Entities;
+using Embervale.World;
 using Godot;
 
 namespace Embervale.Magic.Vfx;
@@ -13,6 +14,11 @@ public static partial class SpellVfx
     private static readonly Color ArcanaSoil = new(0.5f, 0.42f, 0.3f);
     private static readonly Color ArcanaSting = new(1f, 0.86f, 0.3f);
     private static readonly Color ArcanaAsh = new(0.36f, 0.31f, 0.42f);
+
+    // The body of an ash breath is smoke that covers, drawn unlit: at the flakes' own grey it stood
+    // out pale against a dusk scene. The dark of an insect among the stinging darts.
+    private static readonly Color ArcanaAshDark = new(0.25f, 0.21f, 0.3f);
+    private static readonly Color ArcanaInsect = new(0.11f, 0.12f, 0.05f);
 
     /// <summary>How far from the camera a first-person body's head is at most (metres).</summary>
     private const float ArcanaInsideViewDistance = 0.8f;
@@ -1680,16 +1686,56 @@ public static partial class SpellVfx
             swarm.Energy = 1.3f;
             swarm.Sustain = true;
             swarm.TrueSize = true;
-            rig.Add(fx.Motif(swarm)).Get?.Follow(VfxAnchor.To(body, middle));
+
+            // The ring is tipped, so it crosses the body on a slant and is never a level carousel.
+            if (rig.Add(fx.Motif(swarm)).Get is { } outer)
+            {
+                outer.Follow(VfxAnchor.To(body, middle));
+                outer.Basis = new Basis(Vector3.Right, 0.42f);
+            }
+
+            if (ArcanaRich)
+            {
+                // Stings: small bright points that jump from place to place over the body.
+                VfxMotifSpec stings = VfxMotifSpec.At(
+                    body.GlobalPosition + middle, colors, VfxSprite.Mote, VfxMotion.Crackle, ArcanaLavish ? 3 : 2,
+                    Mathf.Clamp(fit.X * 0.75f, 0.4f, 1.1f), 0.2f);
+                stings.Tint = ArcanaSting;
+                stings.Aspect = 1f;
+                stings.Speed = 0.4f;
+                stings.Energy = 1.6f;
+                stings.Sustain = true;
+                stings.TrueSize = true;
+                rig.Add(fx.Motif(stings)).Get?.Follow(VfxAnchor.To(body, middle));
+
+                // The insects themselves: dark specks drifting among the darts (they cover, so they
+                // show against a bright sky where the darts do not).
+                VfxBurstSpec bodies = VfxBurstSpec.At(body.GlobalPosition + middle, colors, ArcanaAmount(0.5f));
+                bodies.Tint = ArcanaInsect;
+                bodies.Continuous = true;
+                bodies.Extents = new Vector3(reach * 0.8f, fit.Y * 0.35f, reach * 0.8f);
+                bodies.SpeedScale = 0.14f;
+                bodies.SizeScale = 0.55f;
+                bodies.LifeScale = 0.7f;
+                bodies.GravityScale = 0f;
+                bodies.Damping = 0f;
+                rig.Add(fx.Burst(VfxEmitter.Chunks, bodies)).Get?.Follow(VfxAnchor.To(body, middle));
+            }
+
             if (ArcanaLavish)
             {
+                // A second, tighter and quicker ring, tipped the other way.
                 Vector3 higher = middle + new Vector3(0f, fit.Y * 0.22f, 0f);
                 VfxMotifSpec inner = swarm;
                 inner.Position = body.GlobalPosition + higher;
                 inner.Count = Mathf.Max(3, insects / 2);
                 inner.Radius = reach * 0.62f;
                 inner.Speed = 3.3f;
-                rig.Add(fx.Motif(inner)).Get?.Follow(VfxAnchor.To(body, higher));
+                if (rig.Add(fx.Motif(inner)).Get is { } tight)
+                {
+                    tight.Follow(VfxAnchor.To(body, higher));
+                    tight.Basis = new Basis(Vector3.Back, -0.6f);
+                }
             }
 
             return;
@@ -1789,7 +1835,10 @@ public static partial class SpellVfx
         rig.Add(cast.Fx.Disc(spoken)).Get?.Follow(mouth);
         if (ArcanaRich && VfxAnchor.BodyOf(caster) is { } body)
         {
-            VfxDiscSpec under = VfxDiscSpec.At(body.GlobalPosition, 2.6f, cast.Colors.Scaled(0.7f, 1f));
+            // Wider than the speaker: a dragon two metres across stood on a circle of 2.6 and hid it.
+            BodyFit(body, out _, out Vector3 fit);
+            VfxDiscSpec under = VfxDiscSpec.At(
+                body.GlobalPosition, Mathf.Clamp((fit.X * 0.5f) + 1.4f, 2.6f, 4.5f), cast.Colors.Scaled(0.7f, 1f));
             under.Sustain = true;
             under.Rune = true;
             under.Spin = -0.7f;
@@ -1998,11 +2047,14 @@ public static partial class SpellVfx
 
                 // The breath: smoke that covers what is behind it, so a handful of puffs a tick on
                 // any tier (ticks overlap), each thinned by how wide it stands on screen.
+                // In the face of whoever it is aimed at the puffs are fewer and half the width: they
+                // cover, and from the far end of the wedge every one of them stands over the dragon.
                 VfxBurstPreset puff = VfxBurstPresets.For(VfxParticles.Smoke);
                 VfxBurstSpec billow = BreathDriven(
-                    ashen, origin, axis, range, half, puff, Mathf.Clamp(density * 0.55f, 0.36f, 0.6f) * thin, 0.9f, 1f, 0.7f,
-                    Mathf.Clamp(widthAtEnd * 0.45f, 0.9f, 2.6f));
-                billow.Tint = ArcanaAsh;
+                    ashen, origin, axis, range, half, puff,
+                    Mathf.Clamp(density * 0.55f, 0.36f, 0.6f) * (lens ? 0.45f : 1f), 0.9f, 1f, 0.7f,
+                    Mathf.Clamp(widthAtEnd * 0.45f, 0.9f, lens ? 1.4f : 2.6f));
+                billow.Tint = ArcanaAshDark;
                 billow.Damping = 1.1f;
                 billow.GravityScale = 0.5f;
                 cast.Fx.Burst(VfxParticles.Smoke, billow);
@@ -2148,26 +2200,42 @@ public static partial class SpellVfx
         }
 
         var flat = new Vector3(axis.X, 0f, axis.Z);
-        if (flat.LengthSquared() <= 0.01f)
+        float level = flat.Length();
+        if (level <= 0.1f)
         {
             return true;
         }
 
         // The ground under the wedge, lit for the whole breath: one patch a tick, at a new place
         // along the centre line each time and as wide as the wedge is there, living long enough
-        // that three or four overlap. (The caster's own feet give the floor's height.) An ash
-        // breath, which never left a patch, leaves none on the leanest tier.
+        // that three or four overlap. An ash breath, which never left a patch, leaves none on the
+        // leanest tier.
         if (pattern == VfxDiscPattern.None && tier == VfxTier.Performance)
         {
             return true;
         }
 
-        flat = flat.Normalized();
+        // The floor is the breather's own feet, unless it is in the air: then it is the terrain
+        // under each patch (they hung in the sky under a hovering dragon), and a breath pitched
+        // down stops where it meets it.
+        flat /= level;
+        Vector3 feet = body.GlobalPosition;
+        bool terrain = WorldGround.Field != null;
+        float under = terrain ? WorldGround.HeightAt(feet.X, feet.Z) : feet.Y;
+        float height = origin.Y - VfxArcanaRules.BreathFloor(feet.Y, under, under, terrain);
+        float fall = Mathf.Max(0f, -axis.Y);
+
+        Vector3 OnFloor(float along, float across)
+        {
+            Vector3 at = origin + (flat * VfxArcanaRules.GroundReach(along, level, fall, height)) +
+                         (flat.Cross(Vector3.Up) * across);
+            at.Y = VfxArcanaRules.BreathFloor(feet.Y, under, terrain ? WorldGround.HeightAt(at.X, at.Z) : feet.Y, terrain);
+            return at;
+        }
+
         float step = VfxArcanaRules.PatchAlong(roll);
-        var foot = new Vector3(origin.X, body.GlobalPosition.Y, origin.Z);
-        Vector3 under = foot + (flat * (range * step));
-        float wide = Mathf.Clamp(range * step * slope * 0.85f, 0.9f, 3.2f);
-        VfxDiscSpec patch = VfxDiscSpec.At(under, wide, lit);
+        VfxDiscSpec patch = VfxDiscSpec.At(
+            OnFloor(range * step, 0f), VfxArcanaRules.PatchRadius(tier, range * step * slope * 0.85f), lit);
         patch.Pattern = pattern;
         patch.Life = 1.5f;
         patch.Body = pattern == VfxDiscPattern.None ? 0.2f : 0.12f;
@@ -2181,7 +2249,7 @@ public static partial class SpellVfx
             // newest, so a long breath leaves a scorched (or frosted) fan and not a single spot.
             float far = 0.25f + (0.65f * ((roll & 0xFFFF) / 65535f));
             float across = ((((roll >> 16) & 0xFFFF) / 65535f) - 0.5f) * far * widthAtEnd;
-            Vector3 at = foot + (flat * (range * far)) + (flat.Cross(Vector3.Up) * across);
+            Vector3 at = OnFloor(range * far, across);
             cast.Fx.Mark(new VfxGroundMarkSpec
             {
                 Mark = mark,

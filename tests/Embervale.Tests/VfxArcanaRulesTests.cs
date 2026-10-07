@@ -256,6 +256,56 @@ public class VfxArcanaRulesTests
         }
     }
 
+    [Theory]
+    [MemberData(nameof(Breaths))]
+    public void TheLitPatchOnTheLeanestTierIsNoWiderThanItWas(float range, float angle)
+    {
+        float slope = Slope(angle);
+        for (int roll = 0; roll < 4096; roll += 97)
+        {
+            float wide = range * VfxArcanaRules.PatchAlong(roll << 12) * slope * 0.85f;
+            float lean = VfxArcanaRules.PatchRadius(VfxTier.Performance, wide);
+            Assert.InRange(lean, 0.9f, VfxArcanaRules.PatchLeanRadius);
+            foreach (VfxTier tier in Enum.GetValues<VfxTier>())
+            {
+                float radius = VfxArcanaRules.PatchRadius(tier, wide);
+                Assert.InRange(radius, 0.9f, 3.2f);
+                Assert.True(radius >= lean, $"{tier} lights less ground than the leanest tier.");
+            }
+        }
+    }
+
+    [Fact]
+    public void ABreathersOwnFeetAreTheFloorUnlessItIsInTheAir()
+    {
+        // Standing on the terrain, on a bridge a little above it, or under it in a dungeon.
+        Assert.Equal(10f, VfxArcanaRules.BreathFloor(10f, 10f, 9.2f, hasGround: true));
+        Assert.Equal(12f, VfxArcanaRules.BreathFloor(12f, 10f, 9.2f, hasGround: true));
+        Assert.Equal(-6f, VfxArcanaRules.BreathFloor(-6f, 10f, 9.2f, hasGround: true));
+
+        // Hovering: the terrain under the patch, never the air under the dragon.
+        Assert.Equal(9.2f, VfxArcanaRules.BreathFloor(22f, 10f, 9.2f, hasGround: true));
+
+        // Nothing to ask (the sandbox): as it always was.
+        Assert.Equal(22f, VfxArcanaRules.BreathFloor(22f, 0f, 0f, hasGround: false));
+    }
+
+    [Fact]
+    public void APitchedBreathStopsWhereItMeetsTheFloor()
+    {
+        // Level: all of what was asked for.
+        Assert.Equal(9f, VfxArcanaRules.GroundReach(9f, 1f, 0f, 3f), 3);
+
+        // From twelve metres up at 45 degrees it lands twelve metres out, however long the wedge.
+        float level = MathF.Sqrt(0.5f);
+        Assert.Equal(12f, VfxArcanaRules.GroundReach(40f, level, level, 12f), 2);
+        Assert.Equal(4f * level, VfxArcanaRules.GroundReach(4f, level, level, 12f), 3);
+
+        // Never behind the mouth, and never further than the axis laid flat.
+        Assert.Equal(0f, VfxArcanaRules.GroundReach(-3f, 1f, 0f, 3f));
+        Assert.True(VfxArcanaRules.GroundReach(9f, 0.4f, 0f, 3f) <= 9f * 0.4f + 0.001f);
+    }
+
     [Fact]
     public void OnlyTheTwoLowestTiersAreLean()
     {

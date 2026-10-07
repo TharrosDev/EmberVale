@@ -105,6 +105,51 @@ public static class VfxArcanaRules
     /// lights the ground: from a fifth of the way to nine tenths.</summary>
     public static float PatchAlong(int roll) => 0.2f + (0.7f * (((roll >> 12) & 0xFFF) / 4095f));
 
+    /// <summary>The widest the lit patch under a breath was on the leanest tier before it was sized
+    /// to the wedge (metres of radius): what that tier is still held to.</summary>
+    public const float PatchLeanRadius = 1.8f;
+
+    /// <summary>
+    /// The radius of the patch one tick of a breath lights on the ground, for a wedge
+    /// <paramref name="wide"/> metres across there. Three or four of them are alive at once and each
+    /// is a blended disc on the floor, so the leanest tier keeps the size it always had (a disc
+    /// nearly twice as wide is three times the pixels, on the tier that is short of them).
+    /// </summary>
+    public static float PatchRadius(VfxTier tier, float wide) =>
+        Math.Clamp(wide, 0.9f, tier == VfxTier.Performance ? PatchLeanRadius : 3.2f);
+
+    /// <summary>How far above the ground a breather's feet are before it counts as in the air.</summary>
+    public const float AirborneClearance = 2.5f;
+
+    /// <summary>
+    /// The height of the floor a breath lights and burns. A breather standing on it gives the
+    /// height itself (<paramref name="casterY"/>: right on a bridge, a roof or a dungeon floor,
+    /// where the terrain is somewhere else). One hovering well above the terrain does not: its
+    /// patches were drawn in the air under it. Then it is the terrain under the patch
+    /// (<paramref name="groundAtPatch"/>). <paramref name="hasGround"/> is false where there is no
+    /// terrain to ask (the sandbox).
+    /// </summary>
+    public static float BreathFloor(float casterY, float groundUnderCaster, float groundAtPatch, bool hasGround) =>
+        hasGround && casterY - groundUnderCaster > AirborneClearance ? groundAtPatch : casterY;
+
+    /// <summary>
+    /// How far along the ground (metres from under the mouth) a breath reaches when it is asked for
+    /// <paramref name="along"/> metres down its axis. <paramref name="level"/> is the length of the
+    /// axis laid flat (1 = a level breath, less when it is pitched), and a breath pitched down
+    /// (<paramref name="fall"/> = how steeply, 0..1) from <paramref name="height"/> metres up stops
+    /// where it meets the floor.
+    /// </summary>
+    public static float GroundReach(float along, float level, float fall, float height)
+    {
+        float reach = Math.Max(0f, along);
+        if (fall > 0.05f && height > 0f)
+        {
+            reach = Math.Min(reach, height / fall);
+        }
+
+        return reach * Math.Clamp(level, 0f, 1f);
+    }
+
     /// <summary>
     /// Whether a point stands in a breath: <paramref name="along"/> metres down its axis and
     /// <paramref name="off"/> metres to the side of it, for a wedge <paramref name="range"/> long
