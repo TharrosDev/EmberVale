@@ -58,9 +58,6 @@ public partial class SpellbookPanel : UiPanel
     private const float PinDiscSize = 22f;
     private const float CardDiscSize = 24f;
 
-    // Below this usable width the eight slots sit in two rows of four, so a name is never cut to a stub.
-    private const float PinRowWidth = 1400f;
-
     // For the screenshot harness: how many slots the last rebuild drew, and a card's pin button.
     private int _pinSlotsBuilt;
     private Button? _pinForCapture;
@@ -241,7 +238,7 @@ public partial class SpellbookPanel : UiPanel
             _body.AddChild(line);
         }
 
-        _body.AddChild(BuildPins(usable));
+        _body.AddChild(BuildPins());
 
         // The hairline every hub page has under its title and tabs.
         _body.AddChild(UiTheme.RowRule());
@@ -358,7 +355,7 @@ public partial class SpellbookPanel : UiPanel
     /// ⚠️ The line over the slots is always there, whatever it says: the panel restores focus by
     /// child index across a rebuild, and a line that came and went would shift every row under it.
     /// </summary>
-    private Control BuildPins(float usable)
+    private Control BuildPins()
     {
         var block = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
         block.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
@@ -378,7 +375,9 @@ public partial class SpellbookPanel : UiPanel
 
         var grid = new GridContainer
         {
-            Columns = usable >= PinRowWidth ? pins.Count : Mathf.Max(1, pins.Count / 2),
+            // Two rows of four at every width. One row of eight cut the names short ("Arcane
+            // Shi...") on anything narrower than a 1080p page, and the name is what a slot is for.
+            Columns = Mathf.Max(1, pins.Count / 2),
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
         };
         grid.AddThemeConstantOverride("h_separation", UiTheme.ChipGap);
@@ -399,7 +398,9 @@ public partial class SpellbookPanel : UiPanel
         bool chosen = slot == _pinSlot;
         bool prepared = spell != null && _spellcasting!.Selected?.Id == spell.Id;
         Color tint = spell != null ? SpellSchools.Color(spell.School) : UiTheme.Disabled;
-        Color? edge = chosen ? UiTheme.Accent : spell != null ? tint : null;
+
+        // An empty slot keeps a visible edge: it is somewhere a spell can go, not a gap in the row.
+        Color? edge = chosen ? UiTheme.Accent : spell != null ? tint : UiTheme.IronLit;
 
         PanelContainer card = UiTheme.CardButton(
             edge, out Button input, out VBoxContainer col, UiTheme.Compact(UiTheme.CardStyle(edge)));
@@ -416,7 +417,7 @@ public partial class SpellbookPanel : UiPanel
 
         Label name = UiTheme.Body(
             spell != null ? SpellText.Name(spell) : Loc.T("wheel.slot.empty"),
-            spell == null ? UiTheme.Disabled : prepared ? tint : UiTheme.Text);
+            spell == null ? UiTheme.Dim : prepared ? tint : UiTheme.Text);
         name.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
         name.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
         name.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
@@ -450,11 +451,14 @@ public partial class SpellbookPanel : UiPanel
     /// </summary>
     private Control BuildSchoolRing(float width)
     {
-        var frame = new Control { CustomMinimumSize = new Vector2(width, 0f) };
+        // Clipped: the diagram is decoration for this column only. Centre-anchored it hung half its
+        // width off the column's right edge, across the school page's rank lines, striking them through.
+        var frame = new Control { CustomMinimumSize = new Vector2(width, 0f), ClipContents = true };
 
         ColorRect ring = UiOrnament.RuneCircle(width, UiTheme.GlyphLight, intensity: 0.5f, ticks: 30f);
-        ring.SetAnchorsPreset(Control.LayoutPreset.CenterTop);
+        ring.SetAnchorsPreset(Control.LayoutPreset.TopLeft);
         ring.Position = new Vector2(0f, 10f);
+        ring.Size = new Vector2(width, width);
         frame.AddChild(ring);
 
         // Six two-line rows plus their gaps are taller than a 720 px page, so the list scrolls over the

@@ -37,11 +37,21 @@
 #      the Spine, the rest at the Chest, so no one joint takes it all) until the chest's mean facing
 #      is forward, and the neck is turned so the head's is too. The Hips track is not touched, so
 #      the legs go on stepping exactly sideways.
+#      It is also STOOD UP. The source carries its weapon low in a fighting crouch, the chest
+#      pitched well forward over the hips; from behind, in third person, that was a hunched sideways
+#      scuttle with the blade across the body. The same two joints are turned until the chest's mean
+#      lean from upright is STRAFE_LEAN degrees, which leaves a little of the stance and none of the
+#      hunch.
 #   4. strafe_right IS MIRRORED from strafe_left (after the squaring); Meshy shipped only the one.
+#   5. THE IDLE'S ARMS ARE BROUGHT IN. The mean pose the idle is calmed toward holds both upper arms
+#      well out from the body (measured and printed below), which on a standing character read as a
+#      relaxed A-pose on the player, the townsfolk and every bandit alike. Each upper arm is turned at
+#      the shoulder, as one rigid offset over the whole clip, until its mean angle from straight down
+#      is IDLE_ARM_ANGLE degrees: enough to clear a hip and a scabbard. idle_alert is not touched.
 #
 # Every one of these prints what it did, per clip, so the log is the check: hips travel removed (in
-# metres), idle mean yaw and range before and after, the strafe's chest and head facing before and
-# after.
+# metres), idle mean yaw and range before and after, the idle's upper arm angles before and after,
+# the strafe's chest and head facing and its lean before and after.
 #
 # Re-run whenever the sources or their .import retarget settings change — the committed .res is
 # otherwise unreproducible. It writes anim_meshy.res and nothing else.
@@ -83,6 +93,15 @@ const STRAFE_RIGHT := "strafe_right"
 
 # How much of the idle's motion about its mean pose survives.
 const IDLE_MOTION := 0.15
+
+# The angle from straight down, in degrees, the idle's upper arms are brought in to. Not zero: an arm
+# hung dead vertical goes through the hip of every armoured body.
+const IDLE_ARM_ANGLE := 14.0
+
+# The lean from upright, in degrees, the strafe's chest is stood up to.
+const STRAFE_LEAN := 8.0
+
+const UPPER_ARMS := [["LeftUpperArm", "LeftLowerArm"], ["RightUpperArm", "RightLowerArm"]]
 
 # Samples per second when a track is averaged. Keys cannot be averaged directly: the importer's
 # optimiser drops the ones it can interpolate, so they are not evenly spaced in time.
@@ -174,6 +193,9 @@ func _initialize() -> void:
 			_detrend_hips(anim, slot, metres)
 
 		if slot in SQUARE_CHEST:
+			# Stood up first: the squaring turns about the vertical, which cannot undo the standing
+			# up, whereas standing up after it could carry the chest's facing a little off forward.
+			_stand_chest_up(anim, slot, skeleton)
 			_square_chest(anim, slot, skeleton)
 
 		if slot == IDLE:
@@ -185,6 +207,8 @@ func _initialize() -> void:
 			total_tracks += alert.get_track_count()
 			_report(IDLE_ALERT, alert, mapped)
 			_calm_idle(anim, hips_rest)
+			for pair in UPPER_ARMS:
+				_bring_arm_in(anim, slot, skeleton, pair[0], pair[1])
 
 		out.add_animation(slot, anim)
 		added += 1
@@ -472,6 +496,105 @@ func _square_chest(anim: Animation, slot: String, skeleton: Skeleton3D) -> void:
 	print("    square  %-18s chest mean facing %+.1f deg -> %+.1f deg (turned %+.1f at the Spine, %+.1f at the Chest); head %+.1f deg -> %+.1f deg; hips left at %+.1f deg"
 		% [slot, rad_to_deg(before), rad_to_deg(after), rad_to_deg(-before * 0.5), rad_to_deg(-midway),
 		   rad_to_deg(head_before), rad_to_deg(head_after), rad_to_deg(hips_yaw)])
+
+
+# Which way a bone's own "up" points over a clip, as the mean of the unit vectors: the turn the pose
+# has taken from the bone's rest, carried through +Y. Straight up for a bone standing as it rests.
+func _mean_up(anim: Animation, skeleton: Skeleton3D, bone: int) -> Vector3:
+	var rest: Quaternion = skeleton.get_bone_global_rest(bone).basis.orthonormalized().get_rotation_quaternion()
+	var rest_inverse: Quaternion = rest.normalized().inverse()
+	var samples := _sample_count(anim)
+	var total := Vector3.ZERO
+	for i in samples:
+		var pose: Quaternion = _global_rotation(anim, skeleton, bone, anim.length * float(i) / float(samples))
+		total += (pose * rest_inverse) * Vector3.UP
+	if total.length_squared() < 0.000001:
+		return Vector3.UP
+	return total.normalized()
+
+
+# Stands a clip's chest up: turns the upper body on the hips, about whatever horizontal axis the
+# chest's mean lean is about, until that lean is STRAFE_LEAN degrees. Shared between the Spine and the
+# Chest like the squaring, and like it never reads or writes the Hips, so the legs step as they did.
+func _stand_chest_up(anim: Animation, slot: String, skeleton: Skeleton3D) -> void:
+	var chest := skeleton.find_bone(CHEST)
+	if chest < 0:
+		return
+
+	var up_before := _mean_up(anim, skeleton, chest)
+	var lean_before := up_before.angle_to(Vector3.UP)
+	var keep := deg_to_rad(STRAFE_LEAN)
+	if lean_before <= keep:
+		print("    upright %-18s chest mean lean %.1f deg, already inside %.1f; left alone"
+			% [slot, rad_to_deg(lean_before), STRAFE_LEAN])
+		return
+
+	var axis := up_before.cross(Vector3.UP)
+	if axis.length_squared() < 0.000001:
+		return
+	axis = axis.normalized()
+	var excess := lean_before - keep
+	if not _turn_from(anim, skeleton, SPINE, Quaternion(axis, excess * 0.5)):
+		_failures.append("%s: no Spine rotation track; its chest cannot be stood up" % slot)
+		return
+
+	var up_midway := _mean_up(anim, skeleton, chest)
+	var lean_midway := up_midway.angle_to(Vector3.UP)
+	var axis_midway := up_midway.cross(Vector3.UP)
+	if lean_midway > keep and axis_midway.length_squared() > 0.000001:
+		_turn_from(anim, skeleton, CHEST, Quaternion(axis_midway.normalized(), lean_midway - keep))
+
+	var lean_after := _mean_up(anim, skeleton, chest).angle_to(Vector3.UP)
+	print("    upright %-18s chest mean lean %.1f deg -> %.1f deg (%.1f at the Spine, %.1f at the Chest; leaning toward x %+.2f, z %+.2f before)"
+		% [slot, rad_to_deg(lean_before), rad_to_deg(lean_after), rad_to_deg(excess * 0.5),
+		   rad_to_deg(maxf(lean_midway - keep, 0.0)), up_before.x, up_before.z])
+
+
+# Which way an upper arm points over a clip, as the mean unit vector in the skeleton's space: from
+# the shoulder joint toward the elbow, which is where the lower arm's rest sits in the upper arm's
+# own space.
+func _mean_arm(anim: Animation, skeleton: Skeleton3D, upper: int, lower: int) -> Vector3:
+	var along: Vector3 = skeleton.get_bone_rest(lower).origin
+	if along.length_squared() < 0.000001:
+		return Vector3.DOWN
+	along = along.normalized()
+	var samples := _sample_count(anim)
+	var total := Vector3.ZERO
+	for i in samples:
+		total += _global_rotation(anim, skeleton, upper, anim.length * float(i) / float(samples)) * along
+	if total.length_squared() < 0.000001:
+		return Vector3.DOWN
+	return total.normalized()
+
+
+# Brings one upper arm in toward the body: one turn at the shoulder, the same for every key, that
+# takes the arm's mean direction to IDLE_ARM_ANGLE degrees from straight down along the shortest way
+# there. The elbow, wrist and fingers ride along unchanged, and what little the calmed idle moves the
+# arm about its mean is kept.
+func _bring_arm_in(anim: Animation, slot: String, skeleton: Skeleton3D, upper_name: String, lower_name: String) -> void:
+	var upper := skeleton.find_bone(upper_name)
+	var lower := skeleton.find_bone(lower_name)
+	if upper < 0 or lower < 0:
+		print("    arms    %-18s the rig has no %s/%s; left alone" % [slot, upper_name, lower_name])
+		return
+
+	var before := _mean_arm(anim, skeleton, upper, lower)
+	var angle := before.angle_to(Vector3.DOWN)
+	var keep := deg_to_rad(IDLE_ARM_ANGLE)
+	var axis := before.cross(Vector3.DOWN)
+	if angle <= keep or axis.length_squared() < 0.000001:
+		print("    arms    %-18s %s is %.1f deg from straight down, already inside %.1f; left alone"
+			% [slot, upper_name, rad_to_deg(angle), IDLE_ARM_ANGLE])
+		return
+
+	if not _turn_from(anim, skeleton, upper_name, Quaternion(axis.normalized(), angle - keep)):
+		print("    arms    %-18s %s has no rotation track; left alone" % [slot, upper_name])
+		return
+
+	var after := _mean_arm(anim, skeleton, upper, lower)
+	print("    arms    %-18s %s %.1f deg from straight down -> %.1f deg (pointing x %+.2f, y %+.2f, z %+.2f -> x %+.2f, y %+.2f, z %+.2f)"
+		% [slot, upper_name, rad_to_deg(angle), rad_to_deg(after.angle_to(Vector3.DOWN)),
+		   before.x, before.y, before.z, after.x, after.y, after.z])
 
 
 # A bone's rotation in the skeleton's space at a time in a clip: each ancestor's rotation, the

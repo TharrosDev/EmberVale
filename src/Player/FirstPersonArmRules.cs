@@ -60,6 +60,23 @@ public static class FirstPersonArmRules
     }
 
     /// <summary>
+    /// The line of sight to a point given in the camera's own axes (+X right, +Y up, -Z forward),
+    /// mirrored onto the hand's own side (<paramref name="side"/>: -1 left, +1 right): the line the
+    /// wrist is put on so the hand sits under whatever is drawn at that point. A point that is not
+    /// in front of the camera gives the default line instead.
+    /// </summary>
+    public static Vector3 LineToward(Vector3 viewPoint, float side)
+    {
+        if (!viewPoint.IsFinite() || viewPoint.Z > -0.01f)
+        {
+            return ViewDirection(75f, 16f / 9f, side);
+        }
+
+        float sign = side < 0f ? -1f : 1f;
+        return new Vector3(sign * Math.Abs(viewPoint.X), viewPoint.Y, viewPoint.Z).Normalized();
+    }
+
+    /// <summary>
     /// The point on the line of sight from <paramref name="eye"/> along <paramref name="direction"/>
     /// (a unit vector) that the wrist can be swung onto: <paramref name="reach"/> from the
     /// <paramref name="shoulder"/>, on the far side of the line's pass through that sphere. Where the

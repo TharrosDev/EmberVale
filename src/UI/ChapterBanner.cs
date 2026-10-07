@@ -178,8 +178,10 @@ public partial class ChapterBanner : CanvasLayer
     /// <summary>Playing, with no menu, cinematic or conversation holding the screen. Every narration sequence
     /// and modal registers with <see cref="UiState"/>, so this one check queues behind the opening, closing and
     /// ending sequences and the vision cards without naming any of them.</summary>
+    // The spell wheel holds the card the same way: it is drawn on the HUD's layer, under this one,
+    // and a card across the middle of the screen covered the wheel's lower half and its readout.
     private static bool CanShow() =>
-        GameManager.Instance is { IsPlaying: true } && !UiState.MenuOpen;
+        GameManager.Instance is { IsPlaying: true } && !UiState.MenuOpen && !SpellWheel.Showing;
 
     private void BeginNext()
     {

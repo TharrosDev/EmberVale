@@ -68,12 +68,12 @@ public sealed partial class SpellShots : TimedShots
     /// <summary>Besides every self-cast, the spells photographed in first person: two or more a school.</summary>
     private static readonly HashSet<string> FirstPersonSet = new()
     {
-        "emberlash", "flame_lance", "sunfall",
-        "rime_shard", "frost_nova", "glacial_bulwark",
-        "ball_lightning", "storm_conduit", "thunder_step",
+        "emberlash", "flame_lance", "sunfall", "pyre_wall",
+        "rime_shard", "frost_nova", "glacial_bulwark", "blizzard",
+        "ball_lightning", "storm_conduit", "thunder_step", "stormbrand",
         "null_lance", "gravity_well",
-        "stinging_swarm", "thornsnare",
-        "ember_siphon", "soul_tithe",
+        "stinging_swarm", "thornsnare", "lifebloom_totem",
+        "ember_siphon", "soul_tithe", "grave_mark",
     };
 
     private static readonly HashSet<string> DaylightSet = new()
@@ -303,6 +303,38 @@ public sealed partial class SpellShots : TimedShots
 
         _props.Clear();
         ShotStage.ClearSpellNodes(GetTree(), _stale);
+
+        // And what the last spell left drawn: a Gravity Well's floor glyph outlived its spell by
+        // long enough to be in the next two spells' frames.
+        _director ??= FindDirector(GetTree().Root);
+        if (_director != null && IsInstanceValid(_director))
+        {
+            _director.KillAll();
+        }
+        else
+        {
+            _director = null;
+        }
+    }
+
+    private SpellVfxDirector? _director;
+
+    private static SpellVfxDirector? FindDirector(Node node)
+    {
+        if (node is SpellVfxDirector director)
+        {
+            return director;
+        }
+
+        foreach (Node child in node.GetChildren())
+        {
+            if (FindDirector(child) is { } found)
+            {
+                return found;
+            }
+        }
+
+        return null;
     }
 
     private void Stage(Plan plan)

@@ -17,65 +17,141 @@ public class SpellWheelMetricsTests
     private static readonly Vector2 Hd = new(1280f, 720f);
     private static readonly Vector2 FullHd = new(1920f, 1080f);
 
+    // The canvas the HUD lays out in on a 16:9 screen.
+    private static readonly Vector2 Logical = new(1600f, 900f);
+
     [Theory]
     [InlineData(SettingsMath.HudScaleMin)]
     [InlineData(1f)]
     [InlineData(1.25f)]
     [InlineData(SettingsMath.HudScaleMax)]
-    public void TheWholeBlock_FitsTheHandheldView_AtEveryHudScale(float hudScale)
+    public void TheWholeBlock_FitsEveryView_AtEveryHudScale(float hudScale)
     {
         // With the widest safe zone as well: the view the wheel lays out in is what is left of it.
-        foreach (float safe in new[] { 0f, SettingsMath.HudSafeZoneMax })
+        foreach (Vector2 screen in new[] { Handheld, Hd, Logical, FullHd })
         {
-            Vector2 view = Handheld * (1f - (2f * safe));
-            float radius = SpellWheelMetrics.Radius(view, hudScale);
-            Vector2 centre = SpellWheelMetrics.Centre(view, radius);
-            float reach = radius * SpellWheelRules.FanEdge;
+            foreach (float safe in new[] { 0f, SettingsMath.HudSafeZoneMax })
+            {
+                Vector2 view = screen * (1f - (2f * safe));
+                float radius = SpellWheelMetrics.Radius(view, hudScale);
+                Vector2 centre = SpellWheelMetrics.Centre(view, radius);
+                float reach = radius * SpellWheelRules.FanEdge;
+                string where = $"at {screen}, scale {hudScale}, safe {safe}";
 
-            Assert.True(radius >= SpellWheelMetrics.MinRadius);
-            Assert.True(centre.Y - reach >= SpellWheelMetrics.Margin - 0.01f, $"top of the fan off the view at scale {hudScale}, safe {safe}");
-            Assert.True(centre.X - reach >= SpellWheelMetrics.Margin - 0.01f);
-            Assert.True(centre.X + reach <= view.X - SpellWheelMetrics.Margin + 0.01f);
+                Assert.True(radius >= SpellWheelMetrics.MinRadius);
+                Assert.True(centre.X - reach >= SpellWheelMetrics.Margin - 0.01f);
+                Assert.True(centre.X + reach <= view.X - SpellWheelMetrics.Margin + 0.01f);
 
-            float legendBottom = SpellWheelMetrics.LegendTop(centre, radius) + SpellWheelMetrics.LegendHeight;
-            Assert.True(legendBottom <= view.Y - SpellWheelMetrics.Margin + 0.01f, $"legend off the view at scale {hudScale}, safe {safe}");
-            Assert.True(SpellWheelMetrics.ReadoutWidth(view, radius) <= view.X - (SpellWheelMetrics.Margin * 2f) + 0.01f);
+                // The legend over the wheel, with the names' room between it and the fan.
+                float legendTop = SpellWheelMetrics.LegendTop(centre, radius);
+                Assert.True(legendTop >= SpellWheelMetrics.Margin - 0.01f, $"legend off the view {where}");
+                Assert.True(
+                    legendTop + SpellWheelMetrics.LegendHeight + SpellWheelMetrics.Gap + SpellWheelMetrics.LabelRoom
+                    <= centre.Y - reach + 0.01f, $"legend on the fan's names {where}");
+
+                // The readout under it, wherever the open fan has pushed it.
+                for (int school = -1; school < SpellWheelRules.Schools.Count; school++)
+                {
+                    foreach (int count in new[] { 1, 3, 5, 8 })
+                    {
+                        float bottom = SpellWheelMetrics.ReadoutTop(centre, radius, school, count) + SpellWheelMetrics.ReadoutHeight;
+                        Assert.True(bottom <= view.Y - SpellWheelMetrics.Margin + 0.01f, $"readout off the view {where}, fan {school}x{count}");
+                    }
+                }
+
+                Assert.True(SpellWheelMetrics.ReadoutWidth(view, radius) <= view.X - (SpellWheelMetrics.Margin * 2f) + 0.01f);
+            }
         }
     }
 
     [Fact]
-    public void TheRim_FollowsTheHudScale_UntilTheViewRunsOut()
+    public void TheRim_SpansNearHalfTheScreen_AndFollowsTheHudScale_UntilTheViewRunsOut()
     {
-        Assert.Equal(SpellWheelMetrics.BaseRadius, SpellWheelMetrics.Radius(Hd, 1f), 3);
-        Assert.Equal(SpellWheelMetrics.BaseRadius * 1.5f, SpellWheelMetrics.Radius(FullHd, 1.5f), 3);
-        Assert.Equal(SpellWheelMetrics.BaseRadius * 0.75f, SpellWheelMetrics.Radius(Hd, 0.75f), 3);
+        // The outer ring's diameter is 45 to 50 percent of the screen's height, whatever the screen.
+        foreach (Vector2 screen in new[] { Handheld, Hd, Logical, FullHd })
+        {
+            float share = SpellWheelMetrics.Radius(screen, 1f) * 2f / screen.Y;
+            Assert.InRange(share, 0.45f, 0.50f);
+        }
 
-        // The handheld view holds the full rim at scale 1 and caps a larger one.
-        Assert.Equal(SpellWheelMetrics.BaseRadius, SpellWheelMetrics.Radius(Handheld, 1f), 3);
-        Assert.True(SpellWheelMetrics.Radius(Handheld, 1.5f) < SpellWheelMetrics.BaseRadius * 1.5f);
+        Assert.Equal(Hd.Y * SpellWheelMetrics.RimShare * 0.75f, SpellWheelMetrics.Radius(Hd, 0.75f), 3);
+        Assert.True(SpellWheelMetrics.Radius(Hd, 1.25f) > SpellWheelMetrics.Radius(Hd, 1f));
+
+        // A scale the view has no room for is capped, not clipped.
+        Assert.True(SpellWheelMetrics.Radius(Handheld, 1.5f) < Handheld.Y * SpellWheelMetrics.RimShare * 1.5f);
 
         // Nonsense in, something drawable out.
-        Assert.Equal(SpellWheelMetrics.BaseRadius, SpellWheelMetrics.Radius(Hd, 0f), 3);
-        Assert.Equal(SpellWheelMetrics.BaseRadius, SpellWheelMetrics.Radius(Hd, float.NaN), 3);
+        Assert.Equal(SpellWheelMetrics.Radius(Hd, 1f), SpellWheelMetrics.Radius(Hd, 0f), 3);
+        Assert.Equal(SpellWheelMetrics.Radius(Hd, 1f), SpellWheelMetrics.Radius(Hd, float.NaN), 3);
         Assert.Equal(SpellWheelMetrics.MinRadius, SpellWheelMetrics.Radius(Vector2.Zero, 1f), 3);
         Assert.Equal(SpellWheelMetrics.MinRadius, SpellWheelMetrics.Radius(new Vector2(float.NaN, float.NaN), 1f), 3);
     }
 
     [Fact]
-    public void TheWheel_SitsOnTheCentreOfTheView_WhereThereIsRoomUnderIt()
+    public void TheWheel_SitsOnTheCentreOfTheScreen()
     {
-        Vector2 centre = SpellWheelMetrics.Centre(Hd, SpellWheelMetrics.Radius(Hd, 1f));
-        Assert.Equal(640f, centre.X, 3);
-        Assert.Equal(360f, centre.Y, 3);
+        foreach (Vector2 screen in new[] { Hd, Logical, FullHd })
+        {
+            Vector2 centre = SpellWheelMetrics.Centre(screen, SpellWheelMetrics.Radius(screen, 1f));
+            Assert.Equal(screen.X * 0.5f, centre.X, 3);
+            Assert.Equal(screen.Y * 0.5f, centre.Y, 3);
+        }
 
-        // On the handheld view it lifts, and only as far as the readout and legend need.
-        float radius = SpellWheelMetrics.Radius(Handheld, 1f);
-        Vector2 lifted = SpellWheelMetrics.Centre(Handheld, radius);
-        Assert.Equal(426.5f, lifted.X, 3);
-        Assert.True(lifted.Y < 266.5f);
+        // The handheld view is the tight one: it may lift, and by no more than a few lines.
+        Vector2 handheld = SpellWheelMetrics.Centre(Handheld, SpellWheelMetrics.Radius(Handheld, 1f));
+        Assert.Equal(426.5f, handheld.X, 3);
+        Assert.InRange(handheld.Y, 266.5f - 24f, 266.5f);
+    }
+
+    [Fact]
+    public void TheReadout_SitsUnderTheRim_AndDropsOnlyForAFanThatHangsLower()
+    {
+        float radius = SpellWheelMetrics.Radius(Hd, 1f);
+        Vector2 centre = SpellWheelMetrics.Centre(Hd, radius);
+        float close = centre.Y + radius + SpellWheelMetrics.Gap;
+
+        Assert.Equal(close, SpellWheelMetrics.ReadoutTop(centre, radius), 3);
+
+        // Fire is straight up and Frost and Necrotic are in the top half: the plate stays put.
+        Assert.Equal(close, SpellWheelMetrics.ReadoutTop(centre, radius, 0, 4), 3);
+        Assert.Equal(close, SpellWheelMetrics.ReadoutTop(centre, radius, 1, 4), 3);
+        Assert.Equal(close, SpellWheelMetrics.ReadoutTop(centre, radius, 5, 4), 3);
+
+        // Arcane is straight down: the plate clears the whole fan and its names.
+        Assert.Equal(SpellWheelRules.FanEdge, SpellWheelMetrics.FanDrop(3, 4), 4);
         Assert.Equal(
-            Handheld.Y - SpellWheelMetrics.Margin,
-            SpellWheelMetrics.LegendTop(lifted, radius) + SpellWheelMetrics.LegendHeight, 2);
+            centre.Y + (radius * SpellWheelRules.FanEdge) + SpellWheelMetrics.LabelRoom + SpellWheelMetrics.Gap,
+            SpellWheelMetrics.ReadoutTop(centre, radius, 3, 4), 3);
+
+        // Lightning and Nature hang part of the way, and as far as each other.
+        Assert.InRange(SpellWheelMetrics.FanDrop(2, 3), 1f, SpellWheelRules.FanEdge);
+        Assert.Equal(SpellWheelMetrics.FanDrop(2, 3), SpellWheelMetrics.FanDrop(4, 3), 4);
+        Assert.Equal(0f, SpellWheelMetrics.FanDrop(0, 3), 4);
+        Assert.Equal(0f, SpellWheelMetrics.FanDrop(-1, 3), 4);
+        Assert.Equal(0f, SpellWheelMetrics.FanDrop(3, 0), 4);
+    }
+
+    [Fact]
+    public void TextSizes_GrowWithTheRim_BetweenTheirFloorsAndWhatThePlateHolds()
+    {
+        Assert.Equal(18, SpellWheelMetrics.NameSize(84f));
+        Assert.Equal(12, SpellWheelMetrics.TextSize(84f));
+        Assert.Equal(24, SpellWheelMetrics.NameSize(207f));
+        Assert.Equal(16, SpellWheelMetrics.TextSize(207f));
+        Assert.Equal(24, SpellWheelMetrics.NameSize(400f));
+        Assert.Equal(16, SpellWheelMetrics.TextSize(400f));
+    }
+
+    [Theory]
+    [InlineData("Emberlash", "Emberlash", "")]
+    [InlineData("Flame Lance", "Flame", "Lance")]
+    [InlineData("Ball of Lightning", "Ball of", "Lightning")]
+    [InlineData("  Blink ", "Blink", "")]
+    [InlineData("", "", "")]
+    public void AFanName_BreaksAtTheSpaceNearestItsMiddle(string name, string first, string second)
+    {
+        Assert.Equal((first, second), SpellWheelMetrics.NameLines(name));
+        Assert.Equal((string.Empty, string.Empty), SpellWheelMetrics.NameLines(null));
     }
 
     [Fact]
@@ -213,7 +289,8 @@ public class SpellWheelMetricsTests
         Assert.Equal(0, SpellWheelMetrics.Numeral(0f));
         Assert.Equal(1, SpellWheelMetrics.Numeral(0.1f));
         Assert.Equal(9, SpellWheelMetrics.Numeral(9f));
-        Assert.Equal(0, SpellWheelMetrics.Numeral(9.1f));
+        Assert.Equal(10, SpellWheelMetrics.Numeral(9.1f));
+        Assert.Equal(99, SpellWheelMetrics.Numeral(600f));
     }
 
     [Fact]
