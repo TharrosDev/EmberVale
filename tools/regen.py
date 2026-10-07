@@ -9,16 +9,20 @@
 
 Output is failures only, then one line `REGEN {json}`. --json prints the full result object
 instead; -v prints every entry. Each generator's full output is in artifacts/regen/<name>.log.
-Exit 0 clean, 1 when a generator would change a file or a check fails, 2 when a generator crashed,
-3 when another regen holds the lock.
+Exit 0 clean, 1 when a generator would change a file or a check fails, 2 when a generator crashed
+or one named with --only could not run, 3 when another regen holds the lock.
 
 This file owns no generation rule. Each entry runs the generator's own entry point; a generator
-with no --check (gen_appearance, gen_player_mask) is checked by running it, comparing the files it
-owns and putting the old bytes back. Entries run one at a time because six of them rewrite blocks
-of data/locale/strings.csv.
+with no --check (gen_appearance, gen_player_mask) is checked by running a copy of it in a temporary
+folder that holds copies of the files it reads and owns, then comparing; --check never writes a
+tracked file. Entries run one at a time because six of them rewrite blocks of
+data/locale/strings.csv.
+
+A generator whose dependency is missing is `skipped` in a full run; named with --only it is an
+ERROR, because the caller asked for exactly that check and it did not run.
 
 A passing entry is remembered in artifacts/regen/cache.json by a hash of everything it reads and
-writes plus its command, and reported `cached` until one of those changes. CI and any run that
+writes (the local modules it imports included) plus its command, and reported `cached` until one of those changes. CI and any run that
 must not trust the cache pass --no-cache.
 """
 
@@ -28,13 +32,16 @@ import argparse
 import hashlib
 import importlib.util
 import json
+import os
+import re
 import shutil
 import sys
+import tempfile
 import time
 from dataclasses import dataclass
 from pathlib import Path
 
-from quality_common import ROOT, run_process, write_json
+from quality_common import ROOT, pid_alive, run_process, write_json
 
 STATE = ROOT / "artifacts" / "regen"
 LOCK_STALE_SECONDS = 900
@@ -56,8 +63,11 @@ class Entry:
     write: tuple[str, ...] | None
     #: everything the generator reads or writes; a change to any of it invalidates the cache.
     watch: tuple[str, ...]
-    #: files the writer owns. Required when `check` is None: they are snapshotted and restored.
+    #: files the writer owns. Required when `check` is None: the check compares them with what a
+    #: copy of the writer produces in a temporary folder.
     owns: tuple[str, ...] = ()
+    #: inputs a `check` is None writer reads besides the files it owns; copied next to them.
+    reads: tuple[str, ...] = ()
     #: importable modules / executables it needs; missing ones make the entry `skipped`.
     needs: tuple[str, ...] = ()
     timeout: int = 300
@@ -106,7 +116,9 @@ REGISTRY: tuple[Entry, ...] = (
     Entry("gen_player_mask", "player body region mask",
           None, ("tools/gen_player_mask.py",),
           ("tools/gen_player_mask.py", "assets/models/characters/chr_player_base*"),
-          owns=("assets/models/characters/chr_player_base_mask.png",), needs=("PIL",)),
+          owns=("assets/models/characters/chr_player_base_mask.png",),
+          reads=("assets/models/characters/chr_player_base.glb",
+                 "assets/models/characters/chr_player_base_texture_0.png"), needs=("PIL",)),
     Entry("check_hit_zones", "enemy hit zones cover their meshes",
           ("tools/check_hit_zones.py", "--check"), None,
           ("tools/check_hit_zones.py", "data/enemies/*.tres", "assets/models/creatures/*.glb")),
@@ -152,9 +164,39 @@ def tree_hashes(root: Path, patterns: tuple[str, ...]) -> dict[str, str]:
     return {path.relative_to(root).as_posix(): file_token(path) for path in files_for(root, patterns)}
 
 
+_IMPORT = re.compile(r"^[ \t]*(?:import|from)[ \t]+([A-Za-z_][\w.]*)", re.M)
+_IMPORTS: dict[Path, tuple[str, ...]] = {}
+
+
+def local_imports(root: Path, script: str) -> tuple[str, ...]:
+    """Project modules a script imports, transitively, as root-relative paths. A generator's
+    output depends on them as much as on its own file, and a hand-kept watch list misses them.
+    Names are resolved beside the importing file and under tools/, which is how they run."""
+    start = root / script
+    if start not in _IMPORTS:
+        seen: dict[Path, None] = {}
+        queue = [start]
+        while queue:
+            current = queue.pop()
+            try:
+                text = current.read_text(encoding="utf-8", errors="replace")
+            except OSError:
+                continue
+            for name in _IMPORT.findall(text):
+                parts = name.split(".")
+                for base in (current.parent, root / "tools"):
+                    for candidate in (base.joinpath(*parts).with_suffix(".py"), base.joinpath(*parts, "__init__.py")):
+                        if candidate.is_file() and candidate not in seen and candidate != start:
+                            seen[candidate] = None
+                            queue.append(candidate)
+        _IMPORTS[start] = tuple(sorted(path.relative_to(root).as_posix() for path in seen))
+    return _IMPORTS[start]
+
+
 def signature(root: Path, entry: Entry) -> str:
     digest = hashlib.sha256(repr((entry.check, entry.write)).encode("utf-8"))
-    for name, token in tree_hashes(root, entry.watch).items():
+    script = (entry.check or entry.write)[0]
+    for name, token in tree_hashes(root, (*entry.watch, *local_imports(root, script))).items():
         digest.update(f"{name}\0{token}\n".encode("utf-8"))
     return digest.hexdigest()
 
@@ -197,22 +239,33 @@ def execute(root: Path, arguments: tuple[str, ...], timeout: int):
     return run_process([sys.executable, *arguments], timeout=timeout, cwd=root)
 
 
-def snapshot(root: Path, patterns: tuple[str, ...]) -> dict[Path, bytes]:
-    return {path: path.read_bytes() for path in files_for(root, patterns)}
+def snapshot(root: Path, patterns: tuple[str, ...]) -> dict[str, bytes]:
+    return {path.relative_to(root).as_posix(): path.read_bytes() for path in files_for(root, patterns)}
 
 
-def restore(root: Path, patterns: tuple[str, ...], before: dict[Path, bytes]) -> None:
-    for path in files_for(root, patterns):
-        if path not in before:
-            path.unlink()
-    for path, payload in before.items():
-        if not path.is_file() or path.read_bytes() != payload:
-            path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_bytes(payload)
+def run_in_copy(root: Path, entry: Entry, run=execute):
+    """Run a writer that has no --check in a temporary folder holding copies of the script, the
+    modules it imports and the files it reads and owns. Returns (process result, what it left in
+    the files it owns). The real tree is only read: a run killed half way leaves nothing behind
+    in it. Works because these writers find the project root from their own file's location."""
+    script = entry.write[0]
+    with tempfile.TemporaryDirectory(prefix="regen-check-") as folder:
+        scratch = Path(folder)
+        for path in files_for(root, (script, *local_imports(root, script), *entry.owns, *entry.reads)):
+            target = scratch / path.relative_to(root)
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(path, target)
+        try:
+            result = run(scratch, entry.write, entry.timeout)
+            return result, snapshot(scratch, entry.owns)
+        finally:
+            for key in [key for key in _GLOBS if key[0] == scratch]:
+                del _GLOBS[key]
 
 
 def run_check(root: Path, entry: Entry, run=execute) -> dict:
-    """Run one entry's check. A writer with no --check runs for real and is then put back."""
+    """Run one entry's check. A writer with no --check runs on a temporary copy; nothing here
+    writes a file the project tracks."""
     started = time.monotonic()
     if entry.check is not None:
         result = run(root, entry.check, entry.timeout)
@@ -222,16 +275,8 @@ def run_check(root: Path, entry: Entry, run=execute) -> dict:
         output = result.output
     else:
         before = snapshot(root, entry.owns)
-        try:
-            result = run(root, entry.write, entry.timeout)
-            _GLOBS.clear()
-            after = snapshot(root, entry.owns)
-        finally:
-            _GLOBS.clear()
-            restore(root, entry.owns, before)
-            _GLOBS.clear()
-        changed = sorted(path.relative_to(root).as_posix() for path in set(before) | set(after)
-                         if before.get(path) != after.get(path))
+        result, after = run_in_copy(root, entry, run)
+        changed = sorted(name for name in set(before) | set(after) if before.get(name) != after.get(name))
         output = result.output
         if result.returncode != 0 or result.timed_out:
             status = "ERROR"
@@ -262,33 +307,40 @@ def run_write(root: Path, entry: Entry, run=execute) -> dict:
 
 
 class Lock:
-    """A directory lock: mkdir is atomic, and two lanes regenerating at once lose locale blocks."""
+    """A directory lock: mkdir is atomic, and two lanes regenerating at once lose locale blocks.
+    The directory holds the owner's process id; it is taken over only when that process is gone,
+    never by age, because a --fix over the whole registry can outlast any fixed limit."""
 
     def __init__(self, path: Path):
         self.path = path
         self.held = False
+
+    def owner(self) -> int | None:
+        """The live owner's pid, 0 for a lock still being written, None when the owner is gone."""
+        try:
+            pid = int((self.path / "pid").read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            try:   # no pid yet: a run that created the directory this second, or old debris
+                return 0 if time.time() - self.path.stat().st_mtime < LOCK_STALE_SECONDS else None
+            except OSError:
+                return None
+        return pid if pid_alive(pid) else None
 
     def acquire(self) -> bool:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         try:
             self.path.mkdir()
         except FileExistsError:
-            try:
-                age = time.time() - self.path.stat().st_mtime
-            except OSError:
-                age = 0
-            if age < LOCK_STALE_SECONDS:
+            if self.owner() is not None:
                 return False
             # A crashed run left it behind.
+        (self.path / "pid").write_text(str(os.getpid()), encoding="utf-8")
         self.held = True
         return True
 
     def release(self) -> None:
         if self.held:
-            try:
-                self.path.rmdir()
-            except OSError:
-                pass
+            shutil.rmtree(self.path, ignore_errors=True)
             self.held = False
 
 
@@ -312,8 +364,10 @@ def select(names: list[str] | None, registry: tuple[Entry, ...] = REGISTRY) -> l
 
 
 def regen(mode: str, entries: list[Entry], root: Path = ROOT, state: Path = STATE,
-          use_cache: bool = True, run=execute) -> dict:
-    """mode: check | fix | stale. Returns the result object printed as REGEN {json}."""
+          use_cache: bool = True, run=execute, required: bool = False) -> dict:
+    """mode: check | fix | stale. Returns the result object printed as REGEN {json}.
+    `required` (the entries were named with --only): an entry that cannot run for a missing
+    dependency is an ERROR instead of `skipped`, since nothing else would report it unchecked."""
     started = time.monotonic()
     cache_path = state / "cache.json"
     cache = load_cache(cache_path) if use_cache else {}
@@ -329,6 +383,10 @@ def regen(mode: str, entries: list[Entry], root: Path = ROOT, state: Path = STAT
     def check_one(entry: Entry, trust_cache: bool) -> dict:
         missing = missing_needs(entry)
         if missing:
+            if required:
+                return {"name": entry.name, "status": "ERROR", "seconds": 0.0, "changed": [],
+                        "reason": "not checked: missing " + ", ".join(missing)
+                                  + " (named with --only, so it cannot be skipped)"}
             return {"name": entry.name, "status": "skipped", "seconds": 0.0,
                     "reason": "missing " + ", ".join(missing), "changed": []}
         fingerprint = signature(root, entry)
@@ -432,7 +490,7 @@ def main(argv: list[str] | None = None) -> int:
                                      "error": f"another regen holds {lock.path.relative_to(ROOT).as_posix()}"}))
         return 3
     try:
-        result = regen(chosen, entries, use_cache=not args.no_cache)
+        result = regen(chosen, entries, use_cache=not args.no_cache, required=bool(args.only))
     finally:
         lock.release()
     report(result, args.json, args.verbose)
