@@ -47,6 +47,7 @@ public sealed partial class ConsoleScript : Node
     public const string TimeoutArgument = "--exec-timeout";
     public const string VerboseArgument = "--exec-verbose";
     public const string StopOnFailArgument = "--exec-stop-on-fail";
+    public const string KeepNarrationArgument = "--exec-keep-narration";
 
     /// <summary>How long the runner waits for the world before a statement: 30 s at 60 fps, the
     /// loading gate's own limit.</summary>
@@ -62,6 +63,7 @@ public sealed partial class ConsoleScript : Node
     private string _directory = string.Empty;
     private bool _verbose;
     private bool _stopOnFail;
+    private bool _openingHandled;
     private double _timeoutSeconds;
     private ulong _startedMsec;
 
@@ -245,6 +247,18 @@ public sealed partial class ConsoleScript : Node
 
             _barrier = 0;
             _started = true;
+            if (!_openingHandled)
+            {
+                // A New Game opens under the prologue cards: controls are locked and a shot shows the
+                // card, not the world. End it once, through its own skip path, before anything runs.
+                _openingHandled = true;
+                if (!HeadlessArgs.User.Has(KeepNarrationArgument) &&
+                    DevCommands.SkipNarration(GetTree().Root) is { Count: > 0 } skipped)
+                {
+                    _report.Fact("narration_skipped", string.Join(",", skipped));
+                }
+            }
+
             Begin(step);
         }
         else

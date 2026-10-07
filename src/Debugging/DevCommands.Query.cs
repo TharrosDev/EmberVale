@@ -51,6 +51,7 @@ public static partial class DevCommands
     {
         console.Register(new ConsoleCommand("get", "get [<key>...]", "Print key=value for each state key, or list the keys. These are the keys the script runner's assert and wait-until test.", Get));
         console.Register(new ConsoleCommand("dump", "dump <player|enemies|entity <runtimeId>|world|saveables> [fileName]", "State as JSON: an entity with every saveable component's own Save(), the live enemies, the world's dials, or the registered save ids. Replied inline when short, else written under the console output directory.", Dump));
+        console.Register(new ConsoleCommand("skip", "skip", "End the narration that is playing (the New Game prologue, a vision, an ending card) the way holding the skip key does. The script runner does this once before its first statement.", Skip));
         console.Register(new ConsoleCommand("hud", "hud [on|off]", "Print the F3 debug HUD as text, or show or hide the overlay.", Hud));
     }
 
@@ -446,6 +447,37 @@ public static partial class DevCommands
         }
 
         return null;
+    }
+
+    /// <summary>Ends every narration sequence playing under <paramref name="root"/> through its own
+    /// skip path. Returns their type names, empty when none was playing.</summary>
+    public static List<string> SkipNarration(Node root)
+    {
+        var skipped = new List<string>();
+        var pending = new Stack<Node>();
+        pending.Push(root);
+        while (pending.Count > 0)
+        {
+            Node node = pending.Pop();
+            if (node is NarrationSequence { IsPlaying: true } sequence)
+            {
+                skipped.Add(sequence.GetType().Name);
+                sequence.SkipNow();
+            }
+
+            foreach (Node child in node.GetChildren())
+            {
+                pending.Push(child);
+            }
+        }
+
+        return skipped;
+    }
+
+    private static string Skip(DevConsole console, string[] args)
+    {
+        List<string> skipped = SkipNarration(console.GetTree().Root);
+        return skipped.Count == 0 ? "nothing to skip: narration is not playing" : "skipped " + string.Join(", ", skipped);
     }
 
     private static string Hud(DevConsole console, string[] args)
