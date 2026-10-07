@@ -242,17 +242,16 @@ internal static class ArenaRunner
 
     private static List<string> Archetypes()
     {
-        var ids = new List<string>();
+        // Archetype rows and the templates registered in code (the goblin has no archetype row):
+        // everything --arena=<id> accepts, so the list and the "all" sweep leave nothing out.
+        var ids = new SortedSet<string>(EnemyTemplateRegistry.TemplateIds, StringComparer.Ordinal);
         foreach (EnemyArchetypeResource archetype in EnemyArchetypeDatabase.All)
         {
-            if (Array.IndexOf(HeadlessStory.Bosses, archetype.Id) < 0)
-            {
-                ids.Add(archetype.Id);
-            }
+            ids.Add(archetype.Id);
         }
 
-        ids.Sort(StringComparer.Ordinal);
-        return ids;
+        ids.ExceptWith(HeadlessStory.Bosses);
+        return new List<string>(ids);
     }
 
     private static List<string> Encounters()
