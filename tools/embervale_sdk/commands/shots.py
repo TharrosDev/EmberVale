@@ -167,7 +167,7 @@ def run(run, args, passthrough):
     suite = {"combatshots": "combat-shots"}.get(suite, suite)
     if suite == "list" or not suite:
         run.result["metrics"]["shots"] = dict(suites=sorted(SUITES))
-        run.note("SHOTS " + json.dumps(dict(suites=sorted(SUITES)), ensure_ascii=False))
+        run.brief("SHOTS " + json.dumps(dict(suites=sorted(SUITES)), ensure_ascii=False))
         return
     if suite == "shot" and (args.ui or "").split("/")[0].lstrip("-") == "shellshots":
         # The title suite has no session to attach --shot to; it takes the same filter directly.
@@ -202,7 +202,7 @@ def run(run, args, passthrough):
             run.issue("shots.incomplete", "the suite did not print its shot list; see the step's stdout log")
             return
         run.result["metrics"]["shots"] = dict(suite=suite, shots=names)
-        run.note("SHOTS " + json.dumps(dict(suite=suite, count=len(names), shots=names), ensure_ascii=False))
+        run.brief("SHOTS " + json.dumps(dict(suite=suite, count=len(names), shots=names), ensure_ascii=False))
         return
 
     manifest_path = find_manifest(run.artifacts)
@@ -239,4 +239,4 @@ def run(run, args, passthrough):
     if args.movie:
         summary["movie"] = str(run.artifacts / f"{suite}.avi")
     run.result["metrics"]["shots"] = summary
-    run.note("SHOTS " + json.dumps(summary, ensure_ascii=False))
+    run.brief("SHOTS " + json.dumps(summary, ensure_ascii=False))

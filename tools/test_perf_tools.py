@@ -257,6 +257,25 @@ class Analytics(unittest.TestCase):
 
 
 class SdkCommands(unittest.TestCase):
+    def test_a_run_with_nothing_to_compare_says_so_and_asserts_nothing(self):
+        def filed(verdict):
+            run = mock.Mock()
+            run.result = dict(assertions=[])
+            perf_report.file_verdict(run, dict(suite="session", key="k", machine="m", **verdict), "perf_report")
+            return run
+        none = filed(dict(status="no-baseline", baseline="tests/performance_baselines/m/k.json"))
+        self.assertIn("NO BASELINE", none.brief.call_args.args[0])      # default output, not --verbose only
+        code, message, severity = none.issue.call_args.args
+        self.assertEqual((code, severity), ("perf_report.not_compared", "warning"))
+        self.assertIn("nothing was compared", message)
+        self.assertEqual(none.result["assertions"], [])                 # no "no perf regression" pass
+        apart = filed(dict(status="incomparable", reason="different resolution"))
+        self.assertIn("different resolution", apart.issue.call_args.args[1])
+        ok = filed(dict(status="ok", regress=[], improve=[], same=3, info=0, new=0, missing=0, tolerance=0.1))
+        ok.issue.assert_not_called()
+        self.assertEqual([(a["name"], a["success"]) for a in ok.result["assertions"]],
+                         [("no perf regression (k)", True)])
+
     def test_both_commands_are_discovered_with_their_own_flags(self):
         self.assertIn("perf-report", REGISTRY)
         self.assertIn("vfxperf", REGISTRY)

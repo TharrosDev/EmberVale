@@ -28,12 +28,15 @@ class FakeRun:
     def __init__(self, folder, harness=None, run_id="run-1"):
         self.artifacts = Path(folder) / "artifacts" / run_id
         (self.artifacts / "user").mkdir(parents=True)
-        self.env, self.timeout, self.notes, self.issues, self.calls = {}, 900, [], [], []
+        self.env, self.timeout, self.notes, self.briefs, self.issues, self.calls = {}, 900, [], [], [], []
         self.result = dict(metrics={})
         self.harness = harness
 
     def note(self, message):
         self.notes.append(message)
+
+    def brief(self, line):
+        self.briefs.append(line)
 
     def issue(self, code, message, severity="error", path=None):
         self.issues.append((code, message, severity))
@@ -43,7 +46,8 @@ class FakeRun:
         return types.SimpleNamespace(output=self.harness(self) if self.harness else "")
 
     def shots_line(self):
-        lines = [n for n in self.notes if n.startswith("SHOTS ")]
+        # brief(), not note(): the line must be in the default output, not only under --verbose.
+        lines = [n for n in self.briefs if n.startswith("SHOTS ")]
         return json.loads(lines[-1][6:]) if lines else None
 
 

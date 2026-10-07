@@ -12,7 +12,9 @@ this machine's baseline through tools/perf_compare.py. Without --render the engi
 nothing is drawn, so frame time is script and physics cost only and is baselined separately.
 
 The result's metrics.perf_report holds the facts and the comparison. Assertions: the game's own
-verdict (no invariant violation, no logged error, integrity clean) and "no perf regression".
+verdict (no invariant violation, no logged error, integrity clean) and "no perf regression". With
+no baseline for this machine nothing is compared: the output says NO BASELINE and the run carries
+a warning, so it does not read as a comparison that passed.
 """
 from __future__ import annotations
 
@@ -49,6 +51,24 @@ def baseline_key(facts, args):
     return "-".join(part for part in parts if part)
 
 
+def file_verdict(run, verdict, code):
+    """Files one perf_compare verdict in the run: its lines in the default output, then either the
+    "no perf regression" assertion or, when nothing was compared, a warning that says so."""
+    for line in perf_compare.render(verdict):
+        run.brief(line)
+    status = verdict["status"]
+    if status == "refused":
+        run.issue(f"{code}.baseline", f"baseline not updated: {verdict['reason']}")
+    elif status in ("no-baseline", "incomparable"):
+        why = "no baseline recorded for this machine" if status == "no-baseline" else verdict.get("reason", status)
+        run.issue(f"{code}.not_compared", f"{verdict['key']}: nothing was compared ({why}); "
+                  "this is not a regression verdict. Record a baseline with --update-baseline", "warning")
+    elif status in ("regress", "ok"):
+        run.result["assertions"].append(dict(name=f"no perf regression ({verdict['key']})",
+                                             success=status == "ok", expected=[],
+                                             actual=[e["key"] for e in verdict["regress"]]))
+
+
 def run(run, args, passthrough):
     if not 1 <= args.repeat <= 9 or args.seconds <= 0 or args.warmup < 0:
         raise ValueError("perf-report needs --repeat 1..9, --seconds > 0 and --warmup >= 0")
@@ -71,10 +91,4 @@ def run(run, args, passthrough):
     verdict = perf_compare.evaluate(reports, baseline=args.baseline, update=args.update_baseline,
                                     tolerance=args.tolerance, key=baseline_key(facts, args), median=True)[0]
     run.result["metrics"]["perf_report"]["compare"] = verdict
-    for line in perf_compare.render(verdict):
-        run.note("  " + line)
-    if verdict["status"] == "refused":
-        run.issue("perf_report.baseline", f"baseline not updated: {verdict['reason']}")
-    elif verdict["status"] in ("regress", "ok"):
-        run.result["assertions"].append(dict(name="no perf regression", success=verdict["status"] == "ok",
-                                             expected=[], actual=[e["key"] for e in verdict["regress"]]))
+    file_verdict(run, verdict, "perf_report")

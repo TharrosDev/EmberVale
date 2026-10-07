@@ -6,11 +6,14 @@
 
 It launches `-- --new-game --vfxperf=<tiers>` with a window (the scenario refuses a headless display),
 then runs tools/perf_compare.py on each `vfxperf_<tier>.json` the game wrote under the run's
-artifacts. One assertion per tier: "no perf regression".
+artifacts. One assertion per tier: "no perf regression"; a tier with no baseline is a warning
+and a NO BASELINE line instead, never a pass.
 """
 from __future__ import annotations
 
 import perf_compare
+
+from .perf_report import file_verdict
 
 HELP = "Spell-effect frame cost at several tiers in one launch, with a baseline verdict per tier."
 TIERS = ("performance", "low", "medium", "high", "ultra")
@@ -56,11 +59,4 @@ def run(run, args, passthrough):
     verdicts = perf_compare.evaluate(present, update=args.update_baseline, tolerance=args.tolerance)
     run.result["metrics"]["vfxperf"] = verdicts
     for verdict in verdicts:
-        for line in perf_compare.render(verdict):
-            run.note("  " + line)
-        if verdict["status"] == "refused":
-            run.issue("vfxperf.baseline", f"baseline not updated: {verdict['reason']}")
-        elif verdict["status"] in ("regress", "ok"):
-            run.result["assertions"].append(dict(name=f"no perf regression ({verdict['key']})",
-                                                 success=verdict["status"] == "ok", expected=[],
-                                                 actual=[e["key"] for e in verdict["regress"]]))
+        file_verdict(run, verdict, "vfxperf")
