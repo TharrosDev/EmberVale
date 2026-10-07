@@ -21,7 +21,7 @@ public sealed partial class ReproRun : Node
 {
     public const string Flag = "--repro";
 
-    /// <summary>Frames to wait for the world to settle before running anyway.</summary>
+    /// <summary>Frames to wait for the world to settle before giving up.</summary>
     private const int MaxWaitFrames = 1800;
 
     private int _waited;
@@ -48,20 +48,25 @@ public sealed partial class ReproRun : Node
         {
             report.Fail($"{Flag} needs a script: {Flag}=<name>, one of {string.Join(", ", ReproHarness.Names)}");
         }
+        else if (!ready)
+        {
+            // A script run against a world that is still loading proves nothing about the script.
+            report.Fail($"the session had not finished loading after {MaxWaitFrames} frames; the script was not run");
+        }
         else if (Console == null)
         {
             report.Fail("there is no dev console in this run (a --capture or exported session); run without --capture");
         }
         else
         {
-            ReproResult result = ReproHarness.Execute(name, Console.Execute);
+            ReproResult result = ReproHarness.Execute(name, Console.Run);
             report.Fact("steps", result.Steps).Fact("failed_step", result.FailedStep);
             Log.Info(result.Transcript.Replace("\n", " | "));
-            report.Check(result.Passed, $"'{result.FailedStep}' did not reach its prerequisite");
+            report.Check(result.Passed, $"'{result.FailedStep}' failed");
         }
 
         // Printed, not written to --report: that file belongs to whatever ends the run.
-        int code = report.Emit(line => GD.Print(line), null);
+        int code = report.Emit(line => GD.Print(line), null, (long)Time.GetTicksMsec());
         if (code != 0)
         {
             Log.Error($"{Flag}: '{name}' failed: {string.Join("; ", report.Failures)}");

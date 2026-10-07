@@ -248,6 +248,11 @@ public readonly record struct FilmLayout(int Frames, int Columns, int Rows, int 
     public int BarWidth(int index) =>
         Frames <= 1 ? CellWidth : Math.Max(1, (int)Math.Round(CellWidth * (index + 1) / (double)Frames));
 
+    /// <summary>What to say about a film that came out shorter than asked, or null when it did
+    /// not: "4 of 16 frames".</summary>
+    public static string? Shortfall(int captured, int asked) =>
+        captured < asked ? $"{captured} of {asked} frames" : null;
+
     /// <summary>Reads <c>--film</c>'s value: <c>FRAMESxSTRIDE</c> (e.g. <c>16x3</c>), just
     /// <c>FRAMES</c>, or nothing for 12 frames 4 apart. False when the text is neither.</summary>
     public static bool TryParse(string? text, out int frames, out int stride)
@@ -294,6 +299,10 @@ public sealed class ShotRecord
 
     public string? Film { get; set; }
 
+    /// <summary>"4 of 16 frames" when the film holds fewer frames than were asked for (only the
+    /// frames between the shot's start and its capture are kept), else null.</summary>
+    public string? FilmShort { get; set; }
+
     public string? Problem { get; set; }
 
     public long Frame { get; set; }
@@ -310,6 +319,27 @@ public sealed class ShotRecord
 /// The run's manifest: one entry per shot with its file, checks and pixel measurements, written as
 /// <c>manifest.json</c> next to the images so a run is read from one small file instead of a log.
 /// </summary>
+/// <summary>The effect tier names a run may ask for (<c>--vfxperf=a,b,c</c>,
+/// <c>EMBERVALE_SPELLSHOTS_TIER</c>).</summary>
+public static class EffectTierNames
+{
+    public static readonly string[] All = Enum.GetNames<Embervale.Magic.Vfx.VfxTier>();
+
+    /// <summary>The first name that is not a tier (a number is not a name), or null when all are.</summary>
+    public static string? FirstUnknown(IEnumerable<string> names)
+    {
+        foreach (string name in names)
+        {
+            if (!Array.Exists(All, tier => string.Equals(tier, name.Trim(), StringComparison.OrdinalIgnoreCase)))
+            {
+                return name;
+            }
+        }
+
+        return null;
+    }
+}
+
 public sealed class ShotManifest
 {
     public const int Schema = 1;
@@ -396,6 +426,11 @@ public sealed class ShotManifest
                 if (shot.Film != null)
                 {
                     json.WriteString("film", shot.Film);
+                }
+
+                if (shot.FilmShort != null)
+                {
+                    json.WriteString("film_short", shot.FilmShort);
                 }
 
                 if (shot.Problem != null)

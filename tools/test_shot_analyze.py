@@ -75,6 +75,13 @@ class StatsTests(unittest.TestCase):
         code, lines = cli("stats", self.dir)
         self.assertEqual(0, code)
         self.assertEqual(3, len(lines))
+        # Compact by default: a clean image is two fields, a flagged one keeps every measurement.
+        by_name = {line.get("image"): line for line in lines[:-1]}
+        self.assertEqual(["image", "mean"], list(by_name["ok.png"]))
+        self.assertIn("black", by_name["black.png"]["flags"])
+        self.assertIn("black_pct", by_name["black.png"])
+        code, lines = cli("stats", self.dir, "--full")
+        self.assertTrue(all("black_pct" in line and "hash" in line for line in lines[:-1]))
         self.assertEqual(dict(summary=True, directory=str(self.dir), images=2, flagged=["black.png"]), lines[-1])
         code, lines = cli("stats", self.dir, "--flagged-only", "--strict")
         self.assertEqual(1, code)
@@ -196,6 +203,21 @@ class SheetTests(unittest.TestCase):
             self.assertEqual((160, 90), thumb.size)
         code, lines = cli("sheet", self.dir, self.dir / "sheet.png", "--per-sheet", 0)
         self.assertEqual((0, 5, [str(self.dir / "sheet.png")]), (code, lines[-1]["images"], lines[-1]["sheets"]))
+
+    def test_the_sheet_command_outlines_a_black_image_and_a_duplicate(self):
+        # Cells are laid out by name: 00..04 are scenes, then black, then a copy of 00.
+        Image.new("RGB", (640, 360), (0, 0, 0)).save(self.dir / "05-black.png")
+        scene(self.dir / "06-copy.png", box=[0, 10, 40, 60])
+        code, lines = cli("sheet", self.dir, self.dir / "sheet.png")
+        self.assertEqual(0, code)
+        self.assertEqual(["05-black.png", "06-copy.png"], lines[-1]["flagged"])
+        red = (255, 59, 59)
+        with Image.open(self.dir / "sheet.png") as sheet:
+            cell = lambda index: ((index % 4) * 320 + 1, (index // 4) * (180 + 22) + 1)
+            self.assertEqual(red, sheet.getpixel(cell(5)), "the black image is outlined")
+            self.assertEqual(red, sheet.getpixel(cell(6)), "the duplicate is outlined")
+            self.assertNotEqual(red, sheet.getpixel(cell(0)))
+            self.assertNotEqual(red, sheet.getpixel(cell(4)))
 
     def test_the_old_contact_sheet_command_still_works(self):
         out = self.dir / "out" / "contact.png"

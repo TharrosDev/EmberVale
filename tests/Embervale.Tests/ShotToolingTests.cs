@@ -331,4 +331,43 @@ public class ShotToolingTests
         Assert.NotNull(new OneShotSpec { Fov = 5f }.Validate());
         Assert.Null(new OneShotSpec { At = new[] { 1f, 2f, 3f }, Hour = 0f }.Validate());
     }
+
+    [Theory]
+    [InlineData("{\"distnace\":40}", "unknown key 'distnace'")]
+    [InlineData("{\"wether\":\"rain\"}", "unknown key 'wether'")]
+    [InlineData("{\"yaw\":\"ninety\"}", "yaw 'ninety' is not a number")]
+    [InlineData("{\"distance\":\"12m\"}", "distance '12m' is not a number")]
+    [InlineData("{\"settle\":\"abc\"}", "settle 'abc' is not a number")]
+    [InlineData("{\"hour\":\"noon\"}", "hour 'noon' is not a number")]
+    [InlineData("{\"fov\":null}", "fov 'null' is not a number")]
+    public void AKeyOrNumberThatCannotBeReadIsRefusedNotIgnored(string json, string expected)
+    {
+        List<OneShotSpec> specs = OneShotSpec.FromJson(json, out string? error);
+        Assert.Null(error);
+        Assert.StartsWith(expected, Assert.Single(specs).Validate());
+    }
+
+    [Fact]
+    public void AFlagWhoseNumberCannotBeReadIsRefused()
+    {
+        var args = new CommandLineArgs(new[] { "--shot", "--yaw=ninety" });
+        Assert.Equal("yaw 'ninety' is not a number", OneShotSpec.FromArgs(args).Validate());
+    }
+
+    [Fact]
+    public void EffectTierNames_RefuseAMisspeltTierAndANumber()
+    {
+        Assert.Null(EffectTierNames.FirstUnknown(new[] { "performance", " Medium", "ULTRA" }));
+        Assert.Null(EffectTierNames.FirstUnknown(Array.Empty<string>()));
+        Assert.Equal("mediun", EffectTierNames.FirstUnknown(new[] { "performance", "mediun", "ultra" }));
+        // Enum.TryParse would take "2"; the result file is named by tier, so a number is not a name.
+        Assert.Equal("2", EffectTierNames.FirstUnknown(new[] { "2" }));
+    }
+
+    [Fact]
+    public void AFilmShorterThanAskedSaysSo()
+    {
+        Assert.Equal("4 of 16 frames", FilmLayout.Shortfall(4, 16));
+        Assert.Null(FilmLayout.Shortfall(16, 16));
+    }
 }

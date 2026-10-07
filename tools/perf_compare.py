@@ -20,6 +20,11 @@ more than an absolute floor for its kind (0.5 ms, 16 draw calls, 8 MB ...), so n
 number does not fail a run. Which way is worse is decided by the key's name (RULES below); keys that
 are settings or counts of work done (`frames`, `seconds`, `seed`) are informational.
 
+A run with TOO FEW FRAMES is not judged: a percentile over 19 frames is noise (one stalled 5 s run
+gave p50 254 ms against 7 ms for the same scene). When the run, or its baseline, sampled fewer than
+--min-frames frames (default 60) the verdict is "INCOMPARABLE: N frames", and --update refuses to
+record it. The session report already skips a warm-up (`--warmup`, default 3 s), so none is added here.
+
 OUTPUT is one line per regression or improvement and one summary line; --json prints one JSON line
 instead. EXIT CODES: 0 no regression (or nothing to compare with) · 5 at least one regression ·
 2 unusable input, a refused --update, or a missing baseline under --require-baseline.
@@ -42,6 +47,9 @@ from pathlib import Path
 from quality_common import ROOT, write_json
 
 BASELINES = ROOT / "tests/performance_baselines"
+MIN_FRAMES = 60
+# Where a document says how many frames it sampled: the session report and the driver metrics, vfxperf.
+FRAME_COUNT_KEYS = ("frames", "frameMs.frames")
 EXIT_REGRESSION = 5
 SCHEMA = 1
 
@@ -186,6 +194,19 @@ def _load(path):
     return document
 
 
+def frame_count(flat):
+    """How many frames a flattened run sampled, or None when it does not say."""
+    return next((flat[key] for key in FRAME_COUNT_KEYS if key in flat), None)
+
+
+def too_few_frames(flat, minimum=MIN_FRAMES, what="this run"):
+    """Why a flattened run cannot be judged, or None: 'incomparable: 19 frames ...'."""
+    frames = frame_count(flat)
+    if frames is None or frames >= minimum:
+        return None
+    return f"{frames:.0f} frames ({what} sampled fewer than {minimum}; run longer or use --repeat)"
+
+
 def refusal(document):
     """Why a document must not become a baseline, or None."""
     facts = body(document)
@@ -197,7 +218,7 @@ def refusal(document):
 
 
 def evaluate(paths, baseline=None, update=False, tolerance=0.10, key=None, median=False, force=False,
-             rules=RULES):
+             rules=RULES, min_frames=MIN_FRAMES):
     """Compares (or records) each file. With median=True the files are repeats of ONE measurement.
     Returns one verdict dict per measurement; verdict["status"] is regress, ok, no-baseline,
     incomparable, updated or refused."""
@@ -211,8 +232,9 @@ def evaluate(paths, baseline=None, update=False, tolerance=0.10, key=None, media
         current = median_values([flatten(body(doc)) for _, doc in group])
         target = Path(baseline) if baseline else baseline_path(suite, name, machine)
         verdict = dict(suite=suite, key=name, machine=machine, baseline=str(target), files=[str(p) for p, _ in group])
+        short = too_few_frames(current, min_frames)
         if update:
-            reason = next((r for r in (refusal(doc) for _, doc in group) if r), None)
+            reason = next((r for r in (refusal(doc) for _, doc in group) if r), None) or short
             if reason and not force:
                 verdict.update(status="refused", reason=reason)
             else:
@@ -221,6 +243,10 @@ def evaluate(paths, baseline=None, update=False, tolerance=0.10, key=None, media
                                         captured=dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
                                         git=_git_head(), source=path.name, values=current))
                 verdict.update(status="updated", values=len(current))
+            verdicts.append(verdict)
+            continue
+        if short and not force:
+            verdict.update(status="incomparable", reason=short)
             verdicts.append(verdict)
             continue
         if not target.is_file():
@@ -235,6 +261,11 @@ def evaluate(paths, baseline=None, update=False, tolerance=0.10, key=None, media
             verdicts.append(verdict)
             continue
         old = stored["values"] if isinstance(stored.get("values"), dict) else flatten(body(stored))
+        short = too_few_frames(old, min_frames, "the baseline")
+        if short and not force:
+            verdict.update(status="incomparable", reason=short)
+            verdicts.append(verdict)
+            continue
         outcome = compare(current, old, tolerance, rules)
         verdict.update(outcome, status="regress" if outcome["regress"] else "ok", tolerance=tolerance,
                        captured=stored.get("captured", ""), git=stored.get("git", ""))
@@ -253,7 +284,7 @@ def render(verdict):
     if status == "no-baseline":
         return [f"{head}: NO BASELINE ({verdict['baseline']}); record one with --update"]
     if status == "incomparable":
-        return [f"{head}: INCOMPARABLE {verdict['reason']}"]
+        return [f"{head}: INCOMPARABLE: {verdict['reason']}"]
     if status == "refused":
         return [f"{head}: REFUSED --update: {verdict['reason']} (--force overrides)"]
     if status == "updated":
@@ -287,14 +318,16 @@ def main(argv=None):
     parser.add_argument("--key", help="baseline key (default: from the file's tier/mode/region/view, else its name)")
     parser.add_argument("--median", action="store_true", help="the files are repeats of one measurement: compare their per-key median")
     parser.add_argument("--require-baseline", action="store_true", help="exit 2 when there is nothing to compare with")
-    parser.add_argument("--force", action="store_true", help="update from a failed/stale run, or compare across machines")
+    parser.add_argument("--force", action="store_true", help="update from a failed/stale/too-short run, or compare across machines or frame counts")
+    parser.add_argument("--min-frames", type=int, default=MIN_FRAMES, help=f"fewest sampled frames a run may be judged on (default {MIN_FRAMES})")
     parser.add_argument("--json", action="store_true", help="one JSON line instead of text")
     args = parser.parse_args(argv)
     if not math.isfinite(args.tolerance) or args.tolerance < 0:
         print("perf: --tolerance must be a non-negative number")
         return 2
     try:
-        verdicts = evaluate(args.current, args.baseline, args.update, args.tolerance, args.key, args.median, args.force)
+        verdicts = evaluate(args.current, args.baseline, args.update, args.tolerance, args.key, args.median, args.force,
+                            min_frames=args.min_frames)
     except (OSError, ValueError, KeyError) as error:
         print(f"perf: unusable input: {error}")
         return 2

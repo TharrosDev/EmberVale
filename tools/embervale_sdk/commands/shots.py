@@ -143,7 +143,7 @@ def summarize(manifest, directory):
                 # A timed suite's closing zz-summary check is driven but writes no image in a filtered or one-off run.
                 selected=sum(1 for x in shots if x.get("selected") and (x.get("file") or x.get("name") != "zz-summary")),
                 failed=manifest.get("failed", []), flagged={s["name"]: s["flags"] for s in shots if s.get("flags")},
-                focus_lost=manifest.get("focus_lost", []), films=[s["film"] for s in shots if s.get("film")],
+                focus_lost=manifest.get("focus_lost", []), films=[s["film"] + (f"({s['film_short']})" if s.get("film_short") else "") for s in shots if s.get("film")],
                 dir=str(directory), manifest=str(Path(directory) / "manifest.json"))
 
 

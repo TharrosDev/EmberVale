@@ -168,6 +168,21 @@ public sealed partial class VfxPerfScenario : Node
         }
 
         _tiers.AddRange(tiers);
+
+        // A tier nobody recognises would be measured at whatever tier was live and filed under that
+        // tier's name, overwriting its real numbers. Refuse before anything is sampled.
+        string single = OS.GetEnvironment(ShotStage.TierVariable).Trim();
+        IEnumerable<string> asked = _tiers.Count > 0 ? _tiers : single.Length > 0 ? new[] { single } : Array.Empty<string>();
+        if (EffectTierNames.FirstUnknown(asked) is { } unknown)
+        {
+            _phase = Phase.Done;
+            var report = new HeadlessReport(Flag.TrimStart('-'));
+            report.Fact("suite", Flag.TrimStart('-')).Fact("tiers", _tiers);
+            report.Refuse($"'{unknown}' is not an effect tier; use {string.Join("|", EffectTierNames.All).ToLowerInvariant()}");
+            report.FinishAndQuit(GetTree());
+            return;
+        }
+
         Log.Info($"{Flag}: {CasterCount} casters for {_seconds:0.#} s, view={_view}" +
                  (_tiers.Count > 0 ? $", tiers={string.Join(",", _tiers)}." : "."));
     }
@@ -494,6 +509,13 @@ public sealed partial class VfxPerfScenario : Node
 
         int casts = _casts.Values.Sum();
         string tier = VfxQuality.Tier.ToString().ToLowerInvariant();
+        if (_tierIndex < _tiers.Count && !string.Equals(tier, _tiers[_tierIndex].Trim(), StringComparison.OrdinalIgnoreCase))
+        {
+            // The names were checked at start, so this is the settings refusing the change.
+            Fail($"asked for tier '{_tiers[_tierIndex]}' but the live tier is '{tier}'; nothing was written for it");
+            return;
+        }
+
         Vector2I size = DisplayServer.WindowGetSize();
         var result = new Dictionary<string, object>
         {

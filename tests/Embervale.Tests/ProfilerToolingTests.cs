@@ -288,16 +288,20 @@ public class ProfilerToolingTests
     public void Repro_ExecuteRunsInOrderAndStopsAtTheFirstFailedStep()
     {
         var ran = new List<string>();
-        string Console(string line)
+        // The console's typed result decides, not the wording: 'spawned 0/6' matches no failure
+        // prefix and still stops the script; 'no player needed' reads like one and does not.
+        ConsoleResult Console(string line)
         {
             ran.Add(line);
-            return line.StartsWith("bogus", StringComparison.Ordinal) ? "unknown command 'bogus'" : "ok";
+            return line.StartsWith("bogus", StringComparison.Ordinal)
+                ? new ConsoleResult(false, "spawned 0/6")
+                : new ConsoleResult(true, "no player needed");
         }
 
         ReproResult passed = ReproHarness.Execute("fine", new[] { "seed 1", "spawn 6" }, Console);
         Assert.True(passed.Passed);
         Assert.Equal(2, passed.Steps);
-        Assert.Contains("spawn 6 → ok", passed.Transcript);
+        Assert.Contains("spawn 6 → no player needed", passed.Transcript);
 
         ran.Clear();
         ReproResult failed = ReproHarness.Execute("broken", new[] { "seed 1", "bogus", "spawn 6" }, Console);

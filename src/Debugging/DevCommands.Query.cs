@@ -47,8 +47,21 @@ public static partial class DevCommands
         "flag.<flagId>", "quest.<questId>", "item.<itemId>", "spell.<spellId>", "rep.<factionId>", "stat.<StatType>",
     };
 
+#if EMBERVALE_TOOLING
+    private static string InvariantTest(DevConsole console, string[] args)
+    {
+        string message = args.Length > 0 ? string.Join(" ", args) : "invariant-test: a violation raised on purpose from the dev console";
+        Embervale.Core.Diagnostics.Invariant.Check(false, message);
+        return console.Reply($"raised 1 invariant violation ({Embervale.Core.Diagnostics.Invariant.Violations} this session)",
+            new Godot.Collections.Dictionary { ["invariants"] = Embervale.Core.Diagnostics.Invariant.Violations });
+    }
+#endif
+
     private static void RegisterQuery(DevConsole console)
     {
+#if EMBERVALE_TOOLING
+        console.Register(new ConsoleCommand("invariant-test", "invariant-test [message]", "Raise one invariant violation through the real Invariant API, to prove the path that follows one: the count, the flight recorder's dump, a script run's exit 1. Nothing in the game is changed.", InvariantTest));
+#endif
         console.Register(new ConsoleCommand("get", "get [<key>...]", "Print key=value for each state key, or list the keys. These are the keys the script runner's assert and wait-until test.", Get));
         console.Register(new ConsoleCommand("dump", "dump <player|enemies|entity <runtimeId>|world|saveables> [fileName]", "State as JSON: an entity with every saveable component's own Save(), the live enemies, the world's dials, or the registered save ids. Replied inline when short, else written under the console output directory.", Dump));
         console.Register(new ConsoleCommand("skip", "skip", "End the narration that is playing (the New Game prologue, a vision, an ending card) the way holding the skip key does. The script runner does this once before its first statement.", Skip));
