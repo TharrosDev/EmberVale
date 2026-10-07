@@ -29,11 +29,15 @@ class FakeRun:
         self.artifacts = Path(folder) / "artifacts" / run_id
         (self.artifacts / "user").mkdir(parents=True)
         self.env, self.timeout, self.notes, self.issues, self.calls = {}, 900, [], [], []
+        self.briefs = []
         self.result = dict(metrics={})
         self.harness = harness
 
     def note(self, message):
         self.notes.append(message)
+
+    def brief(self, line):
+        self.briefs.append(line)
 
     def issue(self, code, message, severity="error", path=None):
         self.issues.append((code, message, severity))
@@ -180,7 +184,7 @@ class RunTests(unittest.TestCase):
         out = 'EMBERVALE_RESULT {"gate":"shots","ok":false,"failures":["--only matched no shot: jurnal"]}'
         run = FakeRun(self.folder.name, lambda r: out)
         shots.run(run, parse("panelshots", "--only", "jurnal"), [])
-        self.assertEqual(["shots.failed", "shots.incomplete"], [code for code, _, _ in run.issues])
+        self.assertEqual(["shots.failed"], [code for code, _, _ in run.issues])
         self.assertIn("jurnal", run.issues[0][1])
         self.assertIsNone(run.shots_line())
 

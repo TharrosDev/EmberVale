@@ -138,8 +138,10 @@ def find_manifest(artifacts):
 def summarize(manifest, directory):
     """The compact view of a manifest: what an agent needs before opening any image."""
     shots = manifest.get("shots", [])
-    return dict(suite=manifest.get("suite"), ok=bool(manifest.get("ok")), registered=manifest.get("registered", len(shots)),
+    return dict(suite=str(manifest.get("suite") or "").lstrip("-"), ok=bool(manifest.get("ok")), registered=manifest.get("registered", len(shots)),
                 captured=manifest.get("captured", 0), seconds=manifest.get("seconds"),
+                # A timed suite's closing zz-summary check is driven but writes no image in a filtered or one-off run.
+                selected=sum(1 for x in shots if x.get("selected") and (x.get("file") or x.get("name") != "zz-summary")),
                 failed=manifest.get("failed", []), flagged={s["name"]: s["flags"] for s in shots if s.get("flags")},
                 focus_lost=manifest.get("focus_lost", []), films=[s["film"] for s in shots if s.get("film")],
                 dir=str(directory), manifest=str(Path(directory) / "manifest.json"))
@@ -152,7 +154,9 @@ def analyze(directory, manifest, baseline=None):
     names = [s["file"] for s in manifest.get("shots", []) if s.get("file")]
     paths = [directory / name for name in names if (directory / name).is_file()]
     flagged = {s["file"] for s in manifest.get("shots", []) if s.get("file") and (s.get("flags") or s.get("problem"))}
-    out = dict(sheets=[str(p) for p in shot_analyze.make_sheets(paths, directory / "sheet.png", flagged=flagged)])
+    # One image needs no contact sheet: the sheet would be a smaller copy of it.
+    out = dict(sheets=[str(p) for p in shot_analyze.make_sheets(paths, directory / "sheet.png", flagged=flagged)]
+               if len(paths) > 1 else [])
     if baseline and Path(baseline).is_dir():
         results = shot_analyze.diff_dirs(directory, baseline, directory / "diff")
         out["baseline"] = str(baseline)
@@ -162,12 +166,51 @@ def analyze(directory, manifest, baseline=None):
     return out
 
 
+def wrapped(head, names, width=280):
+    """Names packed into lines short enough for the compact output (it clips a line at 300)."""
+    lines, line = [], head
+    for name in names:
+        if len(line) + 1 + len(name) > width:
+            lines.append(line)
+            line = " "
+        line += " " + name
+    return lines + [line]
+
+
+def brief_lines(summary):
+    """The run in a few plain lines: what an agent reads before it opens an image."""
+    from ..compact import short_path
+    lines = [f"SHOTS {summary['suite']} {'ok' if summary['ok'] else 'FAILED'} captured {summary['captured']}"
+             f"/{summary['selected']} selected ({summary['registered']} registered) in {summary['seconds']}s dir={short_path(summary['dir'])}"]
+    if summary["failed"]:
+        lines += wrapped("  failed:", summary["failed"])
+    if summary["flagged"]:
+        lines += wrapped("  flagged:", [f"{name}[{','.join(flags)}]" for name, flags in summary["flagged"].items()])
+    if summary["focus_lost"]:
+        lines += wrapped("  focus lost:", summary["focus_lost"])
+    if summary.get("films"):
+        lines += wrapped("  films:", summary["films"])
+    if summary.get("sheets"):
+        lines += wrapped("  sheets:", [short_path(p) for p in summary["sheets"]])
+    if "baseline" in summary:
+        changed = summary.get("changed", {})
+        lines.append(f"  against {short_path(summary['baseline'])}: {len(changed)} changed, "
+                     f"{len(summary.get('missing_baseline', []))} with no baseline")
+        lines += [f"    {image} {row['pct']}% {short_path(row['triptych']) if row.get('triptych') else ''}".rstrip()
+                  for image, row in list(changed.items())[:10]]
+    if summary.get("movie"):
+        lines.append(f"  movie: {short_path(summary['movie'])}")
+    return lines
+
+
 def run(run, args, passthrough):
     suite = (args.target or "").lstrip("-")
     suite = {"combatshots": "combat-shots"}.get(suite, suite)
     if suite == "list" or not suite:
         run.result["metrics"]["shots"] = dict(suites=sorted(SUITES))
         run.note("SHOTS " + json.dumps(dict(suites=sorted(SUITES)), ensure_ascii=False))
+        for line in wrapped("SHOTS suites:", sorted(SUITES)):
+            run.brief(line)
         return
     if suite == "shot" and (args.ui or "").split("/")[0].lstrip("-") == "shellshots":
         # The title suite has no session to attach --shot to; it takes the same filter directly.
@@ -203,6 +246,8 @@ def run(run, args, passthrough):
             return
         run.result["metrics"]["shots"] = dict(suite=suite, shots=names)
         run.note("SHOTS " + json.dumps(dict(suite=suite, count=len(names), shots=names), ensure_ascii=False))
+        for line in wrapped(f"SHOTS {suite} {len(names)} shots:", names):
+            run.brief(line)
         return
 
     manifest_path = find_manifest(run.artifacts)
@@ -210,6 +255,8 @@ def run(run, args, passthrough):
         reported = result_line(step.output) or {}
         for failure in reported.get("failures", []):
             run.issue("shots.failed", failure)
+        if reported.get("failures"):
+            return  # the harness said why it stopped; "wrote no manifest" would only repeat it
         run.issue("shots.incomplete", "the run wrote no manifest.json: it did not reach its first shot "
                   "(no session, a crash, or the timeout); see the step's stdout log")
         return
@@ -240,3 +287,5 @@ def run(run, args, passthrough):
         summary["movie"] = str(run.artifacts / f"{suite}.avi")
     run.result["metrics"]["shots"] = summary
     run.note("SHOTS " + json.dumps(summary, ensure_ascii=False))
+    for line in brief_lines(summary):
+        run.brief(line)
