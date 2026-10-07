@@ -931,11 +931,11 @@ after `--`. A machine-readable tool ends with one line of a name and a JSON obje
   `settings`, `validate-all`, `invariants`, `repro`). `DevCommands.cs`.
 - **Scenario `console` op** — one console line from an SDK scenario plan, through
   `DevConsole.ExecuteJson`. `tools/headless/driver.gd`.
-- **Session entry flags** — `--play`, `--slot=<name>`, and in tooling builds `--new-game` (refused
+- **Session entry flags** — `--play`, `--slot=<name>` (a name with no save fails the run), and in tooling builds `--new-game` (refused
   without an absolute `EMBERVALE_USER_DIR`) and `--quit-after=<seconds>`. `GameShellController`,
   `SessionEntryRules`; the harness table is `SessionHarnesses`.
 - **Stale-build guard** — a run on the engine binary whose `Embervale.dll` is older than
-  `src/**/*.cs` or the csproj warns `STALE_BINARY`; `--strict-build` makes it exit 1.
+  `src/**/*.cs` or the csproj warns `STALE_BINARY`; `--strict-build` makes it exit 2 with a result line.
   `BuildFreshness`.
 
 ### Headless gates (any build unless noted)

@@ -287,7 +287,7 @@ first or you are exercising a **stale binary** (a silent trap: a behaviour-prese
 game loads it), *then* run. Pure-logic unit suite: `dotnet test tests/Embervale.Tests`.
 **This is now guarded, but only on some routes.** `python tools/embervale.py` rebuilds a stale DLL
 before it launches the engine (step `auto-build`; `--no-build` opts out), and a tooling build run
-on the engine binary logs one `STALE_BINARY` warning, or exits 1 with `-- --strict-build`. A **raw
+on the engine binary logs one `STALE_BINARY` warning, or exits 2 with `-- --strict-build`. A **raw
 `godot ...` run still executes the stale binary** after that warning, the editor's `run_project`
 does too, and `--script` GDScript probes are not checked at all. The table of what is guarded is in
 [`docs/TOOLING.md`](docs/TOOLING.md) (*Stale-build guard*).
@@ -393,7 +393,7 @@ and their options, and a misspelt mode flag exits 2 instead of idling on the tit
 the most recent save, so systems that only init on world build (the audio directors, spawners)
 can be launched deterministically — useful for capturing runtime logs without driving the menu
 (the menu's *Continue* needs input the MCP can't inject). It continues the newest save slot
-(`--slot=<name>` picks one); with no saves it stays on the menu, and `--new-game` (tooling builds,
+(`--slot=<name>` picks one, and fails the run when no save has that name); with no saves it stays on the menu, and `--new-game` (tooling builds,
 isolated `EMBERVALE_USER_DIR` only) is the alternative. This is the one-command content gate for the maintainer (and
 later CI). The same battery is also reachable in-game via the `validate-all` dev console
 command (`F1`).
@@ -402,8 +402,8 @@ command (`F1`).
 enemy.goblin 3; frames 30; assert enemies.count ge 3"` runs any `F1` command, plus `wait`, `frames`,
 `assert`, `wait-until`, `expect`, `shot` and `input`, in an isolated new game and exits non-zero on
 a failed statement (raw form: `-- --new-game --exec "..."` with an absolute `EMBERVALE_USER_DIR`;
-all session flags go after `--`). `--new-game` is refused without that isolated directory, so it
-cannot touch real saves. [`docs/TOOLING.md`](docs/TOOLING.md) has the verbs, the `get` keys and the
+all session flags go after `--`). `--new-game`, `--exec` and `--repro` are refused (exit 2) without
+that isolated directory, so they cannot touch real saves; `--exec-allow-real-save` is the opt-out. [`docs/TOOLING.md`](docs/TOOLING.md) has the verbs, the `get` keys and the
 other one-command routes (`gate`, `shots`, `perf-report`, `verify`).
 
 **What a bare `--play` still doesn't prove:** it resumes where the save left off, which for the

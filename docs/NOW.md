@@ -533,8 +533,8 @@ tested behaviour.
   rarity beam, and the five generated weapon models (`wpn_axe_iron`, `wpn_mace_iron`,
   `wpn_spear_iron`, `wpn_staff_oak`, `wpn_greatsword_iron`: checked against the coordinate contract
   and in Blender renders only, never in a hand in the engine) have never been on a screen.
-  Panel-shot baselines will differ. ⚠️ The world bake manifest is stale since those models landed
-  (model imports are shared bake inputs): run `python tools/world_bake.py --bake` once.
+  Panel-shot baselines will differ. The world bake went stale when those models landed (model imports are shared bake
+  inputs); it was rebaked on 2026-10-07 (all six regions, 151 artifacts) and `world_bake.py --check` is current.
 - **Input.** The pad hotbar chord shares `LT` with block; search fields swap input bindings while
   focused. Neither has been held in a hand.
 - **Old saves.** The v3 to v4 step, the material bag migration and the widened trainer lesson are

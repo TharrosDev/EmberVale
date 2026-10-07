@@ -192,8 +192,9 @@ protocol, not a remotely exposed debugger or a daemon attached to arbitrary runn
 ### Stale-build guard
 
 Nothing that launches the game recompiles C#, so the SDK checks first. `Embervale.dll` is stale
-when it is missing or older than `Embervale.csproj` or any `src/**/*.cs`
-(`embervale_sdk/freshness.py`). Before an engine launch the SDK then runs
+when it is missing, older than `Embervale.csproj` or any `src/**/*.cs` or `addons/**/*.cs`, or was
+built without tooling (no `ShotHarness` type in the assembly, which is what a world bake leaves
+behind, however new the file is) (`embervale_sdk/freshness.py`). Before an engine launch the SDK then runs
 `dotnet build Embervale.sln --nologo` as a step named `auto-build` and records
 `configuration.auto_build`. A failed build raises diagnostic `build.stale`, exits 1 and does not
 launch the engine. `--no-build` opts out.
@@ -334,11 +335,12 @@ All of these are read from the arguments **after `--`** only.
 
 | Flag | Does |
 | --- | --- |
-| `--play` | Continues the newest save past the menu. With no save it logs an Info line naming `--new-game` and stays on the title. |
-| `--slot=<name>` | The save to continue (takes precedence over `EMBERVALE_SLOT`). An unknown name warns and falls through to the newest save. With `--new-game`, the slot to create. |
+| `--play` | Continues the newest save past the menu. With no save a bare `--play` logs an Info line naming `--new-game` and stays on the title; with a harness flag the run ends at once instead (below). |
+| `--slot=<name>` | The save to continue (takes precedence over `EMBERVALE_SLOT`). A name that matches no save loads nothing and fails the run: `--slot=nope names no save (saves: keep)`, exit 1 (engine-run 2026-10-07). Only the legacy `EMBERVALE_SLOT` variable still falls back to the newest save with a warning. With `--new-game`, the slot to create. |
 | `--new-game` | Tooling builds. Starts a real New Game (the prologue plays) in `--slot` or `automation`, and attaches the requested harnesses to it. **Refused unless `EMBERVALE_USER_DIR` is an absolute path**: a `Log.Error`, and the game stays on the title. The slot is 1 to 64 characters of letters, digits, `_` and `-`. Every SDK run qualifies, because the SDK sets the variable to the run's own `user/` directory. |
 | `--quit-after=<seconds>` | Tooling builds. A real-time limit from shell ready (it runs through pause and ignores time scale). Exits 0, or 1 when there was an invariant violation or the requested session never started; an unparseable value exits 1 at once. Not the engine's own `--quit-after <frames>`, which goes before `--`. |
-| a harness flag | Every flag in `SessionHarnesses.All` (`--hudshots`, `--shot`, `--exec`, `--perf-report`, ...) implies a session, as `--play` does. Several attach in table order. In a shipping build the table is empty and they do nothing. |
+| a harness flag | Every flag in `SessionHarnesses.All` (`--hudshots`, `--shot`, `--exec`, `--perf-report`, ...) implies a session, as `--play` does. Several attach in table order. In a shipping build the table is empty and they do nothing. When the session never starts (a missing slot, no save, a refused new game, a failed load) the process ends with an `EMBERVALE_RESULT` line, gate `exec` for a script run and `session` otherwise, fact `session_started:false`, exit 1, or 2 when refused. |
+| `--exec-allow-real-save` | Tooling builds. `--exec`, `--exec-file` and `--repro` change the session they run in, so they are **refused (exit 2, a result line, nothing written) unless `EMBERVALE_USER_DIR` is an absolute path** (the refusal was engine-run 2026-10-07 for `--exec`: the real saves folder was unchanged afterwards). This flag runs them on the real folder instead, with autosaves off and `save` refused for any slot but `console` (not engine-run). |
 
 By hand, a fresh session therefore needs an isolated user directory:
 
@@ -351,7 +353,7 @@ Flags that work on either side of `--`: the headless mode flags, `--strict-build
 
 | Flag | Does |
 | --- | --- |
-| `--strict-build` | Tooling builds on the engine binary: a stale `Embervale.dll` is an error and exit 1 before any mode or the shell runs. Without it the same condition is one `STALE_BINARY` warning. |
+| `--strict-build` | Tooling builds on the engine binary: a stale `Embervale.dll` is a refusal before any mode or the shell runs: exit 2 and a result line whose gate is the requested mode, else `build` (exit 1 before 2026-10-07; unit-tested, not engine-run). Without it the same condition is one `STALE_BINARY` warning. |
 | `--report=<path>` | Also writes the run's `EMBERVALE_RESULT` JSON to that file (directories are created; a write failure is a failure). |
 
 Adding a harness is one line in `SessionHarnesses.All` (`src/Bootstrap/SessionHarnesses.cs`), inside
@@ -372,10 +374,15 @@ EMBERVALE_RESULT {"schema":1,"gate":"state","ok":true,"exit_code":0,"elapsed_ms"
 are deduplicated strings. `exit_code` is the process exit code: 0 pass, 1 failed, 2 refused (a bad
 flag or filter, a missing prerequisite). In a tooling build a stale binary adds the fact
 `stale_binary: true` and a warning. `--report=<path>` writes the same object to a file, which is how
-the SDK reads it.
+the SDK reads it. `elapsed_ms` is the process uptime when the line is written, engine boot included
+(about 6 s for `--validate --only=items,crafting`, 41 s for a session refused after boot), not the
+time the mode itself took.
 
 Around it, a headless mode prints each failure once on stderr as `[ERROR] <gate>: <message>` and the
-older `<gate>: PASS` or `<gate>: FAIL (n failure(s))` line. Everything else is silent unless
+older `<gate>: PASS` or `<gate>: FAIL (n failure(s))` line. A passing run whose facts hold
+`partial:true` (`--validate --only/--skip`, `--lifecycle --cycles=1`, `--story-only`,
+`--story-mission`, `--no-boot-validate`) prints `<gate>: PARTIAL PASS (not the gate)` instead, still
+exit 0 (engine-run for `--validate --only=items,crafting` only). Everything else is silent unless
 `--verbose` (the log level is raised to warnings for the run, and warnings are not mirrored to the
 engine log). `--world-bake` and `--worldmap` are the exceptions: they parse their own arguments,
 stay as loud as they were and print no result line.
@@ -481,7 +488,8 @@ godot --headless --path . -- --console-help[=md|json]
 ```
 
 `--exec "a; b"` takes a script inline and `--exec-file=<path>` from a file (`ConsoleScript`, tooling
-builds). Statements split on `;` and newlines, `#` starts a comment, double quotes group a token. A
+builds). Both need an absolute `EMBERVALE_USER_DIR` or `--exec-allow-real-save` (*Session entry
+flags*); the SDK `console` command always isolates. Statements split on `;` and newlines, `#` starts a comment, double quotes group a token. A
 statement is anything the `F1` console accepts, or a runner verb:
 
 | Verb | Does |
@@ -490,7 +498,7 @@ statement is anything the `F1` console accepts, or a runner verb:
 | `frames <n>` | Lets n process frames pass |
 | `wait-until <key> <op> <value> [seconds=10]` | Polls a `get` key each frame; fails after that many real seconds |
 | `assert <key> <op> <value>` | Fails unless a `get` key compares true. Ops: `eq ne gt ge lt le contains` |
-| `expect <text>` | Fails unless the previous reply contains the text |
+| `expect <text>` | Fails unless the most recent reply (from a command, `assert`, `wait-until` or `shot`; `wait`, `frames` and `input` reply nothing) contains the text |
 | `shot <name>` | Writes the viewport to `<output>/<name>.png`. Needs a window |
 | `input <action> [frames=2]` | Presses an InputMap action, holds it, releases it |
 | `quit` | Stops the script here |
@@ -505,16 +513,19 @@ Output goes to `$EMBERVALE_ARTIFACTS/console/`, else `user://console/`: `result.
 line per statement, `{"i","cmd","ok","frame","out","data"?}`, then `{"event":"result",...}`; dumps
 too long to reply inline; `shot` PNGs. Stdout gets one `[CON] FAIL <i> <cmd> -> <first line>` per
 failed statement and the `EMBERVALE_RESULT` line (gate `exec`; facts `source, steps, ran, failed,
-first_failure, frames, invariants, orphans, timescale, output, results`). Exit 0 when every
-statement passed, 1 otherwise.
+first_failure, frames, invariants, orphans, timescale, output, results`, plus `stopped_early` and,
+in a new game, `narration_skipped`). `ran` counts the statements that completed. Exit 0 when every
+statement passed and no invariant was violated, 1 otherwise; `result.ndjson` is flushed per
+statement.
 
 The SDK `console` command writes the script to `console-script.txt`, starts an isolated
 `--new-game` (or copies `--fixture` into the run and continues it), and passes `--exec-file`,
 `--report` and a `--quit-after` backstop. Its own flags: `--file`, `--fixture`, `--stop-on-fail`,
 `--exec-timeout` (240), `--quiet`, `--game-log`, `--reference`. Each failed statement is a failed
-assertion (`ASSERT console 3: <cmd>: expected ok, actual <reply>`) and the run exits 5;
+assertion in `summary.json` and prints as `FAIL 3 <cmd> -> <reply>` plus `ERROR process.console:
+statement 3 ...`; the SDK run exits 5 (the game process itself exits 1);
 `console.incomplete` means the runner never reached its result line. The per-statement lines
-(`ok   3 pos -> <first line>`) print with `-v`; without it, read `metrics.console.steps` in
+(`ok 3 pos -> <first line>`) print with `-v` and on a failed run; otherwise read `metrics.console.steps` in
 `summary.json` or `<run>/console/result.ndjson`.
 
 The reference is generated from the binary: `--console-help` prints the 71 commands, the runner
@@ -529,7 +540,7 @@ verbs and the `get` keys with no session. The command groups:
 | Story and quests | `quest <list\|status\|start\|advance\|complete\|reset>`, `flag`, `story`, `guild`, `companion`, `tutorial`, `opening` |
 | Save and settings | `save [slot]`, `load [slot]`, `savecheck`, `autosave`, `settings`, `locale`, `log` |
 | Query | `get [<key>...]`, `dump <player\|enemies\|entity <runtimeId>\|world\|saveables> [fileName]`, `hud [on\|off]`, `stats`, `derived`, `economy`, `shop`, `service` |
-| Checks | `invariants`, `validate`, `validate-all`, `repro [name]` |
+| Checks | `invariants`, `invariant-test [message]` (raises one violation through the real `Invariant` API, so a script run exits 1 and the flight recorder dumps; not engine-run), `validate`, `validate-all`, `repro [name]` |
 
 `get` keys: `state frame fps timescale invariants orphans nodes menu`, `region cells.active
 cells.resident world.settled world.ready`, `time.hour time.day time.phase weather event`,
@@ -715,7 +726,9 @@ hides only the HUD layer, so tutorial, toast and subtitle layers can still appea
 **Filmstrip.** `--film[=FRAMESxSTRIDE]` (default 12x4; 2 to 48 frames, stride 1 to 120) applies to
 `--spellshots`, `--camshots` and `--shot`. For every selected shot it keeps the last FRAMES drawn
 frames, STRIDE apart, before the capture and writes them as one `<shot>.film.png` with a
-`<shot>.film.json` beside it; the manifest entry gets a `film` field. Spacing is exact only under
+`<shot>.film.json` beside it; the manifest entry gets a `film` field, and `film_short` when fewer
+frames than asked were kept (only frames between the cast and the capture exist), which the SDK
+`SHOTS` line shows in brackets after the film name (not engine-run). Spacing is exact only under
 `--fixed-fps 60`. It is the way to read motion from stills; the UI harnesses have no film.
 `shots <suite> --movie` also records the run with the engine's `--write-movie` (AVI).
 
@@ -723,11 +736,16 @@ frames, STRIDE apart, before the capture and writes them as one `<shot>.film.png
 line; exit 0, 1 with `--strict` when something is flagged or changed, 2 on a usage error.
 
 ```text
-python tools/shot_analyze.py stats DIR [--flagged-only] [--strict]
+python tools/shot_analyze.py stats DIR [--flagged-only] [--full] [--strict]
 python tools/shot_analyze.py diff DIR --baseline DIR2 [--out DIR] [--row-normalize] [--threshold 12] [--strict]
 python tools/shot_analyze.py sheet DIR OUT.png [--columns 4] [--thumb-width 320] [--per-sheet 16] [--only-flagged] [--glob "*.png"]
 python tools/shot_analyze.py thumbs DIR [--width 480]
 ```
+
+`stats` is compact: an unflagged image is one short line (`image`, `mean`) and a flagged one carries
+every measurement; `--full` prints every measurement for every image. `sheet` outlines flagged
+images in red with or without `--only-flagged`. `diff` counts a baseline image the run did not
+produce as changed (`missing_current`). These three were not re-run after the fixes.
 
 `diff` reports the mean error, the changed share and up to five boxes, and writes one before,
 after, heatmap triptych per changed image to `DIR/diff/<name>.diff.png`. A baseline at another
@@ -856,7 +874,9 @@ A value regresses when it is worse than the baseline by more than the tolerance 
 absolute floor for its kind. Output is `REGRESS` and `IMPROVE` rows and one summary line. Exit 0
 for no regression, no baseline or another machine's baseline; 5 on a regression; 2 on bad input, a
 refused `--update` or a missing baseline under `--require-baseline`. No baselines are committed
-yet. `tests/performance_baselines/world_performance.json` is the old history file and is no
+yet. A run or a baseline with fewer than `--min-frames` sampled frames (default 60) is not judged:
+the verdict reads `INCOMPARABLE: N frames`, and `--update` refuses to record it (unit-tested, not
+engine-run). `tests/performance_baselines/world_performance.json` is the old history file and is no
 longer read by any tool.
 
 **Spell effects.** `python tools/embervale.py vfxperf [--tiers performance,medium,ultra]
@@ -910,7 +930,8 @@ while running, 0 done, 1 failed, timed out or interrupted, 2 with nothing record
 `--max-minutes N` (default 90) stops the engine with exit 124 and state `timeout`; `--bake --resume`
 then keeps each region the interrupted run finished, when its signature is unchanged and its
 outputs still hash the same (`artifacts/world_bake/journal.json`). Resume is per region, not per
-cell. ⚠️ A bake leaves the Debug assembly without the capture harnesses; `--restore-tooling`
+cell. ⚠️ A bake builds `Embervale.csproj` alone with `-p:EmbervaleTooling=false` (the test project cannot
+compile against that assembly) and so leaves the Debug assembly without the capture harnesses; `--restore-tooling`
 rebuilds the solution afterwards, otherwise run `dotnet build Embervale.sln`. For a long bake use
 `python tools/embervale.py job start tool world_bake --timeout 1200 -- --bake`.
 
@@ -1059,8 +1080,9 @@ It prints the failing lines, then `REGEN {"ok":...,"drift":[...],"failed":[...],
 Exit 0 clean, 1 drift or a failed check, 2 a generator crashed, 3 the lock
 (`artifacts/regen/.lock`, stale after 15 minutes) is held. `--fix` writes only what drifted, then
 checks again. An entry whose needs are missing is `skipped` (`gen_spell_sfx` without numpy and
-ffmpeg). ⚠️ A generator with no `--check` of its own (`gen_appearance`, `gen_player_mask`) is run
-for real, compared and its files restored, so `--check` briefly writes tracked files. Results are
+ffmpeg). `--check` is read-only: a generator with no `--check` of its own (`gen_appearance`,
+`gen_player_mask`) runs as a copy inside a temp folder and the result is compared with the tree. A
+generator named with `--only` whose dependency is missing is an error (exit 2), not a skip. Results are
 cached in `artifacts/regen/cache.json`. The `generators` world gate runs `regen.py --check` over
 the generators no other gate covers.
 
