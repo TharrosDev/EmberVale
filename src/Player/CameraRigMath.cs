@@ -63,6 +63,42 @@ public static class CameraRigMath
     /// such trouble (the seat rises), so the limit is one-sided.</summary>
     public const float ThirdPersonLookUpLimit = 1.0f;
 
+    /// <summary>How low the character's feet may sit in the third-person frame at a level look, as a
+    /// fraction of the half height below the centre line. 0.7 is 612 px down a 720 px screen, clear
+    /// of the hotbar, which starts at about 640.</summary>
+    public const float FramingFeetAtMost = 0.7f;
+
+    /// <summary>The most the third-person camera is ever tilted down for framing (8 degrees).</summary>
+    public const float MaxFramingTilt = 0.14f;
+
+    /// <summary>
+    /// How far the third-person camera is tilted DOWN about its own seat, in radians, so that at a
+    /// level look the character's feet are on screen above the hotbar instead of behind it. The seat
+    /// is <paramref name="cameraHeight"/> above the ground and <paramref name="distance"/> behind the
+    /// character, so the feet are a fixed angle below the camera's level line; a narrow field of view
+    /// puts that angle off the bottom of the frame. The tilt is exactly what brings the feet back to
+    /// <see cref="FramingFeetAtMost"/>: nothing at a wide view or a far seat, capped at
+    /// <see cref="MaxFramingTilt"/>.
+    ///
+    /// <para>⚠️ The rig feeds this the player's SETTINGS (field of view, distance) through the closest
+    /// ordinary framing, never the live profile: a tilt that moved as a cast or a fight began would
+    /// swing the crosshair off what the player was pointing at. It is a property of the seat, like the
+    /// rise. The crosshair is the camera's own centre ray (<c>AimController</c> reads the camera's
+    /// forward), so the shot still goes where the crosshair is.</para>
+    /// </summary>
+    public static float FramingTilt(float fovDegrees, float distance, float cameraHeight)
+    {
+        if (!float.IsFinite(fovDegrees) || !float.IsFinite(distance) || !float.IsFinite(cameraHeight) || cameraHeight <= 0f)
+        {
+            return 0f;
+        }
+
+        float halfFov = Math.Clamp(fovDegrees, MinFov, MaxFov) * (MathF.PI / 360f);
+        float feet = MathF.Atan2(cameraHeight, Math.Clamp(distance, MinDistance, MaxDistance));
+        float lowest = MathF.Atan(FramingFeetAtMost * MathF.Tan(halfFov));
+        return Math.Clamp(feet - lowest, 0f, MaxFramingTilt);
+    }
+
     /// <summary>The player's own arms in first person: body further than <see cref="LimbCoreRadius"/>
     /// from the vertical line through the head (so not the chest, belly or legs the player sees when
     /// looking down) is thinned out as it comes inside <see cref="LimbFadeRadius"/> of the eye and
@@ -104,6 +140,27 @@ public static class CameraRigMath
     /// </summary>
     public static bool HiddenInFirstPerson(int bone, int leftHand, int rightHand) =>
         bone < 0 || (bone != leftHand && bone != rightHand);
+
+    /// <summary>How long what the hands hold stays in the first-person view after the last moment of
+    /// fighting, so a blade does not blink out between two swings or as a guard drops.</summary>
+    public const float WeaponLowerSeconds = 2.5f;
+
+    /// <summary>
+    /// Whether what the hands hold is drawn in first person. The body's clips were authored for a
+    /// camera behind the character: at a jog, a sprint or a strafe the arm pump swings the blade
+    /// straight across the view, at arm's length from the eye and the height of the screen. So it is
+    /// drawn while it is up for a fight (an attack, a cast or a draw in progress, a raised guard, a
+    /// lock) and for <see cref="WeaponLowerSeconds"/> after, and is a shadow on the ground the rest
+    /// of the time. ⚠️ An action in progress always shows it: a swing with no blade would be worse
+    /// than a blade across the view.
+    /// </summary>
+    public static bool WeaponUp(bool acting, bool lockedOn, float secondsSinceFighting) =>
+        acting || lockedOn || (float.IsFinite(secondsSinceFighting) && secondsSinceFighting < WeaponLowerSeconds);
+
+    /// <summary>As <see cref="HiddenInFirstPerson(int, int, int)"/>, with the hands' pieces hidden too
+    /// while <paramref name="weaponUp"/> is false (<see cref="WeaponUp"/>).</summary>
+    public static bool HiddenInFirstPerson(int bone, int leftHand, int rightHand, bool weaponUp) =>
+        !weaponUp || HiddenInFirstPerson(bone, leftHand, rightHand);
 
     /// <summary>How the wall spring's push-out is shaped: a pause before anything moves, a ramp up to
     /// full speed, and a slowing approach so it does not stop dead at full extension.</summary>

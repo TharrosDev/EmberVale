@@ -162,6 +162,12 @@ public partial class PlayerCameraRig : EntityComponent
     private bool _headHidden;
     private double _headRescan;
 
+    // Seconds since the player last attacked, guarded or held a lock, and whether what the hands
+    // hold is drawn in first person because of it (CameraRigMath.WeaponUp). Starts lowered.
+    private float _sinceFighting = float.PositiveInfinity;
+    private bool _weaponUp;
+    private Combat.Actions.CharacterActionComponent? _actions;
+
     // The body shader's view_fade as last written to the surfaces; NaN until the first write, and
     // again whenever the surfaces are collected afresh, so new ones are always given it.
     private static readonly StringName ViewFadeParameter = "view_fade";
@@ -408,6 +414,7 @@ public partial class PlayerCameraRig : EntityComponent
         _profile = CameraProfile.Blend(_profile, target, CameraRigMath.Damp(dt, _profileSeconds));
 
         CameraNudge nudge = SampleLayers(dt);
+        UpdateWeaponUp(dt);
 
         Vector3 third = UpdateSeat(dt, nudge.DistanceScale);
 
@@ -436,6 +443,23 @@ public partial class PlayerCameraRig : EntityComponent
         if (!_frameDriven)
         {
             UpdateHeadCutout(delta);
+        }
+    }
+
+    /// <summary>Tracks whether what the hands hold is up for a fight. A change asks the head cut-out
+    /// to look at the held pieces again at once, so a swing never starts without its blade.</summary>
+    private void UpdateWeaponUp(float dt)
+    {
+        // Any action at all, and a held charge before it becomes one: the camera's own "in combat"
+        // ends when a swing can be cancelled, which is before the blade has stopped moving.
+        _actions ??= Entity?.GetComponent<Combat.Actions.CharacterActionComponent>();
+        bool acting = _inputs.InCombat || _actions is { Current: not null } || _actions is { IsCharging: true };
+        _sinceFighting = acting || _inputs.LockedOn ? 0f : _sinceFighting + dt;
+        bool up = CameraRigMath.WeaponUp(acting, _inputs.LockedOn, _sinceFighting);
+        if (up != _weaponUp)
+        {
+            _weaponUp = up;
+            _headRescan = 0d;
         }
     }
 
@@ -838,8 +862,9 @@ public partial class PlayerCameraRig : EntityComponent
         return size.X > 1f && size.Y > 1f ? size.X / size.Y : 16f / 9f;
     }
 
-    /// <summary>Switches everything hung on the skeleton that is not in a hand to shadows-only,
-    /// remembering what each piece was set to (<see cref="CameraRigMath.HiddenInFirstPerson"/>). A
+    /// <summary>Switches everything hung on the skeleton that is not in a hand to shadows-only, and
+    /// what the hands hold too while it is not up for a fight, remembering what each piece was set
+    /// to (<see cref="CameraRigMath.HiddenInFirstPerson(int, int, int, bool)"/>). A
     /// piece is on a bone when its mount (the node <c>EquipmentPresentationComponent</c> parents to
     /// the skeleton) follows that bone.</summary>
     private void HideHeadPieces()
@@ -859,7 +884,7 @@ public partial class PlayerCameraRig : EntityComponent
                 _ => -2,
             };
 
-            if (bone != -2 && CameraRigMath.HiddenInFirstPerson(bone, _leftHandBone, _rightHandBone))
+            if (bone != -2 && CameraRigMath.HiddenInFirstPerson(bone, _leftHandBone, _rightHandBone, _weaponUp))
             {
                 HidePieces(child);
             }
@@ -974,7 +999,28 @@ public partial class PlayerCameraRig : EntityComponent
         if (Camera != null)
         {
             Camera.Position = rest + nudge.Offset;
-            Camera.Rotation = nudge.Euler;
+            Camera.Rotation = nudge.Euler + new Vector3(-FramingTilt() * _modeBlend, 0f, 0f);
         }
+    }
+
+    /// <summary>
+    /// The third-person seat's downward tilt (<see cref="CameraRigMath.FramingTilt"/>), from the
+    /// player's field of view and distance settings as the fight framing shapes them: that is the
+    /// closest ordinary framing on foot, so feet that clear the hotbar there clear it walking and
+    /// sprinting too. Fades out with the view blend, so first person is untouched.
+    /// </summary>
+    private float FramingTilt()
+    {
+        if (_modeBlend <= 0f || CameraPivot == null)
+        {
+            return 0f;
+        }
+
+        Settings.Settings? s = _settings?.Current;
+        CameraProfile fight = CameraProfile.For(CameraContext.Combat);
+        return CameraRigMath.FramingTilt(
+            (s?.FieldOfView ?? 75f) + fight.FovOffset,
+            (s?.ThirdPersonDistance ?? PlayerFactory.ThirdPersonBackDistance) * fight.DistanceScale,
+            CameraPivot.Position.Y + PlayerFactory.ThirdPersonRise + fight.RiseOffset);
     }
 }

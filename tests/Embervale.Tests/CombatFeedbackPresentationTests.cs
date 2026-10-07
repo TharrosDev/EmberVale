@@ -266,4 +266,25 @@ public class CombatFeedbackPresentationTests
         Assert.False(DamageNumberMath.ShouldMerge(0.1f, true, HitOutcome.Hit, HitOutcome.Blocked));  // other outcome
         Assert.False(DamageNumberMath.ShouldMerge(0.1f, true, HitOutcome.Critical, HitOutcome.Critical)); // crits stand alone
     }
+
+    [Fact]
+    public void Number_ThatWouldPrintOverAnother_IsLiftedClearAboveIt()
+    {
+        // Two labels 120 x 40 on the same spot: the newer one goes up by a full line and the gap.
+        float lift = DamageNumberMath.LiftToClear(400f, 300f, 120f, 40f, 400f, 300f, 120f, 40f);
+        Assert.Equal(44f, lift, 3);
+        Assert.Equal(0f, DamageNumberMath.LiftToClear(400f, 300f - lift, 120f, 40f, 400f, 300f, 120f, 40f));
+
+        // Partly overlapping from below still ends up above, not shoved down into the target.
+        Assert.True(DamageNumberMath.LiftToClear(400f, 320f, 120f, 40f, 400f, 300f, 120f, 40f) > 44f);
+
+        // Beside it, or already clear above or below: left alone.
+        Assert.Equal(0f, DamageNumberMath.LiftToClear(400f, 300f, 120f, 40f, 530f, 300f, 120f, 40f));
+        Assert.Equal(0f, DamageNumberMath.LiftToClear(400f, 250f, 120f, 40f, 400f, 300f, 120f, 40f));
+        Assert.Equal(0f, DamageNumberMath.LiftToClear(400f, 350f, 120f, 40f, 400f, 300f, 120f, 40f));
+
+        // The state word is one more thing to clear: a wide plate at the middle of the screen.
+        Assert.True(DamageNumberMath.LiftToClear(640f, 250f, 160f, 44f, 640f, 240f, 420f, 60f) > 0f);
+        Assert.True(DamageNumberMath.MaxLift > DamageNumberMath.LiftAbove(900f));
+    }
 }

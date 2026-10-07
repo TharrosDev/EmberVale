@@ -5617,7 +5617,8 @@ wheel.centre.keeps,Keeps {0}
 hud.spell.wheel_hold,Hold: wheel
 hud.spell.wheel_press,Press: wheel
 hud.spell.wheel_tap,Tap:
-spellbook.pins,"Wheel favourites, clockwise from the top. Choose a slot to replace it, or pin a spell to the first free one."
+spellbook.pins,"Wheel favourites. Slots run clockwise from the top of the wheel, as the dial shows: 1 is straight up. Choose a slot to replace it, or pin a spell to the first free one."
+spellbook.pins_dial,"Where each slot sits on the spell wheel. Slot 1 is at the top and the rest run clockwise."
 spellbook.pins_chosen,"Slot {0} chosen. Pin a spell to put it there."
 spellbook.pins_full,"All eight slots are full. Choose a slot to replace."
 spellbook.pin,Pin

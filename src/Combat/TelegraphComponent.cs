@@ -2,6 +2,7 @@ using Embervale.Combat.Actions;
 using Embervale.Core.Events;
 using Embervale.Core.Services;
 using Embervale.Entities;
+using Embervale.Magic;
 using Embervale.Player;
 using Godot;
 
@@ -48,10 +49,12 @@ public partial class TelegraphComponent : EntityComponent
 
         EventBus.Instance?.Subscribe<AttackPerformedEvent>(OnAttack);
         EventBus.Instance?.Subscribe<AttackInterruptedEvent>(OnInterrupted);
+        EventBus.Instance?.Subscribe<CastWindupStartedEvent>(OnCastWindup);
     }
 
     protected override void OnTeardown()
     {
+        EventBus.Instance?.Unsubscribe<CastWindupStartedEvent>(OnCastWindup);
         EventBus.Instance?.Unsubscribe<AttackPerformedEvent>(OnAttack);
         EventBus.Instance?.Unsubscribe<AttackInterruptedEvent>(OnInterrupted);
     }
@@ -80,6 +83,20 @@ public partial class TelegraphComponent : EntityComponent
             ? combat.ParryWindow
             : 0.2f;
         _ring?.Arm(e.WindupSeconds, RingRadius, RingColor, cls, parryWindow, sweep);
+    }
+
+    /// <summary>A wind-up that turns out to be a spell: the warning already armed for it takes the
+    /// spell's school as its body colour (a fire breath's fan is ember, an ash breath's violet-grey,
+    /// an arcane shout's blue). The caster names its spell just after the action starts, which is why
+    /// this is a second event and not part of <see cref="OnAttack"/>. Look only: shape, size and
+    /// timing were set by the attack event.</summary>
+    private void OnCastWindup(CastWindupStartedEvent e)
+    {
+        if (ReferenceEquals(e.Caster, Entity) &&
+            Entity!.GetComponent<SpellcastingComponent>()?.PendingSpell is { } spell)
+        {
+            _ring?.Tint(SpellSchools.Color(spell.School));
+        }
     }
 
     private void OnInterrupted(AttackInterruptedEvent e)

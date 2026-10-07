@@ -150,7 +150,7 @@ public class SpellPinRulesTests
             "hud.spell.wheel_hold", "hud.spell.wheel_tap", "spellbook.pins", "spellbook.pins_chosen",
             "spellbook.pins_full", "spellbook.pin", "spellbook.pin_to", "spellbook.unpin", "spellbook.prepare",
             "spellbook.prepared", "spellbook.legend.pin", "tutorial.spell_wheel_hold", "wheel.slot.empty", "wheel.slot.hint",
-            "hud.spell.wheel_press", "tutorial.spell_wheel_press",
+            "hud.spell.wheel_press", "tutorial.spell_wheel_press", "spellbook.pins_dial",
         };
         foreach (string key in keys)
         {

@@ -567,6 +567,9 @@ public static class ContentValidator
             "res://assets/shaders/vfx/vfx_distort.gdshader",
             "res://assets/shaders/vfx/vfx_ground.gdshader",
             "res://assets/shaders/vfx/vfx_ice.gdshader",
+
+            // The wind-up telegraph. TelegraphRing falls back to a plain hard-edged shape without it.
+            "res://assets/shaders/fx/telegraph.gdshader",
         };
 
         foreach (string path in shaders)
