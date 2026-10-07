@@ -135,8 +135,12 @@ public static partial class SpellVfx
                 ice.Size = new Vector3(1.35f, 2.1f, 1.35f);
                 ice.Sustain = true;
                 ice.Fresnel = true;
-                ice.Occlude = 0.35f;
-                ice.Energy = 0.8f;
+                ice.RimPower = 3f;
+
+                // Thin: whoever is frozen (the player included, in third person) stays readable.
+                ice.Occlude = 0.12f;
+                ice.Opacity = 0.7f;
+                ice.Energy = 0.6f;
                 VfxHandle<VfxShell> shell = rig.Add(fx.Shell(ice));
                 shell.Get?.Follow(VfxAnchor.To(body, middle));
                 replaces = shell.IsLive;
@@ -166,11 +170,16 @@ public static partial class SpellVfx
             case StatusVfxShape.WardShell:
             {
                 var middle = new Vector3(0f, 1f, 0f);
-                VfxShellSpec ward = VfxShellSpec.Sphere(body.GlobalPosition + middle, 1f, colors);
+                // A shell, not a volume: a thin school-coloured rim hugging the body, clear across its
+                // middle. It is worn for the whole of the ward, so it must never hide its bearer.
+                VfxShellSpec ward = VfxShellSpec.Sphere(
+                    body.GlobalPosition + middle, 1f, colors with { Core = colors.Mid });
+                ward.Size = new Vector3(1.5f, 2.25f, 1.5f);
                 ward.Sustain = true;
                 ward.Fresnel = true;
-                ward.Opacity = 0.55f;
-                ward.Energy = 0.7f;
+                ward.RimPower = 4f;
+                ward.Opacity = 0.5f;
+                ward.Energy = 0.4f;
                 VfxHandle<VfxShell> shell = rig.Add(fx.Shell(ward));
                 shell.Get?.Follow(VfxAnchor.To(body, middle));
                 replaces = shell.IsLive;

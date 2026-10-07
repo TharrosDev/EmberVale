@@ -95,8 +95,12 @@ public static partial class SpellVfx
         }
         else
         {
+            // Flame colours and half the energy: two added layers at the school's full strength, in
+            // its near-white core colour, summed to a white rectangle with flames only on its top
+            // edge. At this the body sits orange to deep red and only its hottest tongues go yellow.
+            sheet.Colors = Flame(cast.Colors);
             sheet.Size = new Vector3(width, height * 1.15f, 1f);
-            sheet.Energy = 1.2f;
+            sheet.Energy = 0.6f;
         }
 
         VfxHandle<VfxShell> wall = rig.Add(cast.Fx.Shell(sheet));
@@ -269,7 +273,10 @@ public static partial class SpellVfx
         }
 
         // The post: solid, in the school's colours, with a slow crawl of light over it.
-        VfxShellSpec post = VfxShellSpec.Sphere(Vector3.Zero, 0.5f, cast.Colors);
+        // Its heart is the school's body colour and its grain a dark one: drawn from the near-white
+        // core colour it was a plain white post.
+        VfxSchoolColors wood = cast.Colors with { Core = cast.Colors.Mid, Edge = cast.Colors.Edge.Darkened(0.55f) };
+        VfxShellSpec post = VfxShellSpec.Sphere(Vector3.Zero, 0.5f, wood);
         post.Shape = VfxShellShape.Post;
         post.Size = Vector3.One;
         post.Sustain = true;

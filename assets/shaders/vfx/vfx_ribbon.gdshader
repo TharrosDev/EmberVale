@@ -15,7 +15,8 @@ render_mode blend_add, unshaded, cull_disabled, depth_draw_never, shadows_disabl
 // The half width is clamped to an angle as seen from the camera: never wider than `max_angle`
 // (metres of half width per metre of distance), so a trail or a beam that starts beside the
 // first-person camera is a line and not a wedge across the screen, and never thinner than
-// `min_angle`, so a distant bolt does not alias away.
+// `min_angle` (about three pixels across at 720p), so a distant bolt does not alias away with
+// glow off.
 //
 // `core_width` is how much of the width is the bright line and `white_core` how far that line is
 // pushed to white: lightning is a hair of white inside a coloured fringe, a fire trail is a soft
@@ -32,7 +33,7 @@ uniform float flow_speed = 0.0;
 uniform float flow_amount = 0.0;
 uniform float uv_scale = 1.0;
 uniform float max_angle = 0.045;
-uniform float min_angle = 0.0009;
+uniform float min_angle = 0.0026;
 uniform float core_width = 0.28;
 uniform float white_core = 0.0;
 

@@ -241,6 +241,226 @@ public static partial class SpellVfx
         return cast.Fx.Disc(frost);
     }
 
+    /// <summary>
+    /// A fireball going off: the layered explosion a fire spell lands with. Every tier gets the
+    /// short white-hot core with its pulse of light, the shock ring, a burst of large flame puffs,
+    /// thrown sparks and a patch of glowing cracks left on the floor, which is a handful of draws.
+    /// Medium and up add the eroding ball of fire that cools to smoke, a billow that rises, smoke
+    /// rolling up after it, flying embers, debris and a scorch; High and up leave small flames
+    /// burning on the ground and bend the air. <paramref name="radius"/> is the size of the fire
+    /// (not a damage radius: nothing here is read back). <paramref name="groundY"/> is the floor
+    /// under it, NaN when it went off in the air.
+    /// </summary>
+    internal static void FireBlast(in VfxCast cast, Vector3 centre, float radius, float groundY = float.NaN)
+    {
+        VfxSpawner fx = cast.Fx;
+        VfxBudget budget = VfxQuality.Budget;
+        VfxRichness rich = VfxQuality.Rich;
+        VfxTier tier = VfxQuality.Tier;
+        radius = Mathf.Clamp(radius, 0.6f, 6f);
+        bool grounded = !float.IsNaN(groundY) && centre.Y - groundY <= Mathf.Max(2f, radius);
+        var floor = new Vector3(centre.X, grounded ? groundY : centre.Y - (radius * 0.5f), centre.Z);
+        VfxSchoolColors flame = Flame(cast.Colors);
+        float density = budget.ParticleMultiplier;
+        float amount = Mathf.Clamp(0.6f + (radius * 0.3f), 0.6f, 2f);
+
+        BlastCore(cast, centre, radius * 0.4f, Mathf.Max(5f, radius * 3.5f));
+        Vector3 facing = grounded || _director is not { HasCamera: true } eye ? default : eye.CameraPosition - centre;
+        ThinRing(cast, grounded ? floor + (Vector3.Up * 0.12f) : centre, radius * 1.25f, 0.36f, facing, energy: 1.7f);
+
+        // The body of the blast on every tier: a few large puffs of flame, at once. Below Medium
+        // this is all the fire there is, so it is never thinned under about ten puffs.
+        VfxBurstSpec puffs = VfxBurstSpec.At(centre, flame, Mathf.Max(0.6f, density * amount));
+        puffs.Extents = Vector3.One * (radius * 0.22f);
+        puffs.SizeScale = Mathf.Clamp(radius * 0.62f, 0.6f, 2.8f);
+        puffs.SpeedScale = Mathf.Clamp(0.6f + (radius * 0.35f), 0.6f, 2.4f);
+        puffs.LifeScale = rich.Billow ? 1.25f * rich.LifeScale : 0.6f;
+        fx.Burst(VfxEmitter.Flame, puffs);
+
+        VfxBurstSpec sparks = VfxBurstSpec.At(centre, cast.Colors, density * amount);
+        sparks.SpeedScale = Mathf.Clamp(0.9f + (radius * 0.3f), 0.9f, 2.4f);
+        if (grounded)
+        {
+            sparks.Direction = Vector3.Up;
+            sparks.Spread = 80f;
+        }
+
+        fx.Burst(VfxParticles.Sparks, sparks);
+
+        if (grounded)
+        {
+            // What is left when the fire has gone: the ground cracked and glowing. Drawn on every
+            // tier (the two leanest have no scorch decals), and it outlasts everything else here.
+            VfxDiscSpec cracks = VfxDiscSpec.At(floor, radius * 0.85f, cast.Colors);
+            cracks.Pattern = VfxDiscPattern.Cracks;
+            cracks.Life = rich.Billow ? 3.2f : 1.5f;
+            cracks.Body = 0.12f;
+            cracks.Rim = 0f;
+            cracks.Flow = 0.1f;
+            cracks.Energy = 0.9f;
+            fx.Disc(cracks);
+        }
+
+        if (!rich.Billow || !fx.Full)
+        {
+            return;
+        }
+
+        VfxShellSpec ball = VfxShellSpec.Ball(centre, radius * 0.62f, flame, cools: true);
+        ball.Life = Mathf.Clamp(0.5f + (radius * 0.06f), 0.5f, 0.8f) * rich.LifeScale;
+        fx.Shell(ball);
+
+        FireBillow(cast, centre + (Vector3.Up * (radius * 0.25f)), radius, 1.2f, rising: true);
+        if (budget.SecondaryDebris)
+        {
+            // Smoke rolling up out of it, for a second and a half after the flame is gone.
+            VfxBurstSpec smoke = VfxBurstSpec.At(
+                centre + (Vector3.Up * (radius * 0.3f)), cast.Colors,
+                density * budget.DebrisMultiplier * Mathf.Clamp(0.5f + (radius * 0.2f), 0.5f, 1.2f));
+            smoke.Extents = Vector3.One * (radius * 0.3f);
+            smoke.Direction = Vector3.Up;
+            smoke.Spread = 40f;
+            smoke.SpeedScale = 1.3f;
+            smoke.SizeScale = Mathf.Clamp(radius * 0.5f, 0.6f, 2.2f);
+            fx.Burst(VfxParticles.Smoke, smoke);
+
+            VfxBurstSpec embers = VfxBurstSpec.At(centre, cast.Colors, density * amount);
+            embers.SpeedScale = Mathf.Clamp(1.4f + (radius * 0.4f), 1.4f, 3.4f);
+            embers.LifeScale = 1.7f;
+            embers.GravityScale = 0.3f;
+            embers.Damping = 0.8f;
+            fx.Burst(VfxParticles.Embers, embers);
+        }
+
+        if (grounded)
+        {
+            Debris(cast, floor, radius);
+            if (radius >= 2f)
+            {
+                SmokeColumn(cast, floor, radius * 0.8f, 1.6f);
+            }
+
+            if (budget.GroundMarks > 0)
+            {
+                fx.Mark(new VfxGroundMarkSpec
+                {
+                    Mark = VfxMark.Scorch,
+                    Position = floor,
+                    Size = radius * 1.9f,
+                    Colors = cast.Colors,
+                    Life = 8f + radius,
+                    Reach = Mathf.Clamp(radius * 0.15f, 0.5f, 0.9f),
+                });
+            }
+
+            if (tier >= VfxTier.High)
+            {
+                // Small flames left burning on the scorch.
+                VfxBurstSpec burning = VfxBurstSpec.At(floor + (Vector3.Up * 0.15f), flame, density * 0.35f);
+                burning.Continuous = true;
+                burning.StreamSeconds = 2.2f;
+                burning.Extents = new Vector3(radius * 0.4f, 0.05f, radius * 0.4f);
+                burning.Direction = Vector3.Up;
+                burning.Spread = 20f;
+                burning.SizeScale = 0.45f;
+                burning.SpeedScale = 0.6f;
+                burning.LifeScale = 0.7f;
+                fx.Burst(VfxEmitter.Flame, burning);
+            }
+        }
+
+        if (budget.Distortion && !VfxQuality.ReducedMotion && radius >= 1.5f)
+        {
+            fx.Distortion(new VfxDistortionSpec
+            {
+                Position = centre,
+                Radius = radius * 1.3f,
+                Life = 0.4f,
+                Strength = Mathf.Clamp(0.026f + (radius * 0.004f), 0.026f, 0.05f),
+            });
+        }
+    }
+
+    /// <summary>
+    /// A lightning strike going off: the flash and its light, a thunderclap ring along the ground,
+    /// thick forked bolts grounding into the floor around it and a shower of sparks, on every tier
+    /// (two or three plain forks on the leanest). Medium and up add more forks with branches,
+    /// debris, a wisp of smoke, cracks left glowing on the floor and a scorch.
+    /// </summary>
+    internal static void LightningBlast(in VfxCast cast, Vector3 centre, float radius, float groundY = float.NaN)
+    {
+        VfxSpawner fx = cast.Fx;
+        VfxBudget budget = VfxQuality.Budget;
+        VfxTier tier = VfxQuality.Tier;
+        radius = Mathf.Clamp(radius, 0.8f, 5f);
+        bool grounded = !float.IsNaN(groundY) && centre.Y - groundY <= Mathf.Max(2.5f, radius);
+        float drop = grounded ? Mathf.Max(0.3f, centre.Y - groundY - 0.05f) : radius * 0.6f;
+        var floor = new Vector3(centre.X, centre.Y - drop, centre.Z);
+
+        BlastCore(cast, centre, radius * 0.4f, Mathf.Max(6f, radius * 4f));
+        ThinRing(cast, floor + (Vector3.Up * 0.12f), radius * 1.2f, 0.3f, energy: 1.6f);
+
+        int forks = tier switch
+        {
+            VfxTier.Performance => 2,
+            VfxTier.Low => 3,
+            VfxTier.Medium => 5,
+            VfxTier.High => 7,
+            _ => 9,
+        };
+        GroundForks(cast, centre, forks, radius, drop, 0.055f, budget.BoltBranches);
+
+        VfxBurstSpec sparks = VfxBurstSpec.At(
+            centre, cast.Colors, budget.ParticleMultiplier * Mathf.Clamp(0.7f + (radius * 0.3f), 0.7f, 2f));
+        sparks.SpeedScale = Mathf.Clamp(1f + (radius * 0.25f), 1f, 2f);
+        fx.Burst(VfxParticles.Sparks, sparks);
+
+        if (grounded)
+        {
+            VfxDiscSpec cracks = VfxDiscSpec.At(floor, radius * 0.8f, cast.Colors);
+            cracks.Pattern = VfxDiscPattern.Cracks;
+            cracks.Life = budget.SecondaryDebris ? 1.8f : 1f;
+            cracks.Body = 0.1f;
+            cracks.Rim = 0f;
+            cracks.Energy = 1.2f;
+            fx.Disc(cracks);
+        }
+
+        if (!budget.SecondaryDebris || !fx.Full)
+        {
+            return;
+        }
+
+        if (grounded)
+        {
+            Debris(cast, floor, radius * 0.8f);
+            if (budget.GroundMarks > 0)
+            {
+                fx.Mark(new VfxGroundMarkSpec
+                {
+                    Mark = VfxMark.Scorch,
+                    Position = floor,
+                    Size = radius * 1.5f,
+                    Colors = cast.Colors,
+                    Life = 7f,
+                    Reach = 0.6f,
+                });
+            }
+        }
+
+        VfxBurstSpec smoke = VfxBurstSpec.At(
+            floor + (Vector3.Up * 0.3f), cast.Colors, budget.ParticleMultiplier * budget.DebrisMultiplier * 0.35f);
+        smoke.SizeScale = Mathf.Clamp(radius * 0.4f, 0.5f, 1.2f);
+        smoke.SpeedScale = 0.6f;
+        fx.Burst(VfxParticles.Smoke, smoke);
+
+        if (tier >= VfxTier.High)
+        {
+            // A second, slower clap rolling out past the first.
+            ThinRing(cast, floor + (Vector3.Up * 0.12f), radius * 1.7f, 0.55f, energy: 0.7f);
+        }
+    }
+
     /// <summary>The pattern a school draws on the ground under a telegraph or a zone.</summary>
     private static VfxDiscPattern SchoolPattern(DamageType school) => school switch
     {

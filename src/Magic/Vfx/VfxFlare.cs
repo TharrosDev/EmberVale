@@ -97,6 +97,17 @@ public partial class VfxFlare : VfxEffect
     private const float RingAt = 0.8f;
 
     private const float PopSeconds = 0.06f;
+
+    /// <summary>How white the middle of a one-shot flash is pushed, and of a glow that is held (an
+    /// aura in the hand, the head of a bolt). A held glow at the flash's value is a white disc with
+    /// a tinted rim, the same for every school; at this it is the school's colour all through.</summary>
+    private const float FlashHotCore = 0.75f;
+
+    private const float HeldHotCore = 0.18f;
+
+    /// <summary>A held glow's core energy against the school's body energy: past the bloom
+    /// threshold, short of clipping every channel (which is what turns any colour white).</summary>
+    private const float HeldEnergy = 0.6f;
     private const float FadeInSeconds = 0.1f;
 
     private readonly MeshInstance3D _core;
@@ -121,7 +132,7 @@ public partial class VfxFlare : VfxEffect
     public VfxFlare()
     {
         _coreMaterial = VfxMaterials.Sprite(VfxTextures.Dot);
-        _coreMaterial.SetShaderParameter(VfxMaterials.HotCore, 0.75f);
+        _coreMaterial.SetShaderParameter(VfxMaterials.HotCore, FlashHotCore);
         _haloMaterial = VfxMaterials.Sprite(VfxTextures.Dot);
         _streakMaterial = VfxMaterials.Sprite(VfxTextures.Streak);
         _streakMaterial.SetShaderParameter(VfxMaterials.Spin, Mathf.Pi * 0.5f);
@@ -164,7 +175,8 @@ public partial class VfxFlare : VfxEffect
         _ring.Visible = spec.Ring;
 
         float soft = rich.SoftParticles ? Mathf.Clamp(spec.Radius * 0.5f, 0.15f, 1.2f) : 0f;
-        _coreMaterial.SetShaderParameter(VfxMaterials.Tint, colors.Core);
+        _coreMaterial.SetShaderParameter(VfxMaterials.HotCore, spec.Sustain ? HeldHotCore : FlashHotCore);
+        _coreMaterial.SetShaderParameter(VfxMaterials.Tint, spec.Sustain ? colors.Mid : colors.Core);
         _coreMaterial.SetShaderParameter(VfxMaterials.Energy, colors.CoreEnergy);
         _coreMaterial.SetShaderParameter(VfxMaterials.SoftDepth, soft);
         _haloMaterial.SetShaderParameter(VfxMaterials.Tint, colors.Mid);
@@ -221,7 +233,7 @@ public partial class VfxFlare : VfxEffect
     internal void Recolor(in VfxSchoolColors colors)
     {
         _spec.Colors = colors;
-        _coreMaterial.SetShaderParameter(VfxMaterials.Tint, colors.Core);
+        _coreMaterial.SetShaderParameter(VfxMaterials.Tint, _spec.Sustain ? colors.Mid : colors.Core);
         _haloMaterial.SetShaderParameter(VfxMaterials.Tint, colors.Mid);
     }
 
@@ -296,7 +308,11 @@ public partial class VfxFlare : VfxEffect
             float flicker = VfxQuality.ReducedMotion
                 ? 1f
                 : 1f + (0.07f * Mathf.Sin((float)Age * 17f)) + (0.04f * Mathf.Sin(((float)Age * 31f) + 1.3f));
-            coreSize = radius * (0.45f + (0.55f * _level)) * flicker;
+            // Near the eye a glow is drawn hand-sized: the first-person casting point and the head
+            // of a bolt just launched are a metre and a half out, where a 0.3 m glow is a disc over
+            // a fifth of the frame. It grows to its full size over the first metres of its flight.
+            float near = VfxCoverageRules.NearScale(distance);
+            coreSize = radius * (0.45f + (0.55f * _level)) * flicker * near;
             haloSize = coreSize * HaloScale;
             coreAlpha = fade * (0.6f + (0.4f * _level));
             haloAlpha = fade * halo * (0.55f + (0.45f * _level));
@@ -333,6 +349,12 @@ public partial class VfxFlare : VfxEffect
             {
                 boost = 1.7f;
             }
+
+            // A flash at the eye (the release in first person) is held to half its size.
+            float near = Mathf.Max(0.5f, VfxCoverageRules.NearScale(distance));
+            coreSize *= near;
+            haloSize *= near;
+            raysSize *= near;
         }
 
         if (_core.Visible)
@@ -346,7 +368,9 @@ public partial class VfxFlare : VfxEffect
             _core.Scale = Vector3.One * (coreSize * 2f);
             _halo.Scale = Vector3.One * (haloSize * 2f);
             _coreMaterial.SetShaderParameter(VfxMaterials.Opacity, Mathf.Clamp(coreAlpha, 0f, 1f));
-            _coreMaterial.SetShaderParameter(VfxMaterials.Energy, _spec.Colors.CoreEnergy * boost);
+            _coreMaterial.SetShaderParameter(
+                VfxMaterials.Energy,
+                _spec.Sustain ? _spec.Colors.MidEnergy * HeldEnergy : _spec.Colors.CoreEnergy * boost);
             _haloMaterial.SetShaderParameter(VfxMaterials.Opacity, Mathf.Clamp(haloAlpha, 0f, 1f));
         }
 

@@ -190,12 +190,14 @@ public static partial class SpellVfx
         if (plan.Flare)
         {
             VfxFlareSpec snap = VfxFlareSpec.At(hand, (0.3f + (0.3f * cast.Weight) + (0.3f * full)) * plan.Scale, cast.Colors);
-            snap.Life = 0.2f;
+            // In first person the flash is beside the crosshair: two or three frames of it.
+            bool atEye = AtTheViewHand(hand);
+            snap.Life = atEye ? 0.07f : 0.2f;
             snap.Light = plan.Light;
             snap.LightRange = 4.5f;
 
             // A heavy or fully charged cast leaves the hand with a burst of rays, not a wider disc.
-            snap.Rays = cast.Weight >= 0.6f || full >= 0.6f;
+            snap.Rays = !atEye && (cast.Weight >= 0.6f || full >= 0.6f);
             cast.Fx.Flare(snap);
         }
 

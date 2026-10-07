@@ -29,11 +29,13 @@ public static partial class SpellVfx
     {
         SpellVfxSpecial emberlash = table.For("spell.emberlash");
         emberlash.Projectile = EmberlashBolt;
+        emberlash.Impact = FireBoltHit;
         emberlash.Proc = KindleCatches;
 
         SpellVfxSpecial flameLance = table.For("spell.flame_lance");
         flameLance.Release = FireRelease;
         flameLance.Projectile = FlameLanceBolt;
+        flameLance.Impact = FireBoltHit;
         flameLance.Proc = KindleCatches;
 
         SpellVfxSpecial pyreWall = table.For("spell.pyre_wall");
@@ -118,6 +120,12 @@ public static partial class SpellVfx
     private static bool AtTheEye(Vector3 point) =>
         _director is { HasCamera: true } director && director.DistanceToCamera(point) < 1.1f;
 
+    /// <summary>Whether a point is at the first-person casting point or nearer: the view-fixed hand
+    /// (<see cref="VfxViewRules.HandOffset"/>) is a metre and a half from the eye, past <see cref="AtTheEye"/>.</summary>
+    private static bool AtTheViewHand(Vector3 point) =>
+        _director is { HasCamera: true } director &&
+        director.DistanceToCamera(point) < VfxViewRules.HandOffset.Length() + 0.3f;
+
     /// <summary>The brief hot heart of a blast: bright, small and gone in <see cref="CoreSeconds"/>.</summary>
     private static void BlastCore(in VfxCast cast, Vector3 at, float radius, float lightRange)
     {
@@ -186,7 +194,8 @@ public static partial class SpellVfx
     };
 
     /// <summary>Forks thrown out from a point, biased down toward the floor: where lightning grounds.</summary>
-    private static void GroundForks(in VfxCast cast, Vector3 from, int count, float reach, float drop, float width)
+    private static void GroundForks(
+        in VfxCast cast, Vector3 from, int count, float reach, float drop, float width, int branches = 0)
     {
         float turn = Roll() * Mathf.Tau;
         for (int i = 0; i < count; i++)
@@ -194,7 +203,7 @@ public static partial class SpellVfx
             float angle = turn + ((i + (Roll() * 0.6f)) * Mathf.Tau / count);
             float far = reach * (0.6f + (0.4f * Roll()));
             var to = new Vector3(from.X + (Mathf.Cos(angle) * far), from.Y - drop, from.Z + (Mathf.Sin(angle) * far));
-            Fork(cast, from, to, width, 0.16f + (0.08f * Roll()));
+            Fork(cast, from, to, width, 0.18f + (0.1f * Roll()), branches);
         }
     }
 
@@ -260,7 +269,7 @@ public static partial class SpellVfx
         // times its radius across: past this size the release is a flash over half the frame.
         float size = Mathf.Min(0.45f, (0.24f + (0.16f * cast.Weight) + (0.16f * full)) * plan.Scale);
         VfxFlareSpec snap = VfxFlareSpec.At(hand, size, cast.Colors);
-        snap.Life = 0.18f;
+        snap.Life = AtTheViewHand(hand) ? 0.07f : 0.18f;
         snap.Light = plan.Light;
         snap.LightRange = 5f;
         cast.Fx.Flare(snap);
@@ -354,6 +363,43 @@ public static partial class SpellVfx
         smoke.SizeScale = Mathf.Clamp(size * 1.4f, 0.3f, 0.75f);
         smoke.LifeScale = 0.5f;
         Shed(rig, cast, VfxParticles.Smoke, smoke, anchor, handOffset, velocity);
+    }
+
+    /// <summary>
+    /// Where a bolt of fire lands it explodes (<see cref="FireBlast"/>): the generic hit is a flash
+    /// a metre across and a scatter of embers, which is a spark and not a fireball. The size follows
+    /// the spell's weight and what a held cast reached, so a full Flame Lance is twice an Emberlash.
+    /// One of a lance's pierced targets gets the blast too; a blocked or spent bolt keeps the
+    /// generic gutter.
+    /// </summary>
+    private static bool FireBoltHit(in VfxCast cast, in SpellImpactInfo hit)
+    {
+        if (hit.Kind is SpellImpactKind.Blocked or SpellImpactKind.Expired)
+        {
+            return false;
+        }
+
+        float radius = (1.25f + (2.6f * cast.Weight) + (0.9f * Mathf.Clamp(hit.Charge, 0f, 1f))) *
+                       (hit.Crit ? 1.12f : 1f) * (hit.Killed ? 1.1f : 1f);
+        float groundY = float.NaN;
+        if (VfxAnchor.BodyOf(hit.Target) is { } body)
+        {
+            // Bodies stand on their origin; a hit above head height is on something tall, in the air.
+            groundY = body.GlobalPosition.Y;
+        }
+        else if (hit.Normal.Y > 0.7f)
+        {
+            groundY = hit.Position.Y;
+        }
+
+        // On the first-person player the blast would be the whole frame: a spark, as any hit on them.
+        if (hit.Target != null && IsPlayer(hit.Target) && AtTheEye(hit.Position + (Vector3.Up * 0.6f)))
+        {
+            return false;
+        }
+
+        FireBlast(cast, hit.Position, radius, groundY);
+        return true;
     }
 
     /// <summary>
@@ -628,9 +674,54 @@ public static partial class SpellVfx
         spray.SpeedScale = 1.5f;
         fx.Burst(VfxParticles.Sparks, spray);
 
+        // Flame on every tier: a few very large puffs thrown up out of the strike. Below Medium this
+        // is the whole fireball, so it is never thinned under about ten puffs.
+        VfxBurstSpec gout = VfxBurstSpec.At(heart, Flame(cast.Colors), Mathf.Max(0.65f, density * 1.4f));
+        gout.Extents = new Vector3(radius * 0.3f, 0.3f, radius * 0.3f);
+        gout.Direction = Vector3.Up;
+        gout.Spread = 65f;
+        gout.SizeScale = Mathf.Clamp(radius * 0.6f, 1f, 2.8f);
+        gout.SpeedScale = 2f;
+        gout.LifeScale = rich ? 1.4f : 0.65f;
+        fx.Burst(VfxEmitter.Flame, gout);
+
+        // The crater: the ground cracked and glowing where it struck, long after the pillar.
+        VfxDiscSpec crater = VfxDiscSpec.At(floor, radius * 0.9f, cast.Colors);
+        crater.Pattern = VfxDiscPattern.Cracks;
+        crater.Life = rich ? 4.5f : 2f;
+        crater.Body = 0.14f;
+        crater.Rim = 0f;
+        crater.Flow = 0.1f;
+        fx.Disc(crater);
+
         if (!rich)
         {
             return true;
+        }
+
+        // What burns on in the crater: smoke climbing out of it for seconds, and (High and up)
+        // small fires scattered across the scorch.
+        VfxBurstSpec column = VfxBurstSpec.At(floor + (Vector3.Up * 0.3f), cast.Colors, density * budget.DebrisMultiplier * 0.6f);
+        column.Continuous = true;
+        column.StreamSeconds = 3.2f;
+        column.Extents = new Vector3(radius * 0.3f, 0.1f, radius * 0.3f);
+        column.Direction = Vector3.Up;
+        column.Spread = 14f;
+        column.SpeedScale = 1.7f;
+        column.SizeScale = Mathf.Clamp(radius * 0.45f, 0.9f, 2.2f);
+        fx.Burst(VfxParticles.Smoke, column);
+        if (lavish)
+        {
+            VfxBurstSpec fires = VfxBurstSpec.At(floor + (Vector3.Up * 0.15f), Flame(cast.Colors), density * 0.5f);
+            fires.Continuous = true;
+            fires.StreamSeconds = 3f;
+            fires.Extents = new Vector3(radius * 0.55f, 0.05f, radius * 0.55f);
+            fires.Direction = Vector3.Up;
+            fires.Spread = 18f;
+            fires.SizeScale = 0.55f;
+            fires.SpeedScale = 0.6f;
+            fires.LifeScale = 0.75f;
+            fx.Burst(VfxEmitter.Flame, fires);
         }
 
         // The billow: swells from a quarter of its size, and burns away from the inside into smoke.
@@ -899,8 +990,9 @@ public static partial class SpellVfx
         edge.Energy = 0.6f;
         rig.Add(cast.Fx.Disc(edge)).Get?.Follow(floor);
 
-        // Snow: small, slow, wandering, and falling the height of a room. One emitter holds only so
-        // many flakes, so the richer tiers stack layers of it born at different heights.
+        // Snow: thin pale streaks driven down on a slant, fast, the height of a room. (Slow round
+        // motes at this size were a field of glowing balls.) One emitter holds only so many flakes,
+        // so the richer tiers stack layers of it born at different heights.
         int layers = VfxQuality.Tier switch
         {
             VfxTier.Medium => 2,
@@ -911,14 +1003,17 @@ public static partial class SpellVfx
         VfxBurstSpec snow = VfxBurstSpec.At(Vector3.Zero, cast.Colors, density * area * 3f);
         snow.Continuous = true;
         snow.Extents = new Vector3(radius * 0.85f, 0.3f, radius * 0.85f);
-        snow.Direction = Vector3.Down;
-        snow.Spread = 25f;
-        snow.Speed = 2.6f;
-        snow.GravityScale = -3f;
-        snow.SizeScale = 1.8f;
+        snow.Direction = new Vector3(0.32f, -1f, 0.14f);
+        snow.Spread = 7f;
+        snow.Speed = 7.5f;
+        snow.Damping = 0f;
+        snow.GravityScale = 0.2f;
+        snow.SizeScale = 0.42f;
+        snow.LifeScale = 1.15f;
+        snow.Tint = new Color(cast.Colors.Core, 1f);
         for (int i = 0; i < layers; i++)
         {
-            VfxHandle<VfxBurst> falling = rig.Add(cast.Fx.Burst(VfxParticles.Motes, snow));
+            VfxHandle<VfxBurst> falling = rig.Add(cast.Fx.Burst(VfxParticles.Sparks, snow));
             falling.Get?.Follow(VfxAnchor.To(zone, Vector3.Up * (3.2f - (0.5f * i))));
             if (i == 0)
             {
@@ -1222,17 +1317,19 @@ public static partial class SpellVfx
         return false;
     }
 
-    /// <summary>Where Ball Lightning bursts it forks: short strikes out of the burst into the ground
-    /// around it (Medium and up), over the generic flash, ring and sparks.</summary>
+    /// <summary>Where Ball Lightning bursts it detonates (<see cref="LightningBlast"/>).</summary>
     private static bool BallLightningHit(in VfxCast cast, in SpellImpactInfo hit)
     {
-        if (hit.Kind is SpellImpactKind.Blocked or SpellImpactKind.Expired || !VfxQuality.Budget.SecondaryDebris)
+        if (hit.Kind is SpellImpactKind.Blocked or SpellImpactKind.Expired)
         {
             return false;
         }
 
-        GroundForks(cast, hit.Position, VfxQuality.Tier == VfxTier.Ultra ? 5 : 3, 1.7f, 1.1f, 0.024f);
-        return false;
+        // The orb detonates: a strike's worth of forks into the floor, a clap and sparks, on every
+        // tier, in place of the generic flash (which at this size was a soft glow).
+        float groundY = VfxAnchor.BodyOf(hit.Target) is { } body ? body.GlobalPosition.Y : float.NaN;
+        LightningBlast(cast, hit.Position, 2.4f * (hit.Crit ? 1.15f : 1f), groundY);
+        return true;
     }
 
     /// <summary>
@@ -1255,7 +1352,7 @@ public static partial class SpellVfx
             From = from,
             To = to,
             Colors = cast.Colors,
-            Width = AtTheEye(from) ? 0.016f : 0.028f,
+            Width = AtTheViewHand(from) ? 0.016f : 0.028f,
             Jitter = Kink(0.075f, from.DistanceTo(to)),
             Segments = VfxRecipeRules.BoltSegments(VfxQuality.Budget, from.DistanceTo(to)),
             Seed = _director!.NextSeed(),
@@ -1335,8 +1432,8 @@ public static partial class SpellVfx
         return false;
     }
 
-    /// <summary>Stormbrand calls a strike down on what it brands: one bolt out of the sky onto the
-    /// struck point, forked on the richer tiers, over the generic flash and the brand's sigil.</summary>
+    /// <summary>Stormbrand calls a strike down on what it brands: a thick bolt out of the sky onto
+    /// the struck point and a blast where it grounds, over the generic flash and the brand's sigil.</summary>
     private static bool StormbrandHit(in VfxCast cast, in SpellImpactInfo hit)
     {
         if (hit.Kind != SpellImpactKind.Target)
@@ -1344,14 +1441,20 @@ public static partial class SpellVfx
             return false;
         }
 
+        // The strike: a wide soft channel, a bright body and a thin white heart on one line out of
+        // the sky (the leanest tier keeps the two that carry it), then the ground answers.
         float lean = (Roll() - 0.5f) * 3f;
-        Vector3 sky = hit.Position + new Vector3(lean, 8f, (Roll() - 0.5f) * 3f);
-        Fork(cast, sky, hit.Position, 0.04f, 0.22f, VfxQuality.Budget.BoltBranches, jitter: 0.1f);
-        if (VfxQuality.Budget.SecondaryDebris)
+        Vector3 sky = hit.Position + new Vector3(lean, 9f, (Roll() - 0.5f) * 3f);
+        bool rich = VfxQuality.Budget.SecondaryDebris;
+        Fork(cast, sky, hit.Position, 0.16f, 0.3f, VfxQuality.Budget.BoltBranches, jitter: 0.08f);
+        if (rich)
         {
-            Fork(cast, sky, hit.Position, 0.018f, 0.16f, jitter: 0.14f);
+            Fork(cast, sky, hit.Position, 0.07f, 0.24f, jitter: 0.1f);
+            Fork(cast, sky, hit.Position, 0.03f, 0.18f, jitter: 0.14f);
         }
 
+        float groundY = VfxAnchor.BodyOf(hit.Target) is { } body ? body.GlobalPosition.Y : float.NaN;
+        LightningBlast(cast, hit.Position, 2f, groundY);
         return false;
     }
 
@@ -1372,7 +1475,8 @@ public static partial class SpellVfx
         Vector3 end = to + Vector3.Up;
         float length = start.DistanceTo(end);
 
-        Fork(cast, start, end, 0.05f, 0.3f, budget.BoltBranches, jitter: 0.075f);
+        // One thick bolt from where the caster left to where they arrived, on every tier.
+        Fork(cast, start, end, 0.12f, 0.34f, budget.BoltBranches, jitter: 0.075f);
         int extra = VfxQuality.Tier switch
         {
             VfxTier.Medium => 1,
@@ -1381,7 +1485,7 @@ public static partial class SpellVfx
         };
         for (int i = 0; i < extra; i++)
         {
-            Fork(cast, start, end, 0.022f, 0.2f + (0.06f * i), jitter: 0.12f);
+            Fork(cast, start, end, 0.04f, 0.22f + (0.06f * i), jitter: 0.12f);
         }
 
         // Afterimages: small, dim, each a little later than the last.
@@ -1405,27 +1509,13 @@ public static partial class SpellVfx
         VfxFlareSpec depart = VfxFlareSpec.At(start, 0.3f, cast.Colors);
         depart.Life = 0.14f;
         fx.Flare(depart);
-        BlastCore(cast, end, 0.42f, 6f);
         float reach = Mathf.Max(1f, cast.Spell?.DashHitRadius ?? 1.4f);
-        ThinRing(cast, to + (Vector3.Up * 0.12f), reach, 0.28f, energy: 1.3f);
-
-        VfxBurstSpec clap = VfxBurstSpec.At(to + (Vector3.Up * 0.3f), cast.Colors, density * 1.2f);
-        clap.Direction = Vector3.Up;
-        clap.Spread = 80f;
-        clap.SpeedScale = 1.3f;
-        fx.Burst(VfxParticles.Sparks, clap);
+        LightningBlast(cast, end, reach * 1.2f, to.Y);
 
         if (!rich)
         {
             return true;
         }
-
-        GroundForks(cast, end, VfxQuality.Tier == VfxTier.Ultra ? 5 : 3, reach * 1.2f, 0.95f, 0.026f);
-
-        VfxBurstSpec smoke = VfxBurstSpec.At(to + (Vector3.Up * 0.3f), cast.Colors, density * budget.DebrisMultiplier * 0.4f);
-        smoke.SizeScale = 0.7f;
-        smoke.SpeedScale = 0.6f;
-        fx.Burst(VfxParticles.Smoke, smoke);
 
         // A line of scorch along the floor it crossed, and a wider one where it stopped.
         if (budget.GroundMarks > 0)
@@ -1433,14 +1523,13 @@ public static partial class SpellVfx
             int marks = Mathf.Clamp(Mathf.CeilToInt(length / 2.6f), 1, Mathf.Max(1, budget.GroundMarks / 3));
             for (int i = 0; i < marks; i++)
             {
-                bool last = i == marks - 1;
                 fx.Mark(new VfxGroundMarkSpec
                 {
                     Mark = VfxMark.Scorch,
-                    Position = last ? to : from.Lerp(to, (i + 0.5f) / marks),
-                    Size = last ? reach * 1.6f : 1.2f,
+                    Position = from.Lerp(to, (i + 0.5f) / (marks + 1)),
+                    Size = 1.2f,
                     Colors = cast.Colors,
-                    Life = last ? 8f : 6f,
+                    Life = 6f,
                     Reach = 0.6f,
                 });
             }

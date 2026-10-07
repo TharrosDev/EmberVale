@@ -281,7 +281,7 @@ public static partial class SpellVfx
 
     /// <summary>
     /// The first-person casting point, when the camera is in <paramref name="body"/>'s head: a point
-    /// low and to the right in the view, past the near fade and clear of the crosshair
+    /// low and to the left in the view (the left hand casts), past the near fade and clear of the crosshair
     /// (<see cref="VfxViewRules"/>). False in third person, or with no camera.
     /// </summary>
     internal static bool TryFirstPersonHand(Node3D body, out Vector3 position)

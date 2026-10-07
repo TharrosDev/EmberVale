@@ -105,6 +105,8 @@ internal static class VfxMaterials
     private static ArrayMesh? _rimAnnulus;
     private static QuadMesh? _quad;
     private static QuadMesh? _streakQuad;
+    private static QuadMesh? _sparkQuad;
+    private static QuadMesh? _cometQuad;
     private static PlaneMesh? _plane;
     private static SphereMesh? _sphere;
     private static QuadMesh? _sheet;
@@ -147,6 +149,13 @@ internal static class VfxMaterials
 
     /// <summary>A quad four times as long as it is wide: a spark, stretched along its travel.</summary>
     public static QuadMesh StreakQuad => _streakQuad ??= new QuadMesh { Size = new Vector2(0.28f, 1f) };
+
+    /// <summary>A quad eight times as long as it is wide: a spark. Thinner than
+    /// <see cref="StreakQuad"/>, which at a spark's size drew fat grains of rice.</summary>
+    public static QuadMesh SparkQuad => _sparkQuad ??= new QuadMesh { Size = new Vector2(0.12f, 1f) };
+
+    /// <summary>A quad twice as long as it is wide: a comet-shaped ember or wisp.</summary>
+    public static QuadMesh CometQuad => _cometQuad ??= new QuadMesh { Size = new Vector2(0.5f, 1f) };
 
     /// <summary>A unit quad lying flat, facing up: rings and ground discs.</summary>
     public static PlaneMesh Plane => _plane ??= new PlaneMesh { Size = Vector2.One };
@@ -254,6 +263,8 @@ internal static class VfxMaterials
         _annulus = null;
         _rimAnnulus = null;
         _streakQuad = null;
+        _sparkQuad = null;
+        _cometQuad = null;
         _plane = null;
         _sphere = null;
         _sheet = null;

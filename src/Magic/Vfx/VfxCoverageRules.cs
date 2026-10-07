@@ -23,6 +23,28 @@ namespace Embervale.Magic.Vfx;
 /// </summary>
 public static class VfxCoverageRules
 {
+    /// <summary>Inside this distance of the eye a held glow is at its smallest.</summary>
+    public const float NearStart = 0.8f;
+
+    /// <summary>Past this distance of the eye a held glow is its full size.</summary>
+    public const float NearEnd = 3.2f;
+
+    /// <summary>The smallest a held glow is drawn against its size, at the eye.</summary>
+    public const float NearFloor = 0.3f;
+
+    /// <summary>
+    /// How large a glow that is held (a wind-up aura, the head of a bolt in flight) is drawn for
+    /// its <paramref name="distance"/> from the eye, against its true size: <see cref="NearFloor"/>
+    /// at the first-person casting point, growing to 1 by <see cref="NearEnd"/> metres. This is what
+    /// keeps the charge in a first-person hand the size of the hand, and a bolt just launched from
+    /// covering the crosshair it is flying down.
+    /// </summary>
+    public static float NearScale(float distance)
+    {
+        float t = Math.Clamp((distance - NearStart) / (NearEnd - NearStart), 0f, 1f);
+        return NearFloor + ((1f - NearFloor) * t);
+    }
+
     /// <summary>The tangent of half the vertical field of view the estimate assumes (70 degrees).</summary>
     public const float TanHalfFov = 0.7f;
 

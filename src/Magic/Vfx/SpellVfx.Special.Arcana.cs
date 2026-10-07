@@ -381,8 +381,29 @@ public static partial class SpellVfx
         VfxFlareSpec appear = VfxFlareSpec.At(here, inside ? 0.2f : 0.32f, colors);
         appear.Life = 0.26f;
         appear.Light = budget.MaxLights > 0;
-        appear.LightRange = 5f;
+        appear.LightRange = 3f;
         cast.Fx.Flare(appear);
+        if (inside && along != Vector3.Zero && _director is { HasCamera: true } view)
+        {
+            // From inside, everything above is at the feet, under the frame. The arrival shown at
+            // eye level: a hoop opening ahead along the way they came, and streaks falling into it.
+            Vector3 ahead = view.CameraPosition + (along * 2.6f);
+            VfxFlareSpec open = VfxFlareSpec.At(ahead, 0.2f, colors.Scaled(0.6f, 1f));
+            open.NoCore = true;
+            open.Ring = true;
+            open.RingRadius = 1.5f;
+            open.RingNormal = along;
+            open.Life = 0.3f;
+            cast.Fx.Flare(open);
+            if (!lean)
+            {
+                VfxBurstSpec fall = VfxBurstSpec.At(ahead, colors, ArcanaDebris(0.6f));
+                fall.Inward = true;
+                fall.Extents = Vector3.One * 1.8f;
+                fall.LifeScale = 0.45f;
+                cast.Fx.Burst(VfxParticles.Sparks, fall);
+            }
+        }
         ArcanaRing(
             cast, to + (Vector3.Up * 0.12f), VfxArcanaRules.FloorReach(inside), colors, ArcanaFloorSeconds(inside, 0.5f));
         VfxBurstSpec thrown = VfxBurstSpec.At(here, colors, ArcanaAmount(0.9f));
@@ -1107,7 +1128,8 @@ public static partial class SpellVfx
         drawn.LifeScale = 0.6f;
         cast.Fx.Burst(VfxParticles.Motes, drawn);
 
-        VfxBurstSpec stitches = VfxBurstSpec.At(chest, bone, ArcanaDebris(0.5f));
+        // The stitches are the school's own violet: bone-white alone read as a generic burst.
+        VfxBurstSpec stitches = VfxBurstSpec.At(chest, cast.Colors, ArcanaDebris(0.5f));
         stitches.Inward = true;
         stitches.Extents = new Vector3(spread * 0.8f, 0.9f, spread * 0.8f);
         cast.Fx.Burst(VfxParticles.Sparks, stitches);
@@ -1267,6 +1289,36 @@ public static partial class SpellVfx
         spray.Extents = Vector3.One * 0.15f;
         cast.Fx.Burst(look.Spray, spray);
 
+        // The body of the breath, on every tier: a few large puffs driven down the axis from the
+        // mouth, swelling as they go, so the breath is a stream toward whoever it is aimed at and
+        // not a scatter of sparks around the head. Fire cools to smoke along the way; ash is mostly
+        // smoke from the start; frost is cold mist. Each puff is thinned by how wide it stands on
+        // screen (the sprite governor), so the one it reaches looks through it.
+        if (cast.School != DamageType.Arcane)
+        {
+            bool cold = cast.School == DamageType.Frost;
+            VfxBurstPreset puff = VfxBurstPresets.For(cold ? VfxEmitter.Mist : VfxEmitter.Flame);
+            VfxSchoolColors breath = cast.School == DamageType.Fire ? colors : colors.Scaled(0.5f, 1f);
+            VfxBurstSpec stream = VfxBurstSpec.At(
+                origin + (axis * 0.4f), breath, Mathf.Max(0.45f, VfxQuality.Budget.ParticleMultiplier * 0.8f));
+            stream.Direction = axis;
+            stream.Spread = half * 0.6f;
+            stream.LifeScale = Mathf.Clamp(0.75f / Mathf.Max(0.1f, puff.Life), 0.3f, 1f);
+            stream.Speed = range / (Mathf.Max(0.1f, puff.Life * stream.LifeScale) * 0.75f);
+            stream.Damping = 0.5f;
+            stream.GravityScale = 0.3f;
+            stream.SizeScale = Mathf.Clamp(widthAtEnd * 0.4f, 0.8f, 2f);
+            stream.Extents = Vector3.One * 0.15f;
+            if (cold)
+            {
+                cast.Fx.Burst(VfxEmitter.Mist, stream);
+            }
+            else
+            {
+                cast.Fx.Burst(VfxEmitter.Flame, stream);
+            }
+        }
+
         if (look.Haze != VfxParticles.None)
         {
             VfxBurstPreset drift = VfxBurstPresets.For(look.Haze);
@@ -1373,7 +1425,7 @@ public static partial class SpellVfx
 
         // One patch on the floor a tick, somewhere new in the wedge each time: the mark budget keeps
         // the newest, so a long breath leaves a scorched (or frosted) fan and not a single spot.
-        if (look.Mark != VfxMark.None && budget.GroundMarks > 0 && VfxAnchor.BodyOf(cast.Caster) is { } body)
+        if (look.Mark != VfxMark.None && VfxAnchor.BodyOf(cast.Caster) is { } body)
         {
             var flat = new Vector3(axis.X, 0f, axis.Z);
             if (flat.LengthSquared() > 0.01f)
@@ -1384,6 +1436,19 @@ public static partial class SpellVfx
                 float across = ((((roll >> 16) & 0xFFFF) / 65535f) - 0.5f) * along * widthAtEnd;
                 Vector3 side = flat.Cross(Vector3.Up);
                 Vector3 at = new Vector3(origin.X, body.GlobalPosition.Y, origin.Z) + (flat * (range * along)) + (side * across);
+                if (budget.GroundMarks <= 0)
+                {
+                    // No decals on the two leanest tiers: a patch of glowing cracks (or frost) for a
+                    // second and a half, so the breath still leaves the ground it crossed marked.
+                    VfxDiscSpec patch = VfxDiscSpec.At(at, Mathf.Clamp(widthAtEnd * 0.3f, 0.9f, 1.8f), colors);
+                    patch.Pattern = look.Mark == VfxMark.Frost ? VfxDiscPattern.Frost : VfxDiscPattern.Cracks;
+                    patch.Life = 1.6f;
+                    patch.Body = 0.1f;
+                    patch.Rim = 0f;
+                    cast.Fx.Disc(patch);
+                    return true;
+                }
+
                 cast.Fx.Mark(new VfxGroundMarkSpec
                 {
                     Mark = look.Mark,

@@ -35,6 +35,10 @@ internal struct VfxShellSpec
     /// <summary>Drawn as a rim-lit shell (a ward) rather than a body of fire.</summary>
     public bool Fresnel;
 
+    /// <summary>How tightly a rim-lit shell's light hugs its outline: higher is a thinner rim and a
+    /// clearer middle. 0 = the default.</summary>
+    public float RimPower;
+
     /// <summary>0 = pure added light, 1 = covers what is behind it (ice).</summary>
     public float Occlude;
 
@@ -372,7 +376,7 @@ public partial class VfxShell : VfxEffect
         material.SetShaderParameter(VfxMaterials.Scroll, spec.Scroll * speed);
         material.SetShaderParameter(VfxMaterials.Tiling, spec.Tiling == Vector2.Zero ? Vector2.One : spec.Tiling);
         material.SetShaderParameter(VfxMaterials.FresnelMix, spec.Fresnel ? 1f : 0f);
-        material.SetShaderParameter(VfxMaterials.FresnelPower, 2.2f);
+        material.SetShaderParameter(VfxMaterials.FresnelPower, spec.RimPower > 0f ? spec.RimPower : 2.2f);
         material.SetShaderParameter(VfxMaterials.FadeTop, spec.FadeTop);
         material.SetShaderParameter(VfxMaterials.FadeSides, spec.FadeSides);
         material.SetShaderParameter(
@@ -384,7 +388,11 @@ public partial class VfxShell : VfxEffect
         bool ragged = spec.Ragged && spec.Shape == VfxShellShape.Sphere;
         material.SetShaderParameter(VfxMaterials.Billow, ragged ? 0.14f : 0f);
         material.SetShaderParameter(VfxMaterials.Front, ragged ? 0.85f : 0f);
-        material.SetShaderParameter(VfxMaterials.Thin, ragged ? 0.7f : 0f);
+
+        // A sheet of fire is thinned where it is cooler too, so it is tongues of flame with the
+        // world showing between them and not a lit panel.
+        bool flames = spec.Shape == VfxShellShape.Sheet && !spec.Fresnel;
+        material.SetShaderParameter(VfxMaterials.Thin, ragged ? 0.7f : flames ? 0.55f : 0f);
         material.SetShaderParameter(VfxMaterials.Cool, 0f);
     }
 
