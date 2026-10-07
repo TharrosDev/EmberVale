@@ -5,7 +5,7 @@ Neither is Quaternius or Meshy. Both are deterministic pure-python glTF 2.0 bina
 only, no Blender, no Godot) built to the same contract as the shipping `prp_grass_*` meshes so
 they drop into the existing `WorldBiomeScatter` layers unchanged:
 
-    prp_grass_clump_a.glb   18 tapered, curved blades radiating from one root, widths crossed so
+    prp_grass_clump_a.glb   44 tapered, curved blades spread over a 0.6 m root patch, widths crossed so
                             the planes interleave. 126 triangles, 0.70 m tall, origin at the base.
     prp_fern_clump_a.glb    12 broad arching fronds in three rings, five V-folded segments each.
                             216 triangles, 0.80 m tall, origin at the base.
@@ -51,8 +51,8 @@ PROPS = ROOT / "assets" / "models" / "props"
 REFERENCE_GRASS = PROPS / "prp_grass_clump_a.glb"
 REFERENCE_FERN = PROPS / "prp_fern_clump_a.glb"
 
-GRASS_HEIGHT = 0.70
-GRASS_BUDGET = 150
+GRASS_HEIGHT = 1.00
+GRASS_BUDGET = 320
 FERN_HEIGHT = 0.80
 FERN_BUDGET = 250
 UP = (0.0, 1.0, 0.0)
@@ -107,10 +107,15 @@ def rescale_to_height(mesh: Mesh, height: float) -> None:
 # grass clump
 # ----------------------------------------------------------------------------------------------
 
-BLADES = 18
+BLADES = 44
 BLADE_ROWS = 4                      # rows of two verts, then a single tip vertex: 2*4 - 1 = 7 tris
 BLADE_WIDTH = (1.0, 0.93, 0.78, 0.50)   # taper, as a fraction of the root half-width
 BLADE_T = (0.0, 0.25, 0.5, 0.75)        # row heights as a fraction of the blade
+# A tuft, not a spike: the roots spread over a patch about as wide as the tuft is tall, so one
+# instance covers the ground the way the grass it replaced did. The root is shaded, not black: the
+# open fan shows its lower blades, and a black root reads as a dark spike on pale ground.
+TUFT_RADIUS = 0.30
+ROOT_SHADE = 0.34
 
 
 def build_grass(seed: int = 7) -> Mesh:
@@ -119,18 +124,18 @@ def build_grass(seed: int = 7) -> Mesh:
     for i in range(BLADES):
         # golden-angle fan so the blades never stack, root radius packed toward the middle
         phi = i * 2.399963 + rng.uniform(-0.25, 0.25)
-        radius = 0.075 * math.sqrt((i + 0.5) / BLADES)
+        radius = TUFT_RADIUS * math.sqrt((i + 0.5) / BLADES)
         base = (radius * math.cos(phi), 0.0, radius * math.sin(phi))
         # central blades stand tallest, outer blades are shorter and lean further out
-        rim = radius / 0.075
-        height = rng.uniform(0.80, 1.0) * lerp(1.0, 0.5, rim)
+        rim = radius / TUFT_RADIUS
+        height = rng.uniform(0.70, 1.0) * lerp(1.0, 0.45, rim)
         lean = rng.uniform(0.10, 0.22) + 0.30 * rim
         psi = phi + rng.uniform(-0.45, 0.45)
         lean_dir = (math.cos(psi), 0.0, math.sin(psi))
         # width axis: horizontal, twisted off the lean plane so neighbouring blades cross
         twist = psi + math.pi / 2 + rng.uniform(-0.6, 0.6)
         side = (math.cos(twist), 0.0, math.sin(twist))
-        half = rng.uniform(0.020, 0.030)
+        half = rng.uniform(0.038, 0.062)
         bright = rng.uniform(0.82, 1.0)
         v_tip = rng.uniform(0.02, 0.28)     # shorter blades stop short of the palest texture row
 
@@ -139,7 +144,7 @@ def build_grass(seed: int = 7) -> Mesh:
             return add(base, add(mul(lean_dir, lean * height * t * t), (0.0, height * t, 0.0)))
 
         def shade(t: float) -> float:
-            return min(1.0, (0.07 + 0.93 * t ** 1.35) * bright) if t < 1.0 else 1.0
+            return min(1.0, (ROOT_SHADE + (1.0 - ROOT_SHADE) * t ** 1.2) * bright) if t < 1.0 else 1.0
 
         def v_of(t: float) -> float:
             return 0.99 - (0.99 - v_tip) * t
