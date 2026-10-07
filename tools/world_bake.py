@@ -37,12 +37,19 @@ SOURCE_GLOBS = (
     "data/biomes/**/*.tres",
     "data/world/**/*.tres",
     "scenes/regions/**/*.tscn",
+    # Wrapper scenes a cell instances (shrine_waystone, lm_*): their colliders feed the cell navmesh.
+    "scenes/props/*.tscn",
     "src/World/*.cs",
     "src/Bootstrap/HeadlessWorldBake.cs",
     "src/Combat/CombatLayers.cs",
     # Models and world shaders only. UI art, fonts and audio never reach a prepared cell, and
     # hashing their import sidecars made every new icon a thirty-minute rebake.
     "assets/models/**/*.import",
+    # The model bytes themselves. A sidecar does not change when a .glb is replaced in place, so
+    # without these a new mesh under an old name left every prepared cell that scatters it stale.
+    "assets/models/**/*.glb",
+    "assets/models/**/*.gltf",
+    "assets/models/**/*.bin",
     "assets/models/**/*.tres",
     "assets/shaders/world/*",
 )
@@ -67,7 +74,7 @@ def source_digest(path: Path) -> str:
     # Git checks C#/Python out with platform-native endings. Source identity must survive
     # that checkout conversion; binary artifacts retain exact byte hashes via digest().
     payload = path.read_bytes()
-    if path.suffix in {".cs", ".py", ".tres", ".tscn", ".import", ".gdshader", ".gdshaderinc"}:
+    if path.suffix in {".cs", ".py", ".gd", ".tres", ".tscn", ".import", ".gdshader", ".gdshaderinc"}:
         payload = payload.replace(b"\r\n", b"\n")
     return hashlib.sha256(payload).hexdigest()
 

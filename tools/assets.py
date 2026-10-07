@@ -4,6 +4,7 @@
     python tools/assets.py status                     # what exists, what family, what drifted
     python tools/assets.py validate                   # every hard gate, in the order they need
     python tools/assets.py adopt SRC DEST             # source model -> validated production asset
+    python tools/assets.py adopt-batch --plan P --source-dir D   # many static models, one import pass
     python tools/assets.py audit                      # full Blender + Godot inspection
     python tools/assets.py audit-weight               # estimated texture video memory by class
     python tools/assets.py build TARGET               # Blender rebuild + its mandatory follow-up
@@ -451,6 +452,190 @@ def cmd_build(args: argparse.Namespace) -> int:
     return 0
 
 
+def import_and_budget(engine: Path) -> int:
+    """One import pass, the class texture budget, the pass that applies it, then the manifest.
+
+    However many models were just written, this is the whole engine cost of adopting them.
+    """
+    print("  -> godot --headless --import")
+    imported = run_process([str(engine), "--headless", "--path", ".", "--import"], timeout=1800, cwd=ROOT)
+    from embervale_sdk.contract import diagnostics_from_log
+    if imported.returncode or any(d["severity"] == "error" for d in diagnostics_from_log(imported.output, "import")):
+        print(imported.output or imported.launch_error)
+        print("assets: import failed; manifest and rig checks were not advanced.")
+        return 1
+
+    # The first import is what creates a new texture's .import (and extracts an embedded image to
+    # <model>_<image name>.png), so the class budget can only be written now, and a second pass is
+    # what applies it. Without this a fresh 2048 atlas ships uncapped until someone audits it.
+    budgeted = apply_texture_budget()
+    if budgeted:
+        print(f"  -> texture budget written to {len(budgeted)} .import file(s); importing again")
+        imported = run_process([str(engine), "--headless", "--path", ".", "--import"], timeout=1800, cwd=ROOT)
+        if imported.returncode:
+            print(imported.output or imported.launch_error)
+            print("assets: the texture-budget reimport failed.")
+            return 1
+
+    write_json(MANIFEST, build_manifest())
+    return 0
+
+
+# What the engine itself writes for a static model, less the uid, the imported path and [deps],
+# which it fills in on the first import while keeping every value here. Written beside a NEW model
+# so that pass is already the right one: LODs and shadow meshes on, no collision generated from the
+# visual mesh (_subresources is empty and no node carries a -col suffix), embedded images extracted
+# to .png (1) so audit-weight can budget them. An existing sidecar is never overwritten.
+STATIC_IMPORT = """[remap]
+
+importer="scene"
+importer_version=1
+type="PackedScene"
+
+[params]
+
+nodes/root_type=""
+nodes/root_name=""
+nodes/root_script=null
+mesh_library/use_node_names_as_mesh_names=false
+array_mesh/deduplicate_surfaces=true
+nodes/apply_root_scale=true
+nodes/root_scale=1.0
+nodes/import_as_skeleton_bones=false
+nodes/use_name_suffixes=true
+nodes/use_node_type_suffixes=true
+meshes/ensure_tangents=true
+meshes/generate_lods=true
+meshes/create_shadow_meshes=true
+meshes/light_baking=1
+meshes/lightmap_texel_size=0.2
+meshes/force_disable_compression=false
+skins/use_named_skins=true
+animation/import=true
+animation/fps=30
+animation/trimming=false
+animation/remove_immutable_tracks=true
+animation/import_rest_as_RESET=false
+import_script/path=""
+materials/extract=0
+materials/extract_format=0
+materials/extract_path=""
+_subresources={}
+gltf/naming_version=2
+gltf/embedded_image_handling=1
+gltf/texture_map_mode=1
+"""
+
+# The plan kinds that are a static prop. A dragon or a beast is rebound onto a rig first and an NPC
+# body goes through `adopt`, so none of those is this command's to write.
+STATIC_KINDS = ("nature", "landmark", "prop")
+
+
+def cmd_adopt_batch(args: argparse.Namespace) -> int:
+    """Many static models in, ONE import pass owed.
+
+    `adopt` launches the engine twice per model. A tier of forty props is one prep each (pure
+    python, tools/meshy_prep_static.py owns it) and then the same two passes for all of them, so
+    this writes every .glb and its sidecar and leaves the engine work to --import or to the
+    printed commands.
+    """
+    import tempfile
+    import meshy_prep_static
+
+    jobs: list[tuple[Path, Path, dict[str, Any] | None]] = []   # source, folder/name, prep options
+    skipped: list[str] = []
+    if args.plan:
+        if args.source_dir is None:
+            print("assets adopt-batch: --plan needs --source-dir", file=sys.stderr)
+            return 2
+        for item in json.loads(args.plan.read_text(encoding="utf-8")):
+            if (args.only and item["id"] not in args.only) or (args.priority and item.get("priority") not in args.priority):
+                continue
+            if item.get("kind") not in STATIC_KINDS:
+                skipped.append(f"{item['id']}: a {item.get('kind')} is not a static prop")
+                continue
+            source = args.source_dir / f"{item['id']}.{args.stage}.glb"
+            if not source.is_file():
+                skipped.append(f"{item['id']}: no {source.name} yet")
+                continue
+            # An item's optional "prep" object overrides the defaults (origin, yaw, length, offset).
+            options = {"height": item["heightMetres"], **item.get("prep", {})}
+            if "length" in options:
+                options.pop("height")
+            jobs.append((source, Path(item["folder"]) / f"{item['id']}.glb", options))
+    if args.sources and not args.folder:
+        print("assets adopt-batch: prepared sources need --folder", file=sys.stderr)
+        return 2
+    jobs += [(Path(source), Path(args.folder) / Path(source).name, None) for source in args.sources]
+    if not jobs and not args.run_import:
+        print("assets adopt-batch: nothing to adopt" + "".join(f"\n  {line}" for line in skipped), file=sys.stderr)
+        return 2
+
+    root = Path(tempfile.mkdtemp(prefix="adopt-batch-")) if args.dry_run else MODELS
+    failed: list[str] = []
+    for source, relative, options in jobs:
+        dest, real = root / relative, MODELS / relative
+        # A plan id can be the name of a model the game already loads (wpn_sword_iron). Writing over
+        # it is a replacement with its own checks (grip offset, the scenes that scale it), so it is
+        # never a side effect of taking a whole tier: it has to be asked for.
+        if real.is_file() and not args.replace:
+            if not args.dry_run:
+                failed.append(f"{source.name}: {relative.as_posix()} already exists; pass --replace to overwrite it")
+                continue
+            print(f"!! {relative.as_posix()} already exists: the real run refuses it without --replace")
+        group = audit_3d.texture_group(real.with_name(f"{real.stem}_BaseColor.png"))
+        try:
+            if options is None:
+                dest.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(source, dest)
+                report = meshy_prep_static.measure(dest)
+                report["textures"] = [f"{i['name']}: {i['format']} {i['size'][0]}x{i['size'][1]}" for i in report["images"]]
+            else:
+                report = meshy_prep_static.prepare(source, dest, max_texture=audit_3d.TEXTURE_BUDGET[group], **options)
+        except (ValueError, OSError, KeyError) as error:
+            failed.append(f"{source.name}: {error}")
+            continue
+        print(meshy_prep_static.describe(report).replace(dest.name, relative.as_posix(), 1) + f"\n  class   {group}")
+        sidecar = Path(str(real) + ".import")
+        if sidecar.is_file():
+            inherited = audit_3d.parse_import(real).get("nodes/root_scale", 1.0)
+            print(f"  import  kept the existing {sidecar.name}"
+                  + (f"\n  !! it carries nodes/root_scale={inherited}; the new file is already at real size" if inherited != 1.0 else ""))
+        elif not args.dry_run:
+            sidecar.write_text(STATIC_IMPORT, encoding="utf-8", newline="\n")
+            print(f"  import  wrote {sidecar.name}")
+    if args.dry_run:
+        shutil.rmtree(root, ignore_errors=True)
+    print("-" * 78)
+    for line in skipped:
+        print(f"  skipped {line}")
+    for line in failed:
+        print(f"  FAILED  {line}")
+    print(f"{len(jobs) - len(failed)} of {len(jobs)} model(s) " + ("would be written (dry run, nothing kept)" if args.dry_run else "written"))
+    if failed or args.dry_run:
+        return 1 if failed else 0
+
+    engine = discover_godot()
+    if args.run_import:
+        if engine is None:
+            print("assets adopt-batch: --import needs Godot. Set EMBERVALE_GODOT.", file=sys.stderr)
+            return 2
+        if import_and_budget(engine):
+            return 1
+        print("imported, budgeted and manifested. Now run: python tools/assets.py validate")
+        return 0
+    godot = command_text([str(engine or "godot"), "--headless", "--path", ".", "--import"])
+    print("NOT imported yet. In this order, one engine launch at a time:")
+    print(f"  1. {godot}")
+    print("  2. python tools/assets.py audit-weight --fix")
+    print(f"  3. {godot}")
+    print("  4. python tools/assets.py status --write")
+    print("  5. python tools/assets.py validate")
+    print("  6. python tools/assets.py audit-weight --check")
+    print("steps 1 to 4 as one command: python tools/assets.py adopt-batch --import")
+    return 0
+
+
 def cmd_adopt(args: argparse.Namespace) -> int:
     """Source model in, validated production asset out.
 
@@ -500,27 +685,8 @@ def cmd_adopt(args: argparse.Namespace) -> int:
         print("  !! Godot not found - the asset was adopted but NOT imported or rig-checked.")
         print("     Set EMBERVALE_GODOT, then: python tools/assets.py validate")
         return 2
-    print("  -> godot --headless --import")
-    imported = run_process([str(engine), "--headless", "--path", ".", "--import"], timeout=1800, cwd=ROOT)
-    from embervale_sdk.contract import diagnostics_from_log
-    if imported.returncode or any(d["severity"] == "error" for d in diagnostics_from_log(imported.output, "import")):
-        print(imported.output or imported.launch_error)
-        print("assets adopt: import failed; manifest and rig checks were not advanced.")
+    if import_and_budget(engine):
         return 1
-
-    # The first import is what creates a new texture's .import (and extracts an embedded image to
-    # <model>_texture_N.png), so the class budget can only be written now, and a second pass is
-    # what applies it. Without this a fresh 2048 atlas ships uncapped until someone audits it.
-    budgeted = apply_texture_budget()
-    if budgeted:
-        print(f"  -> texture budget written to {len(budgeted)} .import file(s); importing again")
-        imported = run_process([str(engine), "--headless", "--path", ".", "--import"], timeout=1800, cwd=ROOT)
-        if imported.returncode:
-            print(imported.output or imported.launch_error)
-            print("assets adopt: the texture-budget reimport failed.")
-            return 1
-
-    write_json(MANIFEST, build_manifest())
     entry = next((a for a in load_manifest()["assets"] if a["id"] == dest.stem), None)
     if entry is None:
         print(f"assets adopt: {dest.stem} did not reach the manifest", file=sys.stderr)
@@ -570,6 +736,23 @@ def main() -> int:
     adopt.add_argument("--root-scale", type=float, default=None)
     adopt.add_argument("--strip-animations", action="store_true")
     adopt.set_defaults(func=cmd_adopt)
+
+    batch = sub.add_parser("adopt-batch", help="many static models -> assets/models/<folder>/, one import pass")
+    batch.add_argument("sources", nargs="*", help="already prepared .glb files, copied as they are (needs --folder)")
+    batch.add_argument("--folder", help="assets/models/<folder> for the prepared sources")
+    batch.add_argument("--plan", type=Path,
+                       help="generation plan json; every static item whose file exists is prepared to its "
+                            "heightMetres and class texture cap and written to its folder")
+    batch.add_argument("--source-dir", type=Path, help="where the plan's <id>.<stage>.glb files are")
+    batch.add_argument("--stage", choices=("refine", "preview"), default="refine")
+    batch.add_argument("--only", nargs="+", default=[], metavar="ID", help="plan ids to take")
+    batch.add_argument("--priority", type=int, action="append", default=[], help="plan priority to take; repeatable")
+    batch.add_argument("--dry-run", action="store_true", help="prepare into a temp folder, report, keep nothing")
+    batch.add_argument("--replace", action="store_true",
+                       help="allow writing over a model that already exists in assets/models (refused otherwise)")
+    batch.add_argument("--import", dest="run_import", action="store_true",
+                       help="then run the import pass, the texture budget, its reimport and the manifest write")
+    batch.set_defaults(func=cmd_adopt_batch)
 
     audit = sub.add_parser("audit", help="full Blender + Godot inspection and report")
     audit.add_argument("--output", type=Path, default=None)
