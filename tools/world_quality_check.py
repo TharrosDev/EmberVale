@@ -73,6 +73,7 @@ def gates(engine: str | None) -> list[Gate]:
              [sys.executable, "tools/gen_recipes.py", "--check"]),
         Gate("loot-generation", "generated loot tables and affixes match the catalogue",
              [sys.executable, "tools/items/gen_loot.py", "--check"]),
+        Gate("generators", "the generators no other gate checks: perks, appearance, campaign and its self-test, ground cover, player mask, hit zones", [sys.executable, "tools/regen.py", "--check", "--only", "gen_perks", "gen_appearance", "gen_campaign", "campaign_selftest", "gen_ground_cover", "gen_player_mask", "check_hit_zones"]),
         Gate("build", "the C# compiles",
              ["dotnet", "build", "Embervale.sln", "-v", "q", "--nologo"]),
         Gate("tests", "the pure-logic suite",
