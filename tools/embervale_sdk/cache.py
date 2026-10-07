@@ -1,7 +1,8 @@
 """Gate result cache: a gate that PASSED on exactly these inputs is not run again.
 
 The key is the committed tree (per top-level entry) plus the content of every changed, staged or
-untracked file, so any edit to an input changes it. Only passes are stored, never a failure.
+untracked file, so any edit to an input changes it. Only passes are stored, never a failure, and
+never a pass whose inputs changed while the gate ran. A pass is stored with its warnings.
 Ignored files (.godot/, artifacts/) are not inputs: the stale-build guard owns the assembly, and a
 missing import cache is `doctor`'s finding. `--no-cache` skips the lookup.
 """
@@ -78,7 +79,9 @@ class GateCache:
         entry = self.entries.get(name)
         return entry if isinstance(entry, dict) and entry.get("key") == cache_key else None
 
-    def put(self, name: str, cache_key: str, duration: float, run: str) -> None:
+    def put(self, name: str, cache_key: str, duration: float, run: str, diagnostics=()) -> None:
+        """`diagnostics`: the warnings the pass produced; a reuse replays them."""
         self.entries = self.read()   # another run may have stored a pass since this one started
-        self.entries[name] = dict(key=cache_key, duration=round(duration, 1), run=run, passed_at=int(time.time()))
+        self.entries[name] = dict(key=cache_key, duration=round(duration, 1), run=run, passed_at=int(time.time()),
+                                  diagnostics=list(diagnostics))
         write_json(self.path, self.entries)

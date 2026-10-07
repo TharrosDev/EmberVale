@@ -47,6 +47,7 @@ class FakeRun:
         return types.SimpleNamespace(output=self.harness(self) if self.harness else "")
 
     def shots_line(self):
+        # The JSON form is the verbose line; the default output carries the compact SHOTS lines.
         lines = [n for n in self.notes if n.startswith("SHOTS ")]
         return json.loads(lines[-1][6:]) if lines else None
 

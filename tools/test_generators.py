@@ -8,10 +8,12 @@ from __future__ import annotations
 
 import json
 import os
+import subprocess
 import sys
 import tempfile
 import time
 import unittest
+import unittest.mock
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -149,6 +151,20 @@ class ContentIndexTests(unittest.TestCase):
         scene = content.refs(self.index, "enemy.bandit")
         self.assertIn(("scenes", "Spawn.TemplateId"), [(u["kind"], u["where"]) for u in scene["uses"]])
         self.assertEqual(scene["locale_keys"], ["enemy.bandit.name"])
+
+    def test_refs_lists_a_use_in_json_under_data(self):
+        graph = self.root / "data/story/campaign_graph.json"
+        graph.parent.mkdir(parents=True)
+        graph.write_text('{"nodes": [\n {"boss": "enemy.bandit", "drop": "item.not_defined"}]}', encoding="utf-8")
+        bake = self.root / "data/world_bake/manifest.json"
+        bake.parent.mkdir(parents=True)
+        bake.write_text('{"x": "enemy.bandit"}', encoding="utf-8")
+        index = content.build_index(self.root)
+        uses = [(u["kind"], u["path"], u["where"]) for u in content.refs(index, "enemy.bandit")["uses"]]
+        self.assertIn(("json", "data/story/campaign_graph.json", "line 2"), uses)
+        self.assertNotIn("data/world_bake/manifest.json", [path for _, path, _ in uses])
+        # Like code, JSON is searched for uses but is not a source of dangling rows.
+        self.assertNotIn("item.not_defined", [row["token"] for row in content.dangling(index)])
 
     def test_unknown_id_has_no_defs_and_no_uses(self):
         result = content.refs(self.index, "item.nothing")
@@ -357,30 +373,72 @@ class RegenTests(unittest.TestCase):
         self.assertEqual((result["exit_code"], result["not_idempotent"]), (1, ["gen"]))
         self.assertEqual(result["entries"][0]["status"], "NOT-IDEMPOTENT")
 
-    def test_writer_without_check_is_run_compared_and_put_back(self):
-        entry = regen.Entry("plain", "test", None, ("gen.py",), ("gen.py", "out/*.txt"), owns=("out/*.txt",))
+    def test_writer_without_check_runs_on_a_copy_and_never_writes_the_tree(self):
+        entry = regen.Entry("plain", "test", None, ("gen.py",), ("gen.py", "out/*.txt"), owns=("out/*.txt",),
+                            reads=("in/*.txt",))
+        (self.root / "in").mkdir()
+        (self.root / "in" / "source.txt").write_text("input\n", encoding="utf-8")
+        seen = {}
 
         def run(root, arguments, timeout):
-            (self.root / "out" / "a.txt").write_text("regenerated\n", encoding="utf-8")
-            (self.root / "out" / "b.txt").write_text("brand new\n", encoding="utf-8")
+            self.assertNotEqual(root, self.root)
+            # The copy holds the script, what it reads and what it owns, at the same relative paths.
+            seen["files"] = sorted(path.relative_to(root).as_posix() for path in root.rglob("*") if path.is_file())
+            (root / "out" / "a.txt").write_text("regenerated\n", encoding="utf-8")
+            (root / "out" / "b.txt").write_text("brand new\n", encoding="utf-8")
+            # A run killed here leaves the real tree exactly as it was.
+            self.assertEqual((self.root / "out" / "a.txt").read_text(encoding="utf-8"), "old\n")
+            self.assertFalse((self.root / "out" / "b.txt").exists())
             return process()
         row = regen.run_check(self.root, entry, run)
+        self.assertEqual(seen["files"], ["gen.py", "in/source.txt", "out/a.txt"])
         self.assertEqual((row["status"], row["changed"]), ("DRIFT", ["out/a.txt", "out/b.txt"]))
         self.assertEqual((self.root / "out" / "a.txt").read_text(encoding="utf-8"), "old\n")
         self.assertFalse((self.root / "out" / "b.txt").exists())
         self.assertEqual(regen.run_check(self.root, entry, lambda *a: process())["status"], "ok")
 
-    def test_missing_dependency_skips_instead_of_failing(self):
+    def test_every_check_less_writer_finds_its_root_from_its_own_file(self):
+        # run_in_copy relies on it: a writer that used the working directory or a fixed path
+        # would write the real tree from inside the copy.
+        for entry in regen.REGISTRY:
+            if entry.check is None:
+                text = (regen.ROOT / entry.write[0]).read_text(encoding="utf-8")
+                self.assertIn("os.path.dirname(os.path.dirname(os.path.abspath(__file__)))", text, entry.name)
+                for pattern in (*entry.owns, *entry.reads):
+                    self.assertTrue(regen.files_for(regen.ROOT, (pattern,)), f"{entry.name}: {pattern} matches nothing")
+
+    def test_an_imported_helper_invalidates_the_cache(self):
+        (self.root / "tools").mkdir()
+        (self.root / "tools" / "helper.py").write_text("X = 1\n", encoding="utf-8")
+        (self.root / "tools" / "deep.py").write_text("Y = 1\n", encoding="utf-8")
+        (self.root / "gen.py").write_text("import os\nfrom helper import X\n", encoding="utf-8")
+        (self.root / "tools" / "helper.py").write_text("import deep\nX = 1\n", encoding="utf-8")
+        self.assertEqual(regen.local_imports(self.root, "gen.py"), ("tools/deep.py", "tools/helper.py"))
+        before = regen.signature(self.root, self.entry)
+        (self.root / "tools" / "deep.py").write_text("Y = 22\n", encoding="utf-8")
+        regen._GLOBS.clear()
+        self.assertNotEqual(regen.signature(self.root, self.entry), before)
+
+    def test_missing_dependency_skips_a_full_run_and_fails_a_named_one(self):
         entry = regen.Entry("needs", "test", ("gen.py",), None, ("gen.py",), needs=("no_such_module_xyz",))
         result = regen.regen("check", [entry], self.root, self.state, run=lambda *a: self.fail("must not run"))
         self.assertEqual((result["exit_code"], result["skipped"]), (0, ["needs"]))
+        named = regen.regen("check", [entry], self.root, self.state, run=lambda *a: self.fail("must not run"),
+                            required=True)
+        self.assertEqual((named["ok"], named["exit_code"], named["errors"]), (False, 2, ["needs"]))
+        self.assertIn("missing no_such_module_xyz", named["entries"][0]["reason"])
 
-    def test_lock_is_exclusive_and_a_stale_one_is_taken_over(self):
+    def test_lock_is_exclusive_until_its_owner_is_gone(self):
         first, second = regen.Lock(self.state / ".lock"), regen.Lock(self.state / ".lock")
         self.assertTrue(first.acquire())
         self.assertFalse(second.acquire())
+        # Age alone never frees it: a long --fix is still running.
         old = time.time() - regen.LOCK_STALE_SECONDS - 5
         os.utime(self.state / ".lock", (old, old))
+        self.assertFalse(second.acquire())
+        gone = subprocess.Popen([sys.executable, "-c", "pass"])
+        gone.wait()
+        (self.state / ".lock" / "pid").write_text(str(gone.pid), encoding="utf-8")
         self.assertTrue(second.acquire())
         second.release()
         self.assertFalse((self.state / ".lock").exists())
@@ -441,6 +499,23 @@ class WorldBakeTests(unittest.TestCase):
         self.assertEqual(world_bake.status_line({"state": "done", "done": 151, "total": 151}, now)[2], 0)
         failed = world_bake.status_line({"state": "failed", "error": "engine exited 1"}, now)
         self.assertEqual((failed[2], failed[0].endswith("engine exited 1")), (1, True))
+
+    def test_watcher_journals_a_settled_region_only_while_the_engine_is_alive(self):
+        expected = {"region.a": self.outputs("a", 2)}
+        for path in expected["region.a"]:
+            path.write_bytes(b"half")
+        journal = {"regions": {}}
+        with unittest.mock.patch.object(world_bake, "ROOT", self.root), \
+                unittest.mock.patch.object(world_bake, "JOURNAL", self.root / "journal.json"), \
+                unittest.mock.patch.object(world_bake, "STATUS", self.root / "status.json"):
+            watcher = world_bake.Watcher(expected, {"region.a": "sig"}, time.time() - 5, {}, 2.0, journal)
+            # The engine was killed mid-save: its files stop changing, which is not "finished".
+            watcher.tick(journal=False)
+            watcher.tick(journal=False)
+            self.assertEqual(journal["regions"], {})
+            watcher.tick()
+            watcher.tick()
+            self.assertEqual(list(journal["regions"]), ["region.a"])
 
     def test_resumable_needs_same_signature_and_same_bytes(self):
         original = world_bake.ROOT

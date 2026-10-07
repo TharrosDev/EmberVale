@@ -123,7 +123,10 @@ class Run:
         self.history = costs.load()
         self.history_changed = False
         self.cache = gate_cache.GateCache()
-        self.tree = None              # the cache's view of the working tree, read once per run
+        self.tree = None              # the cache's view of the working tree, re-read after each gate that ran
+        self.read_tree = lambda: gate_cache.tree_state(ROOT)
+        self.step_warnings = {}       # step name -> its warning diagnostics, stored with a cached pass
+        self.version_asked = False
         self.heavy_held = False
         job = os.environ.get("EMBERVALE_JOB_DIR")
         self.job_directory = Path(job) if job and Path(job).is_dir() else None
@@ -200,6 +203,7 @@ class Run:
         for code, message in issues:
             self.issue(code, message)
         self.result["diagnostics"].extend(found)
+        self.step_warnings[step["name"]] = [d for d in found if d["severity"] == "warning"]
         self.add_step(step)
         if step["success"]:
             costs.record(self.history, step["name"], step["duration"])
@@ -245,15 +249,24 @@ class Run:
 
     def ensure_heavy(self):
         """One engine run at a time on this machine (see heavy.py). A nested SDK call inherits the
-        lock; anything else waits --wait-lock seconds and then refuses."""
-        if not hasattr(self, "env") or self.heavy_held or self.env.get(heavy.HELD):
+        lock; anything else waits --wait-lock seconds (a job: as long as a job queues) and then
+        refuses. Every engine launch comes through here, so this is also where the engine's
+        version is read: a run that launches no engine takes no lock and starts no engine."""
+        if not hasattr(self, "env"):
             return
-        current = heavy.acquire(f"{self.args.command} {self.result['run_id']}", wait=self.args.wait_lock)
-        if current:
-            raise ValueError(f"another engine run holds the heavy lock (pid {current.get('pid')}: {current.get('what')}). "
-                             "Wait for it (`job wait`), pass --wait-lock SEC, or queue this with `job start`")
-        self.heavy_held = True
-        self.env[heavy.HELD] = "1"
+        if not (self.heavy_held or self.env.get(heavy.HELD)):
+            what = f"{self.args.command} {self.result['run_id']}"
+            wait = max(self.args.wait_lock, float(self.env.get(heavy.WAIT) or 0))
+            current = heavy.acquire(what)
+            if current and wait > 0:
+                self.progress(f"heavy-lock (held by pid {current.get('pid')}: {current.get('what')})")
+                current = heavy.acquire(what, wait=wait)
+            if current:
+                raise ValueError(f"another engine run holds the heavy lock (pid {current.get('pid')}: {current.get('what')}). "
+                                 "Wait for it (`job wait`), pass --wait-lock SEC, or queue this with `job start`")
+            self.heavy_held = True
+            self.env[heavy.HELD] = "1"
+        self.version()
 
     def guard_tool(self, script, arguments):
         """A Python tool that launches the engine itself gets the same stale-build guard and heavy
@@ -268,7 +281,7 @@ class Run:
 
     def ensure_fresh(self):
         """Stale-binary guard: once per run, before the first engine launch, rebuild when a source
-        file is newer than the assembly the engine would load. --no-build opts out."""
+        file is newer than the assembly the engine would load, or that assembly has no tooling. --no-build opts out."""
         if getattr(self, "fresh_checked", False) or getattr(self.args, "no_build", False):
             return
         self.fresh_checked = True
@@ -294,15 +307,18 @@ class Run:
         return self.process(name, command, scan=scan)
 
     def version(self):
-        if self.engine:
+        """Reads the engine's version, once per run, the first time something needs the engine."""
+        if self.engine and not self.version_asked and self.result["godot_version"] is None:
+            self.version_asked = True
             r = self.process("godot-version", [str(self.engine), "--version"], timeout=20)
-            self.result["godot_version"] = r.stdout.strip()
+            self.result["godot_version"] = str(r.stdout or "").strip()
 
     def doctor(self):
         """The checks that actually bite, one row each: ok, info, warn or fail. A fail is an error
         diagnostic (exit 2); a warn is advice. Rows land in metrics.doctor and the compact output
         lists everything that is not ok."""
         from quality_common import discover_blender, memory_megabytes, process_table
+        self.version()
         rows = []
 
         def row(level, key, value, code=None):
@@ -335,7 +351,7 @@ class Run:
 
         stale = stale_reason(ROOT)
         row("warn" if stale else "ok", "binary", f"stale: {stale} (the SDK rebuilds before an engine launch; "
-            "a raw godot launch would not)" if stale else "Embervale.dll is newer than every source")
+            "a raw godot launch would not)" if stale else "Embervale.dll is a tooling build newer than every source")
         memory = memory_megabytes()
         if memory:
             free, total = memory
@@ -637,7 +653,7 @@ class Run:
             self.ensure_fresh()
             self.ensure_heavy()
         self.process(name, command, timeout=gate.timeout, expected_errors=gate.expected_errors)
-        self.remember(name, key)
+        self.remember([(gate, name, command, key)])
 
     def run_batch(self, batch):
         """A run of neighbouring pure-Python gates: executed together, recorded in registry order."""
@@ -650,16 +666,16 @@ class Run:
         if len(todo) == 1:
             gate, name, command, key = todo[0]
             self.process(name, command, timeout=gate.timeout, expected_errors=gate.expected_errors)
-            self.remember(name, key)
+            self.remember(todo)
         elif todo:
             labels = [self.reserve(name) for _, name, _, _ in todo]
             self.progress(todo[0][1], labels[0])
             with ThreadPoolExecutor(max_workers=min(self.args.parallel, len(todo))) as pool:
                 futures = [pool.submit(self.execute, name, label, command, gate.timeout, True, gate.expected_errors)
                            for (gate, name, command, _), label in zip(todo, labels)]
-                for (_, name, _, key), future in zip(todo, futures):
+                for future in futures:
                     self.record(future.result())
-                    self.remember(name, key)
+            self.remember(todo)
 
     def gate_key(self, gate, command):
         """The cache key for this gate now, or None when it must simply run: no cache in play, a
@@ -667,27 +683,55 @@ class Run:
         if getattr(self, "cache", None) is None or not gate.cacheable or self.args.no_build:
             return None
         if self.tree is None:
-            self.tree = gate_cache.tree_state(ROOT) or False
+            self.tree = self.read_tree() or False
         if not self.tree:
             return None
-        return gate_cache.key(self.tree, gate.inputs, [*command, self.env.get("EMBERVALE_SEED"), self.env.get("EMBERVALE_FRAMES")])
+        return self.key_for(self.tree, gate, command)
+
+    def key_for(self, tree, gate, command):
+        extra = [*command, self.env.get("EMBERVALE_SEED"), self.env.get("EMBERVALE_FRAMES")]
+        if self.launches_engine(gate) or gate.name in ENGINE_INSIDE:
+            try:   # a different engine binary is a different run; its file identity costs no launch
+                stat = Path(self.engine).stat()
+                extra += [str(self.engine), stat.st_size, stat.st_mtime_ns]
+            except (OSError, TypeError):
+                pass
+        return gate_cache.key(tree, gate.inputs, extra)
 
     def reuse(self, name, command, key):
-        """Records a cached pass instead of running the gate. False when there is none to reuse."""
+        """Records a cached pass instead of running the gate. False when there is none to reuse.
+        The warnings that pass produced come back with it, so --strict and --max-warnings judge
+        a cached run exactly as they judged the real one."""
         entry = self.cache.get(name, key) if key and not self.args.no_cache else None
         if not entry:
             return False
+        self.result["diagnostics"].extend(dict(item) for item in entry.get("diagnostics") or [])
         self.add_step(dict(name=name, command=[str(c) for c in command], duration=0.0, exit_code=0,
                            process_exit_code=0, success=True, cached=True, cached_run=entry.get("run"),
                            cached_duration=entry.get("duration")))
         return True
 
-    def remember(self, name, key):
-        """Stores a pass. A failure is never cached."""
-        step = self.result["steps"][-1] if key and self.result["steps"] else None
-        if step and step["name"] == name and step.get("success") and step.get("exit_code") == 0:
+    def remember(self, ran):
+        """Stores the passes among the gates that just ran: (gate, name, command, key) each. A
+        failure is never cached, and neither is a pass whose inputs changed while it ran: the
+        key was taken before the gate started, and a gate that ran for minutes while a file was
+        edited proved some other tree. The tree is read again and the pass kept only if its key
+        still stands."""
+        if not any(key for _, _, _, key in ran):
+            return
+        steps = {step["name"]: step for step in self.result["steps"]}
+        passed = [(gate, name, command, key) for gate, name, command, key in ran
+                  if key and steps.get(name, {}).get("success") and steps[name].get("exit_code") == 0]
+        if not passed:
+            return
+        self.tree = self.read_tree() or False
+        for gate, name, command, key in passed:
+            if not self.tree or self.key_for(self.tree, gate, command) != key:
+                self.note(f"  {name}: inputs changed while it ran; the pass is not cached")
+                continue
             try:
-                self.cache.put(name, key, step["duration"], self.result["run_id"])
+                self.cache.put(name, key, steps[name]["duration"], self.result["run_id"],
+                               self.step_warnings.get(name, []))
             except OSError:
                 pass   # an unwritable cache costs a rerun later; it must not fail a gate that passed
 
@@ -874,8 +918,6 @@ def run_command(args, passthrough, entry, body=None):
     try:
         run = Run(args)
         run.note(f"Embervale SDK — {args.command} — {run.artifacts.name}")
-        if entry.version:
-            run.version()
         cmd = args.command
         if (args.write or args.overwrite) and cmd != "author":
             raise ValueError("--write/--overwrite apply only to author")

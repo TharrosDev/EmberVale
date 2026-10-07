@@ -267,13 +267,14 @@ class AuthoringTests(unittest.TestCase):
 
 class FreshnessTests(unittest.TestCase):
     def checkout(self, folder):
-        from embervale_sdk.freshness import ASSEMBLY
+        from embervale_sdk.freshness import ASSEMBLY, TOOLING_MARKER
         root = Path(folder)
         (root / "src/Deep").mkdir(parents=True)
         source, project, assembly = root / "src/Deep/Thing.cs", root / "Embervale.csproj", root / ASSEMBLY
         assembly.parent.mkdir(parents=True)
-        for path in (source, project, assembly, root / "src/notes.txt"):
+        for path in (source, project, root / "src/notes.txt"):
             path.write_text("x")
+        assembly.write_bytes(b"MZ" + TOOLING_MARKER + b"rest")
         for path, when in ((source, 900), (project, 800), (assembly, 1000), (root / "src/notes.txt", 5000)):
             os.utime(path, (when, when))
         return root, source, project, assembly
@@ -293,6 +294,23 @@ class FreshnessTests(unittest.TestCase):
             os.utime(source, (900, 900))
             os.utime(project, (1001, 1001))
             self.assertIn("Embervale.csproj", stale_reason(root))
+
+    def test_an_assembly_built_without_tooling_is_stale_however_new(self):
+        from embervale_sdk.freshness import stale_reason
+        with tempfile.TemporaryDirectory() as folder:
+            root, _, _, assembly = self.checkout(folder)
+            assembly.write_bytes(b"MZ\x00ShippingOnly\x00")   # what world_bake.py --bake leaves
+            os.utime(assembly, (9000, 9000))
+            self.assertIn("built without tooling", stale_reason(root))
+
+    def test_an_addon_source_newer_than_the_assembly_is_stale(self):
+        from embervale_sdk.freshness import stale_reason
+        with tempfile.TemporaryDirectory() as folder:
+            root = self.checkout(folder)[0]
+            (root / "addons/godot_mcp").mkdir(parents=True)
+            (root / "addons/godot_mcp/Plugin.cs").write_text("x")
+            os.utime(root / "addons/godot_mcp/Plugin.cs", (1001, 1001))
+            self.assertIn("addons/godot_mcp/Plugin.cs", stale_reason(root))
 
     def test_missing_assembly_is_stale_and_a_non_checkout_is_not(self):
         from embervale_sdk.freshness import stale_reason
