@@ -24,7 +24,6 @@
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_pine_dead.glb" id="24_pine"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_rock_cluster.glb" id="25_rocks"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_banner_guild.glb" id="26_banner"]
-[ext_resource type="PackedScene" path="res://assets/models/characters/npc_guild_rep.glb" id="30_guild_rep"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_hooded.glb" id="31_hooded"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_townswoman.glb" id="32_townswoman"]
 [ext_resource type="Script" path="res://src/Dialogue/DialogueComponent.cs" id="43_dialogue"]
@@ -35,8 +34,8 @@
 [ext_resource type="Script" path="res://src/Shrines/ShrineComponent.cs" id="shrine_41_5b"]
 [ext_resource type="PackedScene" path="res://scenes/props/bld_wardens_watch.tscn" id="42b_bld_wardens_watch"]
 [ext_resource type="Script" path="res://src/Npc/ScheduleComponent.cs" id="42b_schedulecomponent"]
-[ext_resource type="PackedScene" path="res://assets/models/characters/npc_townsman.glb" id="42b_npc_townsman"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_table_large.gltf" id="wa_prp_table_large"]
+[ext_resource type="PackedScene" path="res://assets/models/characters/npc_dawnwarden.glb" id="rp_npc_dawnwarden"]
 
 ; THE CROSSWAY POST (Phase 38M2) — the wardens' gate on the road north, and the place 38M's toll is
 ; actually about. 38M built the toll, the permit and the bribe and left them standing in the town
@@ -724,7 +723,7 @@ FactionId = "faction.villagers"
 script = ExtResource("6_service")
 ServiceId = "service.crossway.permit"
 
-[node name="Model" parent="RoadWarden" instance=ExtResource("30_guild_rep")]
+[node name="Model" parent="RoadWarden" instance=ExtResource("rp_npc_dawnwarden")]
 
 [node name="GateHand" type="Node3D" parent="."]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 37.5, 0, 8)
@@ -800,7 +799,7 @@ FactionId = "faction.villagers"
 script = ExtResource("6_service")
 ServiceId = "service.crossway.search"
 
-[node name="Model" parent="SearchWarden" instance=ExtResource("30_guild_rep")]
+[node name="Model" parent="SearchWarden" instance=ExtResource("rp_npc_dawnwarden")]
 
 [node name="ImpoundClerk" type="Node3D" parent="."]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 43.5, 0, 14)
@@ -1012,7 +1011,7 @@ DialogueId = "dialogue.dawnwarden_captain"
 script = ExtResource("42b_schedulecomponent")
 ScheduleId = "schedule.dawnwarden_captain"
 
-[node name="Model" parent="DawnwardenCaptain" instance=ExtResource("30_guild_rep")]
+[node name="Model" parent="DawnwardenCaptain" instance=ExtResource("rp_npc_dawnwarden")]
 
 [node name="DawnwardenArmourer" type="Node3D" parent="."]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 14.5, 0, 7.5)
@@ -1072,7 +1071,7 @@ FactionId = "faction.dawnwardens"
 script = ExtResource("43_dialogue")
 DialogueId = "dialogue.dawnwarden_serjeant"
 
-[node name="Model" parent="DawnwardenSerjeant" instance=ExtResource("42b_npc_townsman")]
+[node name="Model" parent="DawnwardenSerjeant" instance=ExtResource("rp_npc_dawnwarden")]
 
 ; Phase 42C — the rank peer FactionResource.RankPeerNpcId has been waiting for since 42B: "a peer
 ; only means anything once there is a rank to be a peer of." He made rank one himself two seasons
@@ -1105,7 +1104,7 @@ FactionId = "faction.dawnwardens"
 script = ExtResource("43_dialogue")
 DialogueId = "dialogue.dawnwarden_partner"
 
-[node name="Model" parent="DawnwardenPartner" instance=ExtResource("30_guild_rep")]
+[node name="Model" parent="DawnwardenPartner" instance=ExtResource("rp_npc_dawnwarden")]
 
 [node name="MapPin" type="Node3D" parent="Nav/WardensWatch"]
 script = ExtResource("maploc_39_5a")

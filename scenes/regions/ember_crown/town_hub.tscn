@@ -21,7 +21,6 @@
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_station_workbench.glb" id="14_workbench"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_station_alchemy.glb" id="15_alchemy"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_banner_guild.glb" id="16_banner"]
-[ext_resource type="PackedScene" path="res://assets/models/characters/npc_guild_rep.glb" id="17_npc_elder"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_vendor.glb" id="18_npc_vendor"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_kael.glb" id="23_npc_kael"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_innkeeper.glb" id="19_npc_inn"]
@@ -62,6 +61,8 @@
 [ext_resource type="Script" path="res://src/World/FlagVisibilityComponent.cs" id="wa_FlagVisibilityComponent"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_bench.glb" id="wa_prp_bench"]
 [ext_resource type="Script" path="res://src/Enemies/SetPieceSpawnComponent.cs" id="wa_SetPieceSpawnComponent"]
+[ext_resource type="PackedScene" path="res://assets/models/characters/npc_elder.glb" id="rp_npc_elder"]
+[ext_resource type="PackedScene" path="res://assets/models/characters/npc_smith.glb" id="rp_npc_smith"]
 
 ; THE EMBER CROWN TOWN HUB (the 2026-08-28 layout rebuild) — the realm's heart, and no longer a plan drawn on a
 ; drawing board.
@@ -835,21 +836,21 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -3.25, 0)
 
 [node name="Model" parent="Waystone" instance=ExtResource("12_waystone")]
 
-[node name="Model" parent="Elder" instance=ExtResource("17_npc_elder")]
+[node name="Model" parent="Elder" instance=ExtResource("rp_npc_elder")]
 
 [node name="Model" parent="Kael" instance=ExtResource("23_npc_kael")]
 
 [node name="Model" parent="VendorGoods" instance=ExtResource("18_npc_vendor")]
 
-[node name="Model" parent="VendorSmith" instance=ExtResource("18_npc_vendor")]
+[node name="Model" parent="VendorSmith" instance=ExtResource("rp_npc_smith")]
 
 [node name="Model" parent="VendorAlch" instance=ExtResource("18_npc_vendor")]
 
 [node name="Model" parent="Innkeeper" instance=ExtResource("19_npc_inn")]
 
-[node name="Model" parent="Trainer" instance=ExtResource("18_npc_vendor")]
+[node name="Model" parent="Trainer" instance=ExtResource("rp_npc_smith")]
 
-[node name="Model" parent="Stablemaster" instance=ExtResource("18_npc_vendor")]
+[node name="Model" parent="Stablemaster" instance=ExtResource("rp_npc_smith")]
 
 [node name="Model" parent="GuildMarker" instance=ExtResource("16_banner")]
 
