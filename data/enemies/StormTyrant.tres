@@ -32,4 +32,4 @@ XpValue = 800
 ; (0.7 x 2.5 -> 0.89 x 3.16), because the melee hitbox, the telegraph ring and the nav
 ; agent all derive from the capsule and AttackRange is not changed. VisualHeight is what the
 ; hurtbox, the plate, status marks, the cast origin and the lock camera read.
-VisualHeight = 4
+VisualHeight = 4.0
