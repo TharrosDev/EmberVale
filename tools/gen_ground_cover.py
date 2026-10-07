@@ -45,8 +45,11 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_OUT = ROOT / "artifacts" / "meshy-overhaul" / "procedural"
 PROPS = ROOT / "assets" / "models" / "props"
-REFERENCE_GRASS = PROPS / "prp_grass_tall.glb"
-REFERENCE_FERN = PROPS / "prp_fern.glb"
+# The layout each build is compared with is the installed copy of the same mesh: the retired models
+# these two were first modelled on are gone, and what must not drift is the attribute layout the
+# scatter shader already draws.
+REFERENCE_GRASS = PROPS / "prp_grass_clump_a.glb"
+REFERENCE_FERN = PROPS / "prp_fern_clump_a.glb"
 
 GRASS_HEIGHT = 0.70
 GRASS_BUDGET = 150

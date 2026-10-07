@@ -2,7 +2,6 @@
 
 [ext_resource type="Script" path="res://src/World/CellNavBaker.cs" id="1_navbaker"]
 [ext_resource type="Script" path="res://src/Entities/Entity.cs" id="2_entity"]
-[ext_resource type="Script" path="res://src/World/TravelNodeComponent.cs" id="3_travel"]
 [ext_resource type="Script" path="res://src/Dialogue/DialogueComponent.cs" id="4_dialogue"]
 [ext_resource type="Script" path="res://src/Animation/CharacterAnimationComponent.cs" id="5_charanim"]
 [ext_resource type="Script" path="res://src/Animation/EquipmentPresentationComponent.cs" id="90_equipment"]
@@ -19,9 +18,6 @@
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_bench.glb" id="23_bench"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_gazebo.glb" id="26_gazebo"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_cauldron.glb" id="27_cauldron"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_fence.glb" id="28_fence"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_tree_broadleaf.glb" id="29_tree"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_bush_flowering.glb" id="30_bush"]
 [ext_resource type="PackedScene" path="res://assets/models/architecture/bld_house_a.glb" id="31_house_a"]
 [ext_resource type="PackedScene" path="res://assets/models/architecture/bld_house_b.glb" id="32_house_b"]
 [ext_resource type="PackedScene" path="res://assets/models/architecture/bld_cottage.glb" id="33_cottage"]
@@ -55,14 +51,14 @@
 [ext_resource type="PackedScene" path="res://assets/models/world/prp_well_a.glb" id="rp_prp_well_a"]
 [ext_resource type="PackedScene" path="res://assets/models/world/prp_banner_a.glb" id="rp_prp_banner_a"]
 [ext_resource type="PackedScene" path="res://assets/models/world/prp_clutter_pile_a.glb" id="rp_prp_clutter_pile_a"]
-[ext_resource type="PackedScene" path="res://scenes/props/bld_cottage_shuttered.tscn" id="dx_cottage_shuttered"]
-[ext_resource type="PackedScene" path="res://assets/models/architecture/bld_house_b.glb" id="dx_house_b"]
-[ext_resource type="PackedScene" path="res://scenes/props/bld_townhouse_balcony.tscn" id="dx_townhouse_balcony"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_scholar_f.glb" id="rp_npc_scholar_f"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_smith.glb" id="rp_npc_smith"]
 [ext_resource type="PackedScene" path="res://scenes/props/lm_tree_oak_a.tscn" id="rp_lm_tree_oak_a"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_fern_clump_a.glb" id="rp_prp_fern_clump_a"]
 [ext_resource type="PackedScene" path="res://scenes/props/lm_rock_boulder_a.tscn" id="rp_lm_rock_boulder_a"]
+[ext_resource type="PackedScene" path="res://scenes/props/bld_cottage_shuttered.tscn" id="dx_cottage_shuttered"]
+[ext_resource type="PackedScene" path="res://assets/models/architecture/bld_house_b.glb" id="dx_house_b"]
+[ext_resource type="PackedScene" path="res://scenes/props/bld_townhouse_balcony.tscn" id="dx_townhouse_balcony"]
 
 ; THE EMBERMARKET — "the Coilyard" (the 2026-08-28 layout rebuild). The Ember Crown's trade district, one street
 ; south of the town square, and as of this phase a district you navigate rather than a street you walk

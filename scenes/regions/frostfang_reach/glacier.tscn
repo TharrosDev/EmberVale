@@ -24,7 +24,6 @@
 [ext_resource type="PackedScene" path="res://scenes/props/lm_ice_wall_a.tscn" id="rp_lm_ice_wall_a"]
 [ext_resource type="PackedScene" path="res://scenes/props/lm_rock_boulder_a.tscn" id="rp_lm_rock_boulder_a"]
 [ext_resource type="PackedScene" path="res://scenes/props/lm_tree_dead_a.tscn" id="rp_lm_tree_dead_a"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_ice_chunk.glb" id="wa_prp_ice_chunk"]
 [ext_resource type="PackedScene" path="res://scenes/props/lm_waystone.tscn" id="rp_lm_waystone"]
 [ext_resource type="PackedScene" path="res://scenes/props/lm_rock_rubble_a.tscn" id="dx_rock_rubble"]
 [ext_resource type="PackedScene" path="res://assets/models/world/prp_tent_a.glb" id="dx_tent"]

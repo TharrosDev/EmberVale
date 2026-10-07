@@ -250,6 +250,148 @@ def place_world(cells: list[Cell], items) -> list[Cell]:
     return out
 
 
+# ------------------------------------------------------------------------------------------------
+# Scatter clearings under the monumental layer (2026-10 overhaul)
+# ------------------------------------------------------------------------------------------------
+# WorldBiomeScatter keeps an instance out of a circle only when its CENTRE is inside it, and a
+# scatter profile is shared by every cell that names it. So a colossus, a hall fragment or a boss
+# ring gets a clearing the same way a building gets a pad: derived from the placement itself, never
+# typed a second time into a spec. Two sources:
+#   * every generated piece in tools/district_layouts.py ITEMS (the Dx_ nodes), by its footprint;
+#   * every hand-placed monument in a cell scene: a non-Dx node instancing a scenes/props/lm_*.tscn
+#     wrapper. Built pieces (stones, columns, walls, towers, arches, the throne) always count; a
+#     rock or an ice wall counts from GIANT_HEIGHT up and a tree from GIANT_TREE_HEIGHT up, because
+#     an ordinary boulder or pine belongs among the scatter. A tree's clearing is its trunk and
+#     not its crown: an elder oak is meant to stand inside a wood.
+# A cell with clearings gets its own copy of its profile (same seed and layers, so nothing else in
+# the cell moves) with the circles added to that profile's Exclusions.
+CLEARING_MARGIN = 2.0        # metres past the hull: a scattered trunk is a point, its crown is not
+GIANT_HEIGHT = 10.0
+GIANT_TREE_HEIGHT = 20.0
+TREE_TRUNK_MARGIN = 2.5
+
+
+def _wrapper_plan(path: Path) -> tuple[float, float, float, float] | None:
+    """(width, height, depth, trunk radius) of a landmark wrapper scene at scale 1, from the bounds
+    its generator writes into it and its first cylinder collider (0 when it has none)."""
+    text = path.read_text(encoding="utf-8")
+    bounds = re.search(r"\(([\d.]+) x ([\d.]+) x ([\d.]+) m\)", text)
+    if not bounds:
+        return None
+    trunk = re.search(r'type="CylinderShape3D"[^\n]*\nradius = ([\d.]+)', text)
+    w, h, d = (float(v) for v in bounds.groups())
+    return w, h, d, float(trunk.group(1)) if trunk else 0.0
+
+
+def scene_giants(scene: Path) -> list[tuple[str, float, float, float]]:
+    """(node, x, z, radius) in the cell frame for every hand-placed monument in a cell scene."""
+    if not scene.exists():
+        return []
+    text = scene.read_text(encoding="utf-8")
+    ext = {m.group(2): m.group(1)
+           for m in re.finditer(r'\[ext_resource [^\]]*path="([^"]+)" id="([^"]+)"\]', text)}
+    placed: dict[str, list[float]] = {}
+    found = []
+    for block in re.split(r"(?m)^(?=\[)", text):
+        header = block.split("\n", 1)[0]
+        if not header.startswith("[node "):
+            continue
+        name = re.search(r'name="([^"]+)"', header).group(1)
+        parent = re.search(r'parent="([^"]*)"', header)
+        parent = parent.group(1) if parent else ""
+        at = re.search(r"^transform = Transform3D\(([^)]*)\)", block, re.M)
+        v = [float(x) for x in at.group(1).split(",")] if at else [1.0, 0, 0, 0, 1.0, 0, 0, 0, 1.0, 0, 0, 0]
+        path = name if parent in ("", ".") else f"{parent}/{name}"
+        placed[path] = v
+        instance = re.search(r'instance=ExtResource\("([^"]+)"\)', header)
+        model = ext.get(instance.group(1), "") if instance else ""
+        if "/scenes/props/lm_" in model and "Dx_" not in path:
+            found.append((path, parent, v, model))
+    out = []
+    for path, parent, v, model in found:
+        plan = _wrapper_plan(ROOT / model.replace("res://", ""))
+        if plan is None:
+            continue
+        w, h, d, trunk = plan
+        # Scale per local axis is the length of that axis' column; position goes up through the parents.
+        sx, sy, sz = math.hypot(v[0], v[3], v[6]), math.hypot(v[1], v[4], v[7]), math.hypot(v[2], v[5], v[8])
+        x, z = v[9], v[11]
+        while parent not in ("", "."):
+            pv = placed.get(parent)
+            if pv is None:
+                break
+            x, z = pv[0] * x + pv[2] * z + pv[9], pv[6] * x + pv[8] * z + pv[11]
+            sx *= math.hypot(pv[0], pv[3], pv[6])
+            sy *= math.hypot(pv[1], pv[4], pv[7])
+            sz *= math.hypot(pv[2], pv[5], pv[8])
+            parent = parent.rsplit("/", 1)[0] if "/" in parent else "."
+        tree = "tree" in model or "pine" in model
+        natural = tree or "/lm_rock_" in model or "/lm_ice_" in model
+        if natural and h * sy < (GIANT_TREE_HEIGHT if tree else GIANT_HEIGHT):
+            continue
+        radius = (trunk * max(sx, sz) + TREE_TRUNK_MARGIN if tree
+                  else 0.5 * math.hypot(w * sx, d * sz) + CLEARING_MARGIN)
+        out.append((path, x, z, radius))
+    return out
+
+
+def monument_exclusions(cells: list[Cell], scatter: str) -> tuple[list[Cell], str]:
+    """Gives every cell that holds a monument its own scatter profile with a clearing under each one.
+    Call it last, on the scatter text the spec is about to emit."""
+    import district_layouts
+    from compose_district import ROUND, footprint, generated
+
+    circles: dict[str, list[tuple[float, float, float]]] = {c.key: [] for c in cells}
+
+    def add(wx: float, wz: float, radius: float) -> None:
+        for cell in cells:
+            nx = min(max(wx, cell.left), cell.right)
+            nz = min(max(wz, cell.top), cell.bottom)
+            if math.hypot(wx - nx, wz - nz) < radius:
+                circles[cell.key].append((round(wx - cell.center[0], 2), round(wz - cell.center[1], 2),
+                                          round(radius, 1)))
+
+    for item in district_layouts.ITEMS:
+        if not generated(item.kind):
+            continue
+        w, d = footprint(item.kind)
+        hw, hd = w * 0.5 * item.scale, d * 0.5 * item.scale * item.depth
+        add(item.x, item.z, (max(hw, hd) if item.kind in ROUND else math.hypot(hw, hd)) + CLEARING_MARGIN)
+    for cell in cells:
+        for _node, x, z, radius in scene_giants(ROOT / cell.scene.replace("res://", "")):
+            add(cell.center[0] + x, cell.center[1] + z, radius)
+
+    out, blocks = [], []
+    for cell in cells:
+        mine = sorted(set(circles[cell.key]))
+        if not mine or not cell.scatter:
+            out.append(cell)
+            continue
+        profile = re.search(rf'\[sub_resource type="Resource" id="{cell.scatter}"\]\n.*?(?=\n\n|\Z)', scatter, re.S)
+        if profile is None:
+            raise ValueError(f"cell '{cell.key}' names scatter profile '{cell.scatter}', which the spec does not define")
+        ids = []
+        for i, (x, z, radius) in enumerate(mine):
+            ids.append(f"Exclusion_auto_{cell.key}_{i}")
+            blocks.append(f'[sub_resource type="Resource" id="{ids[-1]}"]\nscript = ExtResource("11_exclusion")\n'
+                          f"Center = Vector2({x}, {z})\nRadius = {radius}")
+        refs = ", ".join(f'SubResource("{i}")' for i in ids)
+        own = f"{cell.scatter}_at_{cell.key}"
+        body = profile.group(0).replace(f'id="{cell.scatter}"', f'id="{own}"', 1)
+        if "\nExclusions = " in body:
+            body = re.sub(r"(\nExclusions = Array\[[^\n]*\]\(\[)([^\n]*)\]\)", rf"\g<1>\g<2>, {refs}])", body)
+        else:
+            body += f'\nExclusions = Array[ExtResource("11_exclusion")]([{refs}])'
+        blocks.append(body)
+        out.append(replace(cell, scatter=own))
+    if blocks:
+        scatter = (scatter.rstrip("\n")
+                   + "\n\n; Clearings under the monumental layer: derived by gen_regions.monument_exclusions from"
+                   + "\n; tools/district_layouts.py and the hand-placed monuments in the cell scenes. Never edit them here.\n"
+                   + "\n\n".join(blocks) + "\n")
+    return out, scatter
+
+
 @dataclass(frozen=True)
 class Road:
     """A world-space road: a polyline the generator splits at every cell edge it crosses and into

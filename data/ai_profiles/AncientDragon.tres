@@ -8,7 +8,7 @@
 ; willing to keep moving. That is the fight an old creature should be.
 ;
 ; It also spends the most time on the ground — a conversation is impossible with something circling
-; at 24 m, and the aerie is where it lives rather than where it hunts.
+; overhead, and the aerie is where it lives rather than where it hunts.
 ;
 ; TerritoryRadius 44 against a 90 m floor: the leash breaks off well inside its own ground, so a
 ; chase can never spill over the cell edge into the void or a neighbour's props (the 35D/35E rule).
@@ -21,12 +21,18 @@ AlertRadius = 40.0
 AttackRange = 6.5
 PatrolRadius = 6.0
 TurnSpeedDegrees = 35.0
-; Hover and take-off range follow the body (22 m, 14 m and 11 m dragons, not three 5 m ones). The
-; climb speed rose by the same ratio as the altitude, so the climb and the descent take the seconds
-; they always took and the airborne window is still the profile's own number.
+; Take-off range follows the body (22 m, 14 m and 11 m dragons, not three 5 m ones): it is the
+; planar distance past which the dragon flies, not a height.
+; HoverAltitude is set by the breath, not by the body. The cone is 12 m long and leaves the mouth,
+; which rides 8 m above the body origin and 9.8 m ahead of it, so at this hover the mouth is
+; 1.5 m inside the cone's reach of a standing target's chest and the breath covers about 5.8 m
+; around the point under the jaw. Higher than this the air phase cannot touch the ground at all
+; (it was cosmetic at the old hover). The body stands 10.6 m tall, so this is a low hover: raising
+; it means lengthening the breath's ImpactRadius in data/spells by the same metres.
+; The climb speed keeps the climb and the descent at the seconds they always took.
 TakeoffRange = 24.0
-HoverAltitude = 24.0
-ClimbSpeed = 9.2
+HoverAltitude = 3.5
+ClimbSpeed = 1.35
 AirborneDuration = 4.0
 GroundedDuration = 10.0
 TerritoryRadius = 44.0

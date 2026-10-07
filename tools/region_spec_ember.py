@@ -1104,5 +1104,8 @@ def build_ember() -> tuple[str, list[str]]:
     spec, road_issues = realize_roads(spec, roads())
     issues += [f"EmberCrown: {issue}" for issue in road_issues]
     issues += check_envelopes("EmberCrown", spec, {c.key: list(c.routes) for c in spec})
-    return emit("ember_crown", HEADER, spec, [], ENVIRONMENT, BUDGET, RESOURCE, SCATTER,
+    # Trees and rocks stay out from under the monuments and the boss rings (gen_regions.py).
+    from gen_regions import monument_exclusions
+    spec, scatter = monument_exclusions(spec, SCATTER)
+    return emit("ember_crown", HEADER, spec, [], ENVIRONMENT, BUDGET, RESOURCE, scatter,
                 "TemperateLowland"), issues

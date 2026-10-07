@@ -17,11 +17,7 @@
 [ext_resource type="Script" path="res://src/Crafting/CraftingStationComponent.cs" id="9_station"]
 [ext_resource type="PackedScene" path="res://assets/models/architecture/bld_house_a.glb" id="10_house_a"]
 [ext_resource type="PackedScene" path="res://assets/models/architecture/bld_house_b.glb" id="11_house_b"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_station_forge.glb" id="13_forge"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_station_workbench.glb" id="14_workbench"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_station_alchemy.glb" id="15_alchemy"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_banner_guild.glb" id="16_banner"]
-[ext_resource type="PackedScene" path="res://assets/models/characters/npc_guild_rep.glb" id="17_npc_elder"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_vendor.glb" id="18_npc_vendor"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_kael.glb" id="23_npc_kael"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_innkeeper.glb" id="19_npc_inn"]
@@ -49,6 +45,8 @@
 [ext_resource type="PackedScene" path="res://scenes/props/lm_bell_tower.tscn" id="rp_lm_bell_tower"]
 [ext_resource type="PackedScene" path="res://assets/models/world/prp_lamp_post_a.glb" id="rp_prp_lamp_post_a"]
 [ext_resource type="PackedScene" path="res://assets/models/world/prp_banner_a.glb" id="rp_prp_banner_a"]
+[ext_resource type="PackedScene" path="res://assets/models/characters/npc_elder.glb" id="rp_npc_elder"]
+[ext_resource type="PackedScene" path="res://assets/models/characters/npc_smith.glb" id="rp_npc_smith"]
 [ext_resource type="PackedScene" path="res://assets/models/world/prp_cart_a.glb" id="dx_cart"]
 [ext_resource type="PackedScene" path="res://scenes/props/bld_cottage_modular.tscn" id="dx_cottage_modular"]
 [ext_resource type="PackedScene" path="res://scenes/props/bld_cottage_shuttered.tscn" id="dx_cottage_shuttered"]
@@ -63,9 +61,6 @@
 [ext_resource type="PackedScene" path="res://scenes/props/bld_townhouse_wide.tscn" id="dx_townhouse_wide"]
 [ext_resource type="PackedScene" path="res://assets/models/world/prp_well_a.glb" id="dx_well"]
 [ext_resource type="PackedScene" path="res://scenes/props/bld_workshop_open.tscn" id="dx_workshop_open"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_bell_tower.glb" id="wa_prp_bell_tower"]
-[ext_resource type="PackedScene" path="res://assets/models/characters/npc_elder.glb" id="rp_npc_elder"]
-[ext_resource type="PackedScene" path="res://assets/models/characters/npc_smith.glb" id="rp_npc_smith"]
 
 ; THE EMBER CROWN TOWN HUB (the 2026-08-28 layout rebuild) — the realm's heart, and no longer a plan drawn on a
 ; drawing board.

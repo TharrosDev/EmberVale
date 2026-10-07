@@ -13,12 +13,6 @@
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_barrel.glb" id="17_barrel"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_hay.glb" id="18_hay"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_bench.glb" id="21_bench"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_well.glb" id="22_well"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_campfire.glb" id="23_campfire"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_banner_guild.glb" id="26_banner"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_pine_dead.glb" id="24_pine"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_rock_cluster.glb" id="25_rocks"]
-[ext_resource type="PackedScene" path="res://assets/models/characters/npc_guild_rep.glb" id="30_guild_rep"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_hooded.glb" id="31_hooded"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_townswoman.glb" id="32_townswoman"]
 [ext_resource type="Script" path="res://src/Dialogue/DialogueComponent.cs" id="43_dialogue"]
@@ -545,7 +539,7 @@ omni_range = 11.0
 
 ; --- The verges: dead pines and rock, closing both sides down to the road -------
 [node name="PineA" type="Node3D" parent="Nav"]
-transform = Transform3D(1.0121, 0, 0.3683, 0, 1.077, 0, -0.3683, 0, 1.0121, 8, 0, 27)
+transform = Transform3D(1.0121, 0, 0.3683, 0, 1.077, 0, -0.3683, 0, 1.0121, 4, 0, 28.7)
 
 [node name="Model" parent="Nav/PineA" instance=ExtResource("rp_lm_tree_dead_a")]
 

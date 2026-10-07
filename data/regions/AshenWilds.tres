@@ -36,7 +36,7 @@ BackdropColor = Color(0.20, 0.17, 0.16, 1)
 Relief = 1.8
 DetailScale = 3.0
 BackdropRadius = 330.0
-BackdropHeight = 96.0
+BackdropHeight = 144.0
 TerrainSeed = 4400
 SurfaceRoughness = 0.95
 DetailRoughness = 0.86
@@ -51,7 +51,7 @@ HeightBlendEnd = 30.0
 SunTint = Color(0.96, 0.78, 0.62, 1)
 SunEnergyScale = 0.78
 HazeColor = Color(0.52, 0.47, 0.44, 1)
-HazeScale = 1.9
+HazeScale = 1.25
 
 
 [sub_resource type="Resource" id="Budget_ashen"]
@@ -80,7 +80,7 @@ BackdropDistance = 900.0
 
 [sub_resource type="Resource" id="Layer_ash_grass"]
 script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_grass_wispy.glb"
+ScenePath = "res://assets/models/props/prp_grass_clump_a.glb"
 Count = 180
 MinimumScale = 0.6
 MaximumScale = 1.1
@@ -97,11 +97,11 @@ CastShadows = false
 
 [sub_resource type="Resource" id="Layer_ash_stone"]
 script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_rock_cluster.glb"
-Count = 60
-MinimumScale = 0.5
-MaximumScale = 1.3
-MinimumSpacing = 3.6
+ScenePath = "res://assets/models/world/prp_rock_boulder_a.glb"
+Count = 23
+MinimumScale = 0.25
+MaximumScale = 0.7
+MinimumSpacing = 6.0
 Saturation = 0.2
 Clumping = 0.5
 ClumpScale = 28.0
@@ -114,15 +114,15 @@ HlodShape = 2
 HlodReduction = 5
 HlodRangeBegin = 112.0
 HlodRangeEnd = 280.0
-HlodColor = Color(0.88, 0.9, 0.92, 1)
+HlodColor = Color(0.52, 0.47, 0.44, 1)
 HlodScale = Vector3(1.15, 1.15, 1.15)
 
 [sub_resource type="Resource" id="Layer_ash_stone_b"]
 script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_rock_cluster_a.glb"
-Count = 35
-MinimumScale = 0.34
-MaximumScale = 0.8
+ScenePath = "res://assets/models/world/prp_rock_rubble_a.glb"
+Count = 30
+MinimumScale = 0.4
+MaximumScale = 0.9
 MinimumSpacing = 7.0
 Saturation = 0.2
 Clumping = 0.55
@@ -134,28 +134,12 @@ VisibilityRangeEnd = 135.0
 VisibilityFadeMargin = 18.0
 CastShadows = true
 
-[sub_resource type="Resource" id="Layer_ash_pebble"]
-script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_pebble_a.glb"
-Count = 70
-MinimumScale = 0.8
-MaximumScale = 1.8
-MinimumSpacing = 3.2
-Clumping = 0.4
-ClumpScale = 24.0
-MaxSlope = 1.1
-Tint = Color(0.50, 0.46, 0.43, 1)
-TintVariation = 0.16
-VisibilityRangeEnd = 55.0
-VisibilityFadeMargin = 12.0
-CastShadows = false
-
 [sub_resource type="Resource" id="Layer_dead_trunk"]
 script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_pine_dead.glb"
+ScenePath = "res://assets/models/world/prp_tree_dead_a.glb"
 Count = 40
-MinimumScale = 0.6
-MaximumScale = 1.1
+MinimumScale = 0.8
+MaximumScale = 1.5
 MinimumSpacing = 8.0
 Saturation = 0.2
 Clumping = 0.7
@@ -169,24 +153,75 @@ HlodShape = 1
 HlodReduction = 4
 HlodRangeBegin = 130.0
 HlodRangeEnd = 320.0
-HlodColor = Color(0.88, 0.9, 0.92, 1)
+HlodColor = Color(0.40, 0.35, 0.32, 1)
 HlodScale = Vector3(1.15, 1.15, 1.15)
 
-; ⚠️ THE CORRUPTED FOREST IS THE SAME BROADLEAF THE EMBER CROWN PLANTS, DRAINED AND DARKENED. Saturation
-; strips its green and the tint pushes it to a bruised purple-brown: one shared asset reads as a second
-; ecology, which is what Saturation is for. Dense and clumped, so a pocket is a thicket, not a scatter.
+; Blasted crags: the jagged rock at 0.8-1.8 (5-11 m), near black, four per 100 x 100 m. Open ash
+; country only. No collision, like every scatter layer.
+[sub_resource type="Resource" id="Layer_ash_crag"]
+script = ExtResource("10_layer")
+ScenePath = "res://assets/models/world/prp_rock_crag_a.glb"
+Count = 4
+MinimumScale = 0.8
+MaximumScale = 1.8
+MinimumSpacing = 22.0
+Saturation = 0.2
+Clumping = 0.6
+ClumpScale = 70.0
+MaxSlope = 0.6
+Tint = Color(0.6, 0.54, 0.52, 1)
+TintVariation = 0.1
+VisibilityRangeEnd = 180.0
+VisibilityFadeMargin = 24.0
+CastShadows = true
+HlodShape = 1
+HlodReduction = 2
+HlodRangeBegin = 160.0
+HlodRangeEnd = 360.0
+HlodColor = Color(0.6, 0.54, 0.52, 1)
+HlodScale = Vector3(1.1, 1.1, 1.1)
+
+; The tor: the boulder at 2.5-4, a 10-16 m burnt mass, one per 100 x 100 m of open ash.
+[sub_resource type="Resource" id="Layer_ash_tor"]
+script = ExtResource("10_layer")
+ScenePath = "res://assets/models/world/prp_rock_boulder_a.glb"
+Count = 1
+MinimumScale = 2.5
+MaximumScale = 4.0
+MinimumSpacing = 60.0
+Saturation = 0.2
+Clumping = 0.6
+ClumpScale = 90.0
+MaxSlope = 0.5
+Tint = Color(0.5, 0.45, 0.42, 1)
+TintVariation = 0.08
+VisibilityRangeEnd = 220.0
+VisibilityFadeMargin = 26.0
+CastShadows = true
+HlodShape = 1
+HlodReduction = 2
+HlodRangeBegin = 200.0
+HlodRangeEnd = 420.0
+HlodColor = Color(0.5, 0.45, 0.42, 1)
+HlodScale = Vector3(1.1, 1.1, 1.1)
+
+; ⚠️ THE CORRUPTED FOREST IS THE SAME OAK THE EMBER CROWN PLANTS, DRAINED AND BRUISED. Saturation strips
+; its green and the tint pushes the grey that is left toward purple-brown: one shared asset reads as a
+; second ecology, which is what Saturation is for. Dense and clumped, so a pocket is a thicket, not a
+; scatter. ⚠️ The tint is LIGHT on purpose: the oak's atlas is already dark (mean about 0.25), and the
+; 0.4 grey this layer carried for the old broadleaf would take it to black.
 [sub_resource type="Resource" id="Layer_blight_tree"]
 script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_tree_broadleaf.glb"
-Count = 200
+ScenePath = "res://assets/models/world/prp_tree_oak_a.glb"
+Count = 120
 MinimumScale = 0.7
-MaximumScale = 1.45
-MinimumSpacing = 6.0
+MaximumScale = 1.5
+MinimumSpacing = 8.5
 Saturation = 0.18
 Clumping = 0.85
 ClumpScale = 40.0
 MaxSlope = 0.42
-Tint = Color(0.46, 0.34, 0.40, 1)
+Tint = Color(0.95, 0.74, 0.86, 1)
 TintVariation = 0.16
 VisibilityRangeEnd = 150.0
 VisibilityFadeMargin = 22.0
@@ -198,22 +233,30 @@ HlodRangeEnd = 320.0
 HlodColor = Color(0.88, 0.9, 0.92, 1)
 HlodScale = Vector3(1.15, 1.15, 1.15)
 
-[sub_resource type="Resource" id="Layer_blight_fungus"]
+; Elder trees of the blight: the oak at 1.8-2.4 (22-29 m), three per 100 x 100 m, held to the
+; interior of a thicket by a Clumping above Layer_blight_tree's on the same ClumpScale.
+[sub_resource type="Resource" id="Layer_blight_elder"]
 script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_mushrooms.glb"
-Count = 90
-MinimumScale = 0.7
-MaximumScale = 1.4
-MinimumSpacing = 3.0
-Saturation = 0.5
-Clumping = 0.7
-ClumpScale = 18.0
-MaxSlope = 0.5
-Tint = Color(0.62, 0.44, 0.58, 1)
-TintVariation = 0.2
-VisibilityRangeEnd = 50.0
-VisibilityFadeMargin = 10.0
-CastShadows = false
+ScenePath = "res://assets/models/world/prp_tree_oak_a.glb"
+Count = 3
+MinimumScale = 1.8
+MaximumScale = 2.4
+MinimumSpacing = 28.0
+Saturation = 0.18
+Clumping = 0.94
+ClumpScale = 40.0
+MaxSlope = 0.36
+Tint = Color(0.9, 0.7, 0.82, 1)
+TintVariation = 0.1
+VisibilityRangeEnd = 220.0
+VisibilityFadeMargin = 26.0
+CastShadows = true
+HlodShape = 1
+HlodReduction = 2
+HlodRangeBegin = 200.0
+HlodRangeEnd = 420.0
+HlodColor = Color(0.9, 0.7, 0.82, 1)
+HlodScale = Vector3(1.1, 1.1, 1.1)
 
 ; The Beast Lord's floor stays bare: nothing on the plateau top that reads as cover.
 [sub_resource type="Resource" id="Exclusion_lair"]
@@ -235,26 +278,26 @@ Radius = 18.0
 script = ExtResource("9_scatter")
 Seed = 6401
 EdgePadding = 1.0
-Layers = Array[ExtResource("10_layer")]([SubResource("Layer_ash_grass"), SubResource("Layer_ash_stone"), SubResource("Layer_ash_stone_b"), SubResource("Layer_ash_pebble"), SubResource("Layer_dead_trunk")])
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_ash_grass"), SubResource("Layer_ash_stone"), SubResource("Layer_ash_stone_b"), SubResource("Layer_dead_trunk"), SubResource("Layer_ash_crag"), SubResource("Layer_ash_tor")])
 
 [sub_resource type="Resource" id="Scatter_blight"]
 script = ExtResource("9_scatter")
 Seed = 6402
 EdgePadding = 1.0
-Layers = Array[ExtResource("10_layer")]([SubResource("Layer_blight_tree"), SubResource("Layer_blight_fungus"), SubResource("Layer_ash_grass"), SubResource("Layer_ash_stone_b")])
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_blight_tree"), SubResource("Layer_blight_elder"), SubResource("Layer_ash_grass"), SubResource("Layer_ash_stone_b")])
 
 [sub_resource type="Resource" id="Scatter_hearth"]
 script = ExtResource("9_scatter")
 Seed = 6403
 EdgePadding = 1.0
-Layers = Array[ExtResource("10_layer")]([SubResource("Layer_ash_grass"), SubResource("Layer_ash_pebble"), SubResource("Layer_ash_stone_b")])
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_ash_grass"), SubResource("Layer_ash_stone_b")])
 Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_hearth")])
 
 [sub_resource type="Resource" id="Scatter_station"]
 script = ExtResource("9_scatter")
 Seed = 6404
 EdgePadding = 1.0
-Layers = Array[ExtResource("10_layer")]([SubResource("Layer_ash_grass"), SubResource("Layer_ash_stone"), SubResource("Layer_ash_pebble"), SubResource("Layer_dead_trunk")])
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_ash_grass"), SubResource("Layer_ash_stone"), SubResource("Layer_dead_trunk")])
 Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_station")])
 
 [sub_resource type="Resource" id="Scatter_lair"]
@@ -264,6 +307,162 @@ EdgePadding = 1.0
 Layers = Array[ExtResource("10_layer")]([SubResource("Layer_ash_stone"), SubResource("Layer_ash_stone_b"), SubResource("Layer_dead_trunk")])
 Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_lair")])
 
+; Clearings under the monumental layer: derived by gen_regions.monument_exclusions from
+; tools/district_layouts.py and the hand-placed monuments in the cell scenes. Never edit them here.
+[sub_resource type="Resource" id="Exclusion_auto_ash_plateau_0"]
+script = ExtResource("11_exclusion")
+Center = Vector2(-3.0, 2.0)
+Radius = 9.7
+
+[sub_resource type="Resource" id="Scatter_ash_at_ash_plateau"]
+script = ExtResource("9_scatter")
+Seed = 6401
+EdgePadding = 1.0
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_ash_grass"), SubResource("Layer_ash_stone"), SubResource("Layer_ash_stone_b"), SubResource("Layer_dead_trunk"), SubResource("Layer_ash_crag"), SubResource("Layer_ash_tor")])
+Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_auto_ash_plateau_0")])
+
+[sub_resource type="Resource" id="Exclusion_auto_cinder_ravine_0"]
+script = ExtResource("11_exclusion")
+Center = Vector2(5.0, 15.0)
+Radius = 17.0
+
+[sub_resource type="Resource" id="Scatter_ash_at_cinder_ravine"]
+script = ExtResource("9_scatter")
+Seed = 6401
+EdgePadding = 1.0
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_ash_grass"), SubResource("Layer_ash_stone"), SubResource("Layer_ash_stone_b"), SubResource("Layer_dead_trunk"), SubResource("Layer_ash_crag"), SubResource("Layer_ash_tor")])
+Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_auto_cinder_ravine_0")])
+
+[sub_resource type="Resource" id="Exclusion_auto_beast_lair_0"]
+script = ExtResource("11_exclusion")
+Center = Vector2(-17.0, -2.0)
+Radius = 6.7
+
+[sub_resource type="Resource" id="Exclusion_auto_beast_lair_1"]
+script = ExtResource("11_exclusion")
+Center = Vector2(-17.0, 22.0)
+Radius = 6.2
+
+[sub_resource type="Resource" id="Exclusion_auto_beast_lair_2"]
+script = ExtResource("11_exclusion")
+Center = Vector2(-1.0, -26.0)
+Radius = 6.1
+
+[sub_resource type="Resource" id="Exclusion_auto_beast_lair_3"]
+script = ExtResource("11_exclusion")
+Center = Vector2(8.0, 3.0)
+Radius = 4.6
+
+[sub_resource type="Resource" id="Exclusion_auto_beast_lair_4"]
+script = ExtResource("11_exclusion")
+Center = Vector2(12.0, -34.0)
+Radius = 5.7
+
+[sub_resource type="Resource" id="Exclusion_auto_beast_lair_5"]
+script = ExtResource("11_exclusion")
+Center = Vector2(22.0, 3.0)
+Radius = 4.6
+
+[sub_resource type="Resource" id="Exclusion_auto_beast_lair_6"]
+script = ExtResource("11_exclusion")
+Center = Vector2(32.0, -24.0)
+Radius = 5.3
+
+[sub_resource type="Resource" id="Scatter_lair_at_beast_lair"]
+script = ExtResource("9_scatter")
+Seed = 6405
+EdgePadding = 1.0
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_ash_stone"), SubResource("Layer_ash_stone_b"), SubResource("Layer_dead_trunk")])
+Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_lair"), SubResource("Exclusion_auto_beast_lair_0"), SubResource("Exclusion_auto_beast_lair_1"), SubResource("Exclusion_auto_beast_lair_2"), SubResource("Exclusion_auto_beast_lair_3"), SubResource("Exclusion_auto_beast_lair_4"), SubResource("Exclusion_auto_beast_lair_5"), SubResource("Exclusion_auto_beast_lair_6")])
+
+[sub_resource type="Resource" id="Exclusion_auto_hunters_rise_0"]
+script = ExtResource("11_exclusion")
+Center = Vector2(25.0, -1.0)
+Radius = 8.1
+
+[sub_resource type="Resource" id="Scatter_station_at_hunters_rise"]
+script = ExtResource("9_scatter")
+Seed = 6404
+EdgePadding = 1.0
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_ash_grass"), SubResource("Layer_ash_stone"), SubResource("Layer_dead_trunk")])
+Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_station"), SubResource("Exclusion_auto_hunters_rise_0")])
+
+[sub_resource type="Resource" id="Exclusion_auto_crater_field_0"]
+script = ExtResource("11_exclusion")
+Center = Vector2(-42.0, 9.0)
+Radius = 21.7
+
+[sub_resource type="Resource" id="Exclusion_auto_crater_field_1"]
+script = ExtResource("11_exclusion")
+Center = Vector2(52.0, 39.0)
+Radius = 14.6
+
+[sub_resource type="Resource" id="Scatter_ash_at_crater_field"]
+script = ExtResource("9_scatter")
+Seed = 6401
+EdgePadding = 1.0
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_ash_grass"), SubResource("Layer_ash_stone"), SubResource("Layer_ash_stone_b"), SubResource("Layer_dead_trunk"), SubResource("Layer_ash_crag"), SubResource("Layer_ash_tor")])
+Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_auto_crater_field_0"), SubResource("Exclusion_auto_crater_field_1")])
+
+[sub_resource type="Resource" id="Exclusion_auto_lair_approach_0"]
+script = ExtResource("11_exclusion")
+Center = Vector2(9.1, -37.3)
+Radius = 5.4
+
+[sub_resource type="Resource" id="Scatter_ash_at_lair_approach"]
+script = ExtResource("9_scatter")
+Seed = 6401
+EdgePadding = 1.0
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_ash_grass"), SubResource("Layer_ash_stone"), SubResource("Layer_ash_stone_b"), SubResource("Layer_dead_trunk"), SubResource("Layer_ash_crag"), SubResource("Layer_ash_tor")])
+Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_auto_lair_approach_0")])
+
+[sub_resource type="Resource" id="Exclusion_auto_breach_scar_0"]
+script = ExtResource("11_exclusion")
+Center = Vector2(-10.0, -34.0)
+Radius = 11.6
+
+[sub_resource type="Resource" id="Scatter_ash_at_breach_scar"]
+script = ExtResource("9_scatter")
+Seed = 6401
+EdgePadding = 1.0
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_ash_grass"), SubResource("Layer_ash_stone"), SubResource("Layer_ash_stone_b"), SubResource("Layer_dead_trunk"), SubResource("Layer_ash_crag"), SubResource("Layer_ash_tor")])
+Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_auto_breach_scar_0")])
+
+[sub_resource type="Resource" id="Exclusion_auto_last_hearth_0"]
+script = ExtResource("11_exclusion")
+Center = Vector2(-12.0, 22.0)
+Radius = 3.2
+
+[sub_resource type="Resource" id="Scatter_hearth_at_last_hearth"]
+script = ExtResource("9_scatter")
+Seed = 6403
+EdgePadding = 1.0
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_ash_grass"), SubResource("Layer_ash_stone_b")])
+Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_hearth"), SubResource("Exclusion_auto_last_hearth_0")])
+
+[sub_resource type="Resource" id="Exclusion_auto_ashen_flats_0"]
+script = ExtResource("11_exclusion")
+Center = Vector2(-35.0, -30.0)
+Radius = 15.7
+
+[sub_resource type="Resource" id="Scatter_ash_at_ashen_flats"]
+script = ExtResource("9_scatter")
+Seed = 6401
+EdgePadding = 1.0
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_ash_grass"), SubResource("Layer_ash_stone"), SubResource("Layer_ash_stone_b"), SubResource("Layer_dead_trunk"), SubResource("Layer_ash_crag"), SubResource("Layer_ash_tor")])
+Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_auto_ashen_flats_0")])
+
+[sub_resource type="Resource" id="Exclusion_auto_east_rim_0"]
+script = ExtResource("11_exclusion")
+Center = Vector2(30.0, 0.0)
+Radius = 17.3
+
+[sub_resource type="Resource" id="Scatter_ash_at_east_rim"]
+script = ExtResource("9_scatter")
+Seed = 6401
+EdgePadding = 1.0
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_ash_grass"), SubResource("Layer_ash_stone"), SubResource("Layer_ash_stone_b"), SubResource("Layer_dead_trunk"), SubResource("Layer_ash_crag"), SubResource("Layer_ash_tor")])
+Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_auto_east_rim_0")])
 
 ; ---------------------------------------------------------------------------------
 ; ashen_wilds.north_scar   centre (975.0, -570.0)   150 x 140   x 900..1050  z -640..-500
@@ -323,7 +522,7 @@ Id = "ashen_wilds.ash_plateau"
 ScenePath = "res://scenes/regions/ashen_wilds/ash_plateau.tscn"
 Center = Vector3(1125.0, 0, -570.0)
 Presentation = SubResource("Presentation_ash_plateau")
-BiomeScatter = SubResource("Scatter_ash")
+BiomeScatter = SubResource("Scatter_ash_at_ash_plateau")
 
 ; ---------------------------------------------------------------------------------
 ; ashen_wilds.cinder_ravine   centre (1275.0, -570.0)   150 x 140   x 1200..1350  z -640..-500
@@ -370,7 +569,7 @@ Id = "ashen_wilds.cinder_ravine"
 ScenePath = "res://scenes/regions/ashen_wilds/cinder_ravine.tscn"
 Center = Vector3(1275.0, 0, -570.0)
 Presentation = SubResource("Presentation_cinder_ravine")
-BiomeScatter = SubResource("Scatter_ash")
+BiomeScatter = SubResource("Scatter_ash_at_cinder_ravine")
 
 ; ---------------------------------------------------------------------------------
 ; ashen_wilds.beast_lair   centre (1425.0, -570.0)   150 x 140   x 1350..1500  z -640..-500
@@ -443,7 +642,7 @@ Id = "ashen_wilds.beast_lair"
 ScenePath = "res://scenes/regions/ashen_wilds/beast_lair.tscn"
 Center = Vector3(1425.0, 0, -570.0)
 Presentation = SubResource("Presentation_beast_lair")
-BiomeScatter = SubResource("Scatter_lair")
+BiomeScatter = SubResource("Scatter_lair_at_beast_lair")
 
 ; ---------------------------------------------------------------------------------
 ; ashen_wilds.dead_wood   centre (980.0, -435.0)   160 x 130   x 900..1060  z -500..-370
@@ -571,7 +770,7 @@ Id = "ashen_wilds.hunters_rise"
 ScenePath = "res://scenes/regions/ashen_wilds/hunters_rise.tscn"
 Center = Vector3(1145.0, 0, -435.0)
 Presentation = SubResource("Presentation_hunters_rise")
-BiomeScatter = SubResource("Scatter_station")
+BiomeScatter = SubResource("Scatter_station_at_hunters_rise")
 
 ; ---------------------------------------------------------------------------------
 ; ashen_wilds.crater_field   centre (1300.0, -435.0)   140 x 130   x 1230..1370  z -500..-370
@@ -639,7 +838,7 @@ Id = "ashen_wilds.crater_field"
 ScenePath = "res://scenes/regions/ashen_wilds/crater_field.tscn"
 Center = Vector3(1300.0, 0, -435.0)
 Presentation = SubResource("Presentation_crater_field")
-BiomeScatter = SubResource("Scatter_ash")
+BiomeScatter = SubResource("Scatter_ash_at_crater_field")
 
 ; ---------------------------------------------------------------------------------
 ; ashen_wilds.lair_approach   centre (1435.0, -435.0)   130 x 130   x 1370..1500  z -500..-370
@@ -659,7 +858,7 @@ Id = "ashen_wilds.lair_approach"
 ScenePath = "res://scenes/regions/ashen_wilds/lair_approach.tscn"
 Center = Vector3(1435.0, 0, -435.0)
 Presentation = SubResource("Presentation_lair_approach")
-BiomeScatter = SubResource("Scatter_ash")
+BiomeScatter = SubResource("Scatter_ash_at_lair_approach")
 
 ; ---------------------------------------------------------------------------------
 ; ashen_wilds.breach_scar   centre (970.0, -300.0)   140 x 140   x 900..1040  z -370..-230
@@ -716,7 +915,7 @@ Id = "ashen_wilds.breach_scar"
 ScenePath = "res://scenes/regions/ashen_wilds/breach_scar.tscn"
 Center = Vector3(970.0, 0, -300.0)
 Presentation = SubResource("Presentation_breach_scar")
-BiomeScatter = SubResource("Scatter_ash")
+BiomeScatter = SubResource("Scatter_ash_at_breach_scar")
 
 ; ---------------------------------------------------------------------------------
 ; ashen_wilds.last_hearth   centre (1115.0, -300.0)   150 x 140   x 1040..1190  z -370..-230
@@ -802,7 +1001,7 @@ Id = "ashen_wilds.last_hearth"
 ScenePath = "res://scenes/regions/ashen_wilds/last_hearth.tscn"
 Center = Vector3(1115.0, 0, -300.0)
 Presentation = SubResource("Presentation_last_hearth")
-BiomeScatter = SubResource("Scatter_hearth")
+BiomeScatter = SubResource("Scatter_hearth_at_last_hearth")
 SafeRadius = 32.0
 
 ; ---------------------------------------------------------------------------------
@@ -821,7 +1020,7 @@ Id = "ashen_wilds.ashen_flats"
 ScenePath = "res://scenes/regions/ashen_wilds/ashen_flats.tscn"
 Center = Vector3(1265.0, 0, -300.0)
 Presentation = SubResource("Presentation_ashen_flats")
-BiomeScatter = SubResource("Scatter_ash")
+BiomeScatter = SubResource("Scatter_ash_at_ashen_flats")
 
 ; ---------------------------------------------------------------------------------
 ; ashen_wilds.east_rim   centre (1420.0, -300.0)   160 x 140   x 1340..1500  z -370..-230
@@ -859,7 +1058,7 @@ Id = "ashen_wilds.east_rim"
 ScenePath = "res://scenes/regions/ashen_wilds/east_rim.tscn"
 Center = Vector3(1420.0, 0, -300.0)
 Presentation = SubResource("Presentation_east_rim")
-BiomeScatter = SubResource("Scatter_ash")
+BiomeScatter = SubResource("Scatter_ash_at_east_rim")
 
 ; ---------------------------------------------------------------------------------
 ; ashen_wilds.south_ravines   centre (985.0, -155.0)   170 x 150   x 900..1070  z -230..-80

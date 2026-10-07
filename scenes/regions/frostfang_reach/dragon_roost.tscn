@@ -13,15 +13,11 @@
 
 [ext_resource type="PackedScene" path="res://scenes/regions/roost.tscn" id="1_roost"]
 [ext_resource type="Script" path="res://src/World/MapLocationComponent.cs" id="maploc_39_5a"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_ruin_pillar.glb" id="dx_ruin_pillar"]
 [ext_resource type="PackedScene" path="res://scenes/props/lm_rock_crag_a.tscn" id="rp_lm_rock_crag_a"]
 [ext_resource type="PackedScene" path="res://scenes/props/lm_ice_wall_a.tscn" id="rp_lm_ice_wall_a"]
 [ext_resource type="PackedScene" path="res://scenes/props/lm_tree_dead_a.tscn" id="rp_lm_tree_dead_a"]
 [ext_resource type="PackedScene" path="res://scenes/props/lm_rock_boulder_a.tscn" id="rp_lm_rock_boulder_a"]
 [ext_resource type="PackedScene" path="res://scenes/props/lm_rock_rubble_a.tscn" id="rp_lm_rock_rubble_a"]
-
-[sub_resource type="BoxShape3D" id="DxShape_ruin_pillar"]
-size = Vector3(1.2, 4, 1.2)
 [ext_resource type="PackedScene" path="res://scenes/props/lm_dragon_skeleton.tscn" id="dx_dragon_skeleton"]
 [ext_resource type="PackedScene" path="res://scenes/props/lm_monolith_a.tscn" id="dx_monolith"]
 
@@ -87,12 +83,12 @@ transform = Transform3D(0.7688, 0, 0.9162, 0, 1.508, 0, -0.9162, 0, 0.7688, 35, 
 transform = Transform3D(-0.717, 0, 0.6016, 0, 1.144, 0, -0.6016, 0, -0.717, 25, 0, -13)
 
 [node name="ScreeB" parent="Nav" instance=ExtResource("rp_lm_rock_rubble_a")]
-transform = Transform3D(-0.1617, 0, -0.9169, 0, 0.686, 0, 0.9169, 0, -0.1617, -19, 0, -16)
+transform = Transform3D(-0.1617, 0, -0.9169, 0, 0.686, 0, 0.9169, 0, -0.1617, -22, 0, -13.5)
 
 ; The nest marker persists, not the dragon — it is authored in the scene, so the cell persistence
 ; director is guaranteed to find it, and it simply does not repopulate the lair once Defeated is set.
 [node name="Nest" parent="." index="1"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -14, 0, -20)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, -40)
 DisplayName = "Dragon Roost"
 PersistentId = "lair.frostfang_dragon_roost"
 

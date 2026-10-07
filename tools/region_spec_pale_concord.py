@@ -404,7 +404,10 @@ def build_pale_concord() -> tuple[str, list[str]]:
     issues += [f"PaleConcord: {issue}" for issue in road_issues]
     issues += check_envelopes("PaleConcord", spec, {c.key: list(c.routes) for c in spec})
     resource = RESOURCE.replace("@RETURN@", RETURN_REGION)
-    return emit("pale_concord", HEADER, spec, [], ENVIRONMENT, BUDGET, resource, SCATTER, "Pasture"), issues
+    # Trees and rocks stay out from under the monuments and the boss rings (gen_regions.py).
+    from gen_regions import monument_exclusions
+    spec, scatter = monument_exclusions(spec, SCATTER)
+    return emit("pale_concord", HEADER, spec, [], ENVIRONMENT, BUDGET, resource, scatter, "Pasture"), issues
 
 
 if __name__ == "__main__":

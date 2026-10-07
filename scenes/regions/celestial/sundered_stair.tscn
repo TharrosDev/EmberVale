@@ -83,9 +83,10 @@ size = Vector3(4, 0.5, 24.0435)
 [sub_resource type="BoxShape3D" id="WC_Box_4_0p5_24p0435"]
 size = Vector3(4, 0.5, 24.0435)
 
+; The echo's body, at the boss's own capsule (the id keeps its old name: only StairEcho uses it).
 [sub_resource type="CapsuleShape3D" id="WC_Capsule_0p45_2"]
-radius = 0.45
-height = 2
+radius = 0.66
+height = 2.51
 
 [node name="SunderedStairCell" type="Node3D"]
 
@@ -231,7 +232,7 @@ BodyMeshPath = "Model"
 [node name="Collider" type="StaticBody3D" parent="StairEcho"]
 
 [node name="Shape" type="CollisionShape3D" parent="StairEcho/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.255, 0)
 shape = SubResource("WC_Capsule_0p45_2")
 
 [node name="Dialogue" type="Node" parent="StairEcho"]
@@ -243,10 +244,12 @@ script = ExtResource("wc_flagvisibilitycomponent_cs")
 HiddenWhenFlagId = "flag.beat.stair_echo"
 VisibleWhenFlagId = "flag.beat.stair_held"
 
+; The Ashen Knight is drawn at 1.43 here as in the fight (data/enemies/AshenKnight.tres ModelScale): 3.0 m tall.
 [node name="Model" parent="StairEcho" instance=ExtResource("wc_boss_ashen_knight_glb")]
+transform = Transform3D(1.43, 0, 0, 0, 1.43, 0, 0, 0, 1.43, 0, 0, 0)
 
 [node name="EmberGlow" type="OmniLight3D" parent="StairEcho"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.72, 0)
 light_color = Color(0.78, 0.5, 0.4, 1)
 light_energy = 1.4
 omni_range = 6

@@ -310,7 +310,7 @@ Radius = 15.0
 [sub_resource type="Resource" id="Exclusion_ash_roost"]
 script = ExtResource("11_exclusion")
 Center = Vector2(10, 6)
-Radius = 15.0
+Radius = 16.0
 
 ; The ash roost causeway: a 34 m exposed approach, and a line of trees across it would hand the
 ; player cover the fight is designed not to offer.
@@ -319,10 +319,12 @@ script = ExtResource("11_exclusion")
 Center = Vector2(-32, 1)
 Radius = 12.0
 
+; Widened with the dragons (2026-10): the Ancient sweeps 12 m about its nest (22 m long, 17.7 m
+; across the wings), the Ash 8.1 m and the Wild 6.7 m. Each clearing is about twice its sweep.
 [sub_resource type="Resource" id="Exclusion_aerie"]
 script = ExtResource("11_exclusion")
 Center = Vector2(-6, -18)
-Radius = 18.0
+Radius = 23.0
 
 [sub_resource type="Resource" id="Exclusion_aerie_hoard"]
 script = ExtResource("11_exclusion")
@@ -861,4 +863,7 @@ def build_frostfang() -> tuple[str, list[str]]:
     scatter = re.sub(r'\[sub_resource type="Resource" id="(Exclusion_[a-z_]+)"\]\n'
                      r'script = ExtResource\("11_exclusion"\)\nCenter = Vector2\(([-\d.]+), ([-\d.]+)\)',
                      shift_exclusion, SCATTER)
+    # Trees and rocks stay out from under the monuments and the boss rings (gen_regions.py).
+    from gen_regions import monument_exclusions
+    spec, scatter = monument_exclusions(spec, scatter)
     return emit("frostfang_reach", HEADER, spec, [], ENVIRONMENT, BUDGET, RESOURCE, scatter, "Alpine"), issues

@@ -1,6 +1,5 @@
 [gd_scene format=3]
 
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_rock_cluster.glb" id="hand_prp_rock_cluster"]
 [ext_resource type="Script" path="res://src/World/CellNavBaker.cs" id="1_navbaker"]
 [ext_resource type="Script" path="res://src/World/MapLocationComponent.cs" id="maploc_39_5a"]
 [ext_resource type="Script" path="res://src/Entities/Entity.cs" id="wa_Entity"]

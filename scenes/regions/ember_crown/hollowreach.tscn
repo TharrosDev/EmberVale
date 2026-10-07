@@ -11,15 +11,10 @@
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_dock_complex.glb" id="10_docks"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_jetty.glb" id="11_jetty"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_fishing_hut.glb" id="12_hut"]
-[ext_resource type="PackedScene" path="res://assets/models/architecture/bld_house_b.glb" id="13_house"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_brazier.glb" id="15_brazier"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_barrel.glb" id="16_barrel"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_crate.glb" id="17_crate"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_sacks.glb" id="18_sacks"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_fence.glb" id="19_fence"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_cart.glb" id="20_cart"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_rock_cluster.glb" id="21_rocks"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_pine_dead.glb" id="22_pine"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_ruin_wall.glb" id="23_ruinwall"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_ruin_pillar.glb" id="24_pillar"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_timber_stack.glb" id="26_timber"]
@@ -36,7 +31,6 @@
 [ext_resource type="PackedScene" path="res://scenes/props/bld_ledger_house.tscn" id="42b_bld_ledger_house"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_townsman.glb" id="42b_npc_townsman"]
 [ext_resource type="Script" path="res://src/Enemies/LairSpawnComponent.cs" id="49_lairspawn"]
-[ext_resource type="PackedScene" path="res://scenes/props/bld_ruin_tower.tscn" id="dx_ruin_tower"]
 [ext_resource type="PackedScene" path="res://scenes/props/lm_pine_fir_a.tscn" id="rp_lm_pine_fir_a"]
 [ext_resource type="PackedScene" path="res://scenes/props/lm_tree_dead_a.tscn" id="rp_lm_tree_dead_a"]
 [ext_resource type="PackedScene" path="res://scenes/props/lm_rock_boulder_a.tscn" id="rp_lm_rock_boulder_a"]
@@ -48,6 +42,7 @@
 [ext_resource type="PackedScene" path="res://assets/models/world/prp_fence_a.glb" id="rp_prp_fence_a"]
 [ext_resource type="PackedScene" path="res://assets/models/world/prp_cart_a.glb" id="rp_prp_cart_a"]
 [ext_resource type="PackedScene" path="res://assets/models/world/prp_clutter_pile_a.glb" id="rp_prp_clutter_pile_a"]
+[ext_resource type="PackedScene" path="res://scenes/props/lm_ruin_tower.tscn" id="dx_ruin_tower"]
 
 ; HOLLOWREACH (Phase 38O) — the wharf down the water from Tarn's Landing, and the realm's FOURTH
 ; market. It is the only place in Embervale that will buy contraband, and that is the whole of its
@@ -541,7 +536,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.3, 0)
 shape = SubResource("Shape_stand")
 
 [node name="TimberA" type="Node3D" parent="Nav"]
-transform = Transform3D(0.766, 0, 0.6428, 0, 1, 0, -0.6428, 0, 0.766, -33.5, 0, -13)
+transform = Transform3D(0.766, 0, 0.6428, 0, 1, 0, -0.6428, 0, 0.766, -35.5, 0, -13)
 
 [node name="Model" parent="Nav/TimberA" instance=ExtResource("26_timber")]
 

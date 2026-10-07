@@ -43,9 +43,10 @@ agent_max_slope = 40.0
 [sub_resource type="BoxShape3D" id="Shape_brazier"]
 size = Vector3(1, 1.4, 1)
 
+; The kneeling knight's body (the id keeps its old name: only KneelingKnight uses it).
 [sub_resource type="CapsuleShape3D" id="WC_Capsule_0p45_1p5"]
-radius = 0.45
-height = 1.5
+radius = 0.6
+height = 2.15
 
 [node name="KnightGateCell" type="Node3D"]
 
@@ -171,7 +172,7 @@ BodyMeshPath = "Model"
 [node name="Collider" type="StaticBody3D" parent="KneelingKnight"]
 
 [node name="Shape" type="CollisionShape3D" parent="KneelingKnight/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.75, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.075, 0)
 shape = SubResource("WC_Capsule_0p45_1p5")
 
 [node name="Dialogue" type="Node" parent="KneelingKnight"]
@@ -183,11 +184,13 @@ script = ExtResource("wc_flagvisibilitycomponent_cs")
 HiddenWhenFlagId = "flag.beat.gate_vigil_done"
 VisibleWhenFlagId = "flag.main.sundered_stair_done"
 
+; Drawn at 1.43 as in the fight (data/enemies/AshenKnight.tres ModelScale), so the sink to the knee and the
+; greatsword grow by the same factor about his feet: he kneels 2.3 m tall behind a 3.3 m blade.
 [node name="Model" parent="KneelingKnight" instance=ExtResource("wc_boss_ashen_knight_glb")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
+transform = Transform3D(1.43, 0, 0, 0, 1.43, 0, 0, 0, 1.43, 0, -0.715, 0)
 
 [node name="Greatsword" parent="KneelingKnight" instance=ExtResource("wc_wpn_sword_iron_glb")]
-transform = Transform3D(2.4, 0, 0, 0, -2.4, 0, 0, 0, -2.4, 0.05, 1.95, 0.6)
+transform = Transform3D(3.432, 0, 0, 0, -3.432, 0, 0, 0, -3.432, 0.07, 2.79, 0.86)
 
 [node name="Dx_KnightRingWall0" parent="Nav" instance=ExtResource("dx_wall_ruin")]
 transform = Transform3D(0, 0, -0.8, 0, 0.8, 0, 0.8, 0, 0, 59.3, 0, -37)

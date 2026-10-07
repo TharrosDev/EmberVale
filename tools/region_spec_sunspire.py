@@ -618,6 +618,9 @@ def build_sunspire() -> tuple[str, list[str]]:
     scatter = re.sub(r'\[sub_resource type="Resource" id="(Exclusion_[a-z_]+)"\]\n'
                      r'script = ExtResource\("11_exclusion"\)\nCenter = Vector2\(([-\d.]+), ([-\d.]+)\)',
                      shift_exclusion, SCATTER)
+    # Trees and rocks stay out from under the monuments and the boss rings (gen_regions.py).
+    from gen_regions import monument_exclusions
+    spec, scatter = monument_exclusions(spec, scatter)
     return emit("sunspire", HEADER, spec, [], ENVIRONMENT, BUDGET, RESOURCE, scatter, "Desert"), issues
 
 

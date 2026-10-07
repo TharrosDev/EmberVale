@@ -11,12 +11,18 @@ AlertRadius = 45.0
 AttackRange = 6.5
 PatrolRadius = 10.0
 TurnSpeedDegrees = 45.0
-; Hover and take-off range follow the body (22 m, 14 m and 11 m dragons, not three 5 m ones). The
-; climb speed rose by the same ratio as the altitude, so the climb and the descent take the seconds
-; they always took and the airborne window is still the profile's own number.
+; Take-off range follows the body (22 m, 14 m and 11 m dragons, not three 5 m ones): it is the
+; planar distance past which the dragon flies, not a height.
+; HoverAltitude is set by the breath, not by the body. The cone is 11 m long and leaves the mouth,
+; which rides 4.6 m above the body origin and 5.7 m ahead of it, so at this hover the mouth is
+; 2.9 m inside the cone's reach of a standing target's chest and the breath covers about 7.4 m
+; around the point under the jaw. Higher than this the air phase cannot touch the ground at all
+; (it was cosmetic at the old hover). The body stands 6.7 m tall, so this is a low hover: raising
+; it means lengthening the breath's ImpactRadius in data/spells by the same metres.
+; The climb speed keeps the climb and the descent at the seconds they always took.
 TakeoffRange = 20.0
-HoverAltitude = 20.0
-ClimbSpeed = 8.5
+HoverAltitude = 4.5
+ClimbSpeed = 1.9
 AirborneDuration = 5.0
 GroundedDuration = 7.0
 TerritoryRadius = 50.0

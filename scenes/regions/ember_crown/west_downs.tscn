@@ -2,9 +2,7 @@
 
 [ext_resource type="Script" path="res://src/World/CellNavBaker.cs" id="1_navbaker"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_ruin_wall.glb" id="2_ruinwall"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_waystone.glb" id="3_waystone"]
 [ext_resource type="PackedScene" path="res://scenes/props/lm_rock_boulder_a.tscn" id="rp_lm_rock_boulder_a"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_boulder.glb" id="4_boulder"]
 [ext_resource type="PackedScene" path="res://scenes/props/lm_waystone.tscn" id="rp_lm_waystone"]
 
 ; THE WEST DOWNS — a transitional cell (the 2026-08-29 geography overhaul).

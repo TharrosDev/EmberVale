@@ -43,7 +43,7 @@ BackdropColor = Color(0.46, 0.36, 0.26, 1)
 Relief = 1.8
 DetailScale = 2.5
 BackdropRadius = 340.0
-BackdropHeight = 90.0
+BackdropHeight = 135.0
 TerrainSeed = 4400
 SurfaceRoughness = 0.95
 DetailRoughness = 0.88
@@ -55,7 +55,7 @@ HeightBlendEnd = 34.0
 SunTint = Color(1.0, 0.9, 0.74, 1)
 SunEnergyScale = 1.12
 HazeColor = Color(0.86, 0.75, 0.58, 1)
-HazeScale = 1.7
+HazeScale = 1.2
 
 
 [sub_resource type="Resource" id="Budget_sunspire"]
@@ -87,10 +87,10 @@ BackdropDistance = 1300.0
 
 [sub_resource type="Resource" id="Layer_desert_rock"]
 script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_rock_cluster_a.glb"
-Count = 38
-MinimumScale = 0.4
-MaximumScale = 1.1
+ScenePath = "res://assets/models/world/prp_rock_rubble_a.glb"
+Count = 32
+MinimumScale = 0.45
+MaximumScale = 1.2
 MinimumSpacing = 6.0
 Saturation = 0.55
 Clumping = 0.55
@@ -108,26 +108,9 @@ HlodRangeEnd = 290.0
 HlodColor = Color(0.88, 0.8, 0.7, 1)
 HlodScale = Vector3(1.15, 1.15, 1.15)
 
-[sub_resource type="Resource" id="Layer_desert_pebble"]
-script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_pebble_b.glb"
-Count = 90
-MinimumScale = 0.6
-MaximumScale = 1.3
-MinimumSpacing = 3.5
-Saturation = 0.5
-Clumping = 0.45
-ClumpScale = 24.0
-MaxSlope = 0.9
-Tint = Color(0.95, 0.82, 0.64, 1)
-TintVariation = 0.14
-VisibilityRangeEnd = 60.0
-VisibilityFadeMargin = 12.0
-CastShadows = false
-
 [sub_resource type="Resource" id="Layer_dry_grass"]
 script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_grass_wispy.glb"
+ScenePath = "res://assets/models/props/prp_grass_clump_a.glb"
 Count = 150
 MinimumScale = 0.55
 MaximumScale = 1.0
@@ -145,10 +128,10 @@ CastShadows = false
 ; Wind-killed trunks in the open basins: few, far apart and bleached.
 [sub_resource type="Resource" id="Layer_dead_tree"]
 script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_pine_dead.glb"
+ScenePath = "res://assets/models/world/prp_tree_dead_a.glb"
 Count = 6
-MinimumScale = 0.5
-MaximumScale = 0.85
+MinimumScale = 0.7
+MaximumScale = 1.3
 MinimumSpacing = 18.0
 Saturation = 0.3
 Clumping = 0.5
@@ -159,18 +142,69 @@ TintVariation = 0.08
 VisibilityRangeEnd = 150.0
 VisibilityFadeMargin = 20.0
 
+; Sandstone spires: the jagged rock at 1.0-2.2 (6-13 m), three per 100 x 100 m of open desert.
+; The desert had nothing taller than a man in it. No collision, like every scatter layer.
+[sub_resource type="Resource" id="Layer_desert_crag"]
+script = ExtResource("10_layer")
+ScenePath = "res://assets/models/world/prp_rock_crag_a.glb"
+Count = 3
+MinimumScale = 1.0
+MaximumScale = 2.2
+MinimumSpacing = 26.0
+Saturation = 0.45
+Clumping = 0.6
+ClumpScale = 80.0
+MaxSlope = 0.6
+Tint = Color(1.5, 1.2, 0.86, 1)
+TintVariation = 0.1
+VisibilityRangeEnd = 190.0
+VisibilityFadeMargin = 24.0
+CastShadows = true
+HlodShape = 1
+HlodReduction = 2
+HlodRangeBegin = 170.0
+HlodRangeEnd = 380.0
+HlodColor = Color(1.5, 1.2, 0.86, 1)
+HlodScale = Vector3(1.1, 1.1, 1.1)
+
+; The tor: the boulder at 2.5-4, a 10-16 m sandstone mass, one per 100 x 100 m of open desert.
+[sub_resource type="Resource" id="Layer_desert_tor"]
+script = ExtResource("10_layer")
+ScenePath = "res://assets/models/world/prp_rock_boulder_a.glb"
+Count = 1
+MinimumScale = 2.5
+MaximumScale = 4.0
+MinimumSpacing = 60.0
+Saturation = 0.55
+Clumping = 0.6
+ClumpScale = 90.0
+MaxSlope = 0.5
+Tint = Color(1.2, 1.0, 0.76, 1)
+TintVariation = 0.08
+VisibilityRangeEnd = 220.0
+VisibilityFadeMargin = 26.0
+CastShadows = true
+HlodShape = 1
+HlodReduction = 2
+HlodRangeBegin = 200.0
+HlodRangeEnd = 420.0
+HlodColor = Color(1.2, 1.0, 0.76, 1)
+HlodScale = Vector3(1.1, 1.1, 1.1)
+
+; The jungle belt is the Ember Crown's oak under a warm yellow-green tint: there is no palm in the
+; set. 10-18 m with an 8.5 m crown at scale 1, so 90 where the old 3 m-wide tree needed 150.
 [sub_resource type="Resource" id="Layer_jungle_tree"]
 script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_tree_broadleaf.glb"
-Count = 150
-MinimumScale = 0.85
-MaximumScale = 1.7
-MinimumSpacing = 5.5
+ScenePath = "res://assets/models/world/prp_tree_oak_a.glb"
+Count = 90
+MinimumScale = 0.8
+MaximumScale = 1.5
+MinimumSpacing = 8.5
 Saturation = 1.0
 Clumping = 0.7
 ClumpScale = 40.0
 MaxSlope = 0.42
-Tint = Color(0.78, 0.9, 0.62, 1)
+Tint = Color(1.05, 1.0, 0.72, 1)
 TintVariation = 0.18
 VisibilityRangeEnd = 150.0
 VisibilityFadeMargin = 22.0
@@ -179,15 +213,40 @@ HlodShape = 1
 HlodReduction = 3
 HlodRangeBegin = 130.0
 HlodRangeEnd = 320.0
-HlodColor = Color(0.8, 0.9, 0.75, 1)
+HlodColor = Color(1.05, 1.0, 0.72, 1)
 HlodScale = Vector3(1.15, 1.15, 1.15)
+
+; Elder trees of the jungle belt: the oak at 1.8-2.4 (22-29 m), three per 100 x 100 m, held to the
+; interior of a stand by a Clumping above Layer_jungle_tree's on the same ClumpScale. Not in the
+; Wells profile: a town does not get a walk-through trunk.
+[sub_resource type="Resource" id="Layer_jungle_elder"]
+script = ExtResource("10_layer")
+ScenePath = "res://assets/models/world/prp_tree_oak_a.glb"
+Count = 3
+MinimumScale = 1.8
+MaximumScale = 2.4
+MinimumSpacing = 28.0
+Clumping = 0.9
+ClumpScale = 40.0
+MaxSlope = 0.36
+Tint = Color(1.0, 0.96, 0.7, 1)
+TintVariation = 0.1
+VisibilityRangeEnd = 220.0
+VisibilityFadeMargin = 26.0
+CastShadows = true
+HlodShape = 1
+HlodReduction = 2
+HlodRangeBegin = 200.0
+HlodRangeEnd = 420.0
+HlodColor = Color(0.8, 0.9, 0.75, 1)
+HlodScale = Vector3(1.1, 1.1, 1.1)
 
 [sub_resource type="Resource" id="Layer_fern"]
 script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_fern.glb"
+ScenePath = "res://assets/models/props/prp_fern_clump_a.glb"
 Count = 260
-MinimumScale = 0.7
-MaximumScale = 1.4
+MinimumScale = 1.0
+MaximumScale = 1.8
 MinimumSpacing = 2.2
 Clumping = 0.55
 ClumpScale = 22.0
@@ -200,14 +259,14 @@ CastShadows = false
 
 [sub_resource type="Resource" id="Layer_jungle_grass"]
 script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_grass_tall.glb"
-Count = 420
-MinimumScale = 0.8
-MaximumScale = 1.45
+ScenePath = "res://assets/models/props/prp_grass_clump_a.glb"
+Count = 520
+MinimumScale = 1.0
+MaximumScale = 1.7
 MinimumSpacing = 1.6
-MaxSlope = 0.55
 Clumping = 0.35
 ClumpScale = 20.0
+MaxSlope = 0.55
 Tint = Color(0.82, 0.92, 0.6, 1)
 TintVariation = 0.2
 VisibilityRangeEnd = 60.0
@@ -216,18 +275,19 @@ CastShadows = false
 
 [sub_resource type="Resource" id="Layer_bush"]
 script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_bush_flowering.glb"
-Count = 60
-MinimumScale = 0.7
-MaximumScale = 1.3
+ScenePath = "res://assets/models/props/prp_fern_clump_a.glb"
+Count = 36
+MinimumScale = 1.3
+MaximumScale = 1.8
 MinimumSpacing = 4.0
 Clumping = 0.6
 ClumpScale = 28.0
 MaxSlope = 0.6
-Tint = Color(0.85, 0.92, 0.7, 1)
+Tint = Color(0.5, 0.6, 0.36, 1)
 TintVariation = 0.16
 VisibilityRangeEnd = 90.0
 VisibilityFadeMargin = 14.0
+CastShadows = false
 
 ; The mission's sanctum and the library forecourt stay bare: a fight floor and a place two story
 ; portals will stand. Centres are in each cell's CONTENT frame and move with it (see EXCLUSION_OWNERS).
@@ -250,13 +310,13 @@ Radius = 20.0
 script = ExtResource("9_scatter")
 Seed = 6401
 EdgePadding = 1.0
-Layers = Array[ExtResource("10_layer")]([SubResource("Layer_desert_rock"), SubResource("Layer_desert_pebble"), SubResource("Layer_dry_grass"), SubResource("Layer_dead_tree")])
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_desert_rock"), SubResource("Layer_dry_grass"), SubResource("Layer_dead_tree"), SubResource("Layer_desert_crag"), SubResource("Layer_desert_tor")])
 
 [sub_resource type="Resource" id="Scatter_jungle"]
 script = ExtResource("9_scatter")
 Seed = 6402
 EdgePadding = 1.0
-Layers = Array[ExtResource("10_layer")]([SubResource("Layer_jungle_tree"), SubResource("Layer_fern"), SubResource("Layer_jungle_grass"), SubResource("Layer_bush")])
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_jungle_tree"), SubResource("Layer_jungle_elder"), SubResource("Layer_fern"), SubResource("Layer_jungle_grass"), SubResource("Layer_bush")])
 
 [sub_resource type="Resource" id="Scatter_wells"]
 script = ExtResource("9_scatter")
@@ -269,16 +329,289 @@ Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_wells_pl
 script = ExtResource("9_scatter")
 Seed = 6404
 EdgePadding = 1.0
-Layers = Array[ExtResource("10_layer")]([SubResource("Layer_desert_rock"), SubResource("Layer_desert_pebble"), SubResource("Layer_dry_grass")])
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_desert_rock"), SubResource("Layer_dry_grass")])
 Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_library_court")])
 
 [sub_resource type="Resource" id="Scatter_temple"]
 script = ExtResource("9_scatter")
 Seed = 6405
 EdgePadding = 1.0
-Layers = Array[ExtResource("10_layer")]([SubResource("Layer_desert_rock"), SubResource("Layer_desert_pebble"), SubResource("Layer_dry_grass")])
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_desert_rock"), SubResource("Layer_dry_grass")])
 Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_temple_court")])
 
+; Clearings under the monumental layer: derived by gen_regions.monument_exclusions from
+; tools/district_layouts.py and the hand-placed monuments in the cell scenes. Never edit them here.
+[sub_resource type="Resource" id="Exclusion_auto_caravan_gap_0"]
+script = ExtResource("11_exclusion")
+Center = Vector2(75.0, -60.0)
+Radius = 6.8
+
+[sub_resource type="Resource" id="Exclusion_auto_caravan_gap_1"]
+script = ExtResource("11_exclusion")
+Center = Vector2(108.0, 57.0)
+Radius = 11.6
+
+[sub_resource type="Resource" id="Exclusion_auto_caravan_gap_2"]
+script = ExtResource("11_exclusion")
+Center = Vector2(109.0, -56.0)
+Radius = 7.0
+
+[sub_resource type="Resource" id="Scatter_desert_at_caravan_gap"]
+script = ExtResource("9_scatter")
+Seed = 6401
+EdgePadding = 1.0
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_desert_rock"), SubResource("Layer_dry_grass"), SubResource("Layer_dead_tree"), SubResource("Layer_desert_crag"), SubResource("Layer_desert_tor")])
+Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_auto_caravan_gap_0"), SubResource("Exclusion_auto_caravan_gap_1"), SubResource("Exclusion_auto_caravan_gap_2")])
+
+[sub_resource type="Resource" id="Exclusion_auto_northeast_scarp_0"]
+script = ExtResource("11_exclusion")
+Center = Vector2(5.0, 27.0)
+Radius = 18.5
+
+[sub_resource type="Resource" id="Scatter_desert_at_northeast_scarp"]
+script = ExtResource("9_scatter")
+Seed = 6401
+EdgePadding = 1.0
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_desert_rock"), SubResource("Layer_dry_grass"), SubResource("Layer_dead_tree"), SubResource("Layer_desert_crag"), SubResource("Layer_desert_tor")])
+Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_auto_northeast_scarp_0")])
+
+[sub_resource type="Resource" id="Exclusion_auto_salt_basin_0"]
+script = ExtResource("11_exclusion")
+Center = Vector2(30.0, 5.0)
+Radius = 23.9
+
+[sub_resource type="Resource" id="Scatter_desert_at_salt_basin"]
+script = ExtResource("9_scatter")
+Seed = 6401
+EdgePadding = 1.0
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_desert_rock"), SubResource("Layer_dry_grass"), SubResource("Layer_dead_tree"), SubResource("Layer_desert_crag"), SubResource("Layer_desert_tor")])
+Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_auto_salt_basin_0")])
+
+[sub_resource type="Resource" id="Exclusion_auto_belt_west_0"]
+script = ExtResource("11_exclusion")
+Center = Vector2(59.0, 64.0)
+Radius = 8.8
+
+[sub_resource type="Resource" id="Exclusion_auto_belt_west_1"]
+script = ExtResource("11_exclusion")
+Center = Vector2(95.0, 98.0)
+Radius = 8.8
+
+[sub_resource type="Resource" id="Scatter_jungle_at_belt_west"]
+script = ExtResource("9_scatter")
+Seed = 6402
+EdgePadding = 1.0
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_jungle_tree"), SubResource("Layer_jungle_elder"), SubResource("Layer_fern"), SubResource("Layer_jungle_grass"), SubResource("Layer_bush")])
+Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_auto_belt_west_0"), SubResource("Exclusion_auto_belt_west_1")])
+
+[sub_resource type="Resource" id="Exclusion_auto_wells_0"]
+script = ExtResource("11_exclusion")
+Center = Vector2(39.0, -47.0)
+Radius = 3.2
+
+[sub_resource type="Resource" id="Scatter_wells_at_wells"]
+script = ExtResource("9_scatter")
+Seed = 6403
+EdgePadding = 1.0
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_jungle_tree"), SubResource("Layer_fern"), SubResource("Layer_jungle_grass")])
+Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_wells_plaza"), SubResource("Exclusion_auto_wells_0")])
+
+[sub_resource type="Resource" id="Exclusion_auto_belt_east_0"]
+script = ExtResource("11_exclusion")
+Center = Vector2(-5.0, -60.0)
+Radius = 4.4
+
+[sub_resource type="Resource" id="Scatter_jungle_at_belt_east"]
+script = ExtResource("9_scatter")
+Seed = 6402
+EdgePadding = 1.0
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_jungle_tree"), SubResource("Layer_jungle_elder"), SubResource("Layer_fern"), SubResource("Layer_jungle_grass"), SubResource("Layer_bush")])
+Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_auto_belt_east_0")])
+
+[sub_resource type="Resource" id="Exclusion_auto_library_0"]
+script = ExtResource("11_exclusion")
+Center = Vector2(30.0, -47.0)
+Radius = 5.2
+
+[sub_resource type="Resource" id="Exclusion_auto_library_1"]
+script = ExtResource("11_exclusion")
+Center = Vector2(32.0, -54.0)
+Radius = 3.5
+
+[sub_resource type="Resource" id="Exclusion_auto_library_2"]
+script = ExtResource("11_exclusion")
+Center = Vector2(33.0, -41.0)
+Radius = 3.1
+
+[sub_resource type="Resource" id="Exclusion_auto_library_3"]
+script = ExtResource("11_exclusion")
+Center = Vector2(39.0, -36.0)
+Radius = 3.1
+
+[sub_resource type="Resource" id="Exclusion_auto_library_4"]
+script = ExtResource("11_exclusion")
+Center = Vector2(51.0, -36.0)
+Radius = 3.1
+
+[sub_resource type="Resource" id="Exclusion_auto_library_5"]
+script = ExtResource("11_exclusion")
+Center = Vector2(57.0, -40.0)
+Radius = 3.1
+
+[sub_resource type="Resource" id="Exclusion_auto_library_6"]
+script = ExtResource("11_exclusion")
+Center = Vector2(58.0, -55.0)
+Radius = 3.5
+
+[sub_resource type="Resource" id="Exclusion_auto_library_7"]
+script = ExtResource("11_exclusion")
+Center = Vector2(60.5, -48.0)
+Radius = 5.2
+
+[sub_resource type="Resource" id="Scatter_library_at_library"]
+script = ExtResource("9_scatter")
+Seed = 6404
+EdgePadding = 1.0
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_desert_rock"), SubResource("Layer_dry_grass")])
+Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_library_court"), SubResource("Exclusion_auto_library_0"), SubResource("Exclusion_auto_library_1"), SubResource("Exclusion_auto_library_2"), SubResource("Exclusion_auto_library_3"), SubResource("Exclusion_auto_library_4"), SubResource("Exclusion_auto_library_5"), SubResource("Exclusion_auto_library_6"), SubResource("Exclusion_auto_library_7")])
+
+[sub_resource type="Resource" id="Exclusion_auto_sand_sea_0"]
+script = ExtResource("11_exclusion")
+Center = Vector2(-50.0, -82.0)
+Radius = 8.8
+
+[sub_resource type="Resource" id="Exclusion_auto_sand_sea_1"]
+script = ExtResource("11_exclusion")
+Center = Vector2(-18.0, 20.0)
+Radius = 18.4
+
+[sub_resource type="Resource" id="Exclusion_auto_sand_sea_2"]
+script = ExtResource("11_exclusion")
+Center = Vector2(70.0, 35.0)
+Radius = 10.5
+
+[sub_resource type="Resource" id="Scatter_desert_at_sand_sea"]
+script = ExtResource("9_scatter")
+Seed = 6401
+EdgePadding = 1.0
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_desert_rock"), SubResource("Layer_dry_grass"), SubResource("Layer_dead_tree"), SubResource("Layer_desert_crag"), SubResource("Layer_desert_tor")])
+Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_auto_sand_sea_0"), SubResource("Exclusion_auto_sand_sea_1"), SubResource("Exclusion_auto_sand_sea_2")])
+
+[sub_resource type="Resource" id="Exclusion_auto_red_flats_0"]
+script = ExtResource("11_exclusion")
+Center = Vector2(-29.0, 30.0)
+Radius = 20.9
+
+[sub_resource type="Resource" id="Scatter_desert_at_red_flats"]
+script = ExtResource("9_scatter")
+Seed = 6401
+EdgePadding = 1.0
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_desert_rock"), SubResource("Layer_dry_grass"), SubResource("Layer_dead_tree"), SubResource("Layer_desert_crag"), SubResource("Layer_desert_tor")])
+Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_auto_red_flats_0")])
+
+[sub_resource type="Resource" id="Exclusion_auto_pilgrim_track_0"]
+script = ExtResource("11_exclusion")
+Center = Vector2(-43.8, -55.3)
+Radius = 5.7
+
+[sub_resource type="Resource" id="Exclusion_auto_pilgrim_track_1"]
+script = ExtResource("11_exclusion")
+Center = Vector2(-9.6, -63.2)
+Radius = 6.5
+
+[sub_resource type="Resource" id="Exclusion_auto_pilgrim_track_2"]
+script = ExtResource("11_exclusion")
+Center = Vector2(13.4, -36.8)
+Radius = 5.3
+
+[sub_resource type="Resource" id="Exclusion_auto_pilgrim_track_3"]
+script = ExtResource("11_exclusion")
+Center = Vector2(47.5, -44.8)
+Radius = 6.8
+
+[sub_resource type="Resource" id="Exclusion_auto_pilgrim_track_4"]
+script = ExtResource("11_exclusion")
+Center = Vector2(96.0, -22.4)
+Radius = 6.1
+
+[sub_resource type="Resource" id="Scatter_desert_at_pilgrim_track"]
+script = ExtResource("9_scatter")
+Seed = 6401
+EdgePadding = 1.0
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_desert_rock"), SubResource("Layer_dry_grass"), SubResource("Layer_dead_tree"), SubResource("Layer_desert_crag"), SubResource("Layer_desert_tor")])
+Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_auto_pilgrim_track_0"), SubResource("Exclusion_auto_pilgrim_track_1"), SubResource("Exclusion_auto_pilgrim_track_2"), SubResource("Exclusion_auto_pilgrim_track_3"), SubResource("Exclusion_auto_pilgrim_track_4")])
+
+[sub_resource type="Resource" id="Exclusion_auto_temple_0"]
+script = ExtResource("11_exclusion")
+Center = Vector2(-66.7, -44.8)
+Radius = 6.6
+
+[sub_resource type="Resource" id="Exclusion_auto_temple_1"]
+script = ExtResource("11_exclusion")
+Center = Vector2(29.4, -26.76)
+Radius = 10.1
+
+[sub_resource type="Resource" id="Exclusion_auto_temple_2"]
+script = ExtResource("11_exclusion")
+Center = Vector2(29.4, -13.24)
+Radius = 9.9
+
+[sub_resource type="Resource" id="Exclusion_auto_temple_3"]
+script = ExtResource("11_exclusion")
+Center = Vector2(29.8, -4.8)
+Radius = 4.8
+
+[sub_resource type="Resource" id="Exclusion_auto_temple_4"]
+script = ExtResource("11_exclusion")
+Center = Vector2(31.9, -34.45)
+Radius = 7.9
+
+[sub_resource type="Resource" id="Exclusion_auto_temple_5"]
+script = ExtResource("11_exclusion")
+Center = Vector2(37.4, -34.4)
+Radius = 5.0
+
+[sub_resource type="Resource" id="Exclusion_auto_temple_6"]
+script = ExtResource("11_exclusion")
+Center = Vector2(37.48, -4.39)
+Radius = 10.6
+
+[sub_resource type="Resource" id="Exclusion_auto_temple_7"]
+script = ExtResource("11_exclusion")
+Center = Vector2(52.52, -4.39)
+Radius = 10.8
+
+[sub_resource type="Resource" id="Exclusion_auto_temple_8"]
+script = ExtResource("11_exclusion")
+Center = Vector2(52.6, -34.4)
+Radius = 5.0
+
+[sub_resource type="Resource" id="Exclusion_auto_temple_9"]
+script = ExtResource("11_exclusion")
+Center = Vector2(58.1, -34.45)
+Radius = 7.9
+
+[sub_resource type="Resource" id="Exclusion_auto_temple_10"]
+script = ExtResource("11_exclusion")
+Center = Vector2(60.2, -4.8)
+Radius = 4.8
+
+[sub_resource type="Resource" id="Exclusion_auto_temple_11"]
+script = ExtResource("11_exclusion")
+Center = Vector2(60.6, -26.76)
+Radius = 9.9
+
+[sub_resource type="Resource" id="Exclusion_auto_temple_12"]
+script = ExtResource("11_exclusion")
+Center = Vector2(60.6, -13.24)
+Radius = 10.1
+
+[sub_resource type="Resource" id="Scatter_temple_at_temple"]
+script = ExtResource("9_scatter")
+Seed = 6405
+EdgePadding = 1.0
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_desert_rock"), SubResource("Layer_dry_grass")])
+Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_temple_court"), SubResource("Exclusion_auto_temple_0"), SubResource("Exclusion_auto_temple_1"), SubResource("Exclusion_auto_temple_2"), SubResource("Exclusion_auto_temple_3"), SubResource("Exclusion_auto_temple_4"), SubResource("Exclusion_auto_temple_5"), SubResource("Exclusion_auto_temple_6"), SubResource("Exclusion_auto_temple_7"), SubResource("Exclusion_auto_temple_8"), SubResource("Exclusion_auto_temple_9"), SubResource("Exclusion_auto_temple_10"), SubResource("Exclusion_auto_temple_11"), SubResource("Exclusion_auto_temple_12")])
 
 ; ---------------------------------------------------------------------------------
 ; sunspire.north_dunes_w   centre (-265.0, 985.0)   230 x 170   x -380..-150  z 900..1070
@@ -374,7 +707,7 @@ Id = "sunspire.caravan_gap"
 ScenePath = "res://scenes/regions/sunspire/caravan_gap.tscn"
 Center = Vector3(-30.0, 0, 985.0)
 Presentation = SubResource("Presentation_caravan_gap")
-BiomeScatter = SubResource("Scatter_desert")
+BiomeScatter = SubResource("Scatter_desert_at_caravan_gap")
 
 ; ---------------------------------------------------------------------------------
 ; sunspire.north_dunes_e   centre (170.0, 985.0)   160 x 170   x 90..250  z 900..1070
@@ -433,7 +766,7 @@ Id = "sunspire.northeast_scarp"
 ScenePath = "res://scenes/regions/sunspire/northeast_scarp.tscn"
 Center = Vector3(325.0, 0, 985.0)
 Presentation = SubResource("Presentation_northeast_scarp")
-BiomeScatter = SubResource("Scatter_desert")
+BiomeScatter = SubResource("Scatter_desert_at_northeast_scarp")
 
 ; ---------------------------------------------------------------------------------
 ; sunspire.west_mesa   centre (-285.0, 1160.0)   190 x 180   x -380..-190  z 1070..1250
@@ -484,7 +817,7 @@ Id = "sunspire.salt_basin"
 ScenePath = "res://scenes/regions/sunspire/salt_basin.tscn"
 Center = Vector3(-100.0, 0, 1160.0)
 Presentation = SubResource("Presentation_salt_basin")
-BiomeScatter = SubResource("Scatter_desert")
+BiomeScatter = SubResource("Scatter_desert_at_salt_basin")
 
 ; ---------------------------------------------------------------------------------
 ; sunspire.caravan_road   centre (105.0, 1160.0)   230 x 180   x -10..220  z 1070..1250
@@ -637,7 +970,7 @@ Id = "sunspire.belt_west"
 ScenePath = "res://scenes/regions/sunspire/belt_west.tscn"
 Center = Vector3(-255.0, 0, 1340.0)
 Presentation = SubResource("Presentation_belt_west")
-BiomeScatter = SubResource("Scatter_jungle")
+BiomeScatter = SubResource("Scatter_jungle_at_belt_west")
 
 ; ---------------------------------------------------------------------------------
 ; sunspire.wells   centre (-20.0, 1340.0)   220 x 180   x -130..90  z 1250..1430
@@ -797,7 +1130,7 @@ Id = "sunspire.wells"
 ScenePath = "res://scenes/regions/sunspire/wells.tscn"
 Center = Vector3(-20.0, 0, 1340.0)
 Presentation = SubResource("Presentation_wells")
-BiomeScatter = SubResource("Scatter_wells")
+BiomeScatter = SubResource("Scatter_wells_at_wells")
 SafeRadius = 32.0
 
 ; ---------------------------------------------------------------------------------
@@ -817,7 +1150,7 @@ Id = "sunspire.belt_east"
 ScenePath = "res://scenes/regions/sunspire/belt_east.tscn"
 Center = Vector3(170.0, 0, 1340.0)
 Presentation = SubResource("Presentation_belt_east")
-BiomeScatter = SubResource("Scatter_jungle")
+BiomeScatter = SubResource("Scatter_jungle_at_belt_east")
 
 ; ---------------------------------------------------------------------------------
 ; sunspire.belt_far_east   centre (325.0, 1340.0)   150 x 180   x 250..400  z 1250..1430
@@ -927,7 +1260,7 @@ Id = "sunspire.library"
 ScenePath = "res://scenes/regions/sunspire/library.tscn"
 Center = Vector3(-295.0, 0, 1520.0)
 Presentation = SubResource("Presentation_library")
-BiomeScatter = SubResource("Scatter_library")
+BiomeScatter = SubResource("Scatter_library_at_library")
 SafeRadius = 26.0
 
 ; ---------------------------------------------------------------------------------
@@ -1001,7 +1334,7 @@ Id = "sunspire.sand_sea"
 ScenePath = "res://scenes/regions/sunspire/sand_sea.tscn"
 Center = Vector3(-110.0, 0, 1520.0)
 Presentation = SubResource("Presentation_sand_sea")
-BiomeScatter = SubResource("Scatter_desert")
+BiomeScatter = SubResource("Scatter_desert_at_sand_sea")
 
 ; ---------------------------------------------------------------------------------
 ; sunspire.red_flats   centre (85.0, 1520.0)   190 x 180   x -10..180  z 1430..1610
@@ -1070,7 +1403,7 @@ Id = "sunspire.red_flats"
 ScenePath = "res://scenes/regions/sunspire/red_flats.tscn"
 Center = Vector3(85.0, 0, 1520.0)
 Presentation = SubResource("Presentation_red_flats")
-BiomeScatter = SubResource("Scatter_desert")
+BiomeScatter = SubResource("Scatter_desert_at_red_flats")
 
 ; ---------------------------------------------------------------------------------
 ; sunspire.east_waste   centre (290.0, 1520.0)   220 x 180   x 180..400  z 1430..1610
@@ -1209,7 +1542,7 @@ Id = "sunspire.pilgrim_track"
 ScenePath = "res://scenes/regions/sunspire/pilgrim_track.tscn"
 Center = Vector3(-50.0, 0, 1700.0)
 Presentation = SubResource("Presentation_pilgrim_track")
-BiomeScatter = SubResource("Scatter_desert")
+BiomeScatter = SubResource("Scatter_desert_at_pilgrim_track")
 
 ; ---------------------------------------------------------------------------------
 ; sunspire.temple   centre (145.0, 1700.0)   170 x 180   x 60..230  z 1610..1790
@@ -1311,7 +1644,7 @@ Id = "sunspire.temple"
 ScenePath = "res://scenes/regions/sunspire/temple.tscn"
 Center = Vector3(145.0, 0, 1700.0)
 Presentation = SubResource("Presentation_temple")
-BiomeScatter = SubResource("Scatter_temple")
+BiomeScatter = SubResource("Scatter_temple_at_temple")
 
 ; ---------------------------------------------------------------------------------
 ; sunspire.south_waste   centre (315.0, 1700.0)   170 x 180   x 230..400  z 1610..1790

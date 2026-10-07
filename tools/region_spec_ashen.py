@@ -530,4 +530,7 @@ def build_ashen() -> tuple[str, list[str]]:
         if needle not in SCATTER:
             issues.append(f"AshenWilds: {ident} is not at {owner}'s content offset ({dx:g}, {dz:g})")
     scatter = SCATTER
+    # Trees and rocks stay out from under the monuments and the boss rings (gen_regions.py).
+    from gen_regions import monument_exclusions
+    spec, scatter = monument_exclusions(spec, scatter)
     return emit("ashen_wilds", HEADER, spec, [], ENVIRONMENT, BUDGET, RESOURCE, scatter, "AshWaste"), issues

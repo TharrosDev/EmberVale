@@ -5,7 +5,6 @@
 [ext_resource type="Script" path="res://src/Magic/SpellTomeComponent.cs" id="3_tome"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_tome_stand.glb" id="13_tome"]
 [ext_resource type="Script" path="res://src/World/MapLocationComponent.cs" id="maploc_39_5a"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_ruin_pillar.glb" id="14_pillar"]
 [ext_resource type="PackedScene" path="res://scenes/props/lm_rock_boulder_a.tscn" id="rp_lm_rock_boulder_a"]
 [ext_resource type="PackedScene" path="res://scenes/props/lm_ice_wall_a.tscn" id="rp_lm_ice_wall_a"]
 [ext_resource type="PackedScene" path="res://scenes/props/lm_monolith_a.tscn" id="rp_lm_monolith_a"]
@@ -53,7 +52,7 @@ transform = Transform3D(0.5707, 0, 0.3295, 0, 1.464, 0, -0.3295, 0, 0.5707, 38, 
 transform = Transform3D(-0.2254, 0, 0.6193, 0, 1.61, 0, -0.6193, 0, -0.2254, 18, 0, -8)
 
 [node name="GlacierNW" parent="Nav" index="6" instance=ExtResource("rp_lm_ice_wall_a")]
-transform = Transform3D(1.2364, 0, 0.4523, 0, 1.136, 0, -0.5971, 0, 0.9365, -14, 0, -10)
+transform = Transform3D(1.2364, 0, 0.4523, 0, 1.136, 0, -0.5971, 0, 0.9365, -20, 0, -4)
 
 [node name="GlacierNE" parent="Nav" index="7" instance=ExtResource("rp_lm_ice_wall_a")]
 transform = Transform3D(-1.1151, 0, -0.2247, 0, 1.026, 0, 0.4487, 0, -0.5585, 50, 0, -8)

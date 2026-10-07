@@ -11,7 +11,6 @@
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_dock_complex.glb" id="10_docks"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_jetty.glb" id="11_jetty"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_fishing_hut.glb" id="12_hut"]
-[ext_resource type="PackedScene" path="res://assets/models/architecture/bld_house_b.glb" id="13_house"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_brazier.glb" id="15_brazier"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_barrel.glb" id="17_barrel"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_crate.glb" id="18_crate"]

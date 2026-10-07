@@ -1,8 +1,6 @@
 [gd_scene format=3]
 
 [ext_resource type="Script" path="res://src/World/CellNavBaker.cs" id="1_navbaker"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_ruin_pillar.glb" id="dx_ruin_pillar"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_ruin_wall.glb" id="dx_ruin_wall"]
 [ext_resource type="PackedScene" path="res://scenes/props/lm_tree_oak_a.tscn" id="rp_lm_tree_oak_a"]
 [ext_resource type="PackedScene" path="res://scenes/props/lm_monolith_a.tscn" id="dx_monolith"]
 [ext_resource type="PackedScene" path="res://scenes/props/lm_wall_ruin.tscn" id="dx_wall_ruin"]
@@ -29,11 +27,11 @@ navigation_mesh = SubResource("NavMesh_emberwash_valley")
 [node name="NavBaker" type="Node" parent="Nav"]
 script = ExtResource("1_navbaker")
 
+[node name="ElderOak" parent="Nav" instance=ExtResource("rp_lm_tree_oak_a") groups=["world_landmark"]]
+transform = Transform3D(1.0988, 0, 2.3564, 0, 2.6, 0, -2.3564, 0, 1.0988, -10, -0.6, 47.5)
+
 [node name="Dx_KingsbridgePierB" parent="Nav" instance=ExtResource("dx_monolith")]
 transform = Transform3D(0.8314, 0, -0.1767, 0, 0.85, 0, 0.1767, 0, 0.8314, 71, -0.4, 77.5)
 
 [node name="Dx_KingsbridgeAbutment" parent="Nav" instance=ExtResource("dx_wall_ruin")]
 transform = Transform3D(-0.3381, 0, -0.725, 0, 0.8, 0, 0.725, 0, -0.3381, 82, 0, 71.5)
-
-[node name="ElderOak" parent="Nav" instance=ExtResource("rp_lm_tree_oak_a") groups=["world_landmark"]]
-transform = Transform3D(1.0988, 0, 2.3564, 0, 2.6, 0, -2.3564, 0, 1.0988, -10, -0.6, 47.5)

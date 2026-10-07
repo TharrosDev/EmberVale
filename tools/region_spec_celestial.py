@@ -412,7 +412,10 @@ def build_celestial() -> tuple[str, list[str]]:
     spec, road_issues = realize_roads(spec, roads())
     issues += [f"CelestialRealm: {issue}" for issue in road_issues]
     issues += check_envelopes("CelestialRealm", spec, {c.key: list(c.routes) for c in spec})
-    return emit("celestial", HEADER, spec, [], ENVIRONMENT, BUDGET, RESOURCE, SCATTER, "CelestialRuin"), issues
+    # Trees and rocks stay out from under the monuments and the boss rings (gen_regions.py).
+    from gen_regions import monument_exclusions
+    spec, scatter = monument_exclusions(spec, SCATTER)
+    return emit("celestial", HEADER, spec, [], ENVIRONMENT, BUDGET, RESOURCE, scatter, "CelestialRuin"), issues
 
 
 if __name__ == "__main__":

@@ -1,13 +1,10 @@
 [gd_scene format=3 uid="uid://cmbrvlfenedge01"]
 
 [ext_resource type="Script" path="res://src/World/CellNavBaker.cs" id="1_navbaker"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_ruin_pillar.glb" id="2_pillar"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_ruin_wall.glb" id="3_ruinwall"]
-[ext_resource type="PackedScene" path="res://scenes/props/bld_ruin_tower.tscn" id="dx_ruin_tower"]
 [ext_resource type="PackedScene" path="res://scenes/props/lm_rock_boulder_a.tscn" id="rp_lm_rock_boulder_a"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_boulder.glb" id="4_boulder"]
 [ext_resource type="PackedScene" path="res://scenes/props/lm_monolith_a.tscn" id="rp_lm_monolith_a"]
 [ext_resource type="PackedScene" path="res://scenes/props/lm_wall_ruin.tscn" id="rp_lm_wall_ruin"]
+[ext_resource type="PackedScene" path="res://scenes/props/lm_ruin_tower.tscn" id="dx_ruin_tower"]
 
 ; THE FEN EDGE — a transitional cell (the 2026-08-29 geography overhaul).
 ;
