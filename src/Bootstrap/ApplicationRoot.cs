@@ -69,6 +69,10 @@ public partial class ApplicationRoot : Node3D, IServiceScopeHost
             return;
         }
 
+#if EMBERVALE_TOOLING
+        Debugging.ConsoleScript.QuietStartupIfRequested();
+#endif
+
         Log.Info("=== Embervale starting ===");
 
         // The application root is the flow manager, so it must keep processing while the tree is

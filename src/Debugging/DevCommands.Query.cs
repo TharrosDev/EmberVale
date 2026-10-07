@@ -55,13 +55,19 @@ public static partial class DevCommands
     }
 
     /// <summary>Where <c>dump</c> files, script results and <c>shot</c> images go:
-    /// <c>$EMBERVALE_ARTIFACTS/console</c>, else <c>user://console</c>. Created on demand.</summary>
+    /// <c>$EMBERVALE_ARTIFACTS/console</c>, else <c>$EMBERVALE_USER_DIR/console</c> when that is an
+    /// absolute path (an isolated run must not write into the player's folder), else
+    /// <c>user://console</c>. Created on demand.</summary>
     public static string OutputDirectory()
     {
-        string artifacts = OS.GetEnvironment("EMBERVALE_ARTIFACTS");
-        string directory = string.IsNullOrEmpty(artifacts)
-            ? ProjectSettings.GlobalizePath("user://console")
-            : System.IO.Path.Combine(artifacts, "console");
+        string root = OS.GetEnvironment("EMBERVALE_ARTIFACTS");
+        if (string.IsNullOrEmpty(root))
+        {
+            string userDir = OS.GetEnvironment("EMBERVALE_USER_DIR");
+            root = System.IO.Path.IsPathFullyQualified(userDir) ? userDir : ProjectSettings.GlobalizePath("user://");
+        }
+
+        string directory = System.IO.Path.GetFullPath(System.IO.Path.Combine(root, "console"));
         System.IO.Directory.CreateDirectory(directory);
         return directory;
     }

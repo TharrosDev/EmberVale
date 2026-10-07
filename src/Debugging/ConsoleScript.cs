@@ -123,6 +123,22 @@ public sealed partial class ConsoleScript : Node
         GD.Print($"[CON] {_steps.Count} statement(s) from {source}; results -> {Path.Combine(_directory, "result.ndjson")}");
     }
 
+    /// <summary>
+    /// A script run's stdout is read by a shell caller: before anything loads, drop the Info log
+    /// (about a hundred startup lines) and the engine's seven-line navigation edge warning that
+    /// every region load prints. --exec-verbose keeps both.
+    /// </summary>
+    public static void QuietStartupIfRequested()
+    {
+        if ((HeadlessArgs.User.Has(ExecArgument) || HeadlessArgs.User.Has(ExecFileArgument))
+            && !HeadlessArgs.User.Has(VerboseArgument))
+        {
+            Log.MinimumLevel = Log.Level.Warn;
+            Log.MirrorWarningsToEngine = false; // one line per warning, not the engine's copy as well
+            ProjectSettings.SetSetting("navigation/3d/warnings/navmesh_edge_merge_errors", false);
+        }
+    }
+
     /// <summary>Reads and checks the script. Returns what is wrong with it, or null.</summary>
     private string? LoadScript(out string source)
     {
