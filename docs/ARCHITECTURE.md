@@ -128,7 +128,7 @@ state without passing through any of the ordinary setters (`NOW.md` invariant 45
   bounded below ×2. An unblocked hit does at least 1 damage. `PoiseDamage` applies the wind-up
   multiplier.
 - `Hurtbox` (layer Hurtbox, mask 0; needs a shape). An actor may carry several **hit zones**, each
-  with a `ZoneId`, a `DamageMultiplier` and a `PoiseMultiplier` (`HitZoneResource`); `IsWeakPoint` is
+  with a `ZoneId`, a `DamageMultiplier` and a `PoiseMultiplier` (`HitZoneResource`, whose `RotationDegrees` can lay the capsule along a tail or wing); `IsWeakPoint` is
   a damage multiplier of 1.5+. `HitDedupe` makes hits once per **owning entity** per swing or blast
   (shared by `Hitbox` and `SpellResolver`). When a swing overlaps several zones of one body, `Hitbox`
   delivers to the highest-multiplier zone, not whichever physics returned first.
@@ -399,9 +399,12 @@ health), `AiLodClock`, `GuardCycle`, `PackFlank`, `CasterDecision`, `TerritoryLe
 
 - **The roster is data.** `AIProfileResource` (`ai.*`) holds every knob; behaviours are branches
   gated on profile numbers, so they compose. `EnemyArchetypeResource` (`enemy.*`) is a creature:
-  name, build paths, `ModelPath`, **`ModelScale`** (uniform scale so a boss can reuse a body at its own
-  size; match `CapsuleHeight`), tint, profile, faction, spells, capsule, poise, regen, XP, `IsBoss`,
-  `BossId`, `HitZones`, `DialogueId`. `EnemyArchetypeDatabase` registers a builder per archetype with
+  name, build paths, `ModelPath`, **`ModelScale`** (uniform scale; match `CapsuleHeight`, or for a body
+  drawn larger than it fights, ModelScale x f with the capsule x sqrt(f) and **`VisualHeight`** set: reach
+  follows the capsule, the whole-body hurtbox, plate, status marks and lock framing follow `VisualHeight`,
+  via `BodyMetrics`), `HeldWeaponPath` / `HeldWeaponScale` (a hand-socket model, visual only), `CastOrigin`
+  (where spells and breath leave the body), `BodyTint` (unused since the kits were removed), profile,
+  faction, spells, capsule, poise, regen, XP, `IsBoss`, `BossId`, `HitZones`, `DialogueId`. `EnemyArchetypeDatabase` registers a builder per archetype with
   `EnemyTemplateRegistry`, so a new `.tres` is spawnable; `EnemyArchetypeFactory` builds it (melee
   reach scales with height against 1.8 m). Remaining bespoke factories — `EnemyFactory` (goblin),
   `AshenAcolyteFactory` — are structurally different.

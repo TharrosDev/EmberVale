@@ -120,7 +120,7 @@ SpellId = "spell.elder_word"
 RequiredFlagId = "flag.ancient_dragon_defeated"
 
 [node name="Nest" parent="." index="1"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6, 0, -18)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 0, 2)
 DisplayName = "Ancient Aerie"
 PersistentId = "lair.frostfang_ancient_aerie"
 

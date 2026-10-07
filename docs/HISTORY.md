@@ -58,7 +58,7 @@ Status: **done**, **partial**, **not built** (never started; not needed for the 
 | --- | --- | --- |
 | 29 | Combat feel | done: hit-stop, parry/riposte, dodge i-frames, lock-on |
 | 29.5 | Spellcraft and the fading Weave | done: cast modes, school identities, mastery, combos, Weave, enemy casters |
-| 30 | Models and visual identity | done: `ART_STYLE.md`; the cast later moved to Meshy, the world to Quaternius |
+| 30 | Models and visual identity | done: `ART_STYLE.md`; the cast later moved to Meshy, the world to Quaternius, and on 2026-10-06 the outdoor world to Meshy too (housing kit kept) |
 | 30.5 | UI/HUD overhaul | done: `UiPanel` framework and tokens |
 | 31 | Audio foundations | done: buses, music and ambience directors, footsteps |
 | 32 | Companions | done: roster, orders, loyalty; Kael authored in full |
@@ -233,6 +233,32 @@ quantity, and a one-press save guessing a slot. No sockets, durability, repair o
 were added. The whole upgrade was written under a no-engine rule: it compiles and its filtered
 unit tests pass, and `--validate`, `--lifecycle`, `--story`, the save-audit probe and every render
 were left to the single gates run recorded in [`NOW.md`](NOW.md).
+
+### Meshy world overhaul (2026-10-06/07)
+
+Owner direction: the outdoor world is generated art, not the four Quaternius packs, with no cosmetic
+bolt-ons, real dragons and a world that reads as vast. Built on `claude/meshy-world-overhaul` as a tooling
+foundation, one generation run (795 credits), then six lanes each with a review-fix pass: bolt-on
+removal, NPC bodies, scale, scatter, creatures and landmarks. The lanes never launched Godot, so the
+integrator's gates and the single master bake were left to one central run recorded in
+[`NOW.md`](NOW.md); no frame rate, fight or walk is claimed.
+
+- **Sourcing.** Three lanes: a generated cast, a generated outdoor world, and the Quaternius housing and
+  architecture kit kept on purpose ([`ASSET_POLICY.md`](ASSET_POLICY.md) §0.1). Variety rule: two or three
+  models per type, the rest from scatter transform and tint.
+- **Built.** Nine scatter species and 12 new giants, 17 landmark kinds composed in all six realms, 26 new
+  map locations, six NPC bodies, four dragons on a fitted 20-bone rig, three beasts rebound, a regenerated
+  sword and dagger, ten bodies drawn larger than they fight, new fog and backdrop heights, and the
+  pipeline ([`3D_ASSETS.md`](3D_ASSETS.md) → OUTDOOR WORLD, [`RECIPES.md`](RECIPES.md) → Assets).
+- **Removed.** `EnemyVisualKit`, `NpcVisualKit`, both kit models, the player's pauldrons and pouch.
+  Steam Deck stopped being a target.
+- **Traps worth keeping.** Low polycount targets (under about 1,500) come back faceted with holes;
+  text-to-3D ignores "T-pose" unless spelled out strictly; `adopt` reads a fresh Meshy rig as QUADRUPED on
+  its first run; a scratch folder inside the project needs a `.gdignore` or Godot imports it; Godot must
+  not run on a stale C# assembly before the import; two world models must not share an atlas; stone
+  atlases come back near-white and are tinted in the wrapper; a `BoneAttachment3D` overwrites its own
+  transform, so a grip was never applied; a model swap inherits no collision, and the first-draft fog
+  number in the plan was the wrong direction (the old 0.003 already fogged a colossus at 600 m by 83%).
 
 ### Magic upgrade integration (2026-10-01/02)
 

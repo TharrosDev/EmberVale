@@ -52,36 +52,44 @@ You are the lead engineer building this game incrementally. The non-negotiables:
   resources, not new inheritance chains or hard-coded values.
 - **Respect existing architecture.** Inspect before adding; don't duplicate
   systems; refactor when it lowers long-term cost.
-- **3D models: TWO LANES** (maintainer direction, 2026-09-03). **Characters and creatures are
-  generated with Meshy** — semi-realistic, per the prompt stem in `docs/3D_ASSETS.md`. **Props,
-  architecture and nature come from the four packs first, always** (2026-08-08 — this supersedes
-  the older "search the web first" rule, which is now step 3): four Quaternius CC0 MegaKits
-  vendored under `assets/library/`, from which the near-entirety of the *world* is built:
+- **3D models: THREE LANES** (maintainer direction, 2026-10-06; it supersedes "the four packs first, do
+  not mix kits" for the outdoor world). **Characters and creatures are generated with Meshy** — semi-realistic,
+  per the prompt stem in `docs/3D_ASSETS.md`. **The outdoor world — trees, rocks, ice, landmarks, ruins,
+  outdoor props — is generated too**: Meshy text-to-3D (`meshy-5`, preview 5 + texture 10 credits, short
+  prompts, `target_polycount` set at preview, **never the image route**) into `assets/models/world/`, plus two
+  in-house procedural ground-cover meshes (`tools/gen_ground_cover.py`). Owner rule: **2-3 models per
+  type**, variety from scatter transform and tint. Landmarks are solid walk-around set pieces, nothing
+  roofed or enterable. **The modular housing and architecture kit, enterable buildings, interiors and a listed
+  set of small interactive props stay Quaternius on purpose** (Meshy cannot make hollow, enterable
+  buildings), from the vendored bundles under `assets/library/`:
 
   | Bundle | Covers | Models |
   | --- | --- | --- |
   | `medieval_megakit/` | modular architecture — walls, roofs, doors, windows, floors, stairs | 176 |
   | `medieval_interiors/` | interiors, furniture, containers, tools, market stalls | 94 |
-  | `nature_megakit/` | trees, pines, bushes, grass, flowers, rocks, pebbles, rock paths | 68 |
+  | `nature_megakit/` | the retired outdoor nature set (replaced by the generated world; source only) | 68 |
   | `animations/` | 46-clip universal animation library (retargeted — `docs/3D_ASSETS.md`) | 1 |
 
   **The order is fixed. Stop at the first step that works:**
-  1. **The four packs.** `ls assets/library/<pack>/` and read `manifest.json`. Do not skip this
-     because a name did not come to mind — the library has been "searched" from memory twice and
-     been wrong both times.
-  2. **The other vendored bundles** (`men/`, `women/`, `monsters/`, `animals/`, `rpg_items/`,
-     `dungeons/`, `survival/`, `nature/`, `rts/`, `medieval_village/`). Characters and creatures are
-     **not** in the four packs, so this is where they come from.
-  3. **The open web** (Poly Pizza, Kenney, Quaternius, OpenGameArt, Sketchfab) — only once 1 and 2
+  1. **Inventory what exists.** `python tools/assets.py status`, `ls assets/models/<folder>/`, `ls
+     assets/library/<pack>/` and `manifest.json`, and the ledger `reports/3d/archive/meshy-migration/
+     manifest.csv`. The library has been "searched" from memory twice and been wrong both times.
+  2. **The lane.** Cast and outdoor world: generate (`docs/RECIPES.md` → *a new generated world model*,
+     *a new landmark*). Housing kit and interiors: the vendored packs.
+  3. **The other vendored bundles** (`men/`, `women/`, `monsters/`, `animals/`, `rpg_items/`,
+     `dungeons/`, `survival/`, `nature/`, `rts/`, `medieval_village/`).
+  4. **The open web** (Poly Pizza, Kenney, Quaternius, OpenGameArt, Sketchfab) — only once the above
      genuinely do not have it, and CC0/MIT only.
-  4. **Build it in Blender via the MCP.** The rare exception, and now genuinely rare: with 746
-     vendored models the honest answer is almost always in step 1 or 2. ⚠️ **That MCP is not
-     connected by default any more** (2026-08-10) — §2 says what re-adding it costs, and reaching
-     this step is a conversation with the maintainer rather than a tool call.
+  5. **Build it in Blender via the MCP.** The rare exception: ⚠️ **that MCP is not connected by default**
+     (2026-08-10) — §2 says what re-adding it costs, and reaching this step is a conversation with the
+     maintainer rather than a tool call.
 
-  ⚠️ **Mixing kits is the thing to avoid.** Four kits by one author read as one world; a stray
-  model from a fifth source reads as a mistake even when it is well made. If step 3 or 4 is reached,
-  match the pack's flat-shaded, untextured-looking style or do not adopt it.
+  ⚠️ **TASKS EXPIRE, THE LEDGER IS THE LIBRARY.** A Meshy model that is not in `assets/models/` and not
+  in `reports/3d/archive/meshy-migration/manifest.csv` costs credits again. Every new generation is
+  appended there in the commit that adopts it (id, prompt, preview/refine/rig task ids, date, credits);
+  a rejected attempt is a short note, not a row. ⚠️ **Mixing kits is still the thing to avoid inside the
+  kept housing kit**: a model from a fifth source next to it reads as a mistake. The generated outdoor
+  world is the deliberate exception, held together by the variety rule and `docs/ART_STYLE.md` §1.
 
   **No crediting is required** (maintainer direction, 2026-08-08). This build is personal, never
   published and never sold, and every asset in it is CC0, so no attribution was ever legally owed.
@@ -113,7 +121,7 @@ You are the lead engineer building this game incrementally. The non-negotiables:
 | SDK              | `Godot.NET.Sdk/4.7.0` (see `Embervale.csproj`)                  |
 | Assembly / root ns | `Embervale`                                                   |
 | Entry scene      | `scenes/Main.tscn` → `ApplicationRoot` (`src/Bootstrap`)        |
-| Target platforms | Windows, Linux, Steam Deck (Forward+ renderer)                  |
+| Target platforms | Windows, Linux — PC and laptop only (Forward+ renderer)         |
 
 **The Godot MCP is [IvanMurzak/Godot-MCP](https://github.com/IvanMurzak/Godot-MCP) v0.20.1**
 (maintainer direction, 2026-08-09 — it replaced `@coding-solo/godot-mcp`, which was last published
@@ -231,8 +239,8 @@ URLs, the editor is in the wrong mode: close it and reopen with the `godot-cli o
 ⚠️ **THE BLENDER MCP NO LONGER STARTS WITH A SESSION** (maintainer direction, 2026-08-10). Its
 `uvx blender-mcp` entry was **removed from the user-level `~/.claude.json`**, so no `blender-mcp.exe`
 is spawned at startup and **no `mcp__blender__*` tools appear in the tool list at all.** That is the
-intended state: it was launching a process every session for a step-4 tool that almost no session
-reaches (746 models are vendored, and §1 stops at step 1 or 2 nearly every time).
+intended state: it was launching a process every session for a step-5 tool that almost no session
+reaches (1,136 models are vendored, the cast and the outdoor world are generated, and §1 stops at step 1 to 3 nearly every time).
 
 **If a session genuinely needs it, the maintainer re-adds it — ask, do not do it yourself:**
 
@@ -666,12 +674,13 @@ status here or in `README.md`.
 
 ### Standing constraints (these are rules, not history)
 
-- **The world's art set is four Quaternius CC0 MegaKits; the cast is generated** (§1, and
-  [`docs/3D_ASSETS.md`](docs/3D_ASSETS.md)). 1,136 models are vendored at `assets/library/` behind a
-  `.gdignore`; a model enters the game by being **adopted into `assets/models/`** via
-  `python tools/assets.py adopt`, and that is the only step — **crediting is not required and
-  `assets/CREDITS.md` is frozen as history.** Everything is CC0 and the build is personal, never
-  published and never sold.
+- **Three art lanes: the cast and the outdoor world are generated, the housing and architecture kit
+  is Quaternius** (§1, and [`docs/3D_ASSETS.md`](docs/3D_ASSETS.md)). 1,136 models are vendored at
+  `assets/library/` behind a `.gdignore`; a kept-kit model enters the game by being **adopted into
+  `assets/models/`** via `python tools/assets.py adopt`, a generated one through `adopt-batch`, and that
+  is the only step — **crediting is not required and `assets/CREDITS.md` is frozen as history.** The
+  outdoor world is stylised-realistic, not faceted low-poly. There are no cosmetic bolt-ons (the enemy
+  identity kit, the NPC outfit kit, the player's pauldrons and pouch are deleted): a body's look is its mesh.
 - **Four asset traps, each of which shipped a defect before it was written down:** judge a
   candidate **from behind and at eye level** (an open-backed cottage nearly shipped twice; a
   **hi-vis vest and hard hat** stood in a medieval market until someone rendered it close up);
@@ -756,6 +765,12 @@ reading, and this section deliberately does not restate the rules — it used to
 Replacing a model is `python tools/assets.py adopt <src> <dest>` then `python tools/assets.py
 validate`. Rig mapping, textures, retargeting, `.import` configuration and the ordering are handled;
 re-fitting the collision capsule is the one part that still needs judgement.
+
+A generated outdoor-world model goes `tools/meshy_batch.py` → `python tools/assets.py adopt-batch` →
+`tools/make_landmark_wrapper.py` (landmarks, trees, rocks) → `tools/repoint_models.py`, and its prompt and
+task ids are appended to `reports/3d/archive/meshy-migration/manifest.csv`; the steps and the traps they
+hit are in `docs/RECIPES.md` (*Assets*) and `docs/3D_ASSETS.md` (OUTDOOR WORLD). The cast and the world are
+generated, the housing kit is not: sourcing is `docs/ASSET_POLICY.md` §0.1.
 
 ⚠️ **Compilation, import, tests and `--validate` are not visual validation.** Every 3D trap this
 repo has recorded was invisible in a log and visible only in a render.

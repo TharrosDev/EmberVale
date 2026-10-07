@@ -16,14 +16,19 @@ documents it links. **For 3D asset work, `docs/3D_ASSETS.md` is the contract and
   establish ownership before adding them.
 - `data/regions/*.tres` is generated. Edit `tools/region_spec_<region>.py`, then run
   `tools/gen_regions.py`; never hand-edit generated region resources.
-- 3D assets have two lanes: characters and creatures are generated (semi-realistic); props,
-  architecture and nature come from the vendored Quaternius library, searched before anything is
-  sourced or authored. `docs/3D_ASSETS.md` has both. `assets/CREDITS.md` is frozen — do not add
-  to it; the manifest is derived by `python tools/assets.py status --write`.
+- 3D assets have three lanes (2026-10-06): characters and creatures are generated (semi-realistic);
+  the outdoor world (trees, rocks, ice, landmarks, ruins, outdoor props) is generated with Meshy
+  text-to-3D plus two procedural ground-cover meshes; the housing and architecture kit, enterable
+  buildings, interiors and a listed set of small interactive props stay vendored Quaternius, searched
+  before anything else is sourced. Inventory what exists before generating anything.
+  `docs/3D_ASSETS.md` has all three. `assets/CREDITS.md` is frozen; the manifest is derived by
+  `python tools/assets.py status --write`; every generation is logged in
+  `reports/3d/archive/meshy-migration/manifest.csv`.
 - Adopt with `python tools/assets.py adopt`, then `python tools/assets.py validate`. It encodes the
   ordering; calling the underlying scripts by hand skips steps that are not optional.
-- Match `docs/ART_STYLE.md` for the world: grounded forms, restrained detail, nonmetallic
-  plaster/wood/stone, coherent material families. The cast is the documented exception.
+- Match `docs/ART_STYLE.md`: grounded forms, restrained detail, nonmetallic plaster/wood/stone,
+  coherent material families. The generated cast and outdoor world are stylised-realistic; the kept
+  housing kit is faceted low-poly.
 - Never approve 3D work from bounds alone. Use the audit plus eye-level and multi-angle renders.
   Architecture must show front, back, left, right, front three-quarter, and rear three-quarter
   views.

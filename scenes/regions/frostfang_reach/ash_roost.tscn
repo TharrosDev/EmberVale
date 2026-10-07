@@ -112,7 +112,7 @@ omni_range = 7.0
 ; Its own PersistentId — LairSpawnComponent.SaveId derives from it, so sharing one with the Wild
 ; dragon's nest would make killing either mark both defeated.
 [node name="Nest" parent="." index="1"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, 6)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -45, 0, 26)
 DisplayName = "Ash Roost"
 PersistentId = "lair.frostfang_ash_roost"
 

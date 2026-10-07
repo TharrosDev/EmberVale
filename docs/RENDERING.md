@@ -28,6 +28,26 @@ The machine-readable authoring specification is `data/rendering/VisualContract.j
 `docs/3D_ASSETS.md` continues to own source asset adoption and rigs. The contract records physical
 material families, scale, normal/texture guidance, restrained wear, VFX rules and measurable budgets.
 
+## Depth cues for the vast world (2026-10-06)
+
+The world now carries 12-36 m generated landmarks and 28 m+ colossi that must read as far and as
+big, so the haze changed (all in `data/rendering/DayCycle.tres` and the region specs' `ENVIRONMENT`
+lines; none of it has been looked at in a render):
+
+- **`ClearFogDensity` 0.003 to 0.0011**, which puts a colossus at 600 m at 48-60% fog in every realm
+  in clear weather (it was 83% in Ember and 97% in Ashen, so the landmarks vanished). Region
+  `HazeScale` was compressed to 1.0-1.25 to match. Side effect: the Far streaming edge (420 m, 252 m
+  on Low) is now about 37% and 24% fogged instead of 72% and 53%, so cell pop-in is more exposed.
+- **Three new cycle fields:** `AerialPerspective` 0.3 (sky-tinted distance fog; off on the Performance
+  tier), `HeightFogDensity` 0.008 and `HeightFogDrop` 25. The height fog is pinned `HeightFogDrop`
+  metres under the camera so ground at the player's level is never fogged; on high ground the lowland
+  below reads as about 45% fog (Frostfang is where this shows). Ranges are in `EnvironmentValidation`.
+- **`BackdropHeight` raised 1.4-1.8x per realm:** Ember 125, Frostfang 180, Ashen 144, Sunspire 135,
+  Pale 102, Celestial 108. Skyline pieces placed in the backdrop ramp zone can now be partly buried.
+- **Sheltered cameras.** `SkyController.SampleContext` treats any collider within 25 m above the camera
+  as shelter and applies the Interior profile, so a wrapper with an overhead collider (arches, the
+  god hall) would darken the player walking under it.
+
 ## Weather and materials
 
 The world owns five project shader globals: `world_wetness`, `world_snow`, `world_rain`,
@@ -110,7 +130,7 @@ them reads or writes anything while the scale is 1 / 1 / uncut, which is Medium 
   HLOD begin and end) and the biome cull distance. Near and Mid are where collision, navigation and
   gameplay exist and Backdrop decides which cells are resident, so those three never move: a lower
   tier draws props and buildings less far and plays on the same world.
-- **Scatter density** thins ground cover only (grass, flowers, pebbles, ferns: the layers with a
+- **Scatter density** thins ground cover only (the grass and fern clumps: the layers with a
   short detail range) through `MultiMesh.VisibleInstanceCount`. Trees, rocks and scrub are the
   silhouette and keep every instance. No buffer is rewritten.
 - **Enemy shadows** stop past `ActorShadowDistance` (`EnemyAIComponent`, checked four times a
@@ -140,6 +160,8 @@ the three, and it replaces TAA rather than stacking on it.
 
 ### First run
 
+Target platforms are PC and laptop only; the Performance preset is for weak laptops.
+
 On a fresh install (no settings file and no save slots), `SettingsService` picks a preset from
 the adapter name, vendor and device type plus installed memory and thread count
 (`GraphicsAutoDetect`, pure and unit-tested), then saves it:
@@ -147,7 +169,6 @@ the adapter name, vendor and device type plus installed memory and thread count
 | Adapter | Preset | Frame cap |
 | --- | --- | ---: |
 | Software renderer or CPU device | Performance | 30 |
-| Steam Deck APU | Low | 60 |
 | Integrated, at least 15 GB installed and 8 threads | Low | 60 |
 | Integrated, anything less | Performance | 60 |
 | Discrete, at least 15 GB and 8 threads, not a known modest part | High | none |

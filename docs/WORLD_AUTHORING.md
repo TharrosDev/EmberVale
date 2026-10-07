@@ -285,7 +285,10 @@ fix it, all multipliers on top of the day/night and weather curves rather than r
 - `SunEnergyScale` — under 1 for a realm under permanent overcast.
 - `HazeColor` — what the air is made of. Ash in the Ember Crown, blown snow in Frostfang. The single
   strongest cue for distance and biome in a wide shot.
-- `HazeScale` — over about 2.5 the far cells stop being readable.
+- `HazeScale` — over about 2.5 the far cells stop being readable. Since the 2026-10-06 depth pass the
+  realms sit at 1.0-1.25 (Ember 1.0, Frostfang 1.15, Ashen 1.25, Sunspire 1.2, Pale 1.1, Celestial 1.25)
+  against a global `ClearFogDensity` of 0.0011, so a colossus at 600 m reads at 48-60% fog; and
+  `BackdropHeight` is 102-180 (`docs/RENDERING.md`).
 
 ---
 
@@ -379,6 +382,16 @@ render showed bare earth. Any MultiMesh built for the bake writes `MultiMesh.Buf
 - Scatter is deterministic and cell-local. The planner clears every `WorldPathSegmentResource` and
   `WorldGroundAreaResource` automatically; add `BiomeScatterExclusionResource` circles around lairs,
   landmarks, doors, arenas, schedule paths and deliberate clearings.
+- **The species are generated since 2026-10-06** (nine meshes: oak, dead tree, fir, boulder, rubble,
+  crag, ice spire, grass clump, fern clump; `docs/3D_ASSETS.md` → OUTDOOR WORLD). Rules that came with
+  them: trees scatter at 0.7-1.5 and add low-count `Layer_elder` (1.8-2.4) and `Layer_tor` (2.5-4.0)
+  layers with HLOD that have **no collision**, so a player walks through them; keep tors out of roosts,
+  holds, arenas, landings and gates; `HlodColor` must equal `Tint` or the far tier pops in colour; raise
+  `MinimumSpacing` (6.0) on small-rock layers so a rock scaled to 0.7 does not stand in a road, since the
+  planner only keeps scatter `MinimumSpacing x 0.25` from roads and yards; keep a profile's triangle load
+  at or under what it replaced. A scatter `Tint` above 1 is unproven in the engine (the MultiMesh colour
+  may clamp), and the new trees have no normal map, so Tint, wind, wetness and snow now apply to them
+  and they sway.
 - Repeated non-interactive background forms use MultiMesh. Interactive or colliding props stay
   authored nodes so nav and interaction remain inspectable.
 - **Props are detail, not structure.** Rocks, cliffs, glacier assets and vegetation provide
@@ -434,9 +447,44 @@ For a new reachable POI:
 ### Settlements are composed, not hand-placed
 
 `tools/district_layouts.py` holds every generated building and landmark as world-space rows
-(`P(kind, name, x, z, yaw, scale, landmark, pad)`), with `frontage()` laying a row along a road and
-`TERRACES`/`pads()` levelling the ground under it. `tools/compose_district.py` writes them into their
-cells as `Dx_*` nodes (and `--check` proves the scenes match). Edit the layout, never the `Dx_` nodes.
+(`P(kind, name, x, z, yaw, scale, landmark, pad, y, tint, pad_half, depth)`), with `frontage()` laying a
+row along a road, `toward()` aiming a row at a target and `TERRACES`/`pads()` levelling the ground under
+it. `tools/compose_district.py` writes them into their cells as `Dx_*` nodes (and `--check` proves the
+scenes match). Edit the layout, never the `Dx_` nodes.
+
+**Since 2026-10-06 it composes all six realms** and its catalogue (`COMPOSED`) carries 17 generated
+landmark kinds (wrappers from `tools/make_landmark_wrapper.py`). The layouts hold 190 rows, 45 flagged
+`landmark` (always drawn to the Backdrop radius), including `RINGS` (32 boss-ring and wall rows) and
+`MONUMENTS` (57 monuments: colossi, god-hall fragments, dragon skeletons, arches, ruin towers, tors and
+road stones). The new `P` fields:
+
+- **`y`** — metres added to the node's height. A generated giant has no base course, so it is sunk
+  0.3-2.0 m and its foot never shows daylight on the downhill side.
+- **`tint`** — multiplies the wrapper's own stone tint (r, g, b): one mesh, a realm's colour. The realm
+  multipliers `FROST`, `SOOT`, `SAND`, `PALE` and `ASHLIGHT` are unrendered guesses.
+- **`pad_half`** — half-size of the pad when it must not follow the footprint. The generated towers
+  are wider than the ones they replaced; their pads keep the size the cell was surveyed at, so
+  terrain inside the lattice is unchanged and `gen_regions.py --check` stays clean.
+- **`depth`** — front-to-back thinning (1 = as generated), for a single-box piece only (a rampart
+  run). A non-uniform scale on a box collider has not been physics-checked.
+- Also new: the road check is an **oriented rectangle** for generated pieces; a hand-authored node that
+  instances a `dx_*` resource is a CONFLICT; and comments after a generated block survive a recompose.
+
+⚠️ **`compose_district.basis()` turns by MINUS the layout yaw**, contrary to its old comment (a
+`.tscn` `Transform3D` stores its basis by rows), so `facing()` is mirrored in X. Existing placements were
+surveyed with it and stay; new rows use `toward()`. Model fronts are assumed to be +Z. Check a frontage
+and a `toward()` row in a render.
+
+**Siting rules for a giant.** Flat ground only, taken from authored landforms and levelled cores (Python
+has no height sampler, so no giant's ground level has been sampled); never on a road (arches stand beside
+one); no `pad=True` inside the walkable lattice; the 20 m+ ones get `landmark=True`. A piece the player
+can reach inside the lattice gets a `MapLocationComponent` and a `gen_map_locations.py` row in the same
+change (new ids only; 26 `Landmark` locations were added, 104 to 130). Skyline pieces beyond the lattice
+get neither a pin nor a collider. ⚠️ **No monument row has a scatter exclusion or a pad**, and the scatter
+planner avoids only authored `BiomeScatterExclusionResource` circles, paths and ground areas, so trees,
+rocks and grass will grow through colossus legs and arches until each `MONUMENTS` and `RINGS` row gets a
+circle (about half the footprint diagonal times scale) in its region spec, or the specs derive them from
+`district_layouts` the way pads are derived.
 ⚠️ **The terraces and pads are bake inputs** — the Ember spec reads them — so editing a layout
 means `gen_regions`, compose, then a rebake, in that order.
 

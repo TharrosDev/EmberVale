@@ -5,14 +5,138 @@
 Developer SDK: [`TOOLING.md`](TOOLING.md) (`python tools/embervale.py`). Every mechanic in the game,
 one line each: [`MECHANICS.md`](MECHANICS.md).
 
-## Where we are (2026-10-06, spell effects, spell wheel and camera)
+## Where we are (2026-10-07, the Meshy world overhaul)
 
 The game is complete from New Game to credits. The finish run's contract and id registry are
 [`playbook/finish.md`](playbook/finish.md).
 
+### The Meshy world overhaul (`claude/meshy-world-overhaul`)
+
+The newest work is an art overhaul asked for by the owner on 2026-10-06, built the same day and the next
+(2026-10-06/07): the outdoor world is generated art instead of the four Quaternius packs, every cosmetic
+bolt-on is gone, the four dragons are real four-legged dragons, and the world was made to feel vast.
+Sourcing is now three lanes (`CLAUDE.md` §1, [`ASSET_POLICY.md`](ASSET_POLICY.md) §0.1): the cast is
+generated, the outdoor world is generated, and the modular housing and architecture kit, enterable
+buildings, interiors and a listed set of small interactive props stay Quaternius on purpose. It was built
+by a foundation (tooling), a generation run, then lanes for bolt-on removal, NPC bodies, scale, scatter,
+creatures and landmarks, each with a review-fix pass, merged on the branch. ⚠️ **Nothing was played. The
+lanes worked in worktrees and never launched Godot; creatures were judged from Blender contact sheets and
+the world from Python surveys and spot renders, so no fight, walk or frame rate has been tested.**
+
+- **Generation.** 795 credits (285 preview, 480 refine, 30 rig) of a plan that allowed 1,300: 34 outdoor
+  world models, six rigged NPC bodies, four dragons, wolf, boar, elk and the iron sword, all Meshy
+  text-to-3D with `meshy-5` (`tools/meshy_batch.py`). Seven previews were rejected (35 credits: the bush
+  twice, the rubble, the elder, the palm, the brazier and the ranger once each) and are in the ledger's
+  note, not as assets. Two procedural meshes cost nothing (`tools/gen_ground_cover.py`). Every generated
+  model is in `reports/3d/archive/meshy-migration/manifest.csv` with its prompt and task ids; the working
+  folder under `artifacts/` is gitignored, so the ledger is the only copy.
+- **The outdoor world.** 272 production models before the retired files were deleted (`assets.py status` has the live count). Nine scatter
+  species in six realm specs, 216 hand-placed nature nodes and 265 landmark and prop nodes repointed, 12 new giants
+  (eight elder oaks, four crag spires), 17 landmark kinds composed in all six realms (190 layout rows,
+  about 45 always drawn), 26 new map locations, towers, arches, colossi, god halls, dragon skeletons, the
+  Iron Citadel, boss rings rebuilt from rampart and ruin lengths, and tents, lamps, fences, campfires,
+  carts, wells, banners and yard clutter. Wrappers (`scenes/props/lm_*.tscn`) carry primitive colliders and
+  the triplanar detail shader. [`3D_ASSETS.md`](3D_ASSETS.md) → OUTDOOR WORLD has the pipeline.
+- **Cast.** Six new NPC bodies (dawnwarden, clansman, elder, scholar, smith, ranger) on 28 nodes in ten
+  scenes; four dragons at 22, 14, 11 and 5 m on a new 20-bone rig with eight procedural clips under the
+  old names, refit capsules, six-zone hit boxes (`HitZoneResource.RotationDegrees`), a snout
+  `CastOrigin` and hover 24/20/18 m; wolf (and its dire and frost recolours), boar and elk meshes on their
+  existing rigs; a slimmer iron sword and a derived dagger.
+- **Bolt-ons gone.** `EnemyVisualKit`, `NpcVisualKit`, both kit models, the player's pauldrons and pouch,
+  their tests and shot harness. `EnemyArchetypeResource` gained `HeldWeaponPath`, `HeldWeaponScale`,
+  `BodyTint`, `VisualHeight` and `CastOrigin`; the Iron King holds his mace at 1.5.
+- **Vast world.** Ten bodies drawn larger than they fight (look versus reach: `ModelScale` x f, capsule x
+  sqrt f, `VisualHeight`); lock-on aims at the middle of the collision shape; taller lock framing; the boss
+  add ring follows radius; fog and backdrop heights ([`RENDERING.md`](RENDERING.md)); the six-realm
+  compose and its new `P` fields ([`WORLD_AUTHORING.md`](WORLD_AUTHORING.md)).
+- **Held pieces.** A `BoneAttachment3D` overwrote its own transform, so no grip rotation or weapon scale
+  was ever applied; the authored transform now rides on the piece (invariant 59).
+- **Steam Deck dropped** as a target (PC and laptop only); the first-run graphics pick lost its Deck row.
+
+**Leftover, and honest.** Nothing here is meant to read as finished art.
+
+- **Not generated at all.** The horse, the bow and the four 3-bone creatures (ash maw, ruin crawler, cinder
+  wisp, storm mote) are as they were. No bush (two rejected previews: bush layers are the fern at 1.3-1.8,
+  darker), no palm (the Sunspire jungle is the oak with a warm tint), no brazier (all 47 stay Quaternius),
+  no market stall (preview only: both market stands stay), no grass tuft (preview only: the procedural
+  clump is the decision of record).
+- **Still Quaternius outdoors.** The three crafting stations, tome stands (8 scenes), benches (8), cauldrons,
+  timber stacks, the cache chest and the training dummy; the dock, jetty, fishing hut, gazebo and mine head;
+  `bld_ruin_house`; housing decor; the Crossway palisade (three 16 m lengths, since the generated palisade
+  gate is a 6.9 m gateway), the Hollowreach hideaway ruin, the West Downs sheepfold, the Ash Throne steles,
+  the Godfall anchors, `FiveGraves/BlankStone`, the arena `BoxRail`, the citadel `DrayStockade` fence,
+  `CartE`, `CarterWreck`, about 28 clutter nodes where a 2 m pile would not fit, and the library vault and
+  Undercroft interiors. Crossway now mixes the old palisade with new 14-16 m gate towers.
+  `prp_lm_palisade_gate` is adopted and placed nowhere.
+- **Retired files.** The replaced Quaternius outdoor `.glb` files and `T_Nature_*` textures go only through
+  `repoint_models.py delete`, which refuses while a referrer remains; whatever it refused is still on
+  disk (`assets.py status` lists the drift). `T_Nature_Grass.png` stays (the procedural grass takes its
+  hue from it). `build_environment_assets.py` and its `environment` build target, `replace_glacier_props.py`
+  and `gen_ground_cover.py`'s reference-mesh names are the tool referrers that block or outlive the deletes.
+  Run `share_nature_textures.py` without `--check` only after them.
+- **Open work the lanes handed on.** No scatter exclusion for any of the 57 monuments or 32 ring rows (trees
+  and rocks will grow through them); `Exclusion_aerie` should widen from 18 to 22-24 m and two nav rocks
+  (`GlacierNW`, `ScreeB`) sit inside the Ancient's and Wild dragon's swept radius; the four Ashen Knight story
+  figures (`library`, `arena`, `sundered_stair`, `knight_gate`) are 2.1 m beside a 3.0 m fought knight;
+  arena `Rubble3`, Crossway `PineA` and Hollowreach `TimberA` touch new pieces; `tools/patch_human_materials.py`
+  does not list the six new bodies; the wolf's 2048 JPEG sidecar imports uncompressed.
+
+**Unverified (the Meshy world overhaul).**
+
+- **No human has played any of it.** Not one fight, route, waystone landing, save load or boss intro.
+- **Dragons and beasts were judged from still frames in Blender, not in the engine.** The eight dragon clips
+  are procedural and have never been seen to move in game; the wolf, boar and elk rebinds are contact sheets of
+  Walk, gallop, attack and eat. The dire wolf's darker coat and the frost stalker (pale, low contrast, a
+  different rig before) were never seen; the Wild dragon's feet float 0.45 m at rest; the boar is nearly
+  black and 1.24 m against a 1.0 m capsule; every elk, the 0.55 calf included, carries full antlers.
+- **Boss scale and reach were never fought.** Ten capsules grew to radius 0.61-1.26 m and no probe walks one
+  through a door or a nav corridor. Morthul's, the Hollow Queen's and the Crimson Prophet's cast origin is
+  higher and placed spells (sunfall, pyre wall, gravity well) now land near the player instead of at maximum
+  range: a difficulty change nobody has decided. Lock-on's sight ray ends at half capsule height, which may
+  block acquisition on low creatures over rough ground. Grimtusk's model is 3 m long on a 0.72 m hurtbox.
+- **The dragons' fights.** Dragon bites now connect (the old box sat above a 1.8 m player); an airborne
+  breath cannot reach the ground at hover 24/20/18 m (cones 12, 11, 14 m) and the Wild dragon lost a hit it
+  used to land; a grounded breath at close range leaves a snout 9.8 m ahead of the Ancient's centre. The
+  wing zones cover about half the wing vertices; the Frost Drake is one 1.0 x 2.5 m capsule on a 5 m body;
+  players walk through neck, tail and wings. The roost arenas were not checked for a ceiling over a 24 m hover.
+- **The held weapon grip.** Every weapon in the game changed orientation, for the first time, on a grip basis
+  nobody has seen applied (player in both views, bow, staff, shield, NPCs, the Iron King's mace at 1.5 x
+  1.23). The new sword is slim (49 mm blade, grip 26-33 mm) and the dagger's grip is half the contract.
+- **New landmark siting was judged from Python surveys and spot renders only.** There is no height sampler,
+  so no giant's ground level was sampled and any of them may float or bury a side (most exposed: the two
+  tors, the fen head, the Emberspire, Salt Basin and Crater bones, the Hold Pass colossus); model fronts are
+  assumed +Z, so `toward()` rows may face away; `basis()` mirrors `facing()`; the Sand Sea butte and the
+  Celestial side terraces may be unreachable; rampart `depth` is a non-uniform scale on a box collider; the
+  arena's NE ramparts run into the ridge; realm tints and sink depths are guesses.
+- **Walkability at narrowed spots.** The wilds_west corrie (rescaled to hold its 4.8 m throat), hand-placed
+  dead-tree trunk colliders that moved about 1 m, roost crag colliders 1 m smaller, rubble colliders 0.4-0.5 m
+  high, Celestial `ArrivalPillarE`, the library forecourt pillars, Hollowreach `PillarD`, the Crossway gate
+  passage (about 8 m), and Knight's Gate and arena gate posts. The Ruby Gem pickup was moved off a wall;
+  the town hub alarm bell is now a 7 m belfry beside the waystone; the `BlackToken` sits 2 cm over its boulder.
+- **Scatter.** Tints above 1 (five layers) may clamp dark; the new tree tints, blight purple, pale and jungle
+  are guesses; trees sway for the first time; the Sunspire `belt_east` elder oak is untinted; elders, tors and
+  crags have no collision; the far-tier colour hand-off was matched on paper; fir and dead crowns may clip
+  settlement roofs.
+- **The haze and the horizon.** The fog change is the biggest look change and was never rendered: Ember's
+  near field drops from 26% to about 10% at 100 m, the streaming edge is exposed, height fog may swim on fast
+  vertical moves and shows on Frostfang high ground, aerial perspective colour, the taller backdrops (Frostfang
+  ramp about 54 degrees; skyline pieces may be partly buried), and arches that trigger the Interior profile.
+- **Performance on weak laptops.** Not measured. The baseline is Ember 11.7 ms mean, 687 draws, worst cell
+  18.5 ms on an Iris Xe at Medium, already over 16.7. Crossway gains about 22k triangles and is already over;
+  rock and ice wrappers no longer batch (roughly 10-20 more draws in rock-heavy cells); about 45 landmarks
+  draw to the Backdrop radius; world textures add about 53 MB by the `audit-weight` estimate (115 MB across 164 textures in all, before the deletes).
+- **The six NPC bodies.** Whether each body's rig and clips resolve is a gate result (Verification below);
+  nobody has seen a hooded or robed NPC on a new body, nor a 1.68-1.85 m body in a 0.4 x 1.8 m collider.
+  Eyeball `crossway_post`, `town_hub`, `clan_hold`, the landing ally clusters and `wilds_north` first.
+- **The Iron Citadel is 21 m against the old 35 m** (a taller one buries the forecourt); its forecourt against
+  the 56 m hull was not looked at. Two new map pins read like duplicates ("The Godfall Hall" beside "Godfall",
+  "The Choir Hall" beside "The Fallen Choir").
+- **Not part of the run recorded here.** The one master bake (every `.import` change stales all six regions),
+  the export build with `check_shipping_assembly.py`, and the negative battery.
+
 ### Spell effects, the spell wheel and the camera (`claude/magic-vfx`)
 
-The newest work is three things asked for together: every spell made spectacular and scalable
+The previous work was three things asked for together: every spell made spectacular and scalable
 across the graphics tiers, a spell wheel on the hold of `F`, and the first- and third-person
 camera fixed. It was built in two waves of lanes (a foundation, then effects core, wheel, camera
 and animation, audio and harnesses; then a look pass, two recipe lanes, HUD and spellbook, and
@@ -131,7 +255,7 @@ Verification. Everything below is what they cannot show.
   measured: not Low or High, not a single caster in ordinary play, not a crowd of afflicted enemies
   (status auras sit outside the live-effect budget), not first-cast hitch on a cold shader cache,
   not another GPU. `vfx_sprite` and `vfx_flow` declare a depth-texture sampler on every tier.
-- **Steam Deck hardware is untested**, for the effects' cost and for the wheel at 853x533.
+- The wheel at a narrow 853x533 window is untested (Steam Deck is no longer a target platform).
 - **Tuned by eye from stills, or not at all.** Every size, lifetime, density and colour in the
   recipes; the governor's numbers, which assume a 70 degree vertical field of view at 16:9;
   whether Performance, with glow off, still reads hot; the live-effect budgets against richer
@@ -247,8 +371,8 @@ below is what they cannot show.
   draw-call count) was not run. New per-frame or per-change costs nobody timed: enemy plates
   unprojected each frame while any is up, keylined text with a halo, icon keylines drawn as eight
   stamps, the creator preview rendering every frame while its idle loops.
-- **Steam Deck hardware is untested.** 1280x800 at UI scale 1.5 is a window on a laptop, not the
-  device. Known limits at that size: a HUD scale above 1 lays out narrower than 853 and the
+- **Narrow windows are untested on real hardware** (Steam Deck stopped being a target on 2026-10-06; the
+  Performance preset stays for weak laptops). 1280x800 at UI scale 1.5 is a window on a laptop. Known limits at that size: a HUD scale above 1 lays out narrower than 853 and the
   bottom bar can overflow, and a text scale above 1 widens the hotbar cells again. 3440x1440 was
   in the plan's matrix and was not shot.
 - **Feel that only play can judge.** HUD ink weight (3 px keyline, 6 px halo) and plate opacity
@@ -735,6 +859,23 @@ Numbers are stable references (other docs cite them); gaps are retired invariant
     second. A body that faces the wrong way or slides is measured with `facing_probe.gd` and
     `--camshots` before the camera is touched.
 
+59. ⚠️ **A HELD PIECE'S AUTHORED TRANSFORM RIDES ON THE PIECE, NEVER ON ITS `BoneAttachment3D`.** The
+    attachment overwrites its own transform with the bone pose at bind and on every skeleton update, which
+    is why no grip rotation or weapon scale ever applied before 2026-10-06. Use `WeaponGrip.Local`; if a
+    weapon sits wrong, tune `WeaponGrip.Hand`.
+60. ⚠️ **LOOK AND REACH ARE SEPARATE, AND A BODY THAT TOWERS KEEPS ITS FIGHT.** `ModelScale` x f with the
+    capsule x sqrt(f) and `VisualHeight` set; reach (melee box, telegraph, nav) reads the capsule and the
+    hurtbox, plate, marks, cast origin and lock framing read `VisualHeight`. Never grow `AttackRange` to
+    chase a bigger model, and never put an authored `.tres` height in as an int (`3.0`, not `3`).
+61. ⚠️ **A MODEL SWAP INHERITS NO COLLISION, AND A DELETE NEEDS THE TOOL.** Refit the capsule, hit zones
+    (`check_hit_zones.py`), cast origin and hover for a new body; delete a replaced `.glb` only with
+    `tools/repoint_models.py delete`, which matches bare file names in C# and tools as well as `res://`
+    paths. Housing decor is named by bare file name in `PlaceableTemplates.cs`, so its models stay on disk.
+62. ⚠️ **A GENERATED LANDMARK IS PLACED THROUGH ITS WRAPPER, FROM A LAYOUT ROW, ON FLAT GROUND, OFF THE
+    ROADS.** Never edit a `Dx_*` node by hand (`compose_district.py` rewrites it), and never move or
+    rename a waystone, portal, spawn, pin or anchor node. A giant has no scatter exclusion until one is
+    added to the region spec.
+
 ## Commands
 
 ```text
@@ -800,6 +941,14 @@ godot --path . --script res://tools/world_shots.gd   # add -- --update-world-bas
 python tools/world_quality_check.py --mode fast | engine | visual | full
 python tools/assets.py status | validate | adopt <src> <dest> | audit
 python tools/assets.py audit-weight [--check | --fix | -v]   # texture video memory by class budget
+python tools/meshy_batch.py PLAN.json OUT [--cap 1300] [--only id] [--stage preview|refine|rig]   # needs MESHY_API_KEY
+python tools/assets.py adopt-batch --plan P --source-dir D [--only id] [--dry-run | --import]   # generated static tiers
+python tools/make_landmark_wrapper.py [id ... | --all [--check | --dry-run] | --slices id]   # scenes/props/lm_*.tscn
+python tools/repoint_models.py apply rows.json [--dry-run] | refs <model.glb> | delete <model.glb> ...
+python tools/gen_ground_cover.py [--check]   # the procedural grass clump and fern
+python tools/check_hit_zones.py [--check]   # zone coverage of the committed meshes
+godot --path . --script res://tools/asset_stage_shots.gd -- --output DIR res://scenes/props/lm_x.tscn   # 3, 10, 30, 100 m
+blender --background --factory-startup --python tools/rebind_creature.py -- --mode dragon|beast ...   # one at a time
 godot --path . --script res://tools/world_perf_probe.gd [-- --json]   # per-cell render cost, all six realms
 python tools/compose_building.py <name> <w> <d> <storeys> [--hollow | --open | --ruined]
 python tools/gen_map_locations.py [--check]
@@ -817,6 +966,28 @@ Python is Codex's bundled interpreter
 Export templates are in `%APPDATA%\Godot\export_templates\4.7.1.stable.mono`.
 
 ## Verification
+
+### Meshy world overhaul (`claude/meshy-world-overhaul`)
+
+What the lanes ran in worktrees (python and compile only, behind the build lock; the numbers are the lanes'
+own and the branch has not been rebuilt since the merges) is below; the Godot gates were left to the
+integrator, one at a time, on the merged tree.
+
+| Check | Evidence |
+| --- | --- |
+| `dotnet build Embervale.sln`, `-c ExportRelease`, `check_shipping_assembly.py` | clean in the scale lane's worktree |
+| `dotnet test tests/Embervale.Tests` | 6567 passing in the scale lane, 6536 in the creature, scatter and landmark lanes (before the merge) |
+| `assets.py audit-weight --check`, `audit_3d.py --static-only` | within budget; 272 assets (before the retired files were deleted), no parse errors |
+| `check_hit_zones.py --check` | passes (Ancient 77%, Ash 79%, Wild 94% of vertices in a zone) |
+| `gen_regions.py --check` | "would change" for all six regions by design (scatter, backdrop and haze fields only), no lattice or seam error |
+| `compose_district.py --check`, `gen_map_locations.py --check` | at a fixed point; 130 locations, 0 out of date |
+| `check_cell_layout.py`, `check_world_composition.py`, `check_architecture_kit.py`, `world_atlas.py --check` | pass for all six regions |
+| `repoint_models.py apply --dry-run` over 265 landmark rows | 0 scenes would change |
+| Scene integrity over every changed `.tscn` | no undeclared id, no missing file |
+| Godot import, `--validate`, `--lifecycle`, `--story`, probes, shot harnesses, melee and combat gates per scaled boss, traversal, the one master bake, the export, the negative battery | not run by the lanes |
+| A human play-through, a fight with any scaled boss or dragon, weak-laptop frame times | not run; see Unverified above |
+
+GATE RESULTS: (filled by the integrator)
 
 ### Spell effects, spell wheel and camera (`claude/magic-vfx`)
 
@@ -841,7 +1012,7 @@ looked at; where a result is not recorded here, **see the PR.**
 | World bake check (`world_bake.py --check`) | current; no bake input was touched |
 | `--spellshots` Performance, `--panelshots` and `--enemy-shots` after the third round | not re-run (same low-memory stop); the Ultra, camera and HUD frames were |
 | Export build with the shipping check, negative battery, world quality | not part of this run |
-| A human play-through, a real mouse and pad on the wheel, the spell audio, any motion review, Steam Deck hardware | not run; see Unverified above |
+| A human play-through, a real mouse and pad on the wheel, the spell audio, any motion review | not run; see Unverified above |
 
 ### UI, HUD and meta-shell upgrade (`claude/ui-upgrade`)
 
@@ -861,7 +1032,7 @@ records what was run, not its numbers: **see the PR for the final numbers.**
 | 3440x1440, high contrast, reduced motion | not captured |
 | Perf scenario and HUD draw-call count, before and after | not run |
 | World bake check, export build with the shipping check, negative battery, world quality | not part of this run |
-| A human play-through, a physical gamepad, the remapping flow on real devices, the audio cues, Steam Deck hardware | not run; see Unverified above |
+| A human play-through, a physical gamepad, the remapping flow on real devices, the audio cues | not run; see Unverified above |
 
 ### Performance pass (`claude/perf-integration`)
 

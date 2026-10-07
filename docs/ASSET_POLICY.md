@@ -17,42 +17,56 @@
 
 ---
 
-## 0. Standing direction — the art set is Quaternius (2026-08-05)
+## 0. Standing direction — three sourcing lanes (2026-10-06)
 
-> **Maintainer instruction, and it overrides §1–§4 for anything a vendored pack already covers.**
-> Embervale's art set **standardises on Quaternius CC0 packs**. The point is coherence: one artist,
-> one style, one skeleton. A slightly better model from elsewhere is the *wrong* answer.
+> **Maintainer instruction, and it overrides §1–§4 wherever it covers a model.** It supersedes the
+> 2026-08-05 "the art set is Quaternius" rule and the 2026-09-03 "two lanes" rule for the outdoor
+> world. Characters and the outdoor world are generated; the housing kit stays Quaternius on purpose.
 
-### §0.1 The four packs, and the order to reach for them (2026-08-08)
+### §0.1 The three lanes, and the order to reach for them
 
-⚠️ **THERE ARE TWO LANES, AND THIS SECTION IS ONE OF THEM** (maintainer direction, 2026-09-03).
-
-**Characters and creatures are generated with Meshy**, semi-realistic, and do not come from the
-packs at all — the cast is custom generations and the prompt stem is in
-[`docs/3D_ASSETS.md`](3D_ASSETS.md). The order below governs **props, architecture and nature**.
-
-**For those, four Quaternius MegaKits are the art set.** The near-entirety of the world is built
-from them, and the search order is fixed: **the four packs → the other vendored bundles → the open
-web → Blender MCP.** Stop at the first that works.
-
-| Bundle | Covers | Models |
+| Lane | Covers | Source |
 | --- | --- | --- |
-| `medieval_megakit/` | modular architecture: walls, roofs, doors, windows, shutters, floors, stairs, balconies, overhangs, chimneys | 176 |
-| `medieval_interiors/` | interiors and props: beds, cabinets, bookcases, shelves, tables, chairs, chests, anvil, workbench, market stalls | 94 |
-| `nature_megakit/` | trees (common/pine/dead/twisted), bushes, ferns, grass, clover, flowers, mushrooms, pebbles, rocks, rock paths | 68 |
-| `animations/` | `AnimationLibrary_Godot_Standard.glb` — 46 clips on one shared skeleton | 1 |
+| **Cast** | characters, creatures, dragons, weapons | Meshy (rigged bodies, image or text route; the prompt stem is in [`docs/3D_ASSETS.md`](3D_ASSETS.md)) |
+| **Outdoor world** | trees, rocks, ice, landmarks, ruins, towers, arches, tents, lamps, fences, carts, wells, banners, yard clutter | **Meshy text-to-3D** (`meshy-5`, preview 5 + texture 10 credits, short prompts, `target_polycount` set at preview, **never the image route**) in `assets/models/world/`, plus **two in-house procedural ground-cover meshes** (`tools/gen_ground_cover.py`: grass clump, fern rosette) |
+| **Kept kit** | the modular housing and architecture kit, the five enterable buildings and 19 composed `bld_*` buildings, interiors, and a listed set of small interactive props | Quaternius CC0 MegaKits under `assets/library/`, **on purpose**: Meshy cannot make hollow, enterable buildings |
 
-⚠️ **What the four packs do NOT cover: characters, creatures and weapons.** Characters and
-creatures are now generated (the other lane, above). Weapons and the remaining odds come from the
-older vendored bundles (`men/`, `women/`, `monsters/`, `animals/`, `rpg_items/`), which is why
-step 2 exists and is not optional.
+**The kept props** keep their measured colliders and are never mapped to a landmark: `prp_tome_stand`,
+`prp_relic` (the town hub Relic), the crafting stations, `prp_bench`, `prp_cauldron`, `prp_timber_stack`,
+the cache chest, the training dummy, the dock, jetty, fishing hut, gazebo and mine head, and the housing
+decor named by bare file name in `src/Housing/PlaceableTemplates.cs` (display pillar, brazier, banner,
+crate). `docs/3D_ASSETS.md` has the list with reasons.
+
+**Search order, stop at the first that works:** (1) **inventory what already exists** —
+`python tools/assets.py status`, `ls assets/models/<folder>/`, `assets/library/<pack>/manifest.json`,
+and the ledger below — because the library has been "searched" from memory wrongly twice; (2) the lane
+above: generate for the cast and the outdoor world, take from the pack for the kept kit; (3) the other
+vendored bundles (`men/`, `women/`, `monsters/`, `animals/`, `rpg_items/`, `dungeons/`, `survival/`,
+`nature/`, `rts/`, `medieval_village/`); (4) the open web (CC0/MIT only); (5) the Blender MCP, which is a
+conversation with the maintainer (`CLAUDE.md` §2).
+
+**Variety rule (owner):** two or three models per type, never a mesh per instance. Variety comes from
+the scatter transform, scale and tint (`albedo_tint` on a wrapper, `Tint` on a scatter layer). A fourth
+rock or tree needs a reason a different scale and tint cannot give.
+
+**Landmarks are solid, walk-around set pieces.** Nothing generated is roofed or enterable; hollow
+buildings stay the kept kit.
+
+⚠️ **THE LEDGER IS THE LIBRARY, AND TASKS EXPIRE.** Meshy task ids and their download URLs lapse, so
+a model that is not in `assets/models/` and not in the ledger is gone and costs credits again. Every new
+generation is appended to `reports/3d/archive/meshy-migration/manifest.csv` (id, prompt, preview, refine
+and rig task ids, date, credits) in the commit that adopts it; a rejected attempt is recorded in a
+short note, never as an asset. `meshy_batch.py` keeps `state.json` with every task id the moment it is
+created, so a re-run never pays twice; copy it into the ledger before the working folder goes.
 
 ## 1. The order of operations — never reversed
 
-1. **Search the web** for an appropriate open-source model.
-2. **Evaluate** whether it can be used (licence first, then fit).
-3. **Adapt it with the Blender MCP** if it is close but not perfect.
-4. **Create from scratch only** when a thorough search shows nothing suitable exists.
+1. **Inventory first.** What is already in `assets/models/`, in the vendored library and in the ledger.
+2. **Take the lane** (§0.1): generate cast and outdoor-world models, adapt a pack model for the kept kit.
+3. **Search the web** for an open-source model only when the lane has nothing and the model is not
+   generatable.
+4. **Evaluate** (licence first, then fit) and **adapt it with the Blender MCP** if it is close.
+5. **Create from scratch only** when a thorough search shows nothing suitable exists.
 
 Creating from scratch is the **rare exception**, and reaching for it requires that *all four*
 of these hold:
@@ -63,6 +77,10 @@ of these hold:
 - combining multiple assets cannot solve the problem.
 
 > **Do not assume a model does not exist.** "I couldn't think of one" is not a search.
+
+Generated models are not "created from scratch" in this sense: generating is a lane, with its own
+cost ledger and recipe (`docs/RECIPES.md` → *a new generated world model*), and it spends credits that
+are capped (`meshy_batch.py` stops at a balance floor of 140).
 
 ---
 
@@ -113,7 +131,7 @@ ownership, or an incompatible licence. **If licensing cannot be verified, discar
 
 Do **not** simply take the first result. Prefer the asset that best matches:
 
-- visual style (`ART_STYLE.md` §1 — low-poly build, grounded proportions)
+- visual style (`ART_STYLE.md` §1 — grounded proportions; faceted low-poly for the kept kit, stylised-realistic otherwise)
 - topology quality and triangle budget (`ART_STYLE.md` §3)
 - game-readiness
 - optimization
@@ -192,20 +210,23 @@ What replaced it is two machine-readable files, neither of them hand-maintained:
   It stays because it is an *index* rather than a credit: it is what makes searching the library
   cost one `grep`.
 
-Provenance for the generated cast — prompts, task ids, per-model history — lives in
+Provenance for every generated model (cast and outdoor world) — prompts, task ids, per-model history — lives in
 `reports/3d/archive/meshy-migration/manifest.csv`, deliberately out of the runtime manifest.
 
 ---
 
 ## 8. Style consistency
 
-`ART_STYLE.md` remains the visual source of truth, but the maintainer relaxed two of its clauses
-for the Phase 35 migration and this section follows them: **§3's triangle bands are lifted** and
-**a sourced asset keeps its own materials** (see `ART_STYLE.md` §3 and §4). A pack whose textures
-already read as stylised low-poly is accepted as it ships; a photo texture must still stop reading
-as a photo. Prefer sourcing further assets from the packs already in use over re-tinting new ones.
+`ART_STYLE.md` remains the visual source of truth, with the 2026-10-06 split: the **generated cast and
+outdoor world are stylised-realistic** (solid sculpted forms, muted painted textures, the §2 palette
+written into every texture prompt), and the **kept housing kit stays faceted low-poly**. The maintainer
+relaxed two of its clauses for the Phase 35 migration and this section follows them: **§3's triangle
+bands are lifted** and **a sourced asset keeps its own materials** (see `ART_STYLE.md` §3 and §4). A
+photo texture must still stop reading as a photo. **"No mixed kits" now applies only inside the kept
+kit:** a model from a fifth source next to the housing kit still reads as a mistake, while the generated
+outdoor world is a deliberate change of register that the §0.1 variety rule keeps coherent. The terrain
+is unchanged: no ground textures.
 
 The one clause of `ART_STYLE.md` §6.3 that this policy overrides is *"if adapting costs more
 than modeling clean — model clean."* Adaptation is now preferred; modelling clean requires
 the §1 four-part test.
-
