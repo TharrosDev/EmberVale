@@ -34,7 +34,7 @@ script = ExtResource("1_navbaker")
 transform = Transform3D(0.5, 0, -0.866, 0, 1, 0, 0.866, 0, 0.5, -29, 0, -25)
 
 [node name="Dx_HuntingLodgeWall" parent="Nav" instance=ExtResource("dx_wall_ruin")]
-transform = Transform3D(-0.5196, 0, -0.3, 0, 0.6, 0, 0.3, 0, -0.5196, -14, 0, -39)
+transform = Transform3D(-0.5196, 0, -0.3, 0, 0.6, 0, 0.3, 0, -0.5196, -18, -0.1, -34)
 albedo_tint = Color(0.585, 0.626, 0.68, 1)
 
 [node name="Dx_HuntingLodgeCollapsedTent" type="Node3D" parent="Nav"]

@@ -51,10 +51,10 @@ script = ExtResource("1_navbaker")
 transform = Transform3D(0.9511, 0, -0.309, 0, 1, 0, 0.309, 0, 0.9511, 23, -0.6, -14)
 
 [node name="Dx_WatchRuinWallA" parent="Nav" instance=ExtResource("dx_wall_ruin")]
-transform = Transform3D(0.1854, 0, -0.5706, 0, 0.6, 0, 0.5706, 0, 0.1854, 39, 0, 1)
+transform = Transform3D(0.1854, 0, -0.5706, 0, 0.6, 0, 0.5706, 0, 0.1854, 39, -0.3, -4)
 
 [node name="Dx_WatchRuinWallB" parent="Nav" instance=ExtResource("dx_wall_ruin")]
-transform = Transform3D(-0.5638, 0, -0.2052, 0, 0.6, 0, 0.2052, 0, -0.5638, 6, 0, -24)
+transform = Transform3D(-0.5638, 0, -0.2052, 0, 0.6, 0, 0.2052, 0, -0.5638, 5, 0, -18)
 
 [node name="Dx_WatchRuinRubble" parent="Nav" instance=ExtResource("dx_rock_rubble")]
 transform = Transform3D(0.4596, 0, -0.3857, 0, 0.6, 0, 0.3857, 0, 0.4596, 25, 0, 3)

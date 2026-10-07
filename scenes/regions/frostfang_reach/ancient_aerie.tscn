@@ -134,7 +134,7 @@ script = ExtResource("maploc_39_5a")
 LocationId = "location.frostfang.ancient_aerie"
 
 [node name="Dx_AerieBones" parent="Nav" instance=ExtResource("dx_dragon_skeleton")]
-transform = Transform3D(0, 0, -1.4, 0, 1.4, 0, 1.4, 0, 0, 52, -0.9, 78)
+transform = Transform3D(0, 0, -1.4, 0, 1.4, 0, 1.4, 0, 0, 58, -0.9, 70)
 
 [node name="MapPin" type="Node3D" parent="Nav/Dx_AerieBones"]
 script = ExtResource("maploc_39_5a")

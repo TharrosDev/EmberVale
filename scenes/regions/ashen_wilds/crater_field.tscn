@@ -28,7 +28,7 @@ navigation_mesh = SubResource("NavMesh_crater_field")
 script = ExtResource("1_navbaker")
 
 [node name="Dx_CraterBones" parent="Nav" instance=ExtResource("dx_dragon_skeleton")]
-transform = Transform3D(-0.6156, 0, -1.6914, 0, 1.8, 0, 1.6914, 0, -0.6156, -42, -1.1, 9)
+transform = Transform3D(1.6914, 0, -0.6156, 0, 1.8, 0, 0.6156, 0, 1.6914, -63, -1.1, 17)
 albedo_tint = Color(0.6, 0.57, 0.56, 1)
 
 [node name="Dx_CraterHead" parent="Nav" instance=ExtResource("dx_colossus_head")]

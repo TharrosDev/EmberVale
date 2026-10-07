@@ -219,14 +219,14 @@ def ember_country() -> list[P]:
         # The old Kingsway watchtower, ruined on the watch ridge: the first landmark north of the city,
         # seen from the north gate and from the Crossway.
         P("ruin_tower", "WatchRuinTower", -22.0, -314.0, 18.0, landmark=True, pad=True, pad_half=5.02, y=-0.6),
-        P("wall_ruin", "WatchRuinWallA", -6.0, -299.0, 72.0, scale=0.6),
-        P("wall_ruin", "WatchRuinWallB", -39.0, -324.0, 160.0, scale=0.6),
+        P("wall_ruin", "WatchRuinWallA", -6.0, -304.0, 72.0, scale=0.6, y=-0.3),
+        P("wall_ruin", "WatchRuinWallB", -40.0, -318.0, 160.0, scale=0.6),
         P("rock_rubble", "WatchRuinRubble", -20.0, -297.0, 40.0, scale=0.6),
         # The broken Kingsbridge: the old bridge's piers stand in the Emberwash valley beside the
         # ford the west road uses now. History without a word of text.
         P("monolith", "KingsbridgePierA", -176.0, -90.0, 0.0, scale=1.0, landmark=True, y=-0.4),
         P("monolith", "KingsbridgePierB", -169.0, -95.0, 12.0, scale=0.85, y=-0.4),
-        P("wall_ruin", "KingsbridgeAbutment", -158.0, -101.0, 115.0, scale=0.8),
+        P("wall_ruin", "KingsbridgeAbutment", -158.0, -105.0, 115.0, scale=0.8, y=-0.2),
         # The Crown Stones: a broken crescent of standing stones on the heath above the northern fields.
         # 11 to 18 m, where they were 5 to 7: the crescent is read from the fields below it.
         P("monolith", "CrownStoneA", 162.0, -318.0, 0.0, scale=1.2, landmark=True, y=-0.4),
@@ -237,11 +237,12 @@ def ember_country() -> list[P]:
         # The drowned towers of the old Hollowreach, standing in the open water west of the district.
         P("ruin_tower", "DrownedTowerA", -402.0, 340.0, 12.0, landmark=True, pad=True, pad_half=5.46, y=-1.0),
         P("ruin_tower", "DrownedTowerB", -386.0, 364.0, 60.0, scale=0.8, landmark=True, pad=True, pad_half=4.58, y=-0.8),
-        # The Southmarch Gate at the end of the caravan road: a border gatehouse, broken.
+        # The Southmarch Gate at the end of the caravan road: a border gatehouse, broken. The two
+        # wall stubs stand on the gap's floor outside each tower, short of the border hills' flanks.
         P("ruin_tower", "SouthmarchTowerW", 58.0, 412.0, 0.0, scale=0.8, landmark=True, pad=True, pad_half=5.24, y=-0.6),
         P("ruin_tower", "SouthmarchTowerE", 88.0, 414.0, 0.0, scale=0.7, pad=True, pad_half=4.8, y=-0.5),
-        P("wall_ruin", "SouthmarchWallW", 40.0, 419.0, 90.0, scale=0.8),
-        P("wall_ruin", "SouthmarchWallE", 105.0, 420.0, 92.0, scale=0.7),
+        P("wall_ruin", "SouthmarchWallW", 45.0, 410.0, 90.0, scale=0.8, y=-0.2),
+        P("wall_ruin", "SouthmarchWallE", 99.0, 410.0, 92.0, scale=0.7, y=-0.2),
         P("cart", "SouthmarchAbandonedCart", 84.0, 390.0, 125.0),
         # The Ashen Breach: the burnt end of the old eastern road.
         P("wall_ruin", "BreachWallA", 502.0, -268.0, 10.0, scale=0.9),
@@ -288,7 +289,7 @@ def frostfang_traces() -> list[P]:
         # The abandoned hunting lodge on the fell west of the vale.
         # It stands on the fell's lower flank: higher up, the path to it was too steep to navigate.
         P("ruin_house", "HuntingLodgeRuin", -264.0, -1550.0, 60.0, landmark=True, pad=True),
-        P("wall_ruin", "HuntingLodgeWall", -249.0, -1564.0, 150.0, scale=0.6, tint=FROST),
+        P("wall_ruin", "HuntingLodgeWall", -253.0, -1559.0, 150.0, scale=0.6, y=-0.1, tint=FROST),
         P("tent", "HuntingLodgeCollapsedTent", -274.0, -1534.0, 20.0, scale=0.85),
         # The Ravenspur watch, broken on the end of its spur.
         P("ruin_tower", "RavenspurWatch", 174.0, -1648.0, 25.0, scale=0.85, landmark=True, pad=True, pad_half=5.02, y=-0.6, tint=FROST),
@@ -314,7 +315,10 @@ def frostfang_traces() -> list[P]:
 # here keeps (tools/compose_district.py checks the first; the others are surveyed by hand):
 #   * never on a road or its shoulder, a portal, a waystone landing, a spawn or a fight floor;
 #   * never a pad: a giant stands on ground that is already level (a terrace, a plateau top, a road's
-#     calmed margin) and is sunk a little (`y`) so its foot is buried, not levelled;
+#     calmed margin) and is sunk a little (`y`) so its foot is buried, not levelled. A yard also
+#     calms the generated relief for the realm's RouteCalm around itself, so a piece on a slope is
+#     moved to level ground first. The Roost and Aerie bones are the two exceptions: no ground near
+#     their roads is level along a skeleton's length, so each has the smallest pad that levels it;
 #   * `landmark=True` (drawn to the Backdrop radius) only at about 20 m and up;
 #   * a site the player can walk to has a map location (tools/gen_map_locations.py, same change).
 # The model heights at scale 1: monolith 12, column 8, ruin tower 24, arch 20, colossus 36, colossus
@@ -363,9 +367,10 @@ def frostfang_monuments() -> list[P]:
         P("colossus", "HoldPassColossus", -62.0, -1750.0, toward(-62.0, -1750.0, -40.0, -1700.0), landmark=True, y=-1.0, tint=FROST),
         P("rock_outcrop", "HoldPassPlinth", -78.0, -1757.0, 60.0, scale=0.8, y=-1.5, tint=FROST),
         # Dragon bones on the three roost approaches: what the roosts' owners left of the last ones.
-        P("dragon_skeleton", "RoostBones", -292.0, -1786.0, 60.0, scale=1.6, y=-1.0),
-        P("dragon_skeleton", "BurntColBones", 232.0, -1800.0, 63.0, scale=1.5, y=-1.0, tint=SOOT),
-        P("dragon_skeleton", "AerieBones", -78.0, -2157.0, 90.0, scale=1.4, y=-0.9),
+        # The Burnt Col bones lie on the dry shelf west of the meltwater channel below the road.
+        P("dragon_skeleton", "RoostBones", -292.0, -1796.0, 60.0, scale=1.6, y=-1.0, pad=True, pad_half=9.0),
+        P("dragon_skeleton", "BurntColBones", 219.0, -1805.0, 63.0, scale=1.5, y=-1.0, tint=SOOT),
+        P("dragon_skeleton", "AerieBones", -72.0, -2165.0, 90.0, scale=1.4, y=-0.9, pad=True, pad_half=9.0),
         # Stormcrown: the broken tower behind the duelling ground, under the spire.
         P("ruin_tower", "StormcrownSpire", 436.0, -2234.0, 70.0, scale=1.4, landmark=True, y=-1.0, tint=SOOT),
         # The vale road's stones, up to the hold.
@@ -379,11 +384,12 @@ def ashen_monuments() -> list[P]:
     return [
         # The Ash Plateau: a god on the flat top of the plateau north of the Hunters' station.
         P("colossus", "AshPlateauColossus", 1122.0, -568.0, toward(1122.0, -568.0, 1180.0, -430.0), scale=0.9, landmark=True, y=-0.8, tint=SOOT),
-        # The Crater Field: the bones west of the crater, the head on its east rim.
-        P("dragon_skeleton", "CraterBones", 1258.0, -426.0, 110.0, scale=1.8, y=-1.1, tint=SOOT),
+        # The Crater Field: the bones along the foot of the crater's western slope (laid across it,
+        # their tail stood 9 m inside the hillside), the head on its east rim.
+        P("dragon_skeleton", "CraterBones", 1237.0, -418.0, 20.0, scale=1.8, y=-1.1, tint=SOOT),
         P("colossus_head", "CraterHead", 1352.0, -396.0, 200.0, y=-1.2, tint=SOOT),
         # The scar road's old gate, north of the road where it comes in from the Breach.
-        P("arch", "ScarArch", 960.0, -334.0, 80.0, landmark=True, y=-0.8, tint=SOOT),
+        P("arch", "ScarArch", 964.0, -331.0, 80.0, landmark=True, y=-0.8, tint=SOOT),
         # Tusk arches on the last stretch of the plateau track.
         P("bone_arch", "LairBoneArchN", 1408.0, -572.0, 90.0, scale=1.4, y=-0.3),
         P("bone_arch", "LairBoneArchS", 1408.0, -548.0, 90.0, scale=1.25, y=-0.3),

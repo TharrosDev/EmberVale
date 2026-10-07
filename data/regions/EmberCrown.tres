@@ -704,7 +704,7 @@ Radius = 6.3
 
 [sub_resource type="Resource" id="Exclusion_auto_north_moor_1"]
 script = ExtResource("11_exclusion")
-Center = Vector2(6.0, -24.0)
+Center = Vector2(5.0, -18.0)
 Radius = 5.9
 
 [sub_resource type="Resource" id="Exclusion_auto_north_moor_2"]
@@ -719,7 +719,7 @@ Radius = 3.4
 
 [sub_resource type="Resource" id="Exclusion_auto_north_moor_4"]
 script = ExtResource("11_exclusion")
-Center = Vector2(39.0, 1.0)
+Center = Vector2(39.0, -4.0)
 Radius = 5.9
 
 [sub_resource type="Resource" id="Scatter_upland_at_north_moor"]
@@ -817,7 +817,7 @@ Radius = 5.2
 
 [sub_resource type="Resource" id="Exclusion_auto_emberwash_valley_3"]
 script = ExtResource("11_exclusion")
-Center = Vector2(82.0, 71.5)
+Center = Vector2(82.0, 67.5)
 Radius = 7.2
 
 [sub_resource type="Resource" id="Scatter_wilds_at_emberwash_valley"]
@@ -929,15 +929,10 @@ Radius = 5.2
 
 [sub_resource type="Resource" id="Exclusion_auto_bridgeward_2"]
 script = ExtResource("11_exclusion")
-Center = Vector2(-3.0, -63.5)
-Radius = 7.2
-
-[sub_resource type="Resource" id="Exclusion_auto_bridgeward_3"]
-script = ExtResource("11_exclusion")
 Center = Vector2(39.6, -21.7)
 Radius = 6.1
 
-[sub_resource type="Resource" id="Exclusion_auto_bridgeward_4"]
+[sub_resource type="Resource" id="Exclusion_auto_bridgeward_3"]
 script = ExtResource("11_exclusion")
 Center = Vector2(45.2, -36.7)
 Radius = 6.1
@@ -947,7 +942,7 @@ script = ExtResource("9_scatter")
 Seed = 5101
 EdgePadding = 1.0
 Layers = Array[ExtResource("10_layer")]([SubResource("Layer_grass_short"), SubResource("Layer_grass_wispy")])
-Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_auto_bridgeward_0"), SubResource("Exclusion_auto_bridgeward_1"), SubResource("Exclusion_auto_bridgeward_2"), SubResource("Exclusion_auto_bridgeward_3"), SubResource("Exclusion_auto_bridgeward_4")])
+Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_auto_bridgeward_0"), SubResource("Exclusion_auto_bridgeward_1"), SubResource("Exclusion_auto_bridgeward_2"), SubResource("Exclusion_auto_bridgeward_3")])
 
 [sub_resource type="Resource" id="Exclusion_auto_town_hub_0"]
 script = ExtResource("11_exclusion")
@@ -1129,7 +1124,7 @@ Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_auto_sou
 
 [sub_resource type="Resource" id="Exclusion_auto_south_gate_0"]
 script = ExtResource("11_exclusion")
-Center = Vector2(-60.0, 59.0)
+Center = Vector2(-55.0, 50.0)
 Radius = 7.2
 
 [sub_resource type="Resource" id="Exclusion_auto_south_gate_1"]
@@ -1149,7 +1144,7 @@ Radius = 7.4
 
 [sub_resource type="Resource" id="Exclusion_auto_south_gate_4"]
 script = ExtResource("11_exclusion")
-Center = Vector2(5.0, 60.0)
+Center = Vector2(-1.0, 50.0)
 Radius = 6.5
 
 [sub_resource type="Resource" id="Scatter_pasture_at_south_gate"]
@@ -1984,9 +1979,9 @@ Shoulder = 2.0
 [sub_resource type="Resource" id="Area_wilds_north_ruin"]
 script = ExtResource("7_area")
 Center = Vector2(10.0, 30.0)
-Radius = Vector2(7, 7)
+Radius = Vector2(7.5, 7.5)
 Feather = 3.5
-SurfaceBlend = 0.42
+SurfaceBlend = 0.9
 ElevationMode = 1
 Elevation = -0.3
 

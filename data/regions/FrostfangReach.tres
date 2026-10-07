@@ -453,7 +453,7 @@ Radius = 8.0
 
 [sub_resource type="Resource" id="Exclusion_auto_ancient_aerie_7"]
 script = ExtResource("11_exclusion")
-Center = Vector2(52.0, 78.0)
+Center = Vector2(58.0, 70.0)
 Radius = 17.3
 
 [sub_resource type="Resource" id="Scatter_heights_at_ancient_aerie"]
@@ -568,7 +568,7 @@ Radius = 3.4
 
 [sub_resource type="Resource" id="Exclusion_auto_high_traverse_1"]
 script = ExtResource("11_exclusion")
-Center = Vector2(57.0, -77.0)
+Center = Vector2(63.0, -85.0)
 Radius = 17.3
 
 [sub_resource type="Resource" id="Scatter_heights_at_high_traverse"]
@@ -641,7 +641,7 @@ Radius = 8.7
 
 [sub_resource type="Resource" id="Exclusion_auto_dragon_roost_4"]
 script = ExtResource("11_exclusion")
-Center = Vector2(53.0, 24.0)
+Center = Vector2(53.0, 14.0)
 Radius = 19.5
 
 [sub_resource type="Resource" id="Exclusion_auto_dragon_roost_5"]
@@ -695,7 +695,7 @@ Radius = 3.6
 
 [sub_resource type="Resource" id="Exclusion_auto_burnt_col_1"]
 script = ExtResource("11_exclusion")
-Center = Vector2(12.0, 10.0)
+Center = Vector2(-1.0, 5.0)
 Radius = 18.4
 
 [sub_resource type="Resource" id="Exclusion_auto_burnt_col_2"]
@@ -780,7 +780,7 @@ Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_auto_rav
 
 [sub_resource type="Resource" id="Exclusion_auto_hunting_grounds_0"]
 script = ExtResource("11_exclusion")
-Center = Vector2(-14.0, -39.0)
+Center = Vector2(-18.0, -34.0)
 Radius = 5.9
 
 [sub_resource type="Resource" id="Scatter_march_at_hunting_grounds"]
@@ -1014,6 +1014,15 @@ SurfaceBlend = 0.72
 ElevationMode = 1
 Elevation = 0.0
 
+[sub_resource type="Resource" id="Area_ancient_aerie_y0"]
+script = ExtResource("7_area")
+Center = Vector2(58.0, 70.0)
+Radius = Vector2(9.0, 9.0)
+Feather = 2.5
+SurfaceBlend = 0.9
+Elevation = 0.0
+ElevationMode = 1
+
 [sub_resource type="Resource" id="Presentation_ancient_aerie"]
 script = ExtResource("4_presentation")
 Width = 240.0
@@ -1025,7 +1034,7 @@ TintStrength = 0.16
 TopologyResolution = 80
 Landforms = Array[ExtResource("8_landform")]([SubResource("Land_ancient_aerie_0"), SubResource("Land_ancient_aerie_1"), SubResource("Land_ancient_aerie_2"), SubResource("Land_ancient_aerie_3"), SubResource("Land_ancient_aerie_4"), SubResource("Land_ancient_aerie_5"), SubResource("Land_ancient_aerie_6")])
 Paths = Array[ExtResource("6_path")]([SubResource("Path_aerie_crescent"), SubResource("Path_aerie_hoard"), SubResource("Path_ancient_aerie_ap0"), SubResource("Path_ancient_aerie_ap1"), SubResource("Path_ancient_aerie_ap2"), SubResource("Path_ancient_aerie_ap3"), SubResource("Path_ancient_aerie_ap4"), SubResource("Path_ancient_aerie_ap5"), SubResource("Path_ancient_aerie_ap6")])
-GroundAreas = Array[ExtResource("7_area")]([SubResource("Area_aerie_court"), SubResource("Area_aerie_hoard")])
+GroundAreas = Array[ExtResource("7_area")]([SubResource("Area_aerie_court"), SubResource("Area_aerie_hoard"), SubResource("Area_ancient_aerie_y0")])
 
 [sub_resource type="Resource" id="Cell_ancient_aerie"]
 script = ExtResource("2_cell")
@@ -1950,6 +1959,15 @@ SurfaceBlend = 0.3
 ElevationMode = 1
 Elevation = -5.16
 
+[sub_resource type="Resource" id="Area_dragon_roost_y0"]
+script = ExtResource("7_area")
+Center = Vector2(53.0, 14.0)
+Radius = Vector2(9.0, 9.0)
+Feather = 2.5
+SurfaceBlend = 0.9
+Elevation = 0.0
+ElevationMode = 1
+
 [sub_resource type="Resource" id="Presentation_dragon_roost"]
 script = ExtResource("4_presentation")
 Width = 230.0
@@ -1959,7 +1977,7 @@ Biome = ExtResource("21_biome_snowfield")
 TopologyResolution = 80
 Landforms = Array[ExtResource("8_landform")]([SubResource("Land_dragon_roost_0"), SubResource("Land_dragon_roost_1"), SubResource("Land_dragon_roost_2"), SubResource("Land_dragon_roost_3"), SubResource("Land_dragon_roost_4"), SubResource("Land_dragon_roost_5"), SubResource("Land_dragon_roost_6"), SubResource("Land_dragon_roost_7")])
 Paths = Array[ExtResource("6_path")]([SubResource("Path_dragon_approach"), SubResource("Path_dragon_narrows"), SubResource("Path_dragon_shelf"), SubResource("Path_dragon_roost_ap0"), SubResource("Path_dragon_roost_ap1")])
-GroundAreas = Array[ExtResource("7_area")]([SubResource("Area_dragon_bowl"), SubResource("Area_dragon_splinter")])
+GroundAreas = Array[ExtResource("7_area")]([SubResource("Area_dragon_bowl"), SubResource("Area_dragon_splinter"), SubResource("Area_dragon_roost_y0")])
 
 [sub_resource type="Resource" id="Cell_dragon_roost"]
 script = ExtResource("2_cell")

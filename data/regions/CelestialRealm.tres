@@ -459,12 +459,12 @@ Radius = 7.2
 
 [sub_resource type="Resource" id="Exclusion_auto_broken_concourse_1"]
 script = ExtResource("11_exclusion")
-Center = Vector2(4.0, -88.0)
+Center = Vector2(-3.0, -92.0)
 Radius = 6.5
 
 [sub_resource type="Resource" id="Exclusion_auto_broken_concourse_2"]
 script = ExtResource("11_exclusion")
-Center = Vector2(12.0, -86.0)
+Center = Vector2(14.0, -83.0)
 Radius = 5.0
 
 [sub_resource type="Resource" id="Exclusion_auto_broken_concourse_3"]

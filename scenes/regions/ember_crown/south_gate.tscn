@@ -39,10 +39,10 @@ transform = Transform3D(0.8, 0, 0, 0, 0.8, 0, 0, 0, 0.8, -42, -0.6, 52)
 transform = Transform3D(0.7, 0, 0, 0, 0.7, 0, 0, 0, 0.7, -12, -0.5, 54)
 
 [node name="Dx_SouthmarchWallW" parent="Nav" instance=ExtResource("dx_wall_ruin")]
-transform = Transform3D(0, 0, -0.8, 0, 0.8, 0, 0.8, 0, 0, -60, 0, 59)
+transform = Transform3D(0, 0, -0.8, 0, 0.8, 0, 0.8, 0, 0, -55, -0.2, 50)
 
 [node name="Dx_SouthmarchWallE" parent="Nav" instance=ExtResource("dx_wall_ruin")]
-transform = Transform3D(-0.0244, 0, -0.6996, 0, 0.7, 0, 0.6996, 0, -0.0244, 5, 0, 60)
+transform = Transform3D(-0.0244, 0, -0.6996, 0, 0.7, 0, 0.6996, 0, -0.0244, -1, -0.2, 50)
 
 [node name="Dx_SouthmarchAbandonedCart" type="Node3D" parent="Nav"]
 transform = Transform3D(-0.5736, 0, -0.8192, 0, 1, 0, 0.8192, 0, -0.5736, -16, 0, 30)

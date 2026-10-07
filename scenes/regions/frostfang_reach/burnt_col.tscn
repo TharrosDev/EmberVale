@@ -37,7 +37,7 @@ transform = Transform3D(1.2, 0, 0, 0, 1.2, 0, 0, 0, 1.2, 26.5, -0.4, 41)
 albedo_tint = Color(0.6, 0.57, 0.56, 1)
 
 [node name="Dx_BurntColBones" parent="Nav" instance=ExtResource("dx_dragon_skeleton")]
-transform = Transform3D(0.681, 0, -1.3365, 0, 1.5, 0, 1.3365, 0, 0.681, 12, -1, 10)
+transform = Transform3D(0.681, 0, -1.3365, 0, 1.5, 0, 1.3365, 0, 0.681, -1, -1, 5)
 albedo_tint = Color(0.6, 0.57, 0.56, 1)
 
 [node name="MapPin" type="Node3D" parent="Nav/Dx_BurntColBones"]

@@ -27,7 +27,7 @@ navigation_mesh = SubResource("NavMesh_breach_scar")
 script = ExtResource("1_navbaker")
 
 [node name="Dx_ScarArch" parent="Nav" instance=ExtResource("dx_arch") groups=["world_landmark"]]
-transform = Transform3D(0.1736, 0, -0.9848, 0, 1, 0, 0.9848, 0, 0.1736, -10, -0.8, -34)
+transform = Transform3D(0.1736, 0, -0.9848, 0, 1, 0, 0.9848, 0, 0.1736, -6, -0.8, -31)
 albedo_tint = Color(0.6, 0.57, 0.56, 1)
 
 [node name="MapPin" type="Node3D" parent="Nav/Dx_ScarArch"]

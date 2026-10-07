@@ -620,7 +620,9 @@ def cells() -> list[Cell]:
             dead end. The fork, the bowl, the ruin in dead ground and Cairn Rise are unchanged.
             """,
             yards=(
-                Yard((0, -5), (7, 7), 3.5, 0.42, elevation=-0.3, name="Area_wilds_north_ruin"),
+                # The ruin's floor has to be a floor: at a blend of 0.42 the generated wall on it
+                # (Nav/RuinWall) stood on 1.3 m of fall. The extra half metre reaches the wall's far corner.
+                Yard((0, -5), (7.5, 7.5), 3.5, 0.9, elevation=-0.3, name="Area_wilds_north_ruin"),
                 Yard((-17, 8), (6, 7), 4.0, 0.3, elevation=0.61, name="Area_wn_bowl"),
                 Yard((18, -12), (6, 7), 4.5, 0.9, elevation=-5.39, name="Area_wn_deadfall"),
                 Yard(at=(21.5, -15.0), ext=(5.5, 6.5), feather=3.0, blend=0.9, elevation=-5.39),

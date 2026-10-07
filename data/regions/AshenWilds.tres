@@ -380,16 +380,21 @@ script = ExtResource("11_exclusion")
 Center = Vector2(25.0, -1.0)
 Radius = 8.1
 
+[sub_resource type="Resource" id="Exclusion_auto_hunters_rise_1"]
+script = ExtResource("11_exclusion")
+Center = Vector2(92.0, 17.0)
+Radius = 21.7
+
 [sub_resource type="Resource" id="Scatter_station_at_hunters_rise"]
 script = ExtResource("9_scatter")
 Seed = 6404
 EdgePadding = 1.0
 Layers = Array[ExtResource("10_layer")]([SubResource("Layer_ash_grass"), SubResource("Layer_ash_stone"), SubResource("Layer_dead_trunk")])
-Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_station"), SubResource("Exclusion_auto_hunters_rise_0")])
+Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_station"), SubResource("Exclusion_auto_hunters_rise_0"), SubResource("Exclusion_auto_hunters_rise_1")])
 
 [sub_resource type="Resource" id="Exclusion_auto_crater_field_0"]
 script = ExtResource("11_exclusion")
-Center = Vector2(-42.0, 9.0)
+Center = Vector2(-63.0, 17.0)
 Radius = 21.7
 
 [sub_resource type="Resource" id="Exclusion_auto_crater_field_1"]
@@ -418,7 +423,7 @@ Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_auto_lai
 
 [sub_resource type="Resource" id="Exclusion_auto_breach_scar_0"]
 script = ExtResource("11_exclusion")
-Center = Vector2(-10.0, -34.0)
+Center = Vector2(-6.0, -31.0)
 Radius = 11.6
 
 [sub_resource type="Resource" id="Scatter_ash_at_breach_scar"]

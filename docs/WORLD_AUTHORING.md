@@ -477,10 +477,12 @@ and a `toward()` row in a render.
 
 **Siting rules for a giant.** Flat ground only, taken from authored landforms and levelled cores (Python
 has no height sampler, so no giant's ground level has been sampled); never on a road (arches stand beside
-one); no `pad=True` inside the walkable lattice; the 20 m+ ones get `landmark=True`. A piece the player
+one); no `pad=True` inside the walkable lattice while a level site exists nearby (a yard also calms the
+generator for `RouteCalm` metres around itself; the Roost and Aerie bones carry the only two, 9 m each);
+the 20 m+ ones get `landmark=True`. A piece the player
 can reach inside the lattice gets a `MapLocationComponent` and a `gen_map_locations.py` row in the same
 change (new ids only; 26 `Landmark` locations were added, 104 to 130). Skyline pieces beyond the lattice
-get neither a pin nor a collider. ⚠️ **No monument row has a scatter exclusion or a pad**, and the scatter
+get neither a pin nor a collider. ⚠️ **No monument row has a scatter exclusion** (and only those two have a pad), and the scatter
 planner avoids only authored `BiomeScatterExclusionResource` circles, paths and ground areas, so trees,
 rocks and grass will grow through colossus legs and arches until each `MONUMENTS` and `RINGS` row gets a
 circle (about half the footprint diagonal times scale) in its region spec, or the specs derive them from

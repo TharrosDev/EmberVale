@@ -25,12 +25,14 @@ navigation_mesh = SubResource("NavMesh_broken_concourse")
 [node name="NavBaker" type="Node" parent="Nav"]
 script = ExtResource("1_navbaker")
 
+; A stands on the terrace's level top and B on the ground at its foot: on the falling flank between
+; them a rigid piece had 1.5 to 1.8 m of fall under it and its fallen drum hung in the air.
 [node name="ColonnadeA" parent="Nav" instance=ExtResource("rp_lm_column_broken")]
-transform = Transform3D(0.9, 0, 0, 0, 0.9, 0, 0, 0, 0.9, 4, 0, -88)
+transform = Transform3D(0.9, 0, 0, 0, 0.9, 0, 0, 0, 0.9, -3, 0, -92)
 albedo_tint = Color(0.665, 0.634, 0.666, 1)
 
 [node name="ColonnadeB" parent="Nav" instance=ExtResource("rp_lm_column_broken")]
-transform = Transform3D(0.6, 0, 0, 0, 0.6, 0, 0, 0, 0.6, 12, 0, -86)
+transform = Transform3D(0.6, 0, 0, 0, 0.6, 0, 0, 0, 0.6, 14, 0, -83)
 albedo_tint = Color(0.665, 0.634, 0.666, 1)
 
 [node name="ColonnadeC" parent="Nav" instance=ExtResource("rp_lm_column_broken")]
