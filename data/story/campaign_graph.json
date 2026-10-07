@@ -25840,10 +25840,13 @@
    ],
    "code": true,
    "externalRefs": [
+    "data/map_locations/PaleCanalArch.tres",
     "data/map_locations/PaleCity.tres",
     "data/map_locations/PaleCourtApproach.tres",
+    "data/map_locations/PaleFallenHall.tres",
     "data/map_locations/PaleLanding.tres",
     "data/map_locations/PalePalace.tres",
+    "data/map_locations/PaleProcessionalColossi.tres",
     "data/regions/PaleConcord.tres",
     "src/Bootstrap/HeadlessStory.cs",
     "src/Bootstrap/LegacyFixtures.cs",
