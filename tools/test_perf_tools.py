@@ -266,14 +266,17 @@ class SdkCommands(unittest.TestCase):
         args = cli.parser("vfxperf").parse_args(["vfxperf", "--tiers", "ultra", "--cast-seconds", "4"])
         self.assertEqual((args.tiers, args.cast_seconds, args.view), ("ultra", 4.0, "wide"))
 
-    def test_perf_report_game_arguments_and_baseline_key(self):
+    def test_perf_report_game_arguments_baseline_name_and_summary(self):
         args = argparse.Namespace(seconds=20.0, warmup=3.0, repro="tools/repro/swarm.txt")
         self.assertEqual(perf_report.game_arguments(args, "R.json", ["--exec=x"]),
                          ["--new-game", "--perf-report=20", "--warmup=3", "--report=R.json",
                           "--repro=tools/repro/swarm.txt", "--exec=x"])
-        facts = {"mode": "new-game", "region": "region.ember_crown", "headless": False}
-        self.assertEqual(perf_report.baseline_key(facts, args), "new-game-region.ember_crown-swarm-render")
-        self.assertEqual(perf_report.baseline_key({"headless": True}, argparse.Namespace(repro=None)), "session-headless")
+        # The baseline is named by perf_compare from the facts, so the standalone tool finds it too.
+        document = {"gate": "perf-report", "facts": {"suite": "session", "mode": "new-game", "region": "region.ember_crown", "plan": "swarm"}}
+        self.assertEqual(perf_compare.identity(document), ("session", "new-game-region.ember_crown-swarm"))
+        line = perf_report.summary_line(0, {"facts": {"frames": 714, "seconds": 5, "headless": True, "frame_ms_p95": 8.94}})
+        self.assertIn("714 frames in 5s headless", line)
+        self.assertIn("p95 8.94", line)
 
     def test_vfxperf_tiers_and_safety_deadline(self):
         self.assertEqual(vfxperf.parse_tiers(" Ultra, medium "), ["ultra", "medium"])

@@ -263,6 +263,12 @@ public sealed partial class GameShellController : Node
             Mathf.Max(seconds, 0.05f), processAlways: true, processInPhysics: false, ignoreTimeScale: true);
         timer.Timeout += () =>
         {
+            if (Debugging.SessionPerfReport.OwnsExit)
+            {
+                // A --perf-report is attached: it measures from the settled world and ends the run.
+                return;
+            }
+
             int violations = Invariant.Violations;
             int code = violations > 0 || _sessionEntryFailed ? 1 : 0;
             Log.Info($"{QuitAfterArgument}: {seconds:0.##}s elapsed, {violations} invariant violation(s)" +

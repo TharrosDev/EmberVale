@@ -90,10 +90,10 @@ public class ProfilerToolingTests
 
     [Theory]
     [InlineData(10.0, -1.0, 3.0, 13.0, 3.0)]    // --perf-report=10: warm-up plus ten seconds
-    [InlineData(-1.0, 20.0, 3.0, 19.75, 3.0)]   // bare flag: ends a quarter second before --quit-after
+    [InlineData(-1.0, 20.0, 3.0, 20.0, 3.0)]    // bare flag: --quit-after is the whole length
     [InlineData(-1.0, -1.0, 3.0, 23.0, 3.0)]    // neither: warm-up plus the default twenty
-    [InlineData(60.0, 10.0, 3.0, 9.75, 3.0)]    // --quit-after is the earlier deadline and wins
-    [InlineData(-1.0, 2.0, 3.0, 1.75, 0.875)]   // a warm-up longer than the run leaves half of it
+    [InlineData(60.0, 10.0, 3.0, 10.0, 3.0)]    // --quit-after is the earlier deadline and wins
+    [InlineData(-1.0, 2.0, 3.0, 2.0, 1.0)]      // a warm-up longer than the run leaves half of it
     public void Plan_ChoosesTheRunLengthAndFitsTheWarmupInside(
         double own, double quitAfter, double warmup, double expectedTotal, double expectedWarmup)
     {

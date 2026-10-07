@@ -42,11 +42,17 @@ def game_arguments(args, report, passthrough=()):
     return user + list(passthrough)
 
 
-def baseline_key(facts, args):
-    """One baseline per mode, region, scenario and display: a headless run is not comparable to a rendered one."""
-    parts = [facts.get("mode", "session"), facts.get("region", ""), Path(args.repro).stem if args.repro else "",
-             "headless" if facts.get("headless") else "render"]
-    return "-".join(part for part in parts if part)
+def summary_line(index, document):
+    """One line a reader can judge the run from; the full facts are in metrics.perf_report."""
+    f = document.get("facts", {})
+    display = "headless" if f.get("headless") else f.get("resolution", "")
+    line = (f"run {index}: {f.get('frames', 0)} frames in {f.get('seconds', 0)}s {display}"
+            f" | frame ms p50 {f.get('frame_ms_p50')} p95 {f.get('frame_ms_p95')} p99 {f.get('frame_ms_p99')}"
+            f" max {f.get('frame_ms_max')} | hitches >33/50/100: {f.get('hitches_gt33')}/{f.get('hitches_gt50')}"
+            f"/{f.get('hitches_gt100')} | draws {f.get('draw_calls')} | static {f.get('static_mb')} MB"
+            f" | enemies {f.get('enemies')}{' safe-zone' if f.get('safe_zone') else ''}"
+            f" | violations {f.get('violations')} errors {f.get('log_errors')} warnings {f.get('log_warnings')}")
+    return line
 
 
 def run(run, args, passthrough):
@@ -62,17 +68,24 @@ def run(run, args, passthrough):
             continue
         document = json.loads(report.read_text(encoding="utf-8"))
         reports.append(report)
+        run.brief(summary_line(index, document))
+        for hitch in document.get("facts", {}).get("worst_hitches", []):
+            run.brief(f"  hitch {hitch}")
+        for warning in document.get("warnings", []):
+            run.brief(f"  warning: {warning}")
         run.result["assertions"].append(dict(name=f"session verdict {index}", success=bool(document.get("ok")),
                                              expected=[], actual=document.get("failures", [])))
         run.result["metrics"].setdefault("perf_report", {})[f"run_{index}"] = document.get("facts", {})
     if not reports:
         return
-    facts = json.loads(reports[0].read_text(encoding="utf-8")).get("facts", {})
+    # No key: perf_compare names the baseline from the facts (mode, region, repro plan), so
+    # `python tools/perf_compare.py <report>` finds the same file. Headless and rendered runs are
+    # kept apart by the machine id, which includes the adapter and resolution.
     verdict = perf_compare.evaluate(reports, baseline=args.baseline, update=args.update_baseline,
-                                    tolerance=args.tolerance, key=baseline_key(facts, args), median=True)[0]
+                                    tolerance=args.tolerance, median=True)[0]
     run.result["metrics"]["perf_report"]["compare"] = verdict
     for line in perf_compare.render(verdict):
-        run.note("  " + line)
+        run.brief(line)
     if verdict["status"] == "refused":
         run.issue("perf_report.baseline", f"baseline not updated: {verdict['reason']}")
     elif verdict["status"] in ("regress", "ok"):

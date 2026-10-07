@@ -21,10 +21,12 @@ namespace Embervale.Debugging;
 /// or no frame was sampled. <c>--report=&lt;path&gt;</c> writes the same JSON to a file.
 ///
 /// <para><b>Length.</b> <c>--perf-report=&lt;seconds&gt;</c> samples that long after the warm-up and
-/// quits on its own. A bare <c>--perf-report</c> takes its length from <c>--quit-after</c> and ends a
-/// quarter second before it, so the report's exit code is the one the process returns; with neither
-/// it samples 20 s. <c>--warmup=&lt;seconds&gt;</c> (default 3) is skipped first: streaming, shader
-/// compilation and the first frames of a session are not what a run is asked about.</para>
+/// quits on its own. A bare <c>--perf-report</c> takes its whole length (warm-up included) from
+/// <c>--quit-after</c>; with neither it samples 20 s. Either way the clock starts when the world has
+/// settled around the player, not at process start, and the report ends the run: the shell's own
+/// <c>--quit-after</c> timer stands down, so the exit code is always the report's.
+/// <c>--warmup=&lt;seconds&gt;</c> (default 3) is skipped first: streaming, shader compilation and
+/// the first frames of a session are not what a run is asked about.</para>
 ///
 /// <para><b>Facts.</b> Frame time p50/p95/p99/max/avg and hitch counts over 33/50/100 ms with the
 /// worst five and what else happened on that frame (a cell finished loading, a gen-2 collection);
@@ -46,9 +48,6 @@ public sealed partial class SessionPerfReport : Node
     private const double DefaultSeconds = 20d;
     private const double DefaultWarmup = 3d;
 
-    /// <summary>How long before <c>--quit-after</c> the report ends the run itself.</summary>
-    private const double QuitMargin = 0.25d;
-
     private const int MonitorEveryFrames = 10;
     private const double IntegritySeconds = 5d;
 
@@ -60,7 +59,9 @@ public sealed partial class SessionPerfReport : Node
 
     private double _warmup = DefaultWarmup;
     private double _total;
+    private ulong _attachTick;
     private ulong _startTick;
+    private bool _settled;
     private ulong _lastTick;
     private ulong _sampleStartTick;
     private bool _sampling;
@@ -80,39 +81,39 @@ public sealed partial class SessionPerfReport : Node
     private int _overBudgetSeconds;
     private double _worstSecondMs;
 
+    /// <summary>Longest wait for the world to settle before the warm-up starts anyway.</summary>
+    private const double MaxSettleSeconds = 120d;
+
+    /// <summary>True once a report is attached: it ends the run, so the shell's own
+    /// <c>--quit-after</c> timer stands down (it counts from shell start, through the load).</summary>
+    public static bool OwnsExit { get; private set; }
+
     public override void _Ready()
     {
         // Frame time is frame time whether or not a menu has the tree paused.
         ProcessMode = ProcessModeEnum.Always;
+        OwnsExit = true;
 
         double own = HeadlessArgs.User.Float(Flag, -1f);
         double quitAfter = HeadlessArgs.User.Float(GameShellController.QuitAfterArgument, -1f);
         _warmup = Math.Max(0d, HeadlessArgs.User.Float(WarmupArgument, (float)DefaultWarmup));
         _total = Plan(own, quitAfter, ref _warmup);
 
-        _startTick = Time.GetTicksUsec();
+        _attachTick = Time.GetTicksUsec();
         EventBus.Instance?.Subscribe<RegionCellLoadedEvent>(OnCellLoaded);
-
-        // A tree timer with the shell's flags, created in the same frame as the shell's own
-        // --quit-after timer (the shell attaches this node from its _Ready). Both count the same
-        // frame deltas, so this one, a quarter second shorter, always fires first.
-        SceneTreeTimer timer = GetTree().CreateTimer(
-            _total, processAlways: true, processInPhysics: false, ignoreTimeScale: true);
-        timer.Timeout += () => Finish(quit: true);
-        Log.Info($"{Flag}: sampling {_total - _warmup:0.##} s after a {_warmup:0.##} s warm-up.");
     }
 
     /// <summary>
-    /// Seconds from attach to the report, and the warm-up clamped to fit inside them.
+    /// Seconds from the settled world to the report, and the warm-up clamped to fit inside them.
     /// <paramref name="own"/> is <c>--perf-report=&lt;s&gt;</c> and <paramref name="quitAfter"/> is
     /// <c>--quit-after=&lt;s&gt;</c>; a negative value means the flag gave no number.
     /// </summary>
     public static double Plan(double own, double quitAfter, ref double warmup)
     {
-        double total = own > 0d ? warmup + own : quitAfter > 0d ? quitAfter - QuitMargin : warmup + DefaultSeconds;
+        double total = own > 0d ? warmup + own : quitAfter > 0d ? quitAfter : warmup + DefaultSeconds;
         if (quitAfter > 0d)
         {
-            total = Math.Min(total, quitAfter - QuitMargin);
+            total = Math.Min(total, quitAfter);
         }
 
         total = Math.Max(total, 0.05d);
@@ -142,6 +143,31 @@ public sealed partial class SessionPerfReport : Node
         _lastTick = tick;
         if (_finished)
         {
+            return;
+        }
+
+        if (_startTick == 0)
+        {
+            // The clock starts on the first frame of a settled world. The session is built and its
+            // region loaded inside one long frame, which would otherwise swallow the whole run.
+            double waited = (tick - _attachTick) / 1_000_000d;
+            bool settled = ServiceLocator.Instance is { } services && services.TryGet(out PlayerCharacter _) &&
+                           services.TryGet(out RegionStreamer region) && region.IsSettled();
+            if (!settled && waited < MaxSettleSeconds)
+            {
+                return;
+            }
+
+            _settled = settled;
+            _startTick = tick;
+            Log.Info($"{Flag}: world {(settled ? "settled" : "NOT settled")} after {waited:0.#} s; " +
+                     $"sampling {_total - _warmup:0.##} s after a {_warmup:0.##} s warm-up.");
+            return;
+        }
+
+        if ((tick - _startTick) / 1_000_000d >= _total)
+        {
+            Finish(quit: true);
             return;
         }
 
@@ -220,7 +246,7 @@ public sealed partial class SessionPerfReport : Node
 
         report.Fact("suite", "session")
             .Fact("mode", HeadlessArgs.User.Has(GameShellController.NewGameArgument) ? "new-game" : "continue")
-            .Fact("args", string.Join(' ', OS.GetCmdlineUserArgs()))
+            .Fact("plan", System.IO.Path.GetFileNameWithoutExtension(HeadlessArgs.User.Value(ReproRun.Flag) ?? string.Empty))
             .Fact("headless", DisplayServer.GetName() == "headless")
             .Fact("capture", BuildProfile.IsCapture)
             .Fact("adapter", RenderingServer.GetVideoAdapterName())
@@ -306,7 +332,10 @@ public sealed partial class SessionPerfReport : Node
 
         report.Check(violations == 0, $"{violations} invariant violation(s)");
         report.Check(Log.ErrorCount == 0, $"{Log.ErrorCount} error(s) were logged");
-        report.Check(_frames.Count > 0, "no frame was sampled: the run ended inside the warm-up");
+        report.Check(_startTick == 0 || _settled, $"the world never settled in {MaxSettleSeconds:0} s; the frames are of a loading world");
+        report.Check(_frames.Count > 0, _startTick == 0
+            ? "no frame was sampled: the run ended before the world settled"
+            : "no frame was sampled: the run ended inside the warm-up");
 
         int code = report.Finish();
         if (quit)
