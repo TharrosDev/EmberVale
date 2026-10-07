@@ -268,7 +268,7 @@ class Run:
 
     def ensure_fresh(self):
         """Stale-binary guard: once per run, before the first engine launch, rebuild when a source
-        file is newer than the assembly the engine would load. --no-build opts out."""
+        file is newer than the assembly the engine would load, or that assembly has no tooling. --no-build opts out."""
         if getattr(self, "fresh_checked", False) or getattr(self.args, "no_build", False):
             return
         self.fresh_checked = True
@@ -335,7 +335,7 @@ class Run:
 
         stale = stale_reason(ROOT)
         row("warn" if stale else "ok", "binary", f"stale: {stale} (the SDK rebuilds before an engine launch; "
-            "a raw godot launch would not)" if stale else "Embervale.dll is newer than every source")
+            "a raw godot launch would not)" if stale else "Embervale.dll is a tooling build newer than every source")
         memory = memory_megabytes()
         if memory:
             free, total = memory
