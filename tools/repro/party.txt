@@ -1,0 +1,6 @@
+# A party in the field: recruit, order them to engage, then give them a fight.
+seed 5
+companion recruit companion.kael
+companion order
+companion order
+spawn 3

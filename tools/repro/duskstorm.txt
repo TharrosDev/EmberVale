@@ -1,0 +1,4 @@
+# Dusk in a storm: the lighting and weather worst case.
+seed 3
+time 19
+weather weather.storm

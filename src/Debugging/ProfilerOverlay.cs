@@ -96,42 +96,44 @@ public partial class ProfilerOverlay : CanvasLayer
 
         SampleGarbageCollector();
 
+        // One reading, shared with the --perf-report JSON, so the overlay and the file agree.
+        ProfilerReading now = ProfilerReading.Read();
         CultureInfo inv = CultureInfo.InvariantCulture;
         StringBuilder sb = _sb;
         sb.Clear();
-        sb.Append("FPS         ").Append(Engine.GetFramesPerSecond().ToString("0", inv)).Append('\n');
+        sb.Append("FPS         ").Append(now.Fps.ToString("0", inv)).Append('\n');
         sb.Append("frame med   ").Append(median.ToString("0.00", inv)).Append(" ms\n");
         sb.Append("frame worst ").Append(worst.ToString("0.00", inv)).Append(" ms (120f)\n");
-        sb.Append("scripts     ").Append(Ms(Performance.Monitor.TimeProcess).ToString("0.00", inv)).Append(" ms\n");
-        sb.Append("physics     ").Append(Ms(Performance.Monitor.TimePhysicsProcess).ToString("0.00", inv)).Append(" ms\n");
-        sb.Append("draw calls  ").Append(Get(Performance.Monitor.RenderTotalDrawCallsInFrame).ToString("0", inv)).Append('\n');
-        sb.Append("primitives  ").Append((Get(Performance.Monitor.RenderTotalPrimitivesInFrame) / 1000d).ToString("0", inv)).Append("k\n");
-        sb.Append("nodes       ").Append(Get(Performance.Monitor.ObjectNodeCount).ToString("0", inv)).Append('\n');
-        sb.Append("orphans     ").Append(Get(Performance.Monitor.ObjectOrphanNodeCount).ToString("0", inv)).Append('\n');
-        sb.Append("static mem  ").Append(Mb(Performance.Monitor.MemoryStatic).ToString("0.0", inv)).Append(" MB\n");
+        sb.Append("scripts     ").Append(now.ScriptMs.ToString("0.00", inv)).Append(" ms\n");
+        sb.Append("physics     ").Append(now.PhysicsMs.ToString("0.00", inv)).Append(" ms\n");
+        sb.Append("draw calls  ").Append(now.DrawCalls).Append('\n');
+        sb.Append("primitives  ").Append((now.Primitives / 1000d).ToString("0", inv)).Append("k\n");
+        sb.Append("nodes       ").Append(now.Nodes).Append('\n');
+        sb.Append("orphans     ").Append(now.Orphans).Append('\n');
+        sb.Append("static mem  ").Append(now.StaticMb.ToString("0.0", inv)).Append(" MB\n");
 
         // The numbers a stutter hunt needs. Video memory is the suspect on a shared-memory GPU;
         // a gen-2 collection or a high allocation rate is what a periodic hitch usually is.
-        sb.Append("video mem   ").Append(Mb(Performance.Monitor.RenderVideoMemUsed).ToString("0", inv))
-          .Append(" MB (tex ").Append(Mb(Performance.Monitor.RenderTextureMemUsed).ToString("0", inv))
-          .Append(" · buf ").Append(Mb(Performance.Monitor.RenderBufferMemUsed).ToString("0", inv)).Append(")\n");
-        sb.Append("managed     ").Append((GC.GetTotalMemory(false) / (1024d * 1024d)).ToString("0.0", inv))
+        sb.Append("video mem   ").Append(now.VideoMb.ToString("0", inv))
+          .Append(" MB (tex ").Append(now.TextureMb.ToString("0", inv))
+          .Append(" · buf ").Append(now.BufferMb.ToString("0", inv)).Append(")\n");
+        sb.Append("managed     ").Append(now.ManagedMb.ToString("0.0", inv))
           .Append(" MB · alloc ").Append((_allocatedPerSecond / 1024d).ToString("0", inv)).Append(" KB/s\n");
         sb.Append("GC /s       gen0 ").Append(_gen0PerSecond).Append(" · gen1 ").Append(_gen1PerSecond)
           .Append(" · gen2 ").Append(_gen2PerSecond).Append('\n');
         sb.Append("GC total    ").Append(_gen0Before).Append(" / ").Append(_gen1Before).Append(" / ").Append(_gen2Before);
 
-        if (ServiceLocator.Instance is { } locator && locator.TryGet(out RegionStreamer streamer))
+        if (now.HasWorld)
         {
-            WorldPerformanceSnapshot world = streamer.PerformanceSnapshot();
+            WorldPerformanceSnapshot world = now.World;
             sb.Append("\nworld       ").Append(world.ResidentRuntimeNodes).Append(" nodes · ")
               .Append(world.ResidentScatterInstances).Append(" scatter");
             sb.Append("\nworld frame ").Append(world.P50FrameMilliseconds.ToString("0.00", inv)).Append('/')
               .Append(world.P95FrameMilliseconds.ToString("0.00", inv)).Append('/')
               .Append(world.P99FrameMilliseconds.ToString("0.00", inv)).Append(" ms p50/p95/p99");
-            sb.Append("\ncells       ").Append(streamer.ActiveCellCount()).Append(" active · ")
-              .Append(streamer.ResidentCellCount()).Append(" resident");
-            sb.Append(streamer.IsWithinPerformanceBudget() ? " · budget OK" : " · OVER BUDGET");
+            sb.Append("\ncells       ").Append(now.ActiveCells).Append(" active · ")
+              .Append(now.ResidentCells).Append(" resident");
+            sb.Append(now.WithinBudget ? " · budget OK" : " · OVER BUDGET");
         }
 
         if (ServiceLocator.Instance is { } services && services.TryGet(out SkyController visuals))
@@ -218,10 +220,4 @@ public partial class ProfilerOverlay : CanvasLayer
             _collectionSeconds = 0d;
         }
     }
-
-    private static double Get(Performance.Monitor monitor) => Performance.GetMonitor(monitor);
-
-    private static double Ms(Performance.Monitor monitor) => Get(monitor) * 1000d;
-
-    private static double Mb(Performance.Monitor monitor) => Get(monitor) / (1024d * 1024d);
 }

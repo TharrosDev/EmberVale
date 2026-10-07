@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using Embervale.Bootstrap;
 using Embervale.Core.Diagnostics;
 using Embervale.Enemies;
 using Embervale.Magic;
@@ -28,6 +29,16 @@ namespace Embervale.Debugging;
 /// <c>EMBERVALE_VFXPERF_VIEW</c> picks the camera: <c>wide</c> (default; a raised camera with the
 /// whole ring in view, the worst case), <c>tp</c> or <c>fp</c>.</para>
 ///
+/// <para><b>Several tiers in one launch:</b> <c>--vfxperf=performance,medium,ultra</c> (or
+/// <c>EMBERVALE_VFXPERF_TIERS</c>) runs the scenario once per tier on the same staged ring, paying
+/// boot and load once, and writes one <c>vfxperf_&lt;tier&gt;.json</c> each plus
+/// <c>vfxperf_summary.json</c>. Only the first tier's first-use numbers are cold: the later tiers
+/// reuse pipelines the first one compiled (<c>firstTier</c> in each file says which it was).</para>
+///
+/// <para>The run ends with one <c>EMBERVALE_RESULT</c> line (gate <c>vfxperf</c>) carrying each
+/// tier's steady and whole-run percentiles; <c>python tools/perf_compare.py</c> on the tier files
+/// is the baseline verdict (<c>python tools/embervale.py vfxperf</c> does both).</para>
+///
 /// <para>Exits 1 when no cast began or nothing ever appeared under the effect director's
 /// <c>VfxRoot</c>: a frame time for effects that did not draw is not a measurement.</para>
 /// </summary>
@@ -37,6 +48,7 @@ public sealed partial class VfxPerfScenario : Node
     private const string OutputDir = "user://vfx_perf";
     private const string SecondsVariable = "EMBERVALE_VFXPERF_SECONDS";
     private const string ViewVariable = "EMBERVALE_VFXPERF_VIEW";
+    private const string TiersVariable = "EMBERVALE_VFXPERF_TIERS";
     private const string CasterArchetypeId = "enemy.hollow_necromancer";
 
     private const int CasterCount = 8;
@@ -48,6 +60,10 @@ public sealed partial class VfxPerfScenario : Node
     private const double StaggerSeconds = 0.6;
     private const double ChannelSeconds = 1.5;
     private const double RestSeconds = 0.35;
+
+    /// <summary>Extra calm before a later tier's baseline: the previous tier's effects are being
+    /// freed and the new tier's settings are being applied.</summary>
+    private const double TierSettleSeconds = 1.0;
 
     /// <summary>Seconds after a spell's first cast in which its effects are first drawn: long enough
     /// for the slowest (a charged meteor: charge, wind-up, fall, then what lingers).</summary>
@@ -114,6 +130,14 @@ public sealed partial class VfxPerfScenario : Node
     private bool _levelGround;
     private Camera3D? _camera;
 
+    // The tiers to run in this launch (empty: once, at whatever tier the settings hold), which one
+    // is running, and what each finished tier measured.
+    private readonly List<string> _tiers = new();
+    private readonly List<(string Tier, Dictionary<string, object> Result, string Path)> _finished = new();
+    private int _tierIndex;
+    private long _allocatedAtCast;
+    private int _gen2AtCast;
+
     public override void _Ready()
     {
         // Pause-immune, as the capture harnesses are: nothing here should stall behind a menu.
@@ -135,7 +159,17 @@ public sealed partial class VfxPerfScenario : Node
 
         string view = OS.GetEnvironment(ViewVariable).Trim().ToLowerInvariant();
         _view = view is "tp" or "fp" ? view : "wide";
-        Log.Info($"{Flag}: {CasterCount} casters for {_seconds:0.#} s, view={_view}.");
+
+        // --vfxperf=a,b,c wins over the variable; neither means one run at the current tier.
+        IReadOnlyList<string> tiers = HeadlessArgs.User.List(Flag);
+        if (tiers.Count == 0)
+        {
+            tiers = new CommandLineArgs(new[] { $"{Flag}={OS.GetEnvironment(TiersVariable)}" }).List(Flag);
+        }
+
+        _tiers.AddRange(tiers);
+        Log.Info($"{Flag}: {CasterCount} casters for {_seconds:0.#} s, view={_view}" +
+                 (_tiers.Count > 0 ? $", tiers={string.Join(",", _tiers)}." : "."));
     }
 
     /// <summary>The capture harnesses' window size, so a frame time here is for the frame they photograph.</summary>
@@ -207,8 +241,10 @@ public sealed partial class VfxPerfScenario : Node
             return;
         }
 
+        // The stagger and any random spread in an effect repeat from run to run.
+        GD.Seed(1);
         ShotStage.PreparePlayer(player);
-        _effects = ShotStage.ApplyEffectTier();
+        _effects = ApplyTier();
 
         // After the settings are announced, and on the window only: a capped frame measures the cap.
         DisplayServer.WindowSetVsyncMode(DisplayServer.VSyncMode.Disabled);
@@ -376,6 +412,8 @@ public sealed partial class VfxPerfScenario : Node
                 if (_clock >= _baselineUntil)
                 {
                     _castStart = _clock;
+                    _allocatedAtCast = GC.GetTotalAllocatedBytes(false);
+                    _gen2AtCast = GC.CollectionCount(2);
                     _phase = Phase.Casting;
                     Log.Info($"{Flag}: baseline taken over {_baseline.Count} frame(s); casting.");
                 }
@@ -470,7 +508,7 @@ public sealed partial class VfxPerfScenario : Node
             ["levelGround"] = _levelGround,
             ["casters"] = _casters.Count,
             ["casts"] = casts,
-            ["castsBySpell"] = _casts,
+            ["castsBySpell"] = new Dictionary<string, int>(_casts), // a copy: the next tier clears the counter
             ["frames"] = all.Count,
             ["baselineMs"] = Stats(_baseline),
             ["frameMs"] = Stats(all),
@@ -485,6 +523,10 @@ public sealed partial class VfxPerfScenario : Node
             ["peakVfxLights"] = _peak.Lights,
             ["peakDrawCalls"] = _peakDrawCalls,
             ["vfxRootFound"] = ShotStage.VfxRoot(GetTree()) != null,
+            ["firstTier"] = _tierIndex == 0,
+            ["adapter"] = RenderingServer.GetVideoAdapterName(),
+            ["allocKbPerSec"] = Round((GC.GetTotalAllocatedBytes(false) - _allocatedAtCast) / 1024.0 / Math.Max(_seconds, 0.001)),
+            ["gcGen2"] = GC.CollectionCount(2) - _gen2AtCast,
             ["godot"] = Engine.GetVersionInfo()["string"].AsString(),
         };
 
@@ -521,8 +563,112 @@ public sealed partial class VfxPerfScenario : Node
         }
         else
         {
-            GetTree().Quit(0);
+            _finished.Add((tier, result, ProjectSettings.GlobalizePath(path)));
+            if (++_tierIndex < _tiers.Count)
+            {
+                NextTier();
+            }
+            else
+            {
+                Conclude(directory);
+            }
         }
+    }
+
+    /// <summary>Sets the effect tier this pass runs at. With a tier list it is named through the
+    /// variable <see cref="ShotStage.ApplyEffectTier"/> already reads, so there is one code path.</summary>
+    private string ApplyTier()
+    {
+        if (_tierIndex < _tiers.Count)
+        {
+            OS.SetEnvironment(ShotStage.TierVariable, _tiers[_tierIndex]);
+        }
+
+        return ShotStage.ApplyEffectTier();
+    }
+
+    /// <summary>Clears what the last tier left on screen and in the counters, then measures a new
+    /// baseline at the next tier with the same ring of casters.</summary>
+    private void NextTier()
+    {
+        ShotStage.ClearSpellNodes(GetTree());
+        _baseline.Clear();
+        _frames.Clear();
+        _firstCast.Clear();
+        _casts.Clear();
+        _firstCastAt = -1;
+        _frameIndex = 0;
+        _peak = default;
+        _peakParticles = 0;
+        _peakDrawCalls = 0;
+        for (int i = 0; i < _casters.Count; i++)
+        {
+            Caster caster = _casters[i];
+            caster.Next = i % _spells.Count;
+            caster.StartAt = i * StaggerSeconds;
+            caster.RestUntil = 0;
+            caster.HoldUntil = 0;
+            caster.Held = false;
+            caster.Active = null;
+            if (IsInstanceValid(caster.Body))
+            {
+                ShotStage.ResetCaster(caster.Body); // cooldowns from the last tier
+            }
+        }
+
+        _effects = ApplyTier();
+        _baselineFrom = _clock + CalmSeconds + TierSettleSeconds;
+        _baselineUntil = _baselineFrom + BaselineSeconds;
+        _phase = Phase.Baseline;
+        Log.Info($"{Flag}: next tier; effects {_effects}.");
+    }
+
+    /// <summary>Writes the combined summary, prints the one machine line and quits.</summary>
+    private void Conclude(string directory)
+    {
+        var report = new HeadlessReport(Flag.TrimStart('-'));
+        var summary = new Dictionary<string, object> { ["suite"] = Flag };
+        var tiers = new Dictionary<string, object>();
+        var names = new List<string>();
+        var files = new List<string>();
+        foreach ((string tier, Dictionary<string, object> result, string file) in _finished)
+        {
+            names.Add(tier);
+            files.Add(file);
+            tiers[tier] = result;
+            var steady = (Dictionary<string, double>)result["steadyMs"];
+            var whole = (Dictionary<string, double>)result["frameMs"];
+            var baseline = (Dictionary<string, double>)result["baselineMs"];
+            report.Fact($"{tier}_baseline_ms_p50", baseline["p50"])
+                .Fact($"{tier}_steady_ms_p50", steady["p50"])
+                .Fact($"{tier}_steady_ms_p95", steady["p95"])
+                .Fact($"{tier}_steady_ms_max", steady["max"])
+                .Fact($"{tier}_frame_ms_p95", whole["p95"])
+                .Fact($"{tier}_first_cast_ms", result["firstCastFrameMs"])
+                .Fact($"{tier}_casts", result["casts"])
+                .Fact($"{tier}_peak_particles", result["peakParticles"])
+                .Fact($"{tier}_peak_draw_calls", result["peakDrawCalls"]);
+        }
+
+        summary["tiers"] = tiers;
+        string summaryPath = $"{directory}/vfxperf_summary.json";
+        using (FileAccess? file = FileAccess.Open(summaryPath, FileAccess.ModeFlags.Write))
+        {
+            if (file != null)
+            {
+                file.StoreString(System.Text.Json.JsonSerializer.Serialize(
+                    summary, new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
+                files.Add(ProjectSettings.GlobalizePath(summaryPath));
+            }
+            else
+            {
+                report.Fail($"could not write {ProjectSettings.GlobalizePath(summaryPath)}");
+            }
+        }
+
+        report.Fact("suite", Flag.TrimStart('-')).Fact("tiers", names).Fact("files", files)
+            .Fact("seconds", _seconds).Fact("view", _view).Fact("level_ground", _levelGround);
+        report.FinishAndQuit(GetTree());
     }
 
     private static Dictionary<string, double> Stats(List<double> samples)

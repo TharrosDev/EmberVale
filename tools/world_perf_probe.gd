@@ -3,7 +3,16 @@ extends SceneTree
 ## Deterministic rendering-cost sample for every region cell.
 ##
 ##     Godot_..._console.exe --path . --script res://tools/world_perf_probe.gd
-##     Godot_..._console.exe --path . --script res://tools/world_perf_probe.gd -- --json
+##     ... world_perf_probe.gd -- --region ember_crown              one realm (repeatable)
+##     ... world_perf_probe.gd -- --cell crossway_post              cells whose id contains this (repeatable)
+##     ... world_perf_probe.gd -- --top 10                          list the ten slowest cells (default 5)
+##     ... world_perf_probe.gd -- --json-file PATH                  write the report; samples go to PATH's .samples.json
+##     ... world_perf_probe.gd -- --json                            print the report as one JSON line instead
+##
+## It prints one line per region and the slowest cells, never the whole table: the table is the JSON.
+## Compare two revisions with `python tools/perf_compare.py PATH` (per-cell keys, machine-keyed
+## baseline, `--update` to record one). Exit 0, 1 when a region or cell failed to stream or the report
+## could not be written, 2 on a bad argument or a filter that matched nothing, 4 on a headless display.
 ##
 ## WHY THIS EXISTS
 ## ---------------
@@ -15,10 +24,15 @@ extends SceneTree
 ## play it and watch the F4 overlay, and the only way to compare two revisions was to remember.
 ##
 ## ⚠️ IT PARKS A CAMERA AT PLAYER EYE HEIGHT IN EVERY CELL AND SAMPLES THE ENGINE'S OWN COUNTERS.
-## Draw calls, primitives, video memory and frame time, averaged over `SAMPLE_FRAMES` after a
-## `WARMUP_FRAMES` settle so shader compilation and the first frame's uploads are not in the average.
-## The camera looks along the ground rather than down at it, because a top-down shot of a cell renders
-## a fraction of what a player standing in it does.
+## Draw calls and primitives averaged, and frame time as the median and the worst, over
+## `SAMPLE_FRAMES` after a `WARMUP_FRAMES` settle so shader compilation and the first frame's uploads
+## are not in it. The camera looks along the ground rather than down at it, because a top-down shot
+## of a cell renders a fraction of what a player standing in it does.
+##
+## ⚠️ FRAME TIME IS THE WALL-CLOCK TIME BETWEEN FRAMES, NOT A MONITOR. It used to be derived from
+## Performance.TIME_FPS, which the engine refreshes once a second: forty reads in half a second were
+## one stale number that still held the warm-up and the previous cell. Numbers from before that fix
+## are not comparable with numbers after it.
 ##
 ## ⚠️ THIS IS NOT world_shots.gd AND MUST NOT BECOME IT. That harness writes PNGs synchronously, which
 ## deliberately blocks frames; any frame time measured while it runs is a measurement of file I/O.
@@ -35,16 +49,19 @@ const WARMUP_FRAMES := 24
 const REGION_WARMUP_FRAMES := 180
 const SAMPLE_FRAMES := 40
 const EYE_HEIGHT := 1.7
-const BASELINE_PATH := "res://tests/performance_baselines/world_performance.json"
 
 var _camera: Camera3D
 var _content_loader: Node
 var _rows: Array = []
 var _json := false
 var _json_path := ""
+var _region_filters: Array[String] = []
+var _cell_filters: Array[String] = []
+var _top := 5
 var _region_id := ""
 var _failures: Array[String] = []
-var _summaries: Array = []
+var _budget_warnings: Array[String] = []
+var _regions := {}
 var _streamer: Node3D
 
 
@@ -53,15 +70,9 @@ func _initialize() -> void:
 		printerr("world perf: a rendering-capable display is required; run without --headless")
 		quit(4)
 		return
-	var args := OS.get_cmdline_user_args()
-	_json = "--json" in args or "--json-file" in args
-	var path_index := args.find("--json-file")
-	if path_index >= 0:
-		if path_index + 1 >= args.size():
-			printerr("world perf: --json-file requires a path")
-			quit(2)
-			return
-		_json_path = args[path_index + 1]
+	if not _parse_arguments(OS.get_cmdline_user_args()):
+		quit(2)
+		return
 	seed(0x50455246454d4245)
 	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
 
@@ -78,6 +89,51 @@ func _initialize() -> void:
 	_run.call_deferred()
 
 
+func _parse_arguments(args: PackedStringArray) -> bool:
+	var index := 0
+	while index < args.size():
+		var argument := args[index]
+		if argument == "--json":
+			_json = true
+		elif argument in ["--json-file", "--region", "--cell", "--top"]:
+			if index + 1 >= args.size():
+				printerr("world perf: %s requires a value" % argument)
+				return false
+			index += 1
+			var value := args[index]
+			match argument:
+				"--json-file": _json_path = value
+				"--region": _region_filters.append(_normalise(value))
+				"--cell": _cell_filters.append(_normalise(value))
+				"--top": _top = maxi(0, int(value))
+		else:
+			printerr("world perf: unknown argument %s" % argument)
+			return false
+		index += 1
+	return true
+
+
+## Lower case with everything but letters and digits removed, so `ember_crown`, `EmberCrown` and
+## `region.ember_crown` name the same realm.
+func _normalise(text: String) -> String:
+	var result := ""
+	for character in text.to_lower():
+		if (character >= "a" and character <= "z") or (character >= "0" and character <= "9"):
+			result += character
+	return result
+
+
+## True when no filter was given, or any of `names` contains any filter once both are normalised.
+func _wanted(filters: Array[String], names: Array) -> bool:
+	if filters.is_empty():
+		return true
+	for wanted in filters:
+		for candidate in names:
+			if _normalise(String(candidate)).contains(wanted):
+				return true
+	return false
+
+
 func _run() -> void:
 	var streamer_script: Script = load("res://src/World/RegionStreamer.cs")
 	_streamer = streamer_script.new()
@@ -86,6 +142,8 @@ func _run() -> void:
 
 	for region_path in REGIONS:
 		var region: Resource = load(region_path)
+		if not _wanted(_region_filters, [String(region.get("Id")), String(region_path).get_file().get_basename()]):
+			continue
 		var configure_started := Time.get_ticks_usec()
 		_streamer.call("Configure", region)
 		var settle := 0
@@ -106,12 +164,20 @@ func _run() -> void:
 		_region_id = String(region.get("Id"))
 		var worst := {}
 		var totals := {"draws": 0.0, "prims": 0.0, "ms": 0.0, "cells": 0.0}
+		var cell_ms := {}
+		var cell_draws := {}
+		var cell_prims := {}
 
 		for authored_cell in region.get("Cells"):
 			if authored_cell == null or authored_cell.get("Presentation") == null:
 				continue
+			if not _wanted(_cell_filters, [String(authored_cell.get("Id"))]):
+				continue
 			var sample := await _sample_cell(authored_cell)
 			_rows.append(sample)
+			cell_ms[sample.cell] = snappedf(sample.ms, 0.01)
+			cell_draws[sample.cell] = roundf(sample.draws)
+			cell_prims[sample.cell] = roundf(sample.prims)
 			totals.draws += sample.draws
 			totals.prims += sample.prims
 			totals.ms += sample.ms
@@ -119,78 +185,76 @@ func _run() -> void:
 			if worst.is_empty() or sample.ms > worst.ms:
 				worst = sample
 
-		var memory := Performance.get_monitor(Performance.RENDER_VIDEO_MEM_USED) / 1048576.0
-		# The split of that total, read once per region beside it (three counter reads, no frame
-		# is sampled around them): textures are what an asset change moves, buffers are meshes,
-		# multimeshes and skeletons. The remainder of the total is the renderer's own targets.
-		var texture_memory := RenderingServer.get_rendering_info(
-			RenderingServer.RENDERING_INFO_TEXTURE_MEM_USED) / 1048576.0
-		var buffer_memory := RenderingServer.get_rendering_info(
-			RenderingServer.RENDERING_INFO_BUFFER_MEM_USED) / 1048576.0
-		_summaries.append({
-			"region": _region_id,
-			"cells": int(totals.cells),
-			"configure_ms": configure_ms,
-			"mean_draws": totals.draws / totals.cells,
-			"mean_prims": totals.prims / totals.cells,
-			"mean_ms": totals.ms / totals.cells,
-			"worst_cell": worst.cell,
-			"worst_ms": worst.ms,
-			"video_memory_mb": memory,
-			"texture_memory_mb": texture_memory,
-			"buffer_memory_mb": buffer_memory,
-		})
-		if not _json:
-			print("")
-			print("%s  (%d cells, streamed+built in %.0f ms)" % [
-				_region_id, int(totals.cells), configure_ms])
-			print("  %-34s %8s %10s %8s" % ["cell", "draws", "prims", "ms/frame"])
-			for row in _rows:
-				if row.region == _region_id:
-					print("  %-34s %8d %10d %8.2f" % [row.cell, row.draws, row.prims, row.ms])
-			print("  %-34s %8.0f %10.0f %8.2f" % [
-				"MEAN", totals.draws / totals.cells, totals.prims / totals.cells,
-				totals.ms / totals.cells])
-			print("  worst cell: %s at %.2f ms/frame" % [worst.cell, worst.ms])
-			print("  resident video memory: %.0f MB (textures %.0f, buffers %.0f)" % [
-				memory, texture_memory, buffer_memory])
-			_check_budget(region, totals, memory)
+		if totals.cells > 0.0:
+			var memory := Performance.get_monitor(Performance.RENDER_VIDEO_MEM_USED) / 1048576.0
+			# The split of that total, read once per region beside it (three counter reads, no frame
+			# is sampled around them): textures are what an asset change moves, buffers are meshes,
+			# multimeshes and skeletons. The remainder of the total is the renderer's own targets.
+			var texture_memory := RenderingServer.get_rendering_info(
+				RenderingServer.RENDERING_INFO_TEXTURE_MEM_USED) / 1048576.0
+			var buffer_memory := RenderingServer.get_rendering_info(
+				RenderingServer.RENDERING_INFO_BUFFER_MEM_USED) / 1048576.0
+			_regions[_region_id] = {
+				"cell_count": int(totals.cells),
+				"configure_ms": snappedf(configure_ms, 0.1),
+				"mean_draws": snappedf(totals.draws / totals.cells, 0.1),
+				"mean_prims": roundf(totals.prims / totals.cells),
+				"mean_ms": snappedf(totals.ms / totals.cells, 0.01),
+				"worst_cell": worst.cell,
+				"worst_ms": snappedf(worst.ms, 0.01),
+				"video_memory_mb": snappedf(memory, 0.1),
+				"texture_memory_mb": snappedf(texture_memory, 0.1),
+				"buffer_memory_mb": snappedf(buffer_memory, 0.1),
+				"cell_ms": cell_ms,
+				"cell_draws": cell_draws,
+				"cell_prims": cell_prims,
+			}
+			if not _json:
+				print("world perf: %s %d cells, mean %.2f ms, %.0f draws, worst %s %.2f ms, video %.0f MB (tex %.0f, buf %.0f), streamed in %.0f ms" % [
+					_region_id, int(totals.cells), totals.ms / totals.cells, totals.draws / totals.cells,
+					worst.cell, worst.ms, memory, texture_memory, buffer_memory, configure_ms])
+			_check_budget(region, totals)
 
 		_streamer.call("UnloadAll")
 		_streamer.call("Configure", null)
 		await process_frame
 		await process_frame
 
+	if _rows.is_empty() and _failures.is_empty():
+		printerr("world perf: no cell matched --region %s --cell %s" % [_region_filters, _cell_filters])
+		_content_loader.call("CollectManagedResources")
+		await process_frame
+		quit(2)
+		return
+
+	_rows.sort_custom(func(a, b): return a.ms > b.ms)
+	var slowest: Array = []
+	for row in _rows.slice(0, _top):
+		slowest.append({"region": row.region, "cell": row.cell, "ms": snappedf(row.ms, 0.01),
+			"max_ms": snappedf(row.max_ms, 0.01), "draws": roundf(row.draws), "prims": roundf(row.prims)})
+	var size := DisplayServer.window_get_size()
+	var report := {"schema": 2, "suite": "world-perf", "kind": "machine-sensitive-report",
+		"engine": String(Engine.get_version_info().string),
+		"adapter": RenderingServer.get_video_adapter_name(),
+		"renderer": RenderingServer.get_current_rendering_method(),
+		"os": OS.get_name(), "resolution": [size.x, size.y],
+		"sample_frames": SAMPLE_FRAMES, "timing": "tick-delta",
+		"filters": {"region": _region_filters, "cell": _cell_filters},
+		"regions": _regions, "slowest": slowest,
+		"budget_warnings": _budget_warnings, "failures": _failures}
 	if _json:
-		var historical = null
-		var comparisons: Array = []
-		if FileAccess.file_exists(BASELINE_PATH):
-			historical = JSON.parse_string(FileAccess.get_file_as_string(BASELINE_PATH))
-			if historical is Dictionary and historical.has("regions"):
-				for current in _summaries:
-					var old = historical.regions.get(current.region)
-					if old is Dictionary:
-						comparisons.append({"region": current.region,
-							"mean_draws_percent": _percent_delta(current.mean_draws, old.mean_draws),
-							"mean_prims_percent": _percent_delta(current.mean_prims, old.mean_prims),
-							"mean_ms_percent": _percent_delta(current.mean_ms, old.mean_ms),
-							"worst_ms_percent": _percent_delta(current.worst_ms, old.worst_ms),
-							"video_memory_percent": _percent_delta(current.video_memory_mb, old.video_memory_mb),
-							"configure_ms_percent": _percent_delta(current.configure_ms, old.configure_ms)})
-		var report := {"schema": 1, "kind": "machine-sensitive-report",
-			"engine": Engine.get_version_info(), "renderer": RenderingServer.get_video_adapter_name(),
-			"os": OS.get_name(), "summaries": _summaries, "samples": _rows,
-			"historical_baseline": historical, "historical_comparisons": comparisons,
-			"failures": _failures}
-		var encoded := JSON.stringify(report, "  ")
-		if _json_path.is_empty():
-			print(encoded)
-		else:
-			var file := FileAccess.open(_json_path, FileAccess.WRITE)
-			if file == null:
-				_failures.append("could not write JSON report %s: %s" % [_json_path, FileAccess.get_open_error()])
-			else:
-				file.store_string(encoded)
+		print(JSON.stringify(report))
+	else:
+		for row in slowest:
+			print("  slow: %s/%s %.2f ms (max %.2f), %d draws, %d prims" % [
+				row.region, row.cell, row.ms, row.max_ms, int(row.draws), int(row.prims)])
+		for warning in _budget_warnings:
+			print("  budget: %s" % warning)
+	if not _json_path.is_empty():
+		if _store(_json_path, JSON.stringify(report, "  ")):
+			_store(_json_path.get_basename() + ".samples.json", JSON.stringify({"samples": _rows}))
+			if not _json:
+				print("world perf: wrote %s" % _json_path)
 	_content_loader.call("CollectManagedResources")
 	await process_frame
 	for failure in _failures:
@@ -198,28 +262,33 @@ func _run() -> void:
 	quit(0 if _failures.is_empty() else 1)
 
 
-func _percent_delta(current: float, baseline: float) -> float:
-	return 0.0 if is_zero_approx(baseline) else ((current - baseline) / baseline) * 100.0
+func _store(path: String, text: String) -> bool:
+	var file := FileAccess.open(path, FileAccess.WRITE)
+	if file == null:
+		_failures.append("could not write %s: %s" % [path, FileAccess.get_open_error()])
+		return false
+	file.store_string(text)
+	return true
 
 
 ## ⚠️ A WARNING, NOT A FAILURE, AND DELIBERATELY SO. A budget overrun on this machine is a fact about
 ## this machine; the gate that can fail a build is --validate's authored-node and scatter budget,
-## which is deterministic. This one is here to be READ.
-func _check_budget(region: Resource, totals: Dictionary, memory: float) -> void:
+## which is deterministic. This one is here to be READ, and it is in the report in every mode.
+## (Video memory is not compared: the budget's memory figure is static memory, a different quantity.)
+func _check_budget(region: Resource, totals: Dictionary) -> void:
 	var budget: Resource = region.get("PerformanceBudget")
 	if budget == null:
 		return
 	var mean_draws: float = totals.draws / totals.cells
+	var mean_ms: float = totals.ms / totals.cells
 	var max_draws: float = float(budget.get("MaxDrawCalls"))
 	var max_ms: float = float(budget.get("MaxFrameMilliseconds"))
-	var max_memory: float = float(budget.get("MaxStaticMemoryMb"))
-	var worst_ms: float = totals.ms / totals.cells
 	if mean_draws > max_draws:
-		print("  ⚠️ mean draw calls %.0f over the region budget of %.0f" % [mean_draws, max_draws])
-	if worst_ms > max_ms:
-		print("  ⚠️ mean frame time %.2f ms over the region budget of %.2f" % [worst_ms, max_ms])
-	if memory > max_memory:
-		print("  ⚠️ video memory %.0f MB over the region budget of %.0f" % [memory, max_memory])
+		_budget_warnings.append("%s mean draw calls %.0f over the region budget of %.0f" % [
+			_region_id, mean_draws, max_draws])
+	if mean_ms > max_ms:
+		_budget_warnings.append("%s mean frame time %.2f ms over the region budget of %.2f" % [
+			_region_id, mean_ms, max_ms])
 
 
 func _sample_cell(authored_cell: Resource) -> Dictionary:
@@ -254,16 +323,17 @@ func _sample_cell(authored_cell: Resource) -> Dictionary:
 	var draws := 0.0
 	var prims := 0.0
 	var frame_times: Array[float] = []
+	var before := Time.get_ticks_usec()
 	for _frame in SAMPLE_FRAMES:
 		await process_frame
+		# ⚠️ THE TIME BETWEEN TWO FRAMES, measured here. Not TIME_PROCESS (the script's slice, near
+		# zero in a probe that does nothing per frame) and not TIME_FPS (refreshed once a second).
+		# Vsync is disabled in _initialize() so this is not the monitor's refresh interval.
+		var now := Time.get_ticks_usec()
+		frame_times.append((now - before) / 1000.0)
+		before = now
 		draws += Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME)
 		prims += Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME)
-		# ⚠️ FROM FPS, NOT FROM TIME_PROCESS. TIME_PROCESS is the SCRIPT's slice of the frame and is
-		# near zero here — this harness does nothing per frame — so averaging it measures the probe
-		# rather than the world. Frame time from FPS is the whole cost, and vsync is disabled in
-		# _initialize() so it is not simply the monitor's refresh rate reported back.
-		var fps: float = Performance.get_monitor(Performance.TIME_FPS)
-		frame_times.append(1000.0 / max(1.0, fps))
 
 	return {
 		"region": _region_id,
@@ -271,6 +341,7 @@ func _sample_cell(authored_cell: Resource) -> Dictionary:
 		"draws": draws / SAMPLE_FRAMES,
 		"prims": prims / SAMPLE_FRAMES,
 		"ms": _median(frame_times),
+		"max_ms": frame_times.max(),
 	}
 
 
@@ -278,11 +349,13 @@ func _sample_cell(authored_cell: Resource) -> Dictionary:
 ## a thermal step or the navmesh baker finishing on a worker will put one 300 ms frame in a
 ## forty-frame window, and a mean built from that reports a cell as twelve times its own cost. The
 ## median is the frame the player actually gets, and it is stable enough to compare two revisions.
+## (The worst frame of the window is reported beside it as max_ms.)
 func _median(values: Array[float]) -> float:
 	if values.is_empty():
 		return 0.0
-	values.sort()
-	return values[values.size() / 2]
+	var ordered := values.duplicate()
+	ordered.sort()
+	return ordered[ordered.size() / 2]
 
 
 func _ground_at(x: float, z: float) -> float:
