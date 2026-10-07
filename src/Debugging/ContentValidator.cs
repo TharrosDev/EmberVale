@@ -687,6 +687,20 @@ public static class ContentValidator
                 issues.Add($"enemy archetype '{id}' HeldWeaponScale must be positive: {archetype.HeldWeaponScale}");
             }
 
+            // Look and reach are separate: a visual height is only ever the model standing TALLER
+            // than the capsule. One below it is ignored by the factory, so it is an authoring
+            // mistake that would otherwise never show.
+            if (archetype.ModelScale <= 0f)
+            {
+                issues.Add($"enemy archetype '{id}' ModelScale must be positive: {archetype.ModelScale}");
+            }
+            if (archetype.VisualHeight != 0f && archetype.VisualHeight < archetype.CapsuleHeight)
+            {
+                issues.Add(
+                    $"enemy archetype '{id}' VisualHeight {archetype.VisualHeight} is below its " +
+                    $"CapsuleHeight {archetype.CapsuleHeight}; use 0 for a body that is its capsule");
+            }
+
             if (!AIProfileDatabase.IsRegistered(archetype.AiProfileId))
             {
                 issues.Add($"enemy archetype '{id}' references unknown AI profile '{archetype.AiProfileId}'");

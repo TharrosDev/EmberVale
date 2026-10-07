@@ -173,8 +173,10 @@ public sealed partial class EnemyShots : ShotHarness
         // A multi-zone body is the exception: its capsule is only what the ground collides with (a
         // 22 m dragon stands on a 4.8 m one), and its hit zones are authored to the silhouette. So
         // the frame grows to hold the zones, or the shot is of a pair of legs.
-        float height = archetype.CapsuleHeight;
-        float reach = archetype.CapsuleRadius;
+        // A body drawn taller than its capsule (VisualHeight) is framed by what is drawn.
+        float height = Mathf.Max(archetype.CapsuleHeight, archetype.VisualHeight);
+        float radius = archetype.CapsuleRadius * (height / Mathf.Max(0.01f, archetype.CapsuleHeight));
+        float reach = radius;
         foreach (HitZoneResource zone in archetype.HitZones)
         {
             if (zone == null)
@@ -192,9 +194,9 @@ public sealed partial class EnemyShots : ShotHarness
                 new Vector2(spine.X, spine.Z).Length() + zone.Radius);
         }
 
-        float width = archetype.CapsuleRadius * 2f;
+        float width = radius * 2f;
         float distance = Mathf.Max(
-            4.8f, Mathf.Max(height * 2.10f, Mathf.Max(archetype.CapsuleRadius * 5.0f, reach * 2.6f)));
+            4.8f, Mathf.Max(height * 2.10f, Mathf.Max(radius * 5.0f, reach * 2.6f)));
         float angle = Mathf.DegToRad(angleDegrees);
         Vector3 target = ground + new Vector3(0f, height * 0.52f, 0f);
         // Enemy factories orient the body toward local -Z. A zero angle must therefore face its

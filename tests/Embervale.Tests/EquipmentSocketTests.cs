@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Embervale.Animation;
+using Godot;
 using Xunit;
 
 namespace Embervale.Tests;
@@ -141,5 +142,97 @@ public class EquipmentSocketTests
                 Assert.DoesNotContain(EquipmentSockets.Normalize(bone), rightBones);
             }
         }
+    }
+
+    // ----- where the authored transform goes -----
+    //
+    // ⚠️ A held piece's offset, grip rotation and scale used to be set on the BoneAttachment3D it
+    // hangs from. The engine writes the bone's pose over that node's transform on every skeleton
+    // update, so all three were discarded: every weapon in the game sat at the hand bone's raw
+    // orientation and at scale 1. They are now the piece's own local transform
+    // (WeaponGrip.Local), and bone pose x that transform is the intended result. The engine half
+    // (that the piece really follows the hand) is tools/equipment_socket_probe.gd and a render.
+
+    private static readonly Vector3 Blade = new Vector3(-0.30f, 0.25f, -0.90f).Normalized();
+
+    private static void AssertClose(Vector3 expected, Vector3 actual, float tolerance = 1e-4f) =>
+        Assert.True((expected - actual).Length() < tolerance, $"expected {expected}, got {actual}");
+
+    [Fact]
+    public void AnUnauthoredPieceSitsExactlyOnItsBone()
+    {
+        // A shield, a helm: no offset, rotation or scale passed. Nothing about them may move.
+        Assert.Equal(Transform3D.Identity, WeaponGrip.Local(Vector3.Zero, Vector3.Zero, Vector3.One));
+    }
+
+    [Fact]
+    public void TheGripRotationSurvivesTheTripThroughDegrees()
+    {
+        Transform3D local = WeaponGrip.Local(Vector3.Zero, WeaponGrip.HandRotationDegrees, Vector3.One);
+
+        // The weapon's long axis (+Y) comes out along the blade direction the grip was measured to.
+        AssertClose(Blade, local.Basis * Vector3.Up);
+        AssertClose(WeaponGrip.Hand.Column0, local.Basis.Column0);
+        AssertClose(WeaponGrip.Hand.Column2, local.Basis.Column2);
+        AssertClose(Vector3.Zero, local.Origin);
+    }
+
+    [Fact]
+    public void TheGripIsARotationAndNothingElse()
+    {
+        Basis hand = WeaponGrip.Hand;
+
+        Assert.Equal(1f, hand.Determinant(), 4);
+        Assert.Equal(1f, hand.Column0.Length(), 4);
+        Assert.Equal(1f, hand.Column1.Length(), 4);
+        Assert.Equal(1f, hand.Column2.Length(), 4);
+        Assert.Equal(0f, hand.Column0.Dot(hand.Column1), 4);
+        Assert.Equal(0f, hand.Column1.Dot(hand.Column2), 4);
+    }
+
+    [Theory]
+    [InlineData(1.5f)]   // the Iron King's mace
+    [InlineData(0.6f)]
+    public void AScaledWeaponKeepsItsGripAndChangesOnlyItsSize(float scale)
+    {
+        Transform3D plain = WeaponGrip.Local(Vector3.Zero, WeaponGrip.HandRotationDegrees, Vector3.One);
+        Transform3D scaled = WeaponGrip.Local(Vector3.Zero, WeaponGrip.HandRotationDegrees, Vector3.One * scale);
+
+        AssertClose(plain.Basis.Column0 * scale, scaled.Basis.Column0);
+        AssertClose(plain.Basis.Column1 * scale, scaled.Basis.Column1);
+        AssertClose(plain.Basis.Column2 * scale, scaled.Basis.Column2);
+
+        // A point one metre up the blade is `scale` metres out along it.
+        AssertClose(Blade * scale, scaled * Vector3.Up);
+    }
+
+    [Fact]
+    public void ScaleIsAlongThePiecesOwnAxesNotTheBones()
+    {
+        // The Node3D convention (rotation x scale). A piece lengthened along its own +Y gets longer
+        // along the blade, whichever way the grip turned it.
+        Transform3D local = WeaponGrip.Local(Vector3.Zero, WeaponGrip.HandRotationDegrees, new Vector3(1f, 2f, 1f));
+
+        AssertClose(Blade * 2f, local.Basis.Column1);
+        AssertClose(WeaponGrip.Hand.Column0, local.Basis.Column0);
+    }
+
+    [Fact]
+    public void BonePoseTimesTheLocalTransformIsWhatTheAttachmentWasMeantToBe()
+    {
+        // What "a bone attachment with this Position, RotationDegrees and Scale" describes: the
+        // bone's pose, then the offset in the bone's axes, then the turn, then the size.
+        var pose = new Transform3D(Basis.FromEuler(new Vector3(0.3f, 1.1f, -0.4f)), new Vector3(1f, 2f, 3f));
+        var offset = new Vector3(0.1f, -0.2f, 0.05f);
+        const float Scale = 1.5f;
+
+        Transform3D world = pose * WeaponGrip.Local(offset, WeaponGrip.HandRotationDegrees, Vector3.One * Scale);
+
+        // The grip point lands at the bone plus the offset turned into the bone's axes.
+        AssertClose(pose.Origin + (pose.Basis * offset), world.Origin);
+
+        // A point p on the weapon lands at bone * (offset + grip * (scale * p)).
+        var p = new Vector3(0.02f, 0.9f, -0.01f);
+        AssertClose(pose * (offset + (WeaponGrip.Hand * (p * Scale))), world * p);
     }
 }

@@ -35,6 +35,11 @@ public static class EnemyArchetypeFactory
         float radius = archetype.CapsuleRadius;
         float height = archetype.CapsuleHeight;
 
+        // Look and reach are separate (EnemyArchetypeResource.VisualHeight): everything that decides
+        // how far this body hits or where it can walk is built from the capsule, and only what has
+        // to cover or clear the model as drawn uses the taller figure.
+        float visualHeight = Mathf.Max(height, archetype.VisualHeight);
+
         // A boss-flagged archetype is a BossEntity so the Phase 28C healthbar and the 28D
         // corruption-on-kill loop can resolve it by type through the ServiceLocator. Everything
         // below is identical either way — BossEntity is an EnemyEntity.
@@ -43,6 +48,11 @@ public static class EnemyArchetypeFactory
         enemy.DisplayName = archetype.NameKey.Length > 0 ? Loc.T(archetype.NameKey) : archetype.Id;
         enemy.TemplateId = archetype.Id;
         enemy.Position = position;
+        if (visualHeight > height)
+        {
+            // Read back by BodyMetrics.VisualHeight: the plate, status marks and the lock camera.
+            enemy.SetMeta(BodyMetrics.VisualHeightMeta, visualHeight);
+        }
 
         enemy.AddChild(new CollisionShape3D
         {
@@ -100,7 +110,9 @@ public static class EnemyArchetypeFactory
             Name = "Footsteps", MaxAudibleDistance = 20f, VolumeOffsetDb = -5f,
         });
         enemy.AddChild(new WeaponTrailComponent { Name = "WeaponTrail" });
-        AddHurtboxes(enemy, archetype, radius, height);
+        // The whole-body hurtbox covers the model as drawn, so a blow or an arrow that lands on a
+        // towering body's chest or head connects; its width stays the capsule's.
+        AddHurtboxes(enemy, archetype, radius, visualHeight);
 
         // The reach and the box scale with the body: these numbers were authored against a 1.8 m
         // humanoid's sword arc, and bolting that arc onto a 0.9 m wolf would have it biting a metre
@@ -143,7 +155,7 @@ public static class EnemyArchetypeFactory
                 Name = "CastOrigin",
                 Position = archetype.CastOrigin != Vector3.Zero
                     ? archetype.CastOrigin
-                    : new Vector3(0f, height * 0.75f, -0.4f),
+                    : new Vector3(0f, visualHeight * 0.75f, -0.4f),
             };
             enemy.AddChild(castOrigin);
             enemy.AddChild(new SpellcastingComponent

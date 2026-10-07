@@ -10,13 +10,20 @@ AttributesPath = "res://data/attributes/StoneSentinelAttributes.tres"
 WeaponPath = "res://data/weapons/StoneFist.tres"
 LootTablePath = "res://data/loot/ConstructLoot.tres"
 ModelPath = "res://assets/models/creatures/enm_stone_sentinel.glb"
+ModelScale = 1.58
 PlaceholderTint = Color(0.5, 0.48, 0.44, 1)
 AiProfileId = "ai.sentry"
 FactionId = ""
 KnownSpellIds = Array[String]([])
-CapsuleRadius = 0.6
-CapsuleHeight = 2.4
+CapsuleRadius = 0.75
+CapsuleHeight = 3.02
 MaxPoise = 150.0
 Reaction = 3
 StaminaRegen = 8.0
 XpValue = 80
+; Look and reach are separate (EnemyArchetypeResource.VisualHeight). The model is drawn at
+; ModelScale 1.58 (2.4 m -> 3.79 m); the capsule grew by sqrt(1.58) only
+; (0.6 x 2.4 -> 0.75 x 3.02), because the melee hitbox, the telegraph ring and the nav
+; agent all derive from the capsule and AttackRange is not changed. VisualHeight is what the
+; hurtbox, the plate, status marks, the cast origin and the lock camera read.
+VisualHeight = 3.79

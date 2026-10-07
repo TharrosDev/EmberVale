@@ -14,14 +14,15 @@ AttributesPath = "res://data/attributes/HollowQueenAttributes.tres"
 WeaponPath = "res://data/weapons/SpectralTouch.tres"
 LootTablePath = "res://data/loot/bosses/HollowQueenBossLoot.tres"
 ModelPath = "res://assets/models/creatures/boss_hollow_queen.glb"
+ModelScale = 1.39
 PlaceholderTint = Color(0.62, 0.58, 0.68, 1)
 AiProfileId = "ai.hollow_queen"
 FactionId = "faction.hollow"
 KnownSpellIds = Array[String](["spell.wither"])
 BreathSpellId = ""
 DialogueId = ""
-CapsuleRadius = 0.55
-CapsuleHeight = 2.3
+CapsuleRadius = 0.65
+CapsuleHeight = 2.71
 IsBoss = true
 BossId = "boss.hollow_queen"
 DirectionalMelee = false
@@ -30,3 +31,9 @@ Reaction = 4
 StaminaRegen = 14.0
 ManaRegen = 9.0
 XpValue = 550
+; Look and reach are separate (EnemyArchetypeResource.VisualHeight). The model is drawn at
+; ModelScale 1.39 (2.3 m -> 3.2 m); the capsule grew by sqrt(1.39) only
+; (0.55 x 2.3 -> 0.65 x 2.71), because the melee hitbox, the telegraph ring and the nav
+; agent all derive from the capsule and AttackRange is not changed. VisualHeight is what the
+; hurtbox, the plate, status marks, the cast origin and the lock camera read.
+VisualHeight = 3.2

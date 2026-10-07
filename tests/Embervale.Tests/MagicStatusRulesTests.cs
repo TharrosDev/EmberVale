@@ -258,4 +258,23 @@ public class MagicStatusRulesTests
     [InlineData(StatusControl.None, true, StatusVfxShape.WardShell)]
     public void StatusShape_ReadsFromWhatTheStatusDoes(StatusControl controls, bool ward, StatusVfxShape expected) =>
         Assert.Equal(expected, StatusVfxShapes.Pick(controls, ward));
+
+    [Theory]
+    [InlineData(1.8f, 1f)]   // the body the marks were authored for
+    [InlineData(1.7f, 1f)]   // a goblin: unchanged
+    [InlineData(0.9f, 1f)]   // a wolf: never shrunk
+    [InlineData(3.6f, 2f)]
+    [InlineData(5.2f, 5.2f / 1.8f)]
+    public void StatusMarks_GrowOnlyForABodyTallerThanAPerson(float bodyHeight, float expected) =>
+        Assert.Equal(expected, StatusVfxShapes.BodyFit(bodyHeight, 1.8f), 4);
+
+    [Fact]
+    public void StatusMarks_KeepTheirClearanceOverATallerHead()
+    {
+        // 2.25 over a 1.8 m body is 0.45 m of air; over a 5.2 m body it is still 0.45 m.
+        float fit = StatusVfxShapes.BodyFit(5.2f, 1.8f);
+
+        Assert.Equal(5.65f, StatusVfxShapes.HeadHeight(2.25f, 1.8f, fit), 3);
+        Assert.Equal(2.25f, StatusVfxShapes.HeadHeight(2.25f, 1.8f, 1f), 4);
+    }
 }

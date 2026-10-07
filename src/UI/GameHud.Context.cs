@@ -414,7 +414,8 @@ public partial class GameHud
         if (locked is Node node && IsInstanceValid(node) && locked.Body is Node3D body &&
             GetViewport().GetCamera3D() is { } camera)
         {
-            Vector3 head = body.GlobalPosition + Vector3.Up;
+            // The same point the lock itself holds and the acquire ring closes onto.
+            Vector3 head = Combat.BodyMetrics.AimPoint(body);
             if (!camera.IsPositionBehind(head))
             {
                 _lockReticle.Position = camera.UnprojectPosition(head) - (_lockReticle.Size / 2f);

@@ -46,14 +46,16 @@ public class GraphicsAutoDetectTests
             GraphicsAutoDetect.Recommend("Mesa Intel(R) Graphics (ADL GT2)", "Intel", GraphicsAutoDetect.DeviceOther, 8 * Gb, 8).Tier);
     }
 
-    [Theory]
-    [InlineData("AMD Custom GPU 0405 (RADV VANGOGH)")]
-    [InlineData("AMD Custom GPU 0932 (RADV GALILEO)")]
-    public void SteamDeck_StartsOnLow(string name)
+    [Fact]
+    public void NoAdapterIsNamedForSpecialTreatment()
     {
-        GraphicsRecommendation pick = GraphicsAutoDetect.Recommend(name, "AMD", GraphicsAutoDetect.DeviceIntegrated, 16 * Gb, 8);
-        Assert.Equal(GraphicsMath.Low, pick.Tier);
-        Assert.Equal(60, pick.MaxFps);
+        // PC and laptop only: there is no per-device row. An unrecognised integrated part is picked
+        // by the same memory-and-threads rule as every other one, in both directions.
+        const string Unnamed = "AMD Custom GPU 0405 (RADV VANGOGH)";
+        Assert.Equal(new GraphicsRecommendation(GraphicsMath.Low, 60),
+            GraphicsAutoDetect.Recommend(Unnamed, "AMD", GraphicsAutoDetect.DeviceIntegrated, 16 * Gb, 8));
+        Assert.Equal(new GraphicsRecommendation(GraphicsMath.Performance, 60),
+            GraphicsAutoDetect.Recommend(Unnamed, "AMD", GraphicsAutoDetect.DeviceIntegrated, 8 * Gb, 8));
     }
 
     [Fact]

@@ -85,7 +85,7 @@ public partial class LockOnComponent : EntityComponent
 
         IEntity? previous = _target;
         Vector3 lastPoint = previous is { Body: { } body } && GodotObject.IsInstanceValid(body)
-            ? body.GlobalPosition + (Vector3.Up * 1.0f)
+            ? BodyMetrics.AimPoint(body)
             : _lastPoint;
 
         _target = value;
@@ -98,7 +98,7 @@ public partial class LockOnComponent : EntityComponent
         _flick.Reset();
         if (value is { Body: { } newBody } && GodotObject.IsInstanceValid(newBody))
         {
-            _lastPoint = newBody.GlobalPosition + (Vector3.Up * 1.0f);
+            _lastPoint = BodyMetrics.AimPoint(newBody);
         }
 
         if (Entity == null)
@@ -236,7 +236,7 @@ public partial class LockOnComponent : EntityComponent
 
         if (target.Body is { } held && GodotObject.IsInstanceValid(held))
         {
-            _lastPoint = held.GlobalPosition + (Vector3.Up * 1.0f);
+            _lastPoint = BodyMetrics.AimPoint(held);
         }
 
         // Flick the right stick to step to the next target in that direction (the mouse does the
@@ -480,7 +480,9 @@ public partial class LockOnComponent : EntityComponent
         }
 
         Vector3 from = _body.GlobalPosition + (Vector3.Up * 1.4f);
-        Vector3 to = entity.Body.GlobalPosition + (Vector3.Up * 1.0f);
+        // The middle of the candidate's own body, not a fixed metre off the ground: on a tall
+        // enemy that was its shin, and on a low one a point above its back.
+        Vector3 to = BodyMetrics.AimPoint(entity.Body);
         var query = PhysicsRayQueryParameters3D.Create(from, to, CombatLayers.CameraBlocker);
         query.Exclude = new Godot.Collections.Array<Rid> { _body.GetRid() };
         return _body.GetWorld3D().DirectSpaceState.IntersectRay(query).Count == 0;

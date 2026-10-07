@@ -17,12 +17,13 @@ AttributesPath = "res://data/attributes/MorthulAttributes.tres"
 WeaponPath = "res://data/weapons/MorthulGrasp.tres"
 LootTablePath = "res://data/loot/bosses/MorthulBossLoot.tres"
 ModelPath = "res://assets/models/creatures/boss_morthul.glb"
+ModelScale = 1.58
 PlaceholderTint = Color(0.16, 0.12, 0.14, 1)
 AiProfileId = "ai.boss"
 FactionId = "faction.fallen"
 KnownSpellIds = Array[String](["spell.wither"])
-CapsuleRadius = 1.0
-CapsuleHeight = 3.3
+CapsuleRadius = 1.26
+CapsuleHeight = 4.15
 IsBoss = true
 BossId = "boss.morthul"
 MaxPoise = 320.0
@@ -30,3 +31,9 @@ Reaction = 4
 StaminaRegen = 18.0
 ManaRegen = 18.0
 XpValue = 3000
+; Look and reach are separate (EnemyArchetypeResource.VisualHeight). The model is drawn at
+; ModelScale 1.58 (3.3 m -> 5.21 m); the capsule grew by sqrt(1.58) only
+; (1 x 3.3 -> 1.26 x 4.15), because the melee hitbox, the telegraph ring and the nav
+; agent all derive from the capsule and AttackRange is not changed. VisualHeight is what the
+; hurtbox, the plate, status marks, the cast origin and the lock camera read.
+VisualHeight = 5.21

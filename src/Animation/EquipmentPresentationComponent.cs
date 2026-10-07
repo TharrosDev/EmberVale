@@ -216,14 +216,19 @@ public partial class EquipmentPresentationComponent : EntityComponent
 
         Vector3 finalScale = scale ?? Vector3.One;
         SocketSpace resolved = space ?? EquipmentSockets.SpaceOf(socket);
+
+        // ⚠️ THE MOUNT CARRIES NO TRANSFORM OF ITS OWN. A BoneAttachment3D is the bone: the engine
+        // writes the bone's pose over the node's whole transform when it binds and again on every
+        // skeleton update, so an offset, rotation or scale set on it is gone before the first frame
+        // is drawn. That is what this did from the day the sword was first hung (and what the
+        // private method it replaced did before it): the grip correction and every weapon scale
+        // were authored, passed in and silently discarded. They belong on the child, where
+        // bone pose x authored transform is exactly what was always meant (WeaponGrip.Local).
         Node3D mount = resolved == SocketSpace.BoneLocal
             ? new BoneAttachment3D
             {
                 Name = $"Socket_{name}",
                 BoneName = skeleton.GetBoneName(bone),
-                Position = offset,
-                RotationDegrees = rotationDegrees,
-                Scale = finalScale,
             }
             : new SocketFollower
             {
@@ -249,7 +254,11 @@ public partial class EquipmentPresentationComponent : EntityComponent
             mount.AddChild(visual);
         }
 
-        visual.Transform = Transform3D.Identity;
+        // A follower composes the authored transform itself, every frame, in the character's axes;
+        // a bone attachment cannot hold one, so there the piece holds it.
+        visual.Transform = resolved == SocketSpace.BoneLocal
+            ? WeaponGrip.Local(offset, rotationDegrees, finalScale)
+            : Transform3D.Identity;
         visual.Name = name;
         _attached[name] = mount;
         return visual;

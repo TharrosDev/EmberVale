@@ -10,13 +10,20 @@ AttributesPath = "res://data/attributes/WardGolemAttributes.tres"
 WeaponPath = "res://data/weapons/StoneFist.tres"
 LootTablePath = "res://data/loot/ConstructLoot.tres"
 ModelPath = "res://assets/models/creatures/enm_ward_golem.glb"
+ModelScale = 1.62
 PlaceholderTint = Color(0.46, 0.38, 0.62, 1)
 AiProfileId = "ai.deathless_guard"
 FactionId = ""
 KnownSpellIds = Array[String]([])
-CapsuleRadius = 0.5
-CapsuleHeight = 2.1
+CapsuleRadius = 0.64
+CapsuleHeight = 2.67
 MaxPoise = 110.0
 Reaction = 3
 StaminaRegen = 12.0
 XpValue = 75
+; Look and reach are separate (EnemyArchetypeResource.VisualHeight). The model is drawn at
+; ModelScale 1.62 (2.1 m -> 3.4 m); the capsule grew by sqrt(1.62) only
+; (0.5 x 2.1 -> 0.64 x 2.67), because the melee hitbox, the telegraph ring and the nav
+; agent all derive from the capsule and AttackRange is not changed. VisualHeight is what the
+; hurtbox, the plate, status marks, the cast origin and the lock camera read.
+VisualHeight = 3.4
