@@ -61,6 +61,10 @@ public sealed class SettingsService
 
     private void OnGameStateChanged(GameStateChangedEvent e) => ApplyFrameCap(e.Current);
 
+    /// <summary>Ends the application-lifetime subscription, so the teardown leak count in
+    /// <c>ApplicationRoot._ExitTree</c> reads zero on a clean exit instead of warning every run.</summary>
+    public void Detach() => EventBus.Instance?.Unsubscribe<GameStateChangedEvent>(OnGameStateChanged);
+
     /// <summary>
     /// ⚠️ Automation keeps the class default. A probe or capture run has no settings file by
     /// construction (<c>EMBERVALE_USER_DIR</c> is a fresh folder each run), so detecting there would

@@ -144,6 +144,11 @@ public partial class ApplicationRoot : Node3D, IServiceScopeHost
     public override void _ExitTree()
     {
         EventBus.Instance?.Unsubscribe<SettingsAppliedEvent>(OnSettingsApplied);
+        if (_scope != null && _scope.TryResolveLocal(typeof(SettingsService), out object? settings))
+        {
+            (settings as SettingsService)?.Detach();
+        }
+
         _scope?.Dispose();
         _scope = null;
 
@@ -153,7 +158,8 @@ public partial class ApplicationRoot : Node3D, IServiceScopeHost
         int leaked = EventBus.Instance?.TotalSubscriberCount() ?? 0;
         if (leaked > 0)
         {
-            Log.Warn($"{leaked} event handler(s) survived application teardown (check OnTeardown unsubscribes).");
+            Log.Warn($"{leaked} event handler(s) survived application teardown: " +
+                     $"{EventBus.Instance!.DescribeSubscribers()} (check OnTeardown unsubscribes).");
         }
 
         EventBus.Instance?.Clear();
