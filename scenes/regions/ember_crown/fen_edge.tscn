@@ -3,8 +3,8 @@
 [ext_resource type="Script" path="res://src/World/CellNavBaker.cs" id="1_navbaker"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_ruin_pillar.glb" id="2_pillar"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_ruin_wall.glb" id="3_ruinwall"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_boulder.glb" id="4_boulder"]
 [ext_resource type="PackedScene" path="res://scenes/props/bld_ruin_tower.tscn" id="dx_ruin_tower"]
+[ext_resource type="PackedScene" path="res://scenes/props/lm_rock_boulder_a.tscn" id="rp_lm_rock_boulder_a"]
 
 ; THE FEN EDGE — a transitional cell (the 2026-08-29 geography overhaul).
 ;
@@ -50,9 +50,6 @@ size = Vector3(0.8, 4.0, 0.8)
 
 [sub_resource type="BoxShape3D" id="Shape_ruin"]
 size = Vector3(4, 5, 1)
-
-[sub_resource type="SphereShape3D" id="Shape_boulder"]
-radius = 1.3
 
 [sub_resource type="NavigationMesh" id="NavMesh_fen_edge"]
 geometry_parsed_geometry_type = 1
@@ -106,26 +103,14 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
 shape = SubResource("Shape_ruin")
 
 [node name="MarkerStoneA" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.766044, 0, -0.642788, 0, 1, 0, 0.642788, 0, -0.766044, -23, 0, 15.5)
+transform = Transform3D(-0.4328, 0, -0.3632, 0, 0.565, 0, 0.3632, 0, -0.4328, -23, -0.18, 15.5)
 
-[node name="Model" parent="Nav/MarkerStoneA" instance=ExtResource("4_boulder")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/MarkerStoneA"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/MarkerStoneA/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
-shape = SubResource("Shape_boulder")
+[node name="Model" parent="Nav/MarkerStoneA" instance=ExtResource("rp_lm_rock_boulder_a")]
 
 [node name="MarkerStoneB" type="Node3D" parent="Nav"]
-transform = Transform3D(0.573406, 0, -0.401504, -0, 0.7, 0, 0.401504, 0, 0.573406, -28.5, 0, 23)
+transform = Transform3D(0.3236, 0, -0.2266, 0, 0.395, 0, 0.2266, 0, 0.3236, -28.5, -0.13, 23)
 
-[node name="Model" parent="Nav/MarkerStoneB" instance=ExtResource("4_boulder")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/MarkerStoneB"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/MarkerStoneB/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
-shape = SubResource("Shape_boulder")
+[node name="Model" parent="Nav/MarkerStoneB" instance=ExtResource("rp_lm_rock_boulder_a")]
 
 [node name="Dx_DrownedTowerA" parent="Nav" instance=ExtResource("dx_ruin_tower") groups=["world_landmark"]]
 transform = Transform3D(1.7607, 0, -0.3742, 0, 1.8, 0, 0.3742, 0, 1.7607, 58, 0, -20)

@@ -109,7 +109,7 @@ BackdropDistance = 900.0
 
 SCATTER = '''[sub_resource type="Resource" id="Layer_ash_grass"]
 script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_grass_wispy.glb"
+ScenePath = "res://assets/models/props/prp_grass_clump_a.glb"
 Count = 180
 MinimumScale = 0.6
 MaximumScale = 1.1
@@ -126,10 +126,10 @@ CastShadows = false
 
 [sub_resource type="Resource" id="Layer_ash_stone"]
 script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_rock_cluster.glb"
-Count = 60
-MinimumScale = 0.5
-MaximumScale = 1.3
+ScenePath = "res://assets/models/world/prp_rock_boulder_a.glb"
+Count = 23
+MinimumScale = 0.25
+MaximumScale = 0.7
 MinimumSpacing = 3.6
 Saturation = 0.2
 Clumping = 0.5
@@ -148,10 +148,10 @@ HlodScale = Vector3(1.15, 1.15, 1.15)
 
 [sub_resource type="Resource" id="Layer_ash_stone_b"]
 script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_rock_cluster_a.glb"
-Count = 35
-MinimumScale = 0.34
-MaximumScale = 0.8
+ScenePath = "res://assets/models/world/prp_rock_rubble_a.glb"
+Count = 30
+MinimumScale = 0.4
+MaximumScale = 0.9
 MinimumSpacing = 7.0
 Saturation = 0.2
 Clumping = 0.55
@@ -163,28 +163,12 @@ VisibilityRangeEnd = 135.0
 VisibilityFadeMargin = 18.0
 CastShadows = true
 
-[sub_resource type="Resource" id="Layer_ash_pebble"]
-script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_pebble_a.glb"
-Count = 70
-MinimumScale = 0.8
-MaximumScale = 1.8
-MinimumSpacing = 3.2
-Clumping = 0.4
-ClumpScale = 24.0
-MaxSlope = 1.1
-Tint = Color(0.50, 0.46, 0.43, 1)
-TintVariation = 0.16
-VisibilityRangeEnd = 55.0
-VisibilityFadeMargin = 12.0
-CastShadows = false
-
 [sub_resource type="Resource" id="Layer_dead_trunk"]
 script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_pine_dead.glb"
+ScenePath = "res://assets/models/world/prp_tree_dead_a.glb"
 Count = 40
-MinimumScale = 0.6
-MaximumScale = 1.1
+MinimumScale = 0.8
+MaximumScale = 1.5
 MinimumSpacing = 8.0
 Saturation = 0.2
 Clumping = 0.7
@@ -201,21 +185,72 @@ HlodRangeEnd = 320.0
 HlodColor = Color(0.88, 0.9, 0.92, 1)
 HlodScale = Vector3(1.15, 1.15, 1.15)
 
-; ⚠️ THE CORRUPTED FOREST IS THE SAME BROADLEAF THE EMBER CROWN PLANTS, DRAINED AND DARKENED. Saturation
-; strips its green and the tint pushes it to a bruised purple-brown: one shared asset reads as a second
-; ecology, which is what Saturation is for. Dense and clumped, so a pocket is a thicket, not a scatter.
+; Blasted crags: the jagged rock at 0.8-1.8 (5-11 m), near black, four per 100 x 100 m. Open ash
+; country only. No collision, like every scatter layer.
+[sub_resource type="Resource" id="Layer_ash_crag"]
+script = ExtResource("10_layer")
+ScenePath = "res://assets/models/world/prp_rock_crag_a.glb"
+Count = 4
+MinimumScale = 0.8
+MaximumScale = 1.8
+MinimumSpacing = 22.0
+Saturation = 0.2
+Clumping = 0.6
+ClumpScale = 70.0
+MaxSlope = 0.6
+Tint = Color(0.6, 0.54, 0.52, 1)
+TintVariation = 0.1
+VisibilityRangeEnd = 180.0
+VisibilityFadeMargin = 24.0
+CastShadows = true
+HlodShape = 1
+HlodReduction = 2
+HlodRangeBegin = 160.0
+HlodRangeEnd = 360.0
+HlodColor = Color(0.88, 0.9, 0.92, 1)
+HlodScale = Vector3(1.1, 1.1, 1.1)
+
+; The tor: the boulder at 2.5-4, a 10-16 m burnt mass, one per 100 x 100 m of open ash.
+[sub_resource type="Resource" id="Layer_ash_tor"]
+script = ExtResource("10_layer")
+ScenePath = "res://assets/models/world/prp_rock_boulder_a.glb"
+Count = 1
+MinimumScale = 2.5
+MaximumScale = 4.0
+MinimumSpacing = 60.0
+Saturation = 0.2
+Clumping = 0.6
+ClumpScale = 90.0
+MaxSlope = 0.5
+Tint = Color(0.5, 0.45, 0.42, 1)
+TintVariation = 0.08
+VisibilityRangeEnd = 220.0
+VisibilityFadeMargin = 26.0
+CastShadows = true
+HlodShape = 1
+HlodReduction = 2
+HlodRangeBegin = 200.0
+HlodRangeEnd = 420.0
+HlodColor = Color(0.88, 0.9, 0.92, 1)
+HlodScale = Vector3(1.1, 1.1, 1.1)
+
+; ⚠️ THE CORRUPTED FOREST IS THE SAME OAK THE EMBER CROWN PLANTS, DRAINED AND BRUISED. Saturation strips
+; its green and the tint pushes the grey that is left toward purple-brown: one shared asset reads as a
+; second ecology, which is what Saturation is for. Dense and clumped, so a pocket is a thicket, not a
+; scatter. ⚠️ The tint is LIGHT on purpose: the oak's atlas is already dark (mean about 0.25), and the
+; 0.4 grey this layer carried for the old broadleaf would take it to black.
 [sub_resource type="Resource" id="Layer_blight_tree"]
 script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_tree_broadleaf.glb"
-Count = 200
+ScenePath = "res://assets/models/world/prp_tree_oak_a.glb"
+Count = 120
 MinimumScale = 0.7
-MaximumScale = 1.45
-MinimumSpacing = 6.0
+MaximumScale = 1.5
+MinimumSpacing = 8.5
 Saturation = 0.18
 Clumping = 0.85
 ClumpScale = 40.0
 MaxSlope = 0.42
-Tint = Color(0.46, 0.34, 0.40, 1)
+Tint = Color(0.95, 0.74, 0.86, 1)
 TintVariation = 0.16
 VisibilityRangeEnd = 150.0
 VisibilityFadeMargin = 22.0
@@ -227,22 +262,30 @@ HlodRangeEnd = 320.0
 HlodColor = Color(0.88, 0.9, 0.92, 1)
 HlodScale = Vector3(1.15, 1.15, 1.15)
 
-[sub_resource type="Resource" id="Layer_blight_fungus"]
+; Elder trees of the blight: the oak at 1.8-2.4 (22-29 m), three per 100 x 100 m, held to the
+; interior of a thicket by a Clumping above Layer_blight_tree's on the same ClumpScale.
+[sub_resource type="Resource" id="Layer_blight_elder"]
 script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_mushrooms.glb"
-Count = 90
-MinimumScale = 0.7
-MaximumScale = 1.4
-MinimumSpacing = 3.0
-Saturation = 0.5
-Clumping = 0.7
-ClumpScale = 18.0
-MaxSlope = 0.5
-Tint = Color(0.62, 0.44, 0.58, 1)
-TintVariation = 0.2
-VisibilityRangeEnd = 50.0
-VisibilityFadeMargin = 10.0
-CastShadows = false
+ScenePath = "res://assets/models/world/prp_tree_oak_a.glb"
+Count = 3
+MinimumScale = 1.8
+MaximumScale = 2.4
+MinimumSpacing = 28.0
+Saturation = 0.18
+Clumping = 0.94
+ClumpScale = 40.0
+MaxSlope = 0.36
+Tint = Color(0.9, 0.7, 0.82, 1)
+TintVariation = 0.1
+VisibilityRangeEnd = 220.0
+VisibilityFadeMargin = 26.0
+CastShadows = true
+HlodShape = 1
+HlodReduction = 2
+HlodRangeBegin = 200.0
+HlodRangeEnd = 420.0
+HlodColor = Color(0.88, 0.9, 0.92, 1)
+HlodScale = Vector3(1.1, 1.1, 1.1)
 
 ; The Beast Lord's floor stays bare: nothing on the plateau top that reads as cover.
 [sub_resource type="Resource" id="Exclusion_lair"]
@@ -264,26 +307,26 @@ Radius = 18.0
 script = ExtResource("9_scatter")
 Seed = 6401
 EdgePadding = 1.0
-Layers = Array[ExtResource("10_layer")]([SubResource("Layer_ash_grass"), SubResource("Layer_ash_stone"), SubResource("Layer_ash_stone_b"), SubResource("Layer_ash_pebble"), SubResource("Layer_dead_trunk")])
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_ash_grass"), SubResource("Layer_ash_stone"), SubResource("Layer_ash_stone_b"), SubResource("Layer_dead_trunk"), SubResource("Layer_ash_crag"), SubResource("Layer_ash_tor")])
 
 [sub_resource type="Resource" id="Scatter_blight"]
 script = ExtResource("9_scatter")
 Seed = 6402
 EdgePadding = 1.0
-Layers = Array[ExtResource("10_layer")]([SubResource("Layer_blight_tree"), SubResource("Layer_blight_fungus"), SubResource("Layer_ash_grass"), SubResource("Layer_ash_stone_b")])
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_blight_tree"), SubResource("Layer_blight_elder"), SubResource("Layer_ash_grass"), SubResource("Layer_ash_stone_b")])
 
 [sub_resource type="Resource" id="Scatter_hearth"]
 script = ExtResource("9_scatter")
 Seed = 6403
 EdgePadding = 1.0
-Layers = Array[ExtResource("10_layer")]([SubResource("Layer_ash_grass"), SubResource("Layer_ash_pebble"), SubResource("Layer_ash_stone_b")])
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_ash_grass"), SubResource("Layer_ash_stone_b")])
 Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_hearth")])
 
 [sub_resource type="Resource" id="Scatter_station"]
 script = ExtResource("9_scatter")
 Seed = 6404
 EdgePadding = 1.0
-Layers = Array[ExtResource("10_layer")]([SubResource("Layer_ash_grass"), SubResource("Layer_ash_stone"), SubResource("Layer_ash_pebble"), SubResource("Layer_dead_trunk")])
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_ash_grass"), SubResource("Layer_ash_stone"), SubResource("Layer_dead_trunk")])
 Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_station")])
 
 [sub_resource type="Resource" id="Scatter_lair"]

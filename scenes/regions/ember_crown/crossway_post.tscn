@@ -21,8 +21,6 @@
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_bench.glb" id="21_bench"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_well.glb" id="22_well"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_campfire.glb" id="23_campfire"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_pine_dead.glb" id="24_pine"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_rock_cluster.glb" id="25_rocks"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_banner_guild.glb" id="26_banner"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_guild_rep.glb" id="30_guild_rep"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_hooded.glb" id="31_hooded"]
@@ -37,6 +35,9 @@
 [ext_resource type="Script" path="res://src/Npc/ScheduleComponent.cs" id="42b_schedulecomponent"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_townsman.glb" id="42b_npc_townsman"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_table_large.gltf" id="wa_prp_table_large"]
+[ext_resource type="PackedScene" path="res://scenes/props/lm_tree_dead_a.tscn" id="rp_lm_tree_dead_a"]
+[ext_resource type="PackedScene" path="res://scenes/props/lm_pine_fir_a.tscn" id="rp_lm_pine_fir_a"]
+[ext_resource type="PackedScene" path="res://scenes/props/lm_rock_boulder_a.tscn" id="rp_lm_rock_boulder_a"]
 
 ; THE CROSSWAY POST (Phase 38M2) — the wardens' gate on the road north, and the place 38M's toll is
 ; actually about. 38M built the toll, the permit and the bribe and left them standing in the town
@@ -187,14 +188,7 @@ radius = 0.8
 [sub_resource type="BoxShape3D" id="Shape_banner"]
 size = Vector3(1.0, 3.4, 0.7)
 
-[sub_resource type="BoxShape3D" id="Shape_rocks"]
-size = Vector3(2.3, 1.4, 1.9)
-
 ; Trunk only: a canopy collider would make a dead pine a pillar the player cannot walk past.
-[sub_resource type="CylinderShape3D" id="Shape_pine"]
-height = 6.0
-radius = 0.4
-
 [sub_resource type="CapsuleShape3D" id="Shape_npc"]
 radius = 0.4
 height = 1.8
@@ -568,103 +562,49 @@ omni_range = 11.0
 
 ; --- The verges: dead pines and rock, closing both sides down to the road -------
 [node name="PineA" type="Node3D" parent="Nav"]
-transform = Transform3D(0.9397, 0, 0.342, 0, 1, 0, -0.342, 0, 0.9397, 8, 0, 27)
+transform = Transform3D(1.0121, 0, 0.3683, 0, 1.077, 0, -0.3683, 0, 1.0121, 8, 0, 27)
 
-[node name="Model" parent="Nav/PineA" instance=ExtResource("24_pine")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/PineA"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/PineA/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 0)
-shape = SubResource("Shape_pine")
+[node name="Model" parent="Nav/PineA" instance=ExtResource("rp_lm_tree_dead_a")]
 
 [node name="PineB" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, -0.9397, 44, 0, 27)
+transform = Transform3D(-1.1182, 0, -0.407, 0, 1.19, 0, 0.407, 0, -1.1182, 44, 0, 27)
 
-[node name="Model" parent="Nav/PineB" instance=ExtResource("24_pine")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/PineB"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/PineB/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 0)
-shape = SubResource("Shape_pine")
+[node name="Model" parent="Nav/PineB" instance=ExtResource("rp_lm_tree_dead_a")]
 
 [node name="PineC" type="Node3D" parent="Nav"]
-transform = Transform3D(0.1736, 0, 0.9848, 0, 1, 0, -0.9848, 0, 0.1736, 52, 0, 22)
+transform = Transform3D(0.2059, 0, 1.168, 0, 1.186, 0, -1.168, 0, 0.2059, 52, 0, 22)
 
-[node name="Model" parent="Nav/PineC" instance=ExtResource("24_pine")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/PineC"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/PineC/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 0)
-shape = SubResource("Shape_pine")
+[node name="Model" parent="Nav/PineC" instance=ExtResource("rp_lm_tree_dead_a")]
 
 [node name="PineD" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.766, 0, 0.6428, 0, 1, 0, -0.6428, 0, -0.766, 46, 0, -3)
+transform = Transform3D(-0.6197, 0, 0.52, 0, 0.809, 0, -0.52, 0, -0.6197, 46, 0, -3)
 
-[node name="Model" parent="Nav/PineD" instance=ExtResource("24_pine")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/PineD"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/PineD/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 0)
-shape = SubResource("Shape_pine")
+[node name="Model" parent="Nav/PineD" instance=ExtResource("rp_lm_pine_fir_a")]
 
 [node name="PineE" type="Node3D" parent="Nav"]
-transform = Transform3D(0.5, 0, -0.866, 0, 1, 0, 0.866, 0, 0.5, 10, 0, -5)
+transform = Transform3D(0.404, 0, -0.6997, 0, 0.808, 0, 0.6997, 0, 0.404, 10, 0, -5)
 
-[node name="Model" parent="Nav/PineE" instance=ExtResource("24_pine")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/PineE"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/PineE/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 0)
-shape = SubResource("Shape_pine")
+[node name="Model" parent="Nav/PineE" instance=ExtResource("rp_lm_pine_fir_a")]
 
 [node name="PineF" type="Node3D" parent="Nav"]
-transform = Transform3D(0.766, 0, 0.6428, 0, 1, 0, -0.6428, 0, 0.766, 37, 0, -15)
+transform = Transform3D(0.6098, 0, 0.5117, 0, 0.796, 0, -0.5117, 0, 0.6098, 37, 0, -15)
 
-[node name="Model" parent="Nav/PineF" instance=ExtResource("24_pine")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/PineF"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/PineF/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 0)
-shape = SubResource("Shape_pine")
+[node name="Model" parent="Nav/PineF" instance=ExtResource("rp_lm_pine_fir_a")]
 
 [node name="RocksA" type="Node3D" parent="Nav"]
-transform = Transform3D(0.6428, 0, 0.766, 0, 1, 0, -0.766, 0, 0.6428, 6, 0, 9)
+transform = Transform3D(0.2353, 0, 0.2804, 0, 0.366, 0, -0.2804, 0, 0.2353, 6, -0.12, 9)
 
-[node name="Model" parent="Nav/RocksA" instance=ExtResource("25_rocks")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/RocksA"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/RocksA/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
-shape = SubResource("Shape_rocks")
+[node name="Model" parent="Nav/RocksA" instance=ExtResource("rp_lm_rock_boulder_a")]
 
 [node name="RocksB" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.342, 0, -0.9397, 0, 1, 0, 0.9397, 0, -0.342, 56, 0, 24)
+transform = Transform3D(-0.1252, 0, -0.3439, 0, 0.366, 0, 0.3439, 0, -0.1252, 56, -0.12, 24)
 
-[node name="Model" parent="Nav/RocksB" instance=ExtResource("25_rocks")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/RocksB"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/RocksB/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
-shape = SubResource("Shape_rocks")
+[node name="Model" parent="Nav/RocksB" instance=ExtResource("rp_lm_rock_boulder_a")]
 
 [node name="RocksC" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.9848, 0, 0.1736, 0, 1, 0, -0.1736, 0, -0.9848, 17, 0, -13)
+transform = Transform3D(-0.3604, 0, 0.0635, 0, 0.366, 0, -0.0635, 0, -0.3604, 17, -0.12, -13)
 
-[node name="Model" parent="Nav/RocksC" instance=ExtResource("25_rocks")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/RocksC"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/RocksC/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
-shape = SubResource("Shape_rocks")
+[node name="Model" parent="Nav/RocksC" instance=ExtResource("rp_lm_rock_boulder_a")]
 
 ; --- The waystone. TravelName is a LOCALE KEY, not prose (38K): TravelNodeComponent resolves it
 ; --- through Loc.T, and Loc.T returns an unknown string unchanged, so a mistyped key renders as the

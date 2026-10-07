@@ -134,10 +134,10 @@ BackdropDistance = 1100.0
 # 8. SCATTER — broken stone and the shards of heaven. No trees and no grass: nothing grows here.
 SCATTER = '''[sub_resource type="Resource" id="Layer_rubble"]
 script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_rock_cluster.glb"
-Count = 60
-MinimumScale = 0.5
-MaximumScale = 1.3
+ScenePath = "res://assets/models/world/prp_rock_boulder_a.glb"
+Count = 23
+MinimumScale = 0.25
+MaximumScale = 0.7
 MinimumSpacing = 4.0
 Saturation = 0.2
 Clumping = 0.6
@@ -156,10 +156,10 @@ HlodScale = Vector3(1.15, 1.15, 1.15)
 
 [sub_resource type="Resource" id="Layer_rubble_b"]
 script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_rock_cluster_a.glb"
-Count = 36
-MinimumScale = 0.3
-MaximumScale = 0.7
+ScenePath = "res://assets/models/world/prp_rock_rubble_a.glb"
+Count = 29
+MinimumScale = 0.35
+MaximumScale = 0.8
 MinimumSpacing = 7.0
 Saturation = 0.2
 Clumping = 0.55
@@ -171,12 +171,40 @@ VisibilityRangeEnd = 130.0
 VisibilityFadeMargin = 18.0
 CastShadows = true
 
+; Fallen masonry of a god's hall: the boulder at 2.5-4, a 10-16 m block, one per 100 x 100 m of
+; the open terraces. The realm has 6 m of relief, so its scale has to come from what stands on it.
+; No collision, like every scatter layer: not in the landing, gate or throne profiles.
+[sub_resource type="Resource" id="Layer_fallen_block"]
+script = ExtResource("10_layer")
+ScenePath = "res://assets/models/world/prp_rock_boulder_a.glb"
+Count = 1
+MinimumScale = 2.5
+MaximumScale = 4.0
+MinimumSpacing = 60.0
+Saturation = 0.2
+Clumping = 0.6
+ClumpScale = 90.0
+MaxSlope = 0.5
+Tint = Color(0.62, 0.56, 0.58, 1)
+TintVariation = 0.08
+VisibilityRangeEnd = 220.0
+VisibilityFadeMargin = 26.0
+CastShadows = true
+HlodShape = 1
+HlodReduction = 2
+HlodRangeBegin = 200.0
+HlodRangeEnd = 420.0
+HlodColor = Color(0.7, 0.66, 0.68, 1)
+HlodScale = Vector3(1.1, 1.1, 1.1)
+
+; Ember shards: the ice spire, drained and tinted to a banked-coal orange. 3-6 m, five per
+; 100 x 100 m (the spire is 518 triangles where the old shard was 24, so half the old count).
 [sub_resource type="Resource" id="Layer_ember_shard"]
 script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_ice_shard.glb"
-Count = 10
-MinimumScale = 0.5
-MaximumScale = 1.2
+ScenePath = "res://assets/models/world/prp_ice_spire_a.glb"
+Count = 5
+MinimumScale = 0.7
+MaximumScale = 1.6
 MinimumSpacing = 14.0
 Saturation = 0.3
 Clumping = 0.7
@@ -190,10 +218,10 @@ CastShadows = true
 
 [sub_resource type="Resource" id="Layer_ash_tuft"]
 script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_grass_short.glb"
+ScenePath = "res://assets/models/props/prp_grass_clump_a.glb"
 Count = 120
-MinimumScale = 0.5
-MaximumScale = 0.9
+MinimumScale = 0.4
+MaximumScale = 0.7
 MinimumSpacing = 3.0
 Saturation = 0.05
 Clumping = 0.5
@@ -224,7 +252,7 @@ Radius = 24.0
 script = ExtResource("9_scatter")
 Seed = 4711
 EdgePadding = 1.0
-Layers = Array[ExtResource("10_layer")]([SubResource("Layer_rubble"), SubResource("Layer_rubble_b"), SubResource("Layer_ember_shard"), SubResource("Layer_ash_tuft")])
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_rubble"), SubResource("Layer_rubble_b"), SubResource("Layer_fallen_block"), SubResource("Layer_ember_shard"), SubResource("Layer_ash_tuft")])
 
 [sub_resource type="Resource" id="Scatter_landing"]
 script = ExtResource("9_scatter")

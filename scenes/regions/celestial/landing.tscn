@@ -8,7 +8,6 @@
 [ext_resource type="Script" path="res://src/Entities/Entity.cs" id="wc_entity_cs"]
 [ext_resource type="Script" path="res://src/Dialogue/DialogueComponent.cs" id="wc_dialoguecomponent_cs"]
 [ext_resource type="Script" path="res://src/World/FlagVisibilityComponent.cs" id="wc_flagvisibilitycomponent_cs"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_rock_cluster.glb" id="wc_prp_rock_cluster_glb"]
 [ext_resource type="Script" path="res://src/Animation/CharacterAnimationComponent.cs" id="wc_characteranimationcomponent_cs"]
 [ext_resource type="Script" path="res://src/Animation/EquipmentPresentationComponent.cs" id="wc_equipmentpresentationcomponent_cs"]
 [ext_resource type="Script" path="res://src/Factions/FactionComponent.cs" id="wc_factioncomponent_cs"]
@@ -21,6 +20,7 @@
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_hooded.glb" id="wc_npc_hooded_glb"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_woman_dress.glb" id="wc_npc_woman_dress_glb"]
 [ext_resource type="Script" path="res://src/Enemies/SetPieceSpawnComponent.cs" id="wc_setpiecespawncomponent_cs"]
+[ext_resource type="PackedScene" path="res://assets/models/world/prp_rock_boulder_a.glb" id="rp_prp_rock_boulder_a"]
 
 ; THE LANDING (the finish run, Act IV) — where the Sunspire library's story gate lets the player out.
 ;
@@ -191,20 +191,20 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 32.5, 0, 41)
 script = ExtResource("wc_entity_cs")
 DisplayName = "The Five Cairns"
 
-[node name="Cairn1" parent="Nav/FiveGraves" instance=ExtResource("wc_prp_rock_cluster_glb")]
-transform = Transform3D(0.55, 0, 0, 0, 0.55, 0, 0, 0, 0.55, -6.5, 0, 0)
+[node name="Cairn1" parent="Nav/FiveGraves" instance=ExtResource("rp_prp_rock_boulder_a")]
+transform = Transform3D(0.201, 0, 0, 0, 0.201, 0, 0, 0, 0.201, -6.5, 0, 0)
 
-[node name="Cairn2" parent="Nav/FiveGraves" instance=ExtResource("wc_prp_rock_cluster_glb")]
-transform = Transform3D(0.4392, 0, 0.331, 0, 0.55, 0, -0.331, 0, 0.4392, -4, 0, 0)
+[node name="Cairn2" parent="Nav/FiveGraves" instance=ExtResource("rp_prp_rock_boulder_a")]
+transform = Transform3D(0.1605, 0, 0.121, 0, 0.201, 0, -0.121, 0, 0.1605, -4, 0, 0)
 
-[node name="Cairn3" parent="Nav/FiveGraves" instance=ExtResource("wc_prp_rock_cluster_glb")]
-transform = Transform3D(0.1516, 0, 0.5287, 0, 0.55, 0, -0.5287, 0, 0.1516, -1.5, 0, 0)
+[node name="Cairn3" parent="Nav/FiveGraves" instance=ExtResource("rp_prp_rock_boulder_a")]
+transform = Transform3D(0.0554, 0, 0.1932, 0, 0.201, 0, -0.1932, 0, 0.0554, -1.5, 0, 0)
 
-[node name="Cairn4" parent="Nav/FiveGraves" instance=ExtResource("wc_prp_rock_cluster_glb")]
-transform = Transform3D(-0.1971, 0, 0.5135, 0, 0.55, 0, -0.5135, 0, -0.1971, 1, 0, 0)
+[node name="Cairn4" parent="Nav/FiveGraves" instance=ExtResource("rp_prp_rock_boulder_a")]
+transform = Transform3D(-0.072, 0, 0.1877, 0, 0.201, 0, -0.1877, 0, -0.072, 1, 0, 0)
 
-[node name="Cairn5" parent="Nav/FiveGraves" instance=ExtResource("wc_prp_rock_cluster_glb")]
-transform = Transform3D(-0.4664, 0, 0.2915, 0, 0.55, 0, -0.2915, 0, -0.4664, 3.5, 0, 0)
+[node name="Cairn5" parent="Nav/FiveGraves" instance=ExtResource("rp_prp_rock_boulder_a")]
+transform = Transform3D(-0.1704, 0, 0.1065, 0, 0.201, 0, -0.1065, 0, -0.1704, 3.5, 0, 0)
 
 [node name="BlankStone" parent="Nav/FiveGraves" instance=ExtResource("2_pillar")]
 transform = Transform3D(0.9, 0, 0, 0, 0.7, 0, 0, 0, 0.9, 6.5, 0, 0)

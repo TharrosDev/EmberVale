@@ -17,14 +17,10 @@ extends SceneTree
 # its own blossom map — counting distinct textures fails a correct result. What must hold is
 # that the map they have in common resolves to ONE imported resource with the full member count.
 const FAMILIES := {
-	"leaves": ["T_Nature_Leaves.png",
-		["prp_clover.glb", "prp_fern.glb", "prp_flowers_a.glb", "prp_flowers_b.glb"]],
+	# The grass gradient is the one shared nature texture left: both procedural ground-cover
+	# meshes (tools/gen_ground_cover.py) name it by URI.
 	"grass": ["T_Nature_Grass.png",
-		["prp_grass_short.glb", "prp_grass_tall.glb", "prp_grass_wispy.glb"]],
-	"pathrocks": ["T_Nature_PathRocks.png",
-		["prp_pebble_a.glb", "prp_pebble_b.glb", "prp_rockpath_small.glb", "prp_rockpath_wide.glb"]],
-	"broadleaf": ["T_Nature_LeafBroadleaf.png",
-		["prp_tree_broadleaf.glb", "prp_bush_flowering.glb"]],
+		["prp_grass_clump_a.glb", "prp_fern_clump_a.glb"]],
 }
 
 

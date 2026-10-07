@@ -193,9 +193,9 @@ CASES = [
 
     ("world.scatter_source_missing", "ValidateRegions",
      [("data/regions/FrostfangReach.tres",
-       # ⚠️ prp_pine_dead is in TWO layers since the 2026-08-29 overhaul (the roosts' and the
-       # bare high-altitude one) and apply_case refuses an ambiguous find. The snow tuft is unique.
-       'ScenePath = "res://assets/models/props/prp_grass_short.glb"',
+       # ⚠️ The dead tree, the boulder and the rubble pile are each in TWO OR MORE Frostfang layers and
+       # apply_case refuses an ambiguous find. The snow tuft is the realm's only grass layer.
+       'ScenePath = "res://assets/models/props/prp_grass_clump_a.glb"',
        'ScenePath = "res://assets/models/props/prp_missing.glb"')],
      "scatter source 'res://assets/models/props/prp_missing.glb' does not exist"),
 

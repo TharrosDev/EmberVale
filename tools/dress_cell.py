@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Scatter nature-megakit ground cover into a region cell and print the `.tscn` stanzas.
+"""Scatter ground cover (the grass clump and the fern rosette) into a region cell and print the `.tscn` stanzas.
 
 Why this exists
 ---------------
@@ -17,11 +17,10 @@ Usage
 
 Styles, because a cell's dressing is a judgement about the PLACE and not a setting:
 
-    meadow     open wilderness - grass everywhere, flowers, ferns and mushrooms under the pines
+    meadow     open wilderness - grass everywhere, ferns under the pines
     verge      a road or a settlement - grass at the margins only, nothing on the thoroughfare
-    shore      a waterfront - wispy grass near the water, pebbles on the strand, ferns inland
-    industrial a worked site - no meadow. Mushrooms and pebbles in the damp corners, grass at the
-               fenceline where nobody walks
+    shore      a waterfront - grass near the water, ferns inland
+    industrial a worked site - no meadow. Grass at the fenceline where nobody walks
     edges      a dense or a deliberately clear cell - a thin band of grass hard against the
                boundary and nothing at all in the middle
 
@@ -64,11 +63,10 @@ STYLES = {
                        pebbles=4, band=(0.80, 1.00)),
 }
 
-SPECIES = {
-    "grass_short": 13, "grass_tall": 14, "grass_wispy": 15, "clover": 16,
-    "flowers_a": 17, "flowers_b": 18, "fern": 19, "mushrooms": 20,
-    "pebble_a": 21, "pebble_b": 22, "rockpath_wide": 23, "rockpath_small": 24,
-}
+# The whole ground-cover set: one grass clump and one fern rosette (tools/gen_ground_cover.py).
+# Variety comes from scale, yaw and where the patches fall; there are no flower, clover, mushroom
+# or pebble species any more, and no stepping-stone path.
+SPECIES = {"grass_clump_a": 13, "fern_clump_a": 14}
 
 NODE_RE = re.compile(r'^\[node name="([^"]+)"[^\]]*\]$')
 XFORM_RE = re.compile(r"^transform = Transform3D\(([^)]*)\)$")
@@ -189,8 +187,7 @@ def main(argv):
                             % (f"{prefix}{placed}", ids[s], x, z, random.choice(YAWS)))
         return placed
 
-    grass = lambda: random.choices(
-        ["grass_short", "grass_tall", "grass_wispy"], weights=[5, 3, 2])[0]
+    grass = "grass_clump_a"
 
     # ⚠️ A BANDED STYLE MUST BE SAMPLED BY ANGLE, NOT BY REJECTION. Drawing (x, z) uniformly in the
     # square and throwing away anything outside the band gives every patch to whichever arc happens
@@ -200,9 +197,9 @@ def main(argv):
     centres = spots_for(cfg["patches"], 2.2)
     n = add("Grass", 0, grass, 1.3, 0.3, clumps=centres, per=random.randint(*cfg["tufts"]))
 
-    # Ferns and mushrooms are shade species: they belong UNDER the pines, so they clear the
-    # trunk and not the canopy. Applying the pine's full keep-out to them deletes them silently,
-    # which is exactly what happened on wilds_north's second pass.
+    # Ferns are a shade species: they belong UNDER the pines, so they clear the trunk and not
+    # the canopy. Applying the pine's full keep-out to them deletes them silently, which is
+    # exactly what happened on wilds_north's second pass.
     pines = [(x, z) for nm, x, z in nodes if "pine" in nm.lower() or "tree" in nm.lower()]
     random.shuffle(pines)
     pineset = {(round(x, 3), round(z, 3)) for x, z in pines}
@@ -210,27 +207,15 @@ def main(argv):
     keepout[:] = [(x, z, r * 0.22 if (round(x, 3), round(z, 3)) in pineset else r)
                   for x, z, r in keepout]
 
-    # ⚠️ Ferns and mushrooms draw from the same pines rather than splitting the list. Slicing it
-    # (shade[:ferns] then shade[ferns:]) starves whichever comes second the moment a cell has
-    # fewer pines than clumps -- wilds_west has two pines and got 3 ferns and ZERO mushrooms.
-    # A pine can shelter both, which is also what a real one does.
     def under(count, spread):
         return [(x + random.uniform(-spread, spread), z + random.uniform(-spread, spread))
                 for x, z in (pines * 3)[:count]] if pines else []
 
-    f = add("Fern", 0, "fern", 1.6, 0.4, clumps=under(cfg["ferns"], 1.8), per=3)
-    m = add("Mushroom", 0, "mushrooms", 1.1, 0.15, clumps=under(cfg["shrooms"], 1.5), per=3)
+    f = add("Fern", 0, "fern_clump_a", 1.6, 0.4, clumps=under(cfg["ferns"], 1.8), per=3)
     keepout[:] = saved
 
-    c = add("Clover", cfg["clover"], "clover", 1.8, 0.2, per=7)
-    fa = add("FlowerA", cfg["flowers"], "flowers_a", 1.8, 0.3, per=4)
-    fb = add("FlowerB", max(0, cfg["flowers"] - 1), "flowers_b", 1.6, 0.3, per=4)
-    p = add("Pebble", cfg["pebbles"], lambda: random.choice(["pebble_a", "pebble_b"]),
-            0.6, 0.15, per=2)
-
     print("\n".join(rows))
-    print(f"\n; {style}: {n} grass, {c} clover, {fa + fb} flowers, {f} ferns, "
-          f"{m} mushrooms, {p} pebbles = {len(rows)}", file=sys.stderr)
+    print(f"\n; {style}: {n} grass, {f} ferns = {len(rows)}", file=sys.stderr)
     print(";EXT " + " ".join(f"{ids[k]}={k}" for k in SPECIES), file=sys.stderr)
 
 

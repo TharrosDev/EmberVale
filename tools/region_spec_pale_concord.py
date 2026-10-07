@@ -125,15 +125,15 @@ BackdropDistance = 1100.0
 # the only way to drain a shared asset.
 SCATTER = '''[sub_resource type="Resource" id="Layer_still_grass"]
 script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_grass_tall.glb"
+ScenePath = "res://assets/models/props/prp_grass_clump_a.glb"
 Count = 480
-MinimumScale = 0.75
-MaximumScale = 1.2
+MinimumScale = 0.9
+MaximumScale = 1.4
 MinimumSpacing = 1.6
 Saturation = 0.45
-MaxSlope = 0.55
 Clumping = 0.3
 ClumpScale = 24.0
+MaxSlope = 0.55
 Tint = Color(0.86, 0.84, 0.70, 1)
 TintVariation = 0.08
 VisibilityRangeEnd = 62.0
@@ -142,33 +142,37 @@ CastShadows = false
 
 [sub_resource type="Resource" id="Layer_wheat"]
 script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_grass_wispy.glb"
+ScenePath = "res://assets/models/props/prp_grass_clump_a.glb"
 Count = 360
-MinimumScale = 0.8
-MaximumScale = 1.1
+MinimumScale = 0.9
+MaximumScale = 1.3
 MinimumSpacing = 1.8
 Saturation = 0.5
-MaxSlope = 0.35
 Clumping = 0.7
 ClumpScale = 40.0
+MaxSlope = 0.35
 Tint = Color(0.92, 0.86, 0.62, 1)
 TintVariation = 0.05
 VisibilityRangeEnd = 58.0
 VisibilityFadeMargin = 10.0
 CastShadows = false
 
+; ⚠️ THE TINT IS ABOVE 1 ON PURPOSE. The oak's atlas is dark (mean about 0.25); drained by Saturation it
+; is a dark grey, and an instance colour only multiplies. A pale, bloodless tree in the held dusk
+; needs the grey LIFTED, which only an over-bright tint does. Fewer and wider apart than before:
+; the crown is 8.5 m across at scale 1.
 [sub_resource type="Resource" id="Layer_pale_tree"]
 script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_tree_broadleaf.glb"
-Count = 38
+ScenePath = "res://assets/models/world/prp_tree_oak_a.glb"
+Count = 30
 MinimumScale = 0.8
-MaximumScale = 1.3
-MinimumSpacing = 9.0
-Saturation = 0.35
-MaxSlope = 0.42
+MaximumScale = 1.4
+MinimumSpacing = 11.0
+Saturation = 0.3
 Clumping = 0.8
 ClumpScale = 50.0
-Tint = Color(0.82, 0.80, 0.74, 1)
+MaxSlope = 0.42
+Tint = Color(1.35, 1.3, 1.2, 1)
 TintVariation = 0.08
 VisibilityRangeEnd = 150.0
 VisibilityFadeMargin = 22.0
@@ -182,15 +186,15 @@ HlodScale = Vector3(1.15, 1.15, 1.15)
 
 [sub_resource type="Resource" id="Layer_stone"]
 script = ExtResource("10_layer")
-ScenePath = "res://assets/models/props/prp_rock_cluster_a.glb"
-Count = 10
-MinimumScale = 0.3
-MaximumScale = 0.6
+ScenePath = "res://assets/models/world/prp_rock_rubble_a.glb"
+Count = 8
+MinimumScale = 0.35
+MaximumScale = 0.7
 MinimumSpacing = 12.0
 Saturation = 0.3
-MaxSlope = 0.9
 Clumping = 0.5
 ClumpScale = 30.0
+MaxSlope = 0.9
 Tint = Color(0.80, 0.78, 0.76, 1)
 TintVariation = 0.08
 VisibilityRangeEnd = 110.0

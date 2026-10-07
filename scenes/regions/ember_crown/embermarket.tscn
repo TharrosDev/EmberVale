@@ -13,7 +13,6 @@
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_waystone.glb" id="13_waystone"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_banner_guild.glb" id="14_banner"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_brazier.glb" id="15_brazier"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_rock_cluster.glb" id="16_rocks"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_market_stand.glb" id="17_stand_a"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_market_stand_b.glb" id="18_stand_b"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_cart.glb" id="19_cart"]
@@ -26,8 +25,6 @@
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_gazebo.glb" id="26_gazebo"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_cauldron.glb" id="27_cauldron"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_fence.glb" id="28_fence"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_tree_broadleaf.glb" id="29_tree"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_bush_flowering.glb" id="30_bush"]
 [ext_resource type="PackedScene" path="res://assets/models/architecture/bld_house_a.glb" id="31_house_a"]
 [ext_resource type="PackedScene" path="res://assets/models/architecture/bld_house_b.glb" id="32_house_b"]
 [ext_resource type="PackedScene" path="res://assets/models/architecture/bld_cottage.glb" id="33_cottage"]
@@ -57,6 +54,9 @@
 [ext_resource type="PackedScene" path="res://scenes/props/bld_cottage_shuttered.tscn" id="dx_cottage_shuttered"]
 [ext_resource type="PackedScene" path="res://assets/models/architecture/bld_house_b.glb" id="dx_house_b"]
 [ext_resource type="PackedScene" path="res://scenes/props/bld_townhouse_balcony.tscn" id="dx_townhouse_balcony"]
+[ext_resource type="PackedScene" path="res://scenes/props/lm_tree_oak_a.tscn" id="rp_lm_tree_oak_a"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_fern_clump_a.glb" id="rp_prp_fern_clump_a"]
+[ext_resource type="PackedScene" path="res://scenes/props/lm_rock_boulder_a.tscn" id="rp_lm_rock_boulder_a"]
 
 ; THE EMBERMARKET — "the Coilyard" (the 2026-08-28 layout rebuild). The Ember Crown's trade district, one street
 ; south of the town square, and as of this phase a district you navigate rather than a street you walk
@@ -246,14 +246,6 @@ size = Vector3(2.95, 1.2, 0.16)
 
 ; Trunk only: a canopy collider would stop the player walking under a tree, which is the one thing a
 ; tree in a market square is for.
-[sub_resource type="CylinderShape3D" id="Shape_tree"]
-height = 8.0
-radius = 0.5
-
-[sub_resource type="CylinderShape3D" id="Shape_bush"]
-height = 1.1
-radius = 0.62
-
 [sub_resource type="CylinderShape3D" id="Shape_lamp"]
 height = 3.6
 radius = 0.22
@@ -268,9 +260,6 @@ radius = 0.8
 
 [sub_resource type="BoxShape3D" id="Shape_banner"]
 size = Vector3(1.0, 3.4, 0.7)
-
-[sub_resource type="BoxShape3D" id="Shape_rocks"]
-size = Vector3(2.3, 1.4, 1.9)
 
 [sub_resource type="CapsuleShape3D" id="Shape_npc"]
 radius = 0.4
@@ -949,103 +938,49 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
 shape = SubResource("Shape_fence")
 
 [node name="TreeW1" type="Node3D" parent="Nav"]
-transform = Transform3D(0.9397, 0, 0.342, 0, 1, 0, -0.342, 0, 0.9397, -65.5, 0, -3.5)
+transform = Transform3D(0.5638, 0, 0.2052, 0, 0.6, 0, -0.2052, 0, 0.5638, -65.5, 0, -3.5)
 
-[node name="Model" parent="Nav/TreeW1" instance=ExtResource("29_tree")]
-
-[node name="Col" type="StaticBody3D" parent="Nav/TreeW1"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/TreeW1/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4, 0)
-shape = SubResource("Shape_tree")
+[node name="Model" parent="Nav/TreeW1" instance=ExtResource("rp_lm_tree_oak_a")]
 
 [node name="TreeW2" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, -0.9397, -53, 0, 0.5)
+transform = Transform3D(-0.9331, 0, -0.3396, 0, 0.993, 0, 0.3396, 0, -0.9331, -53, 0, 0.5)
 
-[node name="Model" parent="Nav/TreeW2" instance=ExtResource("29_tree")]
-
-[node name="Col" type="StaticBody3D" parent="Nav/TreeW2"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/TreeW2/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4, 0)
-shape = SubResource("Shape_tree")
+[node name="Model" parent="Nav/TreeW2" instance=ExtResource("rp_lm_tree_oak_a")]
 
 [node name="TreeE1" type="Node3D" parent="Nav"]
-transform = Transform3D(0.766, 0, 0.6428, 0, 1, 0, -0.6428, 0, 0.766, -25, 0, -29.5)
+transform = Transform3D(0.4596, 0, 0.3857, 0, 0.6, 0, -0.3857, 0, 0.4596, -25, 0, -29.5)
 
-[node name="Model" parent="Nav/TreeE1" instance=ExtResource("29_tree")]
-
-[node name="Col" type="StaticBody3D" parent="Nav/TreeE1"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/TreeE1/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4, 0)
-shape = SubResource("Shape_tree")
+[node name="Model" parent="Nav/TreeE1" instance=ExtResource("rp_lm_tree_oak_a")]
 
 [node name="TreeE2" type="Node3D" parent="Nav"]
-transform = Transform3D(0.5, 0, -0.866, 0, 1, 0, 0.866, 0, 0.5, -36.5, 0, -0.5)
+transform = Transform3D(0.3, 0, -0.5196, 0, 0.6, 0, 0.5196, 0, 0.3, -36.5, 0, -0.5)
 
-[node name="Model" parent="Nav/TreeE2" instance=ExtResource("29_tree")]
-
-[node name="Col" type="StaticBody3D" parent="Nav/TreeE2"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/TreeE2/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4, 0)
-shape = SubResource("Shape_tree")
+[node name="Model" parent="Nav/TreeE2" instance=ExtResource("rp_lm_tree_oak_a")]
 
 [node name="BushA" type="Node3D" parent="Nav"]
-transform = Transform3D(0.7071, 0, 0.7071, 0, 1, 0, -0.7071, 0, 0.7071, -61, 0, -8)
+transform = Transform3D(1.0607, 0, 1.0607, 0, 1.5, 0, -1.0607, 0, 1.0607, -61, 0, -8)
 
-[node name="Model" parent="Nav/BushA" instance=ExtResource("30_bush")]
-
-[node name="Col" type="StaticBody3D" parent="Nav/BushA"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/BushA/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.55, 0)
-shape = SubResource("Shape_bush")
+[node name="Model" parent="Nav/BushA" instance=ExtResource("rp_prp_fern_clump_a")]
 
 [node name="BushC" type="Node3D" parent="Nav"]
-transform = Transform3D(0.6428, 0, -0.766, 0, 1, 0, 0.766, 0, 0.6428, -33, 0, -29.5)
+transform = Transform3D(0.9642, 0, -1.149, 0, 1.5, 0, 1.149, 0, 0.9642, -33, 0, -29.5)
 
-[node name="Model" parent="Nav/BushC" instance=ExtResource("30_bush")]
-
-[node name="Col" type="StaticBody3D" parent="Nav/BushC"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/BushC/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.55, 0)
-shape = SubResource("Shape_bush")
+[node name="Model" parent="Nav/BushC" instance=ExtResource("rp_prp_fern_clump_a")]
 
 [node name="BushD" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.5, 0, 0.866, 0, 1, 0, -0.866, 0, -0.5, -24, 0, -0.5)
+transform = Transform3D(-0.75, 0, 1.299, 0, 1.5, 0, -1.299, 0, -0.75, -24, 0, -0.5)
 
-[node name="Model" parent="Nav/BushD" instance=ExtResource("30_bush")]
-
-[node name="Col" type="StaticBody3D" parent="Nav/BushD"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/BushD/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.55, 0)
-shape = SubResource("Shape_bush")
+[node name="Model" parent="Nav/BushD" instance=ExtResource("rp_prp_fern_clump_a")]
 
 [node name="RocksW" type="Node3D" parent="Nav"]
-transform = Transform3D(0.4226, 0, 0.9063, 0, 1, 0, -0.9063, 0, 0.4226, -69, 0, -3.5)
+transform = Transform3D(0.1547, 0, 0.3317, 0, 0.366, 0, -0.3317, 0, 0.1547, -69, -0.12, -3.5)
 
-[node name="Model" parent="Nav/RocksW" instance=ExtResource("16_rocks")]
-
-[node name="Col" type="StaticBody3D" parent="Nav/RocksW"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/RocksW/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
-shape = SubResource("Shape_rocks")
+[node name="Model" parent="Nav/RocksW" instance=ExtResource("rp_lm_rock_boulder_a")]
 
 [node name="RocksE" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.5, 0, -0.866, 0, 1, 0, 0.866, 0, -0.5, -20, 0, -26.5)
+transform = Transform3D(-0.183, 0, -0.317, 0, 0.366, 0, 0.317, 0, -0.183, -20, -0.12, -26.5)
 
-[node name="Model" parent="Nav/RocksE" instance=ExtResource("16_rocks")]
-
-[node name="Col" type="StaticBody3D" parent="Nav/RocksE"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/RocksE/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
-shape = SubResource("Shape_rocks")
+[node name="Model" parent="Nav/RocksE" instance=ExtResource("rp_lm_rock_boulder_a")]
 
 ; --- Clutter clusters. Five irregular groups against stall flanks and house walls, none of them in the
 ; --- 7 m spine. Deliberately not symmetric and deliberately not on the grid: a market is a place where
