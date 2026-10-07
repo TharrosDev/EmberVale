@@ -165,6 +165,8 @@ internal static class ArenaRunner
                 // Every step stays 1/60 s of game time; there are just more of them per frame.
                 Engine.PhysicsTicksPerSecond = ticksBefore * options.Speed;
                 Engine.MaxPhysicsStepsPerFrame = Math.Max(stepsBefore, options.Speed * 2);
+                // Both: the clock now, and the value hit-stop and a boss's slow beat hand it back at.
+                Embervale.Combat.HitStopDirector.BaseTimeScale = options.Speed;
                 Engine.TimeScale = options.Speed;
                 OS.LowProcessorUsageModeSleepUsec = 1;
 
@@ -221,6 +223,7 @@ internal static class ArenaRunner
         finally
         {
             Release();
+            Embervale.Combat.HitStopDirector.BaseTimeScale = 1f;
             Engine.TimeScale = 1.0;
             Engine.PhysicsTicksPerSecond = ticksBefore;
             Engine.MaxPhysicsStepsPerFrame = stepsBefore;
@@ -632,13 +635,6 @@ internal static class ArenaRunner
             while (true)
             {
                 await HeadlessLifecycle.Frames(root, 1);
-
-                // The speed is the time scale; a hit-stop or a boss's slow beat that hands the
-                // clock back hands back 1, not this run's scale.
-                if (options.Speed != 1 && Mathf.IsEqualApprox((float)Engine.TimeScale, 1f))
-                {
-                    Engine.TimeScale = options.Speed;
-                }
 
                 seconds += Engine.TimeScale / Engine.PhysicsTicksPerSecond;
                 tick++;
