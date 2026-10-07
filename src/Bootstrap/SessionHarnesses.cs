@@ -52,6 +52,7 @@ internal static class SessionHarnesses
         new("--tradeshots", _ => new Debugging.TradeShots { Name = "TradeShots" }),
         new("--spellshots", _ => new Debugging.SpellShots { Name = "SpellShots" }),
         new("--camshots", _ => new Debugging.CamShots { Name = "CamShots" }),
+        new("--shot", session => Debugging.OneShots.Create(session)),
 
         // There to measure frame times, so the world's performance sampling stays on for it.
         new("--vfxperf", _ => new Debugging.VfxPerfScenario { Name = "VfxPerf" }, Capture: false),

@@ -45,6 +45,15 @@ public sealed partial class SpellShots : TimedShots
     /// <summary>Narrows the run to spell ids and school names, comma separated.</summary>
     public const string FilterVariable = "EMBERVALE_SPELLSHOTS_FILTER";
 
+    /// <summary>Set by <c>--shot --spell=id</c> before this harness starts: the one spell to cast and
+    /// the view to cast it in, in place of the two variables.</summary>
+    internal static string? FilterOverride { get; set; }
+
+    /// <inheritdoc cref="FilterOverride"/>
+    internal static string? ViewOverride { get; set; }
+
+    private static string FilterText => FilterOverride ?? OS.GetEnvironment(FilterVariable);
+
     private const string ViewVariable = "EMBERVALE_SPELLSHOTS_VIEW";
     private const string HourVariable = "EMBERVALE_SPELLSHOTS_HOUR";
     private const string BackdropVariable = "EMBERVALE_SPELLSHOTS_BACKDROP";
@@ -185,14 +194,14 @@ public sealed partial class SpellShots : TimedShots
 
     protected override void BuildTimedShots()
     {
-        string view = OS.GetEnvironment(ViewVariable).Trim().ToLowerInvariant();
+        string view = (ViewOverride ?? OS.GetEnvironment(ViewVariable)).Trim().ToLowerInvariant();
         bool third = view != "fp";
         bool first = view != "tp";
 
         List<SpellResource> spells = Filtered();
         if (spells.Count == 0)
         {
-            Problem($"{FilterVariable}='{OS.GetEnvironment(FilterVariable)}' matched no spell.");
+            Problem($"spell filter '{FilterText}' matched no spell.");
             return;
         }
 
@@ -226,7 +235,7 @@ public sealed partial class SpellShots : TimedShots
                 .Select(s => new Plan(s, FirstPerson: true, Day: false, ByEnemy: true)));
         }
 
-        if (third)
+        if (third && FilterOverride == null)
         {
             plans.AddRange(own.Where(s => DaylightSet.Contains(StemOf(s))).Select(s => new Plan(s, FirstPerson: false, Day: true)));
         }
@@ -241,7 +250,7 @@ public sealed partial class SpellShots : TimedShots
 
     private static List<SpellResource> Filtered()
     {
-        string[] tokens = OS.GetEnvironment(FilterVariable)
+        string[] tokens = FilterText
             .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .Select(t => t.ToLowerInvariant())
             .Select(t => t.StartsWith(SpellPrefix, StringComparison.Ordinal) ? t[SpellPrefix.Length..] : t)
@@ -519,6 +528,14 @@ public sealed partial class SpellShots : TimedShots
             Problem($"{run.Plan.Label}: {run.Spell.Id} could not be selected ({Describe(run)}).");
         }
 
+        // Nothing held down survives the window losing focus, so a run that asked for it (or whose
+        // window is not focused now) casts on the component: the same route the fallback below takes.
+        if (DirectInput)
+        {
+            BeginDirect(run);
+            return;
+        }
+
         // The press is made between ticks so the router's next tick sees its edge (TimedShots.NextFrame).
         run.Pressed = -1;
         NextFrame(() =>
@@ -529,6 +546,9 @@ public sealed partial class SpellShots : TimedShots
             run.Held = true;
         });
     }
+
+    /// <summary>A cast the cast button is holding up ends when the engine lets go of the button.</summary>
+    protected override bool FocusLossSpoils() => _run is { Direct: false, Held: true };
 
     /// <summary>Begins the cast on the component itself: how an enemy casts, and the fallback when the
     /// cast button did not reach the player's router.</summary>
