@@ -61,6 +61,10 @@ RULES = (
                              "scene-audit-rules", "scenes", "meshes", "building-collision")),
     (("assets/models/*",), ("content", "architecture", "meshes")),
     (("tools/region_spec_template.py",), ("template",)),
+    (("data/perks/*", "data/appearance/*", "data/races/*", "data/story/*", "data/quests/*", "data/dialogue/*",
+      "data/locale/*", "data/enemies/*", "assets/models/creatures/*", "assets/models/world/*",
+      "tools/gen_perks.py", "tools/gen_appearance.py", "tools/campaign/*", "tools/gen_ground_cover.py",
+      "tools/gen_player_mask.py", "tools/check_hit_zones.py"), ("generators",)),
 )
 # Steps that are not registry gates.
 EXTRA = (
