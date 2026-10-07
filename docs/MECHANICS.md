@@ -40,6 +40,14 @@ live census); the item, crafting and save sections were recounted from the files
   land on the animation's foot contact, sound by water, tag, terrain biome or collider, and scale with
   gait; jumps and landings too, NPCs within 20 m. `FootIkComponent`, `FootPlacement`,
   `FootstepComponent`, `FootstepGait`, `FootstepAudio`, `Surfaces`.
+- **Gait animation** — one 2D blend over strafe and forward speed, each divided by the actor's own
+  run speed, so walk (0.45), run (1) and sprint (1.6) each play their own clip on any body; a
+  diagonal blends the strafe with the gait for its speed; an airborne body takes a fall pose.
+  Every Meshy humanoid uses it. The library's clips have their root travel removed at build, the
+  idle is calmed to face forward (the original is kept as `idle_alert`), and `strafe_right` is the
+  squared `strafe_left` mirrored. Casts, channels and library swings play on the upper body while
+  the legs keep moving. `LocomotionBlend`, `LocomotionTree`, `CharacterAnimationComponent`,
+  `tools/build_meshy_anim_library.gd`.
 - **NaN guard** — a motion vector is checked before it reaches physics, and a body found at a
   non-finite position or below the world is returned to its last floor; each is logged once per body.
   `MotionSafety`.
@@ -51,11 +59,29 @@ The rig (`PlayerCameraRig`) is the only writer of the camera transform. Everythi
 rig sums and clamps them (`CameraLayer.cs`, `CameraRigMath.CombineLayers`). Motion layers scale by
 `CameraComfort`: the settings sliders and Reduced Motion reach all of them.
 
-- **First/third person swap** (`V` or the setting, at any time) — true first person rides the head
-  bone with the body visible; third person is over the shoulder (side, distance 2–6 m and FOV are live
-  settings). The swap is a critically damped spring, so a second press mid-swap turns it round instead
-  of snapping; look direction is kept, the eye seat crossfades, and a swap to third person waits in
-  first person until the seat has 1 m of room. `PlayerCameraRig`, `CameraRigMath` (`src/Player`).
+- **First/third person swap** (`V` or the setting, at any time) — true first person sits at the
+  head with the body visible; third person is over the shoulder, behind the character's back (side,
+  distance 2–6 m and FOV are live settings). The swap is a critically damped spring, so a second
+  press mid-swap turns it round instead of snapping; look direction is kept, the eye seat crossfades,
+  and a swap to third person waits in first person until the seat has 1 m of room.
+  `PlayerCameraRig`, `CameraRigMath` (`src/Player`).
+- **First-person eye** — the eye is anchored to the head's rest position with a neck pivot turned by
+  pitch, and takes only 30% of the animated head's vertical travel and 10% of its horizontal (none
+  under Reduced Motion), so a clip never throws the view. Looking down carries it forward over the
+  chest. Two spheres are cut out of the player's own body, one round the head and one round the
+  camera, so neither the face nor a near-plane slice is ever in frame while the head still casts
+  its shadow; head-socket gear goes shadows-only. `CameraRigMath.EyeLocal`, `LookDownReach`,
+  `HeadHidden`, `EyeSphereRadius`, `PlayerAppearance.SetHeadCutout` / `SetEyeCutout`,
+  `player_body.gdshader` (`fp_head`, `fp_eye`).
+- **Smooth view between physics ticks** — each drawn frame the camera pivot and the visible body
+  are offset by the residual between the last two physics positions, and the offset is removed
+  before any physics tick reads them. In third person the visible body trails a camera turn by a
+  tenth of a second (at most 30 degrees; off in first person, lock-on, actions, a dodge, mounted,
+  casting and Reduced Motion). `PlayerVisualSmoother`, `VisualSmoothing`.
+- **Casting arm in first person** — while a spell is wound up, charged or channelled the casting
+  arm is swung at the shoulder so the hand is in frame, and effects that start at the hand start at
+  the hand the player sees. Presentation only: aim and the spell's path do not move.
+  `FirstPersonArmComponent`, `FirstPersonArmModifier`, `FirstPersonArmRules`.
 - **Camera profiles** — exploration, sprint, combat, target-lock, aim and mounted multiply the
   player's settings, never replace them. Sprint and gallop lean with speed; a context blends in and
   releases at different rates (combat framing is sticky, aim snaps in and lets go slowly); each has
@@ -188,7 +214,34 @@ caps the first two at 25%).
 
 - **Spells as data** — 25 player spells and five enemy spells (`data/spells`): school, delivery, cast
   mode (instant, charged by hold, channelled), mana, cooldown, status. `SpellResource`,
-  `SpellcastingComponent`. `Q` casts, `F` cycles, `T` spellbook.
+  `SpellcastingComponent`. `Q` (pad `RB`) casts, `F` (pad `LB`) is the spell wheel, `T` spellbook.
+- **Spell wheel** — hold `F` (or `LB`) and the wheel opens over the HUD: eight favourites on the
+  inner ring, the six schools on the outer ring, and the hovered school's known spells fanned out
+  past the rim. The mouse or the right stick steers it, letting go over a spell prepares it, the
+  centre or Block cancels. The world keeps running and move, jump, dodge and sprint stay live;
+  look, lock-on, attack, block and cast are held back. Wedges show a cooldown wipe with seconds,
+  the mana price when it cannot be paid and a padlock when corruption is too shallow. It closes
+  without selecting on a stagger, death or a menu. `SpellWheel`, `SpellWheelRules`,
+  `SpellWheelHold`, `SpellWheelInput`, `PlayGate`, `SpellWheelMetrics`, `SpellGlyphs`.
+- **Previous spell** — a tap of `F` (under 0.16 s) swaps back to the spell prepared before this
+  one. With no previous spell, or when the wheel cannot open, the press steps to the next spell as
+  it always did. With presses in place of holds the key toggles the wheel, a second press or
+  Attack selects, and the centre holds the previous spell. `SpellcastingComponent.SelectPrevious`.
+- **Favourites** — eight slots, saved. A newly learned spell takes the first free slot and a
+  forgotten one leaves it; the spellbook's pin row sets them. `SpellFavouritesRules`,
+  `SpellcastingComponent.SetFavourite`, `SpellPinRules`.
+- **Spell effects** — every spell has a wind-up at the hand, a release, a travel picture, an
+  impact and what it leaves behind, built from pooled blocks (flares, particle bursts, lightning
+  ribbons, shells, ground discs and marks, distortion, one screen flash) and coloured from the
+  school's hue. All 30 spells have an authored recipe and special-case hooks. Presentation only:
+  a dropped or culled effect changes nothing else. `SpellVfx`, `SpellVfxDirector`,
+  `SpellVfxCatalog`, `VfxPalette` (`src/Magic/Vfx`).
+- **Spell effect quality** — Performance, Low, Medium, High or Ultra, following the graphics
+  preset unless the Graphics tab's Spell effects option overrides it. A tier sets particle
+  density, lights, ground marks, distortion, lightning strands and how far away an effect is
+  drawn whole, and also what a blast is built from (rays, a billow, debris, smoke, glints). Large
+  soft layers thin out as they cover more of the frame. `Settings.SpellEffects`, `VfxBudgetRules`,
+  `VfxQuality`, `VfxCoverageRules`; [`RENDERING.md`](RENDERING.md#spell-effects) has the table.
 - **Committed casts** — visible wind-up, release and recovery; stagger interrupts for a half-mana
   refund. Held channels retain commitment and slow movement; charge scales damage, piercing and burn
   duration. `SpellActions`, `SpellcastingComponent`, `CharacterActionComponent`.
@@ -204,6 +257,8 @@ caps the first two at 25%).
 - **Status effects** — stacking burns and decay, frost control with immunity, roots, silence,
   marks, swarms, regeneration and wards (`data/status_effects`), with VFX. Root/Stun cancels dodge
   i-frames; effects, modifiers and immunity clear on death and before load. `StatusEffectsComponent`.
+  Each status also wears an aura built from the spell-effect blocks; the player's own shows in
+  third person and comes off in first. `StatusEffectVfxComponent`, `SpellVfx.StatusAura.cs`.
 - **The fading Weave** — each region's `WeavePotency` weakens ordinary magic and strengthens corrupted
   magic as it falls. `Weave`, `WeaveMath`.
 - **Corrupted casts** — spells with `MinCorruptionTier` can only be learned at that tier or above.
@@ -557,7 +612,11 @@ caps the first two at 25%).
   `StatsComponent`, `StatusEffectsComponent`.
 - **Corruption appearance** — the player's body shifts with corruption tier (ash, skin wash, ember glow via the body shader).
   `CorruptionAppearanceController`.
-- **Magic colour** — one hue per school for every spell effect. `SpellSchools.Color`.
+- **Magic colour** — one hue per school for every spell effect. `SpellSchools.Color`; `VfxPalette`
+  derives each school's bright core, mid and edge colours from it.
+- **The player's body colour** — the player's atlas is drawn as emission, the way every other
+  Meshy body's stock material draws it, so the player is no longer a dark silhouette beside the
+  NPCs. `player_body.gdshader` (`emission_amount`), `PlayerAppearance`.
 
 ## Story
 
@@ -586,6 +645,13 @@ caps the first two at 25%).
 - **Music** — Boss over Combat over Safe over Explore, crossfaded. `MusicDirector`, `MusicStateMachine`.
 - **Ambience** — weather over town over day/night; ambient emitters. `AmbienceDirector`.
 - **SFX** — pooled one-shots and positional sounds, footsteps by surface. `AudioDirector`.
+- **Spell sounds** — 25 synthesised cues: a cast, an impact and a blast for each of the six
+  schools, plus a wind-up riser, fizzle, ward break, freeze, heal, blink and thunder. The cast cue
+  plays when the spell leaves the hand, the riser is pitched to end at release, enemy casts are
+  3 dB down, channels and zone pulses are quieter and rate-limited, and identical cues within
+  40 ms fold into one. A landed spell hit plays its school's impact in place of the melee hit cue.
+  A hard limiter holds the SFX bus just under full scale. `SpellAudio`, `AudioDirector`,
+  `AudioBusLayout`, `tools/gen_spell_sfx.py`. *Partial:* nobody has listened to them.
 - *Partial:* CC0 assets where registered, procedural placeholders elsewhere (`ProceduralAudio`);
   no voice acting; audio production (Phase 52) not done.
 
@@ -630,7 +696,8 @@ maps the code.
   weather, event banner, target plate, prompt, crosshair, minimap, compass, party, hotbar, boss
   bar. `GameHud`, `BossFrame`, `Nameplate`, `HotbarPanel`.
 - **HUD presets and per-element modes** — Full, Dynamic or Minimal, or always / dynamic / hidden
-  for each of fourteen elements. A dynamic element shows in a fight, while a pool is below max,
+  for each of fifteen elements (the spell wheel is the fifteenth, and stays on under Minimal). A
+  dynamic element shows in a fight, while a pool is below max,
   for four seconds after it changes, and while `N` is held. `HudOptions`, `HudDynamicRules`,
   `GameHud.Options`.
 - **HUD scale, opacity and safe zone** — 0.75 to 1.5, 0.3 to 1, and up to a tenth of the screen
@@ -638,6 +705,15 @@ maps the code.
 - **Vitals** — bars straight on the world with notches (health at 15% and 30%, stamina at the
   winded mark, mana at the prepared spell's cost), a pale chunk for the length a hit just removed,
   and a mark that changes shape when low or winded. `GameHud.Vitals`, `JuicedBar`.
+- **Spell row** — the prepared spell's glyph on its school disc, the cast key, name, cost and
+  state; the disc goes dark when the cast would not go through. With two or more spells known a
+  line above it shows the wheel key ("Hold: wheel", or "Press: wheel" with presses in place of
+  holds) and a ghost of the spell a tap swaps back to. `GameHud.Vitals`, `SpellDisc`,
+  `SpellPinRules`.
+- **Spellbook pins** — the spellbook's top row is the eight wheel favourites, numbered clockwise
+  from the top; each known spell's card has Prepare and Pin. Choosing a slot first makes the next
+  pin replace it; with all eight full and none chosen the pin is refused. `SpellbookPanel`,
+  `SpellPinRules`.
 - **Hotbar cells** — the item's picture, key glyph, count, a cooldown wipe with its last nine
   seconds counted, and ready, unusable, level-locked and run-out states. `HotbarPanel`,
   `HotbarRules`.
@@ -718,6 +794,8 @@ maps the code.
 - **Advanced graphics** — render scale, upscaling (bilinear, FSR 1.0, FSR 2.2), anti-aliasing (off,
   FXAA, MSAA 2x/4x, TAA), shadow quality, ambient occlusion, volumetric fog and glow, each starting
   from the preset; a moved control makes the preset read Custom. `SettingsPanel`, `GraphicsMath`.
+  Spell effects is the exception: it has its own Follow preset entry, so choosing a preset leaves
+  it alone and moving it never makes the preset read Custom.
 - **First-run graphics detection** — a fresh install (no settings file, no saves) starts on the
   preset its adapter, memory and thread count earn; never re-run over a saved file.
   `GraphicsAutoDetect`.
@@ -775,6 +853,10 @@ maps the code.
   (`--shellshots`, `--metashots`, `--hudshots`, `--combat-shots`, `--panelshots`, `--uishots`,
   `--tradeshots`), each checking the state it photographs; guild, shrine, enemy and look shots;
   world shots. `*Shots.cs`, `tools/world_shots.gd`.
+- **Spell and camera harnesses** — `--spellshots` casts every spell through the real cast button
+  and photographs wind-up, release, impact and linger in both views; `--camshots` photographs both
+  views at every gait, a charge, a channel and looking down and up; `--vfxperf` runs eight casters
+  on a loop and writes frame times. `SpellShots`, `CamShots`, `VfxPerfScenario`, `TimedShots`.
 - **SDK** — `python tools/embervale.py` (doctor, build, validate, test, scenario, screenshot, perf,
   world gates, assets). [`TOOLING.md`](TOOLING.md).
 - **Generators** — regions, map locations, the campaign, guild dialogue, perks, appearance, buildings,

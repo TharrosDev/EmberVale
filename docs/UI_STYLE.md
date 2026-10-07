@@ -558,6 +558,8 @@ digits.
   two things the game had never shown: the **prepared-spell cycle order** that `Q`/`F` walk,
   and the **reactive combos** from `SpellCombo`'s rule table, live since Phase 29.5D and
   discoverable only by noticing a bigger number. Both read from the same authority combat uses.
+  (The prepared row is gone since the 2026-10 spell wheel: `F` is the wheel now, the cycle order
+  means nothing, and the row is the eight pin slots of §13.4 rule 11.)
   ⚠️ `ContentValidator` now gates the UI's fonts and shaders. Three of the four shaders only
   instantiate when a screen is *opened*, so a broken one appeared in no boot log, no `--play`
   run and no test — only in play, as "nothing is there".
@@ -713,6 +715,10 @@ what is unverified.
 | A trade page (vendor, crafting, storage) | `UiTheme.TradePage`, `TradeRow.Build` | `UiTheme.Trade.cs`, `TradeRow.cs` |
 | A drawn mark instead of a typed glyph | `MarkGlyph`, `TradeMark`, `SessionGlyph`, `PerkNodeMark`, `HudIcon` | same names |
 | A confirm prompt in the shell | `SessionPrompt.Open` | `SessionPrompt.cs` |
+| A spell's mark (glyph on its school disc) as a control | `SpellDisc.Create(size, keylined)`, then `Display(spell, lit)`; null draws an empty socket | `SpellDisc.cs` |
+| A spell's glyph or a school's emblem inside your own `_Draw` | `SpellGlyphs.Draw`, `DrawEmblem`, `DrawStrokes`; an unknown id draws `Fallback` | `SpellGlyphs.cs` |
+| Which favourite slot a pin lands in, what the pin button says, the HUD's wheel hint and tap ghost | `SpellPinRules.Decide`, `SlotNumber`, `ShowsWheelHint`, `Ghost` | `SpellPinRules.cs` |
+| The spell wheel's sizes, cell states and placement | `SpellWheelMetrics` (geometry is `SpellWheelRules` in `src/Magic`) | `SpellWheelMetrics.cs`, `SpellWheel.cs` |
 
 A lane that needs a token or builder adds it to its own `UiTheme.<Lane>.cs` partial (§13.3), never to
 `UiTheme.cs`. Every decision that is not drawing sits in a Godot-free `*Rules` class with xUnit cover.
@@ -761,6 +767,7 @@ A lane that needs a token or builder adds it to its own `UiTheme.<Lane>.cs` part
 | `UiTheme.Settings.cs` | `SettingsRowStyle(focused)`; sheet, pane, control-column, binding-cell and prompt widths |
 | `UiTheme.ShellFront.cs` | `Painting(name)`, `Cover(painting)`, `Shade(from, to, opacity, radial)`, `SheetOverPainting(root, painting)`, `SheetToRight(column, width)`, `TitleEntry(text, cue)`; title, splash, loading, credits and first-run measurements; `GenericPainting` |
 | `UiTheme.ShellSession.cs` | `SessionAction(text, cue, lit)`, `SessionActionStyle`, `SessionRule()`; slot, creator, pause, death and narration measurements; `DurationDeath` |
+| `UiTheme.Wheel.cs` | `WheelGlyphInk`, `WheelUnlitDisc(school)`, `WheelUnlitInk(school)`, `WheelLine`, `WheelLitLine`, `WheelBackdrop`, `WheelWell`, `WheelWellHover`, `WheelSchoolGround(school, lit)`, `WheelFanGround(school, lit)`, `WheelSocket`, `WheelLit`, `WheelPrevious`, `WheelPointer`, `WheelNameFont`, `WheelTextFont`, `StyleWheelReadout(box, edge)` |
 
 ### 13.4 HUD rules
 
@@ -784,6 +791,8 @@ never appears on it.
 8. **`HudLayout.BottomClearance` is 140.** Anything centred above the hotbar (prompt, tutorial hint, subtitles, placement strip) sits there or higher; a strip outside `HudLayout.Scaled` converts it with `HudMetrics.ScreenClearance`.
 9. **The tracker shows at most three objective lines**, then "+N more" (`TrackerFoldRules`): the current step first, finished steps dropped first.
 10. **A prompt is glyph, verb, noun** on a plate; an item pickup adds a second line for hold-to-gather. The split is `PromptRules.Split`, and a phrase that does not end in the focused name is shown whole.
+11. **A spell is shown by its disc, everywhere.** The mark is the spell's glyph in `WheelGlyphInk` on a disc of `UiTheme.SchoolColor(school)`; a spell that cannot be cast right now (unaffordable, silenced, corruption-locked) is the unlit look, the glyph in the school's colour on a dark disc (`WheelUnlitDisc`, `WheelUnlitInk`), so colour is never the only signal. Sizes: 26 px keylined on the HUD spell row, 24 px on a spellbook card, 22 px in a pin slot, 18 px for the tap ghost; the wheel's own floor is 26 px. **The spell row** reads disc, cast key, name (through `SpellText.Name`), cost, state. Its wheel hint is a separate caption line ABOVE the row, never a badge in it (at the 286 px vitals minimum a badge leaves the name no room): the `cycle_spell` glyph with "Hold: wheel", then "Tap:" and a ghost disc with the previous spell's name. The line shows only with two or more spells known (`SpellPinRules.ShowsWheelHint`) and the ghost only when there is a spell to swap back to (`SpellPinRules.Ghost`). With presses in place of holds it reads "Press: wheel" and has no ghost, because there is no tap. It redraws on change, not on new subscriptions. **The spellbook's pin row** is eight numbered slots, 1 at the wheel's top wedge and clockwise (`SpellPinRules.SlotNumber`), in one row at a usable width of 1400 or more and two rows of four below. The caption over the slots is always present whatever it says, and a card's Prepare and Pin are always buttons ("Prepared" is a button that does nothing): the panel restores focus by child index across a rebuild, and a row that came and went would drop a pad's focus.
+12. **The spell wheel is HUD, not a panel.** It is a `_Draw` control in `HudLayout.Overlay` with `ZIndex = 1` (so it draws over the scaled HUD), gated by `HudElement.SpellWheel`, and it never calls `UiState.Open`. Keylines are `WheelLine` / `WheelLitLine`. The readout (name, cost, state) is a plate UNDER the wheel, not in the centre: the dead zone is too small for three lines, and the centre holds a cancel mark, or the previous spell's glyph in toggled mode. A legend line under the readout names release, select and cancel with `UiGlyph`. The radius is `SpellWheelMetrics.Radius` (150 px base, 84 px floor) and has to fit the 853x533 handheld view; at 1280x720 and below the readout and legend sit over the hotbar on near-opaque grounds. Cooldowns and mana are sampled four times a second, so the pie wipe steps. Numerals keep the 12 px floor. Hover plays `UiCue` Focus and a selection Confirm.
 
 **Dynamic modes.** A widget that writes its own `Visible` reads `GameHud.Shows(element)` at that write, so two owners never fight over one flag. A widget whose content just changed calls `GameHud.MarkChanged(element)`. A HUD element outside `GameHud` (damage numbers, enemy plates, toasts, subtitles) reads the static `GameHud.ElementMode(element)`. Holding `hud_recall` shows every Dynamic element.
 
@@ -872,7 +881,7 @@ is open) and authored boss intro lines. There is no voice acting to caption.
 | Revert | A changed row shows a drawn restore-default button, also on `menu_sub_prev` (Z / LT) |
 | Reset | "Reset tab" and "Reset all settings" are hold rings. A tab reset touches only that tab's fields; only the Controls tab reset takes bindings; "Reset all" keeps bindings and accessibility options (`SettingsService.ResetTab`, `ResetAllButBindingsAndAccessibility`) |
 | Rebuild | The sheet rebuilds from a dirty flag, restoring focus and scroll. UI scale and text size apply when a drag ends; a key or pad step applies at once |
-| Saved numbers | Every new field is append-only with a default that means "as before" (`docs/NOW.md` invariant 46). `DamageNumberMode` -1 follows the old bool |
+| Saved numbers | Every new field is append-only with a default that means "as before" (`docs/NOW.md` invariant 46). `DamageNumberMode` -1 follows the old bool. `SpellEffects` -1 follows the graphics preset and 0 to 4 are Performance to Ultra in visual order (not `RenderQuality`'s saved order); it is a Graphics-tab dropdown with its own "Follow preset" entry, outside the preset's Custom logic. `HudElement.SpellWheel` is 14 and stays Always under the Minimal preset |
 
 **Remapping** (`InputBindingRules`, `GameInput.ApplyBindings`).
 
@@ -895,6 +904,21 @@ New actions (`GameInput`). None is `ui_`-prefixed, so `GameInput.Park` covers th
 | `menu_tab_prev` / `menu_tab_next` | Q / E | LB / RB | step hub screens, settings tabs, the creator's rail |
 | `menu_sub_prev` / `menu_sub_next` | Z / C | LT / RT | call `OnSubTab` on the open panel |
 | `hud_recall` | N (hold) | none by default; bindable | show every Dynamic HUD element |
+
+One existing action changed meaning with the 2026-10 spell wheel, and it is still one of the 31
+rebindable actions: the count did not move.
+
+| Action | Keyboard | Pad | Does |
+| ------ | -------- | --- | ---- |
+| `cycle_spell` | F | LB | hold: the spell wheel (mouse or right stick steers, release selects, Block cancels). Tap, under 0.16 s: the previous spell. Its binding row reads "Spell wheel (hold) / previous (tap)" (`settings.bind.action.cycle_spell`) |
+| `cast` | Q | RB | unchanged: cast the prepared spell |
+
+The id stays `cycle_spell` so saved bindings keep working and `KnowledgeInput` keeps borrowing it.
+With presses in place of holds the action toggles the wheel, Attack or a second press selects, and
+there is no tap. Draw its hint with `UiGlyph.For(GameInput.CycleSpell)` and say "hold" or "press"
+from that setting (`hud.spell.wheel_hold` / `wheel_press`, `tutorial.spell_wheel_hold` / `_press`),
+never a literal key. When the wheel cannot open (the element is hidden, no spells, a cast in
+progress) the press steps to the next spell, which is what the action did before.
 
 What the sub-tab actions and the borrowed inputs mean per screen:
 
@@ -936,6 +960,31 @@ it is written, so a frame is evidence only of the state it names.
 
 `--guild-shots`, `--shrine-shots`, `--enemy-shots` and `--look-shots` predate the upgrade and are unchanged.
 
+**Frames added by the 2026-10 spell wheel work.** They sit in the two existing harnesses, each
+validating the state it names, and use `WheelShotFixtures` (`src/Debugging/WheelFixtureShots.cs`),
+which teaches every player-learnable spell and puts the save's spell state back afterwards.
+
+| Harness | Frame | Shows |
+| ------- | ----- | ----- |
+| `--hudshots` | `01a-spell-row` | the spell row with its disc, the wheel hint line and the tap ghost |
+| `--hudshots` | `01b-wheel-favourite` | the wheel open, cursor on favourite 1, the readout naming it |
+| `--hudshots` | `01c-wheel-school-fan` | the Fire wedge lit and its fan open past the rim, cursor on a Fire spell |
+| `--hudshots` | `01d-wheel-cooling` | a favourite with a pie wipe and a seconds numeral |
+| `--hudshots` | `01e-wheel-unaffordable` | mana empty: costed favourites unlit with their price, the HUD row's disc unlit |
+| `--hudshots` | `01f-wheel-closed` | the wheel gone and the save's own spells back in the row |
+| `--panelshots` | `29b-spellbook-pins` | the eight pin slots with slot 8 an empty socket |
+| `--panelshots` | `29c-spellbook-pin-focused` | the focus ring on a card's Pin button |
+
+No frame covers the presses-in-place-of-holds variant, high contrast or a HUD scale other than 1
+for the wheel. ⚠️ `WheelShotFixtures.TeachEverything` selects a spell, which publishes
+`SpellSelectedEvent` and completes the tutorial's wheel step if that hint is on screen during a run.
+
+Three more harnesses came with that work and are not UI harnesses: `--spellshots`, `--camshots`
+and `--vfxperf` (`SpellShots`, `CamShots`, `VfxPerfScenario`). They and their variables are in
+`docs/NOW.md` → Commands. `SpellShots` and `CamShots` derive from `TimedShots`, a `ShotHarness`
+that holds the frame counter until a shot's own condition is met (a wind-up at 60%, a bolt in
+flight), which the fixed 30-frame hold cannot do.
+
 | Variable | Does |
 | -------- | ---- |
 | `EMBERVALE_RES` | window size, `WIDTHxHEIGHT` (default 1280x720; `EMBERVALE_SHOT_SIZE` is an older alias) |
@@ -956,7 +1005,8 @@ The ones a harness depends on, and that a refactor must keep:
 | `PauseMenu`, `DeathScreen` | `OpenForCapture`, `CloseForCapture`, `RequestLoad`; `BeginForCapture`, `ShowOptionsForCapture`, `EndForCapture` |
 | `SaveSlotPanel`, `CharacterCreator` | `Configure`, `ShowRowsForCapture`, `HoldDeleteForCapture`, `ReleaseHoldForCapture`; `ShowStepForCapture`, `FocusSlotForCapture`, `SetRigForCapture`, `SetYawForCapture`, `SelectLookForCapture`, `SelectBackgroundForCapture` |
 | `NarrationSequence` | `ShowCardForCapture`, `PauseForCapture`, `EndForCapture` |
-| `GameHud`, `HotbarPanel` | `SettleDynamicForCapture`, `TrackerRowsForCapture`, `TrackerFoldedForCapture`; `SlotStateForCapture` |
+| `GameHud`, `HotbarPanel` | `SettleDynamicForCapture`, `TrackerRowsForCapture`, `TrackerFoldedForCapture`, `SpellWheelHintForCapture`, `SpellGhostForCapture`; `SlotStateForCapture` |
+| `SpellWheel`, `SpellbookPanel` | `OpenForCapture(cursor, toggled)`, `HoverForCapture`, `CloseForCapture`, `IsOpen`, `Hovered` (the cursor is in wheel units: rim 1, fan edge 1.35, +Y down; a capture open takes no gate, plays no sound and does not animate); `ShowUnpinnedForCapture`, `FocusPinForCapture`, `PinSlotsForCapture`, `PinFocusedForCapture` |
 | `Notifications`, `SubtitleLayer`, `BossFrame`, `DamageNumberLayer` | `ClearShownForCapture`, `EndCombatForCapture`, `FlushLootForCapture`, `QueuedForCapture`, `ToastCountForCapture`; `ShowingForCapture`, `SpeakerShownForCapture`; `BarWidthForCapture`; `ClearForCapture` |
 | `InventoryPanel`, `VendorPanel`, `CraftingPanel` | `FocusEquipmentSlotForCapture`, `CompareForCapture`; `CompareForCapture`, `ArmJunkSaleForCapture`; `ShowModeForCapture` |
 | `MapScreen`, `QuestLogPanel`, `BestiaryPanel`, `DialoguePanel` | `ShowLegendForCapture`, `ShowPlaceForCapture`, `SnapForCapture`, `RequestTravelForCapture`, `CancelTravelForCapture`; `ShowSelectedOnMapForCapture`; `SelectForCapture`; `TypewriterForCapture`, `FinishLineForCapture` |

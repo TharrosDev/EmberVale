@@ -126,6 +126,51 @@ The content probe checks the real databases, enemy/boss/race loadouts, aliases, 
 every player spell and prepared world tome interactions. Tome scene edits are inputs to the world
 bake, so delivery requires one master bake after integration.
 
+## Selecting a spell: the wheel, the tap and favourites (2026-10-06)
+
+`Q` (pad `RB`) casts the prepared spell. `F` (pad `LB`) is one action, `cycle_spell`, with two
+meanings: a tap under 0.16 s swaps back to the previous spell, and a hold opens the spell wheel,
+steered by the mouse or the right stick and selected by letting go. The inner ring is the eight
+favourites, the outer ring the six schools, and the hovered school's known spells fan out past the
+rim. Block or the centre cancels. With presses in place of holds the key toggles the wheel and a
+second press or Attack selects.
+
+None of it changes a cast rule. `Select` and `SelectPrevious` refuse while a cast is pending,
+charging or channelling, as `Cycle` does, so a cast in flight keeps the spell it began with. A
+selection publishes `SpellSelectedEvent`; an enemy choosing its spell does not. Favourites and the
+previous spell are saved under the `spells` record ([`../SAVE_FORMAT.md`](../SAVE_FORMAT.md)):
+learning pins a spell into the first free slot, forgetting clears its slot and the previous
+spell, and the spellbook's pin row sets them. The wheel is not a menu: the world runs, and only
+look, lock-on, attack, block and cast are lent to it. Ownership is in
+[`../ARCHITECTURE.md`](../ARCHITECTURE.md#213-magic-srcmagic).
+
+## Presentation: effects and sound (2026-10-06)
+
+Presentation reads events and never changes a rule; this section is where it lives, not a new
+contract. Every spell effect goes through the `SpellVfx` facade (`src/Magic/Vfx`), which is a
+no-op on a headless display, so every probe below runs exactly as before. All 30 spells have a
+recipe in `SpellVfxCatalog.Elemental.cs` or `SpellVfxCatalog.Arcana.cs` and special-case hooks in
+the matching `SpellVfx.Special.*.cs`; `SpellVfxCatalogTests` fails a spell in `data/spells` with no
+recipe, so a new spell needs one in the same change. What a hit, a burst or a zone pulse sounds
+like is decided by the pure `SpellAudio` and played by `AudioDirector` from `SpellCastEvent`,
+`CastWindupStartedEvent`, `SpellImpactEvent` and `SpellBurstEvent`.
+
+Three things a spell author should know:
+
+- **The picture is not the path.** In first person the player's bolt is drawn starting at a point
+  fixed in the view and settles onto the true path over 0.25 s. The collision area, `Aim()` and
+  the muzzle offset are untouched.
+- **A telegraph still runs exactly as long as its delay.** For the player's own ground spells and
+  walls the telegraph ring stays armed (the probe reads it) and is hidden while the effect layer
+  draws its own; enemy casts keep the ring.
+- **`StatusVfx*` node names are a contract.** `magic_status_probe` asserts them, and the richer
+  status auras are drawn beside them, never in their place.
+
+The tier table, the shaders and the comfort caps are in
+[`../RENDERING.md`](../RENDERING.md#spell-effects). `--spellshots` renders every spell and
+`--vfxperf` times eight casters ([`../NOW.md`](../NOW.md) → Commands). ⚠️ The effects were judged
+from still frames and the sounds from numbers: no motion review, and nobody has listened.
+
 ## Regression coverage
 
 Build and import before engine probes; running Godot does not recompile C#. Use the Developer SDK:
