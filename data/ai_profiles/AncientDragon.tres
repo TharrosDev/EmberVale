@@ -8,7 +8,7 @@
 ; willing to keep moving. That is the fight an old creature should be.
 ;
 ; It also spends the most time on the ground — a conversation is impossible with something circling
-; at 13 m, and the aerie is where it lives rather than where it hunts.
+; at 24 m, and the aerie is where it lives rather than where it hunts.
 ;
 ; TerritoryRadius 44 against a 90 m floor: the leash breaks off well inside its own ground, so a
 ; chase can never spill over the cell edge into the void or a neighbour's props (the 35D/35E rule).
@@ -21,9 +21,12 @@ AlertRadius = 40.0
 AttackRange = 6.5
 PatrolRadius = 6.0
 TurnSpeedDegrees = 35.0
-TakeoffRange = 18.0
-HoverAltitude = 13.0
-ClimbSpeed = 5.0
+; Hover and take-off range follow the body (22 m, 14 m and 11 m dragons, not three 5 m ones). The
+; climb speed rose by the same ratio as the altitude, so the climb and the descent take the seconds
+; they always took and the airborne window is still the profile's own number.
+TakeoffRange = 24.0
+HoverAltitude = 24.0
+ClimbSpeed = 9.2
 AirborneDuration = 4.0
 GroundedDuration = 10.0
 TerritoryRadius = 44.0

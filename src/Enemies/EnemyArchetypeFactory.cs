@@ -138,7 +138,13 @@ public static class EnemyArchetypeFactory
         // profile it kites and casts exactly like the Ashen Acolyte does.
         if (archetype.KnownSpellIds.Count > 0)
         {
-            var castOrigin = new Node3D { Name = "CastOrigin", Position = new Vector3(0f, height * 0.75f, -0.4f) };
+            var castOrigin = new Node3D
+            {
+                Name = "CastOrigin",
+                Position = archetype.CastOrigin != Vector3.Zero
+                    ? archetype.CastOrigin
+                    : new Vector3(0f, height * 0.75f, -0.4f),
+            };
             enemy.AddChild(castOrigin);
             enemy.AddChild(new SpellcastingComponent
             {
@@ -256,6 +262,7 @@ public static class EnemyArchetypeFactory
                         ? new CapsuleMesh { Radius = zone.Radius, Height = zone.Height }
                         : new SphereMesh { Radius = zone.Radius, Height = zone.Radius * 2f },
                     Position = zone.Offset,
+                    RotationDegrees = zone.RotationDegrees,
                     MaterialOverride = new StandardMaterial3D
                     {
                         AlbedoColor = zone.DamageMultiplier >= 1f
@@ -318,7 +325,7 @@ public static class EnemyArchetypeFactory
 
             enemy.AddChild(BuildHurtbox(
                 $"Hurtbox_{zone.Id}", zone.Id, zone.DamageMultiplier, zone.Offset, zone.Radius, zone.Height,
-                zone.PoiseMultiplier));
+                zone.PoiseMultiplier, zone.RotationDegrees));
         }
     }
 
@@ -327,7 +334,7 @@ public static class EnemyArchetypeFactory
     /// inflate a small zone's volume.</summary>
     private static Hurtbox BuildHurtbox(
         string name, string zoneId, float multiplier, Vector3 offset, float radius, float height,
-        float poiseMultiplier = 1f)
+        float poiseMultiplier = 1f, Vector3 rotationDegrees = default)
     {
         var hurtbox = new Hurtbox
         {
@@ -336,7 +343,10 @@ public static class EnemyArchetypeFactory
         Shape3D shape = height > radius * 2f
             ? new CapsuleShape3D { Radius = radius, Height = height }
             : new SphereShape3D { Radius = radius };
-        hurtbox.AddChild(new CollisionShape3D { Shape = shape, Position = offset });
+        hurtbox.AddChild(new CollisionShape3D
+        {
+            Shape = shape, Position = offset, RotationDegrees = rotationDegrees,
+        });
         return hurtbox;
     }
 }

@@ -182,12 +182,10 @@ def main() -> None:
         "Eye": (0.0, 0.52), "Hair": (0.0, 0.78), "Brown2": (0.0, 0.68),
         "Brown": (0.0, 0.64), "Gold": (0.78, 0.46),
     })
-    patch_glb_materials(WEAPONS / "wpn_sword_iron.glb", {
-        "DarkSteel": (0.82, 0.46), "LightSteel": (0.90, 0.32), "Steel": (0.88, 0.38),
-        "DarkWood": (0.0, 0.72), "LightWood": (0.0, 0.64),
-    })
+    # The iron sword is no longer patched here: it is a generated, textured model written by
+    # tools/meshy_prep_static.py (one atlas material), not the five flat steels this used to tune.
     build_first_person_arms()
-    print("Built player viewmodel assets and patched player/sword material factors.")
+    print("Built player viewmodel assets and patched player material factors.")
 
 
 if __name__ == "__main__":

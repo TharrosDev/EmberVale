@@ -11,9 +11,12 @@ AlertRadius = 40.0
 AttackRange = 6.0
 PatrolRadius = 8.0
 TurnSpeedDegrees = 55.0
-TakeoffRange = 16.0
-HoverAltitude = 12.0
-ClimbSpeed = 6.0
+; Hover and take-off range follow the body (22 m, 14 m and 11 m dragons, not three 5 m ones). The
+; climb speed rose by the same ratio as the altitude, so the climb and the descent take the seconds
+; they always took and the airborne window is still the profile's own number.
+TakeoffRange = 18.0
+HoverAltitude = 18.0
+ClimbSpeed = 9.0
 AirborneDuration = 4.5
 GroundedDuration = 8.0
 TerritoryRadius = 45.0

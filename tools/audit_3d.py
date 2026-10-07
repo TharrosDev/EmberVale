@@ -228,6 +228,15 @@ def parse_import(path: Path) -> dict[str, Any]:
 #
 # The numbers are longest-edge caps written as process/size_limit. A trim sheet tiles across a whole
 # building and is read at arm's length, so it is a hero surface (1024), not a prop.
+# Creatures that are DELIBERATELY one mesh in another coat: copy -> the model it was written from
+# (tools/meshy_prep_static.py --tint / --lighten). Identical geometry between two creatures is
+# otherwise a critical flag, because it has always meant a stand-in that was never replaced. A
+# family listed here is reported as info instead; anything else that matches still fails loudly.
+RECOLOURED_COPIES: dict[str, str] = {
+    "assets/models/creatures/enm_dire_wolf.glb": "assets/models/creatures/enm_wolf.glb",
+    "assets/models/creatures/enm_frost_stalker.glb": "assets/models/creatures/enm_wolf.glb",
+}
+
 TEXTURE_BUDGET: dict[str, dict[str, int]] = {
     "player_boss":       {"base": 2048, "normal": 2048, "orm": 1024},
     "character":         {"base": 1024, "normal": 1024, "orm": 512},
@@ -771,6 +780,9 @@ def main() -> int:
         geometry_hash=record.get("blender",{}).get("geometry_sha256")
         duplicates=geometry_groups.get(geometry_hash, [])
         if geometry_hash and len(duplicates)>1 and len(hash_groups[record["file_sha256"]])==1:
+            if {RECOLOURED_COPIES.get(p, p) for p in duplicates} == {RECOLOURED_COPIES.get(record["path"], record["path"])}:
+                record["flags"].append({"code":"duplicate-geometry","severity":"info","detail":"declared recolour family: " + ", ".join(p for p in duplicates if p != record["path"])})
+                continue
             severity="critical" if record["category"]=="creatures" else "high"
             record["flags"].append({"code":"duplicate-geometry","severity":severity,"detail":"evaluated geometry is identical to " + ", ".join(p for p in duplicates if p != record["path"])})
             record["recommendation"]="IMPROVE"

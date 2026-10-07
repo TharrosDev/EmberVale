@@ -33,4 +33,10 @@ public partial class HitZoneResource : Resource
     /// <summary>Capsule height. Zero (or below twice the radius) makes it a sphere instead — the
     /// right shape for a head or a wing knuckle.</summary>
     [Export] public float Height { get; set; }
+
+    /// <summary>Turns the capsule off the vertical, in degrees. Zero, the default, is the upright
+    /// capsule every zone had before the dragons lay down: a tail runs back along the ground and a
+    /// pair of wings runs side to side, and an upright capsule fits neither. X -90 lays it along
+    /// the body's forward axis; Z 90 lays it across the body. A sphere ignores it.</summary>
+    [Export] public Vector3 RotationDegrees { get; set; } = Vector3.Zero;
 }

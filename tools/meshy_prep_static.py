@@ -17,13 +17,18 @@ correction somebody would otherwise repeat in a scene, so this bakes them into t
                audit_3d.texture_role reads.
 
     python tools/meshy_prep_static.py gen/prp_tree_oak_a.refine.glb out/prp_tree_oak_a.glb --height 12
-    python tools/meshy_prep_static.py wpn_sword_iron.glb wpn_dagger_iron.glb --height 0.45 --origin keep
-    python tools/meshy_prep_static.py enm_wolf.glb enm_dire_wolf.glb --tint 0.55,0.5,0.5
-    python tools/meshy_prep_static.py enm_wolf.glb enm_frost_stalker.glb --lighten 0.35 --desaturate 0.6
+    python tools/meshy_prep_static.py gen/wpn_sword_iron.refine.glb wpn_sword_iron.glb --roll 180 \
+        --height 0.96 --widen 1.25 --offset 0,-0.09,0 --roughness 0.6
+    python tools/meshy_prep_static.py wpn_sword_iron.glb wpn_dagger_iron.glb --height 0.672 --origin keep \
+        --squash-above 0.105,0.5595 --roughness 0.6 --max-texture 512
+    python tools/meshy_prep_static.py enm_wolf.glb enm_dire_wolf.glb --tint 0.63,0.61,0.65 --root-scale 1.447
+    python tools/meshy_prep_static.py enm_wolf.glb enm_frost_stalker.glb --lighten 0.45 --desaturate 0.7 \
+        --tint 0.88,0.95,1.0 --root-scale 1.12
 
-A RIGGED source (the wolf copies above) is recoloured only: its geometry, nodes, materials and
+A RIGGED source (the wolf copies above) is recoloured only: its geometry, skin, materials and
 image names are left exactly as they are, because a skinned mesh cannot be rescaled from here
-without its skeleton. Pure Python plus Pillow; the written file is parsed back and checked.
+without its skeleton. --root-scale multiplies the scene root's own scale instead, which is where
+every beast file already carries its size. Pure Python plus Pillow; the written file is parsed back and checked.
 """
 from __future__ import annotations
 
@@ -90,6 +95,11 @@ def yaw_matrix(degrees: float) -> list[list[float]]:
     return [[c, 0.0, s, 0.0], [0.0, 1.0, 0.0, 0.0], [-s, 0.0, c, 0.0]]
 
 
+def roll_matrix(degrees: float) -> list[list[float]]:
+    c, s = math.cos(math.radians(degrees)), math.sin(math.radians(degrees))
+    return [[c, -s, 0.0, 0.0], [s, c, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0]]
+
+
 # --------------------------------------------------------------------------- accessors
 
 def span(doc: dict, index: int, width: int) -> tuple[int, int, int]:
@@ -149,7 +159,8 @@ def mesh_nodes(doc: dict) -> list[tuple[int, list[list[float]]]]:
 
 def bake_geometry(doc: dict, binary: bytearray, asset_id: str, height: float | None,
                   length: float | None, yaw: float, origin: str,
-                  offset: tuple[float, float, float], allow_multi_mesh: bool) -> None:
+                  offset: tuple[float, float, float], allow_multi_mesh: bool, roll: float = 0.0,
+                  widen: float = 1.0) -> None:
     placed = mesh_nodes(doc)
     if not placed:
         raise PrepError("the scene draws no mesh")
@@ -177,7 +188,10 @@ def bake_geometry(doc: dict, binary: bytearray, asset_id: str, height: float | N
                 if table.setdefault(index, world) != world:
                     raise PrepError("one accessor is drawn with two different transforms")
 
-    turn = yaw_matrix(yaw)
+    turn = multiply(yaw_matrix(yaw), roll_matrix(roll))     # roll first: a point-down sword stood up
+    # Thickness about the long axis, applied last so it is the baked X and Z that grow. The normals
+    # below go through the same matrix's cofactor, so they stay perpendicular to the wider faces.
+    turn = multiply([[widen, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, widen, 0.0]], turn)
     positions = {index: [tuple(row[0] * p[0] + row[1] * p[1] + row[2] * p[2] + row[3] for row in m)
                          for p in read_vectors(doc, binary, index, 3)]
                  for index, world in owners["POSITION"].items() for m in [multiply(turn, world)]}
@@ -234,6 +248,34 @@ def bake_geometry(doc: dict, binary: bytearray, asset_id: str, height: float | N
         doc["meshes"][mesh]["name"] = asset_id
     for key in ("cameras", "extensions"):
         doc.pop(key, None)
+
+
+def squash_above(doc: dict, binary: bytearray, level: float, factor: float) -> None:
+    """Pull everything above `level` (metres, after the bake) toward it by `factor`.
+
+    A dagger cut from a sword: the hilt keeps the size a hand needs and only the blade shortens,
+    which a uniform scale cannot do (it shrinks the grip to a toothpick first)."""
+    done: set[int] = set()
+    for mesh in doc.get("meshes", []):
+        for primitive in mesh["primitives"]:
+            index = primitive["attributes"]["POSITION"]
+            if index in done:
+                continue
+            done.add(index)
+            points = read_vectors(doc, binary, index, 3)
+            normal_index = primitive["attributes"].get("NORMAL")
+            if normal_index is not None:
+                turned = []
+                for point, normal in zip(points, read_vectors(doc, binary, normal_index, 3)):
+                    if point[1] > level:
+                        v = (normal[0], normal[1] / factor, normal[2])
+                        norm = math.sqrt(sum(c * c for c in v))
+                        normal = tuple(c / norm for c in v) if norm > 1e-12 else normal
+                    turned.append(normal)
+                write_vectors(doc, binary, normal_index, turned)
+            write_vectors(doc, binary, index, [(p[0], level + (p[1] - level) * factor, p[2]) if p[1] > level else p
+                                               for p in points])
+            doc["accessors"][index]["min"], doc["accessors"][index]["max"] = bounds(read_vectors(doc, binary, index, 3))
 
 
 # --------------------------------------------------------------------------- materials, textures
@@ -371,7 +413,9 @@ def prepare(source: Path, dest: Path, *, asset_id: str | None = None, height: fl
             offset: tuple[float, float, float] = (0.0, 0.0, 0.0),
             max_texture: int | dict[str, int] = 1024, roughness: float = 0.8,
             tint: tuple[float, float, float] | None = None, lighten: float = 0.0,
-            desaturate: float = 0.0, allow_multi_mesh: bool = False) -> dict:
+            desaturate: float = 0.0, allow_multi_mesh: bool = False,
+            root_scale: float | None = None, roll: float = 0.0, widen: float = 1.0,
+            squash: tuple[float, float] | None = None) -> dict:
     """Write `dest` from `source` and return what was measured in the written file."""
     asset_id = asset_id or dest.stem
     caps = max_texture if isinstance(max_texture, dict) else dict.fromkeys(ROLES, max_texture)
@@ -387,11 +431,26 @@ def prepare(source: Path, dest: Path, *, asset_id: str | None = None, height: fl
 
     rigged = bool(doc.get("skins") or doc.get("animations"))
     if rigged:
-        if height is not None or length is not None or yaw or origin != "base" or any(offset):
+        if (height is not None or length is not None or yaw or roll or origin != "base" or any(offset)
+                or widen != 1.0 or squash):
             raise PrepError("the source is rigged: it can be recoloured, not rescaled or moved")
         roles = image_roles(doc, emission_is_colour=True)
+        if root_scale:
+            # Every beast file here carries its size on the scene root (the wolf 0.342, the dire
+            # wolf 0.495), so a scene that instances the file and an archetype that loads it agree
+            # without either naming a scale. Skin, binds and clips are untouched.
+            for index in doc["scenes"][0]["nodes"]:
+                root = doc["nodes"][index]
+                root["scale"] = [value * root_scale for value in root.get("scale", [1.0, 1.0, 1.0])]
+                if "translation" in root:
+                    root["translation"] = [value * root_scale for value in root["translation"]]
     else:
-        bake_geometry(doc, binary, asset_id, height, length, yaw, origin, offset, allow_multi_mesh)
+        if root_scale:
+            raise PrepError("--root-scale is for a rigged source; a static one takes --height or --length")
+        bake_geometry(doc, binary, asset_id, height, length, yaw, origin, offset, allow_multi_mesh, roll, widen)
+        if squash:
+            squash_above(doc, binary, *squash)
+            height = length = None          # the baked size is no longer the written one
         plain_materials(doc, asset_id, roughness)
         prune_images(doc)
         roles = image_roles(doc, emission_is_colour=False)
@@ -536,6 +595,14 @@ def main() -> int:
     size.add_argument("--height", type=float, help="metres tall after the bake")
     size.add_argument("--length", type=float, help="metres along the longest horizontal axis instead")
     parser.add_argument("--yaw", type=float, default=0.0, help="degrees about +Y, baked before measuring")
+    parser.add_argument("--roll", type=float, default=0.0,
+                        help="degrees about +Z, baked before the yaw (180 stands a point-down sword on its pommel)")
+    parser.add_argument("--widen", type=float, default=1.0,
+                        help="extra scale of the baked X and Z only (a blade and grip too thin to read)")
+    parser.add_argument("--squash-above", dest="squash", metavar="Y,FACTOR",
+                        type=lambda text: tuple(float(part) for part in text.split(",")),
+                        help="after the bake, pull everything above Y metres toward it by FACTOR "
+                             "(a dagger from a sword: the hilt keeps its size, the blade shortens)")
     parser.add_argument("--origin", choices=ORIGINS, default="base",
                         help="base: centre of the bounds at ground level (default). footprint: centre of "
                              "the lowest 5%% (a trunk, not its canopy). keep: scale about the source origin")
@@ -550,6 +617,8 @@ def main() -> int:
     parser.add_argument("--desaturate", type=float, default=0.0, help="0-1 blend of the albedo toward grey")
     parser.add_argument("--id", dest="asset_id", help="asset id for node and material names (default: dest stem)")
     parser.add_argument("--allow-multi-mesh", action="store_true")
+    parser.add_argument("--root-scale", type=float,
+                        help="rigged source only: multiply the scene root's scale (a bigger copy of one rig)")
     args = parser.parse_args()
     options = {key: value for key, value in vars(args).items() if key not in ("source", "dest")}
     try:

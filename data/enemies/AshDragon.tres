@@ -11,33 +11,59 @@
 script = ExtResource("2_zone")
 Id = "head"
 DamageMultiplier = 1.6
-Offset = Vector3(0, 3.9, -3.7)
-Radius = 1.0
+Offset = Vector3(0, 5.3, -4.4)
+Radius = 1.7
 Height = 0.0
 
+; The neck and the torso are the old body zone's multiplier on the parts of a long body an upright
+; capsule cannot reach: an arrow that passed through the dragon's neck used to hit nothing.
+[sub_resource type="Resource" id="Zone_neck"]
+script = ExtResource("2_zone")
+Id = "neck"
+DamageMultiplier = 1.0
+Offset = Vector3(0, 4.7, -2.75)
+Radius = 0.9
+Height = 3.6
+RotationDegrees = Vector3(-56.3, 0, 0)
+
+; One capsule across both wings at the height they are carried.
 [sub_resource type="Resource" id="Zone_wings"]
 script = ExtResource("2_zone")
 Id = "wings"
 DamageMultiplier = 1.2
-Offset = Vector3(0, 3.7, 0)
-Radius = 1.3
-Height = 0.0
+Offset = Vector3(0, 5, 1.6)
+Radius = 2.4
+Height = 9.4
+RotationDegrees = Vector3(0, 0, 90)
 
+[sub_resource type="Resource" id="Zone_torso"]
+script = ExtResource("2_zone")
+Id = "torso"
+DamageMultiplier = 1.0
+Offset = Vector3(0, 3.4, 0)
+Radius = 1.6
+Height = 7.6
+RotationDegrees = Vector3(-87.4, 0, 0)
+
+; The legs and belly: the only part of it a sword reaches. It lies along the stance, not upright.
 [sub_resource type="Resource" id="Zone_body"]
 script = ExtResource("2_zone")
 Id = "body"
 DamageMultiplier = 1.0
-Offset = Vector3(0, 2.3, -0.7)
-Radius = 1.9
-Height = 5.0
+Offset = Vector3(0, 1.2, -0.4)
+Radius = 1.6
+Height = 7.6
+RotationDegrees = Vector3(-90, 0, 0)
 
+; Along the ground behind it, root to tip.
 [sub_resource type="Resource" id="Zone_tail"]
 script = ExtResource("2_zone")
 Id = "tail"
 DamageMultiplier = 0.85
-Offset = Vector3(0, 1.6, 3.5)
-Radius = 0.85
-Height = 0.0
+Offset = Vector3(0, 1.8, 5.2)
+Radius = 1.05
+Height = 6.97
+RotationDegrees = Vector3(99.5, 0, 0)
 
 [resource]
 script = ExtResource("1_archetype")
@@ -53,9 +79,11 @@ FactionId = "faction.fallen"
 KnownSpellIds = Array[String](["spell.ash_breath"])
 BreathSpellId = "spell.ash_breath"
 BreathDuration = 1.8
-CapsuleRadius = 1.9
-CapsuleHeight = 4.6
-HitZones = Array[Resource]([SubResource("Zone_head"), SubResource("Zone_wings"), SubResource("Zone_body"), SubResource("Zone_tail")])
+CapsuleRadius = 2.1
+CapsuleHeight = 5.0
+; The mouth, measured on the model: breath leaves the jaws, not the chest the capsule implies.
+CastOrigin = Vector3(0, 4.6, -5.7)
+HitZones = Array[Resource]([SubResource("Zone_head"), SubResource("Zone_neck"), SubResource("Zone_wings"), SubResource("Zone_torso"), SubResource("Zone_body"), SubResource("Zone_tail")])
 IsBoss = true
 BossId = "boss.ash_dragon"
 DirectionalMelee = true
@@ -63,6 +91,3 @@ MaxPoise = 260.0
 Reaction = 3
 StaminaRegen = 18.0
 XpValue = 1400
-; The wild dragon, the ash dragon and the frost drake are one mesh at three sizes; this flat
-; colour is what tells them apart. Remove it when this archetype gets a body of its own.
-BodyTint = Color(0.2078, 0.1176, 0.1059, 1)

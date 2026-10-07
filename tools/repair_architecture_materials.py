@@ -164,10 +164,11 @@ def main() -> None:
     # that shipped with the ranged system, and the round shield, all stood at 0.4 metallic on their
     # wood and their cloth alike -- the exact defect this tool exists for, one folder over.
     #
-    # ⚠️ THE GENERATED SWORD IS SKIPPED AND MUST STAY SKIPPED. It is an `assets.py build` output
-    # whose materials are art-directed by its build script -- three steels at three roughnesses
-    # on purpose. `response()` has no branch for them, so sweeping it would flatten the blade.
-    generated = {"wpn_sword_iron.glb"}
+    # ⚠️ THE GENERATED SWORD AND DAGGER ARE SKIPPED AND MUST STAY SKIPPED. Each is one textured
+    # atlas written by tools/meshy_prep_static.py (metallic 0, roughness 0.6: the steel is painted),
+    # and its material is named after the file. `response()` would read the "iron" in that name
+    # and turn the whole atlas, leather grip included, into 0.86 metal.
+    generated = {"wpn_sword_iron.glb", "wpn_dagger_iron.glb"}
     total = 0
     for folder in ("weapons", "equipment"):
         for path in sorted((models / folder).glob("*.glb")):

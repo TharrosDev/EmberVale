@@ -72,6 +72,13 @@ public partial class EnemyArchetypeResource : Resource
     /// one whole-body capsule hurtbox instead, so this costs existing content nothing.</summary>
     [Export] public Godot.Collections.Array<HitZoneResource> HitZones { get; set; } = new();
 
+    /// <summary>Where spells and a breath leave this body, from its feet in metres (negative Z is
+    /// forward). Zero, the default, is the chest point every archetype has always cast from: three
+    /// quarters of the capsule height, just ahead of the axis. A long-necked body sets it to the
+    /// mouth, because the capsule no longer says where the head is: a 22 m dragon breathing from
+    /// its chest is breathing from eight metres behind its own jaws.</summary>
+    [Export] public Vector3 CastOrigin { get; set; } = Vector3.Zero;
+
     /// <summary>Build this archetype as a <see cref="BossEntity"/> rather than a plain
     /// <see cref="EnemyEntity"/>, so the Phase 28C boss healthbar and the 28D corruption-on-kill loop
     /// resolve it through the <c>ServiceLocator</c>. World bosses and the dragons set it.</summary>
