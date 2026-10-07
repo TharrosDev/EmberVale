@@ -571,8 +571,10 @@ def bake(full: bool = False, forced: tuple[str, ...] = (), resume: bool = False,
     # harnesses. Every --*shots flag is absent from that assembly until the solution is rebuilt.
     status["updated"] = time.time()
     write_quietly(STATUS, status)
+    # The game project only: the solution also holds the test project, which tests tooling-only types
+    # (the arena) and so cannot compile against an assembly built without them.
     build = run_process(
-        ["dotnet", "build", "-p:EmbervaleTooling=false"], timeout=600, cwd=ROOT)
+        ["dotnet", "build", "Embervale.csproj", "--nologo", "-p:EmbervaleTooling=false"], timeout=600, cwd=ROOT)
     if build.returncode != 0:
         print(build.output, file=sys.stderr)
         return finish(status, "failed", build.returncode, "dotnet build failed")
