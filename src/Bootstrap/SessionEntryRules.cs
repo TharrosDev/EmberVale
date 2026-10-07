@@ -19,6 +19,20 @@ public static class SessionEntryRules
     public static bool IsIsolated(string? userDirectory) =>
         !string.IsNullOrWhiteSpace(userDirectory) && Path.IsPathFullyQualified(userDirectory);
 
+    /// <summary>Lets <c>--exec</c> / <c>--repro</c> run on the real save folder, with autosaves off
+    /// and the <c>save</c> command held to the console slot.</summary>
+    public const string AllowRealSaveArgument = "--exec-allow-real-save";
+
+    /// <summary>Why a console script or repro (<paramref name="flag"/>) may not run, or null when it
+    /// may. It changes the session it runs in, so it needs saves that are not the player's, or the
+    /// caller's explicit word.</summary>
+    public static string? ScriptRefusal(string flag, bool isolated, bool allowRealSave) =>
+        isolated || allowRealSave
+            ? null
+            : $"{flag} changes the session it runs in and would do so on a player's saves: set " +
+              "EMBERVALE_USER_DIR to an absolute directory for the run (the SDK does), or pass " +
+              $"{AllowRealSaveArgument} (autosaves off, `save` to the console slot only)";
+
     /// <summary>Why a new game into <paramref name="slot"/> is refused, or null when it may run.</summary>
     public static string? NewGameRefusal(string slot, bool isolated)
     {

@@ -26,7 +26,14 @@ public sealed partial class GameShellController : Node
 #if EMBERVALE_TOOLING
     /// <summary>True when a command-line session was asked for and did not start.</summary>
     private bool _sessionEntryFailed;
+
+    /// <summary>True when the session was refused before anything was tried (exit 2), as opposed
+    /// to tried and failed (exit 1).</summary>
+    private bool _entryRefused;
 #endif
+
+    /// <summary>Why the command-line session did not start, for the run's result line.</summary>
+    private string EntryFailure { get; set; } = string.Empty;
 
     public SessionLifecycleCoordinator Lifecycle { get; init; } = null!;
 
@@ -38,6 +45,10 @@ public sealed partial class GameShellController : Node
         if (ScheduleQuitIfRequested())
         {
             _sessionEntryFailed = !RunCommandLineSessionIfRequested();
+            if (_sessionEntryFailed)
+            {
+                EndHarnessRunThatNeverStarted();
+            }
         }
 #else
         RunCommandLineSessionIfRequested();
@@ -143,7 +154,8 @@ public sealed partial class GameShellController : Node
     /// real player in it.
     ///
     /// <para><c>--slot=&lt;name&gt;</c> (or <c>EMBERVALE_SLOT</c>) continues that save instead of the
-    /// newest. In a tooling build, <c>--new-game</c> starts a fresh game with the default profile
+    /// newest; a <c>--slot</c> that names no save loads nothing. In a tooling build, a harness whose
+    /// session never started ends the run with a result line (exit 1, or 2 when refused), <c>--new-game</c> starts a fresh game with the default profile
     /// instead of continuing anything, refused unless the run has an isolated user directory
     /// (<c>SessionEntryRules</c>), and <c>--quit-after=&lt;seconds&gt;</c> ends the process on its
     /// own: exit 0, or 1 when invariant violations were recorded or the requested session never
@@ -172,6 +184,14 @@ public sealed partial class GameShellController : Node
         }
 
         string mode = harnesses.Count > 0 ? harnesses[0].Flag : newGame ? NewGameArgument : PlayArgument;
+#if EMBERVALE_TOOLING
+        if (!ScriptMayRun(harnesses))
+        {
+            return false;
+        }
+#endif
+
+        string? slotProblem = null;
         if (newGame)
         {
 #if EMBERVALE_TOOLING
@@ -181,10 +201,17 @@ public sealed partial class GameShellController : Node
             }
 #endif
         }
-        else if (MostRecentSlot() is { } slot)
+        else if (MostRecentSlot(out slotProblem) is { } slot)
         {
             Log.Info($"{mode}: continuing most recent save '{slot}'.");
             StartLoadedGame(slot);
+        }
+        else if (slotProblem != null)
+        {
+            // Never the newest save instead: the caller asked for one world and would get another.
+            EntryFailure = slotProblem;
+            Log.Error($"{mode}: {slotProblem}; nothing was loaded.");
+            return false;
         }
         else
         {
@@ -194,11 +221,13 @@ public sealed partial class GameShellController : Node
             // passed before. --quit-after reports it in the exit code.
             Log.Info($"{mode}: there is no save to continue, so the game stays on the title and nothing " +
                      $"was attached. Pass {NewGameArgument} to start a fresh game instead.");
+            EntryFailure = $"there is no save to continue (pass {NewGameArgument} to start a fresh game)";
             return false;
         }
 
         if (Lifecycle.Session is not { } session)
         {
+            EntryFailure = "the session did not start";
             return false;
         }
 
@@ -233,12 +262,94 @@ public sealed partial class GameShellController : Node
         if (SessionEntryRules.NewGameRefusal(slot, isolated) is { } refusal)
         {
             Log.Error($"{NewGameArgument} refused: {refusal}.");
+            EntryFailure = $"{NewGameArgument} refused: {refusal}";
+            _entryRefused = true;
             return false;
         }
 
         Log.Info($"{mode}: starting a new game in slot '{slot}' (isolated user directory).");
         StartNewGame(slot, Races.CharacterProfile.Human);
         return true;
+    }
+
+    /// <summary>
+    /// A console script or a repro changes the session it runs in (xp, quests, travel, <c>save</c>),
+    /// and continuing a save means the developer's own: so one runs only under an isolated user
+    /// directory (<see cref="SessionEntryRules.ScriptRefusal"/>), or with
+    /// <c>--exec-allow-real-save</c>, which turns the autosave ring off for the process and lets
+    /// the <c>save</c> command write the console slot only.
+    /// </summary>
+    private bool ScriptMayRun(List<(SessionHarness Harness, string Flag)> harnesses)
+    {
+        string? script = null;
+        foreach ((_, string flag) in harnesses)
+        {
+            if (flag is Debugging.ConsoleScript.ExecArgument or Debugging.ConsoleScript.ExecFileArgument or "--repro")
+            {
+                script = flag;
+                break;
+            }
+        }
+
+        if (script == null)
+        {
+            return true;
+        }
+
+        bool isolated = SessionEntryRules.IsIsolated(OS.GetEnvironment("EMBERVALE_USER_DIR"));
+        bool allowed = HeadlessArgs.User.Has(SessionEntryRules.AllowRealSaveArgument);
+        if (SessionEntryRules.ScriptRefusal(script, isolated, allowed) is { } refusal)
+        {
+            Log.Error($"{script} refused: {refusal}.");
+            EntryFailure = $"{script} refused: {refusal}";
+            _entryRefused = true;
+            return false;
+        }
+
+        if (!isolated)
+        {
+            AutosaveService.Suppressed = true;
+            Debugging.DevCommands.SaveConsoleSlotOnly = true;
+            Log.Warn($"{script}: running on the real save folder ({SessionEntryRules.AllowRealSaveArgument}); " +
+                     "autosaves are off and `save` writes the console slot only.");
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// A harness needs a session, and the one it was promised never started: end the run here with
+    /// a result line (exit 1, or 2 when it was refused) instead of leaving the caller to wait on a
+    /// title screen until its own timeout. <c>--play</c> and <c>--new-game</c> on their own keep the
+    /// title up, and <c>--quit-after</c> reports them.
+    /// </summary>
+    private void EndHarnessRunThatNeverStarted()
+    {
+        List<(SessionHarness Harness, string Flag)> harnesses = SessionHarnesses.Requested();
+        if (harnesses.Count == 0)
+        {
+            return;
+        }
+
+        bool script = false;
+        foreach ((_, string flag) in harnesses)
+        {
+            script |= flag is Debugging.ConsoleScript.ExecArgument or Debugging.ConsoleScript.ExecFileArgument;
+        }
+
+        var report = new HeadlessReport(script ? "exec" : "session");
+        report.Fact("mode", harnesses[0].Flag).Fact("session_started", false);
+        string message = EntryFailure.Length > 0 ? EntryFailure : "the requested session never started";
+        if (_entryRefused)
+        {
+            report.Refuse(message);
+        }
+        else
+        {
+            report.Fail(message);
+        }
+
+        report.FinishAndQuit(GetTree());
     }
 
     /// <summary><c>--quit-after=&lt;seconds&gt;</c>: real seconds, counted through pause and time
@@ -292,35 +403,31 @@ public sealed partial class GameShellController : Node
         return string.IsNullOrEmpty(wanted) ? null : wanted;
     }
 
-    private static string? MostRecentSlot()
+    /// <summary>The save to continue (<see cref="SaveSlotChoice"/>): the one <c>--slot</c> names, and
+    /// only that one; else the one <c>EMBERVALE_SLOT</c> names or the newest. Null with a
+    /// <paramref name="problem"/> when <c>--slot</c> names no save.</summary>
+    private static string? MostRecentSlot(out string? problem)
     {
+        problem = null;
         if (SaveManager.Instance is not { } manager)
         {
             return null;
         }
 
-        // --slot / EMBERVALE_SLOT picks a slot by name, for a capture that needs a particular world
-        // state (no live event banner, say). Unknown names fall through to the newest save.
-        string? wanted = RequestedSlot();
-        SaveSlotInfo? latest = null;
+        var slots = new List<KeyValuePair<string, double>>();
         foreach (SaveSlotInfo info in manager.ListSlots())
         {
-            if (wanted != null && info.Slot == wanted)
-            {
-                return info.Slot;
-            }
-
-            if (latest == null || info.TimestampUnix > latest.TimestampUnix)
-            {
-                latest = info;
-            }
+            slots.Add(new KeyValuePair<string, double>(info.Slot, info.TimestampUnix));
         }
 
-        if (wanted != null && latest != null)
+        string wanted = OS.GetEnvironment("EMBERVALE_SLOT");
+        string? slot = SaveSlotChoice.Pick(
+            slots, HeadlessArgs.User.Value(SlotArgument), wanted, out problem, out bool fellBack);
+        if (fellBack)
         {
-            Log.Warn($"Requested slot '{wanted}' does not exist; continuing the newest save '{latest.Slot}' instead.");
+            Log.Warn($"EMBERVALE_SLOT='{wanted}' names no save; continuing the newest save '{slot}' instead.");
         }
 
-        return latest?.Slot;
+        return slot;
     }
 }

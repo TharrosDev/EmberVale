@@ -38,7 +38,8 @@ public partial class ApplicationRoot : Node3D, IServiceScopeHost
     /// <summary>Finite SDK adapter: uses the real new-game path with an isolated slot.</summary>
     public void AutomationNewGame()
     {
-        if (string.IsNullOrEmpty(OS.GetEnvironment("EMBERVALE_USER_DIR")))
+        // The shared rule: a relative path is not honoured by UserDataPaths, so it isolates nothing.
+        if (!SessionEntryRules.IsIsolated(OS.GetEnvironment("EMBERVALE_USER_DIR")))
         {
             GD.PushError("Automation requires an isolated EMBERVALE_USER_DIR");
             return;
@@ -108,7 +109,8 @@ public partial class ApplicationRoot : Node3D, IServiceScopeHost
     /// <summary>
     /// The stale-binary self-check (<see cref="BuildFreshness"/>): run from the project, with a
     /// source file newer than the loaded assembly, this logs one <c>STALE_BINARY</c> warning.
-    /// Returns true only when <c>--strict-build</c> turned that into an exit.
+    /// Returns true only when <c>--strict-build</c> turned that into an exit: code 2 with an
+    /// <c>EMBERVALE_RESULT</c> line, a refusal and never a failed check.
     /// </summary>
     private bool StaleBuildEndsRun()
     {
@@ -137,8 +139,11 @@ public partial class ApplicationRoot : Node3D, IServiceScopeHost
             return false;
         }
 
-        Log.Error($"{BuildFreshness.StrictArgument}: refusing to run a stale binary.");
-        GetTree().Quit(1);
+        // Refused, not failed: nothing was checked, so the exit code is 2 ("could not run") and
+        // there is a result line for a caller that reads only that.
+        var report = new HeadlessReport(HeadlessGate.RequestedMode()?.Flag.TrimStart('-') ?? "build");
+        report.Refuse($"{BuildFreshness.StrictArgument}: refusing to run a stale binary. {BuildFreshness.Detail}");
+        HeadlessGate.Finish(GetTree(), report, legacyLine: false);
         return true;
     }
 #endif

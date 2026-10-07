@@ -45,6 +45,24 @@ public sealed partial class HeadlessReport
 
     public bool Passed => _failures.Count == 0;
 
+    /// <summary>True when the run recorded the fact <c>partial = true</c>: it checked less than
+    /// the gate does, so its pass is not the gate's.</summary>
+    public bool IsPartial
+    {
+        get
+        {
+            foreach (KeyValuePair<string, object?> fact in _facts)
+            {
+                if (fact.Key == "partial")
+                {
+                    return fact.Value is true;
+                }
+            }
+
+            return false;
+        }
+    }
+
     /// <summary>0 when nothing failed, 1 when a check failed, 2 when the gate could not run at all
     /// (<see cref="Refuse"/>): "could not check" must never read as "checked and broken".</summary>
     public int ExitCode => _refused ? RefusedExitCode : Passed ? 0 : 1;

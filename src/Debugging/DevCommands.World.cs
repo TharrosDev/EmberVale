@@ -22,6 +22,10 @@ public static partial class DevCommands
     /// <summary>The slot <c>save</c> and <c>load</c> use when none is named.</summary>
     private const string ConsoleSlot = "console";
 
+    /// <summary>Set for a script run that was allowed onto the real save folder
+    /// (<c>--exec-allow-real-save</c>): <c>save</c> then writes <see cref="ConsoleSlot"/> only.</summary>
+    public static bool SaveConsoleSlotOnly { get; set; }
+
     private static void RegisterWorld(DevConsole console)
     {
         console.Register(new ConsoleCommand("time", "time [<hour>|+<hours>|day <n>]", "Show the clock, set the hour (24 or more rolls the date), advance by hours, or advance to the same hour on day n.", Time));
@@ -87,6 +91,8 @@ public static partial class DevCommands
                 return console.Fail("usage: timescale [<0.05..20>]");
             }
 
+            // Both: the clock now, and the value hit-stop and the boss defeat beat hand it back at.
+            Embervale.Combat.HitStopDirector.BaseTimeScale = scale;
             Engine.TimeScale = scale;
         }
 
@@ -346,6 +352,12 @@ public static partial class DevCommands
         }
 
         string slot = args.Length > 0 ? args[0] : ConsoleSlot;
+        if (SaveConsoleSlotOnly && slot != ConsoleSlot)
+        {
+            return console.Fail($"save to '{slot}' refused: this run is on the real save folder, so only the " +
+                                $"'{ConsoleSlot}' slot may be written (isolate it with EMBERVALE_USER_DIR)");
+        }
+
         return session.Lifecycle.TrySave(slot, out string failureKey)
             ? console.Reply($"saved to '{slot}'", new Godot.Collections.Dictionary { ["slot"] = slot })
             : console.Fail($"save to '{slot}' refused ({(failureKey.Length > 0 ? failureKey : "not a player-writable slot")})");

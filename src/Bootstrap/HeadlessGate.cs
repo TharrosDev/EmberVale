@@ -68,12 +68,17 @@ public static class HeadlessGate
     }
 
     /// <summary>
-    /// The first thing a boot does about its command line. Refuses a misspelt or contradictory one
-    /// (exit 2), answers <c>--gates</c>, and for a real mode applies quiet output and the seed.
+    /// The first thing a boot does about its command line. In a tooling build it refuses a misspelt
+    /// or contradictory one (exit 2); a shipping build never does. Answers <c>--gates</c>, and for a
+    /// real mode applies quiet output and the seed.
     /// Returns true when it ended the run.
     /// </summary>
     public static bool Prepare(SceneTree tree)
     {
+#if EMBERVALE_TOOLING
+        // Tooling builds only. This runs on every boot, and a shipping game must start whatever
+        // its command line holds: a launcher's or a player's unknown argument is ignored there, as
+        // it always was, never answered with an exit before the title.
         string? refusal = HeadlessFlags.Validate(HeadlessArgs.User.All, HeadlessArgs.Has, SessionFlags());
         if (refusal != null)
         {
@@ -82,6 +87,7 @@ public static class HeadlessGate
             Finish(tree, report, legacyLine: false);
             return true;
         }
+#endif
 
         HeadlessMode? mode = RequestedMode();
         if (mode == null)
@@ -198,12 +204,22 @@ public static class HeadlessGate
 
         if (legacyLine)
         {
+            // A filtered or shortened run that found nothing wrong is not the gate passing, and the
+            // callers of this line read nothing else: it must not say the bare PASS.
             string name = label ?? report.Gate;
-            GD.Print(report.Passed ? $"{name}: PASS" : $"{name}: FAIL ({report.Failures.Count} failure(s))");
+            GD.Print(LegacyLine(name, report.Passed, report.Failures.Count, report.IsPartial));
         }
 
         report.FinishAndQuit(tree);
     }
+
+    /// <summary>The <c>gate: PASS|FAIL</c> line. A partial run (<c>--only</c>, <c>--skip</c>,
+    /// <c>--cycles=1</c>, <c>--story-mission</c>, <c>--no-boot-validate</c>) that passed prints
+    /// <c>gate: PARTIAL PASS (not the gate)</c>, which no match for <c>gate: PASS</c> accepts.</summary>
+    public static string LegacyLine(string name, bool passed, int failures, bool partial) =>
+        !passed ? $"{name}: FAIL ({failures} failure(s))"
+        : partial ? $"{name}: PARTIAL PASS (not the gate)"
+        : $"{name}: PASS";
 
     /// <summary>
     /// Keeps a session gate off the developer's own saves. Such a gate builds and destroys
@@ -283,6 +299,7 @@ public static class HeadlessGate
 
     /// <summary>The flags the shell and the harness table read, so a mode run beside one of them
     /// (<c>--save-reload --capture</c>) is not refused and a harness flag is never taken for a typo.</summary>
+#if EMBERVALE_TOOLING
     private static List<string> SessionFlags()
     {
         var flags = new List<string>
@@ -301,4 +318,5 @@ public static class HeadlessGate
 
         return flags;
     }
+#endif
 }

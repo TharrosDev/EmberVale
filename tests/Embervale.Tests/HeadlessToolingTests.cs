@@ -251,4 +251,58 @@ public class HeadlessToolingTests
         Assert.False(SessionEntryRules.IsIsolated(""));
         Assert.False(SessionEntryRules.IsIsolated(null));
     }
+
+    [Fact]
+    public void Script_NeedsIsolationOrTheExplicitFlag()
+    {
+        string? refusal = SessionEntryRules.ScriptRefusal("--exec", isolated: false, allowRealSave: false);
+        Assert.NotNull(refusal);
+        Assert.Contains("--exec", refusal);
+        Assert.Contains(SessionEntryRules.AllowRealSaveArgument, refusal);
+        Assert.Null(SessionEntryRules.ScriptRefusal("--exec", isolated: true, allowRealSave: false));
+        Assert.Null(SessionEntryRules.ScriptRefusal("--repro", isolated: false, allowRealSave: true));
+    }
+
+    private static KeyValuePair<string, double>[] Slots(params (string, double)[] slots) =>
+        System.Array.ConvertAll(slots, slot => new KeyValuePair<string, double>(slot.Item1, slot.Item2));
+
+    [Fact]
+    public void Slot_NamedByTheFlagIsThatSaveOrNothing()
+    {
+        KeyValuePair<string, double>[] slots = Slots(("quick", 30), ("fixture", 10), ("auto1", 20));
+
+        Assert.Equal("fixture", SaveSlotChoice.Pick(slots, "fixture", null, out string? problem, out bool fellBack));
+        Assert.Null(problem);
+        Assert.False(fellBack);
+
+        // A typo must not run the caller's script against the newest save.
+        Assert.Null(SaveSlotChoice.Pick(slots, "fixtur", "quick", out problem, out fellBack));
+        Assert.Contains("--slot=fixtur", problem);
+        Assert.Contains("auto1, fixture, quick", problem);
+        Assert.False(fellBack);
+
+        Assert.Null(SaveSlotChoice.Pick(Slots(), "fixture", null, out problem, out _));
+        Assert.Contains("no saves", problem);
+    }
+
+    [Fact]
+    public void Slot_WithoutTheFlagIsTheVariableOrTheNewest()
+    {
+        KeyValuePair<string, double>[] slots = Slots(("quick", 30), ("fixture", 10), ("auto1", 20));
+
+        Assert.Equal("quick", SaveSlotChoice.Pick(slots, null, null, out string? problem, out bool fellBack));
+        Assert.Null(problem);
+        Assert.False(fellBack);
+
+        Assert.Equal("fixture", SaveSlotChoice.Pick(slots, "", "fixture", out _, out fellBack));
+        Assert.False(fellBack);
+
+        Assert.Equal("quick", SaveSlotChoice.Pick(slots, null, "gone", out problem, out fellBack));
+        Assert.Null(problem);
+        Assert.True(fellBack);
+
+        Assert.Null(SaveSlotChoice.Pick(Slots(), null, null, out problem, out fellBack));
+        Assert.Null(problem);
+        Assert.False(fellBack);
+    }
 }
